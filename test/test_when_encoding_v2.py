@@ -16,6 +16,9 @@ exact long-int clock (``BasicModel.when_time`` / ``self.t``) is the
 addressing side-band and is UNTOUCHED (Option C hybrid).
 
 Pure codec tests -- no model build.
+The formulas above describe centered phase coordinates. Stored coordinates
+are (1 + phase) / 2; decoding, norms and phase operations recenter them.
+
 """
 
 import math
@@ -56,12 +59,12 @@ def test_defaults_and_dims():
 
 
 def test_constant_norm_sqrt2_exact():
-    """Both pairs exactly unit: ||encode(s)|| == sqrt(2) pinned exactly
+    """Both pairs exactly unit: ||2*encode(s)-1|| == sqrt(2) pinned exactly
     (float32 sin^2+cos^2 per pair)."""
     enc = _enc()
     for s in (0, 1, 17, 31250, 999999):
         v = enc.encode(s)
-        n = float(torch.linalg.vector_norm(v))
+        n = float(torch.linalg.vector_norm(2*v-1))
         assert abs(n - math.sqrt(2.0)) < 1e-6, (s, n)
 
 
@@ -71,7 +74,7 @@ def test_lf_pair_roundtrips_onset_over_horizon():
     enc = _enc()
     for s in (0, 1, 12345, 499999, 500001, 999998):
         v = enc.encode(s)
-        a = torch.atan2(v[..., 0], v[..., 1]) % (2 * math.pi)
+        a = torch.atan2(2*v[..., 0]-1, 2*v[..., 1]-1) % (2 * math.pi)
         s_lf = float(a) * _P_LF / (2 * math.pi)
         assert abs(s_lf - s) < 0.5, (s, s_lf)
 
@@ -81,7 +84,7 @@ def test_hf_pair_roundtrips_residue_within_rung():
     enc = _enc()
     for s in (0, 3, 31249, 31250, 31251, 123456, 999999):
         v = enc.encode(s)
-        a = torch.atan2(v[..., 2], v[..., 3]) % (2 * math.pi)
+        a = torch.atan2(2*v[..., 2]-1, 2*v[..., 3]-1) % (2 * math.pi)
         r = float(a) * _P_HF / (2 * math.pi)
         want = s % _P_HF
         # residue is periodic: compare on the circle
@@ -112,8 +115,8 @@ def test_ladder_branch_boundary():
     def _with_lf_error(delta_ticks):
         a = (s_true + delta_ticks) * w_lf
         out = v.clone()
-        out[..., 0] = math.sin(a)
-        out[..., 1] = math.cos(a)
+        out[..., 0] = (math.sin(a)+1)/2
+        out[..., 1] = (math.cos(a)+1)/2
         return out
 
     # just under half a rung: still exact
@@ -187,7 +190,7 @@ def test_tense_relation_keys_on_lf_pair():
     w_lf = 2 * math.pi / _P_LF
 
     def _lf_angle(v):
-        return float(torch.atan2(v[..., 0], v[..., 1]) % (2 * math.pi))
+        return float(torch.atan2(2*v[..., 0]-1, 2*v[..., 1]-1) % (2 * math.pi))
 
     assert _lf_angle(fut) > _lf_angle(now) > _lf_angle(past)
     # float32 angle ULP near pi ~ 2.4e-7 rad ~ 0.04 LF ticks at P=1e6.

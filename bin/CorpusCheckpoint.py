@@ -11,9 +11,9 @@ import copy
 import torch
 
 
-CONTEXT = ('_stm_end_states', '_inter_context', '_inter_context_lanes',
+CONTEXT = ('_inter_context', '_inter_context_lanes',
            '_inter_context_ids', '_inter_context_occurrences',
-           '_inter_last_meaning', '_expectation_documents')
+           '_expectation_documents')
 SURFACES = ('_priming_seen', '_expected_knowing', '_observed_knowing', '_desire')
 STM_META = ('_active_batch', '_scope_columns', '_whole_columns', '_live_max_depth_host')
 
@@ -114,6 +114,12 @@ def restore(model, state):
     if (expectation is None) != (context is None):
         raise ValueError('corpus expectation owner differs from construction')
     if context is not None:
+        retired = set(context.get('fields', ())) & {'_stm_end_states', '_inter_last_meaning'}
+        if retired:
+            import warnings
+            warnings.warn('retired sentence-estimate continuation fields ignored: ' + ', '.join(sorted(retired)), UserWarning)
+            context = dict(context, fields={key: value for key, value in context['fields'].items()
+                                            if key not in retired})
         batch = context.get('batch')
         if (type(batch) is not int or batch < 1 or batch > spaces[0].nStreams
                 or set(context.get('fields', ())) != set(CONTEXT)

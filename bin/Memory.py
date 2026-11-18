@@ -218,7 +218,7 @@ class STMChunks:
 
 
     @staticmethod
-    def refresh(state, indices, gate=None):
+    def refresh(state, indices, gate=None, *, witness=False):
         """Read the current value of a bound off-stack identity/timeline."""
         identities = STMChunks.gather(state[STMChunks.IDENTITY], indices.clamp_min(0))
         timelines = STMChunks.gather(state[STMChunks.TIMELINE], indices.clamp_min(0))
@@ -235,18 +235,32 @@ class STMChunks:
         values = torch.where(available[..., None], STMChunks.gather(state[STMChunks.BUFFER], sources),
                              STMChunks.gather(state[STMChunks.BUFFER], indices.clamp_min(0)))
         state = STMChunks.read(state, torch.where(available, sources, -1), available)
-        return STMChunks.read(state, indices, gate), values
+        result = STMChunks.read(state, indices, gate), values
+        if witness:
+            record = torch.stack((sources, identities, timelines), -1)
+            return (*result, torch.where(available[..., None], record, -1))
+        return result
 
 
     @staticmethod
-    def bind_menu(state, mention, *, orders=None, exclusions=None, meaning_start=0):
+    def bind_menu(state, mention, *, orders=None, exclusions=None, meaning_start=0,
+                  percept_band=None):
         """Fixed K+1 field variants: dummy first, then eligible off-stack chunks."""
         batch, positions, width = mention.shape
         own = mention[:, :, None]
         candidates = state[STMChunks.BUFFER][:, None].expand(batch, positions, -1, width)
         available = ((state[STMChunks.STACK] < 0) & (state[STMChunks.IDENTITY] >= 0))[:, None].expand(batch, positions, -1)
         from IdentityRows import meet_ratios
-        covered, covers = meet_ratios(own[..., meaning_start:], candidates[..., meaning_start:])
+        columns = torch.arange(width, device=mention.device)
+        content = columns >= meaning_start
+        if percept_band is not None:
+            start, end, total = percept_band
+            if total != width:
+                raise ValueError('bind occurrence layout differs from its operands')
+            content = content & ~((columns >= start) & (columns < end))
+        # The occurrence bands locate a description; they are not evidence
+        # for containment. Keep them on the candidates returned below.
+        covered, covers = meet_ratios(own * content, candidates * content)
         available = available & ((covered == 1) | (covers == 1))
         if orders is not None:
             # With an open order each candidate supplies its own typed read.
@@ -1309,6 +1323,15 @@ class MediumTermMemory(MemoryStore):
             members.append((key, key[1]))
         members.extend((event.occurrence, None) for event in entry.timelines[timeline].events
                        if event.role == 0 and event.before is not None)
+        # A modal mention can alias this identity without stating its actual
+        # value. Its event belongs to its branch, even when the same row also
+        # serves as that mention. Old checkpoints retain the event addresses.
+        actual = {event.occurrence for event in entry.events}
+        alternative = set(entry.refinement.get('alternative_mentions', ()))
+        alternative.update(event.occurrence for branch in entry.timelines[1:]
+                           for event in branch.events if event.occurrence not in actual)
+        if timeline == 0:
+            members = [(address, concept) for address, concept in members if address not in alternative]
         members.extend((('sym', cid), cid) for cid in dict.fromkeys(
             cid for cid in (entry.native, entry.symbol) if cid is not None))
         return tuple(dict.fromkeys(members))
@@ -1334,13 +1357,24 @@ class MediumTermMemory(MemoryStore):
         if events:
             latest = events[-1]
             clock = entry.refinement.get('event_links', {}).get(latest.occurrence)
+            eligible = {address for address, concept in members}
             later = () if clock is None or timeline != 0 else tuple((address, self.reading_of(address))
-                for address in entry.occurrences
+                for address in entry.occurrences if address in eligible
                 if entry.refinement.get('mentions', {}).get(address, (None, -1))[1] > clock[1])
             members = ((latest.occurrence, None), *later)
         if references is not None and not events:
             members = tuple(dict.fromkeys((*references, *members)))
         if not members:
+            # An identity introduced only under a modal alternative has no
+            # actual assertion. Keep its address, but contribute no actual
+            # value; reading its alternative still reads that branch normally.
+            alternative = set(entry.refinement.get('alternative_mentions', ()))
+            alternative.update(event.occurrence for branch in entry.timelines[1:]
+                               for event in branch.events)
+            if timeline == 0 and entry.occurrences and all(
+                    address in alternative for address in entry.occurrences):
+                return torch.zeros_like(self.read_member(entry.occurrences[0],
+                    live=live_candidate))
             raise ValueError(f'identity {token!r} has no member references')
         values = [self.read_member(address, concept, live=live_candidate)
                   for address, concept in members]
@@ -1369,6 +1403,17 @@ class MediumTermMemory(MemoryStore):
         self.entries[key] = replace(entry, refinement=refinement)
         self.keep_access(key, stream)
         return key
+
+    def alternative_mention(self, occurrence):
+        """Retain an alias on an alternative without adding it to actuality."""
+        key = self.token_of(occurrence)
+        if key is None:
+            raise ValueError('an alternative mention requires its retained identity')
+        entry = self.entries[key]
+        refinement = dict(entry.refinement)
+        refinement['alternative_mentions'] = tuple(dict.fromkeys(
+            (*refinement.get('alternative_mentions', ()), occurrence)))
+        self.entries[key] = replace(entry, refinement=refinement)
 
     def in_window(self, reference, stream):
         key = self.token_of(reference)
@@ -1524,8 +1569,12 @@ class MediumTermMemory(MemoryStore):
                 self.accesses.pop(token, None)
                 self.names = {address: name for address, name in self.names.items() if name.token != token}
             else:
+                refinement = dict(entry.refinement)
+                if 'alternative_mentions' in refinement:
+                    refinement['alternative_mentions'] = tuple(member for member in
+                        refinement['alternative_mentions'] if member != occurrence)
                 self.entries[token] = replace(entry, occurrences=tuple(
-                    address for address in entry.occurrences if address != occurrence))
+                    address for address in entry.occurrences if address != occurrence), refinement=refinement)
     def forget(self, occurrence):
         self._detach(occurrence)
         # One event can witness a subject and an object in different identities.
@@ -1538,6 +1587,9 @@ class MediumTermMemory(MemoryStore):
                 continue
             refinement = dict(entry.refinement)
             refinement['members'] = tuple(member for member in refinement.get('members', ()) if member[0] != occurrence)
+            if 'alternative_mentions' in refinement:
+                refinement['alternative_mentions'] = tuple(member for member in
+                    refinement['alternative_mentions'] if member != occurrence)
             for name in ('mentions', 'event_links', 'member_concepts'):
                 if name in refinement:
                     refinement[name] = {key: value for key, value in refinement[name].items() if key != occurrence}
@@ -1583,6 +1635,9 @@ class MediumTermMemory(MemoryStore):
         refinement['mentions'] = {**previous.refinement.get('mentions', {}),
                                   **refinement.get('mentions', {})}
         refinement['members'] = tuple(dict.fromkeys((*previous.refinement.get('members', ()), *refinement.get('members', ()))))
+        if 'alternative_mentions' in previous.refinement or 'alternative_mentions' in refinement:
+            refinement['alternative_mentions'] = tuple(dict.fromkeys((
+                *previous.refinement.get('alternative_mentions', ()), *refinement.get('alternative_mentions', ()))))
         for field in ('member_concepts', 'event_links'):
             refinement[field] = {**previous.refinement.get(field, {}), **refinement.get(field, {})}
         self.entries[target] = replace(self.entries[target], refinement=refinement)
@@ -1762,6 +1817,8 @@ class MediumTermMemory(MemoryStore):
             refinement = record.get('refinement', {})
             if not isinstance(refinement, dict):
                 raise ValueError('invalid identity checkpoint refinement')
+            if any(member not in uses for member in refinement.get('alternative_mentions', ())):
+                raise ValueError('invalid identity checkpoint alternative mention')
             if percept(key) and (refinement.get('promoted_percept') != key[1]
                                 or record.get('transient') is not None):
                 raise ValueError('a retained basic percept requires its native reference, not a transient identity')
@@ -1849,7 +1906,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         self.register_buffer('count', torch.tensor(0,dtype=torch.long))
         self.register_buffer('model_clock', torch.tensor(0,dtype=torch.long))
         self.register_buffer('percept_layout', torch.tensor(self.percept_width,dtype=torch.long))
-        self.register_buffer('truth_schema', torch.tensor(17,dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(18,dtype=torch.long))
         for name in ('forget_passes','forget_sentences','forget_last_sentence'):
             self.register_buffer(name,torch.tensor(0,dtype=torch.long))
         self.register_buffer('forget_pending',torch.tensor(False))
@@ -2250,13 +2307,18 @@ class LTM0(IdeaRows):
         """Reject unrepresentable legacy rows before importing any store."""
         from RowTime import checkpoint_times
         version=int(state.get(prefix+'truth_schema',-1))
-        if version not in (16,17):
+        if version not in (16,17,18):
             raise ValueError('unsupported LTM0 checkpoint layout')
         if state[prefix+'slots'].shape != self.slots.shape:
             raise ValueError('LTM0 checkpoint capacity/width differs from construction')
         count=int(state[prefix+'count'])
-        ticks=checkpoint_times(state[prefix+'slots'],count,int(state[prefix+'percept_layout']))
-        if version == 17:
+        slots = state[prefix+'slots']
+        layout = int(state[prefix+'percept_layout'])
+        if version < 18:
+            from CoordinateCheckpoint import point
+            slots = point(slots, layout)
+        ticks=checkpoint_times(slots,count,layout)
+        if version >= 17:
             self.validate_referents(state, prefix, ticks)
         if version == 16:
             plus,minus=state[prefix+'truth_plus'],state[prefix+'truth_minus']
@@ -2275,6 +2337,10 @@ class LTM0(IdeaRows):
         version=int(state[prefix+'truth_schema'])
         count=int(state[prefix+'count'])
         order=ticks.argsort(stable=True)
+        if version < 18:
+            from CoordinateCheckpoint import point
+            state[prefix+'slots'] = point(state[prefix+'slots'], int(state[prefix+'percept_layout']))
+            warnings.warn('LTM0 checkpoint: converted location/time sinusoids to [0, 1]')
         if version == 16:
             addresses=state.get(prefix+'addressing.address_keys')
             self._legacy_times={} if addresses is None else dict(zip(addresses[:count].tolist(),ticks.tolist()))
@@ -2778,6 +2844,12 @@ class STM0(IdeaRows):
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
         self.validate_referents(state, prefix, state[prefix+'row_names'])
+        if int(state[prefix+'truth_schema']) < 18:
+            from CoordinateCheckpoint import point
+            import warnings
+            state[prefix+'slots'] = point(state[prefix+'slots'], int(state[prefix+'percept_layout']))
+            state[prefix+'truth_schema'] = self.truth_schema.clone()
+            warnings.warn('STM0 checkpoint: converted location/time sinusoids to [0, 1]')
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
 
     def compact_rows(self,keep):

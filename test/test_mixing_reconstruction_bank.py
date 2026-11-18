@@ -17,7 +17,7 @@ def test_mixing_reconstruction_keeps_non_ascii_percepts_in_the_target(tmp_path, 
         raw = torch.tensor([list(surface.encode('utf-8'))], dtype=torch.long)
         model._lex_embed_stem(raw)
         isp = model.inputSpace
-        from PrependedSymbols import lookup_view
+        from PrependedSymbols import lookup_view, word_view
         target = [bytes(v[m].tolist()) for v, m in
                   zip(isp._ar_target_word_bytes[0], isp._ar_target_word_mask[0]) if bool(m.any())]
         assert b''.join(target) == surface.encode('utf-8'), target
@@ -29,7 +29,7 @@ def test_mixing_reconstruction_keeps_non_ascii_percepts_in_the_target(tmp_path, 
         assert target[1] == 'é'.encode('utf-8')
         assert candidates == [b'caf'], candidates
         assert int(lookup_view(isp, 'lookup_rows')[0, 1]) == -1
-        assert model._word_symbol_concept_ids() is None
+        torch.testing.assert_close(model._word_symbol_concept_ids(), word_view(isp, 'concept_ids'))
     finally:
         model.End()
         model.symbolSpace.soft_reset()
@@ -41,8 +41,8 @@ def test_mixing_bank_uses_byte_preserving_word_texts():
     from Models import BasicModel
     active = torch.tensor([[True]])
     isp = SimpleNamespace(_word_active_mask=active,
-        _ar_grammar_object_rows=torch.tensor([[1]]),
-        _ar_grammar_object_atoms=torch.ones(1, 1, 2),
+        _ar_word_concept_rows=torch.tensor([[1]]),
+        _ar_word_concept_atoms=torch.ones(1, 1, 2),
         _packed_sentence_ids=torch.zeros(1, 1, dtype=torch.long),
         _finalize_sentence_word_layout=lambda active: None)
     observed = 'café'.encode('utf-8')
@@ -56,7 +56,7 @@ def test_mixing_bank_uses_byte_preserving_word_texts():
     assert bytes(isp._ar_bank_bytes[isp._ar_bank_valid].tolist()) == observed
 
 
-def test_mixing_reconstruction_stages_objects_surfaces_and_occurrences(tmp_path, monkeypatch, eager_reading):
+def test_mixing_reconstruction_stages_words_surfaces_and_occurrences(tmp_path, monkeypatch, eager_reading):
     import Models
     from test_mm_xor import _fresh_model
     root = Path(Models.__file__).resolve().parents[1]
@@ -70,12 +70,12 @@ def test_mixing_reconstruction_stages_objects_surfaces_and_occurrences(tmp_path,
         isp = model.inputSpace
         from PrependedSymbols import lookup_view, word_view
         model._validate_reconstruction_bank()
-        assert model._word_symbol_concept_ids() is None
+        torch.testing.assert_close(model._word_symbol_concept_ids(), word_view(isp, 'concept_ids'))
         rows = lookup_view(isp, "lookup_rows")
         valid = rows >= 0
         assert valid.sum(1).tolist() == [2, 2, 2, 2]
-        torch.testing.assert_close(rows, isp._ar_grammar_object_rows)
-        torch.testing.assert_close(lookup_view(isp, "lookup_atoms"), isp._ar_grammar_object_atoms)
+        torch.testing.assert_close(rows, word_view(isp, 'concept_rows'))
+        torch.testing.assert_close(lookup_view(isp, "lookup_atoms"), isp._ar_word_concept_atoms)
         assert lookup_view(isp, "lookup_sentence_ids")[valid].tolist() == [0] * 8
         assert bool((lookup_view(isp, "lookup_sentence_ids")[~valid] == -1).all())
         owner = model._concept_owner()
@@ -118,7 +118,9 @@ def test_no_compile_reconstruction_uses_the_eager_loop_body(tmp_path, monkeypatc
         assert model._recon_completed
         assert model._recon_cost.shape == (4,)
         assert bool(torch.isfinite(model._recon_cost).all())
-        assert model._word_symbol_concept_ids() is None
+        from PrependedSymbols import word_view
+        torch.testing.assert_close(model._word_symbol_concept_ids(),
+                                   word_view(model.inputSpace, 'concept_ids'))
     finally:
         model.End()
         model.symbolSpace.soft_reset()

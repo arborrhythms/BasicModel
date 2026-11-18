@@ -1,5 +1,4 @@
-"""The live learned map on a complete field, before a thought is taken."""
-from dataclasses import replace
+"""Observe the open field; intuit deposits expect and closes definitions."""
 import torch
 
 
@@ -20,18 +19,12 @@ def observed(owner, field):
 
 
 def open_field(model, field, *, bracket=None):
-    """Predict the basic block once; the selected face deposits its forecast."""
+    """Capture the observed field once, before expect reads its basic block."""
     owner = model._concept_owner()
     knowing, rows = observed(owner, field)
-    width = owner._order_caps()[0]
-    model._intuition_observation = field
-    model._intuition_teacher = knowing[:, :width].detach().clone()
     model._intuition_bracket = bracket
     with torch.no_grad():
         owner._observed_knowing[:len(knowing)].copy_(knowing.detach())
-    stack = owner.intuit_stack
-    model._intuition_prediction = (None if stack is None else
-        stack(knowing[:, :width].detach().flatten(1)).reshape(len(knowing), width, 2))
     return field
 
 
@@ -42,8 +35,10 @@ def read(owner, *, row, work):
     from Understanding import ConceptualField
     work.require('field')
     model = getattr(owner, '_model', None)
-    prediction = getattr(model, '_intuition_prediction', None)
-    if prediction is None:
+    if model is None:
+        return
+    prediction = owner._expected_knowing[:, :owner._order_caps()[0]]
+    if not getattr(owner, '_concept_prediction_open', False):
         return
     field = knowing(model)
     rows = inventory(owner)
@@ -68,14 +63,3 @@ def read(owner, *, row, work):
     # Closure writes only the active stream; another stream's field is held.
     evidence[:,row:row+1] = close(owner, rows, evidence[:,row:row+1])
     publish(model, ConceptualField(ids, evidence, field.where, field.when, field.percepts))
-
-
-def complete(model, present, registry):
-    """The kept basic field teaches the one open-pass prediction."""
-    prediction = getattr(model, '_intuition_prediction', None)
-    if prediction is None:
-        return
-    teacher = model._intuition_teacher
-    model._intuition_target = teacher.detach()
-    error = (prediction - teacher.detach()).square().mean((1, 2))
-    registry.error('intuition.field', error, 1., mask=present, category='output')

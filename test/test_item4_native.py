@@ -13,7 +13,7 @@ from What import What
 import ThoughtClosing
 
 
-def case(row_gain, document_gain, *, omitted=False, relation=False):
+def case(omitted=False, relation=False):
     with pytest.MonkeyPatch.context() as patch:
         fixture = SentenceFixture(patch)
         entry = fixture.program(('part', 'cat', 'dog') if relation else 'cat')
@@ -32,31 +32,14 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
                 parameter.zero_()
             head._inter_predictor.local.bias.copy_(torch.tensor([60., -60.]))
         host = BasicModel()
-        host.document_expectation_gain = document_gain
-        host.expectation_gain = row_gain
         host.reconstruct_in_loop = False
         captured = []
         commit = BasicModel._commit_sentence
-        def capture(owner, state, sid, active, observations, predictions, *args, **kwargs):
-            captured.append(owner._sentence_closing_images(observations[0], active, predictions[0]))
-            return commit(owner, state, sid, active, observations, predictions, *args, **kwargs)
+        def capture(owner, state, sid, active, observations, *args, **kwargs):
+            captured.append(owner._sentence_closing_images(observations[0], active))
+            return commit(owner, state, sid, active, observations, *args, **kwargs)
         patch.setattr(BasicModel, '_commit_sentence', capture)
-        observation = BasicModel._sentence_observation
-        row_prior = ()
-        def observe(*args, **kwargs):
-            value = observation(*args, **kwargs)
-            value['row_expectations'] = row_prior
-            return value
-        patch.setattr(BasicModel, '_sentence_observation', observe)
         for sid in (0, 1):
-            raw = entry.end_state[None]
-            state = (raw, torch.ones(1, dtype=torch.long),
-                     torch.zeros(1, 3, dtype=torch.long), torch.zeros(1, 3, dtype=torch.long),
-                     torch.cat((ids[:1], ids.new_full((2,), -1)))[None], torch.ones(1, 3))
-            field = SymbolField(head, strength=0., epsilon=1e-6, saturation='clip')
-            field.anticipate((torch.zeros_like(raw), torch.zeros_like(state[1]), *state[2:]))
-            field.arrive(state, torch.tensor([True]), lanes=entry.leaf_evidence[:1][None].expand(1, 3, 2))
-            row_prior = field.closing_predictions()
             commit_reading(fixture.language, fixture.registry, entry, fixture.store,
                            discourse=head, sid=sid, document='cat-stream', owner=host)
         host.conceptualSpace.stm = SimpleNamespace(concept_dim=8)
@@ -71,7 +54,7 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
             assert ready.all() and answer.resolved
         index = fixture.store.location(field.row_id)
         retained = fixture.store.meaning_of(index)
-        floor = (1-row_gain)*(1-document_gain)
+        floor = 1.
         torch.testing.assert_close(image.conceived, image.observed*floor, atol=1e-7, rtol=1e-6)
         if relation:
             # Two order-zero symbol operands form an untyped chain; the
@@ -83,26 +66,19 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
         else:
             expected = entry.end_state
         torch.testing.assert_close(retained.roles, expected, atol=0, rtol=0)
-        if omitted:
-            assert image.omission[1, 0] == 1 and image.excess[1].sum() == 0
-            torch.testing.assert_close(image.conceived, entry.end_state*floor, atol=1e-7, rtol=1e-6)
-        return dict(row_gain=row_gain, document_gain=document_gain, floor=floor,
-                    content_norm=float(image.conceived.norm()), raw_norm=float(image.observed.norm()),
-                    answer_correct=None if relation else True, store_correct=True, omitted=omitted, relation=relation,
-                    excess=image.excess.tolist(), omission=image.omission.tolist(),
-                    prime=image.expected.tolist(), row_prime=image.row_expected.tolist())
+        assert image.omission is None and image.expected is None
+        assert image.row_expected is None
+        return dict(answer_correct=None if relation else True, store_correct=True)
 
 
-@pytest.mark.parametrize('row_gain,document_gain,omitted', [
-    (0.,0.,False),(.5,0.,False),(1.,0.,False),(0.,.5,False),
-    (0.,1.,False),(.5,.5,False),(.5,.5,True)])
-def test_expected_cat_and_omission_survive_native_answer_and_store(row_gain,document_gain,omitted):
-    case(row_gain,document_gain,omitted=omitted)
+
+@pytest.mark.parametrize('omitted', [False, True])
+def test_observed_cat_survives_native_answer_and_store(omitted):
+    case(omitted=omitted)
 
 
-@pytest.mark.parametrize('row_gain,document_gain',[(1.,0.),(0.,1.),(.5,.5)])
-def test_relation_chain_uses_symbol_confidence_through_native_close_and_store(row_gain,document_gain):
-    case(row_gain,document_gain,relation=True)
+def test_relation_chain_survives_native_close_and_store():
+    case(relation=True)
 
 
 def test_sentence_prime_is_cleared_before_thought_and_next_peer_input(tmp_path,monkeypatch,eager_reading):

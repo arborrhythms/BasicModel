@@ -72,8 +72,8 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline head_role stack_arity chunk action_context",
-    defaults=(None, None, None, None, None, None, None, None, None, None))
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline head_role stack_arity chunk action_context reference_witness held_refresh held_bind",
+    defaults=(None, None, None, None, None, None, None, None, None, None, None, None, None))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
 
 
@@ -296,11 +296,21 @@ class Encoding(nn.Module):
         encoded = y[:, :, index].clone()  # [batch, nVec, nDim]
         y[:, :, index] = 0
         return y, self.decode(encoded)
+def unsigned_phase(value):
+    """Store a sinusoid in [0, 1]; the signed phase is local to its codec."""
+    return (value + 1) * .5
+
+
+def signed_phase(value):
+    """Recover the centered phase before angle, radius or rotation reads."""
+    return value * 2 - 1
+
+
 class QuadratureEncoding(Encoding):
     """Sin/cos quadrature encoding (nDim=2).
 
-    Encodes scalar values as (sin, cos) pairs at frequency ``div_term = 2pi/maxVal``.
-    Exactly invertible via ``atan2(sin, cos) / div_term``.
+    Stores scalar values as ((sin+1)/2, (cos+1)/2) pairs at frequency ``div_term = 2pi/maxVal``.
+    Decodes by centering the stored pair before ``atan2(sin, cos) / div_term``.
 
     Subclasses implement ``forward()`` to define how values are assigned
     (per-object for spatial, per-batch for temporal).
@@ -326,29 +336,29 @@ class QuadratureEncoding(Encoding):
             offsets: tensor [...] or scalar (int/float).
 
         Returns:
-            Tensor [..., 2] with (sin, cos).
+            Tensor [..., 2] with ((sin+1)/2, (cos+1)/2).
         """
         if not isinstance(offsets, torch.Tensor):
             offsets = torch.tensor(float(offsets), device=TheDevice.get())
         angle = offsets * self.div_term
-        return torch.stack((torch.sin(angle), torch.cos(angle)), dim=-1)
+        return unsigned_phase(torch.stack((torch.sin(angle), torch.cos(angle)), dim=-1))
 
     def decode(self, encoded):
         """Decode sin/cos encoded tensor back to offsets.
 
         Args:
-            encoded: tensor [..., 2] with (sin, cos) or scalar pair.
+            encoded: tensor [..., 2] with unsigned sin/cos coordinates, or scalar pair.
 
         Returns:
             Decoded offsets (tensor or float).
         """
         if isinstance(encoded, torch.Tensor):
-            sin_val = encoded[..., 0]
-            cos_val = encoded[..., 1]
+            sin_val = signed_phase(encoded[..., 0])
+            cos_val = signed_phase(encoded[..., 1])
             angle = torch.atan2(sin_val, cos_val) % (2 * math.pi)
             return angle / self.div_term
         # scalar fallback
-        sin_val, cos_val = encoded
+        sin_val, cos_val = (signed_phase(float(v)) for v in encoded)
         angle = math.atan2(float(sin_val), float(cos_val)) % (2 * math.pi)
         return angle / self.div_term
 
@@ -360,8 +370,8 @@ class QuadratureEncoding(Encoding):
         idx = self.resolve(buf.shape[-1])
         if idx[0] >= 0 and idx[0] < buf.shape[-1]:
             angle = float(offset) * self.div_term
-            buf[batch_idx, pos_idx, idx[0]] = math.sin(angle)
-            buf[batch_idx, pos_idx, idx[1]] = math.cos(angle)
+            buf[batch_idx, pos_idx, idx[0]] = unsigned_phase(math.sin(angle))
+            buf[batch_idx, pos_idx, idx[1]] = unsigned_phase(math.cos(angle))
 class ActiveEncoding(Encoding):
     """Per-slot signed Degree-of-Truth activation (scalar carrier).
 
@@ -411,21 +421,20 @@ class ActiveEncoding(Encoding):
 # ---------------------------------------------------------------------------
 # A span ``[start, end]`` is keyed by the SUM of its two endpoint phasors:
 #
-#   key = scale * [sin(s*dt) + sin(e*dt),  cos(s*dt) + cos(e*dt)]
+#   key = (scale * [sin(s*dt) + sin(e*dt), cos(s*dt) + cos(e*dt)] + 1) / 2
 #
-# By the sum-to-product identity this equals
+# After centering (2 * key - 1), the sum-to-product identity gives
 #
 #   scale * 2*cos((e-s)*dt/2) * [sin(c*dt), cos(c*dt)],   c = (s+e)/2,
 #
 # so the ANGLE decodes the span CENTER and the MAGNITUDE decodes the span
 # EXTENT (length). With ``scale = 0.5`` an INSTANT (start == end) collapses to
-# the legacy single-quadrature point ``[sin(c*dt), cos(c*dt)]`` -- BYTE-IDENTICAL
-# to the pre-bracket WhereEncoding / WhenEncoding stamp (``0.5 * 2 == 1`` exactly
-# in float). This endpoint-sum helper remains for range encodings; the live
+# the unsigned single-quadrature point ``([sin(c*dt), cos(c*dt)] + 1) / 2``.
+# This endpoint-sum helper remains for range encodings; the live
 # WhereEncoding below uses the start only. A range codec carries the start-end
 # bracket the mereology contiguity test reads directly (center = position/time,
 # extent = spatial size / duration). ``decode`` (the inherited atan2 center) is
-# scale-and-sum invariant, so it stays byte-identical and returns the center;
+# scale-and-sum invariant after centering and returns the center;
 # ``decode_span`` recovers ``(start, end)``.
 _BRACKET_SCALE = 0.5
 
@@ -433,7 +442,7 @@ _BRACKET_SCALE = 0.5
 def _bracket_encode(start, end, div_term, scale=_BRACKET_SCALE):
     """Endpoint-sum key for span ``[start, end]`` (tensor- or scalar-capable).
 
-    ``end is None`` => an instant at ``start`` (byte-identical to the legacy
+    ``end is None`` => an instant at ``start`` (the unsigned
     single-quadrature stamp for ``scale == 0.5``)."""
     if not isinstance(start, torch.Tensor):
         start = torch.tensor(float(start), device=TheDevice.get())
@@ -447,7 +456,7 @@ def _bracket_encode(start, end, div_term, scale=_BRACKET_SCALE):
     ds, de = start * div_term, end * div_term
     s = torch.sin(ds) + torch.sin(de)
     c = torch.cos(ds) + torch.cos(de)
-    return scale * torch.stack((s, c), dim=-1)
+    return unsigned_phase(scale * torch.stack((s, c), dim=-1))
 
 
 def _bracket_decode_span(encoded, div_term, scale=_BRACKET_SCALE, wrap=True,
@@ -470,8 +479,8 @@ def _bracket_decode_span(encoded, div_term, scale=_BRACKET_SCALE, wrap=True,
     Both outputs broadcast over ``encoded[..., :2]``."""
     if not isinstance(encoded, torch.Tensor):
         encoded = torch.as_tensor(encoded, dtype=torch.float32)
-    w0 = encoded[..., 0] / scale
-    w1 = encoded[..., 1] / scale
+    w0 = signed_phase(encoded[..., 0]) / scale
+    w1 = signed_phase(encoded[..., 1]) / scale
     angle = torch.atan2(w0, w1)
     if wrap:
         angle = angle % (2 * math.pi)
@@ -511,6 +520,9 @@ def _ladder_phase(start, period, omega):
 
 def _ladder_index(encoded, long, short, div_lf, div_hf, origin=0):
     """Decode a discrete address from the bands, without an integer sidecar."""
+    # An all-zero band is the existing absent-coordinate sentinel, not
+    # four stored phases. Preserve its former zero-angle read.
+    encoded = torch.where(encoded.ne(0).any(-1, keepdim=True), signed_phase(encoded), 0.)
     coarse = (torch.atan2(encoded[..., 0], encoded[..., 1]) % (2 * math.pi)) / div_lf
     fine = (torch.atan2(encoded[..., 2], encoded[..., 3]) % (2 * math.pi)) / div_hf
     branch = torch.round((coarse - fine) / short).to(torch.int64)
@@ -522,7 +534,7 @@ class WhereEncoding(QuadratureEncoding):
     the registry address (mirrors the `.when` ladder,
     ``WhenStartDurationEncoding``):
 
-      ``[sin(p*w_lf), cos(p*w_lf), sin(p*w_hf), cos(p*w_hf)]``
+      ``([sin(p*w_lf), cos(p*w_lf), sin(p*w_hf), cos(p*w_hf)] + 1) / 2``
 
     with both periods derived once from the complete registry capacity.
     The long rung covers the allocation; the short rung resolves one address.
@@ -618,7 +630,7 @@ class WhereEncoding(QuadratureEncoding):
         if self.nDim >= 4:
             a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
             parts += [torch.sin(a_hf), torch.cos(a_hf)]
-        return torch.stack(parts, dim=-1)
+        return unsigned_phase(torch.stack(parts, dim=-1))
 
     def decode(self, encoded):
         """Recover the byte position from the ladder: LF localizes the branch,
@@ -629,6 +641,7 @@ class WhereEncoding(QuadratureEncoding):
         single-rung band decodes the LF pair alone."""
         if not isinstance(encoded, torch.Tensor):
             encoded = torch.as_tensor(encoded, dtype=torch.float32)
+        encoded = signed_phase(encoded)
         two_pi = 2 * math.pi
         a_lf = torch.atan2(encoded[..., 0], encoded[..., 1]) % two_pi
         divisor = self.div_lf
@@ -718,13 +731,13 @@ class WhenRangeEncoding(QuadratureEncoding):
     ``.when`` is the same endpoint-sum key as ``.where`` (see ``_bracket_encode``)
     over a span of model TIME ``[start, end]``:
 
-      ``.when = 0.5 * [sin(s*dt)+sin(e*dt), cos(s*dt)+cos(e*dt)]``, dt=2*pi/period
+      ``.when = (0.5 * [sin(s*dt)+sin(e*dt), cos(s*dt)+cos(e*dt)] + 1) / 2``
+      with dt=2*pi/period. Angle and magnitude below read ``2 * .when - 1``.
 
       * the ANGLE decodes the event-time CENTER (``self.t`` is supplied by a legacy caller;
         the angle is a coarse / folded feature).
       * the MAGNITUDE decodes the event DURATION (extent). An INSTANT event
-        (start == end == t) collapses to ``[sin(t*dt), cos(t*dt)]`` (magnitude
-        1), the default stamp.
+        (start == end == t) has centered magnitude 1, the default stamp.
 
     This standalone codec accepts explicit caller coordinates. Production
     rows use DocumentWhenEncoding and never derive tense from it.
@@ -777,10 +790,11 @@ class WhenRangeEncoding(QuadratureEncoding):
         phi = float(dt_ticks) * self.div_term
         cos_p = math.cos(phi)
         sin_p = math.sin(phi)
-        w0 = when[..., 0]
-        w1 = when[..., 1]
-        return torch.stack((w0 * cos_p + w1 * sin_p,
-                            w1 * cos_p - w0 * sin_p), dim=-1)
+        w0 = signed_phase(when[..., 0])
+        w1 = signed_phase(when[..., 1])
+        shifted = unsigned_phase(torch.stack((w0 * cos_p + w1 * sin_p,
+                            w1 * cos_p - w0 * sin_p), dim=-1))
+        return torch.where(when.ne(0).any(-1, keepdim=True), shifted, 0.)
 
     def next(self, k=1):
         """Scalar FUTURE handle: the present instant advanced ``k`` ticks toward
@@ -826,10 +840,10 @@ class WhenStartDurationEncoding(Encoding):
     """4-dim `.when` v2: a 2-rung quadrature LADDER over ONE quantity, the
     event ONSET ``s`` (design 2026-07-04, Alec FINAL):
 
-      ``[sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)]``
+      ``([sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)] + 1) / 2``
 
     with periods derived once from LTM capacity. Both phases are constant
-    across a field. Two quadrature pairs have constant norm
+    across a field. The centered pairs (2 * band - 1) have constant norm
     ``sqrt(2)`` (nothing to calibrate, no validity keying). ``decode`` =
     atan2 per pair + HF branch resolution by LF (exact once the LF
     estimate localizes within half an HF period). The band carries the field
@@ -881,8 +895,8 @@ class WhenStartDurationEncoding(Encoding):
             start = torch.as_tensor(start, device=TheDevice.get())
         a_lf = _ladder_phase(start, self.maxVal, self.div_lf)
         a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
-        return torch.stack((torch.sin(a_lf), torch.cos(a_lf),
-                            torch.sin(a_hf), torch.cos(a_hf)), dim=-1)
+        return unsigned_phase(torch.stack((torch.sin(a_lf), torch.cos(a_lf),
+                            torch.sin(a_hf), torch.cos(a_hf)), dim=-1))
 
     def decode(self, encoded):
         """Recover ``(start, residue)`` from the ladder: LF localizes the
@@ -892,6 +906,7 @@ class WhenStartDurationEncoding(Encoding):
         broadcast over ``encoded[..., :4]``. Onsets live in [0, P_lf)."""
         if not isinstance(encoded, torch.Tensor):
             encoded = torch.as_tensor(encoded, dtype=torch.float32)
+        encoded = signed_phase(encoded)
         two_pi = 2 * math.pi
         a_lf = torch.atan2(encoded[..., 0], encoded[..., 1]) % two_pi
         a_hf = torch.atan2(encoded[..., 2], encoded[..., 3]) % two_pi
@@ -915,10 +930,11 @@ class WhenStartDurationEncoding(Encoding):
         for div, sl in ((self.div_lf, (0, 1)), (self.div_hf, (2, 3))):
             phi = float(dt_ticks) * div
             cos_p, sin_p = math.cos(phi), math.sin(phi)
-            w0, w1 = when[..., sl[0]], when[..., sl[1]]
+            w0, w1 = signed_phase(when[..., sl[0]]), signed_phase(when[..., sl[1]])
             out.append(w0 * cos_p + w1 * sin_p)
             out.append(w1 * cos_p - w0 * sin_p)
-        return torch.stack(out, dim=-1)
+        shifted = unsigned_phase(torch.stack(out, dim=-1))
+        return torch.where(when.ne(0).any(-1, keepdim=True), shifted, 0.)
 
     def next(self, k=1):
         """Encode the caller's position advanced by ``k`` steps."""
@@ -7411,7 +7427,7 @@ class SubSpace(nn.Module):
 
         Range contracts:
           - percept WHAT/activation: membership in [0, 1]
-          - percept WHERE/WHEN: signed auxiliary coordinates in [-1, 1]
+          - percept WHERE/WHEN: unsigned sinusoid coordinates in [0, 1]
           - concepts: signed values in [-1, 1]
           - "symbols": elements in [0, 1]
           - "input": elements in [-1, 1]
@@ -7464,8 +7480,8 @@ class SubSpace(nn.Module):
                     warnings.warn(msg)
                 return
             # Range check. Percept WHAT is membership-native [0,1]; its
-            # muxed WHERE/WHEN band remains signed [-1,1]. Concept values
-            # remain signed throughout.
+            # muxed WHERE/WHEN band is unsigned too. A concept read can
+            # remain signed before its activation is stored.
             is_vector = target in ("what", "where", "when", "event")
             if kind == "bivector":
                 # Bivector regime (CSBP): values are sums of relu projections,
@@ -7487,7 +7503,7 @@ class SubSpace(nn.Module):
                             (what.min().item() < -1e-2 or
                              what.max().item() > 1.0 + 1e-2))
                 bad_band = (band.numel() > 0 and
-                            (band.min().item() < -1.0 - 1e-2 or
+                            (band.min().item() < -1e-2 or
                              band.max().item() > 1.0 + 1e-2))
                 if bad_what or bad_band:
                     what_range = (None if what.numel() == 0 else
@@ -7496,13 +7512,13 @@ class SubSpace(nn.Module):
                                   (band.min().item(), band.max().item()))
                     msg = ("Range violation: percept event WHAT range "
                            f"{what_range} outside [0, 1] or auxiliary band "
-                           f"range {band_range} outside [-1, 1].")
+                           f"range {band_range} outside [0, 1].")
                     if strict:
                         assert False, msg
                     else:
                         warnings.warn(msg)
                 return
-            if kind == "percepts" and target in ("what", "activation"):
+            if kind == "percepts":
                 lo, hi = 0, 1
             elif kind == "symbols" and not is_vector:
                 lo, hi = 0, 1
@@ -8968,8 +8984,8 @@ class InputSpace(Space):
         self._packed_sentence_end_for_word = None
         self._packed_sentence_slot_end_positions = None
         self._packed_sentence_slot_mask = None
-        # Optional pre-built embedding bypass: callers (chat-loop /
-        # generate_sentence) stage a tensor here so forward() skips
+        # Optional pre-built embedding bypass: callers stage a tensor
+        # here so forward() skips
         # the lex/embed step on that call.  None during training.
         self._cached_embedding = None
         # ---- Per-word ground-truth cursor (INERT this increment) ----
@@ -10198,8 +10214,7 @@ class InputSpace(Space):
 
         Called by forward() at the start of every pass.  Handles three
         cases:
-          * ``_cached_embedding`` set -- use pre-built latent (chat-
-            loop / generate_sentence stages this).
+          * ``_cached_embedding`` set -- use the caller's pre-built latent.
           * ``model_type == 'embedding'`` (the data space_role) -- lex into byte buffer.
           * numeric mode -- vocab codebook lookup.
         """
@@ -12738,7 +12753,8 @@ class ConceptualSpace(Space):
                  indexed_similarity_codebook=False,
                  derived_similarity_codebook=False,
                  shared_percept_readout=None,
-                 order_limit=None, order_reservations=()):
+                 order_limit=None, order_reservations=(), owns_concepts=True,
+                 comprehends_sentences=False):
         """Initialize ConceptualSpace; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -12873,11 +12889,11 @@ class ConceptualSpace(Space):
         expect_pairs = int(TheXMLConfig.space(section, 'expectLayers', 1))
         self.expect_stack = (SigmaPiStack(2*self._order_caps()[0], 2*self._order_caps()[0],
             hidden=expect_hidden, pairs=expect_pairs)
-            if self.expectation_map == 'sigmaPi' and expect_hidden else None)
-        intuit_hidden = int(TheXMLConfig.space(section, 'intuitHidden', 64))
-        intuit_pairs = int(TheXMLConfig.space(section, 'intuitLayers', 2))
-        self.intuit_stack = (SigmaPiStack(2*self._order_caps()[0], 2*self._order_caps()[0],
-            hidden=intuit_hidden, pairs=intuit_pairs) if intuit_hidden else None)
+            if owns_concepts and self.expectation_map == 'sigmaPi' and expect_hidden else None)
+        self.idea_stack = (SigmaPiStack(2*self._order_caps()[0], self.outputShape[-1],
+            hidden=int(TheXMLConfig.space(section, 'ideaHidden', 64)),
+            pairs=int(TheXMLConfig.space(section, 'ideaLayers', 1)))
+            if owns_concepts and comprehends_sentences else None)
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -13215,6 +13231,22 @@ class ConceptualSpace(Space):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        retired = (prefix + 'intuit_stack.',)
+        if self.expect_stack is None:
+            retired += (prefix + 'expect_stack.',)
+        old = [key for key in state_dict if key.startswith(retired)]
+        if old:
+            import warnings
+            warnings.warn('Discarding retired intuition/non-owner expectation stack from checkpoint',
+                          UserWarning)
+            for key in old:
+                del state_dict[key]
+        idea_prefix = prefix + 'idea_stack.'
+        if self.idea_stack is not None and not any(key.startswith(idea_prefix) for key in state_dict):
+            import warnings
+            warnings.warn('Initializing the field-to-idea read absent from this checkpoint', UserWarning)
+            for key, value in self.idea_stack.state_dict().items():
+                state_dict[idea_prefix + key] = value
         # Pre-readout checkpoints have neither new module. Initialize only
         # entirely absent modules; a partial new checkpoint must still fail
         # strict loading. Existing modules/optimizer state are not rewritten.
@@ -15087,8 +15119,8 @@ class ConceptualSpace(Space):
         seen = {id(p) for p in base}
         for parameter in (*self.components.parameters(), *(() if self.concept_predictor is None else self.concept_predictor.parameters()),
                           *(() if self.expect_stack is None else self.expect_stack.parameters()),
-                          *self.intuition.parameters(),
-                          *(() if self.intuit_stack is None else self.intuit_stack.parameters())):
+                          *(() if self.idea_stack is None else self.idea_stack.parameters()),
+                          *self.intuition.parameters()):
             if id(parameter) not in seen:
                 base.append(parameter)
                 seen.add(id(parameter))
@@ -15408,7 +15440,7 @@ class ConceptualSpace(Space):
         # its demand over the written alternatives, rather than asserting
         # every alternative at full strength. A precise basic-level concept
         # then retains its own identity beside a broader property concept.
-        weights = (features.values.to(field).clamp_min(0) if features.values is not None
+        weights = (features._fold_weights(field) if features.values is not None
                    else field.new_zeros(count))
         totals = weights.new_zeros(features.nOutput).scatter_add(0, rows, weights)
         shares = weights / totals[rows].clamp_min(torch.finfo(weights.dtype).tiny)
@@ -19676,7 +19708,7 @@ class WholeSpace(Space):
         return out
 
     def property_rows_for_bytes(self, surface):
-        """Primitive property rows holding anywhere on ``surface``.
+        """Primitive property rows holding on every byte of ``surface``.
 
         This is an eager structural read used when CS forms a word concept.
         It returns row references only; it never allocates a combined WS row.
@@ -19696,9 +19728,9 @@ class WholeSpace(Space):
         if not values:
             return ()
         lut, discard = _analysis_property_signature(self)
-        signature = 0
-        for value in values:
-            signature |= int(lut[int(value) & 0xFF])
+        signature = int(lut[int(values[0]) & 0xFF])
+        for value in values[1:]:
+            signature &= int(lut[int(value) & 0xFF])
         signature &= ~int(discard)
         return tuple(
             row for row in range(min(int(self.nVectors), 63))

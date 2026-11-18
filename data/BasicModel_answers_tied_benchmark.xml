@@ -50,7 +50,7 @@
       <teacherReconstruction>true</teacherReconstruction>
       <leafDistillWeight>0.0</leafDistillWeight>
       <sentenceExpectation>true</sentenceExpectation>
-      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <symbolFieldLossWeight>0.1</symbolFieldLossWeight>
       <autoload>false</autoload>
       <autosave>false</autosave>
       <checkpointEveryBatches>0</checkpointEveryBatches>

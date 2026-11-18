@@ -62,7 +62,22 @@ def test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser(mod
     with torch.no_grad():
         result = model.think((What.supervised(0), What.supervised(1)), x)
     assert result.iterations == 1 and result.forced_closures == 0
-    assert [s.operation for s in result.slots] == [WhatSlotOperation.COMPLETE] * 2
+    assert len(result.answers) == 2
+    memory = model._what_memory()
+    for row, answer in enumerate(result.answers):
+        assert answer.available
+        state = memory.thought_state(b=row)
+        if state is None:
+            assert answer.ltm_slot.operation is WhatSlotOperation.COMPLETE
+            assert memory.get_what_slots(b=row) == [answer.ltm_slot]
+        else:
+            # A native closing owns its history; the wrapper must not add a
+            # second, legacy parity slot for the same presentation.
+            assert state.finished and state.level == 0
+            assert answer.ltm_slot is None
+            assert memory.get_what_slots(b=row) == []
+            assert [record.kind for record in memory.thought_history(b=row)] == [
+                "begin", "finish"]
     # The presentation wrapper has no separate parity chooser.
     assert model._last_answer_construction is None  # D4 uses the numeric forward head.
     assert not hasattr(model, "what_step_chooser")

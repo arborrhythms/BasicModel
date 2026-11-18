@@ -205,16 +205,15 @@ def test_native_worked_document_trains_unforced_without_numeric_oracles(monkeypa
 
 def test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label(monkeypatch):
     from types import SimpleNamespace
-    from EqualityLearning import cost
+    from EqualityLearning import cost, observation
     from Language import VerbLayer
     verb = VerbLayer(8, 8)
     # Ordinary opaque codes. There is no numeral index or arithmetic target.
     head, obj, subject, target = (1 + torch.randn(4, 8).tanh()) / 2
     phrase = verb(subject[None], verb(head[None], obj[None]))[0]
-    program = SimpleNamespace(actions=torch.tensor([[1, 0, -1]]),
-        operation_values=torch.stack((phrase, target, phrase * 0))[None])
     language = SimpleNamespace(_compose_binary_rules=(SimpleNamespace(method_name='equal'),))
-    value, counts = cost(language, [program], torch.tensor([True]), phrase[None])
+    result = SimpleNamespace(equality_terms=(observation(language._compose_binary_rules[0], (phrase, target)),))
+    value, counts = cost(language, [result], torch.tensor([True]), phrase[None])
     value.sum().backward()
     assert counts == [1]
     assert verb._verb_shift.grad is not None and verb._verb_shift.grad.abs().sum() > 0

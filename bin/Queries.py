@@ -1501,16 +1501,7 @@ class ThoughtLTMCapability:
         raise ValueError('LTM what is retired; use query')
 
     def expectation(self, row, *, work):
-        discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
-        if discourse is None:
-            return None
-        value = discourse.expect_next_meaning(int(row), record=False, work=work)
-        if value is None:
-            return None
-        try:
-            return value.detached()
-        except (AttributeError, TypeError):
-            return _detach_boundary_value(value)
+        return None  # Sentence prediction is retired; no replacement prior.
 
 
 def _vector(context, value):

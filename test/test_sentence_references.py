@@ -11,7 +11,7 @@ from ReferenceContext import SituationFrame
 from reading_fixtures import resolve_reading_references as resolve_occurrences
 from Understanding import Reading
 from test_clause_storage import clause_store, idea_clause
-from test_sentence_expectation import layer, observe
+from test_sentence_expectation import layer, admit
 
 
 def language_and_program(mode='particular'):
@@ -92,9 +92,8 @@ def test_predictor_context_carries_address_and_reads_only_that_retained_row():
     row = store.write_clause(idea_clause())
     discourse = layer()
     discourse._ltm_store = store
-    observe(discourse, store.meaning_of(row).roles)
-    discourse.bind_observation_occurrence(0, store.occurrence_of(row))
-    discourse.detach_prediction_context()
+    discourse.include_occurrence(0, store.occurrence_of(row))
+    discourse.detach_context()
     anchors = discourse.situation_references(0)
     assert len(anchors) == 1 and anchors[0].row_id == store.row_name(row)
     torch.testing.assert_close(anchors[0].point, store.slots[row])

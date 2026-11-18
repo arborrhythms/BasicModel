@@ -85,8 +85,14 @@ def _resize(store, capacity):
     width, device, dtype = store.nDim, store.slots.device, store.slots.dtype
     external = getattr(store, '_external_memory', None)
     generation = store.generation
+    parts = store.parts
     STM0.__init__(store, width, capacity, percept_width=0, relation_capacity=capacity,
                   episodic_concepts=store.episodic_capacity)
+    # Deferred activity and trial snapshots address the pair-store object.
+    # Reconstruct its buffers without replacing that owner with a new one.
+    type(parts).__init__(parts, capacity)
+    parts._occurrence_store = store.parts._occurrence_store
+    object.__setattr__(store, 'parts', parts)
     store.to(device=device, dtype=dtype)
     store._thought_capacity_bound = bound
     store.generation = generation

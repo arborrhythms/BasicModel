@@ -26,7 +26,7 @@ def test_instant_decodes_time_and_zero_extent():
     enc = _enc()
     for t in (-1.0, 0.0, 1.0, float(_WHEN_PERIOD // 8)):
         key = enc.encode(t)                          # instant
-        assert math.isclose(float(key.norm()), 1.0, abs_tol=1e-6)
+        assert math.isclose(float((2*key-1).norm()), 1.0, abs_tol=1e-6)
         c, ext = enc.decode(key)
         assert math.isclose(float(c), t, abs_tol=0.05)
         assert math.isclose(float(ext), 0.0, abs_tol=1e-3)
@@ -68,7 +68,7 @@ def test_tense_shifts_center_by_step_via_shift_time():
 
 
 
-# --- present-instant stamp -> [0, 1] at t=0 --------------------------------
+# --- present-instant stamp -> [.5, 1] at t=0 --------------------------------
 def test_forward_stamps_present_instant():
     enc = _enc(); y = enc.forward(torch.zeros(2, 3, 10))
     c, ext = enc.decode(y[0, 0, enc.resolve(y.shape[-1])])

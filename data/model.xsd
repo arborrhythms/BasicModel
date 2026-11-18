@@ -936,8 +936,6 @@
       <xs:element name="independenceMintThreshold" type="positiveFloat" minOccurs="0"/>
       <xs:element name="perceptExpectationGain" type="unitInterval" minOccurs="0"/>
       <xs:element name="symbolExpectationGain" type="unitInterval" minOccurs="0"/>
-      <xs:element name="rowExpectationGain" type="unitInterval" minOccurs="0"/>
-      <xs:element name="documentExpectationGain" type="unitInterval" minOccurs="0"/>
       <xs:element name="expectationOmissionThreshold" type="unitInterval" minOccurs="0"/>
       <xs:element name="perceptExpectationRate" type="positiveFloat" minOccurs="0"/>
       <xs:element name="expectationEpsilon" type="positiveFloat" minOccurs="0"/>
@@ -956,7 +954,7 @@
            distinct occupied NP1/VP/NP2 vectors plus presence logits;
            root scope retains the historical single-vector MSE baseline.
            This scales the mean over eligible observed sentences. -->
-      <xs:element name="sentenceExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="symbolFieldLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- InfoNCE next-idea contrastive term: weight + softmax temperature.
            Reuses the InterSentenceLayer end-state chain (positive next root
            ranked above the chain's past roots). 0.0 weight -> MSE-only
@@ -1206,12 +1204,12 @@
       </xs:element>
       <xs:element name="expectHidden" type="xs:nonNegativeInteger" default="64" minOccurs="0"/>
       <xs:element name="expectLayers" type="xs:positiveInteger" default="1" minOccurs="0"/>
+      <xs:element name="ideaHidden" type="xs:positiveInteger" default="64" minOccurs="0"/>
+      <xs:element name="ideaLayers" type="xs:positiveInteger" default="1" minOccurs="0"/>
       <xs:element name="markerKernels" type="xs:positiveInteger" default="8" minOccurs="0"/>
       <xs:element name="markerHidden" type="xs:positiveInteger" default="64" minOccurs="0"/>
-      <!-- The configured depth counts Pi/Sigma pairs, as for intuition. -->
+      <!-- The configured depth counts Pi/Sigma pairs, as for expectation. -->
       <xs:element name="markerLayers" type="xs:positiveInteger" default="2" minOccurs="0"/>
-      <xs:element name="intuitHidden" type="xs:nonNegativeInteger" default="64" minOccurs="0"/>
-      <xs:element name="intuitLayers" type="xs:positiveInteger" default="2" minOccurs="0"/>
       <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
            concept definition may use for free (genus + differentia = 2);
            the rank-ordered L0 penalty shrinks only the surplus past this.

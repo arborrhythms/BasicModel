@@ -114,3 +114,17 @@ def clause_participants(clause, rules=()):
             extra, read = participant_terms(((node.composition, True),), rules)
             eligible.update(extra); inspected.update(read)
     return nodes, positions, eligible
+
+
+def arrival_members(clause, rules=()):
+    """The existing arrival menu's completed clauses and consumed leaves.
+
+    Comprehension uses this same read to retain only the concept readings
+    that the reference close will offer, independently of the idea entries.
+    """
+    nodes, participants, terms = clause_participants(clause, rules)
+    candidates = [node for node in nodes if id(node) in participants
+                  and node.point is not None and node.reference_request is None]
+    represented = {id(node.composition) for node in nodes}
+    leaves = {key for key, term in terms.items() if not term.children and key not in represented}
+    return candidates, leaves, terms

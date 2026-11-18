@@ -72,14 +72,14 @@ def test_79_stack_construction_leaves_the_global_draw_unchanged(tmp_path):
     from recon_bench import _build_model
     config = Path('data/MM_xor.xml').read_text()
     off = tmp_path/'stacks-off.xml'
-    off.write_text(config.replace('<ConceptualSpace>', '<ConceptualSpace><intuitHidden>0</intuitHidden>'))
+    off.write_text(config.replace('<ConceptualSpace>', '<ConceptualSpace><expectHidden>0</expectHidden>'))
     state = torch.random.get_rng_state().clone()
     first, *_ = _build_model('data/MM_xor.xml')
     next_draw = torch.random.get_rng_state().clone()
     torch.random.set_rng_state(state)
     second, *_ = _build_model(str(off))
-    assert first._concept_owner().intuit_stack is not None
-    assert second._concept_owner().intuit_stack is None
+    assert first._concept_owner().expect_stack is not None
+    assert second._concept_owner().expect_stack is None
     assert torch.equal(torch.random.get_rng_state(), next_draw)
     first.End(); second.End()
 
@@ -87,8 +87,9 @@ def test_79_stack_construction_leaves_the_global_draw_unchanged(tmp_path):
 def test_80_numeric_certificate_keeps_its_bar_with_the_stack_built():
     from numeric_xor import certificate
     model, prediction, error = certificate()
-    stack = model._concept_owner().intuit_stack
-    assert stack is not None and stack.pairs == 2
-    assert model._intuition_prediction.shape == (4, model._concept_owner()._order_caps()[0], 2)
+    stack = model._concept_owner().expect_stack
+    assert stack is not None and stack.pairs == 1
+    # The numeric field is observed without the retired intuition forecast.
+    assert model._concept_owner()._observed_knowing[:4].shape == (4, model._concept_owner().nVectors, 2)
     assert error < 1e-6
     model.End()

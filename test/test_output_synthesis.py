@@ -211,7 +211,9 @@ def _prime_discourse(m, batch, sentences=2):
     for turn in range(sentences):
         values = torch.eye(memory.concept_dim)[[turn % memory.concept_dim,
                                                    (turn+1) % memory.concept_dim]]
-        memory.predict_and_observe_stm_end_state([1,1], [value[None] for value in values],layout='infix')
+        from test_sentence_expectation import admit
+        for b, value in enumerate(values):
+            admit(memory, value[None], b=b)
 
 
 def test_present_and_supervised_resolve_by_identity(synth_config):
@@ -259,24 +261,6 @@ def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
     assert far.source == "identity:cold-memory" and not far.resolved
 
 
-def test_future_resolves_by_prediction_without_committing_memory(synth_discourse_config):
-    m = _build(synth_discourse_config)
-    batch = _batch(m)
-    memory = m.symbolSpace.expectation
-    assert memory is not None and getattr(memory, "_inter_predictor", None) is not None
-    _prime_discourse(m, batch, sentences=2)
-    before = [[frame[1].clone() for frame in row] for row in memory._inter_context]
-    with torch.no_grad():
-        u = m.understand(batch[0])
-        d1 = m.resolveAnswer(u, What.future(1, 1))
-        d2 = m.resolveAnswer(u, What.future(1, 2))
-    assert d1.source == "prediction" and d1.resolved
-    assert all(torch.equal(frame[1], old) for row, saved in zip(memory._inter_context, before)
-               for frame, old in zip(row, saved))
-    assert not d2.resolved  # future forecasts never become factual context
-    with torch.no_grad():
-        construction = m.reverseOutput(u, m.resolveAnswer(u, What.future(1, 1)))
-    assert construction.trace[0]["operation"] == "resolve:prediction"
 
 
 def test_cold_memory_resolution_is_flagged_unresolved(synth_config):
@@ -474,7 +458,7 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
     batch = _batch(m)
     _prime_discourse(m,batch,sentences=2)
     seen = m._recall_history()
-    assert len(seen[0]) == 2 < memory._inter_chain_window
+    assert len(seen[0]) == 4 < memory._inter_chain_window
     with torch.no_grad():
         u=m.understand(batch[0])
         if getattr(m,'question_conditioner',None) is not None:

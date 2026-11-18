@@ -39,7 +39,7 @@ def bound_view(state, observation, sentence, row, meaning):
             point=slots[0] if count == 1 else None,
             relation=None if count == 1 else (clause.relation or 'operator'))
     record = observation['record']
-    root, end, depth = record.root.clone(),record.end_slots.clone(),record.end_depth.clone()
+    root, end, depth = record.idea_root.clone(),record.idea_slots.clone(),record.idea_depth.clone()
     root[row],end[row],depth[row] = slots[-1],packed,count
-    view['record'] = replace(record,root=root,end_slots=end,end_depth=depth)
+    view['record'] = replace(record,meaning_root=root,meaning_slots=end,meaning_depth=depth)
     return (state[0],tuple(language),state[2]),view

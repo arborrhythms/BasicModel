@@ -1220,19 +1220,16 @@ class ReferenceClose(nn.Module):
         from ClauseRow import Clause, Composition
         from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings
-        from ReferenceParticipants import clause_participants
-        nodes, participants, terms = clause_participants(clause,
+        from ReferenceParticipants import arrival_members
+        candidates, leaves, terms = arrival_members(clause,
             self.store.__dict__.get('_part_read_rules', ()))
         names = {site['node'].reference_request['forward_identity']
                  for site in self.sites(clause)
                  if site['node'].reference_request.get('forward_identity') is not None}
-        candidates = [node for node in nodes if id(node) in participants
-                      and node.point is not None and node.reference_request is None]
-        represented = {id(node.composition) for node in nodes}
         for term in terms.values():
             if term.word_id >= 0:
                 names.add(term.word_id)
-            if not term.children and id(term) not in represented:
+            if id(term) in leaves:
                 candidates.append(Clause(ConceptualMeaning.from_description(term.point),
                     point=term.point, composition=term, order=term.order,
                     subject_word_id=term.word_id))
@@ -1790,6 +1787,14 @@ class ReferenceClose(nn.Module):
             if verb_action is not None and value is not None and bool(self.coordinates(value).ne(0).any()):
                 observed.add(token)
             closed_mentions.add(occurrence)
+        for item in plan['items']:
+            node = item['written_node']
+            occurrence = mention_occurrences[id(node)]
+            if (node.identity is not None and node.identity.get('alternative')
+                    and mtm.token_of(occurrence) is not None):
+                # The kept reading already declares this branch. Questions
+                # have no event witness, but their alias is still modal.
+                mtm.alternative_mention(occurrence)
         events = self.link_events(plan, written, when=when, closed_mentions=closed_mentions,
                                     observed=observed, verb_action=verb_action)
         from VerbLearning import observe

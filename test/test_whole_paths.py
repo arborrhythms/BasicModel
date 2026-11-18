@@ -66,7 +66,7 @@ def test_retained_named_transient_captures_its_concept_not_its_mtm_address():
         _concept_owner=lambda: SimpleNamespace(mtm=pool,
             _csw_row_of=lambda cid: 0 if cid == 17 else None),
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[17]])),
-        symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(),
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), languageSpace=SimpleNamespace(),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=strata)))
     positions = torch.tensor([[0]])
     values = torch.ones(1, 1, 4)
@@ -347,7 +347,6 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
         record['expectation'] = snapshot(dict(
             knowing=owner._observed_knowing, expected=owner._expected_knowing,
             concept=model._concept_prediction,
-            pending=model.symbolSpace.expectation._inter_last_meaning,
             context=model.symbolSpace.expectation._inter_context))
         if captures:
             assert model._reverse_event_loss(captures[0]['target'], record['target']) > 0
@@ -403,7 +402,7 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     registry = Error(row_mask=active)
     registry.add('reconstruction', torch.tensor([2.]), objective='reconstruction')
     observation = dict(record=NS(root=torch.ones(1,2)), thoughts=(), thought_fields=())
-    base = Path((), (), observation, None, registry, torch.tensor([[2.,0.,3.]]),
+    base = Path((), (), observation, registry, torch.tensor([[2.,0.,3.]]),
                 Thinking(), before, before, output_trace=('held',))
     def forbidden(*args, **kwargs):
         raise AssertionError('an output departure repeated its prefix')

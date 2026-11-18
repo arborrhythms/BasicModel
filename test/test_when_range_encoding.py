@@ -10,6 +10,9 @@ so the ANGLE decodes the event-time CENTER and the MAGNITUDE the event DURATION
 former magnitude-D tense scheme is retired. The serialized
 ``BasicModel.when_time`` long clock owns the exact time; the angle is the coarse
 (folded) feature.
+The formulas above describe centered phase coordinates. Stored coordinates
+are (1 + phase) / 2; decoding, norms and phase operations recenter them.
+
 """
 import math, os, sys, unittest
 from pathlib import Path
@@ -40,21 +43,21 @@ def test_disabled_when_zero_width():
 # encode: endpoint-sum bracket; an instant is magnitude 1
 # ---------------------------------------------------------------------------
 def test_instant_at_t0_is_unit_cos_axis():
-    # encode(0) is the instant [sin0, cos0] = [0, 1] (magnitude 1).
+    # encode(0) is the instant [.5, 1], whose centered phase has magnitude 1.
     key = _enc().encode(0)
-    assert math.isclose(float(key[0]), 0.0, abs_tol=1e-6)
+    assert math.isclose(float(key[0]), 0.5, abs_tol=1e-6)
     assert math.isclose(float(key[1]), 1.0, abs_tol=1e-6)
-    assert math.isclose(float(key.norm()), 1.0, abs_tol=1e-6)
+    assert math.isclose(float((2*key-1).norm()), 1.0, abs_tol=1e-6)
 
 
 def test_components_stay_in_unit_interval():
-    # Every component is in [-1, 1] (network-friendly) for any instant time and
+    # Every stored component is in [0, 1] for any instant time and
     # any bracket (endpoint-sum scaled by 0.5 keeps |comp| <= 1).
     enc = _enc()
     for s in (0, 1, _WHEN_PERIOD // 4, _WHEN_PERIOD // 2, 12345):
-        assert float(enc.encode(s).abs().max()) <= 1.0 + 1e-6
+        assert (enc.encode(s) >= 0).all() and (enc.encode(s) <= 1).all()
         for e in (s, s + 10, s + 300):
-            assert float(enc.encode(s, e).abs().max()) <= 1.0 + 1e-6, (s, e)
+            assert (enc.encode(s, e) >= 0).all() and (enc.encode(s, e) <= 1).all(), (s, e)
 
 
 

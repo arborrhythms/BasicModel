@@ -347,24 +347,6 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     assert store.part_row(store.parts.find(learned.meaning.role_refs[0][1],goal.role_refs[2][1]))['evidence']==(1.,0.)
 
 
-def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch):
-    from Layers import SymbolExpectation
-    from test_sentence_expectation import observe as expose
-    model,registry,store,goal,menu=credit_chain_world(monkeypatch)
-    # Isolate expectation's ownership from the episode's own work credit.
-    monkeypatch.setattr(model, 'WHAT_STEP_COST', 0.)
-    discourse=SymbolExpectation(4,8,8,concept_dim=8)
-    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
-    model.symbolSpace.expectation=discourse
-    expose(discourse,goal.roles*.25)
-    before=model.shared_grammar.thought_logits(goal,menu).detach().clone()
-    run(model,goal,work_budget=64)
-    assert model._last_thought_comparison is None
-    assert model.errors.total(objective='chooser') is None
-    assert not hasattr(model,'_pending_thought_credit')
-    expose(discourse,goal.roles)
-    assert discourse._inter_loss_count > 0
-    torch.testing.assert_close(model.shared_grammar.thought_logits(goal,menu),before)
 
 
 def test_pair_argument_and_conceptual_extent_keep_both_lanes():
@@ -557,3 +539,23 @@ def test_thought_nested_writer_is_restricted_and_preflights_capacity():
     with pytest.raises(OverflowError,match='forgetting'):
         write(model,parent,row=0)
     assert len(small)==0
+
+
+def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch):
+    from Layers import SymbolExpectation
+    from test_sentence_expectation import admit as expose
+    model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+    # Isolate expectation's ownership from the episode's own work credit.
+    monkeypatch.setattr(model, 'WHAT_STEP_COST', 0.)
+    discourse=SymbolExpectation(4,8,8,concept_dim=8)
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
+    model.symbolSpace.expectation=discourse
+    expose(discourse,goal.roles*.25)
+    before=model.shared_grammar.thought_logits(goal,menu).detach().clone()
+    run(model,goal,work_budget=64)
+    assert model._last_thought_comparison is None
+    assert model.errors.total(objective='chooser') is None
+    assert not hasattr(model,'_pending_thought_credit')
+    expose(discourse,goal.roles)
+    assert len(discourse.situation_references()) == 2
+    torch.testing.assert_close(model.shared_grammar.thought_logits(goal,menu),before)

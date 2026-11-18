@@ -341,6 +341,16 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
                              query[None].expand(B, width), torch.ones(B, dtype=torch.bool))
     monkeypatch.setattr(model, '_sentence_reference_bank', held)
     observed = []
+    from Comprehension import Evaluation
+    finish = Evaluation.finish
+    semantic = []
+
+    def finishing(self, **kwargs):
+        result = finish(self, **kwargs)
+        semantic.append(self.frames.clone())
+        return result
+
+    monkeypatch.setattr(Evaluation, 'finish', finishing)
     observation = model._sentence_observation
 
     def capture(*a, **kw):
@@ -350,8 +360,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
             # Inspect the pinned tree while its sentence is live. The close
             # releases that topology; these are test observations only.
             program, clause = view['entries'][0], view['clauses'][0]
+            view['semantic_frames'] = semantic[-1]
             view['observed_entry'] = SimpleNamespace(**{name: getattr(program, name)
-                for name in ('actions', 'leaves', 'operation_values', 'identity_ids',
+                    for name in ('actions', 'leaves', 'activations', 'leaf_evidence', 'operation_values', 'identity_ids',
                              'identity_actions', 'identity_origins')})
             view['observed_clause'] = SimpleNamespace(point=clause.point,
                     composition=SimpleNamespace(point=clause.composition.point),
@@ -377,11 +388,14 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
             torch.maximum(read_value,prior)[:content_width],rtol=0,atol=0)
         # Prepended occurrences now carry their own current percept bands.
         assert torch.isfinite(frame[0,content_width:]).all()
-        # A fixed projection evaluated as a single word or a bank GEMM can
-        # differ by float32 accumulation order; it retains the same direction.
+        # The reading tree holds the word; comprehension interprets its object.
+        torch.testing.assert_close(frame[1,:content_width], entry.leaves[1,:content_width], rtol=0, atol=0)
+        meaning_frame = view['semantic_frames'][actions][-1]
         beta = owner.interpret.word_for_form('beta')
         beta_token = owner.mtm.entries[owner.mtm.token_of(('name', beta))]
-        torch.testing.assert_close(frame[1,:content_width], owner.mtm.value_of(beta_token)[:content_width], rtol=1e-6, atol=2e-7)
+        expected_object = owner.interpret.activate(owner.mtm.value_of(beta_token),
+            entry.activations[1], evidence=entry.leaf_evidence[1])
+        torch.testing.assert_close(meaning_frame[1,:content_width], expected_object[:content_width], rtol=1e-6, atol=2e-7)
         staged = model.inputSpace.symbol_entries
         beta_site = (staged.object_ids[0,:staged.prepend] == beta_token.transient).nonzero().item()
         # The staged occurrence retains its stamp; the composition sees
@@ -394,7 +408,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         assert entry.identity_actions[actions][-1, 1].item() == handle
         assert clause.children[0].identity['handle'] == handle
         assert tuple(entry.identity_origins[handle-1, :2].tolist()) == (2, occurrence[-1])
-        torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
+        torch.testing.assert_close(clause.composition.point, meaning_frame[2], rtol=0, atol=0)
         # Thought may complete a different working field after the close.
         # The shared recent chunk retains the written sentence's own value.
         from Memory import STMChunks as chunks

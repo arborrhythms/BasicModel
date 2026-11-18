@@ -493,33 +493,6 @@ class TestStoreBackedChain(unittest.TestCase):
         self.assertAlmostEqual(chain[0][2], 0.3, places=5)
 
 
-class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
-    @pytest.mark.usefixtures('eager_reading')
-    def test_observe_does_not_append_deque_but_runs_cycle(self):
-        # FU3: when consolidated, observe_stm_end_state does NOT append to the
-        # per-row deque (the store-append is the source), but STILL runs the
-        # predict/observe L_inter cycle.
-        m = _make_model_provisioned(_SERIAL_CONFIG)
-        store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.expectation
-        self.assertGreater(len(store), 0)
-        deque_before = [len(dq) for dq in disc._stm_end_states]
-        D = store.nDim
-        # Provisioned facts are not an external predecessor. Prime the
-        # row-scoped prediction view with an actual observation first.
-        m.train()
-        disc.observe_stm_end_state([1], [torch.zeros(1, D)])
-        disc.predict_next_end_state(0)
-        self.assertIsNotNone(disc._inter_last_meaning[0])
-        payload = torch.ones(1, D)
-        disc.observe_stm_end_state([1], [payload], None)
-        # Deque UNCHANGED (still 0 in the consolidated path).
-        deque_after = [len(dq) for dq in disc._stm_end_states]
-        self.assertEqual(deque_after, deque_before)
-        self.assertEqual(deque_after[0], 0)
-        # The L_inter cycle ran: a loss term accumulated.
-        self.assertIsNotNone(disc._inter_loss_accum)
-        self.assertGreater(disc._inter_loss_count, 0)
 
 
 # -- user TruthSet -> LTM: the TruthLayer as a view over the store ----------
@@ -834,7 +807,7 @@ class TestSerialForwardAppendsStore(unittest.TestCase):
         # Provisioning (3) + per-sentence conversation appends.
         self.assertGreater(len(store), 3)
         # Deque stays empty (the store-append is the single source).
-        self.assertEqual(len(disc._stm_end_states[0]), 0)
+        self.assertFalse(hasattr(disc, '_stm_end_states'))
         # The store-backed chain reflects the store.
         self.assertEqual(len(disc.get_stm_chain()), len(store))
 

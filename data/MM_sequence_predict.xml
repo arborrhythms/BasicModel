@@ -33,7 +33,7 @@
       <learningRate>0.01</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
       <sentenceExpectation>true</sentenceExpectation>
-      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <symbolFieldLossWeight>0.1</symbolFieldLossWeight>
       <!-- the InfoNCE next-idea contrastive term -->
     </training>
   </architecture>

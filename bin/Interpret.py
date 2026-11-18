@@ -487,7 +487,7 @@ class InterpretLayer(GrammarLayer):
         return activate_code(atoms, presence, width, evidence=evidence)
 
     def bind(self, value, *, identity, scope, candidate_ids, candidate_values,
-             candidate_relations, available, associations, mode, active):
+             candidate_relations, available, associations, mode, active, witness=False):
         """Bind backward, or offer mint and forward to the ordinary chooser.
 
         Zero is the temporary open-reference marker (never a durable ID).
@@ -520,6 +520,11 @@ class InterpretLayer(GrammarLayer):
                         eligible & (mode != 'mint') &
                         (~available.any(-1) if explicit else torch.ones_like(active)), found))
         options.append((value, identity, scope.bitwise_and(1) != 0, active & ~eligible, found))
+        if witness:
+            # Record the actual source branch, even when its address equals
+            # the input's. Comparing addresses cannot recover this choice.
+            options = [(*option, torch.full_like(active, i < candidate_ids.shape[-1]))
+                       for i, option in enumerate(options)]
         return options
 
     def forward(self, word, *, order=None, occurrence=None, selected=None, batch=0,

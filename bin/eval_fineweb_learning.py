@@ -9,8 +9,6 @@ import os
 import torch
 
 from LearningEvaluation import MIN_FINEWEB_SENTENCES, checkpoint_readiness
-from bench_sentence_expectation import (
-    meaning_windows, _controlled_inputs, _score_head, score_prediction_thought)
 
 
 def load_model(config, checkpoint, *, minimum_sentences=MIN_FINEWEB_SENTENCES):
@@ -51,22 +49,8 @@ def load_model(config, checkpoint, *, minimum_sentences=MIN_FINEWEB_SENTENCES):
     return model
 
 
-def _forecast(model):
-    """Read global expectation after the latest completed observation."""
-    discourse = model.symbolSpace.expectation
-    occurrences = discourse._inter_context_occurrences[0]
-    if not occurrences or occurrences[-1] is None:
-        raise ValueError('a prediction question requires an owned observation')
-    return discourse.expect_next_meaning(0, record=False)
-
-
-def read_validation(model, *, sentences=64, documents=1024, gain=None):
-    """Read chronological held-out inputs, optionally asking what comes next.
-
-    A forecast is scored only after its next sentence arrives. Document ends
-    have no target and do not enter accuracy/work averages. The next target
-    never enters the question or controller. Each gain uses a separate restore.
-    """
+def read_validation(model, *, sentences=64, documents=1024):
+    """Read chronological held-out inputs without forecast targets or updates."""
     from What import What
     data = model.inputSpace.data
     options = dict(model.cfg['architecture']['data'])
@@ -81,10 +65,7 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
     discourse = model.symbolSpace.expectation
     if discourse is None:
         raise ValueError('learning evaluation requires symbol activation expectation')
-    if gain is not None:
-        model.expectation_gain = gain
-    groups, trials = {}, []
-    pending, previous_doc = None, None
+    observations = []
     for index, text in enumerate(data.validation_input[:sentences]):
         doc = addresses[index]['document']
         raw = model.inputSpace.prepInput([text])
@@ -94,36 +75,11 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
                 questions=(What.present(0, split='validation'),))
         if not discourse._inter_context[0]:
             raise ValueError('held-out input produced no complete prediction context')
-        _depth, roles, mask = discourse._read_context(0)[0][-1]
-        roles, mask = roles.detach().cpu(), mask.detach().cpu()
-        groups.setdefault(doc, []).append((roles, mask))
-        if pending is not None and previous_doc == doc:
-            trials.append(dict(row=index, document=doc,
-                **score_prediction_thought(pending, roles, mask)))
-        # No look-ahead content is read. The known document boundary only
-        # determines whether a subsequent observation can score this question.
+        observations.append(dict(row=index, document=doc,
+            occurrences=[frame.occurrence for frame in discourse.situation_references(0)]))
         same_doc = index + 1 < sentences and addresses[index + 1]['document'] == doc
-        pending = None
-        if gain is not None and same_doc:
-            with torch.no_grad():
-                pending = _forecast(model)
-        previous_doc = doc
         model.flush_word_buffers()
         model.dispatch_per_row_reset([not same_doc])
         model.dispatch_soft_reset()
         model.post_tick_compact()
-    rows = list(groups.values())
-    views = meaning_windows([torch.stack([v for v, _ in group]) for group in rows],
-        discourse._inter_chain_window,
-        [torch.stack([m for _, m in group]) for group in rows])
-    if views is None:
-        raise ValueError('held-out corpus produced no within-document prediction pairs')
-    scores = {}
-    for seed in (0, 1, 2):
-        scores[seed] = {}
-        for control in ('ordered', 'shuffled', 'context_free'):
-            x, mask = _controlled_inputs(views[0], views[1], control, seed)
-            scores[seed][control] = _score_head(discourse._inter_predictor,
-                x, mask, views[2], bank=discourse._bank_keys, target_masks=views[4])
-    return dict(source_manifest=data.source_manifest, sentences=sentences,
-                predicted_targets=len(views[2]), controls=scores, thought=trials)
+    return dict(source_manifest=data.source_manifest, sentences=sentences, observations=observations)

@@ -17,6 +17,7 @@ import inspect
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import time
 
@@ -184,6 +185,37 @@ class ObservationComplete(Exception):
     pass
 
 
+def compare_states(output, reference):
+    """Require exact model, optimizer and RNG records at every observed batch."""
+    batches = sorted(output.glob('batch-*.json'))
+    if not batches:
+        raise AssertionError('no observed batch states')
+    for path in batches:
+        actual = json.loads(path.read_text())
+        expected = json.loads((reference/path.name).read_text())
+        changed = [key for key in actual.keys() | expected.keys()
+                   if actual.get(key) != expected.get(key)]
+        if changed:
+            raise AssertionError(f'{path.name}: changed {changed}')
+    return len(batches)
+
+
+class StateObserver:
+    """Only record completed batches, outside the measured sentence window."""
+    def __init__(self, output):
+        self.output, self.records = output, []
+        self.reference_seconds = 0.
+        self.calls, self.actions, self.costs = [], [], []
+
+    def batch(self, model, *, seconds, label, optimizer=None):
+        payload = dict(label=label, parameters=parameters(model), stream=stream_digest())
+        if optimizer is not None:
+            payload['optimizer'] = frozen(optimizer.state_dict())
+        index = len(self.records)
+        (self.output/f'batch-{index:03}.json').write_text(json.dumps(payload)+'\n')
+        self.records.append(dict(batch=index, label=label, seconds=seconds))
+
+
 class ProfileObserver:
     def __init__(self, patch, output, inventory):
         import Attention, ModelAttention, SentenceTraining
@@ -255,9 +287,11 @@ def main():
     parser.add_argument('--replay', type=Path, required=True)
     parser.add_argument('--detail', action='store_true')
     parser.add_argument('--profile', action='store_true', help='cProfile alone on the first complete sentence')
+    parser.add_argument('--plain', action='store_true', help='unobserved reference, recorded only after each batch')
+    parser.add_argument('--compare', type=Path, help='require exact state equality to an unobserved run')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
-    assert not (args.detail and args.profile)
+    assert sum((args.detail, args.profile, args.plain)) <= 1
     inventory = Inventory(args.source/'bin', args.detail, args.profile)
     builtins._basicmodel_host_inventory = inventory
     if args.detail:
@@ -268,18 +302,20 @@ def main():
     torch.set_num_threads(1)
     with MonkeyPatch.context() as patch:
         use_eager_reading(patch)
-        observer = ProfileObserver(patch, args.output, inventory)
+        observer = StateObserver(args.output) if args.plain else ProfileObserver(patch, args.output, inventory)
         metadata = json.loads((args.replay/'initial.json').read_text())
         assert os.environ.get('PYTHONHASHSEED') == metadata['pythonhashseed']
         restore(torch.load(args.replay/'initial-rng.pt', weights_only=False))
         started = time.perf_counter()
-        with (nullcontext() if args.profile else ApiCalls(inventory)), \
-             (nullcontext() if args.profile else DispatcherCalls(inventory)):
+        with (nullcontext() if args.profile or args.plain else ApiCalls(inventory)), \
+             (nullcontext() if args.profile or args.plain else DispatcherCalls(inventory)):
             try:
                 lesson(observer)
             except ObservationComplete:
                 pass
-        report = dict(seconds=time.perf_counter()-started, records=observer.records,
+        report = dict(source_commit=subprocess.check_output(
+                          ['git', '-C', str(args.source), 'rev-parse', 'HEAD'], text=True).strip(),
+                      seconds=time.perf_counter()-started, records=observer.records,
                       counts=inventory.totals(), tensor_apis=dict(inventory.api),
                       dispatcher_operations=dict(inventory.ops),
                       host_sites=[dict(phase=p,file=f,function=n,line=l,api=a,count=v)
@@ -287,8 +323,10 @@ def main():
                       loops=[dict(phase=p, **inventory.loop_sites[key], entries=n,
                                   iterations=inventory.loop_iterations[(p,key)])
                              for (p,key),n in inventory.loop_entries.items()])
-        if observer.profile:
+        if getattr(observer, 'profile', None):
             observer.profile.dump_stats(str(args.output/'sentence.pstats'))
+        if args.compare:
+            report['equal_batches'] = compare_states(args.output, args.compare)
         (args.output/'result.json').write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report['counts']),flush=True)
 

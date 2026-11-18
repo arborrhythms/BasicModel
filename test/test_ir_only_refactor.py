@@ -272,36 +272,11 @@ class TestReconstructConceptsLoss(unittest.TestCase):
 
 # -- ARMA layer shape + loss --------------------------------------------
 
-class TestActivationPredictAndObserve(unittest.TestCase):
-    def test_shared_head_shape_and_nonzero_local_error(self):
-        layer = Layers.SymbolExpectation(4, 2, 6, batch=2)
-        layer.set_symbol_bank(torch.eye(6))
-        for _ in range(2):
-            layer.predict_and_observe_stm_end_state([1,1], [torch.eye(6)[:1], torch.eye(6)[1:2]])
-        self.assertEqual(layer.expect_next_meaning().symbol_logits.shape, (6,2))
-        self.assertGreater(float(layer.consume_inter_loss().detach()), 0.)
 
 
 # -- generate_sentence smoke --------------------------------------------
 
-class TestGenerateSentenceSmoke(unittest.TestCase):
 
-    def test_generate_sentence_runs(self):
-        """Smoke: ``BasicModel.generate_sentence`` returns a list (the
-        generate grammar's words seeded by a positive idea prediction).
-        A cold predictor may return an empty list; the call
-        must succeed and not raise.
-        """
-        init_config(path=os.path.join(_DATA, "MM_text.xml"),
-                    defaults_path=os.path.join(_DATA, "model.xml"))
-        Language.TheGrammar._configured = False
-        from data import TheData
-        TheData.load("xor")
-        m, _ = Models.BaseModel.from_config(
-            os.path.join(_DATA, "MM_text.xml"), data=TheData)
-        m.eval()
-        out = m.generate_sentence("zero")
-        self.assertIsInstance(out, list)
 
 
 # -- ε-growing codebook --------------------------------------------------

@@ -99,7 +99,7 @@ def test_emptying_memory_before_the_open_does_not_change_input_reconstruction(tm
         model.End(); model.symbolSpace.soft_reset()
 
 
-def test_registry_uses_the_two_reconstructions_and_post_thought_target(tmp_path, monkeypatch):
+def test_registry_uses_the_two_reconstructions_and_omission_target(tmp_path, monkeypatch):
     from test_native_attention_field import _model
     model = _model(tmp_path, monkeypatch)
     terms, targets = [], []
@@ -109,23 +109,18 @@ def test_registry_uses_the_two_reconstructions_and_post_thought_target(tmp_path,
         terms.append(model._sentence_cost_registry._terms)
         return value
     monkeypatch.setattr(model, '_sentence_path_cost', capture)
-    import IntuitionField
-    complete = IntuitionField.complete
+    import ConceptSpread
+    complete = ConceptSpread.complete
     def completed(*args, **kwargs):
         value = complete(*args, **kwargs)
-        target = model._intuition_target
-        targets.append(target)
         owner = model._concept_owner()
-        assert not target.requires_grad
-        from SentenceField import knowing
-        expected, _ = IntuitionField.observed(owner, knowing(model))
-        torch.testing.assert_close(target, expected[:, :owner._order_caps()[0]])
-        assert 'intuition.field' in model._sentence_close_errors._terms
         prediction = model._concept_prediction
+        targets.append(prediction.target)
         assert all(owner._row_order(int(row)) == 0 for row in prediction.rows)
         assert prediction.target is None  # No omission teacher in this presentation.
+        assert 'intuition.field' not in model._sentence_close_errors._terms
         return value
-    monkeypatch.setattr(IntuitionField, 'complete', completed)
+    monkeypatch.setattr(ConceptSpread, 'complete', completed)
     try:
         source = model.inputSpace.prepInput(['alpha beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=1,

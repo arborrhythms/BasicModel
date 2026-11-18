@@ -15,6 +15,7 @@ def _space():
     nn.Module.__init__(cs)
     cs.nWhat, cs.nWhere, cs.nWhen = 2, 1, 1
     cs.concept_dim = 4
+    cs.expect_stack = cs.idea_stack = None
     cs.inputShape = cs.outputShape = [2, 4]
     cs.concepts_from_percepts = IndexedSigmaConceptsFromPercepts(8, 16)
     return cs

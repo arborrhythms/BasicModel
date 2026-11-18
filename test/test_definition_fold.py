@@ -49,9 +49,10 @@ def test_witnessed_lanes_merge_by_max_without_absence_as_a_label():
         below = held_cost()
         matrix.values[index] += 1e-3
     torch.testing.assert_close(matrix.values.grad[index], (above-below)/.002, atol=2e-4, rtol=.01)
-    # The dual minimum's observed zero blocks against support. A prospective
-    # edge cannot invent an against witness at that Boolean rail.
-    assert matrix.values.grad[matrix._index[row,a+matrix.nOutput+1]] == 0
+    # §57.6: the opposite parameter receives the negative of the signed
+    # coefficient's gradient, even while its own forward magnitude is zero.
+    torch.testing.assert_close(matrix.values.grad[matrix._index[row,a+matrix.nOutput+1]],
+                               -matrix.values.grad[index], atol=0, rtol=0)
     assert field.grad is None and cb.W.grad is None
     assert alloc.parts.truth_plus.grad is None and alloc.parts.truth_minus.grad is None
     report=cs._last_definition_fold['readings'][0]

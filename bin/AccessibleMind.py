@@ -154,13 +154,7 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
         model.expectation_gain = value
         return
     if kind == 'expectation':
-        discourse = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
-        if discourse is not None and result.value is not None:
-            # The sole predictor owns staging. Its live prior calculation is
-            # numerically the same detached value retained on the thought.
-            effect_round.claim(S.EXPECTATION)
-            discourse.expect_next_meaning(row, record=True, refresh=True)
-        return
+        return  # No sentence estimate is produced or staged.
     if getattr(model, '_anticipating_expectation_row', None) == row:
         # Anticipation can retrieve serial frames and form an estimate, but
         # cannot change the input's order-0 field or its reading attention.

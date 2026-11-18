@@ -434,20 +434,7 @@ class ClauseRows:
         closing = PartClosing(owner, self)
         closing.episode = episode
         closing.source_trust = 1. if trust is None else min(1., abs(float(trust)))
-        nodes, seen, visiting = [], set(), set()
-        def visit(value):
-            if id(value) in visiting:
-                raise ValueError('a temporary derivation cannot contain an object cycle')
-            if id(value) in seen:
-                return
-            visiting.add(id(value))
-            for child in (*value.children, *value.companions):
-                visit(child)
-            visiting.remove(id(value))
-            seen.add(id(value))
-            nodes.append(value)
-            closing.prepare(value)
-        visit(clause)
+        nodes = closing.prepare_clause(clause)
         closing.preflight()
         needed, reserved = 0, {}
         def admitted_pair(value, sentence):
@@ -486,7 +473,7 @@ class ClauseRows:
             return result
         for value in nodes:
             sentence = value is clause
-            if sentence or value in clause.companions or value.reference_request is not None or value.identity is not None:
+            if closing.keeps(value, clause):
                 record = closing._planned[id(closing._terms[id(value)])]
                 force = not sentence
                 pair, _ = admitted_pair(value, sentence)
@@ -513,7 +500,7 @@ class ClauseRows:
         outer_pair, outer_from_trust = None, False
         for position, value in enumerate(nodes):
             sentence = value is clause
-            if not sentence and value not in clause.companions and value.reference_request is None and value.identity is None:
+            if not closing.keeps(value, clause):
                 continue
             pair, from_trust = admitted_pair(value, sentence)
             if sentence:

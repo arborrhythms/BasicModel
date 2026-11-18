@@ -33,14 +33,14 @@ def test_packed_prediction_teardown_records_each_observation_once(monkeypatch):
         concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     calls = []
-    observe = discourse.observe_stm_end_state
+    observe = discourse.include_occurrence
     def record(*args, **kwargs):
         calls.append('observe')
         return observe(*args, **kwargs)
-    monkeypatch.setattr(discourse, 'observe_stm_end_state', record)
+    monkeypatch.setattr(discourse, 'include_occurrence', record)
     def present(owner=None):
         return commit_reading(fixture.language, fixture.registry, fixture.program('cat'),
-            None, discourse=discourse, owner=owner)[0]
+            fixture.store, discourse=discourse, owner=owner)[0]
     owner = present()
     BasicModel._end_step(owner)
     BasicModel._end_step(owner)
@@ -60,7 +60,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
+        ("<symbolFieldLossWeight>0.0</symbolFieldLossWeight>", "<symbolFieldLossWeight>0.1</symbolFieldLossWeight>"),
         ("<training>", "<training><teacherReconstruction>true</teacherReconstruction>"),
     ])
     m._tensor_peer_while_eager = True
@@ -84,7 +84,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     def backward_probe(total, amp_scaler=None, **kwargs):
         registry = m._sentence_cost_registry if getattr(m, '_sentence_backward', False) else m.errors
         terms = [value * weight for name, value, weight, _, _ in registry.terms()
-                 if name in ('expectation.activation', 'expectation.symbols')]
+                 if name == 'expectation.symbols']
         loss = sum(terms) if terms else None
         if loss is not None and loss.requires_grad:
             shared = m.objective_parameter_groups(optimizer)['reconstruction']
@@ -97,10 +97,9 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     try:
         for weight in (0.1, 0.1, 0.):
             m.begin_presentation()
-            m.inter_loss_weight = weight
+            m.symbol_field_loss_weight = weight
             # The effective model loss weight must stop Adam credit even if
             # the layer still has an enabled accumulation gate.
-            disc.set_inter_loss_weight(0.1)
             before = [p.detach().clone() for p in predictor]
             batch = (m.inputSpace.prepPackedInput([
                 ["1 plus 2", "3 plus 4"], ["5 plus 6"]]), torch.zeros(2, 1, 0))
@@ -343,7 +342,8 @@ def test_real_intermediate_and_final_ends_have_same_canonical_roles(tmp_path, ea
             else:
                 payload = model._tensor_final_end_slots[0]
                 depth = model._tensor_final_end_depth[0]
-            value, mask = discourse._canonical_meaning(payload, depth, "stm")
+            from Meaning import canonical_role_payload
+            value, mask = canonical_role_payload(payload, depth, "stm")
             meanings.append((value.detach().clone(), mask.clone()))
         finally:
             model.End()

@@ -42,6 +42,28 @@
       "reads": "absolute"
     },
     {
+      "file": "bin/Comprehension.py",
+      "function": "Evaluation.leaf",
+      "attributes": [
+        "when"
+      ],
+      "role": "comprehension occurrence transport",
+      "previous_absolute_time": false,
+      "now": "Copies the original occurrence bands to the interpreted leaf.",
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Comprehension.py",
+      "function": "Evaluation.operation",
+      "attributes": [
+        "when"
+      ],
+      "role": "comprehension occurrence transport",
+      "previous_absolute_time": false,
+      "now": "Restores the physical head time after the content operator.",
+      "reads": "absolute"
+    },
+    {
       "file": "bin/Extension.py",
       "function": "generated",
       "attributes": [
@@ -125,6 +147,17 @@
       "previous_absolute_time": false,
       "now": "Encodes the observation tick before the walk; the predictor receives relative ages.",
       "line": 25,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/HeldConcepts.py",
+      "function": "Evaluation.publish",
+      "attributes": [
+        "when"
+      ],
+      "role": "comprehension occurrence transport",
+      "previous_absolute_time": false,
+      "now": "Publishes the held constituent with its recorded occurrence time.",
       "reads": "absolute"
     },
     {

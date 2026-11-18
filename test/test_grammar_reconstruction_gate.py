@@ -57,7 +57,9 @@ def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(
         parents.clear()
         model.reconstruct_grammar_sentence((tuple(current), tuple(changed), state[2]), sid, active)
         assert parents and not torch.equal(parents[0], before)
-        assert model._word_symbol_concept_ids() is None
+        from PrependedSymbols import word_view
+        torch.testing.assert_close(model._word_symbol_concept_ids(),
+                                   word_view(model.inputSpace, 'concept_ids'))
         decoded.append(texts)
         readback = False
         return commit(state, sid, active, *args)

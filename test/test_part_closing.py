@@ -373,3 +373,20 @@ def test_surface_phrase_keeps_the_unknown_head_word_without_minting(monkeypatch)
     assert f.store.parts.references(row[1])[0] == (SYMBOL, word)
     assert not f.cs.definitions.objects(word)
     assert f.store.parts.find(word, native) == row[1]
+def test_lifted_sign_is_not_mistaken_for_its_open_percept(monkeypatch):
+    from test_clause_acceptance import SentenceFixture
+    from test_modal_timelines import close
+    from chunk_fixtures import record
+    from Memory import NULL_CONCEPT, OCCURRENCE, SYMBOL
+    f = SentenceFixture(monkeypatch)
+    f.noun('a', order=0)
+    target = f.noun('b', order=0)
+    program = record(f, ('part', ('lift', ('sign', 'a')), 'b'))[0]
+    clause, _, row, written = close(f, program)
+    left, right = f.store.parts.references(row[1])
+    assert left[0] == OCCURRENCE and right == (SYMBOL, target)
+    pool = f.cs.mtm
+    percepts = [key for key, entry in pool.entries.items() if entry.kind == NULL_CONCEPT]
+    assert len(percepts) == 1 and percepts[0][-1] != left[1]
+    assert pool.entries[pool.token_of(('ltm', f.store.address_domain, left[1]))].kind != NULL_CONCEPT
+    assert not getattr(f.cs, '_kept_definition_witnesses', ())

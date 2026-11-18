@@ -16,7 +16,7 @@ def test_unpacked_forward_observes_each_published_sentence_once(
     model = _tiny_canonical_model(tmp_path, monkeypatch,
         input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1,
         training_overrides={f'{level}ExpectationGain': gain
-                            for level in ('percept', 'symbol', 'row', 'document')})
+                            for level in ('percept', 'symbol')})
     model.set_sentence_expectation(True)
     import util
     monkeypatch.setattr(util, "TheCompileBackend", "eager" if compiled else "none")
@@ -49,15 +49,9 @@ def test_unpacked_forward_observes_each_published_sentence_once(
             model._publish_compiled_sentence_state(result)
             model._end_step()
             model._end_step()
-            assert discourse.expectation_metrics()["observations"] == 2 * (index + 1)
-            # The cover is the first predecessor in each stream.
-            assert discourse.expectation_metrics()["predicted_targets"] == 2 * (index + 1)
-            for row in range(2):
-                expected = observed[-1]['observed'][row]
-                if index:
-                    comparison = discourse.last_expectation_comparison(row)
-                    torch.testing.assert_close(comparison.observed, expected)
-                    assert not comparison.observed.requires_grad
+            assert [len(discourse.situation_references(row)) for row in range(2)] == [index+1]*2
+            assert all(not frame.roles.requires_grad for row in range(2)
+                       for frame in discourse.situation_references(row))
             if index:
                 loss = costs[-1].mean()
                 assert loss is not None and loss.requires_grad
@@ -82,16 +76,16 @@ def test_explicit_boundary_retains_one_entry_and_skips_masked_rows(monkeypatch):
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     entry = fixture.program(('change', 'cat', ('verb', 'chases', 'mouse')))
     for active in (True, False):
-        commit_reading(fixture.language, fixture.registry, entry, None,
+        commit_reading(fixture.language, fixture.registry, entry, fixture.store,
                        discourse=discourse, active=active, document='doc')
-    assert discourse.expectation_metrics()["observations"] == 1
     assert len(discourse._inter_context[0]) == 1
-    depth, payload, mask = discourse._inter_context[0][0]
+    frame = discourse.situation_references()[0]
+    depth, payload, mask = frame
     assert depth == 1
     clause = finish_reading(fixture.language, entry, registry=fixture.registry)
     from PartClosing import PartClosing
     closing = PartClosing(fixture.cs, fixture.store)
-    expected = closing.prediction_point(closing.prepare(clause))
+    expected = closing.closing_point(closing.prepare(clause))
     torch.testing.assert_close(payload[0], expected)
     assert not payload[1:].any()
     assert mask.tolist() == [True, False, False]

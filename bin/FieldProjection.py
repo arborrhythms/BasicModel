@@ -15,13 +15,18 @@ def close(owner, rows, evidence):
     """Fold each definition once, in dependency order, retaining live edges."""
     store = owner._concept_allocator.layer(0)
     positions = {int(row): i for i, row in enumerate(rows)}
+    # This closure reads the same sparse definitions as the native fold.
+    # Opposite columns are one signed source here too.
+    folded_weights = {matrix: matrix._fold_weights(evidence)
+                      for matrix in (store.conjunctive, store)
+                      if matrix.values is not None}
     definitions = {}
     for row in positions:
         definitions[row] = []
         for matrix, operation in ((store.conjunctive, 'intersection'), (store, 'union')):
             edges = [(column % (store.nOutput+1), column >= store.nOutput+1, index)
                      for (target, column), index in matrix._index.items()
-                     if target == row and float(matrix.values[index].detach()) > 0]
+                     if target == row and float(folded_weights[matrix][index].detach()) > 0]
             if edges:
                 definitions[row].append((matrix, operation, edges))
     done, pending = {}, set(positions)
@@ -41,7 +46,7 @@ def close(owner, rows, evidence):
                         item = torch.zeros_like(value)
                         item[..., 0] = 1.
                     operands.append(item.flip(-1) if negative else item)
-                    weights.append(matrix.values[edge].to(value))
+                    weights.append(folded_weights[matrix][edge])
                 combined = reduce(torch.stack(operands, -2), operation=operation,
                                   weights=torch.stack(weights))
                 # A row without direct evidence takes its definition. Direct

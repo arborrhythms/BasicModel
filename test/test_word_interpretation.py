@@ -194,6 +194,8 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
     owner = model._concept_owner()
     operator = owner.interpret
     calls = []
+    readings = []
+    converting = []
     # Run the identical recurrence bodies eagerly so instrumentation can
     # observe ordering. The normal compiled schedule has separate parity tests.
     def eager_loop(cond, body, carries):
@@ -201,17 +203,33 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
             carries = body(*carries)
         return carries
     monkeypatch.setattr(torch, 'while_loop', eager_loop)
+    from Comprehension import Evaluation
+    leaf = Evaluation.leaf
+    def converted(evaluation, word):
+        converting.append(True)
+        try:
+            return leaf(evaluation, word)
+        finally:
+            converting.pop()
+    monkeypatch.setattr(Evaluation, 'leaf', converted)
     for space in model.conceptualSpaces:
+        reading = space.interpret.reading
+        def identified(word, _reading=reading, **kwargs):
+            result = _reading(word, **kwargs)
+            readings.append((word,result))
+            return result
+        monkeypatch.setattr(space.interpret, 'reading', identified)
         forward = space.interpret.forward
         def observed(word, _forward=forward, **kwargs):
             result = _forward(word, **kwargs)
-            if torch.is_tensor(result):
+            if torch.is_tensor(result) and 'object_atoms' in kwargs:
+                assert converting, 'numerical word interpretation ran before conversion'
                 calls.append(result.detach().clone())
             return result
         monkeypatch.setattr(space.interpret, 'forward', observed)
     choose = model.languageSpace.choose_operation
     def composition(*args, **kwargs):
-        assert calls, 'composition ran before the mandatory interpretation'
+        assert readings, 'composition ran before the mandatory lexical reading'
         return choose(*args, **kwargs)
     monkeypatch.setattr(model.languageSpace, 'choose_operation', composition)
     with torch.no_grad():
@@ -219,6 +237,7 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
     ids = model.inputSpace._ar_word_concept_ids
     objects = model.inputSpace._ar_word_object_ids
     active = model.inputSpace._ar_grammar_leaf_mask
+    assert len(readings) >= int(active.sum())
     assert len(calls) >= int(active.sum())
     # The grammar leaf mask covers presented words; skip the MTM prefix.
     base = ids.shape[1] - active.shape[1]

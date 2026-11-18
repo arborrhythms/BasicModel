@@ -120,20 +120,15 @@ class TestStmLtmTrust(unittest.TestCase):
         disc = SymbolExpectation(4, 3, 4, concept_dim=4, batch=1)
         disc.set_symbol_bank(torch.eye(disc.concept_dim))
         payload = torch.randn(3, 4)
-        disc.observe_stm_end_state([3], [payload], tetralemmas=[0.7])
+        from Memory import STM0
+        disc._ltm_store = STM0(4, capacity=disc.ltm_capacity)
+        disc._ltm_store.append_idea(payload[0], trust=.7)
         chain = disc.get_stm_chain(b=0)
         self.assertEqual(len(chain), 1)
         depth, stored_payload, tet = chain[0]
-        self.assertEqual(depth, 3)
-        self.assertEqual(tet, 0.7, "the scalar trust persists in the LTM slot")
+        self.assertEqual(depth, 1)
+        self.assertAlmostEqual(tet, 0.7, msg="the scalar trust persists in the LTM slot")
 
-    def test_ltm_slot_none_when_no_trust(self):
-        from Layers import SymbolExpectation
-        disc = SymbolExpectation(4, 3, 4, concept_dim=4, batch=1)
-        disc.set_symbol_bank(torch.eye(disc.concept_dim))
-        disc.observe_stm_end_state([1], [torch.randn(1, 4)], tetralemmas=None)
-        _, _, tet = disc.get_stm_chain(b=0)[0]
-        self.assertIsNone(tet, "no trust -> slot stays None (byte-identical)")
 
 
 # -- stage 4: reasoning engine (modus ponens) ------------------------------

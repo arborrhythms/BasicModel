@@ -27,137 +27,61 @@ def layer(batch=1, consolidated=False):
     return result
 
 
-def observe(model, value, *, document="a", layout="infix", mask=None):
-    model.predict_and_observe_stm_end_state(
-        [len(value)], [value], documents=[document], layout=layout,
-        role_masks=None if mask is None else [mask])
+def admit(model, value, *, document="a", b=0, symbols=(), activations=()):
+    """Supply a retained idea to the native recent-situation writer."""
+    if model._ltm_store is None:
+        model._ltm_store = STM0(model.concept_dim, capacity=model.ltm_capacity)
+    model.begin_document(b, document)
+    point = value.reshape(-1, model.concept_dim)[0]
+    index = model._ltm_store.append_idea(point, trust=1.)
+    occurrence = model._ltm_store.occurrence_of(index)
+    model.include_occurrence(b, occurrence, symbols=symbols, activations=activations)
+    return occurrence
 
 
-@pytest.mark.parametrize("consolidated", [False, True])
-@pytest.mark.parametrize("role", [1, 2])
-def test_np1_fixed_other_roles_change_prediction(consolidated, role):
-    a = layer(consolidated=consolidated)
-    b = copy.deepcopy(a)
-    source = torch.arange(12.).reshape(3, 4) / 12
-    changed = source.clone()
-    changed[role] += 1
-    observe(a, source)
-    observe(b, changed)
-    pa, pb = a.expect_next_meaning(), b.expect_next_meaning()
-    assert pa is not None and pb is not None
-    assert not torch.allclose(pa.symbol_logits, pb.symbol_logits)
-    assert not torch.allclose(pa.roles[0], pa.roles[1])
 
 
-def test_padding_and_legacy_operand_orientation_are_explicit():
-    a, b, c = layer(), layer(), layer()
-    full = torch.arange(12.).reshape(3, 4) / 12
-    observe(a, full)
-    observe(b, full[[2, 0, 1]], layout="stm")
-    torch.testing.assert_close(a.expect_next_meaning().roles,
-                               b.expect_next_meaning().roles)
-    a.begin_document(0, "new")
-    short = full[:1]
-    padded = torch.cat((short, torch.full((2, 4), 999.)))
-    observe(a, short, document="new")
-    observe(c, padded, mask=torch.tensor([True, False, False]))
-    torch.testing.assert_close(a.expect_next_meaning().roles,
-                               c.expect_next_meaning().roles)
 
 
-def test_document_change_is_cold_preserves_scored_loss_and_other_row():
-    model = layer(batch=2)
-    payloads = [torch.ones(3, 4), torch.full((3, 4), 2.)]
-    for _ in range(2):
-        model.predict_and_observe_stm_end_state(
-            [3, 3], payloads, documents=["a", "b"], layout="infix")
-    assert model._inter_loss_count == 2
-    before = model.expect_next_meaning(1).roles.detach().clone()
-    model.begin_document(0, "different")
-    assert model.expect_next_meaning(0) is None
-    torch.testing.assert_close(model.expect_next_meaning(1).roles, before)
-    assert model._inter_loss_count == 2
-    model.predict_and_observe_stm_end_state(
-        [3, 0], [payloads[0] * 90, None], mask=[True, False],
-        documents=["different", "b"], layout="infix")
-    assert model._inter_loss_count == 2
-    assert model.consume_inter_loss() is not None
-    assert model.consume_inter_loss() is None
 
 
-def test_activation_loss_trains_predictor_but_never_source_or_target():
-    model = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
-                               batch=1)
-    model.set_symbol_bank(torch.eye(model.concept_dim))
-    encoder = torch.nn.Linear(4, 4, bias=False)
-    source = encoder(torch.arange(12.).reshape(3, 4) / 12)
-    target = torch.nn.Parameter(torch.ones(3, 4))
-    observe(model, source)
-    observe(model, target)
-    loss = model.consume_inter_loss()
-    assert loss is not None
-    loss.backward()
-    assert target.grad is None
-    assert encoder.weight.grad is None
-    assert any(p.grad is not None and p.grad.norm() > 0
-               for p in model._inter_predictor.parameters())
-    assert all(not p.requires_grad for _, p, _ in model.get_stm_chain())
 
 
-@pytest.mark.parametrize("consolidated", [False, True])
-def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
-    from Models import BasicModel as Model
-    from reading_fixtures import finish_reading
+
+def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch):
+    from reading_fixtures import commit_reading, finish_reading
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     entries = [f.program(('change', 'cat', ('verb', verb, obj)))
                for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
-    meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
-                for entry in entries]
+    meanings = [finish_reading(f.language, entry, registry=f.registry).meaning for entry in entries]
     torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
     assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
-    packed = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8)
-    packed.set_symbol_bank(torch.eye(packed.concept_dim))
+    packed = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8, concept_dim=8)
+    packed.set_symbol_bank(torch.eye(8))
     streaming = copy.deepcopy(packed)
-    packed._ltm_store = f.store if consolidated else None
-    streaming._ltm_store = packed._ltm_store
-    from reading_fixtures import commit_reading
-    costs = []
+    packed._ltm_store = streaming._ltm_store = f.store
     for sid, entry in enumerate(entries):
-        _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
-                                   discourse=packed, sid=sid, document='a')
-        costs.append(cost)
-    for t in range(2):
-        closed = finish_reading(f.language, entries[t], registry=f.registry)
-        # Layout step 1's observation is one fused idea; grammatical roles
-        # remain the pre-close witness, not the stored/context row layout.
-        streaming.predict_and_observe_stm_end_state([1], [closed.point[None]],
-            layout='infix', role_masks=[torch.tensor([True,False,False])],
-            sentence_kinds=['idea'], documents=['a'],
-            evidence=[closed.evidence])
-        if consolidated:
-            rows = list(range(len(f.store)))
-            streaming.bind_observation_occurrence(0, f.store.occurrence_of(rows[t]))
-    assert streaming._inter_loss_count == 1
-    torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
-    torch.testing.assert_close(packed.expect_next_meaning().roles,
-                               streaming.expect_next_meaning().roles)
-    if consolidated:
-        assert len(packed._ltm_store) == 2
-        # Future context reads the committed fused point through its address.
-        torch.testing.assert_close(packed._ltm_store.meaning_of(0).roles[0], entries[0].end_state[0])
-        assert packed._ltm_store.meaning_of(0).role_mask.tolist() == [True, False, False]
+        commit_reading(f.language, f.registry, entry, f.store, discourse=packed, sid=sid, document='a')
+    for frame in packed.situation_references():
+        streaming.include_occurrence(0, frame.occurrence, symbols=frame.symbol_ids, activations=frame.activations)
+    assert len(f.store) == 2
+    for a, b in zip(packed.situation_references(), streaming.situation_references(), strict=True):
+        assert a.occurrence == b.occurrence
+        assert a.symbol_ids == b.symbol_ids and a.activations == b.activations
+        torch.testing.assert_close(a.roles, b.roles)
+    torch.testing.assert_close(f.store.meaning_of(0).roles[0], entries[0].end_state[0])
+    assert f.store.meaning_of(0).role_mask.tolist() == [True, False, False]
+
 
 
 def test_restore_keeps_weights_and_durable_memory_but_starts_context_cold():
     model = layer()
-    observe(model, torch.ones(3, 4))
+    admit(model, torch.ones(3, 4))
     state = copy.deepcopy(model.state_dict())
-    observe(model, torch.full((3, 4), 99.))
+    admit(model, torch.full((3, 4), 99.))
     model.load_state_dict(state)
-    assert model.expect_next_meaning() is None
-    assert model.consume_inter_loss() is None
+    assert model.situation_references() == ()
 
 
 def test_source_document_addresses_follow_each_packed_sentence():
@@ -172,11 +96,6 @@ def test_source_document_addresses_follow_each_packed_sentence():
     assert host._expectation_documents[0][2] == host._expectation_documents[1][0]
 
 
-def test_nonfinite_scored_role_error_is_rejected():
-    model = layer()
-    observe(model, torch.ones(3, 4))
-    with pytest.raises(FloatingPointError, match="non-finite"):
-        observe(model, torch.full((3, 4), float("inf")))
 
 
 def test_retired_heads_have_explicit_fresh_activation_migration():
@@ -189,7 +108,7 @@ def test_retired_heads_have_explicit_fresh_activation_migration():
         model.load_state_dict(old, strict=True)
     for name, value in model._inter_predictor.state_dict().items():
         torch.testing.assert_close(value, before[name])
-    assert model.expect_next_meaning() is None
+    assert model.situation_references() == ()
 
 
 
@@ -200,20 +119,20 @@ def test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed():
     disc = layer(consolidated=True)
     disc._ltm_store.append_idea(torch.ones(4), trust=1.)
     host = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=disc))
-    assert disc.expect_next_meaning() is None
+    assert disc.situation_references() == ()
 
 
 def test_new_document_is_reset_before_forward():
     from Models import BasicModel
 
     disc = layer()
-    observe(disc, torch.ones(3, 4), document=("train", 11))
+    admit(disc, torch.ones(3, 4), document=("train", 11))
     host = SimpleNamespace(
         inputSpace=SimpleNamespace(data=SimpleNamespace(
             source_addresses={"train": [{"document": 12}]})),
         symbolSpace=SimpleNamespace(expectation=disc))
     BasicModel._stage_expectation_documents(host, "train", [[0]], 1)
-    assert disc.expect_next_meaning() is None
+    assert disc.situation_references() == ()
 
 
 def test_single_sentence_cursor_keeps_true_document_continuations():
@@ -253,40 +172,33 @@ def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch, eag
         bound.append((args, kwargs))
         raise AssertionError("provisioning is not an external observation")
 
-    monkeypatch.setattr(discourse, "bind_observation_occurrence",
+    monkeypatch.setattr(discourse, "include_occurrence",
                         forbid_external_binding)
     model.provision_ltm()
     assert not bound
     store = model.symbolSpace.ltm_store
     assert len(store) == 3
     assert not any(discourse._inter_context)
-    assert model.symbolSpace.expectation.expect_next_meaning() is None
+    assert model.symbolSpace.expectation.situation_references() == ()
 
 
 @pytest.mark.usefixtures('eager_reading')
 def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
-
     model = _make_model(_SERIAL_CONFIG)
     disc = model.symbolSpace.expectation
-    disc.train()
-    disc.ensure_batch(2)
-    d = disc.concept_dim
-    disc.set_symbol_bank(torch.eye(d))
+    disc.train(); disc.ensure_batch(2)
     for value in (0.2, 0.4):
-        disc.predict_and_observe_stm_end_state(
-            [1, 1], [torch.full((1, d), value), torch.full((1, d), -value)])
-    before = [disc.expect_next_meaning(b).roles.detach().clone() for b in range(2)]
-    before_inputs = [tuple(value.clone() for value in disc._inter_last_meaning[b].inputs[:3]) for b in range(2)]
-    loss_count = disc._inter_loss_count
+        for b, sign in enumerate((1, -1)):
+            admit(disc, torch.full((1, disc.concept_dim), sign*value), b=b)
+    before = [[(f.occurrence, f.roles.clone(), f.symbol_ids, f.activations)
+               for f in disc.situation_references(b)] for b in range(2)]
     model.provision_ltm()
     assert disc._batch == 2
-    assert disc._inter_loss_count == loss_count
     assert [len(c) for c in disc._inter_context] == [2, 2]
     for b in range(2):
-        prediction = disc.expect_next_meaning(b)
-        for value, prior in zip(disc._inter_last_meaning[b].inputs[:3], before_inputs[b]):
-            torch.testing.assert_close(value, prior, rtol=0, atol=0)
-        assert bool(torch.isfinite(prediction.roles).all())
-        store = model.symbolSpace.ltm_store
-        assert torch.count_nonzero(prediction.roles[0,store.when_start:store.when_start+4]) == 0
+        after = disc.situation_references(b)
+        for frame, (occurrence, roles, symbols, activations) in zip(after, before[b], strict=True):
+            assert frame.occurrence == occurrence
+            assert frame.symbol_ids == symbols and frame.activations == activations
+            torch.testing.assert_close(frame.roles, roles, rtol=0, atol=0)

@@ -16,7 +16,31 @@ SCOPE_WIDTH = 14
 # refs[2], transaction[6], timeline[4], two operands' provenance[12],
 # and one publication-kind code. The last code recovers opening/equality/part values
 # from the numerical journal even after their working chunk is evicted.
-RECORD_WIDTH = 2 + 6 + 4 + 2*(SCOPE_WIDTH-2) + 1
+REFERENCE_WITNESS = 2 + 6 + 4 + 2*(SCOPE_WIDTH-2) + 1
+PRE_REFRESH = REFERENCE_WITNESS + 4
+OPERAND_REFRESH = PRE_REFRESH + 6
+IDEA_WRITES = OPERAND_REFRESH + 6
+BIND_READ = IDEA_WRITES + 18
+RECORD_WIDTH = BIND_READ + 3
+
+
+def publication_value(kind, operands, result, prior):
+    """The numerical rule shared by the read and its comprehension."""
+    kind = torch.as_tensor(kind, device=result.device)
+    while kind.ndim < result.ndim:
+        kind = kind.unsqueeze(-1)
+    value = torch.where(kind == 1, prior, result)
+    value = torch.where(kind == 3, torch.maximum(result, operands[..., 0, :]), value)
+    value = torch.where(kind == 4, operands[..., 1, :], value)
+    return torch.where(kind == 5, torch.maximum(operands[..., 0, :], operands[..., 1, :]), value)
+
+
+def record_refresh(records, column, witness, active):
+    """The round/closing read also occurs on a STOP, before any operation."""
+    old = chunks.gather(records, column[:, None])[:, 0]
+    value = torch.cat((old[:, :PRE_REFRESH], witness.reshape(len(old), 6),
+                       old[:, PRE_REFRESH+6:]), -1)
+    return chunks.write(records, column, value, active)
 
 
 def value_record(operands, choice):
@@ -166,7 +190,7 @@ class ChunkJournal(nn.Module):
         order = torch.where(post,unlowered,order)
         return selected._replace(order=order,timeline=torch.stack((timeline,modal.long(),head[:,EVENT],unlowered),-1))
 
-    def publish(self, state, identity, timeline, value, active, *, resolved=True):
+    def publish(self, state, identity, timeline, value, active, *, resolved=True, witness=False):
         match = ((state[chunks.IDENTITY] == identity[:,None]) & (state[chunks.TIMELINE] == timeline[:,None])
                  & (state[chunks.STACK] < 0) & (identity[:,None] >= 0))
         field = match & ((state[chunks.REFS][:,:,0,0] == chunks.SYMBOL)
@@ -188,8 +212,12 @@ class ChunkJournal(nn.Module):
         state = chunks.read(tuple(result),index,active & found)
         refs = state[chunks.REFS].new_zeros(len(identity),2,2)
         refs[:,0,0],refs[:,0,1] = chunks.IDENTITY_REF,identity
-        return chunks.deposit(state,value,active & ~found & (identity >= 0),identity=identity,
-            timeline=timeline,refs=refs,order=torch.ones_like(identity),where=where,when=when)[0]
+        state, deposited = chunks.deposit(state,value,active & ~found & (identity >= 0),identity=identity,
+            timeline=timeline,refs=refs,order=torch.ones_like(identity),where=where,when=when)
+        if witness:
+            record = torch.stack((torch.where(found,index,deposited),identity,timeline,found.long()),-1)
+            return state, torch.where((active & (identity >= 0))[:,None],record,-1)
+        return state
 
     def apply(self, state, scope, selected, operands, references, records, values, *, column, free_ids, clause_scope):
         """Apply one kept operation inside a trial and journal its transaction."""
@@ -264,8 +292,8 @@ class ChunkJournal(nn.Module):
         parent[:,EVENT] = torch.where(event,column+1,torch.where(reset,0,parent[:,EVENT]))
         parent[:,ORIGIN] = origin
         parent[:,TIMELINE],parent[:,MODAL],parent[:,UNLOWERED] = timeline,modal,unlowered
-        result = torch.where(rule[:,5,None].bool(),operands[:,1],selected.candidate)
-        result = torch.where(rule[:,7,None].bool(),torch.maximum(operands[:,0],operands[:,1]),result)
+        result_kind = torch.where(rule[:,7].bool(),5,torch.where(rule[:,5].bool(),4,2))
+        result = publication_value(result_kind, operands, selected.candidate, selected.candidate)
         update = event & (subject >= 0) & parent[:,RESOLVED].bool()
         state = chunks.apply_choice(state,selected,operand_actions=torch.stack((left[:,SOURCE],right[:,SOURCE]),-1))
         physical = chunks.at(state,torch.where(pair,0,selected.position))
@@ -294,23 +322,41 @@ class ChunkJournal(nn.Module):
         later_actual = ((torch.arange(records.shape[1],device=records.device)[None] > prior[:,None])
             & (records[:,:,3] == subject[:,None]) & records[:,:,7].eq(1)
             & records[:,:,9].eq(0) & records[:,:,11].eq(0)).any(-1)
-        state = self.publish(state,subject,torch.zeros_like(timeline),prior_values,
-            post & (left[:,TIMELINE] == 0) & ~later_actual)
+        state, restored = self.publish(state,subject,torch.zeros_like(timeline),
+            publication_value(1, operands, selected.candidate, prior_values),
+            post & (left[:,TIMELINE] == 0) & ~later_actual, witness=True)
         suppress = (post | wrapped) & (head[:,EVENT] > 0)
         mask = suppress[:,None] & (torch.arange(records.shape[1],device=records.device)[None] == head[:,EVENT,None]-1)
         records = records.clone()
         records[:,:,11] = torch.where(mask,1,records[:,:,11])
         # Bind's result reads the chosen value. Publication joins the new
         # description into that identity before the next operand refresh.
-        joined = torch.where((bind & (chosen > 0) & (timeline == 0))[:,None],
-                             torch.maximum(selected.candidate,operands[:,0]),selected.candidate)
-        state = self.publish(state,identity,timeline,joined,opening)
-        state = self.publish(state,subject,timeline,result,update)
+        joined_kind = torch.where(bind & (chosen > 0) & (timeline == 0),3,2)
+        joined = publication_value(joined_kind, operands, selected.candidate, selected.candidate)
+        state, opened = self.publish(state,identity,timeline,joined,opening,witness=True)
+        state, updated = self.publish(state,subject,timeline,result,update,witness=True)
         event_record = torch.stack((parent[:,IDENTITY],torch.where(event,subject,-1),
             torch.where(event,obj,-1),torch.where(event,verb,-1),torch.where(bind,chosen,-1),update.long()),-1)
         timeline_record = torch.stack((selected.order,timeline,origin,torch.zeros_like(origin)),-1)
         publication = torch.where(opening,3,torch.where(rule[:,5].bool(),1,torch.where(rule[:,7].bool(),2,0)))
         record = torch.cat((references,event_record,timeline_record,left[:,2:],right[:,2:],publication[:,None]),-1)
+        witness = selected.reference_witness
+        if witness is None:
+            witness = torch.cat((torch.zeros_like(references), torch.full_like(references,-1)), -1)
+        record = torch.cat((record, witness), -1)
+        previous = chunks.gather(records,column[:,None])[:,0]
+        refresh = selected.held_refresh
+        if refresh is None:
+            refresh = references.new_full((batch,2,3),-1)
+        bind_read = selected.held_bind
+        if bind_read is None:
+            bind_read = references.new_full((batch,3),-1)
+        writes = torch.stack((
+            torch.cat((restored,torch.ones_like(prior[:,None]),prior[:,None]),-1),
+            torch.cat((opened,joined_kind[:,None],torch.full_like(prior[:,None],-1)),-1),
+            torch.cat((updated,result_kind[:,None],torch.full_like(prior[:,None],-1)),-1)),1)
+        record = torch.cat((record,previous[:,PRE_REFRESH:PRE_REFRESH+6],
+                            refresh.reshape(batch,6),writes.reshape(batch,18),bind_read),-1)
         records = chunks.write(records,column,record,selected.valid)
         base,ended = clause_scope.apply(scope[:,:,:2],selected,column)
         metadata = scope[:,:,2:]
@@ -450,6 +496,21 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     timeline[:,2] = timeline.new_tensor([by_column.get(int(origin)-1,-1)+1 for origin in timeline[:,2]])
     timeline = torch.where(journalled[:,None],timeline,0)
     width = values.shape[-1]//3
+    writes = selected[:,IDEA_WRITES:IDEA_WRITES+18].reshape(-1,3,6).clone()
+    for at in range(len(actions)):
+        if int(writes[at,0,0]) >= 0 and bool(journalled[at]):
+            column = int(writes[at,0,5])
+            if column not in by_column:
+                raise ValueError(f'idea restoration reads an earlier event outside this reading: column {column}')
+            writes[at,0,5] = by_column[column]
+    writes = torch.where(journalled[:,None,None],writes,-1)
     return dict(identity_ids=row.new_tensor(ids),identity_origins=origins,identity_values=torch.stack(actual) if actual else values.new_zeros(0,width),
         identity_actions=events,identity_leaves=leaves,timeline_actions=timeline,
-        timeline_values=torch.stack(alternative) if alternative else values.new_zeros(0,width))
+        timeline_values=torch.stack(alternative) if alternative else values.new_zeros(0,width),
+        operation_resolved=selected[:,REFERENCE_WITNESS:REFERENCE_WITNESS+2].bool(),
+        operation_orders=selected[:,REFERENCE_WITNESS+2:REFERENCE_WITNESS+4],
+        held_refresh=torch.where(journalled[:,None,None],selected[:,OPERAND_REFRESH:OPERAND_REFRESH+6].reshape(-1,2,3),-1),
+        held_bind=torch.where(journalled[:,None],selected[:,BIND_READ:BIND_READ+3],-1),
+        held_writes=writes,
+        # Includes STOP/wait reads, whose returned points have no consumer.
+        held_round_reads=row[:,PRE_REFRESH:PRE_REFRESH+6].reshape(-1,2,3))

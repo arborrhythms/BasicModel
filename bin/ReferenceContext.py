@@ -301,26 +301,26 @@ def binding_spec(rule, role, stamp, *, implicit=False):
     return (denoted_order(rule, (stamp,), (), None) if requested else None), mode
 
 
-def resolve_highest(value, identity, types):
+def resolve_highest(value, identity, types, *, witness=False):
     """Interpret the highest defined object of each word in the staged slab."""
     if types is None:
-        return value, identity
+        return (value, identity, torch.zeros_like(identity, dtype=torch.bool)) if witness else (value, identity)
     source = identity[:, :, None] == types.sources[:, None, :]
     associated = (identity[:, :, None, None] == types.identities[:, None]).any(-1)
     matching = (source | associated)[..., None] & (identity > 0)[:, :, None, None]
     matching = matching & (types.identities[:, None] > 0)
     highest = torch.where(matching, types.orders[None, None, None, :], -1).amax((-2, -1))
-    return resolve_order(value, identity, highest, types)
+    return resolve_order(value, identity, highest, types, witness=witness)
 
 
-def resolve_order(value, identity, order, types):
+def resolve_order(value, identity, order, types, *, witness=False):
     """Select an existing grammar-requested type before its numerical use.
 
     A newly requested singleton keeps its source point during the trial;
     the winning closing admits its identity. This read never allocates.
     """
     if types is None:
-        return value, identity
+        return (value, identity, torch.zeros_like(identity, dtype=torch.bool)) if witness else (value, identity)
     batch, positions, width = value.shape
     words, orders = types.identities.shape[1:]
     source = identity[:, :, None] == types.sources[:, None, :]
@@ -341,8 +341,9 @@ def resolve_order(value, identity, order, types):
         2, selected[:, :, None, None].expand(batch, positions, 1, width)).squeeze(2)
     # The existing identity already has its live activation and modifiers.
     changed = found & (ids != identity)
-    return (torch.where(changed[:, :, None], points, value),
-            torch.where(found, ids, identity))
+    result = (torch.where(changed[:, :, None], points, value),
+              torch.where(found, ids, identity))
+    return (*result, changed) if witness else result
 
 
 def resolve_operand(value, identity, position, *, mode, bank, live, active, order=None, forced_reference=None,
@@ -422,7 +423,7 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
 
 def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
                      bank, live, active, chunk_state=None, source=None, meaning_blocks=False,
-                     signable=None, interpretable=None):
+                     signable=None, interpretable=None, percept_band=None):
     """Enumerate reference variants of each operation for one global softmax.
 
     A variant retains the grammar operation's index and learned scoring row.
@@ -433,26 +434,34 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     forced = getattr(bank, 'forces_interpretation',
                      getattr(bank, 'close_references', False) and getattr(interpreter, 'mandatory', True))
 
+    def offer(point, identity, relative, valid, found=None, resolved=None, order=None):
+        # The witness accompanies the variant at its producer. It describes
+        # a value read, not whether the resulting address differs afterwards.
+        return (point, identity, relative, valid,
+                torch.zeros_like(valid) if found is None else found,
+                torch.zeros_like(valid) if resolved is None else torch.as_tensor(resolved, device=valid.device).expand_as(valid),
+                torch.full_like(identity, -1) if order is None else torch.as_tensor(order, device=identity.device).expand_as(identity))
+
     def symbolic_options(value, ids, scope, pos, stamp, rule, role, valid):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
         if int(getattr(rule, 'order_delta', 0) or 0) == -1:
             # Unary lower reads the word's existing object one block down.
             # Order one is an ordinary concept order here, not a request
             # for an occurrence to be bound at the closing.
-            value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
-            return [(value, ids, scope.bitwise_and(1) != 0, valid)]
+            value, ids, used = resolve_order(value, ids, order, getattr(bank, 'types', None), witness=True)
+            return [offer(value, ids, scope.bitwise_and(1) != 0, valid, resolved=used, order=order)]
         if chunk_state is not None and order is not None:
             # Determination supplies an object, never a reference alternative.
             # Explicit bind is the sole compose operation that chooses one.
             # Other orders still read their existing typed concept before
             # composition. A literal implicit operand keeps its own point.
-            typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+            typed_value, typed_ids, used = resolve_order(value, ids, order, getattr(bank, 'types', None), witness=True)
             typed = order != 1
             if mode is None and bank.literal_ids is not None:
                 typed = typed & ~torch.isin(ids, bank.literal_ids)
             value = torch.where(typed[..., None], typed_value, value)
             ids = torch.where(typed, typed_ids, ids)
-            return [(value, ids, scope.bitwise_and(1) != 0, valid)]
+            return [offer(value, ids, scope.bitwise_and(1) != 0, valid, resolved=used & typed, order=order)]
         if order is None:
             if interpreter is not None and bank.associations is not None and bank.associations.numel():
                 from ClauseScope import ClauseScope
@@ -469,22 +478,23 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 choices = []
                 for c in range(count):
                     at = selected[..., c]
-                    choices.append((bank.values.gather(1, at[..., None].expand(*at.shape, D)),
+                    choices.append(offer(bank.values.gather(1, at[..., None].expand(*at.shape, D)),
                         bank.ids.gather(1, at), bank.relations.gather(1, at),
-                        available.gather(-1, at[..., None]).squeeze(-1)))
-                choices.append((value, ids, scope.bitwise_and(1) != 0, valid & ~available.any(-1)))
+                        available.gather(-1, at[..., None]).squeeze(-1), resolved=True))
+                choices.append(offer(value, ids, scope.bitwise_and(1) != 0, valid & ~available.any(-1)))
                 return choices
-            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+            return [offer(value, ids, scope.bitwise_and(1) != 0, torch.ones_like(valid))]
         source_ids = ids
-        typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+        typed_value, typed_ids, typed_used = resolve_order(value, ids, order, getattr(bank, 'types', None), witness=True)
         at_close = bank.close_references
         if at_close:
             value = torch.where((order == 1)[..., None], value, typed_value)
             ids = torch.where(order == 1, ids, typed_ids)
+            typed_used = typed_used & (order != 1)
         else:
             value, ids = typed_value, typed_ids
         if mode in ('kind', 'generic'):
-            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+            return [offer(value, ids, scope.bitwise_and(1) != 0, torch.ones_like(valid), resolved=typed_used, order=order)]
         closing = None
         if at_close:
             # Compose selects the operation, not an individual. Its operands
@@ -516,30 +526,31 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         def alternatives(options):
             # The first variant carries non-binding typed operands. Keep
             # the existing candidate menu and its learned scoring rows.
-            point, ref, relative, available, *extra = options[0]
+            point, ref, relative, available, found, used, requested = options[0]
             options[0] = (torch.where(binding[..., None], point, value),
                 torch.where(binding, ref, ids),
                 torch.where(binding, relative, scope.bitwise_and(1) != 0),
                 available | (~binding & original_valid),
-                *(item & binding for item in extra))
+                found & binding, torch.where(binding, used, typed_used), requested)
             if closing is not None:
                 # Reuse the first variant for deferred rows. Appending a
                 # masked variant would change the unrelated field/higher-
                 # order menu and its sampled departures.
-                point, ref, relative, available, *extra = options[0]
+                point, ref, relative, available, found, used, requested = options[0]
                 options[0] = (torch.where(deferred[..., None], closing[0], point),
                     torch.where(deferred, closing[1], ref),
                     torch.where(deferred, closing[2], relative),
-                    available | closing[3], *(item & ~deferred for item in extra))
+                    available | closing[3], found & ~deferred,
+                    torch.where(deferred, typed_used, used), requested)
             return options
         valid = valid & binding
         if mode == 'mint' and interpreter is None:
-            return alternatives([(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)])
+            return alternatives([offer(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid, resolved=typed_used, order=order)])
         inventory = getattr(bank, 'column_ids', None)
         if interpreter is None and inventory is not None and inventory.numel() == 0:
             # A binder with no referent leaves an open slot. The sentence
             # can still close; its closing will ask on this same reference.
-            return alternatives([(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)])
+            return alternatives([offer(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid, resolved=typed_used, order=order)])
         from ClauseScope import ClauseScope
         P, C = value.shape[1], bank.ids.shape[1]
         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
@@ -595,15 +606,16 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             options = interpreter(value, binding=dict(identity=ids, scope=scope,
                 candidate_ids=candidate_ids, candidate_values=candidate_values,
                 candidate_relations=candidate_relations, available=available,
-                associations=bank.associations, mode=mode, active=valid))
+                associations=bank.associations, mode=mode, active=valid, witness=True))
+            options = [offer(*item[:5], resolved=item[5] | typed_used, order=order) for item in options]
         else:
-            options = [(candidate_values[:, :, c], candidate_ids[:, :, c],
-                        candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
+            options = [offer(candidate_values[:, :, c], candidate_ids[:, :, c],
+                        candidate_relations[:, :, c], available[:, :, c], resolved=True, order=order) for c in range(count)]
             if mode not in ('pronoun', 'bind'):
-                options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid), valid))
+                options.append(offer(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid, resolved=typed_used, order=order))
             else:
-                options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid),
-                                valid & ~available.any(-1)))
+                options.append(offer(value, torch.full_like(ids, -1), torch.zeros_like(valid),
+                                valid & ~available.any(-1), resolved=typed_used, order=order))
         return alternatives(options)
 
     def propose(value, ids, scope, pos, stamp, rule, role, valid):
@@ -615,7 +627,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             first = options[0]
             options[0] = (torch.where(raw[..., None], value, first[0]),
                 torch.where(raw, ids, first[1]), first[2] & ~raw,
-                first[3] | (valid & raw), *first[4:])
+                first[3] | (valid & raw), first[4] & ~raw, first[5] & ~raw, first[6])
         return options
 
     def choice_tag(refs, rule, role, stamp, source):
@@ -639,6 +651,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
     bchoices, uchoices, bfound, ufound = [], [], [], []
+    bresolved, uresolved, borders, uorders = [], [], [], []
     binary_bind, binary_dummy = [], []
 
     def found(option):
@@ -655,10 +668,12 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             mention_order = orders.gather(1,newest)
             own = identities.gather(1,newest)
             own_relative = flags.gather(1,newest).bitwise_and(1) != 0
+            derived = getattr(getattr(getattr(interpreter, 'owner', None),
+                                      'similarity_codebook', None), 'mereology', None)
+            meaning_start = derived.percept_event_width if derived is not None else 0
             points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
-                orders=mention_order, exclusions=getattr(bank,'exclusions',None), meaning_start=getattr(
-                    getattr(getattr(getattr(interpreter, 'owner', None), 'similarity_codebook', None),
-                            'mereology', None), 'percept_event_width', 0))
+                orders=mention_order, exclusions=getattr(bank,'exclusions',None),
+                percept_band=percept_band, meaning_start=meaning_start)
             for column in range(points.shape[2]):
                 binary_ops.append(operation)
                 binary_bind.append(True)
@@ -666,6 +681,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 lefts.append(mention)
                 rights.append(points[:,:,column])
                 brefs.append(torch.stack((own,ids[:,:,column]),-1))
+                bresolved.append(torch.stack((torch.zeros_like(own,dtype=torch.bool),
+                    torch.full_like(own,column > 0,dtype=torch.bool)),-1))
+                borders.append(torch.cat((mention_order,mention_order),-1)[:,None])
                 bchoices.append(torch.stack((torch.full_like(own,-1),chunks[:,:,column]),-1))
                 bfound.append(torch.stack((torch.zeros_like(own,dtype=torch.bool),available[:,:,column] & (column > 0)),-1))
                 # The description keeps its actual clause kind, including
@@ -693,6 +711,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 lefts.append(left[0])
                 rights.append(right[0])
                 brefs.append(torch.stack((left[1], right[1]), -1))
+                bresolved.append(torch.stack((left[5], right[5]), -1))
+                borders.append(torch.stack((left[6], right[6]), -1))
                 bchoices.append(torch.stack((choice_tag(left[1], rule, 'argin1', orders[:, :-1], identities[:, :-1]),
                                              choice_tag(right[1], rule, 'argin2', orders[:, 1:], identities[:, 1:])), -1))
                 bfound.append(torch.stack((found(left), found(right)), -1))
@@ -717,21 +737,22 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         name = getattr(rule, 'method_name', None)
         if name == 'sign':
             valid = active & signable if signable is not None else torch.zeros_like(active)
-            options = [(window, identities, torch.zeros_like(valid), valid)]
+            options = [offer(window, identities, torch.zeros_like(valid), valid)]
         elif name == 'interpret':
             # Reading initially forces interpretation at admission. Lifting
             # mandatory on the layer exposes this same first decision.
-            options = [(window, identities, torch.zeros_like(active), torch.zeros_like(active))]
+            options = [offer(window, identities, torch.zeros_like(active), torch.zeros_like(active))]
             if not forced and interpretable is not None:
                 options = []
                 lexical_found = torch.zeros_like(active)
                 if bank.types is not None:
                     # Reuse the staged lexical points. Interpretation can
                     # read a known object without an earlier MTM mention.
-                    point, identity = resolve_highest(window, identities, bank.types)
-                    admitted = identity != identities
-                    options.append((point, identity, torch.zeros_like(active),
-                                    active & interpretable & admitted))
+                    point, identity, admitted = resolve_highest(window, identities, bank.types, witness=True)
+                    options.append(offer(point, identity, torch.zeros_like(active),
+                                    active & interpretable & admitted, resolved=admitted,
+                                    order=torch.where(identity[...,None,None] == bank.types.identities[:,None],
+                                        bank.types.orders, -1).amax((-2,-1))))
                     lexical_found |= admitted
                 elif bank.associations is not None and bank.associations.numel() and bank.ids.shape[1]:
                     available = ((identities[...,None,None] == bank.associations[:,0]) &
@@ -741,17 +762,17 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                     for selected in priority.topk(count, dim=-1).indices.unbind(-1):
                         point = bank.values.gather(1, selected[...,None].expand(-1,-1,D))
                         admitted = available.gather(-1, selected[...,None]).squeeze(-1)
-                        options.append((point, bank.ids.gather(1, selected), torch.zeros_like(active),
-                                        active & interpretable & admitted))
+                        options.append(offer(point, bank.ids.gather(1, selected), torch.zeros_like(active),
+                                        active & interpretable & admitted, resolved=True))
                         lexical_found |= admitted
                 # An objectless interpretation keeps the open lexical handle.
-                options.append((window, identities, torch.zeros_like(active), active & interpretable & ~lexical_found))
+                options.append(offer(window, identities, torch.zeros_like(active), active & interpretable & ~lexical_found))
         else:
             options = propose(window, identities, flags, positions, orders, rule, 'argin1', active)
         for operand in options:
             delta = int(getattr(rule, 'order_delta', 0) or 0)
             if delta:
-                operand = (*operand[:3], operand[3] & (orders >= max(0, -delta)))
+                operand = (*operand[:3], operand[3] & (orders >= max(0, -delta)), *operand[4:])
             unary_ops.append(operation)
             values.append(operand[0])
             own_values.append(operand[0])
@@ -759,6 +780,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             identity_choices.append(torch.zeros_like(identities))
             bind_dummies.append(False)
             urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
+            uresolved.append(torch.stack((operand[5], torch.zeros_like(operand[5])), -1))
+            uorders.append(torch.stack((operand[6], torch.full_like(operand[6], -1)), -1))
             uchoices.append(torch.stack((choice_tag(operand[1], rule, 'argin1', orders, identities),
                                          torch.full_like(operand[1], -1)), -1))
             ufound.append(torch.stack((found(operand), torch.zeros_like(operand[3])), -1))
@@ -777,5 +800,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
                 binary_choices=stack(bchoices, N-1, (2,), dtype=torch.long), unary_choices=stack(uchoices, N, (2,), dtype=torch.long),
                 binary_found=stack(bfound, N-1, (2,), dtype=torch.bool), unary_found=stack(ufound, N, (2,), dtype=torch.bool),
+                binary_resolved=stack(bresolved, N-1, (2,), dtype=torch.bool), unary_resolved=stack(uresolved, N, (2,), dtype=torch.bool),
+                binary_requested_orders=stack(borders, N-1, (2,), dtype=torch.long), unary_requested_orders=stack(uorders, N, (2,), dtype=torch.long),
                 binary_relations=stack(brels, N-1, (2,), dtype=torch.bool), unary_relations=stack(urels, N, (2,), dtype=torch.bool),
                 binary_valid=stack(bvalid, N-1, dtype=torch.bool), unary_valid=stack(uvalid, N, dtype=torch.bool))

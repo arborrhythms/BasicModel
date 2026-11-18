@@ -42,7 +42,6 @@ def _make_plain_model():
     return model
 
 
-
 @pytest.mark.parametrize("gain", [0., 1.])
 @pytest.mark.parametrize("staged", [False, True])
 def test_staged_expectation_never_enters_conceptual_forward(gain, staged):
@@ -62,8 +61,9 @@ def test_staged_expectation_never_enters_conceptual_forward(gain, staged):
             discourse = model.symbolSpace.expectation
             roles = torch.ones(3, discourse.concept_dim)
             discourse.set_symbol_bank(roles)
-            discourse.predict_and_observe_stm_end_state([3], [roles], layout="infix")
-            assert discourse.expect_next_meaning() is not None
+            from test_sentence_expectation import admit
+            admit(discourse, roles)
+            assert discourse.situation_references()
         assert not hasattr(cs, "_c_prior")
         view = SubSpaceView.snapshot(base, owner=ps, context=ps_sub.view().context())
         cs.forward(view)

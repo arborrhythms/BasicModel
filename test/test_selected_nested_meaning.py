@@ -54,18 +54,22 @@ def test_nested_observation_writers_retain_children_without_certifying_them(monk
     # The common owner otherwise already contains the catalogue's assertion.
     _cs._concept_allocator.parts.remove(*entry.concept_ids[:2].tolist())
     store = _write_selected_observation(language, registry, entry, path)
-    # The two native pairs retain ignorance independently in the common owner.
-    assert len(store) == 0
-    child_id = store.parts.find(*entry.concept_ids[:2].tolist())
-    from Memory import SYMBOL, RELATION
-    parent_id = store.parts.find((SYMBOL, int(entry.concept_ids[2])), (RELATION, child_id))
+    # Each order-one mention keeps its own untrusted occurrence. The two
+    # native pairs still retain ignorance independently in the common owner.
+    assert len(store) == 2
+    from Memory import SYMBOL, RELATION, OCCURRENCE
+    assert store.trust[:len(store)].eq(0).all()
+    torch.testing.assert_close(store.referent[:2], torch.tensor([
+        [SYMBOL, int(entry.concept_ids[0])], [SYMBOL, int(entry.concept_ids[2])]]))
+    child_id = store.parts.find((OCCURRENCE, store.row_name(0)), (SYMBOL, int(entry.concept_ids[1])))
+    parent_id = store.parts.find((OCCURRENCE, store.row_name(1)), (RELATION, child_id))
     assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}
     child, parent = (store.part_row(index, reading='part') for index in (child_id, parent_id))
     from ThoughtReferences import open_slots
     assert not open_slots(child['meaning']) and not open_slots(parent['meaning'])
     assert child['evidence'] == parent['evidence'] == (0., 0.)
     assert parent['meaning'].role_refs[2] == child['occurrence']
-    torch.testing.assert_close(child['meaning'].roles[0], registry._payload(('sym', int(entry.concept_ids[0]))))
+    torch.testing.assert_close(child['meaning'].roles[0], entry.leaves[0])
     assert not child['meaning'].roles.requires_grad
 
 
@@ -144,7 +148,10 @@ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_wri
     assert len(store) == 0
 
 def _write_selected_observation(language, registry, entry, path):
-    store = LTM0(8, capacity=16)
+    from Memory import STM0
+    # These eight coordinates are conceptual inputs, with no time band.
+    # The common writer retains them in working memory (§17.15).
+    store = STM0(8, capacity=16, percept_width=0)
     from ClauseRow import attach_clause_index
     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
     attach_clause_index(host, store, registry.space)

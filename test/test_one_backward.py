@@ -173,7 +173,7 @@ def test_native_sentence_counts_one_backward_and_step_and_preserves_band_gradien
             return {label+'.'+name:dict(pointer=value.data_ptr(),shape=list(value.shape),
                 bytes=value.numel()*value.element_size())
                 for label,module in (('percept',owner),('expect',concept.expect_stack),
-                                     ('intuit',concept.intuit_stack),('infer',concept.intuition))
+                                     ('idea',concept.idea_stack),('infer',concept.intuition))
                 for name,value in (*module.named_parameters(),*module.named_buffers())}
         allocated=storage()
         from corpus_capacity import optimizer_parameter_bytes

@@ -118,7 +118,9 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         decoded, unavailable = readings[0]
         assert all(len(text.split()) == 2 for text in decoded), decoded
         assert not bool(unavailable.any())
-        assert model._word_symbol_concept_ids() is None
+        from PrependedSymbols import word_view
+        torch.testing.assert_close(model._word_symbol_concept_ids(), word_view(isp, 'concept_ids'))
+        assert (model._word_symbol_concept_ids()[:, :3] >= 0).tolist() == [[True, False, True]] * 4
     finally:
         model.End()
         model.symbolSpace.soft_reset()

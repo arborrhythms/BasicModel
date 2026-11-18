@@ -170,6 +170,12 @@ def test_old_ordered_entry_loads_its_strongest_readings_with_warning():
     store = memory_brick()
     state = store.state_dict()
     state['truth_schema'] = torch.tensor(16)
+    # The preceding checkpoint stored centered phase bands.
+    layout = int(state['percept_layout'])
+    if layout >= 8:
+        state['slots'] = state['slots'].clone()
+        bands = state['slots'][..., layout-8:layout].reshape(store.capacity, 2, 4)
+        bands.copy_(torch.where(bands.ne(0).any(-1, keepdim=True), 2*bands-1, 0.))
     state['truth_plus'] = state.pop('trust')
     state['truth_minus'] = torch.zeros_like(state['truth_plus'])
     state['address_keys'] = torch.arange(store.capacity)

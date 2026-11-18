@@ -90,11 +90,11 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     monkeypatch.setattr(parts, 'observe_kept', observation)
     monkeypatch.setattr(GrammarLessons, 'compose_loss', annotation)
     commit = model._commit_sentence
-    def committed(state, sid, active, observations, predictions, wins):
+    def committed(state, sid, active, observations, wins):
         before = len(events)
         winners = [snapshot(observations[int(bool(wins[b]))]['entries'][b])
                    if bool(active[b]) else None for b in range(len(active))]
-        result = commit(state,sid,active,observations,predictions,wins)
+        result = commit(state,sid,active,observations,wins)
         admitted = events[before:]
         rows = active.nonzero().flatten().tolist()
         assert len(admitted)==len(rows)

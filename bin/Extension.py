@@ -264,7 +264,7 @@ def held_context(owner, rule, reference=None, *, open=False, stream=0):
     return Context(owner, name, content, identity, trust, open, stream=stream)
 
 
-def reading(model, program, field, row, positions, *, install=True):
+def reading(model, program, field, row, positions, *, install=True, evaluation=None):
     """Extend the pinned STM tree once in its actual compose order."""
     owner, language = model._concept_owner(), model.languageSpace
     ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:,row]
@@ -272,24 +272,30 @@ def reading(model, program, field, row, positions, *, install=True):
     ids = ids[valid]
     values = field.evidence[valid,row]
     stack = []
+    tree = program.tree if evaluation is None else None
     dispatch = language._tree_layer(2)
     for at, (kind, local, word) in enumerate(program.actions.tolist()):
         if kind < 0:
             break
         if kind == 0:
-            reference = int(program.concept_ids[word])
+            reference = (int(program.concept_ids[word]) if evaluation is None else evaluation.leaf(word))
             source = ConceptSet(ids,values[:,int(positions[word])])
             if program.interpret_forced:
                 source = stored(owner,interpreted(owner,source,stream=row))
             node=Node(source,reference=('sym',reference) if reference > 0 else None)
             stack.append(node)
-            if install and program.tree is not None:
-                program.tree.install_extension(node,word=word)
+            if evaluation is not None:
+                evaluation.completed(at, node)
+            if install and tree is not None:
+                tree.install_extension(node,word=word)
             continue
         if kind == 3:
             # A transposition rewires the STM pair; it is not an application
             # node in that pair's kept tree (SentenceStrata.Tree.forest).
             stack[-2:] = reversed(stack[-2:])
+            if evaluation is not None:
+                evaluation.transpose()
+                evaluation.completed(at)
             continue
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
         rule = rules[local]
@@ -301,7 +307,11 @@ def reading(model, program, field, row, positions, *, install=True):
         wrapped = (dispatch.ops if kind == 1 else dispatch.unary_ops)[local]
         operator = getattr(wrapped,'gl',wrapped)
         reference = None
-        if program.tree is not None:
+        if evaluation is not None:
+            selected = evaluation.operation(at, kind, local, word, rule, operator)
+            if selected not in (-1, 0):
+                reference = owner._closed_clause_store().semantic_reference(selected)
+        elif program.tree is not None:
             selected = program.tree.composition(action=at).reference
             if selected not in (-1,0):
                 reference = owner._closed_clause_store().semantic_reference(selected)
@@ -309,10 +319,14 @@ def reading(model, program, field, row, positions, *, install=True):
         value = operator.compose_extend(*(child.field for child in children),context=context)
         node=Node(value,children,operator,context,reference)
         stack.append(node)
-        if install and program.tree is not None:
-            program.tree.install_extension(node,action=at)
+        if evaluation is not None:
+            evaluation.completed(at, node)
+        if install and tree is not None:
+            tree.install_extension(node,action=at)
         if offset:
             stack.insert(len(stack)-1-offset,stack.pop())
+    if evaluation is not None:
+        evaluation.finish(roots=tuple(stack))
     return tuple(stack)
 
 
@@ -327,27 +341,22 @@ def with_extensions(clause, roots=None):
         companions=tuple(with_extensions(child) for child in clause.companions))
 
 
-def understand(model, record, programs):
-    # The teacher follows the same selected operators on observation alone.
-    # Do not overwrite the live tree's extensions with this detached read.
-    source = getattr(model, '_intuition_observation', None)
-    if source is not None and getattr(model, '_intuition_prediction', None) is not None:
-        from IntuitionField import observed
-        with torch.no_grad():
-            teachers = tuple(() if program is None else reading(model, program, source, row,
-                model._sentence_leaf_positions(record,row), install=False)
-                for row, program in enumerate(programs))
-            empty = ConceptSet(source.concept_ids.new_empty(0), source.evidence.new_empty(0,2))
-            teacher = as_field(tuple(joined(roots,empty) for roots in teachers),
-                               where=source.where, when=source.when)
-            owner = model._concept_owner()
-            model._intuition_teacher = observed(owner, teacher)[0][:, :owner._order_caps()[0]].detach()
-    forest = tuple(() if program is None else reading(model, program, record.open_field, row,
-        model._sentence_leaf_positions(record,row)) for row,program in enumerate(programs))
+def understand(model, record, programs, *, trust=1.):
+    from Comprehension import Evaluation
+    forest, meanings = [], []
+    for row, program in enumerate(programs):
+        if program is None:
+            forest.append(()); meanings.append(None)
+            continue
+        evaluation = Evaluation(model, program, row, trust=trust)
+        forest.append(reading(model, program, record.open_field, row,
+            model._sentence_leaf_positions(record,row), evaluation=evaluation))
+        meanings.append(evaluation.result)
+    forest = tuple(forest)
     empty = ConceptSet(record.open_field.concept_ids.new_empty(0), record.open_field.evidence.new_empty(0,2))
     field = as_field(tuple(joined(roots,empty) for roots in forest),
                      where=record.open_field.where,when=record.open_field.when)
-    return forest,field
+    return forest,field,tuple(meanings)
 
 
 def generated(model, actions, counts, depths, leaf_field, references):

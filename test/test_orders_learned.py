@@ -303,8 +303,9 @@ def test_determiner_opens_a_chunk_identity_only_at_member_order_one(order):
     top = chunks.at(state[0])
     identity = chunks.gather(state[0][chunks.IDENTITY], top[:,None])[:,0]
     assert bool((identity >= 0).all()) == (order == 1)
-    # The last journal column is the publication-kind code.
-    assert (int(state[2][0,0,-1]) == 3) == (order == 1)
+    # Publication kind precedes the held-concept read/write witnesses.
+    from ChunkJournal import REFERENCE_WITNESS
+    assert (int(state[2][0,0,REFERENCE_WITNESS-1]) == 3) == (order == 1)
 
 
 @pytest.mark.parametrize('subject_order,closed_order', [(0,0),(1,0),(2,1)])

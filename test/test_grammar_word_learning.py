@@ -168,7 +168,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
-    model.inter_loss_weight = 0.0
+    model.symbol_field_loss_weight = 0.0
     assert model.output_in_loop and model.languageSpace.generate_policy is not None
     assert model.loss.reconstruction_scale == 1.0
     chooser = model.languageSpace._tree_layer(2).chooser

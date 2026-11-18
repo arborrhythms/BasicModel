@@ -39,7 +39,9 @@ def test_swapped_evidence_combination_is_distinct_from_a_both_pole_test():
     source[0], source[offset] = pair.unbind(-1)
     combined = torch.stack((matrix.fold_presence(source, conjunctive=True),
                             matrix.fold_presence(source, conjunctive=True, dual=True)), -1)
-    torch.testing.assert_close(combined[1], torch.tensor([[0., 1.], [0., 1.], [1., 1.], [0., 0.]]))
+    # §57.6: these two columns are one signed source coefficient. Equal
+    # weights cancel; an explicit both-pole observation still reads both.
+    torch.testing.assert_close(combined[1], torch.zeros(4, 2))
     torch.testing.assert_close(corners(pair)[:, 2], torch.tensor([0., 0., 1., 0.]))
 
 

@@ -51,21 +51,12 @@ class TestActivationOwner(_DiscourseTestBase):
         self.layer = Layers.SymbolExpectation(4, 2, 3, batch=2)
         self.layer.set_symbol_bank(torch.eye(3))
 
-    def test_cold_then_warm_local_error_and_detached_history(self):
-        values = torch.eye(3, requires_grad=True)
-        self.layer.predict_and_observe_stm_end_state([1, 1], [values[:1], values[1:2]])
-        self.assertIsNone(self.layer.consume_inter_loss())
-        self.layer.predict_and_observe_stm_end_state([1, 1], [values[1:2], values[2:]])
-        loss = self.layer.consume_inter_loss()
-        self.assertTrue(torch.isfinite(loss))
-        loss.backward()
-        self.assertIsNone(values.grad)
-        self.assertTrue(any(p.grad is not None and p.grad.abs().sum() for p in self.layer.parameters()))
-        self.assertIsNone(self.layer.consume_inter_loss())
 
     def test_bounded_context_and_row_reset(self):
         for _ in range(12):
-            self.layer.observe_stm_end_state([1, 1], [torch.eye(3)[:1], torch.eye(3)[1:2]])
+            from test_sentence_expectation import admit
+            for b in range(2):
+                admit(self.layer, torch.eye(3)[b:b+1], b=b)
         self.assertEqual(len(self.layer), self.layer._inter_chain_window)
         self.layer.Reset(batch=0)
         self.assertFalse(self.layer._inter_context[0])

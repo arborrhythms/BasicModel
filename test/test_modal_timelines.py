@@ -48,6 +48,20 @@ def pool():
     return result
 
 
+def test_alternative_only_identity_has_no_actual_value():
+    p = pool()
+    p.alternative_mention(address(1))
+    branch = p.alternative(address(1), when=1)
+    assert p.member_references(address(1)) == ()
+    torch.testing.assert_close(p.value_of(address(1)), torch.zeros(8), rtol=0, atol=0)
+    torch.testing.assert_close(p.value_of(address(1), timeline=branch), torch.full((8,), .2))
+    restored = MediumTermMemory()
+    restored._owner = p._owner
+    restored.restore(p.state())
+    torch.testing.assert_close(restored.value_of(address(1)), torch.zeros(8), rtol=0, atol=0)
+    torch.testing.assert_close(restored.value_of(address(1), timeline=branch), torch.full((8,), .2))
+
+
 def test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load():
     p = pool()
     p.event(address(1), address(2), verb=12, role=0, when=2, before=torch.full((8,), .2))
@@ -267,6 +281,29 @@ def test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual(monkey
     expected=(modifier(verb(before,torch.full((8,),.3)),torch.full((8,),.4)) if post else
               verb(before,modifier(torch.full((8,),.3),torch.full((8,),.4))))
     torch.testing.assert_close(f.cs.mtm.value_of(updated, timeline=1),expected)
+
+
+def test_modal_aliases_preserve_actuality_after_restore_and_forgetting(monkeypatch):
+    f, verb, modifier = fixture(monkeypatch)
+    tree = ('modifier', ('change', ('lower_unary', 'subject'), 'move'), 'shift')
+    _, frame, _, _ = close(f, recording(f, tree), actions=(verb, modifier))
+    token, entry = next(iter(f.cs.mtm.entries.items()))
+    actual = f.cs.mtm.value_of(entry).clone()
+    branch = f.cs.mtm.value_of(entry, timeline=1).clone()
+    assert not torch.equal(actual, branch)
+    saved = f.cs.mtm.state()
+    restored = MediumTermMemory(capacity=f.cs.mtm.capacity, horizon=f.cs.mtm.horizon,
+        n_vectors=f.cs.nVectors, field_width=f.cs.mtm.field_width,
+        match_cos=f.cs.mtm.match_cos, mint_count=f.cs.mtm.mint_count)
+    restored._owner = f.cs.mtm._owner
+    restored.restore(saved)
+    torch.testing.assert_close(restored.value_of(token), actual)
+    torch.testing.assert_close(restored.value_of(token, timeline=1), branch)
+    mention, = restored.entries[token].refinement['alternative_mentions']
+    assert restored.token_of(mention) == token
+    restored.forget(mention)
+    assert not restored.entries[token].refinement['alternative_mentions']
+    torch.testing.assert_close(restored.value_of(token), actual)
 
 
 @pytest.mark.parametrize('post',(False,True))

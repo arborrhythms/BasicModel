@@ -87,13 +87,13 @@ def test_coordinate_resolution_above_float32_eps():
 # Encoding: present instant + absolute angle (center) via self.t
 # ---------------------------------------------------------------------------
 def test_forward_at_t0_is_present_instant():
-    # At self.t == 0 the stamped .when is the present instant [sin0, cos0]=[0,1].
+    # At self.t == 0 the stamped .when is the present instant [(sin0+1)/2, (cos0+1)/2]=[.5,1].
     enc = _enc(t=0)
     x = torch.zeros(2, 4, 10)
     y = enc.forward(x)
     idx = enc.resolve(y.shape[-1])
     stamped = y[0, 0, idx]
-    expect = torch.tensor([0.0, 1.0], device=stamped.device)
+    expect = torch.tensor([0.5, 1.0], device=stamped.device)
     assert torch.allclose(stamped, expect, atol=1e-6)
     # encode(0) (an instant) equals the same vector.
     assert torch.allclose(enc.encode(enc.t), expect, atol=1e-6)

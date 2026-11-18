@@ -139,8 +139,8 @@ def test_word_expectation_is_a_trained_distribution_with_one_gain():
     out.loss.sum().backward()
     assert words.grad is None
     assert any(p.grad is not None and p.grad.abs().sum()>0 for p in layer.word_predictor.parameters())
-    assert layer.levels == ('word','sentence','row')
-    assert layer.enabled_levels == ('word','sentence','row')
+    assert layer.levels == ('word','field')
+    assert layer.enabled_levels == ('word','field')
 
 
 def test_word_expectation_only_reads_earlier_observations():
@@ -359,7 +359,7 @@ def test_prior_thought_reserves_the_input_allowance():
     model.train(); model.attention_budget = 4
     model._stage_attention_meters(training=True)
     # Global expectation opens no speculative thought before a closing.
-    assert owner._inter_last_meaning[0] is None
+    assert not hasattr(owner, '_inter_last_meaning')
     assert model._pending_attention_meters[0].spent == 0
     assert model._pending_attention_meters[0].remaining == 4
 

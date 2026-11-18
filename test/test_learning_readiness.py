@@ -179,10 +179,9 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
     force_absolute_reading(loaded)
     try:
-        report = read_validation(loaded, sentences=4, gain=0.)
-        assert report['predicted_targets'] == 2
-        assert len(report['thought']) == 2
-        assert all(row['answered'] for row in report['thought']), report['thought']
+        report = read_validation(loaded, sentences=4)
+        assert len(report['observations']) == 4
+        assert all(row['occurrences'] for row in report['observations'])
         assert loaded._fineweb_training_progress['sentences'] == 3
     finally:
         loaded.End()

@@ -317,13 +317,12 @@ def test_output_ownership_excludes_understanding_and_expectation():
     model, registry, store, refs = setup()
     owner = model._concept_owner()
     model.conceptualSpaces = torch.nn.ModuleList([owner])
-    parameters = (list(owner.expect_stack.parameters()) + list(owner.intuit_stack.parameters())
+    parameters = (list(owner.expect_stack.parameters())
                   + list(owner.intuition.parameters()))
     optimizer = SimpleNamespace(param_groups=[dict(params=parameters)])
     groups = BasicModel.objective_parameter_groups(model, optimizer)
     assert {id(p) for p in owner.intuition.parameters()} <= {id(p) for p in groups['output']}
     assert {id(p) for p in owner.expect_stack.parameters()} <= {id(p) for p in groups['expectation']}
-    assert {id(p) for p in owner.intuit_stack.parameters()} <= {id(p) for p in groups['output']}
     root = Idea(observed=torch.full((owner.outputShape[-1],), .5))
     term = seed(owner, Term(('sym',99),root,root,(.8,.2),idea(registry,refs[1]),(root,),(1.,)*4),QueryWorkBudget(256))
     value = selected(owner,term)[0].roles.sum()
@@ -454,7 +453,7 @@ def test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_
     model.answer_probe=torch.nn.Linear(D,1,bias=False)
     with torch.no_grad():model.answer_probe.weight.fill_(1/D)
     def read(state,sentence,active,view,registry):
-        prediction=model.answer_probe(view['record'].root).flatten()
+        prediction=model.answer_probe(view['record'].idea_root).flatten()
         cost=(prediction-.8).square()
         registry.add('answer',cost,category='prediction',objective='output')
         return cost

@@ -364,12 +364,6 @@ def write_knowing(model, evidence, row):
             pair = torch.minimum(live, code[:, None]).sum(0) / code.sum().clamp_min(1e-12)
             additions[int(slots[0]), row] = pair * locations[:, None]
     carrier._concept_activations = torch.maximum(existing, additions)
-    teacher = getattr(model, '_intuition_teacher', None)
-    if teacher is not None:
-        from IntuitionField import observed
-        from SentenceField import knowing
-        target, _ = observed(space, replace(knowing(model), evidence=additions.detach()))
-        model._intuition_teacher = torch.maximum(teacher, target[:, :teacher.shape[1]])
 
 
 def operand(rule, slot):

@@ -32,8 +32,8 @@ def test_ladder_shape_and_rungs():
     key = enc.encode(torch.tensor(37.0))
     assert key.shape[-1] == 4
     # Two TRUE pairs: each rung is a unit phasor (constant norm sqrt(2) total).
-    assert math.isclose(float(key[..., :2].norm()), 1.0, abs_tol=1e-5)
-    assert math.isclose(float(key[..., 2:].norm()), 1.0, abs_tol=1e-5)
+    assert math.isclose(float((2*key[..., :2]-1).norm()), 1.0, abs_tol=1e-5)
+    assert math.isclose(float((2*key[..., 2:]-1).norm()), 1.0, abs_tol=1e-5)
 
 
 def test_question_location_reads_the_configured_rung_ratio(monkeypatch):

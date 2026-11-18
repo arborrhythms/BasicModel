@@ -101,13 +101,13 @@ def test_live_description_owns_values_but_fact_storage_detaches():
 
 
 @pytest.mark.parametrize("depth", [1, 2, 3])
-def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(depth):
+def test_explicit_stm_layout_retains_all_roles(depth):
     from Meaning import ConceptualMeaning
-    from Layers import SymbolExpectation
     payload = torch.eye(6)[:depth]
     meaning = ConceptualMeaning.from_payload(payload, depth=depth, layout="stm")
-    expected, mask = SymbolExpectation._canonical_meaning(
-        SimpleNamespace(concept_dim=6), payload, depth, "stm")
+    expected = torch.zeros(3, 6)
+    expected[:depth] = payload[[1, 2, 0]] if depth == 3 else payload.flip(0)
+    mask = torch.arange(3) < depth
     torch.testing.assert_close(meaning.roles, expected)
     torch.testing.assert_close(meaning.role_mask, mask)
 

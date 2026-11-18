@@ -236,12 +236,18 @@ def reconstruct(language, record, programs, positions, stm=None):
                 operand = frame[role:role+1]
                 if band is not None:
                     value = torch.cat((value[..., :start], operand[..., start:end], value[..., end:]), -1)
-                if transaction and child[0] != 0:
+                selected_leaf = (child[0] == 0 and getattr(program, 'operation_resolved', None) is not None
+                                 and bool(program.operation_resolved[index, role]))
+                if transaction and (child[0] != 0 or selected_leaf):
                     # The consumer may read an off-stack identity or a typed
                     # reference in place of the prior publication. Transport
                     # the inverse discrepancy back to that producer's chart.
                     # A numerical edge between the two has exactly zero shift.
-                    published = program.operation_values[child[2], 2:3]
+                    # A selected reference can replace a word leaf as well
+                    # as an intermediate. Its producer is the recorded word,
+                    # never the scored reconstruction target.
+                    published = (program.leaves[child[1]:child[1]+1] if selected_leaf else
+                                 program.operation_values[child[2], 2:3])
                     value = _transport_reread(value, operand, published, domain,
                                               getattr(face, 'meaning_layout', None))
                 pending.append((child, value, domain, exact_path and native_exact))

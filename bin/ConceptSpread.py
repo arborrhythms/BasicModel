@@ -26,6 +26,8 @@ def open_prediction(model, present, *, sid=None):
         raise RuntimeError('concept prediction exceeds constructed streams')
     rows = torch.arange(owner._order_caps()[0], device=present.device)
     knowing = owner._observed_knowing[:B, rows].detach().clone()
+    from IdeaRead import open_read
+    open_read(model, knowing)
     if owner.concept_predictor is not None:
         from Expectation import ActivationPredictor
         keys = owner.similarity_codebook.lookup_rows(rows).detach()[None].expand(B, -1, -1).clone()
@@ -53,9 +55,7 @@ def loss(model):
 
 
 def complete(model, present, registry):
-    """Expectation learns the full input; intuition learns the kept thought."""
+    """Expectation learns the full input, with omission as its only teacher."""
     value = loss(model)
     if value is not None:
         registry.error('expectation.concepts', value, 1., mask=present, category='expectation')
-    from IntuitionField import complete as complete_intuition
-    complete_intuition(model, present, registry)

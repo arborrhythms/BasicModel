@@ -127,11 +127,12 @@ def refresh_words(model, sentence):
         source._ar_word_object_atoms = codes(rows, words)
     bank = lookup_view(source, 'lookup_rows')
     if torch.is_tensor(bank):
-        # Aligned perception's bank is WORD followed by OBJECT; mixing has
-        # the one object bank. Both keep their construction-time extents.
-        offset = 0 if mixing else bank.shape[1] // 2
-        for batch, column, row in changed:
-            bank[batch, offset + column] = row
+        # Aligned perception's bank is WORD followed by OBJECT. Mixing's
+        # word-only inverse bank does not change when its referent changes.
+        offset = bank.shape[1] // 2
+        if not mixing:
+            for batch, column, row in changed:
+                bank[batch, offset + column] = row
         lexical = torch.full_like(bank, -1)
         lexical[:, :words.shape[1]] = words
         if not mixing:

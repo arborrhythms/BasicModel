@@ -13,6 +13,41 @@ from Meaning import ConceptualMeaning
 
 
 def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+    """Finish the read's existing journal without changing its numerical work."""
+    reader = _finish_clause(language, program, meaning=meaning, depth=depth, registry=registry)
+    while True:
+        try:
+            next(reader)
+        except StopIteration as ended:
+            return ended.value
+
+
+class ComprehensionClose:
+    """Consume each action's operands while comprehension holds them.
+
+    The input program is the word formula. This reader never installs a
+    numerical value or closing metadata in that formula's pinned tree.
+    """
+    def __init__(self, language, program, numerics, registry):
+        self.reader = _finish_clause(language, program, registry=registry, numerics=numerics)
+        self.action = next(self.reader)
+
+    def consume(self, action):
+        if self.action != action:
+            raise ValueError('comprehension and its closing read different actions')
+        self.action = next(self.reader)
+
+    def finish(self):
+        if self.action is not None:
+            raise ValueError('comprehension closed before consuming the formula')
+        try:
+            next(self.reader)
+        except StopIteration as ended:
+            return ended.value
+        raise RuntimeError('a completed comprehension did not return its clause')
+
+
+def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, numerics=None):
     """Finish an open reading from the values its operations already produced.
 
     The action record supplies grammar metadata only. Numerical values come
@@ -27,13 +62,15 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     from Interpret import leaf_readings
     interpretations = leaf_readings(language, program.actions, len(program.leaves),
                                     forced=program.interpret_forced)
-    orders = program.leaf_orders
-    if program.reference_orders is not None:
+    def number(name):
+        return getattr(program, name) if numerics is None else numerics.closing_value(name)
+    orders = number('leaf_orders')
+    if numerics is None and program.reference_orders is not None:
         orders = (program.reference_orders if orders is None else
                   torch.where(program.reference_orders >= 0, program.reference_orders, orders))
     # The carried address identifies the referent; the leaf keeps its own
     # captured content. Site eligibility comes from its reading and position.
-    refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+    refs = (program.reference_ids if program.reference_ids is not None else program.concept_ids) if numerics is None else numerics.native_ids
     native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
     store = store_ref() if callable(store_ref) else None
@@ -58,8 +95,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     def forward_fields(leaf):
         name = forward_name(leaf)
         return {} if name is None else {'forward_identity': name}
-    values = list(program.leaves.unbind())
-    frames = program.operation_values
+    values = list(program.leaves.unbind()) if numerics is None else numerics.leaves
+    frames = number('operation_values')
     if frames is None:
         raise ValueError('the open reading has no numerical operation journal')
     stack, introductions = [], {}
@@ -100,6 +137,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     for action, (kind, local, word) in enumerate(program.actions.detach().cpu().tolist()):
         if kind < 0:
             break
+        yield action
+        # Comprehension replaces its journal functionally. Earlier operand
+        # views keep their old base; this action reads the current version.
+        frames = number('operation_values')
         if kind == 0:
             has_point = reference_has_point(int(refs[word]),
                 program.reference_relations is None or not bool(program.reference_relations[word]))
@@ -149,20 +190,20 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         operands = tuple(stack[-arity:])
         del stack[-arity:]
         relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
-        selected_refs = (None if program.operation_refs is None else
-                         list(program.operation_refs[action].tolist()))
+        selected_refs = (None if number('operation_refs') is None else
+                         list(number('operation_refs')[action].tolist()))
         for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
             operand['value'] = actual
             if program.operation_relations is not None:
                 operand['has_point'] = not bool(program.operation_relations[action, role])
-            if program.operation_refs is not None:
+            if number('operation_refs') is not None:
                 selected = operand
                 while selected['children']:
                     headed = getattr(selected['rule'], 'head_role', 0)
                     if not headed:
                         break
                     selected = selected['children'][headed-1]
-                reference = int(program.operation_refs[action, role])
+                reference = int(number('operation_refs')[action, role])
                 rule = catalog[local]
                 mode = operation_modes(rule).get('argin'+str(role+1))
                 binding_order, binding_mode = binding_spec(
@@ -254,8 +295,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             parent['identity_handle'] = int(record[0])
             parent['identity_event'] = tuple(record.tolist())
             parent['identity_action'] = action
-        if program.timeline_actions is not None:
-            stamp, alternative, origin, suppressed = program.timeline_actions[action].tolist()
+        if number('timeline_actions') is not None:
+            stamp, alternative, origin, suppressed = number('timeline_actions')[action].tolist()
             parent.update(order=stamp, timeline=bool(alternative), event_origin=origin-1,
                           suppressed_event=bool(suppressed), timeline_order=True)
         if getattr(program, 'close_references', False):
@@ -340,6 +381,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         stack.append(parent)
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
+    yield None
     if len(stack) not in (1, 3):
         raise ValueError('a completed field must have one or three slots')
 
@@ -419,12 +461,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             verb_meaning=None if source_action is None else frames[source_action, 1],
             operation=None if semantic['rule'] is None else semantic['rule'].method_name,
             alternative=node.get('timeline', False), modifiers=tuple(modifiers),
-            timeline_order=program.timeline_actions is not None,
-            timeline_values=program.timeline_values,
-            case_value=(program.case_values[action] if action is not None and program.case_selected is not None
-                       and bool(program.case_selected[action]) else None),
+            timeline_order=number('timeline_actions') is not None,
+            timeline_values=number('timeline_values'),
+            case_value=(number('case_values')[action] if action is not None and number('case_selected') is not None
+                       and bool(number('case_selected')[action]) else None),
             leaf_count=len(node['leaves']),
-            origins=program.identity_origins, ids=program.identity_ids, values=program.identity_values)
+            origins=program.identity_origins, ids=program.identity_ids, values=number('identity_values'))
 
     composition_cache = {}
     def composition(node):
@@ -463,7 +505,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     getattr(rule, 'method_name', None) == 'interpret' else -1,
                 formal_name=None if rule is None else operation_name(rule),
                 interpretation=current.get('interpretation'))
-            if program.tree is not None:
+            if numerics is not None:
+                composition_cache[key] = numerics.composition(composition_cache[key],
+                    action=current.get('action'), word=current['leaves'][0] if rule is None else None)
+            elif program.tree is not None:
                 composition_cache[key] = program.tree.install_composition(composition_cache[key],
                     action=current.get('action'),
                     word=current['leaves'][0] if rule is None else None)
@@ -554,6 +599,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         for slot, node in enumerate(stack)),
         (*language._compose_binary_rules, *language._compose_unary_rules))
 
+    def node_order(item):
+        # The completed-field schema describes an unknown source as a
+        # percept at zero. This does not allocate or change its concept order.
+        return max(0, int(item['order']))
+
     def recover(root, *, top=False):
         # Ask belongs to the kept head, including the lexical early returns.
         # An ask inside an operand does not erase its enclosing assertion.
@@ -634,7 +684,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             relative = request.get('introduction', False)
             description = item['children'][(getattr(item['rule'], 'head_role', 0) or 1)-1] if relative else None
             return Clause(ConceptualMeaning.from_description(point), point=point,
-                subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=item['order'],
+                subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=node_order(item),
                 children=(recover(description),) if relative else (),
                 evidence=metadata(item['leaves'])['evidence'], **bands(item),
                 reference_request=request, composition=composition(item), identity=identity_record(item))
@@ -861,12 +911,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             from ThoughtReferences import bindings
             described = replace(described, bindings=dict(bindings(described), _withheld_symbols=tuple(withheld)))
         evidence = metadata(root['leaves'])
-        def node_order(item):
-            # The journal node already read denoted_order (or the native
-            # timeline capture). Do not reconstruct a second stamp from heads.
-            # A completed point with an unknown source is a percept at zero;
-            # this schema coercion never writes an allocator order.
-            return max(0, int(item['order']))
         evidence['order'] = node_order(root)
         formations = tuple(dict(formation, role=role) for role, item in enumerate(role_nodes)
             if item is not None and (formation := item.get('formation') or head(item).get('formation')) is not None)
@@ -931,7 +975,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             support = evidence['evidence']
             evidence['evidence'] = (0., 0.)
         field = Clause(described, point=None if relation else (
-            program.end_state[0] if top else value(root)), relation=relation,
+            number('end_state')[0] if top else value(root)), relation=relation,
             refs=references, children=tuple(children),
             subject_word_id=subject_word_id(role_nodes[0]),
             factored_refs=factored_refs, composition=composition(root),

@@ -206,7 +206,7 @@ def test_getparameters_byte_identical_when_inactive():
     cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
     # No admitted word: forced interpret now activates feature parameters.
     expected = (*cs.params, *cs.components.parameters(), *cs.expect_stack.parameters(),
-                *cs.intuition.parameters(), *cs.intuit_stack.parameters())
+                *cs.intuition.parameters())
     assert [id(p) for p in cs.getParameters()] == list(dict.fromkeys(map(id, expected)))
 
 

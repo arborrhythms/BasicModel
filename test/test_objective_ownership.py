@@ -120,7 +120,9 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         assert all(a is b for a, b in zip(reconstructed, answered))
         assert reconstructed[0].primed is reconstructed[1].primed
         assert reconstructed[0].primed.rows.shape[0] == 4
-        assert model._word_symbol_concept_ids() is None
+        from PrependedSymbols import word_view
+        torch.testing.assert_close(model._word_symbol_concept_ids(),
+                                   word_view(model.inputSpace, 'concept_ids'))
         report = model.ownership_gradient_diagnostics(optimizer)
         assert report['conflicts'] == 0
         writers = {r['owner'] for r in report['parameters'] if r['writers']}

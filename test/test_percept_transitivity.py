@@ -13,8 +13,8 @@ def test_native_kept_readings_have_transitive_percept_codes(tmp_path, monkeypatc
     certificates = []
     commit = BasicModel._commit_sentence
 
-    def committed(model, state, sid, active, observations, predictions, wins):
-        result = commit(model, state, sid, active, observations, predictions, wins)
+    def committed(model, state, sid, active, observations, wins):
+        result = commit(model, state, sid, active, observations, wins)
         derived = model._concept_owner().similarity_codebook.mereology
         towers = (derived._native(0), derived._native(1))
         identity = model.perceptualSpace.percept_store.identity

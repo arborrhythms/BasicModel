@@ -10,10 +10,11 @@ from Spaces import _concept_alloc_of
 class PartClosing:
     _assertions = frozenset(('part', 'assertPart', 'whole', 'implies', 'equal', 'define'))
 
-    def __init__(self, owner, store):
+    def __init__(self, owner, store, *, working=None):
         self.owner, self.store = owner, store
         self.alloc = _concept_alloc_of(owner)
-        self.parts = self.alloc.parts
+        self.working = working
+        self.parts = self.alloc.parts if working is None else working.parts
         self._terms, self._planned, self._entries = {}, {}, {}
         self._mentions = {}
         self.occurrence_groups = {}
@@ -23,6 +24,26 @@ class PartClosing:
         self.time = None
         self.content_key = None
         self.source_trust = 1.
+        self.staged_points = {}
+
+    def _working_reference(self, reference):
+        """Import a referenced chain, without asserting it or allocating concepts."""
+        if self.working is None or reference[0] != RELATION:
+            return reference
+        row = reference[1]
+        if not self.parts.contains(row):
+            source = self.alloc.parts
+            left, right = (self._working_reference(ref) for ref in source.references(row))
+            self.parts.add(left, right, symbol=row,
+                truth_plus=float(source.truth_plus[row]), truth_minus=float(source.truth_minus[row]))
+        return reference
+
+    def _pair(self, left, right, pair, surprise):
+        if self.working is not None:
+            existing = self.alloc.parts.find(left, right)
+            if existing is not None:
+                self._working_reference((RELATION, existing))
+        return self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1], surprise=surprise)
 
     def _point(self, symbol):
         if symbol in (None, -1, 0):
@@ -142,6 +163,63 @@ class PartClosing:
             record['resolved'] = False
         return record
 
+    def prepare_clause(self, clause):
+        """The native close's postorder, shared by working and kept entries."""
+        nodes, seen, visiting = [], set(), set()
+        def visit(value):
+            if id(value) in visiting:
+                raise ValueError('a temporary derivation cannot contain an object cycle')
+            if id(value) in seen:
+                return
+            visiting.add(id(value))
+            for child in (*value.children, *value.companions):
+                visit(child)
+            visiting.remove(id(value))
+            seen.add(id(value))
+            nodes.append(value)
+            self.prepare(value)
+        visit(clause)
+        return nodes
+
+    @staticmethod
+    def keeps(clause, root):
+        return (clause is root or clause in root.companions
+                or clause.reference_request is not None or clause.identity is not None)
+
+    def stage(self, clause, *, trust=1.):
+        """Use the ordinary semantic close in private STM, without its effects.
+
+        Only the native writer's ideas, mentions, events and relation pairs
+        are materialized. Intermediate numerical operations are not entries.
+        """
+        if self.working is None:
+            raise ValueError('semantic staging requires a private working store')
+        self.source_trust = min(1., abs(float(trust)))
+        nodes = self.prepare_clause(clause)
+        roots = {}
+        for value in nodes:
+            if not self.keeps(value, clause):
+                continue
+            sentence = value is clause
+            pair = value.evidence if trust >= 0 else value.evidence[::-1]
+            entry = self.close(value, pair=pair, sentence=sentence, force=not sentence)
+            roots[id(value)] = entry
+            record = self.prepare(value)
+            point = self.event_point(value, entry[0])
+            if point is not None:
+                event = replace(ConceptualMeaning.from_description(point),
+                    bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
+                    extension=getattr(value.identity.get('result_composition'), 'extension', ()))
+                self.working.append_meaning(event,
+                    evidence=tuple(pole*self.source_trust for pole in pair))
+            if record.get('mention'):
+                mention = entry
+                if entry[0] != OCCURRENCE:
+                    mention = self._write_occurrence(record, pair=(0., 0.), sentence=False,
+                        metadata=value.meaning, stream=-1, surprise=-1.)
+                self._mentions[id(record['value'])] = mention
+        return roots[id(clause)], roots
+
     def preflight(self):
         # At worst every binary semantic term is a relation and every leaf or
         # compressed child an occurrence. Reserve the whole transaction first.
@@ -152,12 +230,13 @@ class PartClosing:
             raise OverflowError('LTM1 construction capacity exhausted before close')
         self.owner._preflight_concept_allocation(0, context='semantic closing')
 
-    def prediction_point(self, record):
+
+    def closing_point(self, record):
         """One entry value: the compressed idea or the chain's head idea."""
         if record['resolved'] and record['value'].operation not in self._assertions:
             return record['value'].point
         for child in record['children']:
-            point = self.prediction_point(child)
+            point = self.closing_point(child)
             if point is not None:
                 return point
         reference = record['reference']
@@ -393,16 +472,25 @@ class PartClosing:
         extension=getattr(term,'extension',())
         if extension:
             value=replace(value,extension=extension)
-        first = len(self.store)
-        row=self.store.append_meaning(value,evidence=pair,surprise=surprise,
-            entry=getattr(self,'episode',None) if sentence else None)
-        if metadata is not None:
-            for index in range(first, len(self.store)):
+        destination = self.store if self.working is None else self.working
+        first = len(destination)
+        entry = getattr(self, 'episode', None) if sentence else None
+        if self.working is not None and entry is None and value.extension:
+            from EpisodicMemory import for_meaning
+            entry = for_meaning(self.store, value)
+        names = {} if self.working is None else {'name': self.working.name_for(term,
+            sentence=sentence, count=max(1, sum(pole > 0 for pole in pair)))}
+        row=destination.append_meaning(value,evidence=pair,surprise=surprise,
+            entry=entry, **names)
+        if metadata is not None and self.working is None:
+            for index in range(first, len(destination)):
                 self.owner.mtm.hold_pending(self.store.occurrence_of(index),
                     replace(metadata,bindings=marks))
-        result=OCCURRENCE,self.store.row_name(row)
-        self.occurrence_groups[self.store.occurrence_of(row)] = tuple(
-            self.store.occurrence_of(index) for index in range(first, len(self.store)))
+        result=OCCURRENCE,destination.row_name(row)
+        if self.working is not None:
+            self.staged_points[id(term)] = destination.slots[row]
+        self.occurrence_groups[destination.occurrence_of(row)] = tuple(
+            destination.occurrence_of(index) for index in range(first, len(destination)))
         self.occurrences.add(result[1])
         return result
 
@@ -454,7 +542,7 @@ class PartClosing:
         assertion = term.operation in self._assertions and len(children) == 2
         if (not sentence and not force and record['reference'] is not None
                 and (not children or term.operation not in (*self._assertions, 'change', 'verb'))):
-            result = record['reference']
+            result = self._working_reference(record['reference'])
         elif self.entry_kind(record, sentence=sentence, force=force) == OCCURRENCE:
             pair = tuple(pole * self.source_trust for pole in pair)
             result = self._write_occurrence(record,pair=pair,sentence=sentence,
@@ -466,24 +554,22 @@ class PartClosing:
             if from_trust and metadata is not None and not metadata.polarity:
                 pair = pair[::-1]
             pair = tuple(pole * self.source_trust for pole in pair)
-            row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
-                surprise=surprise)
+            row = self._pair(left, right, pair, surprise)
             self.edges.append(row)
             if term.operation == 'define':
                 # A kept definition consists of ordinary Part rows. Its
                 # opposite direction is not a new durable relation kind.
-                reverse = self.parts.add(right, left, truth_plus=pair[0], truth_minus=pair[1],
-                                         surprise=surprise)
+                reverse = self._pair(right, left, pair, surprise)
                 self.edges.append(reverse)
             promoted = False
-            if assertion and term.operation in ('equal', 'define', 'part', 'assertPart') and pair[0] > 0:
+            if self.working is None and assertion and term.operation in ('equal', 'define', 'part', 'assertPart') and pair[0] > 0:
                 from FamiliarTier import define_pending
-                subject = children[0]['value']
-                while len(subject.children) == 1 and subject.operation not in ('sign','bind'):
-                    subject = subject.children[0]
-                if subject.operation == 'sign' or subject.interpretation == 'no_op':
+                if 'percept_value' in children[0]:
                     # Commit owns the new occurrence and opens its independent
                     # token before finish_definitions resolves this evidence.
+                    # This is the close's selected percept request. A unary
+                    # operation over a sign may instead denote another idea;
+                    # its descendant's null token is not that idea's token.
                     other_word = children[1]['value'].word_id
                     self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append(
                         (left, right, None, other_word, True))
@@ -498,7 +584,7 @@ class PartClosing:
                     promoted = define_pending(self.owner, left, right, word=word)
                     if not promoted:
                         self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append((left, right, word, None, False))
-            if assertion and term.operation in ('equal', 'define'):
+            if self.working is None and assertion and term.operation in ('equal', 'define'):
                 self.alloc.singletons.add(right[1] if right[0] == SYMBOL else right)
                 if not promoted:
                     self._observe_equality(left, right, record, pair)

@@ -139,7 +139,7 @@
            Future/past What queries will vary objective input availability
            rather than paying for a second predictive faculty. -->
       <sentenceExpectation>false</sentenceExpectation>
-      <sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>
+      <symbolFieldLossWeight>0.0</symbolFieldLossWeight>
 
       <autoload>false</autoload>
       <autosave>true</autosave>

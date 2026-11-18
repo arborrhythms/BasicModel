@@ -67,7 +67,7 @@ def test_episode_columns_compact_keep_prior_entries_and_load_empty_entries():
     with pytest.warns(UserWarning, match='retired'):
         restored.load_state_dict(saved)
     assert (restored.episodic_concepts == -1).all() and not restored.episodic_values.any()
-    assert int(restored.truth_schema) == 17
+    assert int(restored.truth_schema) == 18
 
 
 def test_content_query_retains_entries_in_requesting_stm_and_preserves_perception(tmp_path, monkeypatch):

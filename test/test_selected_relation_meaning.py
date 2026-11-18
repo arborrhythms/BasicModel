@@ -386,11 +386,6 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
-    predict = discourse.sentence_prediction_cost
-    def capture(depths, payloads, mask, **kwargs):
-        calls.append((depths, payloads, kwargs))
-        return predict(depths, payloads, mask, **kwargs)
-    monkeypatch.setattr(discourse, 'sentence_prediction_cost', capture)
     store = LTM0(8, capacity=16)
     monkeypatch.setattr(
         registry, "execute",
@@ -398,23 +393,22 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     # This observation starts without the catalogue fixture's asserted pair.
     cs._concept_allocator.parts.remove(_a[1], _b[1])
     before_parts = set(cs._concept_allocator.parts.indices().tolist())
-    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
-    assert len(store) == 0 and len(calls) == 1
-    row = ('sym', store.parts.find(_a[1], _b[1]))
+    model, _, _ = commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+    # The first operand is order one. Native comprehension keeps its idea
+    # occurrence, whose referent is the same selected concept; the old
+    # helper silently treated both operands as order zero.
+    assert len(store) == 1
+    assert store.meaning_of(0).role_refs[0] == _a
+    field = model._sentence_fields[0][0]
+    row = store.location(field.row_id)
     assert set(store.parts.indices().tolist()) == before_parts | {row[1]}
     stored = store.meaning_of(row)
     assert "mode" not in stored.metadata()
-    assert stored.role_refs[:2] == (_a, _b)
+    assert stored.role_refs[:2] == (store.occurrence_of(0), _b)
     assert stored.role_mask.tolist() == [True, True, False]
     assert store.row(row)["evidence"] == (0., 0.)
-    assert calls[0][0] == [1]
-    assert calls[0][2]["layout"] == "infix"
-    torch.testing.assert_close(calls[0][1][0][0], leaves[0])
-    assert not bool(calls[0][1][0][1:].ne(0).any())
     assert not stored.roles.requires_grad
-    # The live head still trains its selected value; no operation vector or
-    # second operand is an entry in the predictor's target.
-    assert calls[0][1][0].requires_grad
+    assert discourse.situation_references()[0].occurrence == ('sym', row[1])
 
 
 @pytest.mark.parametrize('word_available', [True, False])
@@ -426,9 +420,9 @@ def test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept(monk
     journal = SimpleNamespace(_choice_refs=actual_refs,
         _choice_values=torch.stack((leaves[0], leaves[1], entry.end_state[0]))[None,None])
     host = SimpleNamespace(_concept_owner=lambda:cs, languageSpace=language,
-        symbolSpace=SimpleNamespace(), _reconstruction_stack=lambda:journal,
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), _reconstruction_stack=lambda:journal,
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[a[1],b[1] if word_available else -1]])),
-        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=SimpleNamespace(capture=lambda *args:None))))
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=SimpleNamespace(capture=lambda *args, **kwargs:None))))
     positions=torch.tensor([[0,1]])
     captured,=BasicModel._program_entries(host,
         (positions,entry.actions[None],entry.targets[None],torch.tensor([[-1,-1,0]])),

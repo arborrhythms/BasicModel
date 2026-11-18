@@ -6,8 +6,6 @@
     "wordExpectation": true,
     "perceptExpectationGain": 0.0,
     "symbolExpectationGain": 0.0,
-    "rowExpectationGain": 0.0,
-    "documentExpectationGain": 0.0,
     "expectationPrime": false,
     "explorationUniformFraction": 1.0,
     "explorationTemperature": 1.0

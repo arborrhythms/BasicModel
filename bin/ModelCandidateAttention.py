@@ -177,7 +177,7 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
     prime = values.new_zeros(B, count, 2)
     discourse = getattr(model.symbolSpace, 'expectation', None)
     if not expectation_free and discourse is not None and getattr(model, 'expectation_prime_enabled', True):
-        for b, pending in enumerate(discourse._inter_last_meaning[:B]):
+        for b, pending in enumerate([None] * B):
             prediction = None if pending is None else pending.prediction
             if prediction is not None and prediction.symbol_ids is not None:
                 native_ids = prediction.symbol_ids.to(values.device)

@@ -232,7 +232,7 @@ def _warn_whole_migration(diagnostics):
 def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
     """Move persisted location bands; concept IDs and occurrence keys do not move."""
     import torch
-    from Spaces import WhereEncoding
+    from Spaces import WhereEncoding, unsigned_phase, signed_phase
     start, end = slices['wholes']
     width = end - start
     delta = (copies - 1) * width
@@ -256,12 +256,17 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
         # Zero/empty bands and numerical content are not registry locations.
         finite = torch.isfinite(value).all(-1)
         safe = torch.where(finite[..., None], value, 0.)
-        indices = old.decode_index(safe)
+        centered = checkpoint.get('coordinate_encoding') != 1
+        indices = old.decode_index(unsigned_phase(safe) if centered else safe)
         encoded = old.encode(indices).to(value)
+        if centered:
+            encoded = signed_phase(encoded)
         located = finite & (indices >= 0) & (indices < capacity + delta)
         located &= torch.isclose(value, encoded, rtol=0, atol=2e-5).all(-1)
         moved = address(indices)
         rewritten = new.encode(moved).to(value)
+        if centered:
+            rewritten = signed_phase(rewritten)
         changed += int((located & (value != rewritten).any(-1)).sum())
         return torch.where(located[..., None], rewritten, value)
 

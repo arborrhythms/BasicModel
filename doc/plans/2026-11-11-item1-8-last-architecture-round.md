@@ -20816,3 +20816,10813 @@ The staged whitespace check reports a blank line at EOF in
 `bin/Assessment.py` and `test/test_item18_operator_cost.py`. Both files
 are byte-identical to main; they are retained without an unrelated
 formatting edit. There are no unresolved merge entries.
+
+## 52. Review of the merge, and what remains of item 1.8 (Claude, 2026-11-16)
+
+### 52.1 The merge: accepted
+
+The merge of §51 is commit `5721692530` on `performance`, with parents
+`b568abdebe` and `dd26587e07`. Alec then moved main to it himself
+(`git merge --ff-only performance`), so main and `performance` are the
+same commit. Nothing is pushed.
+
+*Checked by Claude.*
+
+- The edits made by hand beyond the automatic merge (read with
+  `git show --remerge-diff`) are three in the source and tests, as §51
+  says, and each is right:
+  - `Models._run_sentence_word_bricks` keeps the selected leaf mask on
+    exit, in place of the mask of the sentences before it (§51.9).
+  - `SentenceBoundary.finish` also detaches `_attention_greedy` and
+    `_word_expectation`, which the sentence owns since the merge (§51.8).
+  - The stub of `test_item18_trust.py` scores the other binary operators
+    at minus infinity, in place of -1e6 (§51.10). Codex reports that the
+    test failed on main too from the captured stream, so it is a defect
+    of the fixture.
+- The seed of §50.2 (`.abs()` in `ConceptPlacement.seed`) and round C's
+  `OrderPrime.from_predictions` block are in the merged source.
+- On the merged tree: both stopping gates,
+  `test_item18_round_c_continuation.py`, `test_item18_parts_round_c.py`,
+  `test_item18_trust.py`, `test_sentence_owned_attention.py`,
+  `test_sentence_boundary.py` and the three repaired tests: 46 passed.
+
+*Not checked by Claude:* the default sweep (Codex: 7234 cases, 6894
+passed, 338 skipped, 2 unexpected passes, none failed), the records of
+P3 behind Alec's decision of §51.6, and the timings.
+
+*Recorded.*
+
+- The merge shows no gain in time on the one measurement taken: sixteen
+  lesson sentences take 27.25 seconds of `runBatch` merged and 27.26 on
+  main before it, while the walks fall from 34 walks and 1,088
+  iterations to 18 walks and 215 steps. This agrees with §11 of the
+  plan of the `performance` branch: the walk was two percent of a
+  sentence's time.
+- The draws that `Attention.finish_narrowing` makes and discards, to
+  keep the random stream equal to the old main's, are still there. §11
+  of that plan had them go at the merge (*default*). They go with part
+  B, which rewrites the walk; taken out alone they would only cost the
+  exact tests of the steps their oracle.
+
+### 52.2 What remains of this item
+
+By §43 as amended: the sentence as one block, the teacher of the walk of
+attention, and the push. The rules of the sentence as one block are
+§12.2 of `doc/plans/2026-11-14-attention-in-thinking.md`, in three
+groups; Alec's final words on it are §48.2 here.
+
+| Part | Rules | What it changes |
+| --- | --- | --- |
+| A. A look carries its expectation | 1 to 3 | Results. Each step of the walk forecasts over its bracket's span, then reads; the difference is that look's surprise and is given to the chooser. |
+| B. The walk is taken as the words are read | 4 to 9 | Results. The loop over words becomes thinking that calls `attend` for each look; reading in order is taught first; the allowance belongs to the presentation; attention finds the word spans; `unfocus`. |
+| T. The teacher of the first walk | assessment §9.2, §11 | Results. It needs the narrowing of a word read with both lanes (§52.3). |
+| C. A step is tensor code | 10 to 14 | Nothing in results (10 to 13); then one captured graph for a sentence (14). |
+
+*The names of §12.2, checked on the merged source.* All are there as
+written: `narrow_step`, `narrowing_stable`, `advance_narrowing`,
+`finish_narrowing` and `_captured_narrowing` (`bin/Attention.py`);
+`_codebook_retrieval_prior` (`bin/Attention.py`, called from
+`bin/ModelAttention.py`); `stage_input`, `stage_expectation`,
+`forecast_percept` and `observe_percept` (`bin/ModelAttention.py`);
+`_pushed_word_slab` (`bin/Models.py`); `commit_word_reference_slab` and
+`attend` (`bin/Language.py`); `SentenceField` (`bin/SentenceAttention.py`);
+`SymbolExpectation.expect` (`bin/Layers.py`); `ConceptSpread.rule_order`.
+Two differ from what §12.2 says:
+
+- `unfocus` is not built; `focus` and `mint` are operators
+  (`FocusLayer`, `MintLayer`, `bin/Language.py`). Rule 9 builds it.
+- `rule_order` has one caller, `Models._thought_grammar_context`. Rule
+  13 named `infer` as its reader after round B; that is not what the
+  source has.
+
+*Carried to these parts from earlier sections.*
+
+- The lesson's first mismatches have one cause (§49.9.1, §50.3): the
+  composed root discards a nonempty left field by its operator's
+  projection, while an unreferenced generated terminal stimulates the
+  field from its point. It goes with part B.
+- With one walk for a sentence, the last sentence of a packed row can
+  be left with no accepted word (§11 of the plan). Rule 7 answers it.
+- The predictor of `SymbolExpectation` stays one for each order until
+  the loop over words is replaced (§48.8, *default*). It is settled with
+  part B.
+- `test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement`
+  compares at a tolerance a tick of the clock can cross (§11 of the
+  plan). It passes on this machine; it is repaired if it fails again.
+
+### 52.3 The word left with both lanes: what the record says
+
+The assessment recorded which concept gives each lane (§10.13 of
+`doc/plans/2026-11-15-assessment.md`, on round B's source):
+
+- `This`, `Felix` and `What` are each *one* concept holding both lanes
+  at the word's own extent, for 1.0 and against 1.0, with no defined
+  object. So it is the second case of §11 there, not two concepts of one
+  word.
+- `is` and `this` are read with the against lane alone (for 0.0, against
+  1.0), and are minted.
+
+*Claude's reading.* Alec's rule stands: such a word is not minted while
+both lanes are active, and attention narrows first. For one concept,
+narrowing can only mean descending into the word's parts, which
+`Attention.narrowing_mask` forbids at a known word. But why a known word
+read at its own extent has an against lane at all is not known, and `is`
+has only that lane. A design of the narrowing act made before that is
+known would be made on a guess. *Default:* the next text has Codex find
+what writes those lanes, on the merged source, with no repair; the
+teacher and the narrowing act are specified from its answer. The record
+above is from before round C and is taken again first.
+
+### 52.4 The order of the parts, for Alec
+
+*Recommended:* A, then B, then T in this item; the push; item 1.7; and
+part C after item 1.7, with the items it overlaps.
+
+- Rules 10 to 13 are item 1.5's subject by another name (lookups and
+  folds as tensor operations), and rule 14 is item 1's (the compiler's
+  whole graph). §12.4 of the plan already says item 1.5 "is planned with
+  them".
+- Rule 10 makes a meaning's roles, references and bindings integer
+  tensors, and rule 12 does the same for memory's tables. Item 1.7 then
+  splits symbols from concepts and changes what those integers refer to
+  (§18.22 of its spec lists the readers). Built before item 1.7, part C
+  is built on rows that item 1.7 moves.
+- Parts A, B and T change what the model does, which is what "the last
+  architecture round" is for; part C changes only how fast.
+
+*The other choice:* all four parts in this item, as "do everything else
+in 1.8" reads, in the order C (10 to 13), A, B, T, 14.
+
+Answered in §52.5: all four parts in this item.
+
+### 52.5 Alec's answer: all four parts in this item (2026-11-16)
+
+Asked whether part C moves to after item 1.7, Alec chose "No, all in
+1.8". So parts A, B, T and C are all built in this item, before the push
+and before item 1.7.
+
+*What the first text can hold* (Claude).
+
+- *Rule 13 is already built.* `ConceptSpread.rule_order` is now one
+  stable `argsort` on the device and one `tolist` of the result; the
+  92,994 host reads the inventory counted were in an older form of it.
+  Its tuple is read by `ThoughtLTMCapability` (`expected`).
+- *So the inventory is stale.* It was taken at `7a1645e4e6`, before
+  rounds A, B and C rewrote the owners it names (`MereologicalCodes`,
+  `Memory`, `ConceptSpread`). Rules 10 to 12 are specified from where a
+  sentence reads the host on the merged source, so the inventory is
+  taken again first. It edits nothing.
+- *The teacher waits on the diagnosis of §52.3,* which also edits
+  nothing.
+- Parts A and B need neither. Claude writes their text while Codex takes
+  these readings, and the order of building after that is whichever
+  text is ready: A and B, rules 10 to 12, T, then rule 14 last.
+
+### 52.6 Codex text: the inventory again, the capture probe, and what writes both lanes (for Alec to paste)
+
+~~~
+Item 1.8 after the merge: three readings, with no change to production
+source. Read §52 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md first.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel, on main at
+5721692530 (main and performance are now the same commit). Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Edit no file under bin/. An observer or report tool may be added or
+changed under test/. Receipts and raw records stay local and are not
+linked. If a reading cannot be taken without a production edit, stop and
+write that for Alec and Claude.
+
+1. The host inventory, taken again on the merged source.
+   a. With test/sentence_host_inventory.py and
+      test/attention_host_report.py, on the native lesson of §51.3 and
+      its recorded stream: the sixteen sentences count-only, and the
+      first sentence in detail, from stage_input to the first kept close
+      and update. Show first that the observed run's parameters,
+      optimizer and random stream equal the unobserved run's.
+   b. Return the table by phase (preparation, walk, restoration, word
+      step, thought, generate walks, close) beside the table of
+      doc/plans/2026-11-14-attention-host-inventory.md; the five totals
+      of the table in §10 of
+      doc/plans/2026-11-14-attention-in-thinking.md (public tensor API
+      calls, dispatcher operations, host-read calls, scalar reads,
+      nonzero operations) beside its last column; and the thirty
+      functions with the most host reads on the first sentence, each
+      with its file, its count, its kind (Python meaning, reference or
+      binding; table lookup; menu; choice or control; text or metadata)
+      and what it reads.
+   c. For each of those thirty: the Python object it walks (a meaning's
+      roles, a reference, a binding, a registry or table, a menu, a
+      step record), who writes that object, and the largest size it
+      reaches in the lesson beside the capacity the model was built
+      with.
+   d. ConceptSpread.rule_order is now one stable argsort and one
+      tolist. Report its host reads now, and how ThoughtLTMCapability
+      uses the tuple it is given as `expected` (which entries it reads,
+      and how many).
+   e. The complete ledger stays local. Do not replace the two inventory
+      files of 2026-11-14 in doc/plans.
+
+2. The capture probe, again. Run test/attention_block_compile_probe.py
+   on the merged source for Models._run_sentence_word_bricks. Report the
+   first stop with its line and reason. Then, only in the probe's own
+   process and never in bin/, step past each stop as far as the tool
+   allows and list every further stop it reaches, each with its line,
+   its reason and the inventory kind of 1b it belongs to. If the tool
+   can report only the first stop, say so and report that one.
+
+3. What writes both lanes of a known word. Read §52.3 here, and §10.13
+   and §11 of doc/plans/2026-11-15-assessment.md. No repair, and no
+   change to Attention.narrowing_mask or to any chooser.
+   a. Take the table of §10.13 again on the merged source: the same
+      four-epoch lesson, then the assessment's reads of the same texts.
+      For every word of every text read: its extent, the for and
+      against values that ModelAttention.native_word_poles returns,
+      each lane's contributing concepts and rows, and whether the walk
+      minted it, entered it or left it. If Assessment's observers no
+      longer fit the stepped walk (narrow_step), port the observers,
+      under test/ or in bin/Assessment.py's own observing code only if
+      it cannot be done under test/; say which.
+   b. For each word left with both lanes, and for `is` and `this` if
+      they still read against alone: follow the against value back
+      through owner.cs_read_memberships to what it reads (the native
+      percept field's pair at that extent, a definition's member
+      evidence, a stored row), and name the function that wrote that
+      value, the presentation at which it first became nonzero, and
+      what was being read then. The same for the for lane.
+   c. Say whether the value belongs to the word wherever it stands or
+      to its place in the text. Read each such word, through the
+      assessment only, in at least two other places and sentences of
+      the lesson's own vocabulary, and one word that is minted today in
+      the first place of a sentence. No rule about case or spelling is
+      added anywhere.
+   d. State the producer in one paragraph: what makes a known word,
+      read at its own extent in a sentence it was taught in, carry
+      evidence against itself. If there is more than one producer, each
+      with the words it accounts for. Give your recommendation, and do
+      not build it.
+
+4. Run no default sweep: no production source changes. Run both
+   stopping gates once
+   (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class)
+   and the tests of any tool you changed.
+
+5. Return as §53 of the item 1.8 specification: the tables of 1b to 1d;
+   the stops of 2; the table of 3a and the findings of 3b to 3d; the
+   source snapshot, which must be unchanged for bin/; every file added
+   or changed under test/. Do not build the teacher of the first walk,
+   the narrowing act, any rule of §12.2 of
+   doc/plans/2026-11-14-attention-in-thinking.md, or item 1.7.
+~~~
+
+## 53. Three readings after the merge (Codex, 2026-11-16)
+
+### 53.1 Scope and exactness
+
+Read on local `main`, commit `572169253059b684b0cb60c1642e206f9eeae0b6`. No production source, configuration, grammar, seed, fixture or presentation count was changed. No commit or push was made. The four protected attention files and `Models._run_sentence_word_bricks` are unchanged. This builds none of the teacher, narrowing act, §12.2 rules or item 1.7.
+
+First, the native sixteen-sentence lesson of §51.3 was replayed without instrumentation, then with count instrumentation. At **all 16 completed updates**, parameters, optimizer state and Python/NumPy/Torch random streams were exactly equal. The detailed first-sentence replay was also exactly equal at its update. The separate Python-object size replay matched all **16** updates exactly. Equality compares complete serialized state fingerprints, not a tolerance or merely the final loss. All use the recorded §51.3 stream, including its recorded process hash seed; none selects a new seed.
+
+Counters cover `ModelAttention.stage_input` through the kept close/update. Detailed first sentence: `This is Felix.` The size census covers the whole native driver, including construction/admission and all sixteen sentences; its maxima are lengths or shapes actually observed, not an inference from the read-call count. Python containers without a separately reserved capacity are identified below. This distinction matters: construction can request the full concept bank even when a later read requests one row. Receipts, profiles, full ledgers and raw records remain local and are not linked.
+
+### 53.2 Counts beside the old inventories
+
+The old column is the published 2026-11-14 inventory, not a newly reconstructed baseline. The new column is the merged source and §51.3 stream. Intervening architecture and stream differences prevent attributing the whole delta solely to the performance merge. Public calls, dispatcher operations and host APIs are overlapping counting levels and must not be summed. A `cpu` call can be a no-op on this CPU run.
+
+First sentence; each triple is **host API calls / entered loops or conditions / yielded iterations or true conditions**.
+
+| Phase | 2026-11-14 | Merged source |
+| --- | ---: | ---: |
+| preparation | 28,523 / 84,759 / 271,372 | 18,039 / 89,378 / 315,686 |
+| walk | 28 / 180 / 13,852 | 15 / 98 / 11,200 |
+| restoration | 9 / 39 / 263 | 9 / 39 / 263 |
+| word step | 120 / 3,321 / 17,215 | 249 / 10,417 / 53,441 |
+| thought | 102,437 / 45,521 / 313,040 | 642 / 3,466 / 19,938 |
+| generate walks | 10,964 / 34,076 / 142,686 | 9,032 / 38,286 / 158,362 |
+| close | 22,373 / 34,147 / 256,052 | 52,497 / 66,618 / 264,203 |
+
+Sixteen sentences, beside the last column of attention-in-thinking §10:
+
+| Counter | Old last column | Merged source |
+| --- | ---: | ---: |
+| Public tensor API calls | 37,381,989 | 16,357,827 |
+| Dispatcher operations | 41,872,048 | 20,118,044 |
+| Host-read API calls | 2,945,330 | 1,634,871 |
+| Scalar reads | 2,329,329 | 1,284,204 |
+| Dynamic nonzero operations | 31,870 | 10,625 |
+
+First-sentence totals: **1,029,185** public tensor API calls, **1,437,968** dispatcher operations, **80,483** host APIs, **53,915** scalar reads and **367** dynamic nonzero operations. The two dated inventory documents are unchanged.
+
+### 53.3 The thirty largest readers and their objects
+
+Counts are first-sentence host API calls, aggregated across phases. Size maxima are from the sixteen-sentence driver. `T` means table lookup; `M` means Python meaning/reference/binding; `U` means menu; `C` means choice/control; `X` means text/metadata. The runtime concept bank has **4,195** physical rows (the 4,096 declaration plus reserved seats), width **392**; native identity has 96 coordinates, properties 256, meaning two lanes of 16. Recent chunks have **8** seats. The pinned sentence reserves **32** leaves and **112** operations, hence **144** idea seats; thought content has its separate derived construction bound. LTM0 has **16,384** seats, LTM1 **8,192**, native/basic percepts **4,096** each, and whole properties **9**. These are the constructed values, not resized fixtures.
+
+| Function (file) | Calls | Kind; actual read/object | Writer | Largest observed size; constructed capacity |
+| --- | ---: | --- | --- | --- |
+| `MereologicalCodes.py:MereologicalCodes.derive` | 29,538 | T; requested row list, uniqueness map and form-valid mask | `Codebook.lookup_rows` callers supply requests; `derive` and `_invalidate_forms` maintain the form cache | 4,195 requested/unique rows, 2,346 basic rows; bank 4,195 × 392 |
+| `Memory.py:LTM1.references` | 23,620 | M/T; one relation’s two tagged endpoints | `LTM1.add`; forgetting/checkpoint restoration | 2 endpoints (tag/value each); relation table 8,192 seats, at most 23 live in this run |
+| `Memory.py:LTM1.contains` | 12,238 | T; two endpoint-kind tags and address validity | `LTM1.add`, retention and checkpoint load | 2 tags per lookup; 8,192 relation seats |
+| `Memory.py:LTM1.__len__` | 3,878 | T; scalar live relation count | `LTM1.add` and retention | 23 live rows; 8,192 seats; no Python table traversal in this function |
+| `Generative.py:propose_actions` | 832 | U/C; VP menu and generated candidate list | grammar registration, `inverse_basis`, this function’s proposal append | 15 binary rules, 1 VP rule; basis 152 plus 56 constituents = 208 candidates; temporary list has no independent reservation, reconstruction shortlist limit 16 |
+| `Memory.py:IdeaRows.__len__` | 750 | T; scalar idea-store count | `IdeaRows.append_meaning` and retention | 65 live across observed idea stores; LTM0 16,384, pinned STM0 144; no Python walk |
+| `Meaning.py:canonical_role_payload` | 680 | M; occupied roles and finite payload validation | meaning constructors/grammar and thought results | 3 roles × 392 coordinates; construction contract 3 roles |
+| `ChunkJournal.py:capture` | 650 | M/X; selected journal transactions, identity handles and source positions | `ChunkJournal.apply`, `value_record`, shifts and `STMChunks` publication | 24 actions, 3 leaves, 2 identities; current slab 40 × 37, metadata 88 × 12; sentence ceiling 112 operations/32 leaves, recent chunks 8 |
+| `Meaning.py:ConceptualMeaning.__post_init__` | 616 | M; canonical role mask, typed references, bindings and children | grammar/closing/thought `ConceptualMeaning` constructors | 3 references, 8 binding items, 2 children; role cap 3, no independently reserved bindings/children dictionary |
+| `WordIdentity.py:WordIdentity.key` | 532 | X; native form bits packed as a dictionary key | `WordIdentity.form`, admission and `_fixed` | 96 bits per key; fixed identity width 96, native bank 4,096 |
+| `Spaces.py:ConceptualSpace._witnessed_rows` | 495 | T; allocated row→concept map and witnessed bits | concept allocation; `ConceptTrust.observe` and retained definition witnesses | 26 returned witnessed rows; allocated bank snapshot up to 127, physical bank 4,195 |
+| `ConceptTrust.py:ConceptTrust.project` | 489 | T/C; allocated row list and its confidence-scaled coordinates | `ConceptTrust.observe/refresh`, allocation, and this projection | 128 projected rows × 392; bank 4,195, meaning lane width 16 |
+| `ConceptTrust.py:ConceptTrust.refresh` | 447 | T; one row’s known/views/agreement/read_objects fields | `ConceptTrust.observe`, `remember`, interpretation’s read-object grant | one row and its scalar counters per call; 4,195-row trust columns |
+| `BasicPercepts.py:BasicPercepts._boundary_codes` | 440 | T; typed part/whole reference list and code bank | `BasicPercepts.reserve`, native admission; property teaching | 11 references, output 11 × 96; basic/native bank 4,096, whole bank 9; basic index reached 26, word map 13 |
+| `ClauseJournal.py:finish_clause` | 438 | M; kept program actions, operands, references and closing host stack | `ChunkJournal.capture`/`SentenceStrata.Tree`; this close builds node dictionaries | 24 actions, 3 leaves, 22 action nodes, 2 operands, 7 noun terms, 61 native IDs; 112-operation/32-leaf sentence bound; node dictionaries unreserved |
+| `WordIdentity.py:WordIdentity.read_parts` | 260 | X/T; atom dictionary and part rows used to reconstruct spelling | `WordIdentity._atom/admit` and native part admission | 43 atom entries, 16 native word forms, 11 selected parts; native bank 4,096, identity width 96 |
+| `ModelAttention.py:stage_symbol_bank` | 248 | T; allocated row/identity registry snapshot | concept allocator/`_csw_concept_row`; this function builds the read bank | 127 rows/IDs and 127 × 392 keys; physical concept bank 4,195 |
+| `GradientProjection.py:backward` | 230 | C; parameter/gradient tuples, objective registry and projection receipts | `getOptimizer`, autograd, `sides/units`; this function accumulates receipts | 205 parameters/gradient entries; 9 costs, 374 receipt keys, 115 writer keys; Python registries have no separately constructed capacity |
+| `Memory.py:STM0.index_of_row` | 217 | T; live STM row-name vector searched for an exact reference | `STM0._write_point` and restoration | one match, physical store capacity up to 144, working map 24; recent chunks separately 8 |
+| `Memory.py:LTM1.add` | 200 | M/T; typed endpoint pair, free-seat list and evidence maxima | this `LTM1.add`; allocator supplies global handles | 2 endpoints, free list up to 225 in working relation banks; durable relation cap 8,192; pinned pair cap 225 |
+| `Understanding.py:Reading.__post_init__` | 168 | M/X; kept program’s arrays and identity/timeline metadata | `ChunkJournal.capture`, `SentenceStrata` read views | 24 actions, 3 leaves, 2 identity values, 24 × 392 tests; 112 operations/32 leaves declared |
+| `Memory.py:IdeaRows.append_meaning` | 168 | M/T; one occupied meaning role, its referent and entry | closing/thought producers supply meaning; this function writes store columns | 1 occupied role of 3; referent tuple up to 3, entry length 2; LTM0 16,384/pinned STM0 144 |
+| `Memory.py:STM0.row_name` | 161 | T; one STM row name | `STM0._write_point` | one scalar (largest time value 587 is not a container length); store capacity up to 144 |
+| `IdentityRows.py:carrier` | 136 | M/C; one conceptual carrier’s coordinates and finiteness | concept code/MTM/closing producers; this function copies and clears location bands | 392 coordinates; fixed carrier width 392, no Python collection |
+| `IdentityRows.py:form_identity` | 117 | T/X; word-definition IDs and exact form coordinates | native word admission/`InterpretLayer` definition registry | word map 13, 392-coordinate carrier with 352 percept coordinates; physical bank 4,195; no independent list reservation |
+| `PrependedSymbols.py:chunk_token` | 116 | M; chunk reference pair and MTM token lookup | `STMChunks.deposit`/journal publication, `MTM.append_path` | 14 state arrays, 2 × 2 refs, tuple keys of 2 or 3; chunks 8, MTM’s configured pool 64 |
+| `Memory.py:STM0._write_point` | 108 | T; point, row-name slot and model clock | this `STM0._write_point` | 392-coordinate point and scalar clock; observed STM0 capacity up to 144 |
+| `Queries.py:GrammaticalThoughtRegistry._candidate_operand` | 78 | M/U; held candidate/frame/root sources and their typed roles | thought registry’s held sources and grammatical context | 4 sources, 392-coordinate operand; 14 descriptors/operations; sources are temporary, role cap 3 |
+| `MeaningKernels.py:MeaningAction.forward` | 76 | C/U; optional object/group witnesses and meaning transform basis | `propose_actions`/grammar action context and learned `MeaningAction` parameters | largest value 1 × 16 × 16 × 32, basis list 3; two 16-coordinate lanes, reconstruction limit 16, no variable Python meaning walk |
+| `MemoryLink.py:chunk_candidates` | 72 | M/T; recent chunk references and pooled MTM occurrences | `STMChunks` close publication and `MTM.append_path` | 8 chunks scanned, pooled set 19, returned candidates 0; chunks 8, MTM pool 64; pooled occurrence set has no separate reservation |
+
+The size census reads frame-local containers and shapes, not guessed tensor contents. A scalar maximum, a shape’s element count and a table’s live-row count are different quantities; the table names which is used. Two slower preliminary profiling attempts were stopped and replaced by the completed 16-update exact replay; no partial run supplies the reported maxima.
+
+### 53.4 Expected rule order
+
+`ConceptSpread.rule_order` now computes lane maximum, one stable descending `argsort`, and one `tolist`, then makes a tuple. It drops no row. The detailed first-sentence window contains **0 calls / 0 host reads** to it (also confirmed by the function profile), versus the old first-sentence attribution of **92,994** host reads. Across the **whole sixteen-sentence driver**, including work outside the measured stage-to-update windows, the size observer saw **69 calls**, hence **69 `tolist` host APIs**, each returning **4,195** row addresses. This is not a claim that all 69 fall inside the five counter totals.
+
+`ThoughtLTMCapability.__init__` retains that tuple as `__expected`. Its only content reader is `implication_rules`: it takes the prefix `[:min(max_records, work.remaining // 4)]`, charges one `index` unit per row, maps each physical row to a concept, and consults `rows_referencing(SYMBOL, cid)` for allocated concepts. It deduplicates those relation handles and reads at most `min(max_records, remaining // 3)` records, each metered. Thus it does not scan the full expected tuple or drop unexpected rows in `rule_order`; it bounds the subsequent read by a prefix. **In this sixteen-sentence run `implication_rules` was called zero times: zero tuple entries and zero indexed relations were consumed by it.** Its prefix rule is source analysis, not a fabricated exercised inference trace.
+
+### 53.5 Fullgraph capture
+
+The unchanged `test/attention_block_compile_probe.py` tried `torch.compile(BasicModel._run_sentence_word_bricks, backend='eager', fullgraph=True, dynamic=True)` on the first native lesson sentence. Capture failed at **`Spaces.py:16812`, `if not math.isfinite(trust)`**, called by **`Models.py:21083`, `_incoming_trust_multiplier()`**. Dynamo reports `Unsupported: torch.* op returned non-Tensor`, with a Boolean result from built-in `isfinite`. Kind: **choice/control**, a scalar trust validation at entry.
+
+This probe catches that first exception and ends the process’s attempted native call. It has no resume/step-over facility. No further stop was reached or claimed, and no trust check was removed or replaced to manufacture a deeper capture. This establishes a capture boundary, not accelerator execution performance.
+
+### 53.6 Finished lesson and every assessed word
+
+The four-epoch `explore-1.xml` lesson completed **160 sentences** (64 ideas, 96 relations), using the assessment’s recorded stream. The observer follows `Attention.narrow_step`, the actual masks and chooser calls, and `ModelAttention.close_narrowing`, under **`test/postmerge_word_lanes.py` only**. It changes no action or legality. All **45** final reads have a stepped trace: the **22** distinct lesson texts plus **23** position probes. The extra texts use only the lesson’s vocabulary, preserve spelling exactly, and are evaluation transactions, not teaching.
+
+Each table entry below is `form [start,end): (for,against); source; action`. Extents are native byte extents, not word ordinals. `Wcid@row` is the word concept and physical row supplying **every nonzero lane** in that entry; a zero lane has no contributing source. No object supplies either lane in this run. The following object census makes the zero-valued alternatives explicit. Punctuation is included because the native word-place recorder includes it: its initial native pair is `(0,0)`, no word row, and descent can subsequently mint it. No punctuation pair is reconstructed from the post-walk state.
+
+| Form | Word concept@row | Object concepts@rows (each `(0,0)`) |
+| --- | --- | --- |
+| `A` | 214@28 | 260@2431 |
+| `Ciao` | 112@12 | none |
+| `Felix` | 113@13 | none |
+| `Here` | 114@14 | none |
+| `Is` | 215@29 | none |
+| `That` | 115@15 | none |
+| `There` | 116@16 | none |
+| `This` | 117@17 | none |
+| `What` | 118@18 | none |
+| `Who` | 119@19 | none |
+| `a` | 216@30 | 233@2428 |
+| `cat` | 217@31 | 226@2427 |
+| `eats` | 218@32 | none |
+| `here` | 120@20 | 156@2423 |
+| `is` | 121@21 | 125@2418 |
+| `lives` | 219@33 | none |
+| `moves` | 220@34 | none |
+| `sleeps` | 221@35 | none |
+| `that` | 122@22 | 149@2422 |
+| `there` | 123@23 | 167@2425 |
+| `this` | 124@24 | 142@2421 |
+
+| Text | Every recorded word place |
+| --- | --- |
+| 1. `This is Felix.` | `This` [0,4): (1,0.9995708465576172); W117@17; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 2. `What is this?` | `What` [0,4): (1,0.9995708465576172); W118@18; left<br>`is` [5,7): (0,1); W121@21; minted<br>`this` [8,12): (0,1); W124@24; minted<br>`?` [12,13): (0,0); none; minted |
+| 3. `That is Ciao.` | `That` [0,4): (1,0.9995708465576172); W115@15; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Ciao` [8,12): (1,0.9995708465576172); W112@12; left<br>`.` [12,13): (0,0); none; minted |
+| 4. `What is that?` | `What` [0,4): (1,0.9995708465576172); W118@18; left<br>`is` [5,7): (0,1); W121@21; minted<br>`that` [8,12): (0,1); W122@22; minted<br>`?` [12,13): (0,0); none; minted |
+| 5. `Here is Felix.` | `Here` [0,4): (1,0.9998221397399902); W114@14; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 6. `Who is here?` | `Who` [0,3): (1,0.9995708465576172); W119@19; left<br>`is` [4,6): (0,1); W121@21; minted<br>`here` [7,11): (0,1); W120@20; minted<br>`?` [11,12): (0,0); none; minted |
+| 7. `There is Ciao.` | `There` [0,5): (1,0.9998221397399902); W116@16; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Ciao` [9,13): (1,0.9995708465576172); W112@12; left<br>`.` [13,14): (0,0); none; minted |
+| 8. `Who is there?` | `Who` [0,3): (1,0.9995708465576172); W119@19; left<br>`is` [4,6): (0,1); W121@21; minted<br>`there` [7,12): (0,1); W123@23; minted<br>`?` [12,13): (0,0); none; minted |
+| 9. `That is Felix.` | `That` [0,4): (1,0.9995708465576172); W115@15; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 10. `This is Ciao.` | `This` [0,4): (1,0.9995708465576172); W117@17; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Ciao` [8,12): (1,0.9995708465576172); W112@12; left<br>`.` [12,13): (0,0); none; minted |
+| 11. `Here is Ciao.` | `Here` [0,4): (1,0.9998221397399902); W114@14; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Ciao` [8,12): (1,0.9995708465576172); W112@12; left<br>`.` [12,13): (0,0); none; minted |
+| 12. `There is Felix.` | `There` [0,5): (1,0.9998221397399902); W116@16; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Felix` [9,14): (1,0.9998221397399902); W113@13; left<br>`.` [14,15): (0,0); none; minted |
+| 13. `Felix is a cat.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`a` [9,10): (0,1); W216@30; minted<br>`cat` [11,14): (0,1); W217@31; minted<br>`.` [14,15): (0,0); none; minted |
+| 14. `What is Felix?` | `What` [0,4): (1,0.9995708465576172); W118@18; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`?` [13,14): (0,0); none; minted |
+| 15. `Ciao is a cat.` | `Ciao` [0,4): (1,0.9995708465576172); W112@12; left<br>`is` [5,7): (0,1); W121@21; minted<br>`a` [8,9): (0,1); W216@30; minted<br>`cat` [10,13): (0,1); W217@31; minted<br>`.` [13,14): (0,0); none; minted |
+| 16. `Is Ciao a cat?` | `Is` [0,2): (1,0.9995492100715637); W215@29; left<br>`Ciao` [3,7): (1,0.9995708465576172); W112@12; left<br>`a` [8,9): (0,1); W216@30; minted<br>`cat` [10,13): (0,1); W217@31; minted<br>`?` [13,14): (0,0); none; minted |
+| 17. `A cat lives.` | `A` [0,1): (1,0); W214@28; minted<br>`cat` [2,5): (0,1); W217@31; minted<br>`lives` [6,11): (0,1); W219@33; minted<br>`.` [11,12): (0,0); none; minted |
+| 18. `Is Felix a cat?` | `Is` [0,2): (1,0.9995492100715637); W215@29; left<br>`Felix` [3,8): (1,0.9998221397399902); W113@13; left<br>`a` [9,10): (0,1); W216@30; minted<br>`cat` [11,14): (0,1); W217@31; minted<br>`?` [14,15): (0,0); none; minted |
+| 19. `What is Ciao?` | `What` [0,4): (1,0.9995708465576172); W118@18; left<br>`is` [5,7): (0,1); W121@21; minted<br>`Ciao` [8,12): (1,0.9995708465576172); W112@12; left<br>`?` [12,13): (0,0); none; minted |
+| 20. `A cat moves.` | `A` [0,1): (1,0); W214@28; minted<br>`cat` [2,5): (0,1); W217@31; minted<br>`moves` [6,11): (0,1); W220@34; minted<br>`.` [11,12): (0,0); none; minted |
+| 21. `A cat sleeps.` | `A` [0,1): (1,0); W214@28; minted<br>`cat` [2,5): (0,1); W217@31; minted<br>`sleeps` [6,12): (0,1); W221@35; minted<br>`.` [12,13): (0,0); none; minted |
+| 22. `A cat eats.` | `A` [0,1): (1,0); W214@28; minted<br>`cat` [2,5): (0,1); W217@31; minted<br>`eats` [6,10): (0,1); W218@32; minted<br>`.` [10,11): (0,0); none; minted |
+| 23. `is Ciao Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`Ciao` [3,7): (1,0.9995708465576172); W112@12; left<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 24. `Felix is Ciao.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Ciao` [9,13): (1,0.9995708465576172); W112@12; left<br>`.` [13,14): (0,0); none; minted |
+| 25. `is Felix Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`Felix` [3,8): (1,0.9998221397399902); W113@13; left<br>`Felix` [9,14): (1,0.9998221397399902); W113@13; left<br>`.` [14,15): (0,0); none; minted |
+| 26. `Felix is Felix.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Felix` [9,14): (1,0.9998221397399902); W113@13; left<br>`.` [14,15): (0,0); none; minted |
+| 27. `is Here Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`Here` [3,7): (1,0.9998221397399902); W114@14; left<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 28. `Felix is Here.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Here` [9,13): (1,0.9998221397399902); W114@14; left<br>`.` [13,14): (0,0); none; minted |
+| 29. `is Is Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`Is` [3,5): (1,0.9995492100715637); W215@29; left<br>`Felix` [6,11): (1,0.9998221397399902); W113@13; left<br>`.` [11,12): (0,0); none; minted |
+| 30. `Felix is Is.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Is` [9,11): (1,0.9995492100715637); W215@29; left<br>`.` [11,12): (0,0); none; minted |
+| 31. `is That Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`That` [3,7): (1,0.9995708465576172); W115@15; left<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 32. `Felix is That.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`That` [9,13): (1,0.9995708465576172); W115@15; left<br>`.` [13,14): (0,0); none; minted |
+| 33. `is There Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`There` [3,8): (1,0.9998221397399902); W116@16; left<br>`Felix` [9,14): (1,0.9998221397399902); W113@13; left<br>`.` [14,15): (0,0); none; minted |
+| 34. `Felix is There.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`There` [9,14): (1,0.9998221397399902); W116@16; left<br>`.` [14,15): (0,0); none; minted |
+| 35. `is This Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`This` [3,7): (1,0.9995708465576172); W117@17; left<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 36. `Felix is This.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`This` [9,13): (1,0.9995708465576172); W117@17; left<br>`.` [13,14): (0,0); none; minted |
+| 37. `is What Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`What` [3,7): (1,0.9995708465576172); W118@18; left<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 38. `Felix is What.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`What` [9,13): (1,0.9995708465576172); W118@18; left<br>`.` [13,14): (0,0); none; minted |
+| 39. `is Who Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`Who` [3,6): (1,0.9995708465576172); W119@19; left<br>`Felix` [7,12): (1,0.9998221397399902); W113@13; left<br>`.` [12,13): (0,0); none; minted |
+| 40. `Felix is Who.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`Who` [9,12): (1,0.9995708465576172); W119@19; left<br>`.` [12,13): (0,0); none; minted |
+| 41. `is is Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`is` [3,5): (0,1); W121@21; minted<br>`Felix` [6,11): (1,0.9998221397399902); W113@13; left<br>`.` [11,12): (0,0); none; minted |
+| 42. `Felix is is.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`is` [9,11): (0,1); W121@21; minted<br>`.` [11,12): (0,0); none; minted |
+| 43. `is this Felix.` | `is` [0,2): (0,1); W121@21; minted<br>`this` [3,7): (0,1); W124@24; minted<br>`Felix` [8,13): (1,0.9998221397399902); W113@13; left<br>`.` [13,14): (0,0); none; minted |
+| 44. `Felix is this.` | `Felix` [0,5): (1,0.9998221397399902); W113@13; left<br>`is` [6,8): (0,1); W121@21; minted<br>`this` [9,13): (0,1); W124@24; minted<br>`.` [13,14): (0,0); none; minted |
+| 45. `is Felix This.` | `is` [0,2): (0,1); W121@21; minted<br>`Felix` [3,8): (1,0.9998221397399902); W113@13; left<br>`This` [9,13): (1,0.9995708465576172); W117@17; left<br>`.` [13,14): (0,0); none; minted |
+
+### 53.7 Lane provenance, first writes and position
+
+**The first producer is native property scope.** `WholeSpace._build_what_basis` calls `Codebook.set_property_kind`, which teaches `PrimitiveProperties.members/observed` through `PrimitiveProperties.teach`; the word whole is fixed by `define_word`. `WholeSpace.property_rows_for_bytes` returns properties holding **anywhere** on the supplied form. `Corpus.admit_training_forms` / `InterpretLayer.lookup_word` retain those whole references; `BasicPercepts.reserve` knits them with the identity parts, and the concept’s positive basic-percept feature is written by `add_concept_feature`. For the nine affected mixed-property words, the whole references are **0, 4, 8**.
+
+At the actual word extent, `PerceptField.read_percepts` reads property pairs on both native part events and whole spans, then takes lane-wise maxima across contained events. For `This`, the native event `[0,1)` supplies `(1,0)` on whole-property row 4, while `[1,2)`, `[2,3)` and `[3,4)` supply `(0,1)` initially. The row’s bracket pair is therefore `(1,1)` before the first update. Rows 0 and 8 supply `(1,0)`. `BasicPercepts.read` retains the part’s support and the wholes’ counterevidence, so basic percept 5 is `(1,1)`; `cs_read_percept_field` folds that positive feature into word concept 117, physical row 17. `_compose_order0` leaves it unchanged. The other eight affected words follow the same producer, not an LTM contradiction or a name/object definition. Row 4 is the already-taught capital property; this report adds no spelling or case rule.
+
+First **natural training-read observations** of both lanes (both were 1 at these observations):
+
+| Word | Presentation | Text being read | Definition admission |
+| --- | ---: | --- | --- |
+| This, Felix | 1 | `This is Felix.` | before presentation 1 |
+| What | 2 | `What is this?` | before presentation 1 |
+| That, Ciao | 3 | `That is Ciao.` | before presentation 1 |
+| Here | 5 | `Here is Felix.` | before presentation 1 |
+| Who | 6 | `Who is here?` | before presentation 1 |
+| There | 7 | `There is Ciao.` | before presentation 1 |
+| Is | 68 | `Is Ciao a cat?` | second-stage admission, before presentation 65 |
+
+These observation dates are not invented training writes: the primitive examples and basic-percept definitions already exist at the admission boundaries. The pair is produced afresh **by the read at that extent**. For `What`, an additional preserved probe immediately after close 1 already observed both lanes while reading `What is this?`. The final property coefficients have moved slightly: for example `This` and `What` read `(1,0.9995708465576172)`, `Felix` `(1,0.9998221397399902)`. Their positive basic-percept feature remains weight 1, the opposite feature 0, and there are no additional union/intersection definition edges for these word rows. The native basic-percept pair, direct concept pair and final concept pair agree.
+
+**The second producer is learning a negated literal, followed by exact-rail semantics.** `is` and `this` initially read their own basic percept as `(1,0)` and their word concept as `(1,0)`. The admission precedes presentation 1; `is` is naturally read in presentation 1, `this` in presentation 2 (also observed in the preserved probe after close 1). `ConceptualSpace._prepare_part_learning` adds the zero opposite feature beside each existing feature; zero initially asserts nothing. The actual **presentation-2 `MultiOptimizer.step`**, while learning `What is this?`, is the first nonzero write:
+
+| Word; physical row/feature column | Before | After update 2 | Gradient used |
+| --- | ---: | ---: | ---: |
+| is; 21/19 (negated BP 9) | 0 | 0.00000009958856139746786 | -0.00009958855662262067 |
+| this; 24/25 (negated BP 12) | 0 | 0.00000020005531098377105 | -0.00020005530677735806 |
+
+`Models`’ ordinary sentence update calls that optimizer after backward; this is not a write by the assessment, attention or the thought truth store. `cs_read_percept_field` flips the native pair for the odd feature column. `SparseLayer.fold_presence` intersects the positive lane and unions the dual negative lane. `FieldLogic.power` preserves exact Boolean rails for **any positive** exponent. Thus even those small new magnitudes qualify a `(0,1)` literal: it vetoes positive evidence and supplies full negative evidence. The natural read of `is` at presentation 3 already gives `(0,1)`; the preserved `What is this?` probe after close 3 shows the same for `this` (the update-2 write itself is observed for both).
+
+At the end, BP 9 and BP 12 still read `(1,0)` at their own extents. `is`’s positive/negative feature magnitudes are **0.9968709945678711 / 0.08496923744678497**; `this`’s are **0.9997758865356445 / 0.02529602125287056**. The direct and final word fields are `(0,1)`; their object fields are zero. No stored LTM row contributes to either native pole. This traces both the lost for lane and the acquired against lane.
+
+**Position check.** Each of `Ciao`, `Felix`, `Here`, `Is`, `That`, `There`, `This`, `What`, `Who`, `is`, and `this` was also read in `is WORD Felix.` and `Felix is WORD.`. Every native pair was exactly unchanged. In the first pattern the target is in the middle; in the second it is last. `is Felix This.` additionally puts the minted against-only `is` first, and it is still minted; the lesson’s `A cat ...` texts also mint `A` in first place. None of these nine both-lane words becomes mintable merely by moving it. The values are still **extent reads**, not stored word poles, but the same contained native events/definitions reproduce them independently of sentence position.
+
+**Recommendation.** Review the two evidence producers before altering the chooser or mint purity. In the first, “a property holds somewhere in this word” is admitted as a whole of that word, then opposite evidence from other contained events is pooled into the same whole reading. I recommend making the scope of whole admission and whole reading agree, without special treatment of any spelling. In the second, reconstruction credit writes a prospective opposite literal and exact-rail qualification turns an arbitrarily small positive magnitude into full counterevidence on an exact match. Review that learning contract together with its rail semantics; do not interpret the resulting against-only word as an independently witnessed contradiction. No repair or proposed teacher is built here.
+
+### 53.8 Limits, checks and returned source
+
+The final after-training table is complete. A supplementary chronological diagnostic inserted two preserved reads after each kept close, *before that update finished*. It reached 130 completed pairs of probes, then the `This is Felix.` probe at close 131 raised `ValueError: a link requires containment with its collection`, from `MemoryLink.link:234`, called by `ReferenceClose.link_events`. The transaction’s restoration still runs on this error. This is a limitation of that extra intermediate-state reading, not a failed final-state assessment or a new training presentation. The ordinary 160-sentence replay without those intervening probes completed, with the actual feature writes observed, and every required final read succeeded. No production guard was changed. All six fully comparable epoch records from the extra-probe run match the completed replay after excluding elapsed-time fields and process-local tensor addresses.
+
+Both stopping gates were run **once**, together with the observer checks: **14 passed**, including XOR convergence and the previously named raised-class gate; no failure, skip or xfail. After adding the report-metadata test, the final tool module was run again: **4 passed**. These are 15 distinct passing tests (two gates, nine existing assessment tests, four observer-tool tests); the gates were not repeated. The tool tests prove preserved model state/results and a stepped trace, exact comparison rejects optimizer/RNG changes, size maxima do not shrink, and report source/stream comparison metadata comes from the measurement. No default sweep was run.
+
+Files changed under `test/`:
+
+- `sentence_host_inventory.py`: unobserved state-only run, exact completed-update comparison, actual source commit in the receipt.
+- `attention_host_report.py`: measured source/sentence/comparison metadata instead of the old hard-coded commit; raw ledger stays local.
+- `host_object_inventory.py` (new): read-only frame/container census and exact replay comparison.
+- `postmerge_word_lanes.py` (new): stepped assessment trace, native percept/feature provenance, actual optimizer-write observation and preserved position probes; optional intermediate timeline diagnostic.
+- `test_postmerge_observers.py` (new): the four tool certificates above.
+
+The capture probe is unchanged. `bin/Assessment.py` is unchanged: its observers are adapted only in the test process. No other source path was changed. Concurrent prose about later rounds, the sigma/pi plan, `todo.md`, the unrelated item-1.5 plan and local data were left intact.
+
+`bounded_tests.source_snapshot` SHA-256 (canonical sorted JSON): **`3dca278890f4587979d670227ff97a3f07a8a0853413414076beb0ccbabf7d04`**. Its `bin/` subset is byte-for-byte identical to the frozen starting subset: **`7eebb0ab422ce8e27a55a56ee58641e8ea863f25a103651533029cf4b6335621`**. Git also reports no production diff from `5721692530`. The full source digest changes because it includes the five observer/test files above; it is not a new commit.
+
+## 54. Parts A and B on the merged source: the walk taken as the words are read (Claude, 2026-11-16; a design, with one question for Alec)
+
+Alec, 2026-11-16: "Write A and B". This section is the design, read
+against the merged source (`5721692530`). It holds no text for Codex:
+the text differs as a whole by the answer to §54.5. It is numbered 54
+because §53 is Codex's return of §52.6.
+
+### 54.1 What a sentence does today (read in the source)
+
+In `Models._run_sentence_word_bricks`, for one sentence of a row:
+
+1. *The glance* (`ModelAttention.stage_input`, once for the row). The
+   word spans, which words are known, the stem's key for each word
+   (`_ar_embedded_N`), the open read (`read_code_field`, `_last_gist`),
+   each known word's pair of lanes at its own extent
+   (`native_word_poles`), and one prior for each word
+   (`BracketKeys._codebook_retrieval_prior`). It opens the walk
+   (`_attention_open`) and takes no step.
+2. *Every word is perceived, in the order of the text,* before anything
+   is composed: for each word `forecast_percept`, `perceive`,
+   `symbolize`, `observe_percept`, kept in `cache`.
+3. *The walk is finished before the first word is composed.*
+   `start_compose` calls `SentenceNarrowing.for_restore`, which calls
+   `finish_narrowing`: every step of `narrow_step` is taken, each a call
+   of `attend`. Then `handoff` publishes the accepted words and their
+   lanes, and `stage_expectation` forecasts the sentence's words once
+   (`expect('word', ...)`).
+4. *The candidate field is built from all the words*
+   (`SentenceField.__init__`, over the whole `cache`, keeping the words
+   the walk accepted).
+5. *A second chooser reads the accepted words into the grammar.*
+   `read_field` loops: `SentenceField.place` scores the unread words
+   from the state of STM (`CandidateAttention`), `FieldTraversal.select`
+   takes one, and `word_step` composes it. The loop `for index, payload,
+   native in cached` only starts this and breaks. So the loop over words
+   is already a loop over reads, in an order that is chosen.
+6. The path is finished and scored (`finish_path`), the other paths
+   depart from it, and one is kept.
+
+So three choosers act on a sentence, and two of them are attention:
+
+| | The walk | The candidate field |
+| --- | --- | --- |
+| Chooser | `OperationSelectionLayer.attend` | `CandidateAttention`, through `SentenceField.place` and `FieldTraversal.select` |
+| Decides | which words reach the grammar (focus, mint, the field acts) | in what order the accepted words are read, and when to stop |
+| Reads | the pooled key of each bracket, the space, the prior | STM and its slots' places, the gist, the open request, priming, the expectation's prime, the residual of the percept forecast, the unread words' support |
+| Teacher | none (part T) | `AttentionLesson.reading_lesson`, by cross entropy |
+| When | all of it before the first word | one read before each word |
+
+`advance_narrowing` and `narrowing_stable`, which would let the walk be
+taken a part at a time, are called only from
+`SentenceNarrowing.for_word`, after the walk is already finished.
+
+### 54.2 What the rules ask, against that
+
+- *Rule 4* (the first composition no longer asks for every word) is
+  against steps 2, 3 and 4: perception of every word, the whole walk and
+  the whole candidate field all come before the first word.
+- *Rules 1 and 2* (a look carries its expectation) are against three
+  forecasts made apart from the look: the prior of step 1, the percept
+  forecast of step 2, and the word forecast of step 3.
+- *Rule 5* (what has been understood is read by the chooser of the next
+  look) holds today for the candidate field and not for the walk:
+  `attend` does not read STM.
+- Alec's "the word loop is due to be replaced by thinking and successive
+  called to attend()" names one call. Today a sentence takes two
+  choosers' calls, one after the other.
+
+### 54.3 The order proposed
+
+*Amended by §54.6: every look is perceived, not only one that mints a
+word.*
+
+One loop of looks for a sentence, in place of steps 2 to 5:
+
+1. The glance stays as step 1, without the prior.
+2. A look: `narrow_step` takes one step, a call of `attend`, which reads
+   each bracket's pooled key and also what has been understood so far
+   (rule 5) and the surprise of the look before (rule 3).
+3. When the step mints a word, that word is read then:
+   a. the forecast for it is made from what has been read so far: the
+      percept (`forecast_percept`), the concepts of order zero (`expect`,
+      closed upward by `FieldProjection.close`), and the word
+      (`expect('word', ...)` for this one arrival);
+   b. it is perceived (`perceive`, `symbolize`, `observe_percept`);
+   c. it is composed (`word_step`);
+   d. the difference between a and what b and c gave is the look's
+      surprise, kept for the next call of `attend`. The percept and word
+      forecasts keep their costs (the arrival loss and
+      `expectation.word`), and `expect` keeps its teacher by omission
+      (§30.3, rule 4).
+4. The loop ends when `attend` has no legal act, or stops, or the
+   allowance is spent. A word never minted is not perceived and not
+   composed; it is stood for by what was expected (rule 6).
+5. Closing, scoring and the other paths as today. A path that departs in
+   the walk takes the same looks up to its departure and its own after.
+
+### 54.4 Claude's defaults in this design
+
+1. *Building order: B before A.* Once a word is perceived when it is
+   minted (B), two of rule 2's three forecasts are already made at the
+   look, and A is what is left: the forecast of concepts at each look,
+   the surprise to `attend`, and the prior gone. This corrects §52.5,
+   which named A first.
+2. *A forecast takes no place.* `expect` reads activations and has no
+   input for where the look is. So a look's forecast is what is expected
+   next, given what has been read, and is the same wherever the look
+   lands. Read in order, that is the next word's. A forecast that depends
+   on the place of the look is not built in this round.
+3. *A word is perceived once.* The first path to mint a word perceives
+   it, and the other paths of the sentence reuse that, as both paths
+   share one perception today.
+4. *Rule 8, in its narrow form.* The word spans come from the stem's
+   offsets (`_ar_word_part_offsets`), and the search of the surface for
+   each word's bytes in `stage_input` goes. Attention dividing bytes into
+   words with no word axis is not in this round.
+5. *Rule 7.* A presentation's allowance is `attentionBudget` for each of
+   its sentences, held by one meter, so a sentence may spend more than
+   its share and the last sentence of a packed row is no longer left
+   with nothing. The bracket table keeps its size.
+6. *Rule 9.* `unfocus` is a seventh act of the walk: it puts back the
+   bracket that the last `focus` divided or entered, costs one act, and
+   is legal while a focus of this walk is in force and none of its words
+   has been minted.
+7. *A span of several words minted as one unit* is not built: a mint
+   stays at one word (`narrowing_mask`). Rule 3's "whether a span read as
+   expected is taken as one unit" waits for it.
+8. *`Examination.run`* (an input with no words to compose) keeps its
+   whole walk at once in this round.
+9. *The discarded draws of `finish_narrowing` go,* with
+   `_captured_narrowing` if the stepped loop no longer needs it; the
+   exact tests of the steps are ported to the new loop.
+
+### 54.5 For Alec: one chooser of the next look, or two
+
+*Answered in §54.6: one chooser.*
+
+With the walk taken as the words are read, the walk mints one word at a
+time, so the candidate field's chooser would most often be offered one
+word.
+
+*Recommended: one chooser.* `attend` chooses every look, and a word is
+composed when it is minted. `CandidateAttention` and the choice in
+`FieldTraversal.select` go. `SentenceField` stays as the record of which
+words were placed, with their places, times and lanes, which the
+grammar's bookkeeping reads. `attend` is given what the candidate
+chooser reads today (STM and its slots' places, the gist, the open
+request, priming, the expectation's prime and the residual of the
+percept forecast, which is already a surprise). The reading lesson then
+teaches `attend`, so part T's
+teacher and rule 6's "reading in order is taught first" are one thing.
+The cost: a trained reader and its curriculum (the stages `reading_two`
+and `reading_four`) are rebuilt on `attend`, and the paths lose the
+departure in the candidate's choice.
+
+*The other choice: two choosers, interleaved.* The walk advances until a
+word is settled (`narrowing_stable`), that word joins the candidate
+field, and `CandidateAttention` still chooses among the settled unread
+words and when to stop. Less is rebuilt; two choosers remain for one
+decision, and part T teaches a second one.
+
+### 54.6 Alec's answer: one chooser, and every look is perceived (2026-11-16)
+
+"We should have one chooser, but it wont always find a word. When it does
+not, "the step mints a word" is false. But it is still perceived, because
+the attend() is passing a .where to Perceptual space (as in the word
+loop) and giving thought an opportunity to see what is there: it can even
+run the thought loop, which will give a partial conceptual understanding
+that may or may not be limited to the word (in which case we expect some
+dissonance over the two perceptual channels)." And then: "When I say "run
+the thought loop", I mean conceptualize. sorry for not speaking
+precisely."
+
+**What it decides.**
+
+- *One chooser.* §54.5's first choice: `attend` chooses every look;
+  `CandidateAttention` and the choice in `FieldTraversal.select` go.
+- *§54.3, step 3, was wrong.* It perceived only when a step minted a
+  word. Every look is perceived and conceptualized, whether or not it
+  finds a word. Minting decides only whether a word also goes to the
+  grammar.
+
+**The order of a look, amended** (the code names are Claude's reading of
+where this already exists).
+
+1. *`attend` passes a `.where`.* A step of the walk (`narrow_step`, one
+   call of `attend`) chooses a bracket and an act. The bracket in force
+   at that slot after the act is the look's `.where` (*default*). The
+   model already carries a look's scope to perception:
+   `ModelAttention.handoff` writes `_passback_scope_where`, and
+   perception reads it on a later pass to clip its extents and to set
+   salience. Today it is written once, after the whole walk.
+2. *What is there is perceived, then conceptualized.* This is what the
+   open pass does today for every word bracket of a sentence at once
+   (`FamiliarTier.open_sentence`): `cs_read_memberships` reads the native
+   percepts inside each bracket, and `cs_forward_content` gives the
+   concepts of every order from them. A look does the same for its own
+   bracket. The result is that look's field: a partial conceptual
+   understanding, of a word, of part of one, or of several.
+3. *The forecast comes before 2 and the surprise after it* (part A):
+   what was expected, against the look's field.
+4. *(Corrected by §54.7: not the act `mint`, but the grammar's option to
+   call `interpret`.)* *If the look is one word, read with one lane, and the act is `mint`,*
+   the word also goes to the grammar: its brick (`perceive`, `symbolize`,
+   `observe_percept`) and `word_step`.
+5. The loop ends as in §54.3, step 4. A word never minted is never
+   composed, but it was perceived by every look whose bracket held it.
+
+**Claude's readings, for Alec to confirm.**
+
+- *The first look is the whole sentence, and it perceives every word in
+  it in parallel,* as the open pass does today. Later looks perceive a
+  narrower `.where` again. This is item 6.8's "open awareness is the
+  bracket set to the whole input", and it leaves the walk's rule for what
+  may be minted (`narrowing_mask`, from each word's lanes) reading what
+  it reads now.
+- *The two perceptual channels are `PartSpace` and `WholeSpace`.* A look
+  that is not limited to a word holds parts that make no whole, or a
+  whole with parts missing, so the two disagree. *Default:* that
+  disagreement is measured at each look and reported, and no rule is
+  made of it in this round.
+- *A look's field does not replace the sentence's.* The sentence's field
+  keeps the first look's reading, and each later look's field is a
+  further reading beside it, with its own `.where` and `.when`
+  (*default*).
+
+§54.4's defaults stand, except the third (a word is perceived once),
+which now speaks only of a word's brick.
+
+### 54.7 Alec's correction: at a look the grammar may call `interpret` (2026-11-16)
+
+Of §54.6's step 4 ("If the look is one word, read with one lane, and the
+act is `mint`, the word also goes to the grammar"), Alec: ""teh act is
+mint" should be replaced with "the grammar has the option to call
+interpret() at that point, which will attempt to find the word. if all of
+that works, it can add the word to the tree. The act of finding the word
+will prime the concept, which will cause the object to be primed also.
+The tree is built in this way, and after the tree is complete, the WFF is
+applied to the object in an act of understanding that produces the idea."
+
+**The order of a look, as it now stands.**
+
+1. `attend` passes a `.where` (§54.6, step 1).
+2. What is there is perceived, then conceptualized: the look's field
+   (§54.6, step 2), with the forecast before it and the surprise after
+   (part A).
+3. *The grammar has the option to call `interpret` at that point.*
+   `interpret` attempts to find the word. If the look is one word, read
+   with one lane, and the word is found, the grammar can add it to the
+   tree.
+4. *Finding the word primes its concept, and that primes its object.*
+5. *The tree is built in this way.* After the tree is complete, the
+   well-formed formula is applied to the object in an act of
+   understanding, and that produces the idea.
+
+**Claude's readings, in the source's names.**
+
+- *`mint` leaves the walk.* Today the walk has three progress acts,
+  declared in `data/complete.grammar` as rules on the field (`focus`,
+  bracket acts 0 and 1; `mint`, bracket act 2, `MintLayer`), and `mint`
+  is what accepts a word (`accepted`, `BracketTable.accept`). By Alec's
+  correction a word is accepted by the grammar's call of `interpret`, so
+  the walk keeps `focus`, `unfocus` and the three field acts, and
+  `MintLayer` goes. Making a word that is not there stays with
+  `interpret`, which already does it (`InterpretLayer.lookup_word`).
+- *`interpret` becomes a choice.* Today `InterpretLayer.mandatory` is
+  true and the staging of a sentence's words calls
+  `interpret.lookup_word` for each word (`bin/Models.py`). It becomes an option of the grammar's
+  chooser at a look, beside its other operators, and `word_step` runs
+  for a word only when it is taken and finds the word. The source already
+  carries a case where it is not forced (`interpret_forced`,
+  `forces_interpretation`, a reading of `no_op`); how much of the choice
+  that gives is for Codex to report.
+- *One lane.* Alec's rule of 2026-11-15 stands and moves with it: a word
+  read with both lanes active is not found by `interpret` there; the look
+  is narrowed first (assessment §11).
+- *The walk's own teacher.* With `mint` gone, the reading lesson's target
+  at a look is `interpret` on the named word, and the walk's targets are
+  only the `focus` acts that reach it (part T).
+
+**What the source does today** (read by a sub-agent; the statements
+marked *checked* were read again by Claude):
+
+- *A word becomes its object as it is deposited* (*checked*). In the
+  word's compose step (`stage_cs_lang`, `bin/Models.py`) the word's idea
+  is pushed on STM, then `InterpretLayer.forward(word_idea,
+  object_atoms=...)` returns the object's code with the word's tail, and
+  `FunctionalPeerSTM.resolve_top_reference` writes it over the top slot
+  where the word has an object. So every operator already composes
+  objects, and the tree is never a tree of words.
+- *The idea is the values recorded while reading* (*checked*).
+  `ClauseJournal.finish_clause` builds the clause from the operation
+  journal (`lang[19]`), and "never runs a compose operator".
+  `_commit_sentence` then keeps the scored path's point, roles and
+  extension, and the row written to LTM is made from that point.
+- *One thing is already applied after the tree is complete* (*checked*):
+  `Extension.reading` walks the recorded program once and applies each
+  operator's `compose_extend` to concept sets from the open field. It
+  gives the meaning's extension, not its point or roles.
+- *The tree is recorded apart from the values:* rule ids, arities,
+  positions and actions in the `lang` tuple (`_tensor_record_operation`,
+  `_tensor_record_operands`), the values in `lang[19]`.
+- *Finding a word primes nothing* (*checked* for `Interpret.py`, which
+  has no priming, and for the three calls of `prime_seen`). Priming is
+  written once, when a sentence opens (`_prime_sentence_symbols`), for
+  the word rows and object rows of the staged bank side by side. Nothing
+  primes an object because its word was primed; the one bridge between
+  them (`project_priming_to_towers`) runs from an object to its word's
+  parts.
+
+**Alec, on step 5, the same day.** ""the WFF is applied to the object" is
+the act wherein the idea is constructed from the object concept: we had
+been doing word->object in the interpret step, but now that we have a
+tree in STM and activation spreading from word to object, and parts of
+speech, best to build the tree first and then convert to a meaning in
+one step."
+
+So step 5 is a change to how a sentence is composed, decided:
+
+- *The tree is built over words.* `interpret` at a look finds the word
+  and adds the word to the tree in STM. It no longer turns the word into
+  its object there.
+- *The object is reached by activation.* Finding the word primes the
+  word's concept, and that spreads to its object (step 4).
+- *The meaning is made in one step, at the end.* When the tree is
+  complete it is converted to a meaning: the well-formed formula is
+  applied to the object concepts, and that act of understanding produces
+  the idea.
+
+**What the three changes touch, then** (for the text to Codex).
+
+1. *`interpret` at a look deposits the word and stops there.* The
+   exchange of the top slot for the object
+   (`resolve_top_reference` in `stage_cs_lang`) leaves the word's step.
+   The operators then compose words' codes while the tree is built.
+2. *Finding a word primes it, and its object through it.* New: a priming
+   write where `interpret` finds the word (`prime_seen` for the word's
+   row), and the spread from a word's row to its objects' rows
+   (`definitions.objects(word)`).
+3. *One conversion at the end.* When the tree is complete, each leaf's
+   object is taken (by the definitions and the priming of step 2) and the
+   recorded program is applied to the objects once, as
+   `Extension.reading` already applies it to the extensions. That gives
+   the point, the roles and the extension together, in place of the
+   journal's values read by `finish_clause`.
+
+*Open, and Claude's to settle or to ask before the text:* what the
+operators read while the tree is being built, since today their choice
+and their costs read the composed object values on STM; and which of a
+word's objects a leaf takes at the conversion, where the word has
+several.
+
+*Settled in §55.1:* rule 2 (Claude's default) and rule 5 (Alec's words).
+
+## 55. Part B, first text: the tree first, then the meaning (Claude, 2026-11-16)
+
+Alec, 2026-11-16, of the five readings left unconfirmed in §54.6 and
+§54.7: "Your five readings are fine." So: `mint` leaves the walk's acts;
+the one-lane rule moves to `interpret`'s finding; the first look is the
+whole sentence, perceived in parallel; the two perceptual channels are
+`PartSpace` and `WholeSpace`; and a look's field is a further reading
+beside the sentence's.
+
+Part B is written as two texts. This one is §54.7's three changes to how
+a sentence is composed, which do not need the loop of looks. The second
+is the loop of looks itself (§54.6), with `interpret` as the grammar's
+option at a look; part A follows it.
+
+### 55.1 The rules
+
+1. *A word's step deposits the word.* In the word's compose step
+   (`stage_cs_lang`, `bin/Models.py`) the exchange of the top slot for
+   the word's object goes: the call of `InterpretLayer.forward(word_idea,
+   object_atoms=...)` and `FunctionalPeerSTM.resolve_top_reference`. The
+   top slot keeps the word's idea, row and order. In this text
+   `interpret` is still called for every accepted word.
+2. *The tree is built over words* (*Claude's default* for what the
+   operators read meanwhile). The chooser, its candidates, the operators'
+   forwards and the journal are unchanged code. They act on what STM
+   holds, which is now words' codes, and the journal records those.
+3. *Finding a word primes it, and its object through it.* Where a word is
+   found and deposited, its concept's activation rises, and through its
+   definition that of its objects (`definitions.objects(word)`), on the
+   surface that the readers of rule 5 read.
+   *Read in the source by Claude, and it matters here:* `prime_seen`
+   writes `_priming_seen`, which no reader reads; what the readers call
+   priming (`priming_weights`, `relevance_weights`) is
+   `_expected_knowing` and `_desire`; and I found no code that carries
+   activation from a word's row to its object's row
+   (`FieldProjection.close` and `stimulate` fold definitions upward, and
+   `DefinitionFold` skips word descriptions). Alec's "now that we have
+   ... activation spreading from word to object" may name something I
+   did not find. So the text has Codex report what carries it today, and
+   build this rule only on a spread that exists; if none does, this rule
+   comes back for a design and the other rules go on.
+4. *One conversion, when the tree is complete* (now *comprehension*:
+   on a small stack, not in the tree, §68.26). For each complete path,
+   where `Extension.reading` walks the recorded program today
+   (`_sentence_observation`), the same walk gives the meaning: a leaf
+   takes its object's value, as rule 1's removed call gave it
+   (`InterpretLayer.forward` on the word's idea and the object's atoms),
+   and a node applies its recorded operator's numerical forward to its
+   children's values, with the witness the journal recorded for it
+   (`ChunkJournal.action_context`). The root's value is the point; the
+   roles and the extension come from the same walk. The clause and the
+   row written to LTM are made from this, in place of the journal's
+   values read by `ClauseJournal.finish_clause`.
+5. *Which object a leaf takes.* Alec, 2026-11-16: "the object a leaf
+   takes is the highest order one, or the one determined by (primed)
+   context. So many of the operators like interpret will be able to
+   query conceptual space to find the most active, or perhaps MTM or LTM
+   to see if there is a recent fit". `InterpretLayer.preferred_objects`
+   already chooses so: among a word's objects that the context expects,
+   the highest order and then the strongest; with none expected, the
+   highest order. It is read at the conversion and not when the word
+   arrives (*Claude's default*), so that the whole sentence has had its
+   effect on what is active. *Corrected (§68.19):* a word with no
+   denotation takes what `InterpretLayer.reading` gives it today: a
+   remembered denotation, or else its pending name in MTM, with the value
+   `InterpretLayer.forward` gives on the word's own row. (This sentence
+   said "A word with no object keeps its own value, as today", which was
+   not today.) A query of MTM or LTM for a recent fit is his direction and
+   is not in this text.
+6. *Who reads which.* What concerns the sentence's words reads the tree
+   of words: the chooser, the reading lesson, the reconstruction of the
+   sentence's words, the placement of words and their parts of speech.
+   What concerns the meaning reads the conversion: the idea written to
+   LTM, thought, the answer, the output, the extension, and what the next
+   sentence expects of this one.
+
+### 55.2 Certificates
+
+1. *The word stays.* After a word's step the top slot's value, row and
+   order are the word's. Fails on the starting source (§58's).
+2. *The conversion is the old composition, moved.* On a fixture frozen at
+   the starting source, with that source's actions forced and the same object
+   taken for each leaf, the conversion's point, roles and extension equal
+   what that source's `_commit_sentence` keeps (atol 1e-6).
+3. *Removed* (Alec, §68.16: "it's not a problem as long as we have 2
+   stages").
+4. *Priming by finding,* where rule 3 is built. Finding a word raises
+   its concept's activation and each of its objects', as the readers of
+   rule 5 read it; a word not found raises nothing. Fails on the
+   starting source.
+5. *The object is taken at the end.* For a word with two objects whose
+   expectation changes between its arrival and the end of its sentence,
+   the object in the meaning is the one preferred at the end.
+6. Both stopping gates pass. The learning certificates are recorded under
+   §43.
+
+### 55.3 Codex text (follows the repair of §57.6; Alec has Codex continue with it after §58)
+
+~~~
+Item 1.8, part B, first text: the tree is built over words, and the
+meaning is made in one step when it is complete. Read §54.7 and §55 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md first. This
+text starts from the source that the repair of §57.6 returned as §58;
+"the starting source" below is that source.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Receipts stay local and are not linked. The baseline rule of §43 holds:
+a learning certificate is recorded and not repaired; a mechanism
+certificate must pass; both stopping gates must pass. Do not change a
+bound, a learning rate, a seed, a capacity or a presentation count to
+obtain a pass.
+
+Not in this text: the loop of looks, any edit in bin/Attention.py,
+bin/ModelAttention.py, bin/SentenceAttention.py or
+bin/AttentionTraversal.py, the removal of CandidateAttention or of mint,
+interpret as a choice, the teacher of the first walk, the rules of
+§12.2 of doc/plans/2026-11-14-attention-in-thinking.md, and item 1.7.
+In Models._run_sentence_word_bricks edit only what steps 3 and 4 below
+require, and list each edit.
+
+1. Before any edit, record on the starting source, for certificate 2: for the
+   sentences of the lesson's first document and for both stopping
+   gates' sentences, each reading's actions, each leaf's word and the
+   object it took, and the point, roles and extension that
+   _commit_sentence keeps.
+
+2. Rule 1: a word's step deposits the word. In stage_cs_lang remove the
+   exchange of the top slot for the object (InterpretLayer.forward with
+   object_atoms, and FunctionalPeerSTM.resolve_top_reference). The top
+   slot keeps the word's idea, row and order. interpret is still called
+   for every accepted word. The operators, the chooser and the journal
+   are not changed: they now act on words' codes.
+
+3. Rule 3: priming by finding. First report, with no edit: what raises
+   a word concept's activation when the word is found; what carries
+   activation from a word's row to the rows of definitions.objects(word)
+   (name the function and the surface it writes: _expected_knowing,
+   _observed_knowing, _desire, _priming_seen, the published field); and
+   which of those surfaces InterpretLayer.preferred_objects,
+   priming_weights and the chooser read. Claude found that prime_seen
+   writes _priming_seen and that nothing reads it, and found no spread
+   from a word to its object; confirm or correct that.
+   Then: if a spread from a word to its objects exists, make the finding
+   of a word feed it, so that the word's concept and its objects rise on
+   the surface that preferred_objects reads, and build certificate 4. If
+   none exists, build nothing for this rule, write what you found with
+   your recommendation for Alec and Claude, and go on with the other
+   steps.
+
+4. Rules 4 and 5: one conversion. For each complete path, where
+   Extension.reading walks the recorded program (_sentence_observation),
+   make the meaning in the same walk:
+   a. a leaf takes its object's value, computed as the removed call
+      computed it (InterpretLayer.forward on the word's idea and the
+      object's atoms, with the same presence and evidence); the object
+      is the one InterpretLayer.preferred gives at this point, not at
+      the word's arrival (the highest order among those the context
+      expects, else the highest order); a word with no object keeps its
+      own value;
+   b. a node applies its recorded operator's numerical forward to its
+      children's values, with the witness recorded for that action
+      (ChunkJournal.action_context); a transposition rewires and applies
+      nothing;
+   c. the root's value is the point, and the roles and the extension
+      come from this walk;
+   d. the clause, and the row written to LTM, are made from these in
+      place of the journal's values (ClauseJournal.finish_clause,
+      _commit_sentence).
+   If an operator's forward reads something besides its operands and its
+   recorded witness, name the operator and what it reads, and stop
+   before working around it.
+
+5. Rule 6: who reads which. List every reader of the composed values:
+   the STM root and end slots (lang[6], lang[10]), the journal's values
+   (lang[19]), SentenceUnderstanding.root, the clause's point, roles and
+   extension, and the published field. Give each to one side by this
+   rule, and return the list:
+   - the tree of words: the chooser and its costs, the reading lesson,
+     the reconstruction of the sentence's words, the placement of words
+     and of their parts of speech;
+   - the meaning (the conversion): the idea written to LTM, thought, the
+     answer, the output, the extension, and what the next sentence
+     expects of this one.
+   Where the rule does not decide a reader, stop and write it with your
+   recommendation.
+
+6. Certificates 1 to 6 of §55.2, each as a test (certificate 4 only if
+   step 3 built its rule). Certificates 1 and 4 are shown to fail on the
+   starting source. For certificate 2, if the values differ beyond 1e-6,
+   report the first node that differs with its operator and its
+   operands on both sides, and stop.
+
+7. Tests that asserted the object on STM during the word steps, or a
+   priming that step 3 changed, are ported to these rules; list each
+   with its old and new assertion. Retire none without naming what
+   replaces it.
+
+8. Run once on the finished source: both stopping gates
+   (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class);
+   the lesson with its exact fields of 160 and its mean difference; the
+   verbal proof; the assessment's tables; how often a word had more than
+   one object and which was taken; and one default sweep,
+   env -u RUN_TRAINED -u RUN_SLOW make test.
+
+9. Return as §59: the edits by file and function, with every edit in
+   Models._run_sentence_word_bricks; the reader list of 5; each
+   certificate with its result; the ported tests of 7; the measurements
+   of 8 beside those of §58 and §51; the sweep; the source snapshot.
+~~~
+
+## 57. Review of §53 (Claude, 2026-11-16): accepted; two producers need Alec
+
+No §56 is written: the repair of §57.6 returns as §58, and §55.3 as §59.
+
+### 57.1 What was checked
+
+- *No production change.* `git diff 5721692530 -- bin data` is empty. The
+  changes are the five files under `test/` that §53.8 lists.
+- *The tools' own tests:* `test/test_postmerge_observers.py`, 4 passed.
+- *The capture stop* is where §53.5 says: `math.isfinite(trust)` in
+  `ConceptualSpace._incoming_trust_multiplier`, called at the entry of
+  `Models._run_sentence_word_bricks`.
+- *Both producers of §53.7,* read in the source and, for the second,
+  probed (§57.3, §57.4).
+
+*Not checked by Claude:* the counts of §53.2 and §53.3 (not taken again),
+the 45 reads of §53.6 (the lesson was not run again), and the optimizer
+step at presentation 2.
+
+### 57.2 The inventory, and what it does to rules 10 to 14
+
+- *The thought loop is no longer where a sentence reads the host:* 642
+  reads where the old inventory had 102,437. Rule 13 is done (§53.4).
+- *What reads the host now* (first sentence, 80,483 reads): the form
+  cache of `MereologicalCodes.derive` (29,538), three lookups of `LTM1`
+  (`references`, `contains`, `__len__`: 39,736 together), and the close
+  (52,497 by phase). These are lookups of rows and relations, which is
+  rule 12 and is also item 1.5's subject by name ("lookups as one
+  matmul", "LTM1's index maintained on `add`"). The meaning's own
+  records (`ConceptualMeaning`, `canonical_role_payload`,
+  `finish_clause`, about 1,700 together) are small beside them.
+- *So rules 10 to 12 are written from this list,* largest first:
+  `derive`, then `LTM1`, then the close. Rule 10's tensor record for a
+  meaning comes after them, and after §55.3, which changes where a
+  meaning is made.
+- *Rule 14 needs a better probe.* The present one stops at the first
+  break and cannot go on, so it has shown one stop, at entry. The text
+  for rule 14 first has the probe list every break.
+
+### 57.3 The first producer: a property of one letter, read over the whole word
+
+Confirmed in the source.
+
+- *Admission.* `WholeSpace.property_rows_for_bytes` returns the
+  primitive properties "holding anywhere on `surface`": it joins the
+  properties of every byte. So `This` is admitted with the capital
+  property, because its first letter has it.
+- *Reading.* `PerceptField.read_percepts` evaluates each property on each
+  contained event and then takes the greatest of each lane apart
+  (`events.amax(-2)`). The first letter gives (1, 0) and the others
+  (0, 1), so the word reads (1, 1).
+
+So a property admitted as "somewhere in the word" is read as "for, where
+any letter is for; against, where any letter is against". That reading
+is neither a union nor an intersection. It makes every word with one
+capital letter read with both lanes, wherever it stands, and by Alec's
+rule such a word is never minted: nine of the lesson's words.
+
+*Two ways to make them agree.*
+
+1. *Read it as it was admitted* (Claude's recommendation). A property
+   that holds somewhere is for where any contained event is for, and
+   against only where every contained event is against: the union that
+   `FieldLogic.reduce` already defines. `This` then reads (1, 0) on the
+   capital property. What a word is does not change.
+2. *Admit it as it is read.* A property is a whole of a word only where
+   it holds on every byte. `This` and `this` then have the same wholes
+   and differ in their parts alone.
+
+### 57.4 The second producer: a weight of one ten-millionth states a full negation
+
+Confirmed in the source, and probed.
+
+- `ConceptualSpace._prepare_part_learning` gives every defined feature of
+  a concept its opposite, the same percept negated, at weight zero.
+- `FieldLogic.power` keeps an exact rail for any positive exponent.
+  Probed: with the weight at 0, a value of exactly 0 in a conjunction
+  gives 1 (it states nothing); with the weight at 1e-7 it gives 0. Off
+  the rail the same weight changes almost nothing (0.001 gives
+  0.999999).
+- Native percepts are exact rails. So the first optimizer step that
+  makes a negated feature's weight positive turns the concept from
+  (1, 0) to (0, 1): the percept is present, its negation is exactly
+  false, and the conjunction is vetoed whatever the weight.
+
+So after its first few presentations every taught word reads as evidence
+against itself, with its positive feature still near 1 and the negated
+one at 0.025 to 0.085. This is the `non(is)` of the assessment's trees. It
+is not a contradiction that was witnessed; the backward pass promised a
+small gain and the forward pass took a whole step.
+
+*Claude's recommendation.* Of a percept's two features on one concept,
+the heavier one states and the lighter states nothing. `is`, at 0.997
+against 0.085, then reads (1, 0), and a negation takes effect only when
+its weight passes its partner's. This is the rule Alec gave for item 1.7
+("we can just treat positive and negative weights within the sigma as
+evidence for and against"), applied now to the pair of weights that
+stands in for one signed weight. Item 1.7 then replaces the pair
+(§18.24, rule 23).
+
+*The other choice:* leave it until item 1.7, and build the rest of this
+item on words that read against themselves.
+
+### 57.5 For Alec
+
+1. The first producer: read a property as it was admitted (recommended),
+   or admit it as it is read.
+2. The second producer: the heavier of the two features states
+   (recommended), now, or wait for item 1.7.
+3. *Default:* if either is repaired now, it is one small text for Codex
+   before §55.3, since both change what every word reads and every later
+   measurement.
+
+### 57.6 Alec's answers: both repaired now (2026-11-16), and the text for Codex
+
+*Rule 2 was put in doubt in §57.7 and confirmed by Alec in §57.8. The
+text below stands.*
+
+Asked whether both producers are repaired now, before the tree-first
+text, Alec chose "Yes, both now". Then, of the first producer: "please
+ensure: A property is a whole of a word only if it holds on every byte."
+That is the second way of §57.3, not the one Claude recommended, so the
+reading of a property is left as it is and its admission changes. One
+text for Codex does both repairs before §55.3. Its return is §58, and
+§55.3 then starts from that source and returns as §59. No §56 is
+written.
+
+And of the second producer, where Claude had written that only the
+member with the greater weight enters the fold: that "is not correct,
+just sum them."
+
+**The rules** (the places are Claude's reading of the source).
+
+1. *A property is a whole of a word only if it holds on every byte*
+   (Alec). `WholeSpace.property_rows_for_bytes` is the one place that
+   decides it, and every admission calls it. Today it joins the
+   properties of the bytes (`signature |= ...`), so it returns what holds
+   anywhere; it returns instead what holds on every byte. `This` is then
+   no longer a whole of the capital property, `This` and `this` have the
+   same wholes and differ in their parts, and `A`, one capital byte,
+   keeps it.
+   The reading is not changed (`PerceptField.read_percepts`, the greatest
+   of each lane over the contained events). For a property that holds on
+   every byte of a word it already gives (1, 0) at the word's own
+   extent, and over an extent that also holds bytes without the property
+   it gives both lanes, which is the walk's reason to divide.
+2. *A source and its opposite on one row are summed* (Alec). A pair is
+   a source and its opposite on one row, as
+   `ConceptualSpace._prepare_part_learning` makes them: in the feature
+   matrix of order zero the columns `col` and `col ^ 1`, and in the
+   matrices of the higher orders (`_sparse_fam`) the columns `col` and
+   `(col + offset) % (2 * offset)`.
+   *Claude's reading of "sum them":* the opposite counts as negative, so
+   the pair is one signed weight, the source's weight less its
+   opposite's. Wherever a row is folded (`SparseLayer.fold_presence`, and
+   its call in `cs_read_percept_field`), the source enters with that
+   difference where it is positive, the opposite enters with its size
+   where it is negative, and at zero neither states. `is`, at 0.997 and
+   0.085, states its percept at 0.912. Each weight receives the gradient
+   of the sum, with opposite signs, and at a sum of zero each still
+   receives the gradient a weight of zero has today. A member with no
+   partner is unchanged.
+3. *`FieldLogic.power` is not changed.* Its exact rails stay; item 1.7
+   replaces the arithmetic.
+
+**Certificates.**
+
+1. `property_rows_for_bytes` returns a property that every byte of the
+   surface has, and does not return one that only some bytes have. For
+   `This` it does not return the capital property; for `A` it does; for
+   `This` and `this` it returns the same rows. Fails on `5721692530`.
+2. A word with one capital letter, admitted and read at its own extent
+   before any teaching: its basic percept and its word concept read
+   (1, 0). Fails on `5721692530`, where both read (1, 1).
+3. A concept whose feature has weight 1 and whose negated feature has
+   weight 1e-7 reads (1, 0) when the percept is present. Fails on
+   `5721692530`, where it reads (0, 1).
+4. When the negated feature's weight is the greater, the same concept
+   reads (0, 1) when the percept is present; at equal weights the pair
+   states nothing.
+5. The two weights of a pair receive gradients of equal size and
+   opposite sign: with g and h the derivatives that each pole's weight
+   would receive at zero, the source receives g - h and the opposite
+   h - g, at equal weights as elsewhere. *(Amended by §63.4, Alec.)*
+6. The same three (3 to 5) for a pair of a higher order's matrix.
+7. Both stopping gates pass.
+
+**The text.**
+
+~~~
+Item 1.8: repair of the two producers of §53.7, before the tree-first
+text of §55.3. Read §57 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md first; the rules
+and certificates are §57.6.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Receipts stay local and are not linked. The baseline rule of §43 holds:
+a learning certificate is recorded and not repaired; a mechanism
+certificate must pass; both stopping gates must pass. Do not change a
+bound, a learning rate, a seed, a capacity or a presentation count to
+obtain a pass.
+
+Not in this text: any change to FieldLogic.power, to how a property is
+read over an extent (PerceptField.read_percepts), to
+Attention.narrowing_mask, to a chooser, the tree-first change of §55,
+the loop of looks, the teacher of the first walk, and item 1.7.
+
+1. Rule 1 (Alec): a property is a whole of a word only if it holds on
+   every byte. In WholeSpace.property_rows_for_bytes return the
+   primitive properties that every byte of the surface has, in place of
+   those that any byte has (today the bytes' signatures are joined with
+   |=). The discarded properties (whitespace, pad) stay discarded. An
+   empty surface still returns nothing.
+   Then: list every caller of property_rows_for_bytes, and any other
+   place that decides which properties are wholes of a word or of a
+   basic percept, and confirm each takes this rule; the constant-property
+   runs of stage_word_primitives are spans to read at and are not
+   changed. Say whether any admitted surface holds a whitespace or pad
+   byte, and what the rule gives for it. Say what a checkpoint written
+   before this change keeps for its words' wholes when it is loaded; do
+   not migrate it in this text.
+
+2. Rule 2 (Alec): a source and its opposite on one row are summed. A
+   pair is a source and its opposite on one row, as
+   ConceptualSpace._prepare_part_learning makes them: columns col and
+   col ^ 1 in the feature matrix of order zero, and columns col and
+   (col + offset) % (2 * offset) in the matrices of _sparse_fam. The
+   opposite counts as negative: with w the source's weight and v its
+   opposite's, wherever a row is folded (SparseLayer.fold_presence and
+   its call in cs_read_percept_field) the source enters the fold with
+   the weight w - v where that is positive, the opposite enters with
+   v - w where that is positive, and at w = v neither states. Each of w
+   and v receives the gradient of the weight that entered, with opposite
+   signs, and at w = v each still receives the gradient a weight of zero
+   has today (the floor at zero passes it). A member with no partner is
+   unchanged. Build it in one place, and say where; keep the cached
+   positions and the gather that the performance branch gave
+   fold_presence.
+
+3. Certificates 1 to 7 of §57.6, each as a test. Certificates 1, 2 and
+   3 are shown to fail on 5721692530.
+
+4. Tests that asserted a reading or a set of wholes these rules change
+   are ported; list each with its old and new assertion. Retire none
+   without naming what replaces it.
+
+5. Run once on the finished source: both stopping gates
+   (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class);
+   the table of §53.6 again with test/postmerge_word_lanes.py (every
+   word's wholes, its pair, its sources and what the walk did with it),
+   beside §53.6's; the final weights of each word's two features; the
+   lesson with its exact fields of 160 and its mean difference; the
+   verbal proof; the assessment's tables; and one default sweep,
+   env -u RUN_TRAINED -u RUN_SLOW make test.
+
+6. Return as §58: the edits by file and function; the lists of step 1;
+   where rule 2 is built; each certificate with its result; the ported
+   tests; the measurements of step 5 beside those of §53 and §51; the
+   sweep; the source snapshot. Then, on Alec's word, continue with the
+   text of §55.3 from that source.
+~~~
+
+### 57.7 Alec: not binary (2026-11-16); rule 2 is open
+
+Of rule 2 as first written ("only the member with the greater weight
+enters the fold"), Alec: that "is not correct, just sum them." And then:
+"In general, it looks like you want things to be binary, but that is not
+necessary".
+
+So both of Claude's versions of rule 2 are withdrawn: the first chose one
+member of the pair, and the second (§57.6, a signed difference in which
+the source or its opposite enters) still chose one. Rule 1 stands (a
+property is a whole of a word only if it holds on every byte).
+
+*Claude's reading of "sum them", for Alec to confirm.* Nothing is chosen.
+Each member gives the row its weight times what it reads, and each lane
+is the sum: with $w$ the source's weight and $v$ its opposite's, and
+$(f, a)$ the percept's pair, the row is given $(w f + v a,\; w a + v f)$.
+With the percept present, `is` (0.997 and 0.085) reads for 0.997 and
+against 0.085. This is the Sigma of item 1.7 (§18.24, rule 23) with both
+of its weights present.
+
+*What follows from it, and is Alec's.* A taught word then reads with both
+lanes above zero, one large and one small. The walk's test for a mint
+is binary today (`Attention.narrowing_mask` asks for one lane above zero
+and the other at zero), so such a word would be left, as the capitalized
+words are now. What "both lanes active at once" means for graded lanes
+is not Claude's to choose.
+
+*Not checked:* how a summed pair enters the rest of a row's fold, which
+is a product with exponents (`SparseLayer.fold_presence`,
+`FieldLogic.power`); it is read before the text is written.
+
+### 57.8 Alec: the two weights, signed (2026-11-16)
+
+Asked whether "sum them" is a sum on each lane, Alec answered "No".
+Asked then what is added together, he chose "The two weights, signed":
+the opposite's weight counts as negative, so the pair is one weight, the
+source's less its opposite's, applied to the percept's pair as it is; a
+negative total puts the evidence on the against lane.
+
+So rule 2 of §57.6 stands as it is written there, with its certificates
+3 to 6 and step 2 of its text, and §57.7's reading (a sum on each lane)
+is withdrawn. The question of §57.7 about the walk's test for a mint
+does not arise.
+
+*One correction of what Claude put to Alec.* The choice said that `is`
+"then reads for 0.912 and against 0". The weight is 0.912, but in today's
+fold a weight is an exponent (`FieldLogic.power`), and a percept that is
+exactly present reads exactly 1 under any positive exponent. So after
+this repair `is` reads (1, 0), and the size of the weight shows only
+where a value is not exactly 0 or 1. A reading in proportion to the
+weight comes with item 1.7's arithmetic (§18.24, rules 23 and 31), not
+with this repair, which leaves `FieldLogic.power` as it is (rule 3).
+
+### 57.9 Alec: one signed weight into a concept (2026-11-16)
+
+"That second solution is necessary to reach one channel, but for
+conceptual input, dont we want only one signed lane?" Asked whether he
+meant the weight into a concept or the evidence a concept carries, Alec
+answered "The weight".
+
+So the input of a concept is one signed weight for each source, as item
+1.7 already has it (`doc/plans/2026-11-14-sigma-pi-layers.md`, §18.24,
+rule 23). The two unsigned weights of today's source, a source and its
+opposite as separate columns, are what rule 2 of §57.6 sums, and item 1.7
+replaces the pair by the one weight. The evidence a concept carries is
+not changed by this: it stays a pair of lanes in the field that attention
+and learning read. The text of §57.6 stands.
+
+### 57.10 Alec: Codex goes on to §55.3 after the repair (2026-11-16)
+
+"when Codex returns from the repair, I will ask it to continue with
+55.3". So §58 is not read by Claude before §55.3 starts. The last step of
+§57.6's text and the heading of §55.3 are amended to say so. Claude reads
+§58 and §59 together when both are returned.
+
+Also from Alec, the same day: "From now one, reference the spec where you
+have written the text for codex, so that you emit fewer symbols." A text
+for Codex is written in the spec and named to Alec by its section; it is
+not repeated in Claude's message.
+
+## 58. The two word-field producers: partial return at the zero-derivative question (Codex, 2026-11-16; through Alec for Claude)
+
+### 58.1 Scope, causes and edits
+
+**Not complete.** Rule 1 is built; rule 2 reaches a conflict at equal weights between the ordinary signed derivative and certificate 5's requirement for a nonzero old zero-edge gradient. §58.5 is the question for Alec and Claude. No pass of that certificate or completed final campaign is claimed. The scope is §57.6 as confirmed by Alec in §57.8–57.9. Work is on local main, starting at `572169253059b684b0cb60c1642e206f9eeae0b6`. Nothing is committed or pushed. The tree-first work of §55.3, the loop of looks and item 1.7 are not built here.
+
+The first cause was the mismatch in §53.7: admission joined byte signatures, so a property of one byte became a whole of the entire surface. The native field then read counterevidence on its other bytes. The second was two independent exponents on opposite literals: an arbitrarily small positive opposite exponent vetoed a present percept on the exact rail. Neither repair changes the native evidence or the exact-rail arithmetic.
+
+| File / function | This round's edit |
+| --- | --- |
+| `bin/Spaces.py`, `WholeSpace.property_rows_for_bytes` | Intersect the signatures of all bytes, starting with the first byte. Keep the empty result and the existing whitespace/pad discard. The existing learned-membership threshold used to form a byte signature is unchanged. |
+| `bin/Layers.py`, `SparseLayer._fold_weights` | One implementation of signed pair weights, shared by every `fold_presence` call. Match opposite columns on the same target row, subtract, and expose only the positive magnitude of each represented pole. |
+| `SparseLayer.bind` | Carry feature-pair layout and original source columns into the transient view. Different unattended sources may map to the same silent slot; those addresses must not create false pairs. |
+| `SparseLayer.fold_presence` | Gather the shared helper's weights using the existing cached range positions and `_SelectDefinitionEdges` gather. The membership gathers, reductions and `FieldLogic.power` are unchanged. |
+| `test/test_item18_producer_repair.py` | Certificates 1–6, plus binding/cache-growth coverage; certificate 7 is the two existing stopping-gate tests. |
+| `test/test_definition_fold.py`, `test_witnessed_lanes_merge_by_max_without_absence_as_a_label` | Port its opposite-parameter gradient assertion from zero to the negative of the source gradient; all teacher, finite-difference, ownership and idempotence assertions stay. |
+| `test/test_evidence_folds.py`, `test_swapped_evidence_combination_is_distinct_from_a_both_pole_test` | Port the expected fold of an equal-weight opposite pair; retain its separate assertion about an actual both-pole observation. |
+| `test/postmerge_word_lanes.py`, `main` / kept-close observer / assessment callback | Replay the same 45 assessment texts; record both selected fields and per-order occupancy; read the reviewed known-probe ladder after training. These are observers, not extra training presentations. |
+
+The four attention files, `Models._run_sentence_word_bricks`, the choosers, `PerceptField.read_percepts` and `FieldLogic.power` are unchanged. The earlier §53 observer files and unrelated pending documents remain as received. This return edits only this plan in the documents.
+
+### 58.2 All word-whole readers and producers
+
+There are seven production calls in six functions:
+
+| Caller | Surface / destination |
+| --- | --- |
+| `Corpus.admit_training_forms` | Each supplied native surface; `InterpretLayer.lookup_word`, then its description's wholes into `BasicPercepts.reserve`. |
+| `ConceptLessons.admit_native_forms` | Each explicitly supplied native lesson form; directly into `BasicPercepts.reserve`. |
+| `FamiliarTier.promote_candidates` | Decoded literal bytes when promoting a native candidate. |
+| `BasicModel._stage_reading_word_concepts` | The admitted byte extent of a word in the eager reader. |
+| `BasicModel._stage_serial_concept_rows` | The currently admitted word's surface; its basic percept uses those wholes. |
+| `ConceptualSpace._autobind_property_concepts` | Surface label, or a second call on the actual stored byte parts when no label-derived property is available. Each call now intersects every byte of the surface it classifies. |
+
+The other producers were read as well. `InterpretLayer.lookup_word` passes supplied wholes into the definition and `_populate_concept_weights`; the latter knits those wholes with the witnessed parts in `BasicPercepts.reserve`. `Corpus` subsequently uses that stored description, rather than a second property decision. `InterpretLayer._sync_identity` changes identity parts while retaining the existing wholes. These preserve the classification they receive; they do not make an independent any-byte decision. Alternative decompositions of the same surface collect its already-classified wholes. `FamiliarTier.promote_candidates`' percept-recurrence branch takes the **intersection** of its member percepts' wholes while joining their parts; it already enforces a common whole across the collected parts. `BasicPercepts.reserve` records explicit boundaries. Non-word selectors (`add_concept_feature`, `_refresh_basic_selectors`, `BasicPercepts.carrying`) collect already-admitted basic percepts, not newly inferred byte properties. Numeric `BasicPercepts.perceive_value` supplies the exact value as both typed boundaries; it is not a byte-property classifier. No second any-byte word-property classifier was found.
+
+`WholeSpace.stage_word_primitives` and `stage_analysis_spans` continue to describe constant-property runs at which to read. The primitive property teacher (`_build_what_basis`, `PrimitiveProperties.teach` / `define_word`) continues to define byte memberships. None of these spans or byte predicates was changed into a word-whole admission.
+
+**Whitespace and pad.** The normal corpus cuts retain separator surfaces in native identity storage, but do not give whitespace-only surfaces lexical word rows. The lexical predicate rejects a form containing NUL; it can accept a multi-byte form containing whitespace and a non-punctuation character when explicitly supplied. The native concept-lesson admission also accepts whole supplied surfaces. An actual admission probe of `b'A B'`, `b'A\0'`, `b' '` and `b'\0'` through `ConceptLessons.admit_native_forms` admitted four basic percepts, all with empty wholes under the current primitive inventory. The lexical predicate returned true only for `b'A B'`. Thus it is not true that all admitted *native* surfaces are free of whitespace/pad. The rule computes their common properties and still discards whitespace/pad themselves; it does not strip bytes before classification. None of the 21 lexical surfaces in the comparable lesson table contains either byte.
+
+**Old checkpoints.** No migration was added. `BasicPercepts.get_extra_state` / `set_extra_state` preserve the recorded `(parts, wholes)` tuples. `BasicModel._collect_structural_extras` and the structural restore preserve `word_descriptions` and pending word descriptions. Reading an already mapped word with the same decomposition returns that description without redefining it. Consequently an old `This` keeps wholes `(0,4,8)`, including the formerly admitted capital property; this repair does not silently turn it into `(0,8)` on load. The new signed-weight read applies to restored weights, but does not rewrite those stored wholes.
+
+The non-production call sites are also accounted for (all use the same reader):
+
+- `test/test_word_admission.py::test_23_fuse_parts_before_word_admission`.
+- `test/test_item18_lexical_form.py::named_kind`.
+- `test/test_item18_producer_repair.py::test_01_wholes_hold_on_every_byte`.
+- `test/test_item18_perceptual_scalar.py::test_text_uses_the_same_percept_collection_reader`.
+- `test/test_item18_perceptual_scalar.py::test_percept_reference_promotes_without_an_event_row`.
+- `test/test_item18_perceptual_scalar.py::test_shared_value_does_not_mix_two_words_definition_views`.
+- `test/test_generated_extension.py::declared_object`.
+- `test/test_definition_rows.py::admit`.
+- `test/test_item18_scalar.py::test_scalar_only_presentation_closes_and_reconstructs_its_modalities`.
+- `test/test_item18_scalar.py::test_scalar_boxes_are_counted_native_definitions`.
+- `test/test_item18_scalar.py::test_scalar_perception_keeps_percept_and_concept_references`.
+- `test/test_item18_recognition.py::test_90_named_percept_does_not_mix_native_spellings`.
+- `test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows`.
+- `test/test_percept_collection_binding.py::test_bind_percept_collection_reads_membership_not_coordinate_overlap`.
+- `test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read`.
+- `test/test_item18_finish.py::test_scalar_views_do_not_rewrite_a_words_existing_member_collection`.
+- `test/test_item18_finish.py::named_scalar_model`.
+
+### 58.3 The signed fold and its derivative
+
+`SparseLayer._fold_weights` is the sole netting implementation. A feature's partner is `col ^ 1`; a conceptual source's is `(col + offset) % (2*offset)`. The lookup includes the target row, so different rows never cancel. Missing partners contribute zero to subtraction and keep the old unpaired floor/derivative. The partner gather is cached against the same COO topology tensor identity used by the performance branch's range cache; an edge edit invalidates that identity. No new durable weight or checkpoint field is introduced.
+
+For unequal weights only the represented pole takes fold credit. Subtraction sends its derivative to both stored parameters with opposite signs. At equality neither pole states in forward. The returned implementation passes both existing zero-floor derivatives through subtraction, with no preferred pole. If their local cotangents are `g` and `h`, the stored weights receive `g-h` and `h-g`. This preserves the old local floor derivatives and the signed chain rule, but permits cancellation. The conflict with certificate 5 is below.
+
+The magnitude still qualifies membership as an exponent: `(1, 1e-7)` gives a weight near one and an exact present percept reads `(1,0)`; `.2` against `.7` gives the opposite magnitude `.5`; equal weights state neither. This is the signed-weight decision, not the withdrawn sum of evidence lanes in §57.7.
+
+### 58.4 Certificates and test ports
+
+Certificates 1, 2 and 3 were first run with production `bin/` and `data/` unchanged from `5721692530`: **3 failed, 15 deselected**, 3.11 seconds. The observed failures were respectively the capital property in `This`'s wholes, `(1,1)` on the admitted word/basic percept, and `(0,1)` for the present percept with weights `1` and `1e-7`.
+
+| Certificate | Test / result after repair |
+| --- | --- |
+| 1 | `test_01_wholes_hold_on_every_byte`: pass, including empty, whitespace/pad and mixed surfaces. |
+| 2 | `test_02_admitted_word_and_basic_percept_are_positive_before_teaching`: pass, both `(1,0)` through the native read. |
+| 3 | `test_03_small_opposite_does_not_deny_present_percept`: pass, `(1,0)`. |
+| 4 | `test_04_dominant_opposite_and_equal_feature_weights`: 2 passed, `(0,1)` and `(0,0)`. |
+| 5 | `test_05_feature_pair_gradients_and_zero_floor`: **5 passed, 1 failed** on the returned implementation. At equal weights in the conjunctive fold both local derivatives are .25, so both signed derivatives are zero. The asserted nonzero gradient fails. |
+| 6 | `test_06_higher_order_pair_values` / `test_06_higher_order_pair_gradients`: 6 passed. |
+| 7 | Both original stopping-gate tests passed together, **2 passed in 2.98 seconds**, without changing either test. Both passed again after removing the provisional preferred-pole derivative; the combined 25-case run had 23 passes and two certificate-5 failures before correcting its union chain-rule comparison. No stopping gate failed. |
+
+The 18 new cases include the additional binding/cache-growth test. The earlier 110-pass focused run and 28-pass certificate/evidence-fold run used a provisional preferred-pole derivative at equality; **they do not certify the returned derivative**. The final focused run on the returned implementation is **22 passed, 1 failed**: the 18 new cases, four definition-fold cases and the word-admission mechanism. The one failure is the equal-weight conjunctive case of certificate 5.
+
+**Two ports, no retirements:** `test_evidence_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test` formerly expected `[(0,1),(0,1),(1,1),(0,0)]` from source/opposite columns both weighted one. It now expects four `(0,0)` pairs, because the signed coefficient is zero. Its assertion that an actually observed `(1,1)` has a both-pole corner of one, and the other three cases zero, is retained unchanged. No fixture size, learning rate, bound, seed or presentation count was changed.
+
+`test_definition_fold.py::test_witnessed_lanes_merge_by_max_without_absence_as_a_label` formerly asserted zero gradient on the opposite column. Its source gradient is approximately -.3300 in the observed failing run; the new signed coefficient gives the opposite +.3300. It now asserts exact equal size and opposite sign. The existing finite-difference comparison on the source weight, no gradients into field/codebook/testimony, held teacher, missing-place mask and repeated-testimony assertions all remain. The port passes.
+
+### 58.5 For Alec and Claude: the derivative at a zero sum
+
+**Question.** Does certificate 5 allow the two old zero-edge derivatives to cancel when propagated through a signed sum? I recommend **yes**: retain the ordinary signed chain rule and allow this specific zero; do not privilege a source pole or add a different backward rule merely to obtain a nonzero gradient. The words “each receives one wherever a weight of zero receives one” would then need that qualification.
+
+**Reproduction.** One row has a source/opposite pair at equal weights `.5,.5` and a separate unpaired neutral anchor at weight 1. The source memberships are `.25,.8`; the anchor's membership is 1 in the conjunctive fold. A generic unpaired control has the same two edges at zero. Its unchanged old fold gives local gradients **(.25,.25,0)**. Signed subtraction necessarily gives **(0,0,0)**. With the pair at unequal weights the represented pole gives the required equal-size/opposite-sign gradient; the ambiguity is at the kink only. This uses no optimizer, selected seed or learning criterion.
+
+**Why the provisional choice was removed.** Initially I retained only the non-negated source's zero derivative, producing `(.25,-.25,0)` in this check. That made the first reading of certificate 5 pass, but it is an arbitrary choice between the two old floor derivatives. A producer trace exposed its consequence in the existing grounded fixture: after its unchanged 32 naming presentations, a prospective pair remained `(0,0)` instead of learning the negative feature; the `00` case read `(0,0)` where the old independent-weight reader gave `(0,1)`. In the diagnostic with the same Torch starting stream, the old opposite feature reached **.17335018515586853** while the positive stayed zero. The present source-only derivative had suppressed that credit. Both zero derivatives passing through the signed chain rule restore the word-admission mechanism test without changing that fixture or its assertion. The speculative preferred-pole rule is therefore **removed**, not left behind a switch.
+
+This is not a request to tune the learning fixture. It asks which derivative the mechanism certificate specifies at exact equality. No new backward rule, chooser preference or learned-result repair is proposed.
+
+### 58.6 Validation stopped at the question
+
+Both stopping gates passed before the broader run and passed on the returned production implementation. The initial default command was exactly `env -u RUN_TRAINED -u RUN_SLOW make test`, with nothing deselected. It and the lesson were stopped cleanly once the derivative conflict was established; they ran the now-rejected preferred-pole variant. They are **incomplete diagnostics**, not final measurements.
+
+The sweep completed **3255 of 7257** selected cases before interruption (exit 130). It found two assertion failures: the opposite-gradient contract in `test_definition_fold` (ported above), and `test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery` (produced by the provisional preferred-pole derivative, removed above). That word-admission test now passes without an assertion port. No learning expected-failure mark was added. The outstanding mechanism failure on the returned source is certificate 5's nonzero-at-equality assertion.
+
+The lesson reached **117 of 160** kept sentences, with **0/117** exact fields and mean of sentence mean absolute differences **.19548810391615218** on that discarded variant. At interruption, order occupancy/capacity was **52/2346, 105/1239, 27/610**. It did not reach the after-training table or ladder. These are not substituted for §53.6's completed 160-sentence run, its 45 final reads or the required final feature weights. Nor are they a comparison with §51's accepted full sweep (**6894 passed, 338 skipped, 2 xpassed, 0 failed**, 7234 selected) or its passing verbal proof. The requested final lesson, every-word table, final weights, verbal proof, assessment tables and complete sweep remain owed after the zero-derivative decision.
+
+A launch-only error occurred before the lesson began: the generic resource-monitor context installs signal handlers and cannot run in a Python thread. The lesson was launched instead in a separate monitored process; it was not retrained to select a result. Receipts remain local and are not linked.
+
+### 58.7 Returned working source
+
+The returned `bounded_tests.source_snapshot` is **`ab9e798537216aa03f801254356e12a51c3e77b48404dacca1f65007ac84feff`**. The uncommitted changes made by this repair are `bin/Spaces.py`, `bin/Layers.py`, `test/test_item18_producer_repair.py`, the two ported test files and the additions to `test/postmerge_word_lanes.py` listed above. The earlier §53 changes and unrelated pending files are preserved. The five protected attention places and excluded arithmetic/readers are unchanged. No commit, push, migration, fixture resize, seed selection, learning-rate change or presentation-count change was made.
+
+Stop here for Alec's answer to §58.5. §55.3 has not begun.
+
+
+### 58.8 Completion after §63.4 and the reader check of §63.5
+
+Alec's answer resolves §58.5: both zero-edge derivatives pass through ordinary signed subtraction, including their cancellation. The implementation of §58.3 stays. Certificate 5 now compares its equal-weight gradients with `(g-h, h-g)` from the unchanged unpaired zero-edge control, instead of demanding a nonzero result. Both fold modes and both unequal signs remain covered. Certificate 6 has the same control on the higher-order layout. No preferred-pole derivative remains.
+
+#### 58.8.1 The additional readers, their causes and repairs
+
+The resumed audit found another forward fold of the same conceptual matrices: `FieldProjection.close`, used for stimulation, bracket closure and intuition. `ConceptAllocator.layer(order)` returns the same store for every order, and `_sparse_families` registers its sigma and conjunctive matrices. `close` read raw parameter values directly, bypassing `fold_presence`. With a present source and no direct evidence on the target, weights `(0.2,0.7)` and `(0.5,0.5)` both incorrectly returned `(1,0)`. The additional certificate-6 test failed in those two cases before repair (2 failed, 1 passed). `close` now obtains each matrix's weights once from `SparseLayer._fold_weights`; the readings become `(0,1)` and `(0,0)`.
+
+The later §63.5 note also identified raw-weight edge admission and reverse attribution. Seven added checks failed before repair: six reverse cases, covering both fold modes and both unequal signs plus equality, and one canceled dependency cycle. A canceled pair was still being undone backward; two canceled definitions also falsely formed a cycle. The reverse now undoes the signed exponent, and closure admits only a positive net edge. The dependency algorithm and direct-evidence maximum are unchanged.
+
+Tracing that reverse to its native percept demand found the same problem in `ConceptualSpace.cs_percept_attribution`: its shares used raw feature weights. Three added checks failed before repair. For a demand `(.8,.3)`, the stronger source must attribute `(.8,.3)`, the stronger opposite `(.3,.8)`, and equality nothing. The reader now obtains its feature weights from the same helper before computing shares. This does not change how a property is read over an extent.
+
+| File / function added to §58.1's edit list | Final change and affected callers |
+| --- | --- |
+| `bin/FieldProjection.py::close` | One netted-weight read per matrix, used for both edge admission and the weighted fold. `stimulate` and `close_bracket` receive it; no canceled dependency is retained. |
+| `bin/Layers.py::SparseLayer.attribute_presence` | Read `_fold_weights(y)` instead of `self.values.clamp_min(0)`. Its selection and inverse exponent are otherwise unchanged. Direct production callers are `ConceptualAttentionLayer.reverse`, `ConceptualSpace.cs_reverse_presence` and `CaseSelection.stage_case_bank`. |
+| `bin/Spaces.py::ConceptualSpace.cs_percept_attribution` | Read `_fold_weights(field)` instead of raw feature magnitudes before distributing demand. Its native consumers are `FieldReverse`, `ConceptualSpace.refine_over_collected` and `Models._passback_scope_ps`; span and pole addressing are unchanged. |
+| `test/test_item18_producer_repair.py` | Amend certificate 5 as Alec decided; add closure, reverse, canceled-cycle and native-percept reverse checks. |
+| `test/test_item20_round6_repair.py` / `test/test_stored_idea_generation.py` | Replace empty-table namespaces by the native two-row `ConceptualAttentionLayer.square(2)` in the isolated fixtures. No assertion or capacity changes. |
+
+The arithmetic still exists in **one place**, `SparseLayer._fold_weights`. The performance branch's cached range positions and `_SelectDefinitionEdges` gather remain. Definition storage, source signs, the native property reader and `FieldLogic.power` are not rewritten. The acquisition/generalization of a percept collection's boundaries is unchanged; this repair concerns the signed sparse definition read and its reverse, not a new rule for constructing perceptual boundaries.
+
+#### 58.8.2 Certificates, ports and interrupted diagnostics
+
+| Certificate | Finished-source mechanism coverage |
+| --- | --- |
+| 1 | `test_01_wholes_hold_on_every_byte`: every-byte intersection, single capital, empty surface, whitespace/pad. |
+| 2 | `test_02_admitted_word_and_basic_percept_are_positive_before_teaching`: both native reads `(1,0)`. |
+| 3 | `test_03_small_opposite_does_not_deny_present_percept`: weights `(1,1e-7)` read `(1,0)`. |
+| 4 | `test_04_dominant_opposite_and_equal_feature_weights`: 2 cases, `(0,1)` and `(0,0)`. |
+| 5 | `test_05_feature_pair_gradients_and_zero_floor`: 6 cases; signed gradients, including allowed cancellation at equality. `test_05_percept_attribution_reads_the_same_signed_feature`: 3 native inverse cases. |
+| 6 | `test_06_higher_order_pair_values`, `test_06_higher_order_pair_gradients`, `test_06_definition_closure_reads_the_same_signed_pair`: 3 cases each. `test_06_reverse_attributes_only_the_signed_definition`: 6 cases. `test_06_cancelled_definition_does_not_create_a_dependency_cycle`: 1 case. |
+| 7 | The two original stopping-gate tests, unchanged; their full-sweep results are below. |
+
+Certificates 1–6 and the binding/cache-growth check comprise **31 cases**. The complete focused run, including definition attribution, generated extensions, stored-idea generation, occurrence writing, field/places/intuition and both stopping gates, is **156 passed, 2 skipped, 1 warning in 35.31 seconds**. The skips are existing slow cases. The warning is an existing conversion of a gradient-bearing tensor to a scalar in `test_weak_disjuncts_do_not_accumulate`. No stopping gate has failed.
+
+**Five existing test names ported (seven parameterized cases); none retired.** The two semantic ports in §58.4 remain: equal opposite weights now state neither lane, and the opposite parameter receives the negative of its source's gradient. The additional three names are:
+
+- `test_item20_round6_repair.py::test_occurrence_writer_preserves_the_emitted_terminal_despite_priming`.
+- `test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False/True]`.
+- `test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True/False]`.
+
+These latter tests supplied an empty sparse-table namespace without the store's weight reader. They now supply the native empty two-row store with the same row identities. Every assertion is unchanged. Certificate 5 itself has the separately authorized assertion port. No new expected-failure mark, fixture resize, seed choice, learning-rate change or presentation-count change was made.
+
+The resumed validation campaigns before the final one are **diagnostics**, not the measurements below. One completed the 160-sentence lesson and stopped its sweep at 5169/7257 to include the closure repair. A later one exposed the empty-table fixture ports. The next completed the training presentations but was interrupted before its final assessment when §63.5's two additional reader requirements were read. No source was edited while those workers were running. A local compiler-cache permission error in a focused run was rerun using a writable cache and passed; no production change addressed that environment error.
+
+One diagnostic random stream also reproduced a pre-existing test assumption: `test_generation_selection_backward.py::test_native_mixed_sentence_keeps_one_live_composition_per_stream` forces path costs to require opposite winners, but its sampled alternative was reconstruction (walk 4) for both streams. That path creates no new composition and does not call the monkeypatched sentence-cost function. The winners were `[False,False]` on both the unchanged `5721692530` production and the repaired production on that same saved stream. The test was not changed or marked. Its result in the final sweep is recorded separately below.
+
+#### 58.8.3 Finished lesson and the every-word comparison
+
+The unchanged `explore-1.xml` protocol completes **160 sentences**: 64 idea and 96 relation presentations, four epochs per phase. It uses the same recorded initial streams as §53 and replays its **45 final assessment texts verbatim**. Runtime including the final reads is **851.696974 seconds**, peak process-tree memory **4,889,105,400 bytes**, exit **0**. This is a completed measurement, not a passed learning criterion: the ideas phase meets its phase exit, the relations phase does not; correct answer bindings are **0/32** and **0/48**, and nonempty answers **0/32** and **0/48**.
+
+The observer compares the selected path's `SentenceUnderstanding.understanding_field`, produced by `Extension.understand` and its operators' `compose_extend` read, with that same path's `generation.field`, produced by `OutputOccurrences.generated` and its generate operators/terminal stimulation. It reads the selected observation records, not a generated scratch field after restoration. Concept IDs are aligned with absent entries zero; the maximum over each concept's locations is compared lane by lane.
+
+| Measurement | §51 | §53 | Finished §58 |
+| --- | --- | --- | --- |
+| Full 160-sentence field equality | Not measured there | Not measured there | **0/160 exact** |
+| Mean of sentence mean absolute field differences | Not measured there | Not measured there | **0.2432773888373049** |
+| Coordinate-weighted mean difference / maximum | Not measured there | Not measured there | **0.28726480308539826 / 1** |
+| Same 45 texts: known-word occurrences minted / left | Not measured there | **67 / 72** | **139 / 0** |
+| Same 21 words: positive-only at their own span | Not measured there | **1** (`A`); nine mixed-case words both-lane, eleven lowercase words negative-only | **21** |
+| Native nonzero sources over those 139 word occurrences | Not measured there | Word rows; object alternatives zero | **139 for-lane word-row sources**, no against-lane source, no nonzero object source |
+| Stopping gates | Both pass | Both pass | Both pass in the full sweep |
+
+Order occupancy/capacity after the lesson is **60/2346 at order 0, 114/1239 at order 1, 27/610 at order 2**. No capacity was changed. No field-accuracy bar or new learning fix was introduced.
+
+The table below names every surface, its wholes, its final feature pair and the actual lane source; the source for each new `(1,0)` reading is the word ID/row shown, not one of its objects. The final two stored feature weights are **(1,0) for all 21 words**. Punctuation remains a separate native surface rather than an allocated lexical word. No own-span word in the comparison remains both-lane, so §67's referral condition before the later loop-of-looks text is not triggered by this table.
+
+All 45 texts replayed verbatim. Walk actions: M = minted, E = entered, L = left. Pairs and sources are given by the word table below; punctuation is not an allocated lexical word.
+
+| Text | §53 word/action sequence | §58 word/action sequence |
+| --- | --- | --- |
+| This is Felix. | This:L is:M Felix:L .:M | This:M is:M Felix:M .:M |
+| What is this? | What:L is:M this:M ?:M | What:M is:M this:M ?:M |
+| That is Ciao. | That:L is:M Ciao:L .:M | That:M is:M Ciao:M .:M |
+| What is that? | What:L is:M that:M ?:M | What:M is:M that:M ?:M |
+| Here is Felix. | Here:L is:M Felix:L .:M | Here:M is:M Felix:M .:M |
+| Who is here? | Who:L is:M here:M ?:M | Who:M is:M here:M ?:M |
+| There is Ciao. | There:L is:M Ciao:L .:M | There:M is:M Ciao:M .:M |
+| Who is there? | Who:L is:M there:M ?:M | Who:M is:M there:M ?:M |
+| That is Felix. | That:L is:M Felix:L .:M | That:M is:M Felix:M .:M |
+| This is Ciao. | This:L is:M Ciao:L .:M | This:M is:M Ciao:M .:M |
+| Here is Ciao. | Here:L is:M Ciao:L .:M | Here:M is:M Ciao:M .:M |
+| There is Felix. | There:L is:M Felix:L .:M | There:M is:M Felix:M .:M |
+| Felix is a cat. | Felix:L is:M a:M cat:M .:M | Felix:M is:M a:M cat:M .:M |
+| What is Felix? | What:L is:M Felix:L ?:M | What:M is:M Felix:M ?:M |
+| Ciao is a cat. | Ciao:L is:M a:M cat:M .:M | Ciao:M is:M a:M cat:M .:M |
+| Is Ciao a cat? | Is:L Ciao:L a:M cat:M ?:M | Is:M Ciao:M a:M cat:M ?:M |
+| A cat lives. | A:M cat:M lives:M .:M | A:M cat:M lives:M .:M |
+| Is Felix a cat? | Is:L Felix:L a:M cat:M ?:M | Is:M Felix:M a:M cat:M ?:M |
+| What is Ciao? | What:L is:M Ciao:L ?:M | What:M is:M Ciao:M ?:M |
+| A cat moves. | A:M cat:M moves:M .:M | A:M cat:M moves:M .:M |
+| A cat sleeps. | A:M cat:M sleeps:M .:M | A:M cat:M sleeps:M .:M |
+| A cat eats. | A:M cat:M eats:M .:M | A:M cat:M eats:M .:M |
+| is Ciao Felix. | is:M Ciao:L Felix:L .:M | is:M Ciao:M Felix:M .:M |
+| Felix is Ciao. | Felix:L is:M Ciao:L .:M | Felix:M is:M Ciao:M .:M |
+| is Felix Felix. | is:M Felix:L Felix:L .:M | is:M Felix:M Felix:M .:M |
+| Felix is Felix. | Felix:L is:M Felix:L .:M | Felix:M is:M Felix:M .:M |
+| is Here Felix. | is:M Here:L Felix:L .:M | is:M Here:M Felix:M .:M |
+| Felix is Here. | Felix:L is:M Here:L .:M | Felix:M is:M Here:M .:M |
+| is Is Felix. | is:M Is:L Felix:L .:M | is:M Is:M Felix:M .:M |
+| Felix is Is. | Felix:L is:M Is:L .:M | Felix:M is:M Is:M .:M |
+| is That Felix. | is:M That:L Felix:L .:M | is:M That:M Felix:M .:M |
+| Felix is That. | Felix:L is:M That:L .:M | Felix:M is:M That:M .:M |
+| is There Felix. | is:M There:L Felix:L .:M | is:M There:M Felix:M .:M |
+| Felix is There. | Felix:L is:M There:L .:M | Felix:M is:M There:M .:M |
+| is This Felix. | is:M This:L Felix:L .:M | is:M This:M Felix:M .:M |
+| Felix is This. | Felix:L is:M This:L .:M | Felix:M is:M This:M .:M |
+| is What Felix. | is:M What:L Felix:L .:M | is:M What:M Felix:M .:M |
+| Felix is What. | Felix:L is:M What:L .:M | Felix:M is:M What:M .:M |
+| is Who Felix. | is:M Who:L Felix:L .:M | is:M Who:M Felix:M .:M |
+| Felix is Who. | Felix:L is:M Who:L .:M | Felix:M is:M Who:M .:M |
+| is is Felix. | is:M is:M Felix:L .:M | is:M is:M Felix:M .:M |
+| Felix is is. | Felix:L is:M is:M .:M | Felix:M is:M is:M .:M |
+| is this Felix. | is:M this:M Felix:L .:M | is:M this:M Felix:M .:M |
+| Felix is this. | Felix:L is:M this:M .:M | Felix:M is:M this:M .:M |
+| is Felix This. | is:M Felix:L This:L .:M | is:M Felix:M This:M .:M |
+
+| Word | §53 wholes | §58 wholes | §53 pair (range over reads) | §58 pair | §53 feature weights (source, opposite) | §58 feature weights | §58 word ID / row / basic percept |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A | (0, 4, 8) | (0, 4, 8) | (1, 0) | (1, 0) | (1, 0) | (1, 0) | 333 / 41 / 26 |
+| Ciao | (0, 4, 8) | (0, 8) | (1, 0.9995708466) | (1, 0) | (1, 0) | (1, 0) | 112 / 12 / 0 |
+| Felix | (0, 4, 8) | (0, 8) | (1, 0.9998221397) | (1, 0) | (1, 0) | (1, 0) | 113 / 13 / 1 |
+| Here | (0, 4, 8) | (0, 8) | (1, 0.9998221397) | (1, 0) | (1, 0) | (1, 0) | 114 / 14 / 2 |
+| Is | (0, 4, 8) | (0, 8) | (1, 0.9995492101) | (1, 0) | (1, 0) | (1, 0) | 334 / 42 / 27 |
+| That | (0, 4, 8) | (0, 8) | (1, 0.9995708466) | (1, 0) | (1, 0) | (1, 0) | 115 / 15 / 3 |
+| There | (0, 4, 8) | (0, 8) | (1, 0.9998221397) | (1, 0) | (1, 0) | (1, 0) | 116 / 16 / 4 |
+| This | (0, 4, 8) | (0, 8) | (1, 0.9995708466) | (1, 0) | (1, 0) | (1, 0) | 117 / 17 / 5 |
+| What | (0, 4, 8) | (0, 8) | (1, 0.9995708466) | (1, 0) | (1, 0) | (1, 0) | 118 / 18 / 6 |
+| Who | (0, 4, 8) | (0, 8) | (1, 0.9995708466) | (1, 0) | (1, 0) | (1, 0) | 119 / 19 / 7 |
+| a | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9998300076, 0.02051447332) | (1, 0) | 335 / 43 / 28 |
+| cat | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.995688498, 0.1030747443) | (1, 0) | 336 / 44 / 29 |
+| eats | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9999855757, 0.007193554658) | (1, 0) | 337 / 45 / 30 |
+| here | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9994442463, 0.03997046873) | (1, 0) | 120 / 20 / 8 |
+| is | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9968709946, 0.08496923745) | (1, 0) | 121 / 21 / 9 |
+| lives | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9999551773, 0.01144853607) | (1, 0) | 338 / 46 / 31 |
+| moves | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9999518394, 0.01204280555) | (1, 0) | 339 / 47 / 32 |
+| sleeps | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.999974966, 0.00901361648) | (1, 0) | 340 / 48 / 33 |
+| that | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9998241663, 0.02165108733) | (1, 0) | 122 / 22 / 10 |
+| there | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9998360872, 0.02111715637) | (1, 0) | 123 / 23 / 11 |
+| this | (0, 8) | (0, 8) | (0, 1) | (1, 0) | (0.9997758865, 0.02529602125) | (1, 0) | 124 / 24 / 12 |
+
+Actual nonzero native-field source counts: {('for', 'word'): 139}. Nonzero object evidence records: 0.
+
+#### 58.8.4 Assessment tables
+
+P = passed, F = failed, B = blocked by an earlier rung, N = unavailable for the fixture’s declared vocabulary. These are preserved evaluation reads; the reviewed ladder gates no sweep assertion. Each source has its nine rungs below.
+
+| Source | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `test/test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0]` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75]` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi]` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor]` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row` | F | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned]` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing]` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel` | N | N | N | N | N | N | N | N | N |
+| `explore-1 after four epochs` | P | F | B | B | N | N | B | N | N |
+| `test/test_item18_recognition.py::test_90_present_percept_is_said_by_its_class_without_naming_an_object` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_recognition.py::test_90_named_percept_does_not_mix_native_spellings` | P | N | N | N | N | N | N | N | N |
+
+Failed-rung records are grouped only when their displayed words, references, lanes, tree, missing leaves and answer agree. The count is the number of restored reads. No missing kind of word is guessed from its spelling.
+
+
+`test/test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0]`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75]`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views`: rungs 2: fixture declares 3 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index`: rungs 2: fixture declares 3 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`: rungs 2: fixture declares 4 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi]`: rungs 2: fixture declares 2 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor]`: rungs 2: fixture declares 2 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+**`test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`**
+
+Rung 1: definition not trusted, word does not denote one object.
+
+| Count | Record |
+| --- | --- |
+| 3 | `alpha`; 0 alpha: known, minted, row 12, objects [], trusted False; pair [1.0, 0.0]. Tree `alpha`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []} |
+
+`test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`: rungs 2: fixture declares 2 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_intuit.py::test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned]`: rungs 2: fixture declares 1 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing]`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient`: rungs 2: fixture declares 1 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+**`explore-1 after four epochs`**
+
+Rung 2: not said back, unknown word, definition not trusted, word does not denote one object, objects are not distinct.
+
+| Count | Record |
+| --- | --- |
+| 3 | `This`; 0 This: known, minted, row 17, objects [181], trusted True; pair [1.0, 0.0]. Tree `This`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `This` ([None]) |
+| 3 | `is`; 0 is: known, minted, row 21, objects [128], trusted True; pair [1.0, 0.0]. Tree `is`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `A` ([None]) |
+| 3 | `Felix`; 0 Felix: known, minted, row 13, objects [157], trusted True; pair [1.0, 0.0]. Tree `Felix`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Felix` ([None]) |
+| 3 | `.`; 0 .: unknown, minted, row None, objects [], trusted False. Tree `.`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `sleeps` ([None]) |
+| 3 | `What`; 0 What: known, minted, row 18, objects [164], trusted True; pair [1.0, 0.0]. Tree `What`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `What` ([None]) |
+| 3 | `this`; 0 this: known, minted, row 24, objects [186], trusted True; pair [1.0, 0.0]. Tree `this`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `this` ([None]) |
+| 3 | `?`; 0 ?: unknown, minted, row None, objects [], trusted False. Tree `?`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `sleeps` ([None]) |
+| 3 | `That`; 0 That: known, minted, row 15, objects [192], trusted True; pair [1.0, 0.0]. Tree `That`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `That` ([None]) |
+| 3 | `Ciao`; 0 Ciao: known, minted, row 12, objects [169], trusted True; pair [1.0, 0.0]. Tree `Ciao`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Ciao` ([None]) |
+| 3 | `that`; 0 that: known, minted, row 22, objects [197], trusted True; pair [1.0, 0.0]. Tree `that`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `that` ([None]) |
+| 3 | `Here`; 0 Here: known, minted, row 14, objects [202], trusted True; pair [1.0, 0.0]. Tree `Here`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Here` ([None]) |
+| 3 | `Who`; 0 Who: known, minted, row 19, objects [176], trusted True; pair [1.0, 0.0]. Tree `Who`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Who` ([None]) |
+| 3 | `here`; 0 here: known, minted, row 20, objects [207], trusted True; pair [1.0, 0.0]. Tree `here`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `here` ([None]) |
+| 3 | `There`; 0 There: known, minted, row 16, objects [212], trusted True; pair [1.0, 0.0]. Tree `There`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `There` ([None]) |
+| 3 | `there`; 0 there: known, minted, row 23, objects [217], trusted True; pair [1.0, 0.0]. Tree `there`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `there` ([None]) |
+| 3 | `a`; 0 a: known, minted, row 43, objects [348], trusted True; pair [1.0, 0.0]. Tree `a`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `a` ([None]) |
+| 3 | `cat`; 0 cat: known, minted, row 44, objects [353], trusted True; pair [1.0, 0.0]. Tree `cat`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `cat` ([None]) |
+| 3 | `Is`; 0 Is: known, minted, row 42, objects [370], trusted True; pair [1.0, 0.0]. Tree `Is`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Is` ([None]) |
+| 3 | `A`; 0 A: known, minted, row 41, objects [389], trusted True; pair [1.0, 0.0]. Tree `A`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `A` ([None]) |
+| 3 | `lives`; 0 lives: known, minted, row 46, objects [], trusted False; pair [1.0, 0.0]. Tree `lives`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `lives` ([None]) |
+| 3 | `moves`; 0 moves: known, minted, row 47, objects [], trusted False; pair [1.0, 0.0]. Tree `moves`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `moves` ([None]) |
+| 3 | `sleeps`; 0 sleeps: known, minted, row 48, objects [], trusted False; pair [1.0, 0.0]. Tree `sleeps`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `sleeps` ([None]) |
+| 3 | `eats`; 0 eats: known, minted, row 45, objects [370], trusted True; pair [1.0, 0.0]. Tree `eats`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `cat` ([None]) |
+
+`explore-1 after four epochs`: rungs 3,4,7: lower rung has not passed; rungs 5: fixture has no declared determiner; rungs 6: fixture has no declared determiner, noun_modifier; rungs 8: fixture has no declared verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, verb_modifier.
+
+`test/test_item18_recognition.py::test_90_present_percept_is_said_by_its_class_without_naming_an_object`: rungs 2: fixture declares 3 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_recognition.py::test_90_named_percept_does_not_mix_native_spellings`: rungs 2: fixture declares 3 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+#### 58.8.5 Native scalar curricula
+
+These two native assessment sources run separately under `RUN_SLOW`, using their original captured first streams. The teacher-only target remains `surface(0, surface(1, verb(bind.open(lower(2)), 3)))`. Scalar acquisition, learning rate, capacity, 200-round bound and the subsequent 18 presentations are unchanged. Evaluation supplies only text and the scalar.
+
+| Fixture | Completed rounds / completed training presentations / evaluated readings | Exact readings / qualifying rounds | Result | Call / guard seconds | Peak bytes |
+| --- | --- | --- | --- | --- | --- |
+| `test_90_present_percept_is_said_by_its_class_without_naming_an_object` | 60 / 180 / 180 | 0 / 0 | FAIL: intuition replay mismatch during the first presentation of round 61 | 599.087996 / 615.051763 | 2728218008 |
+| `test_90_named_percept_does_not_mix_native_spellings` | 200 / 600 / 600 | 0 / 0 | 200-round bound reached; existing non-strict XFAIL | 3266.332973 / 3271.854594 | 2659192240 |
+
+Neither fixture reached its subsequent 18 presentations or the recognition assertions. No recognition accuracy is claimed. Each final available round’s three evaluated readings follow; the first is round 60, before the next training presentation raises.
+
+| Fixture | Count | Last available kept reading |
+| --- | --- | --- |
+| 1 | 3 | `implies(part(0, lower(1)), surface(lower(2), lower(3)))` |
+| 2 | 3 | `preposition(0, verb(lower(1), multiply(bind.open ×3(2), 3)))` |
+
+Fixture 2’s learning producer is its kept compose program: it does not match the annotated nesting and opening. Fixture 1 instead hits a replay validation error and is **not** relabeled a learning XFAIL. Both after-stage known probes are in the preceding table, taken before cleanup.
+
+**Replay producer, traced separately.** The failing native episode is 1589, at level zero. After `intuit` (1590), `infer` (1591) has no intuition firing, but its recorded resident alternative is `(1,1)`, so its result is `(1,1)`. `exist` (1592) then records `(0,0)`. The next `infer` (1593) again has no intuition firing; this time its recorded resident alternative and result are both `(0,0)`. Both inference results have references `(None,None,None)` and zero role values. Thus this native failure is **not** evidence that those two results have different numerical meanings.
+
+`ThoughtChunks._write_serial` combines the inference with matching **currently held** chunks, by references and role mask, and `stage` writes those alternatives into the event. The serial `exist` face writes the focus too. `Thoughts.replay_thoughts` reads the event's alternatives but also maxima in every earlier inference under the same reference tuple from its episode-local `conclusions` dictionary. The intervening serial write does not remove that dictionary entry. It therefore replays `(1,1)` for event 1593, against the event's `(0,0)`, and raises `intuition pair differs from replayed rule firings`. This is a disagreement between the resident-content read and the historical replay accumulator, exposed at the empty-reference key.
+
+A separate minimal three-event reproduction, with the same zero meaning and alternatives `(1,1)`, then `exist`, then alternatives `(0,0)`, fails in the same way; each inference alone passes. `ThoughtChunks.py`, `ThoughtInference.py`, `Thoughts.py`, `ThoughtStream.py`, `Intuition.py` and `Models.py` are byte-identical to `5721692530`. This establishes the pre-existing mechanism defect; it does **not** claim that the starting model's full curriculum reached this same learned trajectory. The signed-fold repair changes that trajectory and newly reaches the defect here.
+
+For Alec and Claude, I recommend reconciling replay with the executor's recorded resident-alternative contract, and reviewing whether an empty reference tuple is a sufficient conclusion identity. No historical trust is silently discarded, no validation is weakened, and no thought mechanism is changed in this two-producer repair. The failed native certificate remains a reported failure, not an accepted learning baseline. The default sweep skips these `RUN_SLOW` curricula and remains independently green.
+
+#### 58.8.6 Finished default sweep, verbal proof and returned source
+
+The command is exactly **`env -u RUN_TRAINED -u RUN_SLOW make test`**, with nothing deselected. All **7270/7270 selected cases** complete: **6935 passed, 333 skipped, 2 xpassed, 0 xfailed, 0 failed**, exit **0**. Counts are by selected node, not repeated reports for one node. Elapsed time is **2205.829587 seconds**, peak aggregate process-tree memory **10,792,876,240 bytes**. The source manifest is identical at the start and end. For comparison, §51 reported **6894 passed, 338 skipped, 2 xpassed, 0 failed** from 7234 selected cases, **1960.391055 seconds**, peak **11,966,578,144 bytes**; §53 did not run a default sweep.
+
+Both stopping gates pass in this sweep: `test_mm_xor.py::TestMMXorConvergence::test_convergence` in **0.282478 seconds**, and `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class` in **0.104430 seconds**. The 31 producer-repair cases pass. No stopping gate failed during this repair.
+
+The unchanged non-strict marks produce the same two XPASS names as §51:
+
+- `test_forgetting.py::test_unforced_grammar_turnover_reports_its_retained_occurrences`.
+- `test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`.
+
+No new mark was added. The mixed-sentence selection test discussed in §58.8.2 passes in this final sweep; its separately reproduced pre-existing random-path assumption is not counted as a final failure. The 333 skips are the default exclusions/availability guards, including the two scalar curricula measured separately above.
+
+**Verbal proof:** the sweep runs `TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct` on its native **400 epochs / 1600 presentations**, once. It passes, with **4/4 exact sentence reconstructions** and **4/4 field reconstructions**: `hello world`, `hello there`, `loving world`, `loving there`. This equals §51's 4/4 reconstruction result; §53 did not rerun it. The printed predictions are **(.5000, .5000, .5000, .5000)** against labels **(0,1,1,0)**; their MSE from those rounded values is **.25**. This is not a claim that this grammar model learned numeric XOR. Final printed train losses are **output .1750, reconstruction .0000**. The proof worker takes **654.897122 seconds**, peak **2,245,447,256 bytes**, versus §51's **583.8 seconds**. No initialization was chosen to obtain this result.
+
+**Remaining results and producers.** There is no unexpected default-sweep failure. The lesson's generated extension disagrees with its composed extension on all 160 presentations; its two publishers and its answer limits are in §58.8.3. The reviewed ladder's failures and records are in §58.8.4. The slow scalar result and the newly reached failure of the pre-existing thought-replay mechanism are in §58.8.5; neither is hidden by a new expected-failure mark or a changed assertion. No chooser or arithmetic was tuned to improve a learning result.
+
+The returned `bounded_tests.source_snapshot` is **`7768411acaecf5d2a9ad58a39f2f0041c79f43cdc6d94fc1b79176bec5bf7fb6`**. The production diff is exactly `bin/Spaces.py`, `bin/Layers.py` and `bin/FieldProjection.py`; this repair's tests/observer and ports are listed above. The four protected attention files and `Models._run_sentence_word_bricks` have **no edits**, nor has any other part of `Models.py`. Earlier observer changes and unrelated pending files are preserved. `git diff --check` passes. Work remains on local main at `572169253059b684b0cb60c1642e206f9eeae0b6`. Nothing was committed or pushed; receipts remain local and are not linked.
+
+
+## 59. Tree-first preflight: compound needs an unrecorded case input (Codex, 2026-11-16; through Alec for Claude)
+
+This is the read-only preflight of §55.3 on the repaired source. The question was raised while the independent final measurements of §58.8 ran; those measurements are now returned above, including the native scalar replay failure. No tree-first production edit has been made. The operator-reader audit reaches the explicit stop in step 4 before removing the early interpretation. The five protected attention places are unchanged.
+
+### 59.1 Starting observations
+
+On source `7768411acaecf5d2a9ad58a39f2f0041c79f43cdc6d94fc1b79176bec5bf7fb6`, the lesson's first document was replayed from the same recorded initialization, without forcing or choosing actions. Its four texts are `This is Felix.`, `What is this?`, `That is Ciao.`, and `What is that?`. Both complete paths' actions, leaf values/word references/object references, operand witnesses, and the clauses' points, roles and extensions were captured before admission; the actual clauses passed to the writer were captured too. The readings are retained locally, not linked. No word-tree or conversion certificate is claimed before implementing one.
+
+Neither stopping gate contains a textual sentence to capture through `_commit_sentence`: `MM_xor` uses numeric XOR and `field.grammar`; the named shared-concept gate constructs four named individuals with twelve explicit equality closes, then three `symbol_equality` closes. They remain the unchanged stopping tests, not substituted verbal fixtures.
+
+### 59.2 Priming audit (rule 3)
+
+The source confirms Claude's finding. `_prime_sentence_symbols` runs `FamiliarTier.open_sentence`, stages the prediction with `ConceptSpread.open_prediction`, collects the staged lookup rows and active field rows, then calls `prime_seen` once at sentence opening. That is a simultaneous register of available rows, not a word-arrival propagation through `definitions.objects(word)`.
+
+- Native perception and the basic-percept definition fold give a found word its field evidence. `IntuitionField.open_field` maps the open field into `_observed_knowing`.
+- `prime_seen` decays and bumps `_priming_seen`. Its only numerical reader is the next update of that same ledger; snapshots/checkpoints preserve it. `relevance_weights` checks its shape but uses no values from it.
+- `ConceptSpread.open_prediction` writes `_expected_knowing` from observed order-zero knowing through the learned predictor/stack. It does not walk word-to-object definitions.
+- `InterpretLayer.preferred_objects` reads the positive expected lane, then order, then expected magnitude. `priming_weights` delegates to `relevance_weights`: `1 + expected.amax(lanes) + desire`, or `1 + desire` on the serial path. `SymbolField` has its separate causal predictor/gain read for the chooser; it does not write a definition-mediated prime into those surfaces.
+- `FieldProjection.close` folds declared concept edges; `DefinitionFold.examples` excludes word descriptions. Neither traverses `definitions.objects` to propagate a found word into its objects. `project_priming_to_towers` carries conceptual relevance toward perceptual parts, in the opposite direction.
+
+No spread from a word to its objects on the surface read by `preferred_objects` was found. Rule 3 is therefore not built, as step 3 instructs. Recommendation: specify the definition-mediated propagation and its combination with causal expectation explicitly; calling `prime_seen` at each arrival cannot implement it. This finding alone does not stop the other rules.
+
+### 59.3 The additional forward input, and the required decision
+
+`CompoundLayer.compose_from_grammar_context` reads `context.case_view` (or `selected_cases` on the layout without a meaning block). `LanguageSpace.compose_step` constructs that view from the open `CaseFlow` state and `_reference_bank.cases`. The view holds native case codes, membership weights, accumulated tests and the head reference. `compose_case_meaning` and `select_view` use it to select and refold the head's cases. Without it, the meaning-block face returns the head unchanged; the point-only face rejects the missing selected cases.
+
+`ChunkJournal.action_context` records only the action's object value, its presence and its verb group. `Reading.case_values` retains the *folded result*, and `case_selected` a flag; neither retains the incoming case distribution/test. `FormCentroids.capture` does retain the other numerical witnesses (leaf counts and the span's whole), so those can be replayed. `SentenceUnderstanding.primed.case_bank` is a separately staged inverse bank; it is not the compose bank, which additionally includes the reference types and event cases. Substituting it is not certified.
+
+Concrete reproduction, using the existing paired-compound fixture's fixed operands and case data: the head's for lane is `(0.5, 0.5, 0, 0)` and its against lane `(0, 0.5, 0.5, 0)`. The modifier selects the second case. The native forward with its case view gives `(0, 1, 0, 0)` and `(0, 0, 1, 0)`; with the same operands and `ChunkJournal.action_context` alone it leaves the head unchanged. The first differing coordinates differ by **0.5**, well beyond certificate 2's **1e-6**. This is an operator preflight reproduction, not a claim to have run certificate 2 on an implemented conversion. The form centroid is identical. No learning, selected initialization or modified parameter is involved.
+
+**For Alec and Claude:** may the conversion retain the compose path's bounded case inputs and replay the existing `CaseFlow` selection on the converted operands? I recommend doing so, retaining the case bank once per path and reconstructing each head's case view in the conversion. It should use the final selected object references and keep the existing capacity. Copying `case_values` would copy the old word-tree result rather than apply the operator to the selected objects; dropping the case view would change `compound`.
+
+This is the stop required by §55.3, step 4: “If an operator's forward reads something besides its operands and its recorded witness, name the operator and what it reads, and stop before working around it.” No substitute kernel, extra case writer or replay from a copied result has been built. Certificates 1–6 and the finished tree-first measurements remain owed after this decision. No commit or push was made.
+
+
+### 59.4 Resumed preflight and the correction to priming (Codex, 2026-11-17)
+
+Read §68, including the correction in §68.8 and its text in §68.9.
+No part of the withdrawn priming implementation had been built: there
+is no new ledger, change to `preferred_objects`, or certificate 4 to
+remove. Those remain unbuilt. The decision on `compound` stands: retain
+the compose case bank once per path and reconstruct the case view by
+the existing `CaseFlow` selection on the converted operands. The old
+thought replay defect remains deferred as §68.2 directs.
+
+The continued reader audit found a second way objects enter composition,
+independent of the exchange in `stage_cs_lang`. Removing that exchange
+alone cannot satisfy certificate 3 while keeping the candidate code
+unchanged. The following is a preflight on the accepted source, not a
+failure measured on an implemented conversion.
+
+### 59.5 Reference preparation also substitutes objects before composition
+
+`LanguageSpace.choose_operation` calls
+`ReferenceContext.prepare_operands` before the operator forward. Its
+`symbolic_options` does these reads:
+
+- `lower_unary` calls `resolve_order` to substitute the word's existing
+  object one order down.
+- Implicit reference arguments, including the arguments of `part`,
+  `whole` and `equal`, call `resolve_order`; at orders other than one,
+  the returned object point and reference replace the supplied operand.
+- A non-reference argument can take an associated object's value from
+  the bounded reference bank. The optional `interpret` branch likewise
+  supplies a resolved object, but that optional choice is outside this
+  text and is not enabled here.
+- Explicit `bind` obtains its right operand from `STMChunks.bind_menu`.
+  For a non-dummy candidate, `BindLayer.forward` returns that retained
+  point, even when the left operand is the word's point.
+
+These are production readers, not just isolated test behavior:
+`Models._sentence_reference_types` stages the typed points from
+`resolve_word_concept`, and `_sentence_reference_bank` stages the
+retained points and admitted lexical associations. Changing that staging
+to use word references would still give `resolve_order` a matching word
+source. The native bind menu reads the off-stack chunk directly.
+
+Two fixed-input probes, with native rules loaded from
+`complete.grammar`, show the discrepancy without training or a chooser
+decision:
+
+| Read | Word-side input | Native prepared operand and result |
+| --- | --- | --- |
+| `part`, implicit reference at order zero | References `(10, 20)`, points `(1, 0, 0, 0)` and `(0, 1, 0, 0)`; word 20 names object 21 | The valid candidate has references `(10, 21)` and right operand `(.2, .3, .4, .5)`. `PartLayer.compose` returns that object point. On the two word points it returns `(0, 1, 0, 0)`: maximum difference **0.699999988079071**. |
+| `bind`, native off-stack chunk | Word 10 at `(1, 0, 0, 0)`; retained idea 31 at `(1, .5, 0, 0)`, both order zero | The unchanged containment rule admits the dummy and idea 31. The dummy returns the word; the candidate for 31 returns `(1, .5, 0, 0)`. No candidate was forced to win. |
+
+The existing contract checks pass unchanged: **20 passed in 3.98 s**
+across
+`test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point`,
+`test_item18_operators_a.py::test_73_lower_reads_the_words_existing_object_one_order_down`,
+and `test_stm_chunk_gates.py`. In particular,
+`test_bind_menu_at_each_order_and_kept_mention_commit` keeps the selected
+retained reference through the native close. These passes establish that
+the early substitutions are existing contracts; they are not tree-first
+certificates. No assertion was ported or retired.
+
+### 59.6 For Alec and Claude: when a reference supplies its value
+
+§55.1, rule 2 says that “the chooser, its candidates, the operators'
+forwards and the journal are unchanged code”; certificate 3 says that
+“during the word steps no operator's forward runs on an object's
+value.” The reads in §59.5 cannot meet both requirements. In particular,
+`bind` is a meaningful reference choice, not the lexical exchange that
+step 2 already authorizes removing. Its current numerical forward
+returns the stored idea. Rule 6 assigns the chooser to the word tree,
+but does not specify a new word-tree behavior for these reference
+operations.
+
+**Recommendation:** explicitly allow these reference operations to keep
+the word-side value during tree construction, recording the selected
+reference and its required order as a witness. Apply the referenced
+value only in the final conversion. For `bind`, this means retaining the
+word description on STM and applying the selected retained operand in
+the conversion; it needs an exception to the unchanged candidate/forward
+rule. Typed lexical resolution must likewise move to the conversion,
+with its requested order retained. This is a change to when reference
+semantics takes effect, not permission to force a binding choice. The
+alternative is to allow these early reference substitutions explicitly
+and narrow certificate 3 and the word-tree rule to match.
+
+Please decide which contract governs before these readers are changed.
+This is the unresolved-reader stop of §55.3, step 5, together with the
+conflict between rule 2 and certificate 3. The accepted `compound`
+decision is not being reopened.
+
+No production or test source has changed in this resumed preflight, and
+the five protected attention places are unchanged. Source snapshot:
+`7768411acaecf5d2a9ad58a39f2f0041c79f43cdc6d94fc1b79176bec5bf7fb6`.
+The starting observations of §59.1 are preserved. Certificates 1–3, 5
+and 6, the complete reader inventory and the finished-source campaign
+remain owed; certificate 4 is withdrawn by §68.8. No new sweep or
+stopping-gate result is claimed. Receipts stay local and are not linked.
+Nothing is committed or pushed.
+
+### 59.7 Continuation under §68.15: partial implementation, certificate-2 stop (Codex, 2026-11-17)
+
+Read §68.15 with the later amendments through §68.18. Reference operations
+remain unchanged during the read; certificate 3 is removed. No priming
+ledger or certificate 4 is built. There is no new rule restricting which
+stage may affect the field. The formula is read first and evaluated on
+its objects at the end. The main checkout and HEAD remain
+`572169253059b684b0cb60c1642e206f9eeae0b6`; nothing is committed or pushed.
+
+**Not complete.** The implementation below is work in progress. Its
+frozen-source comparison reaches a mismatch at action 4 of the first
+lesson sentence, a `surface` application. §55.3, step 6 requires a stop
+at the first differing node. The cause found is in this implementation,
+not a request to change the architecture or the comparison tolerance.
+No production edit was made after that comparison; the follow-up was
+diagnosis and this return.
+
+### 59.8 Edits made before the stop
+
+| File and functions | Change so far |
+| --- | --- |
+| `Models.py`: `stage_cs_lang` inside `_run_sentence_word_bricks` | Remove the eager tensor interpretation and `resolve_top_reference` exchange. Retain the pushed word. Mark a deposited known word from its row and put its native word identity in the scope. The existing reference candidates and operator forwards still run. |
+| `Models.py`: `_word_symbol_rows`, `_word_symbol_concept_ids`, `_pushed_word_slab`, `_publish_sentence_scratch` | The read's word rows, identities, values and recorded orders use words; numeric-only inputs retain their existing object-row fallback. |
+| `Models.py`: `_program_entries` | Record each action's requested operand orders and retain a cloned compose case bank once per path/stream. |
+| `MeaningConversion.py` (new): `requested_orders`, `Evaluation` | Carry numerical values alongside `Extension.reading`'s action traversal. Read final preferred objects with the existing tensor interpretation; apply the recorded operators and action/form/case witnesses; preserve occurrence bands and absolute head time between operations. Reference substitution is incomplete: §59.9 gives its defect. |
+| `Extension.py`: `reading`, `understand` | The same action traversal evaluates the live numerical meaning and the extension. The detached intuition teacher remains an extension-only traversal. Return the converted programs beside the field. |
+| `SentenceStrata.py`: `Tree.point`, `MeaningTree`, `CompositionView.point`, `replace_composition` | A converted numerical view shares the pinned formula's topology and lease. It owns its values and closing metadata; word-side values and metadata are not overwritten. |
+| `Understanding.py`: `Reading`, `detached`; `FormCentroids.py`: `capture` | Carry requested orders, the case bank and the unmasked span-whole count. Keep the original masked count for the word-side inverse. Preserve the interpretation mode and case bank on detachment. |
+| `Models.py`: `_sentence_observation`, `_commit_sentence` | Keep word programs separate from converted programs. Build meaning clauses, preview references and write from the conversion; word programs still feed placement and grammar teaching. Admission is intended to retain the scored numerical conversion without evaluating it again. This is not yet certified. |
+| `SentenceUnderstanding.py`: semantic value fields and `reader_features`; `WholePaths.py`: `fields`, output construction; `ThoughtAnswer.py`: `bound_view` | Add the converted root/slots/depth as the semantic reader's inputs. Keep the original root/slots for word reconstruction. |
+| `test/test_item18_tree_first.py` (new) | Add the word-deposit check and a final-preference check using two declared objects. These are initial tests, not a completed certificate suite. |
+
+**Protected places.** `Attention.py`, `ModelAttention.py`,
+`SentenceAttention.py` and `AttentionTraversal.py` are byte-for-byte
+unchanged from §58.8. The only edits inside
+`Models._run_sentence_word_bricks` are the two `stage_cs_lang` edits
+listed above: retaining the pushed word/its known-row gate, and carrying
+the native word identity into the scope. Both implement §55.3 step 2.
+No chooser, attention legality, first-walk teacher, loop of looks, or
+item-1.7 code was changed.
+
+The reader assignment implemented so far is:
+
+- Word side: compose state and its journal, `DerivationReconstruction`,
+  the word reconstruction in `SentenceField`, the grammar lesson,
+  `PartsOfSpeech.observe_kept`, and word placement. The existing
+  equality residual remains a cost of the selected read's operations.
+- Meaning side: the clause's point/roles/extension, reference previews,
+  `WholePaths.fields`, thought inputs, `SentenceUnderstanding.reader_features`,
+  answer substitution, the row writer and the next sentence's observation.
+  The published understanding field is the extension from the same walk.
+
+This is not the completed exhaustive reader audit. In particular, the
+conversion of local identity/timeline values and all admission paths
+still needs verification; those tables currently retain read-stage
+values. No completed implementation is claimed for those readers.
+
+### 59.9 First differing node and its producer
+
+The comparison uses the saved initialization and random streams of
+§59.1 and the frozen §58.8 source for the ordinary model. Its selected
+actions are the fixed formula evaluated by the new converter; no new
+action, seed, learning rate, capacity or presentation budget is chosen.
+Both sides take the same native leaf identities and values. The first
+sentence is `This is Felix.`; its first path is:
+
+`SHIFT 0; SHIFT 1; surface; SHIFT 2; surface; SHIFT 3; part`.
+
+At zero-based action **2**, both numerical operands and the result
+match exactly. At zero-based action **4**, `surface(surface(This, is),
+Felix)`, the left operand matches exactly. The right operand has 392
+coordinates and differs in 78. The following describes every differing
+coordinate of that operand; the other 314 match exactly:
+
+| Right-operand coordinates (zero based) | Starting source | Conversion |
+| --- | --- | --- |
+| `0, 5, 9, 10, 15, 18, 20, 26, 29, 30, 32, 34, 37, 40, 48, 55, 56, 64, 65, 66, 67, 68`; all of `161–186`; all of `193–218` | **1.0** each | **0.7574647068977356** each |
+| `352` | **0.0** | **0.09954361617565155** |
+| `353` | **0.0** | **0.9950331449508667** |
+| `354` | **0.0** | **0.19509032368659973** |
+| `355` | **0.0** | **0.9807852506637573** |
+
+Maximum operand difference: **0.9950331449508667**. Maximum result
+difference: **0.16583885252475739**, at coordinate 353, where the
+starting result is **0** and the converted result is
+**0.16583885252475739**. At coordinate 0 the results are **1.0** and
+**0.9595774412155151**. The four captured leaf vectors themselves have
+maximum difference **0**. Full operands remain in the local receipt;
+no receipt is linked.
+
+**Producer.** The recorded action-4 operand references are `(4196,
+4197)`. The original leaf concept for `Felix` is **113**. Finishing the
+source clause assigns **4197** back to that leaf's composition metadata.
+`Evaluation._source_reference` reads this *post-closing* metadata, and
+`Evaluation.operation` tests whether the recorded reference differs
+from it. Both are 4197, so the converter incorrectly concludes that
+there was no reference substitution. It uses the scaled word value
+and the word's place instead of the recorded reference operand. This
+is why the first two leaves (whose post-closing references remain 117
+and 121) do not expose the same error at action 2. The bounded bank has
+no valid retained candidate or lexical association in this case, and
+its typed identity entries are all -1; this is the transient identity
+path, not a changed preferred dictionary object.
+
+**Recommendation for continuation:** preserve and read each operand's
+reference witness before closing annotates the tree, including a
+transient alias whose final leaf reference happens to be the selected
+reference. Do not infer whether substitution happened from the final
+composition metadata. This is a correction to my implementation under
+§68.15's existing reference-witness rule; no new architecture decision
+or relaxation of certificate 2 is requested. Then repeat certificate 2
+from the same frozen source and finish the remaining readers/tests.
+
+The explicit stop is §55.3, step 6: “if the values differ beyond 1e-6,
+report the first node that differs with its operator and its operands
+on both sides, and stop.” The reference operations and the `surface`
+kernel themselves have not been repaired or changed to obtain a pass.
+
+### 59.10 Tests, limits and returned partial source
+
+Before the certificate-2 stop:
+
+- The existing
+  `test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol`
+  passes all **3** configurations in **4.37 s** on the initial draft.
+- The first run of `test_item18_tree_first.py` gives **1 passed, 1
+  failed in 3.07 s**. The final-preference check passes. The word-deposit
+  check reaches the conversion and fails in `ModifierLayer`'s cube
+  check; it does not fail its deposit assertions. A fresh diagnostic
+  invocation takes another reading and passes, which is **not** used as
+  evidence that the failure is repaired. Inspection then found that the
+  draft did not restore the head's absolute time between operators as
+  `choose_operation` does. That restoration was added before the frozen
+  comparison. The test has not been rerun on the returned partial source.
+- Certificate 2's comparison stops at §59.9. It has not reached a
+  completed root, role or extension comparison, or the remaining three
+  sentences. It is not yet a complete permanent test.
+- Certificates 1 and 5 still owe their before/after proof and final-source
+  runs. Certificate 3 is removed by §68.16. Certificate 4 is deferred to
+  item 1.7 by §68.11. Certificate 6 and both stopping gates have not been
+  run on this partial source.
+
+No existing test was ported or retired yet. The tests asserting the old
+object deposit still need their named ports. The 160-sentence lesson,
+verbal proof, assessment tables, multi-object count and default sweep
+have **not** been run on this partial implementation. §58.8's accepted
+numbers remain the baseline, not results of this source.
+
+The returned source snapshot, using `bounded_tests.source_snapshot` and
+the same canonical JSON hash as §58.8, is
+`0c4bb8071672423e28138b54f38d86c01d1e7c52afc0a699bec1a91c92b6fea3`.
+Only the nine production files and one test file listed in §59.8 differ
+from that starting source. All earlier accepted work and other pending
+document edits are preserved. Nothing is committed or pushed.
+
+### 59.11 Continuation under §68.20: pending names and explicit witnesses (Codex, 2026-11-17)
+
+**Stopped at certificate 2 again, as §68.20 requires.** This is a partial
+return, not completion of §55.3. The first mismatch is now action 2,
+`surface(This, is)`, before the action 4 reported in §59.9. The corrected
+pending-name leaf exposes an additional native operand read:
+`STMChunks.refresh` reads the prepended identity's current value. The
+conversion does not yet perform that read. Its maximum operand difference
+is **0.2425352931022644**, above 1e-6. No production edit was made after
+this comparison failed.
+
+The prerequisite was checked first on §58.8's frozen source and recorded
+random stream: **“This is Felix.” stages Felix's object as 4197, on row
+13.** The other word objects are 4195 on row 17 and 4196 on row 21. These
+are pending-name leaves, not reference substitutions. No object was
+invented or admitted by the conversion.
+
+Changes since §59.10:
+
+| File and function | Change |
+| --- | --- |
+| `Models._program_entries` | Captures the selected positions' staged object IDs and rows from the existing word view. Removes the reconstruction of requested orders from the completed action tree. |
+| `Understanding.Reading` | Carries those two leaf-address columns and the explicit operation-substitution flags, with the requested orders; detachment includes them. |
+| `MeaningConversion.Evaluation.leaf` | Calls `InterpretLayer.referent(..., batch=stream)` at conversion; when it returns the word, uses the staged pending name and its row. Calls the tensor interpretation with the existing activation and two-lane evidence. Reads the pending name's order from that row, rather than treating its transient handle as an allocated concept. No MTM writer is called. |
+| `ReferenceContext.resolve_order`, `resolve_highest` | Optional witness returns the existing value-selection branch alongside the existing result. The decision remains where the native resolver made it. |
+| `ReferenceContext.prepare_operands` | Carries that witness and requested order through typed reads, reference-bank alternatives and bind's native menu. A reference-bank read is recorded even when its address equals the incoming address. Bind's dummy is not a substitution. |
+| `InterpretLayer.bind` | Optionally identifies the candidate-value branch, separately from the existing `found` flag. Ordinary callers retain their previous return shape. |
+| `OperationSelectionLayer.forward`, `LanguageSpace.choose_operation`, `Spaces.LanguageOperationChoice` | Gather the selected variant's witness with its existing references and operands and carry it in the immutable choice. Candidate values, scores, masks and selection are unchanged. |
+| `ChunkJournal.apply`, `capture` | Append four integer columns to the temporary record: two substitution flags and two requested orders. Capture them with the selected action. The number of journal records and all fixture capacities are unchanged. |
+| `MeaningConversion.Evaluation.operation` | Uses the explicit substitution flag; removes the comparison with a reference inferred from the post-close tree. The requested order stays beside the witness; it does not trigger a second choice. Carries the numerical operands' recorded occurrence bands as described below. |
+| `test_item18_tree_first.py` | Adds the pending-name/no-MTM-write check and a same-address reference-bank witness check. Neither is a retirement or a weakened old assertion. |
+
+The leaf's low-level test verifies the exact `InterpretLayer.forward`
+value at presence .75 and evidence (.6, .2), with MTM's `named` writer
+replaced by an assertion that it is never called. The reference test
+uses the same native address on both sides but a bank value of .5 in
+place of 1: the witness is true. These tests pass on the returned source;
+they are not yet a complete before/after proof of certificates 1 and 5.
+
+### 59.12 The occurrence bands and the additional operand read
+
+The starting source has these producers, in this order:
+
+1. `InterpretLayer.reading` retains the pending name with the row's code.
+2. `PrependedSymbols.symbolize` supplies the name's form beside its MTM
+   meaning. `PrependedSymbols.stage`, called before composing the
+   sentence, deposits it off stack with the token's where and the current
+   time. For these new names the where band is zero.
+3. `stage_cs_lang` interprets the arriving word at its perceptual
+   presence, then stamps the word's where and when into its stack slot.
+4. `LanguageSpace.choose_operation` calls `RowTime.relative_idea`, then
+   `STMChunks.refresh`. The latter finds the same identity and timeline
+   off stack and supplies that value before `prepare_operands` or the
+   numerical face runs. It can replace both form magnitudes and where.
+5. After the numerical face, `choose_operation` restores the physical
+   head's absolute when. `ChunkJournal.apply` preserves the physical
+   head's where and when in its working chunk.
+
+The partial conversion now takes the input occurrence coordinates from
+the operands the numerical journal actually recorded, rather than
+assuming that every operator saw the word's address. It still restores
+the head's absolute time and working-chunk bands. This is **not a claim
+that the band failure is repaired**: the requested rerun of certificate
+1 still fails, now in `SurfaceLayer.compose`'s cube check with -1.0.
+That test's deposit assertions do not fail. The conversion's treatment
+of operand refresh and order-dependent numerical contexts remains
+unfinished.
+
+An observational rerun on the same frozen source identifies the first
+mismatch's source exactly. Before `refresh`, identity 4195 is in stack
+seat 3 with nonzero form coordinates .7574647068977356; identity 4196 is
+in seat 4 with .7615941762924194. Their where bands are, respectively,
+(.0980171412229538, .9951847195625305, 0, 1) and
+(.09897122532129288, .9950903654098511, .12241067737340927,
+.9924795627593994). The matching off-stack seats are **0 and 1**, with
+references `[[2,4195],[2,-118]]` and `[[2,4196],[2,-122]]`. Their nonzero
+form coordinates are **1**, and their where bands are **zero**. Those
+are the operands the old numerical face receives. `prepare_operands`
+selects no reference substitution at this node: both witness flags are
+false and both requested orders are -1.
+
+Thus the lower magnitudes are not a wrong presence supplied to the
+removed tensor interpretation. They are the interpretation's magnitudes
+**before** the native identity refresh. The band's producer is also
+confirmed by the refresh trace, rather than inferred from the final
+clause's references.
+
+### 59.13 Certificate 2: first node and both operands
+
+The comparison uses the same accepted-source Python modules, model
+configuration, lesson and saved random stream as §59.9. It takes the
+actual staged leaf objects; the earlier diagnostic's replacement of
+`preferred` by remapped `concept_ids` has been removed. For witness
+observation, every original tensor and menu returned by the old reference
+preparation is checked for exact equality against the preparation with
+witnesses before its extra fields are read. The old chooser and its
+actions are retained. No seed, presentation count or capacity changes.
+
+Sentence 1, path 0, stream 0, zero-based action **2**, local binary
+operator **12**, `surface`. Actions are:
+
+`SHIFT(0), SHIFT(1), surface, SHIFT(2), surface, SHIFT(3), part`.
+
+At this node both sides reference **4195 and 4196**. The point width is
+392. The following sparse description specifies **all coordinates of
+both operands**; all coordinates not stated are zero. Index ranges are
+inclusive.
+
+| Operand | Nonzero form coordinates | Starting source | Conversion |
+| --- | --- | --- | --- |
+| Left, 4195 | 0, 8, 16, 18–20, 28, 41, 45–46, 52, 58–59, 61, 63–67, 161–186, 193–218 (71 coordinates) | 1 | .7574647068977356 |
+| Right, 4196 | 0, 8, 18, 20, 25, 27, 45–46, 63–65, 161–186, 193–218 (63 coordinates) | 1 | .7615941762924194 |
+| Both operands, time coordinates 356–359 | Same on both sides | (3.65729529994141e-10, 1, .0003834951785393059, .9999998807907104) | Same |
+
+Where coordinates 352–355 are zero on both sides at this node. The
+maximum left difference is **.2425352931022644** and the maximum right
+difference is **.23840582370758057**. The result differs too: at their
+61 shared form coordinates the old result is 1 and the converted result
+is **.8797647356987**; at the left-only ten coordinates it is .5 versus
+**.4393661618232727**; at the right-only two it is .5 versus
+**.44039854407310486**. The maximum result difference is
+**.12023526430130005**. Result time coordinates match. The comparison
+stops here; roots, roles, extensions, the remaining actions and the
+other three sentences have not passed certificate 2.
+
+**For Alec and Claude.** The numerical operands in the old composition
+are not always the recursively composed children: an identity read can
+refresh them from the shared field before reference preparation. My
+recommendation is to specify that read as part of the conversion's
+native input environment: retain the bounded initial field and the
+recorded refresh/publication choices, and evaluate publications on the
+converted values in action order. This should reuse the existing chunk
+semantics and bound; it should not restore eager word-to-object exchange,
+change the presence, or copy an old operator's whole operand merely to
+pass this comparison. It has not been built: §68.20 explicitly stops
+this continuation at the first remaining numerical difference.
+
+### 59.14 Tests and remaining failures at this stop
+
+On the final partial source, `test_item18_tree_first.py` gives **3 passed,
+1 failed in 3.27 s**. The final-preference test and the two new focused
+checks pass. `test_1_word_deposit_keeps_its_value_row_and_order` still
+fails during conversion in `SurfaceLayer.compose`, at the cube check,
+with -1.0. It is not marked as a learning baseline failure.
+
+An earlier focused run, before the pending-name order correction, gives
+**32 passed, 4 skipped, 5 failed in 9.55 s** across that test file,
+`test_reference_close.py` and `test_word_interpretation.py`. Its failures
+are retained here, not hidden by the narrower last run:
+
+- The word-deposit test then reached a different later failure:
+  `program_meaning` offered transient reference `('sym',161)` to
+  `registry.form`, which requires an allocated symbol. Pending identity
+  correspondence in the semantic closing is unfinished.
+- `test_every_read_word_has_a_concept_and_symbol[MM_text.xml]` and its
+  `[XOR_grammar.xml]` case reach the new leaf guard: a staged pending
+  object's row is -1. A diagnostic of MM_text confirms word 24 has
+  conceptual row 0, while the selected reading's word rows and staged
+  object rows are -1. The old exchange was gated by `object_row >= 0`;
+  this absent-row case has not been ported to the conversion. The
+  diagnostic itself gives **1 failed in 2.41 s**.
+- The `[aligned]` case reaches `ModifierLayer`'s cube check with -1.0
+  during conversion.
+- `test_every_serial_word_runs_interpret_before_composition` asserts
+  that the removed tensor interpretation has run before the first
+  grammar choice. This is the old-contract test named in §59.10; its
+  required port to retained lexical reading plus late numerical
+  interpretation is still owed.
+
+No existing test has been ported or retired in this continuation. No
+before-failure proof or full certificate pass is claimed for the new
+reference plumbing. Certificate 2 is the required failed comparison
+above. Certificate 3 remains removed, 4 remains deferred, and certificate
+6 and the two stopping gates have not been run on this partial source.
+The lesson, verbal proof, assessment tables, multi-object count and the
+default sweep have not been run. The accepted §58.8 measurements remain
+baseline measurements only.
+
+### 59.15 Returned source and protected places
+
+The `bounded_tests.source_snapshot` canonical JSON hash is
+`ba28f3e006eca34feef91a7a8606d14b561b6f5b044e157b8d290e54547cbebc`.
+The change since §59.10 is the eight production files and one test listed
+in §59.11. Across this incomplete tree-first round, fourteen production
+files and the one test differ from §58.8. Receipts and full operand
+records remain local and are not linked.
+
+The four protected attention files are byte-identical to §58.8. There is
+**no additional edit in `Models._run_sentence_word_bricks` in this
+continuation**: the two `stage_cs_lang` changes already listed in §59.8
+remain the full list (removing the eager exchange; carrying the word
+identity into scope). This continuation's Models change is in
+`_program_entries`, outside that function. No attention rule, chooser
+score, kernel, priming rule or fixture bound was changed. All unrelated
+work is preserved. HEAD remains `572169253059b684b0cb60c1642e206f9eeae0b6`;
+nothing is committed or pushed.
+
+### 59.16 Continuation under §68.25: STM ideas and the next certificate-2 stop (Codex, 2026-11-17)
+
+**Stopped at the remaining certificate-2 difference, as §68.25 asks.**
+The conversion now passes the numerical nodes, root and roles of the
+first three sentences on the frozen source: **five observed complete
+paths, fifteen numerical nodes**, at atol 1e-6. It stops at action 2 of
+sentence 4, “What is that?”, path 0, stream 0, `surface(What, is)`.
+Its right operand differs by **.7615941762924194**. The leaf objects
+match; the remaining producer is the lexical form view of a higher-order
+object, described in §59.20. The whole certificate, including its
+extension comparison, has not passed. No production repair was made
+after that difference was found.
+
+The four failures in Claude's §68.23 focused run are addressed. The
+broader focused run here gives **54 passed, 4 skipped in 12.11 s**;
+after the additional mechanism assertions, the targeted return run gives
+**6 passed in 4.34 s**. Neither is the default sweep or the stopping
+gates.
+
+### 59.17 The native refresh and publication records
+
+The source audit finds the following flow. `PrependedSymbols.stage`
+finishes before the first word's compose step. The conversion takes a
+copy then. `STMChunks.refresh` can read one of those off-stack ideas or
+an idea subsequently published by `ChunkJournal.apply`. The round and
+closing refresh calls in `stage_cs_lang` return points which that caller
+discards: they mark native reads. The refresh inside
+`LanguageSpace.choose_operation` supplies the numerical operands.
+`ChunkJournal.apply` can publish an opening/bind, update a subject, or
+restore the earlier actual event of an S modifier. These reads and writes
+are now recorded at their producers.
+
+| File and function | Change since §59.15 |
+| --- | --- |
+| `Memory.STMChunks.refresh` | Optional witness returns the actual selected seat, identity and timeline. An unavailable source is -1. The existing result and read accounting are unchanged. |
+| `LanguageSpace.choose_operation`; `Spaces.LanguageOperationChoice` | Carry the selected operand refresh witnesses. Bind also records the selected off-stack candidate's seat, identity and timeline. No new choice is made during conversion. |
+| `ChunkJournal.record_refresh`; the two `stage_cs_lang` call sites | Record the round/closing refresh, including STOP/wait reads, in the existing bounded action journal. Those returned points have no native consumer. |
+| `ChunkJournal.publish`, `apply`, `capture` | Record the actual publication target, identity, timeline, whether it existed, its value rule and, for restoration, the earlier event column. Capture maps that earlier column to its action; an earlier event outside this reading raises instead of being guessed. |
+| `ChunkJournal.publication_value` | Shares the numerical publication rule between read and conversion: candidate, candidate joined with description, right operand for equality, both operands for part, or the earlier event's left operand for restoration. Publication order stays restoration, opening, subject update. |
+| New `IdeaJournal.snapshot`, `Evaluation` | Copy the constructed STM field once at the sentence's start, and evaluate the recorded reads/writes in a per-path copy of that same shape. A refresh validates seat, identity and timeline against the initial or published ideas. It fails if the source is unavailable. It does not manufacture a field entry or reselect a candidate. |
+| `MeaningConversion.Evaluation.operation` | Reads refreshed operands and bind's candidate from that copy at the recorded action, applies the numerical face, then publishes the conversion's values in the recorded order. Identity and alternative-timeline values used by closing are taken from this evaluated field. |
+| `Understanding.Reading`; `Models._program_entries` | Carry the initial field, refresh/publication records and evaluated field for the lifetime of the reading. Detachment retains them without gradients. |
+| `IdeaJournal.install`; `Models._commit_sentence` | Before the kept close, replace the surviving off-stack ideas the read wrote with the selected conversion's values. The read's identity/timeline references and read accounting stay in place. |
+
+The temporary integer journal grows from **41 to 74 columns**; its number
+of records is unchanged. The initial/evaluated idea arrays have the
+existing STM chunk capacity. No fixture's capacity, seed, presentation
+count or learning rate changes. No refresh source outside the initial or
+published ideas was encountered in these checks; the guards are not a
+proof of every grammar path.
+
+The new `test_conversion_refresh_reads_its_own_published_idea` takes a
+native refresh witness and publication target, gives read and conversion
+different values, and checks that the next conversion refresh reads its
+own joined description. It also checks restoration from an earlier
+converted operand. It passes. This is a mechanism check, not a learned
+sentence or a substitute for certificate 2.
+
+### 59.18 The idea row, leaf gate and numerical bands
+
+**The idea is in STM0.** `SentenceStrata` constructs one one-row STM0
+beside each pinned trial/stream tree, at the same trial/stream index. It
+uses the existing LTM0/STM0 row layout and the tree root's occurrence name
+and address domain. The original syntax store and its points remain
+intact; overwriting its root would give meaning to a reader of the word
+tree. The new row is the additional storage §68.22 calls for; existing
+syntax/recent capacities and fixture parameters are unchanged. Its
+relation store uses the native minimum of two seats, including reserved
+zero.
+
+`MeaningTree.install_idea` writes the converted root there and removes
+that root value from its Python dictionary. `MeaningTree.point` reads the
+root from the STM0 row; the converted end state is read from it too.
+`SentenceStrata.read` finds the idea before the syntax point at that
+address. The kept close copies the converted clause point into the
+existing recent store, then expires the pinned idea with its tree.
+Clear/expiry covers both.
+
+`MeaningTree` still holds its source-tree lease, shared topology, and
+working dictionaries of inner/leaf values and closing metadata. Their
+reader is the open conversion/`ClauseJournal` composition and role
+recovery; they are not extra STM rows or a second tree. The root is no
+longer one of those dictionary values. The certificate-1 test now also
+checks, at the conversion boundary, that the semantic root is read by
+`SentenceStrata.read` and is absent from the working value dictionary.
+It does not apply that assertion to admission's still-unconverted syntax
+view.
+
+**Absent staged object row.** `Evaluation.leaf` keeps the word's value
+when the staged object row is negative, matching the removed exchange's
+`object_row >= 0` gate. `MM_text.xml` and `XOR_grammar.xml` now pass
+`test_every_read_word_has_a_concept_and_symbol`. Pending MTM handles
+remain in the operation/identity journal; a concept-address column uses
+the lexical cue when that handle is not an allocated concept, as the
+native capture already does. The converted leaf value is supplied
+explicitly to meaning recovery, rather than inviting another dictionary
+lookup through that cue.
+
+**The -1 band failure's missing producer.** The old dispatcher calls
+`operator.content_operand` in `_stacked_reduced` and `_apply_op` before
+its cube kernel. That native helper removes percept coordinates from
+the numerical content. The journal still records the raw operands,
+including their occurrence bands. The conversion had reproduced the
+journal's bands but omitted this adapter. It now calls the same helper
+before the numerical face, except for bind, whose native path consumes
+its prepared operands directly. The journal frames still retain the
+raw operands. This repairs the cube failure without clipping values,
+changing a kernel or changing `Attention.narrowing_mask`.
+
+### 59.19 Tests and the port
+
+The starting-source failures are the reviewed §68.23 results: **4
+failed, 35 passed, 4 skipped in 9.73 s**, on the three named files. The
+word-deposit and absent-object-row failures are mechanism defects, not
+learning baselines.
+
+The corresponding focused run after these repairs, also including
+`test_chunk_journal_origins.py`, gives **54 passed, 4 skipped in
+12.11 s**. This is before the final test-only additions. On the returned
+source, the five tests in `test_item18_tree_first.py` plus the port below
+give **6 passed in 4.34 s**. In particular,
+`test_1_word_deposit_keeps_its_value_row_and_order` passes without changing
+its input, capacity or any original deposit assertion.
+
+One existing test is ported; none is retired:
+
+- `test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition`:
+  before, every grammar choice required a previous tensor
+  `InterpretLayer.forward` call. After, every choice requires the native
+  lexical `InterpretLayer.reading` to have run; tensor interpretation of
+  row atoms is required to occur inside `Evaluation.leaf`, at conversion.
+  The original coverage count and word/object assertions stay, with an
+  additional lexical-reading coverage count. The same input and fixture
+  are used. This is §55.1's two-stage contract, ported under §55.3 step 7.
+
+Certificate 5's final-preference check and the pending-name/no-MTM-write
+and same-address reference-witness checks continue to pass. The new
+publication and STM-root assertions pass. These focused results do not
+supply every still-owed starting-source proof or the full named-port
+inventory of §55.3.
+
+### 59.20 Certificate 2: same objects, a missing lexical view
+
+The local comparison keeps the frozen Models read, including its eager
+exchange. Its added observation/storage code records the new witnesses.
+For every observed path, its actions and complete old numerical journal
+are checked for **exact equality** against the saved §58.8 first-document
+record before conversion. Reference-preparation tensors and menus are
+also compared exactly with the original preparation. Thus the new
+comparison is not against a changed old read. No seed or choice was
+changed to obtain the first three sentences' agreement.
+
+After the fifteen passing nodes and five passing root/role comparisons,
+the first differing node is sentence 4, path 0, stream 0, action **2**,
+local binary operator **12**, `surface(What, is)`. Its actions are:
+
+`SHIFT(0), SHIFT(1), surface, SHIFT(2), surface, SHIFT(3), part`.
+
+Conversion choices are **4203, 128, 4196, -1**, exactly the staged leaf
+objects. The first leaf's refresh reads seat **7**, identity **4203**,
+timeline **0**; its operand agrees. The second has no refresh and no
+publication precedes this node. Object **128**, the meaning of word
+**121** here, is at row **2418**, order **1**.
+
+The following describes both 392-coordinate operands completely; all
+unstated coordinates are zero, and ranges are inclusive.
+
+| Coordinates | Left operand, both sides | Right, old read | Right, conversion |
+| --- | --- | --- | --- |
+| Left form support: 0, 4, 8, 18–20, 27, 31, 33, 35–36, 46, 51, 57, 64–67, 161–186, 193–218 | 1 on these 70 coordinates | — | — |
+| Right form support: 0, 8, 18, 20, 25, 27, 45–46, 63–65, 161–186, 193–218 | — | .7615941762924194 on these 63 coordinates | 0 |
+| Where, 352–355 | (.0980171412229538, .9951847195625305, 0, 1) | (.09897122532129288, .9950903654098511, .12241067737340927, .9924795627593994) | Same as old read |
+| When, 356–359 | (3.65729529994141e-10, 1, .0003834951785393059, .9999998807907104) | Same as left | Same as left |
+
+Left meaning coordinates 360–375, on both sides:
+
+`(.03597359359264374, .07953725755214691, .06455598026514053, .09504474699497223, .013213349506258965, .06589736044406891, .15177984535694122, .03933465853333473, .08925933390855789, 0, .025294141843914986, .012821764685213566, 0, .0724082738161087, .10274337977170944, .07655896246433258)`.
+
+Right meaning coordinates 360–375, on both sides:
+
+`(.21884030103683472, .04490017518401146, .011009126901626587, .015200723893940449, .2426294982433319, .16597649455070496, .306741327047348, .20759110152721405, .3680855333805084, .19822260737419128, .20588411390781403, .07035132497549057, .1920570731163025, .1299731582403183, .05998450517654419, .6683152318000793)`.
+
+Maximum differences are **0** for the left operand,
+**.7615941762924194** for the right, and **.3807970881462097** for the
+result. The difference is confined to form: on 60 shared form coordinates
+the old result is .8807970881462097 and conversion gives .5; at the
+right-only coordinates 25, 45 and 63 it is .3807970881462097 versus 0.
+The occurrence bands and meaning coordinates agree.
+
+**Producer, confirmed by the diagnostic.** The old staging calls
+`InterpretLayer.lexical_atoms` to give a higher-order object's ephemeral
+view the observed word's form. `PrependedSymbols.refresh_words` uses
+that same reader when it refreshes the staged mapping. The stored object
+keeps its own meaning and no perceptual form. Conversion instead takes a
+raw `similarity_codebook.lookup_rows` result. On row 2418 its form is
+zero. Calling the existing `lexical_atoms` with word 121 changes exactly
+the 63 form coordinates listed above from 0 to 1; the same presence,
+.7615941762924194, then supplies the old operand's form. The word's
+identity and object choice do not change.
+
+The old captured `Reading.leaves` and the converted leaves themselves
+happen to agree here; that capture is not the operand the old numerical
+face consumed. This is why checking leaves alone did not expose the
+missing lexical view. The operator's actual operand is the evidence for
+this stop.
+
+**Recommendation for Alec and Claude:** the continuation should read the
+chosen row through the existing `InterpretLayer.lexical_atoms`, with its
+observed word and stream, before the existing tensor interpretation. It
+should not put a word form into the durable object row or replace the
+selected object. That repair is not built here because §68.25 requires a
+stop at the first remaining differing node.
+
+### 59.21 Returned source, limits and the protected places
+
+The canonical `bounded_tests.source_snapshot` hash is
+`a103f6a282cd6219ae8ad2d8915c214ec1c5cd353da34b15790594bed13a96a8`.
+Nine production files and two tests differ from §59.15:
+`ChunkJournal`, `IdeaJournal`, `Language`, `MeaningConversion`, `Memory`,
+`Models`, `SentenceStrata`, `Spaces`, `Understanding`,
+`test_item18_tree_first.py` and `test_word_interpretation.py`.
+
+The four protected attention files are unchanged. The **only new edit
+inside `Models._run_sentence_word_bricks`** is the two-line initial-idea
+snapshot immediately after `PrependedSymbols.stage`. Its purpose is
+§68.25.1a. Location correction to the earlier returns: `stage_cs_lang`
+is nested in `_run_tensor_peer_word_pipeline` and passed to the protected
+loop as `compose_word`; it is not defined inside
+`_run_sentence_word_bricks`. The two newly instrumented round/closing
+refresh calls are in that `stage_cs_lang`. Outside those places,
+`_program_entries` captures the initial ideas and `_commit_sentence`
+installs the kept conversion's publications before closing. The earlier
+eager-exchange removal remains in place.
+
+Certificate 2 has not completed its fourth sentence, second path or
+extension comparison. The two stopping gates, complete reader audit,
+remaining ports, 160-sentence lesson, verbal proof, assessment tables,
+multi-object count and default sweep have **not** been run/completed on
+this partial source. The remaining known mechanism failure is §59.20;
+no learning failure has been reclassified or repaired. The additional
+STM storage has focused lifecycle coverage, not a full checkpoint/sweep
+claim. Receipts remain local and are not linked. Nothing is committed or
+pushed; HEAD remains `572169253059b684b0cb60c1642e206f9eeae0b6`.
+
+### 59.22 §68.28: a consumed constituent is still read at the close (Codex, 2026-11-17)
+
+**Correction in §59.25:** the numerical reduction's one entry was
+mistaken for a single semantic idea in the question below. The completed
+clause is a relation with three semantic slots. The observations of the
+inner-point readers stand; this example does not establish the proposed
+need for additional intermediate storage.
+
+Read §68.26–§68.29 before changing the representation. The starting
+`bounded_tests.source_snapshot` still hashes to
+`a103f6a282cd6219ae8ad2d8915c214ec1c5cd353da34b15790594bed13a96a8`.
+This continuation stops under §68.28.1: **“If a reader needs a value the
+stack no longer holds, name the reader and the value, and stop.”** No
+production or test source has been changed in this continuation.
+
+The concrete reader is `ReferenceClose._prepare`, through its preview's
+`replace_term` and `rewrite_term`. It copies a constituent's `point`
+along with its reference/binding metadata from a `CompositionView`.
+That view currently obtains the point from `MeaningTree.values`, even
+after the numerical stack has consumed the constituent. The later
+readers are `ClauseRow.write_clause.reserve`,
+`PartClosing.event_point` and `PartClosing._write_occurrence`. This is
+not only a diagnostic read: the closing writes an occurrence from it.
+
+**Native reproduction.** Read the lesson's first sentence, **“This is
+Felix.”**, with the unchanged `explore-1.xml` configuration and the
+already-recorded lesson random stream. A local observer reads the
+existing evaluation and close; it changes no action, parameter, bound,
+presentation count or storage value. Its first path records:
+
+```
+SHIFT This; SHIFT is; surface; SHIFT Felix; part; SHIFT .; part
+```
+
+At zero-based action **2**, `surface(This, is)` gives the constituent at
+syntax address **3**. Action 4 consumes it; action 6 leaves one numerical
+stack entry, at root address **7**. After comprehension finishes,
+`ReferenceClose._prepare` still reads address 3's **object-space point**.
+The trace records **47 reads of non-root composition points** during
+the first sentence, including the preview and the kept writer. The
+first relevant value is demonstrably neither replacement available at
+that boundary:
+
+| Value, coordinate 0 of the 392-wide vector | Number |
+|---|---:|
+| Consumed object-space `surface(This, is)` | 0.8797647356987 |
+| Same address in the unchanged word tree | 0.7595294713973999 |
+| Final numerical stack entry | 0.6598235368728638 |
+
+The consumed point differs from the word-tree point by maximum
+**0.12023526430130005**, and from the final entry by maximum
+**0.9950903654098511**, including occurrence coordinates. A content
+coordinate also differs (coordinate 0 above); this is not just an
+occurrence-band difference. Replacing this read with either point would
+change what the existing close receives.
+
+`ClauseJournal.finish_clause` is the producer of the retained
+composition view: `composition` currently attaches the object-space
+metadata to `MeaningTree`, and `recover_content`/`retain_introductions`
+retain the constituent for closing. Removing `MeaningTree` and the
+converted `Reading` therefore needs a rule for retaining this consumed
+constituent in the new stack, rather than substituting the word-tree
+value or recreating a numerical tree under another name.
+
+An earlier candidate was ruled out as a stop: in the unchanged
+`test_1_word_deposit_keeps_its_value_row_and_order` fixture,
+`FamiliarTier.commit_read_words` reads consumed leaves to retain pending
+names. In the traced case those values equal the word-side leaves;
+that case can read the word side. It does not establish a need to keep
+every interpreted leaf or to build the deferred episodic scattering.
+
+### 59.23 The existing close, observations and limits
+
+The close does **not** currently copy an arbitrary end stack as a list
+of independent ideas. `ClauseJournal.finish_clause` accepts **one or
+three** end slots; two slots raise `a completed field must have one or
+three slots`. For three it recovers subject, predicate and object,
+requires a selected relative operation, and raises `three slots have
+no selected relative clause` otherwise. Nested clauses, reference
+requests and identity introductions can add retained children even
+when the numerical end stack has only one entry. `ClauseRow.write_clause`
+and `PartClosing` then reserve and write those occurrences and their
+relations. No writer has been added or changed here.
+
+The intended storage choice remains private **STM0/STM1** per scored
+path: `_sentence_path_cost` runs comprehension on paths that may not
+be kept. Direct work in durable LTM would require undoing their writes
+and associated allocation/MTM effects. This is an implementation choice
+within §68.29, not a request for another store layout. No new store has
+yet been constructed.
+
+The final focused native observer of
+`test_1_word_deposit_keeps_its_value_row_and_order` completed with **1
+passed in 1.71 s**; the separate first-sentence lesson observer
+completed its kept close. Neither is certificate 2 or a full lesson
+measurement. An earlier four-sentence observer attempt completed two
+sentences, then the third sentence's training backward raised
+`a sentence intermediate was mutated before backward` at
+`SentenceCompose._SavedValue.unpack`, called through
+`Models._sentence_train_step`. That failure has not been attributed to
+a particular mutating write; it is recorded here, not hidden by the
+subsequent first-sentence observation and not claimed repaired.
+
+The lexical-view repair of §68.28.4, the two module renames, removal of
+`MeaningTree`/the converted program, and their tests have **not** been
+built past this reader stop. Certificate 2 has not been rerun. The
+stopping gates, full lesson, proofs, assessment and sweep remain owed
+on the finished source. There are **no new edits** in
+`Models._run_sentence_word_bricks`, `stage_cs_lang`, or the four
+protected attention files. The source snapshot remains the hash in
+§59.22. Receipts stay local and are not linked. Nothing is committed or
+pushed; HEAD remains `572169253059b684b0cb60c1642e206f9eeae0b6`.
+
+### 59.24 Question for Alec and Claude: consumed closing constituents
+
+May comprehension retain a constituent that the numerical reduction
+has consumed, but which the existing binding/closing still needs, as
+an additional STM0 entry with its STM1 references until the kept close?
+The concrete case is the object-space `surface(This, is)` point in
+§59.22, not the value of that node in the word tree.
+
+**Recommendation:** retain the constituents required by the existing
+closing as semantic STM0/STM1 entries during comprehension, including
+such consumed participants. The existing closing then takes these
+entries; a losing path discards them. Keep their association with the
+source occurrence index, but put no value or binding metadata into the
+word tree and keep no general numerical mirror of its nodes. This
+preserves the existing closing's values and writes. It requires
+clarifying that “what is left on the stack” includes these retained
+closing constituents, not just the numerical reduction's surviving
+operands. §68.28.1 explicitly requires this reader to be named and the
+work to stop before making that choice.
+
+### 59.25 Alec's answer: the relative end state is S R S (2026-11-17)
+
+Alec answered §59.24: **“\"This is Felix\" will eventually be parsed as a
+relation (STM1) over two ideas (STM0), and the grammar end state is
+\"S R S\", not S”**, then directed Codex to `data/complete.grammar`.
+
+Read that file in full. Its Symbolic starts distinguish absolute
+`S` from relative outputs, and its relation declarations explicitly
+describe `Relation(RI_1, RI_2)` over two ideas. The active relative
+starts are `part`, `whole` and `implies`; the `equal` declarations remain
+commented under §27.1. No grammar rule or learned word mapping has been
+changed in response to this clarification.
+
+The additional native observation confirms the error in the question's
+premise. On the same recorded lesson stream, the first sentence's
+completed clause has **relation `part`, point `None`, three semantic
+slots of width 392**, and references
+`(('clause', 0), ClausePredicate(name='part'), ('clause', 1))`.
+It has three retained children under the current close. The frozen
+starting-source capture likewise has relation `part`, point `None`,
+and all three roles occupied on both captured paths (two children in
+each of those readings). These observations do not certify that the
+learned tree is the intended parse; they establish that a single
+numerical carrier is not a single semantic idea.
+
+**Correction and consequence.** §59.22's numerical work-stack depth is
+not the relative sentence's semantic end state. Comprehension must
+preserve a declared relation in STM1 with its idea operands in STM0,
+as §68.29 already requires. The relation's operands are part of that
+result, not extra saved intermediates merely because numerical
+composition consumed their work-stack slots. The general additional
+retention proposed in §59.24 is not authorized by Alec's answer and is
+not established as necessary by this example. That example's stop is
+withdrawn; the remaining reader audit must distinguish semantic
+relation operands from numerical work values before declaring another
+missing-value conflict.
+
+Only this return has been amended. Production and test source are
+unchanged from §59.21; no commit or push has been made.
+
+### 59.26 Continuation after Alec's S R S clarification (Codex, 2026-11-17)
+
+This is a **partial implementation and a reader stop**, not completion of
+§68.28. The erroneous premise of §59.22 remains withdrawn. A relation's
+operands belong to its semantic result. The new stop below concerns an
+arrival candidate inside an absolute result, not those operands.
+
+Starting from §59.21's `a103f6a282cd6219ae8ad2d8915c214ec1c5cd353da34b15790594bed13a96a8`:
+
+| File and function | Change and cause |
+|---|---|
+| `Comprehension.Evaluation.leaf` | Read the selected object's atoms through `InterpretLayer.lexical_atoms`, with the observed word and stream, before tensor interpretation. This supplies the form missing in §59.20 without changing the object or its row. |
+| `Comprehension` (formerly `MeaningConversion`) | Execute the recorded operations beside `Extension.reading`; return a `Result` containing the semantic clause, final held concepts and private native stack. No converted `Reading` is made. `from_stack` takes retained composition points from native STM0 entries and removes other composition points. The ordinary closing metadata remains temporary. |
+| `HeldConcepts` (formerly `IdeaJournal`) | Rename the initial/evaluated `Ideas` to `Concepts`, the evaluator's `ideas` to `concepts`, and its caller's `ideas` to `held`. The recorded initial, refresh, bind, write, round-read and final fields now use `held_*`. This changes the names, not the publication rule. |
+| `ChunkJournal`, `Language`, `Spaces`, `Understanding` | Port those added fields, imports and publication/read witnesses to the new names. No old module or compatibility alias is retained. |
+| `ClauseJournal._finish_clause`, `ComprehensionClose` | Consume an action's comprehended operands as the action completes. Finishing assigns the existing native roles without running another numerical operator or installing semantic metadata in the word tree. The ordinary word-side `finish_clause` still drives the same reader itself. |
+| `SentenceStrata` | Delete `MeaningTree`. Each trial has an `IdeaStack`, a native STM0 with STM1, beside its word tree. Syntax remains in its original bank. Capture reserves addresses for additional semantic events so a trial cannot alias the next tree. The private idea capacity is constructed as five rows per possible word/operator action: two evidence lanes for an idea, two for a separate event, and an untrusted mention. No fixture or existing durable capacity was changed. |
+| `PartClosing`, `ClauseRow.write_clause` | Share the native postorder and retained-node selection. `PartClosing.stage` uses the native `_write`/`_write_occurrence` into the private stack, without live MTM, definition or promotion effects. Import an already-existing relation pair before adding its evidence, preserving its native reference and maximum evidence. |
+| `Models._sentence_observation`, `_boundary_observation_view` | Use completed semantic clauses for meaning readers and keep the original entries for word readers. The semantic end view has the clause's one or three slots, rather than inferring its semantic arity from a numerical carrier. |
+| `Models._commit_sentence` | Use the scored comprehension's clause and install its held-concept publications. Word admission supplies native aliases; it does not run comprehension again. Word reconstruction, placement and lexical registration still receive the word entries. |
+| `WholePaths.finish`, `Models._sentence_path_cost`, `Extension.understand` | Carry the incoming trust into the trial's native semantic staging. The default argument is retained for direct observation fixtures; production passes the path's trust. |
+| `EqualityLearning.observation`, `EqualityLearning.cost` | The equality residual previously read word-side journal operands after the split. Measure its scalar residual on the comprehended operands while they are live, and give that residual to its existing cost owner. |
+
+The final kept close still uses `ClauseRows.write_clause` and `PartClosing`;
+no second durable writer was introduced. **The complete unchanged-copy
+contract is not yet certified.** Reference admission/selection still
+occurs between the scored semantic stack and that native close; the reader
+stop below is in this boundary. Private staging is not being presented as
+proof that every final referent, entry and address is already copied
+unchanged.
+
+Private STM is necessary because comprehension runs for both kept and
+discarded paths. The relation test verifies two STM0 ideas and one STM1
+pair, and verifies that staging changes neither the live tables nor the
+allocator or pending MTM. Its subsequent native write has the same two
+idea values and trusts and the same relation evidence. Native relative
+closings retain the relata and their pair; nested retained clauses/events
+are handled by the existing postorder. The existing close accepts one or
+three semantic slots, not an arbitrary list of unrelated final ideas.
+
+### 59.27 Causes found while exercising the new representation
+
+1. **Selected operand order.** Comprehension looked up a selected pending
+   MTM identity as though it were already an allocated concept. That gave
+   order −1 despite the reference operation's recorded order. It now uses
+   `operation_orders` for a selected operand. The new
+   `test_comprehension_keeps_the_selected_operands_recorded_order` failed
+   before the repair; the eight-test focused run then passed.
+2. **Unwitnessed closing order.** `ClauseJournal.close_member` passed −1
+   to `Clause`, whose completed-field schema requires a nonnegative order.
+   Its sibling/root paths already used zero for an unwitnessed percept.
+   The member now uses that same helper without changing the input stamps
+   or allocating a concept. The new
+   `test_pending_constituent_with_unknown_order_closes_without_allocating_an_order`
+   failed before; its combined journal/end-state run then gave **37 passed
+   in 8.87 s**.
+3. **Private occurrence address.** An extra event row could take the next
+   syntax tree's address. Capture now reserves the private semantic address
+   interval as well as the syntax addresses; a multi-lane child also cannot
+   take the root's reserved index. The word-deposit/native-stack test
+   exposed this before the repair and passes afterwards.
+4. **An existing relation pair.** An initially empty private STM1 gave a
+   previously known pair a new handle and only the incoming evidence.
+   Staging now imports that native pair first. In
+   `test_working_relation_reads_the_existing_pair_without_reasserting_it`,
+   the old pair has evidence **(0.8, 0.1)** and the incoming pair **(0.3,
+   0)**. The test failed before and passes afterwards, preserving the old
+   handle and **(0.8, 0.1)**.
+5. **An unused numerical mirror.** The first `Result` implementation still
+   carried numerical points in closing `Composition` records that were
+   not native semantic entries. The strengthened
+   `test_1_word_deposit_keeps_its_value_row_and_order` failed on that
+   implementation (**1 failed in 2.84 s**). Removing these points makes
+   that test pass and exposes the surviving reader in §59.28. It is not
+   repaired by retaining the numerical mirror under a new name.
+
+The lexical-view test,
+`test_comprehension_uses_the_observed_words_form_for_a_higher_order_object`,
+failed before the repair at **24 of 360 coordinates**, maximum difference
+**0.75**. Its seven-test focused run passed afterwards. The higher-order
+object keeps its own reference and meaning, and takes this word's form.
+
+### 59.28 The remaining reader: an arrival candidate inside an absolute idea
+
+Removing the non-entry points exposes
+`ReferenceClose._arrival_constituents`, called by `pending_names`,
+`_arrival_plan` and `prepare`. It enumerates the existing participant
+terms and constructs a candidate `Clause` from an unrepresented leaf's
+`term.point`. Such a leaf need not be an idea or a relation operand that
+the native writer retains. `_arrival_plan` later uses the candidates'
+points for its menu and can admit a selected arrival. Merely splitting
+the names-only call would not settle that later read.
+
+**Native test observation.** The focused run of
+`test_real_packed_ends_train_before_the_next_sentence[False]` raises
+`TypeError: must be real number, not NoneType` at this construction. One
+instrumented failing execution has the recorded actions
+`SHIFT; bind; bind; bind; bind; lift; bind; bind; bind; bind` on one
+leaf. The completed clause is **absolute**, with no relation; its root
+reference is occurrence **414**. The private native writer has nine
+occurrences (including the existing retained binding requests), with
+names **406, 407, 408, 409, 411, 412, 413, 415, 414**. The unrepresented
+arrival leaf is word/reference **109**, order **0**, and none of those
+rows contains its exact point. Its point also differs from the direct
+concept read by maximum **0.23840582370758057**: at coordinate 0 the
+interpreted point is **0.7615941762924194**, and the concept read is
+**1.0**. In this execution the root's non-positional content happens to
+agree with the leaf; this is **not** evidence that replacing every leaf
+with the root preserves arrival scoring.
+
+The fixture does not fix its random stream. A later standalone diagnostic
+execution passed (**1 passed in 5.10 s**); it does not erase the failing
+execution or certify this reader. No seed was selected to get either
+outcome, and neither the fixture nor its number of presentations changed.
+
+**Isolated native closing contract.** A prescribed absolute composition
+`bind(lift(leaf))`, with distinct supplied constituent points, separates
+the storage question from that untrained choice. The old arrival reader
+returns two candidates: the root and the leaf. Both private staging and
+the unchanged native writer retain **one idea and zero relations**; only
+the root's point is retained. Reading arrivals after retaining only that
+entry raises the same error. This is a direct closing-contract
+reproduction, not a claim that a trained numerical `lift` produced the
+prescribed points. It demonstrates which existing candidate contract
+still needs a value outside the final semantic entries.
+
+This differs from §59.22: no S R S result or unretained relatum is being
+mistaken for a single numerical carrier. The missing value is an
+**additional candidate for reference matching**, which might never be
+selected or written. A general numerical tree has not been restored;
+`ReferenceClose` has not been changed to discard or substitute this
+candidate.
+
+### 59.29 Question for Alec and Claude: the lifetime of arrival candidates
+
+May the existing `HeldConcepts` working set retain **only the consumed
+concept readings that arrival matching still needs**, until the kept
+reference close, even when an unselected candidate is not copied to LTM?
+
+**Recommendation:** permit that temporary working-set use. Keep the
+word tree immutable, keep the final semantic STM0/STM1 entries in their
+native layout, and discard an unselected arrival candidate at the close.
+Do not retain every numerical intermediate or write every candidate to
+LTM. This preserves the existing arrival-candidate contract. The other
+choice is to restrict arrival matching to the final semantic entries and
+their references, explicitly retiring its consumed-constituent candidates;
+that would change the reference menu and needs a decision.
+
+The reason for stopping is the explicit instruction in **§68.28.1**:
+**“If a reader needs a value the stack no longer holds, name the reader
+and the value, and stop.”** Its companion §68.29 says the small stack is
+exactly what is copied to LTM. §68.25.1e also does not authorize new
+held-concept inputs beyond the recorded reads/writes. The recommendation
+therefore needs a clarification of these rules; it is not an assumed
+implementation permission. No workaround for this reader has been built.
+
+### 59.30 Validation, ports and remaining work at this stop
+
+**Certificate 2, first document.** With the same saved starting stream,
+the frozen source's actions and recorded operator values are unchanged.
+All **four sentences and seven scored paths** complete the comparison:
+every numerical action's operands/result, the captured starting-source
+clause point and roles, and the live frozen extension's nodes agree
+within **absolute tolerance 1e-6, relative tolerance 0**. The old receipt
+serialized extension node types rather than their values; the extension
+comparison therefore reads the frozen implementation live, instead of
+claiming a comparison from those strings. The initial lexical stop is
+resolved. The two stopping gates use numeric input/direct native semantic
+fixtures, not ordinary word sentences for this tree observer; their tests
+themselves remain owed on the finished source. A maintained certificate-2
+test incorporating this observer is also unfinished.
+
+An earlier native four-sentence training probe completed all four kept
+closes and training steps. This was before removing the last non-entry
+points. It did not reproduce §59.23's saved-intermediate mutation, but
+the particular earlier mutating write has **not** been attributed; that
+failure is not claimed repaired by a different successful trace.
+
+The final combined focused run gives **118 passed, 6 skipped, 1 failed
+in 31.08 s**. The remaining failure is the arrival-reader test named in
+§59.28. The passing set includes the word-deposit/immutable-tree check,
+end-of-read preferred-object check, lexical view, selected order, unknown
+closing order, native S R S storage and existing-pair checks. Earlier,
+an explicit compiled generation test failed only because the sandbox
+could not write `~/.cache/torchinductor`; using a writable temporary cache
+gave **1 passed in 5.25 s**, with no source or test-contract change.
+
+Ports in this continuation preserve the existing assertions:
+
+- `test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label`:
+  its cost input is now the live comprehension residual, not a fake word
+  operation journal. Its nonzero verb-gradient and count assertions remain.
+- `test_real_packed_ends_train_before_the_next_sentence`,
+  `test_disabled_sentence_prediction_leaves_adam_momentum_unused`,
+  `test_bind_departure_changes_r_keep_and_the_resolvers_score_function`,
+  `test_named_token_keeps_its_content_before_and_after_the_close`, and
+  `test_registration_averages_coverage_and_includes_zero_cost_active_rows`:
+  observation/path-cost mocks accept or forward the new `incoming_trust`
+  argument. No assertion was removed. The stored-idea generation fixture's
+  observation mock was ported to the same signature.
+- `test_1_word_deposit_keeps_its_value_row_and_order`: replace the check
+  through `meaning_entries`/`MeaningTree` with traversal of the native
+  semantic stack. Keep every original deposit value/row/order assertion;
+  additionally check word-bank immutability and the absence of numerical
+  inner-node points outside native entries.
+- The new tree-first fixture imports/field accesses use `Comprehension`
+  and `HeldConcepts`. No test contract is retired in this continuation.
+
+Reader audit so far: word reconstruction (`DerivationReconstruction`,
+`SentenceField.sentence_generated`, the word-root/end readers), grammar
+teaching, `SentenceCredit` and `PartsOfSpeech.observe_kept` stay on word
+entries. The semantic boundary, next-sentence prediction, `WholePaths`
+meaning fields, thought/answer views, output field, extension and native
+writer take comprehension's result. Equality's residual is moved as
+listed above. `FamiliarTier.commit_read_words` still takes lexical entries.
+**The complete reader inventory is unfinished**: arrival matching is the
+surviving reader now referred for a decision, and final admission/copy
+needs to be verified after it is settled.
+
+Neither stopping gate, the complete 160-sentence lesson, verbal proof,
+assessment tables, multi-object count nor the default sweep has been run
+on this unfinished source. There is no new full-lesson number or sweep
+result to compare with §58/§51. This is a mechanism/representation stop,
+not a learning failure marked under §43.
+
+### 59.31 Source and protected places
+
+The canonical `bounded_tests.source_snapshot` SHA-256 is
+`e17650b3f5c1e0eadaf2344d7a0b1d5cd3d3e0260301f9c1b8ea3bd6238e5225`.
+Fourteen production files are changed/added relative to §59.21, with the
+two old module names removed, as listed in §59.26. The partial code and
+its remaining mechanism failure are returned for review, not accepted
+or landed.
+
+The four protected attention files are unchanged. In this continuation,
+the only edit in `Models._run_sentence_word_bricks` renames its existing
+initial snapshot from `IdeaJournal.snapshot`/`_sentence_initial_ideas` to
+`HeldConcepts.snapshot`/`_sentence_initial_concepts`. There is **no new
+edit in `stage_cs_lang`**. Cumulatively, that function still has the
+earlier removal of the eager word-to-object exchange, the word identity
+carried into scope, and the recorded end-of-round/end-of-closing refresh
+witnesses listed in §59.21. It remains nested in
+`_run_tensor_peer_word_pipeline`, not the protected loop itself.
+
+No chooser, attention legality rule, kernel, priming rule, seed,
+presentation count, learning rate or existing fixture capacity was
+changed to obtain a pass. All unrelated edits are preserved. Receipts
+stay local and are not linked. Nothing is staged, committed or pushed;
+HEAD remains `572169253059b684b0cb60c1642e206f9eeae0b6`.
+
+### 59.32 Continuation under §68.34 and §68.36 (Codex, 2026-11-17)
+
+Started from §59.31's snapshot
+`e17650b3f5c1e0eadaf2344d7a0b1d5cd3d3e0260301f9c1b8ea3bd6238e5225`.
+Alec's §68.36 decision is implemented. This is a partial return: the
+listed repairs and the wider run pass, but the reader audit reproduces
+another consumed-value reader (§59.39). The stop is §68.28 point 1,
+not a failed stopping gate. No later queued round is started.
+
+### 59.33 The two mutation errors have one producer
+
+`Comprehension.Evaluation.operation` wrote `self.frames[at]` in place.
+`ClauseJournal._finish_clause` iterates `frames[action, :arity]` while
+assembling the operands of a clause; those tensors are views produced by
+`Unbind`. A later operation changed another row of the same base tensor.
+The earlier operand views therefore became invalid. The same write
+invalidated an intermediate protected by `SentenceCompose._SavedValue`,
+producing §59.23's “a sentence intermediate was mutated before backward”.
+
+The repair is at the write: `frames` is replaced with `index_copy`.
+`case_values` and `case_selected` use the same functional update, so their
+previous views also retain their own base. The incremental clause reader
+refreshes its frame reference after each yielded action. Nothing carrying
+a gradient is detached to avoid the error.
+
+`test_comprehension_later_action_preserves_operand_views_and_gradients`
+has two cases, `roles` and `backward`. Before the change, both fail with
+those respective errors (2 failed in 2.29 s). After it, both pass and
+check the gradients of all three original leaves, including zero credit
+for the later leaf. The first math-chain reproduction also passes after
+this repair. A separate “no external observation is awaiting an
+occurrence” error in the other math-chain test is not attributed to this
+mutation; its producer is reproduced in §59.39.
+
+### 59.34 Fixture ports and remaining names
+
+All four sentence-journal ports fail before and pass after (4 failed in
+4.11 s; 4 passed in 3.03 s). No existing assertion is dropped.
+
+| Test | Old fixture/assertion | Port |
+| --- | --- | --- |
+| `test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients` | Stand-in model had no `ltm_store`; capture accepted no time boundary | Supplies `symbolSpace.ltm_store.model_clock = tensor(7)`; capture accepts `after` and asserts it reads 7; existing address and gradient assertions stay |
+| `test_program_keeps_the_identity_leaf_stamp_before_reference_resolution` | Same missing store/boundary | Same explicit clock; existing identity/stamp assertions stay |
+| `test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading` | Same missing store/boundary at three captures | Supplies the clock and asserts `[7, 7, 7]`; incomplete-scoring/admission assertions stay |
+| `test_identity_admission_uses_the_resolved_stm_order` | Watched the deliberately removed object exchange, so its expected list stayed empty | Renamed `test_identity_admission_uses_the_deposited_word_order`; watches `ShortTermMemory.functional_push_step_masked` and checks `ChunkJournal.push` sees that word order, with the nonempty-witness assertion retained |
+
+Production has no fallback for a stand-in without a store. No test is
+retired. The three comments in `Understanding.py`/`ChunkJournal.py` now
+say comprehension. The three tree-first test names now say
+`test_5_comprehension_reads_the_final_preferred_object`,
+`test_comprehension_takes_staged_pending_name_without_writing_mtm`, and
+`test_comprehension_refresh_reads_its_own_published_concept`. Their local
+names/comments also follow §68.26. Unrelated uses of “conversion” are
+unchanged.
+
+### 59.35 Arrival readings belong beside the trial's tree
+
+The menu's membership read is factored into
+`ReferenceParticipants.arrival_members`. Both
+`ReferenceClose._arrival_constituents` and
+`HeldConcepts.Evaluation.retain_arrivals` use it. It retains the same
+eligible completed clauses and previously unrepresented participant
+leaves; no score, legality rule, chooser or candidate criterion changes.
+
+`HeldConcepts.ArrivalReadings` holds only offered consumed values not
+already represented by a native idea entry. Its keys are temporary
+constituent identities. `Comprehension.Evaluation.finish` supplies those
+values to the existing closing metadata alongside `PartClosing`'s
+native entries. `Result.detached` uses one memo for the clause and its
+held values, preserving their sharing. There is no second numerical
+operator tree. A selected arrival still follows the existing occurrence
+write, token binding and MTM merge; an unselected value lapses with the
+trial. The word tree is unchanged.
+
+`test_consumed_arrival_is_held_for_the_trial_without_writing_live_mtm`
+fails before `retain_arrivals` exists and passes after it. It checks the
+consumed leaf, the native stack's single entry, the absence of an extra
+intermediate entry, and unchanged live MTM. The native-path test
+`test_comprehension_stages_native_values_without_mutating_words_or_mtm`
+also compares every retained value with the value produced by
+comprehension at that constituent (atol 1e-6), compares MTM before and
+after staging, and checks the word tree's columns and metadata unchanged.
+The former word-deposit test is split so certificate 1 can run on the
+starting source independently of the new comprehension classes; no
+assertion is retired.
+
+The focused arrival/reference/math/relation run gives **72 passed,
+1 skipped in 60.25 s**. This did not certify the separate prediction
+reader of §59.39.
+
+### 59.36 Certificate 2 is maintained data and a native numerical replay
+
+The frozen-source observation was repeated with the original saved
+stream: **four sentences, seven scored readings**, all action frames,
+clause points/roles and extension nodes within **atol 1e-6**. There is no
+numerical mismatch or replacement seed. The readings are `This is
+Felix.` (path 0), `What is this?` (paths 0 and 1), `That is Ciao.` (paths
+0 and 1), and `What is that?` (paths 0 and 1). A reused first-sentence
+path has no second independently evaluated reading.
+
+The maintained fixture is
+`test/fixtures/item18-comprehension-first-document.pt.gz`, **102,313
+bytes**, with its description, source hash and content hash in
+`test/fixtures/item18-comprehension-first-document.json`. The recorded
+source is §58.8's
+`7768411acaecf5d2a9ad58a39f2f0041c79f43cdc6d94fc1b79176bec5bf7fb6`.
+The JSON is included in `bounded_tests.source_snapshot`, and the test
+verifies the binary fixture's SHA-256 against it.
+
+It records actions, words, actual staged object references (including
+MTM pending identities), the old admitted/native reference aliases,
+leaf evidence and physical bands, reference and case witnesses, initial
+held concepts and refresh/publication witnesses, the `surface` and
+`part` kernels used by these readings, the dictionary/hierarchy/MTM
+reads used as inputs, the open field and its positions, and expected
+per-action operands/results, clause points/roles and every extension
+node's actual IDs and two-lane values. The extension is not a class
+name or a shape-only receipt.
+
+`test_2_first_document_matches_recorded_object_readings`, with
+`test/comprehension_replay.py`, runs today's interpretation, numerical
+operators, held-value refresh, extension and clause assembly. Its
+recorded dictionary calls are inputs, not operator outputs. Unknown
+calls fail; there is no lookup of a desired output. The replay stops
+before durable staging, which the separate native-store certificates
+cover. It loads no copy of the frozen implementation. If an action
+mismatches, its assertion identifies sentence, path, action, operator
+and both operand frames. The test passes.
+
+### 59.37 Certificates 1 and 5, and the wider run's activity repair
+
+Certificate 1 now runs on both implementations. On the frozen §58.8
+source it fails at the actual word-journal boundary: both observed
+orders differ from the deposited word's orders (absolute difference
+1). On the current source it passes. No mock exchange is inserted.
+
+For certificate 5, the same two-object fixture on the frozen native
+interpreter/close selects object **2** at arrival, changes the final
+expected object to **4**, and keeps reference **2**; the assertion for
+4 fails. The current certificate's native comprehension takes object
+4 and its interpreted value while leaving the input word unchanged.
+The standalone tree-first run at this point gives **15 passed in
+4.37 s**, including certificates 1, 2, 5 and the native semantic-stack
+checks. Certificate 3 remains retired by §68.16; certificate 4 remains
+deferred to item 1.7 by §68.15. Neither is implemented here.
+
+The first wider run then finds a different mechanism failure:
+**1 failed, 262 passed, 8 skipped in 105.13 s**.
+`test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention`
+reaches an activity journal entry at row 32 while the current thought
+store has 32 rows of capacity. `ThoughtTrialState.restore` applies the
+selected path's activity *before* restoring that path's larger native
+thought store. `ThoughtStrata._resize` also replaces the pair-store
+object, so a saved relation effect addresses the old object.
+
+A native regression,
+`test_thought_trial_restores_its_native_store_before_applying_activity`,
+uses the existing bounded thought-store growth: a 34-entry thought is
+saved, the earlier 32-capacity state is restored, and the saved thought
+is selected. Before repair it raises the identical index-32 error.
+Restoring the contents first exposes the second defect: relation
+activity stays **.5** instead of **.6**. The final repair restores the
+native contents before applying their activity, and reconstructs the
+pair store's buffers while preserving its object identity. Both idea
+and relation activity then equal **.6**. No growth bound or fixture
+capacity is changed. These are defects in trial restoration exposed by
+the round, not changes to activity's formula.
+
+That regression plus thought-inference, episodic-concept and existing
+trial-activity tests give **29 passed in 6.86 s**. The wider rerun gives
+**264 passed, 8 skipped in 124.04 s**, including both math-chain tests.
+Its explicit file set is `test_item18_tree_first`,
+`test_word_interpretation`, `test_reference_close`,
+`test_reference_arrivals`, `test_reference_participants`,
+`test_chunk_journal_origins`, `test_sentence_journal`,
+`test_sentence_compose`, `test_math_chain`,
+`test_reference_reconstruction`, `test_stored_idea_generation`,
+`test_clause_closing`, `test_clause_storage`, `test_clause_acceptance`,
+`test_clause_scope`, `test_clause_grammar`, `test_part_closing`,
+`test_relation_closing`, `test_sentence_end_state`, and
+`test_stm_relative_sentence_end_state` (all under `test/`, `.py`). The
+nineteen filenames identifiable in §68.33's prose are included;
+`test_clause_grammar` is the twentieth in this run.
+
+### 59.38 Reader inventory for §55.3 step 5
+
+The word and semantic carriers are separate; a numerical reference
+witness in the word program is an input to comprehension, not permission
+to read the whole word tree as the meaning.
+
+| Surface and readers | Side and read |
+| --- | --- |
+| STM root/end slots `lang[6]`, `lang[10]`; `_publish_sentence_scratch`, `_trial_understanding`, `_packed_sentence_roots`, `_tensor_sentence_roots_live`, `_tensor_final_end_slots` | Word formula; publication/capture retains the physical word stack for its chooser, credit and inverse |
+| `_sentence_end_state`, `_capture_reading_programs`, `_program_entries`, `_recovered_word_ideas`, `_final_end_state`, `_reconstruct_trial`, `_reconstruct_sentences` and `_reverse_idea_to_words` | Word formula and word reconstruction; they do not provide semantic rows to the close |
+| `lang[19]`, `_choice_values`; `ChunkJournal`/`SentenceStrata.capture`, `Reading` and `CompositionView` | Word values and the recorded action/witness journal; the pinned syntax keeps those values unchanged |
+| `GrammarLessons.compose_loss`/`generate_loss` and annotation readers; `_student_compose_states`; `GrammarEvidence` and `eval_operators` | Word tree, reading lesson and operator/tree assessment |
+| `DerivationReconstruction`; `SentenceCredit`'s inverse/coverage costs; `FormCentroids`; `PartsOfSpeech.observe_kept`/placement; `MereologicalCodes.observe_close` | Word operands, word forms and their formal-argument placements |
+| `SentenceUnderstanding.root`, `.end_slots`, `.end_depth`; `SentenceField.sentence_generated` and `reconstruct_generation` | Word reconstruction, including its independently generated field |
+| `Comprehension.Evaluation.leaf`/`operation`, `ClauseJournal.ComprehensionClose` | Evaluate the word formula on its final selected objects and recorded external witnesses; produce the semantic point, roles and extension |
+| `EqualityLearning.observation`/`cost` | Comprehended equality operands, not the word operands; the existing residual's gradient ownership is unchanged |
+| `Result.clause`, `_boundary_observation_view(completed=...)`, `_sentence_observation` | Meaning; the clause and semantic-role envelope come from comprehension. **The prediction representative within this read is the unresolved reader of §59.39.** |
+| `PartClosing.stage`, `IdeaStack`, the kept `PartClosing`/`ClauseRow`/`Memory.write_clause` path | Native semantic entries and tagged references; private staging leaves live MTM unchanged; the kept writer receives the scored clause |
+| `ReferenceClose`/`ReferenceParticipants`, `MemoryLink` and `FamiliarTier.commit_read_words` | Conceptual candidates/content come from the semantic clause and held arrival readings; word-program arguments supply lexical identity, positions and occupation only |
+| `_sentence_closing_images`, `SymbolExpectation.sentence_prediction_cost`/`observe_stm_end_state`, component expectation costs and commit | Semantic observation and its canonical roles; its prediction-head selection needs the port in §59.39 |
+| `WholePaths.fields`, `ThoughtClosing.closing_question`, `TimelineRead`, `ThoughtStrata`, `ThoughtFaces`, `ExtendedRecall` | Meaning, declared semantic roles/references and the operated extension; no replay of the syntax as object values |
+| `WholePaths.output`, `ThoughtAnswer.bound_view`, `AnswerDerivation`/answer materialization and output generation | Semantic sentence state or the accepted thought's state and reference |
+| `SentenceUnderstanding.idea_root`/`.idea_slots`/`.idea_depth`, `reader_features`, `Conditioner`; `_sentence_numeric_error`/`_forward_head` | Comprehension's semantic fields when present. Numeric-only fixtures with no comprehension retain their native input field; `_forward_head` reads the field, not the unused word-root argument |
+| `Extension.reading`/`understand`, `with_extensions`; `WholePaths.finish` and `SentenceField.publish`; `EpisodicMemory.stage` | The operators' semantic extension is the understanding field. `WholePaths` republishes it after reconstruction; the generated reconstruction field remains separately attributed |
+| `OutputOccurrences.generated`, `SentenceField.knowing` and the final published conceptual carrier | The generated idea's own extension, or the published understanding field, according to that caller; no union of unrelated word-tree leaves substitutes for it |
+| `SentenceBoundary`, detach/select/clear readers | Lifetime and row selection only; preserve which carrier they were given |
+
+### 59.39 For Alec and Claude: prediction still reads a consumed phrase
+
+This is the explicit stop of §68.28 point 1: “If a reader needs a value
+the stack no longer holds, name the reader and the value, and stop.”
+It is separate from the repaired arrival menu, and is not hidden by the
+passing wider run.
+
+**Native reproduction.** Four known order-zero concepts have codes
+`e0`, `e1`, `e2`, `e3`. Two surface phrases have computed values
+`e0 + e1` and `e2 + e3`, and references to their content concepts `e1`
+and `e3`. The kept form relates those phrases by `part`. The ordinary
+writer retains the pair of known concept references: private staging
+correctly leaves **zero new STM0 entries and one STM1 relation**. It
+must not invent extra entries for the two phrases.
+
+Before consumed values are removed,
+`PartClosing.prediction_point(prepare(clause))` returns
+`(1,1,0,0,0,0,0,0,0,0,0,0)`, the first phrase's value. After staging and
+the authorized arrival retention, it returns **None**. The noun leaves
+are held, but the composed surface phrase is neither a new native entry
+nor an arrival candidate. `prediction_point` sees its resolved status
+and returns its now-empty `Composition.point` without descending.
+The old value still exists in `clause.meaning.roles[0]`.
+
+The complete downstream sequence reproduces the earlier math error:
+`_boundary_observation_view` returns observed depth **0**;
+`SymbolExpectation.observe_stm_end_state` skips the observation; the
+native writer writes the relation; `bind_observation_occurrence` then
+raises **“no external observation is awaiting an occurrence”**. This
+attributes the separate failure first seen while checking the mutation
+repair. It can still occur despite the wider run's pass; no seed was
+chosen to provoke or suppress it.
+
+**Recommendation, not built:** port prediction's representative read
+to the existing semantic roles/constituents produced by comprehension,
+preserving the old representative value. This uses already-carried
+semantic information, rather than retaining another numerical
+intermediate or changing the written relation. The alternative of
+reading the referenced concept's code would give `e1` in this example,
+which changes the predictor's target. May prediction take the existing
+semantic roles under this rule? No guard is weakened and no extra held
+value, fallback, writer or prediction target has been installed pending
+that decision.
+
+### 59.40 Source, protected places and work still owed
+
+The returned canonical source snapshot is
+`b2a637acf428bbb12aaf690f33022a1f17e47eb80ad0544813098089f118a957`.
+The binary certificate fixture is covered through its checked JSON
+content hash. HEAD remains
+`572169253059b684b0cb60c1642e206f9eeae0b6`.
+
+New production edits in this continuation are in
+`Comprehension.Evaluation.operation`/`finish` and `Result.detached`,
+`ClauseJournal._finish_clause`, `HeldConcepts.ArrivalReadings`/
+`Evaluation.retain_arrivals`, `ReferenceParticipants.arrival_members`,
+`ReferenceClose._arrival_constituents`, `WalkTrials.ThoughtTrialState.restore`,
+`ThoughtStrata._resize`, and the naming comments in `Understanding` and
+`ChunkJournal`. The test and fixture additions/ports are named above.
+`git diff --check` passes.
+
+There is **no new edit** in either `Models._run_sentence_word_bricks`
+or `stage_cs_lang` in this continuation. Cumulatively since §58.8, the
+protected word loop only captures the initial held concepts after
+`PrependedSymbols.stage`. `stage_cs_lang` removes the eager
+word-to-object exchange, keeps the word deposit, carries word IDs into
+scope, and records the existing refresh witnesses after a normal round
+and a closing round. It changes neither chooser nor kernel. All four
+protected attention files remain unchanged.
+
+The final-source stopping gates, 160-sentence lesson, verbal proof,
+assessment tables, multi-object counts and default sweep are **not run
+at this stop**. §68.33's prior gate passes and §58's measurements are not
+substituted for them. The wider test run is not the default sweep. The
+prediction reader above is the remaining known mechanism defect.
+Receipts stay local and are not linked. No bound, learning rate, seed,
+capacity or presentation count is changed to obtain a pass. Nothing is
+staged, committed or pushed; unrelated changes are preserved.
+
+### 59.41 Sixth continuation: preflight and attribution checkpoint (Codex, 2026-11-17)
+
+Read §68.54 with §68.40, §68.49, §68.51–§68.58. Alec's decision
+removes sentence prediction; the proposed repair of its representative in
+§59.39 is not built. Started on the §59.40 snapshot,
+`b2a637acf428bbb12aaf690f33022a1f17e47eb80ad0544813098089f118a957`,
+with HEAD still `572169253059b684b0cb60c1642e206f9eeae0b6`.
+
+All 24 named nodes fail in the starting-source run: **24 failed in
+122.54 seconds**. This is a targeted reproduction, not the default sweep.
+The first document's four kept-close situation frames were captured before
+editing, using the lesson's existing saved random stream. They include
+occurrence, symbols and activations; comparison after step 2 is still owed.
+No seed was selected for a result.
+
+The fourteen `clause.meaning` failures all enter through
+`reading_fixtures.commit_reading`. That helper calls
+`_sentence_observation` without its `record`, and supplies an extended
+clause and a record afterwards, but never runs comprehension. Part B's
+`_commit_sentence` now takes the selected comprehension's admitted clause;
+the helper's `comprehensions` is consequently `None` while its physical
+payload is nonempty. These are not fourteen native readings that lost a
+clause. The helper must be ported to the native comprehension contract;
+restoring the earlier numerical journal as a second production close would
+undo part B. That port is not complete at this stop. The fourteen are:
+
+- `test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage`;
+- all seven named cases of `test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store`;
+- all three named cases of `test_item4_native.py::test_relation_chain_uses_symbol_confidence_through_native_close_and_store`;
+- both cases of `test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm`;
+- `test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]`.
+
+Their sentence-estimate assertions go with step 2; their assertions about
+stored content, references, evidence and masked streams still require
+ports. No test has been retired in this continuation yet.
+
+The two further starting failures are
+`test_what_training.py::test_curriculum_drives_question_families_through_run`
+(`no external observation is awaiting an occurrence`) and
+`test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`
+(`external observation occurrence is already bound` in this run). Both
+reach the estimate's separate observation/binding lifecycle, which step 2
+replaces by the kept close's own admission. The latter's assessment teardown
+also exhausted retained sentence-trial banks after the exception. This
+run does not reproduce or attribute the different finite-coordinate error
+Claude observed; no claim that it has been repaired is made.
+
+### 59.42 Eight regressions addressed, with their tests
+
+Only one production function changes at this checkpoint:
+`Comprehension.Evaluation.leaf`. The native word push has zero where/when
+coordinates when an input supplied no occurrence bands. Comprehension
+instead carried `None` in those fields. A later identity opening passed
+that head to `HeldConcepts.Evaluation.publish`, which attempted to
+concatenate `None` into its point. This is the producer of
+`TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth`.
+The leaf now carries the native zero coordinates in that case and copies
+supplied coordinates unchanged. The same native ingestion test fails
+before and passes after; no publication guard is weakened.
+
+The other seven failures are ports, preserving their assertions:
+
+| Test | Part-B change it had not followed | Port |
+| --- | --- | --- |
+| `test_item18_operator_cost.py::test_binary_bind_dummy_pays_the_declared_operator_cost` | `OperationSelectionLayer.forward` carries selected-operand resolution and order witnesses | The declared reference menu supplies `resolved` and `requested_orders`; the cost assertion stays −.75 |
+| `test_orders_learned.py::test_determiner_opens_a_chunk_identity_only_at_member_order_one[1]` | `ChunkJournal` appends held-concept witnesses after its publication-kind column | Read `REFERENCE_WITNESS-1`, rather than the last column; the order/identity/publication assertions stay |
+| `test_retire_mode.py::test_native_every_completed_field_reaches_the_chooser` | `WholePaths.finish` supplies incoming trust to the trial's comprehension | The observer forwards the keyword arguments; every chooser, menu and work assertion stays |
+| `test_selected_relation_meaning.py::test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept[False]` and `[True]` | `_program_entries` pins its formula after the native store clock | The fixture supplies that clock and its capture stub accepts `after`; all identity/value/allocation assertions stay |
+| `test_whole_paths.py::test_retained_named_transient_captures_its_concept_not_its_mtm_address` | The same pinned-formula clock | Supply the store clock; all concept, word, value and MTM assertions stay |
+| `test_thought_intuition.py::test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_chooser` | `ThoughtAnswer.bound_view` now replaces the semantic `meaning_root`, preserving the word root | The answer probe reads `record.idea_root`; both fired-weight gradients, chooser gradient and detached-resident assertions stay |
+
+The checkpoint run is **26 passed in 10.65 seconds**: ten focused cases
+(the eight previously failing cases plus the determiner's two other
+orders), and all sixteen tests of `test_item18_tree_first.py`. Its C1/C2
+numerical replay and gradient certificates remain passing. The wider
+21-file/77-file checks and stopping gates are due after step 2; none is
+claimed from this focused run.
+
+The inventory of §59.38 missed the forced-close helper, the new operand
+witness fields in a hand-built menu, the publication column displaced by
+journal witnesses, the incoming-trust argument in a wrapper, clock-bearing
+capture stubs, and an answer probe still reading the word root. It also
+missed the surviving field loss's use of the retiring sentence-loss key,
+below. The complete step-2 reader/retirement inventory is still owed.
+
+### 59.43 Design question: the surviving field read's loss weight
+
+§68.53 rule 1 removes `sentenceExpectationLossWeight` but expressly keeps
+`SymbolField`, the shared predictor's field read during the read (§68.44's
+table). The key has a surviving reader: `Models._sentence_path_cost`
+weights **`expectation.symbols`**, from `SymbolField.loss`, by
+`self.inter_loss_weight`. Construction gets that value from
+`sentenceExpectationLossWeight`. This is separate from the removed
+sentence-target cost `expectation.activation`; deleting the latter does
+not remove this use.
+
+The surviving loss is live and trains the shared predictor. On one fixed
+input and one unseeded initialization, its raw loss is
+**0.2726309597492218**. Through the existing registry, weight .1 gives
+**0.02726309560239315**, with summed parameter-gradient norms
+**0.04547182691749185**. Weight 1 gives **0.2726309597492218** and
+**0.45471830759197474**. Weight zero books no term. These alternatives
+therefore change learning, rather than merely renaming a retired setting.
+The existing `MM_ladder.xml` and `MM_ladder_idiom.xml` explicitly set the
+old key to zero; the other explicit declarations in data set .1.
+
+**For Alec and Claude:** may the surviving field-read loss take a new key
+`symbolFieldLossWeight`, default .1, with each configuration's current
+value ported unchanged? I recommend this. It removes the sentence key,
+keeps the surviving teacher's current weight, and does not couple it to
+`wordExpectationLossWeight`, which separately controls the word-arrival
+loss. No replacement key or weighting change has been built. The explicit
+removal and preservation rules do not settle this surviving use, so the
+continuation stops here for the decision, before step 2.
+
+### 59.44 Checkpoint source and remaining work
+
+Returned source snapshot:
+`c283f59f6aa36cf9578e0c4b007fd44aa5c86bbe93c34c0827bf1b697e3fac13`.
+The production diff since §59.40 is `Comprehension.Evaluation.leaf`; the
+six changed test files and their ports are named in §59.42. There is no new
+edit in `Models._run_sentence_word_bricks`, `stage_cs_lang`, or any of the
+four protected attention files. The initial sixteen tree/comprehension
+certificates still pass. Eight of the original 24 failures are addressed;
+the other sixteen await the closing-helper port and estimate removal.
+
+Steps 2–5, their per-step gates and 21/77-file runs, and the final lesson,
+verbal proof, assessment tables, multi-object counts and default sweep
+remain undone. No final-round measurement or gate pass is claimed at this
+checkpoint. Receipts stay local and are not linked. No seed, capacity,
+bound, learning rate or presentation count changes. Nothing staged,
+committed or pushed; unrelated changes preserved.
+
+### 59.45 Resumed under §68.60: the field loss keeps its weight
+
+Alec's answer is built: `symbolFieldLossWeight` replaces
+`sentenceExpectationLossWeight` for the surviving during-read
+`SymbolField.loss`, booked as `expectation.symbols`. The default remains
+.1; `MM_ladder.xml` and `MM_ladder_idiom.xml` keep their explicit zero.
+Other explicit values remain .1, including executable benchmark
+configurations. No word-loss weight is substituted. The retained boolean
+`sentenceExpectation` still enables the during-read field read; it makes
+no sentence estimate.
+
+`test_item18_no_sentence_estimate.py` checks the actual path's booking
+against the former weighted loss on the same field graph and parameters:
+value and every gradient agree at atol 1e-6. Its zero-weight check books no
+term and checks both ladder configurations. The pending estimate,
+sentence comparison/cost, row/document estimates, distance-one FUTURE
+answer and `generate_sentence` are removed. The shared word/field
+predictor, bank, percept reads and recent situation remain.
+
+This continuation is in progress. The step-by-step results and final
+source below will supersede these progress notes; no completion is
+claimed here.
+
+### 59.46 The native closing helper and the recent situation
+
+`reading_fixtures.commit_reading` now captures the declared reading in
+`SentenceStrata`, runs `Comprehension.Evaluation` alongside the native
+extension traversal, and supplies that result to the single production
+commit. Previously it called `_sentence_observation` without a record,
+then supplied a clause without comprehension. That is the producer of the
+fourteen missing-clause failures; no native sentence required a second
+close. The helper does not alter the production guard.
+
+One existing assertion needed a further port:
+`test_selected_relation_meaning::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm`
+(the forward and packed cases). Its first concept is actually order one,
+and the second order zero. The old helper silently gave both order zero.
+Native comprehension therefore retains the first operand as an idea whose
+referent is that same selected concept, then relates its occurrence to
+the second concept. The old assertions of zero idea rows and a direct
+concept/concept pair become one idea row with the original referent and
+an occurrence/concept pair. The pair, its zero evidence, its role mask,
+its detached storage and the prohibition on executing a query during the
+close stay checked. The source receives no special case for this fixture.
+
+At the kept close, `include_occurrence` receives the written occurrence,
+symbols and activations directly. There is no observation awaiting a
+later binding. The anonymous `_stm_end_states` list loses its only writer
+with the estimate and is removed; `get_stm_chain`, still read by temporal
+recall, remains a view of the native store. Old continuation checkpoints
+may discard the retired estimate/list fields with a warning; their
+retained recent addresses are restored. The bounded per-stream situation
+and the durable store remain distinct views of the same retained rows.
+
+The closing projection has one surviving reader:
+`_sentence_closing_images` uses `_boundary_observation_view`'s observed
+entry for the thought chooser's observed/conceived input. Its former
+`PartClosing.prediction_point` implementation is retained as
+`closing_point` for that read, as §68.54.2c permits; it supplies no
+forecast or new source to a reader. In the consumed-surface reproduction
+of §59.39 the point is still absent, the staged stack still has zero idea
+entries and one relation, and the native writer and recent admission now
+complete without an awaiting-observation error.
+
+The first-document check holds the historical native kept closes fixed.
+It preserves the occurrence, symbols and activations after all four
+closes exactly. A direct live rerun is also recorded: removal of the
+sentence estimate changes later selected readings, so the live histories
+are not equal. The historical roots were symbol 126, times 20 and 31,
+and time 44; the new live roots were symbols 126, 128 and 130, and time
+48. The last activation references change from times 38/43 to 42/47.
+This is not represented as live-training parity. The replay certificate
+checks the history-writer contract on the same admitted rows.
+
+### 59.47 Step 2 checks and the readers left cold
+
+Step 2's stopping gates: **2 passed in 3.29 seconds**. Its 21-file
+group: **268 passed, 8 skipped in 118.54 seconds**. The further 61-file
+group: **837 passed, 27 skipped, 1 XPASS in 500.64 seconds**. The
+additional 16-file group: **183 passed, 6 skipped in 201.78 seconds**.
+The two wider groups total **1,020 passed, 33 skipped, 1 XPASS**. No
+failure remains in those checks. An initial run could not write Torch's
+compiler cache outside the workspace; the completed runs use a local
+cache. This was an execution permission failure, not a source repair.
+
+`test_math_chain.py` passed five consecutive runs without setting a seed:
+**16 passed** in each, in **59.31, 60.57, 60.06, 54.90 and 53.11
+seconds**. The five new tests in `test_item18_no_sentence_estimate.py`
+pass (**5 passed, 4.74 seconds**): the weighted field loss and every
+parameter gradient agree at tolerance 1e-6, the zero-weight ladders book
+no term, the consumed-surface relation has no pending-observation
+dependency, the four historical closes preserve their recent frames,
+and no production call of a removed sentence-estimator function remains.
+The qualification on the live first-document rerun is in §59.46.
+
+The former consumers remain; none receives the expected field or the new
+point in place of the removed estimate:
+
+| Consumer | Input now; branch left unreachable from the native sentence path |
+| --- | --- |
+| `OrderPrime.from_predictions`, called by `_run_sentence_word_bricks` and the candidate-attention prime | A `None` for every stream; no sentence-level predicted-symbol prime |
+| `_sentence_reference_bank` and its reference adapter | No prediction, no predicted flag; the adapter uses its own operand as query |
+| `_sentence_closing_images` / `ClosingImage.form` | No estimate and zero sentence gain; observed equals conceived; the row-prior branch receives `None` |
+| `_selected_thought_expectation` | No comparison; its existing cold case reads the active operand with no predicted presence |
+| `_append_observed_meaning` / the clause writer | No comparison; the existing default initial activity, .5, is used |
+| The components' closing cost and commit, including verb observation | No estimate; no verb innovation is inferred from a sentence prediction |
+| `ThoughtClosing.close` / `absence` | No pending estimate and no omission image; the native close does not offer an absence from a prediction |
+| `ThoughtLTMCapability.expectation` and the expectation commit effect | `None`; neither walks a table for a replacement |
+
+`rowExpectationGain`, `documentExpectationGain` and
+`sentenceExpectationLossWeight` are removed from construction and schema.
+`expectationPrime`, the omission/image thresholds and the cold consumer
+interfaces stay for their existing readers; setting a former sentence
+prime or image gain cannot manufacture the removed estimate. FUTURE at
+distance one has no forecast answer; PAST still reads the retained
+store. `generate_sentence` is removed. Word arrival, percept arrival,
+the during-read symbol field and their learning remain.
+
+The remaining two starting failures of §59.41 now pass in the wider
+groups: `test_curriculum_drives_question_families_through_run` and
+certificate 81. Their reproduced awaiting/already-bound errors belonged
+to the removed estimate's observation/binding lifecycle. These results
+do not claim to repair the separately reported finite-coordinate failure
+by a different draw.
+
+### 59.48 Step 3: intuit uses expect's field
+
+`IntuitionField.open_field` now only records the observed knowing and its
+bracket. `read` takes the owner's detached `_expected_knowing` order-zero
+block, joins it into the selected stream at the live bracket, then calls
+the existing `FieldProjection.close`. Existing higher orders and other
+streams are preserved. There is no downward propagation in this change.
+
+Removed: `intuit_stack` and its construction/parameter enlistment;
+`intuitHidden` and `intuitLayers`; `_intuition_prediction`,
+`_intuition_observation`, `_intuition_teacher` and `_intuition_target`;
+the detached second traversal in `Extension.understand`; the teacher
+addition in `Intuition.write_knowing`; the teacher carried by
+`_sentence_observation`, `WholePaths.finish`, `ThoughtTrialState` and
+`SentenceBoundary`; and `IntuitionField.complete` / `intuition.field`.
+The inference engine's `_intuition_field` is a different value, the
+recorded inference result, and stays. `ConceptSpread.complete` keeps
+only `expectation.concepts`, with its original omission teacher.
+
+The only production evaluation of `expect_stack` is in
+`ConceptSpread.open_prediction`, which first calls `_concept_owner`.
+Its other references enumerate parameters, report their ownership or
+load checkpoints. No non-owner evaluates it. `ConceptualSpace` therefore
+constructs it only on the owner: stage zero for a shared concept
+dictionary, the terminal stage otherwise. The math-chain configuration
+now builds one instead of three. Old checkpoint entries for the removed
+intuition map or an absent non-owner expectation map are discarded with
+a warning; no removed parameter enters a newly constructed optimizer.
+
+The three tests of `test_item18_shared_expectation.py` fail against the
+saved pre-step-3 source: the deposited lanes differ, the old registry
+still books `intuition.field`, and the old model still owns the removed
+stack. They pass after. On the captured fixed batch,
+`expectation.concepts` is **.043478261679410934 before and after**;
+the maximum parameter-gradient difference is **0** (required tolerance
+1e-6). The expectation weights, observed field, omitted-input teacher
+and active-stream mask are held fixed for this comparison.
+
+The focused certificates and ports: **78 passed, 6 skipped in 22.03
+seconds**. Stopping gates: **2 passed, 3.31 seconds**. The 21-file group:
+**268 passed, 8 skipped, 134.03 seconds**. Further 61 files: **838
+passed, 26 skipped, 1 XPASS, 528.26 seconds**. Additional 16 files:
+**183 passed, 6 skipped, 275.66 seconds**. No failure remains in these
+groups. No protected attention file or word-loop edit was needed for
+this step.
+
+The independent teacher portion of
+`test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference`
+is retired by §68.53.4, including its 200 teaching presentations. Its
+unseen-combination/explicit-inference assertions remain as
+`test_83_an_unseen_conclusion_still_needs_inference`; no shortened
+curriculum is substituted. Certificate 84 hooks `expect_stack`, and
+still verifies one open evaluation and no relation-table read. The
+round-C deposit test obtains its field through `open_prediction` and
+keeps the selection, upward closure and trial-restoration assertions.
+The round-6 registry test keeps both reconstruction registries and
+checks the omission target, with no post-thought teacher. Stack
+construction, numeric XOR, optimizer-ownership and one-backward storage
+tests drop the retired map's assertions while retaining their live
+contracts. The image experiment's optional zero-width control now
+names expectation, not a second intuition learner; that historical
+two-map comparison is no longer available.
+
+### 59.49 Step 4: the field-to-idea read, and its checks so far
+
+`IdeaRead.open_read`, called by `ConceptSpread.open_prediction`, holds the
+observed order-zero field at the sentence's open, on both lanes, detached.
+`IdeaRead.complete` reads that field with the owner's `idea_stack` and
+books mean squared error against the detached kept `record.meaning_root`
+for the present streams as `expectation.idea`. It is called after the
+kept close, beside `ConceptSpread.complete`, before the sentence's one
+backward. `SentenceTraining.operator_groups`,
+`Models.objective_parameter_groups` and `ConceptualSpace.getParameters`
+include this stack in expectation's parameters. Neither end of its
+teacher gives a gradient to another learner.
+
+`ConceptualSpace` constructs the stack only where it owns the concepts
+and the model comprehends sentences. Its defaults in `model.xml` and
+`model.xsd` are `ideaHidden=64`, `ideaLayers=1`; the output is the full
+code width. An old checkpoint with no such stack initializes it and
+warns. `IdeaRead.expected_point` evaluates the detached expected field
+on demand; no production consumer calls it. The numeric centroid read
+is unchanged.
+
+Of the 41 model configuration XML files under `data/` (excluding the
+defaults file), these 15 have no sentence comprehension and build no
+idea read: `MM_20M_xor.xml`, `MM_global.xml`, `MM_image.xml`,
+`MM_reading.xml`, `MM_xor.xml`, `MM_xor_fixture.xml`, `XOR_exact.xml`,
+`XOR_pos.xml`, `XOR_symbols.xml`, `ergodic-only.xml`, `ergodic.xml`,
+`idempotent.xml`, `mnist.xml`, `stream_smoke.xml`, `xor.xml`. The other
+26 have the sentence path. This is the existing grammar capability
+test, not a test for whether their input happens to contain text.
+
+The three new tests in `test_item18_idea_read.py` fail before this step
+(the module or stack is absent) and pass after: **3 passed, 3.71
+seconds**. They check input/target detachment, exclusive parameter
+gradients and a real optimizer step; the native kept close's input,
+semantic target and cost booking; and owner-only construction in the
+math-chain model with no construction in the numeric XOR model. The
+one-backward storage test includes the new stack's existing parameters.
+
+Step 4 stopping gates: **2 passed, 3.50 seconds**. The 21-file group:
+**268 passed, 8 skipped, 115.64 seconds**. Further 61 files: **838
+passed, 26 skipped, 1 XPASS, 521.22 seconds**. Additional 16 files:
+**182 passed, 6 skipped, 1 failed, 80.35 seconds**. The failure is
+`test_81_expectation_restores_the_omitted_native_word`, at the finite
+coordinate guard during training, before its learning assertion. It is
+the draw-dependent mechanism failure already named in §68.53, not a
+new expected-failure mark. Its producer and question are below.
+
+The lesson observer now records observed/expected order-zero fields and
+the actual kept semantic roots, and can compare the final learned read
+with `FieldProjection.key` on the same saved observed field, separating
+form from meaning. It also records the no-omission field and point
+distances, and the actual comprehension's leaf choices for the
+multi-object count. Its tests are **5 passed, 5.24 seconds**. These are
+observer checks, not the requested final measurements: the lesson,
+verbal proof, assessment tables and full sweep have not been run on
+this unfinished source. No claim that the read beats the centroid is
+made.
+
+### 59.50 Design question: a signed word event is not a grammar point
+
+**Producer, reproduced.** The failure is not a NaN, infinity or rounding
+excursion. `SigmaConceptsFromPercepts.from_coefficients` legitimately
+returns a signed tanh read. `ConceptualSpace.reduce_aligned_word_peers`
+passes it to `decode_sparse_concept_rows`, which multiplies the word's
+dictionary code by that signed value. In the captured failing run the
+word is row **12**, its staged code is in **[0,1]**, and the read at its
+first location is **-1**. Its decoded event consequently has **73
+negative coordinates**, with minimum **-1**. This is the value
+`stage_cs_lang` now deposits unchanged. Its separate identification
+presence is already **1**, and its leaf field evidence is **(1,0)**.
+
+The chooser evaluates `part`; `PartLayer.forward` passes its right
+operand through and the unchanged `assert_cube` rejects it. A separate
+captured failure has the same chain, a right operand and result in
+**[-1,0]**, and zero NaNs or infinities. The comparison on the failing
+input with the removed early `InterpretLayer.forward` produces content
+in **[0,1]**: it activates the selected object's code using nonnegative
+identification presence and the two evidence lanes. Removing that
+conversion exposed the signed event to grammar. This attributes this
+last member of §68.54.1's 24 failures to part B's word-deposition change;
+it is not attributed to the new independent idea read merely because
+this run reached it after step 4.
+
+The reproduction runs certificate 81's unchanged fixture and 200-step
+loop until its exception. The follow-up trace replays the recorded
+starting random streams of the failing diagnostic; no seed or
+presentation count was selected to get a pass. Its diagnostic failed
+in **132.95 seconds**. The comparison calls the old conversion only in
+the local trace, not in production.
+
+**Question for Alec and Claude.** May the grammar deposit a word's own
+code through the existing `Interpret.activate_code` law, using its
+nonnegative identification presence and existing two evidence lanes,
+while retaining that word's reference, order and bands? I recommend
+this. The object would still be selected only during comprehension;
+the signed percept read itself would stay as it is. This changes the
+numeric value deposited for a negatively read word, which §55.1.1 and
+certificate 1 currently require to be kept. It therefore needs their
+meaning settled before building it. The alternative is a specified
+signed-coordinate grammar, which would change the operators that
+§55.1.2 leaves unchanged. No clamp, relaxed guard, chooser change or
+substituted object has been added to conceal the failure.
+
+### 59.51 Paused work, protected places and source
+
+Step 5 remains: remove `Result.held_arrivals` and port its test to the
+values retained by `from_stack` in the clause. The final campaign and
+the final exhaustive port/retirement inventory remain. The new question
+above stops this continuation before a representation change. The
+first-document historical-frame replay and the live-trajectory
+qualification in §59.46 still stand; live trajectory equality is not
+claimed.
+
+For the protected-place audit, all four attention files remain
+byte-identical to HEAD. The complete current edits in
+`Models._run_sentence_word_bricks` are: snapshot the initial held
+concepts after prepending symbols; remove the sentence-estimate calls,
+pending-prediction list and its append/clear; leave the existing prime
+reader with an all-`None` input; call the kept close with its reduced
+argument list; and add `IdeaRead.complete` at the kept close. The
+earlier comprehension snapshot is required by the separate native
+meaning stack; the deletions are §68.53.1–3; the new cost call is
+§68.53.5. In `stage_cs_lang`, the edits remain: remove the early
+object-value/reference substitution; gate and journal the word's own
+reference; and record the existing refresh's witness at ordinary and
+closing operation rounds so comprehension can replay it. No additional
+edit to that nested word step was made for the failure above.
+
+The returned working-source snapshot (`bounded_tests.source_snapshot`,
+SHA-256 of its compact, sorted JSON) is
+`9baba8d67ea420bccb8b6d34aa89c262662be8d78b0e490b49c45faf369e4e7e`
+(1,216 source files). HEAD remains
+`572169253059b684b0cb60c1642e206f9eeae0b6`. `git diff --check` passes.
+Nothing is staged, committed or pushed by this continuation. Receipts
+remain local and are not linked.
+
+### 59.52 Alec's correction: inspect the grammar's domain, not the signed Sigma
+
+Alec: "The output of the sigma is negative. That does not seem like a
+problem, it is a signed hyperball. I don't know what 'the decoder' is,
+but which grammar operator requires positive numbers? That sounds like
+the error."
+
+The operator in the captured exception is `PartLayer`. In that call its
+numerical forward is just `return right`; it has no positivity
+requirement of its own. `OperationSelectionLayer._stacked_reduced`
+subsequently applies `assert_cube(value)` to the candidate. This shared
+check, not part's arithmetic, raises. A direct check with right operand
+`[-.2, 0, .4]` (norm .44721359, within the unit ball) returns exactly
+that operand from `PartLayer`; the subsequent shared check rejects it.
+The check and `assert_cube` date to commit `dde89352756`, before this
+tree-first change.
+
+There are further instances of the same domain assumption, so removing
+that one assertion is not yet a complete repair: `GrammarLayer.compose_blocks`
+checks the combined form and meaning point, and the chart-based paths
+of modifier, surface, marker and `MeaningKernels.LaneKernel` explicitly
+use `cube_chart` / `cube_unchart`, which assume unsigned membership
+coordinates. Those must be distinguished from the signed conceptual
+coordinates Alec is describing. The term "decoder" in §59.50 means
+only `decode_sparse_concept_rows`: its indexed dictionary lookup and
+multiplication by the Sigma output, not a second learned model.
+
+The recommendation to alter the deposited word in §59.50 is **withdrawn**
+pending that domain audit. A negative Sigma output is valid; its sign
+alone is not a defect. No input conversion, clamp, removed assertion or
+changed operator has been built in response to this exchange. The
+source snapshot of §59.51 is unchanged. This corrects the earlier
+explanation that treated grammar's existing cube restriction as the
+required contract for the signed word.
+
+### 59.53 The signed conceptual domain, as Alec directed
+
+Alec approved continuing and documenting the change, then clarified:
+"Grammar operators (most of them) operate on conceptual vectors, so
+signed unit ball is fine." Sigma is not replaced and its weights are
+not made positive. The word's signed value is still deposited unchanged.
+
+The repaired producer is the grammar's unsigned coordinate assumption.
+`Layers.assert_signed` checks finite coordinates in [-1,1]; it does not
+introduce a new normalization or alter the existing magnitudes of form
+codes and meaning blocks. `signed_chart` and `signed_unchart` use the
+existing bounded atanh and tanh directly. `GrammarLayer`'s block checks,
+`OperationSelectionLayer._stacked_reduced`, the forward/reverse chart
+paths in `Language`, and `MeaningKernels.LaneKernel` and `MeaningAction`
+now use that signed chart. The inverse-candidate filters admit negative
+coordinates too. Change's internal Sigma uses its native signed mode;
+its learned weights are unchanged. Synthesize's internal `identity_cube`
+flag is named `identity_chart`, and its chart's neutral operand is zero.
+Percept and field evidence retain their [0,1] contracts and two lanes.
+No chooser, input conversion, positive activation or reference selection
+was added to obtain this result.
+
+The seven new cases in `test_item18_signed_grammar` fail before this
+repair (7 failed, 3.54 seconds). They cover the unchanged signed Part
+candidate and its gradient, change/modifier/surface/lower with reverse,
+the meaning kernel's learned inverse, and marker's learned inverse with
+its form block unchanged. After the repair the signed and tree-first
+group passes (36 passed, 6.64 seconds). The historical first-document
+replay still passes. The port of
+`test_lower_rejects_non_cube_identity_input` is
+`test_lower_rejects_non_signed_conceptual_input`: its out-of-range lower
+input changes from -.001 to -1.001; the 1.001 and NaN rejection cases
+remain. Negative valid inputs are covered by the new certificates.
+
+Both stopping gates pass (2 passed, 3.34 seconds). Replaying certificate
+81's recorded failing random stream completes its unchanged 200
+presentations and passes (1 passed, 380.35 seconds). This is the stream
+recorded to reproduce the failure, not a seed selected to obtain a pass.
+The 21-file run passes (268 passed, 8 skipped, 142.18 seconds). A fresh
+16-file run reaches a separate mechanism error, a null-kind definition
+whose left occurrence has no open null token; that producer is being
+traced. Its result is 182 passed, 6 skipped, 1 failed, 81.31 seconds.
+
+### 59.54 The unused arrival sidecar is removed
+
+`Comprehension.Result.held_arrivals`, its detached copy and its assignment
+in `Evaluation.finish` are removed. The local arrival readings still
+feed `from_stack`, which the closing uses. The test
+`test_comprehension_stages_native_values_without_mutating_words_or_mtm`
+now reads those retained clause arrivals through
+`ReferenceParticipants.arrival_members`: their values must be the
+original deposited word values or native comprehension values. Its
+unchanged-word-tree, unchanged-MTM and stored-value assertions remain,
+and it asserts the removed sidecar is absent. This group with the new
+idea-read, shared-expectation, no-sentence-estimate and signed-grammar
+certificates passes (34 passed, 9.38 seconds).
+
+These two steps change none of the four protected attention files or
+the word loop. The complete word-loop audit in §59.51 still applies.
+No file has been staged, committed or pushed. This is a progress record;
+the remaining mechanism investigation and final measurements are not
+claimed complete.
+
+### 59.55 Two further mechanism producers exposed by the signed chart
+
+The 61-file run after the signed chart returns **834 passed, 27 skipped,
+1 xpassed, 3 failed in 543.67 seconds**. All three failures are the
+`[True]` post-attachment cases in `test_modal_timelines`:
+`test_modal_bracketings_write_only_an_idea_and_preserve_the_actual`,
+`test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual`,
+and `test_fixed_query_reads_event_order_and_never_asserts_the_question`.
+Their assertions are not changed.
+
+The producer is `MediumTermMemory.member_references` and the later-mention
+read in `value_of`. A modal event's row also served as an alias of its
+subject. The actual read joined that row's value with its actual members,
+although the event belonged to the alternative timeline. The former
+unsigned chart happened to hide this because the modal value was smaller.
+In the fixed reproduction the subject's value is .35355338 in each of
+eight coordinates and the modal row's is .40824065; the actual read
+incorrectly became .40824065. No learned parse is needed to reproduce it.
+
+The actual member read now excludes occurrences belonging only to an
+alternative event. `ReferenceClose.commit` also marks the kept reading's
+alternative aliases in MTM through `alternative_mention`; a question has
+no asserted event, but its modal alias must still leave actuality alone.
+This is reference metadata in the existing temporary refinement, not
+another copy of a value or an LTM column. State/restore retain and validate
+it, merge carries it, and detach/forget remove it. Older checkpoints still
+supply alternative event addresses; they cannot supply an unwritten mark
+for an earlier modal question. No guessed migration of such a mark is
+performed. The new
+`test_modal_aliases_preserve_actuality_after_restore_and_forgetting`
+checks the actual and alternative reads, retained alias, checkpoint and
+forgetting. The original modal and medium-term-memory files pass together:
+**35 passed, 89.23 seconds**, before this additional checkpoint test; the
+combined mechanism run below includes the new test too.
+
+The null-definition failure has a fixed structural reproduction:
+`part(lift(sign(a)), b)`. The close retains the open sign at occurrence
+1 and the lifted idea at occurrence 0. `PartClosing._write` peeled every
+unary from the relation's left operand until it found `sign`, then queued
+occurrence 0 as a null-kind definition. MTM correctly holds the null token
+at occurrence 1 instead. `FamiliarTier.define_pending` correctly rejects
+occurrence 0. The writer now reads the left record's selected percept
+request (`percept_value`, populated by `PartClosing.prepare` from the
+close), rather than a syntactic descendant. The lifted idea keeps its
+ordinary relation; its descendant keeps its independent open percept.
+The guard in `define_pending` is unchanged.
+
+`test_lifted_sign_is_not_mistaken_for_its_open_percept` fails before with
+that exception (**1 failed, 2.50 seconds**) and passes after. It checks
+the written relation, the distinct null occurrence, the non-null left
+occurrence, and consumption of pending witnesses. The original failing
+certificate-81 run did not capture its kept tree; this fixed tree proves
+the writer defect but does not establish which exact tree that run took.
+Three instrumented fresh draws completed the unchanged 200 presentations
+without reproducing the exception (110.01, 148.36 and 247.55 seconds).
+They do not replace the required finished-source certificate or sweep.
+
+The six-file mechanism run (`test_part_closing`, `test_item25_completion`,
+`test_trust_round1`, `test_item20_round6_repair`,
+`test_item18_signed_grammar`, `test_modal_timelines`) is **140 passed in
+29.64 seconds**. After the final detach cleanup, both stopping gates and
+the two new regression tests pass: **4 passed in 3.68 seconds**.
+
+### 59.56 Design boundary found by the remaining coordinate audit
+
+The grammar repair is not yet sufficient to claim a signed point works
+through all of generation and reference matching. These are surviving
+readers, not a reason to change Sigma or turn the word's signed value
+positive.
+
+1. `BasicModel._generation_read` and the prepared-answer arm of `generate`
+   send the idea to `PrimedSymbolReader.consume`. That function in the
+   protected `Attention.py` still uses `cube_translate`. Part returns
+   `[-.2,0,.4]` unchanged (length .44721359), but this consumer rejects it
+   even with the learned consume adjustment at zero. A local reproduction
+   reaches the actual consumer without changing its chooser or legality.
+2. `IdentityRows.carrier` rejects that same valid point when the owner
+   has meaning coordinates. Merely changing the guard is insufficient:
+   `IdentityRows.meet_ratios` treats coordinates as nonnegative masses.
+   Applied to `[-.4,.2]` against itself (length .44721362), both coverage
+   ratios are zero. `ReferenceClose` and `MemoryLink` use this read for
+   reference containment. A signed `LaneKernel` with its existing bias
+   set to -.5 maps a .2 input to -.28880996 (four coordinates, length
+   .57761991), so a valid operator output can reach this boundary; no
+   non-finite or out-of-ball value is required.
+
+Other reads of the unsigned chart are `GrammarLessons.compose_examples`
+(variable augmentation), `DerivationReconstruction._transport_reread`
+(inverse discrepancy), `MemoryState.distance` and `ModalLearning.residual`
+(action teachers), and `BasicModel._condition_answer_on_question`.
+`Memory.event` also checks a case operand's unsigned range. These read
+conceptual values, so their domain must follow the decision at this
+boundary. `FormCentroids.weighted_mean` instead reads native property
+codes; its perceptual contract is distinct. Clause, word and thought
+evidence validators still check two nonnegative lanes and are not
+conceptual-point validators.
+
+**Questions sent to Alec and Claude through the phone-alert question
+tool.** Should reference containment compare the two-lane fields
+stimulated by the signed points? I recommend that, keeping the signed
+idea and its typed reference while reading overlap on its extension.
+This changes the existing reference-matching rule and is not settled by
+accepting signed operator inputs; the field use of operators also has
+open work recorded in §68.55. Separately, may the protected
+`PrimedSymbolReader.consume` take the same signed chart as grammar? I
+recommend that narrow numerical port, with no chooser, narrowing-mask or
+mint-purity edit. Neither change has been built. No guard is weakened
+and no absolute-value or positive-lane conversion is substituted for a
+decision.
+
+### 59.57 Checkpoint while those boundary decisions are pending
+
+The source snapshot (`bounded_tests.source_snapshot`, SHA-256 of compact
+sorted JSON) is
+`56ed878b1d78ef06817e6be6c6b39358cd3431ac45f105a0f6bc8ed1734d264c`
+(1,217 files). HEAD remains
+`572169253059b684b0cb60c1642e206f9eeae0b6`. `git diff --check` passes;
+the index is empty. Nothing committed or pushed. The four protected
+attention files are unchanged, and the complete word-loop and
+`stage_cs_lang` edit list remains §59.51; the later changes here add no
+edit in those places.
+
+The final 21/77-file reruns, 160-sentence lesson and idea-read measures,
+verbal proof, assessment tables, multi-object counts, complete default
+sweep and final exhaustive port/retirement inventory remain pending.
+The per-step results already in §59.47–49 stand, with the later signed
+chart and mechanism results above. No finished-source campaign or final
+completion is claimed. Receipts remain local and are not linked.
+
+### 59.58 Alec's answer and the representation question for Claude
+
+Alec answered the first question in §59.56: "I don't understand what
+coordinates are being summed here, and why." On the second: "A symbol
+reader should be accepting only unsigned if it's reading symbols and
+not concepts. Feel free to pass to Claude if there is an architecture
+or spec issue, and this is not a narrow problem."
+
+Neither answer approves the proposed change of matching law or a port
+of the protected attention file. Both remain unbuilt. This clarification
+changes only this document; the source snapshot and tests of §59.57
+remain unchanged.
+
+**Which coordinates, and why the sum exists.**
+`ReferenceClose.coordinates` calls `IdentityRows.coordinates`, which
+retains the vector width but zeros its form and location/time prefix.
+The remaining dense meaning coordinates of the current description and
+the candidate go to `IdentityRows.meet_ratios`. These are code dimensions,
+not the concept-indexed activations of `ConceptualField`. The helper
+computes `overlap = minimum(query, candidate).sum(-1)`, then divides by
+`query.sum(-1)` and `candidate.sum(-1)` respectively. The purpose is to
+measure how much of each nonnegative region the other covers. A zero or
+negative denominator returns zero, and reference eligibility requires
+one coverage to equal one. `MemoryLink.menu`, `ReferenceClose.score_order`
+and the link-coverage cost use this assumption.
+
+That law came with the representation assumed by these readers: native
+meaning coordinates in [0,1], with separate for and against blocks
+(`MeaningCodes` and `MereologicalCodes`). It does not compute a signed
+point's Euclidean length or its similarity to another point. In the
+diagnostic, `query = candidate = [-.4,.2]` has sum -.2, so the nonpositive
+mass branch returns zero even for the same nonzero point. The normal
+carrier guard rejects this input first; the direct call isolates why
+relaxing that guard alone would be wrong.
+
+**What the symbol reader actually receives.**
+`PrimedSymbolReader` currently serves generation's global content read.
+`BasicModel._addressable_spaces` offers the input window, STM, LTM0 ideas,
+part/whole codebooks and, where present, the symbol codebook.
+`PrimedSymbolReader.forward` forms the probability-weighted content read
+from those keys. `BasicModel._generation_read` then calls
+`reader.consume(idea, content)`, and `generate` has the same consumer
+for a prepared answer. Thus the argument called `symbols` inside
+`consume` is the generation idea on this path. It is not restricted to
+an unsigned symbol-activation vector by its caller. This trace supports
+Alec's distinction; the class name does not establish the operand type.
+
+**Why the earlier recommendations are not yet a complete repair.**
+The current `FieldProjection.stimulate` also assumes signless meaning
+codes and separate nonnegative for/against blocks. It clamps each
+meaning block at zero before matching. Moving the containment read to
+that function without settling the representation could discard signed
+conceptual coordinates. Likewise, changing every consumer named
+"symbol" to a signed chart would conflate unsigned symbol activations
+with signed conceptual points. The two narrow recommendations in §59.56
+are therefore proposals awaiting this broader review, not an approved
+implementation plan.
+
+**For Claude's review, through Alec.** Specify the boundary between the
+signed conceptual point Alec has confirmed, the existing two-block
+meaning-code representation, and unsigned symbol/field activations.
+In particular, state what reference containment reads and how a
+generation idea receives the global reader's content. I recommend
+keeping point geometry and activation/evidence separate and using a
+declared conversion/read between them, rather than treating the sum of
+signed coordinates as evidence or changing the symbol contract by name.
+The signed grammar changes of §59.53 need review at these downstream
+boundaries too; they do not settle them. No conversion, new matching
+law, positive-weight Sigma, attention edit, commit or push has been made
+in response to these answers. Work stays at this design question under
+the continuation's stop rule.
+
+### 59.59 Seventh continuation: leaf activation and the restored charts (2026-11-18)
+
+Started from §59.57's source snapshot
+`56ed878b1d78ef06817e6be6c6b39358cd3431ac45f105a0f6bc8ed1734d264c`,
+under §68.64. This is a partial return: certificate 4(ii) reaches the
+explicit stop in that text, described below.
+
+In `Models._run_tensor_peer_word_pipeline.stage_cs_lang`, a word with
+`_ar_word_concept_atoms` now calls `InterpretLayer.activate` on its own
+staged code, with the payload's existing absolute presence and evidence
+pair. The product's where/time band is copied unchanged. The pushed row,
+order and reference, payload construction and comprehension's object
+selection are unchanged. This is the only additional edit in
+`stage_cs_lang` in this continuation; there is no additional edit in
+`_run_sentence_word_bricks` or the four protected attention files. The
+earlier edit inventory in §59.51 still applies. The audit of paths with
+no staged word code is not complete and is not certified here.
+
+§59.53's signed chart has been withdrawn from `Language.py`,
+`MeaningKernels.py` and `Layers.py`; its test file is removed, and
+`test_lower_rejects_non_cube_identity_input` is restored. An AST comparison
+against HEAD confirms that `assert_cube`, `GrammarLayer.compose_blocks`
+and `OperationSelectionLayer._stacked_reduced` are identical. The entire
+`MeaningKernels.py` file has no diff against HEAD. The remaining Language
+changes are the earlier comprehension/reference witnesses and removal of
+the sentence-expectation weight; the remaining Layers changes include
+the earlier source/opposite folding repair and sentence-estimate removal.
+Their exhaustive line attribution remains owed with the completed return.
+The two §59.55 repairs and §59.54's removal remain in place; no new repair
+of the alternative-only identity has been made yet.
+
+Certificate 1 now checks the pushed value against `Interpret.activate_code`
+on the word's own code, presence and pair, with the existing bands preserved,
+as well as retaining its slot-value/row/order assertions. A second test,
+`test_negated_sigma_reads_keep_unsigned_word_deposits_and_ideas`, checks
+deposits, comprehension end values and kept rows, and is intended to compare
+ordinary and negated reads from preserved model/random state. Its literal
+all-coordinate assertion currently fails before the comparison completes.
+
+| Check | Restored charts, before leaf activation | After leaf activation |
+| --- | --- | --- |
+| Certificate 1, strengthened | passed | passed |
+| All-coordinate unsigned check | failed | failed |
+| Combined run | 1 passed, 1 failed, 4.19 s | 1 passed, 1 failed, 3.26 s |
+
+The first row is not claimed as a failing-before proof: that draw already
+agreed with the leaf law. The second failure is not a learning result.
+Both runs stop in the ordinary-read arm; a separate diagnostic with every
+Sigma read negated confirms the same producer. No seed, presentation
+count, capacity, bound or learning rate was changed.
+
+### 59.60 Stop required by §68.64: the preserved location band is signed
+
+The new certificate finds a negative coordinate through a route other
+than the word's push. On the unchanged tiny canonical fixture and input
+`['hi no', 'we go']`, the first comprehension leaf has reference 160,
+order zero. Its content before occurrence stamping has minimum zero.
+`Comprehension.Evaluation.leaf` then copies `program.symbol_where` into
+the idea's location band. `when_start` is 356, so where occupies
+coordinates 352 to 355. Its four values are:
+
+```
+0.0980171412229538, 0.9951847195625305,
+-8.742277657347586e-08, -1.0
+```
+
+The negative coordinates are 354 and 355. The -1 is not rounding noise
+and is not a negative evidence lane. The word's staged code has minimum
+zero, and its activated comprehension content has minimum zero. The
+same first negative values occur with every
+`SigmaConceptsFromPercepts.from_coefficients` read negated. The diagnostic
+stops immediately after this leaf; it does not claim the rest of the
+sentence or the kept rows passed.
+
+The producer chain is `Models._stage_word_concepts` →
+`WhereRegistry.encode('text', starts)` → `Spaces.WhereEncoding.encode`
+→ `program.symbol_where` → `Comprehension.Evaluation.leaf`'s band copy.
+`WhereEncoding` is the existing sine/cosine ladder over an address,
+including negative phase coordinates. Its class is AST-identical to HEAD.
+`stage_cs_lang` also stamps this same band onto the pushed slot after
+`functional_push_step_masked`; the raw-push hook does not include that
+later stamp. The time band is likewise a phase encoding, although its
+values at this first leaf are nonnegative. Neither encoding has been
+changed in this continuation.
+
+**For Alec and Claude.** §68.64 step 1 requires preserving the place and
+time coordinates, but step 4(ii) requires that no idea coordinate be
+negative and explicitly says to stop if another route introduces one.
+These requirements conflict for the existing location encoding. I
+recommend preserving both phase encodings and limiting the unsigned
+certificate to content and the two evidence lanes, with a separate
+assertion that the location/time bands are preserved unchanged. May the
+certificate make that distinction? Making the bands themselves unsigned
+would require a different encoding and its readers, which is outside
+this repair. No band conversion, clamp, guard relaxation or certificate
+exception has been built.
+
+### 59.61 Checkpoint at the location-band question
+
+Source snapshot (`bounded_tests.source_snapshot`, compact sorted JSON):
+`f117cbead8a904ae3f6bfb231250214e0c3f075a4009cf0d23f7ef253c0df7ab`,
+1,216 files. HEAD remains
+`572169253059b684b0cb60c1642e206f9eeae0b6`. Nothing staged, committed or
+pushed. The four protected attention files remain unchanged.
+
+The new test has diagnostic coordinate reporting and supplies leaf
+positions to `reading_forest`; these test-only corrections do not alter
+its all-coordinate assertion. The producer was traced in the ordinary
+and negated arms; each diagnostic failed as expected at that same leaf.
+Receipts stay local and are not linked.
+
+The remaining §68.64 work is pending: no-code paths; the complete remaining
+line inventory; ablations of the two retained repairs and the
+alternative-only identity test; the saved-stream certificate 81; lesson
+pair counts and signed-reader attribution; both stopping gates and the
+21/77 files; and the final lesson, idea-read measures, verbal proof,
+assessment tables, multi-object counts and default sweep. No new result
+for those checks is claimed. Work stops at §59.60 under §68.64's explicit
+stop rule, not at a completed-round return.
+
+### 59.62 Alec's answer: unsigned location and time (2026-11-18)
+
+Alec answered §59.60: "Use sinusoids in 0-1 range, that’s a todo in 1.7
+anyway." The all-coordinate certificate stands. The encoding is
+`(sinusoid + 1) / 2`; the angle, radius and rotation readers first recover
+`2 * coordinate - 1`. This is a change to the representation, not an
+exception to the certificate. The rest of item 1.7 is not built.
+
+`Spaces.QuadratureEncoding.encode`, `stamp` and `decode`, the shared
+`_bracket_encode`/`_bracket_decode_span`, `_ladder_index`,
+`WhereEncoding.encode`/`decode`, `WhenStartDurationEncoding.encode`/
+`decode`/`shift_time`, and `WhenRangeEncoding.shift_time` use that law.
+`DocumentWhenEncoding` continues to average its endpoints; the affine
+encoding commutes with that average. Its inherited shift and address read
+use the new coordinates. The percept auxiliary-band validation now checks
+[0,1]. No Sigma is clamped or changed, and no period, allocation, width or
+clock tick changes. A four-coordinate band still costs 16 bytes in float32.
+
+The four initial codec cases failed on the centered encodings and passed
+after the change. They cover address recovery through 2^32−1, the two-rung
+phase norm after centering, time shifts and range extent. The additional
+checkpoint tests retain content, occurrence identities, empty bands and
+learned sparse weights, and show that conversion runs once only.
+
+Checkpoint decision taken here: old stored observations must be converted
+before the new readers read them. `Memory.IdeaRows.truth_schema` is 18;
+LTM0 and STM0 import centered slots of schemas 16/17 with a warning.
+LTM0's existing ambiguous-time rejection remains. The bundle marker
+`coordinate_encoding=1` distinguishes the sidecars. `CoordinateCheckpoint`
+converts typed observation bands in MTM, the working STM, the situation
+context, singleton observations and truth-view buffers. Empty bands stay
+empty. Sparse learned weights called `values` are explicitly not locations;
+parameters and optimizer state are unchanged. Thus this is an address and
+observation migration, not a claim that an old learned numerical function
+has identical outputs under a changed input chart. The warning says so.
+`checkpoint_migrations._migrate_whole_addresses` reads the marker so the
+earlier WholeSpace address migration can still run before this conversion.
+An in-process restore takes no checkpoint conversion.
+
+Ports: the norms and angle checks in `test_when_encoding_v2`,
+`test_where_bracket`, `test_when_bracket` and `test_when_range_encoding`
+read centered phases; stored coordinates are checked in [0,1]. The old
+time-zero pair (0,1) is now (.5,1). The explicit MPS leaf test retains the
+division and exact rounding comparison, on the centered value of its
+unsigned half-precision storage; its former captured raw half values do
+not describe that storage. It remains skipped on the default CPU run.
+The schema-16 fixtures in `test_item18_reduction` and `test_item18_finish`
+now actually write centered legacy bands; the current schema assertion
+in `test_item20_round7_episodes` is 18. The WholeSpace migration test in
+`test_item20_round2_memory` now exercises both marked unsigned and legacy
+centered bands, keeping every address, content and identity assertion.
+The time-reader inventory adds the three existing comprehension readers
+`Evaluation.leaf`, `Evaluation.operation` and `HeldConcepts.Evaluation.publish`.
+No fixture capacity, seed or presentation count changes.
+
+### 59.63 Restored-chart certificates and alternative-only identity
+
+The negated-Sigma certificate now passes, with equality in all four
+comparisons: deposits, ideas, trees and kept rows. The ordinary and
+negated arms have no negative coordinate. Before the sinusoid change,
+both arms failed at the location band recorded in §59.60. Certificate 1
+also compares the raw push with `Interpret.activate_code` of the word's
+own code and payload, in addition to the unchanged row/order/value
+assertions. Its particular draw passed before and after; it is not
+presented as a separate fail-before demonstration.
+
+The required `assert_cube`, `GrammarLayer.compose_blocks` and
+`OperationSelectionLayer._stacked_reduced` are AST-identical to HEAD.
+`MeaningKernels.py` is byte-identical to HEAD. The signed-chart test is
+removed and `test_lower_rejects_non_cube_identity_input` is restored.
+
+The two §59.55 repairs still have failing ablations under these charts.
+Without recording an alternative mention, `test_modal_aliases_preserve_actuality_after_restore_and_forgetting`
+fails on its saved `alternative_mentions` assertion (its preceding value
+assertions pass in this draw). Without the null-definition repair,
+`test_lifted_sign_is_not_mistaken_for_its_open_percept` raises on
+the invalid `(1,0)` definition. Neither failure is attributed to the
+withdrawn signed chart.
+
+An identity mentioned only on an alternative timeline reads zero on the
+actual timeline. It keeps its identity and its alternative's value.
+`MediumTermMemory.value_of` now recognizes that case from the existing
+alternative events and `alternative_mentions`. An unrelated empty
+identity still raises. The new
+`test_alternative_only_identity_has_no_actual_value` failed with the
+old read, passes with this read, and checks both timelines after restore.
+The three focused tests pass together (3 passed, 2.64 seconds).
+
+Certificate 81 passes on the saved failing stream, with the same 200
+presentations: `alpha gamma` expects hidden row 13 at 1.0 versus maximum
+other absent 0.0; `beta delta` expects hidden row 15 at 1.0 versus 0.0.
+The direct rerun was 191.87 seconds; the passive pair-producer diagnostic
+was 204.67 seconds and passed too. These are repeated observations of
+the same fixed protocol, not additional teaching of either model.
+
+### 59.64 The shared pair and the other signed-product readers
+
+On the saved certificate-81 stream, 568 handoffs occur in the 200
+training presentations. Taking the last handoff of each presentation,
+both word places have the same pair in 200/200. The first word has
+(0,1) in 9 of the first 133, and in 0 of the presentations after the
+first twelve. This does **not** reproduce Claude's 97/133 count on the
+earlier source; it is the count with the restored charts, unsigned
+bands and leaf activation. No walk rule is changed to obtain it.
+
+The producer is `Attention.close_narrowing`: for each selected scope it
+intersects, unions or flips the pooled lanes, then broadcasts that pair
+to every word reached by the scope. `ModelAttention.handoff` takes it
+at `pole_changes` and otherwise takes the native pair (or the positive
+descent witness). The first training presentation has native (1,0) at
+the present first word and (0,0) at the omitted second; the actions
+begin 5,4,3, on scopes reaching both words, and the handoff is (0,1) at
+both. `Models._attention_sentence_payload` carries that pair unchanged.
+It does not derive it from the Sigma sign. This is attribution only.
+
+The other signed-product readers remain for item 1.7's audit:
+
+| Reader | Treatment of the sign |
+|---|---|
+| `decode_sparse_concept_rows`, called by `reduce_aligned_word_peers` | Multiplies the addressed code by the signed coefficient; carries the bands separately. |
+| `stage_cs_sym` → `compute_symbolic_reference` → `promote_symbol_reference` | Carries the signed per-location activation with its row/order and decodes it again; only the language payload's presence takes its absolute value. |
+| `decode_prior_stm_tensors` / `decode_prior_stm_peer` | Decodes prior rows with their saved scalar activations and validity; does not turn a sign into a lane. |
+| `reduce_aligned_word_peers`'s prior-symbol return | Validity-masks the prior field, otherwise preserves it; it is not averaged into the current word. |
+| `_peer_stage_b` and `commit_symbolic_peer_results` | Publish the completed event and the prior symbolic event without changing their sign; the sentence cache returns the original event. |
+| Noncanonical `stage_cs_sub` → `_per_word_contributions` → the final `commit_from` | Saves the event before taking the payload's absolute presence, then stacks it for the continuous/reconstruction carrier. |
+| The earlier direct `_per_word_body_step` / `_peer_stage_b` push | Outside the sentence-brick path, pushes the completed first event. It has no new activation law in this edit. |
+
+There is no staged own-word code when aligned serial-word mode is off,
+its part/word metadata is absent, or there is no concept/whole owner.
+Missing metadata cannot enter the canonical scheduler; absent owners
+stage unknown rows. The mixing sentence path keeps the completed
+percept/mixing event instead of doing an indexed word-code read. The
+existing XOR mixing fixture was observed unchanged: 14 active deposits,
+no own-code tensor and no negative coordinate. A separate existing
+aligned fixture had six active deposits, all with the own code and no
+negative coordinate. Numeric/non-word inputs do not execute this word
+push. These are observed paths, not a claim that every possible
+noncanonical configuration was exhaustively measured.
+
+### 59.65 Remaining chart-file diff, by changed line
+
+The signed experiment contributes no remaining line. The table covers every
+zero-context diff hunk against HEAD, including whitespace deletions. Old
+line numbers are HEAD; new numbers are this source. Deletions have a zero
+new-line count. `MeaningKernels.py` has no diff.
+
+| File / old span → new span | Attribution |
+| --- | --- |
+| `Language.py` 7182,1 → 7182,1 | §68.54 step 1: recorded reference/order and refresh witnesses for comprehension |
+| `Language.py` 8968,1 → 8967,0 | §68.54 step 2: removed sentence-estimate weight |
+| `Language.py` 10885,1 → 10883,0 | §68.54 step 2: removed sentence-estimate weight |
+| `Language.py` 11647,2 → 11645,3 | §68.54 step 1: recorded reference/order and refresh witnesses for comprehension |
+| `Language.py` 11828,1 → 11827,13 | §68.54 step 1: recorded reference/order and refresh witnesses for comprehension |
+| `Layers.py` 3642,2 → 3641,0 | Whitespace-only deletion during §68.54 step 2; no behavior |
+| `Layers.py` 5359,0 → 5358,6 | Earlier §57.6/§58 paired-source fold repair; not made by §68.54 |
+| `Layers.py` 5361,0 → 5366,31 | Earlier §57.6/§58 paired-source fold repair; not made by §68.54 |
+| `Layers.py` 5403,5 → 5438,1 | Earlier §57.6/§58 paired-source fold repair; not made by §68.54 |
+| `Layers.py` 5470,1 → 5501,1 | Earlier §57.6/§58 paired-source fold repair; not made by §68.54 |
+| `Layers.py` 6143,1 → 6173,0 | Whitespace-only deletion during §68.54 step 2; no behavior |
+| `Layers.py` 8870,2 → 8899,0 | Whitespace-only deletion during §68.54 step 2; no behavior |
+| `Layers.py` 9196,50 → 9223,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9247,1 → 9225,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9249,4 → 9227,3 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9267,2 → 9244,2 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9273,4 → 9249,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9284,1 → 9256,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9310,1 → 9282,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9317,1 → 9288,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9322,1 → 9292,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9324,1 → 9293,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9328,4 → 9297,3 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9336,1 → 9303,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9348,3 → 9314,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9355,1 → 9318,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9376,214 → 9338,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9613,20 → 9361,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9644,1 → 9372,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9649,1 → 9376,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9654,2 → 9380,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9657,2 → 9381,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9668,7 → 9390,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9698,2 → 9413,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9711,42 → 9425,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9759,1 → 9432,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9765,1 → 9438,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9767,3 → 9440,3 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9778,3 → 9451,2 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9796,13 → 9468,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9811,31 → 9471,1 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9846,1 → 9475,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 9854,23 → 9482,0 | §68.54 step 2: remove the sentence estimate and its observation lifecycle; keep the word/field predictor and direct recent admission |
+| `Layers.py` 11917,1 → 11522,0 | Whitespace-only deletion during §68.54 step 2; no behavior |
+| `Layers.py` 12431,1 → 12035,0 | Whitespace-only deletion during §68.54 step 2; no behavior |
+| `Layers.py` 14739,1 → 14342,0 | Whitespace-only deletion during §68.54 step 2; no behavior |
+
+### 59.66 Test ports and retirements, by name
+
+The AST inventory against HEAD has 101 changed existing test functions,
+53 missing old names and 12 new names in tracked files. Nine of the missing
+names are renamed ports below; **44 contracts are retired**, all with the
+sentence-estimate lifecycle of §68.53.1/§68.54.2. Parameterized cases are
+not counted as separate functions in this inventory. Newly added modules
+and earlier §58 producer tests are separate from these tracked-file counts.
+
+Renamed ports (same file unless shown otherwise):
+
+| File and former name | Current name and contract |
+| --- | --- |
+| `test/test_item18_intuit.py::test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference` | `test_83_an_unseen_conclusion_still_needs_inference`; §68.54.3 removes the independent teacher; unseen inference stays |
+| `test/test_item20_round6_loop.py::test_registry_uses_the_two_reconstructions_and_post_thought_target` | `test_registry_uses_the_two_reconstructions_and_omission_target`; native retained contract; retired sentence-estimate assertion removed |
+| `test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store` | `test_observed_cat_survives_native_answer_and_store`; native retained contract; retired sentence-estimate assertion removed |
+| `test/test_item4_native.py::test_relation_chain_uses_symbol_confidence_through_native_close_and_store` | `test_relation_chain_survives_native_close_and_store`; native retained contract; retired sentence-estimate assertion removed |
+| `test/test_item4_review.py::test_omission_surprise_and_non_marks_agree_at_both_native_writers` | `test_non_marks_do_not_change_default_activity_without_an_estimate`; native retained contract; retired sentence-estimate assertion removed |
+| `test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation` | `test_no_sentence_estimate_or_anticipatory_thought_operation`; native retained contract; retired sentence-estimate assertion removed |
+| `test/test_sentence_journal.py::test_identity_admission_uses_the_resolved_stm_order` | `test_identity_admission_uses_the_deposited_word_order`; §55.1: the deposited word order replaces arrival-time object order |
+| `test/test_sentence_retention.py::test_idea_closing_initializes_activity_from_live_surprise` | `test_idea_closing_initializes_activity_at_the_default_without_an_estimate`; native retained contract; retired sentence-estimate assertion removed |
+| `test/test_stm_chunk_repairs.py::test_same_chunks_supply_current_time_and_untimed_estimate` | `test_word_read_uses_current_time_without_changing_chunks`; native retained contract; retired sentence-estimate assertion removed |
+
+Retired by name under §68.54.2 (no replacement sentence forecast):
+
+```
+test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history
+test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation
+test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor
+test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes
+test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate
+test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate
+test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign
+test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides
+test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree
+test/test_fineweb_learning.py::test_trained_fineweb_prediction_benefits_from_context
+test/test_fineweb_learning.py::test_trained_fineweb_remainder_reduces_work_at_matched_error
+test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_native_bank_shape_independent_of_observation_depth
+test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly
+test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak
+test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_never_retains_encoder_graph
+test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled
+test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows
+test/test_inter_sentence_prediction_shape.py::test_prediction_trains_predictor_with_detached_context_and_target
+test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error
+test/test_ir_only_refactor.py::TestGenerateSentenceSmoke::test_generate_sentence_runs
+test/test_item4_review.py::test_bank_confidence_follows_each_symbol_in_every_role
+test/test_ltm_chain_grows.py::TestLtmChainGrows::test_ragged_absolute_and_relative_depths_coexist
+test/test_ltm_chain_grows.py::TestLtmChainGrows::test_tetralemma_field_records_when_provided
+test/test_ltm_chain_grows.py::TestLtmContextReset::test_shared_prediction_uses_the_same_observed_chain
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams
+test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step
+test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold
+test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison
+test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed
+test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor
+test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain
+test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory
+test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss
+test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation
+test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target
+test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row
+test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected
+test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction
+test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit
+test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently
+test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust
+test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode
+test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation
+```
+
+Their surviving storage/context contracts are covered by the ports below
+and `test_item18_no_sentence_estimate`: the kept close writes the recent
+occurrence directly; retained memory remains available to recall. In
+particular, an anonymous forecast slot with depth three, a `None` trust
+placeholder, or a tetralemma sidecar is not an LTM0 row. Its scalar-trust
+assertion is retained through the native row writer. The first-document
+replay and its live-reading qualification remain as stated in §59.46.
+
+Existing-name ports are enumerated below. Only changed assertions are
+shown; “unchanged” means the assertions remain while setup/calls/owned
+parameters are ported. The common lifecycle port replaces
+`observe_stm_end_state`/`bind_observation_occurrence` by native row admission
+and `include_occurrence`; word-field loss uses `symbolFieldLossWeight`;
+comprehension fixtures use the native kept close; and removed intuition
+parameters are absent. The paired-source tests are the earlier §58 ports,
+not effects of removing a sentence estimate.
+
+| Test | Old changed assertion(s) | New changed assertion(s) |
+| --- | --- | --- |
+| `test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward` | `assert discourse.expect_next_meaning() is not None` | `assert discourse.situation_references()` |
+| `test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_one_entry_and_skips_masked_rows` | `assert discourse.expectation_metrics()['observations'] == 1` | unchanged |
+| `test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once` | `assert discourse.expectation_metrics()['observations'] == 2 * (index + 1)`<br>`assert discourse.expectation_metrics()['predicted_targets'] == 2 * (index + 1)`<br>`torch.testing.assert_close(comparison.observed, expected)`<br>`assert not comparison.observed.requires_grad` | `assert [len(discourse.situation_references(row)) for row in range(2)] == [index + 1] * 2`<br>`assert all((not frame.roles.requires_grad for row in range(2) for frame in discourse.situation_references(row)))` |
+| `test/test_definition_fold.py::test_witnessed_lanes_merge_by_max_without_absence_as_a_label` | `assert matrix.values.grad[matrix._index[row, a + matrix.nOutput + 1]] == 0` | `torch.testing.assert_close(matrix.values.grad[matrix._index[row, a + matrix.nOutput + 1]], -matrix.values.grad[index], atol=0, rtol=0)` |
+| `test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset` | unchanged | unchanged |
+| `test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_cascades_to_discourse` | `assert len(layer._inter_last_meaning) == 6` | unchanged |
+| `test/test_evidence_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test` | `torch.testing.assert_close(combined[1], torch.tensor([[0.0, 1.0], [0.0, 1.0], [1.0, 1.0], [0.0, 0.0]]))` | `torch.testing.assert_close(combined[1], torch.zeros(4, 2))` |
+| `test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective` | `assert float(training.findtext('sentenceExpectationLossWeight')) == 0.1` | `assert float(training.findtext('symbolFieldLossWeight')) == 0.1` |
+| `test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning` | `assert discourse.expectation_metrics()['predicted_targets'] - count == 2 * int(enabled)` | `assert len(discourse.situation_references()) - count == 2` |
+| `test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating` | `assert discourse.consume_inter_loss() is None`<br>`assert metrics['observations'] == 2`<br>`assert metrics['predicted_targets'] == 1`<br>`assert metrics['activation_mse'] >= 0` | `assert len(discourse.situation_references()) == 2`<br>`assert not hasattr(discourse, '_inter_last_meaning')` |
+| `test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings` | `assert ('sentence' in model.symbolSpace.expectation.enabled_levels) == enabled`<br>`assert model.inter_loss_weight == 0.1` | `assert ('field' in model.symbolSpace.expectation.enabled_levels) == enabled`<br>`assert model.symbol_field_loss_weight == 0.1` |
+| `test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage` | `assert discourse.expectation_metrics()['observations'] == 1` | `assert len(discourse.situation_references()) == 1` |
+| `test/test_expectation_kind.py::test_grammatical_kind_does_not_train_a_second_expectation_head` | `torch.testing.assert_close(idea.consume_inter_loss(), relation.consume_inter_loss())`<br>`assert relation.last_expectation_comparison().sentence_kind == 'relation'`<br>`assert not any(('kind' in name for name, _ in idea.named_parameters()))`<br>`assert not hasattr(model.expect_next_meaning(), 'kind_logit')` | `assert not any(('kind' in name for name, _ in model.named_parameters()))` |
+| `test/test_expectation_review.py::test_expectation_names_and_production_defaults` | `assert float(training.findtext('sentenceExpectationLossWeight')) == 0.1` | `assert float(training.findtext('symbolFieldLossWeight')) == 0.1` |
+| `test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream` | `assert disc.expect_next_meaning(0) is None` | `assert disc.situation_references(0) == ()` |
+| `test/test_expectation_review.py::test_soft_reset_preserves_stream_and_bare_reset_is_hard` | `torch.testing.assert_close(disc.expect_next_meaning(0).roles, prior)`<br>`assert disc.expect_next_meaning(0) is None` | `torch.testing.assert_close(disc.situation_references(0)[0].roles, prior.roles)`<br>`assert disc.situation_references(0) == ()` |
+| `test/test_expectation_review.py::test_unaddressed_driver_rows_form_independent_streams` | `assert disc._inter_loss_count == 2` | `assert [len(disc.situation_references(b)) for b in range(2)] == [2, 2]` |
+| `test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser` | unchanged | unchanged |
+| `test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy` | unchanged | unchanged |
+| `test/test_item18_finish.py::test_old_ordered_entry_loads_its_strongest_readings_with_warning` | unchanged | unchanged |
+| `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row` | unchanged | unchanged |
+| `test/test_item18_operator_cost.py::test_binary_bind_dummy_pays_the_declared_operator_cost` | unchanged | unchanged |
+| `test/test_item18_operator_cost.py::test_complete_path_pays_c_for_one_more_kept_application` | unchanged | unchanged |
+| `test/test_item18_round_c_continuation.py::test_intuit_deposits_only_when_selected_and_derives_higher_orders` | `assert model._intuition_target.shape == (1, owner._order_caps()[0], 2)`<br>`assert not model._intuition_target.any()` | `assert not hasattr(model, '_intuition_teacher')` |
+| `test/test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged` | `assert first._concept_owner().intuit_stack is not None`<br>`assert second._concept_owner().intuit_stack is None` | `assert first._concept_owner().expect_stack is not None`<br>`assert second._concept_owner().expect_stack is None` |
+| `test/test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built` | `assert stack is not None and stack.pairs == 2`<br>`assert model._intuition_prediction.shape == (4, model._concept_owner()._order_caps()[0], 2)` | `assert stack is not None and stack.pairs == 1`<br>`assert model._concept_owner()._observed_knowing[:4].shape == (4, model._concept_owner().nVectors, 2)` |
+| `test/test_item20_round2_memory.py::test_migration_moves_persisted_bands_and_keeps_identity_keys` | `assert torch.equal(new.decode_index(moved[:, 4:8]), expected)`<br>`assert int(new.decode_index(value[4:8])) == int(expected[6])`<br>`assert torch.equal(new.decode_index(extra['perception']['percept_where']), expected)`<br>`assert torch.equal(new.decode_index(fields['_live_where']), expected)`<br>`assert torch.equal(new.decode_index(fields['_live_buffer'][:, 4:8]), expected)`<br>`assert context.maxlen == 2 and torch.equal(new.decode_index(context[0][:, 4:8]), expected)`<br>`assert int(new.decode_index(runtime['mtm'][0]['entries'][0]['timelines'][0][1][4:8])) == int(expected[6])`<br>`assert int(new.decode_index(field[4:8])) == int(expected[6])`<br>`assert torch.equal(new.decode_index(value[:, 4:8]), expected)` | `assert torch.equal(decode(moved[:, 4:8]), expected)`<br>`assert int(decode(value[4:8])) == int(expected[6])`<br>`assert torch.equal(decode(extra['perception']['percept_where']), expected)`<br>`assert torch.equal(decode(fields['_live_where']), expected)`<br>`assert torch.equal(decode(fields['_live_buffer'][:, 4:8]), expected)`<br>`assert context.maxlen == 2 and torch.equal(decode(context[0][:, 4:8]), expected)`<br>`assert int(decode(runtime['mtm'][0]['entries'][0]['timelines'][0][1][4:8])) == int(expected[6])`<br>`assert int(decode(field[4:8])) == int(expected[6])`<br>`assert torch.equal(decode(value[:, 4:8]), expected)` |
+| `test/test_item20_round6_repair.py::test_occurrence_writer_preserves_the_emitted_terminal_despite_priming` | unchanged | unchanged |
+| `test/test_item20_round7_episodes.py::test_episode_columns_compact_keep_prior_entries_and_load_empty_entries` | `assert int(restored.truth_schema) == 17` | `assert int(restored.truth_schema) == 18` |
+| `test/test_item4_parity.py::test_parity_configuration_removes_selection_prime_without_muting_the_predictor` | `assert after[:, 5 * count:7 * count].any()` | `assert not after[:, 5 * count:7 * count].any()` |
+| `test/test_item4_parity.py::test_shipped_defaults_and_declared_parity_configuration` | unchanged | unchanged |
+| `test/test_item4_repair.py::test_word_read_starts_from_factual_previous_context_and_never_forecasts_itself` | unchanged | unchanged |
+| `test/test_item4_review.py::test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments` | `assert not torch.equal(after, context(model, values, addresses, valid, parts=parts))` | `torch.testing.assert_close(after, context(model, values, addresses, valid, parts=parts), rtol=0, atol=0)` |
+| `test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser` | `assert discourse._inter_loss_count > 0` | `assert len(discourse.situation_references()) == 2` |
+| `test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once` | unchanged | unchanged |
+| `test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles` | unchanged | unchanged |
+| `test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher` | unchanged | unchanged |
+| `test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path` | `assert report['predicted_targets'] == 2`<br>`assert len(report['thought']) == 2`<br>`assert all((row['answered'] for row in report['thought'])), report['thought']` | `assert len(report['observations']) == 4`<br>`assert all((row['occurrences'] for row in report['observations']))` |
+| `test/test_ltm_chain_grows.py::TestLtmBounded::test_chain_evicts_oldest_at_capacity` | unchanged | unchanged |
+| `test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_default_capacity_is_1024` | `self.assertEqual(layer._stm_end_states[0].maxlen, 1024)` | `self.assertEqual(layer._inter_context[0].maxlen, 8)` |
+| `test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_explicit_capacity_is_honored` | `self.assertEqual(layer._stm_end_states[0].maxlen, 42)` | `self.assertEqual(layer._inter_context[0].maxlen, 8)` |
+| `test/test_ltm_chain_grows.py::TestLtmChainGrows::test_chain_is_time_ordered_oldest_first` | unchanged | unchanged |
+| `test/test_ltm_chain_grows.py::TestLtmChainGrows::test_get_stm_chain_none_returns_all` | unchanged | unchanged |
+| `test/test_ltm_chain_grows.py::TestLtmChainGrows::test_payload_is_snapshot_decoupled_from_live_buffer` | unchanged | unchanged |
+| `test/test_ltm_chain_grows.py::TestLtmChainGrows::test_processing_n_sentences_grows_chain_to_n` | `self.assertIsNone(tet)` | `self.assertEqual(tet, 1.0)` |
+| `test/test_ltm_chain_grows.py::TestLtmContextReset::test_ensure_batch_resizes_chain` | `self.assertEqual(len(self.layer._stm_end_states), 4)`<br>`self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)` | `self.assertEqual(len(self.layer._inter_context), 4)`<br>`self.assertEqual(len(self.layer.situation_references(b=0)), 0)` |
+| `test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_all_rows_clears_chain` | `self.assertEqual(len(self.layer.get_stm_chain(b=0)), 1)`<br>`self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)`<br>`self.assertEqual(len(self.layer.get_stm_chain(b=1)), 0)` | `self.assertEqual(len(self.layer.situation_references(b=0)), 1)`<br>`self.assertEqual(len(self.layer.situation_references(b=0)), 0)`<br>`self.assertEqual(len(self.layer.situation_references(b=1)), 0)` |
+| `test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_single_row_clears_only_that_row` | `self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)`<br>`self.assertEqual(len(self.layer.get_stm_chain(b=1)), 1)` | `self.assertEqual(len(self.layer.situation_references(b=0)), 0)`<br>`self.assertEqual(len(self.layer.situation_references(b=1)), 1)` |
+| `test/test_ltm_chain_grows.py::TestLtmFailLoud::test_inf_payload_raises` | unchanged | unchanged |
+| `test/test_ltm_chain_grows.py::TestLtmFailLoud::test_nan_payload_raises` | unchanged | unchanged |
+| `test/test_ltm_chain_grows.py::TestLtmPerRow::test_out_of_range_row_returns_empty` | `self.assertEqual(self.layer.get_stm_chain(b=5), [])` | `self.assertEqual(self.layer.situation_references(b=5), ())` |
+| `test/test_ltm_chain_grows.py::TestLtmPerRow::test_rows_are_independent` | `self.assertEqual(len(self.layer.get_stm_chain(b=0)), 3)`<br>`self.assertEqual(len(self.layer.get_stm_chain(b=1)), 3)`<br>`self.assertEqual(self.layer.get_stm_chain(b=1)[0][0], 3)`<br>`self.assertEqual(self.layer.get_stm_chain(b=0)[0][0], 1)` | `self.assertEqual(len(self.layer.situation_references(b=0)), 3)`<br>`self.assertEqual(len(self.layer.situation_references(b=1)), 3)`<br>`self.assertEqual(self.layer.situation_references(b=1)[0].depth, 1)`<br>`self.assertEqual(self.layer.situation_references(b=0)[0].depth, 1)` |
+| `test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque` | `self.assertEqual(len(disc._stm_end_states[0]), 0)` | `self.assertFalse(hasattr(disc, '_stm_end_states'))` |
+| `test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label` | unchanged | unchanged |
+| `test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance` | `assert discourse.expect_next_meaning() is not None` | `assert discourse.situation_references()` |
+| `test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser` | unchanged | unchanged |
+| `test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget` | `torch.testing.assert_close(nested, direct)` | `torch.testing.assert_close(nested[-4:-1], direct[-4:-1])` |
+| `test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role` | `torch.testing.assert_close(direct, nested)`<br>`torch.testing.assert_close(direct[:width], discourse.last_expectation_comparison().observed[0])` | `torch.testing.assert_close(direct[-4:-1], nested[-4:-1])`<br>`torch.testing.assert_close(direct[:3 * width], question.roles.flatten())`<br>`assert direct[-1] == 0` |
+| `test/test_one_attention.py::test_prior_thought_reserves_the_input_allowance` | `assert owner._inter_last_meaning[0] is None` | `assert not hasattr(owner, '_inter_last_meaning')` |
+| `test/test_one_attention.py::test_word_expectation_is_a_trained_distribution_with_one_gain` | `assert layer.levels == ('word', 'sentence', 'row')`<br>`assert layer.enabled_levels == ('word', 'sentence', 'row')` | `assert layer.levels == ('word', 'field')`<br>`assert layer.enabled_levels == ('word', 'field')` |
+| `test/test_one_backward.py::test_native_sentence_counts_one_backward_and_step_and_preserves_band_gradients` | unchanged | unchanged |
+| `test/test_orders_learned.py::test_determiner_opens_a_chunk_identity_only_at_member_order_one` | `assert (int(state[2][0, 0, -1]) == 3) == (order == 1)` | `assert (int(state[2][0, 0, REFERENCE_WITNESS - 1]) == 3) == (order == 1)` |
+| `test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill` | `assert len(seen[0]) == 2 < memory._inter_chain_window` | `assert len(seen[0]) == 4 < memory._inter_chain_window` |
+| `test/test_parts_of_speech.py::test_kept_readings_alone_supply_argument_views` | unchanged | unchanged |
+| `test/test_performance_leaves.py::test_mps_retains_range_pullbacks_and_large_single_rung_addresses` | `torch.testing.assert_close(encoding.decode(half), legacy * (period / 64), rtol=0, atol=0)` | `torch.testing.assert_close(encoding.decode(half), expected, rtol=0, atol=0)` |
+| `test/test_retire_mode.py::test_native_every_completed_field_reaches_the_chooser` | unchanged | unchanged |
+| `test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm` | `assert len(store) == 0 and len(calls) == 1`<br>`assert stored.role_refs[:2] == (_a, _b)`<br>`assert calls[0][0] == [1]`<br>`assert calls[0][2]['layout'] == 'infix'`<br>`torch.testing.assert_close(calls[0][1][0][0], leaves[0])`<br>`assert not bool(calls[0][1][0][1:].ne(0).any())`<br>`assert calls[0][1][0].requires_grad` | `assert len(store) == 1`<br>`assert store.meaning_of(0).role_refs[0] == _a`<br>`assert stored.role_refs[:2] == (store.occurrence_of(0), _b)`<br>`assert discourse.situation_references()[0].occurrence == ('sym', row[1])` |
+| `test/test_selected_relation_meaning.py::test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept` | unchanged | unchanged |
+| `test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused` | unchanged | unchanged |
+| `test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence` | unchanged | unchanged |
+| `test/test_sentence_expectation.py::test_new_document_is_reset_before_forward` | `assert disc.expect_next_meaning() is None` | `assert disc.situation_references() == ()` |
+| `test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed` | `assert disc.expect_next_meaning() is None` | `assert disc.situation_references() == ()` |
+| `test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream` | `assert model.symbolSpace.expectation.expect_next_meaning() is None` | `assert model.symbolSpace.expectation.situation_references() == ()` |
+| `test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold` | `assert model.expect_next_meaning() is None`<br>`assert model.consume_inter_loss() is None` | `assert model.situation_references() == ()` |
+| `test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration` | `assert model.expect_next_meaning() is None` | `assert model.situation_references() == ()` |
+| `test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles` | `assert streaming._inter_loss_count == 1`<br>`torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())`<br>`torch.testing.assert_close(packed.expect_next_meaning().roles, streaming.expect_next_meaning().roles)`<br>`assert len(packed._ltm_store) == 2`<br>`torch.testing.assert_close(packed._ltm_store.meaning_of(0).roles[0], entries[0].end_state[0])`<br>`assert packed._ltm_store.meaning_of(0).role_mask.tolist() == [True, False, False]` | `assert len(f.store) == 2`<br>`torch.testing.assert_close(f.store.meaning_of(0).roles[0], entries[0].end_state[0])`<br>`assert f.store.meaning_of(0).role_mask.tolist() == [True, False, False]`<br>`assert a.occurrence == b.occurrence`<br>`assert a.symbol_ids == b.symbol_ids and a.activations == b.activations`<br>`torch.testing.assert_close(a.roles, b.roles)` |
+| `test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses` | `assert disc._inter_loss_count == loss_count`<br>`assert bool(torch.isfinite(prediction.roles).all())`<br>`assert torch.count_nonzero(prediction.roles[0, store.when_start:store.when_start + 4]) == 0`<br>`torch.testing.assert_close(value, prior, rtol=0, atol=0)` | `assert frame.occurrence == occurrence`<br>`assert frame.symbol_ids == symbols and frame.activations == activations`<br>`torch.testing.assert_close(frame.roles, roles, rtol=0, atol=0)` |
+| `test/test_sentence_journal.py::test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading` | unchanged | `assert clock_reads == [7, 7, 7]` |
+| `test/test_sentence_journal.py::test_program_keeps_the_identity_leaf_stamp_before_reference_resolution` | unchanged | `assert clock_reads == [7]` |
+| `test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients` | unchanged | `assert clock_reads == [7]` |
+| `test/test_sentence_references.py::test_predictor_context_carries_address_and_reads_only_that_retained_row` | unchanged | unchanged |
+| `test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive` | unchanged | unchanged |
+| `test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes` | unchanged | unchanged |
+| `test/test_thought_intuition.py::test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_chooser` | unchanged | unchanged |
+| `test/test_thought_intuition.py::test_output_ownership_excludes_understanding_and_expectation` | `assert {id(p) for p in owner.intuit_stack.parameters()} <= {id(p) for p in groups['output']}` | unchanged |
+| `test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust` | `self.assertEqual(depth, 3)`<br>`self.assertEqual(tet, 0.7, 'the scalar trust persists in the LTM slot')` | `self.assertEqual(depth, 1)`<br>`self.assertAlmostEqual(tet, 0.7, msg='the scalar trust persists in the LTM slot')` |
+| `test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work` | unchanged | unchanged |
+| `test/test_when_bracket.py::test_instant_decodes_time_and_zero_extent` | `assert math.isclose(float(key.norm()), 1.0, abs_tol=1e-06)` | `assert math.isclose(float((2 * key - 1).norm()), 1.0, abs_tol=1e-06)` |
+| `test/test_when_encoding_v2.py::test_constant_norm_sqrt2_exact` | unchanged | unchanged |
+| `test/test_when_encoding_v2.py::test_hf_pair_roundtrips_residue_within_rung` | unchanged | unchanged |
+| `test/test_when_encoding_v2.py::test_ladder_branch_boundary` | unchanged | unchanged |
+| `test/test_when_encoding_v2.py::test_lf_pair_roundtrips_onset_over_horizon` | unchanged | unchanged |
+| `test/test_when_encoding_v2.py::test_tense_relation_keys_on_lf_pair` | unchanged | unchanged |
+| `test/test_when_range_encoding.py::test_components_stay_in_unit_interval` | `assert float(enc.encode(s).abs().max()) <= 1.0 + 1e-06`<br>`assert float(enc.encode(s, e).abs().max()) <= 1.0 + 1e-06, (s, e)` | `assert (enc.encode(s) >= 0).all() and (enc.encode(s) <= 1).all()`<br>`assert (enc.encode(s, e) >= 0).all() and (enc.encode(s, e) <= 1).all(), (s, e)` |
+| `test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis` | `assert math.isclose(float(key[0]), 0.0, abs_tol=1e-06)`<br>`assert math.isclose(float(key.norm()), 1.0, abs_tol=1e-06)` | `assert math.isclose(float(key[0]), 0.5, abs_tol=1e-06)`<br>`assert math.isclose(float((2 * key - 1).norm()), 1.0, abs_tol=1e-06)` |
+| `test/test_where_bracket.py::test_ladder_shape_and_rungs` | `assert math.isclose(float(key[..., :2].norm()), 1.0, abs_tol=1e-05)`<br>`assert math.isclose(float(key[..., 2:].norm()), 1.0, abs_tol=1e-05)` | `assert math.isclose(float((2 * key[..., :2] - 1).norm()), 1.0, abs_tol=1e-05)`<br>`assert math.isclose(float((2 * key[..., 2:] - 1).norm()), 1.0, abs_tol=1e-05)` |
+| `test/test_whole_path_repairs.py::test_no_departure_does_not_share_later_registry_writes` | unchanged | unchanged |
+| `test/test_whole_paths.py::test_hidden_word_changes_only_loss_targets_through_the_close` | unchanged | unchanged |
+| `test/test_whole_paths.py::test_output_departure_runs_only_the_last_stage` | unchanged | unchanged |
+| `test/test_whole_paths.py::test_retained_named_transient_captures_its_concept_not_its_mtm_address` | unchanged | unchanged |
+| `test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition` | `assert calls, 'composition ran before the mandatory interpretation'` | `assert len(readings) >= int(active.sum())`<br>`assert readings, 'composition ran before the mandatory lexical reading'`<br>`assert converting, 'numerical word interpretation ran before conversion'` |
+
+This inventory names retained assertions as well as contract changes; it
+does not claim that all 101 functions needed a new assertion. No new
+expected-failure mark is introduced in this continuation.
+
+### 59.67 Sweep repairs: the mixing word boundary and empty bands
+
+The first sweep reached 4,952 of its 7,256 selected cases: 4,688 passed,
+31 failed, 232 skipped and one xpassed, in 1,051.120 seconds. I interrupted
+it to repair the non-learning failures. Both stopping gates passed in
+that run. This is an incomplete diagnostic sweep, not the required final
+sweep; the remaining 2,304 cases did not complete.
+
+**Mixing still staged objects.** Removing the arrival-time exchange left
+`_stage_reading_grammar_references` publishing only object codes. There
+was no own-word code for the new leaf law on this path, while its inverse
+bank and `_pushed_word_slab` still described objects. The unchanged,
+untrained forced-prefix fixture reconstructed only `hello` or `loving`
+from each two-word input: 0/4 correct multisets on both reads, with first
+read residuals 52,52,52,52 and second read residuals
+13.75,15.25,15.75,14.25. HEAD on the fixture's original saved stream gives
+4/4 on each read and all residuals zero. A process-local diagnostic
+staging word codes restores those results without training or changing
+a chooser; the production repair follows that boundary, not the test's
+expected strings.
+
+`Models._stage_reading_grammar_references` now stages each admitted word's
+row, order, code and lexical form, separately from its current object
+reference. `_stage_mixing_reconstruction_bank` reads those words;
+`_pushed_word_slab`, `_capture_reading_programs`,
+`_publish_sentence_scratch`, `_trial_understanding` and the final symbol
+reference publication read word rows/codes/orders. They no longer
+substitute `_ar_grammar_object_*` for the word tree. Those object arrays
+remain for the existing mixing object staging and the protected
+`ModelAttention.stage_expectation` reader; neither that reader nor its
+forecast changes. `PrependedSymbols.refresh_words` updates the object's
+references but does not replace a mixing inverse-bank word with that
+object. Comprehension still selects the object after the walk.
+
+The strengthened three-configuration word-deposit test exposed a second
+producer: `stage_cs_lang` used `symbolic_orders`, the conceptual pass's
+fold depth, as the word's order. All three cases failed (order 1 instead
+of the staged word's order 0). Where an own-word code is staged, the push
+now takes its row and order from the same staged word arrays. It keeps
+the conceptual-pass metadata for paths without a word. This implements
+the stated row/order part of the leaf law; it does not change allocation.
+The three cases then pass. The earlier certificate's comparison of the
+slot to the push alone did not catch this mismatch.
+
+This supersedes §59.64's account of the mixing fallback. Admitted mixing
+words now have their own code. Numeric inputs and paths without an
+admitted word still retain their unsigned native event; no code or
+reference is invented for them. The former object-bank override is
+removed, not retained as an option. The forced-prefix, forward-discard,
+zero-meaning departure and MTM-current-value failures had this shared
+producer. Their assertions were not weakened.
+
+**Empty time was decoded as a phase.** An all-zero missing time band
+survived storage and migration, but the new recentering interpreted it
+as four minus ones. `DocumentWhenEncoding` first shifted that false
+phase by half a tick; `decode_index` returned 5,368,706,048 instead of
+the former zero. `ReferenceClose.accessible` consequently discarded the
+actual event as earlier than its mention and returned `predicate=None`.
+All four `test_occurrence_candidates_use_retained_part_participants`
+cases failed. `_ladder_index` now preserves the sentinel's former
+zero-angle read, and both time `shift_time` implementations preserve
+an absent band rather than rotating it into a present phase. No
+`ReferenceClose` read changes. The new
+`test_absent_time_band_retains_zero_tick_read` covers both the empty read
+and empty rotations, and distinguishes the nonempty encoding of tick zero.
+The four original reference assertions then pass unchanged.
+
+The final focused check at this checkpoint is **31 passed in 14.05 s**:
+the eight coordinate cases, four occurrence-view cases, three word-deposit
+cases, the operator/fixed-reconstruction checks and both stopping gates.
+The 75-case port/repair check before the order and empty-band corrections
+passed in 26.15 s. These are not a claim that the final sweep has passed.
+
+An additional failing-before proof for §59.63 is now recorded: removing
+only the leaf-activation block from `stage_cs_lang` in a process-local
+ablation makes the negated-Sigma certificate fail with a pushed coordinate
+of −0.7615942 (3.90 s). No signed chart was restored for that ablation.
+
+### 59.68 Measurements completed before those sweep repairs
+
+These measurements are from source
+`62adf1c0e52705ab384971dbe971ec4a56f7a9f1641cd39488106c12c99c93e2`
+(1,218 source files), before §59.67's final repairs. They must not be
+represented as the finished-source measurements. The original lesson
+stream and its recorded Python hash seed were replayed; there was no
+search for a seed. Four epochs and 160 presentations completed.
+
+| Measurement | This diagnostic lesson | §58 |
+| --- | ---: | ---: |
+| Exact understood/generated fields | 9/160 | 0/160 |
+| Mean of the per-sentence absolute field differences | 0.26606202113325705 | 0.2432773888373049 |
+| Final order-zero occupancy/capacity | 52/2346 | 60/2346 |
+| Final order-one occupancy/capacity | 119/1239 | 114/1239 |
+| Final order-two occupancy/capacity | 30/610 | 27/610 |
+
+The compared fields are the comprehension/`compose_extend` field of the
+kept reading and `generate_extend`'s field of its generated idea; the
+observer saves both before restoration. These results are not like for
+like with §58 or §51: sentence estimation is gone, intuit shares expect's
+map, the new idea read has its own loss, and stored coordinates are
+unsigned. §51 did not measure this field difference.
+
+At the final read weights, on the 160 saved open fields and their actual
+kept semantic roots, mean squared errors are:
+
+| Block | Learned read | `FieldProjection.key` centroid |
+| --- | ---: | ---: |
+| Form (including its occurrence bands) | 0.019514660374261437 | 0.025242783673820667 |
+| Meaning | 0.003048001775475222 | 0.006945401405027951 |
+
+All 160 observations have no omission. Expected-versus-observed field
+MSE is 0.0028945545986061917; mean absolute difference is the same number.
+The read of those two fields has point MSE 0.029187897506926675 and mean
+absolute difference 0.0695662957848981. Thus the learned read is below
+the centroid on meaning in this diagnostic, but equality of its two
+inputs' predictions is not established by those distances.
+
+Over training, including the trial deposits, 936 deposits use the walk's
+pair, zero use the fallback `(presence,0)`, and all 936 have an own-word
+code. Of 544 observed aligned scalar reads, zero are negative. No pushed
+coordinate is negative. The 45 assessment texts add 184 deposits and
+139 reads; the ladder adds 72 deposits and 66 reads. Both use the walk's
+pair throughout, with no negative read or deposit coordinate. These
+counts keep probe reads separate from training. The existing signed
+readers listed in §59.64 remain item 1.7's work.
+
+The object-choice observer now retains the evaluator's actual choice
+through `Result.detached`, in this observer process only. It has records
+for all 160 kept presentations: 544 lexical choices, **zero choices
+with more than one declared object**. This lesson therefore supplies no
+multi-object selection comparison; it is not credited with one. The
+mechanism certificate of changed end-of-sentence expectation remains
+the separate test.
+
+The lesson's final assessment ladder reports rung 1 passed, rung 2
+failed, rungs 3,4,7 blocked by the lower rung, and rungs 5,6,8,9 not
+applicable to its declared vocabulary. The 45 individual records were
+also produced. The complete fixture assessment tables and the verbal
+proof are not claimed at this stop, nor is a final full sweep.
+
+### 59.69 Additional test ports and remaining failure attribution
+
+These ports extend §59.66. Each was seen failing in the diagnostic sweep.
+No fixture size, seed, presentation count or learning rate changed.
+
+| Test (under `test/`) | Old assertion/call | Port and retained assertions |
+| --- | --- | --- |
+| `test_existence_metadata::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles` (three depths) | Compare with deleted `SymbolExpectation._canonical_meaning` | Renamed `test_explicit_stm_layout_retains_all_roles`; explicit native role order and mask, all roles retained (§68.54.2) |
+| `test_grammar_object_leaves::test_grammar_resolves_each_word_to_its_full_object_code` (three configurations) | Hook the removed arrival-time object exchange | Renamed `test_grammar_deposits_each_word_with_its_own_code`; exact activated word code, own row/order, eight deposits and four distinct word rows (§55.1.1–2) |
+| `test_item20_round1::test_reading_nonoperation_has_empty_rows_and_no_row_zero_gradient` (two kinds) | Incomplete capture mock | Supply its clock and capture keyword; retain every empty-row and gradient assertion |
+| `test_lexical_reference_orders::test_capture_owns_grammar_resolution_without_changing_reconstruction` | Same incomplete capture mock | Same mock port; retain IDs, orders, leaves and detached-ID assertions |
+| `test_live_concepts_from_percepts::test_pre_readout_checkpoint_initializes_only_new_modules_with_strict_loading`, `test_conceptual_checkpoint_metadata_and_tensor_state_roundtrip_together`, `test_autoload_capacity_preflight_expands_all_readout_aliases_in_place` | A `__new__` fixture omitted the newly constructed stack attributes | Declare both stacks absent on that non-sentence fixture; all checkpoint, strict-load and alias assertions stay |
+| `test_native_attention_field::test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit`, `test_native_candidate_departure_credits_only_scorer_parameters` | Cost mocks rejected `incoming_trust` | Accept the existing keyword; isolation and gradient assertions stay |
+| `test_model_time_when::test_forward_at_t0_is_present_instant` | Stored `(0,1)` | Stored `(.5,1)`; encode/forward equality and decoded-time assertions stay |
+| `test_item55_mechanisms::test_surface_inverses` | Replace expected word values with pending object values | Compare the inverse with `record.word_values`; preserve pending-identity, surface, unavailable and other assertions (§55.1.6) |
+| `test_reading_curriculum::test_native_four_word_inverse_follows_composed_children_without_free_decoder[pending-identities]` | Inverse must equal the pending object's unscaled point | Inverse equals the word tree; still differs from the pending point and preserves all four words (§55.1.6) |
+| `test_query_native_ids::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent` | Word-symbol IDs were object IDs | Renamed `test_word_identity_is_independent_of_its_object_identity`; all three lexical IDs survive independently of the object IDs (§55.1.1) |
+| `test_query_native_ids::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent` | Incomplete model mock | Supply `_word_symbol_rows`; the same TypeError assertion stays |
+| `test_percept_transitivity::test_native_kept_readings_have_transitive_percept_codes` | Commit hook takes deleted `predictions` argument | Remove that argument; all transitivity, entropy and state-preservation checks stay (§68.54.2) |
+
+The updated AST inventory has 109 changed existing test functions, 56
+old names absent and 15 new names in tracked files. Twelve absent names
+are renamed ports (the nine in §59.66 plus the three above); the number
+of retired contracts remains **44**, each accounted for in §59.66.
+New untracked certificate modules remain separate from those counts.
+
+`test_free_reconstruction::test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit`
+is confirmed preexisting on HEAD, on the sweep's exact saved random
+stream. Both versions fail with advantage `[0,0,0,1.100325345993042]`,
+zero eligible non-tied compose decisions in every stream, and no
+grad-bearing compose surrogate. Its assertion asks for a compose cost
+term from the unmasked advantage even though that path drew no eligible
+compose choice. The producer `_compose_score_function_loss` is unchanged.
+The replay fails in 4.40 s on this round's source and 4.37 s on HEAD.
+It is listed, not repaired and not relabelled as a learning baseline.
+
+The 29 repaired/ported sweep failures and the 17 tree-first cases were
+then rerun on this checkpoint: **46 passed in 27.90 s**. Thus those 29
+are confirmed passing; this does not cover the uncompleted sweep cases.
+
+The other unresolved diagnostic failure is
+`test_live_references::test_public_reading_fuses_the_reference_before_capture_and_write`.
+HEAD passes it (3.33 s). Its remaining producer and the decision required
+are below; I have not weakened its assertions.
+
+### 59.70 For Alec and Claude: bind compares the occurrence bands too
+
+The unsigned sinusoids are built, but they expose an unported numerical
+reader. `ReferenceContext.prepare_operands` calls `STMChunks.bind_menu`;
+the latter calls `IdentityRows.meet_ratios` on every coordinate from
+`meaning_start` onward. For a configuration with no separate meaning
+block, `meaning_start` is zero. The word's location and time therefore
+participate in the containment test alongside its content. They are
+coordinates of where and when it was read, not more evidence of the
+object's description.
+
+In the unchanged live-reference fixture, the held idea contains every
+content coordinate of the incoming word. The word and held idea have
+different occurrence bands. The requested bind is unavailable at the
+first word and after the second; the forced fixture consequently takes
+`change` first and binds that result at the close. The later assertion
+that the first participant already held the reference fails. Correcting
+the separate word-order defect in §59.67 leaves this failure unchanged.
+
+A minimal reproduction uses content (.2,.2) inside (.8,.8), locations 20
+and 10, and ticks 1 and 0, with the actual codecs and native bind menu.
+With the eight occurrence coordinates in the comparison, its two
+containment ratios are approximately .8337 and .9677: the real candidate
+is unavailable. Comparing the content alone gives .25 and 1: it is
+available. In a process-local diagnostic on the unchanged live-reference
+test, excluding only those eight coordinates from the **comparison**,
+while returning the original candidates unchanged, offers the requested
+bind before `change` and passes the original fusion assertion. The test
+then reaches its separate old word-equals-pending-object assertion, which
+requires the same §55.1.6 port as the inverse tests above. No such bind
+comparison change is in production.
+
+**Question:** may bind's containment read exclude the location/time band,
+while keeping that band unchanged on the operand and selected result?
+I recommend that rule: use content for containment, and retain location
+and time for their own readers. This would also apply to the no-separate-
+meaning configuration; the paired configuration already starts beyond
+that band. It requires an explicit amendment because §68.62 rule 4 says
+nothing downstream changes, naming `IdentityRows.meet_ratios` and its
+readers, while §55.1.2 keeps the operators/chooser unchanged. Recentring
+these coordinates only to recover the old test result would preserve the
+same unwanted dependence, so I have not done that either.
+
+Checkpoint source snapshot (`bounded_tests.source_snapshot`, 1,218 files):
+`c1f6ac3004a5104987f8ca3cfaf9bd11ba43e0b552759698c5f98df1c6fce28d`.
+No commit or push. The four protected attention files are byte-identical
+to HEAD. There is no new edit in `Models._run_sentence_word_bricks` in
+this continuation; its cumulative edits remain those in §59.51. In
+`stage_cs_lang`, the continuation adds the unsigned own-word activation
+and copies the product's occurrence band, uses the staged word row and
+order rather than the conceptual pass's fold depth, and removes the
+mixing-object fallback for the lexical scope ID. The earlier removal of
+the object exchange and reference/publication witnesses are unchanged.
+The final lesson/proof/assessment/sweep campaign remains owed after this
+decision and the remaining ports; this is not a completion claim.
+
+### 59.71 Resumed: containment reads content, occurrences keep their bands
+
+Alec's continuation ("Please continue if that was the only stopper") is
+taken as approval of §59.70's recommendation. `STMChunks.bind_menu` now
+excludes the occurrence's location and time coordinates from its
+containment comparison. It returns the original candidate, including
+those coordinates, unchanged. `IdentityRows.meet_ratios` itself is
+unchanged. The mask is applied by multiplication over the fixed-width
+operands; the read introduces no variable-length gather.
+
+The layout comes from the native LTM store in
+`LanguageSpace.choose_operation`, through the new `percept_band`
+argument of `ReferenceContext.prepare_operands`. In particular, the
+journal's band cannot supply this information: an unpaired configuration
+can have no journal band while its input still has the eight occurrence
+coordinates. `prepare_operands` starts beyond the percept block only
+when its interpreter's codebook actually has a separate meaning block;
+otherwise it reads content across the unpaired code, excluding the band.
+The live-reference fixture also supplies a reference bank without an
+interpreter, so its old `meaning_start` was zero independently of the
+native model's layout. This qualifies §59.70's explanation: the zero
+start alone did not prove that this fixture's model was unpaired.
+
+Before the repair the unchanged
+`test_public_reading_fuses_the_reference_before_capture_and_write`
+failed its first-participant fusion assertion: the earlier bind was
+unavailable. It now passes that assertion. The new parametrized
+`test_bind_compares_content_and_preserves_occurrence_coordinates`
+checks both layouts, offers the containing candidate despite different
+location/time bands, rejects a genuinely incompatible description, and
+checks exact preservation of the candidate and source state.
+
+That live-reference test needed two further ports under §55.1.6 and
+§68.64. It formerly compared the word-tree operand directly with the
+pending object's unactivated MTM value, and compared the semantic clause
+with the word-tree root. It now checks the word operand against its
+word leaf, the comprehension operand against the pending object's code
+activated with the recorded presence and pair, and the semantic clause
+against the comprehension root. On this fixture both words' presence
+is .7615941762924194, their pairs are (1,0), and their pending codes are
+also their lexical codes; thus their interpreted form retains that
+presence rather than becoming one. Every identity, origin, occurrence
+time, retained-row, inverse-independence and gradient assertion remains.
+No test is retired and no fixture size or teaching count changes.
+
+The focused run is **36 passed in 6.93 s**, including both stopping
+gates. No new edit is made in the word loop or its nested word step in
+this continuation. The four protected attention files remain identical
+to HEAD. The additional `Language.py` diff is the layout extraction in
+`choose_operation` and its argument to reference preparation, authorized
+by this containment decision; the previous chart-file inventory is
+§59.65. `MeaningKernels.py` and the restored chart checks stay as there.
+The required wider checks and final measurements are in progress on
+source `c1f57067ef6b24621ec3b25b9608c05a1ffaef9cc5e7c1b06475d80f8bd55b88`
+(1,218 files). No commit or push.
+
+### 59.72 The remaining mixing relation port
+
+The first rerun of the 21 files gave **268 passed, 8 skipped, 2 failed
+in 124.78 s**. Both failures were
+`test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats`
+(`first-encounter` and `admitted`). They asserted that mixing had no
+native word-ID bank and that the reading program's leaf IDs were the
+objects'. The mixing repair in §59.67 deliberately supplies the word's
+own bank and deposits its word ID. These assertions are ported under
+§55.1.6: the reading's IDs equal the word bank; comprehension's native
+concept IDs equal the former expected object IDs; its actual selected
+references equal the staged object references. For a first encounter
+the latter can be a pending MTM reference, distinct from the native
+concept ID. All assertions about positive concept IDs, unchanged
+capacity, no duplicate seats, valid closing references and unchanged
+definitions remain. The numeric-input test in the same file still
+asserts that it has no word bank, unchanged. The file after the port:
+**9 passed, 1 skipped in 10.09 s**. No production edit was required.
+
+For §59.71's ablation, removing only the occurrence mask from the
+comparison gives **1 failed, 1 passed in 2.62 s**: the unpaired-layout
+certificate fails, and the paired case still passes because its
+meaning block already lies beyond the occurrence band. Both pass with
+the repair. This is a counterfactual test of the cause, not a change to
+a fixture or its initialization.
+
+The preliminary default sweep was interrupted for this port, with
+**1,158 of 7,259 cases completed**; it is not the returned sweep. Its
+concurrent lesson was also stopped. Both were restarted on the updated
+source, which is frozen for the returned measurements. No bound, seed,
+learning rate, capacity or presentation count changes. The lesson uses
+the same saved random stream as the earlier comparison, not a newly
+selected initialization.
+
+### 59.73 Wider checks and the rest of the word-bank ports
+
+The required 21/61/16 file groups now give, respectively:
+
+| Group | Passed | Skipped | XPASS | Failed | Seconds |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 21 files | 270 | 8 | 0 | 0 | 152.29 |
+| 61 files | 840 | 27 | 1 | 0 | 330.48 |
+| 16 files | 183 | 6 | 0 | 0 | 200.72 |
+
+The next default sweep reported a failure at
+`test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal`:
+it too asserted that the mixing path's word-ID bank was absent. Searching
+all remaining uses of that assertion and the old inverse-bank fields
+identified the following ports. Their four files gave **10 failed,
+12 passed in 18.82 s** before the ports and **22 passed in 17.31 s**
+after them. No production code changed for these ports.
+
+| Test | Former assertion / fixture | Replacement under §55.1.6 and §68.64 |
+| --- | --- | --- |
+| `test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal` | No word-ID bank during read-back | IDs equal the word-aligned bank; all changed-parent, free-inverse and disposal assertions remain |
+| `test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_percepts_in_the_target` | No word-ID bank | IDs equal that bank; exact UTF-8 target and candidate bytes and the inadmissible high-byte row assertions remain |
+| `test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts` | Mock supplies object rows/atoms | Mock supplies word rows/atoms to the word inverse; both exact byte assertions remain |
+| `test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences` | Bank rows/atoms equal objects; word IDs absent | Renamed `test_mixing_reconstruction_stages_words_surfaces_and_occurrences`; rows/atoms equal words and IDs equal their bank; all counts, surfaces, sentence IDs, masks and occurrence assertions remain |
+| `test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body` | No word-ID bank | IDs equal their bank; forbidden graph-capture and finite completed-cost assertions remain |
+| `test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back` (four parameter cases) | No word-ID bank | IDs equal their bank, with word/space/word validity `(true,false,true)`; every perception, span, push and inverse assertion remains |
+| `test_objective_ownership.py::test_trial_consumers_share_one_record_and_answer_cannot_write_it` | No word-ID bank | IDs equal their bank; shared records, all ownership and gradient assertions remain |
+
+The remaining assertion of an absent word bank belongs to
+`test_relation_closing`'s numeric input, and stays. This is one renamed
+port, not another retired contract. No expected-failure mark is added.
+
+The lesson and its observer continue on the final production source.
+Only the four test files in the table changed after that lesson started;
+the source-manifest comparison confirms that no production file, data,
+configuration or imported observer changed. Thus the measurement is of
+the returned model, without another training attempt. The default sweep
+is restarted after the ports, with nothing deselected. Its starting
+source is `7d555ca0db1861d80da86b66cff428b1a8a19a40dd965da946fcc25471fd7d08`
+(1,218 files).
+
+### 59.74 Returned-model lesson and the field-to-idea read
+
+The unchanged `explore-1.xml` lesson completes four epochs and **160
+sentences** on the saved comparison stream. There is no selected new
+seed, extra presentation or resized allocation. The fields are captured
+before trial restoration: the understanding field is the extension of
+the comprehension's kept reading; the generated field is the extension
+left by `generate_extend` on the generated idea. No source field or
+desired answer is substituted for either measurement.
+
+| Measurement | Returned model | §59.68 diagnostic | §58 |
+| --- | ---: | ---: | ---: |
+| Exact understood/generated fields | 21/160 | 9/160 | 0/160 |
+| Mean of per-sentence absolute differences | 0.20900825535936746 | 0.26606202113325705 | 0.2432773888373049 |
+| Final order-zero occupancy/capacity | 52/2346 | 52/2346 | 60/2346 |
+| Final order-one occupancy/capacity | 113/1239 | 119/1239 | 114/1239 |
+| Final order-two occupancy/capacity | 27/610 | 30/610 | 27/610 |
+
+The coordinate-weighted mean absolute difference is
+**0.2189327997790162**, maximum **1**. The mean in the table gives each
+sentence equal weight. §51 did not measure this field comparison.
+These are not like-for-like runs against §58 or §51: sentence estimation
+has been removed; intuit uses expect's map; the field-to-idea read has
+its own loss; and stored occurrence coordinates are now unsigned.
+The 139 unequal fields remain a learning result; no chooser is tuned
+to make this table improve.
+
+At the final read weights, evaluated on the 160 saved open fields and
+their actual kept semantic roots:
+
+| Block | Learned read MSE | `FieldProjection.key` centroid MSE |
+| --- | ---: | ---: |
+| Form, including occurrence bands | 0.023740512973745354 | 0.03366334491547605 |
+| Meaning | 0.009511619061593868 | 0.010882760184904328 |
+
+The learned read is below the centroid on both blocks in this run.
+All 160 observations have no omission. Expected-versus-observed field
+MSE is **0.0028679133611149155**, mean absolute difference
+**0.002867916649847757**. The points read from those two fields have
+MSE **0.037796036052168344**, mean absolute difference
+**0.07700937471818178**. These distances do not establish equality of
+the two point predictions.
+
+Training, including trial deposits, has **938 word deposits**: all use
+the walk's pair and the word's own staged code; **zero** use the fallback
+`(presence,0)`. Of **544 aligned scalar reads**, **zero** are negative;
+no pushed coordinate is negative. The 45 post-training assessment texts
+add **184 deposits and 139 reads**, again all using the walk's pair and
+own code, with no negative read or pushed coordinate. All 184 assessed
+word places are minted. These evaluation reads are preserved probes,
+not additional teaching.
+
+The object observer captures the evaluator's actual end-of-sentence
+selection for all **160** kept presentations, with no unavailable
+record: **517 lexical choices**, **zero** with more than one declared
+object. There is therefore no lesson measurement of competing objects'
+selection. The mechanism certificate of an expectation change before
+comprehension remains the independent check of that behavior. The
+signed readers and shared-pair producer reported in §59.64 remain
+item 1.7's work; nothing here changes Sigma's signed read.
+
+The lesson's native answer score is **0/32** in the idea phase and
+**0/48** in the relation phase, the same scores as §58. All 80 scored
+outputs are empty. Idea acquisition passes its exit check; relation
+acquisition does not. The final preserved probe of `What is this?`
+keeps `verb(divide(multiply(What,is),this),?)`, with no open reference;
+`Is Ciao a cat?` keeps
+`whole(divide(divide(divide(Is,Ciao),a),cat),?)`, with three unresolved
+open roles. Neither produces an answer. These are examples of the
+learned reading's limits, not a claim that all 80 training questions
+have the same producer: the recorded question closes include 45 idea
+rows and 35 relation rows. The native training-step time totals
+**450.8097268693382 s**; elapsed time at the last training epoch is
+**475.33982091594953 s**, before the preserved assessment reads.
+
+### 59.75 Returned-model assessment tables
+
+The 31 fixture reports are from the final default sweep, and the lesson report is from §59.79. There are 32 sources: rung one passes for 8, fails for 1, and is unavailable for 23. No slow scalar curriculum is claimed as rerun here.
+
+P = passed, F = failed, B = blocked by an earlier rung, N = unavailable for the fixture’s declared vocabulary. These are preserved evaluation reads; the reviewed ladder gates no sweep assertion. Each source has its nine rungs below.
+
+| Source | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `test/test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0]` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75]` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi]` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor]` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row` | F | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_83_an_unseen_conclusion_still_needs_inference` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned]` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing]` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient` | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays` | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel` | N | N | N | N | N | N | N | N | N |
+| `explore-1 after four epochs` | P | F | B | B | N | N | B | N | N |
+
+Failed-rung records are grouped only when their displayed words, references, lanes, tree, missing leaves and answer agree. The count is the number of restored reads. No missing kind of word is guessed from its spelling.
+
+
+`test/test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0]`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75]`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views`: rungs 2: fixture declares 3 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index`: rungs 2: fixture declares 3 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`: rungs 2: fixture declares 4 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi]`: rungs 2: fixture declares 2 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor]`: rungs 2: fixture declares 2 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+**`test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`**
+
+Rung 1: definition not trusted, word does not denote one object.
+
+| Count | Record |
+| --- | --- |
+| 3 | `alpha`; 0 alpha: known, minted, row 12, objects [], trusted False; pair [1.0, 0.0]. Tree `alpha`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []} |
+
+`test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`: rungs 2: fixture declares 2 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_intuit.py::test_83_an_unseen_conclusion_still_needs_inference`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned]`: rungs 2: fixture declares 1 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing]`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient`: rungs 2: fixture declares 1 distinct words, fewer than twenty; rungs 3: fixture has no declared name; rungs 4: fixture has no declared name, verb; rungs 5: fixture has no declared determiner, noun, verb; rungs 6: fixture has no declared determiner, noun_modifier, noun, verb; rungs 7: fixture has no declared pronoun, name, verb; rungs 8: fixture has no declared name, verb, verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, noun, verb, verb_modifier.
+
+`test/test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+`test/test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel`: rungs 1,2,3,4,5,6,7,8,9: fixture exercises structure or numeric tensors; no taught text vocabulary.
+
+**`explore-1 after four epochs`**
+
+Rung 2: unknown word, definition not trusted, word does not denote one object, not said back, objects are not distinct.
+
+| Count | Record |
+| --- | --- |
+| 3 | `This`; 0 This: known, minted, row 17, objects [186], trusted True; pair [1.0, 0.0]. Tree `This`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `This` ([None]) |
+| 3 | `is`; 0 is: known, minted, row 21, objects [128], trusted True; pair [1.0, 0.0]. Tree `is`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `is` ([None]) |
+| 3 | `Felix`; 0 Felix: known, minted, row 13, objects [159], trusted True; pair [1.0, 0.0]. Tree `Felix`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Felix` ([None]) |
+| 3 | `.`; 0 .: unknown, minted, row None, objects [], trusted False. Tree `.`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `sleeps` ([None]) |
+| 3 | `What`; 0 What: known, minted, row 18, objects [166], trusted True; pair [1.0, 0.0]. Tree `What`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `What` ([None]) |
+| 3 | `this`; 0 this: known, minted, row 24, objects [192], trusted True; pair [1.0, 0.0]. Tree `this`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `this` ([None]) |
+| 3 | `?`; 0 ?: unknown, minted, row None, objects [], trusted False. Tree `?`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `sleeps` ([None]) |
+| 3 | `That`; 0 That: known, minted, row 15, objects [207], trusted True; pair [1.0, 0.0]. Tree `That`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `That` ([None]) |
+| 3 | `Ciao`; 0 Ciao: known, minted, row 12, objects [172], trusted True; pair [1.0, 0.0]. Tree `Ciao`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Ciao` ([None]) |
+| 3 | `that`; 0 that: known, minted, row 22, objects [214], trusted True; pair [1.0, 0.0]. Tree `that`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `that` ([None]) |
+| 3 | `Here`; 0 Here: known, minted, row 14, objects [220], trusted True; pair [1.0, 0.0]. Tree `Here`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Here` ([None]) |
+| 3 | `Who`; 0 Who: known, minted, row 19, objects [180], trusted True; pair [1.0, 0.0]. Tree `Who`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Who` ([None]) |
+| 3 | `here`; 0 here: known, minted, row 20, objects [226], trusted True; pair [1.0, 0.0]. Tree `here`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `here` ([None]) |
+| 3 | `There`; 0 There: known, minted, row 16, objects [232], trusted True; pair [1.0, 0.0]. Tree `There`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `There` ([None]) |
+| 3 | `there`; 0 there: known, minted, row 23, objects [238], trusted True; pair [1.0, 0.0]. Tree `there`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `there` ([None]) |
+| 3 | `a`; 0 a: known, minted, row 36, objects [384], trusted True; pair [1.0, 0.0]. Tree `a`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `a` ([None]) |
+| 3 | `cat`; 0 cat: known, minted, row 37, objects [389], trusted True; pair [1.0, 0.0]. Tree `cat`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `cat` ([None]) |
+| 3 | `Is`; 0 Is: known, minted, row 35, objects [408], trusted True; pair [1.0, 0.0]. Tree `Is`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `Is` ([None]) |
+| 3 | `A`; 0 A: known, minted, row 34, objects [421], trusted True; pair [1.0, 0.0]. Tree `A`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `A` ([None]) |
+| 3 | `lives`; 0 lives: known, minted, row 39, objects [], trusted False; pair [1.0, 0.0]. Tree `lives`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `lives` ([None]) |
+| 3 | `moves`; 0 moves: known, minted, row 40, objects [], trusted False; pair [1.0, 0.0]. Tree `moves`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `moves` ([None]) |
+| 3 | `sleeps`; 0 sleeps: known, minted, row 41, objects [], trusted False; pair [1.0, 0.0]. Tree `sleeps`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `sleeps` ([None]) |
+| 3 | `eats`; 0 eats: known, minted, row 38, objects [], trusted False; pair [1.0, 0.0]. Tree `eats`; missing []; kept {'references': [None, None, None], 'open_references': [], 'children': []}; answer `eats` ([None]) |
+
+`explore-1 after four epochs`: rungs 3,4,7: lower rung has not passed; rungs 5: fixture has no declared determiner; rungs 6: fixture has no declared determiner, noun_modifier; rungs 8: fixture has no declared verb_modifier; rungs 9: fixture has no declared determiner, noun_modifier, verb_modifier.
+
+### 59.76 Final sweep diagnostics: inverse transport and two test ports
+
+The diagnostic sweep reached 7,257 of 7,259 selected tests, including
+both stopping gates, before being interrupted to finish the five failures
+below and rerun on the completed source. It is not the final sweep.
+
+1. `test_reading_curriculum.py::test_native_four_word_inverse_follows_composed_children_without_free_decoder[admitted-objects]`
+   failed on 418 of 2,880 coordinates, maximum difference .2384058237.
+   The saved failure stream fails with either bind containment. A selected
+   `part` reads an object's value in place of a direct word leaf. The
+   existing inverse discrepancy transport in
+   `DerivationReconstruction.reconstruct` handled an intermediate child,
+   but explicitly excluded a leaf. Thus the first word (with an intervening
+   bind node) was transported, and the later direct leaves were not.
+   The audit now transports a leaf when its recorded
+   `operation_resolved` witness says that its operand was replaced. The
+   producer is `program.leaves`, never the scored target. `inverse_step`
+   and the training path are unchanged. The new
+   `test_reconstruction_magnitudes.py::test_selected_reference_at_a_word_leaf_transports_inverse_error_not_the_target`
+   fails before the repair and passes after: it retains a nonzero root
+   error, its unit gradient, and independence from the scored target.
+   The original assertion is unchanged. The saved native failure stream
+   now passes both containment variants: **2 passed in 3.60 s**.
+2. All three cases of
+   `test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them`
+   now receive the real leaf orders from `commit_reading`: (1,0,1).
+   The existing class-close rule therefore keeps two occurrences of the
+   order-one class, both at zero trust. The old assertion of no occurrence
+   is ported to two zero-trust occurrences with that exact class referent;
+   the relations address those occurrences. Every independent-pair,
+   zero-evidence, parent-to-child, no-open-slot and detached-read assertion
+   stays. The eight conceptual coordinates of this fixture have no time
+   band; its helper uses STM0, of the same width and capacity, under
+   §17.15 and the already accepted fixture rule of §23. It no longer
+   presents those coordinates as an LTM0 time band. No writer changes.
+3. `test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse` reported
+   unlisted reads, not a cross-lane collapse. Its explicit census now
+   includes `ClauseJournal._finish_clause` (the moved journal body) and
+   `Comprehension.Evaluation.leaf` (the conversion's recorded evidence).
+   The former takes each lane's minimum over words independently; the
+   latter passes the pair to interpretation. The AST checker and its
+   mutation assertions are unchanged.
+
+The repaired/ported files, original inverse and live-reference tests,
+unsigned certificates, item-55 mechanisms and both stopping gates give
+**225 passed, 1 skipped in 37.39 s**. No expected-failure mark is added.
+
+### 59.77 Correction of the unintended form-only bind change
+
+On reading §68.65, I confirmed that §59.71 had also changed the start
+of the comparison for a bank with an interpreter but no meaning pairs.
+That was not part of §59.70's question. It allowed binding by forms,
+contrary to the existing meaning-only contract. I have removed that
+extra change: `ReferenceContext.prepare_operands` again takes
+`mereology.percept_event_width` whenever that mereology exists, else
+zero. Exclusion of the declared place/time band stays; the values and
+references returned stay unchanged. This is a correction of my added
+condition, not a new decision about what the menu should read.
+
+`test_unsigned_coordinates.py::test_bind_bank_with_form_only_interpreter_offers_only_dummy`
+uses identical forms. It fails with the extra condition (two valid
+alternatives) and passes without it (only the dummy). The existing
+both-layout and live-reference certificates pass too. No test requires
+the changed start.
+
+The cause in §59.70 is corrected: the signed bands already exposed the
+comparison once the slot retained the word's identity. `STMChunks.refresh`
+looks for an off-stack entry of the same identity and timeline; a word
+with no such entry keeps its own value and occurrence bands. It still
+refreshes a word if such a matching off-stack entry actually exists.
+The unsigned encoding was not the producer of that change.
+
+The lesson has a meaning block: its measured form width is **360** and
+meaning width **32**. Its comparison starts at 360 before and after this
+correction, so §59.74's lesson is unaffected by the restored start.
+The inverse audit repair above has no production caller; its shared
+`inverse_step` used by training is unchanged. The three file groups and
+full sweep are nevertheless being run again on the completed source.
+
+The final source at the start of those runs is
+`e3936d459c868e0e472ada88023ed3d0609b4d0dd63c5dd45c41a799ace1bbb7`
+(1,218 source files). §68.65's separate question about reading the word
+versus its staged object in the menu is not implemented. The read,
+chooser, order filter and exclusions are unchanged by this correction.
+
+### 59.78 Additional read-only findings from the bind review
+
+The passive four-file census uses `test_stm_chunk_gates.py`,
+`test_item25_completion.py`, `test_math_chain.py` and
+`test_live_references.py`. Both HEAD and the returned source pass all
+**77 tests** (73.45 s and 77.42 s respectively). These are separate
+unseeded runs, not a same-stream claim of numerical equivalence. Counts
+include direct menu tests and forced grammar tests as well as native
+reads. A candidate is a populated off-stack seat before containment;
+mention orders are counted once per such candidate. A dummy is excluded
+from “offered” and included in “binds chosen”.
+
+| Read | HEAD | Returned source |
+| --- | ---: | ---: |
+| Menu calls | 286 | 425 |
+| Candidates compared | 1,517 | 2,293 |
+| Content passes | 131 | 259 |
+| Content passes refused by order | 47 | 201 |
+| Real candidates offered | 84 | 58 |
+| Binds chosen, including dummy | 1 | 179 |
+| Real binds chosen | 1 | 1 |
+| Candidates at open mention order (-1) | 418 | 553 |
+| Candidates at mention order 0 | 795 | 1,716 |
+| Candidates at mention order 1 | 289 | 9 |
+| Candidates at mention order 2 | 2 | 2 |
+| Direct calls with no order argument | 13 | 13 |
+
+This supports the review's distinction between containment and order;
+it does not establish a correction for what the menu should read.
+Nothing changes the mention, order filter or chooser for these counts.
+The first diagnostic observer itself raised on a mock rule with no
+`method_name`; that local observer was corrected to permit the mock.
+There was no corresponding production failure.
+
+The additional explicit numerical consumers of occurrence coordinates
+noticed during this review are not phase decoders:
+
+- `ReferenceClose.continuity` takes the sum of componentwise minima of
+  stored `.where` bands as one policy feature. It still does so. The
+  unsigned representation changes that feature; it is not a centered
+  phase overlap. No claim of invariant continuity logits is made.
+- `SubSpace._compute_active` and `set_activation_from_event` use nonzero
+  band norms to mark presence. Present unsigned bands remain nonzero,
+  and the absent all-zero sentinel remains zero.
+- `ReferenceContext.resolve_operand` ranks its bounded candidates by a
+  full-value squared residual and query norm. It has no independent band
+  mask. This existing numerical reference reader is unchanged.
+
+For the `IdentityRows.meet_ratios` call census, the following reads can
+reach occurrence coordinates without `IdentityRows.coordinates` first:
+`ClauseRows.consequents` and `evaluate` when `ChainRead.point` reads an
+occurrence; `MediumTermMemory.merge` for a state/event/percept collection;
+and the percept branch of `MemoryLink.menu` and `link` (the latter's
+containment check), which retain the full point for containment.
+`ReferenceClose.score_order` inherits that full-point read when called
+with the percept coordinate reader. `FieldProjection.stimulate`'s form
+fallback explicitly extends through `percept_event_width`, including the
+band; its two meaning-lane reads start after it. This lists reachable
+columns, not a claim that every such call holds a nonzero occurrence band.
+
+The other calls are confined to their respective contents: ordinary
+`MemoryLink` and `ReferenceClose` reference/grouping reads use
+`IdentityRows.coordinates`; `TimelineRead.case_coverage`,
+`CaseSelection.SelectedCases.coverage`, `CompoundLayer.select_view` and
+`BindingAnswers` slice meaning coordinates; `PartsOfSpeech.value_scores`,
+`ConceptHierarchy.fit` and `MereologicalCodes.collapse` read positions or
+centroids in their declared order; `BasicPercepts.read_points` reads its
+native part/whole boundaries; and `ConceptTrust.observe` uses the carrier
+which zeroes its occurrence band. The bind menu now excludes its declared
+band as described above. None of the additional readers is changed in
+this continuation.
+
+### 59.79 Completed file groups and repeated lesson on the returned source
+
+After §59.77, on source `e3936d459c868e0e472ada88023ed3d0609b4d0dd63c5dd45c41a799ace1bbb7`:
+
+| Required group | Passed | Skipped | XPASS | Failed | Seconds |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 21 files | 270 | 8 | 0 | 0 | 137.77 |
+| 61 files | 840 | 27 | 1 | 0 | 371.82 |
+| 16 files | 183 | 6 | 0 | 0 | 247.01 |
+
+These targeted runs use the eager diagnostic setting. The first sweep
+on this source inherited that setting, `MODEL_COMPILE=none`. I stopped
+it at **3,572 of 7,261** tests (no test failure) and restarted the exact
+requested default command without a compilation override. The interrupted
+run is not the returned default sweep.
+
+The lesson was also repeated on this source, using the same original
+saved random stream, 160 presentations and four epochs. Its field records,
+object choices, deposit records, field-to-idea measurements, 45 assessment
+reads and ladder records are **byte-identical** to §59.74's run. Thus its
+numbers stand: **21/160** exact fields, sentence-mean absolute difference
+**0.20900825535936746**, coordinate-weighted difference
+**0.2189327997790162**, maximum **1**. Occupancies are **52/2346**,
+**113/1239**, **27/610**. The meaning read's MSE is
+**0.009511619061593868**, against centroid **0.010882760184904328**;
+the form figures are **0.023740512973745354** and
+**0.03366334491547605**. With nothing omitted, field MSE/MAE are
+**0.0028679133611149155 / 0.002867916649847757**, and point MSE/MAE
+are **0.037796036052168344 / 0.07700937471818178**.
+
+There are **938** training deposits with the walk's pair and the word's
+own code, **0** fallback pairs, **544** scalar reads with **0** negative,
+and **0** negative deposited coordinates. Of **517** lexical choices,
+**0** have several objects; that aspect is not exercised by this lesson.
+The answer results remain **0/32** in ideas and **0/48** in relations;
+the observed reading producers and the two distinct question traces are
+recorded in §59.74. No learning failure is repaired. Training-step time
+in this repeated run is **516.9002056258032 s**, and elapsed time at the
+last training epoch is **542.0368149579735 s**. The passive census and
+other validation processes were running; these timings are not an
+isolated performance comparison.
+
+The added passive menu census gives:
+
+| Read | Training | 45 assessment texts | Ladder |
+| --- | ---: | ---: | ---: |
+| Menu calls | 2,132 | 438 | 144 |
+| Candidates compared | 12,582 | 2,439 | 1,008 |
+| Content passes | 636 | 188 | 90 |
+| Content passes refused by order | 258 | 131 | 42 |
+| Real candidates offered | 378 | 57 | 48 |
+| Binds chosen, including dummy | 251 | 102 | 0 |
+| Real binds chosen | 50 | 0 | 0 |
+| Candidates at open mention order (-1) | 4,972 | 500 | 84 |
+| Candidates at mention order 0 | 7,585 | 1,939 | 924 |
+| Candidates at mention order 1 | 25 | 0 | 0 |
+
+These include the native training trials. They count the menu during
+the read, not the later closing's reference proposals. The observer
+changes no choice, tensor result or random stream.
+
+§68.67 and §70 arrived during this validation. §70.5 explicitly leaves
+this source, including the uncommitted band exclusion in the menu, in
+place until the first text for the shared match replaces it. The numbers
+above describe that source, not approval of the withdrawn matching
+design. No part of §70's proposed implementation or §60's loop is built.
+
+### 59.80 The completed default sweep and the remaining answer-history port
+
+The default sweep on §59.79's source completed **7,261/7,261** cases in
+**2,165.5269640840124 s**: **6,928 passed, 330 skipped, 2 XPASS, 1 failed**.
+Counts are by unique test node; the runner reports the existing
+`TestOrthogonalFlags::test_flags_match_expected` node four times.
+Both stopping gates passed. The XPASS nodes are
+`test_forgetting.py::test_unforced_grammar_turnover_reports_its_retained_occurrences`
+and `test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`.
+No compilation override or deselection was used.
+
+The failure is
+`test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser`.
+Its old assertion requires two legacy `LTMSlot.COMPLETE` records.
+The saved failing random stream fails on this source (**6.32 s**) and
+passes on HEAD (**8.95 s**). The test's existing seed, two-row batch,
+math configuration and all capacities stay unchanged.
+
+The producer is now traced through capture and closing. At HEAD both
+recorded programs have twelve `None` lexical forms. Tree-first capture
+uses the retained word rows and records their actual staged forms (for
+example `m`, `equals`, `k`, `minus` in the first row); numerical places
+still have no lexical form. Both versions have clause references
+`(-1,25,-1)`, order zero and no relation. The existing
+`ThoughtClosing.closing_question` therefore leaves no opening on HEAD,
+but a lexical referent opening on this source. Its native controller
+records one `begin` and one `finish` for each row, with work one, finished
+true and level zero. `Models.ask` already has an explicit rule that an
+ordinary thought history owns the row: it returns the available answer
+without appending a duplicate legacy parity slot. Neither that rule nor
+the closing/controller is changed for this test.
+
+The assertion is ported under §55.1's tree/meaning separation to inspect
+the actual owner. Each of the two answers must be available. A row with
+no native history still must have its one `COMPLETE` slot. A native row
+must have exactly `begin, finish`, be finished at level zero, and have
+no legacy slot in either the answer or the memory. The existing
+one-iteration, no-forced-closure, no-extra-chooser, numeric-head and
+legacy-knob assertions all remain. This is a test port, not a new
+production path or an expected-failure mark. It passes the saved failure
+stream in **7.44 s**; this file and the episode-memory and spacetime
+files give **28 passed in 14.22 s**. The ported assertion also passes
+on HEAD's unchanged production and fixture on that saved stream
+(**8.73 s**), exercising the retained legacy-slot branch.
+
+The verbal proof in that sweep passes: **4/4** word multisets through
+the grammar inverse and **4/4** through the field reconstruction.
+After the unchanged 400 epochs, printed output loss is **0.1750** and
+reconstruction loss **0.0000**. Its numeric outputs are all **0.5000**;
+this is the verbal reconstruction proof, not evidence of learned XOR
+classification. Its worker took **643.0 s**. The separate numerical
+XOR stopping gate passed.
+
+The only source change after that sweep is this test port. The source
+snapshot is now
+`a6d71b77b3481131db0e313db3ac604172b3b3616c8e05e36460f92274e18815`
+(1,218 files). The lesson and all production code are unchanged from
+§59.79. A new default sweep is running on this manifest so the final
+receipt includes the port; it will also repeat the verbal proof, and
+both results will be reported. No seed is selected for either sweep.
+
+### 59.81 Final protected-place and chart audit
+
+The four protected files `Attention.py`, `ModelAttention.py`,
+`SentenceAttention.py` and `AttentionTraversal.py` are byte-identical
+to HEAD. The complete cumulative edits in
+`Models._run_sentence_word_bricks`, compared with HEAD, are:
+
+- Remove `predict_next_end_state` and `expect_next_meaning` calls;
+  remove the local prediction list and its append/clear; supply the
+  existing `OrderPrime` with `[None] * B`; and remove the prediction
+  argument to `_commit_sentence`. These implement §68.54's removal of
+  the sentence estimate, without giving its readers a substitute.
+- Capture `HeldConcepts.snapshot` after `prepend_symbols`, for
+  comprehension's initial held constituents.
+- Call `IdeaRead.complete` after `ConceptSpread.complete`, for
+  §68.54's owner-only field-to-point teacher and cost.
+
+The complete cumulative edits in the nested `stage_cs_lang` are:
+
+- Activate the word's own staged atoms with the payload's presence and
+  independent pair, and preserve the product's declared occurrence
+  band (§68.64). The band now uses the unsigned codecs Alec approved.
+- Take the lexical leaf's row and order from `concept_rows` and
+  `concept_orders`, when its own word atoms exist; the conceptual fold
+  depth is not the word's order.
+- Remove the early object-valued `InterpretLayer.forward` and
+  `resolve_top_reference`; keep `pushed_word`. The gate refers to the
+  retained word row, and the scope records `concept_ids` rather than
+  object IDs or the retired grammar-object fallback (§55.1).
+- Record the witnesses returned by the existing `STMChunks.refresh`
+  in both ordinary and closing rounds, so comprehension replays the
+  reference actually read (§68.15).
+
+There is no additional edit in either function for the inverse audit,
+the bind correction or the last test port. No first-walk teacher,
+chooser or narrowing-mask change is built.
+
+The chart-file census of §59.65 is completed by the later bind edit:
+`Language.py` adds `when_start` and `occurrence_band` after old line
+11630 (new lines 11629–11631), and passes `percept_band` after old
+line 11706 (new line 11709). These are §59.71's pending band exclusion,
+explicitly left uncommitted by §70.5. The other three reference-witness
+hunks now start at new lines 7182, 11648 and 11831; their content and
+attribution are unchanged. The two removed sentence-estimate lines
+and all `Layers.py` hunks remain exactly as listed in §59.65.
+`MeaningKernels.py` remains byte-identical to HEAD. An AST comparison
+again confirms that `assert_cube`, `GrammarLayer.compose_blocks` and
+`OperationSelectionLayer._stacked_reduced` are unchanged.
+
+### 59.82 Completed return: final sweep, measurements and source
+
+The final **`env -u RUN_TRAINED -u RUN_SLOW make test`** completes
+**7,261/7,261** selected cases, with nothing deselected and no
+`MODEL_COMPILE` override: **6,929 passed, 330 skipped, 2 XPASS,
+0 XFAIL, 0 failed**, exit **0**. Elapsed time is
+**2,020.716515416978 s**; peak aggregate process-tree memory is
+**16,944,842,008 bytes**. There is no compilation-cache retry.
+Counts are by unique selected node, as in §51 and §58; the existing
+orthogonal-flags node emits four passing reports for one case.
+
+| Sweep | Selected/completed | Passed | Skipped | XPASS | Failed | Seconds |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| §51 | 7,234 | 6,894 | 338 | 2 | 0 | 1,960.391055 |
+| §58 | 7,270 | 6,935 | 333 | 2 | 0 | 2,205.829587 |
+| §59, finished source | 7,261 | 6,929 | 330 | 2 | 0 | 2,020.716515416978 |
+
+Both stopping gates pass in this final sweep. Call times are
+**0.3152142079779878 s** for
+`test_mm_xor.py::TestMMXorConvergence::test_convergence` and
+**0.10556249995715916 s** for
+`test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+Neither stopping gate failed during this continuation. The ported
+answer-history test passes in the sweep too (**31.099503458011895 s**).
+Certificate 81 passes in **144.84267941699363 s**, with its unchanged
+200 presentations. The strengthened word-deposit certificate and
+negated-Sigma/all-coordinate certificate pass in **1.2510851660044864 s**
+and **0.7454069590894505 s** respectively. Their failing-before
+qualifications and saved-stream results remain as recorded above.
+
+The final verbal proof again gives **4/4** exact word-multiset
+reconstructions and **4/4** field reconstructions. The unchanged
+400 epochs / 1,600 presentations end with printed output loss
+**0.1750** and reconstruction loss **0.0000**. All four printed numeric
+predictions remain **0.5000** against labels **(0,1,1,0)**, hence MSE
+**0.25** from the rounded predictions. This is not learned numeric XOR;
+the separate numerical stopping gate supplies that proof. The worker
+took **594.7652152091032 s**, peak **4,815,263,384 bytes**. The earlier
+sweep's proof in §59.80 is retained in the record, not discarded in
+favor of this one. The reconstruction counts and printed losses equal
+§58's; its worker took **654.897122 s**, and §51's took **583.8 s**.
+No initialization was selected for either of this continuation's sweeps.
+
+The 160-sentence lesson is the completed production measurement of
+§59.79: **21/160** exact fields, mean absolute difference
+**0.20900825535936746**, occupancies **52/2346, 113/1239, 27/610**.
+The last source change is confined to the answer-history test, so no
+production, configuration, lesson or observer byte changed after that
+measurement. Its comparison with §58 and its field-to-point measurements
+are in §59.74 and §59.79. These are not like-for-like experiments with
+§58 or §51: the sentence estimate is gone, intuit shares expect's map,
+the point read has its own loss, and occurrence coordinates are unsigned.
+The timings above are observations, not an isolated performance claim.
+
+The remaining learning limits are recorded, not repaired:
+
+- **139/160** lesson fields differ; native answer bindings and nonempty
+  answers are **0/32** for ideas and **0/48** for relations. The two
+  distinct kept question readings and their openings are in §59.74;
+  no single producer is claimed for all eighty empty outputs.
+- The final assessment tables in §59.75 contain **32 sources**:
+  rung one passes for **8**, fails for **1**, and is unavailable for
+  **23**. The failing fixture is
+  `test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`:
+  its definition is untrusted, so the rung's one-trusted-object check
+  fails. The lesson fails rung two and blocks its dependent rungs.
+  The complete records and vocabulary limitations are in that table;
+  the ladder still gates no sweep assertion.
+- The two pre-existing non-strict marks remain XPASS:
+  `test_forgetting.py::test_unforced_grammar_turnover_reports_its_retained_occurrences`
+  (unforced grammar/retained-occurrence baseline) and
+  `test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`
+  (the historical top-k reconstruction criterion). No mark is added
+  or changed. No assertion failure remains in this final default run;
+  earlier intermittent failures and their producers remain recorded
+  above, not silently repaired.
+
+The 330 skips are the existing default availability and slow/trained
+guards. This return does not claim those regimes were run. The only
+runner warning is its stale weekly slow-test record. The final fixture
+assessment records agree with the preceding sweep's displayed records;
+their parallel completion order differs.
+
+The final tracked-file AST inventory has **119 modified existing test
+functions, 57 absent old names and 17 added names**. All 119 modified
+names occur in this return. Thirteen absent names are renamed ports;
+the **44 retired contracts** remain precisely those named in §59.66
+under §68.53.1/§68.54.2. Newly added modules are outside these
+tracked-file counts. The additional ports and certificates since that
+inventory are named with their old and new contracts in §59.67–§59.80.
+
+The returned `bounded_tests.source_snapshot`, unchanged through the
+final sweep, is
+**`a6d71b77b3481131db0e313db3ac604172b3b3616c8e05e36460f92274e18815`**
+(1,218 files). Main's HEAD remains
+`572169253059b684b0cb60c1642e206f9eeae0b6`.
+`git diff --check` passes. The protected-place inventory is §59.81;
+the four attention files are byte-identical to HEAD. No bounds, seeds,
+learning rates, capacities or presentation counts were changed to obtain
+a result. Nothing is staged, committed or pushed; receipts remain local
+and are not linked. §70.5's pending bind exclusion remains on this
+uncommitted source. No shared matcher, loop of looks, first-walk teacher
+or other next-round implementation is claimed here.
+
+## 60. Part B, second text: the loop of looks (Claude, 2026-11-16)
+
+§58 and §59 are kept for Codex's returns of §57.6 and §55.3. This text
+starts from the source §59 returns ("the starting source" below).
+
+It builds what Alec decided in §54.6 and §54.7 and confirmed in §55: one
+chooser; every look perceived and conceptualized at its `.where`; at a
+look the grammar's option to call `interpret`; `mint` out of the walk.
+The words in quotation marks are his; a rule marked *default* is
+Claude's.
+
+### 60.1 The rules
+
+**The loop.**
+
+1. *One loop of looks for a sentence.* In
+   `Models._run_sentence_word_bricks`, the perception of every word
+   before composing, the walk finished before the first word
+   (`SentenceNarrowing.for_restore`, `finish_narrowing`), the candidate
+   field built from all the words, and the loop of `read_field` are
+   replaced by one loop. A step of it is one step of the walk
+   (`narrow_step`, one call of `attend`), and what follows from that
+   step (rules 3 to 6) is done before the next.
+2. *The first look is the whole sentence.* It is the open pass as it is
+   (`FamiliarTier.open_sentence`): every word bracket read in parallel.
+   The walk's own readings (`native_word_poles`, the keys, the open read
+   in `stage_input`) stay as they are.
+3. *Every look is perceived and conceptualized.* After a step, the
+   bracket in force at the chosen slot is the look's `.where`
+   (*default*). It is written where perception reads a look's scope
+   (`_passback_scope_where`, which `ModelAttention.handoff` writes today
+   once, after the walk), the native percepts inside it are read
+   (`cs_read_memberships` at that extent), and the concepts of every
+   order are given from them (`cs_forward_content`). This is done whether
+   or not the look holds a word.
+4. *A look's field is a further reading.* The fields of a sentence's
+   looks are kept in order beside the sentence's own field
+   (`_sentence_open_fields`), which keeps its shape; each has its
+   `.where` and `.when` (*default:* a field of their own with one reading
+   for each look, of `attentionBudget` readings at most).
+5. *Attention has no act that accepts a word; at a look the grammar may
+   call `interpret`* (amended by §60.4). The acts of `attend` are `focus`
+   (divide, descend), `unfocus` (rule 11) and the three field acts.
+   `mint` goes and nothing takes its place among them (`MintLayer`, its
+   rule in `data/complete.grammar`, `GrammarPhases.EXAMINATION`). After a
+   look is perceived and conceptualized, and before `attend` is called
+   again, the grammar has its option: where the look is one word read
+   with one lane (the test `narrowing_mask` made for a mint), it may call
+   `interpret` on that word. *Default:* the grammar's own chooser decides
+   it as it decides its other one-operand rules (`score_unary`,
+   `interpret` against abstaining), and the decision is recorded,
+   explored and credited as its other choices are. A word read with both
+   lanes is not offered. A bracket whose word was interpreted is done, as
+   an accepted one is today.
+6. *`interpret` finds the word, and the word joins the tree.* When it is
+   taken, the word is found (*default:* from the sentence's staged bank,
+   which stays where it is staged; moving the lookup itself to the look
+   is not in this text), and if it is found its brick runs then
+   (`forecast_percept`, `perceive`, `symbolize`, `observe_percept`) and
+   `word_step` deposits the word (§55.1, rule 1) and composes. A word
+   never interpreted has no brick, is not composed and is no leaf.
+   *Default:* a word's brick and its forecast are made once, by the
+   first path that finds it, and the other paths reuse them.
+7. *The word forecast is made at the look.* `stage_expectation` no longer
+   forecasts a sentence's words once: `WordExpectation.word_distribution`
+   is taken one arrival at a time, in the order the words are found, each
+   forecast made before its word's brick. Its results keep their places
+   by word (`_word_expectation`, `_word_column`,
+   `_word_expectation_mask`) and its cost keeps its name.
+
+**One chooser.**
+
+8. *`CandidateAttention` goes,* with `SentenceField.place`, the choice
+   and the alternative in `FieldTraversal.select`, the departure in the
+   candidate's choice (`candidates` of `SentenceCredit.departure`, the
+   cost `attention.candidate_departure`), and the field's own allowance.
+   `SentenceField` stays as the record of the words placed: it takes a
+   word when the word is interpreted, and keeps `remember`,
+   `placements`, `full_admission`, `grammar_leaves`, `source_order`,
+   `ordered_reconstruction` and `report`.
+9. *`attend` reads what has been understood.* It is given what
+   `ModelCandidateAttention.context` assembles without the candidates'
+   own support: STM and its slots' places, the gist, the open request,
+   priming, the expectation's prime and the residual of the percept
+   forecast. *Default:* through one linear map to the chooser's width,
+   added to each bracket's key, started at zero from a private generator,
+   so that before any teaching `attend` scores as it does on the
+   starting source.
+10. *The allowance belongs to the presentation.* It is `attentionBudget`
+    for each sentence of the presentation, held by one meter (*default*).
+    The bracket table keeps its size for a sentence.
+11. *`unfocus`.* It puts back the bracket that the last `focus` of this
+    walk divided or entered, costs one act, and is legal while such a
+    focus is in force and none of its words has been interpreted
+    (*default*). *Default:* it takes the address `mint` had, so the menu
+    keeps six acts and `bracket_anchor` its size; that row starts again
+    at zero.
+12. *Paths.* A path that departs in the walk takes the same looks, the
+    same calls of `interpret` and the same word steps up to its
+    departure, and its own after it. The kept path replays its recorded
+    steps.
+
+**The teacher.**
+
+13. *The reading lesson teaches `attend`* (assessment §9.2, with `mint`
+    gone). While `AttentionLesson.reading_lesson` is set and the model
+    trains, the lesson names the first word not yet interpreted. For
+    `attend` the target of a step is the legal `focus` that reaches that
+    word by the fewest acts; no field act and no `unfocus` is a target.
+    For the grammar the target at a look is `interpret` where the look is
+    that word, and abstaining at any other look. Each target is the
+    choice taken, and its cost is the cross entropy of the chooser's
+    probability of it, booked as `attention.reading_lesson` is today. If
+    `interpret` can never be offered on a named word (both lanes), the
+    lesson passes over that word and reports it.
+
+**Removed with these.**
+
+14. The draws that `finish_narrowing` makes and discards; and
+    `_captured_narrowing`, `advance_narrowing` and `narrowing_stable` if
+    the loop no longer calls them.
+15. The search of the surface for each word's bytes in `stage_input`:
+    the spans come from the stem's offsets (`_ar_word_part_offsets`). If
+    a path has no offsets, stop and say which.
+
+**The name.**
+
+16. *`mint` is renamed `interpret` wherever it does not create* (Alec,
+    §60.5). Every occurrence of the word, in `bin/`, `test/`, `data/`
+    and `doc/*.md`, that names the processing of a word at a look (the
+    act that was `mint` and before it `gloss`, its tests, reports and
+    comments, and "minted" said of a word that reached the grammar)
+    becomes `interpret` or "interpreted". An occurrence that names the
+    making of a concept, an object, a row, an identity or a referent
+    stays (`_mint_row`, `concept_mint_count`, `mint_threshold`, a close
+    request whose mode makes a referent, and the like). The plans and
+    benchmarks under `doc/` are records and are not edited.
+
+**Not changed in this text.** `Examination.run` (an input with no words
+to compose) keeps its whole walk at once. `InterpretLayer.mandatory`
+keeps its value, since it also rules the leaf's inverse in generation and
+the closing of references. `Attention.narrowing_mask`'s tests stay,
+apart from the name of what they allow. A span of several words taken as
+one unit is not built. Part A's remainder is not built: `expect` at each
+look, the surprise given to `attend`, and the prior
+(`BracketKeys._codebook_retrieval_prior`), which stays.
+
+### 60.2 Certificates
+
+1. *The first word is composed before the walk is finished.* On a
+   sentence of three known words, the first `word_step` follows fewer
+   calls of `attend` than the walk takes in all. Fails on the starting
+   source.
+2. *Every look has a field.* A sentence's look fields are as many as its
+   first look and its steps, each with its bracket's `.where`; a step
+   that finds no word has one; `_passback_scope_where` holds each look's
+   interval when its perception runs.
+3. *Only interpreted words are composed.* A word never interpreted has
+   no brick call, no `word_step` and is no leaf; a word interpreted has
+   each once in a path.
+4. *The grammar's option is where `mint` was legal.* It is offered at a
+   look of one word read with one lane, and at no other; no act of
+   `attend` accepts a word; `MintLayer` and the rule `mint` are in no
+   menu, no source file and no grammar file.
+5. *One chooser.* No source file names `CandidateAttention`; a
+   checkpoint that holds its weights loads, with those weights retired
+   and named.
+6. *The same acts give the same sentence.* With the map of rule 9 at
+   zero, and the starting source and this one both made to take the same
+   acts on a sentence, reading its words in the order of the text, the
+   kept tree, the meaning and the row written to LTM are equal (atol
+   1e-6). If they differ, the first value that differs is reported with
+   its producer.
+7. *The word forecast is causal in the order found.* The forecast for a
+   word reads only the words found before it; for words found in the
+   order of the text it equals the starting source's.
+8. *The allowance.* In a packed row of four sentences the last sentence
+   takes looks, where the starting source leaves it none.
+9. *`unfocus`.* After a focus, `unfocus` restores the bracket table to
+   what it was, costs one act, and is not legal once a word of the
+   focused bracket is interpreted. The menu of `attend` has six acts.
+10. *A departure replays.* A path departing at step s has the same
+    looks, interpretations and word steps as the first path before s.
+11. *The lesson's targets read every word in order,* in the fewest acts,
+    on sentences of one to six words; a taught step books the cross
+    entropy of its target; a test fails without the teacher.
+12. Both stopping gates pass.
+
+### 60.3 Codex text (follows §59 and the repair of §68.31)
+
+~~~
+Item 1.8, part B, second text: the loop of looks. Read §54.6, §54.7 and
+§60 of doc/plans/2026-11-11-item1-8-last-architecture-round.md first,
+and §68.26 for the terms: the second stage is comprehension, and "the
+meaning" below is what it gives, the sentence's idea. Build rules 1 to
+16 of §60.1 and certificates 1 to 12 of §60.2, on the source that §69
+returned (the replay repair of §68.31, which follows §59).
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Receipts stay local and are not linked. The baseline rule of §43 holds:
+a learning certificate is recorded and not repaired; a mechanism
+certificate must pass; both stopping gates must pass. Do not change a
+bound, a learning rate, a seed, a capacity or a presentation count to
+obtain a pass.
+
+Not in this text: what §60.1 lists under "Not changed in this text";
+the rules 10 to 14 of §12.2 of
+doc/plans/2026-11-14-attention-in-thinking.md; and item 1.7. The four
+attention files and Models._run_sentence_word_bricks are yours to edit
+for these rules.
+
+1. Before any edit, record on the starting source what certificates 6
+   and 7 compare: for the sentences of the lesson's first document, with
+   the walk and the field made to take the words in the order of the
+   text, the acts, the kept tree, the meaning, the row written to LTM
+   and the word forecast.
+
+2. Build the rules in this order, each with its certificates, and keep
+   both stopping gates passing after each: the loop (rules 1 to 7, 12,
+   14, 15; certificates 1 to 4, 6, 7, 10); one chooser (rules 8 and 9;
+   certificate 5); the allowance and unfocus (rules 10 and 11;
+   certificates 8 and 9); the teacher (rule 13; certificate 11).
+
+3. Where a rule marked default in §60.1 cannot be built as written, or
+   a reader needs something the loop no longer provides before the first
+   word (every word's brick, the finished walk, the whole candidate
+   field, the sentence's word forecast), stop and write it for Alec and
+   Claude with your recommendation. Name each reader you changed and
+   what it reads now.
+
+4. Tests of the candidate chooser, of mint, of the walk finished before
+   composing, and of the reading lesson on the candidate field are
+   ported to these rules or retired; list each with its old and new
+   assertion, and what replaces a retired one. The stages reading_two
+   and reading_four of test/attention_curriculum_gates.py are run on the
+   new teacher and their results recorded.
+
+5. Rule 16, the name: go through every occurrence of the word mint
+   (mint, minted, mints, minting, Mint) in bin/, test/, data/ and
+   doc/*.md, not doc/plans or doc/benchmarks. Rename to interpret those
+   that name the processing of a word at a look, with the local name
+   gloss in bin/Attention.py; leave those that name the making of a
+   concept, an object, a row, an identity or a referent. Return each
+   identifier and phrase with the side you gave it and its count; where
+   you cannot tell, leave it and list it for Alec.
+
+6. Measure at each look, and report without making a rule of it: the
+   number of whole properties and of basic percepts that read both lanes
+   at the look's extent (PartSpace against WholeSpace).
+
+7. Run once on the finished source: both stopping gates
+   (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class);
+   the lesson with its exact fields of 160 and its mean difference; the
+   verbal proof; the assessment's tables, with every word found or left
+   and why; for the sixteen lesson sentences the looks, the calls of
+   attend, the words interpreted and the seconds, beside §51.9's; and one
+   default sweep, env -u RUN_TRAINED -u RUN_SLOW make test.
+
+8. Return as §61: the edits by file and function; the readers of step
+   3; each certificate with its result; the tests of step 4; the list of
+   step 5; the measurements of steps 6 and 7 beside those of §59; the
+   sweep; the source snapshot.
+~~~
+
+### 60.4 Alec: no act of attention accepts a word (2026-11-16)
+
+Of "mint leaves the walk", which Alec did not understand, and Claude's
+question whether attention should keep an act of its own that accepts a
+word: "I think mint doesn't add anything; just call attend() again."
+
+So attention only looks: `attend` is called, the look is perceived and
+conceptualized, the grammar has its option, and `attend` is called again.
+Claude's default in the first writing of rule 5, which offered
+`interpret` in the menu of `attend` in the place `mint` had, kept `mint`
+under another name and is withdrawn. Rules 5, 11 and 13 and certificates
+4 and 9 above are amended to this.
+
+Alec, then: "attend() looks, interpret() processes a word (if it can)",
+and "interpret is better than mint(), please". So the act is named
+`interpret` everywhere in this item, and a word that reaches the grammar
+is said to be interpreted, not minted. *(Superseded by §60.5: every
+other use is renamed too, unless it names the making of something.)*
+
+### 60.5 Alec: the rename (2026-11-16)
+
+Asked whether the other uses of the word are renamed too: "rename every
+occurrence unless it actually creates the concept/object/etc". This is
+rule 16 and step 5 of the text. Counted by Claude before writing it: the
+word is in 35 files of `bin/`, 105 of `test/`, 27 of `data/` and 23 of
+`doc/` outside the plans, and most of its identifiers name a making
+(`_mint_row`, `concept_mint_count`, `mint_threshold`, `_mint_field`,
+`mint_frozen_concept`), so they stay.
+
+## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
+
+§61 is kept for Codex's return of §60.3. This section starts from the
+source §61 returns. It has no text for Codex yet: the text differs as a
+whole by the answer to §62.5.
+
+### 62.1 What exists after §60 (read in the source)
+
+- *The percept forecast and the word forecast* are made when the grammar
+  interprets a word, for that word's arrival (§60.1, rules 6 and 7):
+  `PerceptExpectation.forecast`, from the mean and the last of earlier
+  arrivals, and `WordExpectation.word_distribution`. Neither takes a
+  place: each says what comes next.
+- *`expect`* runs once, at the open pass (`ConceptSpread.open_prediction`).
+  Its input is the observed field over the rows of order zero
+  (`_observed_knowing`, the greatest of each lane over the glance's
+  readings, `IntuitionField.observed`), and its output is the expected
+  field over the same rows (`_expected_knowing`). Its teacher is
+  omission: words hidden from the stem before perception, and the cost
+  is the difference between what it expects from the lossy field and the
+  field with them present (`Omission.concept_teacher`,
+  `expectation.concepts`).
+- *The prior of a bracket* (`BracketKeys._codebook_retrieval_prior`) is
+  made once in `stage_input`: each word key's likeness to the codebook's
+  rows, weighted by priming (`priming_weights`, which is one plus the
+  expected field plus desire). `narrow_step` adds it to each bracket's
+  score.
+
+### 62.2 What remains of part A (§12.2, rules 1 to 3)
+
+1. Each look forecasts what will be conceived over its bracket's whole
+   span, then reads it; the difference is the look's surprise. Alec: "every
+   time we look in a new place, we have an expectation about what we will
+   perceive there, and what we will conceive about it", and "yes, we
+   expect the whole .where span".
+2. This takes the place of the prior.
+3. The surprise is a signal to `attend` ("I would provide it surprise as a
+   signal to the attention algorithm"); what `attend` does with it is
+   learned.
+
+### 62.3 The design (Claude's, for §62.5's first answer)
+
+1. *A look's forecast is `expect` with the look's span left out.* Before
+   the look is perceived, `expect` is taken on the observed field formed
+   from the readings outside the look's bracket, and closed upward
+   (`FieldProjection.close`). So it says what should be in this place,
+   given what was seen elsewhere. The place enters by what is left out,
+   which is the form omission already teaches, so `expect` needs no new
+   input and no new teacher.
+2. *The surprise is the difference, both ways.* With the look's field
+   read at its extent (§60.1, rule 3) and the forecast, per row and lane:
+   what was read beyond what was expected (excess), and what was expected
+   beyond what was read (omission), as `gain_field` already splits a word
+   forecast. Both are kept, graded, summed over rows: two numbers for a
+   look.
+3. *At the glance every word bracket gets its surprise* the same way,
+   one `expect` for each word with that word left out. A later look
+   replaces the surprise of the brackets it covers; a bracket of several
+   words has the sum of theirs (*default*).
+4. *`attend` reads each bracket's surprise* through the zero-started map
+   of §60.1, rule 9 (*default*), so that before any teaching `attend`
+   scores as it does on the starting source.
+5. *The prior goes:* `BracketKeys._codebook_retrieval_prior`, its call in
+   `stage_input`, and `local_prior` in `narrow_step`. Priming still
+   reaches `attend` through rule 9 of §60.1.
+6. *Unchanged:* `open_prediction` at the open pass, whose field the
+   readers of `_expected_knowing` read (priming, `rule_order`,
+   `InterpretLayer.preferred_objects`); the teacher of `expect`; the
+   percept and word forecasts at an interpreted word. A look's comparison
+   is reported and is not a further cost (*default*).
+
+*On "This is Felix."* The glance reads four brackets and takes four
+forecasts: `Felix` is forecast from `This`, `is` and `.`, and so on. A
+word the context predicts reads with little surprise, a new name with
+much. `attend` sees four pairs of numbers before its first act, where it
+sees one prior today. A later look into `Felix`'s parts forecasts them
+from everything outside them, the other words and `Felix`'s other
+parts.
+
+*Cost* (not measured). One `expect` for each word at the glance and one
+for each later look. On the lesson's configuration the block of order
+zero has some 2,300 rows. At the production size (about 600,000 rows,
+hidden width 64) one call is about 77 million multiply-adds, and a
+sentence of twenty looks about 1.5 billion.
+
+### 62.4 Certificates, in outline
+
+1. A look's forecast reads nothing inside its bracket: changing what is
+   inside changes the look's field and not its forecast.
+2. With the forecast equal to the look's field, the surprise is zero on
+   both lanes; an unexpected word gives excess, an expected word that is
+   missing gives omission.
+3. At the glance every word bracket has a surprise, and a later look
+   replaces the surprise of exactly the brackets it covers.
+4. With the map of §60.1, rule 9, at zero, `attend` scores as on the
+   starting source less the prior; the prior is in no source file.
+5. Both stopping gates pass.
+
+### 62.5 For Alec: where a look's forecast comes from
+
+*Recommended: from everything seen except the look's place* (§62.3). It
+forecasts "there", as you put it, uses the teacher `expect` already has,
+and works for a look at any place and in any order.
+
+*The other choice: from what has been understood so far.* `expect` is
+taken on the field of the words the grammar has interpreted and nothing
+else, and forecasts what comes next, with no place. This was Claude's
+default 2 of §54.4. It is causal (it never sees the glance), and read in
+order it forecasts the next word; read out of order, its forecast is not
+about the place looked at.
+
+*Answered (Alec, 2026-11-16):* "Yes, span left out". §62.3 stands as
+written, and Claude's default 2 of §54.4 (a forecast takes no place) is
+withdrawn.
+
+### 62.6 Codex text (follows §61, the return of §60.3)
+
+~~~
+Item 1.8, part A's remainder: the forecast of a look and its surprise.
+Read §62 of doc/plans/2026-11-11-item1-8-last-architecture-round.md
+first. Build §62.3, items 1 to 6, and certificates 1 to 5 of §62.4, on
+the source that §61 returned.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Receipts stay local and are not linked. The baseline rule of §43 holds:
+a learning certificate is recorded and not repaired; a mechanism
+certificate must pass; both stopping gates must pass. Do not change a
+bound, a learning rate, a seed, a capacity or a presentation count to
+obtain a pass.
+
+Not in this text: a new input or a new teacher for expect, any change to
+the percept and word forecasts made when a word is interpreted, the
+rules 10 to 14 of §12.2 of doc/plans/2026-11-14-attention-in-thinking.md,
+and item 1.7.
+
+1. A look's forecast. Before a look is perceived, take expect (the map
+   ConceptSpread.open_prediction runs) on the observed field formed
+   from the readings outside the look's bracket, in the form
+   IntuitionField.observed forms it, and close it upward with
+   FieldProjection.close. Do not write it to _expected_knowing, which
+   open_prediction at the open pass keeps writing for its readers.
+
+2. The surprise. Compare the forecast with the look's field over the
+   rows of order zero and their closure, on each lane: excess (read
+   beyond forecast) and omission (forecast beyond read), summed over
+   rows, as gain_field splits a word forecast. Keep both, graded.
+
+3. At the glance, take one forecast for each word bracket with that word
+   left out. A later look replaces the surprise of the brackets it
+   covers; a bracket of several words has the sum of theirs.
+
+4. attend reads each bracket's latest surprise through the zero-started
+   map of §60.1, rule 9. Remove BracketKeys._codebook_retrieval_prior,
+   its call in stage_input and local_prior in narrow_step; list every
+   other reader of the prior and what replaces it for that reader.
+
+5. A look's comparison is reported (each look's excess and omission in
+   the sentence's record) and is not a cost.
+
+6. Certificates 1 to 5 of §62.4, each as a test; certificate 1 is shown
+   to fail before item 1. Port the tests of the prior; retire none
+   without naming what replaces it.
+
+7. Run once on the finished source: both stopping gates
+   (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class);
+   the lesson with its exact fields of 160 and its mean difference; the
+   verbal proof; the assessment's tables; for the sixteen lesson
+   sentences the calls of expect, the looks and the seconds, beside
+   §61's; the distribution of excess and omission over the lesson's
+   looks, for interpreted words and for words left; and one default
+   sweep, env -u RUN_TRAINED -u RUN_SLOW make test.
+
+8. Return as §64: the edits by file and function; the readers of item
+   4; each certificate with its result; the ported tests; the
+   measurements of item 7 beside those of §61; the sweep; the source
+   snapshot.
+~~~
+
+## 63. Review of §58 (Claude, 2026-11-16): rule 1 and rule 2 accepted; certificate 5 to be amended
+
+### 63.1 Checked
+
+- The two production edits are where §58.1 says, and nothing else under
+  `bin/` changed: `WholeSpace.property_rows_for_bytes` intersects the
+  bytes' signatures; `SparseLayer._fold_weights` nets each pair on its
+  own row and is the one place every `fold_presence` call reads.
+- The return stops for a question and claims no final measurement. The
+  lesson and sweep it interrupted ran a variant that is now removed.
+- *Recorded:* an old checkpoint keeps its words' old wholes (for
+  example `This` keeps the capital property); no migration is made. A
+  model trained before this repair should be trained again rather than
+  loaded, if its words' readings matter.
+
+### 63.2 The derivative at a zero sum (§58.5)
+
+Codex is right, in Claude's reading. With one signed weight s = w - v,
+the source enters with the positive part of s and the opposite with the
+negative part, and at s = 0 both floors pass their derivatives: the
+derivative with respect to s is g - h. That is the derivative of the one
+signed weight Alec decided (§57.9) and that item 1.7 builds; it is zero
+exactly where the two poles' local derivatives are equal, and nowhere
+else. Choosing one pole to keep a nonzero derivative is a preference
+with no reason, which Codex removed; and the removed preference stopped
+a word in the grounded fixture from learning its negation.
+
+*Recommended amendment of certificate 5 of §57.6:* "The two weights of a
+pair receive gradients of equal size and opposite sign: with g and h the
+derivatives that each pole's weight would receive at zero, the source
+receives g - h and the opposite h - g, at equal weights as elsewhere."
+
+### 63.3 Text for Codex (Alec's word given in §63.4)
+
+~~~
+§58.5 is answered (see §63 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md): keep the
+ordinary signed chain rule; certificate 5 of §57.6 is amended as §63.2
+states. Port test_05_feature_pair_gradients_and_zero_floor to it. Then
+finish §57.6 from its step 3: the certificates, the ports, the
+measurements of step 5 and one default sweep, all on the returned
+source. Append the rest of the return to §58 as §58.8. Then continue
+with the text of §55.3 from that source.
+~~~
+
+### 63.4 Alec's answer (2026-11-16)
+
+Asked whether, at equal weights, a pair's two gradients may cancel to
+zero as Codex recommends, Alec chose "Yes, allow it". Certificate 5 of
+§57.6 is amended as §63.2 states, and the text of §63.3 is to be given
+to Codex.
+
+## 65. Rules 10 to 12 and 14: tables as tensors, and one graph for a sentence (Claude, 2026-11-16)
+
+Rule 13 is built (§53.4). This section writes the rest of part C of
+§12.2 of `doc/plans/2026-11-14-attention-in-thinking.md`. Every rule here
+keeps results equal; none changes what the model does.
+
+### 65.1 What it rests on
+
+- *Where a sentence reads the host now* (§53.2, §53.3, first sentence,
+  80,483 reads): `MereologicalCodes.derive` (29,538), the lookups of
+  `LTM1` (`references` 23,620, `contains` 12,238, `__len__` 3,878), and the
+  close (52,497 by phase). A meaning's own records are about 1,700.
+- *Item 1.5's sandbox* (branch `item1-5-lookups-and-folds`, §7 of its
+  plan `doc/plans/2026-10-30-item1-5-lookups-and-folds.md`). It built and
+  certified bit for bit, on `88694a6269`: `derive` as one scatter per
+  tower over a device table of the feature topology (step 1a); the
+  membership read's binding and the order-zero fold on the device (steps
+  1b and 1c); `LTM1`'s index kept by a sorted insert on `add` in place of
+  a rebuild, and `_witnessed_rows` cached on the structure's revision
+  (step 2). Its measurements: `derive` 50 to 75 times faster, 1,500
+  `LTM1` adds 45 times faster. Main has moved since (`LTM1` and
+  `MediumTermMemory` are now in `bin/Memory.py`; `MereologicalCodes`,
+  `Spaces` and `Layers` are rewritten), so its designs are ported, not its
+  commits.
+- *The capture probe* stops at the first break and cannot go on (§53.5).
+  The first break is `math.isfinite(trust)` in
+  `_incoming_trust_multiplier`, at the entry of the sentence.
+
+### 65.2 The rules
+
+1. *Take the inventory again first,* on the source §64 returns, with the
+   tools of §53; the loop of looks and the tree first change these paths.
+   The order of the work below follows its counts, largest first.
+2. *Rule 12, the tables.*
+   a. `MereologicalCodes.derive` as item 1.5's step 1a: one table of the
+      feature topology on the device, rebuilt on the store's revision, and
+      each tower's forms as one scatter over the rows not yet valid.
+   b. `LTM1`'s index kept by insertion on `add` (item 1.5's step 2), so
+      `_index` never rebuilds by reading every row; `references` and
+      `contains` read for many rows at once where a caller loops over rows
+      (`protected_references`, `stratum`, `retain`, the readers in
+      `EntryRead`, `TimelineRead`, `corpus_lessons`).
+   c. `_witnessed_rows` cached on the revision; and the membership read's
+      binding and order-zero fold on the device (item 1.5's steps 1b and
+      1c), where they are still among the largest.
+   d. Then the next readers in the new inventory, until the close and the
+      preparation no longer lead it, or Claude is asked.
+3. *Rule 11, capacities.* A table keeps the model's constructed size; a
+   full one follows the rules already decided (concepts are kept; a full
+   block warns and an automatic promotion's MTM entry lapses, §48.6). No
+   fixture is shrunk.
+4. *Rule 14, the probe.* The probe lists every break of
+   `Models._run_sentence_word_bricks` and does not stop at the first:
+   `torch._dynamo.explain` (or its equivalent in the installed version)
+   on the sentence, with each break's line, reason and the inventory kind
+   of §53.3.
+5. *Rule 14, the breaks.* They are removed in order of how often they
+   occur, each with its certificate. The entry's check of trust is taken
+   once outside the sentence (the function already accepts
+   `incoming_trust`). A break that is a Python meaning, reference,
+   binding, table, menu or record of a step takes a tensor record with a
+   mask (rule 10), within the model's capacities.
+6. *Rule 10 only as rule 14 needs it.* A meaning's records become tensors
+   where a break requires it, not elsewhere in this text; what is decoded
+   at the kept close stays on the host.
+7. *When a break cannot go without changing results,* it is not
+   approximated: it is listed with how often it occurs and what removing
+   it would change, for Alec.
+
+### 65.3 Certificates
+
+1. *Each table:* the new reading equals the old one on the cases of item
+   1.5's certificates (`test_item1_5_derive.py`,
+   `test_item1_5_memberships.py`, `test_item1_5_lookups.py` on its
+   branch), ported to the merged source with the old reading kept in the
+   test.
+2. *Exact replays:* the lesson's sixteen sentences and both stopping
+   gates, before and after each step, equal in parameters, optimizer
+   state, registered costs, chooser records and random streams, as P1 to
+   P3 of the plan of the `performance` branch.
+3. *The probe:* the list of breaks before and after, and, if one graph is
+   reached, no break and no recompilation across the lesson's lengths and
+   batch sizes.
+4. *The counts:* the inventory before and after, and the seconds of the
+   sixteen sentences (single runs, as §51 reported them).
+5. Both stopping gates pass.
+
+### 65.4 Codex text (follows §64)
+
+~~~
+Item 1.8, part C: tables as tensors and one graph for a sentence. Read
+§65 of doc/plans/2026-11-11-item1-8-last-architecture-round.md first,
+and §7 of doc/plans/2026-10-30-item1-5-lookups-and-folds.md on the
+branch item1-5-lookups-and-folds (git show). Build the rules of §65.2 in
+their order, with the certificates of §65.3, on the source that §64
+returned. The inventory of rule 1 includes comprehension's stack and
+the concepts held in STM (§68.25, §68.28). After rule 1 and before the
+tables of rule 2, build the rules of §65.5 (one record of a read) with
+its certificates, and take the inventory again: it removes reads that
+rule 2 would otherwise only make faster.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Do not merge or check out the item 1.5 branch; read it and port its
+designs. Receipts stay local and are not linked. Every step must keep
+results exactly equal (certificate 2); where one cannot, stop as rule 7
+says. Do not change a bound, a learning rate, a seed, a capacity or a
+presentation count.
+
+Return as §66: the inventory before and after; each step with its edits
+by file and function and its certificates; the probe's list of breaks
+before and after; what remains for Alec under rule 7; the seconds of
+the sixteen sentences; one default sweep,
+env -u RUN_TRAINED -u RUN_SLOW make test; the source snapshot.
+~~~
+
+### 65.5 One record of a read (Alec, 2026-11-17; step A of item 1.6)
+
+Alec decided on 2026-11-17 ("All good", of the four questions of
+`doc/plans/2026-11-17-item1-6-zero-data-movement.md`, section 8) that
+the one form of a sentence's tree is the trace of its read, and that
+this is built with part C. It reverses item 2.0's round 5, where the
+tree pinned in STM0 and STM1 is the authority (`doc/Architecture.md`:
+"A pinned sentence stores word and operator-concept occurrences in STM0
+and ordered pairs in STM1").
+
+*What exists* (read in the source that §59.40 returned).
+`SentenceStrata.capture` writes an occurrence row for each action into
+an STM0 bank and an ordered pair for each application into its STM1,
+and then sets the reading's `actions` and `leaves` to None. From then on
+`Reading.__getattribute__` answers `actions` and `leaves` by
+`Tree.actions()` and `Tree.leaves()`, which rebuild them from the rows
+and pairs each time they are read, through `Tree.forest`, `node` and
+`operator` (`parts.references`); nothing keeps the result. Twelve other
+files of `bin/` then loop over the actions on the host (rule 12 names
+them). In two probes every read of `references` came from there (item
+1.6, section 3.2). The pinned rows have three more users: `MemberRead`,
+which finds a member's point by its address in `strata.banks`;
+`SentenceStrata.read`, which does the same; and `SentenceBoundary`,
+which detaches the banks' `slots`.
+
+*Its place in part C* (Claude's order): after the inventory of rule 1
+and before the tables of rule 2, because what it removes need not be
+made faster. Whether the 23,620 reads of `references` in §53's lesson
+sentence are these walks is not checked; the inventory shows it.
+
+*The rules* (they continue §65.2's numbers).
+
+8. *The trace is the tree.* What a read recorded stays as it was
+   recorded: the actions, each action's operands and result
+   (`operation_values`), its record (`action_records`, which carries
+   each operand's provenance), its references and orders, and the
+   leaves. `Reading.actions` and `Reading.leaves` are those tensors.
+9. *Nothing is pinned for the tree.* `SentenceStrata.capture` writes no
+   occurrence row and no pair for a word or an operator. `Tree` and
+   `CompositionView` answer from the trace: an action's operands by
+   their provenance, and a node's point from `operation_values` or the
+   leaves. A node's address still finds its point: `MemberRead` and
+   `SentenceStrata.read` answer it from the trace (by rule 10 the
+   address is the tree's first name plus the node's action).
+   `SentenceStrata.banks` goes, with its detach in `SentenceBoundary`,
+   if nothing else is written there; `idea_stores` and `recent_stores`
+   stay, and the idea stack keeps the address domain that it takes from
+   the bank today.
+10. *Names are kept.* The clock advances as it does today: one name for
+    each action, then the idea stack's capacity. So a node keeps the
+    address it has today, with no row behind it, and the names of the
+    rows the close writes do not change (the idea shares its tree's
+    index, §68.22).
+11. *The close's marks.* What the close attaches to a node
+    (`_composition`, and what `replace_composition` and
+    `install_extension` write) is kept with the trace's node, by its
+    action or word, for the path, where `STM0.working` holds it today.
+12. *One index of a trace.* Each action's operands, parent, leaves and
+    order are worked out once for a path. The readers that loop over
+    the actions on the host take it: first those a sentence runs
+    (`ClauseJournal`, `Comprehension`, `DerivationReconstruction`,
+    `Extension`, `FormCentroids`, `PartsOfSpeech`, `SentenceCredit`,
+    and `leaf_readings` of `Interpret` and `reference_requests` of
+    `ReferenceContext`, which are given the actions), then the reports
+    (`Assessment`, `GrammarEvidence`, `eval_operators`). Which of them a
+    sentence runs is read here from where each is imported; the
+    inventory of rule 1 settles it.
+13. *If a reader needs something of the pinned rows that the trace does
+    not hold,* it is named with what it reads, and the work stops there.
+
+*Certificates* (they continue §65.3's numbers).
+
+6. *No walk of a pinned tree.* In a sentence no call of `references`,
+   `contains` or `add` on a store comes from `SentenceStrata`'s tree
+   (268 and 1,720 calls of `references` in the probes of item 1.6,
+   section 3.2).
+7. *The same record.* For the lesson's sentences, `Reading.actions` and
+   `Reading.leaves` equal what the starting source's `Tree.actions()`
+   and `Tree.leaves()` give, and the rows the close writes have the same
+   names and values. `Tree.actions()` writes -1 as a word's operation,
+   and as the word of an operation that is not unary; where a recorded
+   row holds something else there, the reading keeps today's value and
+   the difference is listed.
+8. *The counts:* the host reads of a sentence before and after this
+   step, by the inventory of rule 1.
+
+Certificate 2 of §65.3 (exact replays) holds across this step as across
+the others.
+
+### 63.5 Noted in the doc pass, for §58.8 (Claude, 2026-11-16)
+
+Read in the working tree while §63.3 was being built, so it may already
+be done: the forward fold reads the netted weights
+(`SparseLayer._fold_weights`), but two readers of the same matrices read
+the raw ones. `SparseLayer.attribute_presence`, the way back that
+`cs_reverse_presence` uses, still takes `self.values.clamp_min(0)`; and
+`FieldProjection.close` chooses a definition's edges by the raw value
+being above zero. A pair whose source and opposite are equal then states
+nothing forward but is still undone backward, and is still listed as an
+edge. Under §57.6's rule 2 ("Wherever a row is folded") both read the
+netted weights. §58.8 says what each does now.
+
+## 67. The rest of item 1.8, in order (Claude, 2026-11-16; a doc pass)
+
+Every rule of item 1.8 is now written. This is where each part is, in
+the order Codex builds them, and what each one supersedes. A number in
+the last column is reserved for that return; nothing else is written
+there.
+
+| Order | Part | Rules and certificates | Text for Codex | Return |
+| ---: | --- | --- | --- | --- |
+| 1 | The two producers of a word's lanes | §57.6, certificate 5 amended in §63.4 | §57.6, then §63.3 | §58, §58.8 |
+| 2 | The tree first, then the meaning; with it, expectation as the field map and the read to a point | §55.1, §55.2, as amended by §68.11, §68.13, §68.14, §68.19, §68.22, §68.24 and §68.26; and §68.53 | §55.3, continued by §68.15, §68.20, §68.25, §68.28, §68.34 and §68.54 | §59 |
+| 2b | The thought replay | §68.2, §68.31 | §68.31 | §69 |
+| 3 | The loop of looks (part B), with the teacher (part T) and the rename | §60.1, §60.2, as amended in §60.4 and §60.5 | §60.3 | §61 |
+| 4 | The forecast of a look and its surprise (part A) | §62.3, §62.4 | §62.6 | §64 |
+| 5 | Tables as tensors and one graph for a sentence (part C), with one record of a read | §65.2, §65.3, §65.5 | §65.4 | §66 |
+
+Then Claude reviews each return; Alec pushes; item 1.7 follows (its
+rules in one place: §19 of `doc/plans/2026-11-14-sigma-pi-layers.md`).
+
+**Where §12.2 of `doc/plans/2026-11-14-attention-in-thinking.md` went.**
+Rules 1 to 3: §62. Rules 4 to 9: §60 (rule 6's reading in order is the
+teacher of §60.1, rule 13; rule 8 is §60.1, rule 15; rule 9 is §60.1,
+rule 11). Rule 13: built (§53.4). Rules 10 to 12 and 14: §65. The
+teacher of the first walk (assessment §9.2): §60.1, rule 13, with `mint`
+gone (§60.4). The narrowing of a word read with both lanes (assessment
+§11): its producers are repaired by §57.6; if §58.8 still shows a word
+read with both lanes at its own extent, it comes back to Alec before
+§60.3.
+
+**Superseded in passing.** §54.3, step 3, by §54.6; §54.4's default 2 (a
+forecast takes no place), by §62.5; §54.5's choice, by §54.6; §55.3's
+first form, by its return to §59 and the start from §58's source; the
+first form of §57.6's rule 2, by §57.8; §57.7's reading, by §57.8.
+
+## 68. Review of §58.8 and §59 (Claude, 2026-11-17)
+
+### 68.1 §58.8: accepted
+
+- *Checked in the diff.* Rule 1: `WholeSpace.property_rows_for_bytes`
+  intersects the bytes' signatures. Rule 2 is in one place,
+  `SparseLayer._fold_weights`, and certificate 5 is as Alec answered in
+  §63.4 (at equal weights the source gets g - h and the opposite h - g).
+  The two readers of §63.5 (`FieldProjection.close`,
+  `SparseLayer.attribute_presence`) and a third Codex found
+  (`ConceptualSpace.cs_percept_attribution`) all read the netted weight.
+- *Results.* Every word of the 45 assessment texts is read at its own
+  span (139 of 139), each as (1, 0) from its word row and none from an
+  object. The default sweep has no failure; both stopping gates pass.
+- *Unchanged, not a regression:* the lesson's answers, 0 of 32 and 0 of
+  48 (0 of 80 in §49). *New:* the understanding and the generated fields
+  differ on all 160 presentations (mean 0.24). This is the baseline the
+  tree first is measured against.
+- The five ported tests keep their assertions; accepted.
+
+### 68.2 A defect newly reached (§58.8.5), for Alec
+
+`Thoughts.replay_thoughts` keeps the greatest of the earlier conclusions
+under one key of references for the whole episode;
+`ThoughtChunks._write_serial` combines an inference with what STM holds
+now. An `exist` between two inferences replaced the held chunk, so the
+replay and the record disagree, at a conclusion with no references. The
+thought files are unchanged since `5721692530`; the repair's new
+trajectory reaches the defect in one slow fixture
+(`test_90_present_percept_is_said_by_its_class_without_naming_an_object`,
+an expected failure at its bound before). Codex recommends that the
+replay follow the recorded held alternatives, and that whether an empty
+key may identify a conclusion be looked at. Not in the queue of §67;
+*default:* its own small text after the queue's order 2, unless Alec
+says otherwise.
+
+### 68.3 §59.2: no spread from a word to its objects
+
+Codex confirms what §55 noted: `prime_seen` registers the rows open at
+the start of a sentence, and nothing reads `_priming_seen`'s values; no
+code walks `definitions.objects`. So rule 3 of §55.2 has to be written.
+Alec's words (§55): "The act of finding the word will prime the concept,
+which will cause the object to be primed also"; and "the object a leaf
+takes is the highest order one, or the one determined by (primed)
+context".
+
+*Default* (Claude, put to Alec): when `interpret` finds a word, the word
+is primed by its reading, and each of its objects
+(`definitions.objects`) by that reading times the definition's weight.
+The priming is kept in `_priming_seen`, with its decay.
+`InterpretLayer.preferred_objects` reads, in place of the expected lane
+alone, the sum of the expected field (`_expected_knowing`) and that
+priming. Graded and summed; no threshold.
+
+### 68.4 §59.3: `compound` reads a case view
+
+`CompoundLayer.compose_from_grammar_context` reads the case view that
+`LanguageSpace.compose_step` builds from the open `CaseFlow` state and
+the reference bank's cases; no record keeps it. Codex recommends that
+the conversion keep the compose path's case bank once per path, and
+rebuild each head's case view from the selected objects by the existing
+`CaseFlow` selection, within the existing capacity. Claude agrees: the
+view is part of the operator's input, so this applies the operator to
+the objects, as §55 has it. Copying `case_values` would copy the word
+tree's result, and dropping the view would change `compound`. Put to
+Alec.
+
+### 68.5 What follows
+
+With Alec's word on §68.3 and §68.4, §55.3 continues from its step 4
+on the source §58.8 returned, with those two rules added; the return
+stays §59. No text is written before his answer.
+
+### 68.6 Alec's answers (2026-11-17)
+
+On §68.3: "Word priming spreads to object by first priming the meta
+concept." On §68.4: "Ok".
+
+So rule 3 of §55.1 now reads, with Claude's defaults marked:
+
+1. *The route.* Finding a word primes the word; the word primes each of
+   its meta concepts; each meta concept primes its object. The meta
+   concept of a word and an object is the definition row
+   `InterpretLayer.define` writes, an `LTM1` row of `alloc.parts` (sigma-pi
+   §18.22 and §18.23 name it so).
+2. *How much* (*default*). The word is primed by its reading (its for
+   lane at its span). Each of its meta concepts is primed by that
+   reading times the definition's evidence, for less against. The object
+   is primed by the same amount its meta concept received, so an
+   object's priming is the sum over the meta concepts that name it,
+   whichever words primed them. Graded and summed; no threshold.
+3. *Where it is kept* (*default*). The word and the object on
+   `_priming_seen`; the meta concepts on a ledger of the same kind over
+   `LTM1` rows, for each stream. `LTM1.activity` is not used: it is
+   forgetting's record of access, kept across streams. Reading a
+   definition's evidence for priming does not mark it accessed.
+4. *How long* (*default*). Priming adds up within the sentence and
+   decays where `prime_seen` decays it now, once at each sentence's
+   opening, the meta ledger with it.
+5. *Who reads it.* `InterpretLayer.preferred_objects` reads, in place
+   of the expected lane alone, the expected field (`_expected_knowing`)
+   plus the object's priming; its order of keys is otherwise unchanged.
+   It is read at the conversion (rule 5).
+
+Certificate 4 of §55.2 reads: finding a word raises its row, each of its
+meta concepts and each of their objects on the surfaces above, by the
+amounts of point 2; a word not found raises nothing; and for a word
+with two objects and equal expectation, the object whose meta concept
+another word of the sentence also primed is preferred at the
+conversion. Fails on the starting source.
+
+§59.3's case view, decided: the conversion keeps the compose path's case
+bank once for each path, and rebuilds each head's case view from the
+selected objects by the existing `CaseFlow` selection, within the
+existing capacity; the bank is part of the recorded witness of rule 4.
+
+### 68.7 Codex text (continues §55.3)
+
+~~~
+Item 1.8, part B, first text, continued. Read §59 and §68 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md; Alec has
+answered §59's two questions (§68.6). Continue the text of §55.3 from its
+step 2, on the source §58.8 returned, with these changes:
+
+- Step 3 (amended by §68.8): build nothing for rule 3, add no priming
+  ledger, and leave InterpretLayer.preferred_objects reading the
+  expected field as it does; certificate 4 of §55.2 is not built.
+- Step 4: the conversion keeps the compose path's case bank once for
+  each path and rebuilds each head's case view from the selected objects
+  by the existing CaseFlow selection, within the existing capacity
+  (§68.6). Any other operator whose forward reads something besides its
+  operands and its recorded witness still stops you, as step 4 says.
+
+Everything else in §55.3 stands: what is not in the text, the baseline
+rule of §43, steps 5 to 8, and no commit or push (never push main, and
+never force-push). Receipts stay local and are not linked.
+
+Return by continuing §59 from §59.4, with what step 9 of §55.3 asks.
+
+### 68.8 Correction to §68.6 (Alec, 2026-11-17)
+
+Alec: "Your write up of priming spread was not expected. We already have
+propagation of priming vertically in order to share structure between
+vertical layers. Or we had that when we had folds... I was describing
+what should already exist".
+
+*Withdrawn:* points 2 to 4 of §68.6 (the amounts, a new ledger over
+`LTM1` rows, the decay), the change to `preferred_objects` in point 5,
+and §68.6's form of certificate 4. They were a mechanism Alec did not ask
+for.
+
+*What the record says should exist.* §3.18, Part A (approved 2026-11-12):
+expectation by going up to containers and down to their missing members.
+§48.11.4, answer 2: the meta concept of a word and its object "is primed
+and primes, up and down, like any concept" (Alec: "it should happen on
+meta concepts also"). §48.11.3, point 3: the spread of activation goes
+both ways between orders.
+
+*What the source has* (Codex, §59.2; Claude, reading
+`bin/ConceptSpread.py`). Expectation is the stack taught by omission, over
+the rows of order zero alone. `FieldProjection.close` folds definitions
+upward only. A word's naming record (word DEF object: the `LTM1` row
+`InterpretLayer.define` writes) is kept out of the folds (`DefinitionFold`
+skips a row whose whole is a word: "Naming records provide provenance,
+never membership"; Alec, 2026-09-29: "I would not expect to create a fold
+just to unite word and object"). A definition between concepts is in
+the folds: "balloons are rubber" is kept as an `LTM1` part row of balloon
+under rubber, one order apart (`class_member`), and `DefinitionFold`
+teaches its edge from it (read in the source, not run). The one spread built,
+`Priming.propagate` (2026-10-27 to 2026-11-06), spread by place, not
+through definitions. So nothing carries priming up and down between
+orders today.
+
+*How it was lost.* §30.8 left the pass of §3.18, Part A, out of round B
+("Expectation is the stack"), by Claude's default, and §48.11.3 then
+spoke of the spread both ways as if it were built. Claude's error.
+
+*Rule 3 of §55.1 now reads:* finding a word primes it; the priming goes up
+to its meta concepts and down to their objects, by the vertical spread of
+§3.18, Part A, and §48.11.4, which is still to be built; nothing else is
+added for it. Until then `preferred_objects` reads the expected field as
+now, and certificate 4 of §55.2 is not built. §68.7, step 3, is amended
+to this.
+
+*For Alec: where the vertical spread is built.* Recommended: in item
+1.7, on the cycle that replaces the folds; up through each order's Sigma
+and Pi, and down by the way back of rule 17 of sigma-pi §19.2 (*Claude's
+reading, not checked*). Or now, in item 1.8, as §3.18, Part A, on the
+folds that 1.7 then replaces.
+
+### 68.9 Codex text, only if §68.7 was given before §68.8
+
+~~~
+Item 1.8, a correction to §68.7: read §68.8 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. Its step 3 is
+withdrawn: build nothing for rule 3, add no priming ledger, and leave
+InterpretLayer.preferred_objects reading the expected field as it does;
+certificate 4 of §55.2 is not built. If you built any of §68.6, points 2
+to 5, remove it and list what you removed. The rest of §68.7 stands.
+~~~
+
+### 68.10 Alec on §68.8 (2026-11-17)
+
+"When word concepts are interpreted, though, we need to create the
+meta-concept structure if it does not already exist. And that wholes
+structure cannot be subject to thinning." And, of §68.8's wording: "I
+don't know what you mean "Word definitions are kept out of the folds". If
+"balloons are rubber" is a definition, then we need the edge that
+"balloon things are a part of rubber things"." That edge exists (§68.8,
+as reworded): what is kept out of the folds is only the naming record of
+a word and its object. The first point is written as sigma-pi §19.10,
+rules 20 and 22 as amended; the question in it is put to Alec there.
+
+### 68.11 Alec: the vertical spread is built in item 1.7 (2026-11-17)
+
+"Build the vertical spread in 1.7". Rule 3 of §55.1 and its certificate
+4 move to sigma-pi §19.11 (rules 23 to 27, certificate 16). In item 1.8
+nothing is built for rule 3 (§68.7, step 3, as amended). §68.8's reading
+that the spread goes down by the way back was wrong: sigma-pi §19.11
+gives the toy and the rule.
+
+### 68.12 Review of §59.4 to §59.6 (Claude, 2026-11-17)
+
+Checked: no part of the withdrawn priming was built (§59.4), and
+nothing in the source changed. §59.5 is a real second way in: before an
+operator's forward, `ReferenceContext.prepare_operands` puts an object's
+value in place of a word's (`resolve_order` for `lower` and for the
+implicit references of `part`, `whole` and `equal`; the reference bank;
+`bind`'s menu, whose chosen idea `BindLayer.forward` returns). Rule 2 of
+§55.1 ("unchanged code") and certificate 3 ("no operator's forward runs
+on an object's value") cannot both hold.
+
+Rule 2 is Claude's default; certificate 3 follows from Alec's "build the
+tree first and then convert to a meaning in one step" (§55). *Recommended:*
+Codex's first option. During the tree, a reference operation keeps the
+word's value; what it chose (the reference, and the order it asked for)
+is recorded as its witness; the referenced value is applied in the
+conversion. For `bind`, the choice among the menu's candidates is still
+made during the tree, and only its value waits. This amends rule 2 for
+reference operations; certificate 3 stands. *The other option:* allow
+these substitutions during the tree, and narrow certificate 3 and rule 2
+to match. Put to Alec.
+
+### 68.13 Alec on §59.6, and the meaning built as the tree grows (2026-11-17)
+
+*Decided.* Alec: "keep the word's value until the conversion." So §59.6's
+first option holds, as §68.12 has it: during the tree a reference
+operation keeps the word's value and records what it chose, with the
+order it asked for, as its witness; the referenced value is applied in
+the conversion; `bind`'s choice among its menu is still made during the
+tree. Rule 2 of §55.1 is amended for reference operations; certificate 3
+stands.
+
+*Alec, then:* "The human mind does understand while processing the
+sentence, but that parallelism would require two trees... actually,
+though, can we build the idea from the corresponding objects as we go,
+but never have to make the word to object substitution?"
+
+*Claude: yes, with one tree and two values at each node.* The tree's
+shape is the program, one sequence of actions. Each node carries the
+word's value, which the tree, the chooser and the readers of words read,
+and its object's value, which the idea reads. Each kept action applies
+its operator to both, with the same witness. A leaf's object value is
+its preferred object's (`InterpretLayer.preferred_objects`) when the word
+arrives; a reference operation's object value is the value it chose. No
+value passes from one side to the other, so nothing is substituted. The
+conversion of rule 4 becomes the same walk taken step by step:
+`Extension.reading` is already a stack machine that applies one action
+at a time in compose order (read in the source), and the idea is that
+machine run as the words arrive.
+
+*What differs from one conversion at the end.*
+
+1. *A leaf's object is chosen when its word arrives;* rule 5 chose it at
+   the end so the whole sentence could change it (certificate 5).
+   *Default:* at the end, a leaf whose preferred object has changed is
+   replaced and the nodes above it are applied again. The final idea is
+   then the one a single conversion at the end gives.
+2. *Cost.* The chooser still compares candidates on the word side only;
+   the object side applies the kept action once. So the operator runs
+   are those of one conversion at the end, plus those on paths that do
+   not complete. Not measured.
+3. *The idea exists during the sentence.* No reader takes it before the
+   end in this item (*default*); rule 6 is unchanged.
+
+Certificate 3 then reads: no value on the word side is ever an object's.
+Certificate 2 compares the idea at the end with the starting source's
+composition, as before.
+
+*For Alec:* build the idea as the tree grows (recommended), or keep one
+conversion at the end. No Codex text is written before his answer; the
+continuation of §55.3 differs by it.
+
+### 68.14 Two stages (Alec, 2026-11-17)
+
+Alec: "Maybe. "Each kept action applies its operator to both values" is
+particularly weird, the meaning of a sentence does not come from the
+words but from the objects that they refer to. Further, those word
+manipulations will affect the cognitive field, which we want for the
+object manipulations. So let's do two stages, and on the meaning of the
+objects when we do the grammar operations at the end of the sentence
+read."
+
+So the idea is not built as the tree grows (§68.13's proposal is
+withdrawn), and §55's two stages stand, with one rule added:
+
+1. *The read.* The grammar builds the tree over words, as §55.1, rules 1
+   and 2, have it.
+2. *The meaning, at the end of the read.* The grammar's operations are
+   applied to the objects' meanings, as §55.1, rule 4, has it.
+3. *Withdrawn* (Alec, §68.18): a rule that only the second stage writes
+   the conceptual field. The field is the concepts' activations.
+
+### 68.15 Codex text (continues §55.3; replaces §68.7 and §68.9)
+
+~~~
+Item 1.8, part B, first text, continued. Read §55, §59 and §68 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md; §68.11 to
+§68.14 hold Alec's answers to §59.6 and since. This text replaces §68.7
+and §68.9. Continue the text of §55.3 from its step 2, on the source
+§58.8 returned, with these changes:
+
+- Step 3: build nothing for rule 3 (it moves to item 1.7, §68.11). Add no
+  priming ledger; InterpretLayer.preferred_objects keeps reading the
+  expected field as it does; certificate 4 of §55.2 is not built.
+- Step 4, compound: the conversion keeps the compose path's case bank once
+  for each path and rebuilds each head's case view from the selected
+  objects by the existing CaseFlow selection, within the existing
+  capacity (§68.6).
+- Step 4, reference operations (§59.5: resolve_order in lower and in the
+  implicit references of part, whole and equal; the reference bank;
+  bind's menu): during the read they run as they do now (§68.16). Each
+  records the reference it chose and the order it asked for as its
+  witness, and the conversion applies that reference to the objects.
+- Certificate 3 of §55.2 is removed (§68.16).
+
+Everything else in §55.3 stands: what is not in the text, the baseline
+rule of §43, steps 5 to 8, and no commit or push (never push main, and
+never force-push). Receipts stay local and are not linked.
+
+Return by continuing §59 from §59.7, with what step 9 of §55.3 asks.
+~~~
+
+### 68.16 Certificate 3 removed (Alec, 2026-11-17)
+
+"Remove cert 3, it's not a problem as long as we have 2 stages."
+
+So §59.6's conflict is gone, and rule 2 of §55.1 stands unamended:
+during the read the reference operations run as they do now, even where
+they put an object's value in place of a word's. What they chose is
+recorded, and the conversion applies it to the objects. *Claude's
+reading:* this replaces the answer recorded in §68.13 ("keep the word's
+value until the conversion"), which was asked under certificate 3.
+§55.2's certificate 3 and §68.15 are amended to this.
+
+If Codex had §68.15 before this amendment: "Read §68.16. Certificate 3
+is removed; the reference operations run during the read as they do now,
+and only record their choice for the conversion. The rest of §68.15
+stands."
+
+### 68.17 Stage one builds the WFF; its ties with Frege (Alec, 2026-11-17)
+
+Alec: "Please also doc that stage one is building the WFF, there are a
+number of nice ties with Frege".
+
+*The two stages, in these terms.* Stage one, the read, builds the
+well-formed formula (WFF): the tree of the grammar's operations over the
+sentence's words, which is the recorded program (§55.1, rules 1 and 2).
+Stage two, at the end of the read, evaluates that formula on the objects
+the words refer to, and its value is the idea (§55.1, rule 4).
+
+*Ties with Frege* (Claude; Frege's works cited from memory; where a tie
+is an analogy, it says so).
+
+1. *A formula language* (Begriffsschrift, 1879). Frege wrote judgements
+   in a concept-script whose form does not depend on what its signs
+   stand for. Stage one writes the sentence as such a formula, in the
+   grammar's operations, before anything is referred to.
+2. *Reference is compositional* (On Sense and Reference, 1892). The
+   reference of a whole is fixed by the references of its parts: a part
+   replaced by another with the same reference leaves the whole's
+   reference unchanged. Stage two computes the idea from the objects
+   alone, so two words that name one object ("the morning star", "the
+   evening star") give that leaf the same value.
+3. *Sense and reference* (1892). Two signs with one reference can differ
+   in sense, the way the reference is presented. *Analogy:* a word's meta
+   concept, which joins the word to its object (sigma-pi §19.10), plays
+   the part of a sense; two words naming one object have two meta
+   concepts and one object. Stage one works on the signs, stage two on
+   the references.
+4. *Function and argument* (Function and Concept, 1891). A function is
+   unsaturated: it has places that an object fills. *Analogy:* an
+   operator of the tree is a function, its places are the argument
+   concepts of round C (sigma-pi §19.9), and stage two fills them with
+   objects.
+5. *The context principle* (The Foundations of Arithmetic, 1884,
+   introduction and §62; cited in `doc/Philosophy.md`): a word has a
+   meaning only in the context of a sentence. Stage two takes a leaf's
+   object at the end of the read, when the whole sentence has had its
+   effect on what is active (§55.1, rule 5).
+6. *The reference of a sentence is its truth value* (1892). *Analogy:*
+   stage two's idea carries its evidence for and against, the model's
+   graded truth (the two lanes).
+7. *Not Frege's idea.* Frege set the subjective idea (Vorstellung)
+   outside logic. The model's "idea" is what stage two produces, an
+   intension with its extension, and is not Frege's Vorstellung.
+
+*For the documentation pass* that lands with item 1.8: the two stages
+go to `doc/Language.md`, and the ties to `doc/Philosophy.md` beside its
+existing citation of Frege (1884). `doc/*.md` is not edited now: another
+pass over those files is uncommitted (`basicmodel-docs`).
+
+### 68.18 No field rule (Alec, 2026-11-17)
+
+"there is no field rule; the field is just the concept activations."
+So §68.14's third point is withdrawn, with step 4b of §68.15 and the
+mentions in §68.16 and §68.17. The two stages are all: the read builds
+the formula over words, and its end applies the formula to the objects.
+And the reason for them, in Alec's words: "We can't avoid touching it,
+thus two stages." The read's operations on words cannot help moving the
+concept activations, so the meaning is made apart from them, from the
+objects, at the end.
+
+If Codex had §68.15 with its step 4b: "Read §68.18. Step 4b of §68.15 is
+withdrawn: there is no rule about which stage writes the conceptual
+field. The rest of §68.15 stands."
+
+### 68.19 Review of §59.7 to §59.10 (Claude, 2026-11-17)
+
+*Checked.* The source snapshot is
+`0c4bb8071672423e28138b54f38d86c01d1e7c52afc0a699bec1a91c92b6fea3`, as
+§59.10 gives it. HEAD is still `5721692530` and nothing is committed. The
+four attention files are unchanged. The stop is the one §55.3, step 6,
+asks for. Run on the returned source (default environment, 4.66 s):
+`test_item18_tree_first.py` gives 1 failed and 1 passed, and the
+word-interpretation test passes its 3 configurations. The failure is the
+one §59.10 saw, still there after the restored head time:
+`Evaluation.operation` gives the Sigma's compose an operand with a
+coordinate of -1.0, and the cube check stops it.
+
+*Felix's 4197 is the leaf's object, not a reference operation's choice*
+(read in the source, not run). For each word the read calls
+`InterpretLayer.reading` (`Models.py`, near line 11498) and stages its
+answer as the word's object (`_ar_word_object_ids`,
+`_ar_word_object_rows`). For a name with no denotation, `reading` keeps
+the name in MTM and returns the pending name's transient identity, on the
+word's own row. The starting source's `stage_cs_lang` then put
+`InterpretLayer.forward` of the word, on that row's atoms, in the slot:
+the exchange that rule 1 removed. So 4197 is the object the starting
+source took for the leaf "Felix", and certificate 2's "the same object
+taken for each leaf" means the conversion takes it at the leaf.
+`Evaluation.leaf` asks only `InterpretLayer.preferred`, which covers
+words with denotations. It gives Felix nothing, so Felix keeps the word's
+value.
+
+*My error.* Rule 5 of §55.1 said "A word with no object keeps its own
+value, as today." That is not today. Today such a word takes a remembered
+denotation if MTM has retained one, and otherwise its pending name in
+MTM, with the value `InterpretLayer.forward` gives on its own row
+(`InterpretLayer.reading` and `referent`). Rule 5 is corrected to this.
+It agrees with Alec's blank object in item 1.7 (sigma-pi §19.10: "if we
+interpret a word without an object, we must create a blank one").
+*Claude's reading:* when item 1.7 builds the blank object, it takes the
+pending name's place here.
+
+*On Codex's recommendation.* Codex is right that the conversion must not
+infer a reference operation's substitution from what closing writes into
+the tree. But Felix's operand was not substituted by a reference
+operation: §59.9 found no candidate in the bank, and the typed entries
+were -1. §68.15 asks each reference operation to record its choice where
+it makes it, and the conversion reads that record; no comparison of
+references is needed, before or after closing. Treating 4197 as a chosen
+reference would copy the operand value the read recorded. *Claude's
+reading of §59.9, not run:* on the frozen fixture that value is the
+starting source's, so certificate 2 would pass at this leaf by copying.
+On the new read it is the word's value, so the meaning would still give
+Felix the word's value.
+
+*The occurrence bands.* §59.9's coordinates 352 to 355, and the -1.0 of
+the failing test, are sine and cosine pairs (0.0995 and 0.9950; 0.1951
+and 0.9808; about 0 and -1). `Evaluation.leaf` writes the word's where
+and when bands into the leaf's point. The starting source's operand had
+zeros there for Felix, and the cube kernels take only values in [0, 1].
+The conversion gives its operands their bands where the starting source
+gave them.
+
+### 68.20 Codex text (continues §68.15)
+
+~~~
+Item 1.8, part B, first text, continued again. Read §68.19 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. §68.15 stands,
+with these corrections to your partial source.
+
+1. The leaf (rule 5 of §55.1, as corrected in §68.19). A leaf takes the
+   object InterpretLayer.reading gave its word, chosen again at the
+   conversion without learning: InterpretLayer.referent at that point,
+   and where referent gives the word itself, the pending name the read
+   staged for it (_ar_word_object_ids, _ar_word_object_rows). Its value
+   is computed as the removed call computed it: InterpretLayer.forward on
+   the word's idea and that row's atoms, with the same presence and
+   evidence. Do not write to MTM at the conversion. First confirm, in one
+   line, that for "This is Felix." the read stages 4197 as Felix's
+   object; if it does not, report what does and stop.
+2. The witness. Each reference operation records its choice where it
+   makes it (ReferenceContext.prepare_operands, for resolve_order and the
+   reference bank; the candidate bind takes from STMChunks.bind_menu),
+   with the order it asked for. Evaluation.operation reads that record.
+   It does not decide whether an operand was substituted by comparing
+   references, before or after closing.
+3. The bands. Find where the starting source's operands got their where
+   and when coordinates, give the conversion's operands the same, and
+   name the place in the return.
+   test_item18_tree_first.py::test_1_word_deposit_keeps_its_value_row_and_order
+   still fails on the returned source with an operand coordinate of -1.0;
+   rerun it.
+
+Then repeat certificate 2 from the same frozen source. If a node still
+differs beyond 1e-6, report it as §55.3, step 6, says, and stop.
+Otherwise finish §55.3 from step 5, as §68.15 has it. Never push main,
+and never force-push; commit nothing. Receipts stay local and are not
+linked. Return by continuing §59 from §59.11.
+~~~
+
+### 68.21 Alec on §68.19 (2026-11-17)
+
+*Alec's words.* "1. The blank object is just a random concept vector.
+Perhaps that was not clear. 2. The word stays in the syntax tree. That
+tree is used to operate on a concept vector, which is the idea, also
+stored in STM0. It can also produce a field, which we have talked about
+elsewhere in the operators section. Is the field work still in todo.md
+somewhere ? Every operator should have four methods, as we discussed."
+
+*The blank object* is recorded in sigma-pi §19.10. §59.11 confirms the
+reading of §68.19: 4197 is Felix's pending name, on row 13. §68.19 stands
+for item 1.8: certificate 2 needs the leaf to take today's pending name,
+whose value is the word's own vector. In item 1.7 the blank object takes
+its place, and its value is a random concept vector, not the word's.
+
+*The four methods and the field: built.* Every operator has compose,
+generate, `compose_extend` and `generate_extend` (on the operator base
+class in `bin/Layers.py`). The grammar loader refuses an operator class
+that lacks either extend method (`bin/Language.py`). They landed on
+2026-11-14 (`0a293469c7`, §3.17 as §17 built it) and are documented in
+`doc/Extend.md`. `Extension.reading` walks the formula with
+`compose_extend` to give the field of understanding, and Codex's
+conversion carries the idea beside the same walk (§59.8). `todo.md` has
+no open line for them.
+
+*A gap: the idea is not in STM0* (read in Codex's partial source).
+Before the two stages, the pinned sentence in STM0 held the composed
+values, so the point of its root was the idea. Now its points are the
+words', and the conversion keeps its values in a Python dictionary
+beside the tree (`SentenceStrata.MeaningTree.values`). *Claude's
+default:* the conversion writes the sentence's idea, the value of the
+formula's root, as a row of the pinned sentence's STM0 store. The kept
+close retains and compacts that row as it does the root today. The values
+of the inner nodes are the walk's working values and are not stored. No
+Codex text is written before Alec's word on this default.
+
+### 68.22 Alec on §68.21 (2026-11-17)
+
+*Alec's words.* "1: sorry, near the objects of nearby words is great.
+Pure zero is even better, since magnitude is certainty in that space.
+2. The idea is a tensor in conceptual space, held in stm along with the
+trees, both sharing a common index, so the layout of stm and LTM ideas is
+the same, a tensor in conceptual space plus a few extra fields. Hopefully
+this does not contradict you. 3. A,b,c,d, yes. E nice!"
+
+1. *The blank object starts at zero* (item 1.7; sigma-pi §19.10, with
+   the record it is set beside). "Zero is never a start" in §48.11.4 is
+   Claude's wording, drawn from round C's measurement (§48.11.6), not
+   Alec's; it holds for the starts it names, and the blank object is not
+   one of them.
+2. *The idea in STM: decided,* and it agrees with §68.21's default. The
+   idea is a tensor in conceptual space, held in STM beside its tree and
+   under the tree's index. An STM idea has the layout of an LTM idea:
+   `STM0` already subclasses `LTM0` (`doc/Architecture.md`). So the
+   conversion writes the sentence's idea as a row of STM0 under its
+   tree's index, and the kept close keeps it as it keeps the root today.
+3. *Item 1.7's open points:* decided as recommended (sigma-pi §19.10).
+
+### 68.23 Review of §59.11 to §59.15 (Claude, 2026-11-17)
+
+*Checked.* The source snapshot is
+`ba28f3e006eca34feef91a7a8606d14b561b6f5b044e157b8d290e54547cbebc`, as
+§59.15 gives it. HEAD is still `5721692530`; the four attention files are
+unchanged. §59.11 confirms §68.19: 4197 is Felix's pending name, on row
+13, and This and is are pending names too (4195 and 4196). The stop is
+the one §55.3, step 6, asks for. Run on the returned source (default
+environment), `test_item18_tree_first.py`, `test_word_interpretation.py`
+and `test_reference_close.py` give 4 failed, 35 passed and 4 skipped in
+9.73 s. The failures are the four §59.14 names; the `[aligned]` case it
+lists from an earlier run now passes.
+
+*What the stop shows* (read in the source, and as Codex traced it). The
+operators of the starting source do not read only the leaves:
+
+- At the start of a sentence, `PrependedSymbols.stage` puts MTM's live
+  identities off the stack in STM. These are ideas STM holds.
+- Before each operation, `LanguageSpace.choose_operation` calls
+  `STMChunks.refresh`. An operand that refers to an identity held off the
+  stack is replaced by that identity's idea, as STM holds it then.
+- After an operation, `ChunkJournal.apply` writes back to those ideas
+  (`ChunkJournal.publish`). What the sentence says of an identity joins
+  that identity's idea, and a later operand that refers to it reads the
+  joined idea.
+
+So in Alec's words of §68.22, the operators read and write the ideas held
+in STM beside the tree. In the read these reads and writes now carry the
+words' values.
+
+*For Alec.* What the conversion does with the ideas held in STM.
+
+- *Recommended* (Codex's §59.13, in these terms). The conversion starts
+  from the ideas STM holds when the sentence begins. Where the read
+  refreshed an operand, the conversion's operand is that idea as the
+  conversion holds it at that action. Where the read wrote to an idea,
+  the conversion writes its own result, in the same order. At the end of
+  the sentence the ideas STM keeps are the conversion's, not the read's
+  (*Claude's reading*, from "the meaning of a sentence does not come from
+  the words but from the objects", §68.14). Certificate 2 then compares
+  like with like.
+- *The other way.* The conversion reads only the leaves, and certificate
+  2 is narrowed to exclude the operands that a refresh replaced. What the
+  sentence says of an identity would not reach its idea through the
+  conversion.
+
+*For the next text, whichever is chosen* (no Codex text before Alec's
+answer):
+
+1. *The idea in STM0*, as §68.22 decides; today it is a Python dictionary
+   beside the tree (`SentenceStrata.MeaningTree.values`).
+2. *A word whose read staged no object row.* The removed exchange was
+   gated by `object_row >= 0`, so such a word kept its own value; the
+   conversion's leaf does the same. This is the case that fails
+   `test_every_read_word_has_a_concept_and_symbol` on `MM_text.xml` and
+   `XOR_grammar.xml`.
+3. *The old contract's test.* `test_every_serial_word_runs_interpret_before_composition`
+   is ported under §55.3, step 7, with its old and new assertion.
+
+### 68.24 Alec on §68.23 (2026-11-17)
+
+"Regarding your previous question, as recommended." So the conversion
+reads and writes the ideas held in STM as the read does: it starts from
+the ideas STM holds when the sentence begins; where the read refreshed
+an operand, the conversion's operand is that idea as the conversion holds
+it at that action; where the read wrote to an idea, the conversion writes
+its own result, in the same order; and at the end of the sentence the
+ideas STM keeps are the conversion's, not the read's. Then: "The
+blocking task is returning text for codex."
+
+### 68.25 Codex text (continues §68.20)
+
+~~~
+Item 1.8, part B, first text, continued a third time. Read §68.21 to
+§68.24 of doc/plans/2026-11-11-item1-8-last-architecture-round.md.
+§68.15 and §68.20 stand, with these additions to your partial source of
+§59.15.
+
+1. The ideas held in STM (§68.24; the stop of §59.13).
+   a. The conversion starts from a copy of the ideas STM holds when the
+      read begins, after PrependedSymbols.stage has put them off the
+      stack.
+   b. The read records, at the action where each happens, every refresh
+      of an operand from an off-stack idea (STMChunks.refresh in
+      LanguageSpace.choose_operation, and at the round's and the
+      closing's end in Models._run_sentence_word_bricks) and every write
+      to an idea (ChunkJournal.publish in ChunkJournal.apply), with the
+      identity and timeline it named. Record them where they happen, as
+      you did the reference witnesses; do not infer them afterwards.
+   c. Where the read refreshed an operand, the conversion's operand is
+      that idea as the conversion's copy holds it at that action. Where
+      the read wrote to an idea, the conversion writes its own value to
+      its copy, in the same order and by the same rule (bind's joined
+      description, the subject's result, the S modifier's earlier
+      event).
+   d. At the end of the sentence, before the kept close, the ideas STM
+      keeps are the conversion's: each value the read wrote to an idea
+      held in STM is replaced by the conversion's.
+   e. If a refresh or a write reads anything other than an idea STM held
+      at the start or one the conversion wrote, name it and stop.
+
+2. The sentence's idea in STM0 (§68.22). The conversion writes the
+   sentence's idea, the value of the formula's root, as a row of STM0
+   under its tree's index, with the layout of an LTM0 idea row. The
+   readers of the meaning read it there, and the kept close keeps it as
+   it keeps the root today. The values of the inner nodes are the walk's
+   working values and are not stored in STM. Report what
+   SentenceStrata.MeaningTree still holds after this, and for which
+   reader.
+
+3. A word whose read staged no object row. The removed exchange was
+   gated by object_row >= 0, so such a word kept its own value; the
+   conversion's leaf does the same. This is the case of
+   test_every_read_word_has_a_concept_and_symbol on MM_text.xml and
+   XOR_grammar.xml.
+
+4. Port test_every_serial_word_runs_interpret_before_composition under
+   step 7 of §55.3, with its old and its new assertion, and rerun
+   test_item18_tree_first.py::test_1_word_deposit_keeps_its_value_row_and_order.
+
+Then repeat certificate 2 from the same frozen source. If a node still
+differs beyond 1e-6, report it as §55.3, step 6, says, and stop.
+Otherwise finish §55.3 from step 5, as §68.15 has it: the reader list,
+certificates 1, 2, 5 and 6, the ported tests, the runs of step 8 and the
+sweep. In Models._run_sentence_word_bricks list every edit. Commit
+nothing; never push main, and never force-push. Receipts stay local and
+are not linked. Return by continuing §59 from §59.16.
+~~~
+
+### 68.26 Alec: concepts and the idea; comprehension, not a conversion (2026-11-17)
+
+*Alec's words.* "Let's adopt the convention that concepts are parts of a
+sentence (generally); an idea is reserved for the vector in concept all
+space that corresponds to the sentence. So I don't think a conversion is
+necessary, we can build the sentence as a tree, which will help verify
+our correctness, and leave it filled with word concepts, which is the WFF
+in the syntactic form. The second phase is comprehension, not in the
+tree; we can just execute the tree on a small stack, doing shift-reduce
+as the tree suggests, and that will happen on object-concepts. The
+resulting idea, or relation between ideas, or chained phrases that
+reference each other (he said(she said(hello))) that are unreducible get
+written to LTM as the semantic memory (and relata). STM should also store
+a scattering of the high-entropy word concepts as episodic memory."
+
+1. *Terms.* A concept is a part of a sentence, generally. An idea is the
+   vector in conceptual space that corresponds to a sentence. So what
+   §68.22 to §68.25 called the ideas held in STM (MTM's identities, put
+   off the stack, and what a sentence says of them) are concepts held in
+   STM. The idea is the sentence's.
+2. *Two stages, renamed.* Stage one, the read, leaves the tree filled
+   with word concepts: the WFF in its syntactic form. Stage two is
+   comprehension, and it is not in the tree. It executes the tree's
+   actions on a small stack, shifting and reducing as the tree has them,
+   on object concepts. What it gives (the idea, or relations between
+   ideas, or chained phrases that refer to each other and cannot be
+   reduced, as in he said (she said (hello))) is written to LTM as
+   semantic memory, with the relata.
+   *Claude's readings.*
+   a. Codex's `Evaluation` stack (§59.8) is this. What goes is what puts
+      comprehension in the tree: `SentenceStrata.MeaningTree`, with its
+      values and metadata at the tree's nodes, and the copy of the
+      program with converted values.
+   b. The extension (`compose_extend` over the same actions) is part of
+      comprehension, on the same stack.
+   c. What comprehension leaves on its stack is what the closing writes
+      (`_commit_sentence`), so no new writer is needed.
+   d. The idea's row in STM0 beside its tree (§59.18) stays (§68.22).
+3. *Episodic memory in STM* (not in the text of §68.28; to be specified
+   later, *Claude's default*). What exists: `EpisodicMemory.select`
+   keeps the strongest field readings over all orders
+   (`episodicConcepts`, 4 by default) and writes them beside the
+   sentence's LTM0 row. What Alec adds: STM keeps such an entry too, and
+   it is a scattering of the high-entropy word concepts. *Open:* what
+   the entropy measures (*Claude's reading:* a word's surprise against
+   what was expected of it), how many, and how STM keeps them.
+
+### 68.27 Review of §59.16 to §59.21 (Claude, 2026-11-17)
+
+*Checked.* The source snapshot is
+`a103f6a282cd6219ae8ad2d8915c214ec1c5cd353da34b15790594bed13a96a8`, as
+§59.21 gives it. HEAD is still `5721692530`; the four attention files are
+unchanged. Run on the returned source (default environment),
+`test_item18_tree_first.py`, `test_word_interpretation.py`,
+`test_reference_close.py` and `test_chunk_journal_origins.py` give 55
+passed and 4 skipped in 11.74 s. The stop is the one §55.3, step 6, asks
+for. The first three sentences now agree at every node, root and role.
+
+*The stop of §59.20.* In the starting source the operand for an object
+of a higher order is a view of it: its meaning, with the form of the
+word that names it here (`InterpretLayer.lexical_atoms`). The
+comprehension took the object's row alone, whose form is zero.
+*Recommended* (Codex's, and Claude's default, since §55.2's certificate
+2 is the old composition moved): read the chosen object through
+`lexical_atoms`, with its observed word and stream, before the tensor
+interpretation; the object's row is not changed and the object is not
+replaced. The form the operand carries is the word's, and its meaning
+is the object's. This agrees with Alec's "The idea itself will hold that
+information in an encoded way" (§48.11.1, of which word to place when
+an idea is said).
+
+### 68.28 Codex text (continues §68.25)
+
+~~~
+Item 1.8, part B, first text, continued a fourth time. Read §68.26,
+§68.27 and §68.29 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md.
+§68.15, §68.20 and §68.25 stand, with these changes to your partial
+source of §59.21.
+
+1. Comprehension, not in the tree (§68.26). The tree stays as the read
+   built it, filled with word concepts; comprehension writes nothing into
+   it, neither values nor metadata. Comprehension executes the recorded
+   actions on a small stack of object concepts. That stack is the ideas
+   and the references that the end of the round copies into LTM0 and
+   LTM1 (§68.29), so its entries have the layout of their rows. Work in
+   place in LTM's stores of ideas and of references if you can. If you
+   cannot (for example, because comprehension also runs for paths that
+   are not kept), say why, and hold the stack in STM0 and STM1, which
+   share LTM0's and LTM1's layout, until the end of the round copies it.
+   Wherever the stack is held, the idea keeps its tree's index (§68.22).
+   Remove SentenceStrata.MeaningTree and the copy of the program with
+   converted values. The closing and the readers of the meaning take
+   what comprehension gives: the idea, the roles and the extension, each
+   taken from the stack as comprehension runs, and what is left on the
+   stack at the end. If a reader needs a value the stack no longer
+   holds, name the reader and the value, and stop.
+2. Names (§68.26, point 1). An idea is the vector of a sentence; the
+   parts of a sentence are concepts. Rename what this round added under
+   "idea" that is not a sentence's vector: IdeaJournal and its initial
+   and evaluated "ideas" hold the concepts held in STM (default name:
+   HeldConcepts). Rename MeaningConversion to Comprehension. Leave names
+   that this round did not add.
+3. What comprehension leaves (one idea, or ideas it could not reduce
+   into one, with the references between them) is what the closing
+   writes to LTM0 and LTM1 today (_commit_sentence). Worked in place, it
+   is already there; otherwise the end of the round copies it as it is.
+   Add no other writer. Report how the closing treats a stack with more
+   than one entry at the end.
+4. The stop of §59.20: read the chosen object's row through
+   InterpretLayer.lexical_atoms, with its observed word and stream,
+   before the tensor interpretation. Do not change the object's row or
+   replace the object.
+
+Not in this text: the episodic memory of §68.26, point 3.
+
+Then repeat certificate 2 from the same frozen source. If a node still
+differs beyond 1e-6, report it as §55.3, step 6, says, and stop.
+Otherwise finish §55.3 from step 5, as §68.15 has it: the reader list,
+certificates 1, 2, 5 and 6, the ported tests, the runs of step 8 and the
+sweep. In Models._run_sentence_word_bricks and in stage_cs_lang list
+every edit. Commit nothing; never push main, and never force-push.
+Receipts stay local and are not linked. Return by continuing §59 from
+§59.22.
+~~~
+
+### 68.29 Alec: the small stack is LTM's (2026-11-17)
+
+"Fine to hand off, but one clarification: "the small stack" is exactly
+the ideas and references that will be copied into LTM0 and LTM1 at the
+end of the round. Feel free to work in place in LTM if possible, since
+it already has idea and reference stacks."
+
+So comprehension's stack holds ideas and references in the layout of
+LTM0's and LTM1's rows, and the end of the round copies them there
+unchanged; or comprehension works in place in LTM's stores. §68.28's
+points 1 and 3 are amended to this. *Claude's note for Codex's
+judgement:* comprehension runs inside the scoring of every complete
+path (`_sentence_path_cost` calls `_sentence_observation`), so working
+in place must not leave the rows of a path that is not kept in LTM.
+
+If Codex had §68.28 before this amendment: "Read §68.29. Comprehension's
+stack is the ideas and references that the end of the round copies into
+LTM0 and LTM1; work in place in LTM if you can, and otherwise hold the
+stack in STM0 and STM1 in the same layout. The rest of §68.28 stands."
+
+### 68.30 A mind without buffers: for the documentation pass (Alec, 2026-11-17)
+
+*Alec's words.* "A final note: consider that STM is in fact a tree that
+might be unfolded in the same process as conceptual recursion, except
+that it uses an activation trace instead of a buffer that gets
+read/written. If we combine that with extension instead of intension, we
+pretty much have a buffer-free mind (it works via activation of
+structures rather than reading/writing contents). This should probably
+be in the architecture section. I don't see a need to go there now, but
+the principle is very friendly biologically. I guess this is in the
+biological plausibility section, where we should also flag what is
+implausible: inverses and backprop."
+
+Nothing is built for it in item 1.8. *For the documentation pass* that
+lands with item 1.8 (with §68.17's), in `doc/Architecture.md`:
+
+- *Where.* There is no section on biological plausibility today. The
+  nearest is "Where the mechanism is deliberately cleaner than
+  cognition", in "Cognitive grounding: dense-perceptual vs
+  sparse-symbolic (2026-07-02)". Its point 2 already says that
+  invertibility "is instrumental (reconstruction, gradient), not a
+  biological claim". *Claude's default:* a section "Biological
+  plausibility" beside it, linked from `doc/Philosophy.md`'s list of
+  discrepancies ("Psychological grounding (2026-09-16)").
+- *What is plausible.* The principle above: STM as a tree unfolded by
+  the same process as conceptual recursion, kept by a trace of
+  activation and not by a buffer that is read and written; and the
+  extension (a field of active concepts) in place of the intension. The
+  mind then works by activating structures, not by reading and writing
+  contents. Beside it: Alec's "intuit and recall dont return" (§48.11.1).
+- *What is not.* Inverses (already point 2) and backpropagation (not yet
+  flagged anywhere in `doc/`).
+
+`doc/*.md` is not edited now: another pass over those files is
+uncommitted (`basicmodel-docs`).
+
+*Alec, then:* "Actually, removing inverses and backprop might be a good
+way forward for both plausibility and optimization." A direction, not a
+decision; nothing in item 1.8 or 1.7 changes for it.
+
+### 68.31 Preparation for the rest of item 1.8 (Claude, 2026-11-17)
+
+Alec: "Please do any prep work necessary for 1.8 and 1.7".
+
+*The queued texts, read against §68.11 to §68.30.*
+
+- §60.3 (the loop of looks): its rules do not depend on how the meaning
+  is made. Two amendments in place: it reads §68.26 for the terms, and
+  it starts from the source of §69, after the replay repair below.
+- §62.6 (a look's forecast): no change. It writes nothing to
+  `_expected_knowing`, the surface that item 1.7's vertical spread
+  writes later (sigma-pi §19.11).
+- §65.4 (tables as tensors): one sentence added. Rule 1 of §65.2 already
+  takes the inventory again; it now names comprehension's stack and the
+  concepts held in STM among its paths.
+
+*The thought replay* (§68.2; queue order 2b; returns as §69). Read in the
+source: `Thoughts.replay_thoughts` keeps, for a whole episode, the
+greatest pair of the earlier inferences under one key of references
+(`conclusions`); the executor combines an inference only with the chunks
+STM holds then (`_write_serial` of `bin/ThoughtChunks.py`), and records
+them in the event as `alternatives`, which the replay also reads.
+*Claude's default:* the executor is the behaviour and the replay is its
+check, so the replay follows the recorded alternatives. Whether a key
+with no references may identify a conclusion is reported, not changed.
+
+~~~
+Item 1.8, a small repair between the first and second texts of part B:
+the thought replay. Read §58.8.5, §68.2 and §68.31 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. Work on the
+source that §59 returned in full.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Receipts stay local and are not linked. Do not weaken or remove a
+validation, and do not change a bound, a learning rate, a seed, a
+capacity or a presentation count.
+
+1. Write the three-event case of §58.8.5 as a test (an inference whose
+   alternatives are (1, 1), then exist, then an inference whose
+   alternatives are (0, 0), all with no references), and show that it
+   fails on the starting source.
+
+2. In Thoughts.replay_thoughts, an inference's replayed pair is its own
+   firings joined with the alternatives its event recorded: what STM
+   held when it ran. The episode's conclusions maximum is not added
+   where the executor did not combine it. If an event of either branch
+   (derivation, intuition_derivation) lacks the alternatives the
+   executor combined, name the event and its writer and stop.
+
+3. Report, with no edit: every place where a tuple of references that
+   are all None is a key that identifies a conclusion or a held chunk
+   (the executor's match by references and role mask, the replay), how
+   often the lesson and the two test_90 curricula reach it, and what
+   would change if such a key matched nothing.
+
+4. Run: the new test; test/test_thought_intuition.py and
+   test/test_thought_infer.py; under RUN_SLOW,
+   test/test_item18_recognition.py::test_90_present_percept_is_said_by_its_class_without_naming_an_object
+   (record its result; a learning result is recorded, not repaired);
+   both stopping gates; one default sweep,
+   env -u RUN_TRAINED -u RUN_SLOW make test.
+
+5. Return as §69: the edits by file and function; the report of step 3;
+   each run with its result; the source snapshot.
+~~~
+
+### 68.32 The record of 2026-11-17, checked (Claude; a doc pass)
+
+Alec, 2026-11-17: "Make sure it's all in the doc, and 1.7". Each
+decision of the day that bears on item 1.8, and where it is. Item 1.7's
+are in §19.21 of `doc/plans/2026-11-14-sigma-pi-layers.md`, which states
+its rules once.
+
+| Decided | Where |
+| --- | --- |
+| §58.8 accepted | §68.1 |
+| The thought replay: its own small repair, queue order 2b | §68.2, §68.31 |
+| The word-to-object spread is built in item 1.7; rule 3 of §55.1 waits for it | §68.8, §68.11; sigma-pi rules 23 to 27 |
+| Two stages; certificate 3 removed; no rule about which stage moves the field; "We can't avoid touching it, thus two stages" | §68.14, §68.16, §68.18 |
+| Stage one builds the WFF; the ties with Frege | §68.17 |
+| A word with no object takes its pending name as its object (rule 5 of §55.1 corrected); the blank object replaces it in item 1.7 | §68.19, §68.21; sigma-pi rule 20 |
+| A reference operation records its choice where it makes it | §68.15, §68.20 |
+| Comprehension reads and writes the concepts held in STM as the read does, and STM keeps comprehension's at the end | §68.24, §68.25 (which say "ideas"; renamed by §68.26) |
+| The idea is held in STM beside its tree, under one index, in LTM's layout | §68.22, §68.25 |
+| Terms: a concept is a part of a sentence, an idea is a sentence's vector; the second stage is comprehension, on a small stack, not in the tree | §68.26, §68.28 |
+| The small stack is the ideas and references that LTM receives; worked in place if possible | §68.29 |
+| The end state of a relative sentence is S R S: a relation (STM1) over two ideas (STM0) | §59.25, in Codex's record of Alec's answer |
+| A higher-order object's operand carries the form of the word that names it (*Claude's default*) | §68.27, §68.28 |
+| A mind without buffers; removing inverses and backpropagation as a direction | §68.30 |
+| The order of what is left | §67, §68.31 |
+
+*Not yet specified.* "STM should also store a scattering of the
+high-entropy word concepts as episodic memory" (§68.26, point 3). It has
+no rule, no certificate and no place in the queue of §67.
+
+*Not yet reviewed.* §59.22 to §59.31, with Codex's question of §59.29
+(the lifetime of arrival candidates). Alec calls the review.
+
+*For the documentation pass* that lands with item 1.8 (`doc/*.md` is not
+edited now: another pass over those files is uncommitted, in the
+worktree `basicmodel-docs`).
+
+| File | What it gains | From |
+| --- | --- | --- |
+| `doc/Language.md` | the two stages: the read builds the WFF over words, and comprehension executes it on object concepts, on a stack of ideas and references in LTM's layout; the terms concept and idea; a relative sentence ends as S R S; a word with no object | §68.14 to §68.19, §68.26, §68.29, §59.25 |
+| `doc/Philosophy.md` | the ties with Frege, beside its citation of Frege (1884), with the references checked | §68.17 |
+| `doc/STM.md` | the idea beside its tree under one index; the concepts held in STM, which comprehension reads and writes | §68.22, §68.24, §68.25 |
+| `doc/Architecture.md` | the same in outline; "A mind without buffers", in the section on biological plausibility that item 1.7's pass adds | §68.30; sigma-pi §19.21 |
+| `doc/Extend.md` | comprehension carries the idea beside the walk that gives the field of understanding | §59.8, §68.21 |
+
+### 68.33 Review of §59.22 to §59.31 (Claude, 2026-11-17)
+
+*Checked.* The source snapshot is
+`e17650b3f5c1e0eadaf2344d7a0b1d5cd3d3e0260301f9c1b8ea3bd6238e5225`, as
+§59.31 gives it. HEAD is still `5721692530`; the four attention files
+are unchanged; `MeaningTree`, `MeaningConversion` and `IdeaJournal` are
+in no file of `bin/` or `test/`. Run here on the returned source
+(default environment): both stopping gates pass (2 passed in 3.08 s),
+which §59.30 had not run; `test_item18_tree_first.py` alone gives 10
+passed.
+
+*A wider run finds more than §59.30's one failure.* The twenty test
+files nearest the change (the tree-first file, word interpretation,
+reference close, arrivals and participants, chunk and sentence journals,
+sentence compose, math chain, reference reconstruction, stored idea
+generation, clause closing, storage, acceptance and scope, part and
+relation closing, and the two end-state files) give 9 failed, 253 passed
+and 8 skipped in 81 s. All nine passed at §58.8, whose sweep had no
+failure.
+
+| Cause | Tests | Where it is raised |
+| --- | --- | --- |
+| (a) The arrival reader of §59.28 | `test_item18_tree_first.py::test_1_word_deposit_keeps_its_value_row_and_order`; `test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]`; `test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats[admitted]` | `TypeError: must be real number, not NoneType` in `ReferenceClose._arrival_constituents`, reached from `pending_names` |
+| (b) A write in place | `test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention`; `::test_native_worked_document_trains_unforced_without_numeric_oracles` | `RuntimeError: Output N of Unbind is a view and its base or another view of its base has been modified inplace`, where `ClauseJournal._finish_clause` stacks a clause's three roles, under `Comprehension.Evaluation.finish` |
+| (c) A fixture with no store | `test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients`; `::test_program_keeps_the_identity_leaf_stamp_before_reference_resolution`; `::test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading` | `'types.SimpleNamespace' object has no attribute 'ltm_store'`; for the third, in `Models._capture_reading_programs` |
+| (d) The old contract, not yet ported | `test_sentence_journal.py::test_identity_admission_uses_the_resolved_stm_order` | the test's own list of expectations is empty: the exchange it watched is removed |
+
+- (a) reaches further than §59.28 says. The word-deposit test passes
+  alone (4 runs of 4) and fails in this run: it depends on the draw, as
+  §59.28 says of the other fixture.
+- (b) is not attributed here. It may be the mutation of a saved
+  intermediate that §59.23 left unattributed.
+- (c) and (d) are ports under §55.3, step 7.
+
+*Accepted.* The relation of a relative sentence held in STM1 over its two
+ideas in STM0, with its test (§59.25, §59.26). The private STM0 and STM1
+of each scored path (`IdeaStack`), with the reason §68.29 asks for:
+comprehension runs for paths that are not kept. `MeaningTree` deleted and
+the word tree left as the read built it. The renames. The word's form for
+a higher-order object, with its test (§68.28, point 4). The report on the
+close: one or three end slots. The five causes of §59.27, each with a
+test that failed before its repair. Certificate 2 on the first document
+is reported as passing for four sentences and seven paths; it is not
+rerun here, since its observer is not in the tree, and the maintained
+test is owed.
+
+*Noted.* The equality residual now reads comprehension's operands
+(`EqualityLearning`); accepted under rule 6 of §55.1, since an equality
+is between objects. Names left over from before §68.26: "conversion" in
+three comments of `bin/` and in three test names of
+`test_item18_tree_first.py`, and "published_idea" in one.
+
+*§59.29, for Alec: the candidates for a name that has no referent yet.*
+(Alec corrected this account; §68.36 has it in his terms.)
+An earlier sentence can leave a name with no referent. At each close,
+`ReferenceClose` offers the present sentence's constituents as
+candidates for it (`_arrival_constituents`). One kind of candidate is a
+single word's object, read inside a sentence that comprehension reduces
+to one idea. By the close that reading has been consumed, and the stack
+holds only what goes to LTM (§68.29). A candidate that is chosen is
+written to LTM as an entry of its own, with the earlier name bound to
+it; one that is not chosen is only scored.
+
+- *Recommended* (Codex's §59.29). Such candidates are kept as concepts
+  held in STM for the trial, until the reference close. A chosen one is
+  written, and the others are dropped with the trial. The stack is still
+  exactly what is written, and today's choices and values are unchanged.
+- *Compute it again.* The close interprets the tree's leaf again, with
+  the object comprehension recorded for it. Nothing is kept. It is a
+  second place where a leaf is interpreted, to be held equal to the
+  first by a certificate.
+- *Restrict the candidates* to the sentence's final ideas and the
+  operands of its relation. A name could then no longer take a word
+  inside an idea as its referent; the menu changes, and with it what is
+  learned.
+
+*Claude's reading, not traced:* item 1.7's blank object ends pending
+names (sigma-pi §19.21, rule 20), which is where these sites come from,
+so the first choice is an allowance for item 1.8's source and need not
+outlive it.
+
+*What does not wait for that answer.* Causes (b), (c) and (d); the
+maintained test of certificate 2; the before and after of certificates 1
+and 5; the leftover names. No Codex text is written while §59.29 is
+open.
+
+### 68.34 Codex text (continues §68.28)
+
+Alec, 2026-11-17: "What text for codex to continue?" It was first
+written without the arrival reader, while §59.29 was open; his
+correction of §68.36 then gave its point 8.
+
+~~~
+Item 1.8, part B, first text, continued a fifth time. Read §68.33 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. §68.15, §68.20,
+§68.25 and §68.28 stand. Start from your source of §59.31.
+
+Read §68.36 as well: it has Alec's answer to §59.29, and point 8 below
+is built on it.
+
+1. Cause (b) of §68.33. Find the write in place behind "Output N of
+   Unbind is a view and its base or another view of its base has been
+   modified inplace" in
+   test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention
+   and ::test_native_worked_document_trains_unforced_without_numeric_oracles.
+   It is raised where ClauseJournal._finish_clause stacks a clause's three
+   roles, under Comprehension.Evaluation.finish. Name the tensor, the view
+   and the write, and repair it at the write; do not detach a value that
+   carries a gradient. Say whether it is the mutation of §59.23 ("a
+   sentence intermediate was mutated before backward"). If it is not,
+   attribute that one as well, or show that it cannot occur on this
+   source.
+
+2. Cause (c). The three tests of test_sentence_journal.py whose stand-in
+   for the model has no ltm_store. Port each fixture to supply what the
+   read now records, with its old and its new form; do not give the
+   source a path for a model with no store. If a test's assertion can no
+   longer be made, say which and why, and stop on that test.
+
+3. Cause (d). Port
+   test_sentence_journal.py::test_identity_admission_uses_the_resolved_stm_order
+   under step 7 of §55.3, with its old assertion and its new one.
+
+4. Certificate 2 as a test in the tree, needing no copy of the starting
+   source: it reads values recorded from that source (for the first
+   document's sentences and paths: the actions, each leaf's object, the
+   point, the roles and the extension's values) and compares
+   comprehension's with them at atol 1e-6. Say what is recorded, where it
+   is kept and its size.
+
+5. Certificates 1 and 5 of §55.2, each shown to fail on the starting
+   source and to pass on yours.
+
+6. Names. "conversion" in the comments this round added to bin/ and in
+   the names of test_item18_tree_first.py's tests becomes comprehension;
+   "published_idea" in a test's name becomes the published concept
+   (§68.26).
+
+7. The reader list of step 5 of §55.3, complete.
+
+8. Cause (a): the arrival reader (§68.36). A sentence's nouns tie to
+   identities in MTM, and what STM holds of those identities is the
+   concepts held beside the tree (HeldConcepts). A constituent that
+   ReferenceClose._arrival_constituents offers, and that comprehension
+   has consumed, is held there for the trial, with the trial's other
+   held concepts, until the kept reference close. A chosen one refines
+   the identity through the existing close (its occurrence is written
+   and the token is bound); the others lapse with the trial. The word
+   tree stays as the read built it, the idea stack's entries stay
+   exactly what is written, and nothing else is kept. Show that a held
+   value equals the one comprehension used for that leaf (atol 1e-6),
+   and that staging a trial leaves the live MTM unchanged.
+
+Then run the twenty test files of §68.33 again and return the count, with
+each remaining failure and its cause. If none remains, go on with step 8
+of §55.3 as §68.15 has it. In Models._run_sentence_word_bricks and in
+stage_cs_lang list every edit. Do not change a bound, a learning
+rate, a seed, a capacity or a presentation count. Commit nothing; never
+push main, and never force-push. Receipts stay local and are not linked.
+Return by continuing §59 from §59.32.
+~~~
+
+### 68.35 Folded into §68.34
+
+The text that stood here for the arrival reader is point 8 of §68.34,
+reworded on Alec's correction (§68.36). Nothing else is to be given.
+
+### 68.36 Alec on §59.29: sentences tie toward MTM (2026-11-17)
+
+*Alec's words.* Of §68.33's "An earlier sentence can leave a name with
+no referent yet. At each close, the present sentence's parts are offered
+as candidates for it": this "does not seem right. Sentence nouns tie to
+identity in MTM, and that identity is either transitory when deleted
+from MTM or becomes promoted as a symbol at the next order. So sentences
+tie toward MTM, not really between each other (there is a ref() at LTM1
+which is good for chaining LTM0 to each other, as in clauses, if-then
+sequences, ...)." And of §68.34: "Sounds like you can address these. Let
+me know if there are more questions after this."
+
+*The account, corrected.* Claude's sentence described a tie from one
+sentence to another. The source agrees with Alec, and so does its
+record (`doc/Architecture.md`, "Reference is resolved in two stages"):
+
+- A noun of a sentence ties to an identity in MTM. A name with no
+  referent opens an identity there with no kind (`mtm.open`). MTM drops
+  it, or promotes it.
+- What the code calls an arrival is a refinement of such an identity.
+  When a later sentence names it again, `ReferenceClose._arrival_plan`
+  scores that sentence's participants for it; a chosen one is written as
+  an occurrence and bound to the identity's token (`bind`, `mtm.merge`).
+  Nothing is written from one sentence's row to another's.
+- A tie between sentences is a reference of LTM1 between two ideas of
+  LTM0, as a clause or an if-then has it. It is not this.
+
+*What follows for §59.29* (*Claude's reading* of the correction). A
+noun's reading belongs on the side of MTM, with the concepts STM holds
+of MTM's identities (`HeldConcepts`), and not on the idea stack. So the
+readings that `_arrival_constituents` needs are held there for the
+trial; a chosen one refines the identity at the kept close, and the
+others lapse with the trial, as an identity does that MTM drops. The
+idea stack stays exactly what is written (§68.29). This is the first
+choice of §68.33, in Alec's terms, and it leaves today's menu as it is.
+*The other reading,* not taken: a constituent to which the read gave no
+identity is no candidate at all, which would change the menu.
+
+*§68.34* is read as needing nothing more from Alec and goes to Codex as
+written, with the arrival reader as its point 8. Claude has changed no
+code.
+
+### 68.37 Decided: item 1.6's four questions (Alec, 2026-11-17)
+
+"All good", of the four recommendations of
+`doc/plans/2026-11-17-item1-6-zero-data-movement.md`, section 8. For
+item 1.8: the one form of a sentence's tree is the trace of its read,
+and that step is built with part C (§65.5; queue order 5). The other
+three are item 1.6's and are in its document.
+
+*For the documentation pass* of item 1.8, added to §68.32's list:
+`doc/Architecture.md` and `doc/STM.md` give the tree pinned in STM0 and
+STM1 as the sentence's record; they change to the trace when §65.5
+lands.
+
+### 68.38 On §59.39: what the expectation of a sentence reads (Claude, 2026-11-17; for Alec)
+
+Codex returned §59.32 to §59.40 and stopped under §68.28 point 1. This
+is not a review of that return: nothing was run and its snapshot was
+not checked. It is the one question, read in the source.
+
+*The reader.* `_boundary_observation_view` (`Models.py`) takes what a
+sentence's expectation is compared with. Its comment gives the design:
+"Prediction and the closing image compare the single entry written by
+that reading". It starts from `meaning.roles[0]`, and where a clause
+store exists it takes `PartClosing.prediction_point` in its place ("One
+entry value: the compressed idea or the chain's head idea"). For a part
+that is resolved and is not an assertion, that function returns the
+part's composed value (`Composition.point`). The tree no longer holds
+it, so the observation is empty, `SymbolExpectation.observe_stm_end_state`
+skips it (depth 0), and `bind_observation_occurrence` later finds no
+observation waiting (§59.39).
+
+*The question* is Alec's: what a sentence's expectation is compared
+with, when the sentence leaves a relation between two phrases and no
+new idea.
+
+1. *Recommended (Codex's proposal).* What it is compared with today:
+   the first phrase's value as the sentence composed it (in §59.39's
+   case both concepts, `e0 + e1`), read from the first role of the
+   clause's meaning, which comprehension already produces. Nothing more
+   is held for it, and the predictor's target does not change, so the
+   exact replays and the gates are not disturbed.
+2. The concept that the phrase refers to (`e1` alone), read from the
+   store by the function's own branch for a reference. It follows the
+   relation that is written, but it changes what the predictor learns.
+
+Checked by reading, not by running: the caller and the function are as
+described; that `clause.meaning.roles[0]` still holds the old value is
+Codex's observation. No text for Codex until Alec answers.
+
+### 68.39 Alec on §59.39: the expectation specifies one of the sentence's two ideas (2026-11-17)
+
+Alec, of §68.38's question: "If the expectation is just an idea, and
+the sentence is (always) a relation between two ideas, then we probably
+want to allow expectation to specify just one of those ideas (otherwise
+expectation is doing complex work, which is not its purview)".
+
+*What it settles.* The expectation is one idea. A sentence is a
+relation between two ideas. The expectation is compared with one of
+those two ideas, and with nothing composed beyond them: composing is
+not the expectation's work.
+
+*The source already has this shape.* `_boundary_observation_view` puts
+one value in the first role and masks the others.
+`PartClosing.prediction_point` gives "the compressed idea or the
+chain's head idea": it tries the head first, and the other part if the
+head gives nothing. So his rule is the design, and the gap of §59.39 is
+only which value stands for an idea.
+
+*Applied to the source* (Claude's reading). The two ideas of a relation
+are what the writer keeps (`PartClosing.entry_kind`). A part that it
+writes as a new idea is that entry, and gives its value, as today. A
+part that refers to an idea already kept is that idea: the writer makes
+no entry for it, and `entry_kind` returns the kind of its reference.
+For such a part the expectation is compared with the kept idea's value,
+read from the store by the branch that `prediction_point` already has
+for a reference (`ChainRead.point`, or `head_idea` for a relation). No
+composed value is read or held for it. In §59.39's case that is `e1`,
+where the frozen source gave `e0 + e1`.
+
+*This is the second option of §68.38,* and it reverses Claude's
+recommendation there, which weighed only that nothing would change.
+Where a part is a composed phrase that refers to an idea already kept,
+the expectation is now compared with that idea and not with the phrase
+as the sentence composed it. What the predictor learns changes in those
+sentences.
+
+*Left as it is, not decided here.*
+1. Which of the two ideas: the head first, then the other, as the
+   function does today. Alec's words allow either. (Closed by §68.42:
+   both are given.)
+2. A part whose own value is still held (a new idea; a leaf held for
+   the arrival menu, §59.35) gives that value, as today. Whether a held
+   leaf's reading and its kept idea differ is reported, not changed.
+3. The grammar's absolute start `S` (§59.25); Alec's "(always)" is
+   recorded, and no rule of the grammar is changed for it.
+
+§68.38's question is closed by this section.
+
+### 68.40 Review of §59.32 to §59.40 (Claude, 2026-11-17)
+
+**Where the work stands.** The eight points of §68.34 are built. Codex
+stopped, as §68.28 point 1 requires, at a reader that needs a value the
+stack no longer holds (§59.39); Alec has answered it (§68.39). Step 8
+of §55.3 is not run: the gates on the final source, the lesson, the
+verbal proof, the tables and the default sweep.
+
+*Checked.*
+
+- *Source.* `bounded_tests.source_snapshot` over the working tree, as
+  sorted compact JSON, is
+  `b2a637acf428bbb12aaf690f33022a1f17e47eb80ad0544813098089f118a957`
+  over 1,211 inputs: the source §59.40 returns. HEAD is `5721692530`.
+  `bin/Attention.py`, `bin/ModelAttention.py`, `bin/SentenceAttention.py`
+  and `bin/AttentionTraversal.py` have no diff from HEAD.
+  `git diff --check` is clean.
+- *Tests.* Codex's twenty files of §59.37 and
+  `test/test_reference_arrival_review.py`: 270 passed, 8 skipped, in
+  113.81 s. Both stopping gates pass (2 passed in 3.59 s).
+- *The defect of §59.39, by repetition.* `test/test_math_chain.py` run
+  three times gives 16 passed; then 1 failed and 15 passed; then 16
+  passed. The failure is
+  `test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention`,
+  with "no external observation is awaiting an occurrence"
+  (`Layers.py`, `bind_observation_occurrence`). Until the reader is
+  repaired the tests have a failure that depends on the draw, as §59.39
+  says.
+- *Certificate 2's files.*
+  `test/fixtures/item18-comprehension-first-document.pt.gz` is 102,313
+  bytes, and its SHA-256 is the one its JSON gives; the test checks
+  that before it loads the file.
+
+*Read in the source, and as §59 describes.*
+
+- §59.33: `Comprehension.Evaluation.operation` replaces `frames`,
+  `case_values` and `case_selected` by `index_copy`; nothing is
+  detached.
+- §59.35: `ReferenceParticipants.arrival_members` is the one read of the
+  menu's members, for `ReferenceClose._arrival_constituents` and for
+  `HeldConcepts.Evaluation.retain_arrivals`.
+  `Comprehension.Evaluation.finish` gives those values to `from_stack`
+  with the staged ideas. This is §68.36 as point 8 of §68.34 asked.
+- §59.37: `ThoughtStrata._resize` rebuilds the pair store's buffers in
+  place, so the object that saved effects address stays the same one.
+- §59.36: in `test/comprehension_replay.py` the recorded dictionary
+  reads answer by their exact arguments, and `InterpretLayer`,
+  `SentenceStrata.capture`, `Comprehension.Evaluation` and
+  `Extension.reading` run as they are.
+
+*Notes.* None stops the work.
+
+1. `Result.held_arrivals` has no reader in `bin/`; two tests read it.
+   `from_stack` has already put its values into the clause, and its
+   keys are the Python identities of the clause's compositions, which
+   mean something only while those objects live. Point 2 of §68.41.
+2. `index_copy` copies all of a path's frames at each action. It is
+   exact and small. It is one more copy for the inventory of part C
+   (§65.2 rule 1).
+3. Certificate 2's replay calls `SentenceStrata.capture`. It is ported
+   with §65.5, when the tree's rows are no longer pinned.
+4. The fixture is a pickle, loaded with `weights_only=False` after its
+   hash is checked.
+
+*Not checked.* That `Models._run_sentence_word_bricks` and
+`stage_cs_lang` have no edit since §59.31 (there is no commit to compare
+with); that the inventory of §59.38 is complete; certificates 1 and 5 on
+the frozen source; what the fixture holds.
+
+### 68.41 Codex text (continues §68.34): withdrawn
+
+**Withdrawn on 2026-11-17 by §68.43, before it was given to Codex.**
+Point 1 gives a sentence's symbols to its expectation, and Alec has
+decided that expectation is never given a sentence or an idea. Its
+point 2 and its closing paragraph are carried into the text that
+replaces it. It stays here as the record.
+
+Amended the same day by §68.42: point 1 now gives the expectation the
+relation and both of its ideas, where it first gave one idea.
+
+~~~
+Item 1.8, part B, first text, continued a sixth time. Read §68.39,
+§68.40 and §68.42 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. §68.15, §68.20,
+§68.25, §68.28 and §68.34 stand. Start from your source of §59.40.
+
+1. What a sentence gives its expectation (Alec, §68.39 and §68.42; the
+   reader of §59.39). The expectation is a field over the symbols that
+   exist (SymbolExpectation, ActivationPredictor): it has no slots, and
+   a composed value is never a target (Expectation.symbol_activations).
+   A sentence gives it the symbols of its relation, in the three roles
+   the envelope already has (Meaning.canonical_role_payload): the first
+   idea, the relation, the second idea, each as the relation keeps it.
+   A sentence that leaves one idea gives one, and the relation and the
+   second idea are none. A new idea is no symbol yet and gives no
+   target. Nothing composed is read or held for it.
+
+   a. An idea's value. In PartClosing.prediction_point a resolved part
+      that is not an assertion gives its own value only where it has
+      one. Where it has none, because the writer makes no idea of it and
+      keeps it as its reference (entry_kind), it gives the value of the
+      idea it refers to, read from the store by the branch the function
+      already has (ChainRead.point, or head_idea for a relation), before
+      its sub-parts are tried. It is read for each of the relation's two
+      parts.
+   b. The roles. For a relation, Models._boundary_observation_view fills
+      the first idea, the relation and the second idea, marks each role
+      it holds, and returns the depth those roles need. The relation's
+      value is its operator's concept. For one idea it fills the first
+      role, as today.
+   c. The handles. Each role carries the identity of the symbol it
+      holds, as a one-word sentence's first role does today
+      (concept_ids[0]); a role that holds no kept symbol carries none.
+      Since item 3.0 (8b523874f9), Models._sentence_observation reads a
+      relation's handles from clause.refs and then sets every handle of
+      a clause to -1. Say why. If the reason is that the one entry
+      written was a new idea with no identity, it does not hold for a
+      kept symbol, and the reset goes for the roles above. If there is
+      another reason, name it and stop.
+   d. Nothing else of the expectation changes: ActivationPredictor, the
+      one representative of the estimate's envelope, symbol_activations
+      and its rule for an unknown value, and the lanes.
+
+   Do not read the clause's roles for a composed value, hold another
+   value, add a fallback, or weaken bind_observation_occurrence. If a
+   sentence that writes a row still gives no observation, name the case
+   and stop.
+
+   Certificates:
+   a. Your reproduction of §59.39 as a test that fails before and passes
+      after: the roles hold the first concept (e1), the relation where
+      the bank holds its concept, and the second concept (e3), with
+      their handles; the target is exactly those symbols; and
+      bind_observation_occurrence binds the observation to the written
+      relation.
+   b. The same sentence with a bank that holds two orders gives the same
+      targets. (Read in match_symbols, not run: a value with no handle
+      matches nothing there today.)
+   c. A sentence that leaves one idea: the relation's and the second
+      idea's roles are not occupied; its target is that idea's symbol
+      where the idea is a kept symbol, and nothing where it is new.
+   d. test/test_math_chain.py run five times in a row with no failure,
+      and no seed set for it (in §68.40 it failed in one run of three).
+   e. For the first document's seven readings: the symbols that are
+      targets before and after, by role.
+
+   Say also: each reader of the observation's roles and of the
+   comparison (the closing image, the surprise kept with the written
+   row, the context of later estimates) and what changes for it;
+   whether the bank holds the relations' concepts; and whether a leaf's
+   held reading (§59.35) and its kept idea differ, and in which part of
+   the vector.
+
+2. Result.held_arrivals has no reader in bin/. Either name the reader
+   that needs it, or remove the field and let the tests read what
+   from_stack left in the clause.
+
+Then run the test files of §68.40 and both stopping gates again and
+return the counts, with each failure and its cause. If none fails, go on
+with step 8 of §55.3 as §68.15 has it. In
+Models._run_sentence_word_bricks and in stage_cs_lang list every edit.
+Do not change a bound, a learning rate, a seed, a capacity or a
+presentation count. Commit nothing; never push main, and never
+force-push. Receipts stay local and are not linked. Return by continuing
+§59 from §59.41.
+~~~
+
+### 68.42 Alec: the expectation may guess a whole relation and both ideas (2026-11-17)
+
+Alec, asked whether §68.39 read him rightly (the idea is the one the
+relation keeps): "I'm equally happy to let it guess at a whole relation
+and both ideas in some cases, where the relation and second idea can be
+none. That's probably a better general solution."
+
+*What it settles.* §68.39's reading stands, as the case of one idea.
+The general form: an expectation may hold a relation and both of its
+ideas, and the relation and the second idea may be none.
+
+*What the source has* (read, not run).
+
+- A sentence's expectation is not an idea's vector. `SymbolExpectation`
+  is "One activation predictor for symbols"; `ActivationPredictor`
+  gives each symbol of the bank two activations of its own and has "no
+  slot-structured output". Its three roles are an envelope: "it holds
+  one native representative, never a predicted syntactic structure".
+- Only a symbol that exists can be a target: "Unknown composed values
+  never become targets for their nearest key"
+  (`Expectation.symbol_activations`). So the composing that Alec keeps
+  out of the expectation (§68.39) is already kept out, and the phrase
+  as the sentence composed it (`e0 + e1`, §59.39) was never a target.
+- The envelope is "infix NP1/VP/NP2 roles and their explicit occupancy
+  mask" (`Meaning.canonical_role_payload`): a first idea, a relation
+  and a second idea, each occupied or not. That is Alec's general form.
+- Since item 3.0 (`8b523874f9`) a sentence fills one of the three.
+  `Models._boundary_observation_view` gives "the single entry written
+  by that reading", and `Models._sentence_observation` sets the handles
+  of a clause to -1, after reading a relation's from `clause.refs`,
+  except for a one-word sentence. Without a handle a value is a target
+  only if it equals a key of the bank, and in a bank that holds more
+  than one order not even then (`match_symbols`). So a sentence that is
+  a relation gives its expectation little or no target today.
+
+*The rule,* built by point 1 of §68.41. A sentence gives its expectation
+the symbols of its relation, in the envelope's three roles: the first
+idea, the relation and the second idea, each as the relation keeps it
+(§68.39) and each with its symbol's identity. A sentence that leaves
+one idea gives one. A new idea is not yet a symbol and gives no target.
+The predictor is not changed.
+
+*Claude's, for Alec to overrule.*
+
+1. It is built now, as the repair of §59.39, and not after part B. The
+   expectation learns little or nothing from a relation today, so
+   giving it one idea or all three is the same kind of change: one
+   change, and one set of closing runs.
+2. An idea or a relation that the expectation does not guess counts as
+   surprise, as any symbol that comes unexpected does today. "Can be
+   none" is read of the sentence and of the form of a guess, not as a
+   cost left out.
+3. The estimate's envelope keeps its one representative
+   (`SymbolExpectation._prediction`). The guess is the field over the
+   bank.
+4. The relation's symbol is its operator's concept.
+
+*For the documentation pass* of item 1.8, added to §68.32's list:
+`doc/Reasoning.md` or `doc/Architecture.md`, wherever the sentence's
+expectation is described, says what a sentence gives it.
+
+### 68.43 Alec: expectation works on percepts and the field, never on a sentence or an idea (2026-11-17)
+
+Alec, of §68.42: "Let's go the other way. Expectation is supposed to be
+simple: it is not prediction, just an aid to understanding and missing
+data. So let's have expectation work on percepts and the field, never
+on a full sentence. That means never on an idea, either, since that is
+a computed value."
+
+*What it settles.* Expectation is not prediction. It is an aid to
+understanding, and it supplies missing data. It works on percepts and
+on the field. It is never given a full sentence, and never an idea,
+because an idea is a computed value.
+
+*What it withdraws.* The general form of §68.42 (a relation and both
+ideas), the reading of §68.39 (one idea, as the relation keeps it), and
+with them point 1 of §68.41. A sentence gives its expectation nothing.
+§68.38, §68.39 and §68.42 stay as the record of how the question went.
+
+*What stood before* (`doc/ExpectationRetention.md`). Since 2026-10-19
+expectation is a gain on what arrives. One predictor
+(`SymbolExpectation`) is read at a percept's arrival, at a symbol's
+arrival, at the sentence's close and for the next row of a document,
+each with its own gain, all four zero as shipped. The spread over the
+order-zero field (`ConceptSpread`) is a separate one. This decision
+keeps the reads at a percept and in the field, and removes those at the
+close and for the document. What the reads at the close feed in the
+source is mapped before a text is written.
+
+### 68.44 What stands on the sentence's expectation, and an order for removing it (Claude, 2026-11-17)
+
+From `doc/ExpectationRetention.md` and two read-only sweeps of the
+source of §59.40. The numbered list was read again in the source by
+Claude; the table is the sweep's report, except its last row. Nothing
+was run.
+
+**What exists on percepts and the field.** It stays.
+
+| Read | Where | What it does |
+| --- | --- | --- |
+| A percept's arrival | `PerceptExpectation` (`forecast_percept`, `observe_percept`), at each word | Runs beside the signal: the content is the observed percept. Its residual is a feature of candidate attention (`perceptExpectationGain`, 0) and the teacher of the decoder's correction at the leaves |
+| A word | `WordExpectation.word_distribution`, once for a sentence | The next word's symbol from the words before it; a gain on the word (`symbolExpectationGain`, 0). Its content is read only by the answer's attention |
+| The field, during the read | `SymbolField`, at each word step | The symbols about to be active, from what STM holds; a gain on operands and on the expected arguments (0 as shipped) |
+| The field, at a sentence's open | `ConceptSpread.open_prediction` | The expected order-zero field (`_expected_knowing`), from the observed one. It is trained only where input was omitted, against the read of the whole input (`Omission.concept_teacher`). `InterpretLayer.preferred_objects` ranks a word's objects by it; the relevance weights and thought's order of rules read it |
+
+The last row is Alec's description, found in the source: missing data
+trains it, and understanding reads it.
+
+**What stands on the read at the close** (`SymbolExpectation`'s sentence
+level: an estimate staged at a sentence's open and an observation at its
+close).
+
+1. *The choice of operator, and attention's prime.*
+   `OrderPrime.from_predictions` turns the estimate into a bias on the
+   reducer's logits (`OperationSelectionLayer.forward`), a feature of
+   the reference close's ordering (`ReferenceClose.prime`) and a feature
+   of candidate attention. `expectationPrime` is true.
+2. *The query of a reference.* `Models._sentence_reference_bank` takes
+   the estimate's representative as the query, and
+   `ReferenceContext.resolve_operand` scores the candidates by their
+   distance to it, in place of the operand's own value.
+3. *The recent situation.* The candidates of a reference
+   (`situation_references`) are the observations that the close
+   appended. Nothing else fills them: `include_occurrence` has no
+   caller.
+4. *A written row's activity.* The comparison's surprise is the row's
+   first activity (`MemoryActivity.written`; .5 when it is unknown).
+   Forgetting evicts the least active rows first, and a row is
+   considered for promotion at .9 (`MemoryConsolidation.consolidate`).
+5. *The observation of a verb.* `IndependentComponents.commit` takes
+   the innovation, what the sentence says of each known individual less
+   what the estimate expected of it, and gives it to `verbs.observe`,
+   which may allocate a change concept. With no estimate, nothing is
+   observed.
+6. *The thought of an absence.* From the closing image,
+   `ThoughtClosing.absence` writes a `not` thought for the symbol most
+   expected and not come (`expectationOmissionThreshold`, .5). The
+   thought chooser reads that image too.
+7. *An answer about what comes next* (`Models._temporal_answer_rep_row`,
+   the relation FUTURE at distance 1), and the seed of
+   `generate_sentence`, which has no caller in `bin/`.
+8. *Its own loss* on the predictor it shares with the word and field
+   reads (`sentenceExpectationLossWeight`, .1), and the earlier
+   sentences in the word read's context.
+
+The choice among readings does not stand on it: that is R + A alone
+(`SentenceCredit.comparison`).
+
+*It cannot be switched off as it is.* `sentenceExpectation` is false in
+`data/MM_ladder.xml`, but with it off the recent situation is empty
+(point 3), and the lesson's first document needs it.
+
+**What each falls back to, in the source as it is.**
+
+| Point | Without the estimate |
+| --- | --- |
+| 1 | No prime on the serial path. Alec's rule of 2026-11-01 already says "on the serial path expectation selects no concept" |
+| 2 | The operand's own value is the query |
+| 3 | Nothing: the situation needs a writer of its own |
+| 4 | .5 for every written row, then use and decay |
+| 5 | No verb is observed |
+| 6 | No such thought |
+| 7 | No answer |
+| 8 | The words of the present sentence alone |
+
+**For Alec.** The decisions the removal needs, Claude's default first.
+
+a. *A row's activity:* .5 for every written row, then use and decay;
+   or later the field's own residual, once item 1.7 has one.
+b. *A verb:* observed as the difference between what a sentence says of
+   an individual and what was last kept of it (a difference across
+   time, Alec, 2026-10-19), in place of the difference from an
+   estimate; or no observation of verbs until that is designed.
+c. *An absence:* none at the close. It returns from the field's
+   omission with item 1.7 (sigma-pi §19.20, reasoning over absence).
+d. *What comes next:* no answer from expectation, which is not
+   prediction. Whether the production objective of 2026-09-15
+   (prediction of the next sentence) is still wanted, and by what, is
+   open.
+
+**Claude's proposal for the order.**
+
+- *Part B closes without touching expectation.* The reader of §59.39
+  takes its value from the sentence's meaning, as Codex proposed there,
+  so that the close's read is exactly what it was before part B. It is
+  a port and decides nothing.
+- *The removal is its own item,* after item 1.7 and before item 1.6
+  (todo 1.65). Item 1.7 builds the expected field at every order and
+  the field's omission, which are what a prime and an absence would
+  read. Item 1.6 gains from it: no estimate row for each sentence, and
+  no cost of a prediction for each scored path.
+
+§68.41 stays withdrawn, and there is no text for Codex until Alec
+chooses.
+
+### 68.45 Alec: expectation is intuit over System 1, done in this round; a point from the field by an N:1 network (2026-11-17)
+
+Alec, of §68.44, in four paragraphs:
+
+"Expectation is simple, then. intuit over System 1 (S1). "Whether the
+next-sentence production objective of 2026-09-15 is still wanted is
+open." No, we are not doing predictive processing, we are doing input
+reconstruction. Expectation approximates prediction, but is really just
+debiasing over some short period of time."
+
+"I'd like to do expectation in round 1.8."
+
+"One option for predicting the idea, since we are predicting the field,
+is "reading" the field to turn it into an idea. Today we can go from
+WFF to idea and idea to WFF, and we should be able to go from field to
+idea and idea to field (these are the _extension methods on the
+operators). so in principle, predicting the field using expect will
+allow us to create the corresponding idea."
+
+"I still have reservations about a human mind actually having an idea
+which is a dynamic point in conceptual space (i.e. an idea), as opposed
+to WFF and field which we know it has: do you have arguments bearing on
+that somewhat redundant representation?"
+
+Then, while Claude was reading the source: "Since an idea is an
+arbitrary point, and the field is a point cold over defined concepts,
+an N:1 network would be fine for expectation, without having to go
+through a WFF. It does not have the sophistication of a thought-out
+answer, but it will do fore expectation." Claude reads "point cold" as
+"point cloud" and "fore" as "for".
+
+*What it settles.*
+
+- Expectation is intuit over System 1.
+- There is no predictive processing: the model learns by reconstructing
+  its input. The production objective of 2026-09-15, prediction of the
+  next sentence, is not wanted. This closes point d of §68.44:
+  expectation answers nothing about what comes next. That the answer to
+  the relation FUTURE at distance 1 goes with it is Claude's reading.
+- Expectation approximates prediction, and is a debiasing over a short
+  period of time.
+- Expectation is done in round 1.8. The proposal of §68.44 to make its
+  removal an item of its own after item 1.7 (todo 1.65) is withdrawn.
+- Where an expected idea is wanted, it is read from the expected field
+  by an N:1 network: many concepts in, one point out, with no WFF. It
+  is cruder than a thought-out answer and enough for expectation. This
+  replaces the route through the operators' extension methods that the
+  third paragraph first offered.
+
+*What it leaves open.* His reservation about the idea itself, and the
+question he puts to Claude about it (§68.47). What the source has for
+the rest, and what remains to decide, is §68.46.
+
+### 68.46 What the source has for §68.45, and a trial with no estimate (Claude, 2026-11-17)
+
+Read in the source that §59.40 returned (HEAD and the source snapshot
+are unchanged). The trial and the count below were run; the rest is
+read.
+
+**expect and intuit, as built.** Each is a `SigmaPiStack` of the
+conceptual space: `expect_stack` with one pair of layers,
+`intuit_stack` with two, 64 hidden units each. At a sentence's open
+both read the order-zero block of one observed field
+(`_observed_knowing`: the read of every present word bracket by
+`FamiliarTier.open_sentence`, written by `IntuitionField.open_field`),
+and each gives an order-zero field. They differ by teacher alone.
+expect learns the read of the whole input where input was omitted
+(`Omission.concept_teacher`, cost `expectation.concepts`). intuit
+learns the basic field that the kept reading leaves (cost
+`intuition.field`). So expectation is, as built, intuit's form on the
+field of System 1. Claude reads "intuit over System 1" as this: one
+form, with its own weights and its own teacher (Alec, 2026-11-12 and
+2026-11-14), and nothing changes here. One shared network would be a
+change.
+
+**Debiasing over a short period, as built.** At a percept's arrival it
+is literal: `PerceptMoments` keeps a running mean and spread
+(`perceptExpectationRate`, .05) and reports how far an arrival lies
+from them. In the field the period is one sentence: the observed field
+is overwritten at each sentence's open, so the expected field is a
+reconstruction of the sentence at hand from the part of it that is
+visible, with what that part implies. Nothing in it comes from the
+sentences before. The estimate of the sentence level was the other
+kind, made from the last eight closings before a word was read.
+
+**The conversions.**
+
+| From | To | In the source |
+| --- | --- | --- |
+| WFF | idea | compose, run over the tree by `Comprehension.Evaluation` |
+| idea | WFF | the generate walk |
+| the leaves' sets | the field | `compose_extend` at each operator of the same tree (`Extension.reading`) |
+| a field | its operands' fields | `generate_extend` |
+| idea | field | `FieldProjection.stimulate`: coverage on each lane, then the definitions upward |
+| field | point | `FieldProjection.key`: the centroid of the codes of the field's concepts of one order, weighted by their evidence (`Examination.run` and `NumericPercepts.forward` call it) |
+
+The two extension methods of an operator take sets to sets; neither
+gives an idea. The last row is the N:1 read with no WFF. It has no
+weights of its own: the concepts' codes are its weights. The prime
+reads the estimate the same way, order by order (`OrderPrime.bias`).
+
+**The estimate is already a field and one code.**
+`SymbolExpectation._prediction` gives an activation on both lanes for
+every row of the bank, which is every concept's code
+(`stage_symbol_bank`), and as its one representative the code of the
+most expected row. Each reader of §68.44 reads one or the other.
+
+| Reader (§68.44) | Reads |
+| --- | --- |
+| 1, the prime | the field: the weighted mean of the expected codes of each order |
+| 2, the query of a reference | the representative. `resolve_operand` is the numerical adapter for fixtures; by its own account production resolves references through `ReferenceClose`, which reads the prime |
+| 4, a row's surprise; 6, the absence thought | the field, against what the close observed (`ClosingImage.form`) |
+| 5, a verb | the representative, projected on each known individual's axis, at the representative's order |
+| 7, what comes next | the representative |
+
+So Alec's design asks for two changes and no new interface: the field
+comes from expect in place of the predictor, and the representative is
+the N:1 read in place of the most expected row. The second is also his
+rule against a single winner (2026-11-16).
+
+**Since item 3.0 the estimate has had almost nothing to learn.** Where
+a clause is kept, the close's observation names a row of the bank only
+for a sentence of one word (`Models._sentence_observation` sets every
+other handle to -1). A value with no handle matches a row only by exact
+code, and only if every row of the bank has one order
+(`Expectation.match_symbols`). For a sentence of several words the
+observed field is therefore empty, and the predictor is taught to
+expect nothing. Counted over the 82 test files below:
+222
+comparisons at a close, in 25 of the files. In banks of several
+orders (106 comparisons) the observation activated a row in 28, each
+time through a handle, and was empty in the other 78; the math-chain
+documents gave 0 of 26. In banks of one order, which are unit tests
+of the estimate with hand-made values, it activated a row by exact
+code in 46 of 116. Before each comparison the estimate expected
+every row at about .5 (the bank's mean lay between .40 and .61):
+predictors that had learned nothing.
+
+**A trial with no estimate.** `SymbolExpectation.expect_next_meaning`
+was made to return nothing, in a scratch process (the checkout is
+untouched; `probe_no_estimate/no_estimate.py` in the session's
+scratchpad). Every sentence is then read as the first sentence of a
+document is read today: no prime, the operand's own value as the query,
+.5 as a row's first activity, no verb observed, no absence thought, no
+cost. The close still records the sentence in the recent situation.
+
+- Both stopping gates pass (2 passed, 3.21 s).
+- The 21 files of §68.40: 268 passed, 8 skipped, 2 failed; before, 270
+  passed. One failure is a test of the estimate's own cost
+  (`test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation`).
+  The other is the defect of §59.39 itself, in
+  `test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles`
+  (the same error at `Layers.py:9771`). That defect comes and goes by
+  the draw: a run of the same file with the estimate on gave two such
+  failures.
+- 61 more files that name the sentence level, the prime, verbs or the
+  closing image: before, 866
+  passed and 22 failed (§68.49); with no estimate, 819 passed and 69
+  failed, the same 22 and 47 more. Each of the 47 fails on a statement
+  about the estimate itself: that one exists, its cost, its
+  comparison, its closing image, or the answer to FUTURE from it
+  (`probe_no_estimate/ev_new_failures.txt`). No test of anything
+  else changed.
+
+**What a full expected field would do to readers 4 and 6.** The close's
+observation is empty for a sentence of several words, and expect's
+field is full on that sentence's own concepts. With expect's field in
+the estimate's place and nothing else changed, every close would show a
+large omission: a high surprise for every written row, and an absence
+thought at every close (`ThoughtClosing.absence` fires above .5). Read,
+not run. These two readers cannot stay as they are once the field's
+source changes.
+
+**A correction to §68.44.** It says item 1.6 gains "no estimate row for
+each sentence". The store holds no estimate row. What goes is the
+pending estimate kept for each stream, and the cost of a prediction for
+each scored path.
+
+**Proposed rules (for Alec's word; no text for Codex yet).**
+
+1. *Nothing estimates a sentence.* `SymbolExpectation` makes no
+   estimate at a sentence's open from earlier closings, takes no target
+   at a close, and has no cost there (`expectation.activation`). The
+   reads for a row and for a document go with it. The predictor it
+   shares stays, for the word read and for the field read during the
+   read.
+2. *Every sentence is read as the first sentence of a document is read
+   today.* That path exists and runs at every document's start. Its
+   consequences are those of the trial.
+3. *The recent situation has its own writer.* The close admits each
+   written row with `include_occurrence`, which exists and has no
+   caller, given the row's symbols and activations as
+   `bind_observation_occurrence` takes them today.
+   `PartClosing.prediction_point`, the entry that
+   `_boundary_observation_view` makes for the estimate,
+   `observe_stm_end_state` and `bind_observation_occurrence` go. With
+   them goes the reader Codex stopped on in §59.39, and the defect that
+   comes and goes by the draw.
+4. *No answer about what comes next.* The answer to FUTURE at distance
+   1 from the estimate, `predict_next_end_state` and
+   `generate_sentence` go (Alec: no predictive processing).
+5. *No legacy.* The configuration keys of the removed reads and the
+   tests of the removed reads go, each listed in the return.
+6. *The N:1 read is `FieldProjection.key`.* It stays, and is what an
+   expected idea is made with.
+
+**Open for Alec: how far this round goes.**
+
+- *Rules 1 to 6 alone (Claude's recommendation).* Expectation is then
+  what §68.45 says: intuit's form on the field of System 1, taught by
+  the omitted input, read by `interpret` when it ranks a word's objects
+  and by thought when it orders its rules; and a debiasing at the
+  percept. Nothing measured needs more. A reader is given the N:1 point
+  when one is found to need it, with item 1.7, where expect is rebuilt
+  as Pi, Not, Sigma at every order.
+- *Rules 1 to 6, and the N:1 point given to three readers now.* The
+  prime reads expect's field (order zero from expect, the orders above
+  by the definitions, `FieldProjection.close`); the reference adapter's
+  query and the verb read the centroid at the order they ask for.
+  Readers 4 and 6 stop either way. Three things here are Claude's and
+  not measured: the prime would be the first read of the expected field
+  by the chooser on the serial path, which Alec's rule of 2026-11-01
+  kept out ("on the serial path expectation selects no concept"); the
+  field is the sentence's own, so the query and the verb would be
+  measured against the sentence's unparsed gist, not against what came
+  before; and its effect on the two gates is unknown.
+
+Not asked, Claude's readings: "intuit over System 1" as one form with
+two teachers; the N:1 read as the centroid with no weights of its own
+(a trained N:1 layer would be new); the period of the field as one
+sentence, as built.
+
+### 68.47 On the idea as a point (Claude, 2026-11-17; Alec's question of §68.45)
+
+Alec asks for arguments bearing on whether a mind has an idea, "a
+dynamic point in conceptual space", beside the WFF and the field,
+"which we know it has". His earlier words on it: "As an argument
+against the single vector processing as opposed to the field; it's
+basically a grandmother neuron. But being able to use a single vector
+to stimulate its conceptual entailments; reasonable" (2026-11-11); and,
+of a thought needing one point to carry on, "That is semantic memory;
+animals and system 1 cognition in general is episodic" (2026-11-16).
+
+**In the model** (read in the source; not an inventory of every
+reader).
+
+- *The idea carries nothing of its own.* compose makes it from the WFF
+  and generate makes a WFF from it. The field of understanding is
+  computed from the leaves' sets by `compose_extend` over the same
+  tree, without the idea. It reads the idea's side only for the
+  referent a definite determiner takes (`Extension.held_context`).
+- *It is the lossy one.* An N:1 read gives one point for many clouds:
+  "cat or dog" and a thing between the two give one centroid. The way
+  back (`FieldProjection.stimulate`) gives the concepts a point covers,
+  not the cloud it came from.
+- *What it buys is cheap likeness.* A point read N:1 from a cloud is a
+  sketch of the cloud: the product of two such points is the overlap of
+  their clouds, weighted by the likeness of the concepts' codes. One
+  row of fixed width stands in for a number at every concept.
+- *Its jobs today.* Likeness between composed things (the choice of a
+  referent, the recall of kept rows by one product); the fixed-width
+  content of a kept row; saying a kept row again (the generate walk
+  starts from it); and the value a kept row is made a concept from.
+  Each has a counterpart on the field's side in the design: overlap of
+  fields; a row's strongest references, which it keeps already;
+  description from a field (`compose_extend` with no words, deferred on
+  2026-11-12); rows nominated by recurrence in MTM. Speaking from a
+  field is the one that is not built.
+
+**In people.** Thirteen works were checked on 2026-11-17 against the
+publishers' records, and three more were found by that check. Each
+line below is as corrected by it.
+
+For a composed code beyond the words:
+
+- Models of comprehension keep one vector for the utterance, update it
+  at each word, and fit the N400 by the size of the update (St. John
+  and McClelland, 1990; Rabovsky, Hansen and McClelland, 2018). The
+  rival account keeps such a vector too and disputes only which
+  component shows its update (Brouwer, Crocker, Venhuizen and Hoeks,
+  2017). These are simulations: they show that one vector is enough,
+  not that a brain holds one.
+- In fMRI a model of composed sentence meaning predicts activity that
+  the words alone do not, across a network and at no single site
+  (Anderson and others, 2021). Composed meaning with the words'
+  meanings removed predicts temporal-lobe fMRI and no MEG sensor or
+  timepoint (Toneva, Mitchell and Wehbe, 2022).
+- For single concepts a space of likeness has support: a hub in the
+  anterior temporal lobes that "represents the semantic similarity
+  among concepts" (Patterson, Nestor and Rogers, 2007). The claim is
+  about concepts, not sentences.
+
+Against a single point for a sentence, or limiting it:
+
+- Most of what is read out of sentences from brain activity is their
+  words' content. Pereira and others (2018) decode sentences with
+  vectors that are averages of word vectors, and on those sentences the
+  fit depends mainly on lexical content, not on word order (Kauf and
+  others, 2024). An average of word vectors is a field read N:1.
+- Who did it and to whom are decodable from distinct neighbouring
+  regions (Frankland and Greene, 2015): roles kept apart, as in a WFF.
+  The paper
+  does not exclude a further integrated code, and an unreviewed
+  reanalysis disputes the separation (Lalisse and Smolensky, 2021).
+- Memory keeps meaning better than wording. After about 27 seconds of
+  further text a change of form is detected only a little above chance
+  while a change of meaning is still detected about four times in five
+  (Sachs, 1967); memory for wording is not nil (Gurevich, Johnson and
+  Goldberg, 2010). Recognition separates three levels, the surface, the
+  propositions and the situation (Fletcher and Chrysler, 1990, after
+  van Dijk and Kintsch, 1983). None of the three is one vector.
+- Likeness between things is not a distance: judged similarity is
+  described by common and distinctive features and need not be
+  symmetric (Tversky, 1977; the reference was checked, its content is
+  from memory). That is an overlap of fields, not points in a space.
+- A compact code with no likeness in it has support as an address: the
+  hippocampal index (Teyler and DiScenna, 1986, a theory paper).
+
+Two results Claude had meant to cite for a composed pattern "of the
+same kind as a concept" do not carry that weight. Baron and Osherson
+(2011) used photographs of faces, and a later study found no
+compositional model surviving correction in that region (Ciapparelli
+and others, 2025). Bemis and Pylkkanen (2011) read their anterior
+temporal effect as syntactic, and it has a failed replication (Kochari
+and others, 2021). Whether a category is held as one central point or
+as its instances is not settled for the point either (Smith and Minda,
+1998; Nosofsky and Zaki, 2002). Bransford and Franks (1971) is left
+out: its main effect is disputed as an artifact (Katz, Atkeson and
+Lee, 1974).
+
+**Claude's reading.** Nothing checked shows a single point for a
+sentence. What is shown is the words' content, which is a field;
+roles kept apart; and something composed that is spread over a network and seen
+only in slow measurements. That agrees with Alec's two remarks above.
+The point is reasonable as a key, which addresses, stimulates and is
+compared cheaply, and not as what is kept or reasoned on. No change is
+proposed here. A cheap test, if it is wanted: the choice of a referent
+and the recall of rows, measured once with the overlap of fields in
+place of the distance between points.
+
+**References** (for the documentation pass; DOIs as checked).
+
+- Anderson and others (2021), J Neurosci 41(18):4100-4119, doi:10.1523/JNEUROSCI.1152-20.2021.
+- Baron and Osherson (2011), NeuroImage 55(4):1847-1852, doi:10.1016/j.neuroimage.2011.01.066.
+- Bemis and Pylkkanen (2011), J Neurosci 31(8):2801-2814, doi:10.1523/JNEUROSCI.5003-10.2011.
+- Brouwer, Crocker, Venhuizen and Hoeks (2017), Cogn Sci 41(S6):1318-1352, doi:10.1111/cogs.12461.
+- Ciapparelli and others (2025), Cereb Cortex 35(8):bhaf246.
+- Fletcher and Chrysler (1990), Discourse Processes 13(2):175-190, doi:10.1080/01638539009544752.
+- Frankland and Greene (2015), PNAS 112(37):11732-11737, doi:10.1073/pnas.1421236112.
+- Gurevich, Johnson and Goldberg (2010), Lang Cogn 2(1):45-78.
+- Katz, Atkeson and Lee (1974), Mem Cognit 2:709-713.
+- Kauf and others (2024), Neurobiol Lang 5(1):7-42, doi:10.1162/nol_a_00116.
+- Kochari and others (2021), Neuropsychologia 155:107754.
+- Lalisse and Smolensky (2021), arXiv:2110.12342.
+- Nosofsky and Zaki (2002), JEP:LMC 28:924-940.
+- Patterson, Nestor and Rogers (2007), Nat Rev Neurosci 8(12):976-987, doi:10.1038/nrn2277.
+- Pereira and others (2018), Nat Commun 9:963, doi:10.1038/s41467-018-03068-4.
+- Rabovsky, Hansen and McClelland (2018), Nat Hum Behav 2(9):693-705, doi:10.1038/s41562-018-0406-4.
+- Sachs (1967), Percept Psychophys 2(9):437-442, doi:10.3758/BF03208784.
+- Smith and Minda (1998), JEP:LMC 24(6):1411-1436, doi:10.1037/0278-7393.24.6.1411.
+- St. John and McClelland (1990), Artif Intell 46(1-2):217-257, doi:10.1016/0004-3702(90)90008-N.
+- Teyler and DiScenna (1986), Behav Neurosci 100(2):147-154, doi:10.1037/0735-7044.100.2.147.
+- Toneva, Mitchell and Wehbe (2022), Nat Comput Sci 2:745-757, doi:10.1038/s43588-022-00354-6.
+- Tversky (1977), Psychol Rev 84(4):327-352, doi:10.1037/0033-295x.84.4.327.
+- van Dijk and Kintsch (1983), Strategies of Discourse Comprehension, Academic Press.
+
+### 68.48 From the WFF to the field: "Felix runs" (Alec's question, 2026-11-17; Claude's answer)
+
+Alec: "Going from WFF to field is still an open. If "Felix runs", we can
+obviously light up the conceptual space of felix and the conceptual
+space of running, and the implications/entailments of both (felix's
+parts and wholes, running's parts and wholes). But what happens in the
+field to combine those two? Two nouns might be conjoined with union in
+the field, but it seems odd to think of the union of the fields of a
+noun and verb. Could that be sufficient? Can we argue that it must be
+possible to represent that idea in the field via OR,NOT,AND?"
+
+**What is written and built.** §3.17's table gives `verb` a narrowing,
+the `intersection` of its operands' sets ("Alec, by the rule for
+narrowing"), and `Extension.compose` has it so: `verb` stands with
+`compound` and `modifier` among the narrowing operators. The rows for
+`part`, `whole`, `equal` and `implies` are open in that table ("what a
+relation sentence leaves as its field"); as built they leave the
+content operand's set unchanged. In `data/complete.grammar` "Felix
+runs" is the rule `verb`, and `data/field.grammar` holds exactly
+`intersection`, `union` and `not`.
+
+**What each of the three does with it.**
+
+- *Union* is what the two words light, with what each implies. It is
+  enough to stimulate and to expect. It is not the statement: "Felix
+  runs and Ciao sleeps" and "Felix sleeps and Ciao runs" have one
+  union.
+- *Intersection* is what is both: Felix, if Felix is known to run, and
+  nothing if it is news, since Felix is not yet among the things that
+  run. A narrowing reads a fact and cannot state one.
+- *The statement is a comparison of the two fields, not a third field:*
+  Felix's field lies inside running's. In the three operators it has
+  three equal forms. "Felix AND NOT running" is empty (Boole's
+  x(1 - y) = 0). "Felix AND running" is Felix. "Felix OR running" is
+  running. The last two need no NOT, which matters where NOT is to
+  carry all negation (sigma-pi §19.15). So the union does enter, in
+  this form: the sentence says that adding Felix to the things that run
+  adds nothing.
+- *Graded,* it is one number on each lane: the share of Felix's field
+  inside running's, and the share outside. That is the graded match the
+  vertical spread already uses for a part and its whole (`meet_ratios`;
+  Alec, 2026-11-12: "entailment is not a binary").
+- *A statement that is news* makes the comparison true by writing an
+  edge: a relation in `LTM1`, then weights in the Sigma and the Pi when
+  it is promoted. After it, lighting Felix lights running. The idea is
+  then in the field as an entailment, not as a pattern of its own.
+- *Over episodes in place of things* the combination is a set again:
+  the rows in which Felix and running are both present. That is how
+  §3.17 has recall narrow the rows.
+
+**Must it be possible with OR, NOT and AND?**
+
+- *For what is said of one thing: yes.* The three are complete for any
+  condition on one thing's concepts: every such condition is an OR of
+  ANDs of concepts and their NOTs, the form that Pi, Not and Sigma
+  compute (and, or and not were exact in the toy of sigma-pi §19.13).
+  And every statement made of one-place words with "every", "some" and
+  "no" comes to saying that such a combination is empty, or that it is
+  not (Boole, 1854, for the algebra; the general result for one-place
+  predicates is standard logic, cited here from memory). So one thing
+  is needed beside the three, and it is not an operator on fields: the
+  reading of a field as empty or not, which the two lanes and the
+  graded match give.
+- *For a relation between two things: not with the three alone.* The
+  field of "Felix chases Ciao" holds chasing, Felix and Ciao and loses
+  who chases whom. One of two things must be added. Either a row for a
+  thing in a role (Ciao as the one chased), which costs rows and no
+  operator, and with which every stated fact is again an AND of rows.
+  Or the following of a relation's edges (the things that chase Ciao),
+  which the field does today only for members and for parts and
+  wholes. The roles are what the WFF has and the field lacks.
+
+**Claude's answer to the open rows of §3.17, for Alec.** A sentence
+that states leaves as its field the graded comparison of its two
+operands' fields on the two lanes, and the kept sentence writes the
+edge. A sentence that reads keeps the narrowing as built. Nothing is
+built on this, and it is not part of the text for Codex.
+
+### 68.49 An addition to the review of §68.40: 22 tests outside Codex's files (Claude, 2026-11-17)
+
+Found while the trial of §68.46 ran. In 61 test files that name the
+sentence level, the prime, verbs or the closing image, the source of
+§59.40 gives 866 passed, 27 skipped and 22 failed (644.82 s). The same
+22, run alone, fail on Codex's working tree and pass on the committed
+source (HEAD `5721692530`, extracted to the scratchpad with `data/`
+linked: 22 passed, 76.15 s). They are part B's. By error:
+
+- 14: `AttributeError: 'NoneType' object has no attribute 'meaning'` at
+  `Models.py:20736` in `_commit_sentence`, where a sentence is
+  committed with no clause (`test_item4_native.py` 10,
+  `test_selected_relation_meaning.py` 2, `test_expectation_defaults.py`
+  1, `test_sentence_expectation.py` 1).
+- 3: a fixture without `ltm_store`
+  (`test_selected_relation_meaning.py` 2, `test_whole_paths.py` 1).
+- 1 each: `TypeError: expected Tensor as element 1`
+  (`test_ltm_consolidation.py`); the defect of §59.39
+  (`test_what_training.py`); `KeyError: 'binary_resolved'`
+  (`test_item18_operator_cost.py`); an assertion
+  (`test_orders_learned.py`); a changed signature of `cost`
+  (`test_retire_mode.py`).
+
+The 22 names are in `probe_no_estimate/ev_baseline_failed.txt` in the
+session's scratchpad. The inventory of §59.38 did not reach them. They
+go into the next text for Codex. Not checked: the other 669 test files.
+
+### 68.50 Alec: a taught N:1 read by Pi, Not, Sigma; the union in separate subspaces (2026-11-17)
+
+Alec, of §68.46 to §68.48, in four paragraphs:
+
+"The N:1 read from concept field to conceptual point should be better
+than centroid. It might be able to be taught from S2, but either way
+since we have WFF:idea and field:WFF, we want the idea:field to make a
+nice triangle."
+
+"I think also that we can argue that since WFF:idea is non-linear
+grammatically, but reduces to something calculable with pi-not-sigma,
+we will want to use pi-not-sigma for the field:idea mapping. Please
+suggest a clean way to teach that: I think its flexible until we figure
+out WFF:field (if/until then, we can compute that as
+WFF:idea:field)."
+
+"BTW, you are too critical of union: felix and runs can combine nicely
+if they live in separate subspaces, which might be justified in light
+of a spatial and temporal decomposition of 4D event space."
+
+"So, lets expect a conceptual field, and an independent N:1
+pi-not-sigma to reach the idea. that will at least give us an expected
+conceptual point without having to traffic in words."
+
+*What it settles.*
+
+- The read from the field to a point is taught. It is not the centroid.
+  Its form is Pi, Not, Sigma, and it is independent: a network of its
+  own.
+- Expectation in this round is two things: the expected conceptual
+  field, which is expect, and this read, which gives an expected point
+  with no word.
+- The three sides of the triangle are WFF and idea, field and WFF, and
+  idea and field. The third is what this read completes. Until the side
+  between the WFF and the field is worked out, a WFF's field may be
+  computed by way of its idea.
+- It answers the choice of §68.46 with neither of Claude's two as they
+  were written: the point comes from a taught read, and no reader of it
+  is named.
+
+*What it asks of Claude.* A clean way to teach the read: §68.51.
+
+*What it corrects in §68.48.* Claude wrote that the union "loses who
+runs". That compared two events laid over each other. Within one event
+the union of a thing's field and a change's field loses nothing when
+the two lie in separate subspaces, and events are told apart by where
+and when. The toy of §68.51 agrees: with nouns and verbs on separate
+coordinates even the centroid has the direction of a noun with its
+verb exactly (cosine 1.000), and the taught read has the whole of it.
+What his remark leaves, in Claude's reading: two things in one event
+still need telling apart, which the same decomposition may give by
+where each is.
+
+*Read in the source for his argument.* On the meaning block of a code
+(`[for | against]`, values from 0 to 1), the declared rules of
+composition are the least and the greatest on the two lanes
+(`intersection`, `union`), the exchange of the lanes (`not`) and a mean
+(`MeaningCodes.compose`). Those are and, or and not on graded values,
+which is his "reduces to something calculable with pi-not-sigma".
+Where an operator declares no such rule, `compose_blocks` takes a case
+meaning, an action, a kernel, or one operand's meaning unchanged (for
+the verb, the verb's own). In every case the form block of the result
+is the leaf-weighted centroid of the operands' forms, and the result is
+held in the unit cube (`assert_cube`).
+
+### 68.51 A way to teach the N:1 read (Claude's suggestion, 2026-11-17; for Alec)
+
+**The suggestion: System 2's idea is the teacher.**
+
+1. *Form.* One more `SigmaPiStack` on the conceptual space, beside
+   `expect_stack` and `intuit_stack`. In: the order-zero field on both
+   lanes. Out: one point of the idea's width, in the range of a code.
+   One pair of layers and 64 hidden units to begin with, as expect has.
+   Item 1.7 rebuilds the three together as Pi, Not, Sigma.
+2. *The pair that teaches it.* At each kept sentence the input is the
+   sentence's observed order-zero field at its open, the block that
+   expect and intuit read (`_observed_knowing`), and the target is the
+   root idea the kept reading leaves (`record.meaning_root`). Both are
+   detached.
+3. *Its cost.* The squared error between the read and the target, for
+   the streams that are present, as a term of its own.
+4. *Nothing flows back.* Not into System 2, whose idea is only a
+   target. Not into expect, intuit or the codes, whose values are only
+   an input.
+5. *Its use.* The same map on expect's field gives the expected point,
+   at a sentence's open, before any operator is applied and with no
+   word.
+6. *Why the observed field teaches and the expected field is read.*
+   Under omission System 1 and System 2 then learn from the same lossy
+   sentence. expect is taught to give the whole field back, so its
+   output is a field of the kind the read was taught on, with the
+   missing part filled.
+
+**Why this one.** It uses one pair for each kept sentence, and both
+halves are computed already. It closes the triangle at the idea: on
+every kept sentence the way from the field is taught to arrive where
+the way from the WFF arrives. It asks nothing of the side between the
+WFF and the field, so it does not move when that side is settled. And
+it is the third of one family on one input: expect (teacher: the
+omitted input), intuit (teacher: the kept field), this read (teacher:
+the kept idea). System 2 teaches System 1 by a target, as it does for
+intuit.
+
+**A toy** (`toy_n1/toy_n1.py` in the session's scratchpad; not the
+model). 35 concept rows (16 nouns, 10 verbs, 8 modifiers, the word
+"not"), codes of width 16 as `[for | against]`. Four kinds of sentence
+are composed with the declared rules of `MeaningCodes.compose`: noun
+with verb by `union`; noun with a negated verb; modifier with noun by
+`intersection`; and modifier, noun and verb. The field is flat: the
+rows a sentence's words light. A fifth of the pairs are held out whole,
+so every test sentence is a combination never seen in training (about
+1,190 training and 540 test sentences; 6,000 steps; three seeds). The
+readers are the centroid, one linear map by least squares, and the
+built `SigmaPiStack` with one pair and with two. The numbers are the
+squared error and the cosine against the composed idea, on the test
+sentences, as means of the three seeds.
+
+| reader | nouns and verbs on separate coordinates | on shared coordinates |
+| --- | --- | --- |
+| centroid | .0192, .855 | .0069, .945 |
+| one linear map | .0026, .973 | .0030, .968 |
+| stack, one pair | .0004, .995 | .0002, .998 |
+| stack, two pairs | .0032, .972 | .0036, .963 |
+
+- The one-pair stack is exact on noun with verb and on the negated verb
+  (error .0000, cosine 1.000, every seed, on separate coordinates). Its
+  weakest kind is modifier with noun (cosine .96 to .99).
+- The centroid has the direction of noun with verb exactly on separate
+  coordinates and half its size. It misses the negation (cosine .70 to
+  .76), which a linear map misses too (.84 to .89).
+- Two pairs did worse than one here: they had not finished learning in
+  the same number of steps (error on the training sentences .001 to
+  .002, against .0001). The count of pairs is a parameter to measure.
+
+**What the toy does not show.** A field with graded activations and
+with the concepts that the lit ones imply; the operators that compose
+with a kernel of their own; a relation between two things; the size of
+the model's inventory; and learning while the codes and System 2 still
+move.
+
+**Claude's defaults, each for Alec to change.**
+
+- *A sentence that is a relation* teaches with its root idea, one of
+  its two (Alec, earlier the same day: "allow expectation to specify
+  just one of those ideas").
+- *No reader in this round.* The expected point is made, taught and
+  measured. Its error against the kept idea is at hand as a row's
+  surprise, if one is wanted later; a row's first activity stays .5
+  (rule 2 of §68.46).
+- *Names:* `idea_stack`, `ideaHidden`, `ideaLayers`, and the cost
+  `expectation.idea`.
+- *The other direction of the side,* from an idea to its field, stays
+  `FieldProjection.stimulate`, which has no weights.
+- *Not proposed:* a second teacher by the round trip, a point to its
+  field and back to the point. It needs no sentence, but the field
+  `stimulate` makes is not the kind of field the read is given at use.
+
+**For the text, once Alec has spoken.** Rules 1 to 6 of §68.46, this
+read, and the 22 tests of §68.49. Its certificates: on the lesson's
+kept sentences the read's error against the kept idea is below the
+centroid's (`FieldProjection.key`); no gradient of its cost reaches a
+parameter outside its own stack; both stopping gates.
+
+**A code is mostly form** (read after the toy). In the math-chain
+model a code is 392 wide: a form block of 360 and a meaning block of
+32. Its order-zero capacity is 2,346 rows, so expect and intuit each
+read 4,692 inputs. Composition computes only the meaning block; the
+form block of an idea is the leaf-weighted centroid of its leaves'
+forms (`compose_blocks`). So on the form block a centroid is what
+composition itself does, and the taught read can equal it and not
+better it; "better than centroid" is about the meaning block, which is
+what the toy models. Claude's default: the stack is taught the whole
+point, and the certificate reports the two blocks apart, for the read
+and for the centroid. If the centroid is as good on the form block,
+the stack gives the meaning block alone.
+
+### 68.52 Alec: expect and intuit are one N:N map; the N:1 read; the operators' field use to future work (2026-11-17)
+
+Alec, of §68.51, in three messages:
+
+"So to revisit an earlier discussion: we have expect doing N:N and
+intuit might as well use that same N:N. we will augment those with the
+N:1 mapping that we just discussed. I don't believe that all of the
+operators have a _extension() implemented yet, so lets add that to
+future work unless it is immediately necessary."
+
+"The N:1 read can be taught with System 2's idea as its target, but if
+we are doing animal cognition, do we still need to produce it?"
+
+"The N:1 read can be centroid if we are doing animal cognition."
+
+*What it settles.*
+
+- expect is the map from a field to a field, and intuit uses the same
+  one. This answers §68.46, where Claude had read "intuit over System
+  1" as two networks of one form.
+- The read from a field to a point is added to both.
+- Where there is a System 2, that read is taught with System 2's idea
+  as its target (the teacher of §68.51). With no System 2, "animal
+  cognition", it is the centroid.
+- Completing the operators' field use is future work, unless it is
+  needed at once.
+
+*Claude's readings, each for Alec to correct.*
+
+- *"That same N:N" is expect's network.* intuit then has no stack, no
+  teacher and no cost of its own. Its teacher was the basic field that
+  the operators leave (`Extension.understand`), which is a different
+  target from expect's, the whole input, and which needs the operators'
+  field use that is now future work. What System 2 concludes teaches
+  the read to a point in its place. If Alec means one network with
+  both teachers, rule 4 of §68.53 changes by one cost.
+- *"Animal cognition" is a model in which no sentence is comprehended.*
+  It has no idea to teach the read with. The centroid is what such a
+  path uses already: `NumericPercepts.forward` reads the field of the
+  number modality into a point with `FieldProjection.key`.
+- *No reader of the expected point in this round* (§68.51's default,
+  not spoken to).
+
+*Is the operators' field use needed at once? No.* Read in the source:
+every compose rule of the eight grammar files has a contract in
+`Extension.compose`, so nothing fails for want of one. Of its 49 names,
+28 are in the list that passes the content operand's set through
+unchanged (`interpret` and an open `ask` apart), and the table of §3.17
+still has open rows (the four relation operators, `conjunction`,
+`preposition`, examination's actions) and rows that are Claude's
+proposal. So Alec's belief is right in substance. With intuit on
+expect's map, the field that the operators leave teaches nothing; it
+is still made for a kept clause, for recall and for the field of the
+generate walk, on the contracts that exist. The note for
+`doc/FutureWork.md` is in §68.55.
+
+### 68.53 Expectation in item 1.8: the rules in one place (Claude, 2026-11-17)
+
+These gather §68.43 to §68.52. "Alec" marks what he decided; the rest
+is Claude's and is marked.
+
+1. *Nothing estimates a sentence* (Alec, §68.43, §68.45).
+   `SymbolExpectation` makes no estimate at a sentence's open from
+   earlier closings and takes no target at a close. What goes: the
+   estimate and its pending state (`expect_next_meaning`, `_prediction`,
+   `_inter_last_meaning`), the comparison and its cost
+   (`observe_stm_end_state`'s comparison, `_score`,
+   `sentence_prediction_cost`, `expectation.activation`), the reads for
+   a row and for a document, the answer to FUTURE at distance 1 from
+   the estimate, `predict_next_end_state` and `generate_sentence`
+   (Alec, §68.45: no predictive processing; that the last three go is
+   Claude's reading), and the keys `sentenceExpectationLossWeight`,
+   `rowExpectationGain` and `documentExpectationGain`. What stays: the
+   predictor that the word read and the field read during the read
+   share, the bank, the reads at a percept, and the record of the
+   recent situation. The field read during the read keeps its loss,
+   `expectation.symbols`, at the weight it has, under a key of its own,
+   `symbolFieldLossWeight` (Alec, §68.60; the old key had weighted it
+   as well).
+2. *Every sentence is read as the first sentence of a document is read
+   today* (Claude; the path exists and runs at every document's start).
+   A reader that took the estimate as one of its inputs receives none:
+   no prime from the sentence level, the operand's own value as the
+   query of the reference adapter, the default as a written row's first
+   activity, no verb observed, no absence thought. Their code is left
+   as it is in this round and each is listed in the return; what each
+   reads next is item 1.7's.
+3. *The recent situation has its own writer* (Claude). At a kept close
+   each written row is admitted by `include_occurrence`, which exists
+   and has no caller, with the row's symbols and activations as
+   `bind_observation_occurrence` attaches them today. The close's
+   observation for the estimate, `bind_observation_occurrence`,
+   `PartClosing.prediction_point` and the estimate's entry in
+   `_boundary_observation_view` go where nothing else reads them. With
+   them goes the reader of §59.39 and the defect that comes and goes
+   by the draw. The word read keeps the context it has today, from the
+   admitted rows.
+4. *intuit is expect's map and the propagation over the orders* (Alec,
+   §68.52, as he amended it in §68.57). The operator `intuit` deposits
+   expect's field, detached, where it deposits its own stack's today
+   (`IntuitionField.read`), and then propagates over the orders. Up, it
+   has the closure of the definitions today (`FieldProjection.close`).
+   Up and down together are the vertical spread of item 1.7 (sigma-pi
+   §19.11, rules 23 to 27), which is not built; this round keeps the
+   closure, and item 1.7 gives intuit the spread (sigma-pi §19.22).
+   `intuit_stack`, the keys `intuitHidden` and `intuitLayers`, its
+   prediction, its teacher (`_intuition_teacher`: the block in
+   `Extension.understand`, the addition in `Intuition.write_knowing`
+   and the names that carry it through a trial) and its cost
+   `intuition.field` go (that the teacher and the cost go is Claude's
+   reading). expect keeps its form, its teacher, the omitted input, and
+   its cost `expectation.concepts`.
+5. *The read from a field to a point* (Alec, §68.50, §68.52; its
+   details are §68.51's).
+   a. With no System 2 it is the centroid, `FieldProjection.key`, as
+      built. Nothing changes there.
+   b. Where sentences are comprehended it is a `SigmaPiStack` of its
+      own on the conceptual space, beside `expect_stack`: in, the
+      order-zero field on both lanes; out, one point of a code's width;
+      one pair of layers and 64 hidden units (`ideaHidden`,
+      `ideaLayers`; the names are Claude's). A model that comprehends
+      no sentence builds none.
+   c. Its teacher: at each kept sentence, the sentence's observed
+      order-zero field at its open is the input and the root idea that
+      the kept reading leaves (`record.meaning_root`) is the target,
+      both detached. Its cost is their squared error for the streams
+      present, a term of its own (`expectation.idea`), stepped with
+      expect's parameters.
+   d. The expected point is this read on expect's field. In this round
+      nothing reads it but its certificate; it is computed when read
+      (Claude).
+6. *The operators' field use is future work* (Alec, §68.52; §68.55).
+7. *No reader is deleted for want of its estimate, and none is given
+   the expected field or point in this round* (Claude). The prime, the
+   query, the verb, a row's surprise and the absence thought are item
+   1.7's, with the rebuilt expect.
+
+**A trial of rules 1, 2 and 4 together** (scratch process, checkout
+untouched: `probe_no_estimate/no_estimate.py` and `shared_nn.py` in the
+session's scratchpad; intuit's prediction replaced by expect's stack on
+the same input, and no cost for intuit).
+
+- Both stopping gates pass with rule 4 alone, and with rules 1, 2 and 4
+  (2 passed each).
+- The 16 test files that name intuit or expect: before, 181 passed and
+  2 failed; with rules 1, 2 and 4, 179 passed and 4 failed. Three are
+  new, and each tests intuit's own stack, teacher or cost
+  (`test_item18_intuit.py::test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference`,
+  `test_item18_round_c_continuation.py::test_intuit_deposits_only_when_selected_and_derives_higher_orders`,
+  `test_item20_round6_loop.py::test_registry_uses_the_two_reconstructions_and_post_thought_target`).
+  One that failed before passed (the second of the two tests below,
+  which fails by the draw).
+- The 21 files of §68.40: 268 passed and 2 failed, the same two as with
+  rule 1 alone (§68.46).
+
+Rule 3 and rule 5 are not trialled: they need the build. The toy of
+§68.51 stands for rule 5.
+
+**Two more tests that part B broke,** found in those 16 files. Both
+pass on the committed source (2 passed, 147.20 s) and fail on Codex's
+working tree:
+`test_thought_intuition.py::test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_chooser`
+(`AttributeError: 'NoneType' object has no attribute 'coalesce'`, every
+run), and
+`test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`
+(`RuntimeError: identity map requires finite coordinates in [0, 1]`, in
+two runs of three). With §68.49 that is 24 tests in the 77 files run
+beyond Codex's own. Not checked: the other 653 test files.
+
+### 68.54 Codex text (continues §68.34; replaces §68.41)
+
+Written on 2026-11-17 after §68.52 and amended after §68.57 (its step
+3). Approved by Alec the same day: "Yes, as written" (§68.58).
+
+~~~
+Item 1.8, part B, first text, continued a sixth time. Read §68.40,
+§68.49, §68.52, §68.53, §68.55 and §68.57 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md, and §68.51 for
+step 4. §68.15, §68.20, §68.25, §68.28 and §68.34 stand. §68.41 was
+never given and is withdrawn. Start from your source of §59.40.
+
+Alec has decided that nothing estimates a sentence. The reader you
+stopped on in §59.39 is therefore removed, not repaired.
+
+1. The 22 tests of §68.49 and the two of §68.53, named in §68.56. Each
+   fails on your source and passes at HEAD 5721692530 when run alone
+   (one of the two fails by the draw). For each, name the edit of this
+   part that broke it. Those that test the estimate of a sentence go
+   with step 2: say which. Repair the others at their cause, or port
+   the test under step 7 of §55.3 with its old assertion and its new
+   one. Fourteen
+   raise at Models.py:20736, where _commit_sentence reads clause.meaning
+   for a sentence that has no clause: say when a sentence is committed
+   with none, and repair it there. Your inventory of §59.38 did not
+   reach these files; say what else it did not reach.
+
+2. Nothing estimates a sentence: rules 1, 2 and 3 of §68.53.
+   a. Remove what rule 1 lists. Keep the predictor that the word read
+      and the field read during the read share, the bank, the reads at
+      a percept, and the record of the recent situation.
+   b. Every sentence is read as the first sentence of a document is
+      read today. Do not delete a reader that took the estimate as one
+      of its inputs (the prime, the query of the reference adapter, a
+      row's first activity, the verb, the absence thought), and give it
+      nothing else to read. List each with the lines that no call now
+      reaches and the keys that no longer do anything.
+   c. The recent situation is written by the kept close itself, through
+      include_occurrence with the row's symbols and activations. Remove
+      the close's observation for the estimate,
+      bind_observation_occurrence, PartClosing.prediction_point and the
+      estimate's entry in _boundary_observation_view, where nothing
+      else reads them; name whatever else does.
+   d. Remove or port each test of what is removed, and list them. A
+      trial with no estimate changed 48 tests, each on a statement
+      about the estimate itself (§68.46; named in §68.56); if another
+      test changes, name it and its cause.
+   Certificates: (i) for the first document, situation_references
+   gives the same frames after each kept close as on your source of
+   §59.40 (occurrence, symbols and activations); (ii) your reproduction
+   of §59.39 as a test that fails on that source and passes now;
+   (iii) test/test_math_chain.py five times in a row with no failure
+   and no seed set for it; (iv) no call of the removed functions
+   remains in bin/.
+
+3. intuit is expect's map and the propagation over the orders: rule 4
+   of §68.53. The operator intuit deposits expect's field, and then
+   propagates upward by the closure of the definitions, as it does
+   today. Build no propagation downward: it is item 1.7's. Remove
+   intuit_stack, its keys, its prediction, its teacher and its cost,
+   and the names that carry the teacher through a trial. Certificates:
+   (i) what intuit deposits in a stream equals the order-zero block of
+   that stream's expected field; (ii) the cost expectation.concepts and
+   its gradients are unchanged by this step on one batch (atol 1e-6);
+   (iii) no parameter of the removed stack remains in an optimizer.
+   Say also whether expect_stack is ever read on a conceptual space
+   that does not own the concepts (in the math-chain model three spaces
+   build one each, and only the owner's is read, as far as Claude
+   read); if not, build it on the owner alone.
+
+4. The read from a field to a point: rule 5 of §68.53, with §68.51.
+   Build the stack, its teacher and its cost, on the conceptual space
+   that owns the concepts and on no other. Say which configuration
+   files comprehend no sentence, and build none there. Certificates:
+   (i) no gradient of expectation.idea reaches a parameter outside the
+   read's own stack, and the optimizer holds and steps the stack's
+   parameters; (ii) on the lesson's kept sentences at its end, the
+   squared error against the kept idea, for the read and for
+   FieldProjection.key on the same field, on the form block and on the
+   meaning block apart; (iii) the expected point of a sentence with
+   nothing omitted and the read of its observed field agree as closely
+   as expect's field and the observed field do: give both distances.
+   If the read is not below the centroid on the meaning block at the
+   lesson's end, report it and do not tune.
+
+5. Result.held_arrivals has no reader in bin/. Either name the reader
+   that needs it, or remove the field and let the tests read what
+   from_stack left in the clause.
+
+After each of steps 2, 3 and 4 run both stopping gates, the 21 test
+files of §68.40 and the 77 further files of §68.46 and §68.53 (all
+listed in §68.56), and return the counts for each step with each
+failure and its cause. If a stopping gate fails, stop at that step and
+report; do not tune. If none fails after step 5, go on with step 8 of
+§55.3 as §68.15 has it. Its measurements are then not like for like
+with those of §58 and §51: say with them that the lesson runs with no
+estimate of a sentence, with intuit on expect's map and with the new
+read's cost. In Models._run_sentence_word_bricks and in stage_cs_lang
+list every edit. Do not change a bound, a learning rate, a seed, a
+capacity or a presentation count. Commit nothing; never push main, and
+never force-push. Receipts stay local and are not linked. Return by
+continuing §59 from §59.41.
+~~~
+
+### 68.55 For the documentation pass and for future work (Claude, 2026-11-17)
+
+**For `doc/FutureWork.md`: the field use of every operator** (Alec,
+§68.52: "lets add that to future work unless it is immediately
+necessary"). To write there when the documents are edited again:
+
+- Every operator has four uses, compose, think, generate and extend,
+  and two methods on the extension's side, `compose_extend` and
+  `generate_extend` (§3.17). As built, each compose rule has a contract,
+  and 28 of the 49 names pass their content operand's set through
+  unchanged.
+- Open in §3.17's table: what a relation sentence leaves as its field
+  (`part`, `whole`, `equal`, `implies`), `conjunction`, `preposition`,
+  and examination's actions; and the rows that are Claude's proposal.
+- The question behind it: the side of the triangle between the WFF and
+  the field (Alec, §68.48, §68.50). His position: a thing's field and a
+  change's field join by union in separate subspaces, after a
+  decomposition of the event into space and time. Claude's answer for a
+  statement: a comparison of two fields, graded as the share of one
+  inside the other (§68.48). Until it is settled, a WFF's field may be
+  computed by way of its idea (Alec, §68.50).
+- What it would give back: a teacher for the field map from what the
+  operators leave, and recognition with no words (§3.17, deferred on
+  2026-11-12).
+
+**Documents this round changes, at its landing.**
+`doc/ExpectationRetention.md` (the reads at a close and for a document
+go; expect and intuit are one map; the read to a point),
+`doc/Language.md` ("Sentence expectation and interaction memory"),
+`doc/Architecture.md` (the estimate's readers; the recent situation's
+writer), `doc/Reasoning.md` ("The two networks of System 1": now one
+field map and one read to a point, with their two teachers),
+`doc/Philosophy.md` (expectation is not prediction; the point as a key,
+§68.47, with its references), `doc/FutureWork.md` ("Expectation by
+inversion" rests on the removed estimate; the note above), and
+`doc/Params.md` (the keys removed and added).
+
+### 68.56 The lists for §68.54 (Claude, 2026-11-17)
+
+Taken from the runs of §68.46, §68.49 and §68.53, so that the text of
+§68.54 needs nothing outside this document.
+
+**The 21 test files of §68.40.**
+
+~~~
+test/test_chunk_journal_origins.py
+test/test_clause_acceptance.py
+test/test_clause_closing.py
+test/test_clause_grammar.py
+test/test_clause_scope.py
+test/test_clause_storage.py
+test/test_item18_tree_first.py
+test/test_math_chain.py
+test/test_part_closing.py
+test/test_reference_arrival_review.py
+test/test_reference_arrivals.py
+test/test_reference_close.py
+test/test_reference_participants.py
+test/test_reference_reconstruction.py
+test/test_relation_closing.py
+test/test_sentence_compose.py
+test/test_sentence_end_state.py
+test/test_sentence_journal.py
+test/test_stm_relative_sentence_end_state.py
+test/test_stored_idea_generation.py
+test/test_word_interpretation.py
+~~~
+
+**The 61 further files of §68.46** (they name the sentence level, the
+prime, verbs or the closing image).
+
+~~~
+test/test_bind_thought.py
+test/test_c_prior_slotwise.py
+test/test_case_views.py
+test/test_compiled_expectation_boundary.py
+test/test_config_scoping.py
+test/test_discourse_space.py
+test/test_ensure_microbatch_cascade.py
+test/test_expectation_defaults.py
+test/test_expectation_gain.py
+test/test_expectation_kind.py
+test/test_expectation_review.py
+test/test_forgetting.py
+test/test_forward_reference_binding.py
+test/test_grammar_checkpoint.py
+test/test_identity_rows.py
+test/test_identity_threading.py
+test/test_independent_components.py
+test/test_inter_sentence_prediction_shape.py
+test/test_ir_only_refactor.py
+test/test_item18_finish.py
+test/test_item18_operator_cost.py
+test/test_item18_space_boundaries.py
+test/test_item20_round2_memory.py
+test/test_item4_native.py
+test/test_item4_parity.py
+test/test_item4_repair.py
+test/test_item4_review.py
+test/test_item4_step0.py
+test/test_item6_2_thinking.py
+test/test_joint_objectives.py
+test/test_ltm_chain_grows.py
+test/test_ltm_consolidation.py
+test/test_modal_timelines.py
+test/test_negative_expectation.py
+test/test_one_attention.py
+test/test_operators_round2.py
+test/test_orders_learned.py
+test/test_output_synthesis.py
+test/test_output_walk.py
+test/test_parts_of_speech.py
+test/test_query_executors.py
+test/test_query_work_boundaries.py
+test/test_reference_review10.py
+test/test_retire_mode.py
+test/test_selected_relation_meaning.py
+test/test_sentence_expectation.py
+test/test_sentence_prediction_trials.py
+test/test_sentence_references.py
+test/test_sentence_retention.py
+test/test_space_carrier_bridge.py
+test/test_step2b_storage.py
+test/test_stm_chunk_repairs.py
+test/test_structural_checkpoint.py
+test/test_truth_grounded_reasoning.py
+test/test_truth_ideas_routing.py
+test/test_unified_thought_controller.py
+test/test_walk_trials.py
+test/test_what_episode_memory.py
+test/test_what_training.py
+test/test_whole_path_repairs.py
+test/test_whole_paths.py
+~~~
+
+**The 16 further files of §68.53** (they name intuit or expect).
+
+~~~
+test/test_item18_completion.py
+test/test_item18_expect.py
+test/test_item18_intuit.py
+test/test_item18_round_c_continuation.py
+test/test_item18_stack.py
+test/test_item18_word_trust.py
+test/test_item20_round6_gradients.py
+test/test_item20_round6_loop.py
+test/test_item25_completion.py
+test/test_item25_repair.py
+test/test_one_backward.py
+test/test_priming_diffusion.py
+test/test_serial_concepts.py
+test/test_sparse_concept_e2e.py
+test/test_thought_infer.py
+test/test_thought_intuition.py
+~~~
+
+**The 24 tests that fail on the source of §59.40 and pass at HEAD**
+(22 of §68.49, then the two of §68.53).
+
+~~~
+test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+test/test_item18_operator_cost.py::test_binary_bind_dummy_pays_the_declared_operator_cost
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]
+test/test_item4_native.py::test_relation_chain_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]
+test/test_item4_native.py::test_relation_chain_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]
+test/test_item4_native.py::test_relation_chain_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+test/test_orders_learned.py::test_determiner_opens_a_chunk_identity_only_at_member_order_one[1]
+test/test_retire_mode.py::test_native_every_completed_field_reaches_the_chooser
+test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+test/test_selected_relation_meaning.py::test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept[False]
+test/test_selected_relation_meaning.py::test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept[True]
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+test/test_what_training.py::test_curriculum_drives_question_families_through_run
+test/test_whole_paths.py::test_retained_named_transient_captures_its_concept_not_its_mtm_address
+test/test_thought_intuition.py::test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_chooser
+test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word
+~~~
+
+**The 48 tests that the trial with no estimate changed** (step 2d).
+
+~~~
+test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation
+test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-0.0]
+test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-1.0]
+test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history
+test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor
+test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes
+test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate
+test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating
+test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign
+test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides
+test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree
+test/test_expectation_kind.py::test_grammatical_kind_does_not_train_a_second_expectation_head
+test/test_expectation_review.py::test_soft_reset_preserves_stream_and_bare_reset_is_hard
+test/test_expectation_review.py::test_unaddressed_driver_rows_form_independent_streams
+test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_native_bank_shape_independent_of_observation_depth
+test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly
+test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak
+test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_never_retains_encoder_graph
+test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows
+test/test_inter_sentence_prediction_shape.py::test_prediction_trains_predictor_with_detached_context_and_target
+test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error
+test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser
+test/test_ltm_chain_grows.py::TestLtmContextReset::test_shared_prediction_uses_the_same_observed_chain
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams
+test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step
+test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold
+test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison
+test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed
+test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]
+test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor
+test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role
+test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain
+test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory
+test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation
+test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target
+test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row
+test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]
+test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]
+test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]
+test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]
+test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently
+test/test_stm_chunk_repairs.py::test_same_chunks_supply_current_time_and_untimed_estimate
+test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode
+test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation
+~~~
+
+**The 3 tests that the trial of intuit on expect's map changed** (step
+3).
+
+~~~
+test/test_item18_intuit.py::test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference
+test/test_item18_round_c_continuation.py::test_intuit_deposits_only_when_selected_and_derives_higher_orders
+test/test_item20_round6_loop.py::test_registry_uses_the_two_reconstructions_and_post_thought_target
+~~~
+
+### 68.57 Alec: intuit also propagates over the orders; one mechanism for the two large maps (2026-11-17)
+
+Alec, of §68.52 to §68.54:
+
+""What System 2 concludes then teaches the N:1 read instead." Sure,
+whatever produces the idea can teach the N:1 read, but no need to teach
+a centroid."
+
+"But (with apologies), intuit is only called from grammar, and we have
+an opportunity for higher-order cognition there, so lets run the N:N
+intuit() as the existing propagation of N:N expect() *as well as* the
+(up and down) vertical order propagation that is enabled only with
+symbols and recursive cognition."
+
+"So expectation is N:N, and currently it uses a pi-not-sigma that runs
+from concepts to concepts. That is so close to the pi-not-sigma that
+runs from basic percepts to concepts that I wonder if there is a way to
+integrate the two, because these two N:N computations are the largest
+in the model."
+
+Then, while Claude was reading: "one possibility would be to involve
+the reconstruction to wind up back in basic percepts, which is a kind
+of imagination rooted in the word:
+pi-not-sigma-sigma^-1-not-pi^-1".
+
+*What it settles.*
+
+- Whatever produces the idea teaches the read to a point, and a
+  centroid is not taught (rule 5 of §68.53, unchanged).
+- intuit is more than expect's map. It is that map and, as well, the
+  propagation up and down the orders, which needs symbols and
+  recursion. expect is the map alone. Rule 4 of §68.53 and step 3 of
+  §68.54 are amended above.
+- He did not object to intuit losing a teacher of its own; that remains
+  Claude's reading.
+
+*Found in the record and the source.* The propagation up and down the
+orders is the vertical spread, a fan up and a share down on the
+structure's own matrices, which Alec decided on the same day to build
+in item 1.7 (sigma-pi §19.11, rules 23 to 27). It is specified and not
+built. As built, `intuit` deposits and then folds the definitions
+upward only. Rule 25 there ran the spread at the open pass, as part of
+expectation at every order (a default of Claude's); with this decision
+the spread is intuit's. The amendment and what it leaves open for item
+1.7 are sigma-pi §19.22.
+
+*What it asks.* Whether the two large maps can be one. Claude's answer
+is sigma-pi §19.22, since both maps are rebuilt in item 1.7; it changes
+nothing in §68.54. In short: yes, in two steps that are both on the
+first layer's own matrices. The way up and the way back alone return
+what went in, so the round trip he names becomes imagination only when
+something lights the concepts between the two; the spread is that
+something, and with it expect needs no stack of its own.
+
+*Sizes, measured in the math-chain model* (16,127,450 parameters).
+`expect_stack` has 605,332 and `intuit_stack` 613,652, and each of the
+three conceptual spaces builds both: 3,656,952 in all, of which only
+the pair on the space that owns the concepts is read (as far as Claude
+read `ConceptSpread.open_prediction` and `IntuitionField.open_field`).
+The largest single tensor is candidate attention's first layer
+(8,266,368), which item 1.8 removes; the percepts' codes are 1,441,792.
+So once candidate attention is gone, the field maps are the largest
+learned computations, as he says.
+
+*Alec, later, of the round trip:* "it doesnt do a lot of prediction,
+but it does reconstruction of missing data based on (limited) top-down
+information, and it provides a way (when integrated into intuit) to do
+imagination. It also dovetails with The Whole Part, where I detail the
+imagination as the inverse of perception. that is relevant because a
+forwards-backwards ping-pong between those two spaces gives us the
+ability to imagine, which the recursive symbol look is absent
+imagination (since symbols are dimensionless). Sound good?" Claude's
+answer is yes, with the condition his own "limited top-down
+information" states; it is in sigma-pi §19.22, and it is item 1.7's to
+build. Nothing in §68.54 changes.
+
+### 68.58 Decided: the text of §68.54 as written (Alec, 2026-11-17)
+
+Alec, asked whether §68.54 is right to give to Codex as it stands:
+"Yes, as written".
+
+With it stand the two readings that Claude had named to him as inside
+the text: intuit has no teacher of its own (rule 4 of §68.53), and the
+propagation down the orders is not built in this round and waits for
+item 1.7 (sigma-pi §19.22). The defaults of §68.53 that the text builds
+on stand for this round with it: every sentence read as the first of a
+document is read today (rule 2), the recent situation written by the
+kept close (rule 3), no reader of the expected point (rule 5d), and no
+reader deleted or given a new source (rule 7).
+
+Open, and item 1.7's, not this text's: whether the vertical spread also
+runs during the read, for `interpret`'s choice of an object; and the
+one mechanism for the two large maps, with its measure (sigma-pi
+§19.22).
+
+The text is the sixth continuation of part B's first text. Codex
+returns by continuing §59 from §59.41.
+
+### 68.59 On §59.41 to §59.44, and the question of §59.43 (Claude, 2026-11-17; for Alec)
+
+Codex began the text of §68.54 and stopped before its step 2, on a
+question.
+
+*Checked.* HEAD is `5721692530`, nothing is staged, and the source
+snapshot is the one §59.44 returns (`c283f59f6aa3`, 1,211 inputs). The 26
+tests of §59.42 pass (26 passed, 10.49 s), and both stopping gates pass
+(2 passed, 3.16 s). Not checked: the ports' assertions line by line, and
+the wider runs, which §68.54 asks for after step 2.
+
+*What it found, read.* The fourteen failures at `Models.py:20736` come
+from one test helper, `reading_fixtures.commit_reading`, which commits a
+reading that was never comprehended. No native reading lost its clause.
+So step 1's "say when a sentence is committed with none" is answered: in
+that helper only, and it is the helper that is ported.
+
+*The question.* The key `sentenceExpectationLossWeight`, which rule 1 of
+§68.53 removes, also weights a loss that stays: `expectation.symbols`,
+the field read during the read (`SymbolField.loss`, booked in
+`Models._sentence_path_cost` with `self.inter_loss_weight`; read by
+Claude at `Models.py:20420` and `:17318`). Rule 1 was wrong to list the
+key without saying so. Codex proposes a key of its own for it,
+`symbolFieldLossWeight`, default .1, with each configuration keeping the
+value it has today: 0 in the two ladder files, .1 elsewhere.
+
+*Claude's recommendation: yes, as Codex proposes.* It changes no weight
+anywhere, which §68.54 requires, and it gives the teacher that stays a
+name that is true of it. The other ways change what is learned:
+weighting it by `wordExpectationLossWeight` ties two teachers to one
+number, and removing the loss removes the field read's teacher.
+
+*It rests on a reading Alec has not confirmed:* that `SymbolField`, the
+symbols about to be active as read from what STM holds at each word
+step, is expectation on the field in the sense of §68.43, and stays
+with its teacher.
+
+### 68.60 Decided: the field read's loss keeps its weight under a key of its own (Alec, 2026-11-17)
+
+Alec, of §59.43 and §68.59, asked whether the field read's loss may
+keep its weight under a key of its own as Codex proposes: "Yes, new
+key".
+
+*What it settles.* `expectation.symbols`, the loss of the field read
+during the read (`SymbolField`), stays, and is weighted by
+`symbolFieldLossWeight`, default .1. Every configuration keeps the
+value it has today: 0 where it sets `sentenceExpectationLossWeight` to
+0 (`data/MM_ladder.xml`, `data/MM_ladder_idiom.xml`), and .1 elsewhere.
+`sentenceExpectationLossWeight` goes with the estimate. With it the
+reading named in §68.59 stands: `SymbolField` is expectation on the
+field and stays, with its teacher. Rule 1 of §68.53 is amended above.
+
+*Codex text (continues §68.54).*
+
+~~~
+Item 1.8, part B, first text, sixth continuation, continued. Read §68.59
+and §68.60 of doc/plans/2026-11-11-item1-8-last-architecture-round.md.
+§68.54 stands, with rule 1 of §68.53 as amended. Start from your source
+of §59.44.
+
+Alec's answer to §59.43 is yes, as you proposed. The loss
+expectation.symbols keeps its weight under a key of its own,
+symbolFieldLossWeight, default .1, and every configuration keeps the
+value it has today: 0 where it sets sentenceExpectationLossWeight to 0,
+.1 elsewhere. sentenceExpectationLossWeight goes with the estimate.
+Certificate: for one model, one input and one set of weights, the
+weighted loss expectation.symbols and its parameter gradients are the
+same under the old key and under the new (atol 1e-6), and a
+configuration that had the old key at 0 books no such term.
+
+Then continue §68.54 where §59.44 stopped: the sixteen tests of step 1
+that remain, with reading_fixtures.commit_reading ported to the native
+comprehension contract as you say, and no second close added to the
+source; then steps 2 to 5 with their runs. Everything else in §68.54
+stands. Return by continuing §59 from §59.45.
+~~~
+
+### 68.61 Decided the same evening, and kept in other documents (Alec, 2026-11-17)
+
+Three things Alec said after §68.60. None changes the text of §68.54 or
+§68.60; each is written where it is built.
+
+- *Item 1.6, revised.* "the four points are good to go with your
+  recommendations": the block commit of a kept sentence is withdrawn;
+  two steps are added (a meaning is made once; what is cut from the
+  graph is cut where it is written); MTM as rows stays, after item 1.7;
+  the hook on every saved tensor is measured in item 1 first
+  (`doc/plans/2026-11-17-item1-6-zero-data-movement.md`, section 9).
+- *A blind spot.* "please add a testpoint that verifies the
+  architecture fills in a blind spot on reconstruction (i.e. the pi
+  should generalize of neighboring elements to fill in a missing
+  area)." It is certificate 24 of item 1.7, with rule 30, in sigma-pi
+  §19.23. Measured on the committed source, nothing is filled today: 0
+  of 5 bytes, with a whole word withheld and with half of its forms
+  withheld, also after teaching with the same omission.
+- *A sentence's percepts, once.* "I think that attention in GPU reading
+  over a sentence may work most quickly if we compute perceptual
+  features for the whole sentence at the start (IOW, do all codebook
+  lookups by building an array of percept indices for the .what and an
+  array of .where with the same indices)". It is item 1.5's percept
+  pass (Alec, 2026-10-30), and the first look of §60.1 reads every word
+  bracket from two such arrays already; rule 3 of §60.1 reads a later
+  look's percepts again. Measured: 1,924 lookups of codebook rows for a
+  sentence, 63 of them of a whole table (item 1.6's document, section
+  7).
+
+### 68.62 On §59.50 to §59.58: where a sign is stored (Claude, 2026-11-17; for Alec)
+
+Alec, 2026-11-17: "Some signage issues, please review and suggest a
+solution."
+
+**What happened. The cause is mine.**
+
+1. A word's concept is read by a Sigma
+   (`SigmaConceptsFromPercepts.from_coefficients`): one number in
+   [-1, 1].
+2. `ConceptualSpace.decode_sparse_concept_rows` multiplies the word's
+   stored code by that number. A stored code is the form block and the
+   two lanes of meaning, for and against, every coordinate in [0, 1]. A
+   read of -1 therefore gives minus the code: the form and both lanes
+   below zero.
+3. In the committed source that product did not stay in STM.
+   `stage_cs_lang` replaced the top slot by `InterpretLayer.forward` on
+   the object's stored code, which is `Interpret.activate_code`: the
+   form times a presence, and the code's for block times each of the
+   pair's two magnitudes. The presence was the read's absolute value
+   (`activation.abs()`, in the word step's payload, at two places in
+   `bin/Models.py`), and the pair was (presence, 0)
+   (`Interpret.positive_evidence`) in the path I traced. So STM held no
+   negative number, and the sign of the read had no effect on anything.
+   (A word with no object row kept the product there too; I did not
+   find a case of it.)
+4. Rule 1 of §55.1 removed that call so that the word stays in the
+   slot. The call was also the only step that put the read into the
+   code's stored form. I did not see that when I wrote the rule, and my
+   review of §59 did not find it. Since then the product is pushed as
+   it is.
+
+Codex's first recommendation (§59.50) was to put that step back, on
+the word's own code. It was right. As the question was worded it read
+as though the Sigma's negative output were the defect, and that is what
+Alec answered.
+
+**What Alec has decided already.** The item 1.7 spec, §18.25
+(2026-11-16): "A concept is on the signed unit hyperball, +-1, so sigma
+returns values in that range. thats evidence for and against the
+concept. those evidence channels (at output) are stored as two unsigned
+values. As they are unsigned, Percepts (pi) can operate on them." Of
+one reading: "Yes, one number", its positive part on the for lane and
+its negative part on the against lane (rule 3 of sigma-pi §19.21). And
+of percepts (2026-11-17): "for percepts, the opposite of 1 is 0, not
+-1, as in Boole".
+
+So his two answers to Codex hold together with what the operators
+check. "The output of the sigma is negative. That does not seem like a
+problem, it is a signed hyperball": yes, the read is signed. What is
+stored of it is unsigned, and the sign is the lane. Read by these
+rules, a negative coordinate in a stored code says nothing: in the form
+block it is a percept code below zero, and in a lane it is neither that
+lane's evidence nor the other's. Checked with the working source's own
+functions (scratch; a code whose meaning is for .7, .2, 0 and against
+0, 0, 0):
+
+| | for lane | against lane |
+| --- | --- | --- |
+| `not` of minus the code | 0, 0, 0 | -.7, -.2, 0 |
+| `not` of the code | 0, 0, 0 | .7, .2, 0 |
+| share of minus the code that it covers of itself (`IdentityRows.meet_ratios`) | 0 | |
+| the same for `not` of the code | 1 | |
+
+*Claude's reading, not Alec's words:* his "Grammar operators (most of
+them) operate on conceptual vectors, so signed unit ball is fine" is
+true of what the vectors mean, and the vector an operator is handed is
+the stored form of that ball, each signed coordinate as two unsigned
+ones. I do not read him as asking for one signed block in place of the
+two lanes. That would be another representation of every code, row and
+idea, it cannot hold "both", and it is not a repair of this round.
+
+**On §59.53, the signed chart.** Two findings.
+
+1. No operator requires a positive concept value. What they require is
+   unsigned lanes, the stored form: `MeaningCodes.compose` (`not`
+   exchanges the lanes; and, or take the least and the greatest lane by
+   lane), the check in `GrammarLayer.compose_blocks`, the kernels.
+2. The change is not only a wider domain. `cube_chart` has its neutral
+   point at .5 and `signed_chart` at 0, so the chart operators now give
+   other values on ordinary unsigned operands (scratch, the two charts
+   as they are in `bin/Layers.py`):
+
+| | Committed chart | Signed chart |
+| --- | ---: | ---: |
+| a kernel's shift of +.5 on an empty lane (0) | 0 | .462 |
+| a shift of -.5 on an empty lane | 0 | -.462 |
+| a shift of -.5 on .2 | .084 | -.289 |
+| a scale of 2 on .2 | .059 | .385 |
+| a scale of 2 on .5 | .5 | .8 |
+| the chart sum of .5 and .5 (`SynthesizeLayer` where a code has no meaning block) | .5 | .8 |
+| the chart sum of .2 and .3 | .097 | .472 |
+
+   A learned shift now gives an empty lane a value, and can take a lane
+   below zero with no negative input. The earlier certificates of these
+   operators measured the committed chart, and rule 2 of §55.1 says the
+   operators' forwards are unchanged code. §59.55's three modal
+   failures and the readers of §59.56 follow from this change.
+
+**The suggested solution.**
+
+1. *A sign is not stored in a code.* A concept's read is signed. A
+   stored code, a value in STM, a row, an idea and the field are
+   unsigned: the size of the read on the form, and its pair on the two
+   lanes. This is §18.25, and it is what the committed source did.
+2. *The word's step deposits the word by that law.* In `stage_cs_lang`
+   the value pushed for a word is `Interpret.activate_code` on the
+   word's own stored code (`_ar_word_concept_atoms` at the word; the
+   committed source applied it to the object's, `_ar_word_object_atoms`),
+   with the presence and the pair that the payload already carries, and
+   the place and time coordinates as the product has them. The law is
+   called itself (`InterpretLayer.activate`) and not through
+   `InterpretLayer.forward`, which stays out of the word's step as rule
+   1 of §55.1 has it. Nothing else of that rule changes: the slot's
+   row, order and reference are the word's, and the object is taken at
+   the conversion. For a read that is not negative, with the pair
+   (presence, 0) and a code whose against block is empty, the value is
+   the product that is pushed today.
+3. *The committed charts stand.* §59.53's changes go: `assert_signed`,
+   `signed_chart` and `signed_unchart` and their uses in
+   `bin/Language.py`, `bin/MeaningKernels.py` and `bin/Layers.py`;
+   `ChangeLayer`'s Sigma without `unit_interval`; the neutral operand
+   of 0 in `SynthesizeLayer`; the candidate filters at -1;
+   `test_item18_signed_grammar.py`; and the port of
+   `test_lower_rejects_non_cube_identity_input`.
+4. *Nothing downstream changes:* `IdentityRows.carrier` and
+   `meet_ratios`, `ReferenceClose`, `MemoryLink`,
+   `FieldProjection.stimulate`, `PrimedSymbolReader.consume`, the four
+   attention files, and the other readers §59.56 lists.
+5. *Certificates.* Certificate 1 of §55.2 reads: after a word's step
+   the top slot's row and order are the word's, and its value is rule
+   2's. New: with every read negated (`from_coefficients` times -1) a
+   sentence's STM values, tree and kept row are what they are without
+   it; this raises on the source of §59.57 with the committed charts.
+   And certificate 81 passes on the failing draw Codex recorded.
+6. *What the sign means is item 1.7's.* Today the read's sign is
+   dropped by the absolute value. Rule 3 of sigma-pi §19.21 gives it
+   its lane, with the first layer that item rebuilds; the absolute
+   value and `Interpret.positive_evidence` are added to that item's
+   list of readers to adapt. *Recommended:* with item 1.7, for the
+   reason the trial below gives.
+
+**Trials** (scratch copies of §59.57's source; nothing in the working
+tree touched; not receipts). "Committed charts" is rule 3 applied to a
+copy; "negated" is a plugin that returns minus every
+`from_coefficients` read.
+
+| Copy | Reads | Tests | Result |
+| --- | --- | --- | --- |
+| the committed source (5721692530) | negated | math chain, word interpretation, one gate | 31 passed |
+| committed charts, no rule 2 | negated | tree first, math chain, one gate | raises in the first test: `OperationSelectionLayer._stacked_reduced`, "identity map requires finite coordinates in [0, 1]" |
+| committed charts and rule 2 | as they are | the same | 33 passed |
+| committed charts and rule 2 | negated | the same | 33 passed |
+| rule 2 with the pair split by the read's sign | as they are | the same and the other gate | 34 passed |
+| rule 2 with the pair split by the read's sign | negated | the same | 33 passed, 1 failed: `test_native_worked_document_trains_unforced_without_numeric_oracles`, "identity ('ltm', 'time-v1', 52) has no member references" (`bin/Memory.py`) |
+
+On the copy with the committed charts and rule 2, reads as they are:
+both stopping gates and the tree-first file, 18 passed; the 21 files,
+268 passed, 8 skipped, 1 failed
+(`test_every_serial_word_runs_interpret_before_composition`, which
+forbids `InterpretLayer.forward` in the word's step: my first copy
+called the law through it; with the law called itself, that file and
+the tree-first file give 30 passed); the 61 files, 839 passed, 26
+skipped, 1 xpassed; the 16 files, 182 passed, 6 skipped, 1 failed for a
+document my copy lacked (it passes with the documents linked), and
+certificate 81 passed in that draw; Codex's mechanism files of §59.55
+with the three new files of §59.47 to §59.49, 159 passed, and the seven
+cases of `test_item18_signed_grammar.py` fail, as they hand operators
+negative coordinates.
+
+*Not done:* certificate 81 on Codex's recorded failing draw; the
+lesson, the verbal proof, the assessment tables and the full sweep.
+
+So: the read's sign reaches nothing at the committed source; rule 2
+makes that true again; and splitting the sign into the lanes now, with
+every word read against, meets at least one reader that is not ready
+for it. That last is the reason for rule 6.
+
+**§59.58's two questions.**
+
+- *What reference containment reads.* Alec: "I don't understand what
+  coordinates are being summed here, and why." `IdentityRows.coordinates`
+  zeroes a code's form, place and time. What is left is its two lanes
+  of meaning, for the description and for the candidate. Coordinate by
+  coordinate the lesser of the two is taken, and these are summed: what
+  the two share. That sum is divided by each one's own sum, which gives
+  the share of the candidate that the description covers and the share
+  of the description that the candidate covers. A sum of lanes is a
+  quantity only while they are unsigned. With rule 1 they are, and the
+  matching law stays as it is.
+- *How a generation idea receives the reader's content.* As today.
+  Alec: "A symbol reader should be accepting only unsigned if it's
+  reading symbols and not concepts." The keys it reads and the content
+  it forms from them are unsigned, and the idea that `consume` moves is
+  a stored value, unsigned by rule 1. Its argument is named `symbols`
+  and holds the idea (Codex's trace); the name is for the doc pass or
+  for when that file is next opened.
+
+**§59.55's two repairs** (the modal alias mark in MTM, and the writer
+of a null-kind definition) do not depend on the chart. *Default:* both
+stay and are reviewed with the return. I have not reviewed them here.
+The three modal tests that exposed the first pass without it once the
+committed charts are back (§59.49's count).
+
+**For Alec.** (1) Is this the repair: rules 1 to 5? (2) Rule 6: the
+read's sign takes its lane with item 1.7 (recommended), or now. No
+text for Codex is written until he answers; §59.57's source and the
+question of §59.58 stand as Codex left them.
+
+*Answered on 2026-11-18:* §68.63, which also makes rules 2, 5 and 6
+more exact. The text for Codex is §68.64. (§68.65 gave rule 4 one
+exception; §68.67 withdraws it.)
+
+### 68.63 Alec on §68.62: a signed value is replaced by its two unsigned values (2026-11-18)
+
+Alec, 2026-11-18, of §68.62:
+
+> I do not know the fix for the current code, but let me speak to what
+> should happen in the final version.
+>
+> You said "Since then a read of -1 pushes minus the whole code: the
+> form and both lanes below zero". The sigma may be negative, but in its
+> use in higher orders it travels through symbols, and in lower orders
+> it travels back through percepts. In both cases it should be replaced
+> by the two unsigned symbols or percepts that represent the vector: so
+> 0.5 becomes [0, .5] and -0.5 becomes [.5,0]
+
+**What it settles.**
+
+1. *The rule, in Alec's words.* A Sigma's value is signed. Where it is
+   used, going up through symbols or going back down through percepts,
+   it is replaced by two unsigned values, its positive part and its
+   negative part, each on its own side. No symbol and no percept holds a
+   number below zero. This is rule 1 of §68.62, and it says more: the
+   sign is not dropped, it says which of the two values is filled.
+2. *For the way up it was already designed:* rules 3, 4 and 10 of item
+   1.7 (sigma-pi §19.21; decided in §18.25, "Yes, one number"). *For the
+   way back down it was not in the record,* and is written there now
+   (sigma-pi §19.24, with its rule 17 and certificate 3).
+3. *Rule 6 of §68.62* said "What the sign means is item 1.7's". What it
+   means is now stated by Alec: the lane. What is item 1.7's is the
+   building of it.
+
+*Claude's readings, not Alec's words.* (a) The pair is written with the
+negative part first: .5 is against 0 and for .5. The stored code writes
+the for lane first (`MeaningCodes`), so in the code's order .5 is
+(for .5, against 0); nothing in the layout changes. (b) "I do not know
+the fix for the current code" leaves that fix to Claude, held to this
+rule for the final version. Alec has not said when the Sigma's sign is
+to fill the lanes in today's code.
+
+**What today's code has in its place** (read in §59.57's source;
+counted on scratch copies, not receipts).
+
+- *A symbol carries one signed number.*
+  `ConceptualSpace.promote_symbol_reference`: "SymbolSpace transports
+  identity and signed activation". Rule 10 of item 1.7 makes a symbol
+  two unsigned rows.
+- *A word has two reads.* The attention walk reads the word's
+  definition at its extent as a pair, for and against, both unsigned
+  (`ModelAttention.native_word_poles`, through `cs_read_memberships`;
+  handed to the word's step by `Models._attention_sentence_payload`).
+  Beside it the readout (`IndexedSigmaConceptsFromPercepts`) gives one
+  signed number, of which the word's step keeps the absolute value, as
+  the presence of the form. Where the walk ran, its pair fills the two
+  lanes; where it did not, the pair is (presence, 0)
+  (`Interpret.positive_evidence`).
+- *Counted,* with rule 2 of §68.62 on a copy. In certificate 81 every
+  deposit of a word that was present carried a pair other than
+  (presence, 0), the walk's: 373 of 373. On the math chain and the two
+  stopping gates: at least 78 of 97.
+- *The readout's sign.* Its weights start at .5 and its bias at 0, and
+  the first reads counted were .76; its inputs are signed, with -1 for
+  an observed absence (`ConceptsFromPercepts`). Of 478 reads of a word's
+  own row (certificate 81 on two draws, the math chain, the gates) none
+  was below zero. Codex's -1 of §59.50 is the one that has been seen.
+- *Item 1.7 makes the two reads one.* Its rules 8 and 12 replace the
+  fold by which the walk's pair is read (`SparseLayer.fold_presence`
+  and `ConceptualSpace._compose_order0`, in `cs_read_percept_field`)
+  and the readout with the one Sigma of rule 3, whose value is the
+  pair.
+
+So what is stored of a word today is two unsigned lanes, as the rule
+requires of what is stored. They are filled by the walk's read and not
+by the Sigma's value. That is the gap, and item 1.7 closes it.
+
+**The fix for the current code** (*Claude's, as Alec left it*). Rules 1
+to 5 of §68.62 stand, with three precisions.
+
+1. *Rule 2 stores the walk's pair with the word.* The pair that the
+   payload carries is the walk's wherever the walk ran. With rule 2 a
+   word's value in STM is its form times the size of the read, and its
+   code on the two lanes by that pair, as the committed source stored
+   the object's value ("The reference keeps form presence and both
+   conceptual magnitudes"). On §59.57's source a word's value is its
+   code times the read; the walk's pair is not on it, and is applied at
+   the conversion, to the object's code (`Comprehension.Evaluation.leaf`).
+   §68.62 said the value is unchanged "for a read that is not negative,
+   with the pair (presence, 0)": that is the lesser case (at most 19 of
+   97 above), which I did not say there. The runs of §68.62 were made
+   with the walk's pair, and stand.
+2. *The new certificate of rule 5 is reworded.* With every read
+   negated, no value pushed to STM, no kept row and no idea has a
+   coordinate below zero, and the sentence is read without an error.
+   Whether the values equal those without the negation is reported and
+   not required: item 1.7 changes it to the lanes exchanged.
+3. *Rule 6: the Sigma's sign fills the lanes with item 1.7, and not in
+   this repair.* Tried on a copy: where the walk gave no pair, the pair
+   was taken from the read's sign, (read, 0) for a read above zero and
+   (0, minus the read) below it. With the reads as they were in these
+   runs it changes nothing, as none was negative. With every read
+   negated, two of four
+   runs failed, both in
+   `test_native_worked_document_trains_unforced_without_numeric_oracles`:
+   MTM held an identity whose only mention was marked as an alternative
+   (`alternative_mention`, the repair of §59.55),
+   `MediumTermMemory.value_of` found no member in the actual timeline,
+   and `PrependedSymbols.symbolize` raised. Rule 2 as it stands, with
+   every read negated, passed five runs of five. So a word stored wholly
+   against meets at least one reader that is not ready for it; the
+   readers are traced with item 1.7 (its table of readers, sigma-pi
+   §19.21).
+
+**Trials** (scratch copies of §59.57's source, the committed charts
+restored; nothing in the working tree touched; not receipts).
+"Negated" is a plugin that returns minus every `from_coefficients`
+read. The files are the tree-first file, the math chain and one
+stopping gate.
+
+| Copy | Reads | Tests | Result |
+| --- | --- | --- | --- |
+| rule 2 | negated | the files, five runs | 33 passed each time |
+| rule 2, the pair from the read's sign where the walk gives none | negated | the files, four runs | twice all passed; twice one failed, as in precision 3; that test alone, once, passed |
+| rule 2 | as they are, two seeded draws | certificate 81, 200 presentations | passed twice; 209 reads each, none below zero |
+| rule 2, the pair from the read's sign | the same two draws | certificate 81 | passed twice, with the same reads |
+| no rule 2 | one of those draws | certificate 81 | passed: the failure of §59.50 needs a read below zero, and none came |
+
+*Not done:* certificate 81 on the failing stream Codex recorded (my
+draws gave no read below zero); the lesson, the verbal proof, the
+assessment tables and the full sweep.
+
+*Observed, not traced.* In certificate 81 the walk's pair is the same
+at both words of a sentence, and after the first dozen presentations it
+is mostly (0, 1), against: 97 of the first 133 deposits of the first
+word, which is present. With rule 2 that pair is on the stored word, as
+it was on the object's value at the committed source. The text below
+asks Codex what sets it.
+
+*A note on §59.55's first repair,* from the same trace: an identity
+whose only mention is marked as an alternative has no member in the
+actual timeline, and `value_of` raises for it. No ordinary run reached
+this (the 61 files of §68.62 passed with the repair in). The text asks
+Codex what such an identity should read.
+
+### 68.64 Codex text (continues §68.54 and §68.60; answers §59.58)
+
+Written on 2026-11-18 after §68.63. *It rests on two readings of
+Claude's that Alec has not confirmed:* that "I do not know the fix for
+the current code" leaves that fix to Claude; and that the Sigma's sign
+fills the lanes with item 1.7, the final version, so that this repair
+stores the size of the read and the walk's pair, as the committed
+source did.
+
+~~~
+Item 1.8, part B, first text, continued a seventh time. Read §68.62 and
+§68.63 of doc/plans/2026-11-11-item1-8-last-architecture-round.md, and
+§19.24 of doc/plans/2026-11-14-sigma-pi-layers.md for what is not built
+here. §68.54 and §68.60 stand. Start from your source of §59.57.
+
+Your question of §59.58 is answered there. A Sigma's read is signed.
+What is stored of it is unsigned: STM, a row, an idea and the field
+hold no number below zero (Alec, §68.63). The failure of §59.50 came
+from rule 1 of §55.1, which removed the only step that stored the read
+in that form. Your recommendation of §59.50 was right, and the signed
+chart of §59.53 is withdrawn.
+
+1. The word's step stores the word by the leaf law: rule 2 of §68.62,
+   with precision 1 of §68.63. In stage_cs_lang the value pushed for a
+   word is Interpret.activate_code on the word's own staged code
+   (_ar_word_concept_atoms at the word), with the presence and the pair
+   that the payload carries, and the place and time coordinates as the
+   product has them. Call InterpretLayer.activate, not
+   InterpretLayer.forward. The slot's row, order and reference stay the
+   word's, and the object is taken at the conversion, as now. Change
+   nothing in the payload: the presence stays the read's absolute
+   value, and the pair stays the walk's where the walk ran and
+   (presence, 0) where it did not. Do not take the pair from the read's
+   sign and do not clamp the read: that is item 1.7's. Name each path
+   on which no code of the word's own is staged, and what is pushed
+   there; it too holds no number below zero.
+
+2. The committed charts stand: rule 3 of §68.62. Remove what §59.53
+   added and restore what it changed (the list is in rule 3), the test
+   test_lower_rejects_non_cube_identity_input among it. Then list every
+   line of bin/Language.py, bin/MeaningKernels.py and bin/Layers.py
+   that still differs from HEAD, each with the step of §68.54 that made
+   it.
+
+3. §59.54 stands. The two repairs of §59.55 stay with their tests. For
+   each, say whether its test fails without the repair once steps 1 and
+   2 are in. Of the first: an identity whose only mention is marked as
+   an alternative has no member in the actual timeline, and
+   MediumTermMemory.value_of raises for it when
+   PrependedSymbols.symbolize reads it (a trial of Claude's reached
+   this, §68.63). Say what such an identity should read, and give the
+   test.
+
+4. Certificates.
+   (i) Certificate 1 of §55.2: after a word's step the top slot's row
+   and order are the word's, and its value is Interpret.activate_code
+   of the word's staged code with the payload's presence and pair.
+   test_1_word_deposit_keeps_its_value_row_and_order compares the slot
+   with what was pushed; have it compare what was pushed with that law
+   too.
+   (ii) With every read negated (the test itself patches
+   SigmaConceptsFromPercepts.from_coefficients to return minus its
+   value), no value pushed to STM, no kept row and no idea has a
+   coordinate below zero, and the sentence is read without an error.
+   It fails on your source of §59.57 with step 2 applied and passes
+   with step 1. Report whether the values equal those without the
+   negation; where they do not, name the reader of the signed product
+   that makes the difference. If a number below zero reaches a kept row
+   or an idea by another way than the word's push, name the way and
+   stop there.
+   (iii) Certificate 81 on the failing stream you recorded, with its
+   200 presentations unchanged.
+   (iv) assert_cube, GrammarLayer.compose_blocks and
+   OperationSelectionLayer._stacked_reduced check what they checked at
+   HEAD.
+
+5. Report, and do not repair.
+   (a) With step 1, over the lesson: in how many deposits of a word the
+   pair is the walk's and in how many it is (presence, 0), and how many
+   reads are below zero.
+   (b) In certificate 81 the walk's pair is the same at both words of a
+   sentence, and after the first dozen presentations it is mostly
+   (0, 1), for a first word that is present (Claude's count on a copy:
+   97 of the first 133). Say what sets it.
+   (c) Every other place that reads the signed read or the signed
+   product after reduce_aligned_word_peers (the symbol reference of
+   stage_cs_sym, the prior symbol field, the per-word contributions),
+   each with what it does with the sign. It is for item 1.7's list.
+
+Then run both stopping gates, the 21 test files of §68.40 and the 77
+further files of §68.56, and return the counts with each failure and
+its cause. If a stopping gate fails, stop and report; do not tune. If
+none fails, go on with what §68.54 left: its last paragraph, and step 8
+of §55.3 as §68.15 has it. In stage_cs_lang list every edit. Do not
+change a bound, a learning rate, a seed, a capacity or a presentation
+count. Commit nothing; never push main, and never force-push. Receipts
+stay local and are not linked. Return by continuing §59 from §59.59.
+~~~
+
+### 68.65 On §59.70 to §59.74: what bind's containment compares, and where a token is told from its type (Claude, 2026-11-18; for Alec)
+
+Codex asked (§59.70): "may bind's containment read exclude the
+location/time band, while keeping that band unchanged on the operand and
+selected result?" and recommended it. Alec to Codex, as §59.71 quotes
+it: "Please continue if that was the only stopper". Codex took that as
+approval and built it (§59.71 to §59.74). Alec to Claude, 2026-11-18:
+"There is a question for us.", and then:
+
+> Direct compare will not capture whether the concept is a token of a
+> concept type, whihc is where that information may be necessary.
+
+All counts below are from scratch copies with a passive record of
+`STMChunks.bind_menu` (what it was given, what it compared, what it
+offered). They are not receipts. Each is one run, and the draws are not
+seeded.
+
+**1. The question as asked: yes, and the record had decided it.**
+`doc/Architecture.md`, as committed:
+
+- "A mention associates by content only when one of
+  `IdentityRows.meet_ratios`' two coverage ratios over meaning
+  coordinates is exactly one ... (Alec, 2026-11-05). This eligibility is
+  shared by the closing/arrival/thought scorer, the compiled STM binding
+  menu and read-time re-identification ... Empty meaning supplies no
+  identity evidence."
+- "Bands are positions." Location and time coordinates "are positions,
+  not membership evidence"; composition "reads content on either side
+  of the declared percept band (`GrammarLayer.content_operand` zeroes
+  it) and carries the band through unchanged."
+
+Place and time are not meaning coordinates, so they have no part in
+that sum. The committed `bind_menu` compared every coordinate from
+`meaning_start` on, and `ReferenceContext.prepare_operands` gave it
+that start:
+
+| The bank `prepare_operands` is given | `meaning_start` at HEAD | Compared at HEAD | By the record |
+|---|---|---|---|
+| its interpreter's codebook has a form block and a meaning block | the end of the form block | the meaning | the same |
+| a form block and no meaning block (the small fixtures, 360 coordinates) | the whole width | nothing: no candidate is offered | the same ("Empty meaning supplies no identity evidence") |
+| no interpreter (a bank that a test builds by hand; the live-reference test does) | 0 | every coordinate, place and time among them | every coordinate but place and time |
+
+Only the third row needs a change.
+
+**2. Alec's point: the record agrees, and it reads that information in
+two other places.** `doc/Orders.md`, §3: order 1 collects occurrences
+into an individual by "continuity (`.where`/`.when` trajectory)", and
+"Identity is per order ... Same point, different order stamp
+$\Rightarrow$ different thing." In the source, read at HEAD:
+
+| What is asked | Reader | What it reads |
+|---|---|---|
+| may this candidate be offered at all | `STMChunks.bind_menu` during the read, `ReferenceClose.score` at the close: one description contains the other | meaning coordinates |
+| is it of the mention's order (a token is not its type) | `bind_menu`'s order filter, and `result_order` in `prepare_operands` | the order held beside the value |
+| is it the same individual met again | `ReferenceClose.continuity`: four of the scorer's twelve features, summed in one linear policy | the overlap of the mention's `.where` with the identity's, the time since its last mention, the difference from its last occurrence's value, whether STM holds it |
+
+So what tells a token from its type, and one individual from another,
+is read beside the containment sum and not in it. In a model with a
+meaning block that sum never held place or time: they lie in the form
+block. Leaving them out of it takes nothing from those readers, and
+they stay on the mention and on every candidate.
+
+**3. What his point exposes: since rule 1 of §55.1 the menu reads the
+word.** All three reads above are made on what the slot holds. That is
+now the word: its own code, its own order (0, §59.67) and its place in
+the sentence. Rule 2 of §55.1 (*Claude's default*) left the candidates'
+code unchanged and did not consider that its input had changed. §68.16
+says "during the read the reference operations run as they do now"; in
+effect they do not. On four files (`test_stm_chunk_gates.py`,
+`test_item25_completion.py`, `test_math_chain.py`,
+`test_live_references.py`; 77 passed on each source), in the layout
+with a meaning block:
+
+| Source | Menu calls | Candidates compared | The mention's order | Pass on content | Of those, refused by the order filter | Offered |
+|---|---|---|---|---|---|---|
+| HEAD | 598 | 3,356 | open in 2,280, 0 in 549, 1 in 257, 2 or more in 270 | 151 | 22 | 129 |
+| Codex's source of §59.71 with the committed start (point 4) | 350 | 1,878 | open in 460, 0 in 1,399, 1 in 19 | 268 | 250 | 18 |
+
+*Corrected in §70.10:* the totals of this table vary by the draw of one
+training test and are no measure of the size of the drop.
+
+The direct comparison is now between a word and the held objects. The
+word's order is 0 and the held identities are at their own orders, so
+the filter that keeps a token from its type refuses nearly every
+candidate that passes on content. No test of these four files notices.
+
+*Open, for Alec; nothing is built for it:* what the menu reads for the
+mention during the read.
+
+- *Read in the source, not simulated:* the read still stages the word's
+  object beside the word (`_ar_word_object_ids`, `_ar_word_object_rows`,
+  `_ar_word_object_atoms`; comprehension's leaf takes it). The menu
+  could test that object's description and order while the slot keeps
+  the word. That would make §68.16's sentence true again.
+- The other course: no reference is offered during the read, and it is
+  offered at comprehension, where the object is known.
+
+*Claude's leaning:* the first, after a trial on a scratch copy and
+after Codex's counts on the lesson (§68.66, step 6a).
+
+**4. What §59.71 built.** Two things.
+
+(a) The menu leaves place and time out of its comparison and returns the
+candidates unchanged. This is the third row of point 1's table, and it
+is right.
+
+(b) `prepare_operands` now starts the comparison at 0 wherever the
+codebook has no meaning pairs ("otherwise it reads content across the
+unpaired code"). This changes the second row: a model with a form block
+and no meaning block now binds by its forms. That is against "over
+meaning coordinates" and "Empty meaning supplies no identity evidence",
+and against "How `bind` scores a candidate" in the same document:
+"Requests and candidates are read in conceptual coordinates, never in
+the percept cube." §59.70 did not ask for it, and §59.71 does not say
+that it turns `bind` on in the small fixtures. On the two stopping gates
+and seven files (`test_live_references.py`,
+`test_grammar_object_leaves.py`, `test_lexical_reference_orders.py`,
+`test_item55_mechanisms.py`, `test_reading_curriculum.py`,
+`test_unsigned_coordinates.py`, `test_item18_tree_first.py`):
+
+| Source | Result | Menu calls | Candidates compared | Offered |
+|---|---|---|---|---|
+| HEAD (the gates and the five of those files it has) | 60 passed, 1 skipped | 262 | 1,176 | 13, all in the live-reference test |
+| §59.71's source, copied at 06:27 | 86 passed, 1 skipped, 1 failed | 666 | 2,766 | 650 |
+| the same with the committed start restored (one line), place and time still left out | 86 passed, 1 skipped, the same 1 failed | 314 | 1,704 | 13: 11 in the live-reference test, 2 in Codex's new test |
+
+`test_clock_independence` makes 360 menu calls on §59.71's source and 72
+on the other two. The one failure, on both copies, is
+`test_reading_curriculum.py::test_native_four_word_inverse_follows_composed_children_without_free_decoder[admitted-objects]`
+(418 of 2,880 coordinates, greatest difference .2384); not traced, and
+Codex may have ported it since. `test_item55_mechanisms.py::test_absences`
+is left out of every count: it calls `git ls-files`, and a scratch copy
+is no repository. Neither stopping gate calls the menu.
+
+*Recommended:* keep (a), take back (b). The live-reference test,
+Codex's new test of both layouts and both gates pass without (b). A
+model with a meaning block reads the same start either way, so the
+lesson of §59.74 does not depend on it if `explore-1.xml` has a meaning
+block (*not checked*); the sweep's small fixtures do.
+
+**5. The cause is not the unsigned coordinates** (a correction to
+§59.70, which says they "expose" this reader).
+`test_public_reading_fuses_the_reference_before_capture_and_write`, at
+the first word, against the held idea:
+
+| Source | The test | The mention's place against the candidate's | Ratio with place and time | Content only |
+|---|---|---|---|---|
+| HEAD | passes | equal in all 15 comparisons of the test: no place, time at age zero | 1.0 | 1.0 |
+| §59.57's source with the committed charts, signed coordinates (the copy of §68.62) | fails at the fusion assertion | (.098, .995, 0, 1) against none | .9903 | 1.0 |
+| the same with the leaf law of §68.64 | fails the same way | the same | .9903 | 1.0 |
+| Codex's source, copied at 06:20, unsigned coordinates | reaches the next assertion | (.549, .998, .5, 1) against none | .986 | 1.0 |
+
+At HEAD the slot took the object's identity
+(`FunctionalPeerSTM.resolve_top_reference`), and
+`LanguageSpace.choose_operation` then replaced the slot's value, before
+`prepare_operands`, by the off-stack value of that identity
+(`STMChunks.refresh`; §59.12, producer 4). The mention that reached the
+menu was a copy of a candidate, with the candidates' bands. Now the
+slot is the word. No off-stack chunk has its identity, so nothing
+refreshes it, and it keeps the place `stage_cs_lang` stamps on it
+(§59.12, producer 3). This is a fourth thing the call removed by rule 1
+of §55.1 did; §68.63 counted three. It is the same change as point 3.
+
+**6. The rule as it stands.** Rule 4 of §68.62 and rule 2 of §55.1
+gain one exception: 4(a). The start of the comparison, the test of a
+ratio of exactly 1, the order filter and the exclusions do not change.
+
+**7. Also seen, for Codex's lists.** `ReferenceClose.continuity`'s
+overlap is the minimum of two stored `.where` bands, summed. It is not
+in §59.62's list of readers of the coordinates. With the unsigned
+coordinates two places always overlap by a positive amount. Not traced
+further.
+
+**8. Doc pass at landing** (`basicmodel/doc` is not edited now).
+`doc/Architecture.md`, "Bands are positions": the coordinates are
+unsigned since §59.62, and the paragraph names the bind menu beside
+`content_operand`. The paragraph on a mention's association says where
+the comparison starts in each of the three layouts of point 1.
+
+**9. Not reviewed here:** the rest of §59.59 to §59.74. Among it, three
+things Codex decided: stored observations of older checkpoints are
+converted on load (§59.62); an identity mentioned only on an
+alternative timeline reads zero on the actual one (§59.63); the mixing
+path stages words' own codes (§59.67).
+
+### 68.66 Codex text (continues §68.64; answers §59.70 and §59.71)
+
+*Withdrawn by §68.67 (Alec, 2026-11-18); not carried.* Kept for the
+record.
+
+Written on 2026-11-18 after §68.65. *It waits for Alec's word.* Step 2
+rests on Claude's reading of `doc/Architecture.md`; Alec has not said
+whether the changed start stays. Nothing in it builds on the open point
+of §68.65, point 3; step 6a only counts.
+
+~~~
+Item 1.8, part B, first text, continued an eighth time. Read §68.65 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. §68.64 stands.
+Start from your source of §59.74.
+
+1. Keep of §59.71: STMChunks.bind_menu leaves the place and time
+   coordinates out of its containment comparison and returns the
+   candidates unchanged; the percept_band argument; your test of both
+   layouts; your ports of the live-reference test. It is the rule of
+   doc/Architecture.md, "Bands are positions", and the one exception to
+   rule 4 of §68.62 and to rule 2 of §55.1.
+2. Take back of §59.71: the changed start of the comparison in
+   ReferenceContext.prepare_operands (the condition on meaning_pairs).
+   Restore the committed start: the mereology's percept_event_width
+   where the bank's interpreter has one, else 0. doc/Architecture.md
+   has a mention associate "over meaning coordinates" (Alec,
+   2026-11-05), in "the compiled STM binding menu" too, and "Empty
+   meaning supplies no identity evidence": a code with a form block and
+   no meaning block offers no candidate, as at HEAD. §68.65 counts what
+   the changed start did: 650 candidates offered on nine files where
+   HEAD and the committed start offer 13. If a test needs the changed
+   start, name the test and stop; do not keep the start for a test.
+3. The measurements. Say whether explore-1.xml's codebook has a
+   meaning block. If it has, the lesson of §59.74 reads the same start
+   and stands. The sweep and the three groups of files are run again
+   after step 2.
+4. The cause, in a line. §68.65 finds the live-reference test failing
+   on §59.57's source with the signed coordinates too (ratio .9903), so
+   the unsigned coordinates did not expose it. Claude's account: at
+   HEAD STMChunks.refresh replaced the slot's value, before
+   prepare_operands, by the off-stack value of the object's identity;
+   the slot is now the word, nothing refreshes it, and it keeps the
+   place stage_cs_lang stamps. Confirm or correct, and say what refresh
+   still does for a slot that holds a word.
+5. Certificates. (i) Your test of both layouts stays. (ii) New: a bank
+   whose interpreter has a form block and no meaning pairs is offered
+   only the dummy, whatever its forms. (iii) The live-reference test
+   passes as you ported it.
+6. Report, do not repair:
+   (a) The bind menu during the read. On the four files of §68.65,
+       point 3, at HEAD and on your source, and on your lesson and
+       assessment: menu calls, candidates compared, the mention's
+       order, candidates that pass on content, those the order filter
+       refuses, candidates offered, binds chosen. §68.65 counts 18
+       offered where HEAD offered 129, because the mention is now the
+       word at order 0. Build nothing for it: what the menu reads for
+       the mention is Alec's to decide.
+   (b) Every reader that takes stored place or time coordinates as
+       numbers and is not in §59.62's list. ReferenceClose.continuity's
+       overlap is one.
+   (c) Every other read through IdentityRows.meet_ratios whose
+       comparison reaches place or time.
+   (d) test_reading_curriculum.py::test_native_four_word_inverse_follows_composed_children_without_free_decoder[admitted-objects],
+       which failed on Claude's copies of your source of 06:27 with
+       either start.
+7. Then what §68.64 left that is not yet returned: the verbal proof,
+   the assessment tables, the full sweep; then what §68.54 left and
+   step 8 of §55.3 as §68.15.
+
+Change no bound, learning rate, seed, capacity or presentation count.
+Commit nothing; never push main, and never force-push. Receipts stay
+local and are not linked. Return by continuing §59 from its next free
+number.
+~~~
+
+### 68.67 Alec on §68.65: match the object, in one place; place and time belong to events; words, objects, then their meta concepts (2026-11-18)
+
+Alec, 2026-11-18, to the two questions put with §68.65 (1: is §68.66
+right to give to Codex as written; 2: what the menu reads for the
+mention during the read):
+
+> 1 multiple mentions of the same name should form an identity, but
+> even then the object should exist and can be compared (and we don't
+> want to match pronouns always). So it seems we should match the
+> object, not the word. We also have to match the object against types:
+> it may be a type matching a token or vice versa. And we have to
+> account for polysemy. To take the time to make an algorithm that
+> matches a content against Conceptual Space, so that we do this only in
+> one place for all clients needing a match.
+>
+> WRT place/time match, they are necessary at the level of events: there
+> may be a one-shot learning that remembers a percept and its
+> time/place. So I think it is really generalization that should remove
+> that information, not us by hand outside of the matching function I
+> mentioned. but since concepts are created by this promotion algorithm,
+> if lookup fails, we might start to create such a generalization by
+> collecting unmatched entities that can be used to create such a
+> generalization. But I think that will depend on multi-modal
+> information, so perhaps many of the ties between word and object will
+> have to be done first in a multi-modal concept, where "Alec" and "he"
+> have a common perceptual basis or concept in another modality, so that
+> we can tie those words to that concept/stimulus. as cited by Walker
+> Percy, it is not until Helen Keller experiences water at the same time
+> that she feels water running over her hand that she learns this
+> identity between water-word and water-object.
+>
+> Hopefully that answers your 1 and 2.
+
+Then, in four further messages:
+
+> so we learn word generalizations, and we learn object generalizations,
+> and THEN we learn word-object meta-concepts, because those are
+> concsistently associated. there isnt a statistic that will magically
+> produce identity across independent tokens.
+
+> Please make sure this example of meta-concept learning is in the doc.
+
+> And make sure we have a testpoint for cross-modality hebbian learning
+> as just described.
+
+> In addition to pavlovian bell-salivate sequence learning.
+
+**What it settles** (his words, numbered for reference).
+
+1. *The match is on the object, not on the word.* Several mentions of
+   one name form an identity, and even then the object exists and is
+   what is compared. Pronouns are not always matched.
+2. *The object is matched against types as well as tokens:* a type may
+   match a token, or a token a type.
+3. *Polysemy is accounted for.*
+4. *One algorithm matches a content against conceptual space, in one
+   place, for every client that needs a match.* Time is to be taken
+   over it.
+5. *Place and time are necessary at the level of events.* A one-shot
+   learning may remember a percept with its time and place. It is
+   generalization that removes them, and not a removal by hand outside
+   the matching function.
+6. *The order of learning:* word generalizations; object
+   generalizations; then word-object meta concepts, because the two are
+   consistently associated. No statistic produces identity across
+   independent tokens.
+
+*Directions; his words are "might" and "perhaps", and nothing is decided
+by them:*
+
+7. Where a lookup fails, the unmatched entities may be collected, and
+   the promotion that creates concepts may make a generalization of
+   them.
+8. That will depend on multi-modal information. Many ties between word
+   and object may first be made in a multi-modal concept: two words
+   ("Alec", "he") with a common perceptual basis, or a concept, in
+   another modality, to which both are tied.
+
+*Asked for:* the example of meta-concept learning in the doc; a
+testpoint for cross-modality Hebbian learning; and one for Pavlovian
+bell-then-salivate sequence learning.
+
+**What it withdraws of §68.65 and §68.66.**
+
+- §68.66 is withdrawn, and was not carried. Its step 1 kept a removal
+  of place and time by hand inside `STMChunks.bind_menu`, which point 5
+  rules out.
+- §68.65, point 4: "keep (a)" is withdrawn. *Claude's reading of points
+  4 and 5:* both of §59.71's changes to the menu go. (a) removes place
+  and time by hand outside the matching function. (b) matches forms,
+  and the match is against conceptual space.
+- §68.65, point 3: of its two courses the first is decided in
+  direction (the object), and its form is the one matching function of
+  point 4, not a special reading inside the menu.
+- §68.65, point 6 (the exception to rule 4 of §68.62 and to rule 2 of
+  §55.1) is withdrawn with them; the pointer under §68.62 is corrected.
+- §68.65's findings stand: what the record says (point 1), which
+  readers tell a token from its type today (point 2), that the menu
+  reads the word (point 3), the counts (points 3 and 4) and the cause
+  (point 5).
+
+**Where it is written.** The one match: §70 of this specification, a
+design with what exists today and the questions it leaves. The order of
+learning, the example and the two testpoints: sigma-pi §19.25, rule 31
+and certificates 25 and 26. No text for Codex is written until §70's
+questions are answered.
+
+## 70. One match of a content against conceptual space (Claude, 2026-11-18; a design for Alec; no text for Codex)
+
+Alec, 2026-11-18 (§68.67): "So it seems we should match the object, not
+the word. We also have to match the object against types: it may be a
+type matching a token or vice versa. And we have to account for
+polysemy. To take the time to make an algorithm that matches a content
+against Conceptual Space, so that we do this only in one place for all
+clients needing a match." And: "WRT place/time match, they are necessary
+at the level of events ... it is really generalization that should
+remove that information, not us by hand outside of the matching
+function I mentioned."
+
+This section says what the source has today and proposes the form of
+that one function. The requirements are his (§68.67, points 1 to 5).
+The form is Claude's and nothing of it is decided. It ends with three
+questions.
+
+### 70.1 What the source has today
+
+A search of `bin/*.py` on 2026-11-18, on Codex's working tree of
+§59.75, found about forty places that compare a content with stored
+candidates or choose among them. It was made by a sub-agent. Claude
+read the entries marked * itself; the rest is the agent's reading.
+
+| Family | Where | Compared | Measure | Order | Place and time |
+|---|---|---|---|---|---|
+| A. A mention against held identities | `STMChunks.bind_menu`*; `ReferenceClose.score_order`*; `MemoryLink.menu` and `link`; `MediumTermMemory.merge`; `ReferenceClose.individuals` | the slot's value against off-stack chunks; a reference's content against MTM's tokens and individuals | the two numbers of `IdentityRows.meet_ratios`*, one of them exactly 1; in the scorer, then a linear policy over twelve features | must be equal, or open | cut out by `IdentityRows.coordinates`* in the scorer, the link and `individuals`; left in for a percept collection and in `merge`; in the menu, whatever lies after `meaning_start` |
+| B. A content against rows of concepts | `FieldProjection.stimulate`* (every allocated row); `ConceptTrust.observe`; `ConceptHierarchy.fit`; `PartsOfSpeech.value_scores`; `BindingAnswers.cost`; `CompoundLayer.select_view`; `TimelineRead.case_coverage`; `BasicPercepts.read_points` | a point against codes, extensions or bounds | one of the two numbers, graded | `stimulate` keeps the rows of the order asked for, then folds the definitions upward | `stimulate` reads the percept block whole, place and time in it, for a row with no meaning |
+| C. Likeness | `MediumTermMemory.match_candidate`; `FamiliarTier.witnessed_match` and `observe_field`; `readback_scores` and three other reads of a word from a vector | whole vectors, or the form block | a cosine against a threshold, or the greatest | equal, in MTM | left in |
+| D. Distance | `Expectation.match_symbols`; `LanguageSpace.decoder_eligibility` | whole vectors; the form block | a squared distance within a tolerance | a mask | left in |
+| E. A key, not a content | `InterpretLayer.word_for_form`, `lookup_word`, `preferred_objects`*; `ReferenceContext.resolve_order`; `STMChunks.refresh` | an id, a key or a form | equality; `preferred_objects` compares nothing and takes the object the context expects, then the higher order | read from the key | none |
+| F. Recall | `EpisodicMemory.matches` | sets of concept ids | a product over equal ids, for each order | for each order | none |
+
+Seven facts follow from it.
+
+1. *One function already matches a content against all of conceptual
+   space:* `FieldProjection.stimulate` ("Candidate coverage on each
+   lane, then upward definition closure"). For every allocated row it
+   takes how much of the row is found in the content, for and against;
+   a row with meaning is read on its meaning lanes and a row without on
+   its percept block; then the definitions are folded upward, so that a
+   token implies its type. It is called in three places.
+2. *Every other reader compares a content with a short list it holds,*
+   and chooses its own coordinates and its own measure.
+3. *The two numbers are already there.* Every reader of family A takes
+   both numbers of `meet_ratios`: how much of the candidate is found in
+   the content, and how much of the content is found in the candidate.
+4. *Place and time are removed by hand in five places:*
+   `IdentityRows.carrier`* ("excluding its separate location/time
+   band"), `IdentityRows.coordinates`*, `GrammarLayer.content_operand`,
+   `MereologicalCodes.remember_content`*, and §59.71's
+   `STMChunks.bind_menu`*. Elsewhere they are left in the vector that is
+   compared.
+5. *Nothing but `stimulate`'s fold relates two orders.* Family A
+   refuses a candidate of another order.
+6. *A word with several objects is never matched by content.*
+   `preferred_objects` takes one before anything is compared.
+7. *A miss makes something new in six places,* each in its own way:
+   `ReferenceClose`'s preview and commit (`open_reference`);
+   `MemoryLink.link` (`pool.open`, `append_path`);
+   `FamiliarTier.observe_candidate` (`open_candidate`, then
+   `promote_candidates`); `InterpretLayer.lookup_word` and `reading`
+   (`pool.named`); `PerceptCollections.observe`*;
+   `EntryRead.recall_identities`.
+
+### 70.2 The proposal
+
+1. *One function, in one module* (*default names:* `ConceptualMatch`,
+   `match`). It takes a content and the rows to match it against; with
+   no rows given, every allocated row, as `stimulate` does. For each
+   row and each lane it gives the two numbers of fact 3. It chooses
+   nothing. `stimulate` becomes its call over every row.
+2. *The measure is the one that is there.* "The row is found in the
+   content": a token implies its type, and a whole implies its part.
+   "The content is found in the row": a description fits a token.
+   *Claude's reading:* at one order these are Alec's "a type matching a
+   token or vice versa". A client that needs exactness asks for a ratio
+   of one, as now (Alec, 2026-11-05). A client that weighs keeps the
+   numbers.
+3. *Content and position.* The function is the one place that knows
+   which coordinates are content and which are a place or a time. It
+   takes the two numbers on the content: the meaning lanes of a row
+   that has meaning, the percept block of an event. Where the content
+   and the row are both events it also gives the relation of their
+   places and of their times, read by the codecs
+   (`WhereEncoding.decode`, `RowTime`'s ages and brackets). A row that
+   is a generalization holds no place and no time, so nothing is
+   compared for it. That is how generalization removes them. Of fact
+   4's five places, `carrier`, `coordinates` and the menu stop cutting.
+   `content_operand` is the operators' and `remember_content` makes a
+   key; neither is a match, and both are left (*default*).
+4. *Across orders, by membership and never by codes.* At one order the
+   two numbers are taken. Between orders nothing compares one order's
+   code with another's (Alec, 2026-11-15: no space has geometric
+   influence on another). A token reaches its type, and a type its
+   tokens, through the definitions: upward as `stimulate`'s fold has it
+   today, downward with item 1.7's spread (sigma-pi rule 23). The
+   function gives every row it reached with its order and does not
+   refuse a row for its order; a client says which relation it accepts.
+5. *The object, and each object.* A client that matches a mention gives
+   the content of the mention's object. A word with several objects is
+   matched once for each object the context expects
+   (`InterpretLayer.denotations`, in `preferred_objects`' order), and
+   the result keeps them apart, so that what matches can decide among
+   them. A word whose only object is blank gives no content, and
+   nothing is offered for it by content (`meet_ratios`: "An empty
+   request supplies no content evidence"). *Claude's reading* of "we
+   don't want to match pronouns always": a pronoun is matched when it
+   has an object with content, and otherwise by what it shares with a
+   name in another modality (sigma-pi rule 31).
+6. *A miss* (Alec's direction, §68.67, point 7). Where nothing reaches
+   the client's bar the function says so, and the content goes to MTM
+   as a candidate by one writer. Its recurrence makes a generalization
+   (sigma-pi rules 20 and 31). *Default:* not in the first text; fact
+   7's six places stay until then.
+7. *Its inside in item 1.7.* The cycle's forward is the first number
+   for every concept at once; the spread and `parts` and `wholes` give
+   the second and the way down. The function's callers do not change
+   when its inside does.
+
+### 70.3 The clients, in the order they would move
+
+| When | Clients | What changes for them |
+|---|---|---|
+| The first text | Family A (`bind_menu`, `score_order`, `MemoryLink.menu` and `link`, `merge`, `individuals`), and `stimulate` with its three calls | they call the one function; the menu gives it the mention's object; §59.71's two changes go; no reader of the family cuts coordinates |
+| Later, listed and not moved | `ConceptTrust.observe`, `ConceptHierarchy.fit`, `PartsOfSpeech.value_scores`, `BindingAnswers.cost`, the case reads | graded reads of the same numbers |
+| Not clients (*Claude's reading*) | the reads of a word from a vector (`readback_scores` and three others), which match forms for the reconstruction; the keys of family E; likeness in MTM, which item 1.7's rule 16 removes; recall, whose form is decided (an entry holds every order and a question is matched order by order, §3.12) | none |
+
+### 70.4 What was checked, and what was not
+
+- *HEAD is the trial of "match the object".* At HEAD the object reached
+  the menu (§68.65, point 5): 129 candidates offered on four files
+  where the word gets 18, and
+  `test_public_reading_fuses_the_reference_before_capture_and_write`
+  passes with place and time compared, equal in its 15 comparisons.
+  Codex's own census of the four files (§59.78) gives 84 offered at
+  HEAD and 58 on its source, with one real bind chosen on each. The
+  runs are not seeded and its count of a candidate differs from
+  §68.65's; both show the order filter refusing most of what passes
+  on content (47 of 131 at HEAD, 201 of 259 now).
+- *Coverage with place and time left in* (the codecs of §59.62,
+  `meet_ratios`, content (.2, .2) and (.8, .8); scratch, not a
+  receipt):
+
+  | Content | Row | The row found in the content | The content found in the row |
+  |---|---|---|---|
+  | a description with no place | a token at place 20, tick 1 | .05 | 1.0 |
+  | an occurrence at place 20, tick 1 | a type's row with no place | 1.0 | .05 |
+  | an occurrence at place 20, tick 1 | the same content at place 10, tick 0 | .986 | .973 |
+  | the same | the same at place 20, tick 1 | 1.0 | 1.0 |
+  | a word at place 20, tick 1 | a held idea with no place | .25 | .059 |
+
+  So an object with no place fits a token that has one, and a type is
+  found in its token, with nothing removed. The last row is §59.70's
+  failure: the word, not its object.
+- *Coverage of the place coordinates is not a test of the same place.*
+  Of 19,791 pairs of different places, in 6,291 one band lay inside the
+  other; of 19,668 pairs of different times, in none. This is why point
+  3 has the codecs compare positions.
+- *Not tried:* the menu given the object that the read stages
+  (`_ar_word_object_ids`, `_ar_word_object_rows`,
+  `_ar_word_object_atoms`) while the slot keeps the word; a word with
+  two objects; the cost of the function at the menu's rate. A trial on
+  a scratch copy comes before any text.
+
+### 70.5 The round in flight
+
+Codex read §68.65 and took the moved start back itself (§59.77), with a
+certificate that a bank whose interpreter has forms and no meaning
+pairs is offered only the dummy. It confirmed the cause of §68.65,
+point 5, and that the lesson's model has a meaning block (form 360,
+meaning 32), so §59.74's lesson does not depend on the start. It also
+traced and repaired the failing test that §68.65, point 4, left
+untraced (§59.76). Its source keeps §59.71's other change, the place
+and time cut out by hand in the menu, uncommitted, until the first text
+of the match removes it. Its return, §59.59 to §59.77, stands as
+measured on that source; its final sweep is running. No text is
+carried now.
+
+### 70.6 Questions for Alec
+
+*Answered in part in §70.8; the first stands, with its example in §70.9.*
+
+1. *The measure.* The two numbers that are there, exact where a client
+   asks for exactness (*recommended*), or a new measure.
+2. *When.* The function is built now, as the next text of part B, on
+   what exists: the two numbers at one order and the fold upward, with
+   the way down from a type to its tokens coming with item 1.7's spread
+   (*recommended*). Or all of it with item 1.7.
+3. *Several objects.* Each object the context expects is matched and
+   kept apart (*recommended*), or only the one `preferred_objects`
+   takes first.
+
+*Defaults Claude takes unless Alec says otherwise:* orders reported and
+not refused (point 4); the reading of pronouns (point 5); the miss
+collected later (point 6); `content_operand` and `remember_content`
+left as they are (point 3).
+
+### 70.7 Certificates, as a draft
+
+1. `test_public_reading_fuses_the_reference_before_capture_and_write`
+   passes with the committed start of the comparison and with nothing
+   cut by hand.
+2. On the four files of §68.65, point 3, the candidates offered at the
+   menu are reported beside HEAD's.
+3. One place: outside the module no reader of family A calls
+   `meet_ratios` or cuts coordinates.
+4. Moving only the place of a mention's word changes no offer. An event
+   is matched to the remembered event at its place and time, and not to
+   the same content at another.
+5. A type and its token reach each other through their definition, each
+   reported with its order; no code of one order is compared with a
+   code of another.
+6. A word with two objects: both are matched and kept apart.
+
+### 70.8 Alec's answers (2026-11-18)
+
+To the question whether the one match is built as §70 proposes, now, in
+part B:
+
+> Yes, as proposed
+
+To the three questions put with it (the measure; a word with several
+objects; the blank object, which is sigma-pi §19.21's open point 6):
+
+> 1. I am not clear what you mean by measure here. an example please.
+> 2. A word with several objects is polysemy, we should pick one (but
+> make it an educated guess from field context/activation).
+> 3. better never to have the blank at all, but to avoid a discontinuous
+> decision, we might train both and remove the blank only if the vectors
+> subsequently overlap in conceptual space.
+
+And, while the trial of §70.10 ran:
+
+> By the way, Im Ok with only spot testing this change, since codex will
+> have completed a full sweep and we acknowledge that further work is
+> necessary with multimodal before we can earn identity correctly.
+
+His other remarks of the same message, on how the tie of a word and an
+object is learned, are in sigma-pi §19.27.
+
+**What it settles.**
+
+1. The one match is built now, in part B, as §70.2 proposes, with the
+   amendments below.
+2. *One object for a word.* §70.2's point 5 is changed: a word with
+   several objects has one picked, by an educated guess from the field's
+   context and activation. Nothing is matched for each object.
+   *Claude's reading:* `InterpretLayer.preferred_objects` is that guess
+   as it stands (what the expected field holds, then the higher order),
+   and the object the read stages for a word is its choice.
+3. *Spot tests.* This change is certified by spot tests. No sweep and
+   no lesson is asked for it.
+4. *The measure* is not yet answered: he asked for an example, which is
+   §70.9.
+5. *The blank object* is item 1.7's and is recorded in sigma-pi §19.27.
+
+**A default this adds** (*Claude's*; found by the trial of §70.10). At
+the menu four mentions in five are phrases and not single words. A
+phrase has no object during the read: its meaning is made at
+comprehension. `doc/Architecture.md` has the bond at the read made "as
+the word arrives" and the resolution at the clause end, which can undo
+it. So in the first text a single word is compared by its object, and a
+phrase is compared as it is today, and counted. The object of a phrase
+at the menu is left for a later text. (*Reworded by §70.13, after
+Alec's word on the phrase.*)
+
+### 70.9 The measure, by an example
+
+Take four coordinates of meaning: furry, meows, barks, black.
+
+| | furry | meows | barks | black | total |
+|---|---|---|---|---|---|
+| the description "cat" (the mention's object) | .8 | .8 | 0 | 0 | 1.6 |
+| Felix, a held identity | .8 | .8 | 0 | .8 | 2.4 |
+| Rex, a held identity | .8 | 0 | .8 | 0 | 1.6 |
+
+The overlap of two rows is the sum, over the coordinates, of the
+smaller of their two values. The measure is two numbers:
+
+- *how much of the candidate is found in the content:* the overlap
+  divided by the candidate's total;
+- *how much of the content is found in the candidate:* the overlap
+  divided by the content's total.
+
+| Content | Candidate | Overlap | The candidate found in the content | The content found in the candidate |
+|---|---|---|---|---|
+| "cat" | Felix | 1.6 | 1.6 / 2.4 = .67 | 1.6 / 1.6 = 1.0 |
+| "cat" | Rex | .8 | .8 / 1.6 = .5 | .8 / 1.6 = .5 |
+| Felix | the kind cat | 1.6 | 1.6 / 1.6 = 1.0 | 1.6 / 2.4 = .67 |
+
+Everything the description says is true of Felix, so the second number
+is 1 and Felix may be offered. Neither number is 1 for Rex, and Rex is
+not offered. In the last row a token is met and its type is the
+candidate: the first number is 1, which is "a token implies its type".
+The rule of 2026-11-05 offers a candidate when either number is exactly
+1. These are the two numbers of `IdentityRows.meet_ratios`, which every
+reader of family A takes today.
+
+*The question that stands:* whether the one function gives these two
+numbers (*recommended*), or another measure, such as a likeness of the
+two vectors or the layers' own activation.
+
+### 70.10 The trial: the menu given the word's object
+
+A plugin on a scratch copy of Codex's source of §59.78 (not a receipt;
+one run each; the draws are not seeded). Where the mention at the menu
+is a single word, the read's staged object for that word
+(`_ar_word_object_ids`) is looked up among the chunks held off the
+stack, and the menu's test is made on that chunk's value and order. The
+committed comparison is used, with nothing cut by hand. The slot and
+the operands the operators receive are unchanged.
+
+*The failing test.*
+`test_public_reading_fuses_the_reference_before_capture_and_write`:
+
+| The menu's mention | Cut by hand | Result | Offered to single words | Offered to phrases |
+|---|---|---|---|---|
+| the word (Codex's source) | place and time | passes | 4 of its 11 | 7 |
+| the word | nothing | fails at the fusion assertion | 0 | 8 |
+| the word's object, for a single word | nothing | passes | 4 | 7 |
+| the object of the phrase's head word too | nothing | passes | 4 | 6 |
+
+*Eleven files* (the XOR gate, `test_item25_completion.py`,
+`test_stm_chunk_gates.py`, `test_math_chain.py`,
+`test_live_references.py`, `test_grammar_object_leaves.py`,
+`test_lexical_reference_orders.py`, `test_reading_curriculum.py`,
+`test_unsigned_coordinates.py`, `test_item18_tree_first.py`,
+`test_reconstruction_magnitudes.py`): 144 passed in each of the three
+modes (the source as it is; the object for a single word; the object
+of the head word too).
+
+*Counted on one stream* (the passive run; the same menu calls, tested
+both ways with nothing cut by hand):
+
+| Layout | Menu calls | Single words | Their object held off the stack | Offered to single words: the word | the object | Offered to phrases: as today |
+|---|---|---|---|---|---|---|
+| a meaning block | 712 | 135 | 68 | 8 | 41 | 385 |
+| a bank built by hand | 7 | 2 | 2 | 0 | 4 | 11 |
+| forms and no meaning | 269 | 61 | 53 | 0 | 0 | 0 |
+
+So a single word is offered little as a word and more as its object,
+and most of what the menu offers today is offered to phrases.
+
+*A correction to §68.65, point 3, and to §70.4.* The totals given there
+(129 candidates offered at HEAD, 18 on Codex's source) are no measure
+of the size of the drop. One test of the four files,
+`test_native_worked_document_trains_unforced_without_numeric_oracles`,
+trains with free draws, and its menu offered 389 candidates in one run
+of this trial and 4 in another, on one source. What stands is what was
+counted on one stream: the table above, the failing test, and the cause
+of §68.65, point 5.
+
+*Not tried:* a single word whose object is not held off the stack, for
+which the text has the object valued by the leaf law (75 of the 198
+single-word calls of the passive run); the object of a phrase.
+
+### 70.11 Codex text (the one match, first text; follows the return of §59)
+
+Written on 2026-11-18 after §70.8 to §70.10, and amended after §70.12.
+Alec: "Yes, as proposed", and spot tests suffice. The measure of step
+1 is provisional by his word (§70.12): he has not reviewed it and will
+return to it. The treatment of a phrase in step 3 follows §70.13: Alec
+has a phrase turned into a concept vector and used as an identity;
+which vector that is during the read is open, and this text keeps the
+read's own.
+
+*Approved by Alec on 2026-11-18, asked whether it is right to give to
+Codex as it stands: "Sure".* One sentence of step 2 was re-wrapped
+afterwards, with no word changed.
+
+~~~
+Item 1.8, part B: the one match, first text. Read §70 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md: §70.2 as
+amended by §70.8, then §70.9 and §70.10. Start from your returned
+source of §59 when its sweep has finished. Alec has decided that this
+change is certified by spot tests: no sweep and no lesson.
+
+1. One place. A new module (default: bin/ConceptualMatch.py) with one
+   function. It takes a content and candidates and returns, for each
+   candidate, the two numbers of IdentityRows.meet_ratios: how much of
+   the candidate is found in the content, and how much of the content
+   is found in the candidate. It is the only place that decides which
+   coordinates are compared, and it keeps today's three cases: where
+   the codebook its caller reads has no form block, the whole code;
+   where it has one, the coordinates after it, whatever the number of
+   meaning pairs, so that an empty meaning compares nothing; and for
+   FieldProjection.stimulate's rows that have no meaning, the form
+   block. It chooses nothing and filters nothing. The measure is
+   provisional (§70.12): keep it in this one function, so that it can
+   be changed in one place. Name the function and its arguments as you
+   see fit, and say what you named them.
+2. Its callers. STMChunks.bind_menu, ReferenceClose.score_order,
+   MemoryLink.menu and the check in MemoryLink.link,
+   MediumTermMemory.merge and the reconciling step of
+   ReferenceClose.individuals call it, in place of their own
+   meet_ratios and their own choice of coordinates
+   (IdentityRows.coordinates, the menu's meaning_start, a whole
+   vector). FieldProjection.stimulate takes its coverages from it; if
+   they cannot be had from it without changing a value, leave
+   stimulate, say why, and go on. Each caller gives the values it gave
+   before, and none gains or loses a gradient. Where one of them
+   passes a whole vector today for a percept or a percept collection,
+   it still does; list those calls. The exclusion of place and time
+   that §59.71 put in bind_menu, and its percept_band argument, go.
+3. The object at the menu. In ReferenceContext.prepare_operands, where
+   the mention offered to bind is a single word, the menu's test is
+   made on that word's object and not on the word: the object the read
+   staged for it (_ar_word_object_ids, _ar_word_object_rows,
+   _ar_word_object_atoms), with that object's order. Its value is the
+   leaf law on the object's own code (Interpret.activate_code with the
+   word's presence and pair) with no place or time written on it; or,
+   where STM holds that identity off the stack, that chunk's value, as
+   STMChunks.refresh gives a slot of that identity. The slot keeps the
+   word, its row, its order and its reference; the operand the
+   operator receives is unchanged; the choice is recorded for
+   comprehension as now. One object is taken for a word, the one the
+   read chose (InterpretLayer.reading); nothing is matched for each of
+   several. A mention that is a phrase is compared by the vector the
+   read has for it, as today (§70.13): change nothing for it, and
+   count it (step 5).
+4. Certificates, as spot tests.
+   (i) test_public_reading_fuses_the_reference_before_capture_and_write
+       passes with nothing cut by hand; with step 3 taken out it fails
+       at its fusion assertion.
+   (ii) For each caller of step 2, on recorded or random operands, the
+       values after equal the values before.
+   (iii) Outside the module, none of those callers calls meet_ratios or
+       IdentityRows.coordinates for its match.
+   (iv) Moving only the place or the time of a single-word mention
+       changes no offer, in a layout with a meaning block and in one
+       without.
+   (v) The value the menu tests for a single word is the leaf law on
+       the object the read staged for it, or the off-stack value of
+       that identity where STM holds one; it carries no place or
+       time of the word.
+   (vi) Your test of §59.77 stays (a bank with forms and no meaning
+       pairs is offered only the dummy). Your test of §59.71 for both
+       layouts is ported to (iv).
+   (vii) Both stopping gates, test_stm_chunk_gates.py,
+       test_item25_completion.py, test_math_chain.py,
+       test_live_references.py and test_item18_tree_first.py pass.
+5. Report with the return, from one run of those files, for single
+   words and for phrases apart: menu calls, the object found, the
+   object held off the stack, and the candidates offered to the word
+   and to the object. Claude's passive count is in §70.10.
+6. Not in this text: the place and time of two events compared by the
+   codecs; orders reported and not refused; a miss given to MTM; the
+   object of a phrase; the other clients of §70.3. If you find you
+   need one of these, name it and stop there. Report, without
+   building it, what it would take for comprehension to value a
+   phrase during the read, so that the menu could test the vector
+   made from its objects (§70.13): where its evaluator could be
+   called, what it would cost for a sentence, and what it would
+   write.
+
+Change no bound, learning rate, seed, capacity or presentation count.
+Commit nothing; never push main, and never force-push. Receipts stay
+local and are not linked. Return by continuing §59 from its next free
+number.
+~~~
+
+### 70.12 The measure, documented; provisional (Alec, 2026-11-18)
+
+Alec, 2026-11-18, of §70.9: "I have not reviewed the measure above, but
+as long as it aims to fulfill my description, please doc it and we will
+return to it."
+
+So the measure stands for the first text as a provisional choice. It is
+kept inside the one function, so that changing it is a change in one
+place.
+
+**The measure.** For a content $q$ and a candidate $c$, with
+coordinates between 0 and 1, on the coordinates the function compares:
+
+- the overlap, $m = \sum_i \min(q_i, c_i)$;
+- *the candidate found in the content*, $m / \sum_i c_i$;
+- *the content found in the candidate*, $m / \sum_i q_i$.
+
+A side with no mass gives 0 ("An empty request supplies no content
+evidence"). No distance and no likeness of direction enters. It is
+`IdentityRows.meet_ratios`, unchanged. The example is §70.9.
+
+**Which coordinates** (the first text). Where the codebook has no form
+block, the whole code. Where it has one, the coordinates after it,
+which hold the meaning lanes. For `FieldProjection.stimulate`'s rows
+that have no meaning, the form block.
+
+**What a client does with the two numbers** (unchanged). Family A
+offers a candidate when either is exactly 1 (Alec, 2026-11-05), and
+the scorer at the close weighs both among its twelve features.
+`stimulate` writes the first as the row's evidence, for each lane.
+
+**Against his description** (§68.67).
+
+| His words | How the measure and the first text aim at it | Not yet met |
+|---|---|---|
+| "match the object, not the word" | the function's content is an object's content; where the mention is a single word the menu gives it that word's object | a phrase is still compared by its word-tree value; its object exists only at comprehension |
+| "a type matching a token or vice versa" | at one order the two numbers are the two directions: a description fits a token (the second is 1), and a token implies its type (the first is 1) | between orders the menu still refuses another order; a type reaches its tokens only through `lower` and the fold upward; the way down is item 1.7's spread |
+| "account for polysemy" | one object is picked for a word by the field, which is the read's choice (§70.8) | the pick is made at the read; comprehension may pick another at the end |
+| "only in one place for all clients" | one function; family A and `stimulate` call it | the graded readers of §70.3's second row are listed and not moved |
+| place and time "are necessary at the level of events" | where a whole vector is compared for a percept or a percept collection, its place and time are in it, as today | their coordinates are compared by coverage, which is no test of the same place (§70.4); the comparison by the codecs is not in the first text |
+| "generalization ... should remove that information, not us by hand outside of the matching function" | the function alone decides the coordinates; the cut that §59.71 put in the menu goes; a concept is read on its meaning, where no place or time lies | `IdentityRows.carrier` and `coordinates` still cut for their other callers; `content_operand` and `remember_content` are left |
+| "if lookup fails ... collecting unmatched entities" (a direction) | nothing | not in the first text |
+
+**To return to** (Alec: "we will return to it"). The measure itself.
+Whether a ratio of exactly 1 stays the bar for an offer. Each row of
+the table's third column.
+
+**For the documentation pass** (`doc/*.md` is not edited now: another
+pass over those files is open in `basicmodel-docs`, and Codex's sweep
+is running on this tree). `doc/Architecture.md`, the paragraph on a
+mention's association: the one function, the two numbers with the
+example of §70.9, and that the measure is provisional. `doc/Spaces.md`,
+the row "metric" of the table of conceptual space.
+
+### 70.13 Alec on the phrase as the mention (2026-11-18)
+
+Alec, 2026-11-18, of §70.8's default for a phrase:
+
+> Ps: the phrase as the mention can still be turned into a concept
+> vector and either created or just used as an identity in a small
+> pi-not-sigma until it dictates that a symbol should be produced for
+> that entity.
+
+**What it says** (*Claude's reading*). A phrase is not left without an
+object. Its concept vector is made, and that vector is the entity:
+either a concept is made for it, or it is used as an identity in a
+small Pi, Not, Sigma until that store dictates that a symbol be
+produced for it. The small Pi, Not, Sigma is the store that tries
+candidates, MTM in the form he gave it on 2026-11-17 (sigma-pi §19.21).
+
+**What exists** (read on 2026-11-18; not run).
+
+- *A phrase's concept vector.* At the read it is the node's value on
+  the stack, composed by the operators from its words' values. At
+  comprehension it is the same node composed from its words' objects
+  (`Comprehension.Evaluation`: "Evaluate a completed grammatical formula
+  on its referenced objects"), which walks the recorded program after
+  the read, once for each scored path.
+- *Used as an identity.* At the menu, the dummy alternative keeps the
+  mention's own content. At the close, a description with no referent
+  opens an identity in MTM with its value (`open_reference` in
+  `ReferenceClose.commit`, through `MemoryLink.link`), read from
+  comprehension's operands (`ClauseJournal.ComprehensionClose`).
+- *Until a symbol is produced.* `FamiliarTier.promote_identity` ("A kept
+  definition or recurrent mention supplies an object's witness"); in
+  item 1.7, rule 20.
+
+**The gap.** One thing. During the read, the vector the menu tests for
+a phrase is the one made from its words. The one made from its objects
+exists only at comprehension. To have it at the menu, comprehension
+would value a part of the tree during the read; its evaluator walks a
+recorded program for one stream, outside the walk of the read. That was
+not tried.
+
+**What it changes.**
+
+- §70.8's default is reworded. A phrase at the menu is compared by its
+  concept vector, and where nothing is offered or chosen it is used as
+  an identity in MTM until a symbol is produced, as the close has it
+  today. In the first text that vector is the one the read has: nothing
+  is changed for a phrase, and it is counted.
+- Step 6 of §70.11 has Codex report what it would take for
+  comprehension to value a phrase during the read.
+- The first row of §70.12's table stands in its third column: it is
+  what remains to be met.
+
+*Open, for Alec; it does not block the first text.* Whether the vector
+of a phrase at the menu must be the one made from its objects
+(*Claude's leaning:* yes, as the next text, once Codex has said what it
+takes), or whether the read's own vector serves for the bond, since the
+close settles the reference from comprehension's value and can undo the
+bond.

@@ -477,9 +477,8 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     recovered,unavailable,defined=reconstruct(language,record,programs,
                         lambda b:model._sentence_leaf_positions(record,b))
                     assert not unavailable.any()
-                    # D6 interprets each identified word before the surface
-                    # operations. Their exact inverse returns the pending
-                    # token's value, whose magnitude is not form attention.
+                    # Surface inverses recover the word tree. Pending object
+                    # values belong to the separate comprehension walk.
                     expected = record.word_values.clone()
                     for b, program in enumerate(programs):
                         positions = model._sentence_leaf_positions(record,b)
@@ -488,7 +487,6 @@ def _native_step_comparison(tmp_path, monkeypatch):
                                 continue
                             pending, symbol, point = observed[0]['reading_tokens'][word]
                             assert pending and symbol is None
-                            expected[b,position] = point
                     torch.testing.assert_close(recovered[record.word_valid],expected[record.word_valid])
                     continue
                 audit = model._last_sentence_credit

@@ -75,7 +75,7 @@ def test_ensure_microbatch_cascades_to_discourse():
     assert layer._batch == 6
     assert len(layer._inter_context) == 6
     assert len(layer._inter_context_lanes) == 6
-    assert len(layer._inter_last_meaning) == 6
+    assert len(layer._inter_context) == 6
     assert all(not row for row in layer._inter_context)
 
 

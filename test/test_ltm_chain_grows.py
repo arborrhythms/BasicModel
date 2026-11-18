@@ -28,6 +28,7 @@ import unittest
 import torch
 import matplotlib
 import Layers
+from test_sentence_expectation import admit
 matplotlib.use('Agg')
 
 
@@ -74,7 +75,7 @@ class TestLtmChainGrows(_LtmTestBase):
         for _ in range(N):
             depths, payloads = self._absolute_end_state(B=1)
             recorded_depths.append(depths[0])
-            self.layer.observe_stm_end_state(depths, payloads)
+            admit(self.layer, payloads[0])
         chain = self.layer.get_stm_chain(N)
         self.assertEqual(len(chain), N)
         self.assertEqual([entry[0] for entry in chain], recorded_depths)
@@ -82,28 +83,17 @@ class TestLtmChainGrows(_LtmTestBase):
         for depth, payload, tet in chain:
             self.assertIsInstance(depth, int)
             self.assertEqual(tuple(payload.shape), (depth, self.D))
-            self.assertIsNone(tet)
+            self.assertEqual(tet, 1.)
 
     def test_get_stm_chain_none_returns_all(self):
         """``n=None`` returns the entire chain for the row."""
         N = 4
         for _ in range(N):
             depths, payloads = self._absolute_end_state(B=1)
-            self.layer.observe_stm_end_state(depths, payloads)
+            admit(self.layer, payloads[0])
         self.assertEqual(len(self.layer.get_stm_chain()), N)
         self.assertEqual(len(self.layer.get_stm_chain(None)), N)
 
-    def test_ragged_absolute_and_relative_depths_coexist(self):
-        """Absolute (depth 1) and relative (depth 3) end-states live in
-        the same chain; each payload has the right ``[depth, D]`` shape.
-        """
-        # Sentence 1: absolute (depth 1). Sentence 2: relative (depth 3).
-        self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
-        self.layer.observe_stm_end_state([3], [torch.randn(3, self.D)])
-        chain = self.layer.get_stm_chain()
-        self.assertEqual([e[0] for e in chain], [1, 3])
-        self.assertEqual(tuple(chain[0][1].shape), (1, self.D))
-        self.assertEqual(tuple(chain[1][1].shape), (3, self.D))
 
     def test_chain_is_time_ordered_oldest_first(self):
         """The accessor returns oldest-first; the last ``n`` preserves
@@ -112,7 +102,7 @@ class TestLtmChainGrows(_LtmTestBase):
         for i in range(5):
             payload = torch.full((1, self.D), float(i))
             marks.append(float(i))
-            self.layer.observe_stm_end_state([1], [payload])
+            admit(self.layer, payload)
         full = self.layer.get_stm_chain()
         self.assertEqual([float(e[1][0, 0]) for e in full], marks)
         last3 = self.layer.get_stm_chain(3)
@@ -124,17 +114,11 @@ class TestLtmChainGrows(_LtmTestBase):
         STM buffer is overwritten by the next sentence in the real
         model)."""
         src = torch.zeros(1, self.D)
-        self.layer.observe_stm_end_state([1], [src])
+        admit(self.layer, src)
         src.add_(99.0)  # overwrite the source in place
         stored = self.layer.get_stm_chain()[0][1]
         self.assertTrue(torch.all(stored == 0.0))
 
-    def test_tetralemma_field_records_when_provided(self):
-        """The optional tetralemma is parked verbatim when passed."""
-        tet = (0.1, 0.2, 0.3, 0.4)
-        self.layer.observe_stm_end_state(
-            [1], [torch.randn(1, self.D)], tetralemmas=[tet])
-        self.assertEqual(self.layer.get_stm_chain()[0][2], tet)
 
 
 class TestLtmBounded(_LtmTestBase):
@@ -146,10 +130,15 @@ class TestLtmBounded(_LtmTestBase):
             batch=1, ltm_capacity=3,
         )
         self.layer = layer
+        from Memory import STM0
+        store = STM0(2, capacity=layer.ltm_capacity)
+        layer._ltm_store = store
+        rows = [store.append_idea(torch.full((2,), float(i+3)), trust=1.) for i in range(3)]
+        rows = rows + rows
         for i in range(6):
             payload = torch.full((1, 2), float(i))
-            layer.observe_stm_end_state([1], [payload])
-        chain = layer.get_stm_chain()
+            layer.include_occurrence(0, store.occurrence_of(rows[i]))
+        chain = [tuple(frame) for frame in layer.situation_references()]
         # maxlen=3 -> only the 3 most recent survive (marks 3, 4, 5).
         self.assertEqual(len(chain), 3)
         self.assertEqual([float(e[1][0, 0]) for e in chain], [3.0, 4.0, 5.0])
@@ -168,7 +157,7 @@ class TestLtmFailLoud(_LtmTestBase):
         bad = torch.randn(1, 3)
         bad[0, 0] = float('nan')
         with self.assertRaises(FloatingPointError):
-            self.layer.observe_stm_end_state([1], [bad])
+            admit(self.layer, bad)
         # Nothing was stored.
         self.assertEqual(len(self.layer.get_stm_chain()), 0)
 
@@ -176,7 +165,7 @@ class TestLtmFailLoud(_LtmTestBase):
         bad = torch.randn(1, 3)
         bad[0, 2] = float('inf')
         with self.assertRaises(FloatingPointError):
-            self.layer.observe_stm_end_state([1], [bad])
+            admit(self.layer, bad)
 
 
 class TestLtmPerRow(_LtmTestBase):
@@ -190,21 +179,18 @@ class TestLtmPerRow(_LtmTestBase):
     def test_rows_are_independent(self):
         # Row 0 gets 3 absolute sentences; row 1 gets 1 relative.
         for i in range(3):
-            self.layer.observe_stm_end_state(
-                [1, 3] if i == 0 else [1, 1],
-                [torch.randn(1, 2),
-                 torch.randn(3, 2) if i == 0 else torch.randn(1, 2)])
-        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 3)
-        self.assertEqual(len(self.layer.get_stm_chain(b=1)), 3)
+            for b in range(2):
+                admit(self.layer, torch.randn(1, 2), b=b)
+        self.assertEqual(len(self.layer.situation_references(b=0)), 3)
+        self.assertEqual(len(self.layer.situation_references(b=1)), 3)
         # Row 1's first end-state is the depth-3 relative one.
-        self.assertEqual(self.layer.get_stm_chain(b=1)[0][0], 3)
-        self.assertEqual(self.layer.get_stm_chain(b=0)[0][0], 1)
+        self.assertEqual(self.layer.situation_references(b=1)[0].depth, 1)
+        self.assertEqual(self.layer.situation_references(b=0)[0].depth, 1)
 
     def test_out_of_range_row_returns_empty(self):
-        self.layer.observe_stm_end_state([1, 1],
-                                         [torch.randn(1, 2),
-                                          torch.randn(1, 2)])
-        self.assertEqual(self.layer.get_stm_chain(b=5), [])
+        for b in range(2):
+            admit(self.layer, torch.randn(1, 2), b=b)
+        self.assertEqual(self.layer.situation_references(b=5), ())
 
 
 class TestLtmContextReset(_LtmTestBase):
@@ -216,39 +202,28 @@ class TestLtmContextReset(_LtmTestBase):
         )
 
     def test_reset_all_rows_clears_chain(self):
-        self.layer.observe_stm_end_state([1, 1],
-                                         [torch.randn(1, 3),
-                                          torch.randn(1, 3)])
-        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 1)
+        for b in range(2):
+            admit(self.layer, torch.randn(1, 3), b=b)
+        self.assertEqual(len(self.layer.situation_references(b=0)), 1)
         self.layer.Reset()
-        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)
-        self.assertEqual(len(self.layer.get_stm_chain(b=1)), 0)
+        self.assertEqual(len(self.layer.situation_references(b=0)), 0)
+        self.assertEqual(len(self.layer.situation_references(b=1)), 0)
 
     def test_reset_single_row_clears_only_that_row(self):
-        self.layer.observe_stm_end_state([1, 1],
-                                         [torch.randn(1, 3),
-                                          torch.randn(1, 3)])
+        for b in range(2):
+            admit(self.layer, torch.randn(1, 3), b=b)
         self.layer.Reset(batch=0)
-        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)
-        self.assertEqual(len(self.layer.get_stm_chain(b=1)), 1)
+        self.assertEqual(len(self.layer.situation_references(b=0)), 0)
+        self.assertEqual(len(self.layer.situation_references(b=1)), 1)
 
-    def test_shared_prediction_uses_the_same_observed_chain(self):
-        self.layer.set_symbol_bank(torch.eye(self.layer.concept_dim))
-        for _ in range(2):
-            self.layer.predict_and_observe_stm_end_state([1,1], [torch.ones(1,3), torch.ones(1,3)*2])
-        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 2)
-        self.assertIsNotNone(self.layer.consume_inter_loss())
-        self.assertIsNotNone(self.layer.expect_next_meaning())
-        self.assertFalse(hasattr(self.layer, '_s_history'))
 
     def test_ensure_batch_resizes_chain(self):
-        self.layer.observe_stm_end_state([1, 1],
-                                         [torch.randn(1, 3),
-                                          torch.randn(1, 3)])
+        for b in range(2):
+            admit(self.layer, torch.randn(1, 3), b=b)
         self.layer.ensure_batch(4)
-        self.assertEqual(len(self.layer._stm_end_states), 4)
+        self.assertEqual(len(self.layer._inter_context), 4)
         # A batch reshape starts fresh row-owned contexts.
-        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)
+        self.assertEqual(len(self.layer.situation_references(b=0)), 0)
 
 
 class TestLtmCapacityKnob(_LtmTestBase):
@@ -260,7 +235,7 @@ class TestLtmCapacityKnob(_LtmTestBase):
         )
         self.layer = layer
         self.assertEqual(layer.ltm_capacity, 1024)
-        self.assertEqual(layer._stm_end_states[0].maxlen, 1024)
+        self.assertEqual(layer._inter_context[0].maxlen, 8)
 
     def test_explicit_capacity_is_honored(self):
         layer = Layers.SymbolExpectation(
@@ -268,7 +243,7 @@ class TestLtmCapacityKnob(_LtmTestBase):
         )
         self.layer = layer
         self.assertEqual(layer.ltm_capacity, 42)
-        self.assertEqual(layer._stm_end_states[0].maxlen, 42)
+        self.assertEqual(layer._inter_context[0].maxlen, 8)
 
 
 if __name__ == '__main__':

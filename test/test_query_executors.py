@@ -140,18 +140,6 @@ def test_equality_executor_rejects_width_truncation_and_nonfinite_values():
             context, torch.ones(8), torch.full((8,), float("nan")))
 
 
-def test_global_expectation_retains_all_roles_without_a_thought_operation():
-    from test_sentence_expectation import layer as make_layer
-    layer=make_layer()
-    roles=torch.arange(3*layer.concept_dim,dtype=torch.float32).reshape(3,-1)/100
-    layer.predict_and_observe_stm_end_state([3],[roles],layout='infix')
-    prediction=layer.expect_next_meaning(0)
-    marker=layer._inter_last_meaning[0]
-    value=layer.expect_next_meaning(0,record=False)
-    assert value is prediction
-    assert value.roles.shape==(3,layer.concept_dim) and value.presence_logits.shape==(3,)
-    assert layer._inter_last_meaning[0] is marker
-    assert 'arma' not in THOUGHT_EXECUTORS
 
 
 @pytest.mark.parametrize('reverse', (False, True))
@@ -189,3 +177,10 @@ def test_query_returns_only_the_completed_direction_of_an_unresolved_equality(mo
     else:
         assert result['frames'] == () and result['witnesses'] == ()
         assert result['support_true'] == result['support_false'] == 0.
+
+
+def test_no_sentence_estimate_or_anticipatory_thought_operation():
+    from test_sentence_expectation import layer
+    owner = layer()
+    assert not hasattr(owner, 'expect_next_meaning')
+    assert 'arma' not in THOUGHT_EXECUTORS

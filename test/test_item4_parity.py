@@ -16,7 +16,7 @@ def test_shipped_defaults_and_declared_parity_configuration():
         training = ET.parse(ROOT/'data'/filename).getroot().find('./architecture/training')
         assert training.findtext('expectationPrime') == 'true'
         assert float(training.findtext('explorationUniformFraction')) == .5
-        for level in ('percept', 'symbol', 'row', 'document'):
+        for level in ('percept', 'symbol'):
             assert float(training.findtext(level+'ExpectationGain')) == parity[level+'ExpectationGain'] == 0.
     assert parity['sentenceExpectation'] and parity['wordExpectation']
     assert not parity['expectationPrime'] and parity['explorationUniformFraction'] == 1.
@@ -49,7 +49,7 @@ def test_parity_configuration_removes_selection_prime_without_muting_the_predict
         assert not before[:,5*count:7*count].any()
         model.expectation_prime_enabled = True
         after = context(model, values, addresses, valid)
-        assert after[:,5*count:7*count].any()
+        assert not after[:,5*count:7*count].any()
         torch.testing.assert_close(before[:,:5*count], after[:,:5*count], rtol=0, atol=0)
         torch.testing.assert_close(before[:,7*count:], after[:,7*count:], rtol=0, atol=0)
     finally:

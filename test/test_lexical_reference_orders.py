@@ -58,10 +58,10 @@ def test_capture_owns_grammar_resolution_without_changing_reconstruction():
     language = SimpleNamespace(_compose_binary_rules=[rule], _compose_unary_rules=[])
     language.resolve_lexical_references = lambda *args, **kwargs: Language.LanguageSpace.resolve_lexical_references(language, *args, **kwargs)
     host = SimpleNamespace(languageSpace=language, _concept_owner=lambda: cs,
-                           symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0, 1]])),
+                           symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=0), _word_reference_orders=torch.tensor([[0, 1]])),
                            _reconstruction_stack=lambda: None,
                            conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
-                               strata=SimpleNamespace(capture=lambda *args: None))))
+                               strata=SimpleNamespace(capture=lambda *args, **kwargs: None))))
     leaves = torch.randn(1, 2, 8)
     actions = torch.tensor([[[0, 0, 0], [0, 0, 1], [1, 0, -1]]])
     entry, = BasicModel._program_entries(host,

@@ -114,8 +114,9 @@ def test_occurrence_writer_preserves_the_emitted_terminal_despite_priming():
     bank = PrimedSymbols(torch.tensor([[0, 1]]), codes, torch.tensor([[1., 2.]]),
         torch.ones(1, 2, dtype=torch.bool), torch.tensor([[[97], [98]]]),
         torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=2)
-    empty = NS(_index={}, values=torch.empty(0))
-    store = NS(_tensor_row_keys={0:10, 1:11}, _index={}, values=torch.empty(0), conjunctive=empty)
+    from Layers import ConceptualAttentionLayer
+    store = ConceptualAttentionLayer.square(2)
+    store._tensor_row_keys = {0:10, 1:11}
     owner = NS(similarity_codebook=NS(lookup_rows=lambda rows: codes[0, rows],
         mereology=NS(percept_event_width=2)),
         definitions=NS(word_ids={10, 11}),

@@ -38,7 +38,7 @@ def test_binary_bind_dummy_pays_the_declared_operator_cost():
         binary_valid=torch.ones(1, 1, 1, dtype=torch.bool),
         unary_valid=torch.zeros(1, 2, 0, dtype=torch.bool),
         left=value[:, :1, None], right=torch.zeros(1, 1, 1, 2), unary=torch.zeros(1, 2, 0, 2))
-    for name in ('refs', 'relations', 'choices'):
+    for name in ('refs', 'relations', 'choices', 'resolved', 'requested_orders'):
         refs['binary_'+name] = torch.zeros(1, 1, 1, 2, dtype=torch.long)
         refs['unary_'+name] = torch.zeros(1, 2, 0, 2, dtype=torch.long)
     _, _, route = layer(value, slots=2, reference_data=refs,
@@ -79,7 +79,7 @@ def test_complete_path_pays_c_for_one_more_kept_application(monkeypatch):
         observation = dict(record=NS(root=torch.ones(1, 2)), thoughts=(), thought_fields=(),
             entries=(NS(actions=torch.tensor(actions)),),
             generation=NS(trace=(torch.tensor([[0, 2, -1]]),)))
-        base = WholePaths.Path((), (), observation, None, errors, torch.tensor([[2., 0., 3.]]),
+        base = WholePaths.Path((), (), observation, errors, torch.tensor([[2., 0., 3.]]),
             WholePaths.Thinking(), before, before, output_trace=('held',))
         draw = dict(walk=torch.tensor([6]), reconstruction_round=torch.tensor([-1]),
             thought_round=torch.tensor([-1]), output_round=torch.tensor([0]), compose_round=torch.tensor([-1]))
@@ -92,4 +92,3 @@ def test_complete_path_pays_c_for_one_more_kept_application(monkeypatch):
     assert result['advantage'].tolist() == [.75]
     costs, _ = WholePaths.objectives(paths, parts, active, [paths[1].draw])
     assert costs['penalty.reconstruction'] == (5+6)*.75
-

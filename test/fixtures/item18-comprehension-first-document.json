@@ -1,0 +1,89 @@
+{
+  "source_snapshot": "7768411acaecf5d2a9ad58a39f2f0041c79f43cdc6d94fc1b79176bec5bf7fb6",
+  "sha256": "0b4e57aa2810d0539106c3e2426c8ab6afd7b4c5efbb4d73c5eceda2573b5f72",
+  "bytes": 102313,
+  "sentences": 4,
+  "paths": 7,
+  "records": [
+    {
+      "sentence": 1,
+      "path": 0,
+      "words": [
+        "This",
+        "is",
+        "Felix",
+        null
+      ]
+    },
+    {
+      "sentence": 2,
+      "path": 0,
+      "words": [
+        "What",
+        "is",
+        "this",
+        null
+      ]
+    },
+    {
+      "sentence": 2,
+      "path": 1,
+      "words": [
+        "What",
+        "is",
+        "this",
+        null
+      ]
+    },
+    {
+      "sentence": 3,
+      "path": 0,
+      "words": [
+        "That",
+        "is",
+        "Ciao",
+        null
+      ]
+    },
+    {
+      "sentence": 3,
+      "path": 1,
+      "words": [
+        "That",
+        "is",
+        "Ciao",
+        null
+      ]
+    },
+    {
+      "sentence": 4,
+      "path": 0,
+      "words": [
+        "What",
+        "is",
+        "that",
+        null
+      ]
+    },
+    {
+      "sentence": 4,
+      "path": 1,
+      "words": [
+        "What",
+        "is",
+        null,
+        "that"
+      ]
+    }
+  ],
+  "contents": [
+    "fixed actions and word/object references",
+    "word leaves, evidence, reference witnesses, physical bands and case bank",
+    "initial held concepts and publication/refresh witnesses",
+    "native numerical surface/part kernel state",
+    "dictionary, hierarchy and MTM reads used as inputs",
+    "open conceptual field and original positions",
+    "expected per-action operands/results, clause point/roles and every extension node"
+  ],
+  "scope": "Replays numerical comprehension and native clause assembly; native staging/admission are covered separately. No frozen implementation is loaded."
+}

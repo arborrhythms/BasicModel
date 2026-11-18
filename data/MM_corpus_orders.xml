@@ -17,7 +17,7 @@
       <batchSize>1</batchSize><packSentences>false</packSentences><numWorkers>0</numWorkers>
       <learningRate>0.001</learningRate><autoload>false</autoload><autosave>false</autosave>
       <reconstructionScale>0.1</reconstructionScale><equalityLossWeight>1</equalityLossWeight>
-      <sentenceExpectation>true</sentenceExpectation><sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <sentenceExpectation>true</sentenceExpectation><symbolFieldLossWeight>0.1</symbolFieldLossWeight>
       <outputInLoop>true</outputInLoop>
     </training>
   </architecture>

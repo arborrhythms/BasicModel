@@ -161,7 +161,10 @@ def test_word_read_starts_from_factual_previous_context_and_never_forecasts_itse
     inputs=[]
     hook=head.word_predictor.register_forward_pre_hook(lambda _,args:inputs.append(tuple(v.detach().clone() for v in args)))
     try:
-        head.predict_and_observe_stm_end_state([1],[torch.eye(4)[2:3]],layout='infix',evidence=[(0.,.8)],symbol_ids=[torch.tensor([2,-1,-1])])
+        from Memory import STM0
+        head._ltm_store = STM0(4, capacity=head.ltm_capacity)
+        row = head._ltm_store.append_idea(torch.eye(4)[2], trust=-.8, referent=('sym', 2))
+        head.include_occurrence(0, head._ltm_store.occurrence_of(row))
         word_distribution(head,words,keys,valid,torch.tensor([[0,1]]))
         torch.testing.assert_close(inputs[-2][1],torch.cat((keys[:,2],keys[:,2]),-1))
         torch.testing.assert_close(inputs[-2][2][0,2],torch.tensor([0.,.8]))

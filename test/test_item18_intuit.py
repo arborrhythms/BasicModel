@@ -66,7 +66,7 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
     model = lesson(tmp_path, monkeypatch)
     calls = []
     owner = model._concept_owner()
-    hook = owner.intuit_stack.register_forward_hook(lambda *args: calls.append(True))
+    hook = owner.expect_stack.register_forward_hook(lambda *args: calls.append(True))
     try:
         read(model, 'alpha gamma')
         assert len(calls) == 1
@@ -96,11 +96,11 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
         model.End(); model.symbolSpace.soft_reset()
 
 
-def test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference():
+def test_83_an_unseen_conclusion_still_needs_inference():
     from Understanding import ConceptualField
     from FieldProjection import close
     from SentenceField import publish
-    from IntuitionField import open_field, complete
+    from IntuitionField import open_field
     from AccessibleMind import apply_thought_effect
     from QueryWork import QueryWorkBudget
     from Layers import Error
@@ -126,39 +126,12 @@ def test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_in
         values[list(members), 0, 0, 0] = 1
         return ConceptualField(ids, close(owner, rows, values),
             torch.tensor([[[0, 1]]]), torch.tensor([[[0, 1]]]), None)
-    optimizer = torch.optim.Adam(owner.intuit_stack.parameters(), lr=.01)
-    trained_other_output = False
-    for presentation in range(200):
-        # The held-out consequence also occurs in training, so its absence
-        # on a new combination cannot be explained by an untouched output.
-        # Both constituents of the held-out combination are seen separately;
-        # neither alone licenses its consequence. Their pair is never taught.
-        members = ((0, 1), (0, 1, 5), (2,), (3,))[presentation % 4]
-        publish(model, open_field(model, observation(members)))
-        if members[:2] == (0, 1):
-            result = invoke(model, registry, search(model, registry, idea(registry, refs[6])))
-            apply_thought_effect(model, result, row=0, work=QueryWorkBudget(256))
-            assert owner.subspace._concept_activations[4, 0, 0, 0] == 1
-        costs = Error()
-        complete(model, torch.tensor([True]), costs)
-        assert not model._intuition_target.requires_grad
-        optimizer.zero_grad()
-        costs.total().sum().backward()
-        final = owner.intuit_stack.stages[-1].layer.W
-        trained_other_output |= bool(final.grad[:, 2*rows[5]:2*rows[5]+2].any())
-        optimizer.step()
-    assert trained_other_output
+    # The independent thought teacher and its 200 teaching presentations
+    # are retired by §68.53.4. The unseen-combination inference contract stays.
     from IntuitionField import read as deposit
     from SentenceField import knowing
-    publish(model, open_field(model, observation((0, 1))))
-    deposit(owner, row=0, work=QueryWorkBudget(64))
-    field = knowing(model)
-    learned = (field.concept_ids == refs[4][1]).nonzero().item()
-    assert field.evidence[learned, 0, 0, 0] > .5
-    publish(model, field)
-    complete(model, torch.tensor([True]), Error())
-    assert model._intuition_target[0, rows[4], 0] == 0
     publish(model, open_field(model, observation((2, 3))))
+    open_prediction(model, torch.tensor([True]))
     deposit(owner, row=0, work=QueryWorkBudget(64))
     unseen = knowing(model)
     unlearned = (unseen.concept_ids == refs[5][1]).nonzero().item()
@@ -167,6 +140,5 @@ def test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_in
     result = invoke(model, registry, search(model, registry, idea(registry, refs[7])))
     apply_thought_effect(model, result, row=0, work=QueryWorkBudget(256))
     assert owner.subspace._concept_activations[unlearned, 0, 0, 0] == 1
-    print(dict(presentations=200, learned=float(field.evidence[learned, 0, 0, 0].detach()),
-               unseen=float(unseen.evidence[unlearned, 0, 0, 0].detach()),
+    print(dict(unseen=float(unseen.evidence[unlearned, 0, 0, 0].detach()),
                inferred=float(owner.subspace._concept_activations[unlearned, 0, 0, 0].detach())))

@@ -309,8 +309,6 @@
       <sentenceExpectation>true</sentenceExpectation>
       <perceptExpectationGain>0</perceptExpectationGain>
       <symbolExpectationGain>0</symbolExpectationGain>
-      <rowExpectationGain>0</rowExpectationGain>
-      <documentExpectationGain>0</documentExpectationGain>
       <expectationOmissionThreshold>0.5</expectationOmissionThreshold>
       <perceptExpectationRate>0.05</perceptExpectationRate>
       <expectationEpsilon>0.000001</expectationEpsilon>
@@ -322,7 +320,7 @@
 
       <!-- Shared bank-activation predictor: sources and targets are detached;
            the local residual alone trains its weights. -->
-      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <symbolFieldLossWeight>0.1</symbolFieldLossWeight>
       <!-- Hard normal grammatical-thought choices use their own explicit
            REINFORCE credit; zero preserves the deterministic safe baseline. -->
     </training>
@@ -510,6 +508,9 @@
   </ModalSpace>
 
   <ConceptualSpace>
+    <!-- The observed basic field learns the kept sentence idea. -->
+    <ideaHidden>64</ideaHidden>
+    <ideaLayers>1</ideaLayers>
     <!-- Active bipolar complement. Zero disables meaning; storage geometry stays fixed. -->
     <meaningWidth>128</meaningWidth>
     <placementRate>0.1</placementRate>

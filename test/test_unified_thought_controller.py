@@ -231,12 +231,12 @@ def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_e
     question = replace(question, bindings=dict(bindings(question),
         _query_occurrence=store.occurrence_of(source)))
     if with_expectation:
-        from test_sentence_expectation import observe
+        from test_sentence_expectation import admit
         discourse = SymbolExpectation(4, 8, 8, concept_dim=8)
         discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
         model.symbolSpace.expectation = discourse
-        observe(discourse, question.roles)
-        observe(discourse, question.roles)
+        admit(discourse, question.roles)
+        admit(discourse, question.roles)
     for _ in range(4):
         question = registry.form('ask', question)
         question = replace(question, bindings=dict(bindings(question),

@@ -289,7 +289,6 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
             return select(logits, **options)
         owner.shared_grammar.select_logits = skip
     owner.symbolSpace.languageLayer = SimpleNamespace(operation_layer=owner.shared_grammar)
-    owner.document_expectation_gain = getattr(owner, 'document_expectation_gain', 0.)
     owner.expectation_gain = getattr(owner, 'expectation_gain', 0.)
     owner.training = False
     owner.spaces = []
@@ -298,7 +297,12 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     extents = torch.stack((starts, starts+1), -1)
     lanes = (entry.leaf_evidence if entry.leaf_evidence is not None else
              entry.leaves.new_zeros(len(entry.leaves), 2))
-    entry = replace(entry, word_extents=extents, leaf_evidence=lanes)
+    entry = replace(entry, word_extents=extents, leaf_evidence=lanes,
+        leaf_orders=torch.tensor([registry.space._concept_source_order(int(cid))
+                                 for cid in entry.concept_ids], device=entry.concept_ids.device))
+    from Models import _boundary_registry
+    _boundary_registry(owner)
+    short_term.strata.capture(entry, language, 0, after=int(store.model_clock))
     readings = (entry if active else None,)
     owner._capture_reading_programs = lambda **kwargs: (readings, {sid: readings})
     owner._expectation_documents_for_slot = lambda *args: [document]
@@ -348,7 +352,11 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
                 if entry.leaf_evidence is not None else evidence.new_tensor([max(0.,float(entry.activations[position])),max(0.,-float(entry.activations[position]))]))
     bounds = extents[None]
     field = ConceptualField(ids,evidence,bounds,bounds,None)
-    roots = reading(owner,entry,field,0,torch.arange(len(entry.leaves))) if bool(active.any()) else ()
+    from Comprehension import Evaluation
+    evaluation = Evaluation(owner, entry, 0, trust=trust) if bool(active.any()) else None
+    roots = (reading(owner, entry, field, 0, torch.arange(len(entry.leaves)), evaluation=evaluation)
+             if evaluation is not None else ())
+    view['comprehensions'] = (None if evaluation is None else evaluation.result,)
     empty = ConceptSet(ids[:0],evidence.new_empty(0,2))
     extended = as_field((joined(roots,empty),),where=bounds,when=bounds)
     from SentenceUnderstanding import SentenceUnderstanding
@@ -357,19 +365,13 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
         entry.word_rows[None], torch.ones_like(entry.word_rows[None],dtype=torch.bool),
         None, torch.tensor([sid]), understanding_field=extended)
     owner._last_sentence_understanding = view['record']
-    view['clauses'] = [with_extensions(value, roots) for value in view['clauses']]
+    view['clauses'] = [None if evaluation is None else evaluation.result.clause]
     view['meanings'] = [None if value is None else value.meaning for value in view['clauses']]
-    cost, pending = None, None
     if discourse is not None:
-        cost, pending = discourse.sentence_prediction_cost(
-            view['observed_depths'], view['observed'], active, documents=[document],
-            layout=view['layout'], role_masks=view['roles'],
-            evidence=[None if clause is None else clause.evidence for clause in view['clauses']],
-            sentence_kinds=[None if meaning is None else meaning.sentence_kind
-                            for meaning in view['meanings']])
-    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+        discourse._prepare_expectation_documents([document], active, 1)
+    BasicModel._commit_sentence(owner, state, sid, active, [view],
                                torch.zeros(1, dtype=torch.bool))
-    return owner, view, cost
+    return owner, view, None
 
 
 def use_eager_reading(monkeypatch):

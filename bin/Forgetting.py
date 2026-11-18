@@ -151,9 +151,6 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False, conf
     if discourse is not None:
         for chain in getattr(discourse,'_inter_context_occurrences',()):
             roots.update(ref for ref in chain if ref is not None)
-        for pending in getattr(discourse,'_inter_last_meaning',()):
-            if pending is not None:
-                roots.update(getattr(pending,'source_occurrences',()))
     result=forget(store,config or ForgettingConfig.from_xml(),
         document_boundary=document_boundary,epoch_boundary=epoch_boundary,
         open_sentence=getattr(model,'_open_sentence_slot',None) is not None,

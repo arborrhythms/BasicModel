@@ -169,6 +169,13 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
         seat_counts.append((before, sum(len(layer._tensor_rows) for layer in closing.alloc._layers.values())))
         return result
     monkeypatch.setattr(PartClosing, 'close', observe_seats)
+    from Comprehension import Evaluation
+    finish, objects = Evaluation.finish, []
+    def observe_objects(evaluation, **kwargs):
+        result = finish(evaluation, **kwargs)
+        objects.append((result.concept_ids.clone(), evaluation.ids.clone()))
+        return result
+    monkeypatch.setattr(Evaluation, 'finish', observe_objects)
     try:
         inputs, _ = next(iter(model.inputSpace.data.data_loader(split='train', num_streams=4)))
         if preadmit:
@@ -179,12 +186,16 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
         with capture_readings(model) as captured:
             model.forward(model.inputSpace.prepInput(inputs))
         assert model._concept_owner().nVectors == constructed_vectors
-        assert model._word_symbol_concept_ids() is None
         source = model.inputSpace
+        from PrependedSymbols import word_view
+        word_ids = word_view(source, 'concept_ids')
         valid = source._ar_grammar_leaf_mask
+        torch.testing.assert_close(model._word_symbol_concept_ids(), word_ids)
         for b, program in enumerate(captured[0]):
             expected = source._ar_grammar_object_ids[b, valid[b]]
-            torch.testing.assert_close(program.concept_ids, expected, rtol=0, atol=0)
+            torch.testing.assert_close(program.concept_ids, word_ids[b, valid[b]], rtol=0, atol=0)
+            torch.testing.assert_close(objects[b][0], expected, rtol=0, atol=0)
+            torch.testing.assert_close(objects[b][1], word_view(source, 'object_ids')[b, valid[b]], rtol=0, atol=0)
             assert bool((expected > 0).all())
         from Memory import SYMBOL
         assert plans and all(ref is not None and ref[0] == SYMBOL for plan in plans for ref in plan)

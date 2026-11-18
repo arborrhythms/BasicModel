@@ -88,15 +88,21 @@ def test_migration_merges_split_rows_without_overwriting_learned_members():
         migrate_wholespace_checkpoint(saved, live)
 
 
-def test_migration_moves_persisted_bands_and_keeps_identity_keys():
-    from Spaces import WhereEncoding
+@pytest.mark.parametrize("centered", [False, True])
+def test_migration_moves_persisted_bands_and_keeps_identity_keys(centered):
+    from Spaces import WhereEncoding, unsigned_phase, signed_phase
     saved, live, _, _ = migration_fixture()
     slices = dict(input=(0, 8), parts=(8, 12), wholes=(12, 15), symbols=(15, 21), conceptual=(21, 29))
     old = WhereEncoding(nWhere=4, nWhen=4).set_capacity(35)
     new = WhereEncoding(nWhere=4, nWhen=4).set_capacity(29)
     ids = torch.tensor([0, 9, 12, 15, 20, 21, 26, 27, 34])
     expected = torch.tensor([0, 9, 12, 12, 14, 15, 20, 21, 28])
+    saved["coordinate_encoding"] = 0 if centered else 1
+    def decode(band):
+        return new.decode_index(unsigned_phase(band) if centered else band)
     band = old.encode(ids)
+    if centered:
+        band = signed_phase(band)
     slots = torch.cat((torch.full((len(ids), 4), .125), band, torch.full((len(ids), 4), .75)), -1)
     saved['state_dict']['store.percept_layout'] = torch.tensor(12)
     saved['state_dict']['store.slots'] = slots
@@ -116,29 +122,29 @@ def test_migration_moves_persisted_bands_and_keeps_identity_keys():
         'mtm': [copy.deepcopy(saved['structural_extras']['conceptual_spaces'][0]['epoch_mtm'])]}}
     result = migrate_wholespace_checkpoint(saved, live, where_slices=slices, percept_width=12)
     moved = result.checkpoint['state_dict']['store.slots']
-    assert torch.equal(new.decode_index(moved[:, 4:8]), expected)
+    assert torch.equal(decode(moved[:, 4:8]), expected)
     torch.testing.assert_close(moved[:, :4], slots[:, :4], rtol=0, atol=0)
     torch.testing.assert_close(moved[:, 8:], slots[:, 8:], rtol=0, atol=0)
     extra = result.checkpoint['structural_extras']['conceptual_spaces'][0]
     assert extra['epoch_mtm']['entries'][0]['key'] == ('ltm', 'unchanged', 27)
     value = extra['epoch_mtm']['entries'][0]['timelines'][0][1]
-    assert int(new.decode_index(value[4:8])) == int(expected[6])
-    assert torch.equal(new.decode_index(extra['perception']['percept_where']), expected)
+    assert int(decode(value[4:8])) == int(expected[6])
+    assert torch.equal(decode(extra['perception']['percept_where']), expected)
     assert torch.equal(extra['knowing']['where'][:, 0], expected)
     event = extra['epoch_mtm']['entries'][0]['timelines'][0][0][0]
     assert event[0] == ('occurrence', 27) and event[1:4] == (3, 1, (2, 3))
     for field in (event[4], event[5], event[7], event[8][0], event[10]):
-        assert int(new.decode_index(field[4:8])) == int(expected[6])
+        assert int(decode(field[4:8])) == int(expected[6])
     for value in (result.checkpoint['state_dict']['store.addressing.recurrence_codes'],
                   result.checkpoint['structural_extras']['epoch_rows']['store']['slots']):
-        assert torch.equal(new.decode_index(value[:, 4:8]), expected)
+        assert torch.equal(decode(value[:, 4:8]), expected)
     runtime = result.checkpoint['training_state']['corpus_runtime']
     fields = runtime['stm']['owner']['fields']
-    assert torch.equal(new.decode_index(fields['_live_where']), expected)
-    assert torch.equal(new.decode_index(fields['_live_buffer'][:, 4:8]), expected)
+    assert torch.equal(decode(fields['_live_where']), expected)
+    assert torch.equal(decode(fields['_live_buffer'][:, 4:8]), expected)
     context = runtime['expectation']['fields']['_inter_context']
-    assert context.maxlen == 2 and torch.equal(new.decode_index(context[0][:, 4:8]), expected)
-    assert int(new.decode_index(runtime['mtm'][0]['entries'][0]['timelines'][0][1][4:8])) == int(expected[6])
+    assert context.maxlen == 2 and torch.equal(decode(context[0][:, 4:8]), expected)
+    assert int(decode(runtime['mtm'][0]['entries'][0]['timelines'][0][1][4:8])) == int(expected[6])
     assert result.diagnostics.migrated_addresses > 0
     torch.testing.assert_close(saved['state_dict']['store.slots'], slots, rtol=0, atol=0)
 

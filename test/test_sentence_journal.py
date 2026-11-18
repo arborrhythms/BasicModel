@@ -71,10 +71,11 @@ def test_program_reads_compact_journal_by_global_address_and_keeps_value_gradien
     relations = refs.remainder(2).bool()
     trace = SimpleNamespace(_choice_values=frames, _choice_refs=refs,
         _choice_ref_relations=relations, _choice_journal_columns=columns)
+    clock_reads = []
     model = SimpleNamespace(_reconstruction_stack=lambda: trace,
-        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(),
+        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), languageSpace=SimpleNamespace(),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
-            strata=SimpleNamespace(capture=lambda *args: None))))
+            strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
     program = (torch.tensor([[2, 3]]),
         torch.tensor([[[0, -1, 0], [0, -1, 1], [1, 0, -1]]]),
         torch.tensor([[0, 1, 1]]), torch.tensor([[-1, -1, 12]]))
@@ -89,6 +90,7 @@ def test_program_reads_compact_journal_by_global_address_and_keeps_value_gradien
     expected = torch.zeros_like(frames)
     expected[0, 12] = 1
     torch.testing.assert_close(frames.grad, expected, rtol=0, atol=0)
+    assert clock_reads == [7]
 
 
 def test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words():
@@ -223,13 +225,15 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     def resolve(owner,rows,ids,actions,*,leaf_orders,admit):
         observed.append(leaf_orders.clone())
         return ids.clone(),torch.full_like(ids,-1)
+    clock_reads = []
     model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
-        symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0,2]])),
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7)),
+                                    _word_reference_orders=torch.tensor([[0,2]])),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
         _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512),
             _csw_row_of=lambda cid: {101: 10, 102: 11}.get(cid)),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
-            strata=SimpleNamespace(capture=lambda *args: None))))
+            strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
     program=(torch.tensor([[0,1]]),torch.tensor([[[0,-1,0],[0,-1,1],[1,0,-1]]]),
              torch.tensor([[0,0,0]]),torch.tensor([[0,1,2]]))
     entry,=BasicModel._program_entries(model,program,torch.zeros(1,2,4),
@@ -241,11 +245,12 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     assert entry.identity_ids.tolist()==[512]
     assert entry.concept_ids.tolist()==[101,102]
     assert model.symbolSpace._word_reference_orders.tolist()==[[0,2]]
+    assert clock_reads == [7]
 
 
 
-def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, eager_reading):
-    from Models import FunctionalPeerSTM
+def test_identity_admission_uses_the_deposited_word_order(tmp_path, monkeypatch, eager_reading):
+    from Memory import ShortTermMemory
     import ChunkJournal
     from Memory import STMChunks
     from test_compiled_word_chunk import _tiny_canonical_model
@@ -256,10 +261,10 @@ def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, e
         architecture_overrides={'answerSynthesis': False})
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
-    resolve, push = FunctionalPeerSTM.resolve_top_reference, ChunkJournal.push
+    deposit, push = ShortTermMemory.functional_push_step_masked, ChunkJournal.push
     expected, observed = [], []
-    def resolved(*args, **kwargs):
-        result = resolve(*args, **kwargs)
+    def deposited(*args, **kwargs):
+        result = deposit(*args, **kwargs)
         expected.append(STMChunks.stack_view(result)[2][:, 0].clone())
         return result
     def opening(state, scope, active, **kwargs):
@@ -267,7 +272,7 @@ def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, e
             torch.testing.assert_close(STMChunks.stack_view(state)[2][:,0][active], expected[-1][active], rtol=0, atol=0)
             observed.append(True)
         return push(state, scope, active, **kwargs)
-    monkeypatch.setattr(FunctionalPeerSTM, 'resolve_top_reference', staticmethod(resolved))
+    monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(deposited))
     monkeypatch.setattr(ChunkJournal, 'push', opening)
     try:
         raw = model.inputSpace.prepInput(['a b'])
@@ -327,18 +332,21 @@ def test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading():
     trace = SimpleNamespace()
     program = (torch.zeros(B, W, dtype=torch.long), torch.tensor([[[0, -1, 0]]] * B),
                torch.zeros(B, W, dtype=torch.long), torch.full((B, W), -1))
+    clock_reads = []
     host = SimpleNamespace(_open_sentence_slot=0, _tensor_pushed_ideas=words,
         _concept_owner=lambda: SimpleNamespace(mtm=SimpleNamespace(entries={})),
-        inputSpace=inp, symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
+        inputSpace=inp, symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))),
+        languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
         _word_symbol_rows=lambda: rows, _word_symbol_concept_ids=lambda: rows,
         _answer_leaf_slab=lambda _: words, _word_lexical_forms=lambda *args: [(), ()],
         _derivation_program=lambda _: program, _reconstruction_stack=lambda: trace,
         _tensor_sentence_roots_live=torch.ones(B, 1, 3 * D), _tensor_sentence_roots_depth=torch.tensor([[1], [-1]]),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
-            strata=SimpleNamespace(capture=lambda *args: None))))
+            strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
     host._program_entries = MethodType(BasicModel._program_entries, host)
     _, scored = BasicModel._capture_reading_programs(host, sentence_slot=0, admit=False)
     assert all(entry is not None for entry in scored[0])
     _, committed = BasicModel._capture_reading_programs(host, sentence_slot=0, admit=True)
     assert committed[0][0] is not None and committed[0][1] is None
     assert sum(admit for _, admit in recorded) == 1
+    assert clock_reads == [7, 7, 7]

@@ -37,7 +37,7 @@
       <equalityLossWeight>1</equalityLossWeight>
       <sentenceExpectation>true</sentenceExpectation>
 
-      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <symbolFieldLossWeight>0.1</symbolFieldLossWeight>
     </training>
   </architecture>
   <InputSpace><nOutput>128</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>

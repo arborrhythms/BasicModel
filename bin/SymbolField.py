@@ -77,14 +77,6 @@ class SymbolField:
         return SymbolRead(keys, logits.detach().sigmoid(), self.strength,
                           self.epsilon, self.saturation, addresses, actual, known, self.owner._bank_orders)
 
-    def closing_predictions(self):
-        """The shared head's last pre-arrival read, separate from the D prior."""
-        if self.pending is None:
-            return ()
-        keys, _, context, source = self.pending
-        return tuple(self.owner._prediction((keys[b:b+1], context[b:b+1], source[b:b+1]),
-                     self.owner._bank_ids, self.owner._bank_orders).detached()
-                     for b in range(len(keys)))
 
     def loss(self):
         return None if not self.losses else torch.stack(self.losses).mean(0)

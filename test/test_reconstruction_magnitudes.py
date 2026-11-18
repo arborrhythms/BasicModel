@@ -157,3 +157,30 @@ def test_unfinished_forest_trains_from_every_live_stack_root(count):
     record.end_depth = torch.tensor([1])
     with pytest.raises(ValueError, match='forest depth'):
         reconstruct(lang, record, [program], lambda _: range(count), stm)
+
+
+def test_selected_reference_at_a_word_leaf_transports_inverse_error_not_the_target():
+    from types import SimpleNamespace
+    from DerivationReconstruction import reconstruct
+
+    op=SimpleNamespace(inverse_kind='unary',preserves_form=True)
+    language=SimpleNamespace(_compose_unary_rules=[SimpleNamespace(relation_kind=None)],
+        _tree_layer=lambda _:SimpleNamespace(unary_ops=[op]),
+        reverse_unary_step=lambda parent,*a,**kw:(parent,torch.zeros(1,dtype=torch.bool)))
+    leaf=torch.tensor([[.2,.3]])
+    operand=torch.tensor([[.6,.7]])
+    frames=torch.stack((leaf.new_zeros(3,2),torch.cat((operand,operand*0,operand))))
+    program=SimpleNamespace(tree=None,leaves=leaf,actions=torch.tensor([[0,-1,0],[2,0,0]]),
+        operation_values=frames,identity_actions=torch.zeros(2,6),
+        operation_resolved=torch.tensor([[False,False],[True,False]]))
+    parent=torch.tensor([[[.65,.72]]],requires_grad=True)
+    record=SimpleNamespace(word_values=torch.tensor([[[.9,.9]]]),word_valid=torch.ones(1,1,dtype=torch.bool),
+        end_depth=torch.ones(1,dtype=torch.long),end_slots=parent,primed=None)
+    recovered,missing,defined=reconstruct(language,record,[program],lambda _: [0])
+    assert not missing.any() and defined.all()
+    torch.testing.assert_close(recovered,torch.tensor([[[.25,.32]]]))
+    gradient,=torch.autograd.grad(recovered.sum(),parent)
+    torch.testing.assert_close(gradient,torch.ones_like(parent))
+    record.word_values=record.word_values*.1
+    again,_,_=reconstruct(language,record,[program],lambda _: [0])
+    torch.testing.assert_close(again,recovered)

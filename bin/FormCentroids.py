@@ -408,7 +408,8 @@ def capture(program, bank, batch, positions, language):
     values, number, carrier = local.read_presence(program.actions.new_tensor(spans)[None])
     return replace(program, operand_counts=program.leaves.new_tensor(counts),
                    form_wholes=values[0], form_whole_counts=number[0] *
-                       number.new_tensor(active)[:, None], form_whole_presence=carrier[0])
+                       number.new_tensor(active)[:, None], form_whole_presence=carrier[0],
+                   form_whole_counts_raw=number[0])
 
 
 def inverse_context(program, index):

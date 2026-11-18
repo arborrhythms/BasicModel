@@ -1,4 +1,4 @@
-"""Certificate 68: one declared image pass beside the zero-width intuition control."""
+"""Certificate 68: one declared image pass beside the zero-width expectation control."""
 import argparse
 import gc
 import hashlib
@@ -44,16 +44,16 @@ def main():
     results = []
     for enabled in (True, False):
         torch.set_rng_state(streams['torch']); np.random.set_state(streams['numpy']); random.setstate(streams['python'])
-        arm = args.out/('intuit' if enabled else 'zero'); arm.mkdir()
+        arm = args.out/('expect' if enabled else 'zero'); arm.mkdir()
         tree = ET.parse(ROOT/'data/MM_image.xml')
         if not enabled:
-            ET.SubElement(tree.getroot().find('ConceptualSpace'), 'intuitHidden').text = '0'
+            ET.SubElement(tree.getroot().find('ConceptualSpace'), 'expectHidden').text = '0'
         config = arm/'model.xml'; tree.write(config, encoding='utf-8', xml_declaration=True)
         model, device, lr, _ = _build_model(str(config))
         optimizer = model.getOptimizer(lr=lr)
         owner = model._concept_owner()
-        result = dict(intuit=enabled, parameters=0 if owner.intuit_stack is None else
-            sum(p.numel() for p in owner.intuit_stack.parameters()), presentations=0, results={})
+        result = dict(expect=enabled, parameters=0 if owner.expect_stack is None else
+            sum(p.numel() for p in owner.expect_stack.parameters()), presentations=0, results={})
         started = time.monotonic()
         try:
             model.begin_presentation()
@@ -68,7 +68,7 @@ def main():
                 model.End(); model.symbolSpace.soft_reset()
                 (arm/'progress.json').write_text(json.dumps(dict(result, seconds=time.monotonic()-started), indent=2)+'\n')
                 if offset % 80 == 0:
-                    print(json.dumps(dict(intuit=enabled, presentations=result['presentations'])), flush=True)
+                    print(json.dumps(dict(expect=enabled, presentations=result['presentations'])), flush=True)
             owner._online_learning_frozen = True
             model.eval()
             for split, (all_images, all_labels) in heldout.items():

@@ -139,6 +139,21 @@ class SentenceUnderstanding:
     open_field: object | None = None
     extension: tuple = ()
     understanding_field: object | None = None
+    meaning_root: torch.Tensor | None = None
+    meaning_slots: torch.Tensor | None = None
+    meaning_depth: torch.Tensor | None = None
+
+    @property
+    def idea_root(self):
+        return self.root if self.meaning_root is None else self.meaning_root
+
+    @property
+    def idea_slots(self):
+        return self.end_slots if self.meaning_slots is None else self.meaning_slots
+
+    @property
+    def idea_depth(self):
+        return self.end_depth if self.meaning_depth is None else self.meaning_depth
 
     def reader_features(self, *, attention=None, live=False):
         """Fixed linear summaries with the selected training boundary.
@@ -150,9 +165,9 @@ class SentenceUnderstanding:
         forms = self.primed.codes if self.primed.forms is None else self.primed.forms
         bank = (forms.detach() * self.primed.weights.detach()[..., None]
                 * self.primed.valid[..., None]).sum(1)
-        positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
-        end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]
-        root = self.primed.reader_value(self.root)
+        positions = torch.arange(self.idea_slots.shape[1], device=self.root.device)
+        end = self.idea_slots * (positions[None] < self.idea_depth[:, None])[..., None]
+        root = self.primed.reader_value(self.idea_root)
         end = self.primed.reader_value(end)
         bank = self.primed.reader_value(bank, reference=bank)
         from AttentionCredit import fixed_input

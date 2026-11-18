@@ -110,9 +110,9 @@ def record_thought_bind(trace, plan):
 class ThoughtTrialState:
     """Snapshot only the declared thought-effect owners, never model weights.
 
-    History records are immutable. Knowing writes fresh field tensors and
-    expectation replaces its pending estimate. Their old graphs therefore
-    remain safe to restore without detaching the kept policy's credit.
+    History records are immutable and knowing writes fresh field tensors.
+    Their old graphs remain safe to restore without detaching the kept
+    policy's credit.
     """
     def __init__(self,model, *, detach=False):
         memory=model._what_memory()
@@ -128,7 +128,7 @@ class ThoughtTrialState:
                 (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
                         '_last_output_comparison', '_last_output_walk_trace',
                         '_sentence_answer_cost', '_sentence_answer_predictions',
-                        '_sentence_answer_raw_cost', '_intuition_teacher'))]
+                        '_sentence_answer_raw_cost'))]
         if stm is not None:
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
                            ('_thought_contents', '_active_batch', '_max_depth_host')))
@@ -142,8 +142,6 @@ class ThoughtTrialState:
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
                 if name.startswith('_concept_'))))
-        expectation=getattr(getattr(model,'symbolSpace',None),'expectation',None)
-        if expectation is not None:owners.append((expectation,('_inter_last_meaning',)))
         copy = _detached if detach else _copy_containers
         from ThoughtStrata import snapshot
         self.thought_strata = None if stm is None else (stm, snapshot(stm._thought_stores))
@@ -173,8 +171,6 @@ class ThoughtTrialState:
             type(self).keep((current, departing), selected)
             return
         if not effects_only:
-            from MemoryActivity import restore
-            restore(self.activity)
             self.model.when_time.copy_(self.clock)
             self.model.when_encoding.t = self.model.present()
             if self.store_clock is not None:
@@ -184,6 +180,11 @@ class ThoughtTrialState:
             from ThoughtStrata import restore
             stm, snapshot = self.thought_strata
             restore(stm._thought_stores, snapshot)
+        if not effects_only:
+            # Activity addresses belong to this trial's restored rows. A
+            # different path can have left a smaller transient content bank.
+            from MemoryActivity import restore
+            restore(self.activity)
         for owner,values,names in self.saved:
             if effects_only and ('_what_slots' in names or '_thought_contents' in names
                                  or '_concept_activations' in names):
@@ -198,8 +199,6 @@ class ThoughtTrialState:
             # A trial may introduce a knowing carrier for the first time.
             dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if any(name.startswith('_concept_') for name in names) else ()
             for name in set(names)|set(dynamic):
-                if effects_only and name == '_intuition_teacher':
-                    continue
                 if name in values:object.__setattr__(owner,name,_copy_containers(values[name]))
                 elif name in vars(owner):delattr(owner,name)
 
@@ -264,8 +263,7 @@ class ThoughtTrialState:
                     for row, index in enumerate(indices)]), first[batch:]), 0)
             if torch.is_tensor(first) and first.ndim and first.shape[0] == batch:
                 return torch.stack([values[index][row] for row, index in enumerate(indices)])
-            if (name in ('_what_slots', '_thought_contents', '_what_closure_pressure',
-                         '_inter_last_meaning') and isinstance(first, (list, tuple))
+            if (name in ('_what_slots', '_thought_contents', '_what_closure_pressure') and isinstance(first, (list, tuple))
                     and len(first) >= batch):
                 return type(first)(values[indices[row]][row] if row < batch else value
                                    for row, value in enumerate(first))

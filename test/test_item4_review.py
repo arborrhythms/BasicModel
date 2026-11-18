@@ -6,7 +6,7 @@ from dataclasses import replace
 import pytest
 import torch
 from Expectation import sample_alternative, retention_surprise
-from Layers import SymbolExpectation, ExpectationComparison
+from Layers import SymbolExpectation
 from Memory import LTM0
 from Meaning import ClosingImage, ConceptualMeaning, withheld_symbols
 from meaning_fixtures import symbol_prediction, estimate_meaning
@@ -19,19 +19,6 @@ def test_inverse_cdf_never_selects_a_zero_probability_edge():
         assert sample_alternative(probabilities,value).tolist()==[expected,expected]
 
 
-def test_bank_confidence_follows_each_symbol_in_every_role():
-    head=SymbolExpectation(4,8,4)
-    keys=torch.eye(4);head.set_symbol_bank(keys)
-    with torch.no_grad():
-        for p in head._inter_predictor.parameters():p.zero_()
-        head._inter_predictor.local.bias.copy_(torch.tensor([60.,-60.]))
-    prior=head._prediction((keys[None],torch.zeros(1,8),torch.zeros(1,4,2)),head._bank_ids,head._bank_orders)
-    for roles in (keys[:3],keys[torch.tensor([2,0,1])]):
-        image=ClosingImage.form(roles,prior.roles,prior.confidence,prediction=prior,gain=1.)
-        assert not image.conceived.any()
-        torch.testing.assert_close(image.restore(),roles,atol=0,rtol=0)
-    with pytest.raises(ValueError,match='native symbol'):
-        ClosingImage.form(keys[:3],prior.roles,prior.presence_logits.sigmoid(),prediction=prior,gain=1.)
 
 
 def test_native_activated_word_is_observed_by_handle_with_both_lanes(tmp_path,monkeypatch,eager_reading):
@@ -70,21 +57,17 @@ def test_native_activated_word_is_observed_by_handle_with_both_lanes(tmp_path,mo
     model.End();model.symbolSpace.soft_reset()
 
 
-def test_omission_surprise_and_non_marks_agree_at_both_native_writers():
-    keys=torch.eye(4)
-    prior=symbol_prediction(keys,torch.tensor([[1.,0.],[1.,0.],[0.,0.],[0.,0.]]))
-    roles=torch.cat((keys[:1],torch.zeros(2,4)))
-    target=torch.tensor([[1.,0.],[0.,0.],[0.,0.],[0.,0.]])
-    marks={'_withheld_symbols':((1,tuple(keys[1].tolist())),)}
-    ordinary=ConceptualMeaning(roles,torch.tensor([True,False,False]))
-    withheld=replace(ordinary,bindings=marks)
-    comparison=ExpectationComparison(prior,roles,ordinary.role_mask,target-prior.expected_activation,None,activation=target)
-    assert comparison.surprise_for(ordinary)>0
-    assert comparison.surprise_for(withheld)==0
-    for observation in (ordinary,withheld):
-        store=STM0(4,capacity=8, relation_capacity=8192)
-        row=store.append_meaning(observation,surprise=float(comparison.surprise_for(observation)))
-        assert float(store.activity[row])==pytest.approx(float(comparison.surprise_for(observation)))
+def test_non_marks_do_not_change_default_activity_without_an_estimate():
+    keys = torch.eye(4)
+    roles = torch.cat((keys[:1], torch.zeros(2, 4)))
+    ordinary = ConceptualMeaning(roles, torch.tensor([True, False, False]))
+    withheld = replace(ordinary, bindings={'_withheld_symbols': ((1, tuple(keys[1].tolist())),)})
+    for observation in (ordinary, withheld):
+        store = STM0(4, capacity=8, relation_capacity=8192)
+        row = store.append_meaning(observation)
+        assert float(store.activity[row]) == pytest.approx(.5)
+        torch.testing.assert_close(store.slots[row], roles[0])
+
 
 
 
@@ -115,7 +98,7 @@ def test_expectation_free_placement_is_independent_of_forecasts_and_percept_mome
         after=context(model,values,addresses,valid,parts=parts,expectation_free=True)
         torch.testing.assert_close(before,after,rtol=0,atol=0)
         assert after.shape[-1]==model.candidate_attention.context_width
-        assert not torch.equal(after,context(model,values,addresses,valid,parts=parts))
+        torch.testing.assert_close(after,context(model,values,addresses,valid,parts=parts),rtol=0,atol=0)
     finally:
         model.End();model.symbolSpace.soft_reset()
 

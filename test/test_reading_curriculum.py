@@ -163,18 +163,14 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
         ops = model.languageSpace._tree_layer(2).ops
         kernel = next(getattr(op, 'gl', op) for op in ops
                       if getattr(getattr(op, 'gl', op), 'percept_band', None) is not None)
-        if known:
-            # A lexical shift without an off-stack working token retains
-            # form times presence, including a presence strictly below one.
-            target = record.word_values[:, :4]
-        else:
-            # Each pending token is prepended. Its current full value is what
-            # the compose operation consumes when refreshing this stack word.
+        # Both admitted and pending meanings are evaluated after the word
+        # tree. Its inverse retains the word's form presence in either case.
+        target = record.word_values[:, :4]
+        if not known:
             ids = [[model._concept_owner().interpret.word_for_form(w) for w in text.split()] for text in texts]
             pool = model._concept_owner().mtm
-            target = torch.stack([torch.stack([pool.value_of(('name', word)) for word in row]) for row in ids])
-            assert not torch.equal(kernel.content_operand(record.word_values[:, :4]),
-                                   kernel.content_operand(target))
+            pending = torch.stack([torch.stack([pool.value_of(('name', word)) for word in row]) for row in ids])
+            assert not torch.equal(kernel.content_operand(target), kernel.content_operand(pending))
         torch.testing.assert_close(kernel.content_operand(recovered),
             kernel.content_operand(target), atol=1e-5, rtol=1e-5)
     finally:model.End()

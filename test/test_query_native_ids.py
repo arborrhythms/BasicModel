@@ -51,7 +51,7 @@ def test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids():
     assert program.concept_ids.tolist() == [-1, -1]
 
 
-def test_missing_object_identity_cannot_fall_back_to_a_different_word_referent():
+def test_word_identity_is_independent_of_its_object_identity():
     from types import SimpleNamespace
     from Models import BasicModel
     source = SimpleNamespace(
@@ -60,9 +60,10 @@ def test_missing_object_identity_cannot_fall_back_to_a_different_word_referent()
         _ar_word_concept_ids=torch.tensor([[101, 102, 103]]),
         _ar_word_object_ids=torch.tensor([[201, -1, -1]]))
     model = SimpleNamespace(inputSpace=source)
+    model._word_symbol_rows = lambda: BasicModel._word_symbol_rows(model)
     source.word_symbols = lambda name: getattr(source, '_ar_word_'+name)
     ids = BasicModel._word_symbol_concept_ids(model)
-    assert ids.tolist() == [[201, 102, -1]]
+    assert ids.tolist() == [[101, 102, 103]]
 
 
 def test_fractional_staged_identity_is_not_silently_truncated_into_a_referent():
@@ -75,4 +76,6 @@ def test_fractional_staged_identity_is_not_silently_truncated_into_a_referent():
         _ar_word_object_ids=torch.tensor([[201.9]]))
     source.word_symbols = lambda name: getattr(source, '_ar_word_'+name)
     with pytest.raises(TypeError, match='integer|identity|IDs'):
-        BasicModel._word_symbol_concept_ids(SimpleNamespace(inputSpace=source))
+        model = SimpleNamespace(inputSpace=source)
+        model._word_symbol_rows = lambda: BasicModel._word_symbol_rows(model)
+        BasicModel._word_symbol_concept_ids(model)

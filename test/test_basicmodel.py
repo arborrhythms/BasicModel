@@ -545,7 +545,8 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
 class TestWhenEncodingRoundTrip(unittest.TestCase):
     """WhenEncoding (the alias) is the v2 start LADDER (2026-07-04 encoding
     pass): 4 dims ``[sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)]``
-    over ONE quantity, the onset s; decode returns (start, residue).
+    over ONE quantity, the onset s, stored as (1 + phase) / 2;
+    decode returns (start, residue).
     Full codec contract in test/test_when_encoding_v2.py; this is the
     alias-resolves smoke. The bare default (n_when=0) is disabled (nDim=0)
     so .when forward/reverse are no-ops until a space turns it on.

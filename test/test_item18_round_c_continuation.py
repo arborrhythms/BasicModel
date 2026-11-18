@@ -136,7 +136,7 @@ def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatc
     from test_thought_infer import setup
     from Understanding import ConceptualField
     from SentenceField import publish, knowing
-    from IntuitionField import open_field, read, complete
+    from IntuitionField import open_field, read
     from QueryWork import QueryWorkBudget
     from Layers import Error
     model, registry, store, refs = setup()
@@ -154,12 +154,14 @@ def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatc
         result = torch.zeros_like(values).reshape(1,-1,2)
         result[0,a], result[0,b] = torch.tensor([.8,.4]), torch.tensor([.6,.2])
         return result.flatten(1)
-    monkeypatch.setattr(owner.intuit_stack, 'forward', forecast)
+    monkeypatch.setattr(owner.expect_stack, 'forward', forecast)
     def no_key(*args, **kwargs): raise AssertionError('System 1 made a point')
     monkeypatch.setattr('FieldProjection.key', no_key)
     opened = open_field(model, initial)
     torch.testing.assert_close(opened.evidence, initial.evidence)
     publish(model, opened)
+    from ConceptSpread import open_prediction
+    open_prediction(model, torch.tensor([True]))
     from WalkTrials import ThoughtTrialState
     trial = ThoughtTrialState(model)
     assert read(owner, row=0, work=QueryWorkBudget(64)) is None
@@ -170,9 +172,7 @@ def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatc
     torch.testing.assert_close(knowing(model).evidence, field.evidence)
     trial.restore()
     torch.testing.assert_close(knowing(model).evidence, opened.evidence)
-    complete(model, torch.tensor([True]), Error())
-    assert model._intuition_target.shape == (1,owner._order_caps()[0],2)
-    assert not model._intuition_target.any()  # Its deposit never teaches itself.
+    assert not hasattr(model, '_intuition_teacher')
     from test_thought_infer import idea
     content = idea(registry, refs[0])
     requests = (registry.form('intuit', content), registry.form('query', content))

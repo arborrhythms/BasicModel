@@ -249,6 +249,12 @@ def legacy_idea_state(store):
     trust = state.pop('trust')
     state['truth_plus'], state['truth_minus'] = trust.clamp_min(0), (-trust).clamp_min(0)
     state['truth_schema'] = torch.tensor(16)
+    # The preceding checkpoint stored centered phase bands.
+    layout = int(state['percept_layout'])
+    if layout >= 8:
+        state['slots'] = state['slots'].clone()
+        bands = state['slots'][..., layout-8:layout].reshape(store.capacity, 2, 4)
+        bands.copy_(torch.where(bands.ne(0).any(-1, keepdim=True), 2*bands-1, 0.))
     state['addressing.address_keys'] = torch.arange(store.capacity) + 100
     state.pop('referent'); state.pop('activity')
     for key in ('episodic_concepts', 'episodic_values'):

@@ -4,70 +4,15 @@ from pathlib import Path
 import re
 import pytest
 import torch
-from test_sentence_expectation import layer, observe
+from test_sentence_expectation import layer, admit
 
 
-def test_evaluation_reports_residual_without_training_or_weight_changes():
-    model = layer()
-    model.eval()
-    before = copy.deepcopy(model.state_dict())
-    with torch.enable_grad():
-        observe(model, torch.ones(3, 4))
-        observe(model, torch.full((3, 4), 2.))
-    metrics = model.expectation_metrics()
-    assert metrics["observations"] == 2
-    assert metrics["cold_starts"] == 1
-    assert metrics["predicted_targets"] == 1
-    assert metrics["activation_mse"] > 0
-    assert model.consume_inter_loss() is None
-    for name, value in model.state_dict().items():
-        torch.testing.assert_close(value, before[name])
-    comparison = model.last_expectation_comparison(0)
-    assert not comparison.estimate.roles.requires_grad
-    assert not comparison.observed.requires_grad
-    torch.testing.assert_close(comparison.residual,
-                               comparison.activation - comparison.estimate.symbol_logits.sigmoid())
 
 
-def test_fixed_prior_changing_target_changes_residual_not_estimate():
-    a, b = layer(), layer()
-    for model in (a, b):
-        model.eval()
-        observe(model, torch.eye(4)[:1])
-    observe(a, torch.eye(4)[1:2])
-    observe(b, torch.eye(4)[2:3])
-    ca, cb = a.last_expectation_comparison(0), b.last_expectation_comparison(0)
-    torch.testing.assert_close(ca.estimate.roles, cb.estimate.roles)
-    assert not torch.allclose(ca.residual, cb.residual)
-    assert a.expectation_metrics()["predicted_targets"] == 1
-    assert b.expectation_metrics()["predicted_targets"] == 1
 
 
-def test_disable_reenable_drops_pending_and_requires_fresh_predecessor():
-    model = layer()
-    observe(model, torch.ones(3, 4))
-    assert model.expect_next_meaning() is not None
-    model.set_expectation_enabled(False)
-    observe(model, torch.full((3, 4), 2.))
-    observe(model, torch.full((3, 4), 3.))
-    assert model.expect_next_meaning() is None
-    assert model.consume_inter_loss() is None
-    assert model.expectation_metrics()["predicted_targets"] == 0
-    model.set_expectation_enabled(True)
-    observe(model, torch.full((3, 4), 4.))
-    assert model.consume_inter_loss() is None
-    observe(model, torch.full((3, 4), 5.))
-    assert model.consume_inter_loss() is not None
-    assert model.expectation_metrics()["predicted_targets"] == 1
 
 
-def test_all_padding_is_not_an_external_observation():
-    model = layer()
-    observe(model, torch.ones(3, 4))
-    observe(model, torch.full((3, 4), 99.), mask=torch.zeros(3, dtype=torch.bool))
-    assert model.expectation_metrics()["observations"] == 1
-    assert model.consume_inter_loss() is None
-    assert len(model._inter_context[0]) == 1
 
 
 @pytest.mark.parametrize("setting,enabled", [(None, True), ("true", True), ("false", False)])
@@ -77,13 +22,13 @@ def test_omitted_enabled_and_disabled_model_settings(tmp_path, setting, enabled)
     replacement = "" if setting is None else f"<sentenceExpectation>{setting}</sentenceExpectation>"
     model = _build_ladder_variant(tmp_path, "expectation_default", [
         (re.search(r"<sentenceExpectation>.*?</sentenceExpectation>", source).group(), replacement),
-        (re.search(r"<sentenceExpectationLossWeight>.*?</sentenceExpectationLossWeight>", source).group(), ""),
+        (re.search(r"<symbolFieldLossWeight>.*?</symbolFieldLossWeight>", source).group(), ""),
     ])
     try:
         assert model.symbolSpace.expectation is not None  # word level stays live
         assert model.symbolSpace.expectation.expectation_enabled == enabled
-        assert ('sentence' in model.symbolSpace.expectation.enabled_levels) == enabled
-        assert model.inter_loss_weight == 0.1
+        assert ('field' in model.symbolSpace.expectation.enabled_levels) == enabled
+        assert model.symbol_field_loss_weight == 0.1
         assert not hasattr(model, 'arma_scale')
         assert not hasattr(model, 'inter_contrastive_weight')
         if enabled:
@@ -98,7 +43,7 @@ def test_canonical_configuration_enables_only_the_selected_prediction_objective(
     config = ET.parse(Path(__file__).resolve().parents[1] / "data/BasicModel.xml")
     training = config.getroot().find(".//architecture/training")
     assert training.findtext("sentenceExpectation") == "true"
-    assert float(training.findtext("sentenceExpectationLossWeight")) == .1
+    assert float(training.findtext("symbolFieldLossWeight")) == .1
     assert training.find("sentenceExpectationArmaScale") is None
     assert training.find("sentenceExpectationContrastiveWeight") is None
 
@@ -110,7 +55,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
+        ("<symbolFieldLossWeight>0.0</symbolFieldLossWeight>", "<symbolFieldLossWeight>0.1</symbolFieldLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
     model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
@@ -126,11 +71,8 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
                 train=False, batchSize=1, split="runtime",
                 batch_override=(inputs, torch.zeros(1, 1, 0)))
         assert result is not None
-        assert discourse.consume_inter_loss() is None
-        metrics = discourse.expectation_metrics()
-        assert metrics["observations"] == 2
-        assert metrics["predicted_targets"] == 1  # The first sentence has no preceding cover.
-        assert metrics["activation_mse"] >= 0
+        assert len(discourse.situation_references()) == 2
+        assert not hasattr(discourse, '_inter_last_meaning')
         from ReferenceContext import SituationAddress
         assert all(isinstance(value, SituationAddress) for chain in discourse._inter_context for value in chain)
         assert all(not frame.roles.requires_grad for b in range(discourse._batch)
@@ -143,48 +85,6 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         torch._dynamo.reset()
 
 
-def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_path, monkeypatch, eager_reading):
-    from test_meronomy_ladder import _build_ladder_variant, _stage
-    monkeypatch.setenv("MODEL_COMPILE", "none")
-    estimates = []
-    # Pair the counterfactuals at one unseeded initialization. The shared
-    # construction helper no longer installs a fixed learner seed.
-    initial_rng = torch.get_rng_state()
-    for index, rows in enumerate((
-        [["1 plus 2", "3 plus 4"], ["5 plus 6"]],
-        [["1 plus 2", "7 plus 8"], ["9 plus 0"]],
-    )):
-        torch.set_rng_state(initial_rng)
-        model = _build_ladder_variant(tmp_path, f"isolated_expectation_{index}", [
-            ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
-            ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
-            ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-            ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
-        ])
-        model._tensor_peer_while_eager = True
-        model._chart_compose_per_word = lambda: None
-        model._install_unit_span_fn()
-        model.set_sigma(0)
-        try:
-            # Hold the available vocabulary constant. Otherwise the two
-            # inputs mint different candidate keys, so a different top-key
-            # envelope does not imply a changed prediction of the same key.
-            _stage(model, ['1 plus 2', '3 plus 4', '5 plus 6', '7 plus 8', '9 plus 0'])
-            model.End(); model.symbolSpace.soft_reset()
-            inputs = model.inputSpace.prepPackedInput(rows)
-            model.runBatch(train=False, batchSize=2, split="runtime",
-                           batch_override=(inputs, torch.zeros(2, 1, 0)))
-            comparison = model.symbolSpace.expectation.last_expectation_comparison(0)
-            assert comparison is not None
-            estimates.append(comparison.estimate.detached())
-        finally:
-            model.End()
-            model.symbolSpace.soft_reset()
-            torch._dynamo.reset()
-    first, second = estimates
-    torch.testing.assert_close(first.symbol_ids, second.symbol_ids)
-    torch.testing.assert_close(first.symbol_keys, second.symbol_keys)
-    torch.testing.assert_close(first.symbol_logits, second.symbol_logits)
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -195,7 +95,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
     model = _build_ladder_variant(tmp_path, "toggle_expectation", [
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
-        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
+        ("<symbolFieldLossWeight>0.0</symbolFieldLossWeight>", "<symbolFieldLossWeight>0.1</symbolFieldLossWeight>"),
         ("<training>", "<training><wordExpectation>false</wordExpectation><wordExpectationLossWeight>0</wordExpectationLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
@@ -214,7 +114,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
             assert 'word' not in discourse.enabled_levels
             parameters = list(discourse._inter_predictor.parameters())
             before = [p.detach().clone() for p in parameters]
-            count = discourse.expectation_metrics()["predicted_targets"]
+            count = len(discourse.situation_references())
             inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
             result, _ = model.runBatch(train=True, batchSize=1, optimizer=optimizer,
                                       batch_override=(inputs, torch.zeros(1, 1, 0)))
@@ -223,7 +123,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
             changes = [not torch.equal(p, old) for p, old in zip(parameters, before)]
             assert any(changes) if enabled else not any(changes)
             # Each presentation starts with a cover, then both sentence targets.
-            assert discourse.expectation_metrics()["predicted_targets"] - count == 2 * int(enabled)
+            assert len(discourse.situation_references()) - count == 2
             owned = {id(p) for group in optimizer.param_groups for p in group["params"]}
             assert all(id(p) in owned for p in parameters)
     finally:
@@ -302,7 +202,7 @@ def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch)
         commit_reading(f.language, f.registry, entry, store, discourse=discourse,
                        sid=sid, active=active, document='a')
     assert len(store) == 1
-    assert discourse.expectation_metrics()["observations"] == 1
+    assert len(discourse.situation_references()) == 1
 
 
 def test_enabling_expectation_preserves_the_callers_random_stream(tmp_path):

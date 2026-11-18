@@ -115,12 +115,15 @@ def main():
     cache = {}
     hosts = [enrich(site, args.source, cache) for site in measured['host_sites']]
     loops = [enrich(site, args.source, cache) for site in measured['loops']]
-    data = dict(source_commit='7a1645e4e6', base_commit='3926005f12',
-                sentence='This is Felix.', counts=measured['counts'], host_reads=hosts, loops=loops)
+    commit = measured['source_commit']
+    equal = measured.get('equal_batches', 0)
+    data = dict(source_commit=commit, equal_batches=equal,
+                sentence=measured['records'][0]['label']['texts'][0],
+                counts=measured['counts'], host_reads=hosts, loops=loops)
     args.output.with_suffix('.json').write_text(json.dumps(data, indent=2)+'\n')
-    out = ['# Native sentence host inventory (2026-11-14)', '',
-        'This inventories unchanged production source at `7a1645e4e6`, from `stage_input` through the first kept sentence close/update in the native lesson driver. The fixture, configuration, optimizer and recorded RNG stream are unchanged. The resulting parameter, optimizer and RNG hashes match `3926005f12` exactly.', '',
-        'The [complete site ledger](2026-11-14-attention-host-inventory.json) contains every observed host-read API site and Python loop, with its source line, expression, count, purpose, kind, proposed removal class and edit boundary. The table below groups those sites by phase and function. Comprehensions and non-row bookkeeping loops are included as well as row, word and step loops; zero-iteration loop entries are retained.', '',
+    out = ['# Native sentence host inventory', '',
+        f'This inventories production source at `{commit}`, from `stage_input` through the first kept sentence close/update in the native lesson driver. Exact parameter, optimizer and RNG comparison completed for {equal} observed batches.', '',
+        'The local complete site ledger contains every observed host-read API site and Python loop, with its source line, expression, count, purpose, kind, proposed removal class and edit boundary. The table below groups those sites by phase and function. Comprehensions and non-row bookkeeping loops are included as well as row, word and step loops; zero-iteration loop entries are retained.', '',
         'Counts are observations, not estimates. `cpu` on this CPU run may be a no-op; `nonzero` has a dynamic output size. Public tensor API calls, dispatcher operations and host-read API calls are different counting levels and must not be added. The ledger also includes implicit tensor `int`, `float` and `bool` conversions. It does not count internal C++ tensor-library loops as Python loops.', '',
         'Phases use the nearest owning stack frame: attention kernel, restore/snapshot/publication, word step/field read, thought, generate/reconstruction, close/kept output/training finish; the remaining staging and orchestration is preparation. The complete ledger retains the function names and source statements where a different phase split is useful.', '',
         '**Removal classes:** “equal tensor candidate” identifies a bounded numerical/control rewrite that still needs a certificate; “equal rewrite candidate” can reuse existing host input without reading its tensor copy; “design change” means this execution depends on a Python meaning, table, menu, trace or dynamic control representation; “host stays” identifies native text/metadata preparation, validation or autograd/optimizer ownership at the boundary. These conservative labels are not a claim that every candidate has been implemented. The exact byte-feature rewrite retains JSON/address preparation on the host.', '',

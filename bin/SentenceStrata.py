@@ -14,11 +14,62 @@ from Meaning import ConceptualMeaning
 from PartsOfSpeech import operation_name
 
 
+class IdeaStack(STM0):
+    """A trial's native semantic entries, beside its immutable word tree."""
+    def prepare(self, source, tree, sites):
+        self.__dict__.pop('_concept_owner', None)
+        self.expire()
+        self.address_domain = source.address_domain
+        self._external_memory = weakref.ref(source)
+        self._concept_owner = source.__dict__.get('_concept_owner')
+        self.parts.handle_reserved = source.parts.contains
+        self._tree_sites = sites
+        self._tree_root = (tree.roots[0][1] if tree.roots[0][0] == OCCURRENCE
+                           else tree.operator(tree.roots[0])[0])
+        self.model_clock.fill_(tree.semantic_start)
+
+    def name_for(self, term, *, sentence, count):
+        address = self._tree_sites.get(id(term))
+        if (address is None or self.index_of_row(address) is not None
+                or not sentence and address <= self._tree_root < address+count
+                or any(self.index_of_row(address+i) is not None for i in range(count))):
+            return None
+        external = self._external_memory()
+        if external.index_of_row(address) is not None:
+            raise ValueError('the sentence index aliases a retained idea')
+        return address
+
+    def _reference_value(self, reference):
+        if (isinstance(reference, tuple) and reference[:2] == ('ltm', self.address_domain)
+                and self.index_of_row(reference[2]) is None):
+            external = self._external_memory()
+            if external.location(reference) is not None:
+                return OCCURRENCE, reference[2]
+        return super()._reference_value(reference)
+
+    def _keep_working(self, row, meaning):
+        # An unkept path must not deposit pending bindings in the live MTM.
+        reference = self.referent_of(row)
+        self.working[self.row_name(row)] = replace(meaning,
+            role_refs=(reference, *meaning.role_refs[1:]),
+            sentence_kind=meaning.sentence_kind or 'idea').metadata()
+
+    def expire(self):
+        # Expiring a private bank cannot withdraw same-numbered live tokens.
+        owner = self.__dict__.pop('_concept_owner', None)
+        try:
+            super().expire()
+        finally:
+            if owner is not None:
+                self._concept_owner = owner
+
+
 class Tree:
-    def __init__(self, bank, language, roots, length):
+    def __init__(self, bank, language, roots, length, ideas=None):
         self.bank, self.language = bank, language
         self.generation, self.roots, self.length = bank.generation, tuple(roots), length
         self._views = {}
+        self.ideas = ideas
 
     @property
     def store(self):
@@ -28,6 +79,9 @@ class Tree:
 
     def metadata(self, address):
         return dict(self.store.working[address]['bindings'])
+
+    def point(self, address):
+        return self.store.point_of_row(('ltm', self.store.address_domain, address))
 
     def operator(self, ref):
         first, second = self.store.parts.references(ref[1])
@@ -107,7 +161,7 @@ class Tree:
         leaves = sorted((dict(context['bindings'])['_word'], address)
             for address, context in self.store.working.items()
             if '_word' in dict(context['bindings']))
-        return torch.stack([self.store.point_of_row(('ltm',self.store.address_domain,address)) for _, address in leaves])
+        return torch.stack([self.point(address) for _, address in leaves])
 
     def view(self, address):
         if address not in self._views:
@@ -152,7 +206,7 @@ class CompositionView:
 
     @property
     def point(self):
-        return self.tree.store.point_of_row(('ltm',self.tree.store.address_domain,self.address))
+        return self.tree.point(self.address)
 
     @property
     def children(self):
@@ -188,7 +242,8 @@ def replace_composition(value, **changes):
 
 
 class SentenceStrata(nn.Module):
-    def __init__(self, streams, words, recent, width, percept_width=0, relation_capacity=8192, *, paths=2):
+    def __init__(self, streams, words, recent, width, percept_width=0, relation_capacity=8192, *, paths=2,
+                 episodic_concepts=0):
         super().__init__()
         self.words, self.streams, self.recent = int(words), int(streams), int(recent)
         if self.words < 1: raise ValueError('sentence strata require a positive word bound')
@@ -202,18 +257,29 @@ class SentenceStrata(nn.Module):
             raise ValueError('sentence strata require an exploit and admission bank')
         self.banks = nn.ModuleList(STM0(width, self.words+self.operators, percept_width=percept_width,
             relation_capacity=2*self.operators+1) for _ in range(self.trials*self.streams))
+        # Each action can keep an idea on both lanes, a separate event on
+        # both lanes, and an untrusted located mention. These are the native
+        # close's five possible rows, not copies of numerical inner nodes.
+        self.idea_stores = nn.ModuleList(IdeaStack(width,5*(self.words+self.operators),
+            percept_width=percept_width, relation_capacity=relation_capacity,
+            episodic_concepts=episodic_concepts)
+            for _ in range(self.trials*self.streams))
         self.recent_stores = nn.ModuleList(STM0(width, self.recent, percept_width=percept_width,
             relation_capacity=relation_capacity) for _ in range(self.streams))
         self._leases = [None] * len(self.banks)
         self._clock = 0
 
-    def capture(self, program, language, stream):
+    def capture(self, program, language, stream, *, after=0):
+        self._clock = max(self._clock, int(after))
         indices = range(self.trials*stream, self.trials*(stream+1))
         index = next((i for i in indices if self._leases[i] is None or self._leases[i]() is None), None)
         if index is None:
             raise OverflowError('all constructed pinned sentence trials are still retained')
         store = self.banks[index]
         store.expire()
+        ideas = self.idea_stores[index]
+        ideas.expire()
+        ideas.address_domain = store.address_domain
         # Device follows the value, without ever changing a construction size.
         store.to(device=program.leaves.device, dtype=program.leaves.dtype)
         actions = program.actions.tolist()
@@ -254,7 +320,11 @@ class SentenceStrata(nn.Module):
                 right, left = stack.pop(), stack.pop()
                 first = store.parts.add(ref, left, truth_plus=1.)
                 stack.append((RELATION, store.parts.add((RELATION, first), right, truth_plus=1.)))
-        tree = Tree(store, language, stack, len(actions))
+        tree = Tree(store, language, stack, len(actions),ideas)
+        # All paths share one address namespace. Reserve unnamed semantic
+        # entries here too, so a trial's event cannot alias the next tree.
+        tree.semantic_start = self._clock + 1
+        self._clock += ideas.capacity
         self._leases[index] = weakref.ref(tree)
         object.__setattr__(program, 'tree', tree)
         object.__setattr__(program, 'actions', None)
@@ -303,6 +373,7 @@ class SentenceStrata(nn.Module):
                     truth_minus=float(source.truth_minus[relation]))
         for index in range(self.trials*stream, self.trials*(stream+1)):
             self.banks[index].expire(); self._leases[index] = None
+            self.idea_stores[index].expire()
         return store.occurrence_of(row)
 
     def clear(self, stream=None):
@@ -310,9 +381,10 @@ class SentenceStrata(nn.Module):
             self.recent_stores[b].expire()
             for index in range(self.trials*b, self.trials*(b+1)):
                 self.banks[index].expire(); self._leases[index] = None
+                self.idea_stores[index].expire()
 
     def read(self, address):
-        for store in (*self.recent_stores, *self.banks):
+        for store in (*self.recent_stores, *self.idea_stores, *self.banks):
             if store.location(address) is not None:
                 return store.point_of_row(address)
         raise ValueError('short-term member reference has expired')

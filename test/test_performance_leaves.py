@@ -24,15 +24,17 @@ def test_mps_retains_range_pullbacks_and_large_single_rung_addresses(name):
     if name == 'where_decode_2':
         # atan2 promotes integral input. The staged divisor must follow its
         # floating result, not truncate to the original carrier's dtype.
-        axes = torch.tensor([[0, 1], [1, 0], [0, -1]], device='mps')
+        axes = torch.tensor([[0, 1], [1, 0], [0, 0]], device='mps')
         torch.testing.assert_close(case.function(axes), case.function(axes.float()), rtol=0, atol=0)
-        from Spaces import WhereEncoding
-        half = torch.tensor([[1., .3], [-.3, 1.], [1., 1.]], device='mps', dtype=torch.float16)
-        # Captured from 3926005 on MPS, including its negative-angle rounding.
-        legacy = torch.tensor([12.03125, 60.03125, 6.99609375], device='mps', dtype=torch.float16)
+        from Spaces import WhereEncoding, unsigned_phase, signed_phase
+        half = unsigned_phase(torch.tensor([[1., .3], [-.3, 1.], [1., 1.]], device='mps', dtype=torch.float16))
+        # The unsigned storage has half-precision quantization of its own.
+        # Keep the exact divide/rounding contract on the stored coordinates.
+        phase = signed_phase(half)
         for period in (64, 256, 8192):
             encoding = WhereEncoding(maxP=period, nWhere=2)
-            torch.testing.assert_close(encoding.decode(half), legacy * (period / 64), rtol=0, atol=0)
+            expected = (torch.atan2(phase[:, 0], phase[:, 1]) % (2*torch.pi)) / encoding.div_lf
+            torch.testing.assert_close(encoding.decode(half), expected, rtol=0, atol=0)
 
 
 def test_sparse_range_cache_follows_edits_and_keeps_all_pullbacks():

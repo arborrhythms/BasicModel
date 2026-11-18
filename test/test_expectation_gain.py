@@ -54,26 +54,6 @@ def owner():
     return head
 
 
-def test_shared_activation_owner_is_causal_and_detaches_both_sides():
-    head = owner()
-    source = torch.eye(4)[:2].requires_grad_()
-    head.predict_and_observe_stm_end_state([2], [source], layout='infix', documents=['a'])
-    pending = head.expect_next_meaning()
-    assert pending.symbol_logits.shape == (4,2)
-    assert head.word_predictor is head._inter_predictor
-    assert 'byte' not in head.levels
-    target = torch.eye(4)[2:3].requires_grad_()
-    head.observe_stm_end_state([1], [target], layout='infix', documents=['a'])
-    loss = head.consume_inter_loss()
-    loss.backward()
-    assert source.grad is None and target.grad is None
-    assert any(p.grad is not None and p.grad.abs().sum() for p in head._inter_predictor.parameters())
-    comparison = head.last_expectation_comparison()
-    assert comparison.residual.shape == (4,2)
-    assert set(head.expectation_metrics()['per_order_mse']) == {0,1,2}
-    assert head.expect_next_meaning() is not None
-    head.begin_document(0,'b')
-    assert head.expect_next_meaning() is None
 
 
 def test_word_forecast_never_feedbacks_prediction_and_only_attenuates():
@@ -174,13 +154,6 @@ def test_symbol_gain_keeps_native_identity_and_inactive_row_context():
     torch.testing.assert_close(field.pending[3][1,2], torch.tensor([1.,0.]))
 
 
-def test_negative_evidence_is_an_activation_target_not_an_omission_sign():
-    head = owner()
-    roles = torch.eye(4)[:1]
-    head.predict_and_observe_stm_end_state([1], [roles], layout='infix', symbol_ids=[torch.tensor([0,-1,-1])])
-    head.predict_and_observe_stm_end_state([1], [roles], layout='infix', evidence=[(0., .8)], symbol_ids=[torch.tensor([0,-1,-1])])
-    target = head.last_expectation_comparison().activation
-    torch.testing.assert_close(target[0], torch.tensor([0., .8]))
 
 
 def test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit():

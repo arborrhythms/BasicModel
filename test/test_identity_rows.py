@@ -127,15 +127,14 @@ def test_form_region_is_a_concept_and_known_exposure_changes_containment():
 
 
 def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
-    from test_sentence_expectation import layer, observe
+    from test_sentence_expectation import layer, admit
     from ReferenceContext import SituationAddress
     discourse = layer()
     store = STM0(4,capacity=8, relation_capacity=8192)
     discourse._ltm_store = store
     observed=torch.eye(4)[:3]
-    observe(discourse,observed)
     row=store.append_meaning(ConceptualMeaning.from_description(observed[0]))
-    discourse.bind_observation_occurrence(0,store.occurrence_of(row))
+    discourse.include_occurrence(0,store.occurrence_of(row))
     held=discourse._inter_context[0][-1]
     assert isinstance(held,SituationAddress) and not any(torch.is_tensor(v) for v in vars(held).values())
     assert discourse._inter_context_ids[0][-1] is None and discourse._inter_context_lanes[0][-1] is None

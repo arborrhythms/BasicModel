@@ -7179,7 +7179,7 @@ class OperationSelectionLayer(nn.Module):
                                  u_operands.reshape(B, nu, 2, D), x.new_zeros(B, 1, 2, D)), 1)
             routing['operands'] = operands.gather(
                 1, action[:, None, None, None].expand(B, 1, 2, D))[:, 0]
-            for label in ('refs', 'relations'):
+            for label in ('refs', 'relations', 'resolved', 'requested_orders'):
                 b = reference_data['binary_' + label].reshape(B, nb, 2)
                 u = reference_data['unary_' + label].reshape(B, nu, 2)
                 values = torch.cat(
@@ -8965,7 +8965,6 @@ class SymbolSubSpace(SubSpace):
             concept_dim=int(concept_dim),
             ltm_capacity=int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024),
         ) if n_sym_rows > 0 and muxed > 0 else None)
-        self._expectation_weight = float(TheXMLConfig.training('sentenceExpectationLossWeight', .1))
         if (bool(TheXMLConfig.training("sentenceExpectation", True)) or bool(TheXMLConfig.training("wordExpectation", True))) and self._expectation_options:
             self.ensure_sentence_expectation()
 
@@ -10882,7 +10881,6 @@ class SymbolSubSpace(SubSpace):
         discourse.set_expectation_enabled(bool(TheXMLConfig.training('sentenceExpectation', True)))
         discourse.enabled_levels = tuple(level for level in discourse.levels
             if bool(TheXMLConfig.training(('word' if level == 'word' else 'sentence')+'Expectation', True)))
-        discourse.set_inter_loss_weight(self._expectation_weight)
         store = getattr(self, "ltm_store", None)
         if store is not None:
             discourse._ltm_store = store
@@ -11628,6 +11626,9 @@ class LanguageSpace(nn.Module):
         # The source band is retained in STM. Grammar reads its age in this
         # presentation, so shifting the whole clock cannot choose a rule.
         model = self._symbol_space.conceptualSpace._model
+        when_start = model.symbolSpace.ltm_store.when_start
+        occurrence_band = (None if when_start is None else
+                           (max(0, when_start-4), when_start+4, state[0].shape[-1]))
         from RowTime import relative_idea
         chunks = (relative_idea(model, state[0]), *state[1:])
         state = STMChunks.stack_view(chunks)
@@ -11644,8 +11645,9 @@ class LanguageSpace(nn.Module):
         denotations = tuple(OrderReference(window_ids[:, i], window_timelines[:, i]) for i in range(n))
         window = buffer.gather(1, source[..., None].expand(B, n, D))
         physical = STMChunks.stack_indices(chunks).gather(1,source)
-        _, window = STMChunks.refresh(chunks,physical,
-            (torch.arange(n,device=buffer.device)[None] < window_depth[:,None]) & row_gate.reshape(B,1))
+        _, window, held_refresh = STMChunks.refresh(chunks,physical,
+            (torch.arange(n,device=buffer.device)[None] < window_depth[:,None]) & row_gate.reshape(B,1),
+            witness=True)
         # Native leaves carry their projection coefficient separately. A wide
         # cube value is a present working identity, not a unit direction:
         # its Euclidean length is not an activation probability.
@@ -11704,6 +11706,7 @@ class LanguageSpace(nn.Module):
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
                                           bank=reference_bank,
                                           chunk_state=chunks, source=source, signable=signable,
+                                          percept_band=occurrence_band,
                                           interpretable=interpretable,
                                           meaning_blocks=any(getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
                                               for op in self._tree_layer(2).ops),
@@ -11825,7 +11828,19 @@ class LanguageSpace(nn.Module):
         bound_order = torch.where(bound_chunk >= 0, bound_order, state[2][:, 0])
         choice = choice._replace(position=torch.where(binding,0,choice.position),
             order=torch.where(binding,bound_order,choice.order),
-            stack_arity=torch.where(binding,1,2), chunk=route.get('chunk'))
+            stack_arity=torch.where(binding,1,2), chunk=route.get('chunk'),
+            reference_witness=(None if 'resolved' not in route else
+                torch.cat((route['resolved'].long(), route['requested_orders']), -1)))
+        operand_position = route['position'].clamp(0,n-1)
+        first = held_refresh.gather(1,operand_position[:,None,None].expand(B,1,3))[:,0]
+        second = held_refresh.gather(1,(operand_position+1).clamp_max(n-1)[:,None,None].expand(B,1,3))[:,0]
+        first = torch.where(binding[:,None],held_refresh[:,-1],first)
+        second = torch.where(((choice.kind == 1) & ~binding)[:,None],second,-1)
+        bind_identity = STMChunks.gather(chunks[STMChunks.IDENTITY],bound_chunk.clamp_min(0)[:,None])[:,0]
+        bind_timeline = STMChunks.gather(chunks[STMChunks.TIMELINE],bound_chunk.clamp_min(0)[:,None])[:,0]
+        bind_read = torch.stack((bound_chunk,bind_identity,bind_timeline),-1)
+        choice = choice._replace(held_refresh=torch.stack((first,second),1),
+            held_bind=torch.where((binding & (bound_chunk >= 0))[:,None],bind_read,-1))
         if reference_scope is not None and reference_scope.shape[-1] > 2:
             choice = self.chunk_journal.choice(reference_scope,choice)
         def rule_heads(rules):

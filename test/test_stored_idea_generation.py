@@ -411,7 +411,7 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     from contextlib import nullcontext
     from unittest.mock import patch
     from Models import BasicModel
-    from Layers import ModelLoss
+    from Layers import ConceptualAttentionLayer, ModelLoss
     from Understanding import ConceptualField
     from SentenceUnderstanding import PrimedSymbols, SentenceUnderstanding
     from OutputOccurrences import generated
@@ -423,9 +423,8 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     codebook = SimpleNamespace(W=words[0], lookup_rows=lambda rows, **kw: words[0][rows],
         getW=lambda: words[0], mereology=(None if meaning_start is None
         else SimpleNamespace(percept_event_width=meaning_start)))
-    definitions = SimpleNamespace(_tensor_row_keys={0: 0, 1: 1}, nOutput=2,
-        _index={}, values=torch.empty(0),
-        conjunctive=SimpleNamespace(_index={}, values=torch.empty(0)))
+    definitions = ConceptualAttentionLayer.square(2)
+    definitions._tensor_row_keys = {0: 0, 1: 1}
     owner = SimpleNamespace(subspace=carrier, similarity_codebook=codebook,
         definitions=SimpleNamespace(word_ids={0, 1}),
         _csw_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
@@ -462,11 +461,11 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         languageSpace=SimpleNamespace(generation_scope=nullcontext,
             _generate_binary_rules=(), _generate_unary_rules=(),
             _generate_binary_ops=(), _generate_unary_ops=()), _synthesis_guard=nullcontext,
-        inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
+        symbol_field_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
         _staged_concepts_in=torch.ones(1, 1, 2, dtype=torch.long), _input_reconstructions={},
         _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *args: record,
         _tensor_pushed_ideas=words, _sentence_field=None,
-        _sentence_observation=lambda *args, record: dict(record=record,
+        _sentence_observation=lambda *args, record, incoming_trust: dict(record=record,
             entries=(None,), clauses=(None,), meanings=(None,), reference_plans=()))
     def reverse(carrier, *, field):
         percepts = events(field)

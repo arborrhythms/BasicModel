@@ -8,22 +8,22 @@ import torch
 from Layers import WhatInteractionMemory
 from Models import BasicModel
 from What import LTMSlot
-from test_sentence_expectation import layer, observe
+from test_sentence_expectation import layer, admit
 
 
 def test_soft_reset_preserves_stream_and_bare_reset_is_hard():
     disc = layer(batch=2)
-    disc.predict_and_observe_stm_end_state(
-        [3, 3], [torch.ones(3, 4), torch.full((3, 4), 2.)],
-        documents=["a", "b"], layout="infix")
-    prior = disc.expect_next_meaning(0).roles.detach().clone()
+    for b, document in enumerate(('a', 'b')):
+        admit(disc, torch.full((3, 4), b+1.), b=b, document=document)
+    prior = disc.situation_references(0)[0]
     disc.Reset(batch=0, hard=False)
     assert len(disc._inter_context[0]) == 1
-    assert disc._expectation_documents == ["a", "b"]
-    torch.testing.assert_close(disc.expect_next_meaning(0).roles, prior)
+    assert disc._expectation_documents == ['a', 'b']
+    torch.testing.assert_close(disc.situation_references(0)[0].roles, prior.roles)
     disc.Reset(batch=0)
-    assert disc.expect_next_meaning(0) is None
+    assert disc.situation_references(0) == ()
     assert len(disc._inter_context[1]) == 1
+
 
 
 def test_unaddressed_driver_rows_form_independent_streams():
@@ -35,10 +35,9 @@ def test_unaddressed_driver_rows_form_independent_streams():
     for sources in ([[7, 8], [-1, None]], [[9, 10], [11, 12]]):
         BasicModel._stage_expectation_documents(host, "train", sources, 2)
         assert host._expectation_documents == ((None, None), (None, None))
-        disc.predict_and_observe_stm_end_state(
-            [3, 3], [torch.ones(3, 4), torch.full((3, 4), 2.)],
-            documents=[None, None], layout="infix")
-    assert disc._inter_loss_count == 2
+        for b in range(2):
+            admit(disc, torch.full((3, 4), b+1.), document=None, b=b)
+    assert [len(disc.situation_references(b)) for b in range(2)] == [2, 2]
 
 
 def test_address_present_without_document_still_fails():
@@ -73,7 +72,7 @@ def test_expectation_names_and_production_defaults():
     for name in ("model.xml", "BasicModel.xml"):
         training = ET.parse(root / "data" / name).getroot().find("architecture/training")
         assert training.findtext("sentenceExpectation") == "true"
-        assert float(training.findtext("sentenceExpectationLossWeight")) == .1
+        assert float(training.findtext("symbolFieldLossWeight")) == .1
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -100,7 +99,7 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
+        ("<symbolFieldLossWeight>0.0</symbolFieldLossWeight>", "<symbolFieldLossWeight>0.1</symbolFieldLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
@@ -110,14 +109,13 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
     monkeypatch.setattr(data, "has_supervised_outputs", False)
     optimizer = model.getOptimizer(lr=1e-5)
     disc = model.symbolSpace.expectation
-    observe_meanings = disc.observe_stm_end_state
+    include = disc.include_occurrence
     pairs = []
     def capture(*args, **kwargs):
-        before = disc.expectation_metrics()['predicted_targets']
-        result = observe_meanings(*args, **kwargs)
-        pairs.append(disc.expectation_metrics()['predicted_targets'] - before)
+        result = include(*args, **kwargs)
+        pairs.append(1)
         return result
-    monkeypatch.setattr(disc, "observe_stm_end_state", capture)
+    monkeypatch.setattr(disc, "include_occurrence", capture)
     try:
         for rows in ([["1 plus 2", "3 plus 4"]], [["5 plus 6", "7 plus 8"]]):
             inputs = model.inputSpace.prepPackedInput(rows)
@@ -129,7 +127,7 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
         # on the approved closing source, before the first target is charged.
         assert pairs == [1, 1, 1, 1], pairs
         model.symbolSpace.Reset(batch=0, hard=True)
-        assert disc.expect_next_meaning(0) is None
+        assert disc.situation_references(0) == ()
     finally:
         model.End()
         model.symbolSpace.soft_reset()

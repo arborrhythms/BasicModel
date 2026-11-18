@@ -84,7 +84,7 @@ def test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit(tmp_path, mon
     monkeypatch.setattr(SentenceCredit, 'departure', compose_departure)
     original = model._sentence_path_cost
     masks = []
-    def cost(*args):
+    def cost(*args, **kwargs):
         masks.append(model.inputSpace._ar_grammar_leaf_mask.clone())
         result = original(*args)
         # Perturb scratch only after this trial's complete observation. The
@@ -120,7 +120,7 @@ def test_native_candidate_departure_credits_only_scorer_parameters(tmp_path, mon
         return draw
     monkeypatch.setattr(SentenceCredit, 'departure', candidate_draw)
     original_cost = model._sentence_path_cost
-    def fixed_comparison(*args):
+    def fixed_comparison(*args, **kwargs):
         result = original_cost(*args)
         registry = model._sentence_cost_registry
         original_total = registry.total

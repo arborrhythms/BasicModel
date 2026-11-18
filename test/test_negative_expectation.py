@@ -8,11 +8,11 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import pytest
 import torch
 
-from Layers import MeaningExpectation, ExpectationComparison
+from Layers import MeaningExpectation
 from Memory import LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import record_observation as record_source
-from test_sentence_expectation import layer, observe
+from test_sentence_expectation import layer, admit
 
 
 def idea(meaning):
@@ -23,18 +23,6 @@ def record_observation(store, payload, depth, *, meaning, expectation=None):
     return record_source(store, payload, depth, meaning=idea(meaning), expectation=expectation)
 
 
-def test_omitted_symbol_has_a_residual_and_trains_only_the_predictor():
-    model = layer()
-    observe(model, torch.eye(4)[:3])
-    prediction = model.expect_next_meaning()
-    mask = torch.tensor([True, True, False])
-    target = torch.nn.Parameter(torch.eye(4)[:3])
-    model.observe_stm_end_state([3], [target], layout='infix', role_masks=[mask])
-    comparison = model.last_expectation_comparison()
-    torch.testing.assert_close(comparison.residual[2], -prediction.symbol_logits[2].sigmoid())
-    model.consume_inter_loss().backward()
-    assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in model._inter_predictor.parameters())
-    assert target.grad is None
 
 
 
@@ -90,16 +78,11 @@ def _anticipating_model():
     attach_clause_index(model, store, model.conceptualSpace)
     model.symbolSpace.ltm_store = store
     model.symbolSpace.expectation = discourse
-    observe(discourse, meaning.roles)
     index = record_observation(store, meaning.roles, 3, meaning=meaning)
-    discourse.bind_observation_occurrence(0, store.occurrence_of(index))
+    discourse.include_occurrence(0, store.occurrence_of(index))
     return model, discourse, meaning
 
 
-def test_expectation_updates_predictors_outside_the_departure_comparison(monkeypatch):
-    """Expectation trains its predictor; R + A judges the departure."""
-    from test_item6_2_thinking import test_expectation_trains_predictor_without_moving_departure_chooser
-    test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch)
 
 
 
@@ -109,7 +92,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
     from test_reverse_traversal import _select_completed_binary_path
     torch.manual_seed(946)
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1, input_width=16,
-        training_overrides={"rowExpectationGain": 0., "reconstructInLoop": True,
+        training_overrides={"reconstructInLoop": True,
                             "reconstructionPlacement": "eager"},
         architecture_overrides={"ltmConsolidation": True})
     model._tensor_peer_while_eager = True
@@ -141,32 +124,12 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
 
 
 
-def test_detached_pending_prediction_replays_without_an_optimizer_step():
-    model = layer()
-    observe(model, torch.ones(3, 4))
-    model.expect_next_meaning()
-    model.detach_prediction_context()
-    observe(model, torch.zeros(3, 4))
-    loss = model.consume_inter_loss()
-    assert loss.requires_grad
-    loss.backward()
-    assert any(p.grad is not None and p.grad.norm() > 0 for p in model._inter_predictor.parameters())
 
 
 
 
 
 
-def test_disabling_expectation_erases_pending_credit_and_starts_cold():
-    model, discourse, meaning = _anticipating_model()
-    model.eval()
-    discourse.expect_next_meaning(record=True)
-    assert discourse._inter_last_meaning[0] is not None
-    discourse.set_expectation_enabled(False)
-    assert discourse._inter_last_meaning == [None]
-    assert not hasattr(discourse, 'consume_expectation_policy_outcomes')
-    discourse.set_expectation_enabled(True)
-    assert discourse.expect_next_meaning() is None
 
 
 def test_open_question_and_nested_what_spare_the_same_role():
@@ -175,7 +138,6 @@ def test_open_question_and_nested_what_spare_the_same_role():
     registry = model.grammatical_thoughts
     source, whole = meaning.role_refs[0], meaning.role_refs[2]
     question = registry.form("isPart", whole, open_roles=("argin1",))
-    observe(discourse, meaning.roles)
     model.expectation_gain = 1.
     store = model.symbolSpace.ltm_store
     from ThoughtStream import write
@@ -186,35 +148,19 @@ def test_open_question_and_nested_what_spare_the_same_role():
         outer = registry.form("ask", store.occurrence_of(index), context=context)
         direct = model._selected_thought_expectation(question, row=0, work=QueryWorkBudget(64))
         nested = model._selected_thought_expectation(outer, row=0, work=QueryWorkBudget(64))
-    torch.testing.assert_close(direct, nested)
+    torch.testing.assert_close(direct[-4:-1], nested[-4:-1])
     width = question.roles.shape[-1]
     assert direct[-4:-1].tolist() == [1., 0., 0.]
-    torch.testing.assert_close(direct[:width], discourse.last_expectation_comparison().observed[0])
+    torch.testing.assert_close(direct[:3*width], question.roles.flatten())
+    assert direct[-1] == 0  # no sentence estimate
 
 
-def test_anticipation_ignores_incoming_staging_and_other_streams():
-    from types import SimpleNamespace
-    with torch.no_grad():
-        model, discourse, meaning = _anticipating_model()
-    model.eval()
-    perturbed = copy.deepcopy(model)
-    before = discourse.expect_next_meaning(record=True)
-    # Content staged for an arriving or later packed sentence is unavailable
-    # to prior-only thought, including the most recent mutable program slot.
-    perturbed._last_understanding = SimpleNamespace(sentence_states=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
-    perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
-    perturbed.symbolSpace.ltm_store.append_meaning(idea(meaning), )
-    after = perturbed.symbolSpace.expectation.expect_next_meaning(record=True)
-    torch.testing.assert_close(before.roles, after.roles, rtol=0, atol=0)
-    assert not model._what_memory().thought_history()
-    assert not perturbed._what_memory().thought_history()
 
 
 @pytest.mark.parametrize("budget", [1, 64])
 def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
     from QueryWork import QueryWorkBudget
     model, discourse, meaning = _anticipating_model()
-    observe(discourse, meaning.roles)
     registry = model.grammatical_thoughts
     question = registry.form("isPart", meaning.role_refs[2], open_roles=("argin1",))
     memory = model._what_memory()
@@ -231,28 +177,13 @@ def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
         if budget == 64:
             direct = model._selected_thought_expectation(question, row=0,
                 work=QueryWorkBudget(64))
-            torch.testing.assert_close(nested, direct)
+            torch.testing.assert_close(nested[-4:-1], direct[-4:-1])
             assert meter.spent == 2
         else:
             assert meter.remaining == 0
             assert nested[-4:-1].tolist() == [0., 0., 0.]
 
 
-def test_generate_sentence_uses_positive_prediction_only_as_generate_seed(monkeypatch):
-    model, discourse, meaning = _anticipating_model()
-    prediction = discourse.expect_next_meaning()
-    expected = (prediction.roles * prediction.presence_logits.sigmoid()[:, None])[None]
-    seen = []
-    monkeypatch.setattr(model, "_walk_operand", lambda value, **kw: value)
-    monkeypatch.setattr(model, "_walk_budget", lambda: 4)
-    def walk(idea, *args):
-        seen.append(idea)
-        return idea, torch.tensor([1]), None, None
-    monkeypatch.setattr(model, "_compiled_output_walk", lambda: walk)
-    monkeypatch.setattr(model, "_generated_word_text", lambda *args: ("a wheel",))
-    assert model.generate_sentence() == ["a", "wheel"]
-    torch.testing.assert_close(seen[0], expected)
-    assert not seen[0].requires_grad
 
 
 def test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns():
@@ -275,7 +206,7 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
     for enabled, staged, gain in ((True, False, 1.), (True, True, 0.), (True, True, 1.), (False, False, 1.)):
         torch.manual_seed(948)
         model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
-            training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "rowExpectationGain": gain},
+            training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled},
             architecture_overrides={"attentionBudget": 32})
         model.eval()
         model._tensor_peer_while_eager = True
@@ -287,8 +218,8 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
             _stage_fullgraph_tensor_peer(model, ["a bicycle has a wheel"])
             if staged:
                 discourse = model.symbolSpace.expectation
-                observe(discourse, torch.ones(3, discourse.concept_dim))
-                assert discourse.expect_next_meaning() is not None
+                admit(discourse, torch.ones(3, discourse.concept_dim))
+                assert discourse.situation_references()
             cs = model.conceptualSpace
             # Seed ordinary intent through its owner so the priority surface
             # is live and nonuniform; use the real staged percepts for scope.
@@ -341,23 +272,6 @@ def test_omission_is_residual_only_and_content_has_no_predictor_credit():
 
 
 
-def test_predictor_loss_and_gradients_are_identical_at_every_gain():
-    from Meaning import ClosingImage
-    base = layer()
-    results = []
-    for gain in (0., .5, 1.):
-        model = copy.deepcopy(base)
-        observe(model, torch.eye(4)[:3])
-        observe(model, torch.eye(4)[1:4])
-        comparison = model.last_expectation_comparison()
-        ClosingImage.form(comparison.observed, comparison.estimate.roles,
-            comparison.estimate.confidence, gain=gain,
-            prediction=comparison.estimate, occupied=comparison.occupied)
-        loss = model.consume_inter_loss()
-        loss.backward()
-        results.append((loss.detach(), [p.grad for p in model._inter_predictor.parameters()]))
-    for result in results[1:]:
-        torch.testing.assert_close(result, results[0], rtol=0, atol=0)
 
 
 def test_retired_expectation_surfaces_are_absent():

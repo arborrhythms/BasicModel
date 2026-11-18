@@ -72,7 +72,6 @@ def test_held_content_without_a_thought_signature_has_no_expectation_holes(relat
     from dataclasses import replace
     from Queries import QueryWorkBudget
     from test_normal_thought_controller import _catalog_world
-    from test_sentence_expectation import observe
     from Layers import SymbolExpectation
     from MemoryIndex import configure_model_index
     model, registry, _, part, whole = _catalog_world()
@@ -86,8 +85,7 @@ def test_held_content_without_a_thought_signature_has_no_expectation_holes(relat
     model.symbolSpace.expectation = discourse
     held = ConceptualMeaning.from_description(meaning.roles[0])
     prior = store.append_meaning(held)
-    observe(discourse, held.roles)
-    discourse.bind_observation_occurrence(0, store.occurrence_of(prior))
+    discourse.include_occurrence(0, store.occurrence_of(prior))
     # A stored pair exposes actual operands, without a grammatical VP slot.
     index = (store.append_relation(part[1], whole[1]) if relation else
              store.append_meaning(held))

@@ -42,7 +42,6 @@ class Path:
     state: tuple
     reconstruction: tuple
     observation: dict
-    pending: object
     registry: Error
     parts: torch.Tensor
     thinking: Thinking
@@ -141,7 +140,7 @@ def output(model, state, observation, sid, active, registry, *, trace=None, depa
         cost = model._sentence_numeric_error(state, sid, active, observation, registry=registry)
         return cost, None, None
     fields = tuple(observation['thought_fields'])
-    understanding = Understanding(conceptual_state=observation['record'].root,
+    understanding = Understanding(conceptual_state=observation['record'].idea_root,
         sentence_states=fields, sentence_records=(observation['record'],))
     from What import What, WhatAnswer
     supplied = model._sentence_answer_questions
@@ -225,11 +224,11 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
             model._path_reconstruction_options = (None if base is None or not model._sentence_reconstruction else
                 walk_options(base.observation['generation'].trace, draw['reconstruction_round'],
                              reuse=(draw['walk'] >= 5) | (draw['walk'] < 0)))
-            _, rebuilt, observation, pending = model._sentence_path_cost(state, sid, active)
+            _, rebuilt, observation = model._sentence_path_cost(state, sid, active, incoming_trust=trust)
             registry = model._sentence_cost_registry
             expectation = model._sentence_expectation_comparison
         else:
-            rebuilt, observation, pending = base.reconstruction, dict(base.observation), base.pending
+            rebuilt, observation = base.reconstruction, dict(base.observation)
             registry = Error(row_mask=active)
             registry._terms = {name: dict(term) for name, term in base.registry._terms.items()
                 if term.get('objective') != 'output' and not name.startswith('output.')}
@@ -253,8 +252,6 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         # answer reader start from what this sentence understood.
         if reading or regeneration:
             publish(model, observation['record'].understanding_field)
-        if observation.get('intuition_teacher') is not None:
-            model._intuition_teacher = observation['intuition_teacher']
         model._sentence_close_errors = registry
         supervised = model.inputSpace.data.has_supervised_outputs
         thinking = Thinking(None if base is None else base.thinking,
@@ -275,7 +272,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
                       for row, field in enumerate(preview) if field is not None}
             ready = tuple(row for row, field in enumerate(preview) if field is not None and bool(rethink_rows[row]))
             model._path_thinking = thinking
-            images = model._sentence_closing_images(observation, active, pending)
+            images = model._sentence_closing_images(observation, active)
             # The reading prime belongs to composition. Thought now starts
             # before the old outer finally that clears these transient views.
             reducer = model._stm_reducer()
@@ -283,8 +280,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
                 reducer._expectation_prime = None
                 reducer._symbol_expectation_read = None
             with model._committed_thought_scope(sid, ready):
-                thoughts = close(model, preview, sentence=sid, ready=ready, images=images,
-                                 pending=pending)
+                thoughts = close(model, preview, sentence=sid, ready=ready, images=images)
             if base is not None:
                 thoughts = tuple(sorted((*thoughts, *(item for item in base.observation['thoughts']
                     if not bool(rethink_rows[item[0]]))), key=lambda item: item[0]))
@@ -313,7 +309,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         parts = components(registry, expectation, observation['record'].root.sum(-1)*0, answer=cost)
         forced = (getattr(model, '_compose_forced_slots', None) if reading else base.compose_forced_slots)
         attention = (getattr(model, '_attention_words', None) if reading else base.attention_words)
-        return Path(state, rebuilt, observation, pending, registry, parts, thinking, effects, before_output,
+        return Path(state, rebuilt, observation, registry, parts, thinking, effects, before_output,
                     construction, output_trace, draw, forced, attention)
     finally:
         before.restore()
@@ -401,8 +397,7 @@ def think_kept(model, paths, selected, sid, active):
         try:
             with model._committed_thought_scope(sid, ready):
                 results = close(model, preview, sentence=sid, ready=ready,
-                    images=model._sentence_closing_images(path.observation, active, path.pending),
-                    pending=path.pending)
+                    images=model._sentence_closing_images(path.observation, active))
             path.observation.update(thoughts=results, thought_fields=tuple(preview),
                                     thought_absences=path.thinking.absences, thought_inputs=inputs)
         finally:

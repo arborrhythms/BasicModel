@@ -86,6 +86,23 @@ class Reading:
     form_wholes: Any = None
     form_whole_counts: Any = None
     form_whole_presence: Any = None
+    # One bounded compose bank per path; comprehension rebuilds each case view.
+    case_bank: Any = None
+    # Unmasked span witness: the comprehended object can have a different order.
+    form_whole_counts_raw: Any = None
+    # Requested orders beside the recorded operand references (-1: none).
+    operation_orders: Any = None
+    operation_resolved: Any = None
+    # The read's pending name is the fallback when referent still returns
+    # the word at comprehension. These are identities/rows, not cached meanings.
+    staged_object_ids: Any = None
+    staged_object_rows: Any = None
+    held_initial: Any = None
+    held_refresh: Any = None
+    held_bind: Any = None
+    held_writes: Any = None
+    held_round_reads: Any = None
+    held_final: Any = None
     tree: Any = field(default=None, repr=False)
 
     def __getattribute__(self, name):
@@ -103,7 +120,10 @@ class Reading:
                                              "reference_values", "reference_relations", "operation_values", "action_records", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
                                              "identity_origins", "identity_ids", "identity_actions", "identity_values", "identity_leaves",
                                              "timeline_actions", "timeline_values", "case_values", "case_selected", "operand_counts",
-                                             "form_wholes", "form_whole_counts", "form_whole_presence")
+                                             "form_wholes", "form_whole_counts", "form_whole_presence",
+                                             "form_whole_counts_raw", "operation_orders", "operation_resolved",
+                                             "staged_object_ids", "staged_object_rows", "held_refresh", "held_bind",
+                                             "held_writes", "held_round_reads")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -232,6 +252,11 @@ class Reading:
         values["lexical_forms"] = self.lexical_forms
         values['binding_choices'] = self.binding_choices
         values['close_references'] = self.close_references
+        values['interpret_forced'] = self.interpret_forced
+        values['case_bank'] = None if self.case_bank is None else self.case_bank.detached()
+        for name in ('held_initial','held_final'):
+            value = getattr(self,name)
+            values[name] = None if value is None else value.detached()
         return type(self)(**values)
 
 

@@ -43,7 +43,7 @@ def test_recorded_two_stream_readings(tmp_path, monkeypatch, eager_reading):
                 and refs[0][0]=='ltm' and refs[1][0]=='sym'), (stream,0,refs)
 
 
-def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
+def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
     from Layers import SymbolExpectation
     from Memory import LTM0
     from RowTime import encoder
@@ -60,20 +60,19 @@ def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
     state, _ = chunks.deposit(state, value[None], torch.tensor([True]))
     before = tuple(v.clone() for v in state)
     roles = torch.cat((state[chunks.BUFFER][0,:1], torch.zeros(2,width)))
-    predictor._inter_context[0].append((1, roles, torch.tensor([True,False,False])))
-    predictor._inter_context_lanes[0].append((1.,0.))
-    predictor._inter_context_ids[0].append(torch.tensor([0,-1,-1]))
-    predictor._inter_context_occurrences[0].append(None)
-    contexts, estimates = [], []
+    store.model_clock.fill_(2)
+    row = store.append_idea(value, trust=1., referent=('sym', 1))
+    predictor.include_occurrence(0, store.occurrence_of(row))
+    contexts = []
     handle = predictor._inter_predictor.context.register_forward_pre_hook(
         lambda module, args: contexts.append(args[0][:, 0].detach().clone()))
     try:
         for tick in (7, 19):
             store.model_clock.fill_(tick)
-            estimate = predictor.expect_next_meaning()
-            estimates.append(estimate.roles.clone())
+            from WordExpectation import word_distribution
+            keys = torch.eye(width)[:4][None]
+            word_distribution(predictor, keys[:, :1], keys, torch.ones(1, 4, dtype=torch.bool), torch.tensor([[0]]))
             assert int(store.model_clock) == tick
-            assert torch.count_nonzero(estimate.roles[0,8:12]) == 0
     finally:
         handle.remove()
     assert len(contexts)==2 and contexts[0].shape==(1,4*width+4)
@@ -97,7 +96,7 @@ def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
     torch.testing.assert_close(read_time(store,observed),encoder().encode(31),rtol=0,atol=0)
     assert int(store.model_clock) == 32
     (tmp_path/'certificate.json').write_text(json.dumps(dict(ticks=[7,19],
-        contexts=[v.tolist() for v in contexts], estimates=[v.tolist() for v in estimates],
+        contexts=[v.tolist() for v in contexts],
         fixed_now_start=4*width, chunks_unchanged=True,
         stored_times={name:read_time(store,row).tolist() for name,row in
                        (('source',source),('observation',observed))}),indent=2)+'\n')

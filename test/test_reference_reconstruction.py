@@ -39,7 +39,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True):
         clauses=(None,)*len(plans), meanings=(None,)*len(plans))
     model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=enabled,
         loss=SimpleNamespace(reconstruction_scale=7.),
-        inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
+        symbol_field_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
         inputSpace=SimpleNamespace(_reconstruction_sentence_available=active[:, None]),
         _concept_owner=lambda: resolver.components.owner,
         _publish_sentence_scratch=lambda state: None,
@@ -49,7 +49,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True):
         _input_reconstructions={0: None},
         _sentence_order_zero_field=None, _sentence_generation=None,
         _sentence_reverse=None, _sentence_order_zero_reverse=None,
-        _sentence_observation=lambda *args, record: dict(observation, record=record),
+        _sentence_observation=lambda *args, record, incoming_trust: dict(observation, record=record),
         _reconstruct_trial=lambda *args: (root[:, None], root[:, 0], root[:, 0],
                                          active, root[:, 0]))
     lang = [None]*12
