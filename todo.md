@@ -1400,7 +1400,10 @@ generation is expected at this stage and is recorded, not tuned away.
    definition yet; it is recorded for item 1.7 (sigma-pi §19.29).
    **The one text for Codex is §68.80**: the bias, then straight on
    to the forecast of a look (§62.6), returned as §61.22 onward and
-   §64.
+   §64. Future work (Alec, 2026-11-18; `doc/FutureWork.md`): "some
+   record of having examined a particular place, and feedback about
+   the both/neither over symbols so we know if we should attend() by
+   zooming in or out", needed once the bias is lowered.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`

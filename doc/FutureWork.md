@@ -2353,3 +2353,27 @@ model and not a second code path; the switch that turns the higher orders off
 in a trained model, and whether Augustine goes on learning after it; how
 a user selects a personality; and the measurements on which the four are
 compared.
+
+## A record of the places attention has examined, and both or neither as its cue to zoom (Alec, 2026-11-18; future work)
+
+Whether `interpret` is called at a look is decided with a probability,
+`interpretBias`, which is set to 1: every word that may be interpreted is.
+When it is lowered, a word can be looked at and left as a word. Nothing then
+records that its place was examined, so the same look is legal again, and a
+fresh model repeats it until the sentence's acts are spent. Alec: "yes, we
+need some record of having examined a particular place, and feedback about
+the both/neither over symbols so we know if we should attend() by zooming in
+or out (just as the thought operators for that). That can be future work."
+
+What exists. `Attention.narrowing_mask` already reads the two lanes over a
+bracket's words: both lanes make a division legal, and neither lane lets
+`focus` enter an unknown word's parts. That sets which acts are legal; it is
+not fed to the chooser as a reason to narrow or to widen. The lanes are read
+over word concepts and their objects (`ModelAttention.native_word_poles`), not
+over symbols. The bracket table marks a bracket done only when its word is
+interpreted, and keeps the last focuses so that `unfocus` can restore them.
+
+To specify: what the record of an examined place is and how long it lasts;
+whether it forbids a second look, or lowers its score; how both and neither
+over symbols reach `attend`, and which way each points (in or out); and the
+thought operators this follows.

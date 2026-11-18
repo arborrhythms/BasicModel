@@ -33346,7 +33346,12 @@ grammar's chooser decides alone, and a fresh one declines.
 **Open, for when the bias is lowered** (none blocks the text):
 
 - the repeated look at a declined word, which is legal and bounded only
-  by the allowance (§68.78);
+  by the allowance (§68.78). Alec, 2026-11-18: "yes, we need some record
+  of having examined a particular place, and feedback about the
+  both/neither over symbols so we know if we should attend() by zooming
+  in or out (just as the thought operators for that). That can be
+  future work." It is in `doc/FutureWork.md` ("A record of the places
+  attention has examined"), and in no text of item 1.8;
 - reading 3 above;
 - how the bias itself comes to depend on experience ("someday").
 
