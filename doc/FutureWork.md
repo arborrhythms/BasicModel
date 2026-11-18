@@ -2319,3 +2319,33 @@ repeats it. To specify: a lesson of numbers spoken of as individuals, with
 the scalar beside the words (1.8, decision 13), `add` among the operators,
 and a pronoun bound across sentences, in which the value seen at each
 sentence is what tells which individual a word or pronoun denotes.
+
+## Named variants of the model, trained on one corpus (Alec, 2026-11-18)
+
+Three models are to be trained on the same corpus and compared, "Basis,
+Animus, and Augustine", and a fourth is proposed.
+
+- **Basis** is the basic model as it is, with symbols and the higher-order
+  logic they allow.
+- **Animus** is the model after the grammatical change that makes it
+  "resemble animal cognition (cognition without negation or symbols)". It
+  never has the higher orders. What it keeps is order zero, where "animal
+  cognition sees particular events not happening, but it does not negate
+  ideas" (Alec, 2026-11-17). It is trained "on the same corpus as the basic
+  model to see how it differs".
+- **Augustine** is "the basic model which learns as usual and then stops
+  using its higher-order logic (and possibly continues learning)". It differs
+  from Animus in having once had symbols: what it learned with them is still
+  in its weights and its memory when the higher orders are turned off.
+- **A fourth, not yet named** ("haiku or the name of a famous haiku author"),
+  is "the basic model that only speaks using basic level grammar": it "writes
+  without using any relations, only ideas". "I think that is still permitting
+  higher-order and thus negation, but the grammar disallows relative truth."
+  Its restriction is on what it says, and the other two are restricted in
+  what they think with.
+
+To specify: the grammatical change that defines Animus, as a setting of the
+model and not a second code path; the switch that turns the higher orders off
+in a trained model, and whether Augustine goes on learning after it; the
+grammar of the fourth model; and the measurements on which the four are
+compared.
