@@ -1351,6 +1351,15 @@ generation is expected at this stage and is recorded, not tuned away.
    then the loop of looks. Open for Alec from the review: whether two
    things with no references are the same by their content, and
    whether `ImpenetrableLayer`, which nothing builds, stays.
+   **The port is built and reviewed (§61.3 to §61.7; §68.74).** Codex
+   stopped again at §61.6: with the old acceptance gone, no act of
+   attention can look at a bracket of one known word. Alec,
+   2026-11-18: "please authorize it to do a bit more workaround when
+   it hits an error (I.e run with a proposed solution, if the
+   proposed solution seems in keeping with spec." That is §73, for
+   every later text. Codex's solution is taken under it: a focus may
+   look at a word (rule 5a of §60.1). **The one text for Codex to go
+   on is §68.75.** To return to: the two byte frames of §61.4.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`

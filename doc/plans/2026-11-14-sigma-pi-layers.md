@@ -2825,13 +2825,16 @@ presentation count to obtain a pass.
 1. Before any edit, take the four lists of §19.4 and the table of
    §19.21 again on the starting source, and return any reader that is
    new, gone or different, with what you propose for it. Where a reader decides by likeness and
-   §19.4 does not say what becomes of it, stop and write it for Alec and
-   Claude.
+   §19.4 does not say what becomes of it, write it with what you
+   propose; if that keeps to the specification, build it and go on,
+   marked in the return (1.8 §73).
 
 2. Build the order of building of §19.21, steps 1 to 8, each step with
    its certificates, keeping both stopping gates passing after each.
    Where a rule marked default or as Claude's reading in §19.21 cannot
-   be built as written, stop and write it with your recommendation.
+   be built as written, write it with your recommendation; if the
+   recommendation keeps to the specification, build it and go on,
+   marked in the return (1.8 §73).
 
 3. Port the tests that assert what these rules change; list each with
    its old and new assertion; retire none without naming what replaces

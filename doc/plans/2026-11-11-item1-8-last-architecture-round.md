@@ -26861,8 +26861,9 @@ Claude's.
    `.where` and `.when` (*default:* a field of their own with one reading
    for each look, of `attentionBudget` readings at most).
 5. *Attention has no act that accepts a word; at a look the grammar may
-   call `interpret`* (amended by §60.4). The acts of `attend` are `focus`
-   (divide, descend), `unfocus` (rule 11) and the three field acts.
+   call `interpret`* (amended by §60.4, and by rule 5a of §68.74). The
+   acts of `attend` are `focus` (divide, descend and, by rule 5a, the
+   look at a word), `unfocus` (rule 11) and the three field acts.
    `mint` goes and nothing takes its place among them (`MintLayer`, its
    rule in `data/complete.grammar`, `GrammarPhases.EXAMINATION`). After a
    look is perceived and conceptualized, and before `attend` is called
@@ -27559,6 +27560,10 @@ and item 1.7.
    looks, for interpreted words and for words left. No default sweep
    and nothing under RUN_SLOW (§72): name the test files you ran.
 
+   Where a rule or a default cannot be built as written, §73 holds:
+   write the problem and your solution, and if the solution keeps to
+   the specification build it and go on, marked in the return.
+
 8. Return as §64: the edits by file and function; the readers of item
    4; each certificate with its result; the ported tests; the
    measurements of item 7 beside those of §61; the test files you
@@ -27724,7 +27729,10 @@ Do not merge or check out the item 1.5 branch; read it and port its
 designs. Receipts stay local and are not linked. Every step must keep
 results exactly equal (certificate 2); where one cannot, stop as rule 7
 says. Do not change a bound, a learning rate, a seed, a capacity or a
-presentation count.
+presentation count. For anything else that cannot be built as
+written, §73 holds: write the problem and your solution, and if the
+solution keeps to the specification build it and go on, marked in the
+return.
 
 Return as §66: the inventory before and after; each step with its edits
 by file and function and its certificates; the probe's list of breaks
@@ -32177,8 +32185,8 @@ the loop of looks.
 
 ### 68.73 Codex text: the continuation (the tests, the port, the loop of looks)
 
-Written on 2026-11-18. It holds the text of §68.71 and is the one text
-to carry.
+Written on 2026-11-18. It holds the text of §68.71 and was the one text
+to carry; its return is §61.3 to §61.7, and the next is §68.75.
 
 ~~~
 Item 1.8, the loop of looks: the continuation. Read §68.69, §68.70,
@@ -32248,6 +32256,156 @@ capacity or presentation count changes, and a learning certificate is
 recorded and not repaired. Commit locally as Alec has authorized; the
 line of §60.3 that says to commit nothing is older than that. Never push
 main, and never force-push. Return in §61, from §61.3.
+~~~
+
+### 68.74 Review of §61.3 to §61.7: the port, and a word that no act can look at (Claude, 2026-11-18)
+
+Alec, 2026-11-18: "Review. And please authorize it to do a bit more
+workaround when it hits an error (I.e run with a proposed solution, if
+the proposed solution seems in keeping with spec." The authorization is
+§73. The text for Codex is §68.75.
+
+**Verdict.** The port is accepted. The stop of §61.6 is a gap in the
+rules of §60.1 as Claude wrote them, and what Codex proposes for it
+keeps to the record. It is built on Codex's recommendation, under §73.
+
+**The port against §68.73, part B.**
+
+| Asked | Found |
+|---|---|
+| 1. The stem keeps its intervals under a name of their own, and `_ar_word_part_offsets` is not filled | `word_intervals` beside `word_texts` in `PartSpace._forward_input`, on all three stems: whole-slab, word-major and ladder. The offsets tensor is untouched, and ten readers of it are named (§61.4) |
+| 2. One reader, no search, no second split | `stage_input` reads `word_intervals`. The search is gone |
+| 3. Nothing a model computes changes | The word brackets are the same before and after: see the run below |
+| 4. Certificates | Three new, in `test_stem_word_intervals.py`; test 29 now asserts its spans |
+| 5. The two reports | No walk runs on a stem with no offsets in the tests Codex ran. The two frames are explained, and the readers that cross them are named and not repaired |
+| C. The docstring of `ImpenetrableLayer` | Corrected; no behaviour changed |
+
+**What was run** (targeted; scratch copies of the source before the
+port and after it; not receipts).
+
+| Run | Result | Codex's |
+|---|---|---|
+| The word brackets left by every call of `stage_input`, before the port and after it, over eleven test files (the three stems, and the rows with a zero byte) | equal on 101 of 101 calls in 39 tests; the files give 130 passed, 8 skipped before and 130 passed, 8 skipped after | not run |
+| Codex's targeted set, both stopping gates among them | 66 passed | 66 passed |
+| The new certificates on the source before the port | 3 failed | all three fail before |
+| The nine other test files that name `word_texts`, for a fixture that supplies texts and no intervals | 105 passed, 1 failed, 25 skipped; the one failure is `test_absences`, which calls git, and the scratch copy is no checkout | not run |
+
+**Not checked.** Codex's census of 134 tests. The prototype of §61.5,
+which is not in the source.
+
+**Two byte frames, to return to** (§61.4; not for this text). The
+word-major stem counts a word's bytes after every zero byte is removed
+(`InputSpace._lex_batch`); the staged surface keeps the zero bytes. So
+a row with a zero byte before a word has its word at one place for the
+stem and at another for what reads the staged surface, and four
+readers compare the two: `ModelAttention.native_word_poles`,
+`FamiliarTier.open_sentence`, `Models._stage_reading_word_concepts`
+with `_stage_reading_grammar_references`, and the `word_extents` of a
+kept sentence. In the tests the rows are the raw byte rows of older
+fixtures. *Open:* one frame for both.
+
+**The stop of §61.6.** With the old acceptance gone, a bracket that
+holds one known word read with one lane has no legal act: it cannot be
+divided, a known word is not descended into, and no field act is legal
+on it. So attention cannot look at it, and the grammar's option, which
+is offered at the look, is never reached. On "red cat sleeps" the
+third word gets no brick. Codex shows it on the source before its
+prototype too.
+
+*The cause is in the rules as Claude wrote them.* Rule 5 took the act
+out, rule 11 gave its address to `unfocus`, and "Not changed in this
+text" kept the tests of `narrowing_mask`, under which only that act was
+legal there. Alec's words in §60.4 were: "I think mint doesn't add
+anything; just call attend() again", and "attend() looks, interpret()
+processes a word (if it can)". So `attend` has to be able to look at
+such a word, and the rules gave it no way.
+
+**Rule 5a of §60.1** (Codex's proposal of §61.6, taken on its
+recommendation under §73; Alec may overrule it).
+
+- *A focus may look at a word.* `focus` has a third case beside divide
+  and descend. On a live bracket of one known word, read with one lane
+  and not yet interpreted, which is the test `narrowing_mask` made for
+  the old acceptance, a focus selects that bracket as the look. It
+  costs one act, changes no bracket, descends nowhere and accepts
+  nothing. The look is perceived and conceptualized as every look is
+  (rule 3), and then the grammar may interpret or abstain (rule 5).
+- It uses an act address that `focus` has already, so the menu keeps
+  six acts (certificate 9).
+- *The teacher* (rule 13): its target is the fewest legal focuses that
+  reach the first word not yet interpreted, this look among them.
+- Certificate 4 stands: no act of `attend` accepts a word.
+- "Not changed in this text" no longer holds for `narrowing_mask`: it
+  gains this case.
+
+**What the prototype showed** (§61.5; not in the source). On the four
+sentences of §61.1 the kept trees, the meanings and the rows written to
+LTM are identical to the starting source's, and a sentence takes 4
+calls of `attend` where it took 9, since interpreting is no longer an
+act of attention.
+
+**Next.** The text for Codex is §68.75: the authorization, the look at
+a word, and the rest of the loop of looks.
+
+### 68.75 Codex text: the second continuation (go on with your solution; the look at a word; the loop)
+
+Written on 2026-11-18. It is the one text to carry.
+
+~~~
+Item 1.8, the loop of looks: the second continuation. Read §68.74 and
+§73 of doc/plans/2026-11-11-item1-8-last-architecture-round.md. Your
+return §61.3 to §61.7 is reviewed: the port is accepted, and your stop
+of §61.6 was right under the text as it stood.
+
+A. From now on (Alec, 2026-11-18; §73). Where a rule or a default
+   cannot be built as written, or an error stops the work, write the
+   producer, the reproduction and your proposed solution, as you do. If
+   the solution keeps to the specification, build it and go on, and
+   mark it in the return as taken on your own recommendation. Stop only
+   where it would go against a decision of Alec's in the record, or
+   where two solutions differ in design and the specification does not
+   choose between them. The standing rules are unchanged: no bound,
+   learning rate, seed, capacity or presentation count changes; no
+   validation is weakened or removed; a learning certificate is
+   recorded and not repaired; never push main, and never force-push.
+   This replaces the stops that step 3 of the text of §60.3 asks for.
+
+B. The look at a word (your §61.6). Build what you recommend. It is
+   rule 5a of §60.1, written in §68.74.
+1. focus has a third case beside divide and descend: the look. On a
+   live bracket of one known word, read with one lane and not yet
+   interpreted (the test narrowing_mask made for the old acceptance), a
+   focus selects that bracket as the look. It costs one act, changes no
+   bracket, descends nowhere and accepts nothing. The look is perceived
+   and conceptualized as every look is (rule 3), and then the grammar
+   may interpret or abstain (rule 5).
+2. It uses an act address focus has already; the menu keeps six acts
+   (certificate 9). Say which address, and why.
+3. If one bracket can be looked at twice with nothing changed between
+   the two looks, say so and say what bounds it. If a rule is needed,
+   A holds.
+4. The teacher (rule 13): its target is the fewest legal focuses that
+   reach the first word not yet interpreted, this look among them.
+   Certificate 11 reads every word in order on sentences of one to six
+   words.
+5. Certificate 4 stands: no act of attend accepts a word, and the
+   grammar's option is offered where the old acceptance was legal. Add
+   a certificate from your reproduction: on "red cat sleeps", with the
+   focuses forced in the order of the text and every offered
+   interpretation taken, all three words get a brick and a word step.
+   It fails on the starting source with the acceptance column removed.
+
+C. Go on with the text of §60.3 from your prototype of §61.5: the loop,
+   one chooser, the allowance and unfocus, the teacher, and then its
+   steps 4 to 8. The tests are those of §72: targeted only, no default
+   sweep (item 1.8 has its one sweep at its last text, §65.4), and
+   nothing under RUN_SLOW. Name the test files you ran.
+
+D. Not for this text, and recorded in §68.74 and §68.70: the two byte
+   frames of §61.4, and the key of a bracket on the whole-slab stem. Do
+   not repair them here.
+
+Commit locally as Alec has authorized. Return in §61, from §61.8.
 ~~~
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
@@ -33648,3 +33806,46 @@ asked for, 5,433 and 5,950.
 
 **What a return says.** Which test files were run, and that no sweep
 was. A test that was not run is no evidence for the round.
+
+## 73. Codex goes on with its proposed solution where it keeps to the specification (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> And please authorize it to do a bit more workaround when it hits an
+> error (I.e run with a proposed solution, if the proposed solution
+> seems in keeping with spec.
+
+It repeats his word of 2026-10-22: "Codex is more capable than you give
+credit, please allow it to review spec, also suggest fixes and continue
+as long as they are documented." Claude's texts of this item had gone
+back to making each such point a stop: step 3 of the text of §60.3,
+rule 15 of §60.1, and step 2 of the text of §68.31.
+
+**The rule.** Where a rule or a default cannot be built as written, or
+an error stops the work, Codex writes what it writes now: the producer,
+the reproduction and its proposed solution. If the solution keeps to
+the specification, Codex builds it and goes on, and marks it in the
+return as taken on its own recommendation. Claude reviews it with the
+return, and Alec may overrule it then.
+
+**Where it still stops** (*Claude's reading of "in keeping with
+spec"*).
+
+1. Where the solution would go against a decision of Alec's in the
+   record.
+2. Where two solutions differ in design and the specification does not
+   choose between them.
+3. For what the standing rules forbid in any case: a changed bound,
+   learning rate, seed, capacity or presentation count; a validation
+   weakened or removed; a learning certificate repaired and not
+   recorded; a push.
+
+**What changes.**
+
+- The text of §68.75 says it to Codex, for the rest of the loop of
+  looks.
+- The texts not yet carried are amended in place: §62.6, §65.4, and the
+  text of item 1.7 (`doc/plans/2026-11-14-sigma-pi-layers.md`, §19.8).
+  In §65.4 a step that cannot keep its results exactly equal still
+  stops, as its rule 7 says.
+- Every later text for Codex is written so.
