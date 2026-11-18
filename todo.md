@@ -1305,16 +1305,20 @@ generation is expected at this stage and is recorded, not tuned away.
    and positive value", is what the stored two lanes already compute
    (checked, difference 0). Not every inner product is replaced (Alec:
    "it seems like a good fit for MTM and perhaps other places").
-   *Open for Alec:* whether `Ops._part_kernel`'s scalar form becomes
-   this parthood (trial: six definitional tests change and nothing
-   else in 58 files; recommended), and whether MTM's three likeness
-   matchers move to it now or with item 1.7.
+   Alec, 2026-11-18 (§70.16): "1 yes", so `Ops._part_kernel`'s scalar
+   form becomes this parthood (trial: six definitional tests change
+   and nothing else in 58 files); **the text for Codex is §70.17.**
+   And "2 agree": MTM's three likeness matchers move to it with item
+   1.7.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
    (`8cf88d459b`) and the worktree is removed (moved to
    `/tmp/wikioracle-removed-2026-11-18/`). The doc-pass lists kept in
-   the specifications can now be applied on `main`.
+   the specifications can now be applied on `main`. Alec had meant
+   the alias `~/github/doc`, a link to the superproject's `doc`
+   folder, which he removes himself; whether the pass stays on `main`
+   is his to say (§70.16; *recommended:* keep).
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then

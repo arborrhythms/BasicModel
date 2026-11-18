@@ -32218,3 +32218,119 @@ folder and was left alone. So the lists "for the documentation pass" in
 §68.32, §68.37, §68.55, §68.65, §70.12 and §70.14, and in the item 1.7
 specification, no longer wait for another pass over those files: they
 can be applied on `main`.
+
+### 70.16 Alec's answers on §70.15 (2026-11-18)
+
+To three things: whether `Ops._part_kernel`'s scalar form becomes the
+book's parthood; whether MTM's three likeness matchers move with item
+1.7; and whether the docs folder that Claude removed was the one he
+had meant.
+
+> 1 yes
+> 2 agree
+> 3 where was basicmodel-docs folder? that sounds like a branch name, I
+> saw an alias at ~/github/doc that I will delete.
+
+**What it settles.**
+
+1. The scalar form of the source's `part` is replaced. The text for
+   Codex is §70.17.
+2. MTM's three likeness matchers move to parthood with item 1.7. The
+   item 1.7 specification's table of readers has the row.
+3. He had meant the alias. `~/github/doc` is a symbolic link to the
+   superproject's own `doc` folder, `~/github/WikiOracle/doc`. It holds
+   no separate work, and he removes the link himself. *Removing the
+   link is safe; removing it with a trailing slash or recursively would
+   reach the folder it points to.*
+
+**So the docs worktree was not what he named.** What Claude did with it
+is recorded in §70.15, and whether it stays is his to say.
+
+- *Where it was:* `~/github/WikiOracle/basicmodel-docs`, beside
+  `basicmodel`. It was a second checkout of the `basicmodel` repository
+  (a git worktree, on no branch), made on 2026-11-14 at commit
+  `3926005f12`, holding a documentation pass over 30 files that had
+  never been committed. It is the pass that the specifications kept
+  their lists "for the documentation pass" apart from.
+- *What is on `main` from it:* commit `8cf88d459b`. It brings the
+  standing documents to the source as built in three places that were
+  checked (the forgetting parameters the source reads, the one address
+  of the felt value, the ranges of places).
+- *Where it is now:* `/tmp/wikioracle-removed-2026-11-18/basicmodel-docs`,
+  until a reboot.
+- *To undo:* the commit is reverted and the folder moved back. Two
+  later commits edit the same documents in other places
+  (`9ac9ceeb3e`, `cdd2c90ffa`).
+
+*Recommended:* keep it.
+
+### 70.17 Codex text: the scalar part function becomes parthood
+
+Written on 2026-11-18 after §70.16 (Alec: "1 yes"). The direction of
+`copart` in step 2 is Claude's default.
+
+~~~
+Item 1.8: the scalar part function. Read §70.14 and §70.15 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md, and "Parthood
+as Shared Size" in doc/Mereology.md. Take it after the return of §69,
+or with it if that is still open. Spot tests certify it: no sweep of
+its own and no lesson.
+
+1. Ops._part_kernel with scalar=True (bin/Layers.py) returns the
+   parthood of doc/Mereology.md and no longer a clipped cosine: of x in
+   y, what the two share over the size of x. On each coordinate two
+   values of the same sign share the smaller of their sizes, and two of
+   opposite signs share nothing; a size is the sum of the absolute
+   values. It takes the number from ConceptualMatch.match on the two
+   unsigned lanes of each operand, its positive part and its negative
+   part, so that the measure stays in one place. Its own contract for
+   an empty operand stays: an empty x is a part of everything, and
+   nothing that is not empty is a part of an empty y. The vector forms
+   do not change.
+2. The suite follows from it, and its code does not change, with one
+   exception. whole, equal, overlap, underlap and boundary read part as
+   now; boundary is no longer always zero. Ops.copart's scalar form
+   becomes one less the parthood of y in x, which is what its docstring
+   and its vector form (y - x) say: the share of y that x does not
+   account for. Today it is one less the parthood of x in y, which was
+   the same number under the cosine. Name every caller of the scalar
+   copart; if one needs the other direction, say so and stop there for
+   copart.
+3. Its callers are not edited: ThoughtFaces.part, the query's support
+   in bin/Queries.py, _part_score in bin/Layers.py, and
+   ImpenetrableLayer. For the tests that reach the first two, report
+   the support of "A is a part of B" and of "B is a part of A", before
+   and after.
+4. Tests. The six that state the cosine's properties are ported to the
+   function's own, each named with what it asserted and what it asserts
+   now: in test_basicmodel.py::TestBasisMereology,
+   test_part_is_clipped_cosine,
+   test_part_satisfies_boole_contrapositive,
+   test_boundary_zero_under_clipped_cosine,
+   test_overlap_false_when_parallel and
+   test_equal_three_region_partition; and
+   test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal.
+   New certificates:
+   (i) the five cases of §70.14's table, as regions of ones and zeros:
+       0 and 0; .3 and 1; 1 and .3; 1 and 1; .2 and .2;
+   (ii) on signed vectors the value equals ConceptualMatch.match on the
+       two lanes, in both directions;
+   (iii) a thing is wholly a part of itself and no part of its
+       negation, and negating both changes nothing;
+   (iv) the value is 1 exactly when every coordinate of x lies between
+       zero and that of y;
+   (v) the contract for an empty operand, in its three cases.
+5. Run the tests of step 4; every test file that names scalar=True,
+   Ops.part, isPart, ThoughtFaces, ImpenetrableLayer, _part_kernel or
+   support_true; and both stopping gates. On your source of 31b24db620
+   those are 58 files; Claude's trial of step 1 alone had 1,241 passed,
+   15 skipped, and the six of step 4 failed (§70.15).
+6. Leave the docs. Claude changes doc/Logic.md, doc/Architecture.md,
+   doc/STM.md, doc/FutureWork.md and the last paragraph of the section
+   in doc/Mereology.md when you return.
+
+Change no bound, learning rate, seed, capacity or presentation count.
+Commit locally as Alec has authorized; never push main, and never
+force-push. Receipts stay local and are not linked. Return by
+continuing §59 from its next free number.
+~~~
