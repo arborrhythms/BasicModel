@@ -1212,6 +1212,52 @@ The ordered witness supplies the exact reverse. `forward(in_sub, cs_out=None)`
 keeps the shared perceptual interface, and conceptual pass-back scales
 attention with a strictly positive floor; it cannot hide novel content.
 
+### The Two Stems, and Where a Word's Bracket Comes From {#two-stems}
+
+The stem is the first step of reading. `PartSpace` cuts a row's bytes
+into percepts and lays them in a table of slots. There are two stems,
+and the configuration decides which one runs (`PartSpace._embed_radix`).
+
+- **The word-major stem** (`_embed_radix_word_major`; the files that
+  compose or examine words). A slot is a word. Each word carries its
+  parts and the byte at which each part starts
+  (`InputSpace._ar_word_part_offsets`, `[B, W, P]`); the first of them
+  is the word's own start.
+- **The whole-slab stem** (the rest of `_embed_radix`; a file with field
+  operators only). A slot is one emitted percept. A word held as one
+  percept takes one slot; any other word is spelled out, a slot for
+  each part, and the bytes between two words take slots too. The stem
+  computes each word's interval (`Meronomy.percept_spans`) to cut the
+  word texts (`word_texts`) and to say which word a slot's part belongs
+  to (`word_groups`).
+
+A **word bracket** is the interval of the row's bytes that a word
+occupies. The first look of a sentence reads the percepts inside every
+word bracket at once (`FamiliarTier.open_sentence`), with a grammar or
+without one, and attention's later looks divide a bracket or go into
+one. `ModelAttention.stage_input` makes the brackets
+(`model._attention_spans`, `[B, W, 2]`). With the word-major stem a
+word's start is the stem's. With the whole-slab stem it is found again
+by a search of the row for the word's text, from the end of the word
+before; the two agree, and item 1.8's loop of looks has the stem hand
+over its intervals in place of the search.
+
+"hello world" on the whole-slab stem, at a width of eight slots:
+
+| Slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| holds | h | e | l | l | o | the space | w | o |
+| the word of that part | 0 | 0 | 0 | 0 | 0 | none | 1 | 1 |
+| the bracket kept at that slot | "hello", bytes 0 to 5 | "world", bytes 6 to 11 | | | | | | |
+
+The second word is cut at the eighth slot, and its text and bracket are
+whole, since both come from the row and not from the slots. On this
+stem the brackets are kept by the word's number on the same row of
+slots: the bracket of "world" is at slot 1, which holds a letter of the
+first word. Its interval is the word's, and the first look reads by the
+interval. The key taken from the slot is the letter's; only a walk
+reads a key, and no walk runs on this stem in the tests.
+
 ---
 
 ## ConceptualSpace

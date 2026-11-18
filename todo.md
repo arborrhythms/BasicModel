@@ -1324,8 +1324,13 @@ generation is expected at this stage and is recorded, not tuned away.
    with field operators only. Claude's answer is §68.69
    (*recommended:* that stem hands over the word intervals it
    already computes, which equal what the search finds; the
-   brackets stay, since they are that path's first look). *Alec's
-   word is awaited.*
+   brackets stay, since they are that path's first look). Alec,
+   2026-11-18: "the prot, and please doc so I can understand
+   laters." So the port is built: **the text for Codex is §68.71.**
+   The account in plain terms is §68.70, and in
+   [Spaces](doc/Spaces.md#two-stems). Kept for later: on that stem
+   a bracket's key is the code of a letter, which matters only if a
+   walk ever runs there; Codex reports whether one does.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`

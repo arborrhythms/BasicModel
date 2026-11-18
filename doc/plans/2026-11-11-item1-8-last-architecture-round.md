@@ -31591,8 +31591,9 @@ operators only runs (§3.1). Its question: may that stem keep the word
 intervals it already computes and hand them to the staging reader,
 which it recommends; or should that path stop staging word brackets?
 
-**Recommended: the first. The stem hands over its intervals.** Alec's
-word is awaited, and no text for Codex is written before it.
+**Recommended: the first. The stem hands over its intervals.**
+*Decided by Alec the same day: the port (§68.70). The text for Codex
+is §68.71.*
 
 **Read in the source** (HEAD, whose source is that of `db95089f90`).
 
@@ -31667,6 +31668,129 @@ the open read and the gist made from the keys are not the words'. In
 the two files run, no call on this path has a walk (the field
 configuration that examines has offsets), so no chooser read those
 keys. The port does not change this. *Nothing is proposed here.*
+
+### 68.70 Decided: the port; and the question in plain terms (Alec, 2026-11-18)
+
+Alec, 2026-11-18, of §68.69:
+
+> the prot, and please doc so I can understand laters.
+
+*Claude's reading:* "the prot" is the port, the first of the two
+options. The account he asks for is below, and in the standing
+documents under "The Two Stems, and Where a Word's Bracket Comes From"
+in `doc/Spaces.md`. The text for Codex is §68.71.
+
+**In plain terms.**
+
+1. *What a stem is.* The first step of reading a sentence. `PartSpace`
+   cuts the sentence's bytes into percepts and lays them in a table of
+   slots, one row of slots for each sentence.
+2. *There are two stems.*
+   - *The word-major stem.* A slot is a word. Each word carries its
+     parts, and the byte at which each part starts in the sentence. The
+     first of those is where the word starts. The files that compose or
+     examine words read with it.
+   - *The whole-slab stem.* A slot is one emitted percept. A word the
+     model already holds as one percept takes one slot. Any other word
+     is spelled out, a slot for each part, and the space between two
+     words takes a slot too. A file with field operators only reads
+     with it.
+3. *What a word bracket is.* The interval of the sentence that a word
+   occupies: bytes 0 to 5 for "hello" and 6 to 11 for "world" in "hello
+   world". The first look of a sentence reads the percepts inside every
+   word bracket at once (the glance, `FamiliarTier.open_sentence`).
+   Attention's later looks divide a bracket or go into one.
+4. *Where the brackets came from.* `ModelAttention.stage_input` makes
+   them. With the word-major stem it reads each word's start from the
+   stem. With the whole-slab stem it had only the words' texts, so it
+   looked through the sentence for each text in turn, from the end of
+   the word before.
+5. *What was the matter with that.* Not the result: it finds the right
+   starts, on every word checked. But the stem had computed those same
+   intervals a moment before, to cut the texts out, and then dropped
+   them. So the search was a second computation of something known,
+   done byte by byte outside the tensors. Rule 15 of the loop of looks
+   removes it, so that on every path a bracket comes from the stem.
+6. *What the port does.* The whole-slab stem keeps its intervals and
+   hands them to `stage_input`, and the search is deleted. Nothing a
+   model computes changes.
+7. *The option not taken.* To stop making brackets on that path. The
+   glance would then have nothing to read, and a model with field
+   operators only would stop perceiving its words at the first look.
+
+**"hello world" on the whole-slab stem,** at a width of eight slots
+(read from a run of 2026-11-18):
+
+| Slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| holds | h | e | l | l | o | the space | w | o |
+| the word of that part | 0 | 0 | 0 | 0 | 0 | none | 1 | 1 |
+| the bracket kept at that slot | "hello", bytes 0 to 5 | "world", bytes 6 to 11 | | | | | | |
+
+The second word is cut at the eighth slot. Its text and its bracket are
+whole all the same, since both are taken from the sentence and not from
+the slots.
+
+**What was seen beside it, kept for later.** The table shows it. The
+brackets are kept by the word's number on the same row of slots, so the
+bracket of "world", word 1, is at slot 1, which holds the letter "e".
+Its interval is right, and the first look reads by the interval
+(`cs_read_memberships` at the bracket), so what is perceived is right.
+What is wrong is the bracket's key, the code by which a walk's chooser
+would score it: it is the letter's. The open read and the gist made of
+those keys are wrong with it. On the tests run no walk takes this stem,
+so nothing chose by those keys. The port does not touch it, and the
+text of §68.71 has Codex report whether any test walks on this stem.
+*To return to if one does.*
+
+### 68.71 Codex text: the stem hands over its word intervals (answer to §61.2)
+
+Written on 2026-11-18 on Alec's word (§68.70).
+
+~~~
+Item 1.8, the loop of looks: the answer to your question in §61.2. Read
+§68.69 and §68.70 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. Alec,
+2026-11-18: the port. Build the producer port you recommend, and go on
+with the text of §60.3.
+
+1. The whole-slab stem keeps the word intervals it computes.
+   PartSpace._embed_radix has _wspans = Meronomy.percept_spans(_raw)
+   for each row; they are handed on with the stem's other outputs,
+   under a name of their own, to the staging reader. Do not fill
+   _ar_word_part_offsets on this stem: its presence is read as the mark
+   of a word-major stem (for one, word_major in bin/Models.py). Name
+   each reader of _ar_word_part_offsets you checked.
+2. ModelAttention.stage_input reads a word's start and end from the
+   stem on both stems, through one reader, and the search of the staged
+   surface is deleted (rule 15). No second call of percept_spans on the
+   staged surface takes its place.
+3. Nothing a model computes changes. An input with no word texts stages
+   no bracket, as now. The parallel field-only path keeps its word
+   brackets: they are its first look (§3.1; rules 2 and 3 of §60.1).
+4. Certificates.
+   (a) On the three parameters of
+       test_word_admission.py::test_29_each_reading_publishes_only_its_words
+       the staged spans (model._attention_spans) equal the starting
+       source's.
+   (b) On the whole-slab stem the staged spans equal the stem's own
+       intervals, on a row in which a word occurs twice and on a row
+       that is cut at the slab's width.
+   (c) stage_input holds no search of the surface. This fails on the
+       starting source.
+5. Report, with no edit: every test of the default tier that reaches
+   stage_input on a stem with no offsets, and for each whether a walk
+   runs there. On that stem a slot of the slab is an emitted part, and a
+   word's bracket is staged at the slot of its ordinal, so its key is
+   the code of the part at that slot (§68.69, "Beside the question").
+   If a walk runs on such a call, name it in the return as a question
+   for Alec, and do not repair it.
+
+The rules of §60.3 hold: no bound, learning rate, seed, capacity or
+presentation count changes, and a learning certificate is recorded and
+not repaired. Commit locally as Alec has authorized; never push main,
+and never force-push. Return in §61, from §61.3.
+~~~
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
