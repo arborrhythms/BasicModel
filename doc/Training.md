@@ -68,9 +68,10 @@ separate global attention gets no reward); that is why prediction is the
 and stochastic exploration earns its keep in stage 5: search has only a distal
 reward, so it must explore to break symmetry.
 
-These two rules are not System 1 and System 2. By the definition of
-2026-11-09, System 1 is everything the loop needs to close without thinking
-and System 2 is the three grammars, and both are trained by gradient
+These two rules are not System 1 and System 2. System 1 is everything the
+loop needs to close without thinking and System 2 is the higher-order logic
+that symbols allow, which the three grammars carry out, and both are trained
+by gradient
 ([Architecture](Architecture.md#dual-process-system-1-knowing-and-system-2-2026-11-09)).
 
 ## The generated supervised curriculum, in order (Alec, 2026-10-09)

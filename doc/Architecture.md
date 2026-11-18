@@ -595,9 +595,10 @@ cognition.
 
 - **Dual-process cognition** (Sloman 1996; Kahneman). A fast, parallel,
   similarity-driven associative system and a slow, serial, rule-based symbolic
-  one. The model's two systems are divided at grammar, not at symbols: order-0
-  symbols, `intuit`, expectation and memory's linking belong to System 1, and
-  System 2 is the three grammars
+  one. The model's two systems are divided at symbols, or equivalently at
+  higher-order logic, which is what symbols allow (Alec, 2026-11-18): order
+  zero with its symbols, `intuit`, expectation and memory's linking belong to
+  System 1, and System 2 is that logic, which the three grammars carry out
   ([Dual process](#dual-process-system-1-knowing-and-system-2-2026-11-09)). The
   sparsity and the serial capacity-limit are the *same fact*: a sparse
   composer has low fan-in per concept, the computational shadow of
@@ -2729,11 +2730,11 @@ Output is a sequence of order-0 points, one decode per item; the word order come
 
 ### Dual process theory as a design consideration
 
-The architecture is a dual-process model, and the distinction is structural, not a label on speeds. It is the design's account of what separates animal from human cognition.
+The architecture is a dual-process model, and the distinction is structural, not a label on speeds. The line between the two systems "is equivalently at symbols, or higher-order logic (which is what symbols allow)" (Alec, 2026-11-18). The distinction is the design's account of what separates animal from human cognition.
 
 **System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts and their order-0 symbols (which are like percepts in that they still have a spatial interpretation), the order-0 decoder, `intuit` (a learned map from concepts to concepts, evaluated once when the sentence is observed, whose result joins knowing where `Intuition.write_knowing` deposits), `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking of occurrences into collections: MTM's behavioral chains at order 0 and its identities at order 1, promoted by recurrence. Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, tracks things and courses of events as extended nouns and extended events, and learns all of it without grammar. The loop with no thinking step is that mind.
 
-**System 2** is grammar: the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), symbols and the higher orders, definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
+**System 2** is the higher-order logic that symbols allow: symbols and the higher orders, the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
 
 **The two inverses (Alec, 2026-11-10).** "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." In code names: `BasicModel.reverse` is the System 1 inverse and reads no grammar (`reconstruction_reverse`); with symbols on, `SentenceField.sentence_generated` runs the generate walk on the sentence's own end slots, `OutputOccurrences.generated` places the emitted terminals, and the same `reverse` follows (`reconstruction_order_zero`).
 
@@ -2888,14 +2889,14 @@ Each sentence has one comparison, over whole paths, with no local keep for compo
 ```mermaid
 flowchart LR
   IN["input words"]
-  subgraph S1["System 1: no grammar"]
+  subgraph S1["System 1: order zero"]
     F["observed field a_0<br/>(open attention pass)"]
     K["knowing: the generated<br/>order-zero field"]
     V1["reverse"]
     V2["reverse"]
     V3["reverse"]
   end
-  subgraph S2["System 2: grammar"]
+  subgraph S2["System 2: symbols and higher orders"]
     C["compose"]
     G1["generate walk +<br/>occurrence writer"]
     T["closing thought"]

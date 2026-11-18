@@ -1700,8 +1700,8 @@ describe the `optimal` and `human` settings it would select. Items marked
     span, which is nearer four chunks than seven (Cowan 2001). And the
     parallel/serial division is a useful description and a contested theory
     (Keren & Schul 2009): here the two systems share one state, knowing, and
-    one decoder, and what separates them is grammar, not a claim that people
-    have two separate systems.
+    one decoder, and what separates them is the symbol and the higher-order
+    logic it allows, not a claim that people have two separate systems.
 
 **References.** Baddeley & Hitch (1974), *Working memory*, in Bower (ed.), The
 Psychology of Learning and Motivation 8. Braine & O'Brien (1998), *Mental
