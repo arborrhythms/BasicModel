@@ -4343,7 +4343,10 @@ old classes are not edited.
     The contract of a look, and what items 1.8 and 1.5 build of it,
     is 1.8 §74: the look's read is the mask and then the Pi, with no
     reference to word intervals, and a look with the same mask gives
-    the same result whatever was looked at before it.
+    the same result whatever was looked at before it. Alec's note on
+    it: the mereology is built once for the sentence, and the Pi
+    creates the basic percepts "as something that changes in
+    dependence on the .where supplied by the attend() mechanism".
 
 **Certificates.**
 

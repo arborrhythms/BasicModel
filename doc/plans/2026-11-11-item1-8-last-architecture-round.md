@@ -33998,13 +33998,29 @@ that returns indices into the first.
 4. The arrays do not change inside a sentence, since admission and
    nomination are at its boundaries.
 
+**Alec's note on it** (2026-11-18): "it does suggest building the
+mereology, but leaving the PI to create basic percepts as something
+that changes in dependence on the .where supplied by the attend()
+mechanism." So the line between the two is this.
+
+- *Once for a sentence: the mereology.* The parts and the wholes of
+  the sentence at their places. They are what the two arrays hold,
+  and what item 1.5 gathers once.
+- *At each look: the Pi.* It makes the basic percepts from those
+  parts and wholes, and what it makes changes with the `.where` that
+  `attend` supplies. A basic percept is never made ahead for the
+  sentence.
+
+Where this section says "percepts" of the two arrays, it means those
+parts and wholes, and not the basic percepts of item 1.7.
+
 **The split.**
 
 | Part | Item | What it builds | What it leaves for later |
 |---|---|---|---|
 | The loop | 1.8 (§60, being built) | `attend` again and again; every look perceived; `interpret` at a look; one chooser; the allowance; `unfocus`; the teacher | A look is still a bracket of whole word intervals, and its word is found by the exact lookup. Each look reads its percepts again from the arrays, with the row lookups that costs |
 | What a look is | 1.7 (its rule 32) | A look is any `.where`. Behind the mask the Pi finds the spellings and returns the basic percept. Hit and miss feed the width of its cone. The stem's word intervals are no longer the unit of a look | The cost: the rows are still looked up at each look |
-| What a look costs | 1.5, part 2 (the percept pass) | The rows are gathered once, beside the `.where` array, at the sentence's start. A look is one masked product on the device, with no lookup and no host read after the start | nothing |
+| What a look costs | 1.5, part 2 (the percept pass) | The rows of the parts and wholes are gathered once, beside the `.where` array, at the sentence's start. A look is one masked product on the device, the Pi on them, with no lookup and no host read after the start | nothing |
 
 **Why this order.** What a look does comes first and what it costs
 last. Item 1.5 is certified by results equal to the path before it. If
@@ -34024,7 +34040,8 @@ read that item 1.7 then replaces.
 3. *In item 1.5.* Three lines of its list were written on 2026-10-30,
    before the loop of looks, and change:
    - "the percept pass runs once per sentence over all words" is over
-     the sentence's percepts, since a look is no longer made of words.
+     the sentence's parts and wholes, since a look is no longer made
+     of words; the basic percepts are made at each look.
    - "the forecast scored for all words at once" is withdrawn in that
      form. By rule 7 of §60.1 a word's forecast is made at its look and
      reads only the words found before it. What does not depend on the

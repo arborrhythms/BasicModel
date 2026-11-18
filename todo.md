@@ -1561,8 +1561,10 @@ generation is expected at this stage and is recorded, not tuned away.
    into two arrays, the percept indices and their `.where`, and a look
    is a mask on the second that returns indices into the first; item
    1.8 builds the loop, item 1.7 what a look is, and this item what a
-   look costs. So below, the percept pass is over the sentence's
-   percepts and not its words; "the forecast scored for all words at
+   look costs. Alec's note: the mereology is built once for the
+   sentence, and the Pi creates the basic percepts at each look, in
+   dependence on its `.where`. So below, the percept pass is over the
+   sentence's parts and wholes and not its words; "the forecast scored for all words at
    once" is withdrawn in that form, since a forecast is made at its
    look; and a known word's percept comes from the Pi's row of item
    1.7, not from its identity row.
