@@ -1736,6 +1736,21 @@ generation is expected at this stage and is recorded, not tuned away.
    being "just conceptual activations from the forward pass after
    the pullback". Written with its steps, what it needs and my
    defaults; to be simulated before it is made into rules.
+   **Begun 2026-11-19.** Alec's answers on the open points of §19.59
+   are §19.64: the salience map passes each Sigma by its weights; the
+   lookup moves to the device in the part map's form, and when is
+   Claude's to say (item 1.5); a string read as a word it is not is
+   taught when it is observed, by an idempotent round over the
+   harness's logs (item 1.6); a read that gives no WFF ends in
+   `silence`, S → NULL, a rule in no grammar file; nothing more is
+   specified for spellings; and the where flows from a parameter that
+   holds the sinusoid. **The rules in one place are §21** (rules 1 to
+   48, certificates 1 to 44, with what is Alec's, what is Claude's and
+   what is open marked). **The item's text for the implementers is
+   §22,** in seven rounds, and it replaces §19.8; the returns are §23.
+   Round 2 tries the looks in tests only, before round 6 builds them:
+   the form of the where match, and whether reading in order is
+   learned with no location concept made, are open until it returns.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
@@ -1831,6 +1846,16 @@ generation is expected at this stage and is recorded, not tuned away.
    those sentences in its logs, halves each until a word stands
    alone, and teaches each piece with the word it holds as the
    expected output. Not designed.
+   **A word read as another word, taught when it is observed (Alec,
+   2026-11-19; sigma-pi §19.64, point 3; placed here by Claude).**
+   "We can teach that difference when we observe it in the output.
+   so just an idempotent teaching round, gathered from the training
+   harness logs". Nothing is added to a form's code for it. The
+   harness logs each word that is put back as another word (`felixx`
+   read as `felix`); a round gathers those cases and admits each
+   string as a form of its own; run again, it changes nothing. The
+   store's side is item 1.7's (sigma-pi §21, rule 46 and certificate
+   28). Not designed: the log's row, and when the round runs.
    **A test left to chance, to return to here (Alec, 2026-11-19;
    1.8 §66.17, §68.91).** `test_interleave_lifecycle.py` failed
    in 3 of 3 fresh processes on the swept source, since it counted
@@ -1859,6 +1884,21 @@ generation is expected at this stage and is recorded, not tuned away.
    overlap of its two parts one letter shorter) is exact but is not
    built now; the lookup moves to a compiled table on the device in
    this item, with equal results.
+   **Amended 2026-11-19 (sigma-pi §19.53 to §19.57; §19.64, point
+   2).** Exact parthood between forms is wanted after all, so in item
+   1.7 a form's code becomes the set of its parts (no end marks, the
+   space as a character, a part only where two forms would be the
+   same). Alec, of finding the word from its parts without a product
+   against every form: "we might as well move to the powerset version
+   we developed if that will resolve this. Up to you when we do
+   that." It does, with the set of parts used as the form's address:
+   0.76 ms a sentence for both stages on Metal against 6.25 ms, and
+   the same answers at 500 of 500. *Placed here by Claude:* the lookup
+   moves to the device in this item in that form (the parts at every
+   place by one product for each character length, then the word by
+   one probe), with results equal to item 1.7's; and with it the
+   table of a form's longest parts in order, for the way back
+   (sigma-pi §21, rules 44 and 45).
    Alec, 2026-11-18: "1.5 is the compilation to make it fast". The
    attention and the percept bank of one sentence, placed here for
    part of that day, are item 1.7's (sigma-pi §19.44).

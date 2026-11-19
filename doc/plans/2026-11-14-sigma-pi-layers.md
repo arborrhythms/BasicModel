@@ -2805,6 +2805,9 @@ longer defaults: the stacks on the same arithmetic (rule 18, §19.10).
 
 ### 19.8 Codex text (after item 1.8 is pushed)
 
+*Replaced on 2026-11-19 by §22, the item's text in rounds. This text
+predates rules 20 to 48 and is not carried.*
+
 ~~~
 Item 1.7: one structure of Pi, Not and Sigma at every order, and symbols
 split from concepts. Read §19.21 of
@@ -7855,6 +7858,9 @@ usual." The discussion is finished; the item's text can be written.
 
 **Open, to settle in the item or with Alec.**
 
+*Answered by Alec on 2026-11-19: §19.64. The rules in one place are
+§21, and the item's text for the implementers is §22.*
+
 0. The form of the gradient salience map (§19.60): the plain
    gradient misses words that are fully present; recommended, each
    Sigma passed before its squash.
@@ -8129,6 +8135,224 @@ back-projection lands on a percept's own band, so salience on it is
 salience at that percept's place, and the map is laid out place by
 place as in the accounts above.
 
+### 19.64 Alec's answers on the open points of §19.59 (2026-11-19), and what each changes
+
+Alec answered the open points when the item was begun. His words are
+quoted whole. He gave them under the numbers 1 to 6 of a list put to
+him in conversation; §19.59's own list numbers the same points 0 to 5,
+with two of them numbered 1, so each is named here by its subject.
+What follows a quotation is Claude's reading unless it is marked
+*decided*. What is marked *mine* is built as written and is his to
+change.
+
+**1. The form of the gradient salience map** (rule 36).
+
+> You said weights were better, lets do that; I had not specced the
+> what/where pathways at that point
+
+*Decided.* The salience map passes each Sigma by its weights, which is
+to pass it before its squash: the third row of §19.60's table, which
+returned exactly the asked words that are present in 304 of 304
+requests. It is still a gradient and it is still taken from the open
+run: each Pi is passed by the derivative of its product at the values
+of the open run, and the result is multiplied by the activity. His
+"the right fix is probably not to use weights" (§19.60) was said
+before the what and the where had their two pathways. The where now
+has wires of its own for the map to light (point 7 below). *Still to
+be tried,* as §19.60 said: inputs where parts are present by degree.
+It is a step of the round that builds the looks.
+
+**2. Finding the word from its parts without a product against every
+form.**
+
+> we might as well move to the powerset version we developed if that
+> will resolve this. Up to you when we do that.
+
+*Claude's reading of "the powerset version":* the part map of §19.54
+to §19.57, in which a form's code is the set of the parts inside it,
+one point of the powerset over the existing parts.
+
+*Does it resolve it? Yes, when the set is used as the form's address.*
+The 5.9 ms of §19.57 was measured with the part map: it is what it
+costs to multiply the parts found against the parts of every form.
+Since no two forms have the same set of parts, the set itself says
+which form it is, and nothing has to be multiplied. Run by Claude
+today (the 197,014 forms and 762 parts of §19.57, sentences of 20
+words; scratch script `set_address_check.py`). Each part has two fixed
+whole numbers. The numbers of the parts found inside a run of letters
+are summed, which is one small product, and the two sums are one key.
+The key is looked up in a sorted table of the forms' keys, and the
+form's own parts are then compared, so a match is exact.
+
+| The word, from the parts found | On Metal | On the host | Stored |
+| --- | ---: | ---: | ---: |
+| the parts multiplied against every form (§19.57) | 5.89 ms | 8.43 ms | 600 MB as a dense matrix |
+| the set of parts as an address, one probe | 0.45 ms | 0.34 ms | 49 MB |
+| both stages: the parts at every place, then the word by one probe | 0.76 ms | 0.72 ms | |
+
+- The two ways give the same answer at 500 of 500 runs of letters, the
+  right word each time.
+- They read the strings that are no form alike: `felixx` as `felix`
+  and `pimpleprooof` as `pimpleproof` (point 3 below); `caat`, `zzz`,
+  `xqzcatpl` and `thisis` as no word.
+- Two of the 197,014 forms have the same key as another form. The
+  comparison of the parts tells them apart.
+- The probe does not grow with the dictionary as the product does: a
+  sorted table of twice the size costs one step more.
+
+*When* (*mine*, on his "Up to you"). Two things are meant by "moving".
+
+- *The code of a form* is this item's. It is what gives exact parthood,
+  and rules 5 and 43 of §21 build it.
+- *The lookup that finds a sentence's forms* moves to the device in
+  item 1.5, as its plan has it (results equal to the path before it;
+  its section "The radix trie as a tensor"), and it moves there in
+  this form: the parts at every place by one product for each
+  character length, then the word by its set of parts as an address.
+  It is rule 44 of §21.
+- So in this item the store's one lookup at the start of a sentence
+  stays where it is, and the first Pi is read only on the rows it
+  names (rule 33). Nothing built in this item multiplies against every
+  form. Recorded in the item 1.5 plan and in `todo.md`.
+
+**3. A pair that is no known part leaves no trace** (`felixx` read as
+`felix`).
+
+> We can teach that difference when we observe it in the output. so
+> just an idempotent teaching round, gathered from the training
+> harness logs
+
+*Decided.* Nothing is added to a form's code or to the match for this:
+no length that has to agree, and no match at every place. Where a
+string is read as a word it is not, the output shows it, and the
+difference is taught then. The teaching is a round over cases gathered
+from the training harness's logs. It is idempotent: run a second time
+on the same cases, it changes nothing.
+
+*Claude's reading of the teaching.* The string that was read as
+another word is admitted as a form of its own. By the part map it then
+differs from that word in at least one part (`felixx` and `felix`
+differ by `xx`), and its own row, the larger of the two, is the one
+taken at its place (rule 37). Admitting a form that is already known
+changes nothing, and that is what makes the round idempotent.
+
+*In the source today.* The harness does not log it.
+`bin/corpus_lessons.py` writes one row for each epoch (`epochs.jsonl`).
+The input is compared with what is put back once, at the end of a
+trial, on a row's whole list of words (`Models._reconstructionReport`).
+
+*Where it is built* (*mine*). The store's side is this item's and has
+a certificate (rule 46 of §21). The log of a word put back as another
+word, and the round that gathers those cases, go with item 1.6's
+harness, beside the mining of silent outputs that 1.8 §68.89 placed
+there. Recorded in `todo.md` under item 1.6.
+
+**4. A read that gives no WFF.**
+
+> When the parse fails, we can just write an empty null-terminated
+> sentence by force by calling silence() : S → NULL (which is not
+> actually in the grammar becuase it is only a fallback for a broken
+> grammar) and then terminating.
+
+*Decided.* When the read of a sentence gives no well-formed formula,
+the sentence is written by force as an empty sentence that ends in
+NULL, by a rule `silence`, S → NULL, and the read ends there. The rule
+is in no grammar file: it is a fallback for a grammar that is broken,
+and nothing chooses it. It is the rule "that applies automatically
+when we fail to find a WFF" of 1.8 §68.91, now named.
+
+*In the source today.*
+
+- A sentence whose trees do not reduce to one is left with no row.
+  `Models._stm_reduce_to_single_S` tags the depth that is left over as
+  negative ("so it cannot become a program or a memory row"),
+  `_program_entries` gives `None` for it, and `_commit_sentence` skips
+  the write. Nothing is said, and the standalone kernel's head gives
+  0.5 in every place (1.8 §68.90).
+- A rule `null` exists (`NullLayer`, `bin/Language.py`), declared in
+  `data/ladder.grammar` alone. It is the identity on one operand, and
+  it is not this rule.
+- `silence` names no rule today. The word is used for an answer that
+  says nothing (`What.silence`).
+- A rule's layer is found by its name
+  (`SymbolSubSpace._resolve_rule_layer`, from `GRAMMAR_LAYER_CLASSES`),
+  so a layer can be registered that no grammar file declares.
+
+It is rule 48 of §21, with Claude's readings marked there.
+
+**5. Spellings** (rule 32).
+
+> I don't think we need to specify those, they just do what the
+> architecture currently dictates. lets see.
+
+*Decided.* Nothing more is specified for rule 32: not what a near
+spelling reads, not which quantity is the width of a row's cone, and
+not how a hit or a miss moves it. A row of the first Pi does what
+rules 2 and 15 give it, and what a near spelling reads is reported
+(certificate 27 (c) of §21). Points 8 and 10 of §19.21's open list
+close with this.
+
+**6. Two points of the source.**
+
+> I am open to your suggestions on both
+
+*`PiLayer2` passes no gradient at a membership of exactly one.* Its
+clamp is `m.clamp(EPS_LOG, 1.0)` (`PiLayer2._clamp_membership`); the
+ceiling is there so that the logarithm never rises above zero.
+
+- *Checked today:* nothing in `bin/` builds a `PiLayer2` or a
+  `SigmaLayer2` but `bin/Layers.py` itself: `SigmaLayer2`'s own
+  kernel, and `MeronymicFoldAdapter`, which nothing in `bin/` builds
+  (tests do). So no training of today passes through that clamp.
+  §19.52's "training passes through it" was wrong.
+- *Suggested, and built so:* `PiLayer2` is left as it is (rule 1).
+  `PiLayer3` gives the same values and passes the derivative wherever
+  the membership lies between the floor and one, one included; below
+  the floor it passes none, as now. Certificate 2 tests both.
+
+*The read to a point, clipped to 0 to 1.* `SigmaPiStack.forward` clips
+its input and each Sigma's result to that range (`_field_value`), and
+the read's teacher is the kept reading's root idea
+(`IdeaRead.complete`, `record.meaning_root`).
+
+- *Checked today, on a small case only:* in the two reads of
+  `test/test_item18_idea_read.py` the root idea's coordinates lie
+  between 0 and 0.4, and none is below zero. *Read, not traced:* the
+  grammar's maps are charted on the unit cube (`cube_chart`, which
+  asserts the range). So the clip costs nothing as things are.
+- *Suggested, and built so:* under rule 18 the stacks end in rule 3's
+  Sigma, one signed number in -1 to 1, and the clip goes with the old
+  arithmetic. Certificate 7 prints the least and the greatest
+  coordinate of the root ideas of the lesson's sixteen sentences
+  beside the range the read can give, and fails if a teacher's
+  coordinate lies outside it.
+
+**7. The where as a pathway of its own** (§19.62, §19.63).
+
+> I guess I did not address the where as a pathway of its own. But
+> since we are currently "stamping" the .where, if we just let that
+> flow from a pytorch param with the sinusoid written to it, the
+> saliency map should light it up.
+
+*Decided.* The `.where` that is stamped onto percepts flows from a
+parameter that holds the sinusoid. The salience map is a gradient, so
+it lands on that parameter as it lands on any wire, and what it lights
+there is where to look.
+
+*In the source today.* The code of a place is computed when it is
+asked for, from the place's whole number (`WhereEncoding.encode`, read
+through `WhereRegistry.encode`). It is no parameter and no buffer, and
+no gradient reaches it. It is written onto the sentence's percepts in
+`PartSpace._radix_code_events` and `PartSpace._embed_radix`.
+
+It is rule 47 of §21. *Mine there:* the parameter is in no optimizer's
+groups, since §19.63 has it fixed; a percept's band is its row of the
+parameter, taken by the percept's place; and the arithmetic of the
+where match, which neither §19.63 nor this answer gives.
+
+**What is open after these answers** is listed once, at the end of
+§21, each point with what is built meanwhile.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -8271,3 +8495,1555 @@ Each is *mine*, for Alec to take or not.
 ### 20.11 Test files run (Claude, standing in for Codex, 2026-11-18)
 
 `test/test_item17_looks_prototype.py` (9 passed, 3.9 s). The tables are `test/looks_prototype_report.py`'s output (deterministic; its random activities use a generator of its own). Item 1.8's third default sweep (1.8 §66.15) included `test_item17_looks_prototype.py` and ended with no failure.
+
+## 21. Item 1.7: the rules in one place (Claude, 2026-11-19)
+
+Alec, 2026-11-19: "Write the rules of item 1.7 once, as one clean
+statement of the perceptual basis and the looks ... Mark what is mine,
+what is yours, and what is open." This section states every rule of
+item 1.7 once, as it stands after §19.52 to §19.64. For the build it
+replaces §19.21 and §19.51; those sections and the ones around them
+are its record, and where they differ this section stands. Nothing
+here is new: each rule names where it was decided.
+
+**The marks.**
+
+- *(Alec, §n)* after a rule's name: the rule is his decision, and the
+  section holds his words.
+- *Mine:* a reading or a default of Claude's. It is built as written
+  and is his to change.
+- *Open:* not settled. What is built meanwhile is said, and the round
+  that builds it reports it.
+
+Rules 1 to 42 keep the numbers they had. Rules 43 to 48 are new
+numbers for what §19.53 to §19.64 decided.
+
+**What it builds.** One structure at every order: a Pi, then Not, then
+a Sigma. Percepts, and above order zero symbols, are unsigned rows of
+a square, sparse Pi, a product of memberships. Concepts are signed and
+are a Sigma over them, each entry for or Not. A row exists only when
+MTM nominates it. Symbols are split from concepts and have no
+dimensions. A form's code is the set of its parts, so that one form is
+a part of another exactly when its code lies inside the other's. A
+sentence's percepts are read once into one bank, and a look is an
+activity over that bank: `attend` asks for concepts, the request is
+carried down as a salience map onto what each percept is and onto
+where it stands, and what the way up then gives is what `interpret`
+chooses from. The old classes are not edited.
+
+**A. The layers and the structure.**
+
+1. *New classes* (Alec, §18.24, rule 32). `PiLayer3` and `SigmaLayer3`
+   (*mine:* the names). `SigmaLayer`, `PiLayer`, `PiLayer2` and
+   `SigmaLayer2` are not edited, and nothing built with them changes
+   value.
+2. *The Pi* (Alec, §18.24, rules 21 and 31). Square and sparse, on
+   unsigned values: $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$,
+   with `PiLayer2`'s constraints (diagonal at one or more, the rest at
+   zero or more, bias at zero or less), so a row requires the members
+   it has weight on and never exceeds its own reading. Its way back is
+   the exact LDU solve. *Mine:* each percept or symbol is two unsigned
+   rows, one for each lane (a reading of §18.25); a row has weight
+   only on rows of its own lane (a reading of rule 29); and its
+   derivative passes wherever a membership lies between the floor and
+   one, one included, where `PiLayer2`'s clamp passes none at exactly
+   one (§19.64, point 6).
+3. *The Sigma* (Alec, §18.24, rule 23; §18.25; rule 29; "Signed sigma;
+   good, this is knowing in the signed hyperball"). For each concept
+   one signed number, $\tanh(x\,U)$, in $[-1, 1]$. Each input has one
+   signed weight. Its positive part is the input's *for entry* and its
+   negative part is its *Not entry*, so an entry is never both. A
+   weight starts at zero or above (rules 8b and 21), so there is no
+   Not entry until teaching makes one. The concept's value is stored
+   as two unsigned lanes, its positive part on the for lane and its
+   negative part on the against lane; a single reading is never
+   "both". *Mine:* it has no bias; where an answer is read from a
+   Sigma, the signed number is read.
+4. *The cycle* (Alec, §18.25, as amended by rules 20, 21 and 26). At
+   an order with $n$ concepts: $n$ signed values, stored as $2n$
+   unsigned lanes; the rows above that MTM has nominated read those
+   lanes, each row its own lane; each symbol's pair is combined, for
+   less against, into one signed input; the next Sigma reads those
+   inputs.
+29. *One structure: Pi, Not, Sigma, at every order* (Alec, §19.20).
+    - *At the basic level* the Pi makes the basic percepts, their
+      vectors are combined (rule 7), and the Sigma is dense over the
+      content's elements (rule 8). A Not entry there is from one
+      element to one concept, a scalar. It records that something
+      expected is absent: "animal cognition sees particular events
+      not happening, but it does not negate ideas". What teaches it
+      is an omission, the concept expected and not come ("Omission
+      teaches not: yes, for percepts, the opposite of 1 is 0, not -1,
+      as in Boole").
+    - *Above it,* for a mind that has symbols, the structure repeats:
+      a Pi makes symbols over concepts, a Not entry is from one
+      symbol to one concept (the concept reads that symbol's pair
+      swapped), and a Sigma makes the concepts. What tells a human
+      mind from an animal's is this recursion, which symbols enable,
+      and not the Not.
+    - The operator `not` of a sentence or a thought swaps the lanes
+      of what it is put on (`FieldLogic.reduce`), as now. It can be
+      put on any symbol, and no omission need teach it.
+    - With every weight held at zero or above, so that no Not entry
+      is read, a mind speaks only of what is (§19.15).
+
+**B. The perceptual basis: a form, its code and its way back.**
+
+5. *A percept's code obeys the mereology* (Alec, §18.24, rule 27): at
+   or above each part's code and at or below each whole's. For a form
+   it is so by construction, since a form's code is the join of its
+   parts' codes (rule 43). *Mine:* where a row is not a form coded by
+   its parts (a configuration with `identityByParts` off, or the
+   fallback by bytes), its code is the greatest over its parts' codes
+   and a small draw keyed to the row, in place of the sum of its
+   bytes' codes (`BytesFallbackEncoder.encode`), as §19.21 had it.
+43. *The part map: a form's code is the set of its parts* (Alec,
+    §19.54, §19.56).
+    - A part is a run of adjacent characters. The parts of a form are
+      its characters and the longer parts that exist and lie inside
+      it.
+    - *The space is a character,* a part like a letter, "so that the
+      saliency map can select against it from within parts". A form
+      may hold one (`ice cream`).
+    - *No end marks.* A form's code does not mark its first and its
+      last character. So a form has one code wherever it stands: `is`
+      alone and `is` inside `this`.
+    - *A longer part exists only where it is needed* ("we should also
+      do pairs only when needed"). The map starts from the
+      characters. A part of any length, pairs included, is added only
+      where two forms would otherwise have the same parts.
+    - *A part once added is carried by every form that holds that
+      run,* the forms admitted before it and those admitted after.
+      Otherwise a form with the part would stop reading as inside a
+      longer form that holds it.
+    - So parthood is read from the codes: a form found inside a form
+      lies wholly inside its code. What makes something a word is no
+      longer in the code; it is the level a request asks for (rule
+      35).
+    - *Mine:* the part added for two forms is the shortest run that
+      one of them holds and the other does not. The exact code is
+      the list of the form's parts (`WordIdentity.words`), and the
+      row of fixed width is its fold, each part's fixed bits joined
+      (`WordIdentity.atom_code`, `form`), in the layout's width as it
+      is: no configuration is resized. Where two forms' rows are
+      still the same after a part is added, the part's bits are
+      raised as `WordIdentity._mint` raises a mint's today.
+    - *Mine, and open:* the lengths 1 to n of today's code go. A
+      length is not a part, and with the lengths kept `banana` and
+      `bananana` would need no part to tell them apart, where his
+      example adds one. The 32 coordinates of the length block stay
+      in the layout and hold nothing for a form. *Open:* what they
+      become (§19.54, point 3).
+6. *A basic percept is a row of the Pi* over its parts and wholes
+   (Alec, §18.5, rule 8, with rule 31), in place of the least of
+   `BasicPercepts.read`. For order zero, `store.conjunctive` and the
+   key `conceptualPi` go. It becomes a row when MTM nominates it (rule
+   20).
+44. *The lookup of a sentence's forms, on the device* (Alec, §19.55,
+    §19.57; §19.64, point 2). The parts of a sentence are found at
+    every place by one product for each character length. The word is
+    then found from its parts by its set of parts as an address: one
+    probe, and no product against every form (0.76 ms a sentence for
+    both stages on Metal, against 6.25 ms). *Mine, on his "Up to you
+    when":* this is built in item 1.5, with results equal to this
+    item's. In this item the store's lookup stays as it is
+    (`RadixLayer.lookup_with_id`: the dictionary, the trie's longest
+    match, the fallback by bytes), it is made once for a sentence,
+    and the first Pi is read only on the rows it names (rule 33).
+45. *The way back of a form starts from the form alone* (Alec,
+    §19.58: "we are not always doing reconstruction: sometimes we do
+    generation"). No place of a part is taken from a read. "The whole
+    stores its parts in order, and longest first"; the read's matrix
+    of a form's parts stays binary and has no order. *Mine:* in this
+    item the stored order is the table the source keeps, a form's
+    characters in order (`RadixLayer.inverse_table`), which is his
+    alternative with the letters as the parts. The table of the
+    longest parts, half its size and equal in result, is built with
+    the device tables of item 1.5. What goes now is the spelling
+    rebuilt from the end-marked pairs and the greatest length
+    (`WordIdentity.read_parts`, `assemble_pairs`), which cannot stand
+    without end marks: its callers read the stored table, and a code
+    that is no stored form has no spelling.
+46. *A string read as a word it is not is taught when it is observed*
+    (Alec, §19.64, point 3). Nothing is added to a form's code or to
+    the match for it: no length that has to agree, and no match at
+    every place. The teaching is an idempotent round over cases
+    gathered from the training harness's logs. *Mine:* the teaching
+    admits the string as a form of its own. Rule 43 then gives it a
+    part that the other form lacks (`felixx` and `felix` differ by
+    `xx`), and its own row, the larger, is the one taken at its place
+    (rule 37). Admitting a form that is known changes nothing. The
+    store's side is this item's (certificate 28). The harness's log of
+    a word put back as another word, and the round that gathers the
+    cases, are item 1.6's.
+
+**C. Order zero.**
+
+7. *Combination within one reading* (Alec, §18.24, rule 22; §19.17;
+   ""Pi on the gaps". You mean pi over the individual percept dims
+   instead of pooling? Good."). For each lane, the vectors of the
+   active percepts are combined into one vector as wide as the
+   perceptual space, and the Sigma reads the for vector less the
+   against vector. The combination is, for each dimension, a Pi over
+   the percepts of the reading, taken on one less each value:
+   $x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$, with $b_p$ the Pi's value
+   for percept $p$ on that lane and $v_p$ its full vector. `.where`
+   and `.when` are read unsigned; since item 1.8 they are stored so
+   (1.8 §59.62), and a reader of an angle takes $2x - 1$.
+8. *The concepts of order zero* (Alec, §18.24, rule 23): the Sigma of
+   rule 3 on $x$, with $U$ dense, of the perceptual width by the
+   concepts. It replaces the fold of `ConceptualSpace._compose_order0`,
+   the readout `IndexedSigmaConceptsFromPercepts`, and item 1.8's
+   stand-in for one signed weight (`SparseLayer._fold_weights`) at
+   order zero.
+
+8b. *A concept made at order zero starts from its members* (*mine*):
+   a new column of $U$, the sum of its members' vectors, normalized,
+   which the network then learns; under rule 21 a new concept has one
+   member, its own row. What promotion, `PerceptCollections.collect`
+   and the lessons write today (an edge in the feature matrix,
+   `add_concept_feature`) becomes such a column. The Pi of order zero
+   holds only the mereology's entries, a percept over its parts and
+   wholes; no concept writes into it, and it stays full rank.
+
+**D. Above order zero.**
+
+9. *Symbols are split from concepts and have no dimensions* (Alec,
+   §18.22, rules 14, 15 and 20). Separate tensors; a symbol has no
+   vector, place, form or trust content read as a direction; the
+   shared row of a concept and its symbol is given up.
+10. *A symbol is two unsigned rows, one for each lane, and brings one
+    concept* (Alec, §18.25; rules 2 and 21). It is made when MTM
+    nominates it (rule 20), or by `interpret` for a meta concept, and
+    not at a concept's allocation. A conjunction is promoted as a new
+    symbol, a Pi row over its members, under a new concept, a Sigma
+    over that symbol.
+11. *The Sigma above order zero* (Alec, §18.24, rule 24, with
+    §18.25): it reads each symbol's pair combined into one signed
+    input. No vector and no pooling. *Mine:* stored sparse.
+12. *Sigma and Pi at every order* (Alec, §18.24, rule 25). The least
+    and the greatest of `SparseLayer.fold_presence` go above order
+    zero too, and item 1.8's `SparseLayer._fold_weights` with them.
+13. *Place and time* (Alec, §18.24, rule 26). A percept's vector
+    carries `.where` and `.when`; a symbol stores neither; its
+    `.where` is written when STM reads it. Where a product reads them
+    they are taken unsigned (rule 7).
+14. *Between conceptual orders, only activation* (Alec, §18.22, rule
+    16): a pull within one order does not pass through a symbol.
+
+**E. Learning and the way back.**
+
+15. *Membership is learned under a penalty* (Alec, §18.24, rule 29;
+    rule 22). *Mine:* §18.3's penalty, measured first, on the Pi's
+    entries and on the Sigma's entries above order zero. The Sigma of
+    order zero is dense and is not penalized. Above order zero a
+    promotion writes an edge at one into capacity allocated
+    beforehand; at order zero it writes a column of $U$ (rule 8b).
+    The penalty thins the values of entries that exist; it does not
+    make a matrix sparse (§18.9).
+16. *Likeness of codes pairs nothing* (*mine*, from §18.24, rule 28).
+    A row enters a set, or two rows are taken as neighbours, by the
+    mereology or by a promotion, never by the likeness of their
+    codes. The readers that decide by likeness today are §19.4, list
+    1, and the table of §19.21.
+17. *The way back* (Alec, §18.24, rule 30; §19.24). The Pi inverts
+    exactly; the Sigma returns the combined vector by least squares
+    where there are enough concepts, and not otherwise. A signed
+    value on the way back is replaced by its two unsigned parts
+    before a percept or a symbol holds it, as on the way up: -.5 is
+    .5 on the against lane and nothing on the for lane. Teaching does
+    not assume an exact inverse; where it does today is §19.4, list
+    2.
+
+**F. The learned maps of System 1, and storage.**
+
+18. *The stacks are the same structure* (Alec, §19.10; rule 29). A
+    fused pair, `SigmaPiLayer` (new: no class of that name is in the
+    source), and `SigmaPiStack` (`expect`, the read from a field to a
+    point, and the marker of `bin/Language.py`) are pairs of rules 2
+    and 3, a Pi and then a Sigma whose entries are for or Not, with
+    no way back, fused so that a stack is captured as one graph.
+    Today `bin/SigmaPiStack.py` uses `PiLayer`'s chart of odds and a
+    linear `SigmaLayer` clipped to 0 to 1. Rules 6 and 7 of §18.5
+    stand for the rest (the keys, the pair count, the seed, the last
+    Sigma starting at zero, the cost of an MLP layer). `expectLayers`
+    and `ideaLayers` stay at 1, and `markerLayers` at 2. *Mine:* the
+    stacks read concepts, which are scalars (§19.19); and the clip to
+    0 to 1 goes with the old arithmetic, since rule 3's Sigma gives
+    one signed number in -1 to 1 (§19.64, point 6).
+19. *The matrices are tensors on the device* (*mine*): the Pi and the
+    Sigma above order zero are stored as compressed rows, not as
+    dictionaries of edges (`SparseLayer._index`), and grow into
+    capacity allocated beforehand. They can be read by row and by
+    column (rule 28), with an index of columns kept beside the rows.
+
+**G. Rows and concepts** (§19.10).
+
+20. *MTM nominates every row of the Pi* (Alec). A basic percept at
+    order zero, and a symbol at every order above it, becomes a row
+    only when MTM nominates it on recurrence (`concept_mint_count`);
+    nothing becomes a row on its first reading. *Mine:* the tower of
+    parts and wholes below the basic percepts is perception and is
+    made on first sight, as now. This replaces the basic percept
+    reserved at a word's first reading (`BasicPercepts.reserve` in
+    the word loop of `bin/Models.py`), the lessons' declared
+    admission (`Corpus.admit_training_forms`,
+    `ConceptLessons.admit_native_forms`), and symbols made at a
+    concept's allocation.
+    - *A new word* is perceived at once, but `interpret` cannot find
+      it until its basic percept is nominated; its concept comes with
+      that row (Alec, "A,b,c,d, yes").
+    - *Not nominated* (Alec): the meta concept of a word and its
+      object, which `interpret` makes, with its structure, when it
+      interprets the word and the meta concept does not yet exist;
+      the blank object, below; and the grammar's declared concepts,
+      the 72 arguments and 27 operator classes of §19.9, each
+      declared with its row at construction.
+    - *The 12 frozen thought predicates* of §19.9 stay columns of $U$
+      at zero, frozen, read by thought as references and never by
+      perception (Alec, "E nice!").
+    - *The blank object* (Alec). For a word with no object,
+      `interpret` makes a new concept with no members, together with
+      the meta concept; today MTM holds such a word as a pending name
+      (`InterpretLayer.reading`, `pool.named`). Its vector starts at
+      zero ("Pure zero is even better, since magnitude is certainty
+      in that space"); a read that normalizes a concept vector must
+      not divide by its zero length. *Mine:* it is one order above
+      its word.
+21. *One concept for each row* (Alec). Each nominated row brings one
+    concept, so every order's Sigma is square: as many concepts as
+    inputs, with no halving between orders. A concept starts reading
+    only its own row, at one; at order zero that is the column of $U$
+    given by the row's own vector, normalized. Concepts have no
+    nomination or promotion of their own: MTM's promotions of
+    classes, identities and percept collections become nominations of
+    rows. The one writer of a concept's further inputs stays: a kept
+    reading adds the word that filled an argument to that argument
+    (`ConceptHierarchy.observe_member`), as an entry on the word's
+    symbol once MTM has nominated it.
+22. *Both thinned* (Alec). Rule 15's penalty is on the Sigma's
+    entries above order zero as well as on the Pi's; §19.13 shows
+    that with the Pi alone penalized what is learned cannot be read
+    from the rows. The structure of a meta concept is never thinned.
+    *Mine:* a definition between concepts ("balloons are rubber", an
+    edge taught from its `LTM1` part row by `DefinitionFold`) stays
+    under the penalty, held by its witness's cost.
+
+**H. The vertical spread** (§19.11).
+
+23. *A fan up and a share down* (Alec), on the structure's own
+    matrices, Pi and Sigma alike, by the size of their weights. Up: a
+    concept's or a symbol's value is split among the rows that read
+    it, each by its weight's share of all the weights it is read with
+    (its fan). Down: a row's value is split among its inputs, each by
+    its weight's share of the row. What a row receives is summed over
+    all its parents and children, at most one; a Not entry passes to
+    the other lane. At order zero the way down goes on into the first
+    layer (rule 30); the combined vector of order zero's Sigma is not
+    passed (rule 17).
+24. *Siblings get less than the concept that caused them* (Alec). A
+    concept present at one gives every other concept the spread
+    reaches less than one.
+25. *One pass, written to the expected field at every order, where
+    the grammar calls for it* (Alec, §19.22). Up once, then down
+    once, from order zero's expectation (`expect`) and the observed
+    field. It writes `_expected_knowing` at every order, where
+    `ConceptSpread.open_prediction` writes order zero alone today. It
+    is what `intuit` runs after it deposits expect's field; expect
+    itself is the map at order zero alone, and a model with no
+    symbols never runs the spread over the orders. *Mine:* it also
+    runs at the end of the read, before comprehension takes its
+    leaves' objects (1.8 §68.26), so that
+    `InterpretLayer.preferred_objects` reads what the sentence's
+    words primed.
+26. *Not strictly ramified* (Alec). A symbol of order $k$ reads the
+    concepts of every order below $k$. A meta concept is one order
+    above the higher of its word and its object and reaches both in
+    one step, with no symbol between. *Mine:* it holds for every
+    symbol, not only meta concepts.
+27. *Nothing new to learn* (Alec). The spread reads the structure's
+    matrices, adds no parameter and no teacher, writes only the
+    expected field, and changes no value of the evidence.
+30. *The spread reaches the first layer, and the way back reads what
+    it expects* (Alec's request of §19.23; the form is *mine*). The
+    fan and the share run on the Pi of order zero, the mereology's
+    own entries: a part that is present raises the rows that read it,
+    and a row gives a share to each of its parts, so a part that is
+    missing receives from the rows its neighbours raised. It writes
+    expected percepts and changes no evidence; a row still requires
+    its members (rule 2). At the reconstruction, where a look's
+    percepts were withheld the way back reads the expected ones in
+    their place. A concept reaches its row directly (rule 21).
+
+**I. Thought reads the structure** (§19.12).
+
+28. *Thought reads the Sigma and the Pi* (Alec). `parts(c)` gives the
+    entries of c's row of the Pi: the symbols below c, at every lower
+    order (rule 26), each with its weight. `wholes(c)` gives the rows
+    of the Pi above c that have c as an entry, each with its weight.
+    Of the Sigma, thought can read what a concept reads (its own row,
+    and the inputs `observe_member` adds), which concepts read a
+    given row, and which of those entries are Not entries. A result
+    is a set of references with their weights, not a yes or no. A
+    reference's words are those whose meta concepts join them to its
+    concept; a reference with no word, such as a percept, is given as
+    itself. *Mine:* an entry is read as present by a low threshold,
+    which is a key, measured with rule 15's penalty; a read is serial
+    and is charged to the work budget as the queries are today; it
+    moves nothing.
+
+**J. The order of learning** (§19.25).
+
+31. *Words, objects, then their meta concepts* (Alec). A word
+    generalization and an object generalization are each learned from
+    their own occurrences, each a row that MTM nominates with its
+    concept; the object's may be of another modality. An occurrence
+    keeps its place and time, and a generalization holds neither.
+    Then the meta concept of the two is learned from their consistent
+    association. Nothing joins independent tokens: "there isnt a
+    statistic that will magically produce identity across independent
+    tokens". Two words are joined through what both are joined to.
+    The clauses in this item's terms, and how it meets rule 20's meta
+    concept and blank object, are in §19.25 and §19.27.
+
+**K. The looks** (§19.28 to §19.64).
+
+32. *A look is a `.where` that returns percept indices, and a Pi
+    finds the spellings* (Alec, §19.28). A look is not made of the
+    stem's word intervals: "If that is forced to words, then the
+    lexer is doing the models job". Different spellings of a word
+    ("caat", "cat") share most of their parts and wholes, so a row of
+    the Pi in that neighbourhood finds them and returns the basic
+    percept that corresponds to all of them. *Nothing more is
+    specified for it* (Alec, §19.64, point 5): what a near spelling
+    reads, and how wide a row's cone is, are what rules 2 and 15
+    give, and they are reported. The contract of a look is 1.8 §74:
+    its read is the request and then the Pi, with no reference to
+    word intervals, and a look with the same request gives the same
+    result whatever was looked at before it. The mereology is built
+    once for the sentence, and the Pi makes the basic percepts "as
+    something that changes in dependence on the .where supplied by
+    the attend() mechanism". *Mine, a note from the prototype
+    (§19.51):* a form the store does not know is read by its parts,
+    and a row over parts tests containment: `the` is wholly present
+    at `there`. Where the longer form is known, its own row is the
+    larger of the two and is taken (rule 37). Where it is not known,
+    the shorter word is read in its place until it is taught (rule
+    46).
+33. *The percept bank of a sentence* (Alec, §19.34, §19.40). At a
+    sentence's start one lookup reads its percepts into one bank, on
+    the device. For each event the bank holds its row, which is the
+    what: a form's row where the store knows the form, and the rows
+    of the form's parts (rule 43); its place, which is its start; its
+    band of where wires (rule 47); its time; the token it belongs to;
+    and its activity on two lanes. Nothing on a look's path calls
+    `materialize()`, and nothing on it reads a span on the host. The
+    first Pi is read only on the rows the lookup names. *Mine
+    (§19.50):* the events are the lookup's rows and not bytes. The
+    tokens are the stem's units until the lookup moves to the device
+    (rule 44), with one addition: a known form that spans several
+    units is an event of its own at its start (certificate 34's `ice
+    cream`).
+34. *A look is an activity over the bank* (Alec, §19.48, answer 2;
+    §19.63, point 3). An event's activity in a look is its own, times
+    its what match, times its where match: a percept is in the look
+    to the degree that both its what and its where are salient. What
+    is not active is absent on both lanes and is never evidence
+    against (his rule for `non`, 2026-11-12). *Mine (§20.10):* the
+    intersection is the product; the what match is the event's share
+    of the request, capped at one; an event that two asked rows share
+    is not counted twice. The where match is rule 47's.
+35. *The request* (Alec, §19.48, answers 1, 2 and 6; §19.49; §19.54;
+    §19.57; §19.63, point 4). It is the output of `attend`: a mask
+    over all concepts, on two lanes, and it is learned. It names a
+    place in the tree of concepts, and the more particular the node,
+    the fewer words the map selects. As proof of concept it is the
+    node "words", the concept that words are included in. Selecting
+    "words" presses against the space: that concept has a Not entry
+    on the space character (rule 3), so a part that holds a space is
+    lowered. The gradient of a look's selection lands on the request,
+    on which concepts are asked for and on what produces that asking;
+    and `attend` exposes to the error the network's weights that read
+    the where. *Mine:* the mereology's entries of the first Pi and
+    the weights that read the what take none of that gradient, so
+    that perception keeps its one teacher. `attend`'s map starts at
+    the request "words" alone. The node "words" is one concept that
+    every word's concept is a member of, and its Not entry on the
+    space is declared with it. *Open:* which row of the source that
+    concept is (§19.29).
+36. *The salience map* (Alec, §19.43; §19.48, answer 2; §19.53;
+    §19.60; §19.64, point 1). The request is carried down through the
+    matrices of the way up as a gradient of the asked concepts by the
+    percepts of the sentence. It is taken from the open run, the
+    first look, in which the whole sentence is read at once. Each
+    Sigma is passed by its weights, which is before its squash, so
+    that a concept already lit still returns its percepts. Each Pi is
+    passed by the derivative of its product at the values of the open
+    run. It lands on two domains: on each event's activity, the what,
+    and on each event's band of where wires. *Mine (§19.46, §20.2):*
+    it is computed by the transposes of the same sparse matrices with
+    the Pi's local derivatives kept from the open run, and no second
+    backward pass is made inside the forward. Where a token has
+    several copies of one row its membership is the greatest of them,
+    and each copy at the greatest takes the whole derivative. *Open:*
+    how it behaves where parts are present by degree (§19.60); round
+    2 tries it.
+37. *The returned set* (Alec, §19.45; §19.49, answer 3; §19.53). The
+    way up is run again on the bank with the look's activity. What it
+    gives, each concept at its token, is the returned set. The
+    salience map selects the level, and the where selects the word.
+    `interpret` takes the most active word concept, exactly: a
+    selection, with no degree. Of forms that begin at one place the
+    largest is the word (§19.30). Where several are still equally the
+    most active, the request has identified no word: one is taken by
+    a draw, and the draw is credited by the outcome of its path, as a
+    departure of an explore path is (`explorePaths`,
+    `SentenceCredit.WALKS`). *Mine:* largest is the longer extent;
+    where the set holds no word concept, nothing is interpreted; and,
+    with one signed number for a concept, a word read at for 1 and
+    against 0.0002 ("Felix", the decision carried from 1.8 §64.7) is
+    just under one, is the most active at its place, and is
+    interpreted (§19.49).
+38. *`attend`* (Alec, §19.45; §19.48, answers 5 and 7; §19.49;
+    §19.53, point 3; §19.62). One `attend` is: give the mask over
+    concepts, carry it down as the salience map onto the what and the
+    where, intersect, go up, and hand the returned set to the
+    grammar. The acts on brackets go. No order is built in: reading
+    the words of a sentence in order is taught, and a test of it
+    gates the grammar tests. The reading lesson stays and is
+    rewritten for requests in place of acts on brackets. `attend`
+    asks for the word level in general and changes the location it
+    asks for from the state of STM, so as to find the next available
+    word. No place is given as a number and no step is taught: the
+    trial of §20.8 is not built. Teaching begins with minimal
+    sentences and grows a step at a time, so that a parse that fails
+    differs from a shorter one that succeeds by one step. *Mine:*
+    `attend` reads the context it reads today
+    (`AttentionContext.context`: the understood prefix with its
+    places and times, the heat of the spaces, the surprise). A form
+    that was interpreted is lowered in the bank's activity over its
+    extent, the `done` mark of today. Each word is composed as it
+    arrives, as today (1.8 §60.1, rule 6). The operations declared
+    for attention (`focus`, `unfocus`, the field's and, or and not)
+    act on the request's two lanes where they are kept. *Open
+    (§19.61):* what happens after a look that interprets nothing, and
+    looks that are not the next word.
+39. *Attention dims; it does not cut* (Alec, §19.36; §19.48, answer
+    2; §19.63). What lies away from where the request looks is
+    lowered by degree, by the radius and the magnitude of what asks,
+    within the mereological field. There is no separate floor, and
+    the key `attentionFloor` is not read by a look. The place row
+    built for the purpose (§19.51, §20.5) goes with rule 47. *Mine
+    (§20.5):* the where match is read at a form's place, its start,
+    and applied once to the form's reading, on both lanes. It is not
+    applied inside the product of a row's parts, where it cuts the
+    word that was asked for.
+40. *One gain field* (*mine*, from what §19.37 found for him: the
+    gain field joins attention and expectation, and `attend` does not
+    feed it). A look's activity is the `attention` of
+    `Expectation.gain_field`, and the look's forecast (1.8 §62.3) is
+    its `expected`. Its excess and omission are the surprise `attend`
+    reads; `LookForecast.difference` goes.
+41. *One where* (Alec, §19.48, answer 4; §19.63). The where is the
+    place on the constant sinusoid, on wires of its own (rule 47).
+    There is no second where for how a thing's parts stand to one
+    another. The tests of spans made on the host go (`contained` in
+    `read_percepts` and in `PartSpace.part_memberships`, `covered` in
+    `Attention.narrowing_view`). `.where` stays on every reading.
+    *Mine:* the order inside a form is in its code only as far as it
+    tells known forms apart (rule 43), and a string that is no known
+    form may read as one (rule 46). With the registry's capacity the
+    short rung separates the words of a sentence and the long rung
+    removes the short rung's repeats 256 places away; a capacity so
+    small that both rungs have one period is not used for a look
+    (§20.6).
+42. *A literal* (Alec, §19.48). A word left uninterpreted may enter
+    the tree as a literal, a sign and not a symbol, as if it had been
+    quoted. It stands where a clause would. It enters only where the
+    grammar has a rule that takes it, such as `sign` (`SignLayer`);
+    where none does, the sentence is not well formed (rule 48).
+47. *The where is a pathway of its own, on fixed wires* (Alec,
+    §19.62, §19.63; §19.64, point 7).
+    - The `.where` that is stamped onto percepts flows from one
+      parameter that holds the constant sinusoid ("a pytorch param
+      with the sinusoid written to it"). It is fixed: nothing of it
+      is learned, and nothing is written into it as a state. Each
+      percept has its own band, the wires of the code at its place.
+    - The salience map (rule 36) lands on those wires, and what it
+      lights there says where to look.
+    - The combination is the intersection of what and where (rule
+      34).
+    - No location concept is made. "Concepts have the location to
+      abstract over, and a gradient incentivizing them to do so, so
+      it will learn location-concepts over the network, and attend()
+      will expose that network gradient to the error."
+    - *Mine:* the parameter has one row for each place of the
+      registry (`WhereRegistry`), written from `WhereEncoding.encode`,
+      and a band is its row, taken by the percept's place. It takes a
+      gradient and is in no optimizer's groups; a certificate holds
+      it equal to the code before and after training. Concepts read
+      the where through the weights they have on the where
+      coordinates of the combined vector (rules 7 and 8). Those
+      weights start at zero for a new concept, since a generalization
+      holds no place (rule 31), and they are learned.
+    - *Mine, the where match; open, and tried in round 2 before it is
+      built.* An event's where share is the salience on its band
+      taken with the wires' values: the sum over the band of the
+      gradient times the value. The where match is that share
+      referred to the sentence's most salient place and passed
+      through the Pi's exponential. It is one at the most salient
+      place and lower away from it, by the magnitude of what was
+      asked; and it is one everywhere when nothing of where was
+      asked, so that a request with no where part selects the level
+      and leaves every place in (§19.53).
+    - *Open.* Whether the concepts' weights on the where coordinates
+      are enough for a request to tell one word's place from the
+      next. A sum over the sinusoid is broad, a quarter of the short
+      rung's period, 64 places; a product over the where wires is
+      narrow (§20.5), and it would need rows of a Pi to have entries
+      on the where wires. And whether reading in order is learned
+      with no location concept made. Round 2 tries both.
+    - *If it is not learned, the fallback is his* (§19.48): a network
+      gives the `.where` outright, and from that extent the largest
+      word is taken, or failing a word the largest concept.
+48. *Silence* (Alec, §19.64, point 4; §19.53, point 3; 1.8 §68.89,
+    §68.91). When the read of a sentence gives no well-formed
+    formula, the sentence is written by force as an empty sentence
+    that ends in NULL, by the rule `silence`, S → NULL, and the read
+    ends there. The rule is in no grammar file and nothing chooses
+    it: it is a fallback for a grammar that is broken. A read that
+    gives no formula is an error, and the error is propagated.
+    *Mine:* `silence` is a rule's layer registered by its name beside
+    the others (`GRAMMAR_LAYER_CLASSES`), with no operand. It is
+    applied where the closing finds that the sentence's trees did not
+    reduce to one (`Models._stm_reduce_to_single_S`), in place of
+    leaving the sentence with no row. The row it writes holds no word
+    and no concept, and MTM takes nothing from it. What is put back
+    for the sentence is NULL at every place, where the standalone
+    kernel's head gives 0.5 today. The sentence's cost is booked, and
+    that is how its error is propagated. A literal with no rule to
+    take it (rule 42) ends so. *Open:* whether the sentence is tried
+    again in the same pass ("we can try again"). The mining of such
+    sentences by bisection is item 1.6's (1.8 §68.89).
+
+**Certificates.** A certificate of a mechanism must pass. A learning
+certificate is recorded and not repaired (1.8 §43); those are marked
+*learning*.
+
+1. *The old classes are unchanged:* `SigmaLayer`, `PiLayer`,
+   `PiLayer2` and `SigmaLayer2` give the same values before and
+   after, on random inputs over the whole range.
+2. *The Pi:* a row requires its members (§18.24, certificate 21);
+   bounds over the whole range, rails included, with weights scaled
+   far beyond their start (§18.6, certificate 4); the exact way back
+   (atol 1e-6, §18.6, certificate 5); a row has no weight outside its
+   own lane; a membership of exactly one passes its derivative, and
+   one below the floor passes none.
+3. *The Sigma:* each concept is one signed number in a reading and
+   its two lanes are its parts, never both above zero (Alec's
+   numbers, §19.24: .5 is for .5 and against 0; -.5 is for 0 and
+   against .5); on the way back a value of -.5 reaches the percepts
+   as .5 on the against lane and nothing on the for lane; no symbol
+   and no percept holds a number below zero; bounded as in 2; it has
+   no bias; an entry is for or Not, never both.
+4. *The cycle:* the next Sigma reads one combined input, for less
+   against, for each symbol; no symbol is made at a concept's
+   allocation; a promotion is the nomination of a row, which brings
+   its one concept.
+5. *Order zero:* §18.24's certificates 15 (a new percept needs no new
+   weight), 17 (concepts told apart, reported), 18 (the mereological
+   order), 19 (the way back as far as it goes) and 20 (place and time
+   weights, reported). The combined vector is one less the product of
+   the gaps, lies between zero and one, and a percept at zero changes
+   nothing.
+6. *Symbols:* §18.22's certificates 11 and 12 (no tensor holds both a
+   concept and a symbol; nothing reads a vector, place, form or trust
+   content at a symbol; a Sigma above order zero is unchanged when
+   the places of every other order are rotated).
+7. *The stacks:* a fused `SigmaPiLayer` equals its two layers (atol
+   1e-6); a stack is one graph; seconds against an MLP layer of the
+   same size; depth (§18.6, certificates 3, 6, 7 and 8, on rule 18's
+   structure). And the least and the greatest coordinate of the root
+   ideas of the lesson's sixteen sentences are printed and lie within
+   what the read to a point can give (§19.64, point 6).
+8. *Likeness and the way back:* no reader of §19.4's lists 1 and 2,
+   or of the tables of §19.21 and of this section, is left as it was,
+   each changed as listed or reported.
+9. *The standing gates and the lesson* (§18.24, certificate 16;
+   §18.6, certificate 10): both stopping gates pass, XOR among them;
+   the lesson's readings before and after, each order's occupancy,
+   the Pi's kept edges for each row, the Not entries at each order,
+   and one default sweep.
+10. *Speed* (*mine*): the seconds of the lesson's sixteen sentences
+    before and after, as §51 of the 1.8 specification reported them.
+11. *No row on a first reading.* A new word read once has no basic
+    percept and no concept, and `interpret` does not find it; after
+    `concept_mint_count` readings MTM nominates its basic percept,
+    its concept comes with it, and `interpret` finds it.
+12. *Square.* At every order the concepts equal the rows in number,
+    and a new concept reads only its own row, at one; at order zero
+    its column of $U$ is its row's vector, normalized.
+13. *Thinned.* Under the penalty, a Sigma entry above order zero that
+    no cost supports goes to zero, as a Pi entry does; the Sigma of
+    order zero is not penalized.
+14. *Up.* A word found raises its meta concept by its share.
+15. *Down.* A primed meta concept raises its object when the object
+    is absent; the way back of rule 17, on the same case, does not.
+16. *Rule 3 of 1.8 §55.1.* Finding a word raises its meta concepts
+    and their objects; of a word's two objects with equal
+    expectation, the one whose meta concept another word of the
+    sentence primed is preferred at comprehension.
+17. *Evidence unchanged.* With the spread on and off, every order's
+    evidence is equal, and the parameters are the same.
+18. *The blank object.* Interpreting a word with no object makes one
+    blank object and one meta concept, and the blank object's vector
+    is zero; interpreting it again makes nothing new.
+19. *Siblings below the cause.* With one concept present at one,
+    every other concept the spread reaches is below one; two children
+    sharing five parents of equal weight give each other .5.
+20. *One step across orders.* A symbol of order two reads concepts of
+    orders zero and one; a meta concept over a word of order zero and
+    an object of order one primes the object in one pass, with no
+    symbol between.
+21. *The structure is readable.* For a concept c, `parts(c)` and
+    `wholes(c)` give the references and weights of c's row of the Pi
+    and of the rows above that have c as an entry, with the words of
+    those that have words, and the Not entries are told apart; the
+    matrices, the activations and the rows are unchanged after the
+    read.
+22. *And, or and not.* A stack of rule 18 learns and, or and not over
+    true, neither and false from random starts; and and or use no Not
+    entry; with rule 22's penalty, the network whose present entries
+    are set to one and the rest to zero gives the same answers.
+23. *Pi, Not, Sigma.* (a) With no omission taught, the basic level
+    has no Not entry, raising an input never lowers a concept, and no
+    concept is against. (b) The basic level alone learns "A or B, not
+    both" and "A alone, not A with X" from what was expected and what
+    came, and after it X alone is expected absent. (c) The basic
+    level alone learns XOR of two perceived words with no Not entry,
+    given a row for the pair. (d) Above the basic level a Not entry
+    is a symbol's pair read swapped.
+24. *A blind spot is filled* (Alec, §19.23; the testpoint
+    `TestBlindSpot`). With half of a known word's forms withheld, the
+    reconstruction gives the whole word at its place; the word beside
+    it is unchanged; a word never taught is not completed. The values
+    of §19.23 are printed.
+25. *A word and an object of another modality are tied by their
+    consistent association* (Alec, §19.25; the testpoint
+    `TestCrossModalTie`). The word alone and the stimulus alone each
+    make a row and a concept, and no tie; presented together they
+    make the meta concept; then each leaves the other expected; a
+    word met with a different stimulus each time is tied to none; a
+    second word met with the same stimulus is tied to the same
+    object. The values of §19.25 are printed.
+26. *A sequence is learned* (Alec, §19.25; the testpoint
+    `TestBellSalivate`). After the first stimulus has been followed
+    by the second, the first alone leaves the second expected, and
+    its response through it; a stimulus never followed by the second
+    does not. The values of §19.25 are printed.
+27. *The structure as composed is valid* (Alec, §19.53: "Please add
+    a test point to ensure the validity of the structure as
+    composed"; the testpoint `TestStructureValid`). On the lesson's
+    words, after a suffix lesson and after two forms have had to be
+    told apart: (a) every part the store records for a form lies
+    wholly inside the form's code; (b) every known form found inside
+    a known form lies wholly inside it, read by the one match
+    (`ConceptualMatch.match`): `is` in `this` reads 1, where it reads
+    0.82 today; (c) the count of forms that read as wholly inside a
+    form they are not inside is printed, with `cat` in `caat` named.
+28. *A string that is no form* (rule 46). (a) With `felix` known and
+    `felixx` not, what `felixx` is read as is printed, with `caat`
+    and `xileF`. (b) After `felixx` is admitted, it is read as itself
+    and `felix` is not taken at its place. (c) Admitting it again
+    changes nothing: the store's rows, codes and keys are equal
+    before and after.
+29. *The way back of a form* (rule 45). Every form the lesson stores
+    is put back exactly from the form alone; `read_parts` and
+    `assemble_pairs` are named nowhere in `bin/`.
+30. *The bank is read once* (rule 33). One lookup for a sentence; on
+    a look's path no `materialize()` and no host read of a span,
+    counted on the lesson's sentences.
+31. *The salience map* (rule 36). (a) The transposes give what the
+    framework's backward gives on the same local derivatives (atol
+    1e-6). (b) A request for a word's concept returns it at its
+    token; for a word that is absent, nothing; for "words", every
+    word; and on the 304 requests of §19.52, exactly the asked words
+    that are present. (c) Printed: the same requests where parts are
+    present by degree, beside the plain gradient and beside the rows'
+    entries alone.
+32. *The largest, not a word inside it* (rule 37). A known word is
+    not taken at the token of a longer known word that holds its
+    letters: `is` at `This`, `here` at `There`, `the` at `there`.
+33. *The where pathway* (rule 47). (a) The parameter equals
+    `WhereEncoding`'s code at every place, before and after a
+    training step, and is in no optimizer's groups. (b) A gradient
+    from an asked concept that reads the where reaches a percept's
+    band. (c) With a concept given weight on the where by the test,
+    the request "words" with that concept returns the word at that
+    place on each of the lesson's sixteen sentences. (d) With nothing
+    of where asked, every word of the sentence is returned and none
+    is lowered.
+34. *"Words" presses against the space* (Alec, §19.57). With a form
+    of two words known (`ice cream`), a request for "words" lowers
+    the part that holds the space below the two words inside it, and
+    without that request the larger form is the one that fits; on the
+    lesson's sentences no part selected by "words" holds a space.
+35. *A word among garbage letters* (Alec, §19.53; 1.8 §68.88) is
+    returned, and it alone is said.
+36. *The same request, the same look* (1.8 §74). A look with the same
+    request gives the same result whatever was looked at before it.
+37. *Dimming* (rule 39). An event away from where the request looks
+    is lowered on both lanes and is never read as against;
+    `attentionFloor` is read by no look.
+38. *Reading* (rule 38). (a) A fresh model with `interpretBias` at 1
+    reads every word of each of the lesson's sentences once: none
+    twice, none left. (b) *Learning:* after the reading lesson the
+    words are read in order, on how many of the sixteen. (c) The test
+    of (b) gates the grammar tests, as the assessment's first rung
+    gates its others.
+39. *One gain field* (rule 40). The surprise `attend` reads is the
+    excess and the omission of `Expectation.gain_field`, with the
+    look's activity as its `attention` and the look's forecast as its
+    `expected`; `LookForecast.difference` is named nowhere; where a
+    look's activity is one inside one word and nothing elsewhere, the
+    surprise is item 1.8's for that word.
+40. *A literal* (rule 42) enters only under a rule that takes it;
+    with no such rule the sentence ends in silence.
+41. *Silence* (rule 48). A sentence whose read gives no formula is
+    written as S → NULL; what is put back is NULL at every place; its
+    cost is booked; no grammar file names the rule; a sentence that
+    reduces is unchanged.
+42. *A word not yet known* comes back under a request for the word
+    whole with the whole lit and no word concept, and is given a
+    name, as the "neither" of today is (§19.45).
+43. *"Felix"* (1.8 §64.7; §19.49). A word read at for 1 and against
+    0.0002 is interpreted.
+44. *The cost of a look* (*mine*). The host reads and the seconds of
+    the lesson's sixteen sentences beside item 1.8's, with
+    certificate 10; and the operations of one look beside one way up
+    (§20.4 counted 2.3).
+
+**What stays.** The grammar's option at a look and `interpretBias`
+(1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
+forecast of a look from what lies outside it (1.8 §62.3,
+`LookForecast`); the open run (`FamiliarTier.open_sentence`,
+`_sentence_open_fields`); `interpret` at one word; the reading lesson,
+rewritten; the store's lookup, until item 1.5.
+
+**What goes.** The bracket table and its acts
+(`Attention.BracketTable`, `narrow_step`, `narrowing_view`,
+`narrowing_mask`); the look's read of one bracket
+(`SentenceLooks.perceive` as a test of containment); the old pass-back
+(`Models._passback_scope_ps`, `_passback_scope_where`);
+`LookForecast.difference`; the key `attentionFloor`, whose value
+nothing uses today; the tests of spans on the host (`contained`,
+`covered`); in the store, the end marks, the lengths, the mints at a
+position (`WordIdentity._mint` as it is), `read_parts` and
+`assemble_pairs`; and `SigmaPiStack`'s clip. `cs_percept_attribution`
+keeps its other readers until rule 30's way back takes their place.
+What a rule replaces is deleted, and not kept behind a key.
+
+**Readers to adapt.** §19.4's four lists and the table of §19.21
+stand. They were read on 2026-11-16 and 2026-11-17, and each round
+takes its own again on its starting source. Added on 2026-11-19 (read
+in the source at `b3d2e3ae89`):
+
+| Where | Today | Under |
+| --- | --- | --- |
+| `WordIdentity.base_atoms`, and what calls it beside the store: `PartSpace.part_memberships`, `Omission.prepare` and `stage`, `AttentionLesson._prompt_need` | the pairs of `#word#` with the two ends marked, and the lengths 1 to n; a pair block of 64 coordinates with three bits for each atom, and 32 for the lengths | rule 43: the characters and the added parts |
+| `WordIdentity._mint`, called from `admit` and `observe_nested` | for two forms with one code, a mint of three or four characters at a position (`cal@1`) | rule 43: the shortest run that one holds and the other does not, carried by every form that holds it |
+| `WordIdentity.observe_nested` and `nested` | in a suffix lesson a stem's code and a marker's are joined into the longer form's, and every form is rekeyed | the codes need no joining; what the suffix lesson still records is reported |
+| `WordIdentity.read_parts`, `assemble_pairs`, called by `InterpretLayer.lookup_word` and `FieldReverse.reverse` | a spelling from the end-marked pairs and the greatest length | rule 45: the stored table |
+| `RadixLayer(word_bounded=True)`, `_promotable` | no promoted chunk crosses a space | a taught form may hold a space (rule 43); the promotion by frequency is unchanged |
+| `WhereRegistry.encode`, `WhereEncoding.encode` and `stamp`; `PartSpace._radix_code_events`, `_embed_radix` | a place's code is computed when asked for; no parameter, no gradient | rule 47 |
+| `SentenceLooks.Looks.run` and `perceive`; `Attention.narrow_step`, `narrowing_view`, `record_interpretation`; `OperationSelectionLayer.attend`; `FocusLayer`, `UnfocusLayer` | a look is an act on the bracket table, and its read is one bracket | rules 33 to 39 |
+| `AttentionContext.context` and `project` | the context is mapped to acts on brackets, from a map that starts at zero | the context is mapped to the request (rules 35 and 38) |
+| `AttentionLesson.ReadingTargets`, `reading_lesson` | teaches the fewest acts on brackets to the next word | teaches the request (rule 38) |
+| `Expectation.gain_field`'s callers (`WordArrivals.step`, `SymbolField.arrive`, `SymbolRead.gains`, `Meaning.form`); `LookForecast.difference` | no look feeds the gain field | rule 40 |
+| `Models._stm_reduce_to_single_S`, `_program_entries`, `_commit_sentence` | a sentence that does not reduce has no row | rule 48 |
+| `SigmaPiStack._field_value`; `IdeaRead.complete` | every Sigma's result is clipped to 0 to 1 | rule 18 |
+
+**What is mine, in one list, for Alec to overrule.** From §19.21: the
+names `PiLayer3` and `SigmaLayer3`; each percept or symbol as two
+unsigned rows; a row reading its own lane only; the Sigma with no
+bias; the answer of a Sigma read as its signed number; sparse storage
+above order zero; the penalty of §18.3; likeness pairs nothing (rule
+16); the matrices as device tensors with an index of columns (rule
+19); the stacks reading concepts as pairs of the same structure (rule
+18); the blank object one order above its word; the spread run at the
+open pass and before comprehension (rule 25); the threshold key and
+the work budget of rule 28; the speed certificate. Added by this
+section:
+
+1. The derivative at a membership of one, in `PiLayer3` alone (rule
+   2).
+2. The part added for two forms is the shortest run that one holds
+   and the other does not; the code is held as the list and its fold
+   in today's width (rule 43).
+3. The lengths go from a form's code (rule 43).
+4. The lookup moves to the device in item 1.5, and the table of the
+   longest parts with it (rules 44 and 45).
+5. The teaching of a string read as a word it is not admits it as a
+   form; the harness's part is item 1.6's (rule 46).
+6. The bank's tokens are the stem's units, with a form that spans
+   several as an event of its own (rule 33).
+7. The node "words" is one concept that every word's concept is a
+   member of, with its Not entry on the space declared; `attend`'s
+   map starts at that request (rule 35).
+8. Of a look's error, only the request and the weights that read the
+   where are taught (rule 35).
+9. The salience map by the transposes, with the kept derivatives
+   (rule 36).
+10. Largest is the longer extent; nothing is interpreted from an
+    empty set; "Felix" is read (rule 37).
+11. `attend` reads today's context; the `done` mark is over a form's
+    extent; a word is composed as it arrives (rule 38).
+12. The where match is applied once to a form's reading (rule 39).
+13. One gain field (rule 40).
+14. The parameter of the where: one row for each place, in no
+    optimizer's groups; and the arithmetic of the where match (rule
+    47).
+15. `silence` as a registered layer applied at the closing; the row
+    it writes; NULL put back; the cost booked (rule 48).
+
+**Open, with what is built meanwhile.**
+
+1. *The where match, and whether location is learned with no location
+   concept made* (rule 47). Round 2 tries the recommended form and
+   its alternatives in tests before round 6 builds one. If reading in
+   order is not learned, the fallback of §19.48 is built.
+2. *The salience map where parts are present by degree* (rule 36).
+   Round 2 reports it; the map by weights is built.
+3. *Which row "words" is* (rule 35; §19.29). Built as one declared
+   concept.
+4. *What becomes of the 32 coordinates of the length block* (rule
+   43). They stay empty.
+5. *After a look that interprets nothing, and looks that are not the
+   next word* (rule 38; §19.61). Built: the request moves because the
+   state of STM and the bank's activity moved; a look that changes
+   neither ends the read of the sentence.
+6. *Whether a sentence that ends in silence is tried again* (rule
+   48). Built: it is not; its cost is booked once.
+7. *Whether `parts` and `wholes` read the matrices alone,* with
+   LTM1's part table kept as the evidence for `isPart`'s proofs
+   (§19.12; Alec: "We can spec it later"). Built so.
+8. *On graded readings* the layers give the product logic and the
+   grammar's field operators the least and the greatest (§19.13).
+   They are left to differ.
+9. *Whether `data/shamatha.grammar` keeps its `not` rule* (§19.15).
+   It is kept.
+10. *Whether the basic level's against lane is fed by perceived
+    opposites* (1.8 §57.6) as well as by omissions. It keeps what
+    perception gives.
+11. *What becomes of the attention walk's own pair* once the one
+    Sigma's value is the pair (§19.24). It goes with the fold that
+    reads it.
+12. *How rule 31 meets rule 20's blank object* (§19.27: "better never
+    to have the blank at all"; both trained, the blank removed only
+    if the two vectors come to overlap). Built: the blank is made as
+    rule 20 says; what removing is, beside concepts kept forever, is
+    not built.
+13. *What holds a succession,* the bell and then the food, across two
+    sentences (§19.25). Built: a row that MTM nominates for the two
+    when the succession recurs, read by rule 30's spread.
+
+**For the documentation pass** that follows the item's last round.
+The table of §19.21 stands. Added:
+
+| File | What it gains | From |
+| --- | --- | --- |
+| `doc/Mereology.md`, `doc/Spaces.md` | a form's code as the set of its parts: no end marks, the space as a character, a part only where two forms would be the same; exact parthood between forms; the where on fixed wires from one parameter | rules 43 and 47 |
+| `doc/Language.md` | the looks: the bank, the request, the salience map, the returned set, `attend`; a literal; silence, in place of "outputs nothing" | rules 33 to 42 and 48 |
+| `doc/Architecture.md` | the two pathways, what and where, beside the two-streams account and feature integration (§19.63), in "Biological plausibility" | rule 47 |
+| `doc/Params.md` | `attentionFloor` gone | rule 39 |
+| `doc/FutureWork.md` | the lookup on the device by the set of parts as an address; the teaching round over the harness's logs | rules 44 and 46 |
+
+## 22. Item 1.7: the text for the implementers, in rounds (Claude, 2026-11-19; it replaces §19.8)
+
+Alec, 2026-11-19: "Write the item's text for the implementers as one
+hand-off in that file (it replaces 19.8), in rounds, each with its
+targeted tests and its certificates, the test points of 19.53 and
+19.57 among them. One default sweep at the item's push round; no slow
+tier." And: "Start the implementers in Opus, in the same checkout, and
+review each return against the source before the next round goes."
+
+**The rounds.**
+
+| Round | What it builds | Rules of §21 | Certificates | Returns as |
+| --- | --- | --- | --- | --- |
+| 1 | the two layers, the stacks, and the code of a form | 1 to 3, 18, 29; 5, 43, 45, 46 | 1, 2, 3, 7, 22; 27, 28, 29 | §23.1 |
+| 2 | the looks, tried in tests only | 33 to 39, 47 | reported; 31, 33, 34 and 35 on the trial's own bank | §23.2 |
+| 3 | order zero, and rows by nomination | 6, 7, 8, 8b, 19, 20, 21 | 5, 11, 12, 23 (a) to (c) | §23.3 |
+| 4 | symbols and the orders above | 4, 9 to 14, 19, 22; the meta concept and the blank object | 4, 6, 13, 18, 23 (d) | §23.4 |
+| 5 | the vertical spread, the order of learning, thought's reads | 23 to 28, 30, 31 | 14 to 17, 19, 20, 21, 24, 25, 26 | §23.5 |
+| 6 | the looks, in the model | 32 to 42, 47, 48 | 30 to 44 | §23.6 |
+| 7 | the readers, the measurements and the sweep | 16, 17 | 8, 9, 10 | §23.7 |
+
+- Each round is carried by one implementer, Claude on Opus standing in
+  for Codex, in the one checkout.
+- Round 2 changes no file of `bin/` and runs beside round 1. Every
+  other round follows Claude's review of the one before it.
+- The test points Alec asked for: the structure as composed is valid
+  (§19.53; certificate 27, round 1); a word among garbage letters
+  (§19.53; certificate 35, rounds 2 and 6); "words" lowers a form
+  that holds a space (§19.57; certificate 34, rounds 2 and 6); a
+  blind spot is filled, a word tied to an object of another modality,
+  and a sequence learned (§19.23, §19.25; certificates 24 to 26,
+  round 5).
+- The item's one default sweep is round 7's. Nothing runs under
+  `RUN_SLOW` in any round.
+- A round's text is amended in place where an earlier return changes
+  it, with the date. Round 6's waits for round 2's return.
+- *Checked by Claude, 2026-11-19, at `b3d2e3ae89`:* the names of code
+  in §21 and in these texts are in the source, but for those said to
+  be new; both stopping gates exist; and
+  `test/attention_thinking_certificate.py lesson` runs the lesson's
+  sixteen sentences.
+
+**The standing rules, for every round.**
+
+~~~
+Item 1.7 of BasicModel: the Sigma and Pi layers, the perceptual basis
+and the looks. You build one round of it. The rules are §21 of
+doc/plans/2026-11-14-sigma-pi-layers.md. Read §21 whole first, then
+these standing rules and your round in §22, then the sections your
+round names. §19.64 holds Alec's last answers. Where §21 and an
+earlier section differ, §21 stands. The file is long: find a section
+by its heading and read that part.
+
+1. Work in /Users/arogers/github/WikiOracle/basicmodel on main, in
+   this checkout. Commit locally and often, with explicit paths
+   (never "git add -A" and never "git commit -a": files that are not
+   yours may be in the tree). Never push, never force-push, never
+   rewrite history. If git reports a lock, wait and try again:
+   another round may be committing.
+2. Do not edit SigmaLayer, PiLayer, PiLayer2 or SigmaLayer2.
+3. A rule of §21 marked "(Alec, ...)" is his decision. It is not
+   overturned in the source. Where you would recommend otherwise,
+   build the path that keeps it, write your proposal, and go on.
+4. A question is not a stop (1.8 specification, §75). Where a rule
+   marked "mine" or "open" cannot be built as written, or two ways
+   differ and §21 does not choose: write the question, the ways you
+   see and the one you recommend; build the one you recommend in a
+   commit of its own, marked provisional in the return; go on.
+5. A certificate of a mechanism must pass. A learning certificate is
+   recorded and not repaired. Both stopping gates pass at the end of
+   every round. To obtain a pass you change no bound, learning rate,
+   seed, capacity or presentation count; you weaken or remove no
+   validation; you add no skip and no expected failure; and no test
+   fixes a seed so that an assertion holds. A fixture that no longer
+   fits is given more room at construction, with its inputs and
+   assertions kept; nothing is resized during a run.
+6. What a rule replaces is deleted, with its tests ported. It is not
+   kept behind a key or as a second path. A ported test is listed
+   with its old and its new assertion. No test is retired without
+   naming what replaces it.
+7. No language is named or given a special case in the code.
+   Comments and docstrings say what the code does; they do not tell
+   this item's history or name its rounds.
+8. Tests. Run targeted tests only: your round's certificates, every
+   test file that names something your round changed (find them by
+   search; the ones known are listed with the round), and both
+   stopping gates,
+     test/test_mm_xor.py::TestMMXorConvergence::test_convergence
+     test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class
+   Run a file as
+     BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest test/<file>.py
+   with RUN_SLOW and RUN_TRAINED unset. No default sweep before round
+   7, and nothing under RUN_SLOW in any round. A test that was not
+   run is no evidence: name every file you ran, with its counts and
+   its seconds.
+9. A red case or a stop that this text does not name is yours to
+   diagnose to its producer: measure, bisect, name the function, give
+   the evidence.
+10. doc/*.md is not edited in these rounds. The documentation pass
+    follows the item.
+11. The return is a section of the specification, §23.N for round N,
+    committed: what was built, by file and function; each certificate
+    with its test's name and its result; each choice taken on your
+    own recommendation, with its commit; each test ported, with its
+    old and its new assertion; the test files run; the commits; what
+    surprised you; and what you would change in §21. Numbers are
+    stated in the text, and receipts are not linked. Write it at the
+    end of the file, reading the file's end again just before you
+    write, since another round may have added a section. Keep notes
+    for it as you go. Then stop: Claude reviews the return against
+    the source before the next round goes.
+~~~
+
+### 22.1 Round 1: the two layers, the stacks, and the code of a form
+
+~~~
+Round 1 of item 1.7. Rules 1 to 3, 18 and 29 of §21 for the layers
+and the stacks; rules 5, 43, 45 and 46 for the code of a form.
+Certificates 1, 2, 3, 7 and 22; 27, 28 and 29. The two parts do not
+depend on each other. Build A first.
+
+A. The layers and the stacks.
+
+1. In bin/Layers.py add PiLayer3 (rule 2) and SigmaLayer3 (rule 3).
+   They are not wired into the model in this round. PiLayer3 gives
+   PiLayer2's values on PiLayer2's domain; its derivative passes at
+   a membership of exactly one, and is nothing below the floor.
+2. Add the fused pair SigmaPiLayer (rule 18): a Pi and then a Sigma
+   whose entries are for or Not, with no way back. Of §18.5, rules 5
+   to 7, what stands is: no copy of the activation, no gate, no
+   choice in Python on a tensor, one graph, no reverse, the last
+   Sigma of a stack zero at construction, the keys, the pair count
+   and the seed. Read §19.13 and §19.19 for a stack's pair: its rows
+   are free of the diagonal, read their own lane, have weights at
+   zero or more and no bias, and it reads concepts, which are
+   scalars.
+3. Rebuild SigmaPiStack (bin/SigmaPiStack.py) as a row of
+   SigmaPiLayer. Its clip, _field_value, goes. Its users keep their
+   keys: the expect stack and the idea stack of the conceptual space
+   (where bin/Spaces.py reads expectLayers and ideaLayers;
+   ConceptSpread.expected, IdeaRead.complete) and the marker
+   (_MarkerKernel in bin/Language.py, markerLayers). Where a user
+   reads two unsigned halves as a difference, or assumes a result in
+   0 to 1, say what it reads now.
+4. Certificates 1, 2 and 3 in a new test/test_item17_layers.py;
+   certificates 7 and 22 in a new test/test_item17_stacks.py. For
+   certificate 7's last clause, print the least and the greatest
+   coordinate of record.meaning_root where IdeaRead.complete takes
+   it, over the lesson's sixteen sentences (the first stage of
+   data/corpus-lessons.json), beside the range the read can give.
+   For certificate 22 read §19.13 and §19.15; the penalty is §18.3's.
+5. The stacks' learning changes with their arithmetic. The tests
+   that hold a learned value of expect, of the idea read or of the
+   marker are run and listed with their values before and after. A
+   learning certificate that no longer holds is recorded with its
+   numbers and not repaired.
+
+B. The code of a form.
+
+6. In bin/WordIdentity.py a form's code is the set of its parts
+   (rule 43). base_atoms gives the form's characters, the space
+   among them, with no end marks and no lengths; atom_code and form
+   follow. WordIdentity keeps the set of the parts that have been
+   added, saved and loaded with the rest of its state. admit gives a
+   form every added part that lies inside it.
+7. Replace _mint. Where a form that is admitted has the same parts
+   as a form already held, the shortest run of characters that one
+   of the two holds and the other does not becomes a part. Every
+   form held that contains that run takes it and is rekeyed, and no
+   stale key or trie entry is left behind (admit leaves one after a
+   mint today; only observe_nested rebuilds the trie). Where two
+   forms' rows of fixed width are still equal, the part's bits are
+   raised as _mint raises a mint's today. The layout's widths do not
+   change (resolve_identity_layout): the 32 coordinates of the
+   length block stay, and hold nothing for a form.
+8. The callers of base_atoms and form outside the store follow:
+   PartSpace.part_memberships (bin/Spaces.py), prepare and stage of
+   bin/Omission.py, _prompt_need of bin/AttentionLesson.py. Find any
+   other by search.
+9. observe_nested and nested: the codes need no joining now. Keep
+   what the suffix lesson (nested_lesson) records that something
+   else reads; remove the joining of codes and the rekey of every
+   form that it caused; say what is left and who reads it.
+10. read_parts and assemble_pairs go (rule 45). Their callers,
+    InterpretLayer.lookup_word and reverse of bin/FieldReverse.py,
+    read the stored table (RadixLayer.inverse_table). Report what
+    each did for a code that is no stored form, and what it does
+    now.
+11. A taught form may hold a space. Find what refuses one today
+    (RadixLayer's word_bounded and _promotable, the isalpha return
+    of observe_nested, the stem's units) and make the least change
+    that lets admit(b'ice cream') give a form whose code holds the
+    codes of ice, of cream and of the space. Promotion by frequency
+    is unchanged. That the read of a sentence finds such a form is
+    round 6's.
+12. Certificate 27 is a testpoint, TestStructureValid, in
+    test/test_testpoint.py, written as that file's classes are: it
+    prints its values. Its words: the words of the lesson's first
+    stage, cats by a suffix lesson, and this, his, is, at, cat, caat,
+    act, here, there, the. Part (b) reads ConceptualMatch.match.
+    Certificates 28 and 29 in a new test/test_item17_forms.py.
+13. Port the tests that pin today's layout. Known:
+    test_operators_round3a.py, test_hash_order_producers.py,
+    test_item55_mechanisms.py, test_form_subspaces.py,
+    test_percept_transitivity.py, test_whole_path_repairs.py,
+    test_stream_smoke.py, test_word_admission.py,
+    test_dual_towers.py, test_serial_object_meta.py,
+    test_aligned_fold_binding.py, test_reconstruction_roundtrip.py,
+    test_word_store.py, test_meronomy.py, test_percept_store.py,
+    test_basicmodel.py, test_partspace_dynamic_capacity.py. Find the
+    rest by search.
+14. Measure and report, with no assertion: for the first 20,000
+    words of /usr/share/dict/words (lower case, letters only, 2 to
+    12 letters) admitted to the real store, the parts added, by
+    their length; the forms whose row of fixed width is equal to
+    another form's; and the seconds. Stop it at ten minutes and
+    report how far it came.
+
+Run: the new test files; every test file that names what you
+changed; test/test_item18_idea_read.py; both stopping gates; and the
+lesson's sixteen sentences once before your first edit and once
+after your last, as §66.14 of the 1.8 specification ran them
+(PYTHONPATH=bin:test, test/attention_thinking_certificate.py lesson
+--output <a new folder under output/>, with no --compare). Values
+change in this round by design: report what differs in the readings
+(the words read, the trees) and the seconds, not equality.
+Return as §23.1.
+~~~
+
+### 22.2 Round 2: the looks, tried in tests only
+
+~~~
+Round 2 of item 1.7: a trial of the looks, in tests only. Rules 33
+to 39 and 47 of §21. Read §19.45, §19.48, §19.49, §19.53, §19.60 to
+§19.64 and §20, and test/looks_prototype.py, which this extends.
+
+It changes no file of bin/ and no existing test but the prototype's
+own three files (test/looks_prototype.py,
+test/looks_prototype_report.py, test/test_item17_looks_prototype.py);
+new files go beside them. It decides nothing and is not wired into
+the model. Another implementer is editing bin/ in this checkout while
+you work (round 1). If an import of bin/ fails for a reason outside
+your files, wait a few minutes and run again; do not edit bin/.
+
+What it is for. Round 6 builds the looks in the model. Three things
+are not settled, and this round measures them first: how the
+salience map behaves where parts are present by degree; what the
+where match is; and whether a request learns to read the words of a
+sentence in order when no location concept is made.
+
+1. The bank, as rule 33 has it, for the lesson's sixteen sentences
+   (LESSON in test/looks_prototype.py), the three of §19.52 ("Fe li
+   x is here.", "xileF is here.", "The cat is there.") and one
+   sentence with a known form of two words (ice cream). For each
+   token: its form's row where the form is known, and the rows of
+   its parts as rule 43 codes a form, which are its characters and
+   the parts that tell two forms of the vocabulary apart, with no
+   end marks. Build that code in the test; do not read it from the
+   store, which round 1 is changing. A known form that spans two
+   tokens is an event of its own. An event's place is its start. Its
+   band of where wires is its row of one parameter that holds the
+   code of Spaces.WhereEncoding at the registry's capacity; the
+   parameter takes a gradient and is given to no optimizer.
+2. The way up: a first Pi of rule 2 whose rows read their own form
+   and their parts; the combination of rule 7, with the where
+   coordinates among its dimensions; the Sigma of rule 3, dense,
+   with every concept's weights on the where coordinates at zero at
+   the start; and the node "words" as rule 35 has it, with a Not
+   entry on the space.
+3. The salience map of rule 36: by the transposes, with the
+   derivatives kept from the open run; and by the framework's
+   backward on a graph in which each Sigma is passed before its
+   squash. Show that they agree (atol 1e-6). On the 304 requests of
+   §19.52 (each of nineteen sentences asked for each of fifteen
+   words and for "words"), count the requests that return exactly
+   the asked words that are present, beside the plain gradient and
+   beside the rows' entries alone: the table of §19.60 on this bank.
+4. Parts present by degree (§19.60, "Not measured"). Set the open
+   run's activities between 0 and 1: a whole word at .3; half of a
+   word's parts at .5; a word whose parts fall from 1 to .2 along
+   it; the same word twice, at 1 and at .4. For the three ways of
+   step 3, give what is returned and at what value. Where the map by
+   weights and the rows' entries alone differ, say which a reader
+   would call right, and why.
+5. The where match of rule 47. For this step a concept is given
+   weight on the where by the test; the model makes none. Try
+   (a) the form §21 recommends; (b) the product of the two capped
+   shares; (c) any other you would propose. Try them with the two
+   ways a concept can read the where: (i) the Sigma's weights on the
+   where coordinates of the combined vector; (ii) entries of a row
+   of the Pi on the where wires and on their complements. For each
+   pair: on how many of the sixteen sentences does "words" with
+   that concept return the word at the place; does "words" alone
+   return every word, with none lowered; how do the other tokens
+   fall as the weights grow (the table of §20.5); is the asked word
+   cut by its own place.
+6. Whether location is learned with no location concept made (rule
+   47; §19.63, point 4). The request is a learned map from what has
+   been read (the places and times of the words taken so far, which
+   is what AttentionContext.context gives of the understood prefix)
+   to a mask over the concepts, starting at "words" alone. The
+   weights that read the where start at zero and are learned. A
+   form that was taken is lowered in the bank's activity over its
+   extent. The loss asks that the next word in order be the most
+   active of the returned set, and its gradient passes through the
+   salience map, the where match and the way up. Teach minimal
+   sentences first: one word, then two, then the lesson's. Report
+   what was taught, for how many steps, with which optimizer and
+   rate; how many of the sixteen sentences are then read wholly in
+   order, as a curve over the steps; which weights came to read the
+   where; and the same with the gradient on the request alone. Run
+   it from five different starts and report each one. Fix no seed
+   so that it comes out. It is a learning result: report it as it
+   is.
+7. If step 6 does not come to read in order, build the fallback of
+   §19.48 beside it (a network gives the .where outright; from that
+   extent the largest word is taken, or failing a word the largest
+   concept), taught the same way, and report it as in step 6.
+8. On this bank: "words" presses against the space (certificate
+   34), and a word among garbage letters is returned alone
+   (certificate 35).
+
+Tests of the claims of steps 3, 5 and 8 go in
+test/test_item17_looks_prototype.py or a file beside it. A learning
+result is printed by the report and not asserted. Run those test
+files, and name them.
+
+Return as §23.2: the files; each result as a table; what surprised
+you; which form of the where match and which way of reading the
+where you would build in round 6; and what you would change in rules
+34 to 39 and 47 of §21.
+~~~
+
+### 22.3 Round 3: order zero, and rows by nomination
+
+~~~
+Round 3 of item 1.7. Rules 6, 7, 8, 8b, 19, 20 and 21 of §21.
+Certificates 5, 11, 12 and 23 (a) to (c). It starts from the source
+that round 1 returned. Read §18.24, §19.10 and §19.17 to §19.20.
+
+1. Before any edit, take list 4 of §19.4 and the rows of §19.21's
+   table that name order zero again on your starting source. Return
+   any reader that is new, gone or different, with what you build
+   for it.
+2. A basic percept is a row of PiLayer3 over its parts and wholes
+   (rule 6), in place of the least of BasicPercepts.read. For order
+   zero store.conjunctive and the key conceptualPi go. Port the
+   configurations that set the key (true in
+   data/MM_corpus_lessons.xml, MM_corpus_orders.xml, XOR_exact.xml,
+   MM_xor_fixture.xml, MM_xor.xml, XOR_symbols.xml and
+   BasicModel_corpus.xml; false in model.xml and MM_image.xml) and
+   the schema.
+3. Rows by nomination (rule 20). A basic percept becomes a row when
+   MTM nominates it on recurrence (concept_mint_count), in place of
+   the reserve at a word's first reading (BasicPercepts.reserve in
+   the word loop of bin/Models.py) and of the lessons' declared
+   admission (admit_training_forms of bin/Corpus.py,
+   admit_native_forms of bin/ConceptLessons.py). The grammar's
+   declared concepts and the frozen thought predicates are as rule
+   20 has them. One concept for each row (rule 21): promotions of
+   classes, identities and percept collections become nominations
+   of rows.
+4. Combination and the Sigma (rules 7, 8 and 8b): the Pi on the
+   gaps over the active percepts' full vectors, and SigmaLayer3 with
+   a dense U, in place of the folds of
+   ConceptualSpace._compose_order0, of
+   IndexedSigmaConceptsFromPercepts and of SparseLayer._fold_weights
+   at order zero. What the writers of add_concept_feature write
+   today (promotion in bin/FamiliarTier.py and bin/Memory.py,
+   PerceptCollections.collect, bin/ConceptLessons.py) becomes a
+   column of U.
+5. Storage (rule 19): the Pi of order zero as compressed rows on
+   the device, with an index of columns, growing into capacity
+   allocated beforehand.
+6. Certificates 5, 11, 12 and 23 (a) to (c) in a new
+   test/test_item17_order_zero.py. Certificate 23 is §19.20's.
+7. A test that taught a word by one reading now needs
+   concept_mint_count readings, or a row that is declared. Port
+   each so that it states what it stated, and list each.
+
+The orders above zero keep their folds until round 4, and the model
+runs whole at the end of this round. Run: the new test file; every
+test file that names what you changed; both stopping gates; the
+lesson's sixteen sentences before and after, as in round 1. Return
+as §23.3.
+~~~
+
+### 22.4 Round 4: symbols and the orders above
+
+~~~
+Round 4 of item 1.7. Rules 4, 9 to 14, 19 and 22 of §21, the meta
+concept and the blank object of rule 20, and rule 29 above the basic
+level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
+§18.25, §19.10 and §19.24.
+
+1. Before any edit, take list 3 and the rest of list 4 of §19.4,
+   and the rows of §19.21's table on symbols, again on your starting
+   source, as in round 3.
+2. Symbols are split from concepts and have no dimensions (rule 9):
+   separate tensors. The key symbolTower goes, with its
+   configurations ported (data/MM_20M_xor.xml, XOR_exact.xml,
+   XOR_symbols.xml, MM_add_verb.xml,
+   matrix/MM_20M_xor_noraise.xml). The shared row of a concept and
+   its symbol is given up (the readers of list 3).
+3. A symbol is two unsigned rows of PiLayer3 and brings one concept
+   (rule 10). It is made at MTM's nomination, or by interpret for a
+   meta concept, and not at a concept's allocation.
+4. The cycle above order zero (rules 4, 11 and 12): SigmaLayer3,
+   sparse, reads each symbol's pair combined into one signed input.
+   The least and the greatest of SparseLayer.fold_presence go above
+   order zero, and SparseLayer._fold_weights with them
+   (_concept_rung_presence in bin/Spaces.py, FieldProjection.close).
+5. A signed value is its two unsigned lanes on the way up and on
+   the way back (§19.24): the word step's payload and the walk's own
+   pair, as the row of §19.21's table says, with the readers of a
+   word that is stored against traced first (1.8 specification,
+   §68.63).
+6. The blank object and the meta concept (rule 20): interpret makes
+   both for a word with no object, in place of the pending name
+   (InterpretLayer.reading, PrependedSymbols). The blank object's
+   vector is zero, and no read divides by its length.
+7. The penalty (rules 15 and 22): §18.3's, measured first, on the
+   Pi's entries and on the Sigma's entries above order zero. The
+   structure of a meta concept is never thinned.
+8. Certificates 4, 6, 13, 18 and 23 (d) in a new
+   test/test_item17_symbols.py.
+
+Run: the new test file; every test file that names what you
+changed; both stopping gates; the lesson's sixteen sentences before
+and after. Return as §23.4.
+~~~
+
+### 22.5 Round 5: the vertical spread, the order of learning, and thought's reads
+
+~~~
+Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
+14 to 17, 19, 20, 21, 24, 25 and 26. Read §19.11, §19.12, §19.22,
+§19.23, §19.25 and §19.27.
+
+1. The spread (rules 23 to 27): a fan up and a share down on the
+   structure's own matrices, in one pass, written to
+   _expected_knowing at every order (ConceptSpread.open_prediction
+   writes order zero alone today). intuit runs it after it deposits
+   expect's field, and it runs at the end of the read, before
+   comprehension takes its leaves' objects. It adds no parameter and
+   changes no evidence.
+2. Not strictly ramified (rule 26): a symbol reads the concepts of
+   every lower order, where a membership is admitted only between
+   adjacent orders today (class_member; the row of §19.21's table).
+3. The spread reaches the first layer, and the way back reads what
+   it expects (rule 30).
+4. The order of learning (rule 31), with §19.25's clauses and
+   §19.27: an existing object is looked for before one is made.
+5. Thought reads the structure (rule 28): parts and wholes of
+   bin/Queries.py, and ConceptualSpace.concept_parts and
+   concept_wholes, read the matrices. LTM1's part table stays the
+   evidence for isPart's proofs.
+6. Certificates 14 to 17 and 19 to 21 in a new
+   test/test_item17_spread.py. Certificates 24, 25 and 26 are
+   testpoints in test/test_testpoint.py (TestBlindSpot,
+   TestCrossModalTie, TestBellSalivate), each printing the values
+   that §19.23 and §19.25 name. Where 25 and 26 say "learned" they
+   are certificates of learning.
+
+Run: the new test file and the testpoints; every test file that
+names what you changed; both stopping gates; the lesson's sixteen
+sentences before and after. Return as §23.5.
+~~~
+
+### 22.6 Round 6: the looks, in the model
+
+*This text is amended from round 2's return before it is carried.*
+
+~~~
+Round 6 of item 1.7. Rules 32 to 42, 47 and 48 of §21. Certificates
+30 to 44. Read §19.45, §19.48, §19.49, §19.53 and §19.60 to §19.64;
+round 2's return (§23.2); and Claude's review of it, which says
+which form of the where match is built.
+
+1. The where from a parameter (rule 47). The registry's encoder
+   (WhereRegistry, WhereEncoding) holds one parameter with the code
+   of every place, written from WhereEncoding.encode.
+   WhereRegistry.encode reads its rows, and the percepts' .where
+   (PartSpace._radix_code_events, _embed_radix) flows from it. It
+   takes a gradient and is in no optimizer's groups. Where a stamp
+   is a write into a buffer that takes no gradient today, say what
+   you did.
+2. The bank (rule 33). At a sentence's start, where the open run is
+   made (FamiliarTier.open_sentence, SentenceField.open_field,
+   _sentence_open_fields), the rows of the one lookup are held once
+   on the device: each event's row, place, band, time, token and
+   activity. A known form that spans several units is an event of
+   its own. No materialize() and no host read of a span is on a
+   look's path (stage_cs_sub, _per_word_body_step and _peer_stage_b
+   of bin/Models.py call materialize() today; count them again).
+3. The open run keeps the Pi's local derivatives. The salience map
+   (rule 36) carries a request down by the transposes, each Sigma
+   by its weights, onto each event's activity and onto its band.
+4. A look (rules 34, 37 and 39): the activity; the way up again
+   through what is active (cs_read_memberships with the activity in
+   place of a bracket, then cs_forward_content); the returned set.
+   interpret takes the most active word concept; of forms that
+   begin at one place the largest; among equals a draw, credited as
+   a departure is (explorePaths, SentenceCredit).
+5. attend (rules 35 and 38). OperationSelectionLayer.attend gives
+   the request, a mask over all concepts on two lanes, from
+   AttentionContext.context, and starts at "words" alone. The
+   bracket table and its acts go (BracketTable, narrow_step,
+   narrowing_view and narrowing_mask of bin/Attention.py); the done
+   mark of record_interpretation becomes a lowering of the bank's
+   activity over the form's extent; and Looks.run of
+   bin/SentenceLooks.py is the loop of requests. The grammar's
+   option at a look and interpretBias stay (interpret_at_look). Say
+   what becomes of FocusLayer, UnfocusLayer and attention_operations,
+   and of the grammar files that declare them.
+6. The node "words" (rule 35), with its Not entry on the space.
+7. One gain field (rule 40): Expectation.gain_field takes the
+   look's activity as its attention and the look's forecast as its
+   expected. LookForecast.difference goes.
+8. The reading lesson (rule 38): ReadingTargets and reading_lesson
+   of bin/AttentionLesson.py teach the request, minimal sentences
+   first. The test of reading in order gates the grammar tests
+   (certificate 38 (c)), as the assessment's first rung gates its
+   others (bin/AssessmentProbe.py, data/assessment/known_probe.json).
+9. A literal (rule 42) and silence (rule 48): a layer whose
+   rule_name is "silence", in GRAMMAR_LAYER_CLASSES and in no
+   grammar file, applied where Models._stm_reduce_to_single_S finds
+   that the sentence's trees did not reduce to one; _program_entries
+   and _commit_sentence then write its row.
+10. What goes (§21, "What goes"): Models._passback_scope_ps and
+    _passback_scope_where with its two writers
+    (SentenceLooks.perceive, ModelAttention.handoff); the key
+    attentionFloor (bin/AttentionContext.py, bin/AttentionObjective.py,
+    data/model.xml, data/model.xsd); the tests of spans on the host.
+11. Certificates 30 to 44 in a new test/test_item17_looks.py. A
+    test that reads a model supplies its reading and does not leave
+    it to the chooser's draw (1.8 specification, §66.9). The
+    prototype's three files go when the model's own tests state what
+    they stated; say which.
+
+Run: the new test file; test/test_loop_of_looks.py and every test
+file that names Attention, ModelAttention, SentenceLooks,
+AttentionLesson, AttentionContext, LookForecast or WhereRegistry,
+each in a fresh process; both stopping gates; the lesson's sixteen
+sentences before and after, with the host reads of a sentence.
+Return as §23.6.
+~~~
+
+### 22.7 Round 7: the readers, the measurements and the sweep
+
+~~~
+Round 7 of item 1.7. Rules 16 and 17 of §21. Certificates 8, 9, 10
+and 44. It is the round that may be pushed; the push is Alec's word.
+
+1. Take lists 1 and 2 of §19.4, and what is left of the tables of
+   §19.21 and of §21, again on your starting source. Likeness of
+   codes pairs nothing (rule 16): each reader of list 1 as its row
+   says; the candidates of MediumTermMemory.match_candidate,
+   FamiliarTier.witnessed_match and FamiliarTier.observe_field by
+   parthood both ways (ConceptualMatch.match), with the bar set by
+   a trial that is reported. The way back (rule 17): each reader of
+   list 2 as its row says. Certificate 8.
+2. Search the source for what the item's rules replaced and is
+   still there: a key that no reader reads, a function that no
+   caller calls, a second path. Remove it, and list it.
+3. On the finished source, once: both stopping gates; the lesson's
+   sixteen sentences with their readings, each order's occupancy,
+   the Pi's kept edges for each row and the Not entries at each
+   order, beside item 1.8's last return (1.8 specification, §66.3
+   and §66.14); the seconds of the sixteen sentences and the host
+   reads of a sentence (certificates 10 and 44).
+4. Then the item's one default sweep, on this finished source only:
+   env -u RUN_TRAINED -u RUN_SLOW make test (1.8 specification,
+   §72). Nothing under RUN_SLOW. If make plans to rebuild .venv
+   because requirements.txt is newer than .venv/.installed-bin,
+   check that nothing is missing (pip install --dry-run -r
+   requirements.txt) and touch the stamp. The verbal proof and the
+   assessment's tables are read from the sweep's report. A failure
+   is diagnosed to its producer, repaired if it is this item's, and
+   the sweep is run again; the return gives every run.
+5. Return as §23.7: the lists of step 1; what step 2 removed; the
+   measurements of step 3 beside item 1.8's; the sweep; and the
+   source snapshot (test/bounded_tests.source_snapshot).
+~~~
+
+## 23. Item 1.7: the returns of the rounds
+
+Each round's return is a section here, §23.1 to §23.7, written by its
+implementer, with Claude's review after it.
