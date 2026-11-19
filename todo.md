@@ -1528,6 +1528,12 @@ generation is expected at this stage and is recorded, not tuned away.
    concept "reading", called by nothing); a look's read takes no
    condition yet, and the stem makes the cut. Placed with rule 32 by
    Claude, and in no text of item 1.8.
+   As wires (§19.32; Alec, in discussion): "conceptual space asks
+   for the kind of thing it wants (top down activation wires) and
+   the perceptual space returns tokens of those types that occur
+   within the .where span", a mask on what is active, learned by
+   gradient; learning the place the same way is deferred. Open:
+   which wires take the gradient, and what a returned token is.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work

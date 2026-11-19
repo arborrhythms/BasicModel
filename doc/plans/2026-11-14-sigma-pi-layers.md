@@ -4538,7 +4538,9 @@ budget of rule 28; the speed certificate.
     several words one word.
 11. A look carries a place and, optionally, a primed whole (§19.31):
     who sets the condition, what a graded priming does, and which
-    row it names.
+    row it names. As wires (§19.32): a mask on what is active, asked
+    for from above; which wires take its gradient, and what a
+    returned token is.
 
 **For the documentation pass** that lands with item 1.7 (`doc/*.md` is
 not edited now: another pass over those files is uncommitted, in the
@@ -5517,3 +5519,84 @@ graded priming does, since the surface is a number and a run either is
 returned or is not; whether several wholes may be primed at once
 (letters and digits); whether the condition names row 8 or the taught
 row 0; and what a look returns for the bytes between the runs.
+
+### 19.32 The condition as wires: a mask on what is active, asked for from above (Alec, 2026-11-18; a direction, in discussion)
+
+Alec, 2026-11-18, on §19.31:
+
+> Right now we are returning codes, but the efficient architecture is
+> wires. We almost have this in the subspace class; the percept codebook
+> in .what and the .active tell us what is in the .where that we have
+> selected. Which means that we could learn a mask on .active by
+> gradient. We might also be able to learn .where in the same way, but
+> let's defer that unless you see a way to do that easily. So conceptual
+> space asks for the kind of thing it wants (top down activation wires)
+> and the perceptual space returns tokens of those types that occur
+> within the .where span
+
+**In plain terms.** A sentence's percepts are found once: which
+percept each is (an index into the codebook), where it is, and how
+active it is. A look then copies nothing. It is a mask over those
+percepts: each is kept in proportion to being inside the look's place
+and to being of a kind that conceptual space asked for. On "red cat
+sleeps" with words asked for, the three word percepts keep their
+activity and the two spaces lose theirs.
+
+**What exists (read at `bfd2c606a3`).**
+
+- *The form.* `SubSpace` holds `.what` (a codebook), `_index` (for each
+  position, the row it selects: "the activation/selection IS the
+  storage"), `.where`, `.when` and `.activation` (a strength for each
+  position: "materialize() = event * activation").
+- *The sentence's percepts, once.* `native_indices` and
+  `native_part_spans` are two arrays with one index, a percept and its
+  place (1.8 §74; item 1.5's percept pass). A `PerceptField` has an
+  axis of events with their spans, and for a whole property such as the
+  word row its events are the runs on which it holds.
+- *A look today returns codes.* `BasicPercepts.read` builds a new field
+  for each look: a containment test of each event in the bracket, a
+  minimum over each concept's features, loops over rows on the host.
+
+**What the mask would be** (Claude's reading).
+
+- For event `e`: its activity, times a place factor (its span lies in
+  the look's `.where`), times a type factor (the request's value at the
+  event's row, a gather). With no request the type factor is one.
+- His example has two lanes: letters wanted, and spaces, numbers and
+  punctuation not wanted. A request is then a pair of lanes over the
+  rows, as evidence is.
+- The request is activity and not position, so it does not cross the
+  line of the spaces (2026-11-15: no space moves or scores another's
+  positions; activations may pass).
+- The designed way down is rule 30: the first layer's own matrices read
+  from the concepts to the percepts they expect. The request is that
+  reading, with the frozen concept "reading" (§19.31) as its source for
+  words.
+
+**Points that need his word.**
+
+1. *Which wires take the gradient.* Today `expect` has one teacher,
+   omission, and what reads its field is detached
+   (`test_82_omission_is_the_only_teacher_and_consumers_detach`). A mask
+   taught by the cost of what the look reads is a second teacher on the
+   way down, unless it lands elsewhere (desire, or `attend`'s own map).
+2. *What a returned token is.* Each returned percept as its own reading
+   (the words of a look in parallel, as the first look has them), or
+   one reading pooled over the place (as a later look has today, which
+   is why a look at several words reads nothing, 1.8 §68.81).
+3. *Graded.* The mask is a number for each event, so a half-asked kind
+   returns half its activity; whether that is wanted, or what turns it
+   into returned and not returned (the open point of §19.31).
+
+**The place by gradient (deferred by him).** One form is easy to
+state: the place factor is the same operation on the event's `.where`
+code that the type factor is on its `.what` row, a match with a place
+asked for from above, which has a gradient in what is asked. *Not
+checked:* whether the `.where` code is smooth enough for that to teach
+anything (a containment test has no gradient in its bounds). Today the
+place is a discrete choice of `attend`, taught by its lesson and its
+departures.
+
+*Placed here by Claude:* rule 32 and rule 30 of this item give the
+request and the look; the wiring is part 1 of item 1.5. It is in no
+text of item 1.8.
