@@ -6376,3 +6376,86 @@ changes no more after item 1.6, and the slow tier is run once at item
      thing's parts (§19.40);
   5. what moves the look on, and in what order (§19.39);
   6. who changes the request inside a sentence (§19.35).
+
+### 19.45 `attend`, tentatively: ask by concepts, pull back, read what the way up returns (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> The attend() method is what is changing: we ask for percepts by
+> selecting some set of concepts, doing the pull (back?), and examining
+> the set of returned word concepts for something that we might want
+> to interpret(). But that set of "returned concepts" is just conceptual
+> activations from the forward pass after the pullback.
+>
+> Will that work tentatively? If so, let's write that to the 1.7 space
+
+**Yes, tentatively** (Claude). "Pullback" is the word: it is what the
+backward product of §19.43 is called.
+
+**The steps of one `attend`.**
+
+1. *Ask.* A set of concepts is selected: a mask over concept rows, on
+   two lanes.
+2. *Pull back.* The mask is carried down through the matrices of the
+   way up (§19.43). Each percept of the sentence's bank gets a share:
+   how much it lights what was asked.
+3. *Go up again.* The way up is run on the bank with that share as its
+   activity (§19.34). What it gives is the returned set: the concepts
+   that what was selected supports, each at the token where it is.
+4. *Examine.* The word concepts in the returned set are the candidates
+   for `interpret`.
+
+**On "red cat sleeps".** Asked for words: the pullback keeps the three
+runs of letters and drops the spaces; the way up returns `red`, `cat`
+and `sleeps`, each at its token. Asked for the concept of `cat`: the
+pullback keeps the letters of the second token alone, and the way up
+returns `cat`. Asked for `dog`: the pullback is zero, because a row
+that is a product has no share where a part is missing, and nothing is
+returned. So what comes back is what was asked for and is present, not
+merely what was asked for.
+
+**Why it holds together.**
+
+- It adds no structure. Steps 2 and 3 are the matrices of the way up,
+  read down and then up, over a bank that is read once.
+- It tests presence. A request cannot confirm itself (the `dog` case).
+- A near miss comes back weakly. With graded rows, `caat` under a
+  request for `cat` returns `cat` at less than one, which is rule 32's
+  Pi finding the spellings.
+- The acts of today have a place in it: `focus` is a narrower request,
+  `unfocus` a wider one, and the and, or and not of the field are the
+  same operations on the request's two lanes.
+
+**What it needs, and my defaults** (each *mine*, each his to change).
+
+1. *Rows that are products* (§19.43, condition 1): this item's Pi.
+2. *The binding of the way up* (condition 2): the bank keeps the
+   stem's tokens, as the first look reads them today, until rule 32
+   says otherwise.
+3. *A request must be able to name a whole.* A word not yet known
+   lights no word concept, so a request by concepts never returns it.
+   Asked for by its whole ("letters and no spaces", WholeSpace's fixed
+   word row, §19.31), its token comes back with the whole lit and no
+   word, which is the "neither" that leads to a new name today.
+4. *Where the request comes from.* *Default:* from desire, the channel
+   the record gives to selection in comprehension (the expectation
+   specification, §4.7; `prime_desire`), and not from a choice among
+   all concept rows, which would be a menu as large as the vocabulary.
+   Expectation is not the request: it dims what it predicted (§19.37).
+5. *Moving on, and order.* *Default:* a token that was interpreted is
+   lowered in the bank's activity (the `done` mark of today), and among
+   the candidates the earliest in the sentence is taken first.
+6. *The tests.* `interpret` is offered at a returned token that is one
+   word with one lane, as now. Exact or graded is the question carried
+   from 1.8 §68.81.
+
+**What it replaces, when it is made into rules.** The bracket table
+and its acts on brackets (`Attention.narrow_step`), the look's read by
+a containment test (`SentenceLooks.perceive`, `read_percepts`), and the
+lesson written over those acts (`AttentionLesson.ReadingTargets`). The
+grammar's option at a look (`interpret_at_look`, `interpretBias`) and
+the forecast of a look stay.
+
+**Not checked.** None of this is run. Before rules are written it is
+simulated on the lesson's sentences with a first layer of products
+(my rule: simulate before specifying).

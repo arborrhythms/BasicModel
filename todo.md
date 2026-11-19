@@ -1560,6 +1560,13 @@ generation is expected at this stage and is recorded, not tuned away.
    selection's gradient; remove or only dim; the exact tests at full
    strength or graded; the two wheres; what moves the look on; who
    changes the request.
+   **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
+   percepts by selecting some set of concepts, doing the pull
+   (back?), and examining the set of returned word concepts for
+   something that we might want to interpret()", the returned set
+   being "just conceptual activations from the forward pass after
+   the pullback". Written with its steps, what it needs and my
+   defaults; to be simulated before it is made into rules.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
