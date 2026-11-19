@@ -20,13 +20,6 @@ endif
 VENV_PYTHON_FROM_BIN := ../$(VENV_PYTHON)
 VENV_STAMP := .venv/.installed-$(VENV_BIN_DIR)
 
-# --- PDF generation options (inlined from Make.mk) ----------------------------
-PD_TEMPLATE := /bits/projects/custom_template.tex
-PDFOPTS := --pdf-engine=xelatex \
-          -V geometry:margin=1in \
-          --template=$(PD_TEMPLATE) \
-          -V header-includes="\usepackage{amsmath} \usepackage{amssymb} \usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
-
 # Ordered list of doc chapters for PDF generation
 PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/Componentization.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Orders.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/GradientFlow.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md doc/FutureWork.md doc/DevelopmentHistory.md
 MODEL ?= data/BasicModel.xml
@@ -36,14 +29,6 @@ TRAIN_MEMORY_PERCENT ?= 60
 TEST_ARGS ?=
 PYTORCH_MPS_HIGH_WATERMARK_RATIO ?= 0.60
 PYTORCH_MPS_LOW_WATERMARK_RATIO ?= 0.50
-
-# The shared MAKE_PDF macro drops later options due to a broken line
-# continuation, so override it locally with the reader extensions these docs use.
-MAKE_PDF = pandoc $(PDFOPTS) \
-		--from=gfm+smart+bracketed_spans+attributes \
-		--metadata title="$(TITLE)" \
-		--toc --toc-depth=3 \
-		--resource-path=.:doc
 
 .PHONY : all install xor mnist ergodic run compare test testp test_all preflight preflight_full bench doc clean \
          train train_micro bench_local bench_sync bench_remote bench_pull
@@ -215,5 +200,6 @@ doc : BasicModel.pdf
 
 
 TITLE := Basic Model
-BasicModel.pdf : $(PDF_CHAPTERS)
-	$(MAKE_PDF) -o $@ $^
+# Markdown to Typst to PDF, in Python: no pandoc and no TeX installation.
+BasicModel.pdf : $(PDF_CHAPTERS) bin/make_pdf.py
+	$(PYTHON) bin/make_pdf.py --title "$(TITLE)" -o $@ $(PDF_CHAPTERS)

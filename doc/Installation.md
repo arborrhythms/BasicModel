@@ -4,7 +4,7 @@
 
 - **Python 3.12** with a virtual environment at `.venv/`
 - **PyTorch** with MPS (Apple Silicon) or CUDA
-- **pandoc** (optional, for PDF generation via `make doc`)
+- PDF generation (`make doc`) needs nothing beyond `requirements.txt`: the chapters are converted by `md2typst`, their math by `tylax`, and the PDF is written by `typst`. No pandoc and no TeX installation. The one Mermaid diagram is drawn by a Typst package that `typst` downloads on the first build.
 
 ## Conceptual Orientation
 
@@ -104,7 +104,7 @@ command. Stored papers and weights produced by this project remain tracked.
 | `make bench_sync` | rsync the working tree to the ArborStudio remote (excludes venvs, caches, large regenerable data) |
 | `make bench_remote` | `bench_sync` then run the reconstruction bench on ArborStudio's native path |
 | `make bench_pull` | rsync bench result JSON/profile files back from ArborStudio to `output/` |
-| `make doc` | Generate `BasicModel.pdf` via pandoc |
+| `make doc` | Generate `BasicModel.pdf` (`bin/make_pdf.py`: Markdown to Typst to PDF) |
 
 PDF chapters in order: `README.md`, `doc/Installation.md`, `doc/Architecture.md`,
 `doc/Componentization.md`, `doc/BasicModel.md`, `doc/Spaces.md`, `doc/STM.md`,

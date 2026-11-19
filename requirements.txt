@@ -13,3 +13,6 @@ pytest
 pytest-xdist
 executorch
 lxml
+md2typst
+typst
+tylax
