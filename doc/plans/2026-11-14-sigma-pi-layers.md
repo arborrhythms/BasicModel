@@ -6132,3 +6132,43 @@ where are numbers of a row, and a soft edge gives them a gradient.
 percept pass of item 1.5. The Codex text of this item (§19.8) was
 written before §19.31 to §19.40 and should not be carried until they
 are settled.
+
+### 19.41 Placed in item 1.6 (Alec, 2026-11-18)
+
+Alec, 2026-11-18, on §19.40: "This is the 1.6 work I think."
+
+*Read as* today's item 1.6: the number modality, the math corpus and
+the felt world (1.8 §71). Until that morning the number 1.6 meant the
+wiring work, which is now the first part of item 1.5; if he meant
+that, this note is wrong and is to be corrected.
+
+*Why it fits there* (Claude). Item 1.6's design
+(`doc/plans/2026-11-18-item1-6-felt-math-world.md`) is where places
+become coordinates on more than one axis (its §3.2), where one reader
+serves every modality (§3.3), where a look over a scene is a box
+(§3.7), and where a word of place has to be designed (§6). The things
+§19.39 and §19.40 found missing are those: a place that can be asked
+for as content, and a where the first Pi can bound.
+
+*What moves.* §19.31 to §19.40 are item 1.6's: the request for a kind
+of whole or for concepts, the mask on what is active, the percept
+tensor read once for a sentence, the gain field fed by attention, the
+locus as where the request matches, and the where as a coordinate of
+the first Pi. They stay written here, where they were discussed; item
+1.6's design is kept by another session and is not edited from this
+one.
+
+*What stays in this item* (Claude's reading; his placement of
+2026-11-18 in §19.28 is not withdrawn): rule 32's Pi that finds the
+spellings of a word, and hit and miss feeding its width. Rule 32's
+first unspecified point, what a look's `.where` is when it is not the
+stem's word intervals, goes with item 1.6.
+
+*On §19.8.* The caution at the end of §19.40 falls away: this item's
+text does not wait for §19.31 to §19.40. It waits, as before, only for
+what of rule 32 remains in this item.
+
+*The order.* Item 1.6 follows this item and comes before item 1.5. Its
+slow tier is run once at its submission, and the architecture is to
+change no more after it (1.8 §72), so this work has to be inside item
+1.6's submission.

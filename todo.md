@@ -1543,6 +1543,9 @@ generation is expected at this stage and is recorded, not tuned away.
    percepts exists (`cs_percept_attribution`, `_passback_scope_ps`),
    outside the loop of looks, with a floor of one half that never
    removes.
+   **Placed in item 1.6 by Alec (§19.41):** "This is the 1.6 work I
+   think." §19.31 to §19.40 move with it; rule 32's Pi over
+   spellings stays here.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
@@ -1628,6 +1631,20 @@ generation is expected at this stage and is recorded, not tuned away.
       (a numeral's word tied to its felt intensity, a word of place
       tied to the relation of two places, two words with one
       perceptual basis tied to one object).
+   **Looks over one percept tensor (Alec, 2026-11-18: "This is the
+   1.6 work I think.").** Discussed and recorded in the item 1.7
+   specification, [§19.31 to §19.41](doc/plans/2026-11-14-sigma-pi-layers.md),
+   and not yet in this item's design: a look carries a place and a
+   request for a kind (a whole such as "letters and no spaces", or
+   concepts read down to percepts); the first Pi matches one percept
+   tensor read at the start of a sentence, through what is active,
+   with no `materialize()`; attention dims what is outside its area
+   and enters the gain field with expectation; the locus is where
+   the request matches; and the where is a coordinate the Pi can
+   bound, in place of a test. Nothing in it is decided. Open: which
+   wires take the mask's gradient, remove or only dim, the exact
+   tests at full strength or graded, and the two wheres (place in
+   the sentence, arrangement of parts).
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
