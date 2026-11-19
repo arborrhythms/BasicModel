@@ -9549,28 +9549,33 @@ chooses from. The old classes are not edited.
     negative upper bounds"). *Mine:* the holders that count are the
     nearest, since a short form is held by hundreds of words; how
     near is measured in the build.
-52. *The wholes half is a code of rows of the table of wholes*
-    (Alec, §19.70: "we should be storing it as a codebook. Starting
-    from the set of all values, we discriminate at some boundary";
-    "the property is correct"). A whole is one row of a table,
-    defined by where it cuts the values: a set of bytes for a
-    character property, a number for a feeling. The percept's vector
-    never holds the bytes. *Mine:* each row has three coordinates of
-    its own, drawn as a part's are, and a whole inside another
-    carries the other's. For: the upper bound (Alec, §19.73: "A
-    percept cannot have no wholes ... the character class of all
-    characters as an upper bound (which is all ones)"). It is all
-    ones under the class of all characters, less the coordinates of
-    each narrower whole the percept lies in, so a code is at or
-    below each of its wholes' (rule 5). Against: the lower bound, as
+52. *The wholes half is on the basis of the part catalog* (Alec,
+    §19.70: "we should be storing it as a codebook. Starting from
+    the set of all values, we discriminate at some boundary";
+    §19.73: "A percept cannot have no wholes ... the character class
+    of all characters as an upper bound (which is all ones)";
+    §19.75: "Can we have that same part catalog OR'ed and set to
+    equal all ones as a code?"). A whole is one row of a table of
+    wholes, defined by what belongs to it: a set of characters for a
+    character class, a number for a feeling. Its code is the OR of
+    the codes of the catalog parts that belong to it, and the whole
+    catalog OR'ed is the top, all ones. So a class inside another is
+    at or below it with no rule for it, and a character class is the
+    OR of the characters taught to it. For, the upper bound: the AND
+    of the codes of the wholes the percept lies in; a code is at or
+    below each of its wholes' (rule 5). Against, the lower bound as
     evidence against (Alec, §19.72: "wholes as negative lower
-    bounds"), the coordinates of the narrower wholes it does not lie
-    in; *mine:* those directly inside the wholes that apply (over
-    every whole the lane fills 55.6 of 64). A property that is
-    itself a degree holds that degree (Alec, §19.71). *Mine
-    (§23.3b.1):* the class of all characters becomes a row of the
-    table that cuts nothing, with the declared classes directly
-    inside it; today the top is only implied.
+    bounds"): the narrower wholes it does not lie in; *mine:* those
+    directly inside the wholes that apply. A property that is itself
+    a degree holds that degree (Alec, §19.71). *Mine, measured
+    (§23.3b.2):* the catalog is drawn a second time for this half,
+    in coordinates of its own; each known form is its own tightest
+    whole, as a value is admitted "as both its tightest part and its
+    whole"; and every byte is admitted as a part of the catalog, so
+    that the top is all ones. With these 4 of 19,821 words share a
+    code (60 without), and the wholes half tells words apart as he
+    asked (§19.73). *Open:* a class of more than a few words fills
+    the 64 coordinates (rule 57).
 53. *The Pi selects for and against* (Alec, §19.71: "Pi should select
     both strong for and strong against"). A row of the first Pi has
     for entries, its parts and wholes as now, and against entries,
@@ -9610,8 +9615,8 @@ chooses from. The old classes are not edited.
     the scalar readers' threshold at one (`ScalarPercepts`).
 56. *Two forms left with one code get rule 43's next part* (*mine*,
     §23.3b): the shortest run that one holds and the other does not
-    (`ry`). At 64 and 64 with both lanes 35 of 19,821 words are left
-    so. No whole over bytes is made for this (one holds of 122 forms
+    (`ry`). At 64 and 64 with rule 52's wholes half 4 of 19,821
+    words are left so (35 with the parts half's two lanes alone). No whole over bytes is made for this (one holds of 122 forms
     on average). Alec, §19.73: "Wholes should be able to
     discriminate"; the whole that can is one driven by the concepts
     (rule 57), which says nothing at a word's first readings, so the
@@ -9843,7 +9848,7 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     characters alone has a wholes half of all ones on its for lane,
     and one with no holder has nothing on the against lane of its
     parts half; a code is at or below each of its wholes'. Printed for the 19,821 words: the
-    words that share a code (35 before rule 56, none after), and the
+    words that share a code (4 before rule 56, none after), and the
     codes inside another's by accident on the for lane.
 47. *For and against at the first Pi* (rule 53): the row of `archer`
     reads for 1 and against 0 on `archer`, and for 1 and against 1
@@ -10510,14 +10515,16 @@ integers).
    from the parts that the form's nearest holders add (§19.72;
    measure how near: the trial found 0 to 235 against entries a
    row, mean 2.95, and 4,869 rows above the first Pi's 16 entries a
-   row). Wholes half: each whole a row of the table of wholes with
-   three coordinates of its own, a whole inside another carrying
-   the other's; the class of all characters is a row that cuts
-   nothing, the declared classes directly inside it (it is not a
-   row today). Its for lane is the upper bound: all ones under the
-   class of all characters, less the coordinates of each narrower
-   whole that applies (§19.73). Its against lane holds the wholes
-   directly inside those that apply, which do not apply (§19.72). The bytes a property
+   row). Wholes half (rule 52; §23.3b.2, the combination "i, t" of
+   the trial): the part catalog is drawn a second time in this
+   half's own 64 coordinates, every byte admitted as a part of the
+   catalog; a whole is a row of the table of wholes and its code is
+   the OR of the codes of the parts that belong to it; the class of
+   all characters is a row (it is not one today) and is all ones;
+   each known form is its own tightest whole. Its for lane is the
+   upper bound, the AND of its wholes' codes. Its against lane
+   holds the wholes directly inside those that apply, which do not
+   apply (§19.72). The bytes a property
    holds on stay in PrimitiveProperties.members and decide which
    wholes a form has; PrimitiveProperties.codes and the codebook
    rows written from it at begin_forward give way to the rows'
@@ -12626,3 +12633,97 @@ The Not-entry statements are unchanged. The rates are in the docstring. No penal
 4. Attention nominates a form at its known-word read, only where the model reads words.
 5. The identity-only fixtures that need a property and its Not told apart take `with_property_half`.
 6. `test_29[MM_text]` is left failing, pending your answer on where a value's wholes are read.
+
+### 23.3b.2 The trial's third addition: the wholes half on the basis of the part catalog (2026-11-19)
+
+Asked after §19.75. Commit `c1de21d983`, the same two test files; local, not pushed. Run here: the whole trial file, 22 passed in 90 s. The implementer's text is below.
+
+**Review** (Claude). Four combinations were tried at 64 and 64: the wholes half in the same coordinates as the parts (s) or the catalog drawn a second time (i); a form's wholes the character classes only (c), or those and the form itself as its tightest whole (t).
+
+| | (s, c) | (s, t) | (i, c) | (i, t) |
+| --- | ---: | ---: | ---: | ---: |
+| Words sharing a code, of 19,821 | 60 | 60 | 60 | 4 |
+| `archer` and `archery` differ | no | no | no | yes |
+| The lesson's 8: told apart, ties | 6, 2 | 8, 0 | 6, 2 | 8, 0 |
+| A part's concept reads a form holding it | 1.0 | .77 | 1.0 | .76 |
+
+1. *Taken: the second draw, with each form its own tightest whole* (i, t). It is the only combination in which the wholes half tells words apart (4 left of 60), and it tells all 8 of the lesson apart with no ties. In the same coordinates the wholes half is only the complement of the parts half and adds nothing.
+2. *Every byte is admitted as a part of the catalog.* Otherwise the OR of the catalog is not all ones (with the 26 letters alone about 18 of 64 coordinates stay uncovered), and the classes that hold no admitted part code to zero.
+3. *The first Pi's against entries stay* (rule 53). Read on its complement, the wholes half tells against by degree only: a part's concept reads a form holding it at about .76 of its own reading. It also falls for forms that are not strict wholes (.70 where the letters lie inside without being a run, .62 for an accident). So it is a likeness that falls with what the other form adds, and not the evidence that a strict whole tells against (§19.73); that stays with the holders.
+4. *A class of words is not yet settled.* Taught by OR, a class of 5 words has 59 ones and holds 32% of the other words; of 10 words, 63 ones and 82%. The implementer's suggestions, not measured: bound a taught class above by the AND of its own wholes, or keep its members as a list and use the OR as its address. Round 5 takes it up with the wholes driven by the concepts (rule 57).
+
+#### The implementer's text for the third addition
+
+**The wholes half on the basis of the part catalog**
+
+**What was built** (`code_trial.catalog_codes`, `test_9_*`; 64+64; seed 3929796525). The dictionary uses the coder without made wholes.
+- *A whole's code* is the OR of the codes of the catalog parts that belong to it: every character of the part is among the whole's bytes.
+- *A form's upper bound* is the AND of its wholes' codes: the top, the character classes it lies in, and under (t) the form itself, the OR of its own parts.
+- *The wholes half* is read on its complement: the coordinates outside the bound are on the against lane, and any one of them tells against.
+- *Coordinates:* (s) the wholes half uses the parts half's coordinates; (i) the catalog is drawn a second time.
+- *A form's wholes:* (c) the character classes only; (t) those and the form itself.
+
+**Rule 5 holds by construction** (asserted): the bound is at or below each whole's code, and under (s) the parts are at or below the bound.
+
+**The top, exactly all ones at 64.** The OR of the catalog is all ones only if every coordinate is covered by some part.
+- *On the dictionary:* 245 parts cover all 64.
+- *Expected coordinates left uncovered:* 18.4 with the 26 letters alone, 5.3 with 52, 0.7 with the 95 printable characters, 0.0 with all 256 bytes.
+- *So:* admit every byte as a catalog part when the catalog is made, or define the top as all ones and not as the OR.
+
+**On the dictionary every word is lower-case letters,** so the catalog holds only letters, and letter's (and word's) code is the top, 64 ones. The other seven classes have no catalog part and code to 0. So (c) on the dictionary is degenerate: every word's wholes half is the same, all ones. A class with no part in the catalog codes to the bottom, which is a second reason to admit every byte.
+
+| | (s, c) | (s, t) | (i, c) | **(i, t)** |
+|---|---:|---:|---:|---:|
+| Words sharing a code (of 19,821) | 60 | 60 | 60 | **4** |
+| Distinct wholes halves | 1 | 19,761 | 1 | 19,718 |
+| Ones in the bound (least / mean / greatest) | 64 | 5 / 31.5 / 51 | 64 | 5 / 32.2 / 54 |
+| `archer` and `archery` differ | no | no | no | **yes** |
+| Lesson at `41a5bb4aed` (8 rows): told apart, ties | 6, 2 | **8, 0** | 6, 2 | **8, 0** |
+| Others' mean, before / after the squash | .882 / .706 | .832 / .680 | .867 / .698 | .808 / .667 |
+| Lesson at HEAD (5 rows) | 5 of 5 | 5 | 5 | 5 |
+
+**Parthoods of the sample:**
+
+| Pairs | Count | Part reads whole: (c) | (s, t) | (i, t) | Whole reads part: (c) | (s, t) | (i, t) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Held as a run | 852 | 1.0 (all at one) | .773 | .764 | .555 | .773 | .769 |
+| Parts inside, not a run | 1,459 | 1.0 | .707 | .695 | .474 | .707 | .702 |
+| Accidental | 5,937 | 1.0 | .646 | .618 | .431 | .646 | .609 |
+
+**Centroids** (cosine AUC, with the held AUC in brackets; random 300 is .50 to .52):
+
+| | (s, c) | (s, t) | (i, c) | (i, t) |
+|---|---:|---:|---:|---:|
+| Holds `q` (215) | .88 (.68) | .97 (.97) | .88 (.68) | **.98** (.94) |
+| Under the whole of made whole 55 (469) | .53 (.35) | .90 (.90) | .68 (.44) | **.94** (.92) |
+| Wholes share of the centroid, `q` | 0 | .51 | 0 | .51 |
+
+**A class of words coded by OR fills fast** (the second catalog drawing, means of 20 draws). This agrees with your scratch numbers:
+
+| Words in the class | Ones | Share of non-members lying inside |
+|---:|---:|---:|
+| 1 | 32.6 | .001 |
+| 2 | 48.3 | .028 |
+| 3 | 52.5 | .067 |
+| 5 | 59.4 | .32 |
+| 10 | 62.9 | .82 |
+
+**For (t), what a part's concept reads of a form that holds it.** The holder exceeds the part's bound, and that counts against it, but only by degree:
+- it reads .76 against .76 of its own;
+- this is not the first Pi's against entries from the holders. With the union, those read a holder at a net 0 on all 852 pairs held as a run;
+- it tells against just as much by forms that are not strict wholes: .70 for parts inside without being a run, .62 for accidental containments. Alec has ruled those out as evidence.
+
+So the complement read under (t) is a likeness that falls with what the other form adds beyond the bound. It does not replace the list of holders. Under (s, t) the wholes half is the complement of the parts half on the same coordinates, so it adds nothing to telling forms apart (60 shared, as with the parts alone), and the read becomes symmetric.
+
+**What I would build: (i, t).** The catalog is drawn a second time for the wholes half, and each known form is its own tightest whole. Reasons:
+- it is the only combination whose wholes half adds to the code: 4 words share a code against 60, and `archer`/`archery` differ;
+- it tells the lesson's 8 apart with no tie;
+- it puts both a class of words and a class by a whole well above chance (cosine AUC .98 and .94).
+
+Two conditions go with it:
+- admit every byte as a catalog part, so that the top is all ones and no class codes to zero;
+- keep the first Pi's against entries from the holders as the evidence that a strict whole tells against. The complement read also tells against forms Alec ruled out.
+
+**What a concept does when it teaches a whole.** Your reading is right. A member that joins a class ORs its code into the class's code. That is the union, `1 - prod(1 - m)`, read downward, the P7 union form: monotone, so the class's code only grows and its complement, the "not c or d", only shrinks. The table above is the limit. By 5 members a class holds 59 of 64 ones and a third of the non-members lie inside it, and by 10 members 82% do.
+
+*Mine:* a class taught by OR should also be bounded above by the AND of its own wholes (as a form's bound is). Or its members should be kept as a list, with the OR used only as the address. Otherwise a class of more than about 5 words stops excluding anything at 64.
