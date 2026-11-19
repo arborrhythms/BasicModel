@@ -11128,3 +11128,23 @@ None is a regression of a mechanism that I found. Each needs its assertion resta
   - `percept_code_evidence` is unchanged.
 
   What round 3 did change is *when* the copy is taken: a word's row is now promoted at its third reading, not before the first sentence (`admit_training_forms` declared it). By then the wholes' learned codes have been trained for some sentences, so the copy holds whatever fractional values they have reached. Whether any have reached them differs between runs. That explains 16 such values in one run and none in another. Nothing is built for it.
+
+### 23.3.3 Review of the repairs of §23.3.2 (Claude, 2026-11-19)
+
+Read against the source: `4ead362420` and `3a069d421e` (`bin/OrderZero.py`, `bin/SentenceStrata.py`, `bin/ClauseJournal.py`, `bin/ReferenceParticipants.py`, `bin/ReferenceClose.py`, `bin/PartClosing.py`, `bin/ConceptLessons.py`, `bin/Spaces.py`, the two test files). Run here: both gates (2 passed, 3.4 s); `test_item17_order_zero.py` six times (18 passed each); the fixture of the sixteen sentences in `test_item17_stacks.py` six times (passed each). With the six runs of the certificate file that is 12 builds of the fixture with no failure, against 2 failures in 10 before the repair.
+
+**Repairs 1 to 4 are accepted.**
+
+1. *The column* is `v / |v|²` for each member through one writer (`OrderZeroSigma.add_member`), as rule 8b now says. `cat` reads `cat` and `cats` at .7616 and `dog` at 0.
+2. *The trees* are released without the collector: the tree holds its views weakly, and the closures that held a clause through their own cells are cleared or replaced by a stack. *Wanted:* a test that reads with automatic collection off, since nothing now guards the repair; asked of the finishing round. Why it showed only after the round is not established; the cycles are older than the round.
+3. *One count:* `nominates` refuses a call that names no reading; the concept lesson forwards its texts and is counted under the form. Its forms become word concepts, and it teaches the names' columns of `U`. Provisional, as returned.
+4. *The widths* are read from the where registry and the when encoding.
+
+**Step 7 is still not finished** (109 cases). The first implementer stopped twice short of it, so it is given to three fresh implementers on Opus, on separate files, in the one checkout:
+
+- *A, the source:* the reader of "both". `ConceptualSpace.refine_over_collected` takes the least of a concept's two lanes, which is never above zero at order zero now, so the mereology's refine and raise does not fire there. *Mine, on Alec's §19.68:* a concept of order zero is both to the degree that its column reads evidence on each lane of the basic percepts' combined vector taken apart, the least of `tanh(x_for · u)` and `tanh(x_against · u)`, each floored at zero. This keeps what the old read stated (one member seen for and another seen against). A also has `test_refine_raise.py`, the concept lesson's two cases, the test of the trees, and the depth bar of the stacks (two pairs learned on 4 of 5 drawn starts in one run; the bar is to be a measured share).
+- *B, the field tests,* and *C, the word tests:* the ports of step 7, with "both" asserted at the basic percept's two lanes (§19.68). Neither edits `bin/`; a defect of the source is reported and left failing.
+
+Their returns are folded in as §23.3.4.
+
+**Noted, nothing built.** A basic percept's code is copied once, when its row is promoted (`BasicPercepts.promote`), and rows are now promoted at a third reading, not before the first sentence. The wholes' own codes are learned and go on moving after the copy. So the copy can hold values between 0 and 1 (the 16 of §19.68), and it is not renewed.
