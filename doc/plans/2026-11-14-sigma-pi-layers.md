@@ -10784,6 +10784,20 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    (_bind_attended_concepts, cs_percept_attribution,
    PerceptCollections.definitions, concept_of_basic_percept,
    concept_percepts, add_concept_feature) read and write the record.
+10. The room for concepts is square with the rows beneath (rule 21;
+   Alec, 2026-11-19: "We currently have concepts square on 1/2 the
+   percepts?"). Today the concept rows are shared between the orders
+   by a geometric taper (ConceptualSpace._order_caps: each order has
+   half the rows of the one below, so order zero has about half of
+   nVectors), while the basic percepts have their own capacity
+   (basicPerceptCapacity). In the lesson's configuration that is
+   about 2,050 concepts of order zero for 4,096 rows. Rule 21 has
+   one concept for each row at every order, "with no halving
+   between orders". Give order zero room for as many concepts as
+   there are rows of the first Pi, and each order above room for as
+   many concepts as it has symbols; say what becomes of
+   orderAllocation, of the geometric default and of nVectors in the
+   configurations, and what the order-zero Sigma's size then is.
 
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences before
