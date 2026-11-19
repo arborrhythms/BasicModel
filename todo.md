@@ -1726,6 +1726,13 @@ generation is expected at this stage and is recorded, not tuned away.
    this builds under `fullgraph`, and before item 0. It has two parts.
    *Claude's default:* the wiring first, as it stood before the lookups
    when it was an item of its own.
+   **The radix trie as a tensor (Alec's question, 2026-11-18;
+   [plan](doc/plans/2026-11-14-item1-5.md)).** Percepts are found today
+   by a Python trie on the host. Two forms that are wires: the trie
+   as a transition table run for every start place at once (results
+   equal; a trial agreed at 173 of 173 places), which is this item's;
+   and no trie in recognition, the Pi lighting a word from its atoms,
+   which is item 1.7's first layer.
    Alec, 2026-11-18: "1.5 is the compilation to make it fast". The
    attention and the percept bank of one sentence, placed here for
    part of that day, are item 1.7's (sigma-pi §19.44).
