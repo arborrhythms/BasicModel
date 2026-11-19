@@ -47,7 +47,11 @@ def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
     spans = torch.tensor([[[0, 1]]])
     source = (torch.tensor([[0]]), spans, primitive, torch.tensor([[97]]), spans)
     field = basic.read(source, spans, (row,))
-    torch.testing.assert_close(field.values[0, 0, 0], torch.tensor([.4, .6]))
+    # A basic percept is a row of the first Pi (rule 6): on each lane the
+    # product of its members' memberships on that lane. Its part is present
+    # wholly for and not against, its whole .4 for and .6 against.
+    part, whole_pair = torch.tensor([1., 0.]), torch.tensor([.4, .6])
+    torch.testing.assert_close(field.values[0, 0, 0], part * whole_pair)
     gradient, = torch.autograd.grad(field.values[0, 0, 0, 0], (primitive.members,))
     assert gradient[0, 97] == 1 and gradient.count_nonzero() == 1
     absent = (torch.tensor([[1]]), spans, primitive, torch.tensor([[97]]), spans)
@@ -56,7 +60,7 @@ def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
     result = audit(basic)
     assert result['premises'] == 'basic_percepts'
     assert not result['tower0']['violating_pairs'] and not result['tower1']['violating_pairs']
-    receipt('basic-read-gradient', dict(positive=.4, negative=.6, absent=0,
+    receipt('basic-read-gradient', dict(positive=.4, negative=0., absent=0,
         member_gradient=float(gradient[0, 97]), audit=result))
 
 
@@ -216,7 +220,6 @@ def test_one_admitted_form_uses_one_basic_percept_and_only_two_pole_columns(monk
 def test_native_typed_slots_and_composed_whole_keep_the_basic_member_pullback(tmp_path, monkeypatch):
     from test_compiled_word_chunk import _tiny_canonical_model
     from reading_fixtures import force_absolute_reading
-    from Corpus import admit_training_forms
     from FormCentroids import stage, BasicSpanWholes
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
@@ -227,7 +230,8 @@ def test_native_typed_slots_and_composed_whole_keep_the_basic_member_pullback(tm
     model._chart_compose_per_word = lambda: None
     force_absolute_reading(model)
     try:
-        admit_training_forms(model, ('a b',))
+        # The forms are words, nominated by MTM before this reading.
+        nominated_forms(model, ('a b',))
         model.forward(model.inputSpace.prepPackedInput([['a b']]))
         member = model.wholeSpace.subspace.what.primitive_properties.members
         slots = model.inputSpace._ar_whole_reference_vectors
