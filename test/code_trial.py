@@ -723,3 +723,97 @@ def complement_codes(coder, holders=None):
     kids = children(with_top(coder.wholes))
     pairs = [complement_code(coder, w, holders, kids=kids) for w in coder.words]
     return np.stack([f - a for f, a, _ in pairs]), pairs
+
+
+# ---------------------------------------------------------------------------
+# Whether the two-sided code replaces the Not at the basic level (§19.72).
+
+class BasicLevel:
+    """Certificate 23's basic level: base percepts with codes of 3 ones in
+    ``width`` and nominated conjunction rows (the greatest of their members'
+    codes and a small keyed draw, as ``BasicPercepts.code``).
+
+    ``two_lane``: a row's against entries are the rows that hold it as a
+    strict whole (the conjunctions it is a member of), joined by the union;
+    its code's against lane is what those wholes add to it. A reading's
+    combined vector takes each row's for code at its for value and its
+    against code at its for value on the against lane, and the reverse at
+    its against value."""
+
+    def __init__(self, supports, conjunctions, *, width=24, two_lane=False, increment=.1, own=False):
+        n = len(supports)
+        width = max(width, 1 + max(max(s) for s in supports) + (3 * len(conjunctions) if own else 0))
+        codes = torch.zeros(n + len(conjunctions), width, dtype=torch.float64)
+        for row, support in enumerate(supports):
+            codes[row, list(support)] = 1.
+        free = 1 + max(max(s) for s in supports)
+        for i, members in enumerate(conjunctions):
+            if own:
+                # ``own``: a conjunction has 3 coordinates of its own, as a
+                # part has; what it adds to a member is those alone.
+                codes[n + i] = codes[list(members)].amax(0)
+                codes[n + i, free + 3 * i: free + 3 * i + 3] = 1.
+                continue
+            draw = torch.rand(width, generator=torch.Generator().manual_seed(n + i), dtype=torch.float64)
+            codes[n + i] = (codes[list(members)].amax(0) + increment * draw).clamp(max=1.)
+        self.rows = [()] * n + [tuple(c) for c in conjunctions]
+        self.codes, self.two_lane = codes, two_lane
+        self.holders = {r: [h for h, members in enumerate(self.rows) if r in members] for r in range(len(self.rows))}
+        against = torch.zeros_like(codes)
+        if two_lane:
+            for r, hs in self.holders.items():
+                for h in hs:
+                    added = codes[h] - codes[r]
+                    if own:
+                        # Only the whole's own coordinates, not its other
+                        # members'.
+                        added = codes[h] - codes[list(self.rows[h])].amax(0)
+                    against[r] = torch.maximum(against[r], added.clamp(min=0))
+        self.against = against
+
+    def lanes(self, present):
+        """Each row's (for, against) on a reading of the base rows
+        ``present``; a conjunction is present when all its members are."""
+        on = [float(r in present) if not members else float(all(m in present for m in members))
+              for r, members in enumerate(self.rows)]
+        result = []
+        for r in range(len(self.rows)):
+            f = on[r]
+            a = f * float(any(on[h] for h in self.holders[r])) if self.two_lane else 0.
+            result.append((f, a))
+        return torch.tensor(result, dtype=torch.float64)
+
+    def combined(self, present):
+        b = self.lanes(present)
+        gaps_for = torch.log((1 - self.codes).clamp_min(1e-12))
+        gaps_against = torch.log((1 - self.against).clamp_min(1e-12))
+        x_for = 1 - torch.exp(b[:, :1].T @ gaps_for + b[:, 1:].T @ gaps_against)[0]
+        x_against = 1 - torch.exp(b[:, :1].T @ gaps_against + b[:, 1:].T @ gaps_for)[0]
+        return x_for - x_against
+
+    def column(self, members, signs=None):
+        """Rule 8b on the two lanes: each member's for less against code over
+        its squared length, summed (a Not member subtracted)."""
+        signs = [1.] * len(members) if signs is None else signs
+        u = torch.zeros(self.codes.shape[1], dtype=torch.float64)
+        for m, s in zip(members, signs):
+            v = self.codes[m] - self.against[m]
+            u += s * v / v.square().sum()
+        return u
+
+    def teach(self, cases, *, nonnegative, steps=2000, lr=.05):
+        x = torch.stack([self.combined(set(p)) for p in cases])
+        target = torch.tensor(list(cases.values()), dtype=torch.float64)
+        u = torch.zeros(self.codes.shape[1], dtype=torch.float64, requires_grad=True)
+        optimizer = torch.optim.Adam([u], lr=lr)
+        for _ in range(steps):
+            optimizer.zero_grad()
+            ((torch.tanh(x @ u) - target) ** 2).mean().backward()
+            optimizer.step()
+            if nonnegative:
+                with torch.no_grad():
+                    u.clamp_(min=0)
+        return u.detach()
+
+    def read(self, u, present):
+        return float(torch.tanh(self.combined(set(present)) @ u))

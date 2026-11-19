@@ -681,3 +681,61 @@ def test_7_the_lesson_read_on_the_complement(lesson):
     for f in forms:
         _f, a, witnessed = ct.complement_code(c, f)
         print(f, sorted(c.whole_of[f]), 'against', witnessed)
+
+
+# §19.72: whether the two-sided code replaces the Not at the basic level.
+
+WORDS3 = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
+A, B, X, AB, AX = range(5)
+TASKS = {
+    'negative patterning': dict(words=WORDS3, conj=((0, 1), (0, 2)),
+        cases={(A,): 1., (B,): 1., (A, B): 0.},
+        probe={'A': (A,), 'B': (B,), 'A and B': (A, B), 'neither': ()},
+        met=lambda r: r['A'] > .5 and r['B'] > .5 and r['A and B'] < .5),
+    'conditioned inhibition': dict(words=WORDS3, conj=((0, 1), (0, 2)),
+        cases={(A,): 1., (A, X): 0., (B,): 1.},
+        probe={'A': (A,), 'A and X': (A, X), 'B': (B,), 'X': (X,), 'neither': ()},
+        met=lambda r: r['A'] > .5 and r['A and X'] < .5 and r['B'] > .5),
+    'XOR of two perceived words': dict(words=((0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)),
+        conj=((0, 2), (0, 3), (1, 2), (1, 3)),
+        cases={(0, 2): 0., (0, 3): 1., (1, 2): 1., (1, 3): 0.},
+        probe={'t1 t2': (0, 2), 't1 f2': (0, 3), 'f1 t2': (1, 2), 'f1 f2': (1, 3)},
+        met=lambda r: r['t1 t2'] < .5 and r['t1 f2'] > .5 and r['f1 t2'] > .5 and r['f1 f2'] < .5),
+    'X inhibits A, no row AX': dict(words=WORDS3, conj=((0, 1),),
+        cases={(A,): 1., (A, X): 0., (B,): 1.},
+        probe={'A': (A,), 'A and X': (A, X), 'B': (B,), 'X': (X,), 'neither': ()},
+        met=lambda r: r['A'] > .5 and r['A and X'] < .5 and r['B'] > .5),
+}
+
+
+def test_8_whether_the_two_sided_code_replaces_the_not():
+    seed = ct.drawn(1)[0]
+    torch.manual_seed(seed)
+    print(dict(seed=seed))
+    for name, task in TASKS.items():
+        for way, two_lane, nonnegative, own in (('1 as built, Not free', False, False, False),
+                                               ('2 two-lane, untaught', True, None, False),
+                                               ('3 two-lane, taught, weights >= 0', True, True, False),
+                                               ('4 two-lane, taught, Not free', True, False, False),
+                                               ('2o own coordinates, untaught', True, None, True),
+                                               ('3o own coordinates, taught, weights >= 0', True, True, True),
+                                               ('4o own coordinates, taught, Not free', True, False, True)):
+            level = ct.BasicLevel(task['words'], task['conj'], two_lane=two_lane, own=own)
+            if nonnegative is None:
+                if name == 'XOR of two perceived words':
+                    concepts = {'t1 f2 or f1 t2': level.column([5, 6])}
+                else:
+                    concepts = {'A': level.column([A]), 'B': level.column([B]), 'A, B': level.column([A, B]),
+                                'AB (its row)': level.column([AB])}
+                for concept, u in concepts.items():
+                    readings = {k: round(level.read(u, p), 3) for k, p in task['probe'].items()}
+                    print(name, '|', way, '| concept', concept, readings, 'Not entries', int((u < -.01).sum()))
+                continue
+            u = level.teach(task['cases'], nonnegative=nonnegative)
+            readings = {k: round(level.read(u, p), 3) for k, p in task['probe'].items()}
+            nots = int((u < -.01).sum())
+            if nonnegative:
+                assert nots == 0
+            print(name, '|', way, '| met', task['met'](readings), 'Not entries', nots, readings)
+        level = ct.BasicLevel(task['words'], task['conj'], two_lane=True)
+        print('   against entries', {r: level.holders[r] for r in range(len(level.rows)) if level.holders[r]})
