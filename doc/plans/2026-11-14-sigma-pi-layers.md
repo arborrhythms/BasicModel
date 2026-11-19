@@ -5853,3 +5853,65 @@ spaces at 0.01.
 *What of §19.35 stands:* attention supplies the place and conceptual
 space the request; attention's tests are taken on what comes back at
 full strength (point 2, first way).
+
+### 19.37 The gain field joins attention and expectation, and `attend` does not feed it (found for Alec, 2026-11-18)
+
+Alec, 2026-11-18: "We had that dovetailing with expect in the gradient
+calculation, but [I'm] not sure we integrated it with attend()".
+
+**He is right on both counts** (read at `bfd2c606a3`).
+
+*The design* (2026-10-19, the expectation specification): attention
+and expectation are one gain field over a signal that is only ever
+attenuated, `c = m * a * o`, with `o` the observed evidence, `m` the
+attention mask and `a = (1 - g) + g s(r)` the factor of expectation:
+what was predicted is dimmed toward the floor `1 - g`, and what
+surprises is passed in full. The surprise is detached, so that a
+predictor cannot lower its cost by dimming (the dark-room guard).
+
+*It is built:* `Expectation.gain_field(observed, expected, strength,
+attention, ...)`. It returns the dimmed content, the gain, and the
+residual on two lanes, excess and omission.
+
+*`attend` does not feed it.* Its four callers:
+
+| Caller | What it passes as `attention` |
+| --- | --- |
+| `WordExpectation` (the word forecast) | which bank entries are valid |
+| `SymbolField` | which streams are active |
+| the symbol reader in `Expectation.py` | nothing (one) |
+| `Meaning` (the close) | nothing (one) |
+
+`recombine_percept` has the same argument and both its callers leave it
+at one. So `m` is a yes or no for "this row exists" and never the place
+`attend` chose. The place acts earlier and by a hard test: the look's
+bracket decides which events are read at all (`read_percepts`,
+`contained`), and the gain field sees what is left with `m` at one.
+
+*Three more facts.*
+
+- The forecast of a look, built today (1.8 §64, `LookForecast`), takes
+  its excess and omission by a function of its own (`difference`),
+  beside the gain field and not through it.
+- In the content the whole gain is cut from the graph
+  (`content = gain.detach() * observed`), the attention factor with
+  it. As built, nothing can be taught through the gain, neither the
+  forecast nor a mask.
+- The gains are 0 in `data/model.xml` (`perceptExpectationGain`,
+  `symbolExpectationGain`), so today `a` is one as well. *Not checked:*
+  other configurations.
+
+**What integrating it would be** (Claude's reading; it is §19.36 said
+in his earlier formula). At a look, one gain field over the sentence's
+percept tensor: `o` the events' activity, `m` the place `attend` chose
+(one inside, `attentionFloor` outside) times the request (§19.32), and
+`a` from the look's forecast. Its content is what the Pi matches
+through; its excess and omission are the surprise `attend` reads,
+which `LookForecast.difference` computes today.
+
+**The point that needs his word when this is specified.** A mask
+"learned by gradient" (§19.32) cannot be taught through the gain as it
+is cut today. The guard he decided was on the surprise. To teach the
+mask, the attention factor would stay in the graph while the factor of
+expectation stays cut. This is the open point of §19.32 (which wires
+take the gradient) in its exact form.
