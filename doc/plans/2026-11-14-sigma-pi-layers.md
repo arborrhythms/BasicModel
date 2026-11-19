@@ -6051,3 +6051,84 @@ today it chooses among brackets.
 (`AttentionLesson.ReadingTargets`) and its departures are written over
 acts on brackets. This replaces them, so it is rule 32's size and not
 a step inside item 1.8.
+
+### 19.40 The first Pi ranges over one percept tensor and selects the where as it selects the what (Alec, 2026-11-18; in discussion)
+
+Alec, 2026-11-18:
+
+> If we let the first basic level pi operate over the entire unit
+> hypercube of percepts it can select the what; it ought also be able
+> to select the where, since concepts have that information embedded.
+> So I'm hoping to remove the .where as an explicit lookup, and just
+> let that pi range over some large perceptual tensor read into memory
+> at the beginning of each sentence (or possibly two muxed what and
+> where tensors)
+
+**In plain terms.** Each percept of the sentence is one point: what it
+is and where it stands. A row of the first Pi is a region of that
+space (§18.14: a hypercone on the hypercube's parts and wholes). A
+region that is wide along where and narrow along what is "the letter
+c, anywhere". A region narrow along where is a place. A look is then a
+region and not a test: its extent along where is the place, its width
+is the zoom, and its soft edge is the dimming of §19.36.
+
+**What exists** (read at `bfd2c606a3`).
+
+- *The tensor.* The sentence's percepts are held once as indices and
+  spans (§19.34), and a subspace's event is already what, where and
+  when side by side: the content, then four rungs of where
+  (`nWhere`, default 4), then when.
+- *The where as a test.* `read_percepts` (`contained`),
+  `PartSpace.part_memberships` (overlap of a part's span with the
+  bracket, on the host), `narrowing_view` (`covered`) and
+  `LookForecast` (`contained`) each compare integer spans.
+- *A look's place in unit range.* `_passback_scope_where` is the look's
+  interval divided by the length of the input, so the place is already
+  an interval of 0 to 1 on one axis.
+
+**Agreed as a direction (Claude), and it is the easy way to teach the
+place** that he deferred in §19.32: a region's centre and width along
+where are numbers of a row, and a soft edge gives them a gradient.
+
+**Three conditions.**
+
+1. *There are two wheres.* Where a thing stands in the sentence, and
+   how its parts stand to one another. A concept holds the second (c
+   before a before t) and, by rule 31, not the first: a generalization
+   holds no place. Today the second is not a coordinate: a word's
+   parts are matched as an ordered, adjacent run
+   (`part_memberships`: "Groups preserve order, repetition and
+   adjacency"). If the tensor holds only the place in the sentence, a
+   row cannot tell `cat` from `act`; and with no arrangement at all,
+   "red cat sleeps" holds every letter of `trade`. (People do this
+   outside the locus: illusory conjunctions, Treisman and Schmidt
+   1982, from memory.) One form that keeps it to one tensor: the look
+   maps its place onto the unit interval, so that inside a look the
+   where coordinate is relative to the look, and one row (c at the
+   start, a in the middle, t at the end) matches the word wherever it
+   stands. That would make "the unit hypercube" literal.
+2. *The where is also an answer.* A word that is known is found by its
+   run, and the place of the match is where it is. So for what is
+   known, no place has to be asked for: the Pi over the whole sentence
+   finds the known words at once, each with its place. A place has to
+   be asked for only for what is not known, for the order of
+   interpretation, and for one word at a time (§19.39).
+3. *`.where` stays as a coordinate, and as what a reading carries.*
+   The order of the words in the tree, the forecast of a look ("span
+   left out"), and the places of what is held in STM all read it. What
+   goes is the where as a test made on the host.
+
+**Not known.**
+
+- Whether the four rungs of where are a coordinate a region can bound
+  smoothly, or a code in which an interval is not a region. Not
+  checked.
+- An extent is two numbers (a start and an end, or a centre and a
+  size). If size is a coordinate, asking for words or for letters is a
+  selection on it, and the zoom needs no act.
+- The cost: rows of the Pi against events of a sentence. Not measured.
+
+**What it touches.** Rule 32 and the first layer of this item, and the
+percept pass of item 1.5. The Codex text of this item (§19.8) was
+written before §19.31 to §19.40 and should not be carried until they
+are settled.
