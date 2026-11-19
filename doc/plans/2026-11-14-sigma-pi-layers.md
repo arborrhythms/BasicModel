@@ -8734,6 +8734,21 @@ On §23.3c's "a wholes half of 64 cannot keep a coordinate for each byte": "Is i
 
 **On "not aligned with the euclidean basis"** (*Claude's note*). The code is not aligned with the bytes. It is still tied to its coordinates in one way: the part order is read coordinate by coordinate (a code is at or below another when it is so in every coordinate). A code learned through weights of zero or above keeps that order (§19.70); a rotation of the 64 coordinates would not. So a subspace that is not aligned with the coordinates at all needs the order stated another way, for example as a cone that the learned map carries with it. That belongs with the wholes driven by the concepts, which round 5 tries in tests (rule 57).
 
+### 19.80 Alec: properties in terms of other properties (2026-11-19)
+
+"So just like parts build from parts, properties may express in terms of other properties."
+
+Yes. The two halves are built the same way in opposite directions:
+
+| | Parts | Properties (wholes) |
+| --- | --- | --- |
+| The given end | the characters, at the bottom | the class of all characters, at the top |
+| Built from its own kind | a form from its parts, a part from smaller parts | a property from wider properties |
+| By | the OR of their codes | the AND of their codes |
+| So it lies | at or above each part | at or below each property it is stated in |
+
+"Capital letter" is "letter" and "capital"; its code is the AND of theirs and lies inside both. Rule 52 says so now: a row of the table of wholes is given either by the catalog parts that belong to it, or by other rows of the table.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9626,7 +9641,10 @@ chooses from. The old classes are not edited.
     the codes of the catalog parts that belong to it, and the whole
     catalog OR'ed is the top, all ones. So a class inside another is
     at or below it with no rule for it, and a character class is the
-    OR of the characters taught to it. For, the upper bound: the AND
+    OR of the characters taught to it. A whole may also be given by
+    other wholes (Alec, §19.80: "just like parts build from parts,
+    properties may express in terms of other properties"): its code
+    is then the AND of theirs, and it lies inside each. For, the upper bound: the AND
     of the codes of the wholes the percept lies in; a code is at or
     below each of its wholes' (rule 5). Against, the lower bound as
     evidence against (Alec, §19.72: "wholes as negative lower
