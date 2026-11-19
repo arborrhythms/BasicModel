@@ -1733,6 +1733,11 @@ generation is expected at this stage and is recorded, not tuned away.
    equal; a trial agreed at 173 of 173 places), which is this item's;
    and no trie in recognition, the Pi lighting a word from its atoms,
    which is item 1.7's first layer.
+   **Decided (Alec, 2026-11-18: "Ok."):** the radix store and its
+   codes stay as they are; the overlap tree (a whole stored as the
+   overlap of its two parts one letter shorter) is exact but is not
+   built now; the lookup moves to a compiled table on the device in
+   this item, with equal results.
    Alec, 2026-11-18: "1.5 is the compilation to make it fast". The
    attention and the percept bank of one sentence, placed here for
    part of that day, are item 1.7's (sigma-pi §19.44).
