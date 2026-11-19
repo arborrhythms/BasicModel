@@ -7478,7 +7478,7 @@ WholeSpace's canonical properties), and the store is built so that no
 stored part crosses a space (`RadixLayer(word_bounded=True)`).
 
 **The complete part graph, measured** (Claude; the system's word list,
-197,015 forms of 2 to 12 letters, no end marks; scratch script
+197,014 forms of 2 to 12 letters, no end marks; scratch script
 `part_graph_check.py`). Two choices of which parts exist:
 
 | | E: only the parts that exist (the list's own forms, and single letters) | C: every run of letters of every form |
@@ -7526,11 +7526,44 @@ coordinates for each part (E):
 A form inside another reads as wholly inside in every case, at every
 width, by construction.
 
+**His part map, added the same day** (Alec, while this was being
+written): "we might be able to build the part map as "all pairs of a
+word, no mention of the ends, and add a three or four character part to
+disambiguate two words like "banana" and "bananana"." Measured by
+Claude on the same list with `bananana` added (197,015 forms; counted
+on sets of parts, nothing folded; scratch script
+`pairs_part_map_check.py`):
+
+| | Count |
+| --- | ---: |
+| Forms that have the same pairs as another form | 1,536, in 746 groups |
+| The same, with the length kept beside the pairs | 224, in 112 groups |
+| Pairs of such forms told apart by a run of 3 letters | 790 (94%) |
+| by a run of 4 letters | 46 (5%) |
+| by a run of 5 letters | 5 (1%) |
+| A form not inside another, all of whose pairs are in it | 16 of 517,334 (`dog` in `odontology`) |
+| The same, when its runs of 3 letters must be in it too | 0 of 517,334 |
+
+- *It works.* A run of three or four letters tells apart 99 in 100 of
+  the forms that pairs leave the same.
+- *His own example needs five.* `banana` and `bananana` have the same
+  pairs, the same runs of three and the same runs of four; the run
+  `nanan` is the first that only one of them has. The length also
+  tells them apart.
+- *One condition, so that "is inside" stays true.* A longer part that
+  is added becomes an existing part, and every form that holds that
+  run carries it. If only the two words that needed it carried it, a
+  form with that part would stop reading as inside a longer form that
+  holds it.
+- *Where it sits among the choices above.* It is E with the fewest
+  parts: all pairs, and a longer part only where two forms would be
+  the same. The known forms inside a form need not be coordinates.
+
 **For discussion, with what Claude would take.**
 
-1. *Which parts exist.* *Recommended:* E, the parts the store already
-   holds, since that is "over the existing parts" as he put it, and it
-   is a fifth of the nodes. C is the one to take if the parts of a
+1. *Which parts exist.* *Recommended:* his part map: all pairs, and a
+   longer part where two forms would be the same, each carried by
+   every form that holds it. It is E at its smallest. C is the one to take if the parts of a
    sentence are to be built from the letters up by lookups on the
    device, which is item 1.5's question (the radix trie as a tensor).
 2. *How the code is held.* *Recommended:* the short list of parts as

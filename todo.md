@@ -1677,9 +1677,13 @@ generation is expected at this stage and is recorded, not tuned away.
    parts; the code is to be explored over a whole's parts of every
    size ("the complete part graph, and the most efficient storage
    of that graph"). Measured: stored as its immediate edges the
-   graph over the existing parts is 522,429 edges for 197,015
+   graph over the existing parts is 522,429 edges for 197,014
    forms; with every run of letters a node, two edges a node and
-   a whole fixed by its two parts. The request is to say where in
+   a whole fixed by its two parts. His part map (all pairs, no
+   ends, a longer part where two words would be the same) works:
+   1,536 forms share their pairs with another, and a run of 3 or 4
+   letters tells 99 in 100 apart; `banana` and `bananana` need 5.
+   The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it
    ("your solution sounds better"; one-word reads by bisecting a
