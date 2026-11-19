@@ -8783,6 +8783,26 @@ Asked by him: "We currently have concepts square on 1/2 the percepts?" Yes, in r
 
 *Put to him:* whether a concept's own value stays one signed number (rule 3, his §19.24), with only its inputs' weights set free, or whether a concept too may give two channels. **His answer:** "The concept remains a signed fuzzy keen on certainty, but we can represent "both" with two concepts." *Decided.* A concept stays one signed value whose size is its certainty. Both is not a state of one concept: it is two concepts, one for presence and one for absence, each with its own value.
 
+### 19.84 Alec: the docs brought into accord; attention and LTM lookup are content based and need more work (2026-11-19)
+
+"Please update the doc to be in accord the the current piNotSigma and percepts/concepts architecture. Attention definitely needs more work, since it is content based, as is LTM lookup."
+
+**The docs.** `doc/*.md` is being rewritten now to §21's rules, by subject, with no note of what is built (a writer on Opus, reviewed by Claude). The documentation pass was to follow the item's last round; this brings its greater part forward, and what rounds 4 to 7 change is added when they land.
+
+**Why attention and LTM lookup need more work.** Both find things by content, and the content changed under them. A percept's code is now two halves on two lanes, a lower bound and an upper bound, each with evidence for and against (rules 50 to 52). The two readers of content were written for one unsigned vector:
+
+- *LTM lookup* compares by shared size on one lane: the overlap of a question's content with a row's, over the size of each (`ConceptualMatch.match`; 1.8 §70.11, where Alec approved one match for every client and called its measure provisional).
+- *Attention* carries the request down through the weights of the way up (rule 36) onto each percept's activity and its where. Since rule 59 the Sigma has weights on two channels, and rule 36 does not say what the against channel's weights do to a percept's salience.
+
+**What is not decided, with what Claude would take.**
+
+1. *One measure of content for both.* Take rule 54's read as the match: what a row holds of the content that tells for, less what it holds of the content that tells against, each side divided by the number of its own contributions (§19.82). It is not symmetric, as parthood is not: a question lies in a row, not a row in a question. LTM lookup uses it on stored rows, and attention's salience is the same read carried backward.
+2. *The against channel in salience.* A percept that tells against a requested concept lowers its salience and does not go below nothing: attention is drawn to what tells for, and what tells against is not looked at for that request.
+3. *The wholes half in a match.* It is read on its complement, as rule 54 reads it, so that what a question excludes counts and the top class adds nothing.
+4. *What a question is matched on in LTM.* Unchanged: the field of its understanding, order by order, never summed across orders or across rows (`EpisodicMemory.matches`).
+
+Until he answers, the lookup keeps its shared-size match on the for lane, and round 6 builds rule 36 with point 2 as its provisional form.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10208,6 +10228,12 @@ section:
     if the two vectors come to overlap). Built: the blank is made as
     rule 20 says; what removing is, beside concepts kept forever, is
     not built.
+14. *The measure of content for attention and for LTM lookup* on the
+    two-lane code (§19.84; Alec: "Attention definitely needs more
+    work, since it is content based, as is LTM lookup"). Built
+    meanwhile: the lookup keeps its shared-size match on the for
+    lane; round 6 lets a percept that tells against a requested
+    concept lower its salience, never below nothing.
 13. *What holds a succession,* the bell and then the food, across two
     sentences (§19.25). Built: a row that MTM nominates for the two
     when the succession recurs, read by rule 30's spread.
