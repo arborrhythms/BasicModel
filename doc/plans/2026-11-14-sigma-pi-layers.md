@@ -7858,8 +7858,9 @@ usual." The discussion is finished; the item's text can be written.
 0. The form of the gradient salience map (§19.60): the plain
    gradient misses words that are fully present; recommended, each
    Sigma passed before its squash.
-1. How `attend` knows the current position and moves the place
-   (§19.61, four points not designed).
+1. The where as a pathway of its own with location concepts
+   (§19.62, decided in kind; its surface and its rows are not
+   designed), and the points of §19.61 that it leaves.
 1. How the word is found from its parts on the device without a
    product against every form (§19.57: 5.9 ms against 197,014 forms,
    growing with the dictionary).
@@ -7885,13 +7886,13 @@ Begin item 1.7 of BasicModel (the Sigma and Pi layers, the looks, and
 the perceptual basis). Read first, in
 basicmodel/doc/plans/2026-11-14-sigma-pi-layers.md: section 19.59 (what
 is decided and what is open, with the sections that hold each),
-then 19.21 (rules 1 to 32) and 19.51 to 19.61. Read the item 1.7 entry
+then 19.21 (rules 1 to 32) and 19.51 to 19.62. Read the item 1.7 entry
 of basicmodel/todo.md. Your memory holds how we work.
 
 Do, in this order:
 1. Write the rules of item 1.7 once, as one clean statement of the
    perceptual basis and the looks (rules 1 to 42 as they now stand,
-   with what 19.52 to 19.61 changed folded in), as a new section of
+   with what 19.52 to 19.62 changed folded in), as a new section of
    that file. Mark what is mine, what is yours, and what is open.
 2. Put the open points of 19.59 to me, each with what you would take.
    Do not hold the text for them: build on what you recommend unless I
@@ -8009,6 +8010,59 @@ lies.
    still move), and whether the done mark stays.
 4. Places that are not the next word: a look back, or a wider look
    (`unfocus`).
+
+### 19.62 Alec: a parallel pathway for the where, and location concepts (2026-11-19)
+
+Alec, of §19.61:
+
+> The 1.7 prototype of ""a word" plus one place" seems unbiological,
+> lets do something more continuous if possible. I had mentioned a
+> parallel pathway on .where, so that the .where we are currently
+> stamping onto concepts gets muxed in from a parameter surface that
+> can hold the back-projection. So the saliency is selecting both
+> content and location by concepts that may have location information;
+> that means attend will general select the word level, but will
+> change its location concepts to search the next available based on
+> the STM state.
+
+**Decided** (Alec). A look is not "a word, and one place given as a
+number". The where runs on a pathway of its own beside the what. The
+`.where` that is stamped onto concepts today is instead muxed in from
+a surface that can also hold the back-projection. The salience map
+selects content and location together, by concepts, some of which
+carry location. `attend` keeps asking for the word level in general
+and changes the location concepts it asks for, so as to search for
+the next available word, from the state of STM.
+
+**Claude's reading, for him to correct.**
+
+- *The surface* is an array over the places of the sentence, held
+  beside the what. The way up reads the where from it; the way back
+  (the salience map of §19.60) writes onto it. So where attention is
+  directed is a field over places that changes by degree from one look
+  to the next, and not one place.
+- *Location concepts* are concepts whose rows have weight on the where
+  pathway, as rule 39's place row has, so that asking for them is
+  asking for a region.
+- *The schedule* is then nothing of its own: the request is what
+  `attend` gives from STM, and it moves because STM changed when a
+  word was taken. This answers point 1 of §19.61: the current position
+  is read from STM.
+- *What it replaces:* the trial of §20.8 (the end of the last word
+  plus a taught step) is a discrete stand-in and is not built.
+
+**In the source today.** A subspace holds what, where and when either
+as one muxed event or apart (`SubSpace.set_demuxed`, `mux`, `demux`),
+and the where is written by position from the constant sinusoid
+(`WhereEncoding.stamp`). So the two pathways exist as storage. What
+does not exist is a where that anything but the position writes, and a
+concept that asks for a region.
+
+**Not designed.** What the surface holds at each place (the sinusoid
+code, a weight on it, or both); whether it is a parameter that is
+learned or a state of the sentence that is written at each look; how
+the back-projection onto it is combined with the constant code; and
+what a location concept's row is and how it is taught.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
