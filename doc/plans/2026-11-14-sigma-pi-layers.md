@@ -5657,3 +5657,65 @@ content and is a search. Both are one mask.
 *On the open point 1 of §19.32:* this translation runs through the
 definitions' own weights, so a gradient through it teaches the
 definitions unless it is cut there.
+
+### 19.34 The Pi matches one percept tensor through what is active; no `materialize()` (Alec, 2026-11-18; in discussion)
+
+Alec, 2026-11-18:
+
+> Ok so we can do this, but it requires that there is a percept tensor,
+> and the basic-percept-forming-pi that matches against it uses .active
+> to selectively match that tensor. So we never want to call
+> materialize() on the subspace.
+>
+> Agree?
+>
+> Then we can let the selection tensor coming top down from pi match
+> wholes within the .where span to return a selected set.
+
+**Agreed (Claude), and the look's read is already most of the way.**
+Read at `bfd2c606a3`:
+
+- *No `materialize()` on this path.* `SentenceLooks.perceive`,
+  `FamiliarTier.open_sentence`, `BasicPercepts.read`,
+  `PerceptField.read_percepts` and `LookForecast` do not call it. They
+  take the sentence's arrays: the parts' percept indices and spans, the
+  raw bytes, the primitive properties, and the spans of the wholes.
+  (Elsewhere `bin` calls it at some 180 places, and the old pass-back
+  of §19.33 is one of them.)
+- *The percept tensor has an axis of events.* `read_percepts` joins the
+  part events and the whole events on one axis, each with its span.
+- *A mask over that axis exists, as a test.* `contained` is true for
+  the events inside each bracket. It is made from the bracket, it is
+  yes or no, and after it a new tensor of features by readings by
+  events is filled for every read. That filling is the "returning
+  codes".
+
+**So the change is:** the sentence's percept tensor is made once and
+stays; `contained` becomes the activity given to the Pi, a number for
+each event that is the place factor times the request (§19.32); and a
+look changes that activity and nothing else.
+
+**Three conditions** (Claude's, from his earlier rules).
+
+1. *What is not active is absent, not denied.* A masked event gives
+   neither lane. Otherwise looking away from a letter would be evidence
+   against it. This is his rule for `non` (2026-11-12: it withholds both
+   kinds of evidence).
+2. *The selected set is tokens, not bytes.* A mask over bytes that
+   drops the spaces of "red cat sleeps" leaves one extent of letters,
+   on every byte of which the letter whole holds. His wording has it
+   right: the request matches *wholes* inside the `.where`, and what
+   comes back is the set of events of that whole, `red`, `cat` and
+   `sleeps`, each with its own span and each read by the Pi inside
+   that span.
+3. *Where the whole events come from.* Today they are the stem's runs
+   of one type, cut by the taught memberships of the whole properties
+   and then pinned to the fixed letter test (`stage_analysis_spans`,
+   `pin_word_spans`). Under this form they are perception's candidates,
+   found once for the sentence, and the choice among them comes from
+   above. The pin is the part that is still fixed.
+
+*Still open from §19.32 and §19.33:* which wires take the mask's
+gradient, and whether a look may remove what was not asked for or only
+lower it. His "return a selected set" reads as removing; he has not
+said so.
