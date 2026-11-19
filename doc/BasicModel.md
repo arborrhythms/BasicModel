@@ -176,10 +176,13 @@ values, given as scalars or perhaps as images (Alec, 2026-11-18).
 does not give, as at the blind spot of each eye (chapter 15). In the model
 expectation adds nothing to what is perceived
 ([below](#perceptual-space)); filling in belongs to the way back from
-concepts to basic percepts, which is imagination. A test point is to verify
-it (Alec, 2026-11-17): where the percepts of an area are withheld, `PiLayer`
-should generalize over the neighbouring elements and fill the area in on
-reconstruction.
+concepts to basic percepts, which is imagination. The vertical spread reaches
+the first Pi: a part that is present raises the basic percepts that read it,
+and each basic percept gives a share to each of its parts, so a part that is
+missing receives from the rows its neighbours raised; where the percepts of
+an area are withheld, the way back reads the expected ones in their place and
+fills the area in on reconstruction (Alec, 2026-11-17;
+[Architecture](Architecture.md#sigma-and-pi-layers)).
 
 **Idea and field.** The book's glossary calls an idea a concept taken
 together with all of its parts and wholes. The model divides that in two
@@ -271,9 +274,13 @@ similar to cosine similarity, becoming a simple distance measure for poorly
 known percepts.
 
 Attraction and aversion warp perceptual space: attraction is a pole at the
-percept's location, aversion is a zero. Perfectly recognized percepts lie on
-the unit hypersphere within conceptual space. Two percepts can be joined into
-one concept without loss.
+percept's location, aversion is a zero. A percept's code lies on the positive
+unit hypercube, on two lanes, evidence for and evidence against: its parts
+half is built up from all zeros by its parts and its wholes half down from
+all ones by its wholes, so it lies between the two
+([Mereology](Mereology.md)). A concept is one signed value in the signed
+hyperball, whose size is its certainty. Two percepts can be joined into one
+concept without loss.
 
 ## Conceptual Space
 
@@ -302,9 +309,9 @@ A concept can be split into two percepts without loss.
 
 ### Order, extension, and intension (2026-07-02)
 
-Concepts occupy a **ramsified order**. An **order-0 concept** is the output of
-mixing a part and a whole at the corpus callosum — it is defined
-**extensionally**, by its perceptual support (the percepts that fall under it),
+Concepts occupy an **order**. An **order-0 concept** is a Sigma over the basic
+percepts, each of which is a row of the first Pi over its parts and wholes —
+it is defined **extensionally**, by its perceptual support (the percepts that fall under it),
 and it is **subsymbolic**: a conceptual-space citizen with no relational
 definition yet. It is grounded directly. A **higher-order concept** is defined
 in terms of other symbols (its sparse constituent edges), and its grounding is
@@ -348,9 +355,11 @@ dense-perceptual / sparse-symbolic split is in
 The seam between perceptual and relational definition is operational in the
 forward, which has one terminal cutover
 ([Architecture](Architecture.md#a-symbolic-weights-the-two-phase-forward)).
-At it each order-0 concept reads its membership from the attended percepts
-through its feature definition over basic percepts, and each higher order is
-then composed from the preceding order's symbols over the sparse edge-graph.
+At it each order-0 concept reads the combined code of the basic percepts
+present through the dense Sigma of order zero, and above it the one structure
+repeats: a Pi makes symbols over the concepts of every lower order, and a
+Sigma makes the concepts of the next order from those symbols
+([Architecture](Architecture.md#sigma-and-pi-layers)).
 An order-0 concept is thus
 defined by its perceptual features, and a concept of order $\ge 1$ by its
 edges to other symbols. Three relational primitives carry the graph (Alec,
@@ -370,12 +379,13 @@ relation-table entry contract in
 *Symbolic Spaces* are composed of percepts that reference concepts --- a
 subtype of perceptual spaces mapping onto conceptual spaces.
 
-As a reference a symbol has no internal extent: it is a zero-dimensional point
-within perceptual space. It is nevertheless situated (decided 2026-10-20). A
-symbol is the situated side of the index it shares with its concept, this
-activation at this place and time, so it carries `.where` and `.when`; its
-concept is the unsituated fold of its occurrences, which keeps their extent and
-never the clock. In humans, perceptual space projects onto a 3D cerebellar
+As a reference a symbol has no internal extent: it is a zero-dimensional point.
+Symbols are split from concepts and have no dimensions (Alec): a symbol is
+held in a tensor of its own, as two unsigned rows, one for each lane, of the
+Pi above the concepts it reads, and it has no vector, place, form or trust
+content read as a direction. It stores no `.where` or `.when`; its `.where`
+is written when STM reads it, this activation at this place and time. Each
+symbol that MTM nominates brings one concept, a Sigma over it. In humans, perceptual space projects onto a 3D cerebellar
 subspace before symbolic encoding.
 
 Symbols are independent, permanent, and integral (as references). The
@@ -478,9 +488,11 @@ where $r$ is a random vector and $t$ is temperature.
 Current invertible transfer functions use factorized linear maps rather than
 the earlier SVD-rotation sketch. `InvertibleLinearLayer` parameterizes the map
 with triangular factors and a diagonal scale so forward and reverse share the
-same learned transform without forming a dense inverse on every call. `SigmaLayer`
-and `PiLayer` wrap those maps for additive and multiplicative composition. See
-[Architecture.md](Architecture.md) for the implementation contract.
+same learned transform without forming a dense inverse on every call. Each lane
+of a square `PiLayer3` is such a map in the log domain, so the Pi inverts
+exactly; `SigmaLayer3` is $\tanh(x\,U)$ with signed weights and no bias, and
+returns its input by least squares where there are enough concepts. See
+[Architecture.md](Architecture.md#sigma-and-pi-layers) for the contract.
 
 [^1]: Perceptual space is known as "embedding space" in transformer literature.
 

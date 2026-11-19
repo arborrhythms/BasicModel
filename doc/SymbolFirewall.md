@@ -22,8 +22,9 @@ not conditioned by distances between objects in the physical world. And
 that bifurcation needs to be complete; we don't want leakage."
 
 - **Perceptual space** (PartSpace and WholeSpace, the [0, 1] percept cube
-  under the meronomy) holds **forms**. A word form's code is the fold of
-  its letters and letter-wholes; its metric is overlap of form. It
+  under the meronomy) holds **forms**. A word form's code is the set of
+  its parts beside the wholes it lies in, on two lanes; its metric is
+  overlap of form. It
   identifies *which word* (step 1 of the identity staircase: the same form
   is the same word symbol) and nothing about meaning. "cat" is near "cot"
   here and that is all it is for.
@@ -36,9 +37,11 @@ that bifurcation needs to be complete; we don't want leakage."
   concept the fold over the concepts it collects — the conceptual
   mereology (a cat's parts; the taxonomy's kinds), a second tree, not the
   perceptual one.
-- **The symbol index is the only link.** A symbol has a form in the one
-  space and a meaning in the other, tied at the shared index (word DEF
-  object). Nothing else crosses: no metric, no gradient, no fold reads
+- **The meta concept is the only link.** A word's form is in the one space
+  and its object's meaning in the other. Symbols are split from concepts
+  and have no dimensions (Alec), so no geometry rides on a symbol; a word
+  is tied to its object by its meta concept and the stored relation of the
+  two (word DEF object). Nothing else crosses: no metric, no gradient, no fold reads
   across the boundary. Any computation that compared a form code with a
   meaning code, or let letter overlap move a meaning, or let meaning move
   a form code, is leakage and a defect.
@@ -54,15 +57,15 @@ that bifurcation needs to be complete; we don't want leakage."
   a small reliable form–meaning systematicity (Monaghan et al. 2014).
   That is shared **activation**, not a shared **metric**: form activates
   its symbol, the symbol primes its meaning, the meaning's neighbours
-  prime their symbols and forms — the priming surface over the symbol
-  index does exactly this and would produce mixed errors with no geometry
+  prime their symbols and forms — the priming surface over the symbols
+  does exactly this and would produce mixed errors with no geometry
   crossing. The architecture is Levelt on representation and Dell on
   dynamics, which is where the field settled.
 - **Consequences.** `bind`'s content term, the priming spread
   (the expected field `expect` gives), placement by the field, and the
   two identity models (intersection, union) are all **in conceptual
   space**. A row above the basic percept carries no perceptual form of its
-  own; a reader that needs one takes its word's, through the symbol index. The perceptual fold enters identity
+  own; a reader that needs one takes its word's, through the meta concept. The perceptual fold enters identity
   only as form identification (the word symbol).
 
 ## Hierarchical context preserves the firewall (Alec, 2026-11-08)

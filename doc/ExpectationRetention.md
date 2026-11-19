@@ -37,13 +37,15 @@ order-zero field, both lanes, to the whole expected field over the same rows:
 a field to a field, many concepts to as many. It is built only on the
 conceptual space that owns the concepts. It is a stacked sigma-pi map
 (`SigmaPiStack`) with one moderate hidden layer (`expectHidden`, 64 by
-default). A stacked sigma-pi map is a row of pairs,
-each a `PiLayer` under a `SigmaLayer`: a pi unit is
-`tanh(atanh(x) W + b/2)`, the product of its inputs' odds raised to signed
-weights, and a sigma unit is a weighted sum of the pi units. `expect` has one
-pair (`expectLayers`). It keeps the two evidence lanes apart, clips what it
-gives to the field's range of 0 to 1, and starts by adding nothing, since its
-last sigma's weights start at zero.
+default). A stacked sigma-pi map is a row of fused pairs (`SigmaPiLayer`),
+each the structure of every order: a Pi of unsigned rows (`PiLayer3`), each
+row the product of its inputs' memberships on one lane raised to weights at
+zero or above, then a Sigma (`SigmaLayer3`), $\tanh(x\,U)$ with no bias,
+whose entries are for or Not and which gives one signed number in $[-1, 1]$
+for each output ([Architecture](Architecture.md#sigma-and-pi-layers)). The
+next pair reads that number as its two lanes. `expect` has one pair
+(`expectLayers`). It reads the two evidence lanes as two inputs, and starts by
+adding nothing, since its last Sigma's weights start at zero.
 At the open pass (`ConceptSpread.open_prediction`) `expect` reads the
 sentence's observed field and publishes what it gives (`_expected_knowing`),
 which attention, the chooser, retrieval and `ConceptSpread.rule_order` read
@@ -94,14 +96,14 @@ predicted into existence. The shipped defaults are two zero gains
 selection prime and the exploration fraction are separate from the gains, and
 a nonzero gain must first pass the zero-gain
 [parity configuration](../test/fixtures/item4-parity.json), which keeps
-prediction enabled, turns off the compose and bracket-chooser selection
-prime and restores uniform eligible alternatives ($\varphi = 1$). The
+prediction enabled, turns off the selection prime of compose and of `attend`
+and restores uniform eligible alternatives ($\varphi = 1$). The
 expectation prime is not capped, in binding menus or elsewhere
 (`OperationSelectionLayer.prime_bias` is the uncapped, detached prior): the
 form cue and the expectation are legitimate non-uniform priors over
 referents.
 
-The bracket chooser's percept salience is the signed residual against the
+The percept residual that `attend` reads is the signed residual against the
 last arrival's expectation (`attention_residual`, scaled by
 `perceptExpectationGain`); the perceptual moments are maintained but unread,
 and codebook lookup reads the original coordinates. Prediction-error salience
@@ -152,7 +154,7 @@ never an external observation.
 `expect` and `intuit` are one map (Alec, 2026-11-17). When thought calls
 `intuit` (`IntuitionField.read`), it takes the order-zero block of the field
 `expect` published at the open pass, detached, joins it by maximum into its
-stream's knowing at the live bracket, and propagates it upward by the closure
+stream's knowing at the observed places, and propagates it upward by the closure
 of the definitions (`FieldProjection.close`); other orders and other streams
 are kept. `intuit` has no parameters, teacher or cost of its own.
 Propagation downward is not built.
@@ -182,28 +184,28 @@ on, is in
 
 Before a look is perceived, `expect` forecasts what should be at its place
 from everything seen elsewhere (Alec, 2026-11-16: "span left out").
-`LookForecast` keeps a path's located readings. For a look's bracket it pools,
-on each lane of each order-zero row, the greatest reading among those whose
-extent is disjoint from the bracket; a reading that overlaps the bracket, even
-an earlier reading of the same place, gives nothing. It evaluates `expect` on
+`LookForecast` keeps a path's located readings. For a look it pools, on each
+lane of each order-zero row, the greatest reading among those whose extent
+lies outside the look; a reading that overlaps the look, even an earlier
+reading of the same place, gives nothing. It evaluates `expect` on
 that field without publishing it (`ConceptSpread.expected`) and closes the
 forecast upward with `FieldProjection.close`. Every order-zero address is
-forecast, a silent one too. Once the look is perceived, its field within the
-bracket is compared with the forecast row by row and lane by lane: what was
-read beyond the forecast is the **excess**, and what was forecast beyond what
-was read is the **omission**, each summed over the rows only after the split
-(`LookForecast.difference`). The forecast and both numbers are detached.
+forecast, a silent one too. There is one gain field: the look's activity is
+the `attention` of `Expectation.gain_field`, and the look's forecast is its
+`expected`. What the look returns beyond the forecast is the **excess**, and
+what was forecast beyond what it returns is the **omission**, row by row and
+lane by lane, each summed over the rows only after the split; these are the
+surprise `attend` reads. The forecast and both numbers are detached.
 
 At the opening glance each word gets its pair from a forecast with that word
 left out, all words in one batch. In "This is Felix." `Felix` is forecast from
 `This`, `is` and `.`: a word the context makes likely reads with little
 excess, a new name with much. A later look records its own pair in the
 sentence's record (`_sentence_look_fields`) and replaces a word's latest pair
-only when its bracket is that one word; a bracket of several words reads the
-sum of its words' latest pairs (`LookForecast.for_brackets`). The bracket
-chooser reads each bracket's pair through two columns of its context
-projection that start at zero (`AttentionContext.project`), so an untaught
-chooser scores as it would without them. The comparison is reported and is
+only when the look returns that one word; a look over several words reads the
+sum of its words' latest pairs. `attend` reads the pairs through two columns
+of its context projection that start at zero (`AttentionContext.project`), so
+an untaught `attend` asks as it would without them. The comparison is reported and is
 not a cost: `expect` is still taught only by omission, at the open pass.
 
 ## The observation and its surprise

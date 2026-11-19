@@ -42,7 +42,7 @@ learning rules** in their developmental order:
   ([the concept dictionary](#the-concept-dictionary)). This is *prediction as
   substrate*. You cannot ask "why did the empire fall?" until *empire* and
   *fall* are codebook rows, placed by exposure.
-- **Gradient on a task error** moves the attention readouts and the relation
+- **Gradient on a task error** moves attention's request and the relation
   store: the model learns *where to look* and *what relates to what* by being
   *tested*, with credit assigned.
 
@@ -95,9 +95,9 @@ lessons follow 4c and 4d. The stages below keep their corpora and gates.
 
 | # | stage | generated corpus | what the lesson names | gate | trains |
 |---|---|---|---|---|---|
-| 1 | **Identity** | one percept whole (a letter run) presented, re-presented, and re-presented after an intervening item | *same* — the second occurrence reconstructs from the first's concept and row | the same percept gets the same concept row (the identity audit: no duplicate rows); the item is recognised again after the intervening one | identity by construction (fixed codes for a form's boundary-marked letter pairs and its length); the row as the item's persistence. Object permanence *across sentences* is stage 5, not here |
-| 2 | **Identifying words** | one-word fields, known and novel words | the word — its reconstruction, and *which* word (the symbol) | readback 100 % for known words; a novel word is minted once and recognised on its second presentation | the word whole → concept read; the support mask of one candidate |
-| 3 | **Reading words in order** | fields of two, then more, words; the lesson gives the words in turn | the part whose turn it is — "the first word", then "the second": cross entropy on the shortest legal focus to that word and on the grammar decision to interpret it, with both choices supplied during the lesson; the order is the lesson's, from the data | every read supports one word in the lesson's order on permuted fields after training; lesson CE falls to near zero within 64 presentations; control = source order; list reconstruction is reported alongside, not used as this gate | the bracket chooser and grammar interpretation at the selected word |
+| 1 | **Identity** | one percept whole (a letter run) presented, re-presented, and re-presented after an intervening item | *same* — the second occurrence reconstructs from the first's concept and row | after `conceptMintCount` readings the percept has one basic percept and one concept (the identity audit: no duplicate rows); the item is recognised again after the intervening one | identity by construction (a form's code is the set of its parts, with no end marks and no length); MTM's nomination of the row on recurrence, never on a first reading; the row as the item's persistence. Object permanence *across sentences* is stage 5, not here |
+| 2 | **Identifying words** | one-word fields, known and novel words | the word — its reconstruction, and *which* word (the symbol) | readback 100 % for known words; a novel word is perceived at once, and `interpret` finds it once MTM has nominated its basic percept, after `conceptMintCount` readings | the read from a word's basic percept to its concept; the support mask of one candidate |
+| 3 | **Reading words in order** | fields of two, then more, words; the lesson gives the words in turn | the part whose turn it is — "the first word", then "the second": the request `attend` should give, which asks for the word level and moves the location it asks for, from the state of STM, to the next available word, and the grammar decision to interpret it; no place is given as a number and no step is taught; the order is the lesson's, from the data | a fresh model with `interpretBias` at 1 reads every word of each sentence once, none twice and none left; after training every read supports one word in the lesson's order on permuted fields; control = source order; this test gates the grammar tests; list reconstruction is reported alongside, not used as this gate | `attend`'s request, the concepts' weights on the where, and grammar interpretation at the returned word |
 | 4a | **Simple sentences: identities** | `x is three.` `a cat is an animal.` — two words joined by `is`, generated over variables/values and kinds | the sentence; the supplied answer to `what is x ?` | reconstruction 100 %; the question answered 100 % on held-out pairs | the one relation as a verb (`is`); the `what` question bound from supplied answers only |
 | 4b | **Simple sentences: NP** | `the red ball`, `a big cat` — determiner, adjective, noun | the phrase; its asked parts ("the middle word", "the noun"); the supplied answer to `what is red ?` | reconstruction of the compound 100 %; asked parts; the property question | composition within a role and its inverses (adjective ∧ noun, sub-typing); the determiner as the bind-or-mint cue; word → operator learned, never anchored |
 | 4c | **Simple sentences: NP + VP** | `the cat sleeps.` `a dog runs.` — subject and intransitive verb | the sentence; the supplied answer to `what sleeps ?` | reconstruction and the question 100 % | the verb as a pattern of change, categorically apart from nouns (a noun names an individual; a verb is one fixed change that maps the individual before to the individual after); the clause's idea, NP and VP fused to one point |
@@ -162,7 +162,7 @@ one another, because a reference needs sentences to refer to and a row to
 persist. Stage 7's "return after interruption" is stage 5's permanence raised
 to the document. In stages 1 to 3 the supervision names the part to
 reconstruct and never the attention: a one-word field; two words reconstructed
-in turn, so that the focus must isolate one word per read and move; then the
+in turn, so that each look must return one word and the request move; then the
 sentence under the time budget. Stage 4b's asked parts are the fourth such
 lesson. Stage 3 is the lesson that failed when reading order was left to
 sparse credit alone: the scorer learned content, not position. It gates on
@@ -217,7 +217,7 @@ and doubles as the compiler test at scale. Its coverage:
 | generics against particulars; quantifier scope | ideas and relations; the relation stratum |
 | attribution with conflicting sources and known truth | attribution, a relation over a relation; trust in the lanes |
 | surface variety under one meaning: "equals", "is", "sums to", the marker as word or affix | one operation over any surface carrier |
-| perceptual identity of word forms: letters and letter-wholes are percepts (PartSpace, WholeSpace), so nested admission, marker minting and the meet over letter-wholes are exercised; the referent's quantity has no percept, and under textual grounding it needs none — object-concepts are minted and learned through the definitions and kind statements the corpus supplies | word identity and minting |
+| perceptual identity of word forms: letters and letter-wholes are percepts (PartSpace, WholeSpace), so a form's code as the set of its parts, the part added where two forms would be the same, and the wholes it lies in are exercised; the referent's quantity has no percept, and under textual grounding it needs none — object-concepts are minted and learned through the definitions and kind statements the corpus supplies | word identity and minting |
 
 | not reached | why |
 |---|---|
@@ -411,6 +411,27 @@ The architecture groups words and their classes through `ConceptHierarchy`, each
 
 What the curriculum orders is the operations the model learns (Alec, 2026-11-07); the parts of speech follow from the operations, as the occupant classes of their formal arguments. An operation's arguments presuppose what earlier operations produce: an object before a predicate over objects, a clause before a question about it, a predicate before its modifiers. Once word concepts are stable, object concepts are learned through `interpret`; every word then occupies `interpret`'s one input, so all words share one class, and the clause and verb operations' arguments divide them into noun and verb classes. Questions come early, because testing comprehension teaches syntactic category: the answer to "who ran?" is a subject noun. Intransitive comes before transitive, and simple before complex as far as possible. Nouns and verbs are therefore learned first by the curriculum, not by a grammatical-class prerequisite in the learning algorithm. The architecture enforces no order: every operator a grammar file declares is open from the first sentence, and no operator is gated inside the model (Alec, 2026-11-13: "Operators are "a priori" concepts that we are using for the control of the architecture itself. Lets not do that; the gating of those operators might be able to be done *in the tests*, which would act like piagetian stages signalling that the test suite can move on to the next stage."). The order is the corpus presentation's, which models child development and the Piagetian stages: each lesson is such a stage, and a later lesson waits for the artifact of the one before it. A kept application records members whatever its operator's definiteness, and incidental learning from an example met before its lesson is never suppressed. The mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
 
+**Words, objects, then their meta concepts (Alec, 2026-11-18).** A word
+generalization and an object generalization are each learned from their own
+occurrences, each a row that MTM nominates on recurrence with its concept;
+the object may be of another modality than the word. An occurrence keeps its
+place and time, and a generalization holds neither. Then the meta concept of
+the two, one order above the higher of them, is learned from their consistent
+association, when the word's concept and the object's have been present
+together on enough occasions; after it a word that is found raises its
+object, and an object that is met raises its word. "There isnt a statistic
+that will magically produce identity across independent tokens": likeness of
+codes joins nothing, and two words ("Alec" and "he") are joined through what
+both are joined to, a perceptual basis or a concept, which may be of another
+modality. The example is Helen Keller's at the well-house, as Walker Percy
+cites it: she learns the identity between the word water, spelled into one
+hand, and the object only when she feels the water running over the other at
+the same time. Where `interpret` has made a word's meta concept before its
+object is learned, it holds a blank object in its place
+([Orders](Orders.md)). Teaching begins with minimal sentences and grows a step
+at a time, so that a parse that fails differs from a shorter one that
+succeeds by one step.
+
 The ten lessons of `data/lessons/parts-of-speech.json`:
 
 | lesson | operations learned | parts of speech that follow | the lesson ends when |
@@ -475,9 +496,9 @@ the exclusions.
 
 Training and evaluation finish each corpus stage across all streams before
 advancing; within a stage each stream reads contiguous whole documents, and
-packs stop at document boundaries. At a corpus stage boundary,
-`Corpus.admit_stage` admits that stage's training vocabulary before native
-input construction. A mid-presentation checkpoint saves the consumed stage and
+packs stop at document boundaries. No training vocabulary is declared ahead
+of reading: a form becomes a basic percept only when MTM nominates it on
+recurrence, as in any reading. A mid-presentation checkpoint saves the consumed stage and
 stream positions, including with prefetch, the source-manifest and
 stream-layout fingerprints, and the priming, identity, live STM and
 expectation continuation state; a changed source or stream layout rejects it.
@@ -491,15 +512,15 @@ alone does not establish it.
 28 GiB aggregate process-tree RSS guard, host swap/pressure samples and one-hour
 limit before launch. On macOS the same limit also guards charged physical
 footprint, including compressed memory and lifetime peaks between samples.
-`corpus_capacity.py --train-brick` loads the selected metadata, admits the
-training vocabulary through the first native stage with all 28 document windows
-nonempty, and enters that native cursor without training the skipped prefix.
+`corpus_capacity.py --train-brick` loads the selected metadata, reads
+through the first native stage with all 28 document windows nonempty, and
+enters that native cursor without training the skipped prefix.
 It touches reservations, allocates the configured dense optimizer state,
 and runs a populated B28/W256 forward/backward/step. `--search-grid` brackets and
 refines inventories, relations, witnesses, bridge and recurrence in that order;
 a timeout or non-memory error stops that search as inconclusive or failed. A
 constructor-only result never establishes a fit. The selected full-prefix run
-uses stage admission, ordinary checkpoint continuation and the same guard.
+uses stage boundaries, ordinary checkpoint continuation and the same guard.
 The B28/W256 capacity search and the selected corpus prefix belong to the
 `RUN_SLOW` run registered in `test/test_corpus_large_slow.py` (Alec,
 2026-10-29); partial capacity measurements do not select a production size.
@@ -600,7 +621,7 @@ kind-verb documents in `data/corpus-lessons.json`, four documents and four epoch
 per phase, with supplied answers through `MathChainTraining.present`. Read-only
 measurements inspect kept meanings, references, witnessed orders, candidates,
 answer scores and class both-corner fractions. Per-phase held-out recombinations
-run without an optimizer or vocabulary admission; their answers never enter the
+run without an optimizer; their answers never enter the
 training vocabulary union. A failed acquisition remains the result. Only an
 unforced passing relations phase can write `copular_identity`.
 
@@ -746,6 +767,21 @@ contributes no reconstruction term and increments
 spellings or reconstructed ideas. [Architecture](Architecture.md), "The three
 stages: input, thinking, output", gives the loop.
 
+**The reconstruction teaches location (Alec, 2026-11-19).** "Reading in order
+will create location concepts as long as we are teaching location." The bytes
+put back are built through a conjunction of the what pathway and the where
+pathway: on the way back a concept gives each percept it recreates a band of
+where wires, through the same weights by which it reads the where; the band is
+matched against the code of every place of the out buffer by a softmax over
+the places, and the match is the percept's weight at that place. What is put
+back at a place is the sum over the recreated percepts of what each is, times
+its weight there. The error against the sentence's bytes at their places then
+reaches both the weights that read the what and the weights that read the
+where, and no location concept is declared: concepts learn location through
+their weights on the where coordinates. Taught beside the reading lesson this
+read held-out word orders 6 of 6 in the prototype of the looks, and 4 of 6
+alone.
+
 The owned `InputReconstruction` retains the recovered ideas, the realized
 input event, the costs per sentence and truncation. Ownership is established
 during understanding, before later staging can overwrite the carriers.
@@ -790,7 +826,7 @@ reconstruction keeps its meaning
 ([GradientFlow](GradientFlow.md#parameter-owners-and-sides)).
 
 **Adaptive omission.** In training, part of each sentence is hidden before
-identity admission, and reconstruction must restore it (`bin/Omission.py`).
+it is read, and reconstruction must restore it (`bin/Omission.py`).
 Two rates are kept, one for whole words and one for percept slots within the
 kept words, and one word per sentence is always kept whole. Omission is out of
 band: a hidden slot keeps its place, bracket and time and has no content,
@@ -992,32 +1028,19 @@ greedy path.
 
 ### Training Loop
 
-The live aligned P/W-to-concept handoff uses plain Sigma:
-`a_c = tanh(b_c + sum_i W_ci * evidence_i)`. Inputs are up to eight identified
-part/whole-code references at a location, not fold RMS scalars; there is no
-source-count mean or gate. BasicModel opts into weak incoming-connection L1
-with `ConceptualSpace/conceptReadoutL1=0.01` (absent/zero disables it). Each
-concept's weights/bias are gathered from `IndexedSigmaConceptsFromPercepts`
-at sentence staging, then consumed by
-the eager or compiled word loop. Sparse gradients use the compact row-local
-optimizer and appear under reconstruction in the ownership audit.
-Within the single optimizer step, a diagonal-metric L1 prox soft-thresholds
-only admitted input connections. Its threshold is
-`lr * (lambda / distinct_observed_concepts) / (sqrt(v_hat) + eps)`;
-biases and unused slots are excluded. `concept_readout_l1` is a separate
-detached reporting cost, not another backpropagated penalty. Output-gradient
-state boundary stays unchanged; L1 itself is an intentional sparsity/accuracy
-tradeoff, not a promise of monotonic reconstruction improvement. Policies are
-batch-local, never applied in evaluation, and cleared at the next `zero_grad`
-after a skipped update.
-If the readout has no learning gradient (`grad=None`), it is left untouched:
-sparsity alone must not collapse a definition without accuracy feedback.
-Coupled reconstruction updates and missing-gradient no-update behavior are
-tested separately.
-There is no second optimization step. Full processed native fold state remains
-separate from this scalar readout and is released at batch/sentence teardown.
-Checkpoint coefficient tensors and the conceptual vocabulary's reference
-manifest must be restored together.
+The concepts of order zero are the dense Sigma of the first layer
+(`OrderZeroSigma`): $y = \tanh(x\,U)$ over the reading's combined vector,
+with no bias and one column for each basic percept
+([Architecture](Architecture.md#sigma-and-pi-layers)). A column is written
+when its concept is made, from what tells for its member less what tells
+against it, each side divided by its own squared length and the two taken at
+their mean, so that a member read alone reads one; the network then learns
+it; nothing is normalized afterwards. The Sigma of order zero is dense
+and takes no sparsity penalty. Membership above it is learned under a penalty
+on the entries of the Pi and of the Sigma alike, which thins the values of
+entries that exist and does not make a matrix sparse; the structure of a meta
+concept is never thinned. A promotion above order zero writes an entry at one
+into capacity allocated beforehand. There is no second optimization step.
 
 Data flows through `SentenceStreamDataset` wrapped in `DataLoader`. The
 ordered training list is split into `B = batchSize` contiguous slabs of
@@ -1117,9 +1140,7 @@ paths by $R + A$.
 
 `definition_sparsity` (soft-L0), `gate_l1` (the `modifier` eigenvalue edit's L1), and
 `truth.falsity/balance` have no targets and retain their configured penalty
-strengths without normalization. `concept_readout_l1` records the distinct
-observed concepts' incoming L1 with `l1Lambda`; its sole training owner is
-the proximal operation at each applicable sentence or batch optimizer step.
+strengths without normalization.
 A batch without a batch-end backward stages no additional update.
 These terms, and zero-target squared penalties, are reported separately from relative errors. `Error.total()` sums trained terms;
 `total(kind='relative')`, `total(kind='penalty')` and `breakdown()` expose

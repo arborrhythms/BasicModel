@@ -18,7 +18,7 @@ for each loss; the choice of owners neither requires nor removes it.
 |---|---|---|
 | Understanding parameters: codes, grammar operators and their inverses, conceptual definitions, the compose chooser | Reached by reconstruction R and by the answer side A; A loses only its component that opposes R in each unit | Written only by R-owned costs; the owner-restricted backward excludes supplied-answer gradients |
 | Expectation maps: `expect`'s stack, the read from a field to one point (`idea_stack`), the word predictor (`ActivationPredictor`) and the percept predictor | Their own local objectives; sources, targets and consumed forecasts are detached | Same |
-| Bracket and word choices | The reading lesson teaches the native logits. Sampled departures receive whole-path credit. | The context projection has the attention owner. The bracket and grammar scorers use the compose policy. |
+| Looks and word choices | The reading lesson teaches the request. A look's error reaches the request and the weights that read the where, and nothing else ([A look's gradient](#a-looks-gradient-and-the-where-pathway)). Sampled departures receive whole-path credit. | The context projection has the attention owner. The grammar's scorer of `interpret` uses the compose policy. |
 
 `separateChooser` defaults to `false` (`data/model.xml`): each sentence takes
 the gradients $g_R$ of R and $g_A$ of A over every optimizer parameter,
@@ -111,7 +111,7 @@ separate over the weights"). Either way each sentence makes one optimizer step.
 | reconstruction | perception codebooks, conceptual definitions, the compose and generate operators, the compose chooser, and every parameter no other owner claims | the input and order-zero reconstruction losses and compose lessons; the chooser rewards (owner `chooser`) use the same parameter set |
 | expectation | the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`), the shared `ActivationPredictor` (`_inter_predictor`) and word predictor, `expect`'s stack (the conceptual space's own `ActivationPredictor` where `expectationMap` is `predictor`), the read from a field to one point (`idea_stack`) and the percept predictor (`PerceptExpectation`: context and moments update at each arrival, and its parameters receive the accumulated arrival error once, in the sentence's update) | expectation terms whose targets and sources are detached, so a predictor never trains what it predicts; `expect` by omission (`expectation.concepts`); the read to a point by the kept sentence's idea (`expectation.idea`); also `expectation.bind_score_function` |
 | output | output space, answer attention and record reader, the conceptual space's `IntuitionLayer` and the generate policy; named output concepts also own their sparse coefficients | supplied-answer costs; the generate policy also takes the generate lessons (owner `generate_lesson`) |
-| attention | the projection of the understood prefix into the bracket keys | The reading lesson differentiates the bracket logits. With separate ownership its `reading_policy` term reaches the shared chooser and its bracket anchors. |
+| attention | `attend`'s map, from the understood prefix to the request over all concepts | The reading lesson teaches the request. With separate ownership its `reading_policy` term reaches the shared chooser. |
 
 **Sides.** Compose and thought rewards are
 `output.compose_score_function` and `output.thought_score_function`, owner
@@ -198,7 +198,7 @@ Hard derivations train only what they select: a path's costs reach the operators
 
 New question-conditioner widths join the optimizer before the same sentence's first backward. Live thought results and output conditioning retain the selected path's graph; only choice evidence and durable storage use their existing detach boundaries. Batch-end reporting uses the recorded output without another walk or loss. On data without supervised outputs, paths compare on R and only the kept reconstruction runs a thought.
 
-Omission's original contents are detached loss-side targets only, captured before identity admission. `reconstruction_order_zero` restores the original input; `reconstruction_reverse` scores visible positions. `reconstruction.free_percept` excludes omitted brackets from both its numerator and its normalization. Loss-only codes for unseen target bytes neither admit percepts nor consume the forward random stream. Expectation's word and percept reads exclude omitted observations that would otherwise leak content into state; `expect` alone reads them, as its detached teacher, the field with the hidden units present. Rates and accuracy averages are checkpointed statistics, with no gradient. Episodic concept entries are also detached: only their references and signed values are stored, while fields and semantic truth rows retain both poles. A recall rebuilds the poles from the signs, lays out references in their stored order and publishes their field directly, and direct `reverse` can read it without a reconstruction charge.
+Omission's original contents are detached loss-side targets only, captured before the sentence is read. `reconstruction_order_zero` restores the original input; `reconstruction_reverse` scores visible positions. `reconstruction.free_percept` excludes omitted brackets from both its numerator and its normalization. Loss-only codes for unseen target bytes neither admit percepts nor consume the forward random stream. Expectation's word and percept reads exclude omitted observations that would otherwise leak content into state; `expect` alone reads them, as its detached teacher, the field with the hidden units present. Rates and accuracy averages are checkpointed statistics, with no gradient. Episodic concept entries are also detached: only their references and signed values are stored, while fields and semantic truth rows retain both poles. A recall rebuilds the poles from the signs, lays out references in their stored order and publishes their field directly, and direct `reverse` can read it without a reconstruction charge.
 
 ## Default projected gradients
 
@@ -355,6 +355,44 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   nonlinearity the control cannot hold and is not the affine read.
 - **Certainty is the activation.** Forms are at full presence; the leaf's
   activation, the projection coefficient, carries how sure the reader is.
+
+## A look's gradient and the where pathway
+
+- **The salience map is a gradient read in the forward.** A look's request,
+  `attend`'s mask over all concepts on two lanes, is carried down through the
+  matrices of the way up as a gradient of the asked concepts by the
+  sentence's percepts, taken from the open run. Each Sigma is passed by its
+  weights, before its squash, and each Pi by the derivative of its product at
+  the values of the open run. It is computed by the transposes of the same
+  sparse matrices with the Pi's local derivatives kept from the open run, so
+  no second backward pass is made inside the forward. It lands on each
+  event's activity, the what, and on each event's band of where wires
+  ([Architecture](Architecture.md#one-attention)).
+- **What a look teaches (Alec, 2026-11-18).** The gradient of a look's
+  selection lands on the request, on which concepts are asked for and on what
+  produces that asking, and `attend` exposes to the error the network's
+  weights that read the where. The mereology's entries of the first Pi and
+  the weights that read the what take none of it, so that perception keeps
+  its one teacher, reconstruction.
+- **The where parameter is fixed (Alec, 2026-11-19).** The `.where` stamped
+  onto percepts flows from one parameter that holds the constant sinusoid, a
+  row for each address of the registry (`WhereRegistry`), written from
+  `WhereEncoding.encode`: "The parameter itself must stay fixed if the
+  sinusoid coding is to remain meaningful across all .where." It takes a
+  gradient, so the salience map lights it, and it is in no optimizer's
+  groups. What is trained is what reads it: the concepts' weights on the
+  where coordinates of the combined vector, which start at zero for a new
+  concept. The reconstruction's error reaches those weights, since what is
+  put back at a place is built through the what and the where together
+  ([Training](Training.md#within-sentence-reconstruction-objective)).
+- **Membership is learned under a penalty, above order zero.** The Pi's
+  entries and the Sigma's entries above order zero are both penalized, so
+  that what is learned can be read from the rows; the penalty thins the
+  values of entries that exist and does not make a matrix sparse. The
+  structure of a meta concept is never thinned. The Sigma of order zero,
+  dense over the perceptual width, is not penalized. The order-zero Pi holds
+  only the mereology's entries, a percept over its parts and wholes, and no
+  concept writes into it ([Architecture](Architecture.md#sigma-and-pi-layers)).
 
 ## One understanding record, two consumers
 
@@ -571,7 +609,6 @@ errors. They have no fabricated target or normalization denominator:
 |---|---|---|
 | `definition_sparsity` | Rank-ordered soft-L0; `definitionSparsityScale` | Batch; definition coefficients |
 | `gate_l1` | Absolute L1 of the `modifier` eigenvalue edit, where that edit is built; `gateL1Lambda` | Batch; that edit's projection |
-| `concept_readout_l1` | Active sparse readout L1; configured `l1Lambda`, averaged over distinct observed concepts | Trial/batch report only; one proximal application per applicable optimizer step, never another autograd penalty |
 | `truth.falsity`, `truth.balance` | Stored-truth incompatibility and forbidden-corner penalties; the caller's `truth_loss_weight` (default 0) and balance strength | Batch; live operands if present |
 
 A thought choice learns by the whole-path score function like every other
@@ -796,4 +833,4 @@ Superseded mechanisms and their measurements are recorded in
 
 ## The field's arithmetic and numeric input
 
-`FieldLogic.power` supplies the weighted least/greatest arithmetic of sparse definitions (`SparseLayer.fold_presence`, which is also the field's `intersection` and `union`) and of the stored rules that `infer` applies, retaining exact Boolean rails and live exponent derivatives. A numeric input has no learned transform: its felt value f(n) is a level percept at its place, and one order-zero concept per place collects the levels met there. The linear output owns concept/lane weights; retired seats clear weights, gradients and optimizer moments. Its input reconstruction reads the field captured by the understanding. Examination-only paths train reconstruction over their field and supervised numeric output where supplied, with a single attention departure per explored path. On a file with field operators only, `intuit` deposits `expect`'s field detached, so the output cost does not reach `expect`. A felt value beside the words is read through the same basic percepts, with no gradient-trained boundary; it is a modality of its own, with its own `.where` range, and the text residual ledger excludes its reading.
+`FieldLogic.power` supplies the weighted least/greatest arithmetic of the grammar's field operators `intersection` and `union` and of the stored rules that `infer` applies, retaining exact Boolean rails and live exponent derivatives; the layers themselves give the product logic on graded readings, and the two are left to differ. A numeric input has no learned transform: its felt value f(n) is a value percept at its place, coded by its place among the bins of the felt value, and one order-zero concept per place collects the values met there. The linear output owns concept/lane weights; retired seats clear weights, gradients and optimizer moments. Its input reconstruction reads the field captured by the understanding. Examination-only paths train reconstruction over their field and supervised numeric output where supplied, with a single attention departure per explored path. On a file with field operators only, `intuit` deposits `expect`'s field detached, so the output cost does not reach `expect`. A felt value beside the words is read through the same basic percepts, with no gradient-trained boundary; it is a modality of its own, with its own `.where` range, and the text residual ledger excludes its reading.

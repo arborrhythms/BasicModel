@@ -20,8 +20,9 @@ a store.
 ## Fields, codes and ideas
 
 Three forms are kept apart. A field $a \in \mathbb{R}^N$ is an activation per
-concept over the whole codebook at once: graded, parallel and symbolic, the
-activation level of every symbol, for and against. A code is the field's
+concept over the whole codebook at once: graded and parallel, the value of
+every concept, one signed number whose positive part is held on the lane for
+and whose negative part on the lane against. A code is the field's
 nearest-row projection $\pi(a) = \arg\max_i a_i$, one discrete index produced
 one at a time; $\pi$ is idempotent, and words arrive as codes. An idea is what
 composition makes of codes: one vector in no codebook, tied to the codebook not
@@ -41,13 +42,14 @@ from the `GO_*` data block in that script; edit the data, not the SVG.
 `Subsystem` enumerates the ten subsystems:
 
 1. *Perceptual knowing*: the activation of PartSpace and WholeSpace and the
-   word stream they present, read by bracket and located by `.where` and
+   word stream they present, read by looks and located by `.where` and
    `.when`.
 2. *Order-zero knowing*: a field over the whole order-zero codebook at once,
-   two lanes (for and against) per concept, read through the definitions.
-3. *Higher-order knowing*: a field over the higher-order symbols, each one
+   two lanes (for and against) per concept, read from the basic percepts
+   through the order-zero Sigma.
+3. *Higher-order knowing*: a field over the higher-order concepts, each one
    point at its own order and a possibly discontinuous region of order zero,
-   raised by definitions.
+   read through the symbols below it, which have no dimensions.
 4. *Serial thinking*: the codes that enter already projected and the one
    off-codebook idea that operators make of them, held in STM's chunks.
 5. *Priming*: the expected field that `expect` gives once per sentence,
@@ -166,12 +168,9 @@ signed `trust`, its entry (the strongest members of its field of
 understanding, `episodic_concepts` and `episodic_values`), its optional
 `referent` and its `activity`; LTM1 keeps relations of two tagged references.
 Memory is read by content, never by time. A recall reads the latest
-`ltmWindow` rows: each operand of the question's extended tree gives one
-result over the window, matched order by order and never reduced across
-orders (`EpisodicMemory.matches`, `relevance`), and the question's operators
-combine the results as their `compose_extend` combines sets
-(`ExtendedRecall.matches`). The rows are ranked by that result, newest first
-among equals (`EpisodicMemory.query`), and only the rows read are charged.
+`ltmWindow` rows by the question's idea, a point in conceptual space,
+matched against semantic memory by the one match of meaning coordinates
+(`ConceptualMatch.match`), and only the rows read are charged.
 Beside them, `EntryRead.cued_rows` reads the explicitly referenced and already
 retrieved occurrences and the LTM0 rows that LTM1 relations tie to the cue's
 concepts; an address permits a read and supplies no resemblance of its own.
