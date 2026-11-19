@@ -150,8 +150,9 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
     model._install_unit_span_fn()
     # Since the loop of looks which words each packed sentence reads is the
     # chooser's draw; both sentences' words are read, in source order.
-    from reading_fixtures import read_in_source_order
+    from reading_fixtures import read_in_source_order, force_absolute_reading
     read_in_source_order(model, monkeypatch)
+    force_absolute_reading(model)
     assert not model.symbolSpace.expectation.expectation_enabled
     store = model.symbolSpace.ltm_store
     written, sources = [], []
