@@ -285,25 +285,13 @@ class BasicPercepts(nn.Module):
             # of its own). The wholes keep their own lanes and must hold over
             # the extent, and over each event.
             run = torch.tensor([key[0] == 'ps' for key in order], device=members.device)
-            if bool(run.any()):
-                presence = members[..., :1].expand_as(members)
-                members = torch.where(run.reshape(-1, *([1] * (members.ndim - 1))), presence, members)
-                spans = native.spans.to(happened.device)
-                inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
-                          & (spans[:, None, :, 1] <= spans[:, :, None, 1])
-                          & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
-                lies = (happened[..., None, :, 0] * inside[None, :, None]).amax(-1)
-                at_events = lies[..., None].expand_as(happened)
-                happened = torch.where(run.reshape(-1, *([1] * (happened.ndim - 1))), at_events, happened)
-            value = self.pi(members, rows, order)
-            event = self.pi(happened, rows, order)
-            # A row with no whole reads its presence on the for lane alone.
-            unwhole = torch.tensor([row not in self.conjunctions and len(group) == 1
-                                    for row, group in zip(rows, groups)], device=value.device)
-            if bool(unwhole.any()):
-                value = value.clone(); event = event.clone()
-                value[unwhole, ..., 1] = 0.
-                event[unwhole, ..., 1] = 0.
+            spans = native.spans.to(happened.device)
+            inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
+                      & (spans[:, None, :, 1] <= spans[:, :, None, 1])
+                      & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
+            lies = (happened[..., None, :, 0] * inside[None, :, None]).amax(-1)
+            value = self._row_lanes(members, run, rows, order)
+            event = self._row_lanes(happened, run, rows, order, presence=lies)
             values, events = list(value), list(event)
             # Members come before the conjunctions over them.
             members = [('bp', r) for r in rows]
@@ -342,6 +330,26 @@ class BasicPercepts(nn.Module):
         return PerceptField(tuple(('bp', row) for row in rows), value, event, native.spans,
             native.where, native.when, bands, native.when_band,
             torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape))
+
+    def _row_lanes(self, members, run, rows, order, *, presence=None):
+        """Each row's two lanes from its members' memberships, ``[K, ..., 2]``.
+
+        The run of parts is the presence (its for lane, or ``presence``
+        where given), on both lanes. The for lane is the presence times the
+        product of the wholes' for lanes. The against lane is the presence
+        times the union of the wholes' against lanes, ``1 - prod (1 - a)``:
+        the percept is against where any of its wholes is witnessed not to
+        hold. A row with no whole reads ``[presence, 0]``.
+        """
+        shape = (-1, *([1] * (members.ndim - 1)))
+        run = run.reshape(shape)
+        held = members[..., 0] if presence is None else presence
+        for_lane = torch.where(run[..., 0], held, members[..., 0])
+        present = torch.where(run[..., 0], held, torch.ones_like(held))
+        kept = torch.where(run[..., 0], held, 1. - members[..., 1])
+        lane = lambda m: self.pi(torch.stack((m, m), -1), rows, order)[..., 0]
+        present = lane(present)
+        return torch.stack((lane(for_lane), present - lane(kept)), -1)
 
     def lookup_rows(self, rows, *, valid=None):
         rows = torch.as_tensor(rows, device=self.codes.device, dtype=torch.long)

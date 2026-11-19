@@ -89,16 +89,17 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         assert before > .1 and after < 1e-12
     force_order(cs, 10001, 0)
     assert cs._csw_concept_row(0, 10001) == 0
-    from ConceptLessons import admit_native_forms
-    admit_native_forms(model, ('0', '1', 'A'))
+    # The forms are read until MTM nominates their rows (rule 20).
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ('0', '1', 'A'))
     cs.add_concept_feature(0, 'ws', 9, 1.)
     for negative in (False, True):
         cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
     native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
     native[:, 0, 0] = torch.tensor([48, 49, 65])
     store = Spaces._concept_alloc_of(cs).layer()
-    optimizer = torch.optim.Adam([store.features.values], lr=.03)
-    store.features._optimizer = optimizer
+    # The name reads its column of the order-zero Sigma.
+    optimizer = torch.optim.Adam([cs.order_zero.weight], lr=.03)
     # Name single primitive occurrences. The two-position truth table must
     # subsequently arise from extent readout, never from these targets.
     named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
@@ -118,10 +119,14 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         optimizer.step()
         store.project_parts()
         model.End()
-    store.features._optimizer = None
     model.forward(x)
-    expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
-    torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+    # The name is one signed value: against on 00, for on 11. Seen both ways
+    # in 01 and 10, it is both at its basic percepts' rows, not at itself.
+    named = cs._cs_last_a0[0, :, 0]
+    assert float(named[0, 1]) > 0 and float(named[0, 0]) == 0
+    assert float(named[3, 0]) > 0 and float(named[3, 1]) == 0
+    both = cs.order_zero_both(cs._percept_field, [0])[0, :, 0]
+    torch.testing.assert_close(both, torch.tensor([0., 1., 1., 0.]))
     torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
     # Before conceptual folds, the native property events still discriminate
     # both byte positions. Concepts themselves retain only the bracket pool.
@@ -142,6 +147,7 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
             references=cs._field_activated_references.get(batch, ()))
     # The first close observes the complete native conjunctions. The
     # second presentation recognizes four familiar cases, still in MTM.
+    # The second presentation admits them.
     model.End()
     model.forward(x)
     cs.observe_open_field(model._combine_last_cs_sub._concept_activations)

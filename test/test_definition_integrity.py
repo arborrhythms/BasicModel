@@ -34,7 +34,11 @@ def test_word_concepts_exist_before_grounded_case_discovery(tmp_path):
     import inspect
     import test_grounded_xor as original
     source=inspect.getsource(original.learn_grounded_xor).split('    # The second presentation admits')[0]
-    source+='    cs._commit_autobind_from_stash()\n'
+    # A form becomes a word on its concept_mint_count-th reading (rule 20):
+    # the four forms are read, and committed, that many times.
+    source+='    for _ in range(cs.concept_mint_count):\n'
+    source+='        model.End(); model.forward(x)\n'
+    source+='        cs._commit_autobind_from_stash()\n'
     source+="    assert all(cs.word_concepts(word) for word in ('00', '01', '10', '11'))\n"
     namespace=dict(vars(original));exec(compile(source,__file__+':word-first','exec'),namespace)
     namespace['learn_grounded_xor'](tmp_path,4)

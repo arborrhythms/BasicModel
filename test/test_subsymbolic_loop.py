@@ -38,16 +38,17 @@ def test_selected_typed_scope_changes_the_attentive_extent(tmp_path):
     model.forward(inputs[2:3]);model.conceptualSpace._passback_scope_where=torch.tensor([[0.,1.]])
     ids,spans=model._subsymbolic_percepts[:2]
     # A property seen both true and false is read at its basic percepts
-    # (sigma-pi §19.68): the percept of its member (whole 9) and that of its
-    # Not member (whole 10), each on its two lanes.
+    # (sigma-pi §19.68, rule 6): the percept of its member (whole 9) and that
+    # of its Not member (whole 10), each on its two lanes. Over "10" each
+    # part is present and each property is witnessed both ways: both.
     def lanes(whole):
         field = cs._percept_field
         rows = [('bp', r) for r in cs.basic_percepts.carrying('ws', (whole,)) if ('bp', r) in field.keys]
         values = [field.values[field.keys.index(key), 0, 0] for key in rows]
         return torch.stack(values).amax(0) if values else torch.zeros(2)
     model._read_subsymbolic_field(ids,spans,1)
-    torch.testing.assert_close(lanes(9),torch.tensor([1.,0.]))
-    torch.testing.assert_close(lanes(10),torch.tensor([1.,0.]))
+    torch.testing.assert_close(lanes(9),torch.tensor([1.,1.]))
+    torch.testing.assert_close(lanes(10),torch.tensor([1.,1.]))
     model.conceptualSpace._passback_scope_where=torch.tensor([[1.,2.]])/inputs.shape[-1]
     model._read_subsymbolic_field(ids,spans,1)
     torch.testing.assert_close(lanes(9),torch.tensor([0.,0.]))
