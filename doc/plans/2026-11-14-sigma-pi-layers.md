@@ -7597,6 +7597,56 @@ read with no WFF later, nothing is changed in the source now; this
 goes with the item's text, unless he says to take the repair back
 sooner.
 
+### 19.55 Alec: matches over all locations by a matrix product, one matrix for every character length (2026-11-19)
+
+Alec: "the idea is that we do matmul to find matches over all
+locations, with a mat for every character length. That will give us
+the set of matches for all parts, what will uniquely determine what
+word is present."
+
+**In plain terms** (*Claude's reading*). A character is one of a few
+kinds (here 27: the letters and the space). A window of k characters
+of the sentence is k blocks, each with a one at its character. A part
+of k characters is a row of the same shape. Their product counts the
+characters that agree, and the part is at that place when the count is
+k. One product for a length gives every part of that length at every
+place of the sentence at once.
+
+**Run by Claude** (the system's word list, 197,014 forms of 2 to 12
+letters; 100 sentences of 20 words, about 200 characters; scratch
+script `matmul_match_check.py`). Two forms of it:
+
+| | V1: every existing form is a row of the matrix of its length | V2: his part map, then a product from parts to words |
+| --- | --- | --- |
+| Rows | 197,014 in 11 matrices, at most 32,295 in one | 617 pairs and 367 longer parts (320 of 3 letters, 43 of 4, 4 of 5) |
+| What it finds | every form at every place: 4,249 matches in 20 sentences, none different from a search of the text | the parts at every place |
+| The word at a place | matched by its own row, 400 of 400 | the parts matched inside the word give exactly that word, 400 of 400; no two forms share their parts |
+| Time for a sentence | 4.4 ms on Metal, 12.9 ms on the host | 19.8 ms on the host, as written (loops over words and a sparse product; not tuned, and not a fair number) |
+
+- *His claim holds on this list.* With every pair and a longer part
+  where two forms would be the same, the set of parts matched inside
+  a word determines the word: none of the 197,014 forms shares its
+  set with another.
+- *One gap.* A pair that is no known part leaves no trace. The run
+  `felixx` matched the parts of `felix` and nothing else, so it read
+  as `felix`. For the set to determine the word, the run must also be
+  matched at every place, or its length must agree. `xqzcatpl`, `zzz`
+  and `thisis` gave no word.
+- *"Inside a word"* was bounded here by the spaces, which is what the
+  space character of §19.54 is for.
+- *Cost beside the lookup of today.* The lookups measured for the item
+  1.5 plan took 0.2 to 0.4 ms for a sentence with the model on Metal.
+  V1 is some ten times that at this size and grows with the number of
+  forms. V2's first product is small whatever the size of the
+  dictionary; what grows is the product from parts to words, which is
+  the first Pi (a word is the row whose parts are exactly those
+  matched).
+
+**Where it stands.** It is a way to compute rule 33's bank on the
+device with products alone, and V2 is the part map of §19.54 put to
+work. Not decided: which of the two forms, and whether it is built in
+this item or with item 1.5's lookup.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

@@ -1683,6 +1683,12 @@ generation is expected at this stage and is recorded, not tuned away.
    ends, a longer part where two words would be the same) works:
    1,536 forms share their pairs with another, and a run of 3 or 4
    letters tells 99 in 100 apart; `banana` and `bananana` need 5.
+   **Matches by a matrix product, one matrix for each character
+   length (Alec; §19.55):** run on the word list, it finds every
+   form at every place exactly, and with his part map (617 pairs,
+   367 longer parts) the parts matched inside a word give exactly
+   that word, 400 of 400; a pair that is no known part leaves no
+   trace (`felixx` read as `felix`).
    The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it
