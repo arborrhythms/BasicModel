@@ -7858,9 +7858,9 @@ usual." The discussion is finished; the item's text can be written.
 0. The form of the gradient salience map (§19.60): the plain
    gradient misses words that are fully present; recommended, each
    Sigma passed before its squash.
-1. The where as a pathway of its own with location concepts
-   (§19.62, decided in kind; its surface and its rows are not
-   designed), and the points of §19.61 that it leaves.
+1. The where as a pathway of its own (§19.62, §19.63: fixed
+   wires, intersected with the what, no location concept made).
+   Left to read: a wire for each place, or the wires of the code.
 1. How the word is found from its parts on the device without a
    product against every form (§19.57: 5.9 ms against 197,014 forms,
    growing with the dictionary).
@@ -7886,13 +7886,13 @@ Begin item 1.7 of BasicModel (the Sigma and Pi layers, the looks, and
 the perceptual basis). Read first, in
 basicmodel/doc/plans/2026-11-14-sigma-pi-layers.md: section 19.59 (what
 is decided and what is open, with the sections that hold each),
-then 19.21 (rules 1 to 32) and 19.51 to 19.62. Read the item 1.7 entry
+then 19.21 (rules 1 to 32) and 19.51 to 19.63. Read the item 1.7 entry
 of basicmodel/todo.md. Your memory holds how we work.
 
 Do, in this order:
 1. Write the rules of item 1.7 once, as one clean statement of the
    perceptual basis and the looks (rules 1 to 42 as they now stand,
-   with what 19.52 to 19.62 changed folded in), as a new section of
+   with what 19.52 to 19.63 changed folded in), as a new section of
    that file. Mark what is mine, what is yours, and what is open.
 2. Put the open points of 19.59 to me, each with what you would take.
    Do not hold the text for them: build on what you recommend unless I
@@ -8063,6 +8063,67 @@ code, a weight on it, or both); whether it is a parameter that is
 learned or a state of the sentence that is written at each look; how
 the back-projection onto it is combined with the constant code; and
 what a location concept's row is and how it is taught.
+
+### 19.63 Alec: the where surface is fixed wires; the intersection; no location concept of its own (2026-11-19)
+
+Alec, on the four points §19.62 left not designed:
+
+> What the surface holds at each place: I think we just want to hold
+> wires that correspond to the .where, so the saliency on that will
+> tell us where to look. Is that biologically coincident?
+>
+> Whether it is a learned parameter or a state: It would be fixed, as
+> are the positions getting stamped into the percepts on .where.
+>
+> How the back-projection is combined with the constant code:
+> Hopefully this is clear; we are taking the intersection of what and
+> where.
+>
+> What a location concept's row is and how it is taught: we dont need a
+> specific location concept. concepts have the location to abstract
+> over, and a gradient incentivizing them to do so, so it will learn
+> location-concepts over the network, and attend() will expose that
+> network gradient to the error.
+
+**Decided** (Alec).
+
+1. *The surface holds wires for the `.where`,* nothing else. The
+   salience on those wires says where to look.
+2. *It is fixed,* as the positions stamped into the percepts are
+   (`WhereEncoding.stamp`). Nothing of it is learned and nothing is
+   written into it as a state.
+3. *The combination is the intersection of what and where*
+   (§19.48, answer 2): a percept is in the look to the degree that
+   both its what and its where are salient.
+4. *No location concept is made.* Concepts already have the location
+   among what they abstract over. The gradient gives them the reason
+   to use it, so concepts of location form in the network, and
+   `attend` exposes that gradient to the error.
+
+**What goes.** Rule 39's place row, as a row built for the purpose
+(§19.51, §20.5), and §19.62's "location concepts" as a kind of their
+own. The four points §19.62 listed as not designed are settled.
+
+**His question: is it biologically coincident?** In kind, yes, by two
+well-known accounts; Claude read both pages on 2026-11-19.
+
+- The what and the where run on two pathways that are distinct and
+  linked: object identity on one, location on the other
+  (https://en.wikipedia.org/wiki/Two-streams_hypothesis; the page also
+  records the criticism that their independence is overstated).
+- Features are held on maps tied to one master map of locations, and
+  attending to a location gathers the features found there
+  (https://en.wikipedia.org/wiki/Feature_integration_theory). Wires
+  for the where, with salience over them selecting what is bound, is
+  that arrangement.
+
+*Where the likeness stops* (Claude): in those accounts the map of
+locations is laid out in space, place by place. The wires here carry
+the sinusoid code of a place, a few coordinates shared by all places,
+so salience on one wire is not salience at one place. Whether the
+surface is a wire for each place or the wires of the code is the one
+thing his answer leaves to read; Claude reads it as the wires of the
+code, since those are what is stamped today.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
