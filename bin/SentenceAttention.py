@@ -24,7 +24,6 @@ class SentenceField:
         self.valid = torch.zeros_like(live)
         self.iterations = torch.zeros(B,device=active.device,dtype=torch.long)
         self.support_window = like.new_zeros(B, model.conceptualSpace.stm.capacity, W)
-        self._closing = torch.zeros(B,dtype=torch.bool,device=active.device)
         self.reads = []
         self.parts = self.wholes = None
 

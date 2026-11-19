@@ -120,6 +120,8 @@ def test_1_word_deposit_keeps_its_value_row_and_order(tmp_path, monkeypatch, eag
     import ChunkJournal
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     model._tensor_peer_while_eager = True
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     incoming, observed = [], []
     push = ShortTermMemory.functional_push_step_masked
     journal = ChunkJournal.push
@@ -175,6 +177,8 @@ def test_negated_sigma_reads_keep_unsigned_word_deposits_and_ideas(tmp_path, mon
     from Comprehension import Evaluation
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     model._tensor_peer_while_eager = True
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     pushed, ideas, trees = [], [], []
     push = ShortTermMemory.functional_push_step_masked
     finish = Evaluation.finish
@@ -231,6 +235,8 @@ def test_comprehension_stages_native_values_without_mutating_words_or_mtm(tmp_pa
     from test_compiled_word_chunk import _tiny_canonical_model
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     model._tensor_peer_while_eager = True
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     ideas = []
     from Comprehension import Evaluation
     begin, finish = Evaluation.__init__, Evaluation.finish

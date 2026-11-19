@@ -38,8 +38,8 @@ def test_retained_trial_reconstructs_every_admitted_leaf(committed):
     field.valid = torch.zeros_like(field.scope)
     for b, order in enumerate(orders):
         field.valid[b, order] = True
-    field.remaining = torch.zeros_like(field.valid)
-    field.support = field.valid.float()[..., None, None]
+    field.admission = field.valid.float()
+    field.support = field.admission[..., None, None]
     field.source_order = lambda b: orders[b]
     isp = SimpleNamespace(_word_active_mask=saved['word_active'],
         _packed_sentence_ids=saved['sentence_ids'], _sentence_pack_enabled=True,
@@ -218,6 +218,13 @@ def test_tensor_pipeline_records_both_one_word_packed_ends(tmp_path, monkeypatch
         scores[..., 0] = 0.
         return x.new_full((*x.shape[:2], 1), -1e6), scores
     chooser.score_binary, chooser.score_unary = binary, unary
+    # This test calls the tensor body directly. Supply each word through
+    # the real bracket decisions before exercising its two closing groups.
+    import ModelAttention
+    from reading_fixtures import read_in_source_order
+    from test_one_attention import read_offered_words
+    read_in_source_order(model, monkeypatch)
+    monkeypatch.setattr(ModelAttention, 'narrow_words', read_offered_words)
     def eager_while(condition, body, values):
         while bool(condition(*values)):
             values = body(*values)

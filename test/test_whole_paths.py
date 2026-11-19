@@ -616,3 +616,54 @@ def test_thought_preview_keeps_scored_reference_arrivals_unchanged():
         assert 'prepared_root' not in plan and 'written_node' not in plan['items'][0]
     committed = resolver.prepare(clause, plan)
     assert plan['prepared_root'] is committed and view.reference == -1
+
+
+def test_numeric_grammar_replays_reverse_word_arrivals(monkeypatch):
+    """The two operands reach grammar right to left through native decisions."""
+    from pathlib import Path
+    import Models
+    import util
+    from reading_fixtures import force_absolute_reading
+    from test_mm_xor import _fresh_model
+
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    config = Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'
+    model, _, data = _fresh_model(str(config))
+    force_absolute_reading(model)
+    chooser = model._stm_reducer()
+    attend, interpret = chooser.attend, chooser.choose_interpret
+
+    def right_first(keys, legal, space, **options):
+        focus = legal[..., :2].any(-1)
+        slot = focus.shape[1] - 1 - focus.flip((-1,)).long().argmax(-1)
+        op = legal[torch.arange(len(slot), device=slot.device), slot, :2].long().argmax(-1)
+        options['replay_action'] = torch.where(focus.any(-1), 6 * slot + op, -1)
+        return attend(keys, legal, space, **options)
+
+    def read(word, allowed, **options):
+        options['replay_action'] = allowed.long()
+        return interpret(word, allowed, **options)
+
+    captured = []
+    program = model._derivation_program
+    def capture(*args, **kwargs):
+        result = program(*args, **kwargs)
+        if result is not None:
+            captured.append((result[0].tolist(), result[1].tolist()))
+        return result
+
+    monkeypatch.setattr(chooser, 'attend', right_first)
+    monkeypatch.setattr(chooser, 'choose_interpret', read)
+    monkeypatch.setattr(model, '_derivation_program', capture)
+    try:
+        inputs, targets, *_ = next(iter(data.data_loader(split='validation', num_streams=4)))
+        model.runBatch(train=False, batchSize=4, split='validation',
+            batch_override=(model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(targets)))
+        assert captured
+        for positions, actions in captured:
+            for words, row in zip(positions, actions, strict=True):
+                assert words == [2, 0]
+                assert [kind for kind, _, _ in row if kind >= 0] == [0, 0, 1]
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()

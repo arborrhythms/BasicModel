@@ -100,6 +100,8 @@ class ConceptTrust(nn.Module):
         views = int(torch.where(self.known[row], self.views[row], -1))
         if views < 0:
             return
+        # Host binary64 is deliberate. Metal float32 changes rounded radii
+        # and later optimizer updates (item 1.8 §66.5).
         length = (float(self.agreement[row]) / views * -math.expm1(-views / self.trust_views)
                   if views else 0.)
         self.lengths[row, 0] = torch.where(self.read_objects[row],

@@ -262,6 +262,8 @@ def test_identity_admission_uses_the_deposited_word_order(tmp_path, monkeypatch,
         training_overrides={'reconstructionPlacement': 'eager'},
         architecture_overrides={'answerSynthesis': False})
     model._tensor_peer_while_eager = True
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model._chart_compose_per_word = lambda: None
     deposit, push = ShortTermMemory.functional_push_step_masked, ChunkJournal.push
     expected, observed = [], []

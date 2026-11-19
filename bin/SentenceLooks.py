@@ -100,6 +100,12 @@ class Looks:
             from AttentionLesson import ReadingTargets
             self.teacher = ReadingTargets(lesson, model._attention_forms[0], walk.state)
 
+    def source_orders(self):
+        """Original word positions in each row's interpretation order."""
+        arrivals = torch.stack([torch.where(turn['interpreted'], turn['index'], -1)
+                                for turn in self.decisions], dim=1)
+        return tuple([word for word in row if word >= 0] for row in arrivals.tolist())
+
     def lesson_cost(self):
         return None if self.teacher is None else self.teacher.cost()
 

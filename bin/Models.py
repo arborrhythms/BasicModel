@@ -20197,9 +20197,11 @@ class BasicModel(BaseModel):
     def _sentence_leaf_positions(self, record, row):
         """Original field positions in this trial's actual read order."""
         field = getattr(self, '_sentence_field', None)
-        if field is None:
+        order = getattr(self, '_sentence_read_order', None)
+        if field is None and order is None:
             return record.word_valid[row].nonzero().flatten()
-        return torch.tensor([w for w in field.source_order(row) if bool(record.word_valid[row, w])],
+        positions = field.source_order(row) if field is not None else order[row]
+        return torch.tensor([w for w in positions if bool(record.word_valid[row, w])],
                             dtype=torch.long, device=record.word_rows.device)
 
     def _student_compose_states(self, record, row):
@@ -21193,7 +21195,7 @@ class BasicModel(BaseModel):
                         payload = self._attention_sentence_payload(payload,index)
                     if fork is not None:
                         fork.current_rows = payload[7].reshape(B)
-                        fork.phase = (None if field is None else 'closing' if closing else 'word')
+                        fork.phase = ('closing' if closing else 'word') if separate_closing else None
                         latches = fork.begin_word(index, latches)
                         fork.current_latches = latches
                     payload = (*payload[:9], *latches[0], payload[11], *payload[12:])
@@ -21203,7 +21205,8 @@ class BasicModel(BaseModel):
                         incoming_ids=torch.where(payload[4] >= 0, payload[4], payload[2]).reshape(B),
                         incoming_lanes=raw_lanes, incoming_rows=payload[8].reshape(B))
                     current_lang, current_stm, current_feedback = compose_word(
-                        payload, index, None, current_lang, current_stm)
+                        payload, index, None, current_lang, current_stm,
+                        at_close=(closing if separate_closing else None))
                     if field is not None:
                         field.remember(index, payload[7].reshape(B), current_lang, closing=closing)
                     current_stm = symbol_field.arrive(current_stm, payload[7].reshape(B),
@@ -21235,10 +21238,10 @@ class BasicModel(BaseModel):
                     payload = masked_payload(payload,rows)
                     if field is not None:
                         field.arrive(index,payload,native,rows)
-                        field._closing = torch.zeros_like(rows)
                     word_step(index,payload,native)
                 start_compose(torch.zeros((),device=words.device,dtype=torch.long))
                 looks = None
+                separate_closing = field is not None or reading_walk is not None
                 if reading_walk is not None:
                     looks = Looks(self,reading_walk,sid,present,
                         prior=None if exploit is None else look_trials[0],
@@ -21257,7 +21260,7 @@ class BasicModel(BaseModel):
                             arrival(torch.tensor(word,device=words.device),rows)
                 look_trials.append(looks)
                 attention_trials.append(reading)
-                if field is not None:
+                if separate_closing:
                     # Closing has no word brick, even if the last source word
                     # was never interpreted. It deposits no candidate.
                     last = torch.where(active & (sentence_ids==sid),
@@ -21271,7 +21274,6 @@ class BasicModel(BaseModel):
                             torch.full((B,),-1,device=words.device,dtype=torch.long),
                             torch.zeros(B,device=words.device,dtype=torch.long),words.new_zeros(B,D),
                             rows[:,None],torch.zeros_like(rows[:,None]),*empty_feedback,words.new_zeros(B,2))
-                        field._closing = rows
                         word_step(index,payload,(),closing=True)
                 path = (current_stm, current_lang, current_feedback)
                 if kept is not None and field is not None:
@@ -21280,6 +21282,9 @@ class BasicModel(BaseModel):
                     pending_steps.append((self._sentence_trial, self._sentence_pullback, path))
                 return path
             def score(path, alternative):
+                self._sentence_field = field_trials[-1]
+                if self._sentence_field is None and look_trials[-1] is not None:
+                    self._sentence_read_order = look_trials[-1].source_orders()
                 paths.append(path[1][15].detach().clone())
                 if alternative and fork is not None:
                     if not bool((fork.taken | ~fork.selected | ~present).all()):
@@ -21425,6 +21430,7 @@ class BasicModel(BaseModel):
                     reducer._expectation_prime = None
                     reducer._symbol_expectation_read = None
                 self._sentence_field = None
+                self._sentence_read_order = None
                 self.inputSpace._ar_grammar_leaf_mask = source_leaf_mask
             def choose_tensors(values):
                 value = values[0]
@@ -21509,6 +21515,9 @@ class BasicModel(BaseModel):
                 self.inputSpace._ar_grammar_leaf_mask = choose_tensors([
                     field.grammar_leaves(source_leaf_mask) for field in field_trials])
                 self._sentence_read_order = tuple(field_trials[int(selected[b])].source_order(b) for b in range(B))
+            elif look_trials[0] is not None:
+                orders = [looks.source_orders() for looks in look_trials]
+                self._sentence_read_order = tuple(orders[path][b] for b, path in enumerate(selected.tolist()))
             # The sentence walk owns admission. Close may use trial scratch,
             # but its exit must retain the selected leaves, not the old prefix.
             kept_leaf_mask = self.inputSpace._ar_grammar_leaf_mask
@@ -22058,7 +22067,7 @@ class BasicModel(BaseModel):
         apply_language_choice = cs.apply_language_choice
 
         def stage_cs_lang(cs_sym_payload, index, _live,
-                          current_cs_lang, current_stm):
+                          current_cs_lang, current_stm, *, at_close=None):
             """Alternate LS choices with CS-owned applications/STM commit.
 
             LanguageSpace owns every grammar decision and returns immutable
@@ -22218,11 +22227,11 @@ class BasicModel(BaseModel):
             next_symbol_activations = self._tensor_write_word_column(
                 current_cs_lang[0], index, symbol_activation)
             write_word = row_gate
-            if sentence_transactions and self._sentence_field is not None:
+            if at_close:
                 # A separate closing is not another read of its source word.
                 # Keep that word's published activation when the NULL closing
                 # supplies a zero payload to the grammar.
-                write_word = write_word & ~self._sentence_field._closing[:, None]
+                write_word = torch.zeros_like(row_gate)
             next_symbol_activations = torch.where(
                 write_word.reshape(B, 1, 1), next_symbol_activations, current_cs_lang[0])
             # Every non-final packed sentence receives the same bounded NULL
@@ -22231,8 +22240,8 @@ class BasicModel(BaseModel):
             # receive the CS-owned soft reset before the next word arrives.
             intermediate_end = _gather_word(
                 sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B) & row_gate.reshape(B)
-            if sentence_transactions and self._sentence_field is not None:
-                intermediate_end = self._sentence_field._closing & row_gate.reshape(B)
+            if at_close is not None:
+                intermediate_end = row_gate.reshape(B) if at_close else torch.zeros_like(intermediate_end)
             def fork_state(working_stm, working_active):
                 return (current_cs_lang, working_stm, working_active, wholes,
                     chunk_slab, chunk_count, trace_state, left_rows, right_rows,
