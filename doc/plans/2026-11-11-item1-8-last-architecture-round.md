@@ -28214,6 +28214,230 @@ zero as Codex recommends, Alec chose "Yes, allow it". Certificate 5 of
 §57.6 is amended as §63.2 states, and the text of §63.3 is to be given
 to Codex.
 
+## 64. The forecast of a look and its surprise (Codex, 2026-11-18)
+
+### 64.1 What each look reads
+
+The opening gives each word its own prediction from the readings outside that word. At each subsequent look the prediction precedes perception. A reading at a disjoint extent contributes the greater observed value on each lane of each order-zero row. An overlapping reading contributes neither lane, even when it is a previous reading of the same place. The omission-trained map predicts the full order-zero block. The common definition fold then closes that prediction upward. Comparison keeps positive residuals as excess and negative residual magnitudes as omission, summing over rows and lanes only after the split. The forecast and both residuals are detached. Prediction for the whole sentence and its omission teacher still run at the open pass.
+
+| File and function | Change |
+| --- | --- |
+| `ConceptSpread.expected`, `open_prediction` | Both the stack and the activation predictor take the same observed-field argument for a look or a sentence. Only the open pass publishes `_expected_knowing` and trains against omissions. Priming, rule ordering and preferred-object selection retain that published field. |
+| `LookForecast` in `bin/LookForecast.py` | Keeps each path’s located evidence, joins disjoint observations, batches all live opening predictions, applies `FieldProjection.close` at native concept addresses, and compares against the actual located field. Allocated higher-order rows use a compact carrier. Every address in the order-zero block remains in the forecast even when its observed evidence is zero. Padding receives no forecast. |
+| `SentenceLooks.Looks.run` | The opening records a pair per word. Each later active look records its pair, replaces the latest pair at each fully covered word and retains the pair elsewhere. Multiword brackets sum the pairs of the words they contain. The word and percept arrival forecasts keep their existing inputs and losses. |
+| `AttentionContext.install`, `context`, `project` | The rule 9 projection gained two zero-initialized input columns. The prefix is projected once per decision and the pair independently per bracket. This gives the same linear map as concatenating each pair to its prefix. Only the projection and the chooser receive gradients through this comparison. |
+| `Models.BasicModel._run_sentence_word_bricks`, `Language.OperationSelectionLayer.attend` | The live context callback now takes the bracket pairs. The chooser adds the projected context to the corresponding bracket key. The comparison books no loss. This is the word-loop edit for this continuation. |
+| `Models.BaseModel.load_weights` | The old projection gains two zero columns. The optimizer migrates the old columns of each moment by the same map. Strict loading preserves their values and leaves the new moments zero. |
+| `Assessment._attention_trace`, `test/postmerge_word_lanes.py`, `test/attention_thinking_certificate.py` | Report the opening pairs and selected comparisons, the ultimate disposition of each word within the measured walk and the number of native expect evaluations. The sixteen-sentence observer counts calls and the number of spans in them separately. |
+| `test/test_explicit_dimensions.py` | Prints all four generated strings and availability flags before the original grammar proof assertion, so an early failure still identifies the affected outputs. |
+| `doc/Architecture.md` | Describes how bracket attention now reads priming and surprise. |
+
+The three defaults in §62.3 were built. A multiword bracket sums its words’ latest pairs. The existing zero-started projection learns how to use both numbers. The comparison is a report. The measured outcomes below include all three defaults together.
+
+### 64.2 Readers of the former bracket prior
+
+`ModelAttention.stage_input` was the production caller of `BracketKeys._codebook_retrieval_prior`. It previously scanned perceptual codebook rows, using their priming weights or the gist. The resulting per-word scalar travelled in `open_narrowing` or `narrow_words` to `NarrowingState`. `narrowing_view` pooled it over each bracket, `narrow_step` forwarded it, and `OperationSelectionLayer.attend` added it equally to that bracket’s act scores. All those uses are removed. `Attention.priming_prior` had no callers. Priming still enters the composing chooser through the rule 9 context.
+
+Two callers used the completed walk. `Examination.run` has one conceptual observation for all of its field operations. It now measures that glance, records the per-word pairs in the examination result and shares their projection across its baseline and alternatives. Each step sums the projected word pairs in the current bracket. Linearity and the absence of a bias make this the same projection of the bracket sum. The standalone walk staged before a sentence field exists reads the staged keys, native poles and learned chooser. There is no located conceptual observation at that entry point. The detached answer-recall cosine, the priming state of the stores, the walk replay’s prior path and the clause journal’s earlier value have different readers and contracts.
+
+### 64.3 Certificates and test ports
+
+| §62.4 | Observation | Result |
+| --- | --- | --- |
+| 1 | Before the change, `test_inside_changes_the_read_but_not_the_forecast` failed on the returned bias source. The ordinary sentence record held no surprise. Changing only the inside reading now changes the measured field, leaves its forecast exactly equal, and preserves the published sentence expectation bit for bit. | Pass |
+| 2 | An exact reading gives (0, 0). Adding a present field to silence gives (0.875, 0), omitting it gives (0, 0.875), and opposing changes on different lanes give (0.5, 0.5). | Pass |
+| 3 | The glance evaluates all live extents in one batch. A later single-word look changes exactly its own pair. A whole-bracket look replaces every covered word’s pair. Padding stays zero and the candidate reads the sum of its words. | Pass |
+| 4 | With the projection at zero every bracket logit is exactly the unaided score. The test then supplies a nonzero act key and confirms a scoring gradient reaches the two new columns while both feature producers stay detached. At completely fresh zero act keys even a change in the input cannot change their dot product. | Pass |
+| 5 | `test_mm_xor.py::TestMMXorConvergence::test_convergence` and `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class` both passed. | Pass |
+
+The final certificate group gave **6 passed in 5.82 s**. The broader targeted group gave **140 passed, 10 skipped in 81.62 s**. The projection and checkpoint group gave **9 passed in 9.00 s**. The field-only and standalone walk group gave **7 passed in 6.44 s**. The field-only test checks the actual glance keys at the ordinary examination handoff.
+
+| Test or group | Old and new contracts |
+| --- | --- |
+| `test_codebook_retrieval_prior_is_the_subsymbolic_term` → `test_projection_reads_the_two_bracket_surprise_components` | The maximum weighted codebook cosine picked the specified bracket. The learned projection of the two numbers now picks the specified bracket in the same five-bracket fixture. |
+| `test_codebook_path_preserves_gradient_boundary` → `test_bracket_surprise_preserves_gradient_boundary` | The scoring boundary previously detached the codebook and intent. The surprise and prefix now detach both feature producers and train the projection. The read retains complete word coverage. |
+| `test_codebook_path_keeps_complete_word_coverage`, `test_no_codebook_falls_back_to_content_choice` | The callable cosine path and its missing-codebook branch are retired by §62.3.5. Their word-coverage assertions are exercised by `test_shift_bootstrap_selects_each_word_once` and `test_bracket_surprise_preserves_gradient_boundary`. Certificate 4 covers scoring at zero contribution. |
+| `test_shift_bootstrap_selects_each_word_once`, `test_scope_is_normalized_unit_range`, `test_coverage_mask_excludes_consumed`, `test_padding_spans_never_selected`, `test_no_spans_is_noop` | The fixture now uses the native look/interpret loop for word admission. Five focuses and five distinct interpretations replace nine charged attention acts on five words. Complete extents, normalized scope, nonrepetition, padding and the empty-input behavior are tested through their current owners. |
+| `test_input_priming_reads_live_word_extent_without_changing_prior` → `test_glance_forecast_reads_only_live_word_extents` | The old test checked the prior on a live slice against the padded input. The new one checks that padding consumes no forecasts and preserves every live pair exactly. |
+| `test_retrieval_prior_rejects_a_stale_single_stream_surface` → `test_surprise_projection_rejects_a_stale_single_stream_surface` | The scorer rejected a prior from a different batch. The projection now rejects a surprise tensor from a different batch. |
+| `test_public_steps_equal_every_base_field_and_replay_stream`, `test_exhausted_walk_skips_chooser_work_but_keeps_the_full_base_carrier` | Their historical oracle supplied the old scoring keyword even when empty. The adapter checks that the oracle actually passed None and delegates to the live unaided scorer. Original per-field, work, replay and gradient comparisons are retained. |
+| `test_84_intuit_reads_once_at_observation_and_no_relation_row` | The previous hook expected exactly one stack evaluation anywhere in a sentence. It saw 34 after per-look forecasts were introduced. The port checks one published open prediction, one additional invocation per batched look forecast, and zero additional calls when intuition reads. It retains the relation-table and witness assertions. The port passed in 4.22 s. |
+
+### 64.4 The lesson, its word readings and the assessment ladder
+
+The first field was captured from the kept comprehension and the second from its generated idea, before trial restoration. The mean is the average of the 160 per-presentation mean absolute differences over the participating concept rows and both lanes. The empty pair contributes zero.
+
+| Source | Exact of 160 | Mean absolute difference | Final occupancy / capacity, orders 0, 1, 2 |
+| --- | --- | --- | --- |
+| §59.82 | 21 | 0.20900825535936746 | 52/2346, 113/1239, 27/610 |
+| §61.17 | 158 | 0.0038723619654774666 | 35/2346, 73/1239, 27/610 |
+| §64 | 45 | 0.18290162986377254 | 36/2346, 99/1239, 34/610 |
+
+Of this run’s 45 exact pairs, **36 were empty on both sides and 9 were nonempty**. Comprehension was nonempty on 108 presentations and generation on 124. In §61.17 all 158 exact pairs were empty.
+
+| Phase | Questions | Correct bindings | Nonempty answers | Exact text |
+| --- | --- | --- | --- | --- |
+| ideas | 32 | 0 | 0 | 0 |
+| relations | 48 | 0 | 0 | 0 |
+
+The fixture columns give the one-word rung before the loop, after the loop and after the bias. The final column of nine symbols gives all reviewed rungs after the forecast. P means passed, F failed, B blocked by a prerequisite and – unavailable for the fixture’s taught vocabulary. The last row is the trained lesson. Its single final reading serves both continuations. The ladder records observations without gating a mechanism.
+
+| Assessed source | §59 R1 | §61 R1 | Bias R1 | Forecast R1–9 | Failed check |
+| --- | --- | --- | --- | --- | --- |
+| test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word | P | F | P | P – – – – – – – – | — |
+| test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor] | P | F | F | P – – – – – – – – | — |
+| test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi] | P | F | P | P – – – – – – – – | — |
+| test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket | – | – | – | – – – – – – – – – | — |
+| test_item18_intuit.py::test_83_an_unseen_conclusion_still_needs_inference | – | – | – | – – – – – – – – – | — |
+| test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row | F | F | F | F – – – – – – – – | R1 definition not trusted, word does not denote one object |
+| test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports | – | – | – | – – – – – – – – – | — |
+| test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit | – | – | – | – – – – – – – – – | — |
+| test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned] | P | F | P | P – – – – – – – – | — |
+| test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing] | – | – | – | – – – – – – – – – | — |
+| test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient | P | F | P | P – – – – – – – – | — |
+| test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel | – | – | – | – – – – – – – – – | — |
+| test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse | – | – | – | – – – – – – – – – | — |
+| test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel | – | – | – | – – – – – – – – – | — |
+| test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays | – | – | – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context | – | – | – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness | – | – | – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition | – | – | – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order | – | – | – | – – – – – – – – – | — |
+| test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references | – | – | – | – – – – – – – – – | — |
+| test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged | – | – | – | – – – – – – – – – | — |
+| test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations | – | – | – | – – – – – – – – – | — |
+| test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers | – | – | – | – – – – – – – – – | — |
+| test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built | – | – | – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index | P | F | P | P – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content | – | – | – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views | P | F | P | P – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0] | – | – | – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75] | – | – | – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream | – | – | – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams | – | – | – | – – – – – – – – – | — |
+| explore-1 after four epochs | P | F | shared run | F B B B – – B – – | R1 missing leaves, different tree, word not interpreted |
+
+Across all 32 sources, rung one had **7 passed, 2 failed and 23 unavailable**. In §61 these were 0, 9 and 23. In §59 they were 8, 1 and 23. On the final certificate 82 fixture probes, both maps read alpha with the single object 111. Certificate 84 read alpha but had no stored object definition. The operator assertions in the marked fixture pass gave 30 passes, two skips and one obsolete hook assertion. That assertion passed after its port in §64.3. The fixture ladders were retained from the measured runs.
+
+The following 45 held-out readings are in §61.18 order. R is interpreted, D offered and declined, B isolated with both native lanes active, N never isolated, and I isolated with no offer for another reason. The trace supplies the observed extent and the grammar choice.
+
+| Probe | Word places |
+| --- | --- |
+| This is Felix. | This (B) is (B) Felix (B) . (N) |
+| What is this? | What (B) is (B) this (B) ? (R) |
+| That is Ciao. | That (B) is (B) Ciao (B) . (N) |
+| What is that? | What (B) is (B) that (N) ? (N) |
+| Here is Felix. | Here (R) is (B) Felix (B) . (N) |
+| Who is here? | Who (B) is (B) here (N) ? (N) |
+| There is Ciao. | There (R) is (B) Ciao (B) . (N) |
+| Who is there? | Who (B) is (B) there (B) ? (N) |
+| That is Felix. | That (B) is (B) Felix (B) . (N) |
+| This is Ciao. | This (B) is (B) Ciao (B) . (N) |
+| Here is Ciao. | Here (R) is (B) Ciao (B) . (N) |
+| There is Felix. | There (R) is (B) Felix (B) . (N) |
+| Felix is a cat. | Felix (B) is (B) a (B) cat (N) . (N) |
+| What is Felix? | What (B) is (B) Felix (B) ? (N) |
+| Ciao is a cat. | Ciao (B) is (B) a (B) cat (N) . (N) |
+| Is Ciao a cat? | Is (B) Ciao (B) a (B) cat (N) ? (N) |
+| A cat lives. | A (B) cat (B) lives (N) . (N) |
+| Is Felix a cat? | Is (B) Felix (B) a (B) cat (N) ? (N) |
+| What is Ciao? | What (B) is (B) Ciao (B) ? (N) |
+| A cat moves. | A (B) cat (N) moves (N) . (N) |
+| A cat sleeps. | A (B) cat (B) sleeps (N) . (N) |
+| A cat eats. | A (B) cat (B) eats (N) . (N) |
+| is Ciao Felix. | is (B) Ciao (B) Felix (B) . (N) |
+| Felix is Ciao. | Felix (B) is (B) Ciao (B) . (N) |
+| is Felix Felix. | is (B) Felix (B) Felix (B) . (N) |
+| Felix is Felix. | Felix (B) is (B) Felix (B) . (N) |
+| is Here Felix. | is (B) Here (R) Felix (B) . (N) |
+| Felix is Here. | Felix (B) is (B) Here (N) . (N) |
+| is Is Felix. | is (B) Is (B) Felix (B) . (N) |
+| Felix is Is. | Felix (B) is (B) Is (B) . (N) |
+| is That Felix. | is (B) That (B) Felix (B) . (N) |
+| Felix is That. | Felix (B) is (B) That (N) . (N) |
+| is There Felix. | is (B) There (R) Felix (B) . (N) |
+| Felix is There. | Felix (B) is (B) There (N) . (N) |
+| is This Felix. | is (B) This (B) Felix (B) . (N) |
+| Felix is This. | Felix (B) is (B) This (N) . (N) |
+| is What Felix. | is (B) What (B) Felix (B) . (N) |
+| Felix is What. | Felix (B) is (B) What (N) . (N) |
+| is Who Felix. | is (B) Who (B) Felix (B) . (N) |
+| Felix is Who. | Felix (B) is (B) Who (N) . (N) |
+| is is Felix. | is (B) is (B) Felix (B) . (N) |
+| Felix is is. | Felix (B) is (B) is (B) . (N) |
+| is this Felix. | is (B) this (B) Felix (B) . (N) |
+| Felix is this. | Felix (B) is (B) this (B) . (R) |
+| is Felix This. | is (B) Felix (B) This (N) . (N) |
+
+The 184 places included **8 interpreted**, 0 offered and declined, 115 isolated with both lanes, 61 never isolated, and 0 other isolated places without an offer. There were **37/45** empty kept trees. In §61 all 184 places were left and all 45 trees were empty.
+
+### 64.5 Forecast work and the distribution of surprise
+
+The saved sixteen sentences used the same initial random stream as §61. Each native call at the glance batches that walk’s live words. A selected look takes one call for its active rows. These counts measure calls inside the walks. The separately published sentence-open prediction remains outside them in all three runs. Counts in the two left-hand cells are walks / looks / attend calls / interpretations.
+
+| Sentence | §61 counts | §61 s | Bias s | Forecast counts | Look expect calls | Spans forecast | Forecast s |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| This is Felix. | 2/66/64/1 | 2.4638 | 2.9087 | 2/15/13/8 | 15 | 21 | 3.2397 |
+| What is this? | 2/66/64/0 | 1.7899 | 2.1417 | 1/7/6/4 | 7 | 10 | 2.3771 |
+| That is Ciao. | 2/66/64/1 | 1.9837 | 2.2193 | 2/16/14/8 | 16 | 22 | 2.5631 |
+| What is that? | 2/66/64/0 | 1.7003 | 2.1528 | 1/7/6/4 | 7 | 10 | 2.2578 |
+| Here is Felix. | 2/66/64/1 | 1.9602 | 2.1012 | 2/14/12/8 | 14 | 20 | 2.3860 |
+| Who is here? | 2/66/64/1 | 1.9201 | 2.1842 | 2/14/12/8 | 14 | 20 | 2.2838 |
+| There is Ciao. | 2/66/64/1 | 1.9359 | 2.9033 | 2/16/14/8 | 16 | 22 | 3.2142 |
+| Who is there? | 2/66/64/0 | 1.7045 | 2.5194 | 1/8/7/4 | 8 | 11 | 2.9093 |
+| That is Felix. | 2/66/64/1 | 2.1505 | 2.8150 | 2/16/14/8 | 16 | 22 | 3.1570 |
+| What is that? | 2/66/64/0 | 2.1909 | 3.4905 | 2/17/15/8 | 17 | 23 | 3.6671 |
+| This is Ciao. | 2/66/64/0 | 2.0771 | 4.0771 | 2/17/15/8 | 17 | 23 | 4.3619 |
+| What is this? | 2/66/64/0 | 2.0808 | 4.0159 | 2/17/15/8 | 17 | 23 | 4.1595 |
+| Here is Ciao. | 2/66/64/1 | 2.1899 | 3.5748 | 2/16/14/8 | 16 | 22 | 3.6683 |
+| Who is here? | 2/66/64/0 | 2.0321 | 2.9011 | 1/8/7/4 | 8 | 11 | 3.1088 |
+| There is Felix. | 2/66/64/0 | 2.0661 | 2.8926 | 2/16/14/8 | 16 | 22 | 3.0889 |
+| Who is there? | 2/66/64/1 | 2.3030 | 2.6686 | 1/8/7/4 | 8 | 11 | 2.8428 |
+
+All sixteen sentences had the same counts after adding the forecast as with bias alone. The forecast run made **212 look-specific calls for 293 spans**, plus the ordinary open pass. §61 and the bias-only model made zero look-specific expect calls. The final totals were **27 walks, 212 looks, 185 attend calls and 108 interpretations in 49.285258 s**, compared with 45.566345 s for bias alone and 32.548962 s in §61. Runner times including setup were 50.165569 s, 46.394649 s and 33.385730 s respectively.
+
+Every row below counts comparisons on actual training paths, including the alternatives that ran. At the opening there is one comparison per live word. Later there is one per active selected span. A word’s group is its final disposition in that same walk. Multiword looks have their own group. The 90th percentile uses the nearest rank. These are descriptive distributions. §61 did not produce either residual.
+
+| Look | Word disposition | Residual | Count | Exactly zero | Mean | Median | P90 | Maximum |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| opening | interpreted | excess | 857 | 205 | 12.15986 | 12 | 27 | 34 |
+| opening | interpreted | omission | 857 | 857 | 0 | 0 | 0 | 0 |
+| opening | left | excess | 370 | 72 | 21.11582 | 23.99934 | 32.99963 | 35.0014 |
+| opening | left | omission | 370 | 370 | 0 | 0 | 0 | 0 |
+| selected | interpreted | excess | 857 | 205 | 12.15986 | 12 | 27 | 34 |
+| selected | interpreted | omission | 857 | 857 | 0 | 0 | 0 | 0 |
+| selected | left | excess | 1359 | 0 | 26.33076 | 28.9999 | 33.00005 | 35.00578 |
+| selected | left | omission | 1359 | 1359 | 0 | 0 | 0 | 0 |
+| selected | several words | excess | 1606 | 1606 | 0 | 0 | 0 | 0 |
+| selected | several words | omission | 1606 | 1606 | 0 | 0 | 0 | 0 |
+
+Across opening and selected looks, 1714 comparisons involved a word ultimately interpreted. Mean excess was 12.15986 and mean omission was 0.
+
+Across opening and selected looks, 1729 comparisons involved a word ultimately left. Mean excess was 25.21478 and mean omission was 0.
+
+All 160 measured lesson presentations had no active omission target. The residual called omission was zero on all 5,049 measured training comparisons. This distinction matters when interpreting the larger excess for words left.
+
+On the three one-word lesson probes the name Felix had object 155 with definition evidence [0.9999968409538269, 0.0]. Its word row 13 supplied both native lanes, for 1 and against 0.00020045042. A two-lane word has no grammar offer, so the interpretation bias was never consulted there.
+
+### 64.6 The verbal proof and returned source
+
+| Input | Grammar inverse | Available | Field inverse |
+| --- | --- | --- | --- |
+| hello world | 'hello world' | yes | 'hello world' |
+| hello there | 'hello there' | yes | 'hello there' |
+| loving world | 'world loving' | yes | 'loving world' |
+| loving there | 'there loving' | yes | 'loving there' |
+
+The supplied four-word-pair protocol completed 400 epochs, 1,600 presentations. The grammar recovered **4/4** word multisets, with **0/4** inverses marked unavailable. The separate field inverse recovered **4/4**. §61.21 also recovered all four by field and failed grammar availability before it printed the individual rows. §59.82 recovered all four by both paths.
+
+The verbal proof passed in **968.15 s**. The printed numeric predictions were **0.5000, 0.5000, 0.5000 and 0.5000** for targets 0, 1, 1 and 0, giving MSE 0.25 at the printed precision. Final output loss was **0.1750**, reconstruction **0.0000**, as in §61 and §59. This grammar run and the independent numeric stopping fixture have different contracts. The latter passed.
+
+Targeted test files across the two continuations were `test_assessment.py`, `test_attention_thinking_steps.py`, `test_explicit_dimensions.py`, `test_interpret_bias.py`, `test_item18_expect.py`, `test_item18_intuit.py`, `test_item18_lexical_form.py`, `test_item18_marker.py`, `test_item18_placement.py`, `test_item18_recognition.py`, `test_item18_stack.py`, `test_item18_word_trust.py`, `test_item25_completion.py`, `test_look_forecast.py`, `test_loop_of_looks.py`, `test_math_chain_repair.py`, `test_mm_xor.py`, `test_native_attention_field.py`, `test_native_candidate_attention.py`, `test_one_attention.py`, `test_reading_attention.py`, `test_reading_curriculum.py` and `test_sentence_owned_attention.py`. The standalone observers were `attention_curriculum_gates.py`, `attention_thinking_certificate.py` and `postmerge_word_lanes.py`. §72 and §68.80 request targeted runs only.
+
+The long measurements used the final composing computation. While they ran, the sentence-wide expect call-count assertion was ported, the shared projection and field pooling were factored without changing their tensor operations, and the completed field-only examination walk was connected to its own glance. That path is exercised separately. An initial process could not access the Torch compiler cache. The complete verbal proof used the same protocol with access to that cache. No measurement parameter was adjusted.
+
+Implementation checkpoints on local main are `4e0db320f28a2b4c025bd17ca54d9bb8abb6089b` for the bias and `1eba659c3db3f6929b88f20f9bdae248875e34ef` for the forecast. The returned `bounded_tests.source_snapshot` covers **1,222 files**, SHA-256 **`fb0b52c9837bbdafa4dfc3bac9365330d2689ec475ec0a2785372caffb897c13`**.
+
 ## 65. Rules 10 to 12 and 14: tables as tensors, and one graph for a sentence (Claude, 2026-11-16)
 
 Rule 13 is built (§53.4). This section writes the rest of part C of
