@@ -620,31 +620,6 @@ def narrow_words(chooser,keys,spans,known,*,budget,exploit=None,departure=None,i
     return close_narrowing(state)
 
 
-def interpret_words(chooser,keys,spans,known,*,budget,identities=None,poles=None,spent=None,limit=None,glance_keys=None):
-    """A read with no sentence: attention looks, and grammar may interpret.
-
-    No act of attention accepts a word. At each look the grammar has its
-    option on the look's pure word (``interpret_at_look``), as in the
-    sentence's loop of looks (``SentenceLooks.Looks.run``), with the same
-    decisions in the same order. With no sentence nothing is perceived at a
-    look or composed, so no composed prefix enters the next look's context.
-    """
-    state=open_narrowing(chooser,keys,spans,known,budget=budget,
-        identities=identities,poles=poles,spent=spent,limit=limit)
-    state.glance_keys = glance_keys
-    rows=torch.ones(keys.shape[0],dtype=torch.bool,device=keys.device)
-    slot=torch.zeros(keys.shape[0],dtype=torch.long,device=keys.device)
-    while keys.shape[1]:
-        index,allowed=interpretation_at(state,slot)
-        choice=chooser.interpret_at_look(keys[state.rows,index],allowed&rows)
-        record_interpretation(state,slot,choice['interpreted'])
-        if len(state.actions)>=int(state.budget) or not bool(narrowing_view(state)[8].any()):
-            break
-        narrow_step(state)
-        slot,rows=state.look_slot,state.look_active
-    return close_narrowing(state)
-
-
 class BracketKeys:
     """Pure detached read helpers shared by typed brackets and answer recall."""
     @staticmethod

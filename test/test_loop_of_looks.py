@@ -357,37 +357,3 @@ def test_4_verbal_xor_offers_its_declared_interpretation():
         assert {'conjunction', 'disjunction'} <= set(model.languageSpace._generate_binary_names)
     finally:
         model.End()
-
-
-def test_5_a_read_with_no_sentence_interprets_at_its_looks(tmp_path, monkeypatch, eager_reading):
-    """Outside a sentence the stem's read still admits by interpretation.
-
-    No act of attention accepts a word (§60.4), so a read that only walks
-    admits nothing. Where no sentence owns admission (a stem read, as the
-    word evaluator makes), the grammar has its option at each look, with
-    the decisions the sentence's looks take: here every word is reached in
-    source order and interpreted, and exactly those words are admitted.
-    """
-    from test_packed_reconstruction_parity import build_model
-    from reading_fixtures import read_in_source_order
-    model = build_model(tmp_path, word_capacity=8)
-    read_in_source_order(model, monkeypatch)
-    calls = []
-    chooser = model._stm_reducer()
-    interpret = chooser.interpret_at_look
-    def observed(word, allowed, **options):
-        choice = interpret(word, allowed, **options)
-        calls.append(choice['interpreted'].clone())
-        return choice
-    monkeypatch.setattr(chooser, 'interpret_at_look', observed)
-    raw = model.inputSpace.prepInput(['first second last'])
-    with torch.no_grad():
-        model._lex_embed_stem(raw)
-    reading = model._attention_words
-    spans = model._attention_spans  # separators have an empty extent
-    live = spans[..., 1] > spans[..., 0]
-    assert int(live.sum()) == 3
-    assert sum(int(call.sum()) for call in calls) == 3
-    torch.testing.assert_close(reading.accepted, live)
-    torch.testing.assert_close(model.inputSpace._ar_grammar_leaf_mask.bool(), live)
-    assert int(reading.table.done.sum()) == 3
