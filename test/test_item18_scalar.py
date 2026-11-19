@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import torch
 import pytest
+from nomination_fixtures import recurrent_interpretation
 
 
 def test_scalar_boxes_are_counted_native_definitions(tmp_path,monkeypatch):
@@ -15,7 +16,7 @@ def test_scalar_boxes_are_counted_native_definitions(tmp_path,monkeypatch):
     for item in lesson['lessons']:
         text = item['text']
         parts = model.perceptualSpace.percept_store.spell_out(text.encode())
-        word,*_ = owner.interpret_word(parts,model.wholeSpace.property_rows_for_bytes(text),key=text)
+        word,*_ = recurrent_interpretation(owner, parts,model.wholeSpace.property_rows_for_bytes(text),key=text)
         words[text]=word
     for repeat in range(lesson['repetitions']):
         for item in lesson['lessons']:
@@ -68,7 +69,7 @@ def test_scalar_perception_keeps_percept_and_concept_references(tmp_path,monkeyp
     lesson=json.loads(Path('data/scalar_lessons.json').read_text())
     for item in lesson['lessons']:
         raw=item['text'].encode()
-        word,*_=owner.interpret_word(model.perceptualSpace.percept_store.spell_out(raw),
+        word,*_=recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(raw),
             model.wholeSpace.property_rows_for_bytes(item['text']),key=item['text'])
         if item['scalar'] is None:continue
         for repeat in range(lesson['repetitions']):
@@ -99,7 +100,7 @@ def test_scalar_only_presentation_closes_and_reconstructs_its_modalities(tmp_pat
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1)
     model._tensor_peer_while_eager = True
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
-    word, *_ = owner.interpret_word(model.perceptualSpace.percept_store.spell_out(b'one'),
+    word, *_ = recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(b'one'),
         model.wholeSpace.property_rows_for_bytes('one'), key='one')
     for repeat in range(6):
         row = store.append_idea(code(owner, 1.), trust=1.)

@@ -183,7 +183,6 @@
   <ConceptualSpace>
     <!-- Weak lasso on admitted Sigma input connections, not concept/percept
          activations or biases. Applied once by row-local proximal Adam. -->
-    <conceptReadoutL1>0.01</conceptReadoutL1>
     <nInput>8</nInput>
     <!-- PS/WS sigma folds have already emitted conceptual codebook
          activations here. The CS boundary itself is width-preserving. -->

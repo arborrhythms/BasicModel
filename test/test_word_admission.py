@@ -3,7 +3,7 @@ import inspect
 from pathlib import Path
 import pytest
 import torch
-from nomination_fixtures import recurrent_word
+from nomination_fixtures import recurrent_word, nominated_forms, recurrent_interpretation
 
 
 def snapshot(cs):
@@ -181,7 +181,7 @@ def test_training_admission_keeps_period_percept_without_lexical_identity(monkey
     try:
         owner = model._concept_owner()
         percepts = model.perceptualSpace.percept_store
-        admitted = admit_training_forms(model, ['alpha.'])
+        admitted = nominated_forms(model, ['alpha.'])
         assert len(admitted) == 1 and admitted[0][0] == b'alpha'
         assert owner.interpret.word_for_form('alpha') == admitted[0][1]
         assert owner.interpret.word_for_form('.') is None
@@ -203,7 +203,7 @@ def test_eager_admission_never_looks_up_nonlexical_forms(monkeypatch, surface):
         calls.append(kw.get('form'))
         return lookup(parts, wholes, **kw)
     monkeypatch.setattr(cs.interpret, 'lookup_word', observed)
-    assert cs.interpret_word([10], (), key=surface) is None
+    assert recurrent_interpretation(cs, [10], (), key=surface) is None
     if isinstance(surface, str):
         cs._autobind_property_concepts(torch.tensor([[10]]), torch.zeros(1, 1, _D),
             torch.tensor([[0]]), [[surface]], [[surface]], percept_where=None,

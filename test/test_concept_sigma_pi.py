@@ -24,21 +24,6 @@ def test_union_holds_one_present_part_across_orders():
     torch.testing.assert_close(a[rows, :, 0, 0], torch.ones(4, 1), atol=2e-6, rtol=0)
 
 
-def test_sigma_reads_same_order_conjunction_and_lower_order_parts():
-    cs = _cs()
-    cs.conceptual_pi = True
-    p = _mint_field(cs, 101)
-    u = _mint_row(cs, 1, 102)
-    cs.add_concept_edge(p, 0, weight=1., conjunctive=True)
-    cs.add_concept_edge(p, 1, weight=1., conjunctive=True, negated=True)
-    cs.add_concept_edge(u, p, weight=1.)
-    cs.add_concept_edge(u, 2, weight=1.)
-    positive = torch.zeros(32, 4)
-    positive[:3] = torch.tensor([[1., 1., 0., 0.], [0., 1., 0., 1.], [0., 0., 1., 0.]])
-    a0 = _evidence(positive, 1 - positive)
-    _, a = _field_forward(cs, a0, torch.randn(64, 8))
-    torch.testing.assert_close(a[p, :, 0, 0], torch.tensor([1., 0., 0., 0.]), atol=3e-6, rtol=0)
-    torch.testing.assert_close(a[u, :, 0, 0], torch.tensor([1., 0., 1., 0.]), atol=3e-6, rtol=0)
 
 
 def test_unwritten_alternative_receives_credit_from_present_witness():
@@ -55,24 +40,6 @@ def test_unwritten_alternative_receives_credit_from_present_witness():
     assert a[r].count_nonzero() == 0
 
 
-def test_attribution_selects_a_case_and_demands_all_conjunctive_parts():
-    cs = _cs()
-    cs.conceptual_pi = True
-    p = _mint_field(cs, 101)
-    u = _mint_row(cs, 1, 102)
-    for col in (0, 1):
-        cs.add_concept_edge(p, col, weight=1., conjunctive=True)
-        cs.add_concept_edge(u, col + 2, weight=1.)
-    y = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
-    y[p, :, :, 0] = .81
-    y[u, :, :, 0] = .84
-    restored = cs.cs_reverse_presence(y)
-    # Native conjunction's adjoint remains available as an operator report;
-    # the symbolic descent itself only unfolds higher-order concepts.
-    matrix = cs._concept_allocator.layer(0).conjunctive
-    native = matrix.attribute_presence(y[..., 0].flatten(1), conjunctive=True)
-    torch.testing.assert_close(native[:2, 0], torch.tensor([.81, .81]), atol=1e-6, rtol=0)
-    torch.testing.assert_close(restored[:4, 0, 0, 0], torch.tensor([0., 0., .84, 0.]), atol=1e-6, rtol=0)
 
 
 def test_weak_disjuncts_do_not_accumulate():
@@ -86,17 +53,6 @@ def test_weak_disjuncts_do_not_accumulate():
     assert presence == pytest.approx(.001, abs=2e-7)
 
 
-def test_negated_disjunct_and_mixed_parts_on_one_concept():
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, weight=1., conjunctive=True, negated=True)
-    cs.add_concept_edge(row, 1, weight=1., conjunctive=True)
-    cs.add_concept_edge(row, 2, weight=1., negated=True)
-    a0 = _evidence(torch.full((32, 1), .25), torch.full((32, 1), .75))
-    _, a = _field_forward(cs, a0, torch.randn(64, 8))
-    expected = max(min(.75, .25), .75)
-    assert float(a[row, 0, 0, 0]) == pytest.approx(expected, abs=1e-6)
 
 
 def test_sparse_growth_preserves_adam_and_pending_credit():
@@ -133,36 +89,8 @@ def test_recycled_edge_cannot_receive_pending_gradient():
     assert layer.values.grad is None
 
 
-def test_unwritten_conjunction_has_no_invented_directional_credit():
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, conjunctive=True)
-    _, a = _field_forward(cs, _evidence(torch.full((32, 1), .5)), torch.zeros(64, 8))
-    if a[row].requires_grad:
-        a[row].sum().backward()
-    grad = Spaces._concept_alloc_of(cs).layer().conjunctive.values.grad
-    assert grad is None or (torch.isfinite(grad).all() and float(grad.abs().sum()) == 0)
-
-
-def test_frozen_conjunctive_edge_stays_frozen_across_pending_growth():
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, .5, conjunctive=True)
-    cs.freeze_concept(101)
-    _, a = _field_forward(cs, _evidence(torch.full((32, 1), .5)), torch.ones(64, 8))
-    other = _mint_field(cs, 102)
-    cs.add_concept_edge(other, 1, .5, conjunctive=True)
-    a[row].sum().backward()
-    ly = Spaces._concept_alloc_of(cs).layer().conjunctive
-    assert ly.values.grad is None or not ly.values.grad.any()
 
 
 
-def test_pi_edges_are_rejected_above_the_field():
-    cs = _cs()
-    row = _mint_row(cs, 1, 201)
-    with pytest.raises(ValueError, match='order-0'):
-        cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    assert Spaces._concept_alloc_of(cs).layer().conjunctive.nnz == 0
+
+

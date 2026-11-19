@@ -4,6 +4,7 @@ import torch
 import pytest
 from test_compiled_word_chunk import _tiny_canonical_model
 from order_fixtures import force_order
+from nomination_fixtures import recurrent_interpretation
 
 
 def test_empty_extension_has_no_native_percept_demand():
@@ -24,7 +25,7 @@ def declared_object(tmp_path, monkeypatch):
     from FieldProjection import stimulate
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1, concept_meaning_width=8)
     owner = model._concept_owner()
-    word, *_ = owner.interpret_word(
+    word, *_ = recurrent_interpretation(owner, 
         model.perceptualSpace.percept_store.spell_out(b'petal'),
         model.wholeSpace.property_rows_for_bytes(b'petal'), key='petal')
     obj = owner.new_concept()

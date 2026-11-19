@@ -5,6 +5,7 @@ import pytest
 import torch
 from Models import BaseModel
 from test_item18_finish import named_scalar_model, scalar_answer
+from nomination_fixtures import recurrent_interpretation
 
 _load_weights = BaseModel.load_weights
 
@@ -15,7 +16,7 @@ def test_shared_value_does_not_mix_two_words_definition_views(named_scalar_model
     model, _ = named_scalar_model
     owner = model._concept_owner()
     native = model.perceptualSpace.percept_store
-    words = [owner.interpret_word(native.spell_out(form.encode()),
+    words = [recurrent_interpretation(owner, native.spell_out(form.encode()),
         model.wholeSpace.property_rows_for_bytes(form), key=form)[0]
         for form in ('epsilon', 'zeta')]
     reference = ('bp', perceive(owner, 4.))
@@ -127,7 +128,7 @@ def test_text_uses_the_same_percept_collection_reader(named_scalar_model, monkey
     model, _ = named_scalar_model
     owner = model._concept_owner()
     native = model.perceptualSpace.percept_store
-    word, *_ = owner.interpret_word(native.spell_out(b'delta'),
+    word, *_ = recurrent_interpretation(owner, native.spell_out(b'delta'),
         model.wholeSpace.property_rows_for_bytes('delta'), key='delta')
     source = owner.interpret.word_for_form('alpha')
     percept = owner.basic_percepts.words[source]
@@ -152,7 +153,7 @@ def test_percept_reference_promotes_without_an_event_row(named_scalar_model):
     model, _ = named_scalar_model
     owner = model._concept_owner()
     native = model.perceptualSpace.percept_store
-    word, *_ = owner.interpret_word(native.spell_out(b'delta'),
+    word, *_ = recurrent_interpretation(owner, native.spell_out(b'delta'),
         model.wholeSpace.property_rows_for_bytes('delta'), key='delta')
     percept = perceive(owner, 2.)
     reference = ('bp', percept)

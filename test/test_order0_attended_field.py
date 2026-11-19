@@ -187,26 +187,6 @@ def test_batch_members_bind_independently_within_eight_rows():
     assert field.shape[:2] == (sum(cs._field_caps()), 12)
 
 
-def test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence():
-    cs = _cs(nS=16, order=1)
-    a, b, conjunction = [cs.new_concept() for _ in range(3)]
-    for cid in (a, b, conjunction):
-        force_order(cs, cid, 0)
-    ar, br = [cs._csw_concept_row(0, cid) for cid in (a, b)]
-    row = cs._csw_concept_row(0, conjunction)
-    basic_feature(cs, ar, 'ps', 10, 1.)
-    basic_feature(cs, br, 'ps', 11, 1.)
-    cs.add_concept_edge(row, ar, 1., conjunctive=True)
-    cs.add_concept_edge(row, br, 1., conjunctive=True)
-    cs.conceptual_pi = True
-    extent = torch.tensor([[[0, 1]]])
-    a0 = cs.cs_read_memberships((torch.tensor([[10]]), extent, None,
-        torch.tensor([[65]]), extent), extent)
-    _, field = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
-    assert a0[0, 0, 0, 0] == 1
-    assert b not in cs._cs_field_concept_ids
-    slot = (cs._cs_field_concept_ids == conjunction).nonzero().flatten().item()
-    torch.testing.assert_close(field[slot, 0, 0], torch.tensor([1., 0.]))
 
 
 def test_location_writer_keeps_an_ordered_group_before_recurrence(tmp_path):

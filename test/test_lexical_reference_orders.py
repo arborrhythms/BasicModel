@@ -9,11 +9,12 @@ import Spaces
 from order_fixtures import force_order
 from Models import BasicModel
 from test_cs_sparse_weights import _cs
+from nomination_fixtures import recurrent_interpretation
 
 
 def vocabulary():
     cs = _cs(nS=256, order=3)
-    word, _ = cs.interpret_word([7], [], key='cat')
+    word, _ = recurrent_interpretation(cs, [7], [], key='cat')
     from reading_fixtures import supply_object
     obj = supply_object(cs, word)
     ids = [obj]
@@ -80,7 +81,7 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     """Operand positions and the configured storage rung impose no order ceiling."""
     from ReferenceContext import reference_requests, denoted_order
     cs = _cs(nS=256, order=3)
-    word, _ = cs.interpret_word([7], [], key='statement')
+    word, _ = recurrent_interpretation(cs, [7], [], key='statement')
     from reading_fixtures import supply_object
     raw = supply_object(cs, word)
     individual = cs.new_concept()
@@ -182,7 +183,7 @@ def test_ambiguous_particular_requires_a_carried_reference():
 def test_order_zero_reference_agrees_before_and_after_admission(ambiguous):
     from Spaces import _concept_alloc_of
     cs = _cs(nS=256, order=3)
-    word, _ = cs.interpret_word([7], [], key='token')
+    word, _ = recurrent_interpretation(cs, [7], [], key='token')
     if ambiguous:
         for _ in range(2):
             obj = cs.new_concept()

@@ -6,6 +6,7 @@ import torch
 from FieldReverse import NativeActivity, NativeDecode
 from Layers import RadixLayer
 from Understanding import ConceptualField
+from nomination_fixtures import nominated_forms
 
 
 def test_vectorized_native_decode_matches_greedy_walk_without_resizing():
@@ -138,7 +139,7 @@ def test_admitted_word_identity_survives_an_empty_feature_gate(monkeypatch):
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
-        raw, word = admit_training_forms(model, ('shape',))[0]
+        raw, word = nominated_forms(model, ('shape',))[0]
         owner = model._concept_owner()
         row = owner._csw_row_of(word)
         codebook = owner.similarity_codebook

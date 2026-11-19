@@ -71,53 +71,8 @@ def test_66_numeric_certificate_on_level_percepts():
     certificate()
 
 
-def test_66a_numeric_definition_reads_the_whole_bracket():
-    from recon_bench import _build_model
-    model, *_ = _build_model('data/MM_xor.xml')
-    values = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]]).unsqueeze(-1)
-    owner = model._concept_owner()
-    model.train()
-    for _ in range(owner.concept_mint_count + 1):
-        model.forward(values)
-    field = model._numeric_field
-    assert field.evidence.shape[2] == 3
-    start, end = model.where_registry.slices['numeric']
-    assert end - start == 2
-    assert field.where[0].tolist() == [[start, start + 1], [start + 1, end], [start, end]]
-    matrix = owner._concept_allocator.layer().conjunctive
-    assert matrix.nnz == 2
-    parent = owner.concept_id_at_row(matrix._rows[0])
-    evidence = field.evidence[field.concept_ids == parent][0]
-    assert not evidence[:, :2].any()
-    torch.testing.assert_close(evidence[:, 2, 0], torch.tensor([0., 0., 0., 1.]), atol=0, rtol=0)
-    assert not evidence[..., 1].any()
-    for axis, row in enumerate(model.numeric_percepts.rows):
-        value = field.evidence[field.concept_ids == owner.concept_id_at_row(row)][0]
-        torch.testing.assert_close(value[:, axis, 0], values[:, axis, 0], atol=0, rtol=0)
-    torch.testing.assert_close(model.numeric_percepts.reverse(field), values, atol=1e-6, rtol=0)
 
 
-def test_bracket_closure_joins_only_contained_readings_on_both_lanes():
-    from FieldProjection import close_bracket, close
-    from FieldLogic import reduce
-    from Understanding import ConceptualField
-    from test_cs_sparse_weights import _cs, _mint_row
-    owner = _cs(nS=16, order=2)
-    a, b, parent = 11, 12, 13
-    rows = [_mint_row(owner, 0, cid) for cid in (a, b, parent)]
-    owner.add_concept_edge(rows[2], rows[0], weight=1., conjunctive=True)
-    owner.add_concept_edge(rows[2], rows[1], weight=1., conjunctive=True)
-    evidence = torch.tensor([[[[.4, .7], [.8, .2], [1., 1.]]],
-                             [[[.6, .5], [.3, .9], [1., 1.]]],
-                             [[[0., 0.], [0., 0.], [0., 0.]]]])
-    where = torch.tensor([[[3, 4], [4, 5], [5, 6]]])
-    field = ConceptualField(torch.tensor([a, b, parent]), evidence, where, torch.zeros_like(where), None)
-    result = close_bracket(owner, field, torch.tensor([[3, 5]]))
-    joined = reduce(evidence[:, :, :2], operation='union', dim=2)
-    expected = close(owner, rows, joined[:, :, None])
-    torch.testing.assert_close(result.evidence[:, :, -1:], expected, atol=0, rtol=0)
-    torch.testing.assert_close(result.evidence[:, :, :-1], evidence, atol=0, rtol=0)
-    assert result.where[0, -1].tolist() == [3, 5]
 
 
 def test_level_percepts_have_native_bounds_and_distinct_places():

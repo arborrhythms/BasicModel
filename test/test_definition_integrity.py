@@ -43,7 +43,7 @@ def test_word_concepts_exist_before_grounded_case_discovery(tmp_path):
 def test_word_definition_survives_identity_resolution_and_pruning():
     from test_cs_sparse_weights import _cs
     cs=_cs()
-    word,obj=cs.interpret_word([7],[1],key='word')
+    word,obj=recurrent_interpretation(cs, [7],[1],key='word')
     before=cs.concept_parts(word),cs.concept_wholes(word)
     cs.resolve_identities()
     cs.refine_over_collected()
@@ -52,7 +52,7 @@ def test_word_definition_survives_identity_resolution_and_pruning():
 
 from pathlib import Path
 from types import SimpleNamespace
-from nomination_fixtures import recurrent_word
+from nomination_fixtures import recurrent_word, recurrent_interpretation
 
 def test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting():
     m = model()
@@ -88,8 +88,8 @@ def test_taxonomy_keeps_the_forms_derived_from_definition_rows():
     from test_cs_sparse_weights import _cs
     from ConceptIndex import index_part_row
     cs = _cs(nS=64, order=3)
-    word, whole = cs.interpret_word([7], [1], key='animal')
-    _, part = cs.interpret_word([8], [1], key='cat')
+    word, whole = recurrent_interpretation(cs, [7], [1], key='animal')
+    _, part = recurrent_interpretation(cs, [8], [1], key='cat')
     parent = index_part_row(cs, part, whole)
     assert parent in cs.word_concepts('animal')
     assert cs._concept_source_order(parent) == cs._concept_source_order(part) + 1

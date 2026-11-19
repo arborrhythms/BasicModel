@@ -27,6 +27,7 @@ import Spaces
 import Language
 from Layers import WORD
 from test_basicmodel import _populate_test_config
+from nomination_fixtures import recurrent_interpretation
 
 _DATA = os.path.join(os.path.dirname(_BIN), "data")
 _DEFAULTS = os.path.join(_DATA, "model.xml")
@@ -65,7 +66,7 @@ def _build(name):
 
 def test_interpreted_object_keeps_the_native_features_in_one_row():
     cs = _cs_active()
-    A, B = cs.interpret_word([1, 2], WORD, key="cat")
+    A, B = recurrent_interpretation(cs, [1, 2], WORD, key="cat")
     # A reads native features. B's standing bounds are no perceptual
     # definition: only testimony can give the object its membership.
     assert cs._concept_source_order(A) == 0
@@ -105,7 +106,7 @@ def test_population_inactive_is_noop():
         outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
-    cs.interpret_word([1, 2], WORD, key="cat")
+    recurrent_interpretation(cs, [1, 2], WORD, key="cat")
     assert Spaces._concept_alloc_of(cs).layer().features.nnz > 0
 
 
@@ -187,7 +188,7 @@ def test_sparse_concept_forward_smoke():
 def test_getparameters_includes_csw_after_population():
     cs = _cs_active()
     base = set(id(p) for p in cs.getParameters())
-    cs.interpret_word([1, 2], WORD, key="cat")     # populates weights
+    recurrent_interpretation(cs, [1, 2], WORD, key="cat")     # populates weights
     after = cs.getParameters()
     csw = [matrix.values for matrix in Spaces._concept_alloc_of(cs).layer().definition_matrices()
            if matrix.values is not None]
@@ -218,7 +219,7 @@ def test_model_optimizer_picks_up_csw_weights():
     # including the feature weights of the newly fused word parts.
     for word in (b'cat', b'dog'):
         parts = m.perceptualSpace.percept_store.spell_out(word)
-        cs.interpret_word(parts, WORD, key=word)
+        recurrent_interpretation(cs, parts, WORD, key=word)
     csw_ptrs = {ly.values.data_ptr()
                 for ly in Spaces._concept_alloc_of(cs).layer().definition_matrices()
                 if ly.values is not None}

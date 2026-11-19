@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import torch
 from definition_fixtures import witness_object
+from nomination_fixtures import recurrent_interpretation
 
 
 def model():
@@ -14,7 +15,7 @@ def admit(m, text, *, object_order=0):
     cs, ps, ws = m._concept_owner(), m.perceptualSpace, m.wholeSpace
     native = getattr(ps, 'percept_store', None)
     parts = native.spell_out(text.encode()) if native is not None else list(text.encode())
-    pair = cs.interpret_word(parts, ws.property_rows_for_bytes(text), key=text)
+    pair = recurrent_interpretation(cs, parts, ws.property_rows_for_bytes(text), key=text)
     if pair is None:
         return None
     word, obj = pair[:2]

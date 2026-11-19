@@ -42,7 +42,6 @@ def _mint_order0(cs, n):
 
 def _fixture(pi=False):
     cs = _cs(nS=128, order=2)
-    cs.conceptual_pi = pi
     return cs, _mint_order0(cs, 6)
 
 

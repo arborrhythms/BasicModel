@@ -12,14 +12,12 @@ def field(cs, batch=1, occurrences=1):
     return torch.zeros(cs._order_caps()[0], batch, occurrences, 2)
 
 
-@pytest.mark.parametrize('pi', [False, True])
 @pytest.mark.parametrize('parts', [2, 4, 8])
-def test_production_snap_background_is_neither(pi, parts):
+def test_production_snap_background_is_neither(parts):
     cs = _cs()
-    cs.conceptual_pi = pi
     row = _mint_field(cs, 101)
     for part in range(parts):
-        cs.add_concept_edge(row, part, 1., conjunctive=pi)
+        cs.add_concept_edge(row, part, 1.)
     native, extents = binary_features(cs, torch.zeros(2, 8, dtype=torch.long))
     snap = cs.cs_read_memberships(native, extents)
     _, result = cs.cs_forward_content(snap, cs.similarity_codebook.getW())
@@ -39,28 +37,18 @@ def test_membership_read_keeps_both_until_symbol_readout():
     torch.testing.assert_close(corners(symbols(read))[0, 0], torch.tensor([0., 0., 1., 0.]))
 
 
-@pytest.mark.parametrize('conjunctive', [False, True])
 @pytest.mark.parametrize('pair', [(0., 0.), (1., 1.)])
-def test_per_pole_folds_preserve_both_and_neither(conjunctive, pair):
+def test_per_pole_folds_preserve_both_and_neither(pair):
     cs = _cs()
-    cs.conceptual_pi = True
     row = _mint_field(cs, 101)
     for col in (0, 1):
-        cs.add_concept_edge(row, col, 1., conjunctive=conjunctive)
+        cs.add_concept_edge(row, col, 1.)
     a = field(cs)
     a[:2, 0, 0] = torch.tensor(pair)
     _, result = _field_forward(cs, a, torch.zeros(64, 8))
     torch.testing.assert_close(result[row, 0, 0], torch.tensor(pair), atol=1e-6, rtol=0)
 
 
-def test_unknown_definition_is_neither_even_with_zero_edges():
-    cs = _cs()
-    cs.conceptual_pi = True
-    rows = [_mint_field(cs, 101 + i) for i in range(3)]
-    cs.add_concept_edge(rows[1], 0)
-    cs.add_concept_edge(rows[2], 0, conjunctive=True)
-    _, result = _field_forward(cs, torch.ones_like(field(cs)), torch.zeros(64, 8))
-    assert result[rows].count_nonzero() == 0
 
 
 def test_kind_both_member_and_absent_member_is_both():
@@ -74,36 +62,8 @@ def test_kind_both_member_and_absent_member_is_both():
     torch.testing.assert_close(result[row, 0, 0], torch.ones(2))
 
 
-def test_reverse_keeps_counterevidence_and_its_occurrence():
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs.add_concept_edge(row, 1, 1., conjunctive=True, negated=True)
-    query = torch.zeros(sum(cs._order_caps()), 1, 2, 2)
-    query[row, 0, 1, 0] = .81
-    matrix = cs._concept_allocator.layer(0).conjunctive
-    adjoint = matrix.attribute_presence(query[..., 0].flatten(1), conjunctive=True)
-    size = len(query)
-    result = torch.stack((adjoint[:size], adjoint[matrix.nOutput+1:matrix.nOutput+1+size]), -1).reshape_as(query)
-    torch.testing.assert_close(result[0, 0, 1], torch.tensor([.81, 0.]))
-    torch.testing.assert_close(result[1, 0, 1], torch.tensor([0., .81]))
-    assert result[:, :, 0].count_nonzero() == 0
 
 
-def test_part_values_have_only_one_checkpoint_owner():
-    cs = _cs()
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, .7, negated=True)
-    cs.add_concept_edge(row, 1, .8, conjunctive=True)
-    store = Spaces._concept_alloc_of(cs).layer()
-    assert not any('concept_parts_layer' in name for name in cs.state_dict())
-    assert any(parameter is store.values for parameter in cs.parameters())
-    saved = store.parts_extras()
-    store.conjunctive.values.data.zero_()
-    store.load_parts_extras(saved)
-    assert store.conjunctive.values.item() == pytest.approx(.8)
-    assert 'where' not in saved and 'provisional_orders' not in saved
 
 
 def test_checkpoint_preserves_both_and_neither_in_occurrence_field():
@@ -167,19 +127,6 @@ def test_context_allocation_is_bounded_independently_of_the_shared_inventory():
 
 
 
-def test_projected_updates_keep_nonnegative_parts_and_kind_maximum():
-    cs = _cs()
-    row = _mint_row(cs, 1, 101)
-    for part in range(3):
-        cs.add_concept_edge(row, part, .1)
-    store = Spaces._concept_alloc_of(cs).layer()
-    store.assigned[row] = True
-    with torch.no_grad():
-        store.values.copy_(torch.tensor([-.1, .2, .4]))
-    store.project_parts()
-    torch.testing.assert_close(store.values, torch.tensor([0., .2, .4]))
-    with pytest.raises(ValueError, match='self-edge'):
-        store.conjunctive.add_edge(row, row + store.nOutput + 1, 1.)
 
 
 def test_discovered_and_end_definitions_keep_learned_exponent_scale():
@@ -197,35 +144,6 @@ def test_discovered_and_end_definitions_keep_learned_exponent_scale():
     torch.testing.assert_close(store.values, before)
 
 
-def test_signed_checkpoint_migrates_poles_and_optimizer_first_moments():
-    from types import SimpleNamespace
-    from test_structural_checkpoint import _model_with
-    cs = _cs()
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, .7)
-    cs.add_concept_edge(row, 1, .8, conjunctive=True)
-    saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
-    layer = saved['conceptual_spaces'][0]['allocator']['layers'][0]
-    layer['nInput'] = layer['nOutput'] + 1
-    layer['values'].neg_()
-    parts = layer['parts']
-    parts['version'] = 1
-    parts['matrices']['where'] = dict(rows=[], cols=[], values=None)
-    parts['matrices']['conjunctive']['values'].neg_()
-    restored = _cs()
-    _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)
-    store = Spaces._concept_alloc_of(restored).layer()
-    assert store._cols == [store.nOutput + 1]
-    assert store.conjunctive._cols == [store.nOutput + 2]
-    optimizer = torch.optim.Adam([store.values, store.conjunctive.values])
-    for matrix in store.part_matrices():
-        optimizer.state[matrix.values] = dict(exp_avg=torch.tensor([.3]), exp_avg_sq=torch.tensor([.4]))
-    store.migrate_part_moments(optimizer)
-    for matrix in store.part_matrices():
-        assert optimizer.state[matrix.values]['exp_avg'].item() == pytest.approx(-.3)
-        assert optimizer.state[matrix.values]['exp_avg_sq'].item() == pytest.approx(.4)
-    store.migrate_part_moments(optimizer)  # migration is applied exactly once
-    assert optimizer.state[store.values]['exp_avg'].item() == pytest.approx(-.3)
 
 
 def test_restored_knowing_reads_symbols_without_a_percept_carrier():
@@ -247,47 +165,6 @@ def test_restored_knowing_reads_symbols_without_a_percept_carrier():
     assert leg.event.shape == (1, 2 * sum(cs._order_caps()), 8)
 
 
-def test_thought_keeps_negated_definition_in_a_timed_stm_idea():
-    from types import SimpleNamespace
-    from AccessibleMind import apply_thought_effect
-    from QueryWork import QueryWorkBudget
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_field(cs, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs.add_concept_edge(row, 1, 1., conjunctive=True, negated=True)
-    before = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
-    before[1, 0, 0, 0] = 1.
-    cs.subspace._concept_activations = before.clone()
-    cs.subspace._concept_where = torch.tensor([[[0, 2]]])
-    cs.subspace._concept_when = torch.tensor([[[5, 6]]])
-    from clock_fixtures import install
-    model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
-    # A recalled premise enters its native STM slot; no query result is a point.
-    from dataclasses import replace
-    from Meaning import ConceptualMeaning
-    from Memory import STM0
-    from ClauseRow import attach_clause_index
-    store = STM0(cs.nDim, capacity=8, relation_capacity=8192)
-    attach_clause_index(model, store, cs)
-    content = replace(ConceptualMeaning.from_description(cs.similarity_codebook.lookup_rows(row)),
-                      role_refs=(('sym', 101), None, None))
-    index = store.append_meaning(content, trust=.7)
-    store.recall_chunks((store.row(index),), stream=0, work=QueryWorkBudget(32))
-    from ThoughtChunks import held
-    stamp, idea = held(cs.stm, 0)[0]
-    assert idea.role_refs[0] == ('sym', 101)
-    torch.testing.assert_close(cs.subspace._concept_activations, before)
-    assert cs.subspace._concept_where.tolist() == [[[0, 2]]]
-    assert cs.subspace._concept_when.tolist() == [[[5, 6]]]
-    assert not hasattr(cs.subspace, '_thought_occurrence')
-    demand = torch.zeros_like(before)
-    demand[row, 0, 0, 0] = 1.
-    matrix = cs._concept_allocator.layer(0).conjunctive
-    adjoint = matrix.attribute_presence(demand[..., 0].flatten(1), conjunctive=True)
-    size = len(demand)
-    descended = torch.stack((adjoint[:size], adjoint[matrix.nOutput+1:matrix.nOutput+1+size]), -1).reshape_as(demand)
-    torch.testing.assert_close(descended[1, 0, 0], torch.tensor([0., 1.]))
 
 
 def test_concept_meaning_starts_zero_and_grows_without_changing_direction():

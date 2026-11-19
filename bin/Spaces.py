@@ -14863,7 +14863,11 @@ class ConceptualSpace(Space):
             starts = brackets[..., 0].long()
             valid = (brackets[..., 1] > brackets[..., 0])[..., None]
             if registry is not None:
-                where = torch.where(valid, registry.encode('text', starts.clamp_min(0)), 0.)
+                # A bracket beyond the text's addresses has no place to read.
+                start, end = registry.slices['text']
+                inside = (starts >= 0) & (starts < end - start)
+                valid = valid & inside[..., None]
+                where = torch.where(valid, registry.encode('text', torch.where(inside, starts, -1)), 0.)
             else:
                 where = brackets.new_zeros(*starts.shape, self.ORDER_ZERO_WHERE, dtype=codes.dtype)
             if encoding is not None and perception.when is not None:
@@ -15096,12 +15100,17 @@ class ConceptualSpace(Space):
         """
         store = _concept_alloc_of(self).layer(0)
         matrix = store.features
-        keys = [('bp', col // 2) for col in matrix._cols]
         if publish:
             object.__setattr__(self, '_percept_field', perception)
             object.__setattr__(self, '_cs_field_where', perception.where)
             object.__setattr__(self, '_cs_field_when', perception.when)
-            membership = perception.values.index_select(0, perception.selected(keys))
+            # A recorded member that this read does not hold is absent.
+            read = set(perception.keys)
+            held = [i for i, col in enumerate(matrix._cols) if ('bp', col // 2) in read]
+            membership = perception.values.new_zeros(len(matrix._cols), *perception.values.shape[1:])
+            if held:
+                keys = [('bp', matrix._cols[i] // 2) for i in held]
+                membership[held] = perception.values.index_select(0, perception.selected(keys))
             columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
             required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
             self._bind_attended_concepts(required, matrix)

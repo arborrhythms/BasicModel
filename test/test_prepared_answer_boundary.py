@@ -5,6 +5,7 @@ import torch
 from What import What
 from test_output_path_supervised import _native_answer_model
 from test_output_walk import _capture_program_probe, _stop
+from nomination_fixtures import nominated_forms
 
 
 def _given_idea(derivation, codes):
@@ -24,7 +25,7 @@ def _with_identity_bank(model, understanding, codes):
     batch, count = codes.shape[:2]
     from Corpus import admit_training_forms
     forms = ['fixture' + chr(97 + index) for index in range(count)]
-    admitted = dict(admit_training_forms(model, forms))
+    admitted = dict(nominated_forms(model, forms))
     owner = model._concept_owner()
     rows = codes.new_tensor([owner._csw_row_of(admitted[form.encode()])
                             for form in forms], dtype=torch.long)[None].expand(batch, -1)

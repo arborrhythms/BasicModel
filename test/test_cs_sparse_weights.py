@@ -99,31 +99,6 @@ def test_add_concept_edge_dedup_and_query():
     assert cs.concept_weights(34) == []              # different row
 
 
-def test_shared_untyped_square_store():
-    """dual-towers rev 2: every order shares ONE untyped [S+1 x S]
-    ConceptualAttentionLayer, S = sum(taper caps) -- no role blocks; the bias is
-    the store's trailing column S (callers pass col == nVectors); self-edges
-    raise (the Quine atom); the learnable values register EXACTLY ONCE."""
-    cs = _cs(nS=16, order=2)                         # taper (8, 4, 2): S = 14
-    s1 = cs._sparse_families(1)
-    assert _p is s1.conjunctive                       # same concepts, conjunctive parts
-    assert s1 is cs._sparse_families(2)           # ONE shared store
-    assert (s1.nOutput, s1.nInput) == (16, 34)       # [S+1 inputs x S outputs]
-    assert s1.roles is None                          # untyped: no role blocks
-    row = cs.order_slice(1)[0]
-    cs.add_concept_edge(row, 2)                      # order-1 row <- snap col
-    cs.add_concept_edge(row, 16)                     # bias: col nVectors -> S
-    assert (16, 0.0) in cs.concept_weights(row)       # read back as nVectors
-    try:
-        cs.add_concept_edge(9, 9)
-        assert False, "self-edge must raise (the Quine atom)"
-    except ValueError:
-        pass
-    assert s1.nnz == 2
-    # The learnable values surface through getParameters ONCE (dedup: the
-    # same layer is registered under several family keys).
-    params = cs.getParameters()
-    assert len([p for p in params if p is s1.values]) == 1
 
 
 def test_any_edge_on_snap_row_fails_loud():

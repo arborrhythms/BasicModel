@@ -20,6 +20,7 @@ import torch
 from test_cs_sparse_weights import _evidence
 
 from recon_bench import _build_model, _resolve_config
+from nomination_fixtures import recurrent_interpretation
 
 
 def _build(cfg):
@@ -209,7 +210,7 @@ def test_symbol_history_projection():
     """Heat follows a genuine sigma reference; DEF is not a part edge."""
     from test_cs_symbol_table import _cs_sparse_active
     cs = _cs_sparse_active()
-    _, obj = cs.interpret_word([1], 2, key="w1")
+    _, obj = recurrent_interpretation(cs, [1], 2, key="w1")
     parent = class_over(cs, [('sym', obj)])
     row_object = cs._csw_row_of(parent)
     assert row_object is not None

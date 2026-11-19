@@ -97,24 +97,6 @@ def test_parallel_field_never_dispatches_grammar_lift_or_lower(monkeypatch):
     model.End()
 
 
-@pytest.mark.slow
-def test_serial_grammar_never_executes_field_sigma_pi_or_not(tmp_path, monkeypatch):
-    from test_reverse_traversal import _traversal_model, _run
-    model = _traversal_model(tmp_path)
-    assert model.word_brackets
-
-    def forbidden(*args, **kwargs):
-        raise AssertionError('serial grammar executed a field evidence operation')
-
-    for cs in model.conceptualSpaces:
-        cs._symbolic_order = 3  # exclusion is by mode, not an empty field cap
-        cs.conceptual_pi = True
-        assert not cs._sparse_active()
-        for name in ('cs_read_memberships', '_compose_order0', 'cs_forward_content'):
-            monkeypatch.setattr(cs, name, forbidden)
-    _run(model, ['12 plus 1', '3 plus 4'])
-    model.End()
-    model.symbolSpace.soft_reset()
 
 
 @pytest.mark.parametrize('trial', range(3))

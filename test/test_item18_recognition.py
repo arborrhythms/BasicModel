@@ -9,6 +9,7 @@ import pytest
 pytestmark = pytest.mark.assessment_rung(4)
 
 from test_item18_finish import named_scalar_model
+from nomination_fixtures import recurrent_interpretation
 
 
 def teach_question(model, examples, question):
@@ -66,7 +67,7 @@ def test_90_named_percept_does_not_mix_native_spellings(tmp_path, monkeypatch, e
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     for item in lesson['lessons'][:3]:
         form = item['text']
-        word, *_ = owner.interpret_word(model.perceptualSpace.percept_store.spell_out(form.encode()),
+        word, *_ = recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(form.encode()),
             model.wholeSpace.property_rows_for_bytes(form), key=form)
         for _ in range(lesson['repetitions']):
             row = store.append_idea(code(owner, item['scalar']), trust=1.)

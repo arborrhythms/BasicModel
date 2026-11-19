@@ -1,13 +1,14 @@
 """Higher-order symbols read form from their word without storing it."""
 import pytest
 import torch
+from nomination_fixtures import recurrent_interpretation
 
 pytestmark = pytest.mark.assessment_rung(1)
 
 
 def named_kind(model, form):
     owner = model._concept_owner()
-    word, *_ = owner.interpret_word(
+    word, *_ = recurrent_interpretation(owner, 
         model.perceptualSpace.percept_store.spell_out(form.encode()),
         model.wholeSpace.property_rows_for_bytes(form), key=form)
     from definition_fixtures import agreeing_views

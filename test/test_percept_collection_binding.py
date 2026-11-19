@@ -3,6 +3,7 @@ from dataclasses import replace
 import torch
 import pytest
 from test_item18_finish import named_scalar_model
+from nomination_fixtures import recurrent_interpretation
 
 @pytest.mark.parametrize('value, belongs', [(1., True), (2., True), (3., True), (4., False)])
 def test_bind_percept_collection_reads_membership_not_coordinate_overlap(named_scalar_model, value, belongs):
@@ -11,7 +12,7 @@ def test_bind_percept_collection_reads_membership_not_coordinate_overlap(named_s
     from ThoughtReferences import with_slots,bindings
     model,_=named_scalar_model
     owner=model._concept_owner();store=model.symbolSpace.ltm_store
-    word,*_=owner.interpret_word(model.perceptualSpace.percept_store.spell_out(b'collection'),
+    word,*_=recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(b'collection'),
         model.wholeSpace.property_rows_for_bytes('collection'),key='collection')
     for witness in (1.,3.)*3:
         row=store.append_idea(code(owner,witness),trust=1.)

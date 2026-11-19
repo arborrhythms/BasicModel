@@ -37,16 +37,6 @@ def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
         assert cs._percept_field.events.count_nonzero() == 0
 
 
-def test_parameter_getter_does_not_offer_new_parts():
-    cs = _cs()
-    row = _mint_field(cs, 100)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
-    before = tuple(matrix._index)
-    parameter = matrix.values
-    cs.getParameters()
-    assert tuple(matrix._index) == before
-    assert matrix.values is parameter
 
 
 def test_a_located_part_need_not_pervade_but_the_whole_property_must():
@@ -152,19 +142,6 @@ def test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar():
     assert not any('features.values' in key for key in cs.state_dict())
 
 
-def test_sentence_boundary_offers_candidates_and_getter_remains_pure():
-    cs = _cs()
-    row = _mint_field(cs, 100)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    basic_feature(cs, 0, 'ws', 7, 1., parts=(65,))
-    store = Spaces._concept_alloc_of(cs).layer()
-    cs.Reset(hard=True)
-    assert (row, store.nOutput + 1) in store.conjunctive._index
-    assert (0, 2 * cs.basic_percepts.index[((65,), (7,))] + 1) in store.features._index
-    before = [(tuple(m._index), m.values) for m in store.definition_matrices()]
-    cs.getParameters()
-    for (indices, parameter), matrix in zip(before, store.definition_matrices()):
-        assert tuple(matrix._index) == indices and matrix.values is parameter
 
 
 def test_pruning_a_feature_preserves_the_other_tower_at_the_same_address():

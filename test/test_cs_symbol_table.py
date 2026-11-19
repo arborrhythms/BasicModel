@@ -25,6 +25,7 @@ from definition_fixtures import with_definitions
 import Spaces
 from Layers import WORD, UNIVERSE, ATOM, NOTHING, EVERYTHING
 from test_basicmodel import _populate_test_config
+from nomination_fixtures import recurrent_interpretation
 
 _D = 8
 
@@ -141,7 +142,7 @@ def test_populate_then_resolve_identities_live_lifecycle():
 
 def test_interpret_word_structure():
     cs = _cs()
-    A, _ = cs.interpret_word([65, 66, 67], WORD)
+    A, _ = recurrent_interpretation(cs, [65, 66, 67], WORD)
     from reading_fixtures import supply_object
     B = supply_object(cs, A)
     assert set(cs.concept_parts(A)) == {65, 66, 67}
@@ -161,7 +162,7 @@ def test_singleton_populates_one_untyped_edge():
     """Min-support exemption: the singleton's weighted reading is its ONE
     untyped edge onto the constituent's global row (v3)."""
     cs = _cs_sparse_active()
-    _word, A = cs.interpret_word([1], 2, key="w")   # order-0 sym
+    _word, A = recurrent_interpretation(cs, [1], 2, key="w")   # order-0 sym
     S = class_over(cs, [('sym', A)])
     assert cs._concept_source_order(S) == 1
     row = cs._csw_rows[(1, S)]
@@ -172,29 +173,29 @@ def test_singleton_populates_one_untyped_edge():
 
 def test_interpret_word_idempotent_per_key():
     cs = _cs()
-    A1, B1 = cs.interpret_word([65, 66], WORD, key="ab")
-    A2, B2 = cs.interpret_word([65, 66], WORD, key="ab")
+    A1, B1 = recurrent_interpretation(cs, [65, 66], WORD, key="ab")
+    A2, B2 = recurrent_interpretation(cs, [65, 66], WORD, key="ab")
     assert (A1, B1) == (A2, B2)              # same word -> same triple
     # a different surface text mints a fresh triple
-    A3, _ = cs.interpret_word([67], WORD, key="c")
+    A3, _ = recurrent_interpretation(cs, [67], WORD, key="c")
     assert A3 != A1
     # no key -> always fresh
-    A4, _ = cs.interpret_word([65, 66], WORD)
+    A4, _ = recurrent_interpretation(cs, [65, 66], WORD)
     assert A4 == A1  # native ordered parts resolve without a surface cache
 
 
 def test_interpret_word_accumulates_word_parts():
     cs = _cs()
-    A, _ = cs.interpret_word([65], WORD, key="grows")
+    A, _ = recurrent_interpretation(cs, [65], WORD, key="grows")
     # the same word re-presented with a new spelled-out part accrues it onto A.
-    A2, _ = cs.interpret_word([66], WORD, key="grows")
+    A2, _ = recurrent_interpretation(cs, [66], WORD, key="grows")
     assert A2 == A
     assert set(cs.concept_parts(A)) == {65, 66}
 
 
 def test_object_symbol_is_refinable_not_yet_identity():
     cs = _cs()
-    _, B = cs.interpret_word([65, 66, 67], WORD)
+    _, B = recurrent_interpretation(cs, [65, 66, 67], WORD)
     # B starts as a 1-part/1-whole tie (ATOM <= UNIVERSE) -- structurally an
     # identity SHAPE, but it is the unspecified poles awaiting refinement, so it
     # is still in the active set until the lifecycle specializes it.
@@ -204,7 +205,7 @@ def test_object_symbol_is_refinable_not_yet_identity():
 
 def test_resolve_identities_does_not_collapse_unspecified_object():
     cs = _cs()
-    A, _ = cs.interpret_word([65, 66, 67], WORD)
+    A, _ = recurrent_interpretation(cs, [65, 66, 67], WORD)
     from reading_fixtures import supply_object
     B = supply_object(cs, A)
     resolved = cs.resolve_identities()
@@ -301,7 +302,7 @@ def test_prune_removes_bias_edge_of_dropped_everything():
     physical edge pruning can retire is the EVERYTHING bias -- global
     (row, nVectors) -- of a pool concept once a tighter whole is linked."""
     cs = _cs_sparse_active()
-    _word, A = cs.interpret_word([1], 2, key="w")   # A: order-0 sym
+    _word, A = recurrent_interpretation(cs, [1], 2, key="w")   # A: order-0 sym
     c = cs.new_concept()
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
@@ -381,10 +382,10 @@ def test_prune_drops_everything_when_other_whole_linked():
 
 def test_word_object_testimony_retains_distinct_reoccurrences():
     cs = _cs_sparse_active()
-    A, _ = cs.interpret_word([1, 2], 3, key="cat")
+    A, _ = recurrent_interpretation(cs, [1, 2], 3, key="cat")
     from reading_fixtures import supply_object
     B = supply_object(cs, A)
     assert cs.interpret.forward(A, occurrence=(0, 0)) == B
-    assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
+    assert recurrent_interpretation(cs, [1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
     assert cs._concept_allocator.testimony_seen[B] == {(0, 0), (1, 0)}
     assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B

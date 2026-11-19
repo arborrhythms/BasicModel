@@ -78,7 +78,6 @@
     <chunkPromotionThreshold>2</chunkPromotionThreshold>
   </PartSpace>
   <ConceptualSpace>
-    <conceptReadoutL1>0.01</conceptReadoutL1>
     <nInput>8</nInput>
     <nInputDim>1032</nInputDim>
     <nVectors>65536</nVectors>

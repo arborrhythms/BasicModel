@@ -8,12 +8,12 @@ import Spaces
 from Layers import RadixLayer
 from PerceptProperties import PrimitiveProperties
 from test_cs_sparse_weights import _cs
+from nomination_fixtures import recurrent_interpretation
 
 
 @pytest.mark.parametrize('conceptual_pi', [False, True])
 def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     cs = _cs()
-    cs.conceptual_pi = conceptual_pi
     primitive = PrimitiveProperties(4)
     with torch.no_grad():
         primitive.members[:, 65] = torch.tensor([.25, .36, .81, .49])
@@ -65,16 +65,16 @@ def test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids():
 
 def test_witnesses_write_alternatives_without_conjoining_their_literals():
     cs = _cs()
-    word, A = cs.interpret_word([7], [1], key='word')
+    word, A = recurrent_interpretation(cs, [7], [1], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
     row = cs._csw_row_of(A)
-    cs.interpret_word([8], [2], key='word')
+    recurrent_interpretation(cs, [8], [2], key='word')
     [(alternative, weight)] = cs.concept_weights(row)
     assert weight == 1.
     assert {col for r, col in store.features._index if r == row} == {2 * cs.basic_percepts.index[((7,), (1,))]}
     assert {col for r, col in store.features._index if r == alternative} == {2 * cs.basic_percepts.index[((8,), (2,))]}
     before = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
-    cs.interpret_word([8], [2], key='word')
+    recurrent_interpretation(cs, [8], [2], key='word')
     assert before == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
     from test_structural_checkpoint import _model_with
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
@@ -93,7 +93,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     letters = ps.percept_store.spell_out(b'love')
     whole = ws.property_rows_for_bytes(b'love')
     assert whole
-    word, A = cs.interpret_word(letters, whole, key='love')
+    word, A = recurrent_interpretation(cs, letters, whole, key='love')
     identity = ps.percept_store.identity
     atom_ids = tuple(identity.admit(b'love'))
     assert set(cs.concept_parts(word)) == set(atom_ids)
@@ -112,7 +112,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
         ws.subspace.what.primitive_properties, raw, extent), extent)
     torch.testing.assert_close(after, result)
     count = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
-    cs.interpret_word([fused], whole, key='love')
+    recurrent_interpretation(cs, [fused], whole, key='love')
     assert count == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
     cs.refine_over_collected()
     assert A not in Spaces._concept_alloc_of(cs).retired
@@ -121,7 +121,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
 def test_alternatives_do_not_trigger_conjunctive_overcollection():
     cs = _cs()
     for n in range(6):
-        word, A = cs.interpret_word([20 + n], [10 + n], key='word')
+        word, A = recurrent_interpretation(cs, [20 + n], [10 + n], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
     before = dict(store.features._index)
     cs.refine_over_collected()

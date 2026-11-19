@@ -26,6 +26,7 @@ if _BIN not in sys.path:
 
 import torch
 from PrependedSymbols import word_view, lookup_view
+from nomination_fixtures import recurrent_interpretation
 
 _DATA = os.path.join(_PROJECT, "data")
 _SMOKE = os.path.join(_DATA, "MM_ladder.xml")
@@ -580,7 +581,7 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     store = m.perceptualSpace.percept_store
     store.identity.admit(b'hello')
     pid = store.identity.word_rows[b'hello']
-    A, _ = cs.interpret_word([pid], word_whole=None, key='hello')
+    A, _ = recurrent_interpretation(cs, [pid], word_whole=None, key='hello')
     from definition_fixtures import witness_object
     B = witness_object(cs, A)
     # The full native percept resolves to the unary word/object pair ...
@@ -606,7 +607,7 @@ def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
     store = m.perceptualSpace.percept_store
     store.identity.admit(b"hello")
     pid = store.identity.word_rows[b"hello"]
-    A1, _ = cs.interpret_word([pid], word_whole=None, key="hello")
+    A1, _ = recurrent_interpretation(cs, [pid], word_whole=None, key="hello")
     from definition_fixtures import witness_object
     witness_object(cs, A1)
     content, mask = cs.concept_row_content(torch.tensor([pid, len(store) + 1]))

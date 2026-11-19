@@ -6,6 +6,7 @@ import Spaces
 from test_basicmodel import _populate_test_config
 from test_cs_sparse_weights import _evidence
 from order_fixtures import force_order
+from nomination_fixtures import recurrent_interpretation
 
 _D = 8
 
@@ -79,7 +80,7 @@ def test_no_self_edge_via_populate():
 
 def test_relate_x_x_merges_to_one_edge():
     cs = _cs(nS=16, order=2)
-    _word, A = cs.interpret_word([1], 2, key="w")
+    _word, A = recurrent_interpretation(cs, [1], 2, key="w")
     sx = class_over(cs, [('sym', A)])                     # the unit set {A}
     C = cs._concept_allocator.parts.add(sx, sx, truth_plus=1.)                     # part- AND whole-leg on sx
     parts = Spaces._concept_alloc_of(cs).parts

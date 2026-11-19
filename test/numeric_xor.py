@@ -6,7 +6,8 @@ from recon_bench import _build_model
 def fit(config='data/MM_xor.xml', *, promotion=True, iterations=32, steps=1, backward=None):
     model, *_ = _build_model(str(config))
     owner = model._concept_owner()
-    owner.conceptual_pi = promotion
+    # Without promotion no conjunction of the two axes is nominated.
+    owner._promotion_enabled = owner._promotion_enabled and promotion
     values = torch.tensor([[0.,0.],[0.,1.],[1.,0.],[1.,1.]]).unsqueeze(-1)
     target = torch.tensor([0.,1.,1.,0.])
     model.train()
@@ -35,9 +36,10 @@ def certificate(config='data/MM_xor.xml'):
     assert error < 1e-6
     torch.testing.assert_close(prediction,torch.tensor([0.,1.,1.,0.]),rtol=0,atol=1e-6)
     owner = model._concept_owner()
-    matrix = owner._concept_allocator.layer(0).conjunctive
-    assert matrix.nnz == 2
-    row = matrix._rows[0]
+    basic = owner.basic_percepts
+    conjunction, = basic.conjunctions
+    assert len(basic.conjunctions[conjunction]) == 2
+    row = owner.concept_of_basic_percept(conjunction)
     rows = [*model.numeric_percepts.rows,row]
     weights = model.outputSpace.field_readout.weight[0,torch.tensor(rows)*2]
     assert (weights[:2]>0).all() and weights[2]<0

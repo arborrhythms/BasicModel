@@ -7,7 +7,7 @@ from torch import nn
 
 from BasicPercepts import BasicPercepts
 from test_item20_round5_memory import receipt
-from nomination_fixtures import recurrent_word
+from nomination_fixtures import recurrent_word, nominated_forms
 
 
 def percepts(capacity=4):
@@ -135,7 +135,7 @@ def test_supplied_training_form_declares_the_basic_percept_at_admission(monkeypa
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
-        words = admit_training_forms(model, ('hello world',))
+        words = nominated_forms(model, ('hello world',))
         table = model._concept_owner().basic_percepts
         assert words and all(bool(table.promoted[table.words[word]]) for _, word in words)
         assert table.capacity == 256
@@ -192,10 +192,10 @@ def test_one_admitted_form_uses_one_basic_percept_and_only_two_pole_columns(monk
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
         owner = model._concept_owner()
-        first = admit_training_forms(model, ('hello',))
+        first = nominated_forms(model, ('hello',))
         basic = owner.basic_percepts
         before = len(basic.index)
-        second = admit_training_forms(model, ('hello',))
+        second = nominated_forms(model, ('hello',))
         assert first == second and len(basic.index) == before
         _, word = first[0]
         bp = basic.words[word]

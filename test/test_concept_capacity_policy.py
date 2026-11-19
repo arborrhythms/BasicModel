@@ -21,6 +21,7 @@ from definition_fixtures import with_definitions
 
 from Spaces import ConceptualSpace
 from test_basicmodel import _populate_test_config
+from nomination_fixtures import recurrent_interpretation
 
 
 _D = 8
@@ -100,7 +101,7 @@ def test_explicit_word_row_capacity_failure_is_atomic():
         assert cs._csw_concept_row(0, 1000 + row) == row
     before = _allocator_snapshot(cs)
     with pytest.raises(RuntimeError, match='capacity'):
-        cs.interpret_word([10, 11], (0,), key='unseated')
+        recurrent_interpretation(cs, [10, 11], (0,), key='unseated')
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
 
 
@@ -108,20 +109,20 @@ def test_explicit_word_row_capacity_failure_is_atomic():
 
 def test_automatic_capacity_mode_reuses_known_identity_without_recycling():
     cs = _cs(8)
-    known = cs.interpret_word([10], (0,), key='known')
+    known = recurrent_interpretation(cs, [10], (0,), key='known')
     for row in range(1, cs._order_caps()[0]):
         force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
     retained = 1000 + cs._order_caps()[0] - 1
-    assert cs.interpret_word([10], (0,), key='known') == known
+    assert recurrent_interpretation(cs, [10], (0,), key='known') == known
     before = _allocator_snapshot(cs)
     with pytest.raises(RuntimeError, match='capacity'):
-        cs.interpret_word([20], (0,), key='unseen')
+        recurrent_interpretation(cs, [20], (0,), key='unseen')
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
     assert cs._csw_row_of(retained) is not None
     before = _allocator_snapshot(cs)
     with pytest.raises(RuntimeError, match='capacity'):
-        cs.interpret_word([10, 11], (0,), key='known')
+        recurrent_interpretation(cs, [10, 11], (0,), key='known')
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
 
 

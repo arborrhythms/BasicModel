@@ -10,7 +10,6 @@ from nomination_fixtures import recurrent_word
 def test_different_positions_in_one_extent_supply_the_two_symbols():
     from test_concept_memberships import binary_features
     cs = _cs()
-    cs.conceptual_pi = True
     native, _ = binary_features(cs, torch.tensor([[49, 48, 49, 49]]))
     extents = torch.tensor([[[0, 2], [2, 4]]])
     read = cs.cs_read_memberships(native, extents)
@@ -148,32 +147,6 @@ def test_property_priming_projects_direct_surface_rows(tmp_path):
     assert not hasattr(ws, '_pos_kind')
 
 
-def test_native_fused_case_has_no_concept_location(tmp_path):
-    from test_grounded_xor import grounded_model
-    model, _ = grounded_model(tmp_path)
-    ps, cs = model.perceptualSpace, model.conceptualSpaces[0]
-    ps.percept_store.ensure_atomic_bytes([b'1', b'0'])
-    fused = ps.percept_store.insert(b'10')
-    raw = torch.zeros(1, 1, int(model.inputSpace.outputShape[0]), dtype=torch.long)
-    raw[0, 0, :2] = torch.tensor([49, 48])
-    model.forward(raw)
-    # Word admission is the writer of native feature membership.
-    word = recurrent_word(cs.interpret, ps.percept_store.spell_out(b'10'), (), form=b'10',
-                                    word_reading=True)
-    assert word is not None
-    store = Spaces._concept_alloc_of(cs).layer()
-    identity = ps.percept_store.identity
-    units = identity.admit(b'10')
-    assert identity.spelling(units) == b'10'
-    row = cs._csw_row_of(word)
-    bp = cs.basic_percepts.words[word]
-    column = 2 * bp
-    assert cs.basic_percepts.occurrences[bp][0] == tuple(units)
-    edge = store.features._index[row, column]
-    assert float(store.features.values[edge].detach()) > 0
-    assert not hasattr(store.conjunctive, 'locations')
-    assert ps.percept_store.bytes_for(fused) == b'10'
-    model.End()
 
 
 def test_extent_read_keeps_missing_distinct_from_observed_zero():
@@ -223,19 +196,3 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path
     model.End()
 
 
-def test_candidate_growth_preserves_frozen_field_definitions():
-    import Spaces
-    cs = _cs()
-    frozen = _mint_field(cs, 101)
-    live = _mint_field(cs, 102)
-    cs.add_concept_edge(frozen, 0, .5, conjunctive=True)
-    cs.freeze_concept(101)
-    cs.add_concept_edge(live, 0, .5, conjunctive=True)
-    cs._prepare_part_learning()
-    matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
-    candidate = matrix._index[live, matrix.nOutput + 1]
-    cs._hebbian_strengthen(102)
-    assert float(matrix.values[candidate]) == 0.
-    matrix.values.sum().backward()
-    assert float(matrix.values.grad[matrix._index[frozen, 0]]) == 0.
-    assert float(matrix.values.grad[matrix._index[live, 0]]) == 1.

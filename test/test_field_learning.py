@@ -38,24 +38,6 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     assert 2 * absent not in written and 2 * absent + 1 not in written
 
 
-def test_boundary_candidates_keep_bracket_semantics_and_do_not_veto():
-    cs = _cs()
-    cs.conceptual_pi = True
-    _mint_row(cs, 0, 100)
-    row = _mint_row(cs, 0, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    # An unwritten source outside the bound field must not veto this pattern.
-    cs.add_concept_edge(row, cs.order_slice(0)[1] - 1, 0., conjunctive=True)
-    native, extents = binary_features(cs, torch.tensor([[49, 48]]))
-    before = cs.cs_read_memberships(native, extents)
-    assert float(before[row, 0, 0, 0]) == 1.
-    cs._prepare_part_learning()
-    matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
-    opposite = matrix.nOutput + 1
-    assert (row, opposite) in matrix._index
-    assert not hasattr(matrix, "locations")
-    after = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(after, before)
 
 
 def test_boundary_candidates_stay_in_the_preceding_symbolic_order():

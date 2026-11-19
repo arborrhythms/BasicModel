@@ -164,7 +164,7 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     rows = [cs._csw_row_of(cs.mtm.entries[key].symbol) for key in cases]
     assert all(any(r == row
                    for r, col in store.features._index) for row in rows)
-    assert not hasattr(store.conjunctive, 'locations')
+    assert not hasattr(store, 'conjunctive')
     force_order(cs, 20001, 1)
     xor = cs._csw_concept_row(1, 20001)
     assert xor is not None
@@ -212,11 +212,9 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     assert len(learned) == 2
     assert all(store.features.values[store.features._index[0, 2 * bp]] > 0
                for bp in cs.basic_percepts.carrying('ws', 9))
-    # Pi was performed on retained order-0 positions, before symbolization.
-    # The higher-order XOR row contains only sigma edges to those cases.
-    assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
-               for r, c in store.conjunctive._index)
-    assert all(r != xor for r, _ in store.conjunctive._index)
+    # Pi is the first layer's, over basic percepts; the higher-order XOR
+    # row contains only sigma edges to the cases.
+    assert all(cs._order0_inventory_row(c % (store.nOutput + 1)) for r, c in store._index if r == xor)
     assert set(r for r, _ in learned).issubset(rows)
     torch.testing.assert_close(leg._concept_where, cs._cs_field_where)
     assert leg.materialize().shape[1] == 2 * sum(cs._field_caps())

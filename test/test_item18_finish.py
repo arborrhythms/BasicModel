@@ -2,6 +2,7 @@
 from dataclasses import replace
 import pytest
 import torch
+from nomination_fixtures import recurrent_interpretation
 
 
 @pytest.fixture
@@ -14,7 +15,7 @@ def named_scalar_model(tmp_path, monkeypatch, eager_reading):
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     objects = {}
     for form, number in (('alpha', 1.), ('beta', 1.), ('gamma', 2.)):
-        word, *_ = owner.interpret_word(model.perceptualSpace.percept_store.spell_out(form.encode()),
+        word, *_ = recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(form.encode()),
             model.wholeSpace.property_rows_for_bytes(form), key=form)
         for view in range(6):
             row = store.append_idea(code(owner, number), trust=1.)
@@ -412,7 +413,7 @@ def test_scalar_views_do_not_rewrite_a_words_existing_member_collection(tmp_path
     from ScalarPercepts import observe, code
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1)
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
-    word, *_ = owner.interpret_word(model.perceptualSpace.percept_store.spell_out(b'alpha'),
+    word, *_ = recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(b'alpha'),
         model.wholeSpace.property_rows_for_bytes('alpha'), key='alpha')
     text_row = store.append_idea(torch.ones(store.nDim))
     origin = store.occurrence_of(text_row)

@@ -8,58 +8,10 @@ from PerceptProperties import PrimitiveProperties
 from test_cs_sparse_weights import _cs, _mint_row
 
 
-def test_required_parts_keep_support_and_counterevidence_separate():
-    """A true and B false refute their intersection; negating B supports it."""
-    cs = _cs()
-    store = cs._sparse_families(0)
-    matrix = store.conjunctive
-    offset = store.nOutput + 1
-    for target, negative_b in ((2, False), (3, True)):
-        matrix.add_edge(target, 0, 1.)
-        matrix.add_edge(target, 1 + offset * negative_b, 1.)
-    source = torch.zeros(store.nInput, 3)
-    # Crisp evidence, graded evidence, and complete uncertainty.
-    source[0] = torch.tensor([1., .8, 0.])
-    source[offset + 1] = torch.tensor([1., .6, 0.])
-    pair = torch.stack((matrix.fold_presence(source, conjunctive=True),
-                        matrix.fold_presence(source, conjunctive=True, dual=True)), -1)
-    torch.testing.assert_close(pair[2], torch.tensor([[0., 1.], [0., .6], [0., 0.]]))
-    torch.testing.assert_close(pair[3], torch.tensor([[1., 0.], [.6, 0.], [0., 0.]]))
 
 
-def test_swapped_evidence_combination_is_distinct_from_a_both_pole_test():
-    cs = _cs()
-    store = cs._sparse_families(0)
-    matrix = store.conjunctive
-    offset = store.nOutput + 1
-    matrix.add_edge(1, 0, 1.)
-    matrix.add_edge(1, offset, 1.)
-    pair = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [0., 0.]])
-    source = torch.zeros(store.nInput, 4)
-    source[0], source[offset] = pair.unbind(-1)
-    combined = torch.stack((matrix.fold_presence(source, conjunctive=True),
-                            matrix.fold_presence(source, conjunctive=True, dual=True)), -1)
-    # §57.6: these two columns are one signed source coefficient. Equal
-    # weights cancel; an explicit both-pole observation still reads both.
-    torch.testing.assert_close(combined[1], torch.zeros(4, 2))
-    torch.testing.assert_close(corners(pair)[:, 2], torch.tensor([0., 0., 1., 0.]))
 
 
-def test_unknown_concept_withholds_conjunctive_support_without_refuting():
-    cs = _cs()
-    store = cs._sparse_families(0)
-    for source in (0, 1):
-        store.conjunctive.add_edge(2, source, 1.)
-    source = torch.zeros(store.nInput, 1)
-    source[0] = .8
-    read = store.conjunctive.fold_presence(source, conjunctive=True)
-    torch.testing.assert_close(read[2], torch.tensor([0.]))
-    assert not store.conjunctive.fold_presence(source, conjunctive=True, dual=True)[2].any()
-    source[store.nOutput + 2] = .6
-    torch.testing.assert_close(store.conjunctive.fold_presence(source, conjunctive=True)[2],
-                               torch.tensor([0.]))
-    torch.testing.assert_close(store.conjunctive.fold_presence(source, conjunctive=True, dual=True)[2],
-                               torch.tensor([.6]))
 
 
 def test_seam_never_invents_counterevidence_from_an_absent_property():
@@ -78,13 +30,6 @@ def test_seam_never_invents_counterevidence_from_an_absent_property():
     torch.testing.assert_close(read[0, 0, 0], torch.tensor([0., 1.]))
 
 
-def test_conjunctive_edges_exist_only_within_order_zero():
-    import pytest
-    cs = _cs()
-    cs.add_concept_edge(2, 0, 1., conjunctive=True)
-    row = _mint_row(cs, 1, 100)
-    with pytest.raises(ValueError, match='order.?0'):
-        cs.add_concept_edge(row, 0, 1., conjunctive=True)
 
 
 def test_union_is_max_including_empty_and_repeated_support():
@@ -147,29 +92,4 @@ from test_cs_sparse_weights import _cs, _mint_row
 from test_concept_memberships import binary_features
 
 
-def test_native_ordered_case_supplies_the_bracket_conjunction():
-    cs = _cs()
-    cs.conceptual_pi = True
-    assert _mint_row(cs, 0, 100) == 0
-    row = _mint_row(cs, 0, 101)
-    # Section 4c moves exact ordered conjunctions to native perception.
-    # Preserve the original 10-only truth table after retiring locations.
-    basic_feature(cs, 0, 'ps', (49, 48), 1.)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    raw = torch.tensor([[48, 48], [48, 49], [49, 48], [49, 49]])
-    positions = torch.tensor([[[0, 1], [1, 2]]]).expand(4, -1, -1)
-    extents = torch.tensor([[[0, 2]]]).expand(4, -1, -1)
-    native = (raw, positions, None, raw, positions)
-    read = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(read[row, :, 0, 0], torch.tensor([0., 0., 1., 0.]))
-    # Neither a symbol union nor two separate subjects can supply this case.
-    split = torch.tensor([[[0, 1], [1, 2]]]).expand(4, -1, -1)
-    read = cs.cs_read_memberships(native, split)
-    assert read[row, ..., 0].count_nonzero() == 0
-    saved = Spaces._concept_alloc_of(cs).layer().parts_extras()
-    other = _cs()
-    restored = Spaces._concept_alloc_of(other).layer()
-    restored.load_parts_extras(saved)
-    assert restored.conjunctive._index == Spaces._concept_alloc_of(cs).layer().conjunctive._index
-    assert not hasattr(restored.conjunctive, "locations")
 
