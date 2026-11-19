@@ -122,11 +122,11 @@ def test_retired_property_fills_leave_live_basic_percept_reads():
     basis = Codebook()
     basis.W = nn.Parameter(torch.zeros(4, 352))
     identity = WordIdentity(NS(dim=352, _capacity=4, _basis=basis), property_width=256)
-    atom = ('pair', 'a')
+    atom = ('part', 'a')
     identity.atoms[atom] = 0
-    identity.words.update({b'a': (atom,), b'z': (('pair', 'z'),)})
+    identity.words.update({b'a': (atom,), b'z': (('part', 'z'),)})
     identity.word_rows.update({b'a': 1, b'z': 2})
-    identity.atoms[('pair', 'z')] = 3
+    identity.atoms[('part', 'z')] = 3
     properties = PrimitiveProperties(2, property_width=256)
     properties.teach(0, [97, 98], [1., 1.], steps=1, rate=1.)
     pointers = basis.W.data_ptr(), basis.fixed_row_codes.data_ptr()

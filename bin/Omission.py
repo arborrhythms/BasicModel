@@ -82,7 +82,6 @@ class Omission(nn.Module):
 
 def prepare(model, units):
     """Draw from the lexical layout before any unit or byte is admitted."""
-    from WordIdentity import base_atoms
     ps, isp = model.perceptualSpace, model.inputSpace
     identity = getattr(ps.percept_store, 'identity', None)
     width = int(ps._serial_word_capacity)
@@ -91,7 +90,7 @@ def prepare(model, units):
         row = []
         for lo, hi in spans[:width]:
             word = raw[lo:hi]
-            atoms = (tuple(identity.words.get(word, base_atoms(word))) if identity is not None else ())
+            atoms = (tuple(identity.words.get(word) or identity.atoms_of(word)) if identity is not None else ())
             nested = () if identity is None else tuple(identity.nested.get(word, ()))
             parts = ([(lo, hi)] * len(atoms) + [(lo+a, lo+z) for _, a, z in nested]
                      if identity is not None else [(i, i+1) for i in range(lo, hi)])

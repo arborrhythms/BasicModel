@@ -26,11 +26,15 @@ def test_forms_anagrams_length_and_nontrivial_containment():
     for a, b in [(b'bana', b'banana'), (b'cat', b'concat'), (b'aba', b'ababa')]:
         assert set(bank.words[a]) < set(bank.words[b])
         assert (bank.form(a) <= bank.form(b)).all()
+    # With no end marks, a form inside a form is inside its code.
     for b in [b'and', b'ant']:
-        assert not set(bank.words[b'an']) <= set(bank.words[b])
+        assert set(bank.words[b'an']) < set(bank.words[b])
+        assert (bank.form(b'an') <= bank.form(b)).all()
+    # The anagrams are told apart by an added part.
+    assert set(bank.words[b'circus']) != set(bank.words[b'cursic'])
     for n in range(1, 33):
         bank.admit(b'a'*n)
-        assert bank.form(b'a'*n)[64:].tolist() == [1.]*n + [0.]*(32-n)
+        assert bank.form(b'a'*n)[64:].tolist() == [0.]*32
     assert len({bank.key(bank.form(b'a'*n)) for n in range(1, 33)}) == 32
     assert bank.audit()['containment_violations'] == 0
 
@@ -42,8 +46,10 @@ def test_mint_rekeys_existing_word_and_checkpoints_without_global_rng():
     old_row = bank.word_rows[b'calaba']
     bank.admit(b'cabala')
     assert torch.equal(state, torch.get_rng_state())
-    assert bank.mints and bank.mints[0]['atoms'] == ['cal@1', 'cab@1']
-    assert bank.mints[0]['bit_counts'][0] >= 3
+    # The two have the same parts and the same runs of two; the first run
+    # of three that one holds and the other does not becomes a part.
+    assert bank.added == {'bal': ('calaba', 'cabala')}
+    assert ('part', 'bal') in bank.words[b'cabala'] and ('part', 'bal') not in bank.words[b'calaba']
     assert bank.word_rows[b'calaba'] == old_row
     assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
     for word in [b'calaba', b'cabala']:
@@ -68,29 +74,24 @@ def test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube():
     assert not hasattr(bank, 'projection') and not hasattr(other, 'projection')
     assert not list(bank.parameters())
     assert bool(((before >= 0) & (before <= 1)).all())
-    assert before[:64].norm() > 0 and before[64:].count_nonzero() == 5
+    assert before[:64].norm() > 0 and before[64:].count_nonzero() == 0
     assert bank.read(before) == b'hello'
 
 
-def test_unidentified_pair_assembly_and_index_resolves_ambiguity():
-    from WordIdentity import base_atoms, assemble_pairs
-    for word in [b'circus', b'banana']:
-        pairs = [v for k,v in base_atoms(word) if k == 'pair']
-        assert assemble_pairs(pairs, len(word)) == word
+def test_spelling_reads_the_stored_table():
+    from WordIdentity import base_atoms
     bank = identity_bank()
     bank.admit(b'calaba'); bank.admit(b'cabala')
-    pairs = [v for k,v in base_atoms(b'calaba') if k == 'pair']
-    with pytest.raises(ValueError, match='minted index'):
-        assemble_pairs(pairs, 6)
-    assert assemble_pairs(pairs, 6, index=bank, form=bank.form(b'cabala')) == b'cabala'
-    assert bank.read_parts(bank.admit(b'cabala')) == b'cabala'
+    assert bank.spelling(bank.admit(b'cabala')) == b'cabala'
+    assert bank.spelling(bank.admit(b'calaba')) == b'calaba'
+    # A code that is no stored form has no spelling.
     unseen = identity_bank()
     rows = [unseen._atom(atom) for atom in base_atoms(b'circus')]
-    assert not unseen.words and unseen.read_parts(rows) == b'circus'
+    assert not unseen.words and unseen.spelling(rows) is None
 
 
-@pytest.mark.parametrize('quadruple', [False, True])
-def test_masked_mint_extends_bits_and_has_declared_quadruple_fallback(monkeypatch, quadruple):
+@pytest.mark.parametrize('separable', [True, False])
+def test_masked_part_extends_bits_and_an_inseparable_row_is_shared(monkeypatch, separable):
     import WordIdentity
     bank = identity_bank()
     bank.admit(b'calaba')
@@ -99,20 +100,23 @@ def test_masked_mint_extends_bits_and_has_declared_quadruple_fallback(monkeypatc
     missing = (~form.bool()).nonzero().flatten().tolist()
     stream = WordIdentity.bit_stream
     def controlled(atom, dimension):
-        if b'@' not in atom:
+        if atom != b'bal':
             return stream(atom, dimension)
-        value = atom.decode().split('@')[0]
-        if quadruple and len(value) == 3:
-            return tuple(range(dimension))  # both additions remain identical
-        selected = missing[0] if value.startswith('cal') else missing[1]
-        prefix = used[:3] + [selected]
-        return tuple(prefix+[i for i in range(dimension) if i not in prefix])
+        # Its first three bits are calaba's: the rows stay equal at three.
+        prefix = used[:3] + ([missing[0]] if separable else [])
+        return tuple(prefix+[i for i in range(dimension) if i not in prefix and (separable or i in used)])[:dimension]
     monkeypatch.setattr(WordIdentity, 'bit_stream', controlled)
     bank.admit(b'cabala')
-    mint, = bank.mints
-    assert mint['size'] == (4 if quadruple else 3)
-    assert mint['bit_counts'] == [4,4]
-    assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
+    assert list(bank.added) == ['bal']
+    if separable:
+        assert bank.bits[('part', 'bal')] == 4 and not bank.shared
+        assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
+    else:
+        # The parts tell the two apart; the row of fixed width is shared.
+        assert bank.shared == {b'cabala': b'calaba'}
+        assert torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
+        assert bank.word_rows[b'calaba'] != bank.word_rows[b'cabala']
+        assert set(bank.words[b'calaba']) != set(bank.words[b'cabala'])
 
 
 @pytest.mark.parametrize('complete_first', [False, True])

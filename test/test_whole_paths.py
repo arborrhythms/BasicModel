@@ -207,7 +207,10 @@ def test_native_omission_keeps_targets_off_the_reading_path(tmp_path, monkeypatc
     def inspect(*args, **kwargs):
         targets = model._omission_targets
         assert targets is not None and bool(targets['draw'].forms.any())
-        assert bool((model.inputSpace._ar_word_part_ids[:, 1] == -1).all())
+        ids = model.inputSpace._ar_word_part_ids[:, 1]
+        # Every part of the hidden word is -1; a slot past its parts is padding.
+        assert bool((ids == -1).any())
+        assert bool(((ids == -1) | ~model.inputSpace._ar_word_part_mask[:, 1]).all())
         assert bool((model.inputSpace._ar_word_concept_ids[:, 1] == -1).all())
         hidden = targets['bytes']
         assert not bool(model._staged_concepts_in[:, 0][hidden].any())

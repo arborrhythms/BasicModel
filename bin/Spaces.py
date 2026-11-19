@@ -10795,10 +10795,9 @@ class PartSpace(Space):
         identity_ids = atom_ids | (set(identity.word_rows.values()) if identity is not None else set())
         atom_witnesses = None
         if atom_ids:
-            # Byte descent is still the observed witness. Read its exact
-            # boundary pairs/length (and any recorded positional mint) as
-            # parts; their order in the bank has no evidential significance.
-            from WordIdentity import base_atoms
+            # Byte descent is still the observed witness. Read its parts
+            # (characters and added parts); their order in the bank has no
+            # evidential significance.
             atom_witnesses = []
             for b, row in enumerate(spans.detach().cpu().tolist()):
                 events = list(zip(part_ids[b].detach().cpu().tolist(),
@@ -10808,7 +10807,7 @@ class PartSpace(Space):
                     selected = [(pid, a, z) for pid, (a, z) in events
                                 if pid >= 0 and start <= a < z <= end]
                     raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)
-                    parts = identity.words.get(raw, base_atoms(raw)) if raw else ()
+                    parts = (identity.words.get(raw) or identity.atoms_of(raw)) if raw else ()
                     members = ({*identity.parts(raw), identity.word_rows[raw]} if raw in identity.words else
                                {identity.atoms[a] for a in parts if a in identity.atoms})
                     values.append(members if bool(complete[b, w]) else set())

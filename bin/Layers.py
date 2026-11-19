@@ -10350,6 +10350,26 @@ class RadixTrie:
     # Mutation
     # ------------------------------------------------------------------
 
+    def remove(self, key: bytes) -> bool:
+        """Retire ``key``'s terminal; ``False`` if it was not terminal.
+
+        The node stays as an inner node, so the walk of every other key
+        is unchanged.
+        """
+        node = self.root
+        remaining = bytes(key)
+        while remaining:
+            child = node.children.get(remaining[0])
+            if child is None or not remaining.startswith(child.prefix):
+                return False
+            remaining = remaining[len(child.prefix):]
+            node = child
+        if node.percept_id is None:
+            return False
+        node.percept_id = None
+        self._size -= 1
+        return True
+
     def insert(self, key: bytes, percept_id: int) -> bool:
         """Insert ``key`` with the supplied ``percept_id``.
 

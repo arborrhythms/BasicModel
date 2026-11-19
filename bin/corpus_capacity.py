@@ -130,7 +130,7 @@ def measure(config, forms, output):
                 attempted += 1
                 bank.admit(word)
                 if attempted % 10000 == 0:
-                    print(json.dumps(dict(words=attempted, rows=len(store), mints=len(bank.mints),
+                    print(json.dumps(dict(words=attempted, rows=len(store), added_parts=len(bank.added),
                         seconds=time.monotonic()-started, peak_bytes=peak_bytes())), flush=True)
         audit = bank.audit()
         if pointers != (store._basis.W.data_ptr(), store._basis.fixed_row_codes.data_ptr()):

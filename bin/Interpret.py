@@ -258,7 +258,9 @@ class InterpretLayer(GrammarLayer):
         if identity is not None and form is None and parts:
             native_rows = set(identity.atoms.values()) | set(identity.word_rows.values())
             if all(part in native_rows for part in parts):
-                form = identity.read_parts(parts)
+                # The stored form whose code the parts make; a code that is
+                # no stored form has no spelling and is fused as parts.
+                form = identity.spelling(parts)
         if identity is not None and isinstance(form, (str, bytes)):
             from WordIdentity import bytes_of
             raw = bytes_of(form) if isinstance(form, str) else form

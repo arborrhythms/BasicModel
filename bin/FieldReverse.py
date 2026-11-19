@@ -118,9 +118,11 @@ def reverse(model, sub, field):
             properties[whole][col % 2] = torch.maximum(properties[whole][col % 2], place(support))
         if col % 2 == 0:
             if group and any(pid in atoms for pid in group):
-                # Boundary-pair/length atoms name an admitted native word;
-                # their diagnostic spellings are not surface bytes.
-                raw = identity.read_parts(group)
+                # Part atoms name an admitted native word; their own
+                # spellings are not surface bytes.
+                raw = identity.spelling(group)
+                if raw is None:
+                    raise ValueError('a code that is no stored form has no spelling')
                 group = (identity.word_rows[raw],)
             length = sum(len(radix.bytes_for(pid)) for pid in group)
             fitted = support * (extents == length)

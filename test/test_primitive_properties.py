@@ -163,7 +163,7 @@ def test_native_fused_case_has_no_concept_location(tmp_path):
     store = Spaces._concept_alloc_of(cs).layer()
     identity = ps.percept_store.identity
     units = identity.admit(b'10')
-    assert identity.read_parts(units) == b'10'
+    assert identity.spelling(units) == b'10'
     row = cs._csw_row_of(word)
     bp = cs.basic_percepts.words[word]
     column = 2 * bp

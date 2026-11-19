@@ -11,35 +11,35 @@ def test_collision_queue_follows_admission_order(monkeypatch):
     from WordIdentity import WordIdentity
 
     bank = identity_bank()
-    source, first = inspect.getsourcelines(WordIdentity.admit)
+    source, first = inspect.getsourcelines(WordIdentity._settle)
     queue_line = first + next(i for i, line in enumerate(source)
                               if line.strip() == 'key = self.key(self.form(word))')
     reads, mints = [], []
-    form, mint = bank.form, bank._mint
+    form, separate = bank.form, bank._separate
 
-    def observed_form(raw):
+    def observed_form(raw, **kwargs):
         caller = sys._getframe(1)
-        if caller.f_code is WordIdentity.admit.__code__ and caller.f_lineno == queue_line:
+        if caller.f_code is WordIdentity._settle.__code__ and caller.f_lineno == queue_line:
             reads.append(bytes(raw).decode('ascii'))
-        return form(raw)
+        return form(raw, **kwargs)
 
-    def observed_mint(left, right):
+    def observed_separate(left, right):
         mints.append([left.decode('ascii'), right.decode('ascii')])
-        return mint(left, right)
+        return separate(left, right)
 
     monkeypatch.setattr(bank, 'form', observed_form)
-    monkeypatch.setattr(bank, '_mint', observed_mint)
+    monkeypatch.setattr(bank, '_separate', observed_separate)
     bank.admit(b'calaba')
     bank.admit(b'cabala')
     print('hash-order-certificate ' + json.dumps(dict(
         kind='collision', pythonhashseed=os.environ.get('PYTHONHASHSEED'),
         admission=[word.decode('ascii') for word in bank.words],
-        queue_reads=reads, mint_pairs=mints, mint_records=bank.mints)))
+        queue_reads=reads, separated_pairs=mints, added_parts=bank.added)))
     # Pending is a stack: append the touched words in admission order,
     # then process the most recently admitted first.
     assert reads == ['calaba', 'cabala', 'cabala', 'calaba']
     assert mints == [['calaba', 'cabala']]
-    assert bank.mints[0]['atoms'] == ['cal@1', 'cab@1']
+    assert bank.added == {'bal': ('calaba', 'cabala')}
     assert all(bank.read(bank.form(word)) == word for word in bank.words)
 
 

@@ -427,5 +427,59 @@ class TestModelXmlSchema(unittest.TestCase):
         self._validate(os.path.join(_DATA_DIR, "XOR_pos.xml"))
 
 
+# ---------------------------------------------------------------------------
+# The structure of forms as composed
+# ---------------------------------------------------------------------------
+
+class TestStructureValid(unittest.TestCase):
+    """On the lesson's words, after a suffix lesson and after two forms have
+    had to be told apart: every recorded part lies inside its form, every
+    known form inside a known form reads wholly inside it, and the forms that
+    read as inside a form they are not inside are counted."""
+
+    @classmethod
+    def setUpClass(cls):
+        from test_item17_forms import lesson_store
+        cls.store, cls.identity = lesson_store()
+        cls.forms = {word: cls.identity.form(word) for word in cls.identity.words}
+
+    def _found(self, part, whole):
+        from ConceptualMatch import match
+        found, _ = match(self.forms[whole][None], self.forms[part][None])
+        return float(found[0])
+
+    def test_recorded_parts_lie_inside_their_form(self):
+        codes = self.store._basis.fixed_row_codes[:, :self.identity.width]
+        recorded = inside = 0
+        for word, form in self.forms.items():
+            for row in self.identity.parts(word):
+                recorded += 1
+                inside += bool((codes[row] <= form).all())
+        print(dict(recorded_parts=recorded, inside=inside, added=dict(self.identity.added),
+                   nested={w.decode(): [p.decode() for p, _, _ in v]
+                           for w, v in self.identity.nested.items()}))
+        self.assertEqual(inside, recorded)
+        self.assertTrue(self.identity.added)
+        self.assertIn(b'cats', self.identity.nested)
+
+    def test_a_form_inside_a_form_reads_wholly_inside(self):
+        words = sorted(self.forms)
+        pairs = [(a, b) for a in words for b in words if a != b and a in b]
+        read = {(a.decode(), b.decode()): self._found(a, b) for a, b in pairs}
+        print(dict(pairs=len(pairs), wholly_inside=sum(v == 1. for v in read.values()),
+                   is_in_this=read[('is', 'this')], his_in_this=read[('his', 'this')],
+                   at_in_cat=read[('at', 'cat')], here_in_there=read[('here', 'there')],
+                   the_in_there=read[('the', 'there')], cat_in_cats=read[('cat', 'cats')]))
+        self.assertEqual(read[('is', 'this')], 1.)
+        self.assertTrue(all(value == 1. for value in read.values()), read)
+
+    def test_forms_that_read_inside_a_form_they_are_not_inside(self):
+        words = sorted(self.forms)
+        false = [(a.decode(), b.decode()) for a in words for b in words
+                 if a != b and a not in b and self._found(a, b) == 1.]
+        print(dict(read_inside_but_not_inside=len(false), forms=false))
+        self.assertIn(('cat', 'caat'), false)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

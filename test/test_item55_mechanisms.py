@@ -538,7 +538,8 @@ def test_nested_wholes():
                 pass
     assert set(identity.nested) == {b'walked'}
     assert identity._marker_pattern is None
-    assert all(torch.equal(identity.form(word), value) for word,value in before.items() if word != b'walked')
+    # The record joins no codes: no form changes, walked included.
+    assert all(torch.equal(identity.form(word), value) for word,value in before.items())
     # Merely allocating a stem is not witnessing it in a lesson's input.
     late = WordIdentity(RadixLayer(96))
     late.admit(b'walk')
@@ -554,7 +555,7 @@ def test_nested_wholes():
     assert not identity.nested.get(b'went')
     assert pin_word_spans(b'walked',[(0,4),(4,6)]) == [(0,6)]
     assert bool((identity.form(b'walked') >= identity.form(b'walk')).all())
-    assert identity.read_parts(identity.parts(b'walked')) == b'walked'
+    assert identity.spelling(identity.parts(b'walked')) == b'walked'
     # Each part's .where is contained by the predefined word's .where.
     from Spaces import WhereEncoding
     encoding = WhereEncoding(nWhere=4).set_capacity(128)
