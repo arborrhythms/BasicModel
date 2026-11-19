@@ -147,6 +147,10 @@ def test_probe_restores_memory_clocks_parameters_and_random_streams(tmp_path, mo
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1)
     model._tensor_peer_while_eager = True
     try:
+        # "alpha" becomes a known word on its concept_mint_count-th reading
+        # (rule 20); "novel" is read for the first time in the probe.
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: model.understand(model.inputSpace.prepInput(['alpha beta'])))
         model.understand(model.inputSpace.prepInput(['alpha beta']))
         model.End()
         model.train()
