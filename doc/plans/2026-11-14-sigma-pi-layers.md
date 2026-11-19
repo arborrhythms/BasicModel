@@ -7860,7 +7860,7 @@ usual." The discussion is finished; the item's text can be written.
    Sigma passed before its squash.
 1. The where as a pathway of its own (§19.62, §19.63: fixed
    wires, intersected with the what, no location concept made).
-   Left to read: a wire for each place, or the wires of the code.
+   Each percept has its own band of the code's wires.
 1. How the word is found from its parts on the device without a
    product against every form (§19.57: 5.9 ms against 197,014 forms,
    growing with the dictionary).
@@ -8117,13 +8117,14 @@ well-known accounts; Claude read both pages on 2026-11-19.
   for the where, with salience over them selecting what is bound, is
   that arrangement.
 
-*Where the likeness stops* (Claude): in those accounts the map of
-locations is laid out in space, place by place. The wires here carry
-the sinusoid code of a place, a few coordinates shared by all places,
-so salience on one wire is not salience at one place. Whether the
-surface is a wire for each place or the wires of the code is the one
-thing his answer leaves to read; Claude reads it as the wires of the
-code, since those are what is stamped today.
+*A wire for each place, or the wires of the code: no difference*
+(Alec, 2026-11-19: "If i understand correctly, there is no
+difference."). He is right, and Claude's distinction was mistaken. The
+where is stamped onto each percept, so each percept has its own band of
+the code's wires. The surface is that: one band for each percept. The
+back-projection lands on a percept's own band, so salience on it is
+salience at that percept's place, and the map is laid out place by
+place as in the accounts above.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
