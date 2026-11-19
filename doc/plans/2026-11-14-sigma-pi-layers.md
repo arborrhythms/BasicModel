@@ -8806,7 +8806,13 @@ chooses from. The old classes are not edited.
    $x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$, with $b_p$ the Pi's value
    for percept $p$ on that lane and $v_p$ its full vector. `.where`
    and `.when` are read unsigned; since item 1.8 they are stored so
-   (1.8 §59.62), and a reader of an angle takes $2x - 1$.
+   (1.8 §59.62), and a reader of an angle takes $2x - 1$. *Mine, from
+   round 2 (§23.2.1), and put to Alec:* the `.where` and `.when`
+   coordinates of a reading are not combined over its percepts. A
+   reading has one place and one time, its own, read at the degree
+   that it is present. Combined over the percepts they say how many
+   percepts there are and no longer where (0 of 48 places read in the
+   trial).
 8. *The concepts of order zero* (Alec, §18.24, rule 23): the Sigma of
    rule 3 on $x$, with $U$ dense, of the perceptual width by the
    concepts. It replaces the fold of `ConceptualSpace._compose_order0`,
@@ -9066,10 +9072,12 @@ chooses from. The old classes are not edited.
     its what match, times its where match: a percept is in the look
     to the degree that both its what and its where are salient. What
     is not active is absent on both lanes and is never evidence
-    against (his rule for `non`, 2026-11-12). *Mine (§20.10):* the
-    intersection is the product; the what match is the event's share
-    of the request, capped at one; an event that two asked rows share
-    is not counted twice. The where match is rule 47's.
+    against (his rule for `non`, 2026-11-12). *Mine (§20.10; round 2,
+    §23.2.1):* an event's activity in a look, before the where, is
+    its share of the request capped at its own activity. The share
+    already carries the activity, so the two are not multiplied. An
+    event that two asked rows share is not counted twice. The where
+    match is rule 47's, and multiplies a reading once (rule 39).
 35. *The request* (Alec, §19.48, answers 1, 2 and 6; §19.49; §19.54;
     §19.57; §19.63, point 4). It is the output of `attend`: a mask
     over all concepts, on two lanes, and it is learned. It names a
@@ -9106,9 +9114,12 @@ chooses from. The old classes are not edited.
     the Pi's local derivatives kept from the open run, and no second
     backward pass is made inside the forward. Where a token has
     several copies of one row its membership is the greatest of them,
-    and each copy at the greatest takes the whole derivative. *Open:*
-    how it behaves where parts are present by degree (§19.60); round
-    2 tries it.
+    and each copy at the greatest takes the whole derivative. *Found in
+    round 2 (§23.2.1):* where parts are present by degree the map
+    cuts weak words, since a share goes with the presence of its row:
+    a word present at .3 comes back at nothing. And a request that
+    asks at one or above gets no gradient on what it asks, through the
+    cap of rule 34.
 37. *The returned set* (Alec, §19.45; §19.49, answer 3; §19.53). The
     way up is run again on the bank with the look's activity. What it
     gives, each concept at its token, is the returned set. The
@@ -9119,7 +9130,8 @@ chooses from. The old classes are not edited.
     most active, the request has identified no word: one is taken by
     a draw, and the draw is credited by the outcome of its path, as a
     departure of an explore path is (`explorePaths`,
-    `SentenceCredit.WALKS`). *Mine:* largest is the longer extent;
+    `SentenceCredit.WALKS`). *Mine:* largest is the longer extent, and it is taken at each
+    place first, so that a tie is equals left at different places;
     where the set holds no word concept, nothing is interpreted; and,
     with one signed number for a concept, a word read at for 1 and
     against 0.0002 ("Felix", the decision carried from 1.8 §64.7) is
@@ -9210,8 +9222,10 @@ chooses from. The old classes are not edited.
       coordinates of the combined vector (rules 7 and 8). Those
       weights start at zero for a new concept, since a generalization
       holds no place (rule 31), and they are learned.
-    - *Mine, the where match; open, and tried in round 2 before it is
-      built.* An event's where share is the salience on its band
+    - *Mine, the where match; tried in round 2 and built so
+      (§23.2.1).* A reading's where is the band of the event at its
+      start, weighted by that event's presence. An event's where
+      share is the salience on its band
       taken with the wires' values: the sum over the band of the
       gradient times the value. The where match is that share
       referred to the sentence's most salient place and passed
@@ -9220,16 +9234,13 @@ chooses from. The old classes are not edited.
       asked; and it is one everywhere when nothing of where was
       asked, so that a request with no where part selects the level
       and leaves every place in (§19.53).
-    - *Open.* Whether the concepts' weights on the where coordinates
-      are enough for a request to tell one word's place from the
-      next. A sum over the sinusoid is broad, a quarter of the short
-      rung's period, 64 places; a product over the where wires is
-      narrow (§20.5), and it would need rows of a Pi to have entries
-      on the where wires. Round 2 tries both. Location concepts come
-      of teaching location (rule 49).
-    - *If it is not learned, the fallback is his* (§19.48): a network
-      gives the `.where` outright, and from that extent the largest
-      word is taken, or failing a word the largest concept.
+    - *Settled by round 2 (§23.2.1).* The concepts' weights on the
+      where coordinates are enough: with them the word at a place is
+      returned in 16 of 16 sentences, and reading in order was learned
+      from every start, with no location concept made. A row of a Pi
+      on the where wires has no share at its own place and is not
+      built. Location concepts come of teaching location (rule 49).
+      The fallback of §19.48 is not built.
 48. *Silence* (Alec, §19.64, point 4; §19.53, point 3; 1.8 §68.89,
     §68.91). When the read of a sentence gives no well-formed
     formula, the sentence is written by force as an empty sentence
@@ -9267,11 +9278,14 @@ chooses from. The old classes are not edited.
     It takes the place of putting a percept back at the span its read
     had (`SentenceField.native_target`, `FieldReverse.reverse`,
     `Models.reverseReconstruct`; to be read again in round 6).
-    *Open:* the form of the match of a recreated band against the
-    places (the product over the wires and their complements, as
-    §20.5's place row had it, is what round 2 tries first); and how
-    it sits with rule 30, where the way back reads what the spread
-    expects.
+    *From round 2 (§23.2.1):* the match of a recreated band against
+    the places is a softmax over the places of the out buffer; the
+    product of §20.5 gives no gradient from rest. Taught beside the
+    reading lesson it read held-out orders 6 of 6; alone, 4 of 6.
+    *Open:* how it sits with rule 30, where the way back reads what
+    the spread expects; and that a concept has one where for all its
+    occurrences, so a word that occurs at several places is put back
+    at one.
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -9568,13 +9582,17 @@ section:
 **Open, with what is built meanwhile.**
 
 1. *The where match, and whether location is learned with no location
-   concept made* (rules 47 and 49). Round 2 tries the recommended form
-   and its alternatives in tests before round 6 builds one, with the
-   reading lesson and the reconstruction over both pathways as the
-   teachers of location (Alec, §19.65). If reading in order is not
-   learned, the fallback of §19.48 is built.
+   concept made* (rules 47 and 49). *Closed by round 2 (§23.2.1):* the
+   recommended form is built, and reading in order was learned from
+   every start, with the reading lesson and the reconstruction as the
+   teachers. What is left is whether it holds in the model, which
+   round 6 reports.
 2. *The salience map where parts are present by degree* (rule 36).
-   Round 2 reports it; the map by weights is built.
+   Round 2 found that it cuts weak words. The map by weights is
+   built, as Alec decided; whether a weak word should come back is
+   his.
+2b. *The where and the when of a reading* (rule 7): not combined over
+   its percepts. Built so in round 3, put to Alec.
 3. *Which row "words" is* (rule 35; §19.29). Built as one declared
    concept.
 4. *What becomes of the 32 coordinates of the length block* (rule
@@ -10010,8 +10028,11 @@ that round 1 returned. Read §18.24, §19.10 and §19.17 to §19.20.
    classes, identities and percept collections become nominations
    of rows.
 4. Combination and the Sigma (rules 7, 8 and 8b): the Pi on the
-   gaps over the active percepts' full vectors, and SigmaLayer3 with
-   a dense U, in place of the folds of
+   gaps over the active percepts' vectors, and SigmaLayer3 with a
+   dense U. The .where and .when coordinates of a reading are not
+   combined over its percepts (rule 7, from round 2): they are the
+   reading's own place and time, at the degree that it is present.
+   These are in place of the folds of
    ConceptualSpace._compose_order0, of
    IndexedSigmaConceptsFromPercepts and of SparseLayer._fold_weights
    at order zero. What the writers of add_concept_feature write
@@ -10120,7 +10141,7 @@ sentences before and after. Return as §23.5.
 
 ### 22.6 Round 6: the looks, in the model
 
-*This text is amended from round 2's return before it is carried.*
+*Amended on 2026-11-19 from round 2's return and its review (§23.2, §23.2.1): steps 3, 4 and 11.*
 
 ~~~
 Round 6 of item 1.7. Rules 32 to 42 and 47 to 49 of §21.
@@ -10148,12 +10169,24 @@ which form of the where match is built.
 3. The open run keeps the Pi's local derivatives. The salience map
    (rule 36) carries a request down by the transposes, each Sigma
    by its weights, onto each event's activity and onto its band.
-4. A look (rules 34, 37 and 39): the activity; the way up again
-   through what is active (cs_read_memberships with the activity in
-   place of a bracket, then cs_forward_content); the returned set.
+   test/looks_round2.py has it both ways (salience,
+   salience_by_transposes); the transposes are what is built.
+4. A look (rules 34, 37, 39 and 47), as round 2 tried it
+   (look and where_match of test/looks_round2.py). An event's
+   activity is its share capped at its own activity. A reading's
+   where is the band of the event at its start, weighted by that
+   event's presence; its where share is the sum over that band of
+   the gradient times the value; the where match is exp(s - max s)
+   over the sentence's readings, and it multiplies a reading once,
+   never inside a row's product. Then the way up again through what
+   is active (cs_read_memberships with the activity in place of a
+   bracket, then cs_forward_content), and the returned set.
    interpret takes the most active word concept; of forms that
-   begin at one place the largest; among equals a draw, credited as
-   a departure is (explorePaths, SentenceCredit).
+   begin at one place the largest, first; among equals left at
+   different places a draw, credited as a departure is
+   (explorePaths, SentenceCredit). Report what the request learns of
+   the what, since the cap passes it no gradient at one or above;
+   and what a word present by degree comes back as.
 5. attend (rules 35 and 38). OperationSelectionLayer.attend gives
    the request, a mask over all concepts on two lanes, from
    AttentionContext.context, and starts at "words" alone. The
@@ -10189,8 +10222,10 @@ which form of the where match is built.
     percept has a recreated band, which places it in the out buffer;
     the error is over both. Read where the source places what it
     puts back today (SentenceField.native_target, reverse of
-    bin/FieldReverse.py, Models.reverseReconstruct). The form of the
-    conjunction is the one round 2's return and its review name.
+    bin/FieldReverse.py, Models.reverseReconstruct). The match of a
+    recreated band against the places is a softmax over the places
+    of the out buffer (reconstruct and place_weights of
+    test/looks_round2.py). It is taught beside the reading lesson.
 12. Certificates 30 to 45 in a new test/test_item17_looks.py. A
     test that reads a model supplies its reading and does not leave
     it to the chooser's draw (1.8 specification, §66.9). The
@@ -10538,3 +10573,85 @@ rule 49.
   gradient from rest.
 - *Rule 7:* say that .where and .when are not combined across a
   reading's percepts.
+
+### 23.2.1 Review of round 2 (Claude, 2026-11-19)
+
+**Accepted as a trial.** It changed no file of `bin/` and none of the
+prototype's three files (the difference of its four commits, read). Its
+tests pass here with the prototype's: 30 passed in 5.3 s. The code does
+what the return says: the where parameter is written from
+`WhereEncoding` and given to no optimizer, each start's seed is drawn
+from the system and printed, and no seed is fixed for a result.
+
+**Run again by Claude, ten fresh starts** (`looks_round2_report.run`):
+
+| Where of a reading | Taught by | In order, of 16 | Held out, of 6 | Rebuilt, of 164 |
+| --- | --- | --- | --- | --- |
+| head | reading | 16, 16 | 6, 6 | 18, 20 |
+| head | reading and reconstruction, softmax | 16, 16 | 6, 6 | 77, 77 |
+| head | reconstruction alone, softmax | 16, 16 | 4, 4 | 78, 78 |
+| combined | reading | 16, 16 | 4, 4 | 13, 21 |
+| head | the request alone | 0, 0 | 0, 0 | 10, 10 |
+
+They are the return's numbers.
+
+**What it settles, for round 6.**
+
+1. *Reading in order is learned with no location concept made,* on the
+   lesson's sentences, from every start tried. The fallback of §19.48
+   is not built.
+2. *The where match is §21's form:* the where share referred to the
+   most salient reading, through the exponential, applied once to a
+   reading. The capped share cuts everything when nothing of where is
+   asked. A row of a Pi on the where wires has no share at its own
+   place, so the where is read by the concepts' weights, as Alec has it.
+3. *A reading has one where, its own.* With the bands of all of a
+   reading's percepts combined as rule 7 combines vectors, no form of
+   the match reads a place (0 of 48): the coordinates then say how
+   many percepts a reading has. With the band of the reading's start,
+   weighted by its presence, the place is read in 16 of 16.
+4. *The reconstruction teaches location,* as Alec said it would
+   (§19.65). Alone it gives concepts the place their word usually has,
+   which is content (4 of 6 held out). With the reading lesson it reads
+   6 of 6 and puts back 77 of 164 letters. The match of a recreated
+   band against the places has to be a softmax over the places: the
+   product of §20.5 gives no gradient from rest.
+5. *The where parameter fixed* is right in the numbers as well: given
+   to the optimizer, its values moved by up to 1.0, and held-out
+   sentences fell from 6 of 6 to 2.
+
+**Three things it found that are not what the rules assumed.**
+
+1. *The salience map by weights cuts weak words.* A whole word present
+   at .3 comes back at 0, and so does a word whose parts fall from 1 to
+   .2, where the rows' entries alone return what the open run found.
+   The share goes with the presence of the row, which is a product, so
+   it falls fast. Alec decided the map by weights (§19.64, point 1) and
+   it stays; this is how it behaves where parts are present by degree,
+   which §19.60 left to be tried.
+2. *The cap at one gives the request no gradient on what it asks.*
+   "Words" asked at one gives every word a share above one, and the cap
+   passes nothing back. In the trial the request learned only through
+   the where. Round 6 reports what the request learns of the what.
+3. *Location came to be carried by character concepts* that the request
+   asks for, not by concepts anyone would name. They are concepts of
+   location over the network, as §19.63 expected.
+
+**Limits of the trial** (*Claude's*). Sixteen short sentences; a
+context of four slots made for it; teaching with the right word given
+at each look; one concept has one where for all its occurrences, so
+half the letters are not put back. At magnitudes near 1,000 the where
+leaks onto the what and cuts the asked word; what was learned stayed
+under 3.
+
+**Certificate 35, as it stands.** A word among garbage letters is
+returned alone where the garbage is separate runs of letters (`qzv
+Felix xwpt.`). A word inside one run of garbage (`qzFelixvb.`) returns
+nothing, since the stem's units hold no form inside a unit; that needs
+the parts found at every place, which is the lookup of rule 44 in item
+1.5. For Alec.
+
+**Taken into §21** (each *mine*, his to change): rules 34, 37, 39, 47
+and 49 as the return recommends, and rule 7 for `.where` and `.when`
+alone. Rule 7 is a rule he confirmed, so that one is put to him. Round
+6's text is amended to match.
