@@ -35876,6 +35876,11 @@ sweep". He corrected both the same day:
    more after item 1.5, not after item 1.6 (sigma-pi §19.43). Whether
    the one overnight run then moves to item 1.5's submission is not
    said.
+   *And later still that day:* he moved that work to item 1.7 ("1.6
+   is the proving ground for what it is doing", "1.5 is the
+   compilation to make it fast"; sigma-pi §19.44). *Claude's reading:*
+   this rule then stands as first written, the one run at item 1.6's
+   submission.
 
 **What these cost in the last return** (§69): the default sweep 2,239
 seconds; the lesson 450; the two slow curricula that the text of §68.31

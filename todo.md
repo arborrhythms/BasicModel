@@ -1543,15 +1543,30 @@ generation is expected at this stage and is recorded, not tuned away.
    percepts exists (`cs_percept_attribution`, `_passback_scope_ps`),
    outside the loop of looks, with a floor of one half that never
    removes.
-   **Placed in item 1.5 by Alec (§19.42):** "The wiring work and
-   single sentence percept banks, becomes 1.5. So this discussion
-   about attention moves there also." §19.31 to §19.40 move with
-   it; rule 32's Pi over spellings stays here.
+   **Decided (Alec, 2026-11-18; §19.44): "Let's move this attention
+   and sentence percept bank work to 1.7, then, with the rest of the
+   pi-not-sigma work."** So §19.31 to §19.43 are this item's: the
+   percept bank of a sentence read once; the first Pi matching it
+   through what is active, with no `materialize()`; a look as a
+   place and a request for a kind; attention as the filter that
+   dims, fed into the gain field with expectation; the selection
+   matrix from below ("the selection matrix over percepts that
+   light up that concept row": the mask pulled back through the
+   matrices of the way up; on a small case it keeps `cat` and drops
+   `cot` and `sat`); and the where as a coordinate of the first Pi.
+   All of it is in discussion and not yet rules. **The Codex text of
+   §19.8 predates it and is not to be carried as it stands.** Six
+   points need his word first (§19.44): which wires take the
+   selection's gradient; remove or only dim; the exact tests at full
+   strength or graded; the two wheres; what moves the look on; who
+   changes the request.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
    you called out as "unnumbered: felt world for the math corpus" which
-   combines both."). After item 1.7 and before item 1.5. The work that
+   combines both."). "1.6 is the proving ground for what it is doing"
+   (Alec, 2026-11-18, of item 1.7's architecture). After item 1.7 and
+   before item 1.5. The work that
    had this number until then, computation by wiring, is the first part
    of item 1.5. **At its submission the slow tier (`RUN_SLOW`) is run
    once, overnight,** and not before: the architecture changes no more
@@ -1639,28 +1654,9 @@ generation is expected at this stage and is recorded, not tuned away.
    this builds under `fullgraph`, and before item 0. It has two parts.
    *Claude's default:* the wiring first, as it stood before the lookups
    when it was an item of its own.
-   **Looks over one percept bank (Alec, 2026-11-18: "The wiring work
-   and single sentence percept banks, becomes 1.5. So this discussion
-   about attention moves there also.").** Discussed and recorded in
-   the item 1.7 specification,
-   [§19.31 to §19.42](doc/plans/2026-11-14-sigma-pi-layers.md): a look
-   carries a place and a request for a kind; the first Pi matches one
-   percept tensor read at the start of a sentence, through what is
-   active, with no `materialize()`; attention dims what is outside
-   its area and enters the gain field with expectation; the locus is
-   where the request matches; the where is a coordinate the Pi can
-   bound. Both routes exist in the source (the projection from above,
-   `cs_percept_attribution`; the first look's reading of every word
-   from below) and neither is what a look selects by. Nothing in it
-   is decided but this (Alec, 2026-11-18): **"1.5 can change the
-   arch, it will be the last round to do so."** And the selection is
-   to be computed from below, "a series of matmuls, as the
-   architecture already does": "the selection matrix over percepts
-   that light up that concept row" (§19.43: the mask of what is
-   wanted pulled back through the matrices of the way up; on a small
-   case it keeps `cat` and drops `cot` and `sat`, where the
-   projection of the weights lets all three through). Not said:
-   whether the one overnight slow run moves here from item 1.6.
+   Alec, 2026-11-18: "1.5 is the compilation to make it fast". The
+   attention and the percept bank of one sentence, placed here for
+   part of that day, are item 1.7's (sigma-pi §19.44).
    **Part 1, computation by wiring, not by moving data** (item 1.6
    until 2026-11-18; Alec, 2026-11-17: "can you investigate the
    possibility of pushing the architecture in this zero-data movement

@@ -6133,7 +6133,7 @@ percept pass of item 1.5. The Codex text of this item (§19.8) was
 written before §19.31 to §19.40 and should not be carried until they
 are settled.
 
-### 19.41 Placed in item 1.6 (Alec, 2026-11-18; corrected by §19.42: he meant the wiring work, item 1.5)
+### 19.41 Placed in item 1.6 (Alec, 2026-11-18; corrected by §19.42, and withdrawn by §19.44: the work is this item's)
 
 Alec, 2026-11-18, on §19.40: "This is the 1.6 work I think."
 
@@ -6173,7 +6173,7 @@ slow tier is run once at its submission, and the architecture is to
 change no more after it (1.8 §72), so this work has to be inside item
 1.6's submission.
 
-### 19.42 Placed in item 1.5; the filter from above and the selection from below (Alec, 2026-11-18)
+### 19.42 Placed in item 1.5 (withdrawn by §19.44); the filter from above and the selection from below (Alec, 2026-11-18)
 
 Alec, 2026-11-18, correcting §19.41:
 
@@ -6247,7 +6247,7 @@ tests by coordinates can keep results equal. Selecting by a request
 where brackets select today, and dimming where a bracket cuts, change
 what the model does.
 
-### 19.43 Decided: item 1.5 may change the architecture. The selection matrix from below (Alec, 2026-11-18)
+### 19.43 Item 1.5 may change the architecture (see §19.44, which moves the work here). The selection matrix from below (Alec, 2026-11-18)
 
 Alec, 2026-11-18:
 
@@ -6323,3 +6323,56 @@ of the others.
    the second, since it is wiring, needs no second backward pass inside
    the forward (2.7: one backward), and leaves open whether the mask is
    taught through it.
+
+### 19.44 Decided: the attention and the sentence's percept bank are this item's; 1.6 proves, 1.5 compiles (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> Ugh.
+> Let's move this attention and sentence percept bank work to 1.7,
+> then, with the rest of the pi-not-sigma work.
+> 1.6 is the proving ground for what it is doing
+> 1.5 is the compilation to make it fast
+
+**Decided.** §19.31 to §19.43 are item 1.7's, with the Pi, Not, Sigma.
+The placements of §19.41 (item 1.6) and §19.42 (item 1.5) are
+withdrawn.
+
+| Item | What it is |
+| --- | --- |
+| 1.7 | the Pi, Not, Sigma; the looks, the request, and the percept bank of one sentence |
+| 1.6 | "the proving ground for what it is doing": the number modality, the math corpus and the felt world |
+| 1.5 | "the compilation to make it fast": computation by wiring, then the lookups, the folds and the percept pass |
+
+*Claude's reading, his to correct.* His sentence of §19.43, "1.5 can
+change the arch, it will be the last round to do so", was said to make
+room for this work in item 1.5. He has not taken it back in words. With
+the work here, item 1.5 is described again as making fast what exists,
+so rule 3 of 1.8 §72 is read as it was first written: the architecture
+changes no more after item 1.6, and the slow tier is run once at item
+1.6's submission. The question at the end of §19.43's reply falls away.
+
+**What it means for this item.**
+
+- The Codex text of §19.8 was written before §19.31 to §19.43. It is
+  not to be carried as it stands. (§19.41 had lifted this caution; it
+  is back.)
+- This item now holds, beside rules 1 to 32: the percept bank of a
+  sentence read once (§19.34, §19.40); the first Pi matching it through
+  what is active, with no `materialize()` on that path (§19.34); a
+  look as a place and a request (§19.31 to §19.33, §19.39); attention
+  as the filter that dims, fed into the gain field with expectation
+  (§19.36, §19.37); the selection matrix from below (§19.43); and the
+  where as a coordinate of the first Pi (§19.40).
+- All of it is in discussion. Before a text can be written it has to
+  be made into rules, and these need his word:
+  1. which wires take the selection's gradient (§19.32, §19.37);
+  2. whether a look removes what was not asked for or only dims it
+     (§19.33);
+  3. whether the tests for one word and one lane read what is at full
+     strength, or become graded (§19.36; and the "Felix" case carried
+     from 1.8 §68.81);
+  4. the two wheres, a place in the sentence and the arrangement of a
+     thing's parts (§19.40);
+  5. what moves the look on, and in what order (§19.39);
+  6. who changes the request inside a sentence (§19.35).
