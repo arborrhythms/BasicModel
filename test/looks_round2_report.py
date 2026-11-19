@@ -13,7 +13,7 @@ import torch
 from looks_prototype import LESSON
 from looks_round2 import (EXTRA_FORMS, ICE, SENTENCES, WORDS, Bank, Request, Trial, WhereConcept,
                           concept_mask, interpret, lexicon, look, present, returned, salience,
-                          salience_by_transposes, teach_order, count_in_order)
+                          salience_by_transposes, teach_order, count_in_order, rebuilt_letters)
 
 GARBAGE = ('qzv Felix xwpt.', 'qzFelixvb.')
 TWICE = 'Felix is Felix.'
@@ -235,6 +235,65 @@ def step6(starts=5, stages=(10, 10, 60)):
     print()
 
 
+def run(where_of, seed, **kw):
+    trial = make(where_of)
+    before = trial.theta.detach().clone()
+    t0 = time.time()
+    curve, reader, Uw = teach_order(trial, generator=torch.Generator().manual_seed(seed), every=10, **kw)
+    seconds = time.time() - t0
+    lesson = [Bank.read(t, trial.lex) for t in LESSON]
+    held = [Bank.read(t, trial.lex) for t in HELD_OUT]
+    norms = Uw.norm(dim=-1)
+    words = set(trial.lex.word_rows.tolist())
+    top = norms.argsort(descending=True)[:3]
+    tops = ', '.join(f'`{trial.lex.names[i]}` {float(norms[i]):.2f}' for i in top)
+    word_mean = float(norms[trial.lex.word_rows].mean())
+    part_mean = float(norms[[i for i in range(trial.lex.R) if i not in words]].mean())
+    right, total = rebuilt_letters(trial, lesson, Uw, match=kw.get('match', 'product'))
+    short = ' '.join(f'{s}.{k}:{n}' for s, k, n in curve if s == 'start' or k % 20 == 0 or k == 10)
+    return dict(curve=short, order=curve[-1][2], held=count_in_order(trial, reader, held, Uw=Uw),
+                rebuilt=f'{right}/{total}', tops=tops, word_mean=word_mean, part_mean=part_mean,
+                seconds=seconds, trial=trial, before=before)
+
+
+def step6b(starts=5):
+    print('### Step 6b: the reconstruction over both pathways (rule 49)\n')
+    print('As step 6, taught by the reading loss, by the reconstruction\'s squared error over the '
+          'sentence\'s bytes at their places, or by both (summed). Match of a recreated band against '
+          'the places: "product", the place row of §20.5 at concentration 200; "softmax" (mine), the '
+          'inner product of the centred band and code, a distribution over the buffer\'s places at '
+          'sharpness 200. Rebuilt: letters of the lesson whose own character has the most weight at '
+          'their place.\n')
+    print('| Where of a reading | Taught by | Match | Seed | Curve | Lesson in order | Held out | Rebuilt | Where weights: largest; mean on word concepts, on the others |')
+    print('| --- | --- | --- | ---: | --- | ---: | ---: | ---: | --- |')
+    for where_of in ('head', 'combined'):
+        for name, reading, rebuild in (('reading', True, False), ('reconstruction', False, True),
+                                       ('both', True, True)):
+            for match in ('product', 'softmax'):
+                if name == 'reading' and match == 'softmax':
+                    continue
+                for _ in range(starts):
+                    seed = int.from_bytes(os.urandom(4), 'little')
+                    r = run(where_of, seed, reading=reading, rebuild=rebuild, match=match)
+                    print(f"| {where_of} | {name} | {match if rebuild else '-'} | {seed} | {r['curve']} | "
+                          f"{r['order']} of 16 | {r['held']} of 6 | {r['rebuilt']} | {r['tops']}; "
+                          f"{r['word_mean']:.2f}, {r['part_mean']:.2f} |")
+    print()
+    print('The best of them (where of a reading at the head, both teachers, softmax match), with the '
+          'where parameter given to the optimizer and without. Its change: the largest change of any '
+          'value, and of the rows of places 0 to 19.\n')
+    print('| Parameter optimized | Seed | Curve | Lesson in order | Held out | Rebuilt | Largest change, all rows | Places 0 to 19 |')
+    print('| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |')
+    for learned in (False, True):
+        for _ in range(starts):
+            seed = int.from_bytes(os.urandom(4), 'little')
+            r = run('head', seed, reading=True, rebuild=True, match='softmax', theta_learned=learned)
+            change = (r['trial'].theta.detach() - r['before']).abs()
+            print(f"| {'yes' if learned else 'no'} | {seed} | {r['curve']} | {r['order']} of 16 | "
+                  f"{r['held']} of 6 | {r['rebuilt']} | {float(change.max()):.3g} | {float(change[:20].max()):.3g} |")
+    print()
+
+
 def step8():
     print('### Step 8: certificates 34 and 35 on this bank\n')
     for where_of in ('combined', 'head', 'start'):
@@ -278,6 +337,7 @@ def main():
     step4(trial)
     step5()
     step6()
+    step6b()
     step8()
 
 

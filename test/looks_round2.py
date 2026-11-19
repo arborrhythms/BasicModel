@@ -478,7 +478,7 @@ def present(trial, bank, asked):
             if r is not None and trial.lex.names[r] in asked}
 
 
-# --- Reading in order (steps 6 and 7) ---------------------------------------
+# --- Reading in order (step 6) ---------------------------------------------
 
 SLOTS = 4
 
@@ -546,17 +546,20 @@ def count_in_order(trial, reader, banks, Uw=None, form='a'):
 
 
 def teach_order(trial, *, stages=(10, 10, 60), rate=.05, generator=None, noise=1e-2,
-                where_learned=True, every=10, form='a'):
+                where_learned=True, every=10, form='a', reading=True, rebuild=False,
+                theta_learned=False, match='product'):
     """Teach the request (and the where weights) to read in order.
 
-    Returns the curve [(stage, step, in order of the lesson's 16)], the
-    reader and the learned where weights. Adam over the request map and,
-    when ``where_learned``, the concepts' where weights; the where
-    parameter is in no group.
+    ``reading`` adds the reading loss, ``rebuild`` the reconstruction's
+    error over both pathways (rule 49). Returns the curve [(stage, step, in
+    order of the lesson's 16)], the reader, the learned where weights and
+    the where parameter's values after. Adam over the request map, the
+    concepts' where weights when ``where_learned``, and the where parameter
+    only when ``theta_learned``.
     """
     reader = Reader(trial, generator=generator, noise=noise)
     Uw = torch.zeros_like(trial.Uw, requires_grad=where_learned)
-    groups = [reader.A] + ([Uw] if where_learned else [])
+    groups = [reader.A] + ([Uw] if where_learned else []) + ([trial.theta] if theta_learned else [])
     optimizer = torch.optim.Adam(groups, lr=rate)
     lesson = [Bank.read(t, trial.lex) for t in LESSON]
     curve = [('start', 0, count_in_order(trial, reader, lesson, Uw=Uw.detach(), form=form))]
@@ -564,29 +567,95 @@ def teach_order(trial, *, stages=(10, 10, 60), rate=.05, generator=None, noise=1
         banks = [Bank.read(t, trial.lex) for t in texts]
         for step in range(1, steps + 1):
             optimizer.zero_grad()
-            loss = sum(read_in_order(trial, reader, bank, train=True, Uw=Uw, form=form)[0]
-                       for bank in banks)
+            loss = torch.zeros((), dtype=DTYPE)
+            for bank in banks:
+                if reading:
+                    loss = loss + read_in_order(trial, reader, bank, train=True, Uw=Uw, form=form)[0]
+                if rebuild:
+                    loss = loss + reconstruct(trial, bank, Uw, match=match)[0]
             loss.backward()
             optimizer.step()
             if step % every == 0 or step == steps:
                 curve.append((stage, step, count_in_order(trial, reader, lesson, Uw=Uw.detach(),
                                                           form=form)))
+    trial.theta.grad = None
     return curve, reader, Uw.detach()
 
 
-# --- The fallback of §19.48 (step 7) ----------------------------------------
+# --- The reconstruction over both pathways (rule 49, step 6b) ---------------
 
-def fallback_take(trial, bank, lo, hi, activity=None):
-    """A .where given outright as an extent; the largest word wholly inside
-    it, or failing a word the largest token (the largest concept)."""
-    a = bank.live() if activity is None else activity
-    out = trial.up(bank, a)
-    best = None
-    for k, (s, e) in enumerate(bank.spans):
-        if s < lo or e > hi or bank.form[k] is None:
+def recreated_band(Uw_row):
+    """The band a concept gives what it recreates: the place its where
+    weights read best, the inverse of ``2k (c - 1/2)`` at ``k = 1``."""
+    return (.5 + Uw_row / 2).clamp(EPS, 1 - EPS)
+
+
+def shift_band(band, offset, trial):
+    """The band of a place ``offset`` further on: a rotation of each rung
+    of the sinusoid, on fixed wires."""
+    from Spaces import WhereEncoding
+    w = WhereEncoding(nWhere=4).set_capacity(trial.capacity)
+    s = 2 * band - 1
+    out = []
+    for i, period in ((0, w.maxVal), (2, w.period_hf)):
+        d = 2 * math.pi * offset / period
+        sin, cos = s[..., i], s[..., i + 1]
+        out += [sin * math.cos(d) + cos * math.sin(d), cos * math.cos(d) - sin * math.sin(d)]
+    return ((torch.stack(out, -1) + 1) / 2).clamp(EPS, 1 - EPS)
+
+
+def place_weights(band, codes, *, match='product', k=None, sharpness=200.):
+    """A recreated band's weight at each place of the out buffer.
+
+    ``'product'`` (or ``'product<k>'``): the place row of §20.5 centred on
+    the band, at concentration k (200 by default), read at each place's code, ``exp(k sum b log c + (1 - b) log(1 - c) - peak)``.
+    ``'softmax'``: the inner product of the centred band and code, made a
+    distribution over the buffer's places.
+    """
+    c = codes.clamp(EPS, 1 - EPS)
+    if match.startswith('product'):
+        k = float(match[len('product'):] or 200.) if k is None else k
+        log = k * (band * c.log() + (1 - band) * (1 - c).log()).sum(-1)
+        peak = k * (band * band.log() + (1 - band) * (1 - band).log()).sum(-1)
+        return (log - peak).exp()
+    return torch.softmax(sharpness * 4 * ((band - .5) * (c - .5)).sum(-1), 0)
+
+
+def reconstruct(trial, bank, Uw, *, match='product'):
+    """Put the sentence back from its concepts, through what and where.
+
+    Each token's own word concept recreates its form's characters in order
+    (rule 45); each character's band is the concept's recreated band moved
+    on by its offset; its weight at each place is its band's match there;
+    what is put back at a place is the sum of the characters times their
+    weights, times the concept's value. Returns the squared error against
+    the sentence's bytes at their places, and the buffer.
+    """
+    lex = trial.lex
+    out = trial.up(bank, bank.live(), Uw=Uw)
+    n = len(bank.text)
+    codes = trial.theta[:n]
+    buffer = torch.zeros(n, lex.R, dtype=DTYPE)
+    for k, f in enumerate(bank.form):
+        if f is None:
             continue
-        if float(out['b'][k, bank.form[k]]) >= 1 - 1e-9:
-            key = (e - s, -k)
-            if best is None or key > best[0]:
-                best = (key, k)
-    return None if best is None else best[1]
+        value = out['cw'][k, f]
+        band = recreated_band(Uw[f])
+        for j, ch in enumerate(lex.names[f]):
+            weights = place_weights(shift_band(band, j, trial), codes, match=match)
+            buffer = buffer + value * weights[:, None] * torch.nn.functional.one_hot(
+                torch.tensor(lex.index[ch]), lex.R).to(DTYPE)
+    target = torch.nn.functional.one_hot(torch.tensor([lex.index[c] for c in bank.text]), lex.R).to(DTYPE)
+    return ((buffer - target) ** 2).sum(), buffer
+
+
+def rebuilt_letters(trial, banks, Uw, *, match='product'):
+    """Letters whose own character has the most weight at their place, of all letters."""
+    right = total = 0
+    for bank in banks:
+        _, buffer = reconstruct(trial, bank, Uw.detach(), match=match)
+        for p, c in enumerate(bank.text):
+            if c.isalpha():
+                total += 1
+                right += bool(float(buffer[p].max()) > 0 and int(buffer[p].argmax()) == trial.lex.index[c])
+    return right, total
