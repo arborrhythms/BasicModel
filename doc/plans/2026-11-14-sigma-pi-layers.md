@@ -5719,3 +5719,67 @@ look changes that activity and nothing else.
 gradient, and whether a look may remove what was not asked for or only
 lower it. His "return a selected set" reads as removing; he has not
 said so.
+
+### 19.35 How the request meets attention (Claude's reading, for discussion; Alec, 2026-11-18: "I don't know how this would integrate with attention")
+
+Nothing here is decided. It is what the source suggests.
+
+**Attention already holds the mask** (read at `bfd2c606a3`). Inside
+`Attention.narrow_step` a bracket is `covered`: for each word of the
+sentence, whether the bracket holds it. The pooled keys and the three
+field acts (and, or, not) are computed through it
+(`reduce_field(..., mask=covered)`). Only at the look is the bracket
+turned into an interval (`SentenceLooks.perceive`), which
+`read_percepts` turns back into a mask (`contained`).
+
+**The reading.**
+
+1. *Attention gives the place, as now.* `attend` keeps its six acts
+   (divide, descend or look at a word, unfocus, and, or, not) and
+   chooses nothing new. The row of `covered` for the chosen bracket is
+   the place factor of §19.32, handed to the Pi as it is.
+2. *The request is not an act of attention.* It is the state of
+   conceptual space, the surface of expectation and desire that
+   `attend` already reads as a signal (1.8 §60.1, rule 9). The activity
+   the Pi matches through is attention's place times that request.
+3. *Attention's tests are taken on what comes back.* Today they count
+   the stem's words in the bracket (`count`) and read their lanes. They
+   would count the selected set.
+   - One token, one lane: the grammar may call `interpret`. This is his
+     "there are not multiple words there" (§19.29), and with a larger
+     whole asked for it is "the largest word that fits" (§19.30).
+   - Several tokens: attention narrows the place, as it does today for
+     a bracket of several words.
+   - No token: the place holds nothing of the kind asked. This is the
+     cue he asked for as future work (2026-11-18: "feedback about the
+     both/neither over symbols so we know if we should attend() by
+     zooming in or out"), and it is graded: the summed activity of the
+     set.
+
+**On "red cat sleeps".** With words asked for, the first look returns
+`red`, `cat` and `sleeps`; attention divides; the look at "cat sleeps"
+returns two tokens, where today it reads nothing; the look at `cat`
+returns one, and the grammar may interpret it. The acts are those of
+today. With the concept of `cat` asked for, the first look returns the
+one token `cat`, and it may be interpreted with no act of attention at
+all: asking for a content is a search, and it saves the narrowing.
+
+**What it leaves as it is.** The choice of place stays a choice of
+`attend`, taught by its lesson and its departures. The request is
+graded and taught, if at all, by gradient on the asking side. The two
+do not share a teacher.
+
+**Not known.**
+
+- Who changes the request inside a sentence, if anyone. If `attend`
+  must choose it, that is a new choice with its cost in training, which
+  his proposal was meant to avoid. *Default (mine):* not `attend`.
+- Whether attention's own reading of a bracket (the walk's keys and
+  `native_word_poles`) and the look's reading can become one. They read
+  the same place twice today. Not examined.
+- Attention's mask is over the stem's words; the percept tensor's axis
+  also has parts and other wholes. Which axis attention's brackets live
+  on is rule 32's.
+- If a look only lowers what was not asked for (§19.33), "one token"
+  is no longer a count, and the test becomes graded, as the test for
+  one lane already has to (1.8 §68.81).
