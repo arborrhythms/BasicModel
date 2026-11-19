@@ -28439,6 +28439,208 @@ The long measurements used the final composing computation. While they ran, the 
 
 Implementation checkpoints on local main are `4e0db320f28a2b4c025bd17ca54d9bb8abb6089b` for the bias and `1eba659c3db3f6929b88f20f9bdae248875e34ef` for the forecast. The returned `bounded_tests.source_snapshot` covers **1,222 files**, SHA-256 **`fb0b52c9837bbdafa4dfc3bac9365330d2689ec475ec0a2785372caffb897c13`**.
 
+### 64.7 What changes the byte memberships in the lesson (§68.82 A)
+
+**The teaching predates the loop.** On the saved lesson stream the first presentation, “This is Felix.”, changes all 204 nonletter byte coefficients of WholeSpace property 0 from zero to **0.000003605769734349451**. This happens on both the §59 checkpoint and the reviewed source. On the reviewed source the next presentation, “What is this?”, also lowers seven letter coefficients. In the original §64 word records the first visible consequence is on presentation 3, where Ciao reads for 1 and against **0.000002562999725341797**. A membership update and the first word at which that update is visible are different measurements.
+
+| Byte on presentation 2 | C (67) | J (74) | K (75) | M (77) | N (78) | p (112) | r (114) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Decrease from one | 0.0000025630 | 0.0000038147 | 0.0000052452 | 0.0000006557 | 0.0000004172 | 0.0000006557 | 0.0000024438 |
+
+The other 45 letters still read exactly one on that update. The 204 nonletters are byte addresses 0–64, 91–96 and 123–255. Property 0 starts with membership one on the 52 ASCII letters and zero elsewhere. The property code used in an idea contains coefficients for the whole alphabet, so an update can reach a byte absent from the current text. The immutable word whole is a different property, row 8.
+
+**The live paths.** I observed the coefficients before and after the actual batch update, the gradient on the property parameter in the normal backward and, on the two-presentation reproduction, the individual registered terms before that backward. The two presentations came from the start of the ordinary four-epoch lesson on the original saved streams. No synthetic negative, supplied bracket or change to the chooser was needed.
+
+1. In the first update, the kept close’s `memory.link_coverage` supplies **−0.003605769481509924** on each nonletter. `BaseModel._snapshot_sentence_codes` calls the WholeSpace codebook’s `begin_forward`, which obtains the live property vectors from `PrimitiveProperties.codes`. The selected link reads a form constructed from those vectors. `MemoryLink.link` books the uncovered content against its mass. The kept derivative is on the reconstruction side. The learner’s 0.001 step and bounded projection give the change above. The form residual also supplies gradients on letters, whose outward updates are projected back to one.
+2. On the next sentence the additional term is **`output.compose_score_function`**. The selected alternative is a compose departure at round 15, action 25. The attention and interpretation departure indices are both −1. The paired costs are **4.351869106292725 and 5.351869106292725**, with advantage **1**, selected probability **0.017038660123944283** and scale **238.81234741210938**. `_compose_score_function_loss` differentiates the selected probability. It reads the live property vectors through the sentence codebook and the native word weights through `property_presence` and `compute_word_property_event`. In the backward for byte C the unprojected contribution from the compose term is **+0.008171559311449528**. Link coverage and the form residual point the other way. After the shared projection the actual gradient on C is **+0.0025836070999503136**. This is the first downward move from one. The credited choice was the compose action.
+3. `PrimitiveProperties.evidence_on_counts` reads both the direct membership and its complement on observed bytes. The word’s positive basic percept includes its required whole. `ModelAttention.native_word_poles` pools the word and its objects. Thus a decrease in a required whole can coexist with a for lane of one from another component. All three original “Felix” probes at §64.5 sourced both lanes from word 113, physical row 13. Against was **0.00020045042037963867**.
+
+**The final “Felix” can be traced to a single later update.** In the reviewed lesson all 52 letters were exact after presentation 119. Presentation 120, “What is Ciao?”, lowered 19 letters (A, B, D, G, I, L, N, W, X, Y, a, c, i, l, s, t, v, x and z). The compose score-function term again reached property 0 through the active sentence codebook and the stem’s property read. On lowercase l its derivative was **+0.3120521605014801**. The kept form residual and link coverage also reached this property. The actual projected gradient on l was **+0.02031044475734234**, leaving its membership **0.9999796748161316**. The next sentence, “Felix is a cat.”, encountered that drop. Subsequent backwards contributed zero on l through presentation 160. The 0.9 momentum carried the update forward to **0.9997995495796204**. Thus l, at the third byte of “Felix”, supplied the largest against reading. The final byte memberships in spelling order were **1, 1, 0.9997995495796204, 0.999961256980896 and 0.9999688863754272**. I checked the replayed coefficients and their complements against all **4,412** single-byte property-0 events identifiable in the original §64 native records, including the final probes. All matched exactly. The earlier transient at presentations 93–94 followed another compose update on presentation 92.
+
+**Which commit.** Trainable byte properties date to `4b097dc815`. The live byte-to-form code dates to `a8a09a6acb`. Live compose scoring under the single backward is present in `1e02cebf5d`; the registered kept-link gradient and whole-path compose score are present in `16a6a79b81`. The exact change in the first two presentations was checked on both sides of **`4e0db320f2`**. On its parent `710485fbbc` every coefficient remained binary through those two presentations. With the default interpretation bias the native path produced the same 204 and seven changes measured above, before the forecast was introduced. The bias changes which paths execute and receive their existing credit. It neither writes property memberships nor changes the backward rule.
+
+**What happened in §59.74.** I re-read the original native lane records and traced the property parameter on its local source checkpoint `08d1cab2bf`. On that source, three letters (A, B, l) first moved from one at presentation 39. The original native reader first reported an against lane on “That” at presentation 41. It reported positive against evidence on **27/544** recorded training word places, with maximum **0.0005345940589904785**. After training, all 52 letter coefficients were exactly one in the replay, and the original 45 probes reported **0/139** known word readings with a positive against lane. All 184 places were accepted. The historical walk did read graded values during training. Its final assessment encountered different memberships.
+
+**Which contract applies.** With the lesson’s default `separateChooser=false`, the shared gradient rule in `doc/Architecture.md`, “Gradients and choices”, differentiates both costs over every optimizer parameter and removes the opposing component of the answer gradient. Its “Gradient” paragraph explicitly includes `PrimitiveProperties.members`. `doc/GradientFlow.md` assigns kept link coverage a live derivative, and assigns the detached cost advantage times the selected compose probability to the answer side. `doc/Mereology.md` preserves the property-membership gradient. Cutting these edges or fixing property 0 would change that teaching. This is the stop in §68.82 A.3. The only production edit in this continuation is the forecast rule below.
+
+**For Alec and Claude.** Should partial membership by itself make a word ineligible for interpretation? In §64, a learned letter membership of 0.99979955 contributed 0.00020045 against “Felix”. The against value came directly from subtracting membership from one. There was no separately observed contrary reading behind that value. The current rule counts it alongside for 1, so the chooser never sees that word. Keeping exact purity and the specified teaching means accepting this outcome. §68.81’s graded alternative would give this particular pair an offer probability of 0.99979955 and would require a decision on graded evidence wherever an exact test consumes it. A third possible design would represent separately witnessed contrary evidence independently of the complement of a partial membership, which would change the perceptual read itself.
+
+I recommend keeping the declared teaching, retaining this run as the exact-purity baseline, and specifying the graded case with the perceptual work in item 1.7. That puts the meaning of a small complement and its use by attention under one decision. If partial membership is intended to count as conflict immediately, I recommend settling the offer rule before proceeding to §65. No evidence in the trace justified an exception for property 0.
+
+### 64.8 The forecast remembers a word until that word is read again (§68.82 B)
+
+`LookForecast.observe` now replaces a live word’s pair only when both endpoints of the selected interval equal that word’s. Its positive length excludes padding. A multiword look and an interior look each keep their own excess and omission in the trace and contribute their observed fields to subsequent forecasts. `for_brackets` still sums the words’ latest pairs.
+
+The amended `test_glance_predicts_each_live_extent_in_one_batch` failed on `bfd2c606a3` when a multiword observation replaced its words’ pairs. The test now checks a strict interior and a containing interval, both with a nonzero comparison. Every stored pair and their sum must be exactly preserved. The single-word certificate still checks that a later read changes precisely the matched word. Both pass. The implementation and test are in local commit `bf7de20d3d`.
+
+**The missing feature at a multiword look is the word’s identity part.** On the native reading of “That is Ciao.” at [0, 13), and “is Ciao.” at [5, 13), zero part groups fired. Whole properties 0 and 8 did fire. At [5, 13), property 0 gave (1, 0.9999931454658508) and property 8 gave (1, 1) across the contained runs. `PartSpace.part_memberships` extracts identity witnesses for the whole bracket under the exact supplied extent. `BasicPercepts.read` requires its identity part to be present before the whole properties can support that basic percept. Neither bracket supplied the single-word identity, and both returned zero nonzero conceptual coordinates. The individual word look at “Ciao” did supply an identity. Rule 32 of item 1.7 owns the multiword percept.
+
+### 64.9 Measurements after the change in forecast rule 3
+
+Both stopping gates and the four forecast tests passed together, **6 passed in 5.38 s**. The 160-sentence lesson ran to completion on the saved §64 stream. The fields below were measured on the kept comprehension and generated idea before trial restoration.
+
+| Source | Exact / 160 | Mean absolute difference | Both empty | Comprehension nonempty | Generation nonempty | Occupancy / capacity at orders 0, 1, 2 |
+| --- | --- | --- | --- | --- | --- | --- |
+| §64 | 45 | 0.18290162986377254 | 36 | 108 | 124 | 36/2346, 99/1239, 34/610 |
+| §64.9 | 52 | 0.17388613185612484 | 42 | 96 | 118 | 37/2346, 96/1239, 33/610 |
+
+| Phase | Questions | Correct bindings | Nonempty answers | Exact answers |
+| --- | --- | --- | --- | --- |
+| ideas | 32 | 0 | 0 | 0 |
+| relations | 48 | 0 | 0 | 0 |
+
+The 45 held-out probes use the previous texts in their original order. R means interpreted, B isolated with both lanes, D offered and declined, N never isolated and I isolated without an offer for another reason. Each letter in the §64 column corresponds to the same place in the new reading.
+
+| Probe | §64 | Current places |
+| --- | --- | --- |
+| This is Felix. | B B B N | This (B) is (N) Felix (N) . (N) |
+| What is this? | B B B R | What (B) is (B) this (B) ? (R) |
+| That is Ciao. | B B B N | That (B) is (N) Ciao (N) . (N) |
+| What is that? | B B N N | What (B) is (B) that (B) ? (R) |
+| Here is Felix. | R B B N | Here (B) is (N) Felix (N) . (N) |
+| Who is here? | B B N N | Who (B) is (B) here (B) ? (R) |
+| There is Ciao. | R B B N | There (B) is (N) Ciao (N) . (N) |
+| Who is there? | B B B N | Who (B) is (B) there (B) ? (R) |
+| That is Felix. | B B B N | That (B) is (N) Felix (N) . (N) |
+| This is Ciao. | B B B N | This (B) is (N) Ciao (N) . (N) |
+| Here is Ciao. | R B B N | Here (B) is (N) Ciao (N) . (N) |
+| There is Felix. | R B B N | There (B) is (N) Felix (N) . (N) |
+| Felix is a cat. | B B B N N | Felix (B) is (N) a (N) cat (N) . (N) |
+| What is Felix? | B B B N | What (B) is (N) Felix (N) ? (N) |
+| Ciao is a cat. | B B B N N | Ciao (B) is (N) a (N) cat (N) . (N) |
+| Is Ciao a cat? | B B B N N | Is (B) Ciao (N) a (N) cat (N) ? (N) |
+| A cat lives. | B B N N | A (B) cat (N) lives (N) . (N) |
+| Is Felix a cat? | B B B N N | Is (B) Felix (N) a (N) cat (N) ? (N) |
+| What is Ciao? | B B B N | What (B) is (B) Ciao (B) ? (R) |
+| A cat moves. | B N N N | A (B) cat (N) moves (N) . (N) |
+| A cat sleeps. | B B N N | A (B) cat (N) sleeps (N) . (N) |
+| A cat eats. | B B N N | A (B) cat (N) eats (N) . (N) |
+| is Ciao Felix. | B B B N | is (B) Ciao (B) Felix (B) . (R) |
+| Felix is Ciao. | B B B N | Felix (B) is (N) Ciao (N) . (N) |
+| is Felix Felix. | B B B N | is (B) Felix (B) Felix (B) . (R) |
+| Felix is Felix. | B B B N | Felix (B) is (N) Felix (N) . (N) |
+| is Here Felix. | B R B N | is (B) Here (B) Felix (N) . (N) |
+| Felix is Here. | B B N N | Felix (B) is (N) Here (N) . (N) |
+| is Is Felix. | B B B N | is (B) Is (B) Felix (N) . (N) |
+| Felix is Is. | B B B N | Felix (B) is (N) Is (N) . (N) |
+| is That Felix. | B B B N | is (B) That (B) Felix (B) . (R) |
+| Felix is That. | B B N N | Felix (B) is (N) That (N) . (N) |
+| is There Felix. | B R B N | is (B) There (B) Felix (N) . (N) |
+| Felix is There. | B B N N | Felix (B) is (N) There (N) . (N) |
+| is This Felix. | B B B N | is (B) This (B) Felix (B) . (R) |
+| Felix is This. | B B N N | Felix (B) is (N) This (N) . (N) |
+| is What Felix. | B B B N | is (B) What (B) Felix (B) . (R) |
+| Felix is What. | B B N N | Felix (B) is (N) What (N) . (N) |
+| is Who Felix. | B B B N | is (B) Who (B) Felix (B) . (R) |
+| Felix is Who. | B B N N | Felix (B) is (N) Who (N) . (N) |
+| is is Felix. | B B B N | is (B) is (N) Felix (N) . (N) |
+| Felix is is. | B B B N | Felix (B) is (N) is (N) . (N) |
+| is this Felix. | B B B N | is (B) this (B) Felix (B) . (R) |
+| Felix is this. | B B B R | Felix (B) is (N) this (N) . (N) |
+| is Felix This. | B B N N | is (B) Felix (B) This (B) . (R) |
+
+The current disposition of the 184 places was **13 interpreted**, 74 isolated on both lanes, 0 declined, 97 never isolated and 0 other isolated places. There were 32 empty trees out of 45. In §64 the corresponding counts were 8, 115, 0, 61, 0 and 37 empty trees. The 13 interpretations were eight periods and five question marks. §64 interpreted Here three times, There three times and two punctuation marks. All 139 current lexical places read positive against evidence, previously 130/139. On the three isolated “Felix” ladder probes, physical row 13 supplied (0.9998672604560852, 0.0001627802848815918) and its object supplied (0, 0). The last 32 training presentations produced 8 interpreted and 286 left across the executed walks, previously 6 and 284. Over the full lesson the native read had positive against evidence on 182/544 training word places, previously 152/544.
+
+Of the 52 exact matches, 10 had nonempty fields on both sides. §64 had nine nonempty exact matches.
+
+Rung results use P for passed, F for failed, B for a blocked prerequisite and – for unavailable vocabulary. The fixture run gave **31 passed, 2 skipped and 279 deselected in 218.46 s** on the operator assertions.
+
+| Source | §64 rungs 1–9 | Current rungs 1–9 | Failed checks |
+| --- | --- | --- | --- |
+| explore-1 after four epochs | F B B B – – B – – | F B B B – – B – – | R1 missing leaves, different tree, word not interpreted |
+| test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word | P – – – – – – – – | P – – – – – – – – | — |
+| test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor] | P – – – – – – – – | P – – – – – – – – | — |
+| test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi] | P – – – – – – – – | F – – – – – – – – | R1 definition not trusted, word does not denote one object |
+| test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_intuit.py::test_83_an_unseen_conclusion_still_needs_inference | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row | F – – – – – – – – | F – – – – – – – – | R1 definition not trusted, word does not denote one object |
+| test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned] | P – – – – – – – – | P – – – – – – – – | — |
+| test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing] | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient | P – – – – – – – – | P – – – – – – – – | — |
+| test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index | P – – – – – – – – | P – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views | P – – – – – – – – | P – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0] | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75] | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream | – – – – – – – – – | – – – – – – – – – | — |
+| test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams | – – – – – – – – – | – – – – – – – – – | — |
+
+The lesson and fixtures 82 (sigmaPi) and 84 failed rung 1. Both fixtures lacked the trusted single-object definition required by that rung. The sigmaPi fixture passed the rung in §64. Six fixtures passed rung 1 here, and 23 had no applicable rung. The table records probe readiness independently of the operator assertions.
+
+### 64.10 Work and surprise
+
+Each count cell gives walks / looks / attend calls / words interpreted / look-specific expect calls / forecast spans. The sixteen-sentence timing observer restored the same saved stream. Seconds are elapsed for each batch and include the work each path actually took.
+
+| Sentence | §64 counts | §64 seconds | Current counts | Current seconds |
+| --- | --- | --- | --- | --- |
+| This is Felix. | 2/15/13/8/15/21 | 3.2397 | 2/15/13/8/15/21 | 3.2220 |
+| What is this? | 1/7/6/4/7/10 | 2.3771 | 1/7/6/4/7/10 | 2.2789 |
+| That is Ciao. | 2/16/14/8/16/22 | 2.5631 | 2/16/14/8/16/22 | 2.5095 |
+| What is that? | 1/7/6/4/7/10 | 2.2578 | 1/7/6/4/7/10 | 2.3108 |
+| Here is Felix. | 2/14/12/8/14/20 | 2.3860 | 2/14/12/8/14/20 | 2.3377 |
+| Who is here? | 2/14/12/8/14/20 | 2.2838 | 2/14/12/8/14/20 | 2.2218 |
+| There is Ciao. | 2/16/14/8/16/22 | 3.2142 | 2/16/14/8/16/22 | 3.1364 |
+| Who is there? | 1/8/7/4/8/11 | 2.9093 | 1/8/7/4/8/11 | 2.8040 |
+| That is Felix. | 2/16/14/8/16/22 | 3.1570 | 2/16/14/8/16/22 | 3.0542 |
+| What is that? | 2/17/15/8/17/23 | 3.6671 | 2/17/15/8/17/23 | 3.4985 |
+| This is Ciao. | 2/17/15/8/17/23 | 4.3619 | 2/17/15/8/17/23 | 4.1352 |
+| What is this? | 2/17/15/8/17/23 | 4.1595 | 2/17/15/8/17/23 | 4.0343 |
+| Here is Ciao. | 2/16/14/8/16/22 | 3.6683 | 2/16/14/8/16/22 | 3.7062 |
+| Who is here? | 1/8/7/4/8/11 | 3.1088 | 1/8/7/4/8/11 | 2.9468 |
+| There is Felix. | 2/16/14/8/16/22 | 3.0889 | 2/16/14/8/16/22 | 2.9389 |
+| Who is there? | 1/8/7/4/8/11 | 2.8428 | 1/8/7/4/8/11 | 2.6841 |
+
+Counts were identical on every sentence. Both runs totalled 27 walks, 212 looks, 185 calls to attend, 108 interpretations and 212 calls to expect over 293 spans. Batch time totalled **47.819405 s**, previously 49.285258 s. Runner time including setup was 48.682052 s and 50.165569 s respectively. Timings are single observations.
+
+| Look | Ultimate word disposition | Residual | §64 count | §64 mean | Current count | Exactly zero | Mean | Median | P90 | Maximum |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| opening | interpreted | excess | 857 | 12.15986 | 806 | 201 | 11.875931 | 10 | 27 | 40 |
+| opening | interpreted | omission | 857 | 0 | 806 | 806 | 0 | 0 | 0 | 0 |
+| opening | left | excess | 370 | 21.115819 | 443 | 82 | 25.819536 | 30.998016 | 40.997044 | 40.999695 |
+| opening | left | omission | 370 | 0 | 443 | 443 | 0 | 0 | 0 | 0 |
+| selected | interpreted | excess | 857 | 12.15986 | 806 | 201 | 11.875931 | 10 | 27 | 40 |
+| selected | interpreted | omission | 857 | 0 | 806 | 806 | 0 | 0 | 0 | 0 |
+| selected | left | excess | 1359 | 26.330757 | 1461 | 0 | 28.668767 | 21.999899 | 41.000652 | 41.000767 |
+| selected | left | omission | 1359 | 0 | 1461 | 1461 | 0 | 0 | 0 | 0 |
+| selected | several words | excess | 1606 | 0 | 1889 | 1889 | 0 | 0 | 0 | 0 |
+| selected | several words | omission | 1606 | 0 | 1889 | 1889 | 0 | 0 | 0 | 0 |
+
+An opening comparison is one per live word in each executed walk. Subsequent comparisons are one per active selected span. The statistics include alternative paths. Each word is classified by the end of that path. A multiword span keeps its own comparison in the record. The P90 is the nearest-rank percentile.
+
+160/160 presentations had no active omission target. The measured omissions should be interpreted in light of that training history.
+
+### 64.11 Verbal proof, scope and returned source
+
+The four-word-pair proof completed 400 epochs and 1,600 presentations. All four grammar inverses were available. The grammar recovered the four word multisets, including the two in reversed order. The field inverse recovered all four input strings in order.
+
+| Input | Grammar inverse in §64 and here | Field inverse in §64 and here | Target | Numeric prediction in both runs |
+| --- | --- | --- | --- | --- |
+| hello world | hello world | hello world | 0 | 0.5000 |
+| hello there | hello there | hello there | 1 | 0.5000 |
+| loving world | world loving | loving world | 1 | 0.5000 |
+| loving there | there loving | loving there | 0 | 0.5000 |
+
+The printed predictions give MSE 0.25 at that precision. Final training losses were 0.1750 for output and 0.0000 for reconstruction in both runs. The test passed in **889.01 s**, previously 968.15 s.
+
+The targeted tests were the four in `test/test_look_forecast.py`, the numeric XOR convergence gate in `test/test_mm_xor.py`, the raised-class denotation gate in `test/test_item25_completion.py`, and the grammar proof in `test/test_explicit_dimensions.py`. The marked fixture assessments ran from `test_item18_expect.py`, `test_item18_intuit.py`, `test_item18_lexical_form.py`, `test_item18_marker.py`, `test_item18_placement.py`, `test_item18_recognition.py`, `test_item18_stack.py` and `test_item18_word_trust.py` under `test/`. The lesson observer was `test/postmerge_word_lanes.py`. The sixteen-sentence observer was `test/attention_thinking_certificate.py`. §68.82 C called for targeted measurements only. The next implementation, §65, awaits the A.3 decision.
+
+Local implementation commit **`bf7de20d3d0e7f84106278d440559ead64805814`**. The returned `bounded_tests.source_snapshot` covers **1,222 files**, SHA-256 **`86a8b2a53d4992ba571a9266b9a08b158b7680777a63306f6a6182a24b997b45`**.
+
 ## 65. Rules 10 to 12 and 14: tables as tensors, and one graph for a sentence (Claude, 2026-11-16)
 
 Rule 13 is built (§53.4). This section writes the rest of part C of
