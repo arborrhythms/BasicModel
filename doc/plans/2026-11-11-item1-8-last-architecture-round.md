@@ -28031,7 +28031,8 @@ whole by the answer to §62.5.
 3. *At the glance every word bracket gets its surprise* the same way,
    one `expect` for each word with that word left out. A later look
    replaces the surprise of the brackets it covers; a bracket of several
-   words has the sum of theirs (*default*).
+   words has the sum of theirs (*default*; amended by §68.81: a look
+   replaces a word's surprise only when its bracket is that one word).
 4. *`attend` reads each bracket's surprise* through the zero-started map
    of §60.1, rule 9 (*default*), so that before any teaching `attend`
    scores as it does on the starting source.
@@ -33712,6 +33713,313 @@ D. Then go on, without waiting for a review, with the text of §62.6
 
 Commit locally as Alec has authorized. Return A to C in §61, from
 §61.22, and §62.6 as §64. Name the test files you ran.
+~~~
+
+### 68.81 Review of §61.22 to §61.24 and §64: the bias and the forecast of a look are built; a trained model reads almost no word (Claude, 2026-11-18; a recommendation for Alec)
+
+**What I checked.** The source at `bfd2c606a3` (local, not pushed;
+commits `4e0db320f2`, `1eba659c3d`, `bfd2c606a3`). I read
+`OperationSelectionLayer.interpret_at_look` and its call in
+`SentenceLooks.Looks.run`, `bin/LookForecast.py` whole,
+`ConceptSpread.expected`, `AttentionContext.install`,
+`test/test_interpret_bias.py`, and Codex's local records of the lesson
+(the readings of each word, the lanes of each look, the pair of each
+comparison). Rerun by me, targeted only (§72), in the checkout,
+unchanged: `test_interpret_bias.py`, `test_look_forecast.py`,
+`test_loop_of_looks.py`, `test_native_attention_field.py`,
+`test_native_candidate_attention.py`, `test_one_attention.py`,
+`test_reading_attention.py`, `test_attention_thinking_steps.py`,
+`test_sentence_owned_attention.py`, `test_assessment.py`, the ported
+case of `test_item18_intuit.py` and both stopping gates: **122 passed,
+9 skipped**. Not rerun: the reading stages, the verbal proof, the
+fixture ladder and the sixteen timed sentences. No sweep, and nothing
+under `RUN_SLOW`.
+
+**Accepted as mechanism.**
+
+- *The bias (rule 5b; §68.80 A and B).* `architecture.interpretBias`
+  is read as `operatorCost` is, checked to lie in 0 to 1, default 1, in
+  the schema and in `doc/Params.md`. At 1 every offer is interpreted
+  with no draw; at 0 the result equals `choose_interpret` and the random
+  stream is untouched; between, one draw for each offered stream, and a
+  replay keeps the branch that was drawn. A call made by the bias has no
+  alternative, no departure and no lesson target. A fresh model now
+  reads "red cat sleeps": three words, one brick and one word step each.
+- *The forecast of a look (§62.3, items 1 to 6).* `LookForecast` takes
+  `expect` on the readings outside the look's extent, closes it upward,
+  and compares it with what the look reads, as excess and omission. It
+  writes nothing to `_expected_knowing`. `attend` reads each bracket's
+  pair through two new columns of the zero-started map of rule 9.
+  `BracketKeys._codebook_retrieval_prior`, its call in `stage_input` and
+  `local_prior` in `narrow_step` are gone; no source file under `bin`
+  or `test` names them. The comparison books no cost.
+- *What came back.* Sixteen sentences: 108 words interpreted in 185
+  calls of attend, where §61.17 had 8 in 1,024. Both reading stages pass
+  with attention enabled, and "identifying words" passes. The verbal
+  proof has its grammar inverse again, 4 of 4. The eight fixtures stand
+  at rung one as in §59.82: seven pass and `test_84` fails as before.
+  The ninth source, the trained lesson, passed there and fails now
+  (finding 1).
+- *The two `test_82` fixtures (§68.80 C.4).* Codex's account stands: a
+  definition is written when a word has been kept three times, and the
+  fixture's two teaching reads do not guarantee the third. It is why the
+  rung varies between runs, and nothing is to be repaired.
+
+*Taken on Codex's own choice under §73, in keeping with the
+specification:* the draw is taken from the model's ordinary random
+stream; three tests that relied on a fresh model declining now set the
+bias to 0 for that part; `Examination.run` takes its own glance and
+shares the pairs over its alternatives.
+
+**The cost.** The sixteen sentences take 49.3 s, against 45.6 s with the
+bias alone: 212 forecasts over 293 extents.
+
+**What the forecast's numbers say, and do not.** In the lesson `expect`
+was never taught: Codex reports no active omission target on any of the
+160 presentations. Its forecast is therefore zero, the omission is zero
+on all 5,049 comparisons, and the excess is simply how much was read at
+the place. The distribution of §64.5 is a count of active rows and says
+nothing yet about a forecast. This is a learning result (§43) and is
+recorded, not repaired.
+
+**Finding 1: after training, almost no word is offered to the grammar.**
+
+*In plain terms.* Each word is read on two lanes: evidence *for* a
+concept and evidence *against* it. A word may be interpreted only when
+its reading has one lane (Alec, 2026-11-15: a known word "CANNOT be
+minted if both lanes are active at once"). The source decides "has this
+lane" by asking whether the value is above zero
+(`Attention.narrowing_view`: `pooled_poles[...,1]>0`). After the lesson,
+"Felix" reads for 1.0 and against 0.0002. That is above zero, so the
+word counts as read with both lanes, is never offered, and
+`interpretBias` is never consulted for it.
+
+*Measured, from Codex's records of this run.*
+
+- The 45 probes after training: 8 of 184 word places are interpreted,
+  115 are looked at and found with both lanes, 61 are never looked at
+  alone; 37 of 45 kept trees are empty (§64.4).
+- In training the share grows. Of the words read in each fifth of the
+  160 presentations, those with any evidence against: 1 of 96, 0 of 96,
+  4 of 117, 30 of 118, and 117 of 117.
+- Reading stops with it. In the first 64 presentations 414 word
+  comparisons end interpreted and 2 left; in the last 32, 6 and 284.
+- The looks grow with it. A sentence's looks after the first, summed
+  over each 16 presentations: 177, 126, 112, 171, 258, 294, 189, 590,
+  884, 1,021. In the last 32 presentations every one of them holds a
+  reading with both lanes, and each sentence spends its whole allowance
+  of 64.
+- The size of the evidence against, over the 285 word readings that
+  have any: smallest 0.00000006, median 0.00005, largest 0.00024. The
+  evidence for is 1.0, or 0.99996.
+- Every one of them has it from one source: property 0 of WholeSpace.
+
+*The producer.* A whole property's evidence for a byte is its learned
+membership, a number from 0 to 1
+(`PerceptProperties.coefficients`), and its evidence against is one
+minus that (`on_counts` with `complement`). The memberships are
+parameters and are taught. Once teaching has moved one from 1 to 0.9998,
+the evidence against is 0.0002. So the two lanes of such a reading sum
+to one, and the test reads "0.9998 for" as "for and against".
+
+*It is new.* The test is unchanged, and before the loop every one of
+the 184 places was accepted after the same lesson (§59.74: "All 184
+assessed word places are minted"). So either nothing moved the
+memberships of property 0 then, or the walk did not read them where it
+reads them now. *Not traced by me:* which cost moves them, and since
+which commit.
+
+*What item 1.8 rests on.* §57.8: "a percept that is exactly present
+reads exactly 1", and "A reading in proportion to the weight comes with
+item 1.7's arithmetic"; so "The question of §57.7 about the walk's test
+for a mint does not arise." That question was what "both lanes active
+at once" means for graded lanes, which §57.7 left to Alec. A membership
+at 0.9998 is a graded value arriving one item early.
+
+*Simulated (mine; a scratch copy and a wrapper, no source changed).*
+The same lesson from the same starting random streams, with one change
+in a wrapper: where the walk reads a word's lanes
+(`native_word_poles`), an against lane under one hundredth of the for
+lane is not counted. The cut is a device of the simulation and no
+proposal.
+
+- Through 150 of the 160 presentations every word offered is
+  interpreted: 1,120 word comparisons end interpreted and none left,
+  where the run as built has 857 and 370 over all 160.
+- The memberships drift there as well (70 word readings with evidence
+  against, the largest 0.00035), so the drift does not depend on which
+  words are offered.
+- At presentation 150 the run stopped at a kept close.
+  `MemoryLink.link` raised "a link requires containment with its
+  collection": it asks that one of the two shares `match` returns equal
+  1 exactly. So the simulation gives no assessment after training.
+  *Not established:* whether that stop is an artifact of the wrapper,
+  which changes the walk's reading and not the values deposited, or a
+  second exact test met by a graded value.
+
+**Finding 2: a look at several words reads nothing.**
+
+*Measured.* On a fresh model, three sentences: each of the 14 looks at
+a bracket of two or more words has an empty field, and each look at one
+word reads that word's concepts (1 or 8 values). In Codex's lesson all
+1,606 comparisons at a look of several words are exactly (0, 0).
+
+*Why (read, not traced to the row).* `SentenceLooks.perceive` reads the
+look's extent as one bracket (`cs_read_memberships`), as rule 3 of §60.1
+says in my words. A concept's features are read as a conjunction over
+that bracket, and a whole property must hold on every byte of it. The
+first look is different: it reads every word bracket in parallel
+(rule 2). I accepted `perceive` in §68.78 without reading the field of a
+look at several words; the miss is mine.
+
+*What follows.*
+
+- "Every look is perceived and conceptualized" holds today only at a
+  bracket that is exactly one word. What a look at another place
+  conceives is rule 32 of item 1.7 (a look returns percept indices, and
+  a Pi finds what is there; sigma-pi §19.28 and §19.30). It is not
+  repaired in item 1.8.
+- The forecast's rule 3 (§62.3: "a later look replaces the surprise of
+  the brackets it covers") then writes (0, 0) over every word the look
+  covers. On "Felix is a cat." the glance gives the words 8, 8, 1 and 8;
+  the first division looks at "is a cat." and sets its words to 0. The
+  signal to `attend` is erased where attention has not yet looked.
+  *Amended (my default, mine to amend):* a look replaces the pair of a
+  word only when the look's bracket is that one word; a look at
+  several words, or inside a word, is reported with its own pair and
+  leaves the words' pairs as they are. This is in the text of §68.82.
+
+**For Alec: where it is repaired.**
+
+His words that bear on it. On 2026-11-15: "a concept that has conflicted
+evidence cannot be learned if both for and against are present *at the
+same time*: the attention has to be nararowed to avoid ambiguity before
+a concept is learned". On 2026-11-16: "it looks like you want things to
+be binary, but that is not necessary".
+
+1. *At the producer now, and the graded test with item 1.7
+   (recommended).* Codex names what moves the memberships of property
+   0, and since which commit. If the loop or its port brought it in
+   with no rule asking for it, it is repaired there, and the words of
+   the lesson read with one lane as in §59.74. Item 1.8 then stays
+   exact, as §57.8 has it, and what "both lanes at once" means for
+   graded lanes is answered where graded readings arrive, with the Pi,
+   Not, Sigma of item 1.7. If a rule does ask for the teaching, Codex
+   stops there and the question is answered now. This is the text of
+   §68.82.
+2. *The graded test now.* The form would be Alec's. One that uses no
+   threshold, in the product logic of sigma-pi §19.13 (the form is
+   mine): with for `f` and against `a`, the share of what was read that
+   is both is `f a / (f + a - f a)`, and a word is offered with one
+   minus that as its probability. "Felix" at (1, 0.0002) is offered
+   9,998 times in 10,000, a word at (0.6, 0.5) five times in eight, a
+   word at (1, 1) never. It costs a draw at each look at one word, and
+   the simulation above says the same question then returns at the next
+   exact test (`MemoryLink.link`).
+3. *A floor:* a lane under a configured small value does not count. No
+   draw; it is a threshold, which he has asked me not to propose.
+
+The text of §68.82 follows the first and waits for his word.
+
+**Smaller points, none of them blocking.**
+
+- The lesson's answers are 0 of 32 and 0 of 48, as before the loop
+  (§49.9) and in §61.17; they are not a result of this round.
+- Identity permanence fails in the curriculum, as it did in §61.19 in
+  both modes.
+- `observe` gives a look's whole pair to each word it covers, so a
+  bracket of n covered words would sum to n times the look's pair. With
+  the amended rule 3 this no longer arises.
+- Not checked by me: the migration of a checkpoint's projection to its
+  two new columns (`Models.BaseModel.load_weights`) beyond its tests
+  passing in Codex's run, and `Examination.run`'s glance.
+
+### 68.82 Codex text: the fourth continuation (what moves a whole property's membership; the forecast's rule 3; then tables as tensors)
+
+Written on 2026-11-18, on the first choice of §68.81. It waits for
+Alec's word; it is the one text to carry.
+
+~~~
+Item 1.8, the loop of looks: the fourth continuation. Read §68.81 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. Your returns
+§61.22 to §61.24 and §64 are reviewed and their mechanism is accepted:
+the bias and the forecast of a look stand. Two things were found, one
+in the lesson and one in a default of mine. §73 holds as before, and
+the standing rules: no bound, learning rate, seed, capacity or
+presentation count changes; no validation weakened or removed; a
+learning certificate recorded and not repaired; local commits only,
+never push main, never force-push.
+
+A. What moves the memberships of property 0 of WholeSpace.
+   After the lesson a word such as Felix reads for 1.0 and against
+   0.0002 at the walk (native_word_poles), the offer's test counts any
+   value above zero as a second lane (narrowing_view), and the word is
+   never offered: 8 of 184 places are interpreted after training, and
+   6 against 284 left in the last 32 presentations. In your own
+   records every reading with evidence against has it from ('ws', 0):
+   one minus a learned membership (PerceptProperties.coefficients,
+   on_counts with complement). After the same lesson in §59.74 all 184
+   places were accepted, with the same test.
+1. Name the producer: which cost and which path change
+   PerceptProperties.members for property 0 in the lesson, for which
+   bytes, at which presentation a value first leaves 0 or 1, and since
+   which commit. Say what held in the source of §59.74: the membership
+   stayed exact, or it moved and the walk did not read it.
+2. If it came in with the loop of looks, the stem interval port or the
+   forecast, and no rule asks for it (for example a look's reading
+   published where a lesson reads the sentence's), repair it at the
+   producer. Certificates: a targeted test of the smallest case that
+   reproduces it, failing on the returned source; and in the lesson
+   run of C, no word of the 45 probes read at the walk with evidence
+   against above zero.
+3. If a rule does ask for that teaching, change nothing: not the
+   offer's test, not the cost, not the read. Write the producer, the
+   reproduction and the solutions you see, do B and C, and stop before
+   D. What "both lanes at once" means for graded lanes is Alec's
+   (§57.7), and the choices put to him are in §68.81.
+4. Not for this text in either case: a floor, a draw or any other
+   change to the tests of narrowing_view.
+5. For your information: my simulation of the lesson with the small
+   against lane not counted at the walk stopped at presentation 150,
+   at a kept close, on MemoryLink.link ("a link requires containment
+   with its collection"), which asks that a share returned by match
+   equal 1 exactly. I did not establish whether my wrapper caused it.
+   If the lesson of C runs to its end, say so and no more; if it meets
+   that check, report it as in 3.
+
+B. The forecast's rule 3 (§62.3), amended by me.
+1. A look replaces the latest pair of a word only when the look's
+   bracket is that one word. A look at several words, or inside a
+   word, is recorded with its own pair in the sentence's record as now
+   and leaves every word's latest pair as it is
+   (LookForecast.observe). A bracket of several words still has the
+   sum of its words' latest pairs (for_brackets).
+2. Certificate 3 of §62.4 becomes: at the glance every word bracket
+   has a pair; a later look at one word replaces exactly that word's
+   pair; a later look at several words changes none. The last part
+   fails on the returned source.
+3. Why this was needed: a look at several words reads an empty field
+   (on a fresh model, 14 of 14 such looks; in your lesson, 1,606 of
+   1,606 comparisons at (0, 0)), so the old rule wrote zero over the
+   words it covered. Do not repair the empty field: what a look at a
+   place that is not one word conceives is rule 32 of item 1.7. In one
+   paragraph, name the feature that fails over such a bracket.
+
+C. Measure once on the finished source, targeted (§72), beside §64:
+   both stopping gates; the lesson with its exact fields of 160, its
+   mean difference and its occupancy; the 45 probes with each word's
+   disposition, and the rung table; the sixteen sentences with their
+   counts and seconds; the distribution of excess and omission; the
+   verbal proof. No default sweep here and nothing under RUN_SLOW.
+
+D. Then go on, without a review between, to §65.4 (tables as tensors,
+   the last text of item 1.8), on the source of this text. Where §65.4
+   says "commit and push nothing", read: local commits only, never
+   push main, never force-push. Its return carries the item's one
+   default sweep, as it says.
+
+Return A to C in §64 from §64.7, and §65.4 as §66. Name the test files
+you ran. Commit locally; never push main, and never force-push.
 ~~~
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)

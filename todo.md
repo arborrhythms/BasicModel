@@ -1404,6 +1404,25 @@ generation is expected at this stage and is recorded, not tuned away.
    record of having examined a particular place, and feedback about
    the both/neither over symbols so we know if we should attend() by
    zooming in or out", needed once the bias is lowered.
+   **The bias and the forecast of a look are returned and reviewed
+   (§61.22 to §61.24, §64; §68.81).** Both are accepted as mechanism
+   (122 targeted cases pass). A fresh model reads its words; a
+   trained one reads almost none: 8 of 184 places after the lesson.
+   Teaching moves a whole property's membership from 1 to 0.9998, the
+   evidence against is then 0.0002, and the walk's test counts any
+   value above zero as a second lane, so the word is never offered.
+   Before the loop all 184 were read after the same lesson (§59.74).
+   **Recommended to Alec (§68.81):** Codex names what now moves that
+   membership and repairs it at the producer, and what "both lanes at
+   once" means for graded lanes is answered with item 1.7; the other
+   choices are a graded test now, or a floor. Also found: a look at
+   several words reads nothing, and by the forecast's rule 3 its
+   empty comparison erases
+   the surprise of the words it covers; rule 3 is amended (mine), and
+   what such a look conceives is item 1.7's rule 32. **The one
+   text for Codex is §68.82** (the producer, rule 3, the measurements
+   again, then straight on to §65.4, the last text of item 1.8); it
+   waits for Alec's word.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
