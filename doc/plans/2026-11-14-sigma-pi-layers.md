@@ -6869,6 +6869,243 @@ up, and hand the returned set to the grammar.
 **Nothing of §19.46's seven questions is open.** The rules can be
 written when the prototype (§19.47) has returned.
 
+### 19.50 Review of §20, the prototype of the looks (Claude, 2026-11-19)
+
+**Result.** Accepted as a prototype. It changes no file of `bin/` and
+no existing test: three files are new under `test/`
+(`looks_prototype.py`, `looks_prototype_report.py`,
+`test_item17_looks_prototype.py`). Its nine tests pass here (3.1 s),
+and its report prints the tables of §20.2, §20.3 and §20.4 as
+returned (compared line by line; the tables of §20.5 to §20.8 were
+read and not compared line by line).
+
+**What it shows.** The look as Alec described it (§19.48, §19.49)
+works on the lesson's sixteen sentences. A request for the meta concept
+"word" with a place returns the word at that place in 16 of 16, and a
+word that is absent returns nothing in 16 of 16, on three conditions:
+the Sigma is passed by its weights, a place is read once at a token's
+start, and of equally active words the largest is taken. A look costs
+about 2.3 ways up, once for a request and not once for each candidate.
+Reading in order was learned from the request alone: one number, the
+step from the end of the word read to the next place, taught by the
+gradient through the pullback, and after 20 steps all sixteen sentences
+were read in order.
+
+**Checked by Claude.**
+
+1. *A membership of exactly one passes no gradient through `PiLayer2`*
+   (§20.2). Confirmed in this environment (torch 2.15.0): for
+   `exp(3 log clamp(m, eps, 1))` the gradient at `m = 1` is 0 and at
+   `m = 0.999` it is 2.994; with the floor alone it is 3.0 at `m = 1`.
+   The clamp is in the source (`bin/Layers.py`, `PiLayer2`, built by a
+   kernel option and by a fold). Whether it costs today's training
+   anything was not checked.
+2. *A product row is a test of containment* (§20.4). Confirmed, and it
+   depends on what the bank holds. The prototype's bank holds bytes and
+   a word's row asks for its letters. The model's own code of a word is
+   the pairs of `#word#` and the lengths 1 to n
+   (`WordIdentity.base_atoms`). A word is "wholly present at another
+   token" when every part its row asks for is in that token:
+
+   | A word's row asks for | On the lesson's sixteen sentences | In a dictionary |
+   | --- | --- | --- |
+   | its letters (the prototype) | 8 cases, in 6 of 16 (`is` in `This`, `here` in `There`) | not run |
+   | its pairs and lengths (the model's atoms) | 0 cases | 938 of 3,000 sampled words (31%) wholly contain another word (`the` in `there`, `my` in `mystifyingly`) |
+   | the same, with the next length absent | 0 cases | none; 64 of 197,014 words (0.03%) share pairs and length with another word (`acara`, `araca`) |
+
+   | Asked | Token | letters | pairs and lengths | with the next length absent |
+   | --- | --- | --- | --- | --- |
+   | `Felix` | `xileF` | present | absent | absent |
+   | `is` | `This` | present | absent | absent |
+   | `here` | `there` | present | absent | absent |
+   | `the` | `there` | present | present | absent |
+   | `cat` | `caat` | present | present | absent |
+   | `cat` | `act` | present | absent | absent |
+
+   This is a count over sets of atoms (the scratch script
+   `word_rows_check.py`, not kept in the repository), not a run of the
+   prototype's products. The dictionary is the system's word list, 2
+   to 12 letters, lower case.
+3. *The store has a row for each word form and for each atom, and the
+   lookup names them* (`WordIdentity.word_rows`, `atoms`, `parts`): a
+   word's row, its atoms' rows, and its witnessed nested wholes.
+
+**Where Claude reads the return differently.** Two of its five
+surprises come from the prototype's bank of bytes, and rule 33's bank
+is not that. Rule 33's bank holds what the sentence's one lookup names:
+for a token, the row of its form where the store knows the form, the
+rows of its atoms, and its place, which is its start.
+
+- *The contained word* (§20.4; §20.9, point 3). A known word's concept
+  asks for its form's row, and the lookup has already made that an
+  equality: `is` is not the form at `This`. The atoms are for a form
+  that is not known, rule 32's reading of spellings, and there a row is
+  a containment test with the numbers above.
+- *The word cut by its own place* (§20.5; §20.9, point 4). An event of
+  the bank has one place, its start. The where match is read there,
+  which is §20.5's "read at the token", the reading that took the word
+  at the place at every concentration.
+- So the two changes §20.10 proposes for rule 41, the return of the
+  ordered run or letters at their places within the token, are not
+  taken. Order inside a word is in the word's own code, the pairs of
+  `#word#`.
+
+**Where Claude agrees.** The Sigma is passed by its weights and not by
+its slope (§20.9, point 1): a saturated Sigma has almost no slope, so
+the concept that is most present would return least. Alec's words for
+the pullback are "a series of matmuls" and "the selection matrix"
+(§19.43), which are the matrices. A share becomes the look's activity
+capped at one (rule 34). Of equals the largest is taken, his own idea
+(§19.30), then the one found first.
+
+**Not checked.** The counts of multiply-adds (§20.4), the profile of
+the sinusoid (§20.6) and the trial of reading in order (§20.8) beyond
+their tests passing.
+
+### 19.51 The looks, as rules after the prototype (Claude, 2026-11-19; from §19.46, §19.48, §19.49 and §20)
+
+These replace the wording of rules 33 to 41 in §19.46 and add rule 42.
+What Alec decided is given with its section. What is marked *mine* is
+Claude's and is his to change; under 1.8 §75 it does not hold the
+item's text.
+
+**F. The looks.**
+
+33. *The percept bank of a sentence* (Alec, §19.34, §19.40). At a
+    sentence's start one lookup reads its percepts into one bank. For
+    each token the bank holds the row of its form, where the store
+    knows the form; the rows of its atoms; its place, which is its
+    start, with that place's code on the constant sinusoid
+    (`WhereEncoding`, as the registry builds it, both rungs); its
+    time; and its activity on two lanes. Nothing on a look's path
+    calls `materialize()` and nothing on it reads a span on the host.
+    The Pi is read only on the rows the lookup names. How the lookup
+    is computed is item 1.5's and changes no result. *Mine
+    (§19.50):* the events are the lookup's rows and not bytes; the
+    tokens are the stem's until rule 32's Pi makes them.
+34. *A look is an activity over the bank* (Alec, §19.48, answer 2). An
+    event's activity in a look is its own, times its match in the
+    what domain, times its match in the where domain: the
+    intersection of the two across the active percepts. What is not
+    active is absent on both lanes and is never evidence against (his
+    rule for `non`, 2026-11-12). *Mine (§20.10):* the intersection is
+    the product; a what match is the event's share of the request,
+    capped at one; an event that two asked rows share is not counted
+    twice.
+35. *The request* (Alec, §19.48, answers 1, 2 and 6; §19.49, answer
+    6). It is the output of `attend`: a mask over all concepts, on two
+    lanes, and it is learned. It may name a whole. The gradient of a
+    look's selection lands on the request, on which concepts are asked
+    for and on what produces that asking. As proof of concept the
+    request is the meta concept that words are included in, with a
+    place. *Mine:* the first layer's weights take none of that
+    gradient, so that perception keeps its one teacher.
+36. *The pullback* (Alec, §19.43; §19.48, answer 2). The request is
+    carried down through the matrices of the way up onto two domains,
+    the what codebook and the where sinusoid, and each event gets a
+    share. *Mine (§20.9, §20.10, §19.50):* a Pi is passed by the
+    derivative of its product and a Sigma by its weights, not by its
+    slope. It is computed by the transposes of the same sparse
+    matrices with the Pi's local derivatives kept from the way up,
+    with no second backward pass inside the forward. A membership of
+    exactly one passes its derivative; in the source `PiLayer2`'s
+    clamp does not, and that is corrected with a test. Where a token
+    has several copies of one row its membership is the greatest of
+    them, and each copy at the greatest takes the whole derivative.
+37. *The returned set* (Alec, §19.45; §19.49, answer 3). The way up is
+    run again on the bank with the look's activity. What it gives,
+    each concept at its token, is the returned set. `interpret` takes
+    its most active word concept, exactly: a selection, with no draw
+    and no degree. *Mine:* among equals the largest (his idea,
+    §19.30), then the one found first; where the set holds no word
+    concept, nothing is interpreted.
+38. *`attend`* (Alec, §19.45; §19.48, answers 5 and 7; §19.49). One
+    `attend` is: give the mask over concepts, pull it back onto the
+    two domains, intersect, go up, and hand the returned set to the
+    grammar. The acts on brackets go. No order is built in: reading
+    the words of a sentence in order is taught, and a test of it gates
+    the grammar tests. The reading lesson stays and is rewritten for
+    requests in place of acts on brackets. *Mine:* the first thing
+    taught is where the next place is, from where the last word ended
+    (§20.8); a narrower request or place is `focus` and a wider one
+    `unfocus`, and the and, or and not of the field act on the
+    request's two lanes; a token that was interpreted is lowered in
+    the bank's activity, the `done` mark of today; each word is
+    composed as it arrives, as today (1.8 §60.1, rule 6), which his
+    answer 5 does not say.
+39. *Attention dims; it does not cut* (Alec, §19.36; §19.48, answer 2).
+    What lies away from the asked place is lowered by the hypercone of
+    the row that asks, by its radius and its magnitude, within the
+    mereological field. There is no separate floor. *Mine (§20.5):*
+    the weights of a place row set its radius; the row's value at its
+    own place falls as the radius narrows, and the Sigma's weight on
+    the row restores it; the where match is read at an event's place
+    and applied once to the token's reading, on both lanes, not inside
+    the product of a row's parts. The key `attentionFloor` is not read
+    by a look.
+40. *One gain field* (*mine*, from what §19.37 found for him: the
+    gain field joins attention and expectation, and `attend` does not
+    feed it). A look's activity is the
+    `attention` of `Expectation.gain_field`, and the look's forecast
+    (1.8 §62.3) is its `expected`. Its excess and omission are the
+    surprise `attend` reads; `LookForecast.difference` goes.
+41. *One where* (Alec, §19.48, answer 4). The where is the place on
+    the constant sinusoid, and a row of the first Pi bounds it. There
+    is no second where for how a thing's parts stand to one another.
+    The tests of spans made on the host go (`contained`,
+    `part_memberships`' overlap, `covered`). `.where` stays on every
+    reading. *Mine (§19.50, §20.6):* order inside a word is carried by
+    the word's own code, the pairs of `#word#`. With the registry's
+    capacity the short rung separates the words of a sentence and the
+    long rung removes the short rung's repeats 256 bytes away; a
+    capacity of 64 gives both rungs one period, and is not used.
+42. *A literal* (Alec, §19.48). A word left uninterpreted may enter the
+    tree as a literal, a sign and not a symbol, as if it had been
+    quoted. It stands where a clause would. It enters only where the
+    grammar has a rule that takes it, such as `sign` (`SignLayer`);
+    where none does, the sentence is not well formed.
+
+**Rule 32, a note from the prototype** (*mine*). A form the store does
+not know is read by its atoms, and a row over atoms tests containment
+(§19.50): `the` is wholly present at `there`. Where the longer form is
+known, its own row is the larger of the two and is taken (rule 37).
+Where it is not known, the shorter word would be read in its place.
+The lengths 1 to n say "at least n"; saying "exactly n" needs the next
+length's absence, and absence is not evidence (rule 34). This is left
+to rule 32 with the numbers of §19.50 and is not settled here.
+
+**The fallback** (Alec, §19.48), if the build does not work: a network
+gives the `.where` outright, and from that extent the largest word is
+taken, or failing a word the largest concept. §20.7 shows it agrees
+with the returned set wherever one word is at the place. It needs no
+request, so nothing in it can be taught to ask.
+
+**What stays and what goes** are as in §19.46, with two changes: the
+reading lesson (`AttentionLesson.ReadingTargets`) is rewritten and not
+removed, and `attentionFloor` is no longer read by a look.
+
+**Certificates** are those of §19.46 and §19.48, and from the
+prototype: a word that is absent returns nothing; a known word is not
+taken at the token of a longer known word that holds its letters; a
+membership of exactly one passes its derivative through the Pi; a
+request for the meta concept with a place returns the word at the
+place on each of the lesson's sentences.
+
+**For Alec, three points; each is built as recommended unless he says
+otherwise.**
+
+1. *The Sigma in the pullback.* *Recommended:* by its weights. The
+   other choice, by its slope, returned nothing for a word that is
+   fully present.
+2. *What the bank holds.* *Recommended:* the rows the lookup names, a
+   token's form and its atoms. The other choice, bytes, makes a word's
+   row a bag of letters.
+3. *Among equally active words.* *Recommended:* the largest, then the
+   first found.
+
+**What comes next.** The item's text for Codex (§19.8) is rewritten
+from §19.21 (rules 1 to 32) and from this section, as one hand-off.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

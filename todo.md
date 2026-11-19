@@ -1640,6 +1640,20 @@ generation is expected at this stage and is recorded, not tuned away.
    concept, "pulling back the meta-concept to isolate words in the
    percept codebook". None of the seven questions is open; the rules
    are written when the prototype returns.
+   **The prototype returned and is reviewed (Claude, 2026-11-19;
+   sigma-pi §20, §19.50, §19.51).** Accepted as a prototype: its nine
+   tests pass and its tables reproduce. The look works on the
+   lesson's sixteen sentences (the meta concept with a place returns
+   the word at the place in 16 of 16; an absent word returns nothing;
+   reading in order was learned from the request alone). Rules 33 to
+   42 are written as rules in §19.51, with three points for Alec,
+   each built as recommended unless he says otherwise: the Sigma is
+   passed by its weights in the pullback; the bank holds the rows the
+   lookup names (a token's form and its atoms), not bytes; among
+   equally active words the largest is taken. Found in the source:
+   `PiLayer2` passes no gradient at a membership of exactly one.
+   **Next: the item's text for Codex (§19.8) is rewritten from
+   §19.21 and §19.51 as one hand-off.**
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for
