@@ -102,23 +102,25 @@ def _learns_the_combinations(stack, lanes, target, presentations):
 
 def test_depth_one_two_and_four_pairs():
     """The target: the four word combinations, each read as its omitted
-    word, with 1,000 presentations on five starts (the stack's seeds 0 to 4).
+    word, with 1,000 presentations on five starts drawn from the system.
     Measured first: one pair and two pairs learn it on every start; four
     pairs is recorded."""
     from SigmaPiStack import SigmaPiStack
     lanes, target = _word_combinations()
+    starts = _drawn_starts(5)
     learned = {pairs: [_learns_the_combinations(SigmaPiStack(6, 6, hidden=64, pairs=pairs, seed=seed),
-                                                lanes, target, 1000) for seed in range(5)]
+                                                lanes, target, 1000) for seed in starts]
                for pairs in (1, 2, 4)}
-    print(dict(depth={pairs: sum(values) for pairs, values in learned.items()}, starts=5,
+    print(dict(depth={pairs: sum(values) for pairs, values in learned.items()}, starts=starts,
                presentations=1000))
     assert all(learned[1]) and all(learned[2])
 
 
-@pytest.mark.parametrize('device', ['cpu', 'mps'])
+_DEVICES = ['cpu'] + (['mps'] if torch.backends.mps.is_available() else [])
+
+
+@pytest.mark.parametrize('device', _DEVICES)
 def test_seconds_against_an_mlp_layer(device, lesson):
-    if device == 'mps' and not torch.backends.mps.is_available():
-        pytest.skip('no accelerator')
     stack = lesson['expect_stack']
     width, hidden = stack.inputs, stack.hidden
     import copy
@@ -237,9 +239,16 @@ def _read_back(stack, threshold=.1):
     return stack
 
 
+def _drawn_starts(count):
+    """Starts drawn from the system, never chosen."""
+    import os
+    return [int.from_bytes(os.urandom(4), 'little') for _ in range(count)]
+
+
 def _outcomes(task, *, pi_penalty, sigma_penalty, starts=10):
     solved = read = not_entries = literals = 0
-    for seed in range(starts):
+    seeds = _drawn_starts(starts)
+    for seed in seeds:
         stack = _taught(task, seed, pi_penalty=pi_penalty, sigma_penalty=sigma_penalty)
         wanted = _TASKS[task].long()
         solved += bool(torch.equal(_answers(stack(_LANES)[:, 0].detach()), wanted))
@@ -247,7 +256,7 @@ def _outcomes(task, *, pi_penalty, sigma_penalty, starts=10):
         literals += int((stack.stages[0].pi.raw.abs() > .1).sum())
         read += bool(torch.equal(_answers(_read_back(stack)(_LANES)[:, 0].detach()), wanted))
     return dict(solved=solved, read_back=read, not_entries=not_entries,
-                literals=literals/starts, starts=starts)
+                literals=literals/starts, starts=starts, seeds=seeds)
 
 
 @pytest.mark.parametrize('task', sorted(_TASKS))
@@ -256,9 +265,9 @@ def test_and_or_and_not_are_learned_and_read_back(task):
     unpenalized = _outcomes(task, pi_penalty=0., sigma_penalty=0.)
     pi_alone = _outcomes(task, pi_penalty=.003, sigma_penalty=0.)
     print(dict(task=task, penalty_on_both=both, no_penalty=unpenalized, penalty_on_pi=pi_alone))
-    assert both['solved'] == both['starts'] and unpenalized['solved'] == unpenalized['starts']
-    assert both['read_back'] == both['starts']
+    assert both['solved'] == len(both['seeds']) and unpenalized['solved'] == len(unpenalized['seeds'])
+    assert both['read_back'] == len(both['seeds'])
     if task == 'negation':
-        assert both['not_entries'] >= both['starts']
+        assert both['not_entries'] >= len(both['seeds'])
     else:
         assert both['not_entries'] == 0
