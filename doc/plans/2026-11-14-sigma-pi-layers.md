@@ -10655,3 +10655,106 @@ the parts found at every place, which is the lookup of rule 44 in item
 and 49 as the return recommends, and rule 7 for `.where` and `.when`
 alone. Rule 7 is a rule he confirmed, so that one is put to him. Round
 6's text is amended to match.
+
+### 23.1 Round 1: the two layers, the stacks, and the code of a form (Claude on Opus, standing in for Codex, 2026-11-19)
+
+The text of §22.1, with the amendment of §19.65 to rule 46 and certificate 28 (the part `xx` is admitted, not `felixx`). Commits, local on `main`: `e414b3c8ee` (part A), `b995eb2b7f` (part B). Nothing is pushed. Started at `1598a9bd46`; the "before" values were run on an export of that commit.
+
+**What was built, by file and function.**
+
+*Part A.*
+
+- `bin/Layers.py`, new after `SigmaLayer2`: `membership_log` (the log of `clamp(m, EPS_LOG, 1)`, whose derivative passes for `EPS_LOG < m <= 1`); `signed_lanes` (a signed value as for and against, never both; at exactly zero the derivative reaches both lanes); `PiLayer3` (lanes on the second last axis, `[..., lane, i]`; square: one `ContractiveInvertibleLinearLayer` for each lane, `PiLayer2`'s law, exact `reverse`; `free=True`: weights the magnitude of a raw parameter, no bias, no diagonal law, no way back; `weights`, `symbols`); `SigmaLayer3` (`tanh(x U)`, one weight per input, no bias, `for_entries`, `not_entries`, `lanes`, `reverse` by least squares returning the two lanes, refused with fewer concepts than inputs); `SigmaPiLayer` (a free `PiLayer3` and a `SigmaLayer3` fused in one expression over the input's lanes; `reverse` raises).
+- `bin/SigmaPiStack.py`, rebuilt: `stages` is a row of `SigmaPiLayer` pairs; `forward` reads lanes `[..., 2, inputs]`; a pair's output is read by the next as `stack((v, -v), -2)`; the last Sigma is zero at construction. `_field_value` is gone.
+- Users. `bin/Spaces.py`: the expect stack is `SigmaPiStack(cap, cap)` and the idea stack `SigmaPiStack(cap, idea width)` (both were `2*cap` inputs). `ConceptSpread.expected`: the stack reads each concept's two lanes and gives one signed number, held again as two lanes by `signed_lanes`; *what it reads now:* the field's lanes as lanes, and the expected field is never "both". `IdeaRead.complete` and `expected_point`: the lanes; *it assumed nothing in 0 to 1 but its teacher;* the read now gives -1 to 1. `Language._MarkerKernel`: `SigmaPiStack(form width, meaning width)` on the form's lanes; *it read two unsigned halves as a difference* (`raise_by - lower_by`); the shift is now the stack's one signed number, in the same range.
+
+*Part B.*
+
+- `bin/WordIdentity.py`. `base_atoms` gives a form's characters, the space among them, kind `part`, no end marks and no lengths; `atom_code` writes the part block and leaves the 32 coordinates of the length block empty (the layout is unchanged). `distinguishing_run(left, right, one_sided=False)` is rule 43's step and rule 46's part in one helper. `WordIdentity.added` (each added part with the two forms it told apart, or `None` when taught) is saved and loaded in `vocab_extras` in place of `mints`. `atoms_of` gives a form its characters and every added part inside it. `_settle` is the one loop for `admit` and `admit_part`: it keys each pending form, tells apart two forms with one row (`_separate`), and writes the row of every form whose code changed; `_unkey` retires a key from the hash map and from the trie, so no stale key or trie entry is left. `admit_part(run)` adds a part by itself: every held form that contains it takes it and is rekeyed; a part that exists, or a single character, changes nothing. `part_between(string, word)` is the shortest run the string holds and the word does not. `observe_nested` keeps its record (`nested`, `word_witnesses`) and joins no codes, rekeys no form and rebuilds no trie. `read_parts` gives way to `spelling(rows)`: the stored form whose code is the fold of the rows' codes, or `None`. `_mint` and `assemble_pairs` are deleted.
+- `bin/Layers.py`: `RadixTrie.remove`.
+- Callers. `Omission.prepare` and `PartSpace.part_memberships` read `atoms_of`. `InterpretLayer.lookup_word` and `FieldReverse.reverse` read `spelling`. `corpus_capacity` counts added parts. `AttentionLesson._prompt_need` reads `form` unchanged.
+- *What the suffix lesson leaves.* `nested` (a stem and its marker, with their spans) and `word_witnesses`. `nested` is read by the staging of `PartSpace` (a word's part ids and part spans gain the stem's and the marker's rows) and by `Omission.prepare` (the plan of a word's parts). The codes need no joining: `cat` lies inside `cats` by its parts.
+- *A code that is no stored form.* Before, `read_parts` spelled it from its end-marked pairs and greatest length: where the spelling was unique, `lookup_word` admitted those bytes as a new form and `FieldReverse.reverse` failed with a `KeyError` on `word_rows`; where it was not unique, both raised `ValueError` ("pair/length spelling is unresolved"). Now `spelling` gives `None`: `lookup_word` fuses the rows as parts, as for any rows that name no form, and admits nothing; `FieldReverse.reverse` raises `ValueError` ("a code that is no stored form has no spelling").
+- *A form may hold a space* (step 11). Nothing in `admit` refused one. The old code did not hold `ice` inside `ice cream` because `ice` carried the pair `e#`. With the part map it does; the one other change is that `observe_nested`'s test of letters ignores spaces. `RadixLayer`'s `word_bounded` and `_promotable` (promotion by frequency) and the stem's units are unchanged.
+
+**Certificates.**
+
+| | Test | Result |
+| --- | --- | --- |
+| 1 | `test_item17_layers.py::test_the_old_classes_have_the_same_source`, `::test_the_old_classes_give_the_same_values` (5 cases, against `Layers.py` of `1598a9bd46`) | pass: source identical; values and reverses equal exactly |
+| 2 | `::test_pi_gives_pi2_values_on_its_domain`, `::test_a_row_requires_its_members`, `::test_the_pi_is_bounded_over_the_whole_range` (weights scaled 0, 3, 30), `::test_the_pi_has_an_exact_way_back` (atol 1e-6), `::test_a_row_has_no_weight_outside_its_own_lane`, `::test_a_membership_of_one_passes_its_derivative_and_one_below_the_floor_none` | pass. Both present: .48, .42 against the product .48, .42; one absent: below the floor. `PiLayer2`'s derivative at one is 0 |
+| 3 | `::test_a_concept_is_one_signed_number_and_its_lanes_are_its_parts`, `::test_on_the_way_back_minus_half_reaches_the_against_lane`, `::test_the_sigma_is_bounded_over_the_whole_range` (weights to 1e4), `::test_the_sigma_has_no_bias_and_an_entry_is_for_or_not` | pass |
+| 7 | `test_item17_stacks.py`: fused pair equals its two layers (atol 1e-6, inputs to ±1.5); a stack is one graph (one frame at batches 3, 5, 8, 17); seconds against an MLP; depth; root ideas | pass, with the depth recorded below |
+| 22 | `test_item17_stacks.py::test_and_or_and_not_are_learned_and_read_back` (3 tasks) | pass |
+| 27 | `test_testpoint.py::TestStructureValid` (3 tests) | pass; values below |
+| 28 | `test_item17_forms.py::test_a_string_that_is_no_form` | pass |
+| 29 | `test_item17_forms.py::test_every_form_the_lesson_stores_is_put_back_from_the_form_alone`, `::test_the_lesson_model_puts_back_every_stored_form`, `::test_the_pair_spellings_are_named_nowhere` | pass |
+
+*Certificate 7, the numbers.* Seconds for a forward and a backward call at expect's size in the lesson configuration (2,346 concepts, hidden 64), against `Linear(2·2346, 64)`, ReLU, `Linear(64, 2346)`, the same weights: on the processor 0.56 ms against 0.21 ms at a batch of 1 and 1.33 ms against 0.53 ms at 64; on Metal 0.39 against 0.17 ms and 0.45 against 0.32 ms. About 2.5 times an MLP layer on the processor, 1.4 to 2.3 on Metal. *Depth* (the four word combinations, each read as its omitted word; 1,000 presentations; the stack's seeds 0 to 4; the bar measured first): one pair 5 of 5, two pairs 5 of 5, **four pairs 2 of 5**. The test asserts one and two pairs; four pairs is recorded, a learning result not repaired. With a Sigma started at `U(0, 1/√n)` four pairs saturated (each pair's output near 1 for every input); `U(0, 2/n)` is what is built. *Root ideas* of the lesson's sixteen sentences, all sixteen kept: least 0.0, greatest 1.0, against the read's range -1 to 1, so they lie within it (1.0 is the rail of `tanh`, reached only in floating point). The idea read's own values after the sixteen lie in 0 to 4.5e-6: it has barely begun to learn.
+
+*Certificate 22, the numbers* (ten starts, 2,000 presentations, the penalty the sum of the weights' magnitudes, .003 on each layer; an entry is present above .1; read back with present entries at one, a Not entry keeping its sign):
+
+| Task | Penalty | Solved | Read back | Not entries | Pi literals, mean |
+| --- | --- | ---: | ---: | ---: | ---: |
+| and | both | 10 | 10 | 0 | 6.0 |
+| and | none | 10 | 10 | 0 | 12.3 |
+| and | Pi only | 10 | 3 | 10 | 10.4 |
+| or | both | 10 | 10 | 0 | 6.0 |
+| or | none | 10 | 10 | 1 | 12.2 |
+| or | Pi only | 10 | 3 | 14 | 10.9 |
+| not | both | 10 | 10 | 14 | 2.8 |
+| not | none | 10 | 10 | 34 | 8.5 |
+| not | Pi only | 10 | 8 | 18 | 5.2 |
+
+This is §19.13's table in the model's classes: with the penalty on the Pi alone the logic moves into the Sigma and is not read back.
+
+*Certificate 27, the values.* 73 of 73 recorded parts lie inside their form; the parts added are `aa` (`cat`, `caat`) and `ac` (`cat`, `act`); the suffix lesson records `cats` as `cat` and `s`. 20 pairs of a known form inside a known form, 20 read wholly inside: `is` in `this`, `his` in `this`, `at` in `cat`, `here` in `there`, `the` in `there` and `cat` in `cats` all read 1 (`is` in `this` read 0.82 before). Five forms read wholly inside a form they are not inside: `at` and `cat` in `act`, `cat` in `caat`, `that` in `That` and in `What`.
+
+*Certificate 28, the values.* Before the part, `felixx` reads as `felix`, `xileF` as `Felix`, and `caat` as itself (it is a known form in the fixture). `part_between(felixx, felix)` is `xx`; no held form takes it; after it `felixx` reads as no form, `felix` reads 1 inside it, and `felixx` has no row and no key. Admitting `xx` again changes no row, code, key, trie entry, part or bit count.
+
+**Choices taken on my own recommendation** (all in the two commits).
+
+1. The interface of the layers and the stacks: lanes on the second last axis; the stacks read lanes, so the field's two lanes reach the first Pi as they are; a signed value enters as `stack((x, -x), -2)` (A).
+2. The free Pi of a pair: weights are the magnitude of a raw parameter, started at `U(0, 1/n)`; the Sigma started at `U(0, 2/n)`; the penalty of certificate 22 is the sum of magnitudes, §18.3's plain form (A).
+3. `signed_lanes` passes the derivative to both lanes at exactly zero, so that a stack whose last Sigma starts at zero is taught through expect's lanes, as `_field_value` did for the clip (A).
+4. `SigmaLayer3.reverse` refuses with fewer concepts than inputs, and otherwise returns the two lanes (A).
+5. Of runs of one length that tell two forms apart, the first in code-point order is taken (B).
+6. **Provisional** (B, `b995eb2b7f`). *Where two forms' rows of fixed width are equal but their parts differ.* §21 gives bits only to a part added for two forms. The 20,000 words stopped twice when I raised the bits of any differing part: single characters climbed to 27 bits and long forms filled the 64 coordinates. Built: bits are raised only on added parts, the one held by the fewest forms first; where none separates the rows, the row is shared (`WordIdentity.shared`: the form admitted first keeps the key; both keep their own store rows, and their parts still tell them apart). *The question:* is a shared fixed-width row acceptable while the exact code is the list, or should the part block be wider (§19.54 measured 512 coordinates for none shared)? I recommend leaving the layout and the shared rows until item 1.5 reads forms by their set of parts (rule 44). *What it costs now:* the way back from the fixed row of the later form gives the earlier one; the lesson has none.
+
+**Tests ported** (old assertion, then new).
+
+- `test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations`: a stack of 12 on the flattened lanes, read at `[:, 4:, 0]` → a stack of 6 on the lanes, the target for less against, read at `[:, 4:]`; the same three assertions.
+- `::test_79_stages_are_the_shared_pi_and_sigma_layers` → `::test_79_stages_are_fused_pi_and_sigma_pairs`: `PiLayer` and `SigmaLayer` stages and the clipped arithmetic, in 0 to 1 → one `SigmaPiLayer` of a free `PiLayer3` and a `SigmaLayer3` and its arithmetic written out, in -1 to 1.
+- `::test_79_stack_construction_leaves_the_global_draw_unchanged`: four stages → two (a stage is a pair).
+- `test_item18_marker.py`, both cases of test 86: `layer.W` set with the final halves at .25 and .05 → `pi.raw[:, 0, 0] = 1`, `sigma.weight[0, 0] = 1`, the final at .25 − .05; and the final half at `.05·(i+1)` → the final at `.05·(i+1)`. The assertions are unchanged.
+- `test_item18_round_c_continuation.py::test_intuit_deposits_only_when_selected_and_derives_higher_orders`: a forecast of two lanes (.8/.4 and .6/.2) and the parent at (.8, .2) → a forecast of one signed number each (.8 and -.2) and the parent at (.8, 0).
+- `test_item18_idea_read.py::test_native_kept_sentence_books_the_observed_field_and_semantic_root`: the stack on the flattened field → on its lanes.
+- `test_item18_shared_expectation.py::test_intuit_deposits_the_expected_basic_block_then_closes`: a controlled map of two lanes → of one signed number each, of both signs; the assertion is unchanged.
+- `test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment`: `an` not inside `and` and `ant`, and the length bits `[1]*n` → `an` inside both, the length block empty, the 32 forms of `a` still apart, the anagrams `circus` and `cursic` told apart by their parts.
+- `::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng`: the mint `cal@1`, `cab@1` → the added part `bal`, carried by `cabala` alone; the rest unchanged.
+- `::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube`: five length coordinates → none.
+- `::test_unidentified_pair_assembly_and_index_resolves_ambiguity` → `::test_spelling_reads_the_stored_table`: spellings assembled from pairs → the stored forms read back; the unseen atoms of `circus` gave `circus` → no spelling.
+- `::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False, True]` → `::test_masked_part_extends_bits_and_an_inseparable_row_is_shared[True, False]`: a mint of three raised to four bits → the added part raised to four bits; the fallback to a mint of four, which no longer exists → the shared row.
+- `test_hash_order_producers.py::test_collision_queue_follows_admission_order`: it watches `_settle` and `_separate` in place of `admit` and `_mint`; the order of reads is unchanged; the mint record → the added part.
+- `test_item55_mechanisms.py::test_nested_wholes`: every form but `walked` unchanged by the suffix lesson → every form unchanged, `walked` included; `read_parts` → `spelling`.
+- `test_primitive_properties.py::test_native_fused_case_has_no_concept_location`: `read_parts` → `spelling`.
+- `test_whole_paths.py::test_native_omission_keeps_targets_off_the_reading_path`: every part id of the hidden word is -1 → every part of it is -1 and a slot past its parts is padding (the word now has 3 parts in 4 slots).
+- `test_form_subspaces.py`: a fixture's atom kind `pair` → `part`; no assertion changed.
+
+**Learned values, before and after.** Test 79: the read of the omitted words `[[1, 0], [1, 0], [0, 1], [0, 1]]` → `[[.993, .001], [.994, .000], [-.000, .993], [-.000, .996]]`, four of four both. Test 81, expectation restores the omitted word: `alpha gamma` 1.0 → .927, `beta delta` 1.0 → .913, the other absent 0 → 0. No learning certificate failed.
+
+**The 20,000 words** (the first 20,000 of `/usr/share/dict/words`, lower case, letters only, 2 to 12 letters, 19,821 of them distinct; a store as the model builds it, 352 wide, `word_bounded`): finished in 14.0 s. 219 parts added: 169 of two characters, 48 of three, 2 of four. Forms with the same parts: none. Forms whose row of fixed width equals another form's: 120. Parts given more bits: 57, the most 10 (`cs`). A form holds 12.7 parts on average.
+
+**The lesson's sixteen sentences**, once before the first edit (`1598a9bd46`) and once after the last (`b995eb2b7f`), with no `--compare`: 38.05 s → 30.23 s of the record (40.4 s → 32.7 s of the process). The words read are the same four units in every sentence. The attention walk differs in all sixteen: fewer acts before each word (sentence 0's words after attend 3, 6, 9, 10 → 1, 3, 6, 7; walks of 9 to 11 steps → 7 to 10), and four sentences ran one walk where they had run two, and four the reverse, as the departures fell. The record holds hashes and no trees, so the trees were not compared.
+
+**Test files run.**
+
+- New: `test_item17_layers.py` 20 passed, 3.8 s; `test_item17_stacks.py` 10 passed, 80 s; `test_item17_forms.py` 7 passed, 4.7 s; `test_testpoint.py::TestStructureValid` 3 passed.
+- The 29 files that name the stacks and their users (with `test_item18_idea_read.py` and the gate's file), with the two new stack files: 344 passed, 7 skipped, 183 s. Before (on the export): 314 passed, 7 skipped.
+- The 27 files that name the code of a form (the 17 of §22.1 and ten found by search), with `test_item17_forms.py` and the testpoint: 477 passed, 52 skipped, 1 expected failure passing, 158 s. Before: 465 passed, 53 skipped, 1, and one failure that is the export's (`test_absences` runs `git`).
+- The 44 files that name `FieldReverse`, `part_memberships`, `Omission`, `lookup_word` or `corpus_capacity`: 660 passed, 4 skipped, 1, 60 s.
+- Both stopping gates: 2 passed, 3.7 s after A and 3.8 s after B.
+
+**What surprised me.** `PiLayer2`'s clamp passes nothing at one, and torch's clamp passes nothing at either bound, the floor included. The stacks' Sigma, started as a linear layer is, saturates by the third pair. The suffix lesson's joining of codes had nothing left to do. The 64 coordinates of the part block fill on long forms once single characters gain bits.
+
+**What I would change in §21.** Rule 43 should say what is done where two forms' fixed rows are equal and their parts are not (choice 6). Certificate 7's depth should state its bar, since four pairs does not learn the target on most starts. And rule 18's stacks could read the expected field's two lanes as they are: a reading is never both, but today's field still is.
