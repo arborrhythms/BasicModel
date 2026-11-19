@@ -8804,6 +8804,21 @@ So they are two readers with two keys, and neither is to be made into the other:
 
 **What is left open, and it is small.** For attention, rule 36 carries the request down through the Sigma's weights, and since rule 59 those are on two channels. *Mine, built provisionally in round 6:* a percept that tells against a requested concept lowers its salience and never takes it below nothing. Searching episodic memory by the idea, and priming attention from semantic memory, are not designed and not planned (his words above); they are noted in `doc/FutureWork.md`.
 
+### 19.85 Alec: the query on LTM matches the most recent STM, and its top result is pushed onto STM (2026-11-19)
+
+Put to him in §19.84 (the source ranks the rows of LTM by a question's field against each row's episodic entry; should the query become a search by the idea?). His answer:
+
+"Query should be a match against the most recent STM. That allows it to match a question, if there, or any other idea. The result will push the top LTM result onto the STM stack."
+
+*Decided.*
+
+- *The key* is the most recent entry of STM, whatever it is: a question when there is one, or any other idea. The query is no longer something only a question does.
+- *The result* is the top row of LTM by that match, and it is pushed onto the STM stack.
+
+*Not said, to be found in the source before a rule is written* (a survey is being made): what the most recent entry of STM holds that a row of LTM can be matched against; whether today's match of a field of concepts against a row's episodic entry, order by order, is kept as the measure; what calls the query and when; and what a recalled row does today (`EpisodicMemory.reinstate`).
+
+**The sweep.** Asked whether the one default sweep should be run now and not only at the item's push round: "run the default sweep now, if in process, otherwise wait until I answer all of your questions." Work is in process, so it is run now, on round 3c's committed source (`d0a3832629`), in a copy outside the checkout so that round 4's edits do not enter it.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
