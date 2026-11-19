@@ -1438,7 +1438,7 @@ generation is expected at this stage and is recorded, not tuned away.
    the model raises itself. **The one text for Codex is §68.84**:
    that repair, then the item's one default sweep; and after it,
    with no wait, a test-only prototype of item 1.7's `attend`
-   (sigma-pi §19.45). **Codex does not wait on a question (Alec,
+   (its text is sigma-pi §19.47). **Codex does not wait on a question (Alec,
    2026-11-18; §75):** "Can it propose the solution itself? its a
    capable mind, and we still have oppostunity to review." It
    proposes, builds its recommendation in a commit of its own, marks
@@ -1578,7 +1578,10 @@ generation is expected at this stage and is recorded, not tuned away.
    points need his word first (§19.44): which wires take the
    selection's gradient; remove or only dim; the exact tests at full
    strength or graded; the two wheres; what moves the look on; who
-   changes the request.
+   changes the request. **Written as tentative rules 33 to 41 with
+   seven questions and my recommended answers (§19.46; Alec: "1.7
+   spec."), and a text for Codex for a prototype in tests only
+   (§19.47), which follows the last text of item 1.8.**
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for

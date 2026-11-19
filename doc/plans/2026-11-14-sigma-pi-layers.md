@@ -4540,7 +4540,9 @@ budget of rule 28; the speed certificate.
     who sets the condition, what a graded priming does, and which
     row it names. As wires (§19.32): a mask on what is active, asked
     for from above; which wires take its gradient, and what a
-    returned token is.
+    returned token is. *Consolidated, 2026-11-18:* points 8 to 11 and
+    §19.31 to §19.45 are stated as tentative rules 33 to 41, with
+    seven questions for Alec, in §19.46.
 
 **For the documentation pass** that lands with item 1.7 (`doc/*.md` is
 not edited now: another pass over those files is uncommitted, in the
@@ -6459,3 +6461,182 @@ the forecast of a look stay.
 **Not checked.** None of this is run. Before rules are written it is
 simulated on the lesson's sentences with a first layer of products
 (my rule: simulate before specifying).
+
+### 19.46 Item 1.7 after 2026-11-18: the looks, as rules (Claude; tentative, a consolidation of §19.31 to §19.45)
+
+Alec, 2026-11-18: "1.7 spec." This section states the discussion of
+§19.31 to §19.45 once, as rules that continue §19.21's numbering. They
+are *tentative*: none is built on until the prototype of §19.47 has
+run and the questions below have his word. §19.21 stands for rules 1
+to 32, and §19.8 is rewritten from both when they are settled. His
+words are in the sections named; what is marked *default* or *reading*
+is Claude's.
+
+**F. The looks.**
+
+33. *The percept bank of a sentence* (§19.34, §19.40). At the start of
+    a sentence its percepts are read once into one bank: for each
+    event its row (the what), its span (the where), its time, the
+    token it belongs to, and its activity on two lanes. Parts and
+    wholes are events on one axis, as `read_percepts` joins them
+    today. Nothing on a look's path calls `materialize()`, and nothing
+    on it reads a span on the host. *Default:* the tokens are the
+    stem's, as the first look reads them, until rule 32's Pi makes
+    them.
+34. *A look is an activity over the bank* (§19.32, §19.34). It takes
+    the place of the bracket's interval and of the containment test.
+    An event's activity in a look is its own, times the place factor
+    (rule 39), times its share of the request (rule 36). What is not
+    active is absent on both lanes and is never evidence against
+    (his rule for `non`, 2026-11-12).
+35. *The request* (§19.31, §19.33, §19.45). A mask over concept rows
+    on two lanes. It may name a whole: WholeSpace's canonical
+    properties are rows it can name, the fixed word row among them.
+    *Default:* it comes from desire (`prime_desire`; the frozen
+    concept "reading", on from the start, asks for words), and is not
+    a choice among all rows.
+36. *The pullback* (§19.43). The request is carried down through the
+    matrices of the way up, and each event of the bank gets a share:
+    the derivative of the asked rows' activity with respect to the
+    event's activity, times that activity. It uses rule 2's Pi, whose
+    rows are products, and the Not and the Sigma above it. *Default:*
+    computed by the transposes of the same sparse matrices with the
+    local derivatives kept from the way up, with no second backward
+    pass inside the forward.
+37. *The returned set* (§19.45). The way up is run again on the bank
+    with the share as its activity. What it gives, each concept at its
+    token, is the returned set. The word concepts in it are the
+    candidates for `interpret`.
+38. *`attend`* (§19.45). One `attend` is: ask, pull back, go up,
+    examine. The acts on brackets go. A narrower request or place is
+    `focus`, a wider one `unfocus`, and the and, or and not of the
+    field are operations on the request's two lanes. *Defaults:* a
+    token that was interpreted is lowered in the bank's activity (the
+    `done` mark of today), and among the candidates the earliest in
+    the sentence is taken first.
+39. *Attention dims; it does not cut* (§19.36). The place factor is
+    one inside the look's area and `attentionFloor` outside it. The
+    factor is applied once to a token's reading, on both lanes, and
+    not inside the product of a row's parts.
+40. *One gain field* (§19.37). A look's activity is the `attention`
+    of `Expectation.gain_field`, and the look's forecast (1.8 §62.3)
+    is its `expected`. Its excess and omission are the surprise
+    `attend` reads; `LookForecast.difference` goes.
+41. *The where is a coordinate* (§19.40). An event's span is a
+    coordinate of the bank that a row of the first Pi can bound; the
+    tests of spans made on the host go (`contained`,
+    `part_memberships`' overlap, `covered`). `.where` stays on every
+    reading. *Default:* how a thing's parts stand to one another stays
+    what it is today, an ordered and adjacent run, computed on the
+    device; the form in which a look maps its place onto the unit
+    interval is the alternative (question 4).
+
+**What stays.** The grammar's option at a look and `interpretBias`
+(1.8 §60.1, rule 5b); the forecast of a look from what lies outside it
+(1.8 §62.3); `interpret` at one word with one lane; rule 32's Pi over
+spellings.
+
+**What goes.** The bracket table and its acts
+(`Attention.narrow_step`, `narrowing_view`); the look's read of one
+bracket (`SentenceLooks.perceive`); the old pass-back
+(`_passback_scope_ps`), which the pullback replaces; and the lesson
+written over acts on brackets
+(`AttentionLesson.ReadingTargets`; question 7).
+`cs_percept_attribution` keeps its other readers, the reverse of the
+field among them, until rule 30's way back takes their place.
+
+**Certificates, in outline** (numbered when the rules are settled).
+
+- The bank is read once: on a look's path no `materialize()` and no
+  host read of a span, counted on the lesson's sentences.
+- A request for a word's concept returns it at its token; for a word
+  that is absent, nothing; for words, every run of letters. Beside
+  each, the projection of the weights alone, which lets near words
+  through (the small case of §19.43).
+- A word not yet known comes back under a request for the word whole
+  with the whole lit and no word concept, and is given a name.
+- A token outside the look's area is present at the floor on both
+  lanes and is never read as against.
+- A fresh model with `interpretBias` at 1 reads every word of the
+  lesson's sentences once, in order.
+- On a hard mask (floor at zero) the surprise equals 1.8's.
+- The host reads and the seconds of the sixteen sentences, beside
+  1.8's.
+
+**The order of building.** After the steps of §19.21, since rule 36
+needs rule 2's Pi and rule 30's way back: the bank; the pullback and
+the returned set, in tests first (§19.47); `attend` and the gain
+field; then the removals.
+
+**For Alec, before these are rules.** Each with what I would take.
+
+1. *Which wires take the selection's gradient* (§19.32, §19.37).
+   *Recommended:* the asking side only (desire, and `attend`'s own
+   map); the pullback is cut from the first layer's weights, so that
+   perception keeps its one teacher.
+2. *Remove or dim* (§19.33). *Recommended:* dim, with
+   `attentionFloor`, as he described attention.
+3. *The tests for one word and one lane* (§19.36; 1.8 §68.81). Two
+   parts. (a) Attention's dimming: *recommended* that the tests read
+   what is at full strength, so dimming never makes a look "several
+   words". (b) A learned complement, the "Felix" case he asked to be
+   addressed: *recommended* an offer in proportion to how little the
+   two lanes overlap (1.8 §68.81, the second choice), the form being
+   his to set.
+4. *The two wheres* (§19.40). *Recommended:* arrangement stays the
+   ordered adjacent run in this item; the place relative to the look
+   comes with rule 32's Pi.
+5. *What moves the look on, and in what order* (§19.39).
+   *Recommended:* rule 38's defaults.
+6. *Who changes the request inside a sentence* (§19.35).
+   *Recommended:* nothing in this item beyond the standing desire;
+   thought's operators may write desire later.
+7. *What teaches reading now.* The lesson of 1.8 teaches the fewest
+   acts on brackets. With the request from a standing desire and the
+   order by default there is nothing left for it to teach.
+   *Recommended:* it goes, and `attend`'s zero-started map stays for
+   what experience adds later.
+
+### 19.47 Codex text: a prototype of the looks, in tests only (follows the last text of item 1.8)
+
+Written on 2026-11-18. It builds nothing of the model. It is what
+1.8 §68.84 names as the work that follows it (1.8 §75, point 4).
+
+~~~
+Item 1.7, a prototype in tests only. Read §19.43, §19.45 and §19.46 of
+doc/plans/2026-11-14-sigma-pi-layers.md, and §75 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md, which holds
+here: a question is not a stop; build what you recommend, mark it
+provisional, go on. Work in /Users/arogers/github/WikiOracle/basicmodel
+on main. Local commits only; never push main, never force-push. Change
+no file of bin/ and no existing test. It decides nothing and is not
+wired into the model.
+
+1. Under test/, build a small first layer whose rows are products over
+   a sentence's percepts, as rule 2 of §19.21 gives the Pi, with a
+   Sigma above it. The sentence's percepts are held once as indices
+   and spans (rule 33), with the stem's tokens as its readings.
+2. On it, the steps of §19.45: a request over concept rows; the
+   pullback to a share for each percept (rule 36), by the transposes
+   of the same matrices and, beside it, by the framework's backward
+   pass, to show they agree; the way up again on that share; the
+   returned set (rule 37).
+3. Run it on the lesson's sixteen sentences with three requests: a
+   word's concept; the fixed word whole; a word that is absent.
+   Report, for each, what is returned and at which token, beside the
+   projection of the weights alone.
+4. Report the cost in operations beside one pass of the way up, and
+   what the binding by token does and does not prevent (a sentence
+   that holds every letter of a word it does not hold).
+5. Then the dimming of rule 39: with a floor of 0.1 outside one token,
+   what the returned set holds for the other tokens when the factor is
+   applied once to a token's reading, and when it is applied inside
+   the product.
+6. If that is done and nothing else is waiting: whether the four rungs
+   of where form a coordinate a region can bound (§19.40, "Not
+   known"). A measurement, in tests only.
+
+Return it as §20 of doc/plans/2026-11-14-sigma-pi-layers.md: the files,
+each result as a table, what surprised you, and what you would change
+in rules 33 to 41. Name the test files you ran.
+~~~

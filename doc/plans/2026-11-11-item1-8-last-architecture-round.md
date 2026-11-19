@@ -34625,7 +34625,10 @@ word. The text is §68.84.
 
 ### 68.84 Codex text: the last of item 1.8 (the two tests that fail by chance; the sweep), and what comes after it
 
-Written on 2026-11-18. It is the one text to carry.
+Written on 2026-11-18. It is the one text to carry. *Amended the same
+day (Alec: "1.7 spec."):* the prototype that was its part E is a text
+of its own in the item 1.7 specification (sigma-pi §19.47), and part
+E names it.
 
 ~~~
 Item 1.8, the last text. Read §68.83 and §75 of
@@ -34687,25 +34690,9 @@ D. Return A to C as §66.8 onward: the list of B.1; the producer and
    the test files you ran; the source snapshot. Commit locally.
 
 E. What comes after, with no wait between (§75, point 4). When D is
-   written, and whenever what is left of it waits on an answer:
-1. A prototype for item 1.7, in tests only. Read §19.43 and §19.45 of
-   doc/plans/2026-11-14-sigma-pi-layers.md. Build, under test/ and in
-   no file of bin/, a small first layer whose rows are products over a
-   sentence's percepts held once as indices and spans, with the stem's
-   tokens as its readings, and on it the steps of §19.45: a request
-   over concept rows, the pullback to a share for each percept, the
-   way up again on that share, the returned set. Run it on the
-   lesson's sixteen sentences with requests for a word's concept, for
-   the fixed word whole, and for a word that is absent. Report, for
-   each, what is returned and at which token, beside the projection of
-   the weights alone; the cost in operations beside one pass of the
-   way up; and what the binding by token does and does not prevent. It
-   decides nothing and is not wired into the model. Return it as §20
-   of that document.
-2. If that is done and nothing else is waiting: the open point of
-   §19.40, whether the four rungs of where form a coordinate that a
-   region can bound. A test-only measurement, returned in the same
-   section.
+   written, and whenever what is left of it waits on an answer: take
+   the text of §19.47 of doc/plans/2026-11-14-sigma-pi-layers.md, a
+   prototype for item 1.7 in tests only. It changes no file of bin/.
 ~~~
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
