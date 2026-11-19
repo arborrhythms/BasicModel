@@ -64,8 +64,11 @@ def resumed_report(function, args, kwargs):
         report.update(error_type=type(error).__name__, error=str(error))
     finally:
         log.removeHandler(handler)
+    # explain resets Dynamo on a successful return. Its result retains the
+    # per-graph reasons after that reset; failures leave the live log intact.
+    reasons = explanation.break_reasons if report['completed'] else graph_break_reasons
     sites = Counter()
-    for event in graph_break_reasons:
+    for event in reasons:
         if not event.graph_break:
             continue
         stack = [frame for frame in event.user_stack if Path(frame.filename).resolve().parent == source]
@@ -90,9 +93,11 @@ def main():
                         help='resume after graph breaks and report location, reason and multiplicity')
     parser.add_argument('--resume-past', action='append', default=[], metavar='MODULE[.CLASS].FUNCTION',
                         help='in a follow-up explain run, execute an already diagnosed compiler failure eagerly')
+    parser.add_argument('--follow-conditions', action='store_true',
+                        help='on a follow-up, trace the branch actually taken after diagnosing an opaque torch.cond')
     args = parser.parse_args()
-    if args.resume_past and not args.explain:
-        parser.error('--resume-past requires --explain')
+    if (args.resume_past or args.follow_conditions) and not args.explain:
+        parser.error('diagnostic continuations require --explain')
     args.output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
     from pytest import MonkeyPatch
@@ -100,6 +105,10 @@ def main():
     from Models import BasicModel
     with MonkeyPatch.context() as patch:
         use_eager_reading(patch)
+        if args.follow_conditions:
+            def native_branch(pred, true_fn, false_fn, operands):
+                return true_fn(*operands) if bool(pred) else false_fn(*operands)
+            patch.setattr(torch, 'cond', native_branch)
         eager_calls = Counter()
         def fallback(name, method):
             @torch.compiler.disable
@@ -122,7 +131,7 @@ def main():
             if args.explain:
                 report.update(fullgraph=False, dynamic='automatic')
                 report.update(resumed_report(original, values, kwargs))
-                report.update(resumed_past=dict(eager_calls))
+                report.update(resumed_past=dict(eager_calls), followed_conditions=args.follow_conditions)
                 raise ProbeComplete
             try:
                 compiled(*values, **kwargs)
