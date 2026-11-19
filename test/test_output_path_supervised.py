@@ -189,6 +189,9 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
     from dataclasses import replace
     from test_output_walk import _capture_program_probe, _stop
     m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+    # The forms are words, nominated by MTM before this reading.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(m, ["1 plus 2", "3 plus 4"])
     from reading_fixtures import read_in_source_order
     read_in_source_order(m, monkeypatch)
     m.eval()

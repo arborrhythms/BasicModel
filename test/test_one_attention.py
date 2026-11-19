@@ -68,9 +68,13 @@ def test_pinned_masks_known_word_never_descends_and_wide_never_interprets():
 
 def test_normal_field_answer_reaches_final_field_and_keeps_first_word():
     from test_mm_xor import _fresh_model
+    from nomination_fixtures import nominated_forms
     model,_,_= _field_model()
     model.train()
-    value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
+    texts=['hello world','hello there','loving world','loving there']
+    # The forms are words, nominated by MTM before this reading.
+    nominated_forms(model,texts)
+    value=model.inputSpace.prepInput(texts)
     _,_,output,_=model.forward(value)
     # §3.9 replaces the root-state reader with the final field. Its linear
     # weights start at zero, so use a nonzero residual at that initialization.
@@ -461,8 +465,11 @@ def test_divide_isolates_impure_first_word_and_reaches_pure_neighbors():
 def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
     from test_mm_xor import _fresh_model
     from ModelAttention import native_word_poles
+    from nomination_fixtures import nominated_forms
     model, _, _ = _field_model()
     model.eval()
+    # The forms are words, nominated by MTM before this reading.
+    nominated_forms(model, ['hello world'])
     with torch.no_grad():
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world']))
         forms, _, _, live = model._attention_forms

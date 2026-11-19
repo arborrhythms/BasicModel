@@ -14,13 +14,30 @@ def recurrent_word(interpret, *args, **kwargs):
     return word
 
 
+def lexical_forms(model, texts):
+    """``(raw, parts)`` for each lexical form of ``texts``: admitted to
+    perception by ``Corpus.admit_training_forms`` where the percept store
+    keeps word identities, else spelled out by the store, as reading does."""
+    store = model.perceptualSpace.percept_store
+    if getattr(store, 'identity', None) is not None:
+        from Corpus import admit_training_forms
+        return tuple(admit_training_forms(model, texts))
+    from Meronomy import percept_spans
+    from WordSurfaces import is_lexical_form
+    forms = set()
+    for text in texts:
+        raw = text.encode('ascii', errors='replace')
+        forms.update(raw[start:end] for start, end in percept_spans(raw)
+                     if end > start and is_lexical_form(raw[start:end]))
+    return tuple((raw, tuple(store.spell_out(raw))) for raw in sorted(forms))
+
+
 def nominated_forms(model, texts):
     """Admit the forms of ``texts`` and read each until MTM nominates it:
     ``(raw, word)`` for each lexical form."""
-    from Corpus import admit_training_forms
     owner = model._concept_owner()
     result = []
-    for raw, parts in admit_training_forms(model, texts):
+    for raw, parts in lexical_forms(model, texts):
         wholes = model.wholeSpace.property_rows_for_bytes(raw)
         result.append((raw, recurrent_word(owner.interpret, parts, wholes, form=raw)))
     return tuple(result)
@@ -30,9 +47,8 @@ def forms_short_of_nomination(model, texts):
     """Read each lexical form of ``texts`` ``concept_mint_count - 1`` times,
     so that the next reading that holds it is the one in which MTM nominates
     it: the reading of its first encounter as a word."""
-    from Corpus import admit_training_forms
     owner = model._concept_owner()
-    for raw, parts in admit_training_forms(model, texts):
+    for raw, parts in lexical_forms(model, texts):
         wholes = model.wholeSpace.property_rows_for_bytes(raw)
         for reading in range(owner.concept_mint_count - 1):
             word = owner.interpret.lookup_word(parts, wholes, form=raw, reading=('fixture', reading))

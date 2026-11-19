@@ -25,6 +25,9 @@ def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path, mo
     from test_packed_reconstruction_parity import build_model
     from What import What
     model = build_model(tmp_path, word_capacity=8)
+    # The forms are words, nominated by MTM before this reading.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['the cat sat'])
     raw = model.inputSpace.prepInput(['the cat sat'])
     from reading_fixtures import capture_readings, read_in_source_order
     read_in_source_order(model, monkeypatch)
@@ -133,6 +136,9 @@ def test_repeated_percept_occurrences_use_input_starts_and_one_time(model):
 def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model, monkeypatch):
     from What import What
     text = 'cat cat sat'
+    # The forms are words, nominated by MTM before this reading.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, [text])
     from reading_fixtures import capture_readings, read_in_source_order
     read_in_source_order(model, monkeypatch)
     with capture_readings(model) as readings, torch.no_grad():
