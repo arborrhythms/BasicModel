@@ -8384,6 +8384,9 @@ class BasicModel(BaseModel):
     @_sentence_query_mask
     def forward(self, inputData, *, incoming_trust=None):
         """Read through the common sentence driver; raw calls never optimize."""
+        # One reading of the input: every reader of a form in this forward,
+        # and its Reset, names the same reading (ConceptualSpace.reading).
+        self._word_observation_serial = int(getattr(self, "_word_observation_serial", 0)) + 1
         if not getattr(self, '_sentence_run_active', False) and hasattr(self, 'inputSpace'):
             from Occurrence import stage_sources
             source = getattr(inputData, '_sentence_source', None)
@@ -11351,7 +11354,6 @@ class BasicModel(BaseModel):
             isp._ar_word_object_orders = rows.clone()
             return rows
 
-        self._word_observation_serial = int(getattr(self, "_word_observation_serial", 0)) + 1
         B, W, P = (int(part_ids.shape[0]), int(part_ids.shape[1]),
                    int(part_ids.shape[2]))
         stage_word_properties = getattr(
@@ -11435,7 +11437,8 @@ class BasicModel(BaseModel):
                     # raises with nVectors named before partial admission.
                     triple = owner.interpret_word(
                         ordered_parts, sorted(current_wholes), key=key,
-                        occurrence=(self._word_observation_serial, b, p))
+                        occurrence=(self._word_observation_serial, b, p),
+                        reading=owner.reading(b))
                     if triple is None:
                         pending.append((b, p, key))
                         continue

@@ -191,6 +191,25 @@ def stage_input(model):
     intervals=fi.get('word_intervals') or ()
     owner=model._concept_owner()
     definitions=owner.definitions
+    from WordSurfaces import is_lexical_form
+    native_ids=fi.get('native_indices',fi.get('indices'))
+    native_spans=fi.get('native_part_spans',fi.get('part_spans'))
+    whole_space=getattr(model,'wholeSpace',None)
+
+    def found(b, form, lo, hi):
+        """The word of a form, counting this reading of it first: the first
+        reader of a form in a reading is where MTM nominates it (rule 20),
+        so that attention reads it as known in that reading."""
+        word=owner.interpret.word_for_form(form)
+        if (word is not None or not is_lexical_form(form) or whole_space is None
+                or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):
+            return word
+        parts=[int(pid) for pid,(start,stop) in zip(native_ids[b].tolist(),native_spans[b].tolist())
+               if pid>=0 and lo<=start<stop<=hi]
+        if not parts:
+            return None
+        return owner.interpret.lookup_word(parts,sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form))),
+            form=form,word_reading=True,reading=owner.reading(b))
     extents=[];known=[];identities=[];forms=[];vocabulary={}
     for b in range(B):
         row=[];seen=[];ids=[];names=[]
@@ -206,7 +225,7 @@ def stage_input(model):
                 lo=hi=0
             form=surface.decode('latin1')
             row.append((lo,hi) if surface else (0,0))
-            seen.append(bool(surface) and owner.interpret.word_for_form(form) is not None)
+            seen.append(bool(surface) and found(b,form,lo,hi) is not None)
             if form and form not in vocabulary:vocabulary[form]=len(vocabulary)
             ids.append(vocabulary.get(form,-1));names.append(form)
         extents.append(row);known.append(seen);identities.append(ids);forms.append(names)

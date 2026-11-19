@@ -16073,11 +16073,13 @@ class ConceptualSpace(Space):
                                        'declared')
 
     def reading(self, stream):
-        """A reading, for MTM's count of a form: one sentence of one stream,
-        the sentence named by the model's present time (both trials of a
-        sentence share it). A model with no clock reads at time zero."""
-        present = getattr(getattr(self, '_model', None), 'present', None)
-        return (int(present()) if callable(present) else 0, int(stream))
+        """A reading, for MTM's count of a form: one forward of the model's
+        input, in one stream, named by the model's reading serial (advanced
+        once at each forward, before the words are staged, so the word step
+        and the Reset that follows it name the same reading). A space with
+        no model reads at serial zero."""
+        model = getattr(self, '_model', None)
+        return (int(getattr(model, '_word_observation_serial', 0)), int(stream))
 
     def nominates(self, key, reading=None):
         """MTM nominates a row for ``key`` on its ``concept_mint_count``-th
@@ -16540,12 +16542,15 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_sign_operator', operator)
         return operator
 
-    def interpret_word(self, word_parts, word_whole, key=None, *, occurrence=None):
-        """Admit a form and read its witnessed object, or the still-open form."""
+    def interpret_word(self, word_parts, word_whole, key=None, *, occurrence=None, reading=None):
+        """Admit a form and read its witnessed object, or the still-open form.
+        ``reading`` names the reading for MTM's count of the form; without
+        it, the occurrence's sentence and stream name it."""
         from WordSurfaces import is_lexical_form
         if not is_lexical_form(key):
             return None
-        reading = None if occurrence is None else tuple(occurrence)[:2]
+        if reading is None and occurrence is not None:
+            reading = tuple(occurrence)[:2]
         word = self.interpret.lookup_word(word_parts, word_whole, form=key, reading=reading)
         if word is None:
             return None
