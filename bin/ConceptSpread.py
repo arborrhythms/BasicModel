@@ -26,7 +26,10 @@ def expected(owner, knowing):
         context = ActivationPredictor.context_from(keys * knowing.amax(-1)[..., None], knowing.any(-1))
         return owner.concept_predictor(keys, context, knowing).sigmoid()
     if owner.expect_stack is not None:
-        return owner.expect_stack(knowing.flatten(1)).reshape_as(knowing)
+        # The stack reads each concept's two lanes and gives one signed
+        # number for each, held again as its two lanes.
+        from Layers import signed_lanes
+        return signed_lanes(owner.expect_stack(knowing.transpose(-1, -2)))
     return torch.zeros_like(knowing)
 
 

@@ -5015,6 +5015,179 @@ class SigmaLayer2(Layer):
         return 1.0 - self.kernel.compose(1.0 - left, 1.0 - right, gate=gate)
 
 
+def membership_log(m):
+    """``log(clamp(m, EPS_LOG, 1))`` whose derivative passes for
+    ``EPS_LOG < m <= 1``, one included, and is zero outside."""
+    inside = (m > EPS_LOG) & (m <= 1.0)
+    return torch.log(torch.where(inside, m, m.clamp(EPS_LOG, 1.0)))
+
+
+def signed_lanes(value, dim=-1):
+    """A signed value as its two unsigned parts, for then against.
+
+    ``.5`` is ``(.5, 0)`` and ``-.5`` is ``(0, .5)``; the two are never both
+    above zero. At exactly zero the derivative reaches both lanes, so a
+    value that starts at zero can be taught through either.
+    """
+    zero = torch.zeros((), dtype=value.dtype, device=value.device)
+    return torch.stack((torch.where(value < 0, zero, value),
+                        torch.where(value > 0, zero, -value)), dim)
+
+
+class PiLayer3(Layer):
+    r"""A Pi of unsigned rows on two lanes.
+
+    The input and the output hold the lanes on the second last axis,
+    ``[..., lane, i]``: lane 0 is for, lane 1 against. A row of a lane has
+    weight only on the rows of its own lane:
+
+        z_k = exp(W_k · log(clamp(m_k, EPS_LOG, 1)) + b_k)
+
+    Square (the default): each ``W_k`` is :class:`PiLayer2`'s contractive
+    LDU (diagonal at one or more, the rest at zero or more, bias at zero or
+    less), so a row requires the members it has weight on, never exceeds
+    its own reading, and ``reverse`` is the exact LDU solve. On
+    :class:`PiLayer2`'s domain each lane gives :class:`PiLayer2`'s values
+    for the same weights; the derivative passes wherever the membership
+    lies above the floor and at most one, one included.
+
+    ``free=True``: each ``W_k`` is any non-negative ``nInput x nOutput``
+    matrix, the magnitude of its raw parameter, with no diagonal law and no
+    bias. It has no way back. A row with no weight reads one, the empty
+    product.
+    """
+
+    def __init__(self, nInput, nOutput, *, lanes=2, free=False, scale=None,
+                 naive=False, stable=True, d_max=None):
+        super().__init__(nInput, nOutput)
+        self.lanes, self.free = int(lanes), bool(free)
+        if self.free:
+            scale = 1.0 / nInput if scale is None else float(scale)
+            self.raw = nn.Parameter(
+                torch.rand(self.lanes, nInput, nOutput) * scale)
+            self.lane_layers = nn.ModuleList()
+        else:
+            if nInput != nOutput:
+                raise ValueError('PiLayer3 is square unless it is free')
+            self.lane_layers = nn.ModuleList(
+                ContractiveInvertibleLinearLayer(
+                    nInput, nOutput, naive=naive, hasBias=True,
+                    stable=stable, d_max=d_max)
+                for _ in range(self.lanes))
+            self.layers.extend(self.lane_layers)
+
+    def weights(self):
+        """The effective weights, ``[lane, nInput, nOutput]``."""
+        if self.free:
+            return self.raw.abs()
+        return torch.stack([layer.compute_W() for layer in self.lane_layers])
+
+    def forward(self, m):
+        """Each lane's rows over that lane's memberships."""
+        logs = membership_log(m)
+        if self.free:
+            return torch.exp(torch.einsum('...ki,kio->...ko', logs,
+                                          self.weights()))
+        return torch.exp(torch.stack(
+            [layer.forward(logs[..., k, :])
+             for k, layer in enumerate(self.lane_layers)], -2))
+
+    @staticmethod
+    def symbols(rows):
+        """Each row pair as one signed input, for less against."""
+        return rows[..., 0, :] - rows[..., 1, :]
+
+    def reverse(self, z):
+        """The exact way back of each lane, as :meth:`PiLayer2.reverse`."""
+        if self.free:
+            raise RuntimeError('a free PiLayer3 has no way back')
+        z = z.clamp(torch.finfo(z.dtype).tiny, 1.0)
+        logs = torch.log(z)
+        return torch.stack(
+            [torch.exp(layer.reverse(logs[..., k, :])).clamp(0.0, 1.0)
+             for k, layer in enumerate(self.lane_layers)], -2)
+
+
+class SigmaLayer3(Layer):
+    r"""A Sigma of signed concepts: ``y = tanh(x U)``, one number in
+    ``[-1, 1]`` for each concept.
+
+    Each input has one signed weight. Its positive part is the input's for
+    entry and its negative part its Not entry, so an entry is never both.
+    The weights start at zero or above (``scale`` 0 starts them at zero),
+    so there is no Not entry until teaching makes one. There is no bias.
+    A concept's value is held as two unsigned lanes (:func:`signed_lanes`).
+    """
+
+    def __init__(self, nInput, nOutput, *, scale=None):
+        super().__init__(nInput, nOutput)
+        scale = 2.0 / nInput if scale is None else float(scale)
+        self.weight = nn.Parameter(torch.rand(nInput, nOutput) * scale)
+
+    def for_entries(self):
+        return self.weight.clamp(min=0)
+
+    def not_entries(self):
+        return (-self.weight).clamp(min=0)
+
+    def forward(self, x):
+        """The concepts of a signed input."""
+        return torch.tanh(x @ self.weight)
+
+    @staticmethod
+    def lanes(y):
+        """A reading's two lanes, ``[..., lane, concept]``."""
+        return signed_lanes(y, dim=-2)
+
+    def reverse(self, y):
+        """The input by least squares, as its two lanes ``[..., lane, i]``.
+
+        Only where there are enough concepts (``nOutput >= nInput``); the
+        signed input is split into its unsigned parts before it is returned.
+        """
+        if self.nOutput < self.nInput:
+            raise ValueError('too few concepts to return the input')
+        bound = 1.0 - EPS_LOG
+        a = torch.atanh(y.clamp(-bound, bound))
+        return signed_lanes(a @ torch.linalg.pinv(self.weight), dim=-2)
+
+
+class SigmaPiLayer(Layer):
+    r"""A Pi and then a Sigma, fused, with no way back.
+
+    The input is lanes, ``[..., lane, i]``; a signed input ``x`` is read as
+    ``torch.stack((x, -x), -2)``, whose floor at zero gives its two unsigned
+    parts. The Pi is a free :class:`PiLayer3`: for each symbol a for row
+    over the input's for lanes and an against row over its against lanes,
+    weights at zero or more, no diagonal law and no bias.
+    Each symbol's pair, for less against, is read by a
+    :class:`SigmaLayer3`, whose entries are for or Not:
+
+        y = tanh((exp(log f · P_for) − exp(log g · P_against)) · U)
+
+    One expression, with no copy of the activation and no choice on a
+    tensor, so a row of these is captured as one graph. ``zero=True``
+    starts the Sigma at zero.
+    """
+
+    def __init__(self, nInput, nHidden, nOutput, *, zero=False):
+        super().__init__(nInput, nOutput)
+        self.nHidden = nHidden
+        self.pi = PiLayer3(nInput, nHidden, free=True)
+        self.sigma = SigmaLayer3(nHidden, nOutput,
+                                 scale=0.0 if zero else None)
+        self.layers.extend((self.pi, self.sigma))
+
+    def forward(self, lanes):
+        """One signed number for each concept, from the input's lanes."""
+        rows = torch.exp(torch.einsum('...ki,kio->...ko', membership_log(lanes),
+                                      self.pi.raw.abs()))
+        return torch.tanh((rows[..., 0, :] - rows[..., 1, :]) @ self.sigma.weight)
+
+    def reverse(self, y):
+        raise RuntimeError('a SigmaPiLayer has no way back')
+
+
 class _SelectDefinitionEdges(torch.autograd.Function):
     """Gather unique COO positions; its pullback needs no atomic addition.
 

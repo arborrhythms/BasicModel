@@ -23,17 +23,19 @@ def test_86_marker_preserves_form_and_has_an_exact_selected_inverse(paired):
         # No case view or whole-form centroid is consulted by this operation.
         with torch.no_grad():
             for stage in candidate.stack.stages:
-                stage.layer.W.zero_()
-                stage.layer.W[0, 0] = 1.
-            final = candidate.stack.stages[-1].layer.W
-            final[0, :8] = .25
-            final[0, 8:] = .05
+                stage.pi.raw.zero_()
+                stage.pi.raw[:, 0, 0] = 1.
+                stage.sigma.weight.zero_()
+                stage.sigma.weight[0, 0] = 1.
+            final = candidate.stack.stages[-1].sigma.weight
+            # One signed shift for each meaning coordinate: .25 raised less .05 lowered.
+            final[0, :] = .25 - .05
         actual = candidate.compose_from_grammar_context((value,), context=context)
         assert torch.equal(actual[..., :4], value[..., :4])
         assert not torch.equal(actual[..., 4:], value[..., 4:])
         torch.testing.assert_close(candidate.generate(actual), value, rtol=0, atol=1e-6)
         actual.sum().backward()
-        assert candidate.stack.stages[-1].layer.W.grad.abs().sum() > 0
+        assert candidate.stack.stages[-1].sigma.weight.grad.abs().sum() > 0
 
 
 def test_86_compose_and_generate_choose_each_kernel(tmp_path, monkeypatch):
@@ -60,9 +62,10 @@ def test_86_compose_and_generate_choose_each_kernel(tmp_path, monkeypatch):
     with torch.no_grad():
         for index, candidate in enumerate(compose):
             for stage in candidate.stack.stages:
-                stage.layer.W.zero_(); stage.layer.W[0, 0] = 1.
-            final = candidate.stack.stages[-1].layer.W
-            final.zero_(); final[0, :final.shape[1]//2] = .05 * (index+1)
+                stage.pi.raw.zero_(); stage.pi.raw[:, 0, 0] = 1.
+                stage.sigma.weight.zero_(); stage.sigma.weight[0, 0] = 1.
+            final = candidate.stack.stages[-1].sigma.weight
+            final.zero_(); final[0, :] = .05 * (index+1)
     parents = torch.cat([op.compose(values[i:i+1]) for i,op in enumerate(compose)])
     assert not torch.equal(parents, values)
     selected, active = torch.arange(8), torch.ones(8, dtype=torch.bool)

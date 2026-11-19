@@ -15,6 +15,7 @@ def test_79_stack_learns_the_four_disjoint_word_combinations():
     target = present.clone()
     target[torch.arange(4), torch.tensor([4, 4, 5, 5]), 0] = 1
     x, y = present.flatten(1), target.flatten(1)
+    lanes, signed = present.transpose(-1, -2), target[..., 0] - target[..., 1]
     design = torch.cat((x, torch.ones(4, 1)), -1).double()
     linear = torch.linalg.lstsq(design, y.double(), driver='gelsd').solution
     linear_read = (design @ linear).reshape_as(target)
@@ -24,50 +25,53 @@ def test_79_stack_learns_the_four_disjoint_word_combinations():
     linear_choice = (linear_read[:, 5, 0] > linear_read[:, 4, 0] + 1e-12).long()
     expected = torch.tensor([0, 0, 1, 1])
     assert int((linear_choice == expected).sum()) < 4
-    stack = SigmaPiStack(12, 12, hidden=64, pairs=1, seed=0)
-    assert torch.equal(stack(x), torch.zeros_like(y))
+    # The stack reads each word's two lanes and gives one signed number.
+    stack = SigmaPiStack(6, 6, hidden=64, pairs=1, seed=0)
+    assert torch.equal(stack(lanes), torch.zeros_like(signed))
     optimizer = torch.optim.Adam(stack.parameters(), lr=.01)
     for _ in range(200):
         optimizer.zero_grad()
-        loss = (stack(x) - y).square().mean()
+        loss = (stack(lanes) - signed).square().mean()
         loss.backward()
         optimizer.step()
-    read = stack(x).reshape_as(target)
-    assert torch.equal(read[:, 4:, 0].argmax(-1), expected)
-    assert (read[torch.arange(4), torch.tensor([4, 4, 5, 5]), 0] > .5).all()
-    assert (read[torch.arange(4), torch.tensor([5, 5, 4, 4]), 0] < .5).all()
-    print(dict(stack_correct=int((read[:, 4:, 0].argmax(-1) == expected).sum()),
+    read = stack(lanes)
+    assert torch.equal(read[:, 4:].argmax(-1), expected)
+    assert (read[torch.arange(4), torch.tensor([4, 4, 5, 5])] > .5).all()
+    assert (read[torch.arange(4), torch.tensor([5, 5, 4, 4])] < .5).all()
+    print(dict(stack_correct=int((read[:, 4:].argmax(-1) == expected).sum()),
                linear_correct=int((linear_choice == expected).sum()),
-               presentations=200, output=read[:, 4:, 0].detach().tolist()))
+               presentations=200, output=read[:, 4:].detach().tolist()))
 
 
-def test_79_stages_are_the_shared_pi_and_sigma_layers():
-    from Layers import PiLayer, SigmaLayer
+def test_79_stages_are_fused_pi_and_sigma_pairs():
+    from Layers import PiLayer3, SigmaLayer3, SigmaPiLayer
     from SigmaPiStack import SigmaPiStack
     stack = SigmaPiStack(2, 2, hidden=2, pairs=1)
-    assert isinstance(stack.stages[0], PiLayer)
-    assert isinstance(stack.stages[1], SigmaLayer)
-    pi_weight = stack.stages[0].layer.W
-    sigma_weight = stack.stages[1].layer.W
+    assert len(stack.stages) == 1 and isinstance(stack.stages[0], SigmaPiLayer)
+    assert isinstance(stack.stages[0].pi, PiLayer3) and stack.stages[0].pi.free
+    assert isinstance(stack.stages[0].sigma, SigmaLayer3)
+    pi_weight = stack.stages[0].pi.raw
+    sigma_weight = stack.stages[0].sigma.weight
     with torch.no_grad():
-        pi_weight.copy_(torch.tensor([[.1, -.2], [0., .1]]).T)
-        sigma_weight.copy_(torch.tensor([[.2, 0.], [-.1, .3]]).T)
-    x = torch.tensor([[.3, .8], [0., 1.], [1., 0.]])
-    chart = x.clamp(-1+1e-6, 1-1e-6).atanh()
-    middle = (chart @ pi_weight).tanh()
-    wanted = (middle @ sigma_weight).clamp(0, 1)
-    torch.testing.assert_close(stack(x), wanted)
-    stack(x).sum().backward()
+        pi_weight.copy_(torch.tensor([[[.1, .2], [0., .1]], [[.3, 0.], [.2, .1]]]))
+        sigma_weight.copy_(torch.tensor([[.2, 0.], [-.1, .3]]))
+    x = torch.tensor([[.3, -.8], [0., 1.], [1., 0.]])
+    lanes = torch.stack((x, -x), -2)
+    logs = lanes.clamp(1e-6, 1).log()
+    rows = torch.exp(torch.einsum('bki,kio->bko', logs, pi_weight))
+    wanted = ((rows[:, 0] - rows[:, 1]) @ sigma_weight).tanh()
+    torch.testing.assert_close(stack(lanes), wanted)
+    stack(lanes).sum().backward()
     assert all(torch.isfinite(p.grad).all() for p in stack.parameters() if p.grad is not None)
     assert pi_weight.grad is not None and sigma_weight.grad is not None
-    assert (stack(x) >= 0).all() and (stack(x) <= 1).all()
+    assert (stack(lanes) >= -1).all() and (stack(lanes) <= 1).all()
 
 
 def test_79_stack_construction_leaves_the_global_draw_unchanged(tmp_path):
     from SigmaPiStack import SigmaPiStack
     before = torch.random.get_rng_state().clone()
     stack = SigmaPiStack(12, 12, hidden=64, pairs=2)
-    assert len(stack.stages) == 4
+    assert len(stack.stages) == 2
     assert torch.equal(torch.random.get_rng_state(), before)
     from recon_bench import _build_model
     config = Path('data/MM_xor.xml').read_text()

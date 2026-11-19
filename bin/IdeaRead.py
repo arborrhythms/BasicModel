@@ -14,7 +14,7 @@ def complete(model, record, present, registry):
     owner = model._concept_owner()
     if getattr(owner, 'idea_stack', None) is None:
         return
-    prediction = owner.idea_stack(model._idea_observation.flatten(1))
+    prediction = owner.idea_stack(model._idea_observation.transpose(-1, -2))
     target = record.meaning_root.detach()
     if prediction.shape != target.shape:
         raise ValueError('field-to-idea read and kept semantic root have different shapes')
@@ -27,4 +27,4 @@ def expected_point(owner, *, streams):
     if owner.idea_stack is None:
         raise ValueError('a model without sentence comprehension has no learned idea read')
     field = owner._expected_knowing[:streams, :owner._order_caps()[0]].detach()
-    return owner.idea_stack(field.flatten(1))
+    return owner.idea_stack(field.transpose(-1, -2))

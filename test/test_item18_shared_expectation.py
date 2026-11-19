@@ -19,8 +19,9 @@ def test_intuit_deposits_the_expected_basic_block_then_closes(monkeypatch):
         torch.tensor([[[0, 1]]]), torch.tensor([[[0, 1]]]), None)
     width = owner._order_caps()[0]
     # A controlled map tests lane/row transport, independently of learning.
-    expected = torch.arange(2 * width).reshape(1, width, 2).float() / (2 * width)
-    monkeypatch.setattr(owner.expect_stack, 'forward', lambda value: expected.flatten(1))
+    # The stack gives one signed number for each concept; both signs occur.
+    expected = (torch.arange(width).float()[None] - width / 2) / width
+    monkeypatch.setattr(owner.expect_stack, 'forward', lambda value: expected)
     publish(model, open_field(model, field))
     open_prediction(model, torch.tensor([True]))
     before_close = []

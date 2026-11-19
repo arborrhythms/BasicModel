@@ -3885,7 +3885,7 @@ class _MarkerKernel(GrammarLayer):
         from SigmaPiStack import SigmaPiStack
         self.meaning_layout = layout
         self.kernel_index = index
-        self.stack = SigmaPiStack(layout[0], 2*(layout[1]-layout[0]),
+        self.stack = SigmaPiStack(layout[0], layout[1]-layout[0],
                                  hidden=hidden, pairs=pairs, seed=index)
 
     def content_operand(self, value):
@@ -3895,8 +3895,8 @@ class _MarkerKernel(GrammarLayer):
         from MeaningKernels import exact_initial
         width = self.meaning_layout[0]
         form, meaning = value[..., :width], value[..., width:]
-        raise_by, lower_by = self.stack(form).chunk(2, -1)
-        shift = raise_by-lower_by
+        # One signed number for each meaning coordinate: the shift.
+        shift = self.stack(torch.stack((form, -form), -2))
         result = cube_unchart(cube_chart(meaning) + (-shift if inverse else shift))
         # An untrained member is exactly identity, including boundary values.
         result = exact_initial(meaning, result, shift == 0)

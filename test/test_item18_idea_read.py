@@ -42,7 +42,7 @@ def test_native_kept_sentence_books_the_observed_field_and_semantic_root(tmp_pat
     complete = IdeaRead.complete
     def capture(host, record, present, registry):
         owner = host._concept_owner()
-        prediction = owner.idea_stack(host._idea_observation.flatten(1))
+        prediction = owner.idea_stack(host._idea_observation.transpose(-1, -2))
         target = record.meaning_root.detach()
         value = complete(host, record, present, registry)
         expected = (prediction - target).square().mean(-1)[present].mean()

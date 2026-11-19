@@ -12896,10 +12896,10 @@ class ConceptualSpace(Space):
         from SigmaPiStack import SigmaPiStack
         expect_hidden = int(TheXMLConfig.space(section, 'expectHidden', 64))
         expect_pairs = int(TheXMLConfig.space(section, 'expectLayers', 1))
-        self.expect_stack = (SigmaPiStack(2*self._order_caps()[0], 2*self._order_caps()[0],
+        self.expect_stack = (SigmaPiStack(self._order_caps()[0], self._order_caps()[0],
             hidden=expect_hidden, pairs=expect_pairs)
             if owns_concepts and self.expectation_map == 'sigmaPi' and expect_hidden else None)
-        self.idea_stack = (SigmaPiStack(2*self._order_caps()[0], self.outputShape[-1],
+        self.idea_stack = (SigmaPiStack(self._order_caps()[0], self.outputShape[-1],
             hidden=int(TheXMLConfig.space(section, 'ideaHidden', 64)),
             pairs=int(TheXMLConfig.space(section, 'ideaLayers', 1)))
             if owns_concepts and comprehends_sentences else None)
