@@ -53,23 +53,31 @@ def _p5_combine(presence, codes):
 
 def test_the_stand_in_codes_as_word_identity_does():
     """On the first 3,000 words, the trial's coder as built and
-    WordIdentity give every form the same parts, the same row and the same
-    shared rows."""
+    WordIdentity give the same row to every form that holds no part the two
+    made differently. (Since round 3c, step 7, WordIdentity gives two forms
+    with one code rule 56's next part where the stand-in raised bits or
+    shared the row; the forms those parts touch are counted.)"""
     from Layers import RadixLayer
-    from WordIdentity import WordIdentity
+    from WordIdentity import WordIdentity, text_of
     sample = words()[:3000]
     # The source's parts half is 64 wide (rule 50); the stand-in as built
-    # keys forms on their parts alone, as WordIdentity does.
+    # keys forms on their parts alone, as WordIdentity does with no wholes half.
     store = RadixLayer(64, initial_cap=8000)
     identity = WordIdentity(store, pair_dim=64)
     for w in sample:
         identity.admit(w.encode())
     mine = ct.Coder('built').admit_all(sample)
-    differ = sum(int(np.any(identity.form(w.encode()).numpy() != mine.parts_vector(w)[:64])) for w in sample)
-    print(dict(words=len(sample), rows_that_differ=differ, shared=(len(identity.shared), len(mine.shared)),
-               added=(len(identity.added), len(mine.added))))
-    assert differ == 0 and len(identity.shared) == len(mine.shared)
-    assert set(identity.added) == set(mine.added)
+    runs = lambda bits, added: {run for run in added} | {str(atom[1] if isinstance(atom, tuple) else atom)
+                                                          for atom in bits}
+    apart = runs(identity.bits, identity.added) ^ runs(mine.bits, mine.added)
+    apart |= {str(a[1] if isinstance(a, tuple) else a) for a in identity.bits} | {str(a) for a in mine.bits}
+    apart = {text_of(r) if isinstance(r, bytes) else r for r in apart}
+    kept = [w for w in sample if not any(run in w for run in apart) and w not in mine.shared
+            and w not in mine.shared.values()]
+    differ = sum(int(np.any(identity.form(w.encode()).numpy() != mine.parts_vector(w)[:64])) for w in kept)
+    print(dict(words=len(sample), compared=len(kept), rows_that_differ=differ,
+               shared=(0, len(mine.shared)), added=(len(identity.added), len(mine.added))))
+    assert kept and differ == 0
 
 
 # 1. The dictionary.

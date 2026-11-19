@@ -93,7 +93,11 @@ def test_spelling_reads_the_stored_table():
 
 
 @pytest.mark.parametrize('separable', [True, False])
-def test_masked_part_extends_bits_and_an_inseparable_row_is_shared(monkeypatch, separable):
+def test_masked_part_extends_bits_or_the_next_part_tells_them_apart(monkeypatch, separable):
+    """Two forms with one code get rule 43's next part (rule 56): `bal`
+    first; while their codes are still one, the next run that one holds and
+    the other does not, before any part's bits are raised, whether or not
+    raising bal's bits would have told them apart. No row is shared."""
     import WordIdentity
     bank = identity_bank()
     bank.admit(b'calaba')
@@ -109,16 +113,13 @@ def test_masked_part_extends_bits_and_an_inseparable_row_is_shared(monkeypatch, 
         return tuple(prefix+[i for i in range(dimension) if i not in prefix and (separable or i in used)])[:dimension]
     monkeypatch.setattr(WordIdentity, 'bit_stream', controlled)
     bank.admit(b'cabala')
-    assert list(bank.added) == ['bal']
-    if separable:
-        assert bank.bits[('part', 'bal')] == 4 and not bank.shared
-        assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
-    else:
-        # The parts tell the two apart; the row of fixed width is shared.
-        assert bank.shared == {b'cabala': b'calaba'}
-        assert torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
-        assert bank.word_rows[b'calaba'] != bank.word_rows[b'cabala']
-        assert set(bank.words[b'calaba']) != set(bank.words[b'cabala'])
+    assert list(bank.added)[0] == 'bal'
+    assert not torch.equal(bank.code(b'calaba'), bank.code(b'cabala'))
+    assert bank.word_rows[b'calaba'] != bank.word_rows[b'cabala']
+    for raw in (b'calaba', b'cabala'):
+        assert bank.read(bank.code(raw)) == raw
+    # Rule 56: the next part comes before any part's bits are raised.
+    assert len(bank.added) > 1 and bank.bits.get(('part', 'bal'), bank.ones) == bank.ones
 
 
 @pytest.mark.parametrize('complete_first', [False, True])

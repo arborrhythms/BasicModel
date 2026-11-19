@@ -13,21 +13,21 @@ def test_collision_queue_follows_admission_order(monkeypatch):
     bank = identity_bank()
     source, first = inspect.getsourcelines(WordIdentity._settle)
     queue_line = first + next(i for i, line in enumerate(source)
-                              if line.strip() == 'key = self.key(self.form(word))')
+                              if line.strip() == 'key = self.key(self.code(word))')
     reads, mints = [], []
-    form, separate = bank.form, bank._separate
+    code, separate = bank.code, bank._separate
 
-    def observed_form(raw, **kwargs):
+    def observed_code(raw, **kwargs):
         caller = sys._getframe(1)
         if caller.f_code is WordIdentity._settle.__code__ and caller.f_lineno == queue_line:
             reads.append(bytes(raw).decode('ascii'))
-        return form(raw, **kwargs)
+        return code(raw, **kwargs)
 
     def observed_separate(left, right):
         mints.append([left.decode('ascii'), right.decode('ascii')])
         return separate(left, right)
 
-    monkeypatch.setattr(bank, 'form', observed_form)
+    monkeypatch.setattr(bank, 'code', observed_code)
     monkeypatch.setattr(bank, '_separate', observed_separate)
     bank.admit(b'calaba')
     bank.admit(b'cabala')

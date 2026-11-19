@@ -191,8 +191,11 @@ def test_46_printed_on_the_dictionary():
         for j in np.flatnonzero(le):
             true, accident = (true + 1, accident) if parts[i] <= parts[j] else (true, accident + 1)
     print(dict(words=len(words), sharing_for=sharing(F), sharing_both=sharing(np.concatenate((F, A), 1)),
-               sharing_parts_half=sharing(F[:, :64]), inside_true=true, inside_by_accident=accident))
+               sharing_parts_half=sharing(F[:, :64]), inside_true=true, inside_by_accident=accident,
+               added_parts=len(identity.added)))
     assert not (F & A).any()
+    # Rule 56: two forms left with one code get the next part; none is left.
+    assert sharing(F) == 0 and sharing(np.concatenate((F, A), 1)) == 0
 
 
 def test_a_checkpoint_of_the_old_layout_is_refused_with_the_reason():
@@ -266,73 +269,115 @@ def test_47_the_first_pi_is_written_again_when_a_nearer_holder_comes():
     assert basic.pi.row_members(rows[b'is']) == basic.member_keys(rows[b'is'])
 
 
-# Certificate 48: scored by difference (rule 54).
+# Certificate 48: scored by difference (rule 54; Alec, §19.82).
+
+def _difference(positive, negative):
+    """The column as it was before §19.82: for less against, over the
+    squared length of that difference."""
+    vector = positive - negative
+    return vector / vector.square().sum()
+
 
 def test_48_a_concept_reads_by_difference():
-    """A column starts as its member's for code less its against code over
-    the squared length, the wholes half read on its complement: a concept
-    reads its own row at tanh(1), a form that holds its form below that,
-    and a form that holds its parts only by accident lower still."""
+    """A column starts as what tells for its member over the squared length
+    of that, less what tells against it over the squared length of that
+    (``P / |P|^2 - N / |N|^2``): all that tells for reads one and all that
+    tells against takes the reading to zero, however few its coordinates. So
+    `archer` reads `archery`, and `is` reads `this`, at or near zero, while
+    `reach`, which holds archer's letters and not the run, has nothing that
+    tells against archer. Its own row reads one, and one more from its own
+    against lane where it has a holder."""
     from OrderZero import combine
     words = (b'archer', b'archery', b'reach', b'is', b'this', b'cat')
-    # reach holds every part of archer (its letters, once each) but not the
-    # run; archer and reach are told apart by a part reach alone holds.
     identity, basic, book, rows = coded(words)
     column = {w: basic.column(rows[w]) for w in words}
-    def reads(concept, form):
+    before = {w: _difference(*basic.read_pair(basic.lanes(rows[w]))) for w in words}
+    def reads(concept, form, columns=column):
         lanes = _read_form(basic, book, form, [rows[w] for w in words])
         x = combine(lanes[:, None], basic.read_codes([rows[w] for w in words]))[0]
-        return float(((x[0] - x[1]) @ column[concept]))
-    own = reads(b'archer', b'archer')
-    holder = reads(b'archer', b'archery')
-    parts_inside = reads(b'archer', b'reach')
-    print(dict(own=own, holder=holder, parts_inside_not_a_run=parts_inside, is_on_this=reads(b'is', b'this'),
-               is_own=reads(b'is', b'is')))
-    assert own == pytest.approx(1., abs=1e-5) and reads(b'is', b'is') == pytest.approx(1., abs=1e-5)
-    # A form holding it reads below its own: the part its holder adds
-    # tells against it.
-    assert holder < own and reads(b'is', b'this') < 1.
+        return float(((x[0] - x[1]) @ columns[concept]))
+    pairs = ((b'archer', b'archer'), (b'archer', b'archery'), (b'archer', b'reach'),
+             (b'is', b'is'), (b'is', b'this'), (b'cat', b'cat'))
+    table = {f'{c.decode()} on {f.decode()}': (round(reads(c, f, before), 3), round(reads(c, f), 3))
+             for c, f in pairs}
+    print('before the squash (before, built)', table)
+    # The own row: what tells for it reads one; where it has a holder its
+    # own against lane reads one more.
+    for word in (b'archer', b'is', b'cat'):
+        holders = bool(basic.lanes(rows[word])[1, :64].any())
+        assert reads(word, word) == pytest.approx(1. + holders, abs=1e-4)
+    # A holder's added part takes the reading to zero or below.
+    assert reads(b'archer', b'archery') <= 1e-4 and reads(b'is', b'this') <= 1e-4
+    # reach holds every letter of archer, not the run, and nothing that
+    # tells against archer: it reads as the share of archer's code it holds.
+    assert 0 < reads(b'archer', b'reach') <= reads(b'archer', b'archer')
 
 
 def test_48_on_the_dictionary_and_the_lesson():
-    """Printed: on the dictionary, what a part's concept reads (before the
-    squash) of a form that holds it as a run, of one whose parts it holds
-    without the run, and of one that holds it by accident (a sample of
-    every 40th word against all, read alone); and the lesson's concepts
-    told apart, each nominated form read through the first Pi, with a row
-    read both entering at its net (built) and as the trial had it."""
+    """Printed, before §19.82 and as built: what a part's concept reads
+    (before the squash) of a form that holds it as a run, of one whose parts
+    it holds without the run, and of one that holds it by accident (a
+    sample of every 40th word against all, read alone); how often an
+    unrelated form (one that holds neither the part's code nor its parts)
+    is denied because what tells against the part is covered by accident;
+    and the first Pi's entries a row."""
     import code_trial as ct
     try:
         words = [w.encode() for w in ct.dictionary()]
     except OSError:
         pytest.skip('no /usr/share/dict/words on this host')
     identity, basic, _book, rows = coded(words)
-    pairs = basic.read_codes([rows[w] for w in words]).double()
+    index = [rows[w] for w in words]
+    pairs = basic.read_codes(index).double()
     X = (pairs[:, 0] - pairs[:, 1])
-    F = basic.codes[[rows[w] for w in words]].cpu().numpy() > .5
+    F = basic.codes[index].cpu().numpy() > .5
     parts = [set(identity.words[w]) for w in words]
-    sums = {'run': [], 'parts': [], 'accident': []}
+    sums = {form: {'run': [], 'parts': [], 'accident': []} for form in ('before', 'built')}
+    unrelated = {'before': [0, 0], 'built': [0, 0]}
+    from OrderZero import OrderZeroSigma
     for i in range(0, len(words), 40):
-        u = X[i] / X[i].square().sum()
+        P, N = pairs[i]
+        columns = dict(before=_difference(P, N), built=OrderZeroSigma.member_column(P, N))
         le = (~F[i, :64] | F[:, :64]).all(1)
         le[i] = False
+        kinds = {}
         for j in np.flatnonzero(le):
-            kind = 'run' if words[i] in words[j] else 'parts' if parts[i] <= parts[j] else 'accident'
-            sums[kind].append(float(X[j] @ u))
-    print({k: (len(v), round(float(np.mean(v)), 3) if v else None) for k, v in sums.items()})
+            kinds[j] = 'run' if words[i] in words[j] else 'parts' if parts[i] <= parts[j] else 'accident'
+        others = np.ones(len(words), dtype=bool)
+        others[list(kinds)] = False
+        others[i] = False
+        has_against = bool(N.any())
+        for form, u in columns.items():
+            y = (X @ u).numpy()
+            for j, kind in kinds.items():
+                sums[form][kind].append(float(y[j]))
+            if has_against:
+                # Unrelated forms the for part alone reads above zero, and
+                # of them, those that what tells against takes to zero.
+                alone = (X @ (P / P.square().sum())).numpy()
+                live = others & (alone > 0)
+                unrelated[form][0] += int(live.sum())
+                unrelated[form][1] += int((live & (y <= 0)).sum())
+    table = {form: {k: (len(v), round(float(np.mean(v)), 3) if v else None) for k, v in kinds_.items()}
+             for form, kinds_ in sums.items()}
+    print('a part read by its concept (count, mean before the squash)', table)
+    print('unrelated forms read above zero by the for part / denied',
+          {form: (n, d, round(d / max(n, 1), 4)) for form, (n, d) in unrelated.items()})
     entries = [len(basic.pi.row_against(rows[w])) + len(basic.pi.row_members(rows[w])) for w in words]
     against = [len(basic.pi.row_against(rows[w])) for w in words]
     print(dict(against_entries=(min(against), round(float(np.mean(against)), 2), max(against)),
                entries_a_row=(min(entries), round(float(np.mean(entries)), 2), max(entries)),
                rows_over_16=sum(e > 16 for e in entries), pi_entries=basic.pi.nnz,
                allocated=basic.capacity * basic.ENTRIES_PER_ROW))
-    # A holder reads below the part's own reading, and an accident lower
-    # still, on the mean.
-    assert sums['run'] and np.mean(sums['accident']) < np.mean(sums['run']) < 1.
+    # As built, a form that holds the part as a run reads below one that
+    # holds its parts without the run: the run's holder adds what tells
+    # against it.
+    built = sums['built']
+    assert built['run'] and np.mean(built['run']) < np.mean(built['parts'])
 
 
 def test_48_the_lessons_concepts_told_apart():
-    from OrderZero import EPS_LOG
+    from OrderZero import EPS_LOG, OrderZeroSigma
     from test_item17_order_zero import _read_lesson
     model, patch = _read_lesson(16)
     try:
@@ -346,6 +391,8 @@ def test_48_the_lessons_concepts_told_apart():
         concepts = [owner.concept_of_basic_percept(r) for r in nominated]
         pairs = basic.read_codes(nominated)
         U = owner.order_zero.weight[:basic.width, concepts].detach()
+        before = torch.stack([_difference(*pair) for pair in pairs], 1).to(U)
+        built = torch.stack([OrderZeroSigma.member_column(*pair) for pair in pairs], 1).to(U)
         def trial(lanes):
             gaps = torch.log((1 - pairs).clamp_min(EPS_LOG))
             f, a = lanes[:, 0, None], lanes[:, 1, None]
@@ -353,20 +400,21 @@ def test_48_the_lessons_concepts_told_apart():
             away = 1 - torch.exp((f * gaps[:, 1] + a * gaps[:, 0]).sum(0))
             return toward - away
         from OrderZero import combine
-        told = {'net': 0, 'trial': 0}
+        told = {'net, model': 0, 'trial, model': 0, 'net, before': 0, 'net, built': 0}
         both = 0
         for index, form in enumerate(forms):
             raw = form if isinstance(form, bytes) else str(form).encode()
             lanes = _read_form(basic, book, raw, nominated)
             both += int(((lanes[:, 0] > 0) & (lanes[:, 1] > 0)).sum())
-            for name, x in (('net', (lambda c: c[0] - c[1])(combine(lanes[:, None], pairs)[0])),
-                            ('trial', trial(lanes))):
-                y = torch.tanh(x @ U)
+            net = (lambda c: c[0] - c[1])(combine(lanes[:, None], pairs)[0])
+            for name, x, columns in (('net, model', net, U), ('trial, model', trial(lanes), U),
+                                     ('net, before', net, before), ('net, built', net, built)):
+                y = torch.tanh(x @ columns)
                 others = torch.cat((y[:index], y[index + 1:]))
                 told[name] += int(len(others) == 0 or bool(y[index] > others.max()))
         print(dict(nominated=[f.decode() if isinstance(f, bytes) else f for f in forms],
                    told_apart=told, rows_read_both=both))
-        assert told['net'] >= told['trial']
+        assert told['net, model'] >= told['trial, model']
     finally:
         model.End()
         patch.undo()

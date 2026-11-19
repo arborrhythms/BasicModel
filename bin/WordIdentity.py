@@ -107,7 +107,6 @@ def distinguishing_run(left, right, *, one_sided=False):
 class WordIdentity(nn.Module):
     PREFIX = b'\x00identity/atom/'
     WORD_PREFIX = b'\x00identity/form/'
-    SHARED_PREFIX = b'\x00identity/shared/'
 
     def __init__(self, store, pair_dim=64, ones=3, property_width=0, property_ones=3, basic_capacity=None):
         super().__init__()
@@ -130,8 +129,8 @@ class WordIdentity(nn.Module):
         self._catalog = {}
         # Each added part, with the two forms it told apart (None if taught).
         self.added = {}
-        # A form whose row of fixed width is another's: form -> that form.
-        self.shared = {}
+        # Each parts half's stored forms, for a reader that has only that.
+        self.by_parts = {}
         self.word_witnesses = {}
         self.nested = {}
         self._marker_pattern = None
@@ -156,12 +155,13 @@ class WordIdentity(nn.Module):
             self._codes[atom] = result
         return result
 
-    def catalog_code(self, atom):
+    def catalog_code(self, atom, bits=None):
         """A part's code in the wholes half: the catalog drawn a second time
         in that half's own coordinates. A character's is its byte's in the
         table of wholes; a part given more bits in the parts half is given
-        as many more here."""
-        n = self.property_ones + self.bits.get(atom, self.ones) - self.ones
+        as many more here (``bits``: read at those bits)."""
+        bits = self.bits.get(atom, self.ones) if bits is None else int(bits)
+        n = self.property_ones + bits - self.ones
         key = (atom, n)
         if key not in self._catalog:
             from PerceptProperties import catalog_coordinates
@@ -273,6 +273,20 @@ class WordIdentity(nn.Module):
                  for a in atoms]
         return torch.stack(codes).amax(0)
 
+    def code(self, raw, *, override=None):
+        """A form's code as rule 56 compares it: its parts half (:meth:`form`)
+        and its own tightest whole, the OR of its parts' catalog codes in the
+        wholes half. Both are read from its parts, so a set of parts found
+        gives the same code (:meth:`spelling`). ``override`` as in
+        :meth:`form`."""
+        form = self.form(raw, override=override)
+        if not self.property_width:
+            return form
+        atoms = self.words.get(bytes(raw)) or self.atoms_of(raw)
+        wholes = torch.stack([self.catalog_code(a, override[1] if override is not None and a == override[0]
+                                                else None) for a in atoms]).amax(0)
+        return torch.cat((form, wholes))
+
     @staticmethod
     def key(form):
         return np.packbits(form.detach().eq(1).cpu().numpy(), bitorder='little').tobytes()
@@ -280,11 +294,11 @@ class WordIdentity(nn.Module):
     def _reindex(self):
         self.forms = {}
         self.word_keys = {}
+        self.by_parts = {}
         for raw in self.words:
-            key = self.key(self.form(raw))
+            key = self.key(self.code(raw))
             self.word_keys[raw] = key
-            if raw in self.shared:
-                continue
+            self.by_parts.setdefault(self.key(self.form(raw)), set()).add(raw)
             if key in self.forms and self.forms[key] != raw:
                 return self.forms[key], raw
             self.forms[key] = raw
@@ -296,6 +310,20 @@ class WordIdentity(nn.Module):
             del self.forms[old]
             self.store.hash_map.pop(self.WORD_PREFIX+old, None)
             self.store.radix_trie.remove(self.WORD_PREFIX+old)
+        for words in self.by_parts.values():
+            words.discard(word)
+
+    def _next_part(self, left, right):
+        """Rule 43's next part for two forms with one code (rule 56): the
+        shortest run that one holds and the other does not and that is not
+        a part yet; of runs of one length the first in code-point order."""
+        a, b = text_of(left), text_of(right)
+        known = {atom[1] for atom in self.atoms}
+        for size in range(1, max(len(a), len(b)) + 1):
+            found = (runs(a, size) ^ runs(b, size)) - known
+            if found:
+                return min(found)
+        return None
 
     def _add_part(self, run, between):
         self.added[run] = between
@@ -311,36 +339,36 @@ class WordIdentity(nn.Module):
         return [word for word, parts in self.words.items() if atoms.intersection(parts)]
 
     def _separate(self, left, right):
-        """Tell two forms with one row apart; return the forms whose code
-        changed, or ``None`` where their rows stay equal.
+        """Tell two forms with one code apart (rule 56); return the forms
+        whose code changed, or ``None`` where no part tells them apart.
 
-        Where their parts are the same, the shortest run that one holds and
-        the other does not becomes a part. Where their rows are still equal,
-        an added part that one holds and the other does not is given more
-        bits, the part held by the fewest forms first. A row of fixed width
-        that no added part can tell apart is shared: the parts still tell
-        the two forms apart.
+        Rule 43's next part is added, the shortest run that one holds and
+        the other does not, until their codes differ. Where no such run is
+        left, an added part that one holds and the other does not is given
+        more bits, the part held by the fewest forms first.
         """
         changed = []
-        if set(self.words[left]) == set(self.words[right]):
-            run = distinguishing_run(left, right)
+        alike = lambda: self.key(self.code(left)) == self.key(self.code(right))
+        while alike():
+            run = self._next_part(left, right)
+            if run is None:
+                break
             changed.append(self._add_part(run, (text_of(left), text_of(right))))
-            if self.key(self.form(left)) != self.key(self.form(right)):
-                return self._holders(changed)
+        if not alike():
+            return self._holders(changed)
         held = Counter(atom for parts in self.words.values() for atom in parts)
         candidates = sorted((atom for atom in set(self.words[left]) ^ set(self.words[right])
                              if atom[1] in self.added),
                             key=lambda atom: (held[atom], -len(atom[1]), atom[1]))
         for atom in candidates:
             for bits in range(self.bits.get(atom, self.ones)+1, self.pair_dim+1):
-                if not torch.equal(self.form(left, override=(atom, bits)),
-                                   self.form(right, override=(atom, bits))):
+                if not torch.equal(self.code(left, override=(atom, bits)),
+                                   self.code(right, override=(atom, bits))):
                     self._atom(atom, bits)
                     changed.append(atom)
                     self.revision += 1
                     return self._holders(changed)
-        self.shared[right] = left
-        return self._holders(changed) if changed else None
+        return None
 
     def _settle(self, pending):
         """Key each pending form, telling apart any two with one row, and
@@ -350,25 +378,12 @@ class WordIdentity(nn.Module):
         while pending:
             word = pending.pop()
             self._unkey(word)
-            self.shared.pop(word, None)
-            key = self.key(self.form(word))
+            key = self.key(self.code(word))
             other = self.forms.get(key)
             if other is not None and other != word:
                 touched = self._separate(other, word)
                 if touched is None:
-                    # The form admitted first keeps the shared row's key.
-                    if next(w for w in self.words if w in (word, other)) == word:
-                        self.shared.pop(word)
-                        self.shared[other] = word
-                        self.forms[key] = word
-                        self.word_keys[word] = key
-                        affected.update((word, other))
-                        self.store.hash_map.pop(self.WORD_PREFIX + key, None)
-                        self.store.radix_trie.remove(self.WORD_PREFIX + key)
-                        continue
-                    self.word_keys[word] = key
-                    affected.add(word)
-                    continue
+                    raise RuntimeError(f'no part tells {text_of(other)!r} from {text_of(word)!r}')
                 self._unkey(other)
                 # The work stack keeps admission order, so hash order never
                 # decides which of two forms a later collision changes.
@@ -378,15 +393,14 @@ class WordIdentity(nn.Module):
             else:
                 self.forms[key] = word
                 self.word_keys[word] = key
+                self.by_parts.setdefault(self.key(self.form(word)), set()).add(word)
         for word in sorted(affected):
             value = self.form(word)
-            code = self.key(value)
+            code = self.key(self.code(word))
             key = self.WORD_PREFIX + code
-            holder = self.forms.get(code) == word
             row = self.word_rows.get(word)
             if row is None:
-                row = self.store.insert(key if holder else self.SHARED_PREFIX + word,
-                                        init_vector=self._storage_code(value))
+                row = self.store.insert(key, init_vector=self._storage_code(value))
                 self.word_rows[word] = row
                 self.store.inverse_table[row] = word
                 # Keep byte rows distinct for one-letter words/descent.
@@ -394,9 +408,8 @@ class WordIdentity(nn.Module):
                     self.store.hash_map[word] = row
                     self.store.radix_trie.insert(word, row)
             self._fixed(row, value, word)
-            if holder:
-                self.store.hash_map[key] = row
-                self.store.radix_trie.insert(key, row)
+            self.store.hash_map[key] = row
+            self.store.radix_trie.insert(key, row)
 
     def admit(self, raw):
         raw = bytes(raw)
@@ -489,7 +502,14 @@ class WordIdentity(nn.Module):
         return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
 
     def row_for_form(self, form):
-        raw = self.forms.get(self.key(form[..., :self.width]))
+        """The row of the stored form whose code (:meth:`code`) this is. A
+        parts half alone names a form only where no other stored form has
+        that parts half."""
+        if self.property_width and form.shape[-1] >= self.width + self.property_width:
+            raw = self.forms.get(self.key(form[..., :self.width + self.property_width]))
+        else:
+            held = self.by_parts.get(self.key(form[..., :self.width]), ())
+            raw = next(iter(held)) if len(held) == 1 else None
         return None if raw is None else self.word_rows[raw]
 
     def read(self, form):
@@ -497,21 +517,28 @@ class WordIdentity(nn.Module):
         return None if row is None else self.store.bytes_for(row)
 
     def spelling(self, rows):
-        """The stored form whose code is the fold of these rows' codes.
+        """The stored form whose code is read from these rows: the fold of
+        their codes and their tightest whole.
 
         A code that is no stored form has no spelling: ``None``.
         """
-        form = self.store._basis.fixed_row_codes[list(map(int, rows))].amax(0).detach().cpu()
+        rows = list(map(int, rows))
+        form = self.store._basis.fixed_row_codes[rows].amax(0).detach().cpu()[:self.width]
+        if self.property_width:
+            wholes = self.tightest(rows)
+            if wholes is None:
+                return None
+            form = torch.cat((form, wholes))
         return self.read(form)
 
     def vocab_extras(self):
         return dict(atoms=self.atoms, bits=self.bits, words=self.words,
-                    word_rows=self.word_rows, added=self.added, shared=self.shared,
+                    word_rows=self.word_rows, added=self.added,
                     revision=self.revision,
                     word_witnesses=self.word_witnesses, nested=self.nested)
 
     def load_vocab_extras(self, value):
-        for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'shared', 'revision'):
+        for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'revision'):
             setattr(self, name, value[name])
         self._codes = {}
         self.word_witnesses = value.get('word_witnesses', {})
