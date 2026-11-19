@@ -8815,7 +8815,23 @@ Put to him in §19.84 (the source ranks the rows of LTM by a question's field ag
 - *The key* is the most recent entry of STM, whatever it is: a question when there is one, or any other idea. The query is no longer something only a question does.
 - *The result* is the top row of LTM by that match, and it is pushed onto the STM stack.
 
-*Not said, to be found in the source before a rule is written* (a survey is being made): what the most recent entry of STM holds that a row of LTM can be matched against; whether today's match of a field of concepts against a row's episodic entry, order by order, is kept as the measure; what calls the query and when; and what a recalled row does today (`EpisodicMemory.reinstate`).
+**What the source does today** (a read-only survey, 2026-11-19).
+
+- *Who asks.* The thought operators `query` and `ask` (`ThoughtFaces.query`, `ThoughtFaces.ask`), chosen inside a thought episode at a sentence's close or on the answer path, and the readers of truth and existence (`Queries._region_evidence`).
+- *The key* is never an entry of STM. It is the extension of the request's meaning, the tree of its operators (`ExtendedRecall.forest`), built while the sentence is composed.
+- *The match* is `EpisodicMemory.matches` through `ExtendedRecall.matches`: each operand's concepts against each row's episodic entry, order by order, joined by the tree's operators.
+- *The result* is every row that passes the threshold, up to 1,024, each loaded as a chunk held off the stack (`EntryRead.recall_chunks`). Nothing takes only the top row, and nothing is pushed onto the stack. Later operators read those chunks.
+- *STM.* A chunk of a thought or of a recalled row carries an entry of concepts of the same kind as a row of LTM (`EpisodicMemory.entry_set`), so it can be a key with no new structure. A chunk kept at a sentence's close reaches its entry through the row it points at. A close that kept only a relation has none.
+- *"Most recent"* has no one meaning in the source: the top of the stack, the chunk read last, and the chunk latest in time are three things.
+- About 35 tests in 17 files state today's behaviour. The docs name a function `EpisodicMemory.reinstate` that is not in the source.
+
+**What Claude takes where he did not say** (*mine*; rule 60).
+
+1. *The most recent STM* is the top of the stack, since he speaks of the stack.
+2. *The measure stays:* the top chunk's entry of concepts against each row's entry, order by order.
+3. *It is still an operation that thought chooses,* the present `query`, with its key changed. It is not made at every push.
+4. *The pushed row is not the next key's own answer:* a row already held in STM is left out of the match, or the query would find what it has just pushed.
+5. *An answer to a question* is read from the top of the stack after the push, where today it is read from the chunks held off it.
 
 **The sweep.** Asked whether the one default sweep should be run now and not only at the item's push round: "run the default sweep now, if in process, otherwise wait until I answer all of your questions." Work is in process, so it is run now, on round 3c's committed source (`d0a3832629`), in a copy outside the checkout so that round 4's edits do not enter it.
 
@@ -9878,6 +9894,24 @@ chooses from. The old classes are not edited.
     remains a signed fuzzy keen on certainty, but we can represent
     "both" with two concepts").
 
+60. *The query on LTM matches the most recent STM* (Alec, §19.85:
+    "Query should be a match against the most recent STM. That allows
+    it to match a question, if there, or any other idea. The result
+    will push the top LTM result onto the STM stack"). The key is the
+    entry of concepts of the most recent chunk of STM; it is matched
+    against each row of LTM by its episodic entry, order by order;
+    the top row is pushed onto the STM stack. It takes the place of
+    the key built from the request's operators
+    (`ExtendedRecall.forest`) and of loading every row that passes
+    off the stack (`EntryRead.recall_chunks`). *Mine:* the most
+    recent chunk is the top of the stack; the measure is today's
+    (`EpisodicMemory.matches`); it stays an operation that thought
+    chooses; a row already held in STM is left out of the match; an
+    answer is read from the top of the stack after the push. *Open:*
+    what the readers of truth and existence do
+    (`Queries._region_evidence`), which read the best row on each
+    lane and push nothing.
+
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
 *learning*.
@@ -10133,6 +10167,12 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     taught to be present where a percept is witnessed against, and
     to say nothing where it is witnessed for, is learned with
     weight on the against channel alone; the weights are printed.
+52. *The query from STM* (rule 60). (a) With a question on top of the
+    stack, the row of LTM that answers it is pushed onto the stack,
+    and one row only. (b) With an idea that is no question on top,
+    the row most like it is pushed. (c) A second query does not push
+    the row the first pushed. (d) With nothing on the stack, or a
+    top chunk with no entry, nothing is pushed.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -11105,6 +11145,43 @@ Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences with
 the key off and on. Return as §23.6b, with the operations of a walk
 with the read taken and without it, for item 1.5.
+~~~
+
+### 22.6c Round 6c: the query on LTM from the most recent STM (added 2026-11-19, after §19.85)
+
+~~~
+Round 6c of item 1.7, after round 6b and before round 7. Rule 60 of
+§21; certificate 52. Read §19.84 and §19.85 (the survey of what the
+source does today is in §19.85).
+
+1. Before any edit, take the survey of §19.85 again on your
+   starting source: the callers of the query, the key, what a
+   recalled row does, and the tests that state today's behaviour.
+2. The key: the entry of concepts of the top chunk of the STM stack
+   (EpisodicMemory.entry_set for a chunk of a thought or a recalled
+   row; through the row it points at for a chunk kept at a
+   sentence's close). ThoughtStream.candidates, ThoughtFaces.query
+   and ThoughtLTMCapability.query, _cued and best_match take it in
+   place of ExtendedRecall.forest of the request.
+3. The result: the top row by EpisodicMemory.matches, a row already
+   held in STM left out, is pushed onto the stack
+   (STMChunks.deposit with stack=True) in place of
+   EntryRead.recall_chunks loading every row off it.
+4. What assumed that the cue is a question (best_match's open
+   slots, _cued's role mask, closing_question, the readers of the
+   chunks held off the stack): say what each becomes. An answer is
+   read from the top of the stack after the push. Say what the
+   readers of truth and existence do (_region_evidence), and leave
+   them as they are unless they cannot stand.
+5. Certificate 52 in a new test/test_item17_query.py. Port the
+   tests that state today's behaviour, each so that it states what
+   it stated, and list each.
+6. The docs name EpisodicMemory.reinstate, which is not in the
+   source: return every place, for the docs to be corrected.
+
+Run: the new test file; every test file that names what you
+changed; both stopping gates; the lesson's sixteen sentences before
+and after. Return as §23.6c.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
