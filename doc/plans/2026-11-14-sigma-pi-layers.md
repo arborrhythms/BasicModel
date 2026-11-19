@@ -6862,3 +6862,146 @@ up, and hand the returned set to the grammar.
 
 **Nothing of §19.46's seven questions is open.** The rules can be
 written when the prototype (§19.47) has returned.
+
+## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
+
+This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
+
+### 20.1 The files (Claude, standing in for Codex, 2026-11-18)
+
+- `test/looks_prototype.py`. The bank of a sentence (rule 33): each byte's row in a what codebook of the lesson's bytes, its place and that place's code from `Spaces.WhereEncoding` (the constant sinusoid, both rungs, capacity 4096), and the stem's token it belongs to (runs of letters, each mark on its own). The first layer (rule 2 of §19.21): rows are products over a token's memberships, `z = exp(W log clamp(m, ε, 1))`, weights at zero or more. A word row has weight on its letters' codebook rows (the count of each); the fixed word whole has weight one on every byte of the token being a letter; a place row has weight on both unsigned lanes of the token's place code, `k·c` on the code `c` and `k·(1 − c)` on its complement, so it peaks at the place and its radius narrows as `k` grows. The Sigma (rule 3): each concept is `tanh` of a weight times its row; the meta concept "word" is one row over the word concepts. The pullback (rule 36): the share of a byte is its activity times the derivative of the asked concepts by it, by the transposes of the same matrices with the local derivatives kept from the way up, and by the framework's backward. The two domains (§19.48, answer 2): the asked word, whole and meta rows give each byte its what match (its share, capped at one); the asked place rows, read at each byte's place, give its where match; the look's activity is their product. The returned set (rule 37) is the way up again on that activity; `interpret` takes the most active word concept, exactly. Also the fallback, the sinusoid profile and the trial of reading in order.
+- `test/looks_prototype_report.py`, which prints every table below.
+- `test/test_item17_looks_prototype.py`, nine tests of the claims below (9 passed, 3.9 s).
+
+Three choices that the rules do not make were needed to run it; each is reported against its alternative below. (1) The Sigma is passed in the pullback by its slope (rule 36 as written) or by its weights alone. (2) A token's membership of a codebook row is the greatest of its copies, and in the pullback every copy at that greatest value takes the whole derivative (the framework's `amax` splits it among the copies). (3) The share becomes the look's activity capped at full presence, `min(1, share)`.
+
+### 20.2 The pullback by the transposes is the framework's backward (Claude, standing in for Codex, 2026-11-18)
+
+On the sixteen sentences, at full activity and at three random activities, for four requests:
+
+| Sigma passed by | Comparisons | Largest difference |
+| --- | ---: | ---: |
+| its slope | 256 | 2.8e-17 |
+| its weights | 256 | 0.0 |
+
+They agree once both use the same local derivatives. Out of the box they did not, for two reasons. `PiLayer2` (as `clamp(m, ε, 1)`) passes **no gradient at a membership of exactly one** in this torch (2.15): `PiLayer2(3, 3)` at `m = 1` gives a gradient of 0, and at `m = 0.999` about 1.01. A word wholly present stands exactly there, so the framework's backward through the Pi returns no share for it. The prototype clamps only the floor (an activity here never exceeds one). And the framework's `amax` splits a repeated letter's derivative between its copies, so `that` came back at a quarter.
+
+### 20.3 Five requests on the lesson's sixteen sentences (Claude, standing in for Codex, 2026-11-18)
+
+The word meant: for a word, the sentence's last word; for the place, the word at token 1; for the meta concept with a place, the word at token 2. Place rows at concentration 200, applied inside the products. "Projection" is the weights alone: each byte whose letter is in an asked row.
+
+| Request | Sigma passed by | Place read at | Taken as meant, first of equals | Taken as meant, largest of equals | Taken with a tie | Returned on "This is Felix." (token: word concepts at 0.5 or more) | Projection on "This is Felix." |
+| --- | --- | --- | ---: | ---: | ---: | --- | --- |
+| the meta concept | slope | — | — | — | 0 of 16 | nothing | 0:This 1:is 2:Felix |
+| the meta concept | weights | — | — | — | 16 of 16 | 0:This/is 1:is 2:Felix | 0:This 1:is 2:Felix |
+| a word's concept | weights | — | 10 of 16 | 14 of 16 | 6 of 16 | 2:Felix | 0:This 1:is 2:Felix |
+| the fixed word whole | weights | — | — | — | 16 of 16 | 0:This/is 1:is 2:Felix | 0:This 1:is 2:Felix |
+| an absent word (`dog`) | weights | — | 16 of 16 | 16 of 16 | 0 of 16 | nothing | nothing (on "Who is here?", `Who` by its `o`) |
+| a place | — | each byte | 16 of 16 | 16 of 16 | 0 of 16 | 1:is | all tokens |
+| a place | — | the token | 16 of 16 | 16 of 16 | 0 of 16 | 1:is | all tokens |
+| meta concept and a place | weights | each byte | 8 of 16 | 8 of 16 | 0 of 16 | 1:is (Felix meant) | 0:This 1:is 2:Felix |
+| meta concept and a place | weights | the token | 12 of 16 | **16 of 16** | 4 of 16 | 2:Felix | 0:This 1:is 2:Felix |
+
+What comes back is what was asked for and is present: an absent word returns nothing in all sixteen, where the weights alone let a word in on one shared letter. The meta concept returns every word, and with a place read at the token and the largest of equals taken, the word at the place in all sixteen, as §19.49 expects. The ties are the containment of §20.4.
+
+### 20.4 Cost, and what the binding by token does and does not prevent (Claude, standing in for Codex, 2026-11-18)
+
+| One way up | The pullback | One look (the pullback and the way up again) |
+| ---: | ---: | ---: |
+| 478 | 600 | 1,078 |
+
+Multiply-adds per sentence, the mean over the sixteen, counted from the shapes (14 word rows, 20 codebook rows, 4 tokens). A look costs about 2.3 ways up, once for a request and not once for each candidate.
+
+| Sentence | Request | Returned | Taken |
+| --- | --- | --- | --- |
+| "Fe li x is here." (every letter of Felix, in three tokens) | Felix | nothing | nothing |
+| "xileF is here." (the same letters in another order) | Felix | 0:Felix | Felix at token 0 |
+| "This is Felix." | is | 0:is 1:is | is at token 0, tied with is at token 1 |
+| "What is that?" | that | 0:that 2:that | that at token 0, tied with that at token 2 (`What` holds t, h and a) |
+
+The binding by token stops letters spread over tokens. It does not see order inside a token: an anagram is the word, and a word whose letters are all in a longer token (`is` in `This`, `here` in `there`, `that` in `What`) is wholly present there. A product row is a test of containment, not of equality.
+
+### 20.5 Dimming by the asking row (Claude, standing in for Codex, 2026-11-18)
+
+The meta concept with a place at token 2 (`Felix`, first byte 8) on "This is Felix.": the most active word concept at each token as the place row's concentration narrows it, with the where match read at each byte's own place or at its token's first place, and applied inside the products or once to a token's reading.
+
+| Concentration | Read at | Applied | This (token 0) | is (token 1) | Felix (token 2) | Taken |
+| ---: | --- | --- | ---: | ---: | ---: | --- |
+| 12.5 | each byte | inside | 0.932 | 0.991 | 0.984 | is |
+| 12.5 | the token | inside | 0.255 | 0.989 | 0.995 | Felix |
+| 12.5 | each byte | once | 0.293 | 0.924 | 0.995 | Felix |
+| 50 | each byte | inside | 0.285 | 0.962 | 0.853 | is |
+| 50 | the token | inside | 0.000 | 0.931 | 0.995 | Felix |
+| 200 | each byte | inside | 0.000 | 0.506 | 0.096 | is |
+| 200 | the token | inside | 0.000 | 0.277 | 0.995 | Felix |
+| 200 | each byte | once | 0.000 | 0.307 | 0.995 | Felix |
+| 800 | each byte | inside | 0.000 | 0.004 | 0.000 | is |
+| 800 | the token | inside | 0.000 | 0.000 | 0.995 | Felix |
+| 3,200 | each byte | inside | 0.000 | 0.000 | 0.000 | nothing |
+| 3,200 | the token | inside | 0.000 | 0.000 | 0.995 | Felix |
+
+(The full table, with "once" at the token's place too, is printed by the report; "once" at either place takes Felix at every concentration.) Read at each byte's own place, the dimming cuts the word that was asked for: a place's code holds its start and not its end, so the word's later letters lie away from the place and are dimmed, inside the product, once each. A short word near the place then wins, and at 3,200 nothing is left. Read at the token's first place, or applied once to the token's reading, the word at the place is taken at every concentration, and the other tokens fall from about 0.9 to nothing as the cone narrows. The row's value at its own place, its magnitude, falls as `exp(−k·H)` (H the entropy of its code); the Pi may not raise it (its bias is at zero or below), so the prototype gives the Sigma's weight on a place row the inverse of the row's magnitude.
+
+### 20.6 The where sinusoid as a coordinate (Claude, standing in for Codex, 2026-11-18)
+
+A place row at byte 200, concentration 200: its reading at a distance, over its reading at the place.
+
+| Capacity | Rung | +1 | +2 | +4 | +8 | +64 | +128 | +255 | +256 | +512 | +4096 |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4096 | long | 1.000 | 1.000 | 0.998 | 0.993 | 0.625 | 0.158 | 0.001 | 0.001 | 0.000 | 0.000 |
+| 4096 | short | 0.888 | 0.627 | 0.162 | 0.001 | 0.000 | 0.000 | 0.884 | 1.000 | 1.000 | 1.000 |
+| 4096 | both | 0.888 | 0.627 | 0.162 | 0.001 | 0.000 | 0.000 | 0.001 | 0.001 | 0.000 | 0.000 |
+| 64 | both | 0.788 | 0.389 | 0.024 | 0.000 | 0.000 | 0.000 | 0.783 | 1.000 | 1.000 | 1.000 |
+
+At capacity 4096 the long rung's period is 8,192 bytes and the short rung's 256. Within a sentence the long rung separates nothing (0.998 four bytes away); the short rung does all of it, and alone it lets in every place a multiple of 256 bytes away, which the long rung then removes. At capacity 64 `WhereEncoding` gives both rungs the same period of 256, and nothing removes the repeats. At concentration 200 a place four bytes away reads 0.16 and one byte away 0.89; the words of a sentence begin three to six bytes apart.
+
+### 20.7 The fallback (Claude, standing in for Codex, 2026-11-18)
+
+A `.where` given outright; from that extent the largest word, by extent (§19.30 leaves "largest" open); failing a word, the largest concept, here the word whole.
+
+| Sentence | Extent | Taken |
+| --- | --- | --- |
+| "This is Felix." | "This" | the word `This` |
+| "This is Felix." | "This is" | the word `This` |
+| "This is Felix." | "Felix." | the word `Felix` |
+| "This is Felix." | "." | nothing |
+| "This is Felix." | the whole sentence | the word `Felix` |
+| "Who is here?" | "is here?" | the word `here` |
+| "Fe li x is here." | "Fe li " | no word; the whole `li` |
+
+It agrees with the returned sets of §20.3 wherever one word is at the place. It needs no pullback; it also needs no request, so nothing in it can be taught to ask.
+
+### 20.8 Reading in order, taught on the request alone (Claude, standing in for Codex, 2026-11-18)
+
+Each look asks for the meta concept and a place: the first at the sentence's start, each later one at the end of the word read last plus an offset. Only the offset is taught, by the gradient of a loss that asks the next word to be the most active, through the pullback, the place code (made continuous) and the way up. It starts at −3, inside the word just read.
+
+| Steps | Offset | Sentences read wholly in order |
+| ---: | ---: | ---: |
+| 0 | −3.00 | 0 of 16 |
+| 20 | 0.83 | 16 of 16 |
+| 150 | 1.07 | 16 of 16 |
+
+It learns to step one byte past the word read, onto the space before the next word, and then reads all sixteen in order. What was taught is one number shared by all sentences; nothing about which concepts to ask for was taught, and no done mark was used.
+
+### 20.9 What surprised me (Claude, standing in for Codex, 2026-11-18)
+
+1. *A saturated Sigma gives its strongest token almost nothing.* With the meta concept pulled back by the Sigma's slope, the token holding two whole words (`This`, and `is` inside it) gets about 1/300 of the share of a token holding one, and at full presence nothing is returned at all. The derivative is smallest where the concept is most lit. Passed by its weights, every letter of a present word has a share of at least one.
+2. *The framework's backward through `PiLayer2` is zero at full membership* (§20.2). Rule 36's default, the transposes with the local derivatives kept, avoids it only if the derivative at the ceiling is defined to pass.
+3. *A product row is containment.* Ties at the full value are the rule, not the exception: in every sentence for the meta concept and the whole, and in 6 of 16 for a single word. The largest of equals (§19.30) settles all but `that` inside `What`.
+4. *The asked word is cut by its own place.* Dimming at each byte's place, inside the product, favours a short word beside the place over the word at it (§20.5).
+5. *The long rung does nothing inside a sentence,* and at the small capacity the two rungs are one.
+
+### 20.10 What I would change in rules 33 to 42 (Claude, standing in for Codex, 2026-11-18)
+
+Each is *mine*, for Alec to take or not.
+
+- **Rule 34.** Say how a share becomes the look's activity. *Default:* the share capped at full presence; a byte shared by two asked rows is not counted twice.
+- **Rule 36.** The pullback passes the Pi by its product's derivative and the Sigma by its weights, not its slope; the greatest of a token's copies of a letter is a selection, every copy at it taking the whole derivative; at full membership the derivative passes. The transposes stay the default; the framework's backward is used only with those same local derivatives.
+- **Rule 37, with §19.49.** `interpret` takes the most active word concept; among equals the largest (§19.30), then the one found first.
+- **Rule 39.** The place row's dimming is read at a token's first place (or applied once to its reading), never at each byte's own place inside the product. The row's magnitude is carried by the Sigma's weight on it.
+- **Rule 41.** One where, both rungs, and say the capacity: with the registry's capacity the short rung separates a sentence's words and the long rung removes the short rung's repeats. And the binding by token does not know order, so anagrams and letters contained in a longer word read as the word; either the ordered run that §19.48 answer 4 set aside returns, or a word row takes its letters at their places within the token.
+- **Rules 35 and 38.** The trial of §20.8 suggests what `attend` learns first is small: where the next place is, from where the last word ended.
+
+### 20.11 Test files run (Claude, standing in for Codex, 2026-11-18)
+
+`test/test_item17_looks_prototype.py` (9 passed, 3.9 s). The tables are `test/looks_prototype_report.py`'s output (deterministic; its random activities use a generator of its own). No sweep was run for this prototype; the item's sweep (1.8 §66.15) ran before these three files existed.
