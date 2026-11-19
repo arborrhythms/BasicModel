@@ -1451,6 +1451,16 @@ generation is expected at this stage and is recorded, not tuned away.
    of 7,325 cases, of which 34 still fail** in twenty test files and
    passed before the loop of looks. So item 1.8 is not at its push
    until those are ported or repaired and the sweep passes.
+   **Returned and reviewed (§66.8 to §66.16; §68.86): the item's
+   default sweep passes,** 7,336 of 7,336 cases with no failure, in
+   2,114 s, on `b656480f7d`. The 34 were ported or repaired; two were
+   defects (a presentation with no word did not close; a look's field
+   was carried across a packed boundary). Rerun by Claude: 266 passed
+   twice in fresh processes, and the lesson's replay 16 of 16 equal.
+   **Provisional, for Alec:** a read with no sentence gives the grammar
+   its option at each look (three commits that go together); Claude
+   recommends keeping it. **Left of item 1.8:** the doc pass (§70.18),
+   the PDF, the push.
    **The push (Alec, 2026-11-18): "We should push after 1.8".** After
    Codex's return of §68.84 (the repair and the item's one default
    sweep) is reviewed, the doc pass is applied and the PDF rebuilt.

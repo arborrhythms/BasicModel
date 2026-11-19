@@ -34956,6 +34956,93 @@ End with a short report: what is done, the sweep's result, what is
 provisional, and what you could not do.
 ~~~
 
+### 68.86 Review of §66.8 to §66.16: item 1.8's default tier passes (Claude, 2026-11-18)
+
+Codex wrote §66.8 and §66.9 before its credits ran out; a Claude
+session on Opus wrote §66.10 to §66.16 in its place, under §68.85. They
+are reviewed together.
+
+**What I checked.** The source at `c15eadf04a`. Its code and tests are
+those of `b656480f7d`, the source the last sweep ran on: nothing under
+`bin`, `test` or `data`, and neither the `Makefile` nor
+`requirements.txt`, differs between the two.
+
+- *Read:* every change under `bin` since `ca1aa2bd46` (39 lines in
+  four files); the test changes by their difference: no test function
+  is removed (two changed their arguments), no skip and no expected
+  failure is added, and each of the ten assertion lines taken out has
+  its successor beside it. Four ports read in full
+  (`test_grammar_separator.py`, `test_item20_round1.py`,
+  `test_sentence_compose.py`, `test_compose_deadline.py`).
+- *Rerun by me,* twice, each in a fresh process: the 26 test files
+  that changed, with `test_nanochat_grammar_eval.py`,
+  `test_review10_contracts.py`, `test_output_walk.py`,
+  `test_sentence_owned_attention.py`, `test_item18_scalar.py` and both
+  stopping gates: **266 passed, 16 skipped**, both times.
+- *The exact replay, by me:* the sixteen lesson sentences on this
+  source against `output/item18-sentence-tables/entry-lesson`: **16 of
+  16 updates equal**.
+- *The sweep's own record*
+  (`output/tests/20261118-231326-71deb8/result.json`): passed, exit 0,
+  7,336 of 7,336 cases completed, 186 workers, 2,113.7 s, on
+  `b656480f7d`. I did not run the sweep again.
+- *Not checked:* the tables of twenty runs; the scan of 111 files; the
+  other 22 ports line by line; the first two sweeps.
+
+**Accepted.**
+
+- *Codex's §66.8.* The trust radius keeps its host calculation as a
+  named exception, listed for item 1.5. The exception of §68.83 is
+  repaired at its producer: a numeric path kept which words had joined
+  and lost the order in which they arrived, and now replays them in
+  the order they were interpreted (`Looks.source_orders`), with a
+  sentence closing after its arrivals. Its test fails on `bccdae6b58`.
+- *The ports* (§66.9, §66.11). A test that left its reading to chance
+  is given it through the native decisions
+  (`reading_fixtures.read_in_source_order`); a fixture of what the
+  loop of looks replaced reads what stands in its place. Where an
+  asserted value changed, the thing it counts changed, and the table
+  of §66.11 names it.
+- *Two defects of mechanism, repaired* (§66.12). A presentation with
+  no word, a scalar alone, now closes: `SentenceField.placements`
+  reduced over an empty axis. And the fields of a sentence's looks are
+  cut at a packed boundary with the sentence's other records
+  (`SentenceBoundary.finish`); they had carried the first sentence's
+  graph into the second.
+
+**Provisional, for Alec: a read with no sentence** (§66.12; commits
+`26666553c0`, `0a7f25a805`, `64a8be7fc1`, which go together).
+
+*In plain terms.* Two callers read words outside a sentence: the fast
+word evaluator and the standalone sentence kernel. Since §60.4 no act
+of attention accepts a word, so there such a read admitted no word at
+all. What was built: where the grammar declares `interpret`, the
+grammar has its option at each look of that read too
+(`Attention.interpret_words`); a grammar of examination alone walks as
+before.
+
+*Recommended (Claude): keep it.* It is the rule of §60.4 applied where
+the specification was silent ("attend() looks, interpret() processes a
+word (if it can)"), it keeps one rule for admission, and it changes no
+training update (the replay is equal). Its stated limit is real and
+small: in a trained model a sentence's looks also read what has been
+composed so far, and this read has nothing composed. Item 1.7 rewrites
+`attend`, and this read with it.
+
+**What the one sweep at the end cost.** Since the loop of looks 46
+cases of the default tier failed, and no targeted run of mine or of
+Codex's showed them (§72: targeted tests in the rounds, one sweep at
+the item's end). They were found by the first sweep and took three
+sweeps and a night of ports to clear. Nothing in the model was wrong
+in 40 of them; six were defects. This is recorded as it happened, and
+§72 is Alec's.
+
+**Not reviewed here:** the prototype of item 1.7's looks (sigma-pi
+§20). It is read with item 1.7's rules.
+
+**What is left of item 1.8:** the doc pass of §70.18, the PDF, and the
+push (Alec, 2026-11-18: "For 1.8, you push").
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression
