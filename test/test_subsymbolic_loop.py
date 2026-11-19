@@ -32,13 +32,23 @@ def test_selected_typed_scope_changes_the_attentive_extent(tmp_path):
     from order_fixtures import force_order
     force_order(cs,10001,0)
     cs._csw_concept_row(0,10001)
-    from ConceptLessons import admit_native_forms
-    admit_native_forms(model, ('0', '1'))
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ('0', '1'))
     cs.add_concept_feature(0,'ws',9,1.);cs.add_concept_feature(0,'ws',10,-1.)
     model.forward(inputs[2:3]);model.conceptualSpace._passback_scope_where=torch.tensor([[0.,1.]])
     ids,spans=model._subsymbolic_percepts[:2]
+    # A property seen both true and false is read at its basic percepts
+    # (sigma-pi §19.68): the percept of its member (whole 9) and that of its
+    # Not member (whole 10), each on its two lanes.
+    def lanes(whole):
+        field = cs._percept_field
+        rows = [('bp', r) for r in cs.basic_percepts.carrying('ws', (whole,)) if ('bp', r) in field.keys]
+        values = [field.values[field.keys.index(key), 0, 0] for key in rows]
+        return torch.stack(values).amax(0) if values else torch.zeros(2)
     model._read_subsymbolic_field(ids,spans,1)
-    torch.testing.assert_close(cs._cs_last_a0[0,0,0],torch.tensor([1.,1.]))
+    torch.testing.assert_close(lanes(9),torch.tensor([1.,0.]))
+    torch.testing.assert_close(lanes(10),torch.tensor([1.,0.]))
     model.conceptualSpace._passback_scope_where=torch.tensor([[1.,2.]])/inputs.shape[-1]
     model._read_subsymbolic_field(ids,spans,1)
-    torch.testing.assert_close(cs._cs_last_a0[0,0,0],torch.tensor([0.,1.]))
+    torch.testing.assert_close(lanes(9),torch.tensor([0.,0.]))
+    torch.testing.assert_close(lanes(10),torch.tensor([1.,0.]))

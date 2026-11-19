@@ -73,7 +73,7 @@ def test_packed_sentence_boundary_cuts_prior_writes_and_retains_perception(tmp_p
         if not steps:
             entry_nodes.update(nodes([v for _, v in values]))
             for space, names in ((owner.inputSpace, ('_ar_part_reference_vectors',
-                    '_ar_whole_reference_vectors', '_ar_readout_coefficients')),
+                    '_ar_whole_reference_vectors', '_ar_order_zero_reading')),
                     (owner.symbolSpace, ('_word_reference_presences',))):
                 perception.extend(getattr(space, name) for name in names if torch.is_tensor(getattr(space, name)) and getattr(space, name).requires_grad)
         else:

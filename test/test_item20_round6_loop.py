@@ -147,11 +147,11 @@ def test_registry_uses_the_two_reconstructions_and_omission_target(tmp_path, mon
 
 def test_parallel_input_without_composed_sentences_books_only_field_reconstruction(tmp_path):
     from test_grounded_xor import grounded_model
-    from ConceptLessons import admit_native_forms
+    from nomination_fixtures import nominated_forms
     from Layers import Error
     model, inputs = grounded_model(tmp_path)
     try:
-        admit_native_forms(model, ('0', '1'))
+        nominated_forms(model, ('0', '1'))
         understanding = model.understand(inputs)
         errors = Error()
         decoded, cost = model.reverseReconstruct(understanding, target=inputs, registry=errors)

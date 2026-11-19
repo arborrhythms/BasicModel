@@ -25,6 +25,9 @@ def test_stepped_trace_and_provenance_preserve_read_and_state(tmp_path,monkeypat
     model=_tiny_canonical_model(tmp_path,monkeypatch,batch_size=1)
     model._tensor_peer_while_eager=True
     try:
+        # The forms are words, nominated by MTM before these readings.
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model,['alpha beta novel'])
         model.understand(model.inputSpace.prepInput(['alpha beta']));model.End()
         before=snapshot(model)
         plain=Assessment.read_sentence(model,'alpha novel',trace=True)
