@@ -34499,6 +34499,215 @@ Return A to C in §64 from §64.7, and §65.4 as §66. Name the test files
 you ran. Commit locally; never push main, and never force-push.
 ~~~
 
+### 68.83 Review of §64.7 to §64.11 and §66: the tables are tensors and replay exactly; two tests of the default tier fail by chance (Claude, 2026-11-18)
+
+**What I checked.** The source at `bccdae6b58` (local; the return is
+recorded at `122f4d6b30`). I read the changes to `ConceptTrust`, the
+list of files changed (28 under `bin`, 705 lines added and 462
+removed, with `FeatureTable.py` and `ReadingIndex.py` new), and
+Codex's records of the replays. Run by me:
+
+- *The exact replay, independently.* The lesson's sixteen sentences
+  from the saved stream, on a scratch copy of the starting source
+  (`bf7de20d3d`) and on one of the returned source, compared after
+  every update in every parameter, the optimizer's state, the
+  registered costs, the chooser's records and the random streams:
+  **16 of 16 equal**. My run on the starting source also equals
+  Codex's own record of the returned source at the last update.
+- *Targeted tests* (§72), in the checkout, unchanged:
+  `test_item18_tree_first.py`, `test_sentence_journal.py`,
+  `test_whole_paths.py`, `test_sentence_trace.py`,
+  `test_item1_5_derive.py`, `test_look_forecast.py`,
+  `test_interpret_bias.py`, `test_loop_of_looks.py` and both stopping
+  gates: **83 passed, 1 skipped, 2 failed** (the finding below).
+
+Not rerun: the relation, membership and closing certificates one by
+one, the gate replays, the capture probe, the lesson of 160, the
+verbal proof. No sweep, nothing under `RUN_SLOW`.
+
+**Two corrections of §68.81, from Codex's §64.7 and §64.8.**
+
+1. *The teaching of property 0 is not new.* I wrote "It is new". It
+   is not: the memberships of the letter property were taught before
+   the loop, by costs the documents name
+   (`memory.link_coverage`, `output.compose_score_function`;
+   `doc/Architecture.md`, "Gradients and choices"), and in the run of
+   §59.74 a word read with evidence against at 27 of 544 places in
+   training. That run ended with all 52 letters at exactly one, and
+   this one does not. So Codex stopped as §68.82 A.3 says, and Alec
+   decided, as Codex records it: "Keep this baseline as long as we
+   address it later." Exact
+   purity stands for item 1.8, and the graded case is item 1.7's
+   (sigma-pi §19.44, point 3).
+2. *The empty look at several words.* I gave the whole properties as
+   the likely cause and said it was not traced. Codex traced it: the
+   whole properties fire, and what is missing is the word's identity
+   part, which is read for the exact extent given. It stays rule 32's.
+
+**Accepted as mechanism.**
+
+- *The forecast's rule 3 as amended* (§64.8): a word's pair is
+  replaced only when the look's interval equals the word's; the test
+  fails on the source before and passes after.
+- *One trace* (§65.5): the tree's readers read the recorded actions
+  through `ReadingIndex`, and the tree makes no relation call.
+- *The tables* (§65.2, rule 2): the forms from one device table
+  (`FeatureTable`), `LTM1`'s endpoints kept on each add, the membership
+  binding and the fold of order zero on the device, the closing
+  readers batched, and the sentence's incoming trust taken once
+  outside it.
+- *What it gave.* The host reads of the first sentence go from 80,434
+  to 9,870, and of the sixteen from 2,219,189 to 775,457. The seconds
+  move little, 44.9 to 42.5 in Codex's run and 41.5 to 37.9 in mine:
+  the reads were not where the time is.
+
+*Taken on Codex's own choice, in keeping with the specification:* the
+order of sibling reads kept in the batched fold after a first form
+gave a different credit (§66.2); the diagnostic that follows the
+branch taken (§66.6).
+
+**Finding: two tests of the default tier pass or fail by the draw.**
+
+`test_item18_tree_first.py::test_1_word_deposit_keeps_its_value_row_and_order`
+and
+`test_whole_paths.py::test_native_numeric_paths_share_one_head_and_one_update[2]`
+failed in my run. Run three times each on four sources:
+
+| Source | Failures in three runs of the pair |
+| --- | --- |
+| `8444e5dfa1` (the loop, before the bias) | 1, 1, 1 |
+| `bfd2c606a3` (the bias and the forecast) | 1, 1, 2 |
+| `bf7de20d3d` (before the tables) | 0, 2, 0 |
+| `bccdae6b58` (returned) | 1, 1, 2 |
+
+So it is not the tables' doing, and it has been so since the loop of
+looks. Codex reports the same in §66.4 (three or four tests failing on
+both sources, and "Unforced invocations can expose a different empty
+path"). I did not run them when I accepted the loop in §68.78 beyond
+one pass, in which they passed.
+
+*What they are.* The first finds no word pushed. The second stops on
+an exception of the model's own, `ValueError: binary operation
+underflows the recorded forest` (`Models._derivation_program`), on a
+path a fresh model takes with nothing forced: a recorded action of two
+operands with fewer than two leaves in the tree. The first is a test
+that leaves its reading to chance. The second is a path on which the
+model raises, and that is a defect of mechanism whatever the draw.
+
+*Why it matters now.* The item's one default sweep is next, and with
+these it passes or fails by chance. No seed is pinned to pass (Alec,
+2026-09-21).
+
+**The question of §66.5: the trust radius.** `ConceptTrust.refresh`
+computes a radius on the host in double precision and rounds it once
+into the column; in single precision on the device 409 of 7,084
+results differ in the last place, and the replay then differs from
+the second sentence on. Codex recommends keeping the host calculation
+as a named exception. *Agreed (Claude).* Rule 7 of §65.2 says such a
+step is not approximated but listed. It is listed for item 1.5, where
+the arithmetic of the device is decided once for everything it
+touches, and where a change of the last place gets a baseline of its
+own. Under §75 Codex goes on with its recommendation.
+
+**Where part C ends.** Rule 2d of §65.2 has the tables go on "until
+the close and the preparation no longer lead it, or Claude is asked".
+I am asked, and it ends here. The close still leads, and its largest
+reader is the trust radius. Rule 5, the breaks, is not begun in
+earnest: the sentence is 1,344 graphs when the taken branches are
+followed, and the native pass stops at a counter written inside a
+conditional. Alec, 2026-11-18: "1.5 is the compilation to
+make it fast". The list of breaks in §66.6 goes to item 1.5 as its
+starting inventory. *Mine to say under rule 2d, his to overrule.*
+
+**What is left of item 1.8.** The repair of the finding; the item's
+one default sweep; then the doc pass, the PDF, and the push on Alec's
+word. The text is §68.84.
+
+### 68.84 Codex text: the last of item 1.8 (the two tests that fail by chance; the sweep), and what comes after it
+
+Written on 2026-11-18. It is the one text to carry.
+
+~~~
+Item 1.8, the last text. Read §68.83 and §75 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. Your returns
+§64.7 to §64.11 and §66 are reviewed and accepted: the tables replay
+exactly (I replayed the sixteen sentences on both sources myself, 16
+of 16 equal), and your account of property 0 corrected mine.
+
+§75 is new and holds from here on: a question is not a stop. Where
+two solutions differ in design and the specification does not choose,
+write the question and the solutions, build the one you recommend in a
+commit of its own, mark it provisional in the return, and go on. Do
+not overturn a recorded decision of Alec's in the source: keep it,
+write your proposal, and go on with what does not depend on it. The
+standing rules are unchanged: no bound, learning rate, seed, capacity
+or presentation count changes; no validation weakened or removed; a
+learning certificate recorded and not repaired; local commits only,
+never push main, never force-push.
+
+A. Part C ends where you returned it.
+1. The trust radius keeps its host calculation, as you recommend. Name
+   it in doc/Params.md or beside the code as an exception with its
+   reason, and list it for item 1.5.
+2. No more tables and no more breaks in this item. The list of §66.6
+   is item 1.5's starting inventory.
+
+B. The tests that pass or fail by the draw (§68.83).
+1. test_item18_tree_first.py::test_1_word_deposit_keeps_its_value_row_and_order
+   and
+   test_whole_paths.py::test_native_numeric_paths_share_one_head_and_one_update[2]
+   each failed in some of three runs on 8444e5dfa1, bfd2c606a3,
+   bf7de20d3d and bccdae6b58. You name three more in §66.4. List every
+   test of the default tier whose result depends on the draw since the
+   loop of looks; a way to find them is yours.
+2. "binary operation underflows the recorded forest"
+   (Models._derivation_program) is raised by the model on a path a
+   fresh model takes with nothing forced. Name the producer: which
+   record holds an action of two operands when the tree has fewer than
+   two leaves, and whether it can occur in training and evaluation
+   outside this test. If it can, it is a defect of mechanism: repair it
+   at the producer, with a test that reproduces it without a pinned
+   seed and fails on bccdae6b58.
+3. A test that leaves its reading to chance is given its reading
+   through the native decisions, as your fixtures of §61.8 are. Its
+   assertions stay. No seed is pinned, and no test is skipped, marked
+   or loosened to pass.
+4. Certificate: each test of your list passes in twenty consecutive
+   runs, each with a fresh draw.
+
+C. The item's one default sweep (§72), on the finished source:
+   env -u RUN_TRAINED -u RUN_SLOW make test
+   with nothing under RUN_SLOW. Report its counts and seconds, and
+   every failure with its producer. Both stopping gates pass. If the
+   repair of B changes a parameter update, say so, and take the exact
+   replay of the sixteen sentences again as the new record.
+
+D. Return A to C as §66.8 onward: the list of B.1; the producer and
+   the repair of B.2; the ports of B.3; the twenty runs; the sweep;
+   the test files you ran; the source snapshot. Commit locally.
+
+E. What comes after, with no wait between (§75, point 4). When D is
+   written, and whenever what is left of it waits on an answer:
+1. A prototype for item 1.7, in tests only. Read §19.43 and §19.45 of
+   doc/plans/2026-11-14-sigma-pi-layers.md. Build, under test/ and in
+   no file of bin/, a small first layer whose rows are products over a
+   sentence's percepts held once as indices and spans, with the stem's
+   tokens as its readings, and on it the steps of §19.45: a request
+   over concept rows, the pullback to a share for each percept, the
+   way up again on that share, the returned set. Run it on the
+   lesson's sixteen sentences with requests for a word's concept, for
+   the fixed word whole, and for a word that is absent. Report, for
+   each, what is returned and at which token, beside the projection of
+   the weights alone; the cost in operations beside one pass of the
+   way up; and what the binding by token does and does not prevent. It
+   decides nothing and is not wired into the model. Return it as §20
+   of that document.
+2. If that is done and nothing else is waiting: the open point of
+   §19.40, whether the four rungs of where form a coordinate that a
+   region can bound. A test-only measurement, returned in the same
+   section.
+~~~
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression
@@ -36045,3 +36254,41 @@ read that item 1.7 then replaces.
 table. After item 1.5: the lookups of the sentence's start, and none
 after it. *Not checked:* how many of the 1,924 are made at looks, since
 the measurement is older than the loop of looks.
+
+## 75. Codex does not wait on a question: it proposes, builds and goes on (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> also, codex is sitting idle for much of the time, it would be nice if
+> we enabled it to do more work instead of blocking on questions. Can
+> it propose the solution itself? its a capable mind, and we still have
+> oppostunity to review.
+
+This widens §73. Of its three places where Codex still stopped, the
+first two were Claude's reading, and the second is withdrawn.
+
+**The rule.**
+
+1. *A question is not a stop.* Where two solutions differ in design and
+   the specification does not choose, Codex writes the question, the
+   solutions it sees and the one it recommends, builds the one it
+   recommends, and goes on. It is marked in the return as provisional,
+   and it is in a commit of its own so that it can be taken back.
+   Claude reviews it with the return, and Alec may overrule it then.
+2. *A recorded decision of Alec's is not overturned in the source.*
+   Where Codex's recommendation would go against one, it builds the
+   path that keeps the decision, writes its proposal, and goes on with
+   everything that does not depend on the answer. (*Claude's reading;
+   his to widen.*)
+3. *The standing rules hold as before* (§73, point 3): no changed
+   bound, learning rate, seed, capacity or presentation count; no
+   validation weakened or removed; a learning certificate recorded and
+   not repaired; no push.
+4. *No idle time.* A text for Codex names what comes after it. When a
+   text is finished, or what is left of it waits on an answer, Codex
+   takes the next thing named, without waiting for a review between.
+
+**What changes.** Every text for Codex from §68.84 on is written so.
+The text of item 1.7 (`doc/plans/2026-11-14-sigma-pi-layers.md`,
+§19.8) is rewritten before it is carried in any case (sigma-pi
+§19.44), and takes this rule then.

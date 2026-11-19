@@ -1424,6 +1424,25 @@ generation is expected at this stage and is recorded, not tuned away.
    again, then straight on to §65.4, the last text of item 1.8),
    approved by Alec ("Yes, carry it"). Returns: §64.7 onward, then
    §66.
+   **The tables are returned and reviewed (§64.7 to §64.11, §66;
+   §68.83).** Accepted: one trace, the tables as tensors, exact
+   replays (replayed by Claude, 16 of 16 updates equal); the first
+   sentence's host reads go from 80,434 to 9,870. Property 0's
+   teaching is not new and is by declared costs; Alec, as Codex
+   records it: "Keep this baseline as long as we address it later"
+   (the graded case is item 1.7's). Part C ends there: the trust
+   radius keeps its host calculation as a named exception, and the
+   list of capture breaks goes to item 1.5 ("1.5 is the compilation
+   to make it fast"). **Found:** two tests of the default tier pass
+   or fail by the draw since the loop of looks, one on an exception
+   the model raises itself. **The one text for Codex is §68.84**:
+   that repair, then the item's one default sweep; and after it,
+   with no wait, a test-only prototype of item 1.7's `attend`
+   (sigma-pi §19.45). **Codex does not wait on a question (Alec,
+   2026-11-18; §75):** "Can it propose the solution itself? its a
+   capable mind, and we still have oppostunity to review." It
+   proposes, builds its recommendation in a commit of its own, marks
+   it provisional and goes on; each text names what comes next.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
