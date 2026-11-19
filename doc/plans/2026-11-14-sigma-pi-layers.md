@@ -10527,8 +10527,8 @@ integers).
    apply (§19.72). The bytes a property
    holds on stay in PrimitiveProperties.members and decide which
    wholes a form has; PrimitiveProperties.codes and the codebook
-   rows written from it at begin_forward give way to the rows'
-   coordinates.
+   rows written from it at begin_forward give way to the OR of the
+   member characters' catalog codes.
 4. The first Pi (rule 53): against entries, joined by union, read
    by the set of parts found. Storage as rule 19 has it; say what
    the entries a row now come to. A conjunction row is a strict
