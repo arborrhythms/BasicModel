@@ -32,7 +32,7 @@ def lesson_store(extra=EXTRA, *, suffix=True):
     told apart."""
     from Layers import RadixLayer
     from WordIdentity import WordIdentity
-    store = RadixLayer(96, initial_cap=1024)
+    store = RadixLayer(64, initial_cap=1024)
     identity = WordIdentity(store)
     for word in lesson_words() + tuple(extra):
         identity.observe_nested(word)
@@ -128,9 +128,11 @@ def test_a_form_may_hold_a_space():
 
 def test_the_code_holds_no_end_marks_and_no_lengths():
     _, identity = lesson_store()
-    lengths = slice(identity.pair_dim, identity.width)
-    for word in identity.words:
-        assert not identity.form(word)[lengths].any()
+    # No block of lengths: the parts are spread over every coordinate of
+    # the parts half (rule 50).
+    assert identity.width == identity.pair_dim == 64
+    used = torch.stack([identity.form(word) for word in identity.words]).amax(0)
+    assert bool(used[32:].any())
     assert all(kind == 'part' for kind, _ in identity.atoms)
     assert torch.equal(identity.form(b'is'), identity.form(b'is'))
     assert _inside(identity, b'is', b'this') == 1.

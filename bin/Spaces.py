@@ -2503,8 +2503,8 @@ class Codebook(Tensor):
             percept_width = percept_event_width - sum(canonical_shape('PartSpace'))
             if (TheXMLConfig.data_type() == 'embedding'
                     and TheXMLConfig.space('PartSpace', 'identityByParts', default=True)):
-                identity_width = int(TheXMLConfig.space('PartSpace', 'identityPairDim', default=64)) + int(TheXMLConfig.space('PartSpace', 'identityLengthDim', default=32))
-                property_width = int(TheXMLConfig.space('PartSpace', 'propertyDim', default=256))
+                identity_width = int(TheXMLConfig.space('PartSpace', 'identityPairDim', default=64))
+                property_width = int(TheXMLConfig.space('PartSpace', 'propertyDim', default=64))
         if property_width is None:
             property_width = 0
         if identity_width is None:
@@ -10580,20 +10580,20 @@ class PartSpace(Space):
                 promotion_min_length=self.chunk_promotion_min_length,
                 word_bounded=True, basis=self.subspace.what)
             # Standalone dimension fixtures do not construct a full identity
-            # layout. Configured text models reserve D + L before this point.
+            # layout. Configured text models resolve their two halves before
+            # this point.
             if self.nDim >= 33 and TheXMLConfig.space(section, 'identityByParts', default=True):
                 from WordIdentity import WordIdentity
                 pair = int(TheXMLConfig.space(section, 'identityPairDim', default=64))
-                length = int(TheXMLConfig.space(section, 'identityLengthDim', default=32))
-                property_width = int(TheXMLConfig.space(section, 'propertyDim', default=256))
+                property_width = int(TheXMLConfig.space(section, 'propertyDim', default=64))
                 # Small standalone PartSpace fixtures retain their explicit
                 # identity-only layout; resolved text models use both widths.
-                resolved = self.nDim == pair + length + property_width
+                resolved = self.nDim == pair + property_width
                 self.percept_store.identity = WordIdentity(self.percept_store,
-                    pair_dim=pair if resolved else self.nDim-32,
+                    pair_dim=pair if resolved else self.nDim,
                     ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
-                    length_dim=length if resolved else 32,
                     property_width=property_width if resolved else 0,
+                    property_ones=int(TheXMLConfig.space(section, 'propertyOnes', default=3)),
                     basic_capacity=int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=262144)))
             from BasicPercepts import BasicPercepts
             identity = getattr(self.percept_store, 'identity', None)
@@ -20069,14 +20069,14 @@ class WholeSpace(Space):
             basis.replace_W(nn.Parameter(
                 basis.getW().detach().clone(), requires_grad=True))
         from PerceptProperties import PrimitiveProperties
-        identity_width = int(TheXMLConfig.space('PartSpace', 'identityPairDim', default=64)) + int(TheXMLConfig.space('PartSpace', 'identityLengthDim', default=32))
-        property_width = int(TheXMLConfig.space('PartSpace', 'propertyDim', default=256))
+        identity_width = int(TheXMLConfig.space('PartSpace', 'identityPairDim', default=64))
+        property_width = int(TheXMLConfig.space('PartSpace', 'propertyDim', default=64))
         derived = (TheXMLConfig.data_type() == 'embedding'
                    and TheXMLConfig.space('PartSpace', 'identityByParts', default=True)
                    and self.nDim == identity_width + property_width)
         basis.primitive_properties = PrimitiveProperties(
             self.nVectors, property_width=property_width if derived else 0,
-            ones=int(TheXMLConfig.space('PartSpace', 'propertyOnes', default=1)),
+            ones=int(TheXMLConfig.space('PartSpace', 'propertyOnes', default=3)),
             device=basis.getW().device, dtype=basis.getW().dtype)
         for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
             if row < int(self.nVectors):

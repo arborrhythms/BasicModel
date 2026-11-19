@@ -9,7 +9,7 @@ from nomination_fixtures import recurrent_word
 def identity_bank(capacity=512):
     from Layers import RadixLayer
     from WordIdentity import WordIdentity
-    store = RadixLayer(96, initial_cap=capacity)
+    store = RadixLayer(64, initial_cap=capacity)
     store.identity = WordIdentity(store)
     return store.identity
 
@@ -35,7 +35,8 @@ def test_forms_anagrams_length_and_nontrivial_containment():
     assert set(bank.words[b'circus']) != set(bank.words[b'cursic'])
     for n in range(1, 33):
         bank.admit(b'a'*n)
-        assert bank.form(b'a'*n)[64:].tolist() == [0.]*32
+        # No block of lengths: the code is the parts half alone (rule 50).
+        assert bank.form(b'a'*n).shape[-1] == bank.pair_dim == 64
     assert len({bank.key(bank.form(b'a'*n)) for n in range(1, 33)}) == 32
     assert bank.audit()['containment_violations'] == 0
 
@@ -189,7 +190,7 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monk
             obj = owner.interpret.forward(native)
             row = owner._csw_row_of(obj)
             sparse = owner.similarity_codebook.lookup_rows(row)
-            torch.testing.assert_close(sparse[:96],identity.form(word),rtol=0,atol=0)
+            torch.testing.assert_close(sparse[:identity.width],identity.form(word),rtol=0,atol=0)
             dense.append(sparse)
         for layer in [ConjunctionLayer(), DisjunctionLayer()]:
             roots = torch.stack([layer.compose(dense[a],dense[b]) for a,b in [(0,1),(0,3),(2,1),(2,3)]])

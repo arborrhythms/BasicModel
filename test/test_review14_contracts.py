@@ -9,14 +9,14 @@ from test_review13_subspaces import fixture, word
 def towers():
     from Spaces import Codebook
     from PerceptProperties import PrimitiveProperties
-    cs, cb, ps, alloc = fixture(property_width=256)
+    cs, cb, ps, alloc = fixture(property_width=64)
     ws = Codebook()
-    ws.W = nn.Parameter(torch.zeros(2, 259))
-    ws.primitive_properties = PrimitiveProperties(2, property_width=256)
+    ws.W = nn.Parameter(torch.zeros(2, 67))
+    ws.primitive_properties = PrimitiveProperties(2, property_width=64)
     with torch.no_grad():
         ws.primitive_properties.members[0, :3] = torch.tensor([.7,.8,.9])
         ws.primitive_properties.members[1, :3] = torch.tensor([.6,.7,.8])
-    ws.enable_property_codes(identity_width=3, property_width=256)
+    ws.enable_property_codes(identity_width=3, property_width=64)
     ws.begin_forward()
     cs._model.wholeSpace = SimpleNamespace(subspace=SimpleNamespace(what=ws))
     cs.basic_percepts.bind(ws)
@@ -30,9 +30,9 @@ def test_net_evidence_subspaces_and_detached_native_sources():
     upper = ws.W[0, 3:]
     expected = torch.cat((lower, upper))
     result = cb.lookup_rows(row)
-    torch.testing.assert_close(result[:259], expected)
+    torch.testing.assert_close(result[:67], expected)
     assert not result.requires_grad
-    assert not result[259:].any()
+    assert not result[67:].any()
     assert not isinstance(ws.W, nn.Parameter)
     assert ps.W.requires_grad and alloc.layer().features.values.requires_grad
     ws.getW().sum().backward()
@@ -43,7 +43,7 @@ def test_against_alone_is_not_negative_form_and_no_wholes_means_lower():
     cs, cb, ps, ws, alloc = towers()
     row = word(cs, [(4,.5),(7,-.5)])
     torch.testing.assert_close(cb.lookup_rows(row)[:3], ps.W[4, :3])
-    assert cb.lookup_rows(row)[3:259].eq(1).all()
+    assert cb.lookup_rows(row)[3:67].eq(1).all()
 
 
 def test_retired_room_pass_cannot_move_native_wholes():

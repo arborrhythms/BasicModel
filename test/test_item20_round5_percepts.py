@@ -21,7 +21,8 @@ def percepts(capacity=4):
         whole.primitive_properties.members[1, 97] = .7
         whole.primitive_properties.observed[:, 97] = True
     whole.begin_forward()
-    basic = BasicPercepts(NS(_basis=native), 3, 256, capacity)
+    from test_form_subspaces import P
+    basic = BasicPercepts(NS(_basis=native), 3, P, capacity)
     basic.bind(whole)
     return basic, native, whole
 
@@ -107,9 +108,9 @@ def test_recurring_basic_collection_promotes_once_without_an_order_zero_concept(
     from ClauseRow import attach_clause_index
     from MemoryLink import Occurrence
     basic, native, whole = percepts()
-    owner = _cs(nS=64, dim=259)
+    owner = _cs(nS=64, dim=basic.width)
     object.__setattr__(owner, '_basic_percepts', basic)
-    store = STM0(259, capacity=8, percept_width=0, relation_capacity=8192)
+    store = STM0(basic.width, capacity=8, percept_width=0, relation_capacity=8192)
     attach_clause_index(NS(), store, owner)
     owner.concept_mint_count = 3
     row = basic.reserve((0,), (0,), word=10)

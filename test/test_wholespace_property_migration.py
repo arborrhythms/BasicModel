@@ -108,7 +108,10 @@ def test_aligned_model_accepts_unequal_inventory_capacities(tmp_path):
     assert model.concept_binding == "aligned"
     from PartsOfSpeech import operation_names
     from Language import TheGrammar
-    assert model.nConceptCodes == 16 + len(model._concept_owner()._concept_allocator.formal_arguments) + len(operation_names(TheGrammar.rules_upward))
+    from Spaces import ConceptualSpace
+    # The declared seats above order zero: the formal arguments and the
+    # classes of words and objects at one, the operators at two.
+    assert model.nConceptCodes == 16 + len(model._concept_owner()._concept_allocator.formal_arguments) + len(ConceptualSpace.WORD_CLASSES) + len(operation_names(TheGrammar.rules_upward))
     assert model.nSymbols == model.nConceptCodes  # downstream concept refs
     assert model.nWholeProperties == 8
     assert model.nSymbolSlots == 8
@@ -194,7 +197,11 @@ def test_wholespace_owns_one_property_codebook_and_no_concept_store(tmp_path):
     for key, value in state.items():
         if "_owned_bases.what" in key and value.ndim > 0:
             if key == '_owned_bases.what.primitive_properties.byte_bits':
-                assert value.shape == (256, 256)
+                # Every byte is a part of the catalog, in the wholes half.
+                assert value.shape == (256, 64)
+            elif key == '_owned_bases.what.primitive_properties._extra_state':
+                # The record of the rows given by other rows, packed.
+                continue
             else:
                 property_rows.append((key, int(value.shape[0])))
     assert property_rows
@@ -233,9 +240,9 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
 
     # Concepts are opaque codes: no conceptual band, the whole width is
     # the code (2026-09-14).  Symbols are percepts and keep their band.
-    assert cs.subspace.nWhat == 368 and cs.subspace.muxedSize == 368
-    assert ws.subspace.nWhat == 352
-    assert ws.subspace.muxedSize == 360
+    assert cs.subspace.nWhat == 144 and cs.subspace.muxedSize == 144
+    assert ws.subspace.nWhat == 128
+    assert ws.subspace.muxedSize == 136
 
     assert ss.muxedSize == cs.subspace.muxedSize
     assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen

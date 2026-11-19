@@ -521,7 +521,7 @@ def test_nested_wholes():
     from WordIdentity import WordIdentity
     from Meronomy import pin_word_spans
     from constituent_corpus import corpus
-    store = RadixLayer(96, initial_cap=256)
+    store = RadixLayer(64, initial_cap=256)
     identity = WordIdentity(store)
     words = (b'walk',b'walked',b'walking',b'walks',b'cat',b'cats',b'went')
     vocabulary = tuple(sorted({word.encode() for _,text,_,_ in corpus() for word in text['text'].split()}))
@@ -542,7 +542,7 @@ def test_nested_wholes():
     # The record joins no codes: no form changes, walked included.
     assert all(torch.equal(identity.form(word), value) for word,value in before.items())
     # Merely allocating a stem is not witnessing it in a lesson's input.
-    late = WordIdentity(RadixLayer(96))
+    late = WordIdentity(RadixLayer(64))
     late.admit(b'walk')
     with late.nested_lesson('ed'):
         assert not late.observe_nested(b'walked')

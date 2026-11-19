@@ -22,10 +22,11 @@ from torch import nn
 def resolve_identity_layout(config):
     """Resolve text form storage before constructing any spaces.
 
-    Older XML files described a learned letter width. Identity owns an
-    explicit part width plus a block of 32 coordinates that holds nothing
-    for a form. Preserve the declared meaning complement and live slot/row
-    counts; numeric configurations are untouched.
+    A form's code is a parts half and a wholes half (sigma-pi rule 50):
+    ``identityPairDim`` coordinates for the parts, spread over all of them,
+    and ``propertyDim`` for the wholes. Preserve the declared meaning
+    complement and live slot/row counts; numeric configurations are
+    untouched.
     """
     from architecture import canonical_shape
     arch = config.get('architecture', {})
@@ -34,16 +35,17 @@ def resolve_identity_layout(config):
     ps = config.setdefault('PartSpace', {})
     if not ps.get('identityByParts', True):
         return
+    if 'identityLengthDim' in ps:
+        raise ValueError('identityLengthDim is retired: the parts half has no block of 32')
     pair = int(ps.setdefault('identityPairDim', 64))
     ones = int(ps.setdefault('identityOnes', 3))
-    length = int(ps.setdefault('identityLengthDim', 32))
-    property_width = int(ps.setdefault('propertyDim', 256))
-    property_ones = int(ps.setdefault('propertyOnes', 1))
-    if pair < ones or ones < 1 or length != 32:
-        raise ValueError('identity requires D >= s > 0, L = 32')
+    property_width = int(ps.setdefault('propertyDim', 64))
+    property_ones = int(ps.setdefault('propertyOnes', 3))
+    if pair < ones or ones < 1:
+        raise ValueError('identity requires D >= s > 0')
     if not 0 < property_ones <= property_width:
         raise ValueError('property codes require propertyDim >= propertyOnes > 0')
-    width = pair + length + property_width
+    width = pair + property_width
     old_ps = int(ps.get('nDim', 0))
     old_cs = int(config.get('ConceptualSpace', {}).get('nDim', old_ps)) or old_ps
     form_event = width + sum(canonical_shape('PartSpace'))
@@ -107,13 +109,12 @@ class WordIdentity(nn.Module):
     WORD_PREFIX = b'\x00identity/form/'
     SHARED_PREFIX = b'\x00identity/shared/'
 
-    def __init__(self, store, pair_dim=64, ones=3, length_dim=32, property_width=0, basic_capacity=None):
+    def __init__(self, store, pair_dim=64, ones=3, property_width=0, property_ones=3, basic_capacity=None):
         super().__init__()
         object.__setattr__(self, 'store', store)
         self.pair_dim, self.ones = int(pair_dim), int(ones)
-        self.length_dim = int(length_dim)
-        self.width = self.pair_dim + self.length_dim
-        self.property_width = int(property_width)
+        self.width = self.pair_dim
+        self.property_width, self.property_ones = int(property_width), int(property_ones)
         if (store.dim != self.width + self.property_width or self.property_width < 0
                 or not 0 < self.ones <= self.pair_dim):
             raise ValueError('Radix bank width must be identity + property, with 0 < s <= D')
@@ -123,6 +124,10 @@ class WordIdentity(nn.Module):
         self._codes = {}
         self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
         self.word_keys = {}
+        # Each stored form's holders: the stored forms that hold it as a run.
+        self.holders = {}
+        self._atom_rows = {}
+        self._catalog = {}
         # Each added part, with the two forms it told apart (None if taught).
         self.added = {}
         # A form whose row of fixed width is another's: form -> that form.
@@ -140,7 +145,7 @@ class WordIdentity(nn.Module):
             basis.register_buffer('fixed_row_codes', torch.zeros_like(basis.W, requires_grad=False))
 
     def atom_code(self, atom, bits=None):
-        """A part's fixed bits in the part block; the length block stays empty."""
+        """A part's fixed bits, drawn over every coordinate of the parts half."""
         if bits is None and atom in self._codes:
             return self._codes[atom]
         _kind, value = atom
@@ -150,6 +155,69 @@ class WordIdentity(nn.Module):
         if bits is None:
             self._codes[atom] = result
         return result
+
+    def catalog_code(self, atom):
+        """A part's code in the wholes half: the catalog drawn a second time
+        in that half's own coordinates. A character's is its byte's in the
+        table of wholes; a part given more bits in the parts half is given
+        as many more here."""
+        n = self.property_ones + self.bits.get(atom, self.ones) - self.ones
+        key = (atom, n)
+        if key not in self._catalog:
+            from PerceptProperties import catalog_coordinates
+            result = torch.zeros(self.property_width)
+            result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, n))] = 1
+            self._catalog[key] = result
+        return self._catalog[key]
+
+    def tightest(self, rows):
+        """The tightest whole of the form whose parts are these store rows:
+        the OR of their catalog codes in the wholes half. ``None`` where a
+        row is no part or form of this catalog."""
+        if not self.property_width:
+            return None
+        key = (tuple(map(int, rows)), self.revision, len(self.added), len(self.atoms), len(self.word_rows))
+        if key in self._catalog:
+            return self._catalog[key]
+        if len(self._atom_rows) != len(self.atoms) + len(self.word_rows):
+            self._atom_rows = {row: (atom,) for atom, row in self.atoms.items()}
+            self._atom_rows.update({row: raw for raw, row in self.word_rows.items()})
+        codes = []
+        for row in map(int, rows):
+            held = self._atom_rows.get(row)
+            if held is None:
+                return None
+            atoms = held if isinstance(held, tuple) else self.part_atoms(held)
+            codes.extend(self.catalog_code(atom) for atom in atoms)
+        result = torch.stack(codes).amax(0) if codes else None
+        self._catalog[key] = result
+        return result
+
+    def _hold(self, raw):
+        """Record a new stored form among the holders: of each stored form
+        it holds as a run, and of itself those stored forms that hold it."""
+        text = bytes(raw)
+        self.holders[text] = {word for word in self.words if word != text and text in word}
+        for size in range(1, len(text)):
+            for start in range(len(text) - size + 1):
+                run = text[start:start + size]
+                if run in self.holders:
+                    self.holders[run].add(text)
+
+    def nearest_holders(self, raw):
+        """The nearest of a form's holders: those that add the fewest
+        characters to it."""
+        holders = self.holders.get(bytes(raw), ())
+        if not holders:
+            return ()
+        least = min(map(len, holders))
+        return tuple(sorted(h for h in holders if len(h) == least))
+
+    def against_atoms(self, raw):
+        """The parts that a form's nearest holders add to it."""
+        own = set(self.words.get(bytes(raw), ()))
+        return tuple(sorted({atom for holder in self.nearest_holders(raw)
+                             for atom in self.words[holder] if atom not in own}))
 
     def atoms_of(self, raw):
         """The parts of a form: its characters and the added parts inside it."""
@@ -336,6 +404,7 @@ class WordIdentity(nn.Module):
             raise ValueError('a word identity requires nonempty bytes')
         if raw not in self.words:
             self.words[raw] = self.atoms_of(raw)
+            self._hold(raw)
             for atom in self.words[raw]:
                 self._atom(atom)
             self._settle([raw])
@@ -451,6 +520,14 @@ class WordIdentity(nn.Module):
         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}
         self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})
         self._property_revision = None
+        self._atom_rows, self._catalog = {}, {}
+        self.holders = {word: set() for word in self.words}
+        for word in self.words:
+            for size in range(1, len(word)):
+                for start in range(len(word) - size + 1):
+                    run = word[start:start + size]
+                    if run in self.holders:
+                        self.holders[run].add(word)
         self._reindex()
 
     def audit(self):
@@ -466,7 +543,7 @@ class WordIdentity(nn.Module):
             supersets = lists[0].intersection(*lists[1:])
             comparable.extend((word, other) for other in sorted(supersets) if other != word)
         return dict(vocabulary=[text_of(w) for w in words], pair_dim=self.pair_dim,
-            length_dim=self.length_dim, ones=self.ones,
+            ones=self.ones,
             collisions=len(words)-len({self.key(v) for v in forms.values()}),
             containment_pairs=[(text_of(a), text_of(b)) for a, b in comparable],
             containment_violations=sum(bool((forms[a] > forms[b]).any()) for a,b in comparable),

@@ -67,6 +67,21 @@ class _PropertySupportRead(torch.autograd.Function):
         return (torch.cat(chunks, 0) if chunks else torch.zeros_like(weights)), None, None
 
 
+#: The prefix that draws the catalog a second time for the wholes half.
+CATALOG_PREFIX = b'\x00whole-basis/'
+
+
+def catalog_coordinates(part, width, ones):
+    """A catalog part's coordinates in the wholes half: the part drawn a
+    second time, apart from its coordinates in the parts half."""
+    from WordIdentity import bit_stream
+    return bit_stream(CATALOG_PREFIX + bytes(part), int(width))[:int(ones)]
+
+
+#: The row of the table of wholes for the class of all characters.
+TOP = -1
+
+
 class PrimitiveProperties(nn.Module):
     """One bounded coefficient per property and byte, with no tag reader.
 
@@ -76,7 +91,7 @@ class PrimitiveProperties(nn.Module):
     subsequently refine the same coefficients.
     """
 
-    def __init__(self, rows, *, property_width=0, ones=1, device=None, dtype=None):
+    def __init__(self, rows, *, property_width=0, ones=3, device=None, dtype=None):
         super().__init__()
         self.property_width, self.ones = int(property_width), int(ones)
         if self.property_width < 0 or self.ones < 1 or (self.property_width and self.ones > self.property_width):
@@ -87,18 +102,21 @@ class PrimitiveProperties(nn.Module):
         self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
         self.register_buffer('fixed_rows', torch.zeros(int(rows), device=device, dtype=torch.bool))
         self.register_buffer('fixed_members', torch.zeros(int(rows), 256, device=device, dtype=dtype))
-        # Alec's 256/1 layout is the exact byte extension. Smaller configured
-        # layouts use the same deterministic bit stream as identity atoms.
+        # Every byte is a part of the catalog, drawn a second time in the
+        # wholes half's own coordinates (sigma-pi rule 52); a property's code
+        # is the OR of its member bytes' codes, and all bytes OR'ed are the top.
         bits = torch.zeros(256, self.property_width, device=device, dtype=dtype)
-        if self.property_width == 256 and self.ones == 1:
-            bits.fill_diagonal_(1)
-        elif self.property_width:
-            from WordIdentity import bit_stream
+        if self.property_width:
             for byte in range(256):
-                bits[byte, list(bit_stream(bytes([byte]), self.property_width)[:self.ones])] = 1
+                bits[byte, list(catalog_coordinates(bytes([byte]), self.property_width, self.ones))] = 1
+        if self.property_width and not bool(bits.amax(0).eq(1).all()):
+            raise ValueError('the catalog must cover the wholes half: its OR is the class of all characters')
         self.register_buffer('byte_bits', bits, persistent=bool(self.property_width))
         self._byte_columns = tuple(tuple(bits[:, i].nonzero().flatten().cpu().tolist())
                                    for i in range(self.property_width))
+        # A row given by other rows of the table: row -> those rows. Its code
+        # is the AND of theirs, and it holds of a byte as far as all of them do.
+        self.given_by = {}
         self._revision = 0
         self._revision_versions = self._member_versions()
 
@@ -116,14 +134,88 @@ class PrimitiveProperties(nn.Module):
         return self._revision
 
     def codes(self, rows=None):
-        """Weighted byte union, without a rows-by-bytes-by-width workspace."""
-        weights = self.coefficients(rows)
-        if self.property_width == 256 and self.ones == 1:
-            return weights
+        """Each row's code in the wholes half. A row given by catalog parts
+        is the OR of its member bytes' codes, weighted, without a
+        rows-by-bytes-by-width workspace; a row given by other rows is the
+        AND of their codes."""
+        if self.given_by:
+            every = self._union_codes(self.coefficients())
+            every = self._given_codes(every)
+            return every if rows is None else every.index_select(0, rows)
+        return self._union_codes(self.coefficients(rows))
+
+    def _union_codes(self, weights):
         if not self.property_width:
             return weights[:, :0]
         return torch.stack([weights[:, list(ids)].amax(-1) if ids else
                             weights.sum(-1) * 0 for ids in self._byte_columns], -1)
+
+    def _given_codes(self, values):
+        """Replace each row given by other rows with the AND (the least) of
+        theirs, the rows it is given by first."""
+        done, out = {}, list(values.unbind(0))
+        def resolve(row, seen=()):
+            if row in done:
+                return done[row]
+            if row in seen:
+                raise ValueError('a row of the table of wholes is given by itself')
+            if row in self.given_by:
+                done[row] = torch.stack([resolve(other, (*seen, row)) for other in self.given_by[row]]).amin(0)
+            else:
+                done[row] = out[row]
+            return done[row]
+        for row in self.given_by:
+            out[row] = resolve(row)
+        return torch.stack(out)
+
+    @torch.no_grad()
+    def define_by_rows(self, row, rows):
+        """Give a row of the table by other rows of it (\"capital letter\" by
+        \"letter\" and \"capital\"): its code is the AND of theirs, so it lies
+        at or below each."""
+        rows = tuple(sorted(dict.fromkeys(map(int, rows))))
+        if int(row) in rows or not rows or not all(0 <= r < len(self.members) for r in rows):
+            raise ValueError('a row of the table is given by two or more other rows of it')
+        self.given_by[int(row)] = rows
+        self.members[row].copy_(self.coefficients()[list(rows)].amin(0))
+        self.observed[row] = self.observed[list(rows)].all(0)
+        self._revision += 1
+
+    def get_extra_state(self):
+        from IndependentComponents import _pack_state
+        return _pack_state(dict(given_by=tuple(self.given_by.items())))
+
+    def set_extra_state(self, state):
+        from IndependentComponents import _unpack_state
+        self.given_by = {int(k): tuple(v) for k, v in _unpack_state(state).get('given_by', ())}
+
+    def top(self):
+        """The code of the class of all characters, the row ``TOP`` of the
+        table of wholes: every byte belongs to it, so it is the OR of the
+        whole catalog, all ones."""
+        return self.byte_bits.amax(0)
+
+    def directly_inside(self):
+        """Each whole of the table with the wholes directly inside it.
+
+        The table is the class of all characters (``TOP``) and every row that
+        holds of some byte. One whole lies inside another when it holds of no
+        byte more than the other does and of some byte less; it lies directly
+        inside where no whole lies between. Wholes over one set of bytes are
+        one level, inside neither."""
+        revision = self.revision
+        cached = getattr(self, '_inside', None)
+        if cached is not None and cached[0] == revision:
+            return cached[1]
+        members = self.coefficients().detach()
+        sets = {TOP: torch.ones_like(members[0]) if len(members) else members.new_ones(256)}
+        sets.update({row: members[row] for row in range(len(members)) if bool(members[row].gt(0).any())})
+        below = {a: [b for b in sets if b != a and bool((sets[b] <= sets[a]).all())
+                     and bool((sets[b] < sets[a]).any())] for a in sets}
+        result = {a: tuple(b for b in inner if not any(b in below[c] for c in inner))
+                  for a, inner in below.items()}
+        self._inside = (revision, result)
+        return result
 
     def fill(self, raw):
         """Soft meet of the types holding over a part's own byte multiset."""
@@ -146,6 +238,19 @@ class PrimitiveProperties(nn.Module):
         self.observed[row]=True
 
     def coefficients(self, rows=None):
+        if self.given_by:
+            every = self._coefficients()
+            done = {}
+            def resolve(row):
+                if row not in done:
+                    done[row] = (torch.stack([resolve(o) for o in self.given_by[row]]).amin(0)
+                                 if row in self.given_by else every[row])
+                return done[row]
+            every = torch.stack([resolve(r) if r in self.given_by else every[r] for r in range(len(every))])
+            return every if rows is None else every.index_select(0, rows)
+        return self._coefficients(rows)
+
+    def _coefficients(self, rows=None):
         # Projection constrains storage after the optimizer step. The read
         # uses an STE at the rails: clamp's zero boundary derivative would
         # freeze an a-priori 0/1 definition against all later evidence.

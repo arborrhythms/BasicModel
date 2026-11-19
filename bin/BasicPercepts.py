@@ -19,7 +19,10 @@ class BasicPercepts(nn.Module):
         self.width = self.identity_width + self.property_width
         object.__setattr__(self, 'native', native)
         object.__setattr__(self, 'whole', None)
+        # A percept's code is two lanes, each within 0 to 1: the for lane in
+        # ``codes`` and the against lane in ``against_codes``.
         self.register_buffer('codes', torch.zeros(self.capacity, self.width))
+        self.register_buffer('against_codes', torch.zeros(self.capacity, self.width))
         self.register_buffer('promoted', torch.zeros(self.capacity, dtype=torch.bool))
         self.register_buffer('count', torch.zeros((), dtype=torch.long))
         # A reserved address can read its occurrence's own parts/wholes before
@@ -164,7 +167,19 @@ class BasicPercepts(nn.Module):
         return tuple(row for row in self.index.values()
                      if set(features) <= set(self.occurrences[row][1]))
 
+    def _tightest(self, parts):
+        """The form's own tightest whole, from the catalog of its parts, or
+        ``None`` where its parts are no form's of the catalog."""
+        identity = getattr(self.native, 'identity', None)
+        if identity is None or min(parts) < -self.identity_width:
+            return None
+        return identity.tightest(parts)
+
     def subspace_bounds(self, row):
+        """The parts half, the greatest of its parts' codes; the wholes half,
+        the least of its wholes' codes: the class of all characters (all
+        ones), the classes it lies in, and the form itself as its tightest
+        whole."""
         parts, wholes = self.occurrences[int(row)]
         ids = torch.tensor(parts, device=self.codes.device, dtype=torch.long)
         identity = self.part_codes(ids).amax(0)
@@ -177,7 +192,60 @@ class BasicPercepts(nn.Module):
             properties = self.whole_codes(ids).amin(0)
         else:
             properties = identity.new_ones(self.property_width)
+        tightest = self._tightest(parts)
+        if tightest is not None:
+            properties = torch.minimum(properties, tightest.to(properties))
         return identity, properties
+
+    def _form_of(self, parts):
+        identity = getattr(self.native, 'identity', None)
+        if identity is None or min(parts) < -self.identity_width:
+            return None
+        try:
+            return identity.spelling(parts)
+        except (IndexError, KeyError):
+            return None
+
+    def against(self, row):
+        """A percept's against lane, as wide as its code.
+
+        Parts half: the parts that the form's nearest holders add, the
+        stored forms that hold it as a run. Wholes half: the codes of the
+        wholes directly inside those it lies in (the class of all characters
+        among them) that it does not lie in. Where a coordinate is also on
+        the for lane, for stands. A value percept and a conjunction have
+        nothing on it. A coordinate holds no more against than the for
+        lane leaves of it, ``1 - for``."""
+        if not 0 <= int(row) < len(self.index):
+            raise ValueError('unavailable basic percept reference')
+        code = self.code(row)
+        result = torch.zeros_like(code)
+        if int(row) in self.conjunctions:
+            return result
+        parts, wholes = self.occurrences[int(row)]
+        if min(parts) < -self.identity_width:
+            return result
+        identity = getattr(self.native, 'identity', None)
+        raw = self._form_of(parts)
+        if identity is not None and raw is not None:
+            atoms = identity.against_atoms(raw)
+            if atoms:
+                bits = torch.stack([identity.atom_code(atom) for atom in atoms]).amax(0)
+                result[:self.identity_width] = bits.to(result)
+        properties = getattr(self.whole, 'primitive_properties', None)
+        if self.property_width and properties is not None and properties.property_width:
+            from PerceptProperties import TOP
+            inside = properties.directly_inside()
+            applies = {TOP, *map(int, wholes)}
+            witnessed = sorted({b for a in applies for b in inside.get(a, ()) if b not in applies})
+            if witnessed:
+                ids = torch.tensor(witnessed, device=self.codes.device, dtype=torch.long)
+                result[self.identity_width:] = self.whole_codes(ids).amax(0).detach().to(result)
+        return torch.minimum(result, 1 - code.detach().clamp(0, 1))
+
+    def lanes(self, row):
+        """A percept's two lanes, ``[2, width]``: for, then against."""
+        return torch.stack((self.code(row), self.against(row)))
 
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
@@ -196,6 +264,7 @@ class BasicPercepts(nn.Module):
         row = int(row)
         if not self.promoted[row]:
             self.codes[row].copy_(self.code(row))
+            self.against_codes[row].copy_(self.against(row))
             self.promoted[row] = True
             self.count += 1
             self.revision += 1
@@ -458,6 +527,11 @@ class BasicPercepts(nn.Module):
             warnings.warn('retired scalar sidecar cannot supply perceptual witnesses; relearn its definitions')
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        codes = state.get(prefix+'codes')
+        if codes is not None and codes.shape[-1] != self.width:
+            raise ValueError(f'a basic percept code of this layout is {self.identity_width} parts and '
+                             f'{self.property_width} wholes wide on each of two lanes; the checkpoint\'s '
+                             f'is {codes.shape[-1]} wide on one lane')
         # Older checkpoints did not yet have value-bearing native endpoints.
         state.setdefault(prefix+'value_codes', torch.zeros_like(self.value_codes))
         state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))

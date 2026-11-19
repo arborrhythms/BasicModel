@@ -32,7 +32,7 @@ def allocation_plan(config, output):
         raise ValueError('this allocation plan requires the aligned serial corpus architecture')
     capacity, stages = cfg['SymbolSpace']['ltmCapacity'], max(1, arch['bindingDepth'])
     count, parts, wholes = cs['nVectors'], ps['nVectors'], ws['nVectors']
-    form = ps['identityPairDim'] + ps['identityLengthDim'] + ps['propertyDim']
+    form = ps['identityPairDim'] + ps['propertyDim']
     blocks = count * ((parts + 31)//32 + (wholes + 31)//32)
     bridge_capacity = int(cs.get('primingBridgeCapacity', 0) or 0)
     if bridge_capacity:
@@ -106,10 +106,10 @@ def measure(config, forms, output):
     cfg = TheXMLConfig.data
     resolve_identity_layout(cfg)
     ps, ws = cfg['PartSpace'], cfg['WholeSpace']
-    width = ps['identityPairDim'] + ps['identityLengthDim'] + ps['propertyDim']
+    width = ps['identityPairDim'] + ps['propertyDim']
     store = RadixLayer(width, initial_cap=ps['nVectors'], word_bounded=True)
     bank = WordIdentity(store, pair_dim=ps['identityPairDim'], ones=ps['identityOnes'],
-                        length_dim=ps['identityLengthDim'], property_width=ps['propertyDim'])
+                        property_width=ps['propertyDim'], property_ones=ps['propertyOnes'])
     store.identity = bank
     whole = WholeSpace([ws['nInput'], ws['nInputDim']],
                        [ws['nVectors'], ws['nDim'] - sum(canonical_shape('WholeSpace'))],

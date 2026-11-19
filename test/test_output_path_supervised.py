@@ -141,15 +141,15 @@ def test_output_path_memorizes_supervised_labels_on_the_serial_topology(serial_s
 
 
 _NATIVE_CONCEPT_WIDTHS = [
-    pytest.param(488, id="development"),
-    pytest.param(1256, id="production", marks=pytest.mark.slow),
+    pytest.param(264, id="development"),
+    pytest.param(1032, id="production", marks=pytest.mark.slow),
 ]
 
 
-def _native_answer_model(tmp_path, output_loop, *, concept_width=488, answer_synthesis=True):
+def _native_answer_model(tmp_path, output_loop, *, concept_width=264, answer_synthesis=True):
     """Distinct concept/percept widths; production width is an explicit slow case."""
     from test_meronomy_ladder import _build_ladder_variant
-    if concept_width <= 360:
+    if concept_width <= 136:
         raise ValueError("native fixture requires concepts wider than percepts")
     src = (_DATA / "MM_ladder.xml").read_text()
     def block(name):
@@ -157,10 +157,10 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=488, answer_syn
         end = src.index("</" + name + ">", start) + len(name) + 3
         return src[start:end]
     cs, ws, output = block("ConceptualSpace"), block("WholeSpace"), block("OutputSpace")
-    # The legacy fixture declares a 136-wide native face. Configuration
-    # Resolution adds the 256-coordinate property subspace and retains the
-    # original meaning complement (128 development, 896 production).
-    declared_width = concept_width - 360 + 136
+    # The fixture declares a 136-wide native face, the resolved percept
+    # event (64 + 64 + 8); resolution retains the meaning complement (128
+    # development, 896 production).
+    declared_width = concept_width
     native_cs = cs
     for tag in ("nInputDim", "nDim", "nOutputDim"):
         native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{declared_width}</{tag}>")
@@ -178,7 +178,7 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=488, answer_syn
     m._chart_compose_per_word = lambda: None
     m.synthesis_bindings = 0  # named percepts must not hide a dead answer operand
     assert m.answer_synthesis is answer_synthesis and m.output_in_loop is output_loop
-    assert m.wholeSpace.subspace.muxedSize == 360
+    assert m.wholeSpace.subspace.muxedSize == 136
     assert m.conceptualSpace.stm.concept_dim == concept_width
     return m
 

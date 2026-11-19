@@ -9,22 +9,32 @@ import pytest
 import torch
 from torch import nn
 
-from PerceptProperties import PrimitiveProperties
+from PerceptProperties import PrimitiveProperties, catalog_coordinates
 from WordIdentity import WordIdentity, resolve_identity_layout
+
+#: The wholes half (sigma-pi rule 50): 64 coordinates, a byte at 3 of them.
+P = 64
+
+
+def at(byte, *others):
+    """A coordinate of ``byte``'s catalog code that no byte of ``others``
+    holds, in the wholes half."""
+    taken = {c for other in others for c in catalog_coordinates(bytes([other]), P, 3)}
+    return next(c for c in catalog_coordinates(bytes([byte]), P, 3) if c not in taken)
 
 
 def property_book(rows=4, identity=3, band=0):
     from Spaces import Codebook
     book = Codebook()
-    book.W = nn.Parameter(torch.zeros(rows, identity + 256 + band))
-    book.primitive_properties = PrimitiveProperties(rows, property_width=256)
-    book.enable_property_codes(identity_width=identity, property_width=256)
+    book.W = nn.Parameter(torch.zeros(rows, identity + P + band))
+    book.primitive_properties = PrimitiveProperties(rows, property_width=P)
+    book.enable_property_codes(identity_width=identity, property_width=P)
     return book
 
 
 def extended_fixture():
     from test_review13_subspaces import fixture, word
-    cs, cb, ps, alloc = fixture(property_width=256)
+    cs, cb, ps, alloc = fixture(property_width=P)
     ws = property_book(4)
     with torch.no_grad():
         ws.primitive_properties.members[0, [97, 98]] = 1
@@ -35,7 +45,7 @@ def extended_fixture():
     ws.begin_forward()
     cs._model.wholeSpace = NS(subspace=NS(what=ws))
     from BasicPercepts import BasicPercepts
-    basic = BasicPercepts(NS(_basis=ps), 3, 256, 64)
+    basic = BasicPercepts(NS(_basis=ps), 3, P, 64)
     basic.bind(ws)
     object.__setattr__(cs, '_basic_percepts', basic)
     a, b = word(cs, [(4, 1.)], (0, 1)), word(cs, [(4, 1.), (7, 1.)], (1,))
@@ -46,11 +56,11 @@ def test_construction_resolves_the_split_and_preserves_numeric_layout():
     config = {'architecture': {'data': {'dataType': 'embedding'}},
               'PartSpace': {'nDim': 9}, 'ConceptualSpace': {'nDim': 137}}
     resolve_identity_layout(config)
-    assert config['PartSpace']['propertyDim'] == 256
-    assert config['PartSpace']['propertyOnes'] == 1
+    assert config['PartSpace']['propertyDim'] == 64
+    assert config['PartSpace']['propertyOnes'] == 3
     for name in ('InputSpace', 'PartSpace', 'WholeSpace'):
-        assert config[name]['nDim'] == 96 + 256 + 8
-    assert config['ConceptualSpace']['nDim'] == 96 + 256 + 8 + 128
+        assert config[name]['nDim'] == 64 + 64 + 8
+    assert config['ConceptualSpace']['nDim'] == 64 + 64 + 8 + 128
     first = copy.deepcopy(config)
     resolve_identity_layout(config)
     assert config == first
@@ -68,19 +78,23 @@ def test_invalid_property_construction_fails_loud(width, ones):
                                  'PartSpace': {'propertyDim': width, 'propertyOnes': ones}})
 
 
-def test_exact_byte_union_is_monotone_and_differentiable_for_weighted_members():
-    properties = PrimitiveProperties(4, property_width=256)
+def test_catalog_byte_union_is_monotone_and_differentiable_for_weighted_members():
+    properties = PrimitiveProperties(4, property_width=P, ones=3)
     with torch.no_grad():
         properties.members[0, 97] = .2
         properties.members[1, 97:99] = torch.tensor([.4, .3])
         properties.members[2, 97:100] = torch.tensor([.6, .5, .4])
         properties.members[3, 97:101] = torch.tensor([.8, .7, .6, .5])
-    torch.testing.assert_close(properties.byte_bits, torch.eye(256), rtol=0, atol=0)
+    # Every byte is a part of the catalog with 3 coordinates of the wholes
+    # half; a property's code is the OR (greatest) of its members' codes.
+    assert properties.byte_bits.sum(1).eq(3).all()
     codes = properties.codes()
-    torch.testing.assert_close(codes, properties.members)
+    direct = (properties.members[:, :, None] * properties.byte_bits).amax(1)
+    torch.testing.assert_close(codes, direct)
     assert (codes[:-1] <= codes[1:]).all()
-    codes[:, 97:101].sum().backward()
-    assert properties.members.grad[:, 97:101].eq(1).all()
+    columns = sorted({c for byte in range(97, 101) for c in catalog_coordinates(bytes([byte]), P, 3)})
+    codes[:, columns].sum().backward()
+    assert properties.members.grad[:, 97:101].gt(0).any(0).all()
     torch.testing.assert_close(properties.codes(torch.tensor([1, 3])), codes[[1, 3]])
 
 
@@ -102,49 +116,51 @@ def test_tower1_refresh_preserves_storage_and_routes_gradient_to_members():
     book.begin_forward()
     assert book.W.data_ptr() == pointer and not isinstance(book.W, nn.Parameter)
     torch.testing.assert_close(book.W, torch.cat((torch.ones(4, 3), properties.codes(), torch.zeros(4, 8)), -1))
-    book.lookup_rows(0)[3 + 97].backward()
+    book.lookup_rows(0)[3 + at(97, 98)].backward()
     assert properties.members.grad[0, 97] == 1
     properties.members.grad = None
     book.begin_forward()
-    book.getW()[:, 3 + 98].sum().backward()
-    assert properties.members.grad[:, 98].eq(1).all()
+    book.getW()[:, 3 + at(98, 97)].sum().backward()
+    # Row 0 holds 98 alone at its coordinate; an untaught row's zero members
+    # tie there and share the derivative.
+    assert properties.members.grad[0, 98] == 1 and properties.members.grad[:, 98].gt(0).all()
     assert book.W.data_ptr() == pointer
     revision = properties.revision
     with torch.no_grad():
         properties.members[0, 97] = .75
     assert properties.revision > revision
     book.begin_forward()
-    assert book.W[0, 3 + 97] == .75
+    assert book.W[0, 3 + at(97, 98)] == .75
 
 
 def test_retired_property_fills_leave_live_basic_percept_reads():
     from Spaces import Codebook
     basis = Codebook()
-    basis.W = nn.Parameter(torch.zeros(4, 352))
-    identity = WordIdentity(NS(dim=352, _capacity=4, _basis=basis), property_width=256)
+    basis.W = nn.Parameter(torch.zeros(4, 128))
+    identity = WordIdentity(NS(dim=128, _capacity=4, _basis=basis), property_width=P)
     atom = ('part', 'a')
     identity.atoms[atom] = 0
     identity.words.update({b'a': (atom,), b'z': (('part', 'z'),)})
     identity.word_rows.update({b'a': 1, b'z': 2})
     identity.atoms[('part', 'z')] = 3
-    properties = PrimitiveProperties(2, property_width=256)
+    properties = PrimitiveProperties(2, property_width=P)
     properties.teach(0, [97, 98], [1., 1.], steps=1, rate=1.)
     pointers = basis.W.data_ptr(), basis.fixed_row_codes.data_ptr()
     identity.refresh_property_fills(properties)
-    assert not basis.W[:, 96:].any()
-    identity.basic.bind(NS(lookup_rows=lambda rows: torch.cat((torch.ones(2, 96), properties.codes()), -1)[rows]))
+    assert not basis.W[:, 64:].any()
+    identity.basic.bind(NS(lookup_rows=lambda rows: torch.cat((torch.ones(2, 64), properties.codes()), -1)[rows]))
     row = identity.basic.reserve((0,), (0,), word=10)
-    torch.testing.assert_close(identity.basic.code(row)[96:], properties.codes()[0])
-    before = basis.W[:, :96].detach().clone()
+    torch.testing.assert_close(identity.basic.code(row)[64:], properties.codes()[0])
+    before = basis.W[:, :64].detach().clone()
     revision = properties.revision
     properties.teach(1, [97, 99], [.5, .8], steps=1, rate=1.)
     assert properties.revision > revision
     identity.refresh_property_fills()
     p = properties.on_counts(torch.nn.functional.one_hot(torch.tensor(97), 256).float())
     expected = (1-p[:, None]*(1-properties.codes())).amin(0)
-    assert not basis.W[:, 96:].any()
-    torch.testing.assert_close(identity.basic.code(row)[96:], properties.codes()[0])
-    torch.testing.assert_close(basis.W[:, :96], before, rtol=0, atol=0)
+    assert not basis.W[:, 64:].any()
+    torch.testing.assert_close(identity.basic.code(row)[64:], properties.codes()[0])
+    torch.testing.assert_close(basis.W[:, :64], before, rtol=0, atol=0)
     assert pointers == (basis.W.data_ptr(), basis.fixed_row_codes.data_ptr())
 
 
@@ -260,8 +276,8 @@ def test_basic_certificate_allows_ties_and_imposes_no_part_type_order():
         ps.W[8].copy_(ps.W[4])
     ws.begin_forward()
     # A soft meet need not be contained in every selected type.
-    assert properties.fill(b'a')[97] == .75
-    assert properties.codes()[0, 97] == .5
+    assert properties.fill(b'a')[at(97)] == .75
+    assert properties.codes()[0, at(97)] == .5
     report = cb.mereology.containment_audit()
     assert report['tower1']['pairs'] == 3
     assert report['premises'] == 'basic_percepts'
@@ -325,8 +341,8 @@ def test_checkpoint_rejects_a_different_subspace_layout():
     from MereologicalCodes import MereologicalCodes
     _, cb, _, _, _, _, _ = extended_fixture()
     saved = cb.mereology.state_dict()
-    target = MereologicalCodes(cb.mereology.owner, cb.W, percept_width=259,
-                               percept_event_width=259, identity_width=4, property_width=255)
+    target = MereologicalCodes(cb.mereology.owner, cb.W, percept_width=3 + P,
+                               percept_event_width=3 + P, identity_width=4, property_width=P - 1)
     with pytest.raises(ValueError, match='subspaces'):
         target.load_state_dict(saved)
     old = {key: value for key, value in saved.items() if key != '_form_layout'}
@@ -344,19 +360,21 @@ def test_cost_certificate_has_no_pairwise_or_three_axis_union_workspace():
             result = func(*args, **(kwargs or {}))
             self.shapes.extend(list(t.shape) for t in tree_flatten(result)[0] if torch.is_tensor(t))
             return result
-    book = property_book(rows=17)
-    hashed = PrimitiveProperties(17, property_width=7, ones=2)
+    # 37 rows: a coordinate of the catalog holds 2 to 21 bytes, so no
+    # rows-by-bytes slice of the union is square by coincidence.
+    book = property_book(rows=37)
+    hashed = PrimitiveProperties(37, property_width=7, ones=2)
     allocation = Allocations()
     with allocation:
         book.begin_forward()
         book.primitive_properties.fill(b'ab')
         hashed.codes()
-    assert [17, 17] not in allocation.shapes
+    assert [37, 37] not in allocation.shapes
     assert all(len(s) < 3 for s in allocation.shapes), allocation.shapes
     receipt = os.environ.get('ITEM28_RECEIPT')
     if receipt:
         Path(receipt, 'cost-certificate.json').write_text(json.dumps(dict(
-            rows=17, property_width=256, allocations=allocation.shapes,
+            rows=37, property_width=P, allocations=allocation.shapes,
             pairwise_tensor=False, rows_bytes_width_tensor=False), indent=2)+'\n')
 
 
@@ -365,8 +383,11 @@ def test_native_lesson_certificate(tmp_path, monkeypatch, eager_reading):
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1, word_buckets='16')
     try:
         identity = model.perceptualSpace.percept_store.identity
+        # The forms are words from the reading in which MTM nominates them.
         with identity.nested_lesson('s'):
-            model.forward(model.inputSpace.prepInput(['cat cats']))
+            for _ in range(model._concept_owner().concept_mint_count):
+                model.forward(model.inputSpace.prepInput(['cat cats']))
+                model.End()
         cb = model._concept_owner().similarity_codebook
         report = cb.mereology.containment_audit()
         for group in ('tower0', 'tower1', 'cross', 'order0'):

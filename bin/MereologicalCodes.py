@@ -247,7 +247,11 @@ class MereologicalCodes(nn.Module):
         if self.property_width:
             layout = state.get(prefix+'_form_layout')
             if layout is None or not torch.equal(layout.to(self._form_layout), self._form_layout):
-                raise ValueError('checkpoint form subspaces differ from the constructed layout')
+                saved = 'none' if layout is None else 'x'.join(map(str, layout.tolist()))
+                raise ValueError('checkpoint form subspaces differ from the constructed layout: '
+                                 f'the checkpoint has parts, wholes and event {saved}, this model '
+                                 f"{'x'.join(map(str, self._form_layout.tolist()))}; a code is "
+                                 'two halves of 64 on two lanes and is not converted')
         if int(state.get(prefix+'placement_version', -1)) not in (1, 2):
             raise ValueError('placement checkpoint version 1 or 2 is required')
         for name in ('placement', 'placement_witnesses', 'placement_keys', 'placement_keyed'):
