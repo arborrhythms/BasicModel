@@ -403,14 +403,12 @@ def test_normal_input_stages_greedy_and_defers_comparison_to_sentence(monkeypatc
  import ModelAttention
  model,_,_=_fresh_model('data/MM_text.xml'); model.train()
  calls=[]; versions=[]
- # A read with no sentence interprets at its looks (interpret_words);
- # the greedy walk is still staged once and compared in the sentence.
- original=ModelAttention.interpret_words
+ original=ModelAttention.narrow_words
  def traced(*args,**kwargs):
   calls.append('explore' if kwargs.get('exploit') is not None else 'greedy')
   versions.append(tuple(p._version for p in model._stm_reducer().parameters()))
   return original(*args,**kwargs)
- monkeypatch.setattr(ModelAttention,'interpret_words',traced)
+ monkeypatch.setattr(ModelAttention,'narrow_words',traced)
  value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
  model._lex_embed_stem(value)
  assert calls==['greedy'], calls
@@ -547,8 +545,7 @@ def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypa
     import ModelAttention
     model, _, _ = _fresh_model('data/MM_text.xml')
     model.eval()
-    # The stem's read with no sentence interprets at its looks.
-    original = ModelAttention.interpret_words
+    original = ModelAttention.narrow_words
     calls = []
     def bounded(chooser, keys, spans, known, **kwargs):
         calls.append(keys.shape[1])
@@ -570,7 +567,7 @@ def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypa
         torch.testing.assert_close(actual.values, reference.values[:, :3])
         torch.testing.assert_close(actual.accepted, reference.accepted[:, :3])
         return actual
-    monkeypatch.setattr(ModelAttention, 'interpret_words', bounded)
+    monkeypatch.setattr(ModelAttention, 'narrow_words', bounded)
     with torch.no_grad():
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
     assert calls == [3]
