@@ -4,7 +4,7 @@
 
 - **Python 3.12** with a virtual environment at `.venv/`
 - **PyTorch** with MPS (Apple Silicon) or CUDA
-- PDF generation (`make doc`) needs nothing beyond `requirements.txt`: the chapters are converted by `md2typst`, their math by `tylax`, and the PDF is written by `typst`. No pandoc and no TeX installation. The one Mermaid diagram is drawn by a Typst package that `typst` downloads on the first build.
+- PDF generation (`make doc`) needs nothing beyond `requirements.txt`: the chapters are converted by `md2typst`, their math by `tylax`, and the PDF is written by `typst`. No pandoc, no TeX installation and no download at build time.
 
 ## Conceptual Orientation
 

@@ -2882,40 +2882,7 @@ Each sentence has one comparison, over whole paths, with no local keep for compo
 
 **Why whole paths.** The stages are a chain, not parallel branches: the reconstruction walk's words become the order-zero field (`OutputOccurrences.generated`, `SentenceField.publish`), the thought reads that field and writes into it (`Intuition.write_knowing`), and the thought's conclusion is what the output unfolds. A keep at the end of each stage would choose at a local minimum. One comparison at the end of the whole path judges every choice by its effect on both costs: a composition is priced through the thought it leads to and the output that thought produces, so reconstruction R and answer A are two prices of one understanding. More credit is bought with more explore paths, not with local keeps.
 
-```mermaid
-flowchart LR
-  IN["input words"]
-  subgraph S1["System 1: order zero"]
-    F["observed field a_0<br/>(open attention pass)"]
-    K["knowing: the generated<br/>order-zero field"]
-    V1["reverse"]
-    V2["reverse"]
-    V3["reverse"]
-  end
-  subgraph S2["System 2: symbols and higher orders"]
-    C["compose"]
-    G1["generate walk +<br/>occurrence writer"]
-    T["closing thought"]
-    G2["generate walk +<br/>occurrence writer"]
-  end
-  R(["R: reconstruction_reverse +<br/>reconstruction_order_zero"])
-  A(["A: answer"])
-  KEEP{"keep the cheapest<br/>R + A path"}
-  IN --> F
-  IN --> C
-  F --> V1 --> R
-  C -->|"end slots"| G1 --> K
-  K --> V2 --> R
-  C -->|"understanding"| T
-  K -->|"read"| T
-  T -->|"intuit deposits"| K
-  T -->|"conclusion"| G2 --> V3 --> A
-  R --> KEEP
-  A --> KEEP
-  V1 -.-|"one decoder"| V2
-  V2 -.-|"one decoder"| V3
-  G1 -.-|"one walk"| G2
-```
+![The sentence loop of one path](diagrams/sentence_loop.svg)
 
 *The sentence loop of one path. Solid arrows carry values; dotted links join calls of one set of parameters: one `reverse` decoder (`SentenceField.reconstruct`, `OutputOccurrences.realize`) and one generate walk (`BasicModel.generate`). Each stream keeps its cheapest R + A path.*
 
