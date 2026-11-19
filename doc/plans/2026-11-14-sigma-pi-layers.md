@@ -7010,4 +7010,4 @@ Each is *mine*, for Alec to take or not.
 
 ### 20.11 Test files run (Claude, standing in for Codex, 2026-11-18)
 
-`test/test_item17_looks_prototype.py` (9 passed, 3.9 s). The tables are `test/looks_prototype_report.py`'s output (deterministic; its random activities use a generator of its own). No sweep was run for this prototype; the item's sweep (1.8 §66.15) ran before these three files existed.
+`test/test_item17_looks_prototype.py` (9 passed, 3.9 s). The tables are `test/looks_prototype_report.py`'s output (deterministic; its random activities use a generator of its own). Item 1.8's third default sweep (1.8 §66.15) included `test_item17_looks_prototype.py` and ended with no failure.
