@@ -12784,3 +12784,135 @@ Two conditions go with it:
 **What a concept does when it teaches a whole.** Your reading is right. A member that joins a class ORs its code into the class's code. That is the union, `1 - prod(1 - m)`, read downward, the P7 union form: monotone, so the class's code only grows and its complement, the "not c or d", only shrinks. The table above is the limit. By 5 members a class holds 59 of 64 ones and a third of the non-members lie inside it, and by 10 members 82% do.
 
 *Mine:* a class taught by OR should also be bounded above by the AND of its own wholes (as a form's bound is). Or its members should be kept as a list, with the OR used only as the address. Otherwise a class of more than about 5 words stops excluding anything at 64.
+
+### 23.3c Round 3c, the percept's code: first pass, steps 0 and 1 (2026-11-19)
+
+The text is §22.3c. The implementer stopped at a step boundary after step 1, as the text allows, with step 0 committed (`377ad92c82`, local, not pushed) and step 2 kept as a patch outside the checkout. Its return is below.
+
+**Review** (Claude). Read: the return and the commit's diff. Run here at `377ad92c82`, the round's list with both gates (four processes, 246 s): **10 failed, 1,305 passed, 67 skipped.** Nine are the scalar and numeric cases of step 6. Both gates pass, and `test_word_admission`'s `test_29[MM_text.xml]` passes.
+
+*Accepted:* step 0 (a row's value reads its wholes where its run lies, an event over its span; both read across a concept's members' rows) and step 1's list. Its provisional restatement of the extent-containment case stands: with both read across members, a present literal and a present Not literal are both, so "no request" cannot be asserted, and that the gap is not filled is asserted in its place.
+
+*One finding.* The tenth failure is `test_item17_order_zero::test_sentence_trees_are_released_without_the_collector`, the test added for round 3's repair of the trees. In this run every lease was released, and the collector still found three of this model's trees in reference cycles. So some path of a read still leaves a tree in a cycle. It does not bring back the overflow, since the leases were released, but the test fails on about one run in three in a whole-file run. Returned with the next steps: find the cycle and repair it in the source, or show that the leases are all the test should assert.
+
+*Taken from the return for the rules.* Steps 2 and 3 are one change: a wholes half of 64 cannot keep a coordinate for each byte, so the widths cannot move before the wholes are coded on the catalog (rule 52). And step 2 uncovered a defect the old width hid: in the reading of a supplied answer a whole 256 wide reaches a form 136 wide, which `FormCentroids.pad_whole` used to pad silently. Its producer is not traced yet.
+
+*Next:* a fresh implementer on Opus takes steps 2 and 3 from the patch, then the later steps in groups, each reviewed before the next.
+
+#### Return of the first pass
+
+**Where it stands.** Step 0 is built and committed (`377ad92c82`, local, not pushed). Step 1 is returned below. Step 2 was built in the tree and then taken out again, because its ports were not finished. The work in progress is kept as a patch at `/private/tmp/claude-501/-Users-arogers--claude-spares-spare-VQwnjc/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r3c_step2_wip.patch` (596 lines, `git apply` on `377ad92c82`). It is not committed.
+
+The source at `377ad92c82` runs whole:
+- The round's file list (the 101 that exist, with `test_item17_forms`, `test_item17_layers`, `test_item17_order_zero` and `test_item17_stacks`) and both stopping gates: **9 failed, 1,304 passed, 67 skipped, 1 xpassed**. The 9 are the scalar and numeric cases named for step 6.
+- Two scalar cases that step 0 had first broken (`test_item18_scalar::test_scalar_joins_the_actual_glance…` and `test_item18_recognition`) pass with the guard for a reading that has no member key.
+- Both gates pass.
+- The lesson's sixteen sentences, before any change of the code: **20.47 s** of the record (24.7 s of the process). There is no "after" yet.
+
+Steps 2 to 9 are not done; certificates 46 to 49 are not written. Each is described under "What is left".
+
+**Step 0 (committed, `377ad92c82`)**
+
+**Built.**
+- `BasicPercepts._row_values` (new). A reading's value of a row reads each whole *where the run lies*: the whole's lanes at the events of the run's own parts, the greatest over them.
+  - for = presence × Π (wholes' for)
+  - against = presence × (1 − Π(1 − wholes' against)), the union of round 3's last pass, kept
+  - a row with no whole reads `[presence, 0]`; a reading with no member key reads nothing
+  - Events keep `_row_lanes`, which reads a whole over the event's span.
+- `ConceptualSpace.order_zero_both`: "both" is read across the concept's members' rows. It is the least of two unions: of what the members give for, and of what they give against.
+  - A Not member gives the reverse.
+  - A member recorded at weight zero is not read, since it never entered the column. Without that, the grounded fixture's weight-0 for-and-Not member of property 10 read both on `00`.
+  - The members are still read from the feature table; the read must move with that record when round 4 removes it.
+
+**Result.** `test_word_admission::test_29[MM_text.xml]` passes. A word's row read at the sentence bracket now reads its letter whole where its run lies, not at the space.
+
+**Ported**, old assertion → new; expected values are computed in the test:
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_concept_memberships::test_one_property_has_the_four_extent_corners` | each row = presence × the corner | each row = presence × the property's lanes where its part lies (property 0 `[1,0]` at 49 and `[0,1]` at 48; property 1 the reverse); the corners true / false / both / both are `order_zero_both` across the concept's rows |
+| `test_concept_evidence::test_membership_read_keeps_both…` | both rows `[1, 1]` | the row of 49 `[1, 0]`, of 48 `[0, 1]`; `order_zero_both` = 1 |
+| `test_primitive_properties::test_different_positions…` | rows presence × `[1,1]` / `[1,0]` | rows presence × the lanes where the part lies; `order_zero_both` 1 in the first extent, 0 in the second |
+| `test_field_binding::test_observed_complement_is_pooled_inside_one_bracket` ×4 | rows presence × `expected` | rows presence × the lanes where the part lies; `order_zero_both` = least of `expected` |
+| `test_refine_raise::test_extent_containment_does_not_fill_gaps…` ×2 | `order_zero_both` 0 and no request | across the members, the present positive literal gives for and the present negated literal against, so the concept is both (1); the gap stays unfilled: every request finds the witnesses in **2 runs**, never 1 |
+
+The last case changes what is asserted. Under "the least of what its members give for and against", a present literal and a present Not literal are both, so "no refine request" can no longer stand. What the title states, that the gap between the witnesses is not filled, is asserted instead. **Provisional;** this is the reading I took of step 0's sentence.
+
+**Step 1: every place that fixes or reads the widths, the block of 32, or coordinate 95**
+
+The list of §19.69 / §22.3c, checked:
+
+| Place | What it holds today |
+| --- | --- |
+| `WordIdentity.resolve_identity_layout` | requires `identityLengthDim` 32; width = pair + length + property (64 + 32 + 256) |
+| `WordIdentity.__init__` | `length_dim`, `width = pair_dim + length_dim`; `atom_code` docstring "length block stays empty"; `audit` reports `length_dim` |
+| RadixLayer construction (`Spaces.py` ~10586) | reads `identityLengthDim`; an unresolved fixture's `pair_dim = nDim − 32` |
+| `BasicPercepts` | `identity_width`, `property_width`, `_boundary_codes` (a value at the last coordinate of each half), `subspace_bounds`, `is_value` (references below −identity_width), `perceive_value`, `read_points`, `collection_code` |
+| WholeSpace codebook: `Codebook.enable_property_codes`, `begin_forward` (`Spaces.py` ~2453–2490) | writes ones over the identity width, then `PrimitiveProperties.codes()` |
+| `MereologicalCodes` | identity_width + property_width = percept_width; refuses a checkpoint of another layout (`load_state_dict`, "subspaces") |
+| `PrimitiveProperties.codes` | 256/1 exact byte extension, or a hashed byte draw at other widths |
+| `ScalarPercepts.code`, `point`, `reading`, `decode` | coordinate `identity_width − 1` (95) and `width − 1` |
+| `NumericPercepts.reverse` | `codes[..., identity_width − 1]` |
+| `FeatureTable` | the two tower widths |
+| `FormContainment` | splits a code at `identity_width` |
+| `corpus_capacity` (`plan`, `measure`) | pair + length + property |
+| `data/model.xml`, `data/model.xsd` | `identityLengthDim` 32, `propertyDim` 256, `propertyOnes` 1 |
+
+*New, not on the list:*
+- `Codebook.enable_derived_codes` (`Spaces.py` ~2506) and the WholeSpace construction (~20072) each compute the identity width as pair + length themselves.
+- `bin/corpus_audit.py` resolves the layout.
+- `Models.py` ~3632 and ~8363, and `Spaces.py` ~6382 and ~19745, read `_property_identity_width`.
+- `FormCentroids.CandidateWholes._weights` reads in chunks of 256 bytes. That is the byte axis, not the code.
+
+*Gone or different:* `AttentionLesson` reads no width.
+
+**Step 2, tried and taken out (the patch above)**
+
+What the patch does:
+- `resolve_identity_layout` refuses `identityLengthDim` ("the parts half has no block of 32"); width = `identityPairDim` + `propertyDim` (64 + 64); `propertyOnes` 3.
+- `WordIdentity` loses `length_dim`. The RadixLayer construction, `enable_derived_codes` and the WholeSpace construction read the new widths. `corpus_capacity` follows.
+- `PrimitiveProperties`: every byte is a catalog part with 3 coordinates of the wholes half, drawn a second time under a prefix of its own (`catalog_coordinates`, `CATALOG_PREFIX`). A property's code is the OR of its member bytes' codes. The 256/1 exact layout is removed. This is the part of step 3's wholes half that the widths need, since a wholes half of 64 cannot hold one coordinate a byte.
+- `data/model.xml` and `model.xsd` are ported.
+- Ported: `test_item17_forms` (7 pass), `test_form_subspaces` (all but the native lesson certificate, which was also failing before), `test_dimensional_governance`, `test_wholespace_property_migration`, part of `test_output_path_supervised` and `test_review13_subspaces`.
+
+With it, the text models' event width is 136 (128 + 8). **Both gates passed**, and so did `test_item17_order_zero`. The round's list with the step-2 files: 29 failed, 1,327 passed. Of those, 9 are the scalar cases, 1 is the trees test (it fails once in a while; one model of the module releases its trees during the other's run) and 1 was failing before. The rest were unported:
+
+| File | Cases | Cause, by sample |
+| --- | --- | --- |
+| `test_operators_round3a` | 7 | asserts the 96 / 32 layout of `WordIdentity` (bits, rows, spelling) |
+| `test_item20_round5_percepts` | 5 | fixtures built at 96 + 256 |
+| `test_output_path_supervised` | 3 | a defect the old width hid (below) |
+| `test_prepared_answer_boundary` | 2 | not traced |
+| `test_item55_mechanisms::test_nested_wholes` | 1 | not traced |
+
+**A defect the old width hid.** In the reading of a supplied answer, `Comprehension.operation` passes `program.form_wholes[at:at+1]` as a whole of three tensors whose mean is **256** wide, against a form width of 136. `Layers.compose_blocks` → `FormCentroids.pad_whole` padded it silently to 352 before. Its producer is not `FormCentroids.capture`, which was checked. The likely producer is `Generative`'s `form_wholes = candidates(...)`, a `CandidateWholes` bank sliced as if it were a tensor (*not traced to the end*).
+
+**Checkpoint.** `MereologicalCodes` refuses a checkpoint of another layout, so `data/BasicModel.ckpt` would not load after step 2. Of the tests that read it, `test_tied_reconstruction_objective` reads only its keys and shapes, which are of the grammar's heads (256 there is a hidden width, not the code) and are unchanged. `test_word_loop_buckets_and_orders` reads only the configuration's `weightsPath`. Not run against a loaded checkpoint in this pass.
+
+**What is left, in §22.3c's order**
+
+- **Step 2:** apply the patch, then port the files in the table above and trace the 256-wide whole.
+- **Step 3:** the two lanes.
+  - A `BasicPercepts` against code: the parts the nearest holders add, how near to be measured.
+  - The wholes half's against lane: the wholes directly inside those that apply, which do not.
+  - Each known form as its own tightest whole: AND with the OR of its own parts' second-draw codes.
+  - The class of all characters as a row.
+- **Step 4:** the first Pi's against entries, joined by union and read by the set of parts found. Settle how a row read both enters the combined vector, with certificate 23 as it stands.
+- **Step 5:** a column of for less against; containment read on the for lane; the wholes half joined by the product and read on its complement.
+- **Step 6, the scalars, as Alec narrows it** (§19.78, received during this pass):
+  - "the exact same mechanism, except part growth and whole contraction become the same operation on scalars". The catalog is the 64 bins of the felt value. A value's parts half is the bins at or below it; its wholes half is all ones with the bins above cut away. An exact value is one code in both halves. The against lane is the bins above. A collection [low, high] is low's parts code and high's wholes code.
+  - The plan is to build it through step 3's functions for the two halves. Nothing of it is built yet.
+- **Step 7:** `WordIdentity`'s step compares both halves and both lanes; count the words still alike, and remove `shared` if none is.
+- **Step 8:** certificates 46 to 49 in `test/test_item17_code.py`.
+- **Step 9:** the ports. Then the lesson's sixteen sentences after.
+
+**Choices, provisional**
+1. A value reads a whole where its run lies, as the greatest over the run's events. An event keeps the span.
+2. "Both" across a concept's members is the least of two unions, with a Not member giving the reverse and a member at weight zero not read.
+3. The extent-containment test asserts the two runs in place of "no request".
+4. In the step-2 patch, the second draw of the catalog is a prefix on the byte (`\x00whole-basis/`), as the trial draws it; the exact byte layout is removed and not kept as a switch.
+
+**What I would change in §21**
+- Rule 6 should say that a reading's value reads a whole where the run lies and an event reads it over its span. Both are needed: the first for `test_29`, the second for the located-part certificate.
+- Certificate 3 and rule 6 should name where "both" stands. It stands across a concept's members' rows, a property's for at one row and its against at another, and seldom at one row.
+- Rule 50 should note that the wholes half at 64 cannot keep a byte's own coordinate. So step 2 needs rule 52's catalog code at once, and the two steps are one change.
