@@ -29139,6 +29139,50 @@ The native columns are the resumable pass up to the compound inverse, on the §6
 
 The production checkpoints for trace, forms, relations, memberships, closing readers and entry trust are `d26314ba62`, `62bfa1860a`, `1d981f13a5`, `8986950de1`, `1c05dc92f6` and `41c664e107`. The finished probe is in local commit `bccdae6b58`. The working source snapshot covers **1,228 files**, SHA-256 **`06f1b005f5985274f563d0699f83f633a4a34881c2f13df3ea5d05f5ee25fead`**. All work is local. Rule 7 is open on the trust radius. The remaining capture work and the single whole-item default sweep of §72 are pending. The targeted runs used the ordinary tier.
 
+### 66.8 The last numeric grammar round and the trust-radius exception (§68.84)
+
+`ConceptTrust.refresh` keeps the host binary64 calculation of §66.5. Metal float32 changed 413 of 7,084 stored radii in that comparison. The comment beside the calculation records the exception. Item 1.5’s plan lists the radius and starts its compiler work with the §66.6 inventory.
+
+The training failure occurred in an ordinary four-stream XOR batch. On stream 1 of a fresh exploratory path, the walk interpreted positions 2 and 0, in that order. The word chooser legally applied `disjunction` at position 0. The compose trace held that binary rule in column 0 (the first of the three choice columns belonging to word 0). Without native percept support the numeric path had no `SentenceField`. It kept the admission mask, which says *which* words joined, and discarded the order in which they arrived. `_derivation_program` consequently emitted a push for 0 and immediately tried the fold. The push for 2 was still ahead of it. The same confusion let a visit to the last *source* position close the sentence before the first source position had arrived.
+
+`Looks.source_orders` reads the word indices and interpretation decisions the walk already recorded. `_run_sentence_word_bricks` makes that order available while scoring a numeric path and takes each stream’s winning path order into the close. The grammar-lesson reader uses it too. Text still obtains its order from the native sentence field. A walk now closes after its arrivals, including when the source’s last word was visited early or left unread. The word brick receives the closing phase explicitly. It can publish end slots without depositing another word or overwriting its activation. The forest’s depth and operand-position checks still run.
+
+The failure occurs in training and evaluation. `test_numeric_grammar_replays_reverse_word_arrivals` gives the ordinary evaluation path legal right-first focuses, interpretations and a binary fold. On `bccdae6b58` it raised the underflow in column 0. After the repair it returned positions **[2, 0]** and actions **push, push, fold**. In a separate unforced training comparison, with identical initial parameters and the same fresh random stream on both sources, the original aborted before the update. The repair completed that update, changing 15 of the 75 parameters present at entry and ending with 77. The earlier run had no completed update to compare. On the established sixteen-sentence lesson, **16/16** complete batch records matched §66 exactly, including the costs, choices, parameters and optimizer. The replay took **45.59 s**. Both stopping gates passed in **3.90 s** together.
+
+### 66.9 Fresh draws and the reading supplied by each fixture
+
+The census began with the paired runs on four revisions in §68.83 and the three failure logs in §66.4. I checked the saved failures from the loop, forecast and table rounds against their ports, then exercised callers that observe deposits, grammar journals, comprehension and whole-path credit. The list below identifies the observed cases. A finite sample cannot establish that an unobserved draw will never affect a different test.
+
+| Default-tier test | What depended on the draw | Change |
+| --- | --- | --- |
+| `test_item18_tree_first.py::test_1_word_deposit_keeps_its_value_row_and_order` | No word reached the push whose value, lexical row and order the test checks | The fixture supplies source-order focuses and legal interpretations |
+| `test_item18_tree_first.py::test_negated_sigma_reads_keep_unsigned_word_deposits_and_ideas` | Either comparison could observe no word or idea | Both reads run the same supplied decisions through the native walk |
+| `test_item18_tree_first.py::test_comprehension_stages_native_values_without_mutating_words_or_mtm` | No kept idea reached the provenance and immutability assertions | Supply the word reading before observing comprehension |
+| `test_sentence_journal.py::test_identity_admission_uses_the_deposited_word_order` | No word reached identity admission | Supply the reading before comparing the deposited and admitted orders |
+| `test_whole_paths.py::test_native_numeric_paths_share_one_head_and_one_update[1]` and `[2]` | A legal reverse-order reading could raise before training | Repair the production replay. The original test still draws its own paths |
+
+The four word-reading ports reuse `reading_fixtures.read_in_source_order`. Their original assertions remain. The one-exploration case also raised on the first fresh run on the archived return. All six listed cases and the new reverse-order regression passed in **20 consecutive fresh processes** each (**140 passes**). No initial stream was selected.
+
+Two packed-journal fixture contracts in `test_compose_records.py` also failed on the unmodified return. The saved October trace supplied the old `remaining` attribute while the current admission reader needs the admitted values at those positions. The fixture now derives `admission` from its saved arrival order. The two one-word packed endings exercise the tensor body directly. Their staging walk only examined the brackets, so neither closing group received a word. The fixture supplies the legal word decisions at its staging seam, then exercises both real closing groups and their original budgets. Both variants of each contract passed in 20 consecutive fresh processes (**80 passes**).
+
+The sweep also exercised the following readers. Each port supplies the word decisions through the same chooser helper. The grammar, thought, storage and optimization being observed still execute. A run is a fresh Python process with its own initial draw.
+
+| Test or shared fixture | Reading required by its assertions |
+| --- | --- |
+| `test_grammar_object_leaves.py::test_grammar_deposits_each_word_with_its_own_code`, on `XOR_grammar.xml`, `MM_grammar.xml` and `aligned` | The grammar receives each word whose deposited code is compared. The aligned sweep draw admitted four of eight. |
+| `test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating` | Both packed fields close before the runtime reader inspects the retained pairs. In five unforced trials three passed and two failed. |
+| `test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path` | Each source presentation reaches its completed-field counter, and the reloaded evaluator reads its input. |
+| `test_occurrence_coordinates.py::test_native_program_captures_the_symbol_band_and_one_field_time` and `test_input_symbols_keep_their_word_starts_even_when_the_word_repeats` | There are native occurrences to inspect, including both occurrences of the repeated word. |
+| `test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state` | Both source readings exist before checking their owned ideas, with the output loop off and on. The development-width cases are in this tier. |
+| `test_parts_of_speech.py::test_kept_readings_alone_supply_argument_views`, also called by `test_percept_transitivity.py::test_native_kept_readings_have_transitive_percept_codes` and `test_retire_mode.py::test_native_every_completed_field_reaches_the_chooser` | The two annotated sentences reach the kept-program, percept-code and completed-field observers. All three call the same fixture. |
+| `test_reading_round.py::test_native_read_sites_carry_one_token_across_three_documents` | Each of the three one-word presentations supplies its reading. The test follows the native reservation, occurrences and promotion. |
+| `test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer` | Each packed field is read before counting the external writes on the three inference entry points. |
+| `test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract` and `test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged` | Their word-brick observers forward the new closing phase. The same assertions run over the supplied words and the separate close. Both observers accepted the earlier five-argument interface on `bccdae6b58`. |
+
+The 20-run checks comprise **580 passes** on 29 test cases. The original six and the reverse-order regression supplied 140. The four packed-journal variants supplied 80. The later checks supplied 80 for the three grammar-deposit configurations and the runtime expectation test, 20 for learning readiness, 40 for occurrence coordinates, 40 for the two development output modes, 40 for occupation and transitive percepts, 40 for the completed-field audit and the three-document token, and 100 for the three inference entries and the two phase observers. The learning baselines keep their ordinary unforced draws.
+
+The numeric repair is local commit `1c5dcbb73c`. The additional test ports are local commit `1547b3bd7b`. The focused files also included `test_compose_records.py` (11 passed), `test_one_attention.py` (both compiler-cache cases passed with access to their normal cache), `test_whole_paths.py`, `test_sentence_journal.py`, `test_item18_tree_first.py` and the two stopping-gate files `test_mm_xor.py` and `test_item25_completion.py`. The exact lesson used `attention_thinking_certificate.py`. The following sweep covers all 755 selected test files.
+
 ## 67. The rest of item 1.8, in order (Claude, 2026-11-16; a doc pass)
 
 Every rule of item 1.8 is now written. This is where each part is, in
