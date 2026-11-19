@@ -1652,9 +1652,15 @@ generation is expected at this stage and is recorded, not tuned away.
    bound. Both routes exist in the source (the projection from above,
    `cs_percept_attribution`; the first look's reading of every word
    from below) and neither is what a look selects by. Nothing in it
-   is decided. To be settled: this item is written as keeping results
-   equal and follows the last slow run, and selecting by a request
-   changes what the model does.
+   is decided but this (Alec, 2026-11-18): **"1.5 can change the
+   arch, it will be the last round to do so."** And the selection is
+   to be computed from below, "a series of matmuls, as the
+   architecture already does": "the selection matrix over percepts
+   that light up that concept row" (§19.43: the mask of what is
+   wanted pulled back through the matrices of the way up; on a small
+   case it keeps `cat` and drops `cot` and `sat`, where the
+   projection of the weights lets all three through). Not said:
+   whether the one overnight slow run moves here from item 1.6.
    **Part 1, computation by wiring, not by moving data** (item 1.6
    until 2026-11-18; Alec, 2026-11-17: "can you investigate the
    possibility of pushing the architecture in this zero-data movement

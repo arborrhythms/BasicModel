@@ -35871,6 +35871,11 @@ sweep". He corrected both the same day:
 3. *The slow tier* (`RUN_SLOW`) is not run until item 1.6 is submitted,
    when the architecture changes no more. It is then run once,
    overnight. The todo has it under item 1.6.
+   *Amended (Alec, 2026-11-18, later):* "1.5 can change the arch, it
+   will be the last round to do so." So the architecture changes no
+   more after item 1.5, not after item 1.6 (sigma-pi §19.43). Whether
+   the one overnight run then moves to item 1.5's submission is not
+   said.
 
 **What these cost in the last return** (§69): the default sweep 2,239
 seconds; the lesson 450; the two slow curricula that the text of §68.31

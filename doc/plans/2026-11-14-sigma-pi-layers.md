@@ -6246,3 +6246,80 @@ run (1.8 §72). Reading the percept bank once and replacing the where
 tests by coordinates can keep results equal. Selecting by a request
 where brackets select today, and dimming where a bracket cuts, change
 what the model does.
+
+### 19.43 Decided: item 1.5 may change the architecture. The selection matrix from below (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> 1.5 can change the arch, it will be the last round to do so.
+>
+> I think we can do it bottom up from percepts as a series of matmuls,
+> as the architecture already does. At the level of the top-down
+> filter, we have a mask of what we want (let's say the meta-concept).
+> So the matrix that we want to compute is the selection matrix over
+> percepts that light up that concept row.
+
+**Decided.** Item 1.5 may change what the model does, and is the last
+item that does. The question at the end of §19.42 is answered: the
+selection by a request stays in item 1.5. 1.8 §72 said the
+architecture changes no more after item 1.6; it is amended there.
+*Not said:* whether the one overnight run of the slow tier moves from
+item 1.6's submission to item 1.5's.
+
+**What the selection matrix is** (Claude's reading). The way up is a
+chain of matrices, percepts to basic percepts (Pi) to concepts (Sigma)
+and on through the orders. A mask over the top, pulled back through
+the same chain, gives for each percept of the sentence how much it
+lights the wanted row. This is the backward product of the chain: the
+derivative of the wanted row's activity with respect to each percept's
+activity, times that activity. It uses the matrices of the way up and
+no others.
+
+*In the record already.* Rule 28 (§19.12) has thought read a row of
+the Pi downward (`parts(c)`, "at every lower order", each with its
+weight) and keeps the compressed rows readable by row and by column.
+Rule 30 reads the first layer backward. The selection matrix is those
+readings as one product, in place of a serial query.
+
+**It answers both of his doubts of §19.42.**
+
+- *Not 1:1.* The backward product goes through every path and weighs
+  each by what is present, so it is not the projection of the weights
+  alone.
+- *One by one, and costly.* It selects one by one in one pass: its
+  cost is that of the way up, once for a request, and not once for
+  each candidate.
+
+*A small case, run by me* (three tokens, `cat`, `cot`, `sat`; one row
+of the Pi for the word `cat` as a product over its letters; `cat`
+asked for):
+
+| | `cat` | `cot` | `sat` |
+| --- | ---: | ---: | ---: |
+| Projection of the weights (letters of `cat` present) | 3 | 2 | 2 |
+| Backward product times activity | 3 | 0 | 0 |
+
+The projection lets `cot` and `sat` through with two letters of three.
+The backward product keeps only the token that lights the row, because
+the derivative of a product with respect to one letter is the product
+of the others.
+
+**Conditions.**
+
+1. *It needs the Pi of this item.* The fold of today takes a minimum
+   and keeps exact rails (`FieldLogic.power`), whose derivative is zero
+   almost everywhere. With rows that are products it is as above. Item
+   1.7 comes before item 1.5, so the order is right.
+2. *It inherits the binding of the way up.* The small case binds
+   letters by token. Over a whole sentence with no arrangement, the
+   backward product of a row for `trade` on "red cat sleeps" is as
+   wrong as the way up is (§19.40, condition 1).
+3. *Two lanes.* A percept that lowers the wanted row, through a Not,
+   comes back with the other sign. That is the against lane of the
+   selection.
+4. *How it is computed.* Either by the framework's backward pass over
+   the look's graph, or by the transposes of the same sparse matrices
+   with the local derivatives kept from the way up. *Default (mine):*
+   the second, since it is wiring, needs no second backward pass inside
+   the forward (2.7: one backward), and leaves open whether the mask is
+   taught through it.
