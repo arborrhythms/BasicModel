@@ -7776,6 +7776,61 @@ exactly. *In the source today* the store keeps each form's characters
 parts, the second where that §19.48, answer 4, set aside for the
 read; it returns here for the way back only.
 
+### 19.58 Alec: the way back for generation too; the whole stores its parts in order (2026-11-19)
+
+Alec, of point 4 of §19.57:
+
+> The problem is that we are not always doing reconstruction: sometimes
+> we do generation.
+>
+> As an alternative to location matching on words: the whole stores its
+> parts in order, and longest first. That will give us reassembly
+> instructions, but I think we want to keep the part matrices binary.
+>
+> What might also work is a network from words to parts with learnable
+> reconstruction order. Lets do whatever is most efficient for
+> reconstruction.
+
+**His point.** §19.57 took the places of a form's parts from the read
+that matched them. A word that is generated was not read, so there are
+no such places. The way back has to start from the form alone.
+
+**In the source today.** A form's row goes back to its characters by a
+stored table (`RadixLayer.inverse_table`, read by `RadixLayer.reverse`;
+its comment: "Exact, no learning"). It is a list on the host.
+
+**Run by Claude** (197,014 forms; 20 words at a time; scratch script
+`way_back_forms_check.py`). Three ways from a form to its characters,
+none of which uses a place from a read:
+
+| | Entries for a form | Exact | 20 words on Metal | on the host |
+| --- | ---: | --- | ---: | ---: |
+| 1. Its characters in order, a table | 8.7 | all 197,014 | 0.149 ms | 0.002 ms |
+| 2. The same as binary rows, a block of 27 for each position | 8.7 | all 197,014 | 0.149 ms | 0.042 ms |
+| 3. His alternative: its parts in order, the longest at each place, each then expanded to its characters | 4.3, at most 8 | all 197,014 | 0.162 ms | 0.010 ms |
+
+- *His alternative is exact and needs nothing else.* The parts in
+  order, the longest at each place, put back every form: no location
+  arrays, no learned order.
+- *In time there is nothing to choose on Metal;* all three are one or
+  two gathers. In size his alternative is half of the others.
+- *Binary.* The ordered list is binary as one block of the parts for
+  each slot of the order, with a single one in each block. The read's
+  matrix of a form's parts stays as it is, binary and with no order.
+  They are two arrays: the read's holds every part inside the form
+  (15.9), and the way back's holds only the parts that tile it (4.3).
+- *Way 1 is his alternative with letters as the parts,* and is what the
+  source already keeps.
+- *The network with a learnable order* was not run. It is not needed to
+  put back a form the store holds, and it can be wrong where a table
+  cannot. It is what would be needed for a form that was never stored.
+
+**Taken, on his word to do what is most efficient** (*Claude's choice;
+his to overrule*). The whole stores its parts in order, the longest at
+each place (way 3). It serves reconstruction and generation alike,
+since it starts from the form. Point 4 of §19.57, the location arrays
+taken from the read, is withdrawn.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

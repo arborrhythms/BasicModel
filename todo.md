@@ -1701,6 +1701,12 @@ generation is expected at this stage and is recorded, not tuned away.
    sometimes as another word, sometimes still as the word meant.
    **Reconstruction proceeds from the specific concept (Alec),**
    which associates its part arrays with location arrays.
+   **The way back, for generation too (Alec; §19.58):** "the
+   whole stores its parts in order, and longest first"; run on
+   197,014 forms it puts every form back exactly with 4.3
+   entries a form, as fast on Metal as a table of characters.
+   Taken, on his word to do what is most efficient; the location
+   arrays from the read are withdrawn.
    The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it
