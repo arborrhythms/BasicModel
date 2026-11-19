@@ -1638,6 +1638,20 @@ class BaseModel(Mereology, nn.Module):
         nw, nn = canonical_shape(section)
         return nw + nn
 
+    def _concept_inventory_rows(self, configured, reservations):
+        """The constructed concept rows for the configured ``nVectors`` of
+        the ConceptualSpace. Under the geometric taper it is the room of
+        order zero, as many concepts as basic percepts (rule 21), and the
+        orders above and the declared seats are added to it
+        (``ConceptualSpace.inventory_rows``). Declared shares
+        (``orderAllocation``) count the free rows of every order, with the
+        seats of order zero among them and those above on top."""
+        allocation = str(TheXMLConfig.space('ConceptualSpace', 'orderAllocation', 'geometric')).strip()
+        if allocation != 'geometric':
+            return int(configured) + sum(reservations[1:])
+        from Spaces import ConceptualSpace
+        return ConceptualSpace.inventory_rows(configured, self.concept_order_limit, reservations)
+
     @staticmethod
     def _nvec(section, n_out):
         """Resolve a Space's nVectors sentinel: 0 -> ``n_out``.
@@ -16477,8 +16491,7 @@ class BasicModel(BaseModel):
         nvec_whole_properties = self._nvec("WholeSpace", nSymbols)
         nvec_output  = self._nvec("OutputSpace",     nOutput)
         from PartsOfSpeech import order_reservations
-        # The declared seats above order zero come on top of the free rows.
-        self.nConceptCodes = int(nvec_concept) + sum(order_reservations(TheGrammar)[1:])
+        self.nConceptCodes = self._concept_inventory_rows(nvec_concept, order_reservations(TheGrammar))
         # Symbols are downstream references into the conceptual inventory;
         # they do not allocate a second learned prototype table. Preserve the
         # historical attribute name for consumers that ask for reference
@@ -16704,8 +16717,8 @@ class BasicModel(BaseModel):
             # those declared order-zero seats before tapering the free rows;
             # the compose argument/operator reservations are additional seats.
             order_reservations = grammar_reservations(TheGrammar)
-            stage_space_concept = [int(stage_space_concept[0]) +
-                sum(order_reservations[1:]), stage_space_concept[1]]
+            stage_space_concept = [self._concept_inventory_rows(stage_space_concept[0], order_reservations),
+                                   stage_space_concept[1]]
             cs = ConceptualSpace(
                 cs_in, stage_space_concept, cs_out,
                 stage_idx=t, is_last=is_last,

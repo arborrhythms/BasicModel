@@ -14691,6 +14691,17 @@ class ConceptualSpace(Space):
     # The concept inventory is shared by W_sigma, W_pi and witnessed context.
     # Edges run between row identities; dictionary vectors stay distributed.
 
+    @staticmethod
+    def inventory_rows(room, limit, reservations=()):
+        """The concept rows a model constructs for an order-zero room of
+        ``room`` concepts (rule 21): ``room`` at order zero, as many as the
+        basic percepts it reads; half the order below at each order above
+        (the geometric taper, at least one row an order); and each order's
+        declared seats on top. :meth:`_order_caps` gives these blocks back."""
+        reservations = tuple(int(value) for value in reservations)
+        limit = max(int(limit), len(reservations) - 1)
+        return sum(max(1, int(room) >> order) for order in range(limit + 1)) + sum(reservations)
+
     def _order_caps(self):
         """Fixed contiguous blocks over the whole constructed inventory.
 

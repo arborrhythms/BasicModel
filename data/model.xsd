@@ -1002,6 +1002,9 @@
       <!-- Identity's sparse form is D pair coordinates plus L length bits.
            Text model construction resolves the native form/event width from
            these values; numeric models retain their configured dimensions. -->
+      <!-- Rows of the first Pi (basic percepts). Each nominated row brings
+           one concept of order zero, so ConceptualSpace nVectors (the room
+           of order zero) bounds how many are nominated. -->
       <xs:element name="basicPerceptCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
@@ -1146,8 +1149,18 @@
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <!-- The room of order zero: as many concepts as basic percepts, one
+           for each row of the first Pi that MTM nominates (n:n). Under the
+           geometric taper each order above has half the rows of the one
+           below, and the grammar's declared seats come on top, so the
+           constructed inventory is n + n/2 + ... + seats. 0 defers to nOutput.
+           Set it to PartSpace basicPerceptCapacity for a model whose every
+           basic percept may be nominated. -->
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Free rows per order, before grammar reservations; fixed at construction. -->
+      <!-- geometric: the taper from nVectors at order zero. Otherwise the
+           free rows of each order, summing to nVectors less the declared
+           seats of order zero; the seats above come on top. Fixed at
+           construction. -->
       <xs:element name="orderAllocation" default="geometric" minOccurs="0">
         <xs:simpleType><xs:union>
           <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="geometric"/></xs:restriction></xs:simpleType>
