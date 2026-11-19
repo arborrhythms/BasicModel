@@ -1,4 +1,6 @@
 """Saved-model operator readings, with strict restoration in isolated processes."""
+
+from ReadingIndex import steps as recorded_steps
 from collections import Counter
 from contextlib import contextmanager
 import hashlib
@@ -90,7 +92,7 @@ def count_program(program, language):
     if program is None or not len(program.leaves):
         raise ValueError('missing completed program is not a zero-use reading')
     counts, leaves, padded = Counter(), [], False
-    for kind, local, position in program.actions.detach().cpu().tolist():
+    for kind, local, position in recorded_steps(program):
         if kind < 0:
             padded = True
             continue

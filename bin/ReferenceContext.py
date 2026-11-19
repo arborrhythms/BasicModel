@@ -3,6 +3,8 @@
 This module has no memory reader or identity table. A caller may supply only
 live constituents and frames already admitted to the predictor's situation.
 """
+
+from ReadingIndex import steps as recorded_steps
 from dataclasses import dataclass, replace
 from typing import NamedTuple
 
@@ -200,7 +202,7 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
     requests, stack = {}, []
     stamps = None if leaf_orders is None else leaf_orders.detach().cpu().tolist()
     references = None if operation_refs is None else operation_refs.detach().cpu().tolist()
-    for action, (kind, local, word) in enumerate(actions.detach().cpu().tolist()):
+    for action, (kind, local, word) in enumerate(recorded_steps(actions)):
         if kind < 0:
             break
         if kind == 0:

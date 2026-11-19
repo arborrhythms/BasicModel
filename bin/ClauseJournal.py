@@ -4,6 +4,8 @@ Nothing from this journal is stored beside a completed row. The numerical
 operators have already run in the word brick; finishing only assigns roles
 and native references to their actual end-state contents.
 """
+
+from ReadingIndex import steps as recorded_steps
 from dataclasses import replace
 
 import torch
@@ -60,7 +62,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
     from Language import TheGrammar
     from ReferenceContext import binding_spec, operation_modes, denoted_order, OrderReference
     from Interpret import leaf_readings
-    interpretations = leaf_readings(language, program.actions, len(program.leaves),
+    interpretations = leaf_readings(language, program, len(program.leaves),
                                     forced=program.interpret_forced)
     def number(name):
         return getattr(program, name) if numerics is None else numerics.closing_value(name)
@@ -134,7 +136,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
         return dict(order=order, evidence=pair)
     # Each node owns the exact grammar action and its live operands.
-    for action, (kind, local, word) in enumerate(program.actions.detach().cpu().tolist()):
+    for action, (kind, local, word) in enumerate(recorded_steps(program)):
         if kind < 0:
             break
         yield action

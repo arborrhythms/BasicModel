@@ -104,13 +104,7 @@ class Reading:
     held_round_reads: Any = None
     held_final: Any = None
     tree: Any = field(default=None, repr=False)
-
-    def __getattribute__(self, name):
-        if name in ('actions', 'leaves'):
-            tree = object.__getattribute__(self, 'tree')
-            if tree is not None:
-                return getattr(tree, name)()
-        return object.__getattribute__(self, name)
+    action_index: Any = field(default=None, repr=False)
 
     @property
     def _tensor_fields(self):
@@ -249,6 +243,7 @@ class Reading:
                          getattr(self, name).detach().to("cpu"))
                   for name in self._tensor_fields}
         values["tree"] = self.tree
+        values["action_index"] = self.action_index
         values["lexical_forms"] = self.lexical_forms
         values['binding_choices'] = self.binding_choices
         values['close_references'] = self.close_references

@@ -1,4 +1,6 @@
 """Formal argument concepts learned from kept word members in conceptual space."""
+
+from ReadingIndex import steps as recorded_steps
 from collections import Counter
 import math
 
@@ -261,7 +263,7 @@ class PartsOfSpeech(nn.Module):
                  else program.word_ids.detach().cpu().tolist())
         stack = []
         operators = []
-        for kind, local, position in program.actions.detach().cpu().tolist():
+        for kind, local, position in recorded_steps(program):
             if kind < 0:
                 break
             if kind == 0:

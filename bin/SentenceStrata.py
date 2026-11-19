@@ -1,8 +1,4 @@
-"""The pinned sentence: occurrence content in STM0, ordered pairs in STM1.
-
-Reading and Composition expose views of these stores. Numerical inverse
-witnesses are allowed to outlive a forward operation; they carry no topology.
-"""
+"""The sentence trace supplies the word tree. Semantic ideas occupy STM0 and STM1."""
 from dataclasses import replace
 import weakref
 
@@ -11,7 +7,7 @@ from torch import nn
 
 from Memory import STM0, OCCURRENCE, RELATION
 from Meaning import ConceptualMeaning
-from PartsOfSpeech import operation_name
+from ReadingIndex import ReadingIndex
 
 
 class IdeaStack(STM0):
@@ -24,8 +20,7 @@ class IdeaStack(STM0):
         self._concept_owner = source.__dict__.get('_concept_owner')
         self.parts.handle_reserved = source.parts.contains
         self._tree_sites = sites
-        self._tree_root = (tree.roots[0][1] if tree.roots[0][0] == OCCURRENCE
-                           else tree.operator(tree.roots[0])[0])
+        self._tree_root = tree.roots[0]
         self.model_clock.fill_(tree.semantic_start)
 
     def name_for(self, term, *, sentence, count):
@@ -64,104 +59,54 @@ class IdeaStack(STM0):
                 self._concept_owner = owner
 
 
+class Trace:
+    """A path owns the recorded points and the close's occurrence marks."""
+    def __init__(self, program, index, first):
+        self.first = first
+        self.index = index
+        self.leaves = program.leaves
+        self.frames = getattr(program, 'operation_values', None)
+        if not bool(self.leaves.isfinite().all()):
+            raise FloatingPointError('non-finite occupied meaning role')
+        operators = index.actions[:, 0] != 0
+        if any(kind != 0 for kind, _, _ in index.steps):
+            if self.frames is None:
+                raise ValueError('recorded operations require their result points')
+            if not bool(self.frames[operators, 2].isfinite().all()):
+                raise FloatingPointError('non-finite occupied meaning role')
+        self.marks = {}
+        self.live = True
+
+    def point(self, action):
+        kind, _, word = self.index.steps[action]
+        return self.leaves[word] if kind == 0 else self.frames[action, 2]
+
+
 class Tree:
-    def __init__(self, bank, language, roots, length, ideas=None):
-        self.bank, self.language = bank, language
-        self.generation, self.roots, self.length = bank.generation, tuple(roots), length
-        self._views = {}
+    address_domain = STM0.address_domain
+
+    def __init__(self, trace, ideas):
+        self._trace = trace
         self.ideas = ideas
+        self._views = {}
+        self.semantic_start = trace.first + len(trace.index.steps)
 
     @property
-    def store(self):
-        if self.generation != self.bank.generation:
-            raise ValueError('the pinned sentence reference has expired')
-        return self.bank
+    def trace(self):
+        if not self._trace.live:
+            raise ValueError('the sentence reference has expired')
+        return self._trace
 
-    def metadata(self, address):
-        return dict(self.store.working[address]['bindings'])
-
-    def point(self, address):
-        return self.store.point_of_row(('ltm', self.store.address_domain, address))
-
-    def operator(self, ref):
-        first, second = self.store.parts.references(ref[1])
-        if first[0] == RELATION:
-            operator, left = self.store.parts.references(first[1])
-            return operator[1], (left, second)
-        return first[1], (second,)
-
-    def interface(self, data):
-        seat = self.language.parts_of_speech.seats[data['_identity'][1]]
-        matches = [(kind, index) for kind, rules in (
-            (1, self.language._compose_binary_rules), (2, self.language._compose_unary_rules))
-            for index, rule in enumerate(rules)
-            if (operation_name(rule) == seat.name and rule.canonical == data['_interface']
-                and rule.kernel_index == data.get('_kernel'))]
-        if len(matches) != 1:
-            raise ValueError('the operator seat has no unique declared execution interface')
-        kind, index = matches[0]
-        return kind, index
-
-    def node(self, ref):
-        if ref[0] == OCCURRENCE:
-            data = self.metadata(ref[1])
-            return (0, data['_word'])
-        operator, children = self.operator(ref)
-        data = self.metadata(operator)
-        kind, index = self.interface(data)
-        return kind, index, data['_at'], *(self.node(child) for child in children)
+    @property
+    def roots(self):
+        trace = self.trace
+        return tuple(trace.first + action for action in trace.index.roots)
 
     def forest(self):
-        return tuple(self.node(ref) for ref in self.roots)
+        return self.trace.index.forest
 
-    def actions(self):
-        # Event order belongs to occurrences. Pair references determine which
-        # operands were consumed, including non-top unary steps and swaps.
-        entries = {}
-        for address, context in self.store.working.items():
-            data = dict(context['bindings'])
-            if '_at' in data:
-                entries[data['_at']] = (address, data)
-        nodes = {}
-        def collect(node):
-            if node[0]:
-                nodes[node[2]] = node
-                for child in node[3:]: collect(child)
-        for node in self.forest(): collect(node)
-        actions, stack = [], []
-        for index in range(self.length):
-            if index not in entries:
-                raise ValueError('a stored operation has no concept occurrence')
-            address, data = entries[index]
-            if '_word' in data:
-                node = (0, data['_word']); stack.append(node)
-                actions.append((0, -1, data['_word'])); continue
-            if index not in nodes:
-                kind, operation = self.interface(data)
-                rule = self.language._compose_binary_rules[operation]
-                if kind != 1 or len(rule.lhs.split(',')) != 2 or len(stack) < 2:
-                    raise ValueError('an unconsumed operator must be a declared transposition')
-                stack[-2:] = reversed(stack[-2:])
-                actions.append((3, operation, -1)); continue
-            node = nodes[index]
-            kind, operation = node[:2]
-            if kind == 2:
-                position = stack.index(node[3]); word = len(stack)-1-position
-                stack[position] = node
-            elif len(node) == 4:
-                if stack[-1] != node[3]: raise ValueError('invalid stored bound operand')
-                stack[-1] = node; word = -1
-            else:
-                if tuple(stack[-2:]) != node[3:]: raise ValueError('invalid ordered binary operands')
-                stack[-2:] = [node]; word = -1
-            actions.append((kind, operation, word))
-        return self.store.row_names.new_tensor(actions).reshape(-1, 3)
-
-    def leaves(self):
-        leaves = sorted((dict(context['bindings'])['_word'], address)
-            for address, context in self.store.working.items()
-            if '_word' in dict(context['bindings']))
-        return torch.stack([self.point(address) for _, address in leaves])
+    def point(self, address):
+        return self.trace.point(address - self.trace.first)
 
     def view(self, address):
         if address not in self._views:
@@ -169,40 +114,35 @@ class Tree:
         return self._views[address]
 
     def composition(self, action=None, word=None):
-        for address, context in self.store.working.items():
-            data = dict(context['bindings'])
-            if (action is not None and data.get('_at') == action or
-                    word is not None and data.get('_word') == word):
-                return self.view(address)
-        raise ValueError('composition has no shared occurrence')
+        trace = self.trace
+        if action is None:
+            action = trace.index.word_actions.get(word)
+        if action is None or not 0 <= action < len(trace.index.steps):
+            raise ValueError('composition has no shared occurrence')
+        return self.view(trace.first + action)
 
     def install_composition(self, composition, *, action=None, word=None):
         view = self.composition(action, word)
-        context = self.store.working[view.address]
-        data = dict(context['bindings'])
-        data['_composition'] = {name: getattr(composition, name) for name in (
+        marks = view.marks
+        prior = marks.get('extension', ())
+        marks.update((name, getattr(composition, name)) for name in (
             'reference', 'operation', 'head_role', 'order', 'leaves', 'binding',
-            'word_id', 'formal_name', 'interpretation', 'extension')}
-        if not data['_composition']['extension']:
-            data['_composition']['extension'] = dict(context['bindings']).get('_composition', {}).get('extension', ())
-        context['bindings'] = tuple(data.items())
+            'word_id', 'formal_name', 'interpretation', 'extension'))
+        if not marks['extension']:
+            marks['extension'] = prior
         return view
 
     def install_extension(self, node, *, action=None, word=None):
-        view=self.composition(action,word)
-        context=self.store.working[view.address]
-        marks=dict(context['bindings'])
-        composition=dict(marks.get('_composition',{}))
-        composition['extension']=(node,)
-        marks['_composition']=composition
-        context['bindings']=tuple(marks.items())
-
+        self.composition(action, word).marks['extension'] = (node,)
 
 
 class CompositionView:
-    """Metadata and child views of an occurrence, never a second tree."""
     def __init__(self, tree, address):
         self.tree, self.address = tree, address
+
+    @property
+    def marks(self):
+        return self.tree.trace.marks.setdefault(self.address, {})
 
     @property
     def point(self):
@@ -210,23 +150,17 @@ class CompositionView:
 
     @property
     def children(self):
-        data = self.tree.metadata(self.address)
-        if '_word' in data: return ()
-        pending = list(self.tree.roots)
-        while pending:
-            ref = pending.pop()
-            if ref[0] != RELATION: continue
-            operator, children = self.tree.operator(ref)
-            if operator == self.address:
-                return tuple(self.tree.view(child[1] if child[0] == OCCURRENCE else
-                    self.tree.operator(child)[0]) for child in children)
-            pending.extend(children)
-        raise ValueError('operator occurrence has no application pair')
+        trace = self.tree.trace
+        at = self.address - trace.first
+        if trace.index.steps[at][0] == 3:
+            raise ValueError('a transposition is not an application')
+        return tuple(self.tree.view(trace.first + child) for child in trace.index.operands[at])
 
     def __getattr__(self, name):
-        data = self.tree.metadata(self.address).get('_composition', {})
-        if name not in data: raise AttributeError(name)
-        return data[name]
+        try:
+            return self.marks[name]
+        except KeyError:
+            raise AttributeError(name) from None
 
 
 def replace_composition(value, **changes):
@@ -234,10 +168,8 @@ def replace_composition(value, **changes):
         return replace(value, **changes)
     children = changes.pop('children', value.children)
     if tuple(child.address for child in children) != tuple(child.address for child in value.children):
-        raise ValueError('a composition view cannot rewrite the pinned topology')
-    data = value.tree.metadata(value.address)
-    data['_composition'] = dict(data['_composition'], **changes)
-    value.tree.store.working[value.address]['bindings'] = tuple(data.items())
+        raise ValueError('a composition view cannot rewrite the recorded topology')
+    value.marks.update(changes)
     return value
 
 
@@ -255,8 +187,6 @@ class SentenceStrata(nn.Module):
         self.trials = int(paths) + 1
         if self.trials < 2:
             raise ValueError('sentence strata require an exploit and admission bank')
-        self.banks = nn.ModuleList(STM0(width, self.words+self.operators, percept_width=percept_width,
-            relation_capacity=2*self.operators+1) for _ in range(self.trials*self.streams))
         # Each action can keep an idea on both lanes, a separate event on
         # both lanes, and an untrusted located mention. These are the native
         # close's five possible rows, not copies of numerical inner nodes.
@@ -266,7 +196,8 @@ class SentenceStrata(nn.Module):
             for _ in range(self.trials*self.streams))
         self.recent_stores = nn.ModuleList(STM0(width, self.recent, percept_width=percept_width,
             relation_capacity=relation_capacity) for _ in range(self.streams))
-        self._leases = [None] * len(self.banks)
+        self._leases = [None] * len(self.idea_stores)
+        self._traces = [None] * len(self.idea_stores)
         self._clock = 0
 
     def capture(self, program, language, stream, *, after=0):
@@ -274,62 +205,47 @@ class SentenceStrata(nn.Module):
         indices = range(self.trials*stream, self.trials*(stream+1))
         index = next((i for i in indices if self._leases[i] is None or self._leases[i]() is None), None)
         if index is None:
-            raise OverflowError('all constructed pinned sentence trials are still retained')
-        store = self.banks[index]
-        store.expire()
+            raise OverflowError('all constructed sentence trials are still retained')
+        if len(program.leaves) > self.words or len(program.actions) - len(program.leaves) > self.operators:
+            raise OverflowError(f'sentence exceeds construction: {len(program.leaves)}/{self.words} words, '
+                                f'{len(program.actions)-len(program.leaves)}/{self.operators} operations')
+        self._expire_trial(index)
         ideas = self.idea_stores[index]
-        ideas.expire()
-        ideas.address_domain = store.address_domain
-        # Device follows the value, without ever changing a construction size.
-        store.to(device=program.leaves.device, dtype=program.leaves.dtype)
-        actions = program.actions.tolist()
-        operators = sum(kind in (1, 2, 3) for kind, _, _ in actions)
-        if len(program.leaves) > self.words or operators > self.operators:
-            raise OverflowError(f'pinned sentence exceeds construction: {len(program.leaves)}/{self.words} words, {operators}/{self.operators} operations')
-        stack = []
-        for at, (kind, operation, word) in enumerate(actions):
-            self._clock += 1
-            data = {'_at': at}
-            if kind == 0:
-                point = program.leaves[word]
-                data.update(_word=word)
-                concept = int(program.concept_ids[word])
-            else:
-                rules = language._compose_binary_rules if kind in (1, 3) else language._compose_unary_rules
-                rule = rules[operation]
-                concept = language.parts_of_speech.seats[operation_name(rule)].concept
-                point = program.operation_values[at, 2]
-                data['_interface'] = rule.canonical
-                data['_kernel'] = rule.kernel_index
-            if concept not in (-1, 0): data['_identity'] = ('sym', concept)
-            meaning = replace(ConceptualMeaning.from_description(point), bindings=data)
-            row = store.append_meaning(meaning, name=self._clock)
-            ref = OCCURRENCE, store.row_name(row)
-            if kind == 0: stack.append(ref); continue
-            if kind == 3:
-                left, right = stack[-2:]
-                first = store.parts.add(ref, left, truth_plus=1.)
-                store.parts.add((RELATION, first), right, truth_plus=1.)
-                stack[-2:] = right, left
-                continue
-            if kind == 2 or rule.method_name == 'bind':
-                position = len(stack)-1-(max(0, word) if kind == 2 else 0)
-                pair = store.parts.add(ref, stack[position], truth_plus=1.)
-                stack[position] = RELATION, pair
-            else:
-                right, left = stack.pop(), stack.pop()
-                first = store.parts.add(ref, left, truth_plus=1.)
-                stack.append((RELATION, store.parts.add((RELATION, first), right, truth_plus=1.)))
-        tree = Tree(store, language, stack, len(actions),ideas)
-        # All paths share one address namespace. Reserve unnamed semantic
-        # entries here too, so a trial's event cannot alias the next tree.
-        tree.semantic_start = self._clock + 1
-        self._clock += ideas.capacity
+        ideas.address_domain = STM0.address_domain
+        record = getattr(program, 'action_index', None)
+        if record is None:
+            record = ReadingIndex(program.actions, len(program.leaves), language)
+            object.__setattr__(program, 'action_index', record)
+        record.validate_interfaces(language)
+        trace = Trace(program, record, self._clock + 1)
+        tree = Tree(trace, ideas)
+        self._clock += len(trace.index.steps) + ideas.capacity
+        self._traces[index] = trace
         self._leases[index] = weakref.ref(tree)
+        object.__setattr__(program, 'actions', trace.index.actions)
         object.__setattr__(program, 'tree', tree)
-        object.__setattr__(program, 'actions', None)
-        object.__setattr__(program, 'leaves', None)
         return program
+
+    def _expire_trial(self, index):
+        if self._traces[index] is not None:
+            self._traces[index].live = False
+        self._traces[index] = self._leases[index] = None
+        self.idea_stores[index].expire()
+
+    def trace_point(self, address):
+        if isinstance(address, tuple):
+            if len(address) != 3 or address[:2] != ('ltm', STM0.address_domain):
+                return None
+            name = address[2]
+        else:
+            from Occurrence import operand_time
+            name = operand_time(address)
+            if name is None:
+                return None
+        for trace in self._traces:
+            if trace is not None and 0 <= name - trace.first < len(trace.index.steps):
+                return trace.point(name - trace.first)
+        return None
 
     def keep_close(self, stream, point, when, *, address=None, relations=(), source=None):
         store = self.recent_stores[stream]
@@ -372,19 +288,20 @@ class SentenceStrata(nn.Module):
                 bank.add(left, right, symbol=relation, truth_plus=float(source.truth_plus[relation]),
                     truth_minus=float(source.truth_minus[relation]))
         for index in range(self.trials*stream, self.trials*(stream+1)):
-            self.banks[index].expire(); self._leases[index] = None
-            self.idea_stores[index].expire()
+            self._expire_trial(index)
         return store.occurrence_of(row)
 
     def clear(self, stream=None):
         for b in range(self.streams) if stream is None else (stream,):
             self.recent_stores[b].expire()
             for index in range(self.trials*b, self.trials*(b+1)):
-                self.banks[index].expire(); self._leases[index] = None
-                self.idea_stores[index].expire()
+                self._expire_trial(index)
 
     def read(self, address):
-        for store in (*self.recent_stores, *self.idea_stores, *self.banks):
+        for store in (*self.recent_stores, *self.idea_stores):
             if store.location(address) is not None:
                 return store.point_of_row(address)
+        point = self.trace_point(address)
+        if point is not None:
+            return point
         raise ValueError('short-term member reference has expired')

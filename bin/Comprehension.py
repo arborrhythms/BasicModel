@@ -324,8 +324,7 @@ class Evaluation:
 
     def extension_at(self, *, action=None, word=None):
         if action is None:
-            action = next(at for at, (kind, _, index) in enumerate(self.program.actions.tolist())
-                          if kind == 0 and index == word)
+            action = self.program.action_index.word_actions[word]
         node = self.extensions.get(action)
         return () if node is None else (node,)
 
@@ -338,9 +337,7 @@ class Evaluation:
     def composition(self, value, *, action=None, word=None):
         tree = self.program.tree
         address = tree.composition(action=action, word=word).address
-        from Memory import OCCURRENCE
-        root = tree.roots[0]
-        root_address = root[1] if root[0] == OCCURRENCE else tree.operator(root)[0]
+        root_address = tree.roots[0]
         # The prior pinned meaning view read its root from the ended STM
         # slot, including the head's physical occurrence coordinates.
         if address == root_address and self.stack:

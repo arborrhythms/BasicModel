@@ -1,4 +1,6 @@
 """Read native sentence trees without retaining any effect of the probe."""
+
+from ReadingIndex import steps as recorded_steps
 from contextlib import contextmanager
 from pathlib import Path
 import json
@@ -125,7 +127,7 @@ def reading_forest(language, program, positions):
     if program is None:
         return []
     stack = []
-    for action, (kind, local, word) in enumerate(program.actions.tolist()):
+    for action, (kind, local, word) in enumerate(recorded_steps(program)):
         if kind < 0:
             break
         if kind == 0:

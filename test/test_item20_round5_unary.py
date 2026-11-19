@@ -68,10 +68,11 @@ def test_sentence_storage_uses_the_existing_execution_bound_without_resize():
     from SentenceStrata import SentenceStrata
     strata = SentenceStrata(1, 2, 8, 4)
     assert strata.operators == 22
-    assert all(store.capacity == 24 and store.parts.capacity == 45 for store in strata.banks)
-    pointers = [(store.slots.data_ptr(), store.parts.refs.data_ptr()) for store in strata.banks]
+    assert strata.words + strata.operators == 24
+    assert len(strata._traces) == 3 and not hasattr(strata, 'banks')
+    pointers = [store.slots.data_ptr() for store in strata.idea_stores]
     strata.clear()
-    assert pointers == [(store.slots.data_ptr(), store.parts.refs.data_ptr()) for store in strata.banks]
+    assert pointers == [store.slots.data_ptr() for store in strata.idea_stores]
     receipt('sentence-construction-bound', dict(words=2, recent_chunks=8,
-        operator_bound_before=1, operator_bound_after=22, stm0_rows_per_trial=24,
-        branch_bound=44, relation_storage_rows=45, resized=False))
+        operator_bound_before=1, operator_bound_after=22, trace_action_bound=24,
+        syntax_relation_rows=0, resized=False))

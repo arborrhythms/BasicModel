@@ -28467,6 +28467,8 @@ The other 45 letters still read exactly one on that update. The 204 nonletters a
 
 I recommend keeping the declared teaching, retaining this run as the exact-purity baseline, and specifying the graded case with the perceptual work in item 1.7. That puts the meaning of a small complement and its use by attention under one decision. If partial membership is intended to count as conflict immediately, I recommend settling the offer rule before proceeding to §65. No evidence in the trace justified an exception for property 0.
 
+**Alec’s decision, 2026-11-18.** “Keep this baseline as long as we address it later.” The exact-purity lesson stands for item 1.8. Item 1.7 must settle how a learned complement contributes to simultaneous contrary evidence and test the resulting interpretation offers. Part C proceeds on the measured source.
+
 ### 64.8 The forecast remembers a word until that word is read again (§68.82 B)
 
 `LookForecast.observe` now replaces a live word’s pair only when both endpoints of the selected interval equal that word’s. Its positive length excludes padding. A multiword look and an interior look each keep their own excess and omission in the trace and contribute their observed fields to subsequent forecasts. `for_brackets` still sums the words’ latest pairs.

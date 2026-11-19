@@ -1,4 +1,6 @@
 """Loss-side credit for one departure across the sentence's two walks."""
+
+from ReadingIndex import steps as recorded_steps
 import torch
 
 
@@ -19,7 +21,7 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
             costs.append(like.new_zeros(()))
             continue
         steps = []
-        for index, (kind, operation, _word) in enumerate(program.actions.tolist()):
+        for index, (kind, operation, _word) in enumerate(recorded_steps(program)):
             if kind not in (1, 2):
                 continue
             tree = language._tree_layer(1 if kind == 2 else 2)

@@ -24,35 +24,35 @@ def test_default_pinned_banks_use_the_declared_word_bound(default_model):
     recent = default_model.conceptualSpace.stm.capacity
     assert default_model.serial_word_capacity == strata.words == 256
     assert recent == 8
-    assert len(strata.banks) == 3 * default_model._concept_owner().nStreams
-    assert all(bank.capacity == 256 + 3*256 + 2*recent == 1040 for bank in strata.banks)
+    assert len(strata._traces) == 3 * default_model._concept_owner().nStreams
+    assert strata.words + strata.operators == 256 + 3*256 + 2*recent == 1040
     assert all(not hasattr(bank, 'stream')
-               for bank in (*strata.banks, *strata.recent_stores))
+               for bank in (*strata.idea_stores, *strata.recent_stores))
     declared = sum(value.numel()*value.element_size() for value in strata.buffers())
     # Ordered-pair stores are linked rather than registered child modules.
     linked = sum(value.numel()*value.element_size()
-                 for bank in (*strata.banks, *strata.recent_stores)
+                 for bank in (*strata.idea_stores, *strata.recent_stores)
                  for value in bank.parts.buffers())
     assert declared + linked < .25 * 2**30
     receipt('bank-bound', dict(words=strata.words, streams=strata.streams,
-        banks=len(strata.banks), rows_per_bank=strata.banks[0].capacity,
+        banks=len(strata._traces), trace_action_bound=strata.words+strata.operators,
         stream_columns=0, declared_bytes=declared, declared_gib=declared/2**30,
         linked_pair_bytes=linked, all_buffer_bytes=declared+linked))
 
 
 def test_pinned_capture_takes_256_words_and_rejects_257(default_model):
     strata = default_model.conceptualSpace.stm.strata
-    bank = strata.banks[0]
+    bank = strata.idea_stores[0]
     shape = tuple(bank.slots.shape)
     def program(words):
         return SimpleNamespace(leaves=bank.slots.new_zeros(words, shape[-1]),
             actions=torch.tensor([(0, -1, word) for word in range(words)]),
             concept_ids=torch.full((words,), -1, dtype=torch.long))
     accepted = strata.capture(program(256), default_model.languageSpace, 0)
-    assert len(accepted.tree.store) == len(accepted.tree.roots) == 256
+    assert len(accepted.action_index.steps) == len(accepted.tree.roots) == 256
     with pytest.raises(OverflowError, match='257/256 words'):
         strata.capture(program(257), default_model.languageSpace, 0)
-    assert all(tuple(store.slots.shape) == shape for store in strata.banks)
+    assert all(tuple(store.slots.shape) == shape for store in strata.idea_stores)
     strata.clear()
     receipt('capture-bound', dict(accepted_words=256, rejected_words=257,
         fixed_shape=list(shape), resized=False))

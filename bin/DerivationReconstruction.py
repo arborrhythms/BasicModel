@@ -5,6 +5,8 @@ This reader follows the already committed tree; no word bank or target is
 used to choose a child. A retained co-operand is an occurrence witness. Certified native maps keep
 that source live; unsupported maps retain their detached witness contract.
 """
+
+from ReadingIndex import steps as recorded_steps
 import torch
 
 
@@ -154,7 +156,7 @@ def reconstruct(language, record, programs, positions, stm=None):
             forest = list(program.tree.forest())
         else:
             forest = []
-            for index, (kind, operation, word) in enumerate(program.actions.tolist()):
+            for index, (kind, operation, word) in enumerate(recorded_steps(program)):
                 if kind == 0:
                     forest.append((kind, word))
                 elif kind == 1:

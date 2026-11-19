@@ -3,6 +3,8 @@
 These diagnostics never enter grammar features, training credit or answer
 construction. A descriptive zero is not evidence of learned utility.
 """
+
+from ReadingIndex import steps as recorded_steps
 from collections import Counter
 import hashlib
 import json
@@ -37,11 +39,11 @@ class RoutingCoverage:
             raise ValueError('routing sentence IDs must be unique nonempty strings')
         if program is None or len(program.leaves) == 0:
             raise ValueError('missing/empty sentence program is not a zero opaque count')
-        actions = program.actions.detach().cpu()
+        actions = program.actions
         if actions.ndim != 2 or actions.shape[1] != 3:
             raise ValueError('invalid committed grammar actions')
         counts, opaque, shifted, padded = Counter(), 0, [], False
-        for kind, local, word in actions.tolist():
+        for kind, local, word in recorded_steps(program):
             if kind < 0:
                 padded = True
                 continue

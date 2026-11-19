@@ -57,7 +57,7 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             # Include inactive capacity rows: set_state would concatenate
             # their old graph back onto the detached active prefix.
             if hasattr(stm, 'strata'):
-                for store in (*stm.strata.banks, *stm.strata.recent_stores):
+                for store in stm.strata.recent_stores:
                     store.slots = store.slots.detach()
             for field in STMChunks.FIELDS:
                 name = '_live_' + field

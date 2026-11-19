@@ -1454,7 +1454,12 @@ generation is expected at this stage and is recorded, not tuned away.
    Round D of item 1.8 becomes this item, built after item 1.8 is finished
    and pushed: [specification](doc/plans/2026-11-14-sigma-pi-layers.md) §18,
    with §18.22 and §18.23 (symbols without dimensions, split from
-   concepts). Its form as decided the same night is §18.24: the Pi
+   concepts). Its scope includes a carried decision from item 1.8 §64.7. For graded readings, settle
+   whether a learned complement counts as simultaneous contrary evidence,
+   and test a word with both a strong for lane and a small complement.
+   The measured §64 word was “Felix” at (1, 0.00020045042). Item 1.8
+   retains exact purity until this is addressed (Alec, 2026-11-18).
+   Its form as decided the same night is §18.24: the Pi
    selects and weights the percepts, their vectors are pooled at the basic
    level, and a dense Sigma collects them into concepts; above order zero
    the Sigma reads symbols' activations. §18.25 (Alec, 2026-11-16): signed

@@ -13049,6 +13049,8 @@ class BasicModel(BaseModel):
                 from ChunkJournal import leaf_orders
                 selected_leaf_orders = leaf_orders(chunk_scope,transactions,batch=b,
                     positions=pos,orders=selected_leaf_orders)
+            from ReadingIndex import ReadingIndex
+            action_index = ReadingIndex(acts[:L], n, self.languageSpace)
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)
@@ -13056,11 +13058,11 @@ class BasicModel(BaseModel):
             interpreter = getattr(owner() if callable(owner) else None, 'interpret', None)
             interpret_forced = bool(getattr(interpreter, 'mandatory', True))
             if callable(resolve) and callable(owner) and selected_ids is not None:
-                args = (owner(), selected_words, selected_ids, acts[:L])
+                args = (owner(), selected_words, selected_ids, action_index)
                 options = dict(leaf_orders=selected_leaf_orders, admit=admit)
                 if not interpret_forced:
                     from Interpret import leaf_readings
-                    readings = leaf_readings(self.languageSpace, acts[:L], n, forced=False)
+                    readings = leaf_readings(self.languageSpace, action_index, n, forced=False)
                     options['interpreted'] = tuple(value != 'no_op' for value in readings)
                 reference_ids, reference_orders = resolve(*args, **options)
                 if not bool((reference_orders >= 0).any()):
@@ -13086,7 +13088,7 @@ class BasicModel(BaseModel):
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
                 activations=activations[b].index_select(0, pos.to(activations.device)),
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
-                actions=acts[:L], targets=targets[b], end_state=end_state[b],
+                actions=acts[:L], action_index=action_index, targets=targets[b], end_state=end_state[b],
                 word_ids=selected_lexical_ids,
                 concept_ids=selected_ids, reference_ids=reference_ids,
                 reference_orders=reference_orders, lexical_forms=selected_forms,
@@ -20572,7 +20574,7 @@ class BasicModel(BaseModel):
         from Interpret import leaf_readings
         self._last_leaf_readings = tuple(None if entry is None else dict(
             forced=entry.interpret_forced,
-            decisions=leaf_readings(self.languageSpace, entry.actions, len(entry.leaves),
+            decisions=leaf_readings(self.languageSpace, entry, len(entry.leaves),
                                    forced=entry.interpret_forced)) for entry in entries)
         for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths', 'symbol_ids'):
             view[key] = [source[key][b] for b, source in enumerate(chosen)]

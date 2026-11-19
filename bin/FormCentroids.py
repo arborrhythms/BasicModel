@@ -3,6 +3,8 @@
 This transient bank contains existing property rows and input primitive
 counts. It owns no run types, lexical read, identity, or durable membership.
 """
+
+from ReadingIndex import steps as recorded_steps
 from typing import NamedTuple
 
 import torch
@@ -366,7 +368,7 @@ def capture(program, bank, batch, positions, language):
     from dataclasses import replace
     from ReferenceContext import denoted_order
     stack, stamps, spans, counts, active = [], [], [], [], []
-    for index, (kind, operation, word) in enumerate(program.actions.tolist()):
+    for index, (kind, operation, word) in enumerate(recorded_steps(program)):
         pair = (1, 1)
         if kind == 0:
             stack.append((int(positions[word]),))

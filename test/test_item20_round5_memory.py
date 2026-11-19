@@ -590,24 +590,23 @@ def test_shared_sentence_strata_operator_references_gradients_and_expiry():
             targets=words, end_state=words.mean(0), concept_ids=torch.tensor([10, 11]), operation_values=frames)
     a = strata.capture(reading(0), language, 0)
     b = strata.capture(reading(1), language, 0)
-    assert isinstance(a.tree.store, STM0) and STM0.point_of_row is LTM0.point_of_row
-    assert isinstance(a.tree.store.parts, STM1) and STM1.references is LTM1.references
+    assert STM0.point_of_row is LTM0.point_of_row and STM1.references is LTM1.references
+    assert not hasattr(strata, 'banks')
     assert a.tree.forest()[0][1] == 0 and b.tree.forest()[0][1] == 1
-    assert len(a.tree.store) == 3 and len(a.tree.store.parts) == 2
-    assert not hasattr(a.tree.store.parts, 'operation_seat')
+    assert len(a.action_index.steps) == 3 and a.action_index.operands[2] == (0, 1)
     # Conditioning's composition view and MTM resolve the same live entry
     # that reconstruction's forest names; neither owns another value/tree.
     from MemberRead import read
     composition = a.tree.composition(action=2)
     owner = NS(stm=NS(strata=strata, _thought_stores=()))
-    address = ('ltm', a.tree.store.address_domain, composition.address)
+    address = ('ltm', a.tree.address_domain, composition.address)
     torch.testing.assert_close(read(owner, address), composition.point)
     torch.testing.assert_close(torch.stack([child.point for child in composition.children]), words)
     gradient, = torch.autograd.grad(a.leaves.sum(), words)
     torch.testing.assert_close(gradient, torch.ones_like(words))
     reference = strata.keep_close(0, words.mean(0), False)
     assert len(strata.recent_stores[0]) == 1
-    assert all(len(bank) == len(bank.parts) == 0 for bank in strata.banks)
+    assert all(trace is None for trace in strata._traces)
     torch.testing.assert_close(strata.read(reference), words.mean(0).detach())
     with pytest.raises(ValueError, match='expired'): a.tree.forest()
     strata.keep_close(0, words.mean(0), False)
@@ -1029,7 +1028,7 @@ def test_two_reference_sites_of_one_shared_occurrence_do_not_self_bind():
     plan['items'].append(dict(item))
     kept = resolver.prepare(clause, plan)
     assert kept.composition is view and view.binding is None
-    assert len(view.tree.store) == 1 and len(view.tree.store.parts) == 0
+    assert len(view.tree.trace.index.steps) == 1 and view.children == ()
     receipt('shared-occurrence-alias', dict(reference_sites=2, shared_occurrences=1,
         self_bindings=0, extra_branches=0, prepared=True))
 

@@ -1,4 +1,6 @@
 """Unary word-to-object interpretation, with definitions in the common store."""
+
+from ReadingIndex import steps as recorded_steps
 import torch
 from Layers import GrammarLayer
 from Definitions import form_key
@@ -33,7 +35,7 @@ def leaf_readings(language, actions, count, *, forced):
     The symbol and no-op are abstentions, so neither needs a grammar rule.
     """
     stack, readings, shifted = [], ['symbol' if forced else 'no_op'] * count, set()
-    for kind, local, position in actions.detach().cpu().tolist():
+    for kind, local, position in recorded_steps(actions):
         if kind < 0:
             break
         if kind == 0:

@@ -238,8 +238,8 @@ def test_comprehension_stages_native_values_without_mutating_words_or_mtm(tmp_pa
     def starting(self, *args, **kwargs):
         begin(self, *args, **kwargs)
         tree = self.program.tree
-        self._word_tree_before = (tree.store.slots.clone(), tree.store.parts.refs.clone(),
-                                 tree.store.parts.ref_kinds.clone(), repr(tree.store.working))
+        self._word_tree_before = (tree.trace.leaves.clone(), tree.trace.frames.clone(),
+                                  self.program.actions.clone(), tree.forest(), repr(tree.trace.marks))
         self._comprehended_points = {}
     def constituent(self, *args, **kwargs):
         value = compose(self, *args, **kwargs)
@@ -279,9 +279,9 @@ def test_comprehension_stages_native_values_without_mutating_words_or_mtm(tmp_pa
                 assert any(torch.equal(point, result.store.slots[row]) for row in range(len(result.store)))
         tree = self.program.tree
         for before, after in zip(self._word_tree_before[:3],
-                                (tree.store.slots, tree.store.parts.refs, tree.store.parts.ref_kinds)):
+                                (tree.trace.leaves, tree.trace.frames, self.program.actions)):
             torch.testing.assert_close(after, before, rtol=0, atol=0)
-        assert repr(tree.store.working) == self._word_tree_before[3]
+        assert (tree.forest(), repr(tree.trace.marks)) == self._word_tree_before[3:]
         return result
     monkeypatch.setattr(Evaluation, '__init__', starting)
     monkeypatch.setattr(Evaluation, 'composition', constituent)
@@ -359,8 +359,7 @@ def test_relative_comprehension_holds_two_ideas_and_the_native_pair():
     clause = Clause(meaning, relation='part', refs=(('clause', 0), predicate, ('clause', 1)),
                     children=children, composition=composition, evidence=(.7, .2))
     stack = IdeaStack(source.nDim, source.capacity, relation_capacity=source.parts.capacity)
-    tree = SimpleNamespace(roots=((OCCURRENCE, 100),), semantic_start=101,
-                           store=SimpleNamespace(working={100: {}}))
+    tree = SimpleNamespace(roots=(100,), semantic_start=101)
     stack.prepare(source, tree, {id(left): 90, id(right): 91, id(composition): 100})
     before = {name: value.clone() for name, value in source.state_dict().items()}
     next_id = int(owner._concept_allocator.next_id)
@@ -399,8 +398,7 @@ def test_consumed_arrival_is_held_for_the_trial_without_writing_live_mtm():
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     order=1, composition=root, evidence=(.7, 0.))
     stack = IdeaStack(source.nDim, source.capacity, relation_capacity=source.parts.capacity)
-    tree = SimpleNamespace(roots=((OCCURRENCE, 100),), semantic_start=101,
-                           store=SimpleNamespace(working={100: {}}))
+    tree = SimpleNamespace(roots=(100,), semantic_start=101)
     stack.prepare(source, tree, {id(leaf): 98, id(raised): 99, id(root): 100})
     before = owner.mtm.state()
     closing = PartClosing(owner, source, working=stack)
@@ -435,8 +433,7 @@ def test_working_relation_reads_the_existing_pair_without_reasserting_it():
         torch.ones(3, dtype=torch.bool)), relation='part', refs=(ids[0], predicate, ids[1]),
         composition=Composition(right.point, (left, right), operation='part'), evidence=(.3, 0.))
     stack = IdeaStack(source.nDim, source.capacity, relation_capacity=source.parts.capacity)
-    tree = SimpleNamespace(roots=((OCCURRENCE, 100),), semantic_start=101,
-                           store=SimpleNamespace(working={100: {}}))
+    tree = SimpleNamespace(roots=(100,), semantic_start=101)
     stack.prepare(source, tree, {})
     root, _ = PartClosing(owner, source, working=stack).stage(clause)
     assert root == (RELATION, row) and len(stack) == 0

@@ -3,6 +3,8 @@
 The input face reads an occurrence's existing activations. Neither a set
 operation nor a determiner searches a codebook for a similar vector.
 """
+
+from ReadingIndex import steps as recorded_steps
 from dataclasses import dataclass
 import torch
 from FieldLogic import reduce
@@ -274,7 +276,7 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
     stack = []
     tree = program.tree if evaluation is None else None
     dispatch = language._tree_layer(2)
-    for at, (kind, local, word) in enumerate(program.actions.tolist()):
+    for at, (kind, local, word) in enumerate(recorded_steps(program)):
         if kind < 0:
             break
         if kind == 0:
