@@ -7106,6 +7106,153 @@ otherwise.**
 **What comes next.** The item's text for Codex (§19.8) is rewritten
 from §19.21 (rules 1 to 32) and from this section, as one hand-off.
 
+### 19.52 Alec on §19.51: no derivative in a look, the codes, and ties (2026-11-19)
+
+Alec, of the three points of §19.51 and the two questions put with
+them:
+
+> 1 in the pullback (?), passing by weights is fine, but I worry that
+> what you have done is rely on the learning algorithm. Can you point
+> me to an article online that shows the principle you are exercising,
+> hopefully Wikipedia? Also, can you check if the derivative issue is
+> due to preexisting stimulation, and possibly work around that by
+> doing the inverse, which we had been running anyway?
+>
+> 2 OK. Does the mereological space of codes still get produced?
+>
+> 3 if we have equally active words, then we have not identified the
+> correct word. Please an example.
+>
+> Questions 1 please explain in more detail what it means to have a
+> read with no sentences 2 wait until discussion finishes
+
+**1. The derivative was Claude's, and it is not needed.** The share
+"activity times the derivative of the asked rows" is Claude's reading
+in §19.43. His words there were "a series of matmuls" and "the
+selection matrix over percepts that light up that concept row". The
+source carries a request down today by an inverse that shares a
+concept's demand over its entries by their weights
+(`cs_reverse_presence`, `cs_percept_attribution`, read by
+`_passback_scope_ps`), with no derivative; §19.46 had that replaced by
+the pullback, which was the wrong way round.
+
+*His first check: is the derivative issue due to preexisting
+stimulation? Yes.* The slope of a Sigma is what a little more input
+would add. Where the first pass has already lit the concept, it adds
+almost nothing:
+
+| The row's value | The concept, `tanh(3 z)` | Passed down by the slope | Passed down by the weight |
+| ---: | ---: | ---: | ---: |
+| 0 (at rest) | 0.000 | 3.000 | 3.0 |
+| 0.1 | 0.291 | 2.745 | 3.0 |
+| 0.5 | 0.905 | 0.542 | 3.0 |
+| 1 (wholly present) | 0.995 | 0.030 | 3.0 |
+| 2 (two words in one token) | 1.000 | 0.00007 | 3.0 |
+
+At rest the slope is the weight, exactly. "By the weights" is the
+derivative taken before anything was stimulated. The zero that
+`PiLayer2` gives at a membership of exactly one (§19.50) is the same
+kind: full stimulation stands at the clamp's ceiling.
+
+*His second: work around it by the inverse. Yes.* Run by Claude on the
+lesson's sixteen sentences and three more ("Fe li x is here.", "xileF
+is here.", "The cat is there."), each asked for each of fifteen words
+and for the meta concept "word": 304 requests. A request is carried
+down three ways, then the way up is run again, and what counts is
+whether the returned set is exactly the asked words that are present
+(a word concept at 0.01 or more).
+
+| A word's row reads | By the slope | By the weights (a derivative) | By the rows' entries (the way back, no derivative) |
+| --- | ---: | ---: | ---: |
+| its letters (the prototype) | 230 of 304 | 256 of 304 | 203 of 304 |
+| its own form and its letters (rule 2) | 230 of 304 | 304 of 304 | 304 of 304 |
+
+"By the rows' entries" is: read downward the entries the asked rows
+have weight on (rule 28's `parts(c)`), and keep what of them is
+active. With rule 2's row, which reads its own entry and its parts, it
+gives the same sets with the same values as the derivative by the
+weights in 304 of 304, and no derivative is taken. With rows of
+letters alone it is worse (a word's letters light other words made of
+them), which is one more reason the row reads its own form. The
+script is `way_back_check.py` in the session's scratch folder and is
+not kept in the repository.
+
+*The principle, and where it is written.* Recall through one matrix
+upward and its transpose downward, with no learning step in the
+recall, is the bidirectional associative memory
+(https://en.wikipedia.org/wiki/Bidirectional_associative_memory). A
+top-down template compared with the bottom-up input, with a
+"vigilance" that sets how close the match must be, is adaptive
+resonance theory
+(https://en.wikipedia.org/wiki/Adaptive_resonance_theory); its
+vigilance is close to rule 32's width of a row's cone. What Claude had
+done, the derivative of an output by the input, is the gradient kind
+of saliency map (https://en.wikipedia.org/wiki/Saliency_map), which is
+the learning algorithm's backward pass turned on the input. The three
+pages were read on 2026-11-19 for these statements.
+
+**Rule 36, restated on this** (*Alec's suggestion, confirmed by the
+check; his to confirm*). The request is carried down by the way back:
+through a Sigma to the rows it has for entries on, through a Pi to the
+entries a row has weight on, onto the what codebook and the where
+sinusoid. No derivative is taken and nothing of the learning
+algorithm runs in a look. An event's what match is its own activity
+where an asked row reads it, and nothing where none does. The
+existing readers (`cs_reverse_presence`, `cs_percept_attribution`) are
+the place to start from, not something to remove. What §19.51 said of
+the Pi's local derivatives, of the copies of a letter and of a
+membership at one leaves rule 36; the clamp of `PiLayer2` stays a
+point for the source, since training passes through it.
+
+**2. The mereological space of codes.** It is still produced; nothing
+in rules 33 to 42 touches what makes it. The store gives each form a
+code that is the union of its parts' codes (`WordIdentity`: the pairs
+of `#word#`, three coordinates of 64 each, and the lengths 1 to n, one
+coordinate each); the sentence's parts and wholes are read once
+(`read_percepts`); the concept codes are form and meaning
+(`MereologicalCodes`). The bank is that mereology read once, each
+event with its code.
+
+*What the prototype did not do.* It made a table of bytes of its own
+and never read these codes. So it says nothing yet about a row of the
+Pi as a cone in the space of codes.
+
+*Measured in the codes themselves* (20,000 words of the system's word
+list; `code_containment_check.py`, scratch): no two words have the
+same code; 194 of 1,500 words (13%) hold the whole code of another,
+shorter word. `the` lies inside `there` and `cat` inside `caat`; `is`
+does not lie inside `this`, nor `cat` inside `act`, nor `here` inside
+`there`. So in the codes equality tells words apart and containment
+gives the neighbours, which is what a part and whole space should do.
+
+**3. Equally active words: his point is taken.** "Then the one found
+first" (§19.51, rule 37) is withdrawn; it picked a word where none was
+identified. Examples:
+
+- *No place asked.* The meta concept "word" alone, on "This is
+  Felix.", returns `This`, `is` and `Felix`, each at 0.995. Nothing is
+  identified; the request has to say where.
+- *The same word twice.* A request for `is` in a sentence with two
+  returns both equally, for the same reason.
+- *The prototype's ties* (`is` at `This`, 4 of 16 with a place) come
+  from rows of letters and are gone when a row reads its own form: in
+  the 304 requests above a single word asked for never returned two.
+- *Two forms at one place.* His example of §19.30: a look at "ice
+  cream" where the model holds `ice cream`, `ice` and `cream`. `ice
+  cream` and `ice` begin at the same place and both are wholly present.
+
+**Rule 37, restated on this** (*Claude's reading of his remark; his to
+confirm*). `interpret` takes the most active word concept of the
+returned set. Where two or more are equally the most active, no word
+has been identified: nothing is interpreted, and `attend` asks again.
+The one case with a rule is his own (§19.30): of forms that begin at
+the same place the largest is the word.
+
+**His two questions.** The read with no sentence is explained to him
+in the conversation (1.8 §66.12 holds it); his word on keeping it is
+still to come. The item's text for Codex (§19.8) is not written until
+this discussion is finished: "wait until discussion finishes".
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

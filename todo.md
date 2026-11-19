@@ -1652,8 +1652,16 @@ generation is expected at this stage and is recorded, not tuned away.
    lookup names (a token's form and its atoms), not bytes; among
    equally active words the largest is taken. Found in the source:
    `PiLayer2` passes no gradient at a membership of exactly one.
-   **Next: the item's text for Codex (§19.8) is rewritten from
-   §19.21 and §19.51 as one hand-off.**
+   **Alec on these (2026-11-19; §19.52).** He worried that the
+   pullback relied on the learning algorithm, and asked whether the
+   derivative issue came from preexisting stimulation and whether
+   the inverse would do. Checked: yes to both. A look takes no
+   derivative; the request is carried down by the way back, the
+   rows' own entries (304 of 304 requests exact). "If we have
+   equally active words, then we have not identified the correct
+   word": the tie rule "first found" is withdrawn. Rules 36 and 37
+   are restated in §19.52 for his word. **The item's text for
+   Codex (§19.8) waits: "wait until discussion finishes".**
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for
