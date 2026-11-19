@@ -49,12 +49,14 @@ def test_the_stand_in_codes_as_word_identity_does():
     from Layers import RadixLayer
     from WordIdentity import WordIdentity
     sample = words()[:3000]
-    store = RadixLayer(96, initial_cap=8000)
-    identity = WordIdentity(store, pair_dim=64, length_dim=32)
+    # The source's parts half is 64 wide (rule 50); the stand-in as built
+    # keys forms on their parts alone, as WordIdentity does.
+    store = RadixLayer(64, initial_cap=8000)
+    identity = WordIdentity(store, pair_dim=64)
     for w in sample:
         identity.admit(w.encode())
     mine = ct.Coder('built').admit_all(sample)
-    differ = sum(int(np.any(identity.form(w.encode()).numpy()[:96] != mine.parts_vector(w))) for w in sample)
+    differ = sum(int(np.any(identity.form(w.encode()).numpy() != mine.parts_vector(w)[:64])) for w in sample)
     print(dict(words=len(sample), rows_that_differ=differ, shared=(len(identity.shared), len(mine.shared)),
                added=(len(identity.added), len(mine.added))))
     assert differ == 0 and len(identity.shared) == len(mine.shared)
@@ -174,9 +176,9 @@ def test_3_the_lessons_concepts_under_each_layout(lesson):
     print('model as built', ct.told_apart(ct.readings(codes, model_cols)))
     print('model codes, 8b columns', ct.told_apart(ct.readings(codes)))
     built = ct.Coder('built').admit_all(vocabulary)
-    stand_in = np.stack([built.parts_vector(f) for f in forms])
-    # The stand-in's parts half is the model's.
-    assert np.array_equal(stand_in, codes[:, :96])
+    stand_in = np.stack([built.parts_vector(f)[:64] for f in forms])
+    # The stand-in's parts half is the model's, 64 wide (rule 50).
+    assert np.array_equal(stand_in, codes[:, :64])
     print('stand-in as built', ct.told_apart(ct.readings(np.stack([built.vector(f) for f in forms]))))
     holders = ct.holders_of(vocabulary)
     for n in WIDTHS:
