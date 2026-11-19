@@ -8559,6 +8559,41 @@ So the wholes half cannot be made narrower as it is coded. It can if a whole is 
 
 **Put to Alec:** point 2 (it replaces the code of a property by its bytes, which was his layout), the width of point 1, and whether the whole of point 4 may be a property of bytes or must hold of a form as such.
 
+### 19.70 Alec: 64 and 64; wholes as a codebook of boundaries; evidence for and against in the code (2026-11-19)
+
+His answers to the three points of §19.69, and two further thoughts, in his words.
+
+**The wholes.** "The wholes section of the vector as a bitfield is easy, but we should be storing it as a codebook. Starting from the set of all values, we discriminate at some boundary ; that can continue to look like a bitfield for characters, or it can be just a number for feelings. Is this also your proposal?"
+
+*Answer.* In part. The same: a whole starts from everything and cuts some of it away; what a whole holds on (the set of bytes for a character property) is kept in the table of wholes and not in the percept's vector; a feeling is a number. Not the same: §19.69 gave each whole a few drawn coordinates in the vector and had not said that a whole *is* its boundary, one row of a codebook, with the vector carrying only a narrow code of the rows that apply. His statement is the rule; §19.69's point 2 is one way to write the narrow code.
+
+**The width.** "64 and 64 until proven that we need more. Since we will need a million codes, even if they are bf16 we will be storing a lot." *Decided:* 64 for the parts and 64 for the wholes, 128 in place of 352. (Measured at 64 for the parts alone, unsigned: 63 of 19,821 words take another word's row, and 5,937 rows lie inside another's by accident in a sample of 496 words, against 719 at 96. The trial says what, if anything, that proves.)
+
+**Evidence for and against.** "As for positive and negative evidence, we need both. Otherwise we will not be able to discriminate very well between two concepts which have many of the same parts, as they will be scored by similarity and not difference. To some extent, all parts in the catalog other than those that are parts are negative evidence. But also, we are directing a PI at the mereological domain, and it seems likely that there will be part codes in nearby space that we need to discriminate against. Is pi selecting only FOR and not AGAINST?"
+
+*Answer.* Yes: as built the Pi selects only for. A row is the product of its members' memberships on a lane (`PiLayer3`, `PerceptPi.forward`), so it says that its members are present and has no entry that says a part must be absent. The row of `archer` reads one inside `archery`. It has a second lane, but that lane carries what is witnessed against its own members; nothing writes the presence of another part onto it. What tells against today is elsewhere: the lookup takes the form whose parts are exactly those found (rule 44), and the Sigma has Not entries, learned from omission (rule 29).
+
+**The scalars.** "The scalar parts will just be values below, sorted by the less-than operation. Wholes in this case will be the same table as parts, so we are enclosing the scalar by a lessthan sort."
+
+**A signed code.** "Perhaps in parts we should do 1 for parts, 0 for indeterminate (or the partial parthood metric described in mereology), and -1 for wholes (negative indicating negative evidence). But we would want to balance the parthood metric at zero with a -1 to 1 range if we use it. Then we could do the same for properties, in so far as which properties apply and which do not. The caveat being, we would want the same kind of efficient whole-lookup."
+
+**Learned wholes.** "We might also want to let the wholes be learned properties of the top-down conceptual projection, so a pi on half and a sigma on the other half?  Does a learned code under monotone weights create both part and whole orders over a numeric vector?"
+
+*Answer, checked on random layers (4,000 pairs of vectors, one at or below the other in every coordinate).* A map whose weights are all zero or above keeps the order of its inputs: where one vector is at or below another, so are their outputs. This held for the Pi with any entries of zero or above, for `tanh(xU)` with `U` of zero or above, and for the union `1 - Π(1 - x)`; it failed as soon as the Sigma had one Not entry. The two directions come from the two layers:
+
+- A Pi output is at or below every input it reads, when its entries are one or more (a product of numbers between 0 and 1). It makes what needs all its members.
+- A union output is at or above every input it reads. It makes what any member is enough for. `tanh(xU)` rises with every input but is not always above it; only the union form is.
+
+So yes: the Pi makes the order below and the union makes the order above, over one vector, and both keep an order already there. What monotone weights cannot make is evidence against; that needs the against lane or a Not entry (his rule 29).
+
+**Claude's reading of the signed code, with examples, to be confirmed** (tried in §22.3b's trial as it runs).
+
+- *A form.* `archer` holds +1 at the coordinates of its parts and -1 at the coordinates that a form holding it adds (the `y` of `archery`), 0 elsewhere. Reading `archery`, the concept of `archer` then loses by the `y` what `archery` gains by it, so the two are scored by their difference. Unsigned, `archer` reads `archery` at one.
+- *A value.* One table of the values seen, in order. The value 2 holds +1 at the values below it and -1 at the values above it. A collection at 1 then reads against an input of 2, since 2 is above it. Unsigned, a collection at 1 reads .93 at 2 (§23.3.4).
+- *A property.* +1 where a property applies, -1 where it is witnessed not to apply, 0 where nothing is known.
+- *Stored as two lanes.* A signed value is its for part and its against part (§19.24), so the code is a for vector and an against vector, and no number below zero is stored.
+- *Not yet squared with §19.68,* where he said "all zeros for nothing and all ones for everything": in a signed code zero is "not known". Put to him.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10201,7 +10236,14 @@ A trial in tests only of §19.69's proposal, points 1 to 4, with rule
 6 as amended. Nothing in bin/ and no existing file is edited. New
 files: test/code_trial.py, test/test_item17_code_trial.py. Started
 on Claude's recommendation while the three points put to Alec in
-§19.69 are open; his answers change the build, not the trial.
+§19.69 were open. Amended by his §19.70 while it ran: 64 and 64 is
+the layout to judge, with 96 and 128 beside it; the signed code
+(+1 parts, -1 what a whole adds, 0 not known; stored as two lanes)
+is tried beside the unsigned one; a scalar is its place in one
+sorted table of values, the values below as parts and the values
+above as wholes; a whole is one row of a codebook, defined by its
+boundary; and, as a toy, a wholes half learned downward from
+concepts through weights of zero or above.
 
 For the code as built (352) and for two halves of 96 and of 128,
 measure and return:
