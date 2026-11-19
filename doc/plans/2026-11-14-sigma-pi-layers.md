@@ -8505,6 +8505,60 @@ Two things that are not as "all ones for everything":
 
 **3. The 32 empty coordinates.** Alec: "I am not clear on the question. All parts are the same length, right?" Yes: every part's code is the same length, 3 ones in the 64 coordinates of the part block (`WordIdentity.atom_code`). The question is about a form's row, the union of its parts' codes. Example, measured: `archer` has 20 ones of the 64; `archery` adds the part `y`, and each of `y`'s three ones is already set by a letter of `archer`, so the two rows of 64 are the same row. Of the 19,821 words, 63 take another word's row in this way with the part block at 64 coordinates, and 5 with it at 96 (`pair_dim=96`, `length_dim=0`; the same run). Put to him again with the example.
 
+### 19.69 Alec: the code is balanced between parts and wholes; a word is told apart by either (2026-11-19)
+
+His answers to §19.68, points 2 and 3.
+
+On the code: "It seems like the parts are doing too much work, the codes are wider than they need to be, and should be more balanced (half and half?). So if we can't tell two words apart, we should be as likely ( alternate? ) to create a differentiating whole/property as a part/particle. This will also help the centroid be meaningful."
+
+On the 32 empty coordinates: "the parts should be spread over all coordinates. White may be an intensity whole of a table, and number of legs may also sort them, and those codes are more easily orthogonalized so that they do not form accidental part relations if they are at least approximately in different subspaces."
+
+**Decided by this.**
+
+1. The parts are spread over every coordinate of the parts half. The block of 32 that holds nothing goes.
+2. The two halves are balanced, and the code is narrower than 352.
+3. Where two words cannot be told apart, a new whole (a property that holds of one and not of the other) is made as readily as a new part; they alternate.
+4. The codes of wholes of different kinds (an intensity such as white, a count such as the number of legs) lie at least approximately in different subspaces, so that one is not at or below another by accident.
+
+**Measured for it** (the first 20,000 words of `/usr/share/dict/words`, 19,821 distinct; a part has 3 ones; `WordIdentity` as built; accidents counted for 496 of the words against all of them):
+
+| Parts spread over | Words that take another word's row | A row at or below another's, the parts truly inside | The same by accident |
+| --- | ---: | ---: | ---: |
+| 64 (as built, 32 empty) | 63 | 2,311 | 5,937 |
+| 96 | 5 | 2,312 | 719 |
+| 128 | 4 | 2,312 | 613 |
+| 192 | 0 | 2,312 | 76 |
+
+A row has 32 to 35 ones on average at every width.
+
+*The wholes half is 256 wide because each coordinate is one byte.* A property's code today is the set of bytes it holds on (`PrimitiveProperties.codes`, "the exact byte extension": letters 52 ones, capitals 26, digits 10). Folded into fewer coordinates by the stream of bits that the parts use, it is no longer exact:
+
+| Wholes half | Ones of letters | Bytes that are not letters and lie inside letters |
+| --- | ---: | ---: |
+| 256 (as built) | 52 | 0 of 204 |
+| 128 | 42 | 80 of 204 |
+| 96 | 35 | 59 of 204 |
+
+So the wholes half cannot be made narrower as it is coded. It can if a whole is coded as a part is, by a few coordinates of its own and not by the bytes it holds on. That is point 4 read for every whole, the byte properties among them.
+
+**What the source has today** (a read-only survey, 2026-11-19).
+
+- *Every whole is a property of bytes.* There are nine declared rows (letter, digit, whitespace, punctuation, capital, control, high byte, pad, word; `Spaces.py`, the canonical rows of `WholeSpace`), and lessons may teach more. A whole holds of a form when it holds of every one of its bytes (`property_rows_for_bytes`). No whole holds of a form as such. "word" has the bytes of "letter", so the two have one code.
+- *A new property row at run time* has one mechanism, `WholeSpace.maybe_split_property_row`: it takes a free row and teaches it a set of bytes. Configurations with exactly nine rows have no free row.
+- *The 32 coordinates are not all empty.* A felt value is written at the last of them, coordinate 95, and at the last coordinate of the wholes half (`ScalarPercepts.code`, `BasicPercepts._boundary_codes`). §19.68 said they were empty; for a form they are. Parts spread over all 96 would collide with a value there.
+- *The step that tells two forms apart* compares the parts half only (`WordIdentity._settle`, `key`).
+- *The widths* are resolved in `resolve_identity_layout` (which requires the block of 32) and checked in `MereologicalCodes`; a checkpoint of another layout is refused, so `data/BasicModel.ckpt` does not load after a change.
+
+**What Claude proposes, to be tried in tests before it is built** (*mine*; Alec, 2026-10-06: simulate before specifying).
+
+1. *Two halves of one width, 96 and 96* (192 in place of 352). At 96 the parts lose 58 of their 63 shared rows and most of their accidents; 128 gains little more.
+2. *A whole is coded as a part is.* Each whole has a few coordinates of its own in the wholes half, drawn from its name by the stream of bits that draws a part's. A percept's wholes half is all ones less the coordinates of the wholes it lies in. So the halves mirror each other: the parts half gains ones with each part and is all zeros with none; the wholes half loses ones with each whole and is all ones with none. A whole that lies inside another (capital inside letter) carries the other's coordinates, as a form carries its parts'. Which bytes a property holds on stays where it is (`PrimitiveProperties.members`) and still decides which wholes a form has; it is no longer the code.
+3. *An intensity is a whole of its own kind:* its coordinates hold the felt value, in place of the last coordinate of each half.
+4. *Two percepts with one code are told apart by a new part or a new whole, in turn.* The part is rule 43's. The whole is a new property row taught the bytes of the form admitted first (`archer`), so that it holds of that form and not of the other (`archery`, for its `y`). This uses the wholes the source has, which are over bytes. Two forms of the same bytes (`cat`, `act`) can be told apart only by a part. The step compares the whole code, both halves.
+5. *The trial* is in tests only, as round 2 was for the looks, and returns: the words that share a code; the accidents in each half; how many concepts of order zero are told apart on the lesson (6 of 8 now); what the centroid of a set of codes holds from each half; the scalar collections of item 1.8 under point 3 (they are not told apart now, §23.3.4); the numeric certificate.
+
+**Put to Alec:** point 2 (it replaces the code of a property by its bytes, which was his layout), the width of point 1, and whether the whole of point 4 may be a property of bytes or must hold of a form as such.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -8795,7 +8849,16 @@ chooses from. The old classes are not edited.
    (Alec, §18.5, rule 8, with rule 31), in place of the least of
    `BasicPercepts.read`. For order zero, `store.conjunctive` and the
    key `conceptualPi` go. It becomes a row when MTM nominates it (rule
-   20).
+   20). *Mine (§23.3.4):* in a basic percept's row the run of parts
+   is the percept's presence. It is read as present wherever it lies
+   in the extent, and it stands the same on both lanes, since a run
+   of parts has no against of its own. The wholes are read on their
+   own lanes and must hold over the extent. So a percept whose parts
+   are there and whose whole is witnessed not to hold reads against
+   (the character `7` under the property "capital": for 0, against
+   1), and one whose whole is witnessed both ways reads both. As
+   first built the against lane was the product of the members'
+   against lanes, which the run of parts made zero.
 44. *The lookup of a sentence's forms, on the device* (Alec, §19.55,
     §19.57; §19.64, point 2). The parts of a sentence are found at
     every place by one product for each character length. The word is
@@ -8964,7 +9027,10 @@ chooses from. The old classes are not edited.
     made on first sight, as now. *Mine (§23.3.1):* for the count, a
     reading is one sentence of one stream, so a form that stands
     twice in a sentence is read once; and there is one count, kept by
-    MTM under the form, that every reader of the form adds to. This
+    MTM under the form, that every reader of the form adds to. A
+    reading is named by the model's present time and the stream
+    (`ConceptualSpace.reading`), which the trials of one sentence
+    share, so that two trials of a sentence count once (§23.3.4). This
     replaces the basic percept
     reserved at a word's first reading (`BasicPercepts.reserve` in
     the word loop of `bin/Models.py`), the lessons' declared
@@ -9368,6 +9434,9 @@ certificate is recorded and not repaired (1.8 §43); those are marked
    no bias; an entry is for or Not, never both. A property seen both
    true and false is read as both at its basic percept, whose two
    lanes can both be above zero, and not at a concept (Alec, §19.68).
+   This needs rule 6's reading of a row's run of parts on both lanes
+   (§23.3.4): as round 3 first built the row, its against lane was
+   always zero, and both stood only in its wholes' two lanes.
 4. *The cycle:* the next Sigma reads one combined input, for less
    against, for each symbol; no symbol is made at a concept's
    allocation; a promotion is the nomination of a row, which brings
