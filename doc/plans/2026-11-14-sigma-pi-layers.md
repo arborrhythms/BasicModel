@@ -8819,6 +8819,19 @@ Put to him in §19.84 (the source ranks the rows of LTM by a question's field ag
 
 **The sweep.** Asked whether the one default sweep should be run now and not only at the item's push round: "run the default sweep now, if in process, otherwise wait until I answer all of your questions." Work is in process, so it is run now, on round 3c's committed source (`d0a3832629`), in a copy outside the checkout so that round 4's edits do not enter it.
 
+### 19.86 Alec: no code inside another by accident; a form's parts and wholes are linked when it is introduced (2026-11-19)
+
+On §23.3c.4 (in a sample of 496 words read against 19,821, some 1,360 codes lie inside another's without the one form being part of the other): "Codes lying inside one another by accident should not be permitted. When a form is introduced, all of its parts and wholes must be identified and linked. That will be a start-up penalty only."
+
+*Decided.*
+
+- *At a form's introduction, once:* every stored form and catalog part that it holds, and every stored form that holds it, is found and linked. Nothing is searched for later.
+- *No code lies inside another's unless the one form is linked as a part of the other.* Where a new form's code would lie inside a stored form's, or a stored form's inside it, with no link between them, the codes are made to differ before the form is kept.
+
+*What the source has of this.* The forms that hold a form as a run are kept as it is admitted (`WordIdentity._hold`, `holders`), for the against lane. A form's parts are its characters and the added parts inside it (`atoms_of`); a stored form inside it is not a part of it by any link, only by its code lying inside. Nothing looks for a code that lies inside another's by accident.
+
+*What is not known, and is tried in tests before a rule is written* (*mine*). Whether it can be done in 64 coordinates. A code has 31 ones of 64 on average and up to 51, so a short form's few ones fall inside a long form's by chance often, and each repair gives the short form, and every form that truly holds it, more ones. Raising the bits of an added part did not converge in round 3c (880 accidents left at four bits, 985 and two shared codes at six). What has not been tried is choosing the coordinates that separate two forms, in place of drawing them. The trial measures, at 64 and at 96 and 128: whether every accident can be removed as forms are admitted; what it does to the ones in a code and to the time of an admission; and if it cannot be done at 64, that is the proof Alec asked for before the width grows (§19.70).
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
