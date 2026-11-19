@@ -7,9 +7,11 @@ and [symbolization establishes an order-1 individual](Mereology.md).*
 
 ## 1. Orders are sets of symbols
 
-An object at order *n* ≥ 1 is a set of order-(*n*−1) symbols, with graded
+An object at order *n* ≥ 1 is a set of symbols of lower orders, with graded
 (fuzzy) membership, exactly as in set theory. Order increases are always
-over individuals: a set collects symbols, never field regions directly.
+over individuals: a set collects symbols, never field regions directly. The
+ladder is not strictly ramified (Alec, 2026-11-17): a symbol of order *k*
+reads the concepts of every order below *k*, not only those of order *k*−1.
 
 Order 0 is the field: percepts, located in `.where`/`.when`, and the
 Boolean and mereological operations among them — union, intersection,
@@ -18,13 +20,36 @@ and containment; two identical percepts are not one thing until a symbol
 collects their occurrences. Truth at order 0 is coverage of an extent (the
 catuṣkoṭi's for/against lanes).
 
-**The basic level (2026-11-09).** Parts and wholes bound one basic percept
-in perception. An order-0 concept collects those basic percepts through
-`2*bp + pole` literals, not through separate part and whole literal kinds,
-and a property-only or part-only concept collects the basic percepts
-carrying that boundary. Higher orders collect concepts. This is the common
-basis of the order alternation. A recurring basic-level collection promotes
-a percept row, not an order-0 concept.
+**The basic level.** Parts and wholes bound one basic percept in
+perception: a basic percept is a row of the first Pi over its parts and
+wholes, made when MTM nominates it on recurrence and never on a first
+reading. Each nominated row brings one concept of order zero, a column of a
+dense Sigma over the combined code of what is there
+([Architecture](Architecture.md#sigma-and-pi-layers)). Above order zero the
+structure repeats: a symbol is a row of a Pi over concepts, nominated by MTM
+in the same way, and it brings one concept, a Sigma over symbols. Pi, Not
+and Sigma at every order are the common basis of the order alternation
+(Alec, 2026-11-17).
+
+**Symbols are held apart from concepts** (Alec, 2026-11-14). Symbols and
+concepts are in separate tensors, and a symbol has no dimensions: no vector,
+place, form or trust content is read at it as a direction. A symbol is two
+unsigned rows, one for each lane, and brings one concept. It is made when
+MTM nominates it, or by `interpret` for a meta concept, and never when a
+concept is allocated. A symbol stores no `.where` or `.when`; its `.where`
+is written when STM reads it. Between conceptual orders only activation
+passes: a pull within one order does not pass through a symbol.
+
+**Room at each order** (Alec, 2026-11-19). "Geometric taper is not a bad
+rule. Interconnection should be: order zero is n:n on basic percepts, order
+1 is n/2 (with taper) connected to 3n/2, since it connects to both lower
+rows." Order zero has as many concepts as there are basic percepts, each
+order above has half the units of the one below, and the concepts of an
+order connect to the two rows beneath them: at order one its own symbols
+and the concepts of order zero. This is storage allocated beforehand, not a
+number of entries expected. Within that room each order's Sigma is square:
+as many concepts as nominated rows, each concept starting from its own row
+alone.
 
 ## 2. Intension lives at order 0; orders above 0 are extensional
 
@@ -240,9 +265,10 @@ reversed design is recorded in [DevelopmentHistory](DevelopmentHistory.md)).
 What stands:
 
 - **All symbols in one mereological tree.** Every symbol of every order
-  lives in one structure, the symbol index with its Part tree: a word form
-  the centroid of its letters and wholes in the percept cube; a kind tied to
-  its members, an individual to its occurrences, a sentence to its
+  lives in one structure, the rows of the Pi at each order with the Part
+  edges of `LTM1`: a form is a percept whose code is the set of its parts
+  in the percept cube ([Mereology](Mereology.md)); a kind is tied to its
+  members, an individual to its occurrences, a sentence to its
   constituents, by Part edges. One tree, all orders, one relation; two
   carriers, geometric up to order 0 (forms) and recorded above it. A
   symbol above order 0 has no form and no centroid: it is a point that its
@@ -267,12 +293,14 @@ What stands:
   relation between orders says which concepts belong together, activation
   and evidence cross it, and a position never does.
 
-**Centroids (Alec, 2026-10-24 and 2026-11-12).** An order-0 concept's form
-is the center of the space of its parts and its wholes, each averaged over
-its count. A
-higher-order concept has no parts and wholes, and it carries no perceptual
-form: a symbol above order 0 does not take the centroid of what it
-collects (above). A reader that needs its form takes the form of its
+**Forms (Alec, 2026-11-12 and 2026-11-19).** A concept has no form of its
+own. A concept of order zero reads its basic percept's code: its column
+starts from what tells for its member less what tells against it, each side
+divided by the number of its own contributions and the two taken at their
+mean, so that the member read alone reads one
+([Architecture](Architecture.md#sigma-and-pi-layers)). A higher-order
+concept has no parts and wholes, and it carries no perceptual form: a symbol
+above order 0 does not take the centroid of what it collects (above). A reader that needs its form takes the form of its
 word, through the definition that maps the word to it. A class row's cover
 (`cover_members`) weights each member by its net positive evidence
 $\max(0, p - m)$ and drops non-positive members, and a class's place in
@@ -462,8 +490,9 @@ broken transitivity: a concept joined to several distinct concepts at its
 order is read off the LTM1 rows, by inspection.
 
 **Minting and raising are different.** `raiseCount` governs raising only.
-`conceptMintCount` governs minting only: it is the recurrence that promotes
-a familiar candidate or identity, and a kept defining clause promotes its
+`conceptMintCount` governs minting only: it is the recurrence at which MTM
+nominates a familiar candidate or identity as a row, which brings its one
+concept, and a kept defining clause promotes its
 pending subject without a count (`define_pending`). A row is raise evidence
 wherever it is written, so the minted symbol's original row counts toward
 `raiseCount` and is not a mint.
@@ -596,7 +625,7 @@ their a priori declaration and grammar use. See
 
 ## A felt value at order zero
 
-A present scalar reading is a basic percept held in MTM, with a `bp` reference. Each word heard beside it collects such percepts in its own order-zero concept, with a `sym` reference. Their reference kinds distinguish percept and concept without provenance. The concept generalizes the witnessed perceptual parts and wholes; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Asked "what is this?" of a felt value with no object named, the model runs `interpret` backwards, as its generate face `name`: the concept that collects the present reading is read from the field, with no words, and that concept's word is given (`InterpretLayer.reverse`, `lexical_form`). Zero creates no positive value percept or scalar collection. A numeric input row is read the same way, a level percept at each place ([Spaces](Spaces.md#percept-level-sets)).
+A present scalar reading is a basic percept held in MTM, with a `bp` reference. Its code is its place in one sorted table of the values seen: the bins at or below it tell for it and the bins above it tell against it (Alec, 2026-11-19; [Mereology](Mereology.md)). Each word heard beside it adds such percepts as members of its own collection, with a `sym` reference, and the collection is read by its bounds, 0 or 1, not through a column of the Sigma. Their reference kinds distinguish percept and concept without provenance; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Asked "what is this?" of a felt value with no object named, the model runs `interpret` backwards, as its generate face `name`: the concept that collects the present reading is read from the field, with no words, and that concept's word is given (`InterpretLayer.reverse`, `lexical_form`). Zero creates no positive value percept or scalar collection. A numeric input row is read the same way, a level percept at each place ([Spaces](Spaces.md#percept-level-sets)).
 
 ## 12. A word at several orders; order read from the codebook (Alec, 2026-11-13)
 
@@ -616,9 +645,8 @@ based on where it sits in the codebook, since concepts are currently
 ramsified and preallocated." Each order has its own block of rows in the
 concept inventory (`order_slice`), and a concept is given its row at the
 order at which it is admitted. A concept never changes order, since a raise makes a new
-concept. Its symbols' `.where` is its row, in the symbols' range of the
-model's one address space, so its order is read from that place and stored
-nowhere else. No order's rows spill into rows the orders share: a full
+concept. Its row's place in the concepts' range of the model's one address
+space names its order, and the order is stored nowhere else. No order's rows spill into rows the orders share: a full
 block is a capacity error naming its order.
 
 **So is modality.** "modality as implicit since both it and order can be
@@ -627,6 +655,17 @@ concepts in virtue of muxing the .where of a percept will include a .where
 in a range that can uniquely identify the modality and order of a percept"
 (Alec, 2026-11-13). Each modality's input has its own range of places
 ([Spaces](Spaces.md#percept-modalities)).
+
+**A meta concept and the blank object** (Alec, 2026-11-17 and 2026-11-18).
+A meta concept, which joins a word to its object, is one order above the
+higher of its word and its object, and it reaches both in one step, with no
+symbol between. `interpret` makes it, with its structure, when it interprets
+a word whose meta concept does not yet exist; it is not nominated by MTM.
+For a word with no object, `interpret` makes with it a blank object: a new
+concept with no members, one order above its word, whose vector starts at
+zero ("Pure zero is even better, since magnitude is certainty in that
+space"). A read that normalizes a concept vector does not divide by its
+zero length.
 
 An idea composed of several words has no row. Its order follows from its
 operands and its operators: `lower` drops one, `lift` raises one, and a

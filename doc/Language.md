@@ -174,12 +174,10 @@ What cannot be reduced to one idea, such as chained phrases that refer to
 each other (he said (she said (hello))), is left as ideas with the
 references between them.
 
-**A word with no object.** A word that has no object yet still reaches
-comprehension as a leaf: `InterpretLayer.reading` holds a name for it in
-MTM, and the leaf takes that pending name, whose value is the word's own
-vector and whose order is the word row's
-([below](#interpret-word-concept-to-object-concept-2026-09-25)). The name
-gets its definition row at a kept close.
+**A word with no object.** A word that had no object reaches comprehension
+as a leaf whose object is the blank object `interpret` made for it with its
+meta concept: its value is zero and its order is one above its word's
+([below](#interpret-word-concept-to-object-concept-2026-09-25)).
 
 The two stages have ties with Frege (Alec, 2026-11-17): the read writes
 the sentence as a formula whose form does not depend on what its signs
@@ -211,10 +209,11 @@ and `False` once any non-default operator rule (`part`, `equal`,
 
 ## Folds and orders in the grammar
 
-**What the grammar's `sigma` and `pi` bind to (2026-09-24).** The
-perceptual towers own no fold layers, since perception is not sigma and
-pi: in the towers parts combine with AND and wholes divide with OR, while sigma
-and pi are grammatical functions that transform conceptual space. So a unary
+**What the grammar's `sigma` and `pi` bind to (2026-09-24).** Nothing. The
+layers Pi, Not and Sigma are the model's one structure at every order, the
+first of them over the percepts
+([Architecture](Architecture.md#sigma-and-pi-layers)); they are not
+operations a grammar chooses. So a unary
 `P = sigma(P)` or
 `C = pi(C)` rule has no host layer and the dispatcher passes the operand
 through unchanged (`_by_name` miss → `return subspace`); `sigma` and `pi`
@@ -290,23 +289,73 @@ thought permission. Matching faces share one identity and role contract but
 receive their phase-specific context. The capitalized `<Queries>` section is
 rejected, not treated as a parallel catalogue.
 
-The compose grammar declares `focus` and `unfocus` with field operands.
-Focus divides a mixed bracket, enters a retained part or looks at one pure
-word. Unfocus restores a divided or entered bracket while all its words remain
-unread. Both operate during examination. The field operators `intersection`,
-`union` and `not` operate within a bracket. The chooser (`attend`) scores the
-bracket actions with the sentence prefix understood so far. Attention has no
-act that accepts a word.
+### The looks
 
-A sentence is read by one loop of looks (`SentenceLooks.Looks.run`). The first
-look is the whole sentence, every word bracket read at once; each later look
-is one act of `attend`. Every look is perceived and conceptualized, whether or
-not it holds a word: the native percepts inside its bracket are read and the
-concepts of every order are given from them (`SentenceLooks.perceive`), and
-its field is kept, with its place, beside the sentence's own. Then, before
-`attend` acts again, the grammar has its option. Where the look is one known
-word read with one lane (`Attention.interpretation_at`), it may call
-`interpret` on that word. `architecture.interpretBias` (0 to 1, default 1) is
+A sentence is read by one loop of looks (`SentenceLooks.Looks.run`). The
+first look is the open run, in which the whole sentence is read at once; each
+later look is one call of `attend`. A look is content based: it asks for
+concepts, and what it returns is found by what the sentence's percepts are
+and where they stand. It is not made of the word intervals the input is
+split into, and no place is given to it as a number (Alec, 2026-11-18: "If
+that is forced to words, then the lexer is doing the models job"). What is a
+word is the level a request asks for. The mechanism, with its arithmetic, is
+in [Architecture](Architecture.md#one-attention); what the grammar sees of it
+is this.
+
+- **The percept bank.** At a sentence's start one lookup reads its percepts
+  into one bank. For each event the bank holds its row of the first Pi, which
+  is what the event is (a form's row where the store knows the form, and the
+  rows of the form's parts); its place, which is its start; its band of where
+  wires; its time; the token it belongs to; and its activity on two lanes. A
+  known form that spans several tokens (`ice cream`) is an event of its own
+  at its start. The bank is read once: no look reads a span of the input
+  again.
+- **A look is an activity over the bank.** An event is in a look to the
+  degree that both what it is and where it stands are salient. What is not
+  active is absent on both lanes and is never evidence against.
+- **The request** is the output of `attend`: a mask over all concepts, on
+  two lanes, and learned. It names a place in the tree of concepts, and the
+  more particular the concept asked for, the fewer words it selects. The
+  first request is the concept "words", which every word's concept is a
+  member of; it has a Not entry on the space character, so asking for words
+  lowers a part that holds a space. A concept "objects", which every
+  object's concept is a member of, is declared beside it (Alec, 2026-11-19:
+  "Since we create the meta by hand, we might as well add the "objects"
+  concept also").
+- **The salience map** is the request carried down to the percepts as a
+  gradient of the asked concepts by the percepts of the sentence, taken from
+  the open run. Each Sigma is passed by its weights, before its squash, so
+  that a concept already lit still returns its percepts (Alec, 2026-11-19:
+  "You said weights were better, lets do that"). It lands on what each event
+  is and on its band of where wires, and the look is the intersection of the
+  two.
+- **The returned set.** The way up is run again on the bank with the look's
+  activity, and what it gives, each concept at its token, is the returned
+  set. The salience map selects the level and the where selects the word.
+  The grammar's option at a look is over this set.
+
+`attend` gives the mask over concepts, carries it down as the salience map
+onto what and where, intersects them, runs the way up and hands the
+returned set to the grammar. No order of reading is built in. `attend` asks
+for the word level in general and moves the place it asks for from the
+state of STM, so as to find the next word not yet read; reading the words of
+a sentence in order is taught by the reading lesson
+([Training](Training.md)), and its test gates the grammar's tests. A look
+with the same request gives the same result whatever was looked at before
+it. The operations declared for attention, `focus` and `unfocus`, and the
+field operators `intersection`, `union` and `not`, act on the request's two
+lanes; none of them acts on an interval of the input. Attention has no act that accepts a word.
+
+Every look is perceived and conceptualized, whether or not it returns a
+word: the concepts of every order are given from its activity, and its field
+is kept beside the sentence's own. Then, before `attend` acts again, the
+grammar has its option. `interpret` takes the most active word concept of
+the returned set, exactly: a selection, with no degree. Of forms that begin
+at one place the largest is the word, so `is` is not taken at the token of
+`This`. Where several are still equally the most active, the request has
+identified no word, and one is taken by a draw that the outcome of its path
+credits, as an explore path's departure is credited. Where the set holds no
+word concept, nothing is interpreted. `architecture.interpretBias` (0 to 1, default 1) is
 the probability that the call is made without asking the chooser; in the
 remaining share the grammar's chooser decides it as it decides its other
 one-operand rules (`OperationSelectionLayer.choose_interpret`, `interpret`
@@ -314,19 +363,65 @@ against abstaining), and that decision is recorded, explored and credited
 like its others (`interpret_at_look`). At 1 every offered word is
 interpreted; the bias is to be lowered later, so that a word is interpreted
 when experience shows it is worth it (Alec, 2026-11-18). A word that is
-interpreted is found, perceived and deposited in the tree, and its bracket
-is done. A word that is looked at and not interpreted stays a word: its
-concepts are active in the field, but it is no leaf and joins no tree.
+interpreted is deposited in the tree and composed as it arrives, and it is
+lowered in the bank's activity over its extent, so that the next request
+finds the next word. A word that is looked at and not interpreted stays a
+word: its concepts are active in the field, but it is no leaf and joins no
+tree.
+
+**A literal** (Alec, 2026-11-18). A word left uninterpreted may enter the
+tree as a literal, a sign and not a symbol, as if it had been quoted. It
+stands where a clause would, and it enters only where the grammar has a
+rule that takes it, such as `sign` (`SignLayer`). Where no rule takes it,
+the sentence is not well formed.
+
+**Silence** (Alec, 2026-11-19). When the read of a sentence gives no
+well-formed formula, the sentence is written by force as an empty sentence
+that ends in NULL, by the rule `silence`, S → NULL, and the read ends there.
+The rule is in no grammar file and nothing chooses it: "it is only a
+fallback for a broken grammar". It is a rule's layer registered by its name
+beside the others (`GRAMMAR_LAYER_CLASSES`), with no operand, applied where
+the closing finds that the sentence's trees did not reduce to one
+(`Models._stm_reduce_to_single_S`). The row it writes holds no word and no
+concept, and MTM takes nothing from it; what is put back for the sentence is
+NULL at every place. A read that gives no formula is an error: the
+sentence's cost is booked, and that is how the error is propagated. A
+literal with no rule to take it ends so.
 
 Words are admitted only inside a sentence run (`BasicModel._sentence_run`),
 where the sentence owns the read. A read with no sentence is attention's walk
-alone (`ModelAttention.stage_input`): it admits no word, so there is no formula,
-and a parse that gives no well-formed formula outputs nothing (Alec,
-2026-11-19). Nothing raises for that reason. The fast word evaluator
+alone (`ModelAttention.stage_input`): it admits no word, so it gives no
+formula and ends in silence. The fast word evaluator
 (`eval_nanochat_grammar.word_candidate_scores`) reads with no sentence, so it
 lists every item as silent and ranks none until it reads sentences.
 
-The line between the two is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `change`, `lift`, `lower`, `verb`, `modifier` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. The four connectives "collapse to two, with extent/intent each" (Alec, 2026-11-13): `intersection` and `union` act on a field, the symbolic encoding, and on two operands' vectors in conceptual space. `conjunction` and `disjunction`, a symbolic pair over activation patterns, are kept only by grammar files other than `complete.grammar`.
+**A fragment read at one time** (Alec, 2026-11-19). "we don't need "the
+cat" to be a form; we need both words to be processed by the basic level at
+one time, but not necessarily as one symbol, and produce an idea that would
+closely correspond to those words processed separately and grammatically."
+It is an option of the grammar, off unless a configuration sets it, and no
+form, row or symbol is made for the fragment.
+
+- A look whose extent holds two or more words returns their percepts
+  together, and the basic level reads them at one time: the combined vector
+  over all of them, and the concepts of order zero.
+- The read from a field to a point (`IdeaRead`, `ConceptualSpace.idea_stack`)
+  gives one idea for the look, as it gives one for a whole sentence.
+- System 2 teaches it: when the grammar composes the same words one by one
+  into a constituent, that constituent's idea is the target of the read on
+  the look's field, as the kept sentence's root idea is the target of the
+  sentence's read (`IdeaRead.complete`).
+- At such a look the grammar may take the read idea as the meaning of one
+  constituent and go on, in place of the operations that compose it. The
+  constituent's part of speech is read from the same field, from the
+  grammar's declared argument concepts, and is taught by the class the
+  composed constituent filled. The option is taken with a probability that
+  starts at zero, and the composition runs beside the read while the read is
+  taught.
+
+### Encodings and operator signatures
+
+The line between a symbolic and a conceptual encoding is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `change`, `lift`, `lower`, `verb`, `modifier` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. The four connectives "collapse to two, with extent/intent each" (Alec, 2026-11-13): `intersection` and `union` act on a field, the symbolic encoding, and on two operands' vectors in conceptual space. `conjunction` and `disjunction`, a symbolic pair over activation patterns, are kept only by grammar files other than `complete.grammar`.
 
 All executable operators declare their reads, writes, operand kinds, order
 change and head roles: one capability declaration over the accessible
@@ -447,7 +542,7 @@ Every operation's `forward` is what `<compose>` fires and its `reverse` is what 
 
 **Synthesis.** `synthesize` adds two constituents and `analyze`, its reverse spelling, returns the other operand exactly when one is given. A phrase beyond the word, an idiom, is a synthesized concept admitted by recurrence. WholeSpace's analysis of the field, its cut by wholes, is a separate process and not the reverse of a synthesis.
 
-**Surface form and markers.** `surface` is the operator of surface form. One lexeme with its inflected and reordered forms is one word with its transformations, and a language's freedoms of word order are transformations of one structure, not separate syntaxes. `surface` attaches a marker to a complete content constituent: the meaning is the content's, with its polarity, scope and structure, while both operands stay in the numerical carrier for the next choice; the chooser, never a word table, decides whether a word is a marker. `swap` rewrites the two newest constituents in place, a 2-to-2 step that is exact and its own inverse, so a question read in its surface order can compose to the same meaning as its declarative. Splitting a word and inserting a silent element are not grammar operations: sub-word wholes nest inside the word whole ([Lexicon](Lexicon.md#word-forms-and-concept-orders)), and the word stays the unit of attention. A marker belongs to its operator, and no operator has a one-operand face of its own: `lift` and `lower` take one operand, and what a marker does without a written word is the work of `marker`, a one-operand operator whose kernels are learned ([The operators](#the-operators-alec-2026-11-13)). Irregular forms are stored whole and block the rule. There is no morphology analyzer and no operation named for tense, aspect or morphology: tense and aspect are a selection among a verb phrase's phases by `compound` ([below](#words-narrow-the-domain-of-discourse-2026-09-28)), or a kernel of `marker` that the sentence's context chooses. No language is named or special-cased in code, configuration, fixtures or tests (Alec, 2026-10-19): which selection a marker calls, and with what object, is learned by exposure.
+**Surface form and markers.** `surface` is the operator of surface form. One lexeme with its inflected and reordered forms is one word with its transformations, and a language's freedoms of word order are transformations of one structure, not separate syntaxes. `surface` attaches a marker to a complete content constituent: the meaning is the content's, with its polarity, scope and structure, while both operands stay in the numerical carrier for the next choice; the chooser, never a word table, decides whether a word is a marker. `swap` rewrites the two newest constituents in place, a 2-to-2 step that is exact and its own inverse, so a question read in its surface order can compose to the same meaning as its declarative. Splitting a word and inserting a silent element are not grammar operations: sub-word wholes nest inside the word whole ([Lexicon](Lexicon.md#word-forms-and-concept-orders)), and the word is the level that attention's request asks for. A marker belongs to its operator, and no operator has a one-operand face of its own: `lift` and `lower` take one operand, and what a marker does without a written word is the work of `marker`, a one-operand operator whose kernels are learned ([The operators](#the-operators-alec-2026-11-13)). Irregular forms are stored whole and block the rule. There is no morphology analyzer and no operation named for tense, aspect or morphology: tense and aspect are a selection among a verb phrase's phases by `compound` ([below](#words-narrow-the-domain-of-discourse-2026-09-28)), or a kernel of `marker` that the sentence's context chooses. No language is named or special-cased in code, configuration, fixtures or tests (Alec, 2026-10-19): which selection a marker calls, and with what object, is learned by exposure.
 
 #### Concept events are opaque to the grammar ops (2026-09-13)
 
@@ -477,29 +572,35 @@ interpret_argin1 = interpret.reverse(interpret_argout1)     # generate face: lex
 
 Unary, like `not`; its second argument is implicit, the current attentive
 field. `interpret_argin1` is the **word-concept**: the code the word arrives
-as, which PartSpace has already looked up as the recurring unit the fold
-ladder admitted — `interpret` is never the byte-to-word step.
+as, the concept of the basic percept that MTM nominated for its form;
+`interpret` is never the byte-to-word step.
 `interpret_argout1` is the **object-concept** already associated with the word,
 at whatever order that object has. For example, *cat* returns a known cat
 kind if that is its association. Among several existing associations
 `interpret` reads the one expected, and where none is expected the one of
-highest order (below). A new object replaces the word in its inventory row, with
-that row's order; no singleton fold raises it merely to bind a word.
-A default call never adds a particular beside a known kind.
+highest order (below). A word with no object is given the blank object
+(below). A default call never adds a particular beside a known kind.
 Reference orders follow
 [Lexicon](Lexicon.md#word-forms-and-concept-orders); the operator never
 reads the surface form, and no word is anchored to it.
 
-A word's parts fuse before lookup, and its
-concept retains its parts and wholes. Presence requires the part inside
-the word's bracket; a shared property never evidences an absent word.
-Re-reading the same canonical parts mints and writes nothing, regardless
-of changes to the learned property reading. Different parts remain an
-alternative witnessed definition.
+A word is found from its parts. Its form's code is the set of its parts
+([Mereology](Mereology.md)), and its basic percept is a row of the first Pi
+that reads it present where its parts are present and against where a part
+that a form holding it adds is present
+([Architecture](Architecture.md#sigma-and-pi-layers)); a shared property
+never evidences an absent word. Re-reading a form writes nothing new.
 
-A new word is admitted pending, with capacity reserved for itself, its
-object and their definition row; its object comes later, when a kept
-defining clause or the recurrence of its mentions promotes it (below). The
+A new word is perceived at once, but `interpret` cannot find it until MTM
+nominates its basic percept, which MTM does when the form recurs
+(`concept_mint_count` readings; a reading is one sentence of one stream, so
+a form that stands twice in a sentence is read once). Its concept of order
+zero comes with that row (Alec, 2026-11-19). When `interpret` interprets a
+word whose meta concept does not yet exist, it makes the meta concept with
+its structure. Where the word has no object, it makes with it the *blank
+object*: a new concept with no members, one order above its word, whose
+vector starts at zero (Alec, 2026-11-18: "Pure zero is even better, since
+magnitude is certainty in that space"). Neither is nominated by MTM. The
 word continues to exist by identity in `word DEF object`: an LTM1 row whose
 two references are the object and the word, both symbols named by identity and
 never by their codes, so what training does to either code never redirects a
@@ -548,7 +649,7 @@ reverse is the form itself. The tokens and the null-concept are in
 [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts-alec-2026-10-31),
 "The three readings forced".
 
-**Grounding is textual (Alec, 2026-10-19).** The model perceives word forms (letter parts and wholes) and forms word-concepts from them. A word-concept references an object-concept of any order: "Bill" an individual, "water" a mass, "chair" a count kind. Since the model experiences only text, a word gets an object-concept of its own, minted when a kept defining clause or the recurrence of its mentions promotes the word's pending identity (`FamiliarTier.define_pending`, `promote_candidates`), and the model learns about that object from what the text states: a definition ("a table has a top and four legs") adds parts to the conceptual mereology, and a kind statement ("tables are furniture") adds to the conceptual hierarchy. There is no perceptual grounding stage. A newly minted object-concept is nearly empty, resemblance between words arrives through what the text says of them rather than through percepts, and lessons demand behaviors, never non-empty meanings.
+**Grounding is textual (Alec, 2026-10-19).** The model perceives word forms (letter parts and wholes) and forms word-concepts from them. A word-concept references an object-concept of any order: "Bill" an individual, "water" a mass, "chair" a count kind. Since the model experiences only text, a word gets an object-concept of its own, the blank object `interpret` makes for it, and the model learns about that object from what the text states: a definition ("a table has a top and four legs") adds parts to the conceptual mereology, and a kind statement ("tables are furniture") adds to the conceptual hierarchy. There is no perceptual grounding stage. A newly minted object-concept is nearly empty, resemblance between words arrives through what the text says of them rather than through percepts, and lessons demand behaviors, never non-empty meanings.
 
 **What `interpret` creates (Alec, 2026-11-13).** "the interpret() operator in
 our grammar should create a symbol, and we do not symbolize all concepts to
@@ -569,9 +670,10 @@ representation to an object, for which there is no initial basis."
   `InterpretLayer.denotations`.
 - **A symbol of one concept.** "The symbol of a single concept is admissible,
   and perhaps necessary for a zero-D thing."
-- **Only `interpret` makes a symbol.** "lets let interpret() make all
-  symbols." That needs the definition store split into concept rows and
-  symbol rows ([FutureWork](FutureWork.md)).
+- **Who makes a symbol.** Symbols are held apart from concepts and have no
+  dimensions ([Orders](Orders.md)). A symbol is made when MTM nominates it
+  on recurrence, or by `interpret` for a meta concept, and never when a
+  concept is allocated.
 - **Its two names.** "let's use name() and interpret()." `interpret` takes
   a word to its object and `name`, its generate face, takes an object to
   its word. Saying what a present thing is, with no word given, is `name`:
@@ -595,7 +697,10 @@ representation to an object, for which there is no initial basis."
   the other, and the two became one thing (Keller 1903; Percy 1975). The word
   had been learned from its own recurrences, and the object from its own, in
   another modality; the meta-concept that joins them was learned third, from
-  their consistent association. Two words are joined in the same way,
+  their consistent association. In the model a word generalization and an
+  object generalization are each a row that MTM nominates, with its
+  concept, from their own occurrences; an occurrence keeps its place and
+  time, and a generalization holds neither. Two words are joined in the same way,
   through what both are joined to: "Alec" and "he" by a common perceptual
   basis, and not by a likeness of their occurrences. A model with one
   modality cannot know an object except through its word, so it starts by
@@ -914,8 +1019,8 @@ adjectives are left free to commute. It does not lower the order either: it
 selects from the determined set, as an oil is a kind of oil and a gun oil a
 specific kind of oil. The test is whether the word can stand as a noun over
 the whole domain. In both cases the domain is kept as the Ground against
-which the narrowed Figure has its meaning; it is not discarded as perceptual
-attention discards what it excludes.
+which the narrowed Figure has its meaning, as perceptual attention dims what
+lies away from its request and does not cut it ([The looks](#the-looks)).
 
 **Modification (Alec, 2026-10-18).** Intersection cannot serve every adjective: a relative adjective reads its scale from its noun, so what is small for a big noun is larger than what is small for a small noun, and a function relative to its argument fits it better. The grammar offers both `intersection` and `modifier`, whose gain scales the noun's own values, and the chooser picks at run time; a lesson's adjective-noun bracket names the constituent, never the operator ([Learned argument concepts](#learned-argument-concepts)). A noun is an adjective pre-applied to the universe, the all-ones vector that is a product's identity. Every operator has an identity element, and an operator applied without its written operand is applied to that identity (NP = everything, VP = occurs, MP = all possible worlds).
 
@@ -1064,11 +1169,11 @@ and has the rest commented out.
   unit range. A difference floors at zero on each lane, and a quotient by
   zero is silent. Arithmetic on numerals remains thought by chained
   successor ([Training](Training.md)).
-- **Attention finds a word for grammar.** `focus` selects its bracket.
-  `unfocus` can undo the last narrowing while its words remain unread.
-  At a look that is one pure word the grammar may call `interpret`, with
-  probability `interpretBias` and otherwise by its chooser
-  ([Grammar](#grammar)).
+- **Attention finds a word for grammar.** `attend` asks for concepts, and
+  the look returns a set of concepts at their tokens. Where that set holds
+  a word concept the grammar may call `interpret` on the most active one,
+  with probability `interpretBias` and otherwise by its chooser
+  ([The looks](#the-looks)).
 
 ## Exist and thought operations at the completed boundary
 

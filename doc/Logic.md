@@ -23,13 +23,14 @@ test or accumulate the resulting propositions.
 
 > **Terminology.**
 > One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally
-> embedded, EXTENSIONAL; *part* = atom / bottom-up $\sigma$, *whole* = property/region
-> / top-down $\pi$ are its two subtypes); **basic percept** = the tie of one
-> part-percept $\leftrightarrow$ one whole-percept; **concept** = a ConceptualSpace
-> thing: an order-zero concept collects basic percepts, and a concept of a higher
-> order collects symbols of the order below (the Concept codebook, diachronic);
-> **symbol** = a SymbolSpace thing (0-D, INTENSIONAL, references a
-> concept; the symbol codebook). WholeSpace itself holds whole-percepts.
+> embedded, EXTENSIONAL, unsigned on two lanes; *parts* build bottom-up from
+> all zeros, *wholes* top-down from all ones); **basic percept** = a row of
+> the first Pi over its parts and wholes, nominated by MTM; **concept** = a
+> ConceptualSpace thing, one signed value whose size is its certainty: an
+> order-zero concept is a Sigma over the combined code of the basic percepts
+> present, and a concept of a higher order a Sigma over symbols;
+> **symbol** = a row of a Pi over concepts (no dimensions, INTENSIONAL,
+> bringing one concept). WholeSpace itself holds whole-percepts.
 
 ---
 
@@ -61,8 +62,8 @@ act on evidence lanes.
 
 ### Evidence lanes
 
-Evidence about a concept is kept in two lanes, $(c^+, c^-)$, for and
-against. Their four corners are the tetralemma's (for, against, both,
+Evidence in the grammar's fields and ideas is kept in two lanes,
+$(c^+, c^-)$, for and against. Their four corners are the tetralemma's (for, against, both,
 neither), and the lanes are never netted into one signed scalar: *both*
 (the region asserted and denied) and *neither* (no evidence) are different
 states that a signed value would confuse.
@@ -104,6 +105,54 @@ second difference, over an identity's alternative timelines: possible holds
 on some timeline, necessary on every one, the actual included, and the two
 are duals in the lanes, necessity being possibility with the complement
 withheld ([Language](Language.md#words-narrow-the-domain-of-discourse-2026-09-28)).
+
+### And, or and not in the layers
+
+The layers have one structure at every order, a Pi, a Not and a Sigma
+([Architecture](Architecture.md#sigma-and-pi-layers)), and it says the
+three connectives without a grammar operator (Alec, 2026-11-17: "Please also
+verify that the SigmaPi stack can do And, Or, and Not ... I want to make
+sure that what we are doing is interpretable in those terms").
+
+- **And** is a row of a Pi: the product of the lanes it has weight on, so it
+  requires every member. On percepts it is Boole's $xy$.
+- **Or** is a Sigma: a weighted sum of symbols squashed by tanh, any one
+  term being enough. Where percepts of one reading are joined, the or is
+  the Pi taken on the gaps, $1 - (1 - x)(1 - y)$.
+- **Not** is a Sigma weight below zero, a Not entry, which is the only place
+  a sign lives. On percepts the opposite of one is zero, not minus one (Alec,
+  2026-11-17: "Omission teaches not: yes, for percepts, the opposite of 1 is
+  0, not -1, as in Boole"): a Not entry at the basic level records that
+  something expected is absent, and it is taught by omission. Above it, a Not
+  entry reads a symbol's pair of rows swapped.
+
+And and or are monotone: their weights are zero or above, so raising an input
+never lowers the answer, and Not carries all negation (Alec, 2026-11-17: "the
+removal of the NOT is exactly what is necessary to speak only of the good in
+Augustine's sense"). With every weight held at zero or above, so that no Not
+entry is read, a mind speaks only of what is ([Philosophy](Philosophy.md)).
+The operator `not` of a sentence or a thought is separate: it swaps the lanes
+of what it is put on (`FieldLogic.reduce`), can be put on any symbol, and
+needs no omission to teach it.
+
+A concept's value is one signed number in $[-1, 1]$, stored as two unsigned
+lanes, its positive part on the lane for and its negative part on the lane
+against; one reading of one concept is never both (Alec, 2026-11-19: "The
+concept remains a signed fuzzy keen on certainty, but we can represent
+"both" with two concepts"). Both is two concepts, one for presence and one
+for absence, or, at the percepts, a basic percept whose two lanes are both
+above zero.
+
+On true, neither and false the layers and the grammar's field operators
+agree. On graded readings they differ and are left to differ: the layers
+give the product logic, an and of two halves being a quarter and an or of
+two halves three quarters, where `intersection` and `union` give the least
+and the greatest, a half each. Checked as a toy over 20,000 random pairs,
+the two differ by .042 on average and by at most .25. Both are monotone.
+Learned from random starts, a stack of these layers solves and, or and not
+over true, neither and false in 10 of 10 starts, and with the penalty on
+the entries of both the Pi and the Sigma what it learns can be read back as
+the literals of each connective.
 
 ### Sign and parthood
 

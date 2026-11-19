@@ -222,7 +222,8 @@ output, and thoughts are a distillation of intuition."
   It is taught by omission, against the detached field.
 - *Intuition* is top-down. `intuit` has no map of its own: when thought
   calls it, it deposits `expect`'s field into the sentence's knowing and
-  carries it up the orders ([below](#intuition-on-the-field-map)). What is
+  spreads it over the orders, up and then down
+  ([below](#intuition-on-the-field-map)). What is
   conditioned by desired output is the choice to call it, which the
   chooser learns from the outcome. An intuition may answer, under its own
   evidence kind `intuition`.
@@ -256,7 +257,7 @@ normal form; an overrun fails before a partial term is reserved. Each fired rule
 becomes one `infer` candidate carrying its firing pair. Each consequent concept
 receives the knowing deposit $\sum \min(\text{field}, \text{code}) / \sum \text{code}$
 per lane, and `write_knowing` re-evaluates the selected proof live and joins it
-into the field by maximum at the existing brackets. When `infer` selects a
+into the field by maximum at the places it already holds. When `infer` selects a
 firing, the pair is recomputed at unit exponents, $\min(\kappa_1, (t^+, t^-))$,
 so learned weights shape what is proposed and never what is accepted. A
 firing cut off by the budget returns no content and leaves the goal and STM
@@ -275,8 +276,8 @@ serial pick are two learners. Which fired candidate matters most for the focus
 is not computed by the firing: the grammar's operation scorer, the one compose
 uses (`OperationSelectionLayer.thought_logits`), scores each `infer` candidate
 from the focus and the candidate together, the candidate's firing pair among its
-inputs, to one logit. The Sigma and Pi charts belong to combination, which must
-stay monotone and bounded in the cube; a choice needs an unbounded logit, which
+inputs, to one logit. The Sigma and Pi layers belong to combination, which must
+stay monotone and bounded; a choice needs an unbounded logit, which
 the softmax turns into the probability that the score function credits.
 
 *What learns.* Memory is evidence, not a parameter. A row's trust is what its
@@ -416,19 +417,25 @@ applying to concepts (since they live in a signed hypersphere). That means
 symbols are PI(concepts), and concepts are SIGMA(symbols). concepts are also
 SIGMA(basic percepts)."
 
-- **Sigma is a decision boundary and gives two values**, the two lanes of a
-  concept. **Pi is a measure of likeness and gives one**, a presence: "sigmas
-  are decision boundaries and yield two values, whereas pis are vector
-  similarity measures and have only one result".
-- **System 1.** Percepts become basic percepts by pi, whose region is a box,
-  and basic percepts become the concepts of order zero by sigma. "basic
-  percepts are part of system 1, which has order-zero concepts over those."
-- **System 2.** The concepts of an order become symbols by pi, whose region
-  is a cone at the origin, and those symbols become the concepts of the next
-  order by sigma. "system 2 creates a symbolic vertical structure on top of
-  that, which is used by all higher-order concepts."
-- **One sigma for a concept, by its order**: from basic percepts at order
-  zero and from symbols above.
+- **A Sigma gives one signed value for each concept**, $\tanh(x\,U)$ in
+  $[-1, 1]$, whose size is its certainty, stored as two unsigned lanes: its
+  positive part on the lane for and its negative part on the lane against
+  (Alec, 2026-11-17: "Signed sigma; good, this is knowing in the signed
+  hyperball"). A **Pi gives unsigned rows**, each a product of its members'
+  memberships, between zero and one; a percept's opposite is zero, not
+  minus one.
+- **System 1.** Percepts become basic percepts by a Pi, whose region is a
+  box, and basic percepts become the concepts of order zero by a Sigma.
+  "basic percepts are part of system 1, which has order-zero concepts over
+  those."
+- **System 2.** The concepts of an order become symbols by a Pi, whose
+  region is a cone at the origin, and those symbols become the concepts of
+  the next order by a Sigma. "system 2 creates a symbolic vertical structure
+  on top of that, which is used by all higher-order concepts."
+- **One structure at every order** (Alec, 2026-11-17): a Pi, a Not and a
+  Sigma, with the Not as the Sigma's weights below zero
+  ([Architecture](Architecture.md#sigma-and-pi-layers)). A Sigma at order
+  zero reads basic percepts and above it reads symbols.
 - **A cone in place of a nearest neighbour.** "in places where we now ask
   "what is close to this vector", we are effectively asking about the
   hypercone centered on that vector"; a hierarchy of cones lets a read "look
@@ -437,63 +444,74 @@ SIGMA(basic percepts)."
   is added for it: "Member rows with no new geometry". That one kind lies
   within another is the pervasion of
   [Logic](Logic.md#existence-and-pervasion-alec-2026-11-13).
-- **Each lane is a symbol.** A sigma gives two values and a symbol holds one,
-  so a concept's two lanes are two symbols: "two symbols being required to
-  store (without loss) the conceptual information of a single concept over a
-  possibly heterogenous input".
+- **A symbol is a pair of rows.** A symbol is two unsigned rows of the Pi,
+  one for each lane, and brings one concept. The concept above reads the
+  pair as two channels, for and against, each with weights of its own,
+  which start as for less against (Alec, 2026-11-19: "after the Not layer we
+  still have two channels, those need not be combined ... the summation step
+  is determined by gradient need at sigma"). A concept stays one signed
+  value; "both" is two concepts, one for presence and one for absence.
 
-### The two layers, and order zero made by them (Alec, 2026-11-14 and 15)
+### The layers (Alec, 2026-11-14 to 2026-11-19)
 
 "We are basically just updating the algorithms used for the existing
 SigmaLayer and PiLayer. We are also creating a fast SigmaPi layer that
 combines both and that skips the invertibility requirement ( which is the
 alternate to the MLP layer, and that works as fast)." And: "I think the
 order0 basic percept building and zero-order concept building should use pi
-and sigma, respectively. They are subsymbolic, so the fit is good there."
+and sigma, respectively."
 
-- **`PiLayer` is a product in the log domain**: `tanh(atanh(x) W + b/2)`,
-  the product of its inputs' odds raised to the weights. Its one entry and
-  one exit are the logarithm and the exponential of the product.
-- **`SigmaLayer` is a weighted sum with one exit**: `tanh(x W)`. It has no
-  chart on what it is given, so a Pi under a Sigma is not one linear map;
-  with a chart at both ends of both, the pair was.
-- **Each has an exact inverse** where its matrix is built as `L D U`, by the
-  triangular solves. "Inverses are necessary where we form percepts and
-  concepts".
-- **`SigmaPiStack` joins the two without an inverse**: a row of pairs,
-  each a `PiLayer` under a `SigmaLayer` on plain weight matrices, as the
-  model's alternative to an ordinary hidden layer. `expect`, the read to a
-  point and `marker` are such stacks.
-- **A basic percept is built by Pi.** "we have basic percepts, formed as a
-  PI, which is a (sparse) hypercone on hypercube parts and wholes (thus an
-  approximation of the discrete collection that we were creating with the
-  mereology)." It is a pair, for and against, each a product over the
-  unsigned memberships of its parts and wholes. Its matrix is monotone, so
-  that order is kept over the fold, and a conjunction is a row of it.
-- **A zero-order concept is built by Sigma.** "Then those percepts are
-  collected via a (sparse) hyperplane , via the SIGMA, which become
-  zero-order concepts (or basic concepts)." Its matrix is signed, and the
-  sign of a weight chooses the pole it reads: a positive weight carries a
-  percept's lane for into the concept's lane for and its lane against into
-  the concept's lane against, and a negative weight crosses them. The
-  concept keeps both lanes; its signed value, for less against, is a read of
-  them.
+- **`PiLayer3` is a product of memberships**, on unsigned values on two
+  lanes: $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$, a row of
+  each lane having weight only on that lane. It is square and sparse, its
+  diagonal at one or more, the rest at zero or more and its bias at zero or
+  less, so a row requires the members it has weight on and never exceeds its
+  own reading, and its exact way back is the triangular solve of its
+  `L D U` matrix.
+- **`SigmaLayer3` is a weighted sum with one exit**, $\tanh(x\,U)$, with
+  signed weights and no bias. A weight's positive part is its input's for
+  entry and its negative part its Not entry, so an entry is never both.
+  Weights start at zero or above, so there is no Not entry until teaching
+  makes one. Its way back gives the input by least squares where there are
+  enough concepts, and a signed value on the way back is split into its two
+  unsigned parts before a percept or a symbol holds it: -.5 is .5 on the lane
+  against and nothing on the lane for.
+- **`SigmaPiLayer` fuses the two without an inverse**, as the model's
+  alternative to an ordinary hidden layer: a free `PiLayer3` (any weights at
+  zero or more, no diagonal law, no bias) and a `SigmaLayer3` over its pairs,
+  in one expression, so that a stack of them is captured as one graph.
+  `expect`, the read to a point and `marker` are such stacks.
+- **A basic percept is a row of the first Pi.** "we have basic percepts,
+  formed as a PI, which is a (sparse) hypercone on hypercube parts and wholes
+  (thus an approximation of the discrete collection that we were creating
+  with the mereology)." A row exists only when MTM nominates it; it selects
+  for, its parts and wholes being required, and against, the parts that the
+  nearest forms holding it add, any one of which tells against it.
+- **The concepts of order zero are a dense Sigma** over the combined vector
+  of what is there, one column for each nominated row. "Then those percepts
+  are collected via a (sparse) hyperplane , via the SIGMA, which become
+  zero-order concepts (or basic concepts)." A column starts from its
+  member's code and is then learned.
 - **Both and neither.** A ball of black and white patches is, for the
   concept white, both: "We must, for those concepts, say "yes and no" (at
   different places). but concepts don't work like that; there is no
   pervasion. so we get a conceptual 0 value, which means either neither is
-  true or both are true." The two lanes tell the two apart.
-- **The two matrices are sparse.** A row holds entries only for the sources
-  it has been given. Entries grow where percepts are collected for a concept
-  (`PerceptCollections.observe`), each written at one. A source newer than
-  its row is an entry of the matrix's other triangle, so no row is moved.
+  true or both are true." Both stands at the basic percepts, one carrying
+  the property for and another against, and above them it is two concepts,
+  one for presence and one for absence.
+- **The matrices above order zero are sparse**, stored as compressed rows
+  that grow into room allocated beforehand, with an index of columns beside
+  them. Membership is learned under a penalty on the entries of both the Pi
+  and the Sigma, so that what is learned can be read from the rows; the
+  Sigma of order zero is dense and is not penalized.
 - **The way back.** From a concept alone the percept returns as its signed
   value, with no overlap of its lanes: "its grey. Until we remember that the
   soccer ball is composed of little hexagons (either conceptually or
   perceptually). then we can render the "both" condition". Both is rendered
   where the parts are had again.
-- **Only order zero is made this way.** "At the symbolic levels they are
-  not": the symbolic orders keep their definitions and their rules.
+- **Every order is made this way.** The structure repeats above order zero
+  for a mind that has symbols; what tells a human mind from an animal's is
+  this recursion, which symbols enable, and not the Not (Alec, 2026-11-17).
 
 ### Implicit and explicit: what each system holds (Alec, 2026-11-13)
 
@@ -550,11 +568,15 @@ taught."
   associate with the PI operator". A pi multiplies the activations of
   particular members, which an edge names.
 
-A combination of two different words is not available to System 1 alone. The
-perceptual towers stop at the word: every whole is pinned to a maximal run of
-letters, and a run of parts is promoted only inside one word. A conjunction of
-two words first exists on the conceptual side, in what the grammar composes,
-in a candidate of MTM and in a row of memory. That is left to System 2.
+A combination of two different words reaches System 1 in two ways. A taught
+form may hold a space (`ice cream`), and then it is a percept like any word.
+And the basic level may read two or more words at one time, from one look
+over them, into one idea that System 2 teaches by the idea it composed from
+the same words one by one; the grammar may take that idea as one
+constituent ([Language](Language.md#the-looks), "A fragment read at one
+time"). No form, row or symbol is made for such a fragment. Otherwise a
+conjunction of two words first exists on the conceptual side, in what the
+grammar composes, in a candidate of MTM and in a row of memory.
 
 ### Expectation, a stacked sigma-pi
 
@@ -568,18 +590,22 @@ So perhaps expectation is nonlinear in virtue of vertical propagation."
 The maps of System 1 are one class, a stacked sigma-pi (`SigmaPiStack`),
 built for `expect`, for the read to a point and for each kernel of `marker`.
 
-- *A pair.* A stack is a row of pairs, each a `PiLayer`
-  under a `SigmaLayer`. A pi unit is a product in the log domain,
-  `tanh(atanh(x) W + b/2)`: the product of its inputs' odds, each raised to
-  a signed weight. A sigma unit is a weighted sum of the pi units. A pair has
-  no inverse and costs what an ordinary layer of the same weights costs.
+- *A pair.* A stack is a row of fused pairs (`SigmaPiLayer`), each a Pi and
+  then a Sigma. The Pi gives, for each symbol, a row for over the input's
+  lanes for and a row against over its lanes against, each a product of
+  memberships raised to weights of zero or more. The Sigma reads each
+  symbol's pair and gives one signed number in $[-1, 1]$ for each output,
+  its entries for or Not. A pair has no inverse and costs what an ordinary
+  layer of the same weights costs.
 - *Several pairs.* The keys `expectLayers`, `ideaLayers` and
-  `markerLayers` count pairs. Each sigma of a stack is a linear sum of its
-  pi units, clipped to the field's range of 0 to 1 before the next pair or
-  the reader (`SigmaPiStack.forward`).
-- *Lanes.* An input with two evidence lanes enters as two inputs, and an
-  output with two lanes leaves as two. No stage nets one lane against the
-  other.
+  `markerLayers` count pairs (1, 1 and 2). Each pair's signed output is read
+  by the next pair as its two lanes, its positive part for and its negative
+  part against, and nothing is clipped between pairs.
+- *Lanes.* An input enters on its two lanes, for and against, and the
+  stack reads concepts, each one signed value held as its two lanes. A
+  symbol's two rows enter the Sigma as two channels, each with weights of
+  its own, which start as for less against
+  ([above](#the-split-of-sigma-and-pi-alec-2026-11-13)).
 - *Nothing at the start.* The last sigma's weights start at zero, so a new
   stack gives zero and adds nothing. Its first weights come from a
   generator of its own, so building a stack changes no other random number
@@ -622,14 +648,34 @@ on coordinates of its own; one linear map does not.
 `intuit` is `expect`'s map and the propagation over the orders (Alec,
 2026-11-17). It has no stack, teacher or cost of its own. When thought calls
 it (`IntuitionField.read`), it takes the order-zero block of the field
-`expect` published at the open pass, detached, joins it by maximum into the
-stream's knowing at the live bracket, and carries it up the orders by the
-closure of the definitions (`FieldProjection.close`), so that a token present
-lights its types. Other orders and other streams are kept. What it deposits
-joins the sentence's knowing, so that thought, the answer and the output read
-it: "insights that trigger knowing as a result of observation directly". The
-spread down the orders as well as up is not built. The firing of stored
-rules is not `intuit`'s: it is how `infer` applies a stored implication
+`expect` published at the open pass, detached, and deposits it into the
+stream's knowing at the places the sentence observed. It then runs the
+vertical spread once, up and then down, on the structure's own matrices,
+Pi and Sigma alike (Alec, 2026-11-17):
+
+- *Up, by fan.* A concept's or a symbol's value is split among the rows that
+  read it, each by its weight's share of all the weights it is read with.
+- *Down, by share.* A row's value is split among its inputs, each by its
+  weight's share of the row. What a row receives is summed over its parents
+  and children, at most one, and a Not entry passes to the other lane.
+- *Siblings get less than the concept that caused them:* a concept present
+  at one gives every other concept the spread reaches less than one.
+- *Across orders in one step.* A symbol of order $k$ reads the concepts of
+  every order below $k$, so a meta concept primes its word and its object
+  with no symbol between.
+- *Into the first layer.* At order zero the way down goes on through the
+  mereology's own entries of the first Pi, so a part that is missing
+  receives from the rows its neighbours raised; this writes expected
+  percepts, and a row still requires its members.
+
+The spread writes the expected field at every order, adds no parameter and
+no teacher, and changes no value of the evidence. It also runs at the end of
+the read, before comprehension takes its leaves' objects, so that the object
+a sentence's words primed is preferred. A model with no symbols never runs
+it over the orders. What it deposits joins the sentence's knowing, so that
+thought, the answer and the output read it: "insights that trigger knowing
+as a result of observation directly". The firing of stored rules is not
+`intuit`'s: it is how `infer` applies a stored implication
 ([above](#intuition-understanding-and-thought-alec-2026-10-30)).
 
 ### The read to a point, taught by System 2
@@ -666,6 +712,20 @@ generate; these act at a completed boundary.
 | `define` | "creates two STM1" |
 
 `define` is how an identity is written: two relations, `part` each way.
+
+**Thought reads the structure** (Alec, 2026-11-17). `parts(c)` gives the
+entries of c's row of the Pi, the symbols below c at every lower order,
+each with its weight; `wholes(c)` gives the rows of the Pi above c that
+have c as an entry, each with its weight. Of the Sigma, thought can read
+what a concept reads, which concepts read a given row, and which of those
+entries are Not entries. A result is a set of references with their
+weights, not a yes or no; a reference's words are those whose meta concepts
+join them to its concept, and a reference with no word, such as a percept,
+is given as itself. An entry is read as present above a low threshold, a
+key measured under the penalty on the entries, since a literal that
+survives the penalty has a small weight. A read is serial, is charged to
+the work budget as the queries are, and moves nothing. `isPart`'s proofs
+keep `LTM1`'s part table as their evidence.
 The strength of expectation is not a tool: "drop gain, we can set that as
 expectationGain on the model."
 

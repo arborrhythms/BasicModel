@@ -190,41 +190,44 @@ has its own range in the model's shared `.where` allocation.
 same encoding as the perceptual codebooks. A slot keeps its location when
 ideas are pushed, reduced or cleared. The content's codebook address stays
 separate. The kept close writes the sentence's semantic content to LTM,
-with its episodic entry beside it (Section 10). A read places only its focus;
-the earlier placements stay as the occupied slots with their `.where`/`.when`
-stamps, and the read's mask is its candidate's support (below).
+with its episodic entry beside it (Section 10). A read places only what it
+interprets; the earlier placements stay as the occupied slots with their
+`.where`/`.when` stamps.
 
-**Bracket choice and word support.** The bracket chooser scores legal
-looks. `AttentionContext.context` projects the current detached inputs
-into its keys. These inputs include the part and whole keys, priming
-heat, the expectation at each conceptual order, the percept residual,
-the occupied STM slots and their places and times, the open need and
-the gist, and beside them each bracket's excess and omission against
-its forecast ([Architecture](Architecture.md#one-attention)). At a look
-with one known word on one lane, the grammar may interpret that word:
-the call is made with probability `architecture.interpretBias` (1 by
+**Attention and STM.** A look asks for concepts and returns them by what the
+sentence's percepts are and where they stand
+([Architecture](Architecture.md#one-attention),
+[Language](Language.md#the-looks)). STM is what moves the request: `attend`
+asks for the word level in general and changes the place it asks for from the
+state of STM, so as to find the next word not yet read. Its inputs are the
+context it reads (`AttentionContext.context`): the understood prefix with its
+places and times, the heat of the spaces, and the surprise, which is the
+excess and the omission of the one gain field (`Expectation.gain_field`) with
+the look's activity as its attention and the look's forecast as its expected.
+A form that was interpreted is lowered in the sentence's percept bank over its
+extent, so a request that did not change finds the next word. Where the
+returned set holds a word concept, the grammar may interpret the most active
+one: the call is made with probability `architecture.interpretBias` (1 by
 default), and the chooser decides the rest, interpret or abstain.
-Interpretation supplies one word to the grammar. Whole-path comparison credits departures in these choices.
-During the reading lesson each taught focus and grammar decision
-contributes its cross entropy.
+Interpretation supplies one word to the grammar. Whole-path comparison
+credits departures in these choices. During the reading lesson each taught
+request and grammar decision contributes its cross entropy.
 
-The candidate's native paired evidence is its support mask, including
-negative evidence; zero means no evidence, and `hetTolerance` acts on these
-lanes, with 1 a no-op. An attended object appears as the negation of the
-non-object: it has positive and negative evidence over parts and wholes, and
-the parts that are evidence neither way are zeroed. So every concept or
-conceptual candidate already has a mask, where it has no support, and the
-mask is derived, not learned as a boundary. A learned region boundary cannot
-be trained: a straight-through surrogate cannot see the read it did not
-make, so its gradient pushes an admitted item further in and an excluded one
-further out, and learned regions saturate open or collapse to nothing. With
-the support mask the only gradient is the evidence lanes' ordinary gradient,
-and an unsupported part gains support only as a candidate's lanes learn it.
+No region boundary is learned. A look's extent is the activity the salience
+map gives: an event is in the look to the degree that both what it is and
+where it stands are salient, and what is not active is absent on both lanes,
+never evidence against. A learned boundary could not be trained: a
+straight-through surrogate cannot see the read it did not make, so its
+gradient pushes an admitted item further in and an excluded one further out,
+and learned regions saturate open or collapse to nothing. Of a look's error
+only the request and the weights that read the where are taught; the first
+Pi's entries and the weights that read the what take none of it, so that
+perception keeps its one teacher, the reconstruction.
 
 During a sentence, `SentenceField` carries source-support indices beside
 the eight STM slots: pushes move the previous placements, unary operations
 retain their witnesses, and binary operations join their witnesses. The
-indices refer to the sentence's native evidence bank and its original
+indices refer to the sentence's percept bank and its original
 `.where`/`.when` stamps. The scorer reads these stamps and all occupied
 slots; it never places the earlier reads again. The field has its own
 allowance and charges one `serial-word-loop` unit per read.
@@ -261,8 +264,8 @@ stamps" below and [Spaces.md](Spaces.md#reset-cascade-hard-vs-soft)).
 ## 2. Serial sequencing
 
 In SERIAL / GRAMMATICAL mode each word traverses a per-word path: surface
-lookup $\to$ `PartSpace.forward` (the synthesis front end; a word's code is
-the max of its constituents' codes) $\to$ `ConceptualSpace.forward`, which
+lookup $\to$ `PartSpace.forward` (the synthesis front end; a form's code is
+the set of its parts, [Mereology](Mereology.md)) $\to$ `ConceptualSpace.forward`, which
 does the STM bookkeeping ([Spaces.py](../bin/Spaces.py)):
 
 1. **Perceive (overwrite via `_stm_shift_and_push`).**
@@ -349,67 +352,22 @@ slot.
 
 ## 4. Attentional filtering
 
-Serial sequencing and attentional filtering are the same regime, not
-mutually exclusive options: `<attention>` (off/primer/second-order/low-rank,
-read per Space with default `off`) composes with `<symbolicOrder>` rather
-than being gated by it. `data/MentalModel.xml` sets no `<attention>` element,
-so the trainable target configuration runs the Gaussian / word-span window
-below (CS$\to$PS) and the taxonymic mask (CS$\to$SS), and no `<attention>`
-primer/second-order/low-rank retrieval mode.
+Attention is content based in every mode: what reaches STM is chosen by what
+the percepts are and where they stand, and nothing selects by a position or a
+time alone. Serial reading is not a separate regime: a sentence's looks start
+with the open run, the whole sentence at once, and each later look is one call
+of `attend` ([Language](Language.md#the-looks)).
 
-**CS$\to$PS word input.** The word-major radix path and legacy serial inputs use
-different representations.
-
-- **Word-loop mereology (`<serialObjectMeta>` on).** The outer sequence is
-  `[B,W,D]`, with one position per word and $W$ bounded independently by
-  `<serialWordCapacity>`. BasicModel stages W=256 but its compiled
-  `torch.while_loop` stops at the final live column in the batch. InputSpace
-  owns iteration $w$ and presents that word's local state to PartSpace; only
-  then does PartSpace gather its complete discrete ids `[B,P_raw]` and take
-  the max of their codes inside the loop. $P_raw$ is the longest complete spelling
-  in the current batch; it is not bounded by `PartSpace.nOutput`. PS and WS
-  retain their eight-wide live fields in BasicModel, CS binds all three PS and
-  three WS folds by equal location, and one concept carrying its actual order
-  enters the configured STM (default capacity 8). Grammar reductions free STM
-  slots while the outer loop continues.
-
-  With packed training, consecutive complete sentences share the W=256 slab
-  but not conceptual state: CSLang commits a row-local soft boundary between
-  them. Full resolved concepts remain only in the CS-owned `[B,8,D_c]` STM.
-  SymbolSpace receives a scalar `[B,W,1]` activation/reference slab and
-  quantizes that value; it does not retain a dense `[B,W,D_c]` concept
-  history.
-
-Legacy serial inputs retain the following window policies:
-
-- **Gaussian window (default).** `gaussian_window_word(full_seq,
-  center_k)` ([Models.py](../bin/Models.py)) forms a single envelope
-  centred on the processed word at $k$:
-
-  $$
-  w_i = \exp\!\left(-\frac{(i - k)^2}{2\sigma^2}\right), \qquad
-  \sigma = \text{maskRate} \cdot T,
-  $$
-
-  normalized so the center weight $w_k \approx 1$. The peak sits at the
-  current word; words far from $k$ are attenuated toward $0$ by the
-  Gaussian tail. The windowed percepts are mapped into conceptual space
-  and **summed**, so word $k$'s representation carries a faint meronymic
-  trace of its neighbours (the local context *is* part of the embedding
-  signal). This **replaces** the prior BERT-style hide-a-token
-  `create_ir_mask` on the per-word grammar path; it is not
-  target-hiding — the center word is preserved. The centring is
-  **hardcoded**: peak at the current word.
-- **`word_span_window` (legacy hard same-word fallback).**
-  `word_span_window(full_seq, center_k, word_idx)`
-  ([Models.py](../bin/Models.py)) replaces the soft Gaussian tail with a
-  **hard** same-word mask: the masked **sum** over exactly the slots
-  sharing word $k$'s id (`word_idx == word_idx[:, k]`), so PS processes
-  the active word's own span only — no part of a neighbouring word leaks
-  in via the tail. Falls back to the single slot `full_seq[:, k:k+1, :]`
-  when no per-slot word index is available (e.g. byte mode). Whole-
-  sentence context still re-enters serial processing via the read prelude
-  gist/intent, not this window.
+**CS$\to$PS: the look.** The concepts a look asks for are carried down to the
+sentence's percept bank as the salience map, and an event is in the look to
+the degree that both what it is and where it stands are salient
+([Architecture](Architecture.md#one-attention)). What lies away from where the
+request looks is lowered by degree, by the magnitude of what asks; nothing is
+cut and there is no floor. No window is centred on a word's position: the
+place a look asks for comes from the request, through the concepts' learned
+weights on the where, and the request moves with the state of STM (Section
+1). The word that is interpreted enters STM as one idea; the percepts around
+it reach it only through the concepts the look returned.
 
 **CS$\to$SS taxonymic mask.** On the symbolic side the inverse
 recommender zeros **non-admissible** codebook rows before a lift / lower
@@ -424,17 +382,12 @@ rows plus the $\bot$ / $\top$ sentinels. A parallel `_row_weights` closure
 multiplies a taxonymic **priming** mask over the admitted rows (the
 `left_priming` / `right_priming` weights from `taxonomy.priming_mask`).
 
-**Guidance-signal contract.** The mask is a *guidance signal*: it biases
-which codebook rows / sequence positions the reduction may consult, given
-the current word and grammar state. The centring policy (CS$\to$PS) is the
-swappable seam — the present text-reading variant centres on the current
-word; a future image-reading variant would swap that policy (centre on a
-fixated region) without changing the rest of the pipeline.
-
-**Hardcoded masks.** Both masks are **hardcoded** (Gaussian centring fixed
-at the current word; taxonymic admissibility read structurally from the
-codebook's category / order metadata). The bracket chooser scores the legal acts using its slot keys and
-the detached sentence prefix (Section 1).
+**Guidance-signal contract.** The taxonymic mask is a guidance signal: it
+biases which codebook rows a reduction may consult, given the current word
+and grammar state, and it is read from the codebook's category and order
+metadata, which is content. A reading of another modality, such as an image,
+uses the same look: its request is over concepts and its where is that
+modality's own places, so nothing of the pipeline changes with it.
 
 ---
 
@@ -694,16 +647,16 @@ activity.
 **Retrieval.** There is no word index over memory and no index from a
 concept to its rows. Retrieval by a word is
 either a match by content or a lookup of the `LTM1` rows that reference the
-word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read takes
-the question's field of understanding, the set of active concepts its
-operators leave when applied to its words' sets (for "red ball", what the
-sets of red and of ball share): each operand's set gives one
-result over the newest `ltmWindow` rows, matched against their episodic
-entries order by order and never reduced across orders, and the question's
-operators combine the results as they combine sets (`EpisodicMemory.matches`,
-`relevance`). Rows are ranked by that result, newer first among ties; a row a
-read returns has its activity raised. Explicitly addressed rows are read
-directly (`EntryRead.cued_rows`).
+word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read has the
+question's idea as its key, a point in conceptual space, and searches
+semantic memory, the ideas of `LTM0` and the relations of `LTM1`, by the one
+match of points in conceptual space (`ConceptualMatch.match`), which compares
+meaning coordinates and never a form's code (Alec, 2026-11-19: "Query on LTM
+is using the idea, a point in conceptual space, to search semantic memory").
+It reads the newest `ltmWindow` rows; a row a read returns has its activity
+raised, and its entry is published as the stream's knowing
+([Architecture](Architecture.md#recall-and-answers)). Explicitly addressed
+rows are read directly (`EntryRead.cued_rows`).
 
 **One history.** `LTM0` and `LTM1` are one history for the whole model: no
 row records which stream wrote it, and the rows a batch of several streams
