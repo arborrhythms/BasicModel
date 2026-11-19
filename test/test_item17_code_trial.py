@@ -6,6 +6,7 @@ wholes) or that the trial's stand-in codes the source's way. Draws come
 from the system and are printed.
 """
 import functools
+from collections import Counter
 import os
 
 import numpy as np
@@ -589,3 +590,94 @@ def test_5_the_sorted_table_graded_by_distance():
             rows = _scalar_table(read, (1, 2, 4, 1.5))
             margins = {x: round(r['alpha'] - r['gamma'], 3) for x, r in rows.items()}
             print(f'table {mode}, {grade}', rows, 'alpha less gamma', margins)
+
+
+# §19.72: the wholes half as an upper bound, read on its complement.
+
+def test_7_the_wholes_half_read_on_its_complement_declared():
+    c = ct.Coder('balanced', 64)
+    wholes = ct.with_top(c.wholes)
+    kids = ct.children(wholes)
+    for name in wholes:
+        cut = 0 if name == ct.TOP else ct.popcount(c.whole_code_mask(name))
+        print(f'{name:>14}', dict(bytes=len(wholes[name]), cuts=cut, directly_inside=list(kids[name])))
+    c.admit_all(['cat', 'Cat', 'CAT', 'c4t', 'is'])
+    for w in c.words:
+        f, a, witnessed = ct.complement_code(c, w, kids=kids)
+        print(w, dict(wholes=sorted(c.whole_of[w]), cut=int(f[64:].sum()),
+                      against=witnessed, against_coordinates=int(a[64:].sum())))
+        # Rule 5 on the for lane, by construction: the wholes half (all ones
+        # less the cut) is at or below each of its wholes' codes, and below
+        # the top's (all ones).
+        upper = 1 - f[64:]
+        for name in c.whole_of[w]:
+            whole = 1 - ct.bits(c.whole_code_mask(name), 64)
+            assert np.all(upper <= whole)
+
+
+def test_7_the_wholes_half_read_on_its_complement_dictionary():
+    seed = ct.drawn(1)[0]
+    print(dict(seed=seed))
+    c = coder('balanced', 64, True)
+    holders = dictionary_holders()
+    codes_u, pairs_u = ct.complement_codes(c)
+    codes_s, pairs_s = ct.complement_codes(c, holders)
+    count = [len(w) for _f, _a, w in pairs_u]
+    made_against = [sum(x.startswith('made/') for x in w) for _f, _a, w in pairs_u]
+    coordinates = [int(a[64:].sum()) for _f, a, _w in pairs_u]
+    print(dict(wholes=len(c.wholes) + 1,
+               wholes_on_the_against_lane=(min(count), round(float(np.mean(count)), 1), max(count)),
+               of_them_made=round(float(np.mean(made_against)), 1),
+               against_coordinates_of_64=(min(coordinates), round(float(np.mean(coordinates)), 1), max(coordinates)),
+               cut_coordinates_mean=round(float(np.mean([f[64:].sum() for f, _a, _w in pairs_u])), 2)))
+    P, _ = c.matrices()
+    true, accidental = [], []
+    for i in range(0, len(c.words), 40):
+        le = (~P[i] | P).all(1)
+        le[i] = False
+        for j in np.flatnonzero(le):
+            (true if c.parts[c.words[i]] <= c.parts[c.words[j]] else accidental).append((i, j))
+    for name, codes in (('complement, parts unsigned', codes_u), ('complement, parts P6', codes_s)):
+        cols = ct.columns(codes)
+        for direction in ('part reads whole', 'whole reads part'):
+            out = {}
+            for kind, group in (('true', true), ('accidental', accidental)):
+                v = np.array([codes[j] @ cols[i] if direction == 'part reads whole' else codes[i] @ cols[j]
+                              for i, j in group])
+                out[kind] = dict(mean=round(float(v.mean()), 3), least=round(float(v.min()), 3),
+                                 at_one=int((v >= 1 - 1e-9).sum()))
+            print(name, direction, out)
+    made = max((n for n in c.wholes if n.startswith('made/')),
+               key=lambda n: sum(n in c.whole_of[w] for w in c.words))
+    sample = set(range(0, len(c.words), 40))
+    declared_differ = [n for n in ct.declared_wholes()
+                       if len({n in c.whole_of[c.words[i]] for i in sample}) > 1]
+    print(dict(declared_wholes_that_differ_in_the_sample=declared_differ, made=made,
+               made_bytes=len(c.wholes[made])))
+    members = [i for i, w in enumerate(c.words) if made in c.whole_of[w]]
+    rng = np.random.default_rng(seed)
+    random_members = sorted(rng.choice(len(c.words), 300, replace=False).tolist())
+    for name, codes in (('complement, parts unsigned', codes_u), ('complement, parts P6', codes_s)):
+        print(name, 'under', made, ct.centroid_report(codes, members, 64))
+        print(name, 'random 300', ct.centroid_report(codes, random_members, 64))
+
+
+def test_7_the_lesson_read_on_the_complement(lesson):
+    owner, basic, identity = lesson['owner'], lesson['basic'], lesson['identity']
+    rows, forms = _lesson_forms(owner, basic)
+    vocabulary = [w.decode() for w in identity.words]
+    c = ct.Coder('balanced', 64, alternate=True).admit_all(vocabulary)
+    index = [c.words.index(f) for f in forms]
+    holders = ct.holders_of(vocabulary)
+    print(dict(forms=forms))
+    unsigned = np.stack([c.vector(f) for f in forms])
+    print('P2 unsigned', ct.told_apart(ct.readings(unsigned)))
+    print('parts half only', ct.told_apart(ct.readings(unsigned[:, :64])))
+    print('P6 signed', ct.told_apart(ct.readings(ct.signed(c, holders)[0][index])))
+    for name, h in (('complement, parts unsigned', None), ('complement, parts P6', holders)):
+        codes, pairs = ct.complement_codes(c, h)
+        print(name, ct.told_apart(ct.readings(codes[index])))
+        print(name, 'wholes half only', ct.told_apart(ct.readings(codes[index][:, 64:])))
+    for f in forms:
+        _f, a, witnessed = ct.complement_code(c, f)
+        print(f, sorted(c.whole_of[f]), 'against', witnessed)

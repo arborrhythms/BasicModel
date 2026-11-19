@@ -660,3 +660,66 @@ def graded_table_code(table, value, grade):
             elif other <= value and grade == 'both' and crisp[i] > 0:
                 result[i] = max(result[i] if result[i] < 1 else 0., felt(other) / felt(value))
     return result
+
+
+# ---------------------------------------------------------------------------
+# The wholes half as an upper bound, read on its complement (§19.72).
+
+TOP = 'all characters'
+
+
+def with_top(wholes):
+    """The wholes and the class of all characters above them."""
+    result = dict(wholes)
+    result[TOP] = frozenset(range(256))
+    return result
+
+
+def children(wholes):
+    """Each whole's wholes directly inside it (strictly fewer bytes, none
+    between); wholes of one byte set (letter, word) are one level."""
+    sets = {name: wholes[name] for name in wholes}
+    result = {}
+    for a, A in sets.items():
+        below = [b for b, B in sets.items() if B < A]
+        result[a] = tuple(b for b in below
+                          if not any(sets[b] < sets[c] < A for c in below))
+    return result
+
+
+def complement_code(coder, form, holders=None, *, kids=None):
+    """A form's two lanes with the wholes half on its complement.
+
+    Parts half: for at its parts' coordinates; against, with ``holders``,
+    at the coordinates its holders add (P6), else none. Wholes half: for at
+    the coordinates its wholes cut away from all ones (the class of all
+    characters cuts none); against at the own coordinates of the wholes
+    directly inside those that apply which do not apply. Returns
+    ``(for, against)``, each ``2n`` wide in 0 to 1, and the names of the
+    wholes on the against lane."""
+    n, m = coder.parts_n, coder.wholes_n
+    wholes = with_top(coder.wholes)
+    kids = children(wholes) if kids is None else kids
+    applies = set(coder.whole_of[form]) | {TOP}
+    own = coder.part_mask(form)
+    against_parts = 0
+    if holders is not None:
+        for h in holders.get(form, ()):
+            for atom in coder.parts[h] - coder.parts[form]:
+                against_parts |= coder.atom_mask(atom)
+    cut = 0
+    for name in applies - {TOP}:
+        cut |= coder.whole_own(name)
+    witnessed = sorted({b for a in applies for b in kids[a] if b not in applies})
+    against_wholes = 0
+    for name in witnessed:
+        against_wholes |= coder.whole_own(name)
+    f = np.concatenate((bits(own, n), bits(cut, m)))
+    a = np.concatenate((bits(against_parts & ~own, n), bits(against_wholes & ~cut, m)))
+    return f, a, witnessed
+
+
+def complement_codes(coder, holders=None):
+    kids = children(with_top(coder.wholes))
+    pairs = [complement_code(coder, w, holders, kids=kids) for w in coder.words]
+    return np.stack([f - a for f, a, _ in pairs]), pairs
