@@ -817,3 +817,67 @@ class BasicLevel:
 
     def read(self, u, present):
         return float(torch.tanh(self.combined(set(present)) @ u))
+
+
+# ---------------------------------------------------------------------------
+# The wholes half on the basis of the part catalog (§19.73).
+
+def catalog_basis(coder, second=False):
+    """Each catalog part's coordinates in the wholes half: the parts half's
+    own (``s``) or the same catalog drawn a second time (``i``)."""
+    atoms = set()
+    for w in coder.words:
+        atoms |= coder.parts[w]
+    if not second:
+        return {a: coder.atom_mask(a) for a in atoms}
+    return {a: mask_of(coords(b'\x00whole-basis/' + a.encode(), coder.wholes_n, coder.bits.get(a, ONES)))
+            for a in atoms}
+
+
+def class_code(basis, members):
+    """A whole's code: the OR of the codes of the catalog parts that
+    belong to it (every character of the part in ``members``, bytes)."""
+    m = 0
+    for atom, mask in basis.items():
+        if set(atom.encode()) <= members:
+            m |= mask
+    return m
+
+
+def catalog_bound(coder, form, basis, *, tight, extra=None, classes=None):
+    """A form's upper bound in the wholes half: the AND of its wholes'
+    codes (the top, all ones, and the character classes it lies in; with
+    ``tight`` the form itself, the OR of its own parts)."""
+    full = (1 << coder.wholes_n) - 1
+    bound = full
+    classes = {} if classes is None else classes
+    wholes = dict(coder.wholes, **(extra or {}))
+    held = set(form.encode())
+    for name, members in wholes.items():
+        if held <= members:
+            if name not in classes:
+                classes[name] = class_code(basis, members)
+            bound &= classes[name]
+    if tight:
+        own = 0
+        for atom in coder.parts[form]:
+            own |= basis[atom]
+        bound &= own
+    return bound
+
+
+def catalog_codes(coder, *, second, tight, extra=None):
+    """Every form's two halves: the parts half (for), and the wholes half
+    read on its complement, the coordinates outside the upper bound, on
+    the against lane. Returns (codes for less against, parts masks,
+    bounds)."""
+    n, m = coder.parts_n, coder.wholes_n
+    basis = catalog_basis(coder, second)
+    classes = {}
+    parts = [coder.part_mask(w) for w in coder.words]
+    bounds = [catalog_bound(coder, w, basis, tight=tight, extra=extra, classes=classes) for w in coder.words]
+    codes = np.zeros((len(coder.words), n + m))
+    for row, (p, b) in enumerate(zip(parts, bounds)):
+        codes[row, :n] = bits(p, n)
+        codes[row, n:] = -(1 - bits(b, m))
+    return codes, parts, bounds, basis

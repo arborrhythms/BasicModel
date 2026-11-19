@@ -739,3 +739,104 @@ def test_8_whether_the_two_sided_code_replaces_the_not():
             print(name, '|', way, '| met', task['met'](readings), 'Not entries', nots, readings)
         level = ct.BasicLevel(task['words'], task['conj'], two_lane=True)
         print('   against entries', {r: level.holders[r] for r in range(len(level.rows)) if level.holders[r]})
+
+
+# §19.73: the wholes half on the basis of the part catalog.
+
+COMBINATIONS = (('s', 'c'), ('s', 't'), ('i', 'c'), ('i', 't'))
+
+
+def _catalog(c, combo, extra=None):
+    return ct.catalog_codes(c, second=combo[0] == 'i', tight=combo[1] == 't', extra=extra)
+
+
+def test_9_the_catalog_basis_of_the_wholes():
+    c = coder('balanced', 64, False)
+    for second in (False, True):
+        basis = ct.catalog_basis(c, second)
+        top = 0
+        for mask in basis.values():
+            top |= mask
+        classes = {name: ct.popcount(ct.class_code(basis, members)) for name, members in c.wholes.items()}
+        print('i' if second else 's', dict(catalog_parts=len(basis), top_ones=ct.popcount(top),
+                                          coordinates_no_part_covers=64 - ct.popcount(top), classes=classes))
+    for combo in COMBINATIONS:
+        codes, parts, bounds, basis = _catalog(c, combo)
+        keys = {(p, b) for p, b in zip(parts, bounds)}
+        # Rule 5 by construction: the bound is at or below each whole's code,
+        # and, on the same coordinates, the parts at or below the bound.
+        for w, p, b in list(zip(c.words, parts, bounds))[::97]:
+            for name in c.whole_of[w]:
+                assert (b & ~ct.class_code(basis, c.wholes[name])) == 0
+            if combo[0] == 's':
+                assert (p & ~b) == 0
+        a, b_ = c.words.index('archer'), c.words.index('archery')
+        print(combo, dict(sharing=len(c.words) - len(keys), wholes_half_distinct=len(set(bounds)),
+                          bound_ones=(min(map(ct.popcount, bounds)), round(float(np.mean([ct.popcount(x) for x in bounds])), 1),
+                                      max(map(ct.popcount, bounds))),
+                          archer_archery_differ=bool(np.any(codes[a] != codes[b_]))))
+        # Parthoods of the sample, split as the first Pi's against entries were.
+        P = np.array([[(p >> i) & 1 for i in range(64)] for p in parts], dtype=bool)
+        groups = {'held as a run': [], 'parts inside, not a run': [], 'accidental': []}
+        for i in range(0, len(c.words), 40):
+            le = (~P[i] | P).all(1)
+            le[i] = False
+            for j in np.flatnonzero(le):
+                u, v = c.words[i], c.words[j]
+                key = ('held as a run' if u in v else 'parts inside, not a run') if c.parts[u] <= c.parts[v] else 'accidental'
+                groups[key].append((i, j))
+        cols = ct.columns(codes)
+        for kind, group in groups.items():
+            up = np.array([codes[j] @ cols[i] for i, j in group])
+            down = np.array([codes[i] @ cols[j] for i, j in group])
+            print('   ', kind, len(group), dict(part_reads_whole=(round(float(up.mean()), 3), int((up >= 1 - 1e-9).sum())),
+                                              whole_reads_part=round(float(down.mean()), 3)))
+
+
+def test_9_the_catalog_basis_centroids():
+    seed = ct.drawn(1)[0]
+    rng = np.random.default_rng(seed)
+    c = coder('balanced', 64, False)
+    proposal = coder('balanced', 64, True)
+    made = max((n for n in proposal.wholes if n.startswith('made/')),
+               key=lambda n: sum(n in proposal.whole_of[w] for w in proposal.words))
+    extra = {'class of made whole 55': proposal.wholes[made]}
+    random_members = sorted(rng.choice(len(c.words), 300, replace=False).tolist())
+    print(dict(seed=seed, whole=made, bytes=len(proposal.wholes[made])))
+    for combo in COMBINATIONS:
+        codes, parts, bounds, basis = _catalog(c, combo, extra=extra)
+        q = [i for i, w in enumerate(c.words) if 'q' in c.parts[w]]
+        under = [i for i, w in enumerate(c.words) if set(w.encode()) <= extra['class of made whole 55']]
+        print(combo, "holds 'q'", ct.centroid_report(codes, q, 64))
+        print(combo, 'under the whole', ct.centroid_report(codes, under, 64))
+        print(combo, 'random 300', ct.centroid_report(codes, random_members, 64))
+    # A class of words coded by OR: how fast it fills, and the share of
+    # non-members that lie inside it.
+    basis = ct.catalog_basis(c, True)
+    own = [0] * len(c.words)
+    for k, w in enumerate(c.words):
+        for atom in c.parts[w]:
+            own[k] |= basis[atom]
+    for size in (1, 2, 3, 5, 10):
+        fills, inside = [], []
+        for _ in range(20):
+            members = rng.choice(len(c.words), size, replace=False)
+            code = 0
+            for k in members:
+                code |= own[k]
+            fills.append(ct.popcount(code))
+            others = rng.choice(len(c.words), 2000, replace=False)
+            inside.append(np.mean([(own[k] & ~code) == 0 for k in others if k not in members]))
+        print(dict(words=size, ones=round(float(np.mean(fills)), 1), non_members_inside=round(float(np.mean(inside)), 3)))
+
+
+def test_9_the_catalog_basis_on_the_lesson(lesson):
+    owner, basic, identity = lesson['owner'], lesson['basic'], lesson['identity']
+    rows, forms = _lesson_forms(owner, basic)
+    vocabulary = [w.decode() for w in identity.words]
+    c = ct.Coder('balanced', 64).admit_all(vocabulary)
+    index = [c.words.index(f) for f in forms]
+    print(dict(forms=forms))
+    for combo in COMBINATIONS:
+        codes, *_ = _catalog(c, combo)
+        print(combo, ct.told_apart(ct.readings(codes[index])))
