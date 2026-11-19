@@ -35250,6 +35250,42 @@ with its reason, and the counts of the short series; commit it. Then
 stop: Claude reviews, and nothing follows this text for you.
 ~~~
 
+### 68.90 Review of §66.17, and item 1.8 complete (Claude, 2026-11-19)
+
+**Accepted.** `bin/Attention.py` and `bin/ModelAttention.py` are again
+exactly as before the repair (no difference from `1c9b6af572`), and
+`interpret_words` is named nowhere in `bin/` or `test/`. The one change
+of source is the evaluator's: where a candidate was not admitted,
+`word_candidate_scores` returns nothing in place of raising, and
+`score_manifest` lists the item as silent and does not rank it. The
+test changes add no skip, no expected failure and no pinned seed.
+
+**Run by Claude** on `a87532f1bb`, each file in a fresh process: the
+nine affected files twice (126 passed and 26 skipped each time, none
+failed) and `test_interleave_lifecycle.py` three more times (7 passed
+each). With the stand-in's own series (80 of 80; 692 passed, 82
+skipped; 122 passed in the 18 files of its earlier ports; the lesson
+replay 16 of 16 equal) this is the short series Alec asked for. The
+default sweep was not run again.
+
+**Three things for Alec from the return, none holding the push.**
+
+1. *The evaluator now measures nothing.* It always reads with no
+   sentence, so every item is silent on any model, until it reads
+   sentences or words can be admitted outside one (item 1.6's
+   harness).
+2. *The standalone kernel's head* still gives 0.5 in every place when
+   nothing was composed. No word is said; the stand-in left it and
+   recommends leaving it.
+3. *A test left to chance was found.* `test_interleave_lifecycle.py`
+   failed in 3 of 3 fresh processes on the swept source as well; it
+   counted the untrained chooser's draw. It now reads in source order
+   and passes. Why the sweeps passed it is not found.
+
+**Item 1.8 is complete.** `doc/Language.md` states the rule; the PDF is
+rebuilt; `main` is pushed on Alec's word of §68.89 ("complete and push
+1.8 to GitHub"). The superproject's pointer is his.
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

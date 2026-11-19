@@ -318,6 +318,14 @@ interpreted is found, perceived and deposited in the tree, and its bracket
 is done. A word that is looked at and not interpreted stays a word: its
 concepts are active in the field, but it is no leaf and joins no tree.
 
+Words are admitted only inside a sentence run (`BasicModel._sentence_run`),
+where the sentence owns the read. A read with no sentence is attention's walk
+alone (`ModelAttention.stage_input`): it admits no word, so there is no formula,
+and a parse that gives no well-formed formula outputs nothing (Alec,
+2026-11-19). Nothing raises for that reason. The fast word evaluator
+(`eval_nanochat_grammar.word_candidate_scores`) reads with no sentence, so it
+lists every item as silent and ranks none until it reads sentences.
+
 The line between the two is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `change`, `lift`, `lower`, `verb`, `modifier` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. The four connectives "collapse to two, with extent/intent each" (Alec, 2026-11-13): `intersection` and `union` act on a field, the symbolic encoding, and on two operands' vectors in conceptual space. `conjunction` and `disjunction`, a symbolic pair over activation patterns, are kept only by grammar files other than `complete.grammar`.
 
 All executable operators declare their reads, writes, operand kinds, order

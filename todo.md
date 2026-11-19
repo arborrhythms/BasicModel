@@ -1473,6 +1473,13 @@ generation is expected at this stage and is recorded, not tuned away.
    documents, checked against the source; the PDF is rebuilt; `main`
    is pushed once, through that commit. Left for Alec's word: the
    provisional read with no sentence (§66.12, §68.86).
+   **Item 1.8 complete (2026-11-19; 1.8 §68.89, §66.17, §68.90).**
+   On Alec's word the read-with-no-sentence repair is removed: a
+   parse that gives no WFF outputs nothing. A short series of
+   tests passes (the stand-in's and Claude's own); the default
+   sweep was not run again. `main` is pushed a second time on his
+   word. Left with him: the superproject's pointer. The fast word
+   evaluator now lists every item as silent.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
