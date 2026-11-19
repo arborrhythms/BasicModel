@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import torch
 from definition_fixtures import witness_object
-from nomination_fixtures import recurrent_interpretation
+from nomination_fixtures import recurrent_interpretation, readings_before_nomination
 
 
 def model():
@@ -128,7 +128,11 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     count = len(store.parts)
     activity = float(store.parts.activity[r0])
     m._advance_when_time()
-    assert admit(m, 'hello') == first
+    # A known word is found on one reading; the re-witness is that reading.
+    parts = m.perceptualSpace.percept_store.spell_out(b'hello')
+    again = cs.interpret_word(parts, m.wholeSpace.property_rows_for_bytes('hello'), key='hello',
+                              occurrence=(('rewitness', 0), 0, 0))
+    assert tuple(again[:2]) == first
     assert len(store.parts) == count
     assert float(store.parts.activity[r0]) == pytest.approx(min(1., activity + store.parts.activity_config.step))
     assert cs.definitions.row(*first) == r0
@@ -157,8 +161,11 @@ def test_31_read_forms_wait_for_object_testimony_without_changing_the_configurat
     path = Path(_PROJECT) / 'data' / configuration
     before = path.read_bytes()
     m = _fresh_model(str(path))[0]
+    inputs = m.inputSpace.prepInput(['hi no', 'hi go', 'we no', 'we go'])
+    # A form is a word from the reading in which MTM nominates it.
+    readings_before_nomination(m, lambda: m(inputs))
     with torch.no_grad():
-        m(m.inputSpace.prepInput(['hi no', 'hi go', 'we no', 'we go']))
+        m(inputs)
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     for form in ('hi', 'no', 'we', 'go'):
         word = cs.definitions.word(form=form)

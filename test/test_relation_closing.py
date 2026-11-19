@@ -131,8 +131,9 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
     from PartClosing import PartClosing
     from reading_fixtures import capture_readings
     from configuration_fixtures import order_allocation
-    # Four words and their four supplied objects use the eight free seats.
-    with order_allocation('MM_grammar.xml', (8, 0, 0)) as path:
+    # Four words and their four supplied objects use the eight free seats;
+    # order one holds the declared classes "words" and "objects".
+    with order_allocation('MM_grammar.xml', (8, 2, 0), vectors=22) as path:
         model, _, _ = _fresh_model(path)
     constructed_vectors = model._concept_owner().nVectors
     chooser = model.languageSpace._tree_layer(2).chooser
@@ -182,6 +183,10 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
             from test_definition_rows import admit
             for form in sorted({word for sentence in inputs for word in sentence.split()}):
                 assert admit(model, form) is not None
+        else:
+            # The first encounter is the reading in which MTM nominates the forms.
+            from nomination_fixtures import forms_short_of_nomination
+            forms_short_of_nomination(model, inputs)
         definitions = model.symbolSpace.ltm_store.relations('definition').clone()
         with capture_readings(model) as captured:
             model.forward(model.inputSpace.prepInput(inputs))

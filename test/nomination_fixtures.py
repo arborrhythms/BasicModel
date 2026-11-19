@@ -26,6 +26,19 @@ def nominated_forms(model, texts):
     return tuple(result)
 
 
+def forms_short_of_nomination(model, texts):
+    """Read each lexical form of ``texts`` ``concept_mint_count - 1`` times,
+    so that the next reading that holds it is the one in which MTM nominates
+    it: the reading of its first encounter as a word."""
+    from Corpus import admit_training_forms
+    owner = model._concept_owner()
+    for raw, parts in admit_training_forms(model, texts):
+        wholes = model.wholeSpace.property_rows_for_bytes(raw)
+        for reading in range(owner.concept_mint_count - 1):
+            word = owner.interpret.lookup_word(parts, wholes, form=raw, reading=('fixture', reading))
+            assert word is None, (raw, 'a form read short of nomination is not a word')
+
+
 def readings_before_nomination(model, read):
     """The model's own readings that come before the one in which its forms
     are found: ``read()`` (one reading of the text) ``concept_mint_count - 1``

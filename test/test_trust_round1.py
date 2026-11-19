@@ -302,7 +302,10 @@ def test_aligned_serial_sentence_has_no_space_or_punctuation_identity(monkeypatc
         space.subspace = SimpleNamespace(what=SimpleNamespace(lookup_rows=lambda rows: torch.zeros(*rows.shape, 8)))
     model = SimpleNamespace(inputSpace=isp, wholeSpace=ws, perceptualSpace=ps,
         conceptualSpaces=[owner], _aligned_serial_word_mode=lambda: True)
-    BasicModel._stage_serial_concept_rows(model)
+    owner.install_order_zero()
+    # A form is a word from the reading in which MTM nominates it.
+    for _ in range(owner.concept_mint_count):
+        BasicModel._stage_serial_concept_rows(model)
     for word in set(words):
         identity = owner.interpret.word_for_form(word)
         assert (identity is not None) == (word not in (' ', '.'))
