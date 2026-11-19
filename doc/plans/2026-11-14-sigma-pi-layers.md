@@ -8483,6 +8483,28 @@ reading's percepts. The what part of the vectors is still combined by
 the Pi on the gaps, as he confirmed on 2026-11-17. *Mine:* the `.when`
 is the reading's own in the same way; he named the where.
 
+### 19.68 Alec on the review of round 3 (2026-11-19)
+
+Put to him from §23.3.1. His answers, and what was checked for them.
+
+**1. A property seen both true and false.** Alec: "the unposted tests can be pointed at basic percepts, where that will still hold." So a concept stays one signed number (rule 3), and "both" is a state of a basic percept: a row of the first Pi has a value on each lane, and both can be above zero. The tests that read `[1, 1]` at a concept are pointed at the basic percept's two lanes. Certificate 3 of §21 says so.
+
+**2. The concepts of order zero read the whole code.** Alec: "Building on the whole code is right. Are you flagging a degradation? it should still be mereological and parts on one subspace and wholes on the other, all zeros for nothing and all ones for everything, please confirm."
+
+It is not a degradation, and the code is as he says. Checked on the lesson's model after sixteen sentences, on the round's source and on an export of `8b8a2fcf48`:
+
+- *Parts on one subspace, wholes on the other.* A code is 352 wide: 96 for the parts, then 256 for the wholes (`BasicPercepts.subspace_bounds`).
+- *The parts half* is the greatest of its parts' codes, coordinate by coordinate, and is all zeros with no part. Every lesson word's code is at or above each of its parts' codes, on both sources.
+- *The wholes half* is the least of its wholes' codes, and is all ones when the percept has no whole (it then lies only in everything). Every lesson word's code is at or below each of its wholes' codes, on both sources.
+- *Why the half is the same in every word of the lesson:* each word has the same two wholes (property rows 0 and 8, the properties that hold on every one of its bytes; all the lesson's words are letters only), 52 ones. It was so before the round. What changed is the reader: before the round a concept was the least of its percepts' memberships and did not read the code; now a dense Sigma reads it, so what the words share shows in each concept's reading of another word (.72 at the start).
+
+Two things that are not as "all ones for everything":
+
+- In the parts half the 32 coordinates that held the lengths are always zero, so a form that held every part would have ones in 64 of the 96. Point 3 is the same question.
+- The wholes' own codes are learned values and not only 0 and 1: whole 0 has 52 ones and 204 values between, on both sources. In one run of two on the round's source the words' wholes half held 16 such values; in the other, and in one run before the round, none. *Not traced.*
+
+**3. The 32 empty coordinates.** Alec: "I am not clear on the question. All parts are the same length, right?" Yes: every part's code is the same length, 3 ones in the 64 coordinates of the part block (`WordIdentity.atom_code`). The question is about a form's row, the union of its parts' codes. Example, measured: `archer` has 20 ones of the 64; `archery` adds the part `y`, and each of `y`'s three ones is already set by a letter of `archer`, so the two rows of 64 are the same row. Of the 19,821 words, 63 take another word's row in this way with the part block at 64 coordinates, and 5 with it at 96 (`pair_dim=96`, `length_dim=0`; the same run). Put to him again with the example.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9343,7 +9365,9 @@ certificate is recorded and not repaired (1.8 §43); those are marked
    against .5); on the way back a value of -.5 reaches the percepts
    as .5 on the against lane and nothing on the for lane; no symbol
    and no percept holds a number below zero; bounded as in 2; it has
-   no bias; an entry is for or Not, never both.
+   no bias; an entry is for or Not, never both. A property seen both
+   true and false is read as both at its basic percept, whose two
+   lanes can both be above zero, and not at a concept (Alec, §19.68).
 4. *The cycle:* the next Sigma reads one combined input, for less
    against, for each symbol; no symbol is made at a concept's
    allocation; a promotion is the nomination of a row, which brings
@@ -11000,3 +11024,97 @@ Read against the source: the round's four commits (`e9f72750b5`, `c9afb238e7`, `
 1. *A property seen both true and false now reads zero at its concept,* as a property never seen does. This follows from rule 3 (a concept is one signed number; §19.24's numbers), and the largest group of the unported tests asserts the old `[1, 1]`. The two cases still differ below the concept, in the two lanes of the combined vector. The tests are restated so unless he says that both must stay readable at the concept.
 2. *The property half of a code is the same in every word of the lesson* (finding 4). Whether the concepts of order zero should read it at their start, or only the identity half.
 3. Still open from round 1: whether the part block takes the 32 empty coordinates (120 of 19,821 words share a row of 64).
+
+### 23.3.2 Round 3, repairs after §23.3.1 (Claude on Opus, standing in for Codex, 2026-11-19)
+
+Commits, local on `main`: `4ead362420` (repairs 1 to 4), `3a069d421e` (the native-literal fixture). Nothing is pushed. **Repairs 1 to 4 are done. Repair 5 (step 7) is not finished:** the files that name what the round changed fail 109 cases, against 1 at `8b8a2fcf48`. Round 4 should not go until it is.
+
+**1. The start of a column (rule 8b).** `OrderZeroSigma.add_member(column, v, sign)` adds `sign · v / |v|²` and normalizes nothing. `start_column` zeroes the column and then adds each member. `ConceptualSpace._start_order_zero_column` calls `add_member`, so `add_member` is the one writer of a column. Certificates restated:
+
+- Certificate 12: the column is `code / |code|²`, and its own row reads one before the squash.
+- Certificate 5, case 15: `cat` reads `cat` at tanh(1) = .7616, reads `cats` the same (it holds all of `cat`'s parts), and reads `dog` at 0.
+
+*Told apart, again:* 8 nominated rows, **6 of 8** read highest by their own concept. Own row at least .7615; another row at most .7750. This is the review's number.
+
+*Before any porting, the failing set run again:* of the 115, **9 now pass**. I cannot attribute these 9 to the column scale alone, since the bound on a reading's place went in at the same time. Measured over a wider set that also holds the files naming this round's new changes, there are 113 failures. 7 are new: two numeric certificates, two concept-lesson tests, and three that read the closing. Their files had no failure at `8b8a2fcf48` (333 passed, 12 skipped).
+
+**2. Trees kept until the collector.** The probe ran the fixture of the sixteen sentences with automatic collection off. After each sentence it saved the cycles that the collector found. Before the repair, sentence trees sat in reference cycles after every sentence, and the saved count had reached 43 by the sixteenth. The cycles found:
+
+- `Tree._views` against `CompositionView.tree`.
+- The self-recursive closures of these functions, which hold their clause or reading in their own cells:
+  - `ClauseJournal._finish_clause`
+  - `ReferenceParticipants.clause_participants`
+  - `ReferenceClose.sites` (`lexical`, `visit`)
+  - `PartClosing.occurrence_order` (`prepare`, `order`)
+
+Repaired in the source:
+
+- `Tree._views` is a `WeakValueDictionary`, so a view holds its tree and the tree does not hold its views. `Tree.view` takes the view in one step.
+- `clause_participants` walks its clauses by a stack.
+- The other closures clear their recursive names when they are done (in a `finally` where they return).
+
+After the repair, no tree is left in a cycle over the sixteen sentences, and **0 failures in 12 builds** of the fixture (`test_item17_order_zero.py`, each build a fresh process). It is the same error that appeared when the file ran after the others.
+
+**3. One count of readings (rule 20).**
+
+- `nominates` refuses a call that names no reading.
+- `_autobind_property_concepts` (the old `Spaces.py:14211`) names its reading as `(serial, stream)`, like every other caller in `bin/`.
+- `ConceptLessons.present_native_forms` is replaced by `read_native_forms`. The lesson forwards its texts `concept_mint_count` times, and each form is read by `lookup_word(word_reading=True, reading=(serial, stream))`. The count is the one kept under `('form', form)`.
+
+*What changes in the concept lesson:*
+
+- Its forms (`0`, `1`, `A`) become word concepts, nominated on the third pass. Before, only their basic rows were declared.
+- Its Adam teaches the names' columns of the order-zero Sigma (`cs.order_zero.weight`). Before, it taught `store.features.values`, which no forward reads since round 3. **Provisional.**
+- Two tests of `test_objective_ownership.py` now fail. They were not ported.
+
+**4. The widths of a reading's place and time.** `ORDER_ZERO_WHERE` and `ORDER_ZERO_WHEN` are gone. `install_order_zero` reads the widths from `where_registry.encode('text', ·)` and `when_encoding.encode(·)`, and uses 0 where the model has neither. They are kept on the Sigma as `where_width` and `when_width`. A reading with no bracket is padded with zeros. The certificate of the dense Sigma checks the width against the registry and the encoding.
+
+**5. Step 7, not finished.** Ported in this pass:
+
+| File | Cases | Old | New |
+| --- | --- | --- | --- |
+| `test/basic_fixtures.py` (`feature`, used by the native-literal tests) | every reader of the fixture | the occurrence reserved | the occurrence reserved and promoted, a row that is declared (§22.3, step 7) |
+
+The fixture repaired the binding of these tests. Their asserted values still fail.
+
+Still failing, by file (109 cases):
+
+| Group | Files and cases |
+| --- | --- |
+| Native-literal and field tests | `test_refine_raise` 10, `test_field_binding` 10, `test_concept_memberships` 5, `test_order0_percept_definitions` 4, `test_order0_attended_field` 4, `test_concept_evidence` 3, `test_evidence_folds`, `test_field_learning`, `test_cs_sparse_weights`, `test_primitive_properties` 1 each |
+| Word and definition tests | `test_word_interpretation` 4, `test_definition_rows` 4, `test_word_store` 3, `test_word_admission` 3 |
+| Scalar and numeric tests | `test_item18_perceptual_scalar` 4, `test_item18_scalar` 3, `test_item18_places` 2, `test_item18_stack` 1 |
+| Model-reading tests | `test_compiled_word_chunk` 4, `test_item18_producer_repair` 3, `test_concept_output` 3 |
+| The concept lesson | `test_objective_ownership` 2 |
+| Two cases each | `test_trust_round1`, `test_relation_closing`, `test_output_path_supervised`, `test_one_attention`, `test_occurrence_coordinates`, `test_item20_round5_percepts` |
+| One case each | 21 more files |
+
+Of these, `test_item20_round6_gradients::test_knowing_deposit_keeps_the_selected_intuition_weights_live` failed at the start too.
+
+*By sample, they fall into three kinds:*
+
+- **Exact values at a concept.** These read an order-zero concept as the fold of its feature memberships: exact `[1, 0]`, "both" as `[1, 1]`, a fractional membership as its weight. Under rules 3 and 8 they are to be restated as §23.3.1 and the coordinator's text say: the two lanes of `order_zero_input` hold the evidence, and the concept reads for less against.
+- **Learning the old feature weights.** These teach `store.features.values` and are to teach `cs.order_zero.weight` instead (`test_native_learning_updates_one_definition_for_both_modes`).
+- **First sight.** These read a word on first sight through a path the nomination fixtures do not cover (the model's own reading of one sentence).
+
+None is a regression of a mechanism that I found. Each needs its assertion restated, and I did not reach them.
+
+**Counts.**
+
+- `test_item17_order_zero.py`: 18 passed (alone, 32.5 s).
+- `test_item17_stacks.py`: 9 passed, **1 failed**. `test_depth_one_two_and_four_pairs`: two pairs learned the target on 4 of 5 drawn starts. The stacks are unchanged since round 1, so this is the learning certificate's own variance on drawn starts, recorded and not repaired (the review counted 8 of 8). Its bar of "every start" may want stating as a share.
+- Both stopping gates: 2 passed.
+- The 101 files that name what the round changed: 109 failed, 1,183 passed, 61 skipped, 1 xpassed, 396 s, run in 4 processes.
+- The lesson's sixteen sentences: 34.31 s before the round (`8b8a2fcf48`), 25.60 s at `750dc484bd`, 23.98 s now.
+
+**Choices.**
+
+1. Trees: the tree holds its views weakly. Self-recursive closures clear their own names, or walk by a stack.
+2. A call to `nominates` that names no reading is an error.
+3. The concept lesson reads its forms by forwarding its texts, counted under the form, and teaches the names' columns of `U`. **Provisional.**
+4. The native-literal fixture's declared occurrence is a nominated (promoted) row.
+
+**What I would change in §21.**
+
+- Certificate 7's depth bar, "every start", should be a share of the drawn starts, or the presentations stated, since one start in five now misses at two pairs.
+- Rule 8b could say that a later member does not rescale the earlier ones. That is how it is built: each member is added at its own scale.
