@@ -2460,3 +2460,32 @@ of its own.
 
 To specify: the field use of each open operator above, and which of the two
 readings of a stated relation the field takes.
+
+## A where that gives more of its range to what matters (Alec, 2026-11-19; future work)
+
+The code of a place is a fixed sinusoid, held in one tensor for every
+space, and it is not trained: "The parameter itself must stay fixed if
+the sinusoid coding is to remain meaningful across all .where". Alec,
+of letting it vary: "then we can have a nonlinear representation over
+the somatosensory cortex, which is what gives the somatosensory
+homunculus big hands and face."
+
+What it would be. On the body's map in the cortex the hands and the face
+take far more surface than their share of skin, in proportion to how
+finely they tell touches apart, and in vision the centre of the eye
+takes most of the first visual area. The same can be had here with the
+code left fixed: a place of subjective space is passed through a learned
+map before the sinusoid codes it, so that a region that matters is
+spread over more of the code's range.
+
+The map is laterally connected, as a self-organizing map is, so that it
+remains continuous (Alec, 2026-11-19). In such a map each unit is tied
+to its neighbours, and a unit that learns pulls its neighbours with it.
+Places that lie next to one another in subjective space therefore stay
+next to one another in the code however much one region grows, and the
+order of places is kept.
+
+To specify: what tells the map which regions matter (how often a region
+is attended, or how much error it carries); the neighbourhood and how it
+narrows with learning; and how readings stored under an earlier state of
+the map are read after it has moved.

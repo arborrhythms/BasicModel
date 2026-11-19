@@ -8457,8 +8457,14 @@ fixed, as he says; (2) how much of the code's range a region of
 subjective space is given. The second can vary with the first fixed:
 a place is passed through a learned map that keeps order before the
 fixed sinusoid codes it, so a region that matters is spread over more
-of the range. Nothing of it is built in this item. Recorded for
-`doc/FutureWork.md` at the documentation pass.
+of the range. Nothing of it is built in this item.
+
+*Alec, the same day:* "That future work should indicate that the map
+is laterally connected as a SOM, so that it remains continuous." A
+self-organizing map ties each unit to its neighbours, so that a unit
+that learns pulls its neighbours with it and places that are next to
+one another stay so. It is in `doc/FutureWork.md` ("A where that gives
+more of its range to what matters"), with what is left to specify.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
