@@ -9455,6 +9455,78 @@ chooses from. The old classes are not edited.
     occurrences, so a word that occurs at several places is put back
     at one.
 
+**K. The percept's code** (§19.69 to §19.71; tried in tests, §23.3b). These change rules 5 and 43 and the code that rounds 1 and 3 built.
+
+50. *The code is 64 and 64, on two lanes* (Alec, §19.70: "64 and 64
+    until proven that we need more"; §19.71: "we are on a positive
+    unit hypercube with two lanes; evidence for and evidence
+    against"). A percept's code has a parts half and a wholes half of
+    64 coordinates each, and each half has a for lane and an against
+    lane, every value within 0 to 1. His "-1" is 1 on the against
+    lane; zero on both lanes is no evidence. The parts are spread
+    over all 64 coordinates of their half; the block of 32 goes, and
+    no felt value is written at a last coordinate.
+51. *The parts half* (Alec, §19.70: "1 for parts, 0 for
+    indeterminate ... and -1 for wholes"). For: the coordinates of
+    the form's parts (rule 43). Against: the coordinates that the
+    forms holding it add, a holder being a stored form that holds it
+    as a run (the `y` of `archery` for `archer`). Where a coordinate
+    would be both, for stands. *Mine:* which holders count is
+    bounded, since a short form is held by hundreds of words; the
+    bound is measured in the build.
+52. *The wholes half is a code of rows of the table of wholes*
+    (Alec, §19.70: "we should be storing it as a codebook. Starting
+    from the set of all values, we discriminate at some boundary";
+    "the property is correct"). A whole is one row of a table,
+    defined by where it cuts the values: a set of bytes for a
+    character property, a number for a feeling. The percept's vector
+    never holds the bytes. *Mine:* each row has three coordinates of
+    its own, drawn as a part's are, and a whole inside another
+    carries the other's. For: the coordinates of the wholes that
+    apply. Against: the coordinates of the wholes witnessed not to
+    apply, *mine:* among wholes of the same kind as those that apply
+    (over every whole the lane fills 55.6 of 64). A property that is
+    itself a degree holds that degree (Alec, §19.71). *Open, put to
+    Alec:* with no whole the half is all zeros, where rule 5 has a
+    code "at or below each whole's" and round 3 built all ones.
+53. *The Pi selects for and against* (Alec, §19.71: "Pi should select
+    both strong for and strong against"). A row of the first Pi has
+    for entries, its parts and wholes as now, and against entries,
+    the parts that its holders add. *Mine, measured (§23.3b):* the
+    against entries are joined by union (any one is enough; the
+    product fired on 52 of 852 held forms, the union on all), and a
+    member's presence is read from the set of parts found, not from
+    a code. Rule 6's amendment stands: the run of parts is the row's
+    presence on both lanes.
+54. *What a concept reads* (rule 8b on the two lanes). A column starts
+    as its member's for code less its against code, over the squared
+    length; the concept reads the reading's for vector less its
+    against vector, as now. A reader that asks whether one form lies
+    inside another reads the for lane alone, where the part order
+    holds.
+55. *A scalar is its place in one sorted table of values* (Alec,
+    §19.70: "The scalar parts will just be values below, sorted by
+    the less-than operation. Wholes in this case will be the same
+    table as parts, so we are enclosing the scalar by a lessthan
+    sort"). For a value, the values at or below it are for and the
+    values above it are against. *Mine, measured:* the entries take
+    coordinates by bins of the felt value in 64; the boundary is 0 or
+    1; and a concept's column follows its member's code as the table
+    grows, since a column frozen at its making reads every larger
+    value fully. This replaces the value written at coordinate 95 and
+    the scalar readers' threshold at one (`ScalarPercepts`).
+56. *Two forms left with one code get rule 43's next part* (*mine*,
+    §23.3b): the shortest run that one holds and the other does not
+    (`ry`). At 64 and 64 with both lanes 35 of 19,821 words are left
+    so. No whole over bytes is made for this (one holds of 122 forms
+    on average). *Open, put to Alec:* whether a whole should hold of
+    a form as such, so that a word may be told apart by a whole as
+    readily as by a part (§19.69).
+57. *Not built in this item:* "every other part of the catalog is
+    evidence against" as a code (it loses the part order, §23.3b);
+    and the wholes half learned downward from concepts (§19.70; the
+    toy does not answer it). Both go to `doc/FutureWork.md`.
+
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
 *learning*.
@@ -9664,6 +9736,29 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     reconstruction's error reaches the weights that read the where.
     (c) *Learning:* after the reconstruction is taught on the lesson's
     sentences, which concepts have weight on the where is printed.
+46. *The code* (rules 50 to 52): a code is 128 wide on each of two
+    lanes, every value within 0 to 1; a form's for lane is at or
+    above each of its parts' in the parts half; the for lane of a
+    form lies at or below that of a form holding it; no coordinate
+    is one on both lanes; a percept with no whole and no holder has
+    nothing on its against lane. Printed for the 19,821 words: the
+    words that share a code (35 before rule 56, none after), and the
+    codes inside another's by accident on the for lane.
+47. *For and against at the first Pi* (rule 53): the row of `archer`
+    reads for 1 and against 0 on `archer`, and for 1 and against 1
+    on `archery`; the row of `is` reads against on `this`; a row
+    with no holder never reads against from a part.
+48. *Scored by difference* (rule 54): a concept reads its own row at
+    tanh(1); it reads a form that holds its form below that, and a
+    form that holds its parts only by accident lower still (the
+    trial: .30 and .13 before the squash). On the lesson, how many
+    concepts are read highest by their own row is printed (the
+    trial: 7 of 8).
+49. *The scalars* (rule 55): collections at 1, 1 and 2 are told
+    apart at inputs 1, 2 and 4, and a value that arrives between two
+    known ones is read between them; the scalar tests of item 1.8
+    left failing by round 3 pass (§23.3.4), and the numeric
+    certificate keeps its bar.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -10273,6 +10368,70 @@ measure and return:
 6. What cannot be built as proposed, and what to do in its place.
 
 Assert only what holds by construction. Return as §23.3b.
+~~~
+
+### 22.3c Round 3c: the percept's code (added 2026-11-19, after §23.3b)
+
+~~~
+Round 3c of item 1.7. Rules 50 to 56 of §21, with rule 6 as amended
+and rule 8b. Certificates 46 to 49. It starts from the source that
+round 3's last repair pass returned. Read §19.69 to §19.71 and
+§23.3b (the trial: test/code_trial.py is a stand-in for what you
+build, checked against the source; take its arithmetic, not its
+integers).
+
+1. Before any edit, list every place that fixes or reads the
+   widths, the block of 32 or coordinate 95 (the survey of §19.69:
+   resolve_identity_layout, WordIdentity, RadixLayer's construction,
+   BasicPercepts, WholeSpace's codebook and begin_forward,
+   MereologicalCodes, PrimitiveProperties.codes, ScalarPercepts,
+   NumericPercepts.reverse, FeatureTable, FormContainment,
+   corpus_capacity, AttentionLesson, data/model.xml and model.xsd),
+   and return any that is new, gone or different.
+2. The widths (rule 50): the parts half and the wholes half are 64
+   each, the parts over all 64. identityLengthDim and the block go;
+   the configurations and the schema are ported. A checkpoint of the
+   old layout is refused with the reason; say what becomes of
+   data/BasicModel.ckpt and of the tests that load it.
+3. Two lanes (rules 50 to 52): a percept's code is a for vector and
+   an against vector. Parts half: for as rule 43 has it; against
+   from the parts that the form's holders add, the holders bounded
+   (measure the bound: the trial found 0 to 235 against entries a
+   row, mean 2.95, and 4,869 rows above the first Pi's 16 entries a
+   row). Wholes half: each whole a row of the table of wholes with
+   three coordinates of its own, a whole inside another carrying
+   the other's; for where it applies, against where it is witnessed
+   not to apply, among wholes of its kind. The bytes a property
+   holds on stay in PrimitiveProperties.members and decide which
+   wholes a form has; PrimitiveProperties.codes and the codebook
+   rows written from it at begin_forward give way to the rows'
+   coordinates.
+4. The first Pi (rule 53): against entries, joined by union, read
+   by the set of parts found. Storage as rule 19 has it; say what
+   the entries a row now come to.
+5. The concept's read (rule 54): a column from the for code less
+   the against code; the readers of containment
+   (FormContainment, ConceptualMatch.match, the lookup) read the
+   for lane.
+6. The scalars (rule 55): the sorted table in place of the value at
+   a last coordinate; bins of the felt value; a column that follows
+   its member. ScalarPercepts.reconstruct and decode lose their
+   threshold at one; FieldProjection.stimulate and
+   ScalarPercepts.reading read a collection by one reader. The nine
+   scalar and numeric cases that round 3 left failing pass.
+7. Telling apart (rule 56): WordIdentity's step compares the whole
+   code, both lanes, and gives the forms still alike the next part.
+   The shared rows of round 1 (WordIdentity.shared) go if none is
+   left; say how many are.
+8. Certificates 46 to 49 in a new test/test_item17_code.py. The
+   trial's two files stay as they are.
+9. Port every test that names what you changed, each so that it
+   states what it stated, and list each.
+
+Run: the new test file; test/test_item17_order_zero.py,
+test_item17_forms.py, test_item17_layers.py, test_item17_stacks.py;
+every test file that names what you changed; both stopping gates;
+the lesson's sixteen sentences before and after. Return as §23.3c.
 ~~~
 
 ### 22.4 Round 4: symbols and the orders above
