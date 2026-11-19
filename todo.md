@@ -1712,6 +1712,10 @@ generation is expected at this stage and is recorded, not tuned away.
    what is open are in one table in §19.59, with the text that
    begins the item in a new conversation; the implementers run in
    Opus.
+   **Then (Alec; §19.60):** "we will have to revert to a gradient
+   saliency map from the output, since it is input sensitive",
+   taken from the open run; "no derivative" is withdrawn and the
+   form of rule 36 is open (the plain gradient misses 74 of 304).
    The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it

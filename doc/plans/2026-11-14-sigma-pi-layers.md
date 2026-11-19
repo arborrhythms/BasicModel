@@ -7844,7 +7844,7 @@ usual." The discussion is finished; the item's text can be written.
 | --- | --- | --- |
 | The layers: Pi, Not, Sigma at every order; symbols split from concepts | rules 1 to 32 | §19.21 |
 | The looks: the bank, the request, the returned set, `attend`, dimming, one gain field, one where, a literal | rules 33 to 42 | §19.51 |
-| No derivative in a look: the request is carried down by the way back | rule 36 restated | §19.52 |
+| The salience map is a gradient taken from the open run; "no derivative" of §19.52 is withdrawn | rule 36, open as to its form | §19.60 |
 | The salience map selects the level, the `.where` selects the word; what stays selected is drawn and judged by its outcome | rule 37 restated | §19.53 |
 | The request names a place in the conceptual tree; "words" gives the space a Not entry | rule 35 | §19.54, §19.57 |
 | A form's code: no end marks; a space character; its parts of every size | Alec | §19.54 |
@@ -7855,6 +7855,9 @@ usual." The discussion is finished; the item's text can be written.
 
 **Open, to settle in the item or with Alec.**
 
+0. The form of the gradient salience map (§19.60): the plain
+   gradient misses words that are fully present; recommended, each
+   Sigma passed before its squash.
 1. How the word is found from its parts on the device without a
    product against every form (§19.57: 5.9 ms against 197,014 forms,
    growing with the dictionary).
@@ -7880,13 +7883,13 @@ Begin item 1.7 of BasicModel (the Sigma and Pi layers, the looks, and
 the perceptual basis). Read first, in
 basicmodel/doc/plans/2026-11-14-sigma-pi-layers.md: section 19.59 (what
 is decided and what is open, with the sections that hold each),
-then 19.21 (rules 1 to 32) and 19.51 to 19.58. Read the item 1.7 entry
+then 19.21 (rules 1 to 32) and 19.51 to 19.60. Read the item 1.7 entry
 of basicmodel/todo.md. Your memory holds how we work.
 
 Do, in this order:
 1. Write the rules of item 1.7 once, as one clean statement of the
    perceptual basis and the looks (rules 1 to 42 as they now stand,
-   with what 19.52 to 19.58 changed folded in), as a new section of
+   with what 19.52 to 19.60 changed folded in), as a new section of
    that file. Mark what is mine, what is yours, and what is open.
 2. Put the open points of 19.59 to me, each with what you would take.
    Do not hold the text for them: build on what you recommend unless I
@@ -7901,6 +7904,59 @@ Do, in this order:
 Item 1.8 is complete and on GitHub. Commit your own work locally; do
 not push unless I say.
 ~~~
+
+### 19.60 Alec: back to a gradient salience map, taken from the open run (2026-11-19)
+
+Alec:
+
+> By the way, I think we will have to revert to a gradient saliency map
+> from the output, since it is input sensitive: IOW, we will need to
+> use the parallel gradient from the open attention run to determine
+> the operating point of the conceptual attention over the current
+> input, which is something that the weights will not be sensitive to.
+> So the right fix is probably not to use weights.
+
+**What it changes.** Rule 36 as §19.52 restated it ("no derivative is
+taken") is withdrawn. The salience map is a gradient of the asked
+concepts by the input, and it is taken from the open run, the first
+look, in which the whole sentence is read at once. *Claude's reading:*
+the local derivatives are kept from that one pass, as §19.46's rule 36
+had it, so the map costs no second backward pass and is in step with
+the current input. His "probably" leaves the form of the fix open.
+
+**What has been measured that bears on it** (Claude; the 304 requests
+of §19.52, with rule 2's rows; `way_back_check.py`, with an integrated
+gradient added today):
+
+| The request carried down by | Returns exactly the asked words that are present | Misses a word that is fully present |
+| --- | ---: | ---: |
+| the gradient as it is (the Sigma by its slope) | 230 of 304 | 74 |
+| an integrated gradient, from an empty field to the field read, 32 steps | 254 of 304 | 50 |
+| the gradient with each Sigma taken before its squash (its sum, not its `tanh`) | 304 of 304 | 0 |
+| the rows' entries alone, times what is active (no gradient) | 304 of 304 | 0 |
+
+- *The fault of the plain gradient stands:* where the open run has lit
+  a concept fully, its slope is near nothing (0.030 against a weight of
+  3.0, §19.52), so the words that are most present are the ones
+  missed. Whatever is taken has to deal with that.
+- *The third row is a gradient, and it is sensitive to the input.* It
+  passes each Pi by the derivative of its product at the values of the
+  open run, and multiplies by the activity. What it leaves out is only
+  the last squash of each Sigma. §19.51 called it "by its weights",
+  which named it badly.
+- *The fourth row is what he sets aside:* it reads the weights and what
+  is active, and nothing of how strongly the current input drives each
+  row.
+- *Not measured:* cases where the two right-hand rows differ. On these
+  sentences every part is fully present, so they agree. They would
+  differ where parts are present by degree, which is his point.
+
+**Rule 36 as it now stands** (*open; Claude's recommendation is the
+third row*). The salience map is the gradient of the asked concepts by
+the percepts of the sentence, from the open run's kept derivatives;
+each Sigma is passed before its squash, so that a concept already lit
+still returns its percepts. To be confirmed by him, and tried on
+inputs where parts are present by degree, in the item's first round.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
