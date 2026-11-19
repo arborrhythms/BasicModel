@@ -1443,6 +1443,14 @@ generation is expected at this stage and is recorded, not tuned away.
    capable mind, and we still have oppostunity to review." It
    proposes, builds its recommendation in a commit of its own, marks
    it provisional and goes on; each text names what comes next.
+   **Codex is out of credits (Alec, 2026-11-18)**, so a Claude
+   session stands in for it; its text is §68.85. Where Codex stopped:
+   the exception of §68.83 is repaired (`1c5dcbb73c`) and the tests
+   that read by chance are ported (`1547b3bd7b`); §66.8 and §66.9 are
+   written and not committed; **the item's sweep ran and failed, 46
+   of 7,325 cases, of which 34 still fail** in twenty test files and
+   passed before the loop of looks. So item 1.8 is not at its push
+   until those are ported or repaired and the sweep passes.
    **The push (Alec, 2026-11-18): "We should push after 1.8".** After
    Codex's return of §68.84 (the repair and the item's one default
    sweep) is reviewed, the doc pass is applied and the PDF rebuilt.

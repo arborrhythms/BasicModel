@@ -34696,6 +34696,130 @@ E. What comes after, with no wait between (§75, point 4). When D is
    prototype for item 1.7 in tests only. It changes no file of bin/.
 ~~~
 
+### 68.85 Text for a Claude session that finishes Codex's work (Alec, 2026-11-18)
+
+Alec, 2026-11-18: "Codex has run out of credits, BTW, so please emit
+text for yourself to finish its work in another thread (where you can
+run using Opus to save credits)."
+
+**Where Codex stopped** (read in the checkout by Claude).
+
+- *Committed:* `1c5dcbb73c` (the numeric grammar replays its words in
+  the order they were interpreted, and a sentence closes after its
+  arrivals; this is the repair of the exception of §68.83) and
+  `1547b3bd7b` (tests that left their reading to chance are given it
+  through the native decisions).
+- *Written and not committed:* §66.8 and §66.9 of this document, 44
+  lines in the working tree.
+- *The item's sweep was run and failed.* 7,325 cases completed and 46
+  failed (`output/item18-last/fixed-sweep.log`, in the worktree
+  `.worktrees/item18-final-sweep`). Twelve are covered by the ports of
+  `1547b3bd7b`. **Thirty-four still fail**, in twenty test files, and
+  fail on `bccdae6b58` as well
+  (`output/item18-last/archived-sweep-failures.log`). Codex's draft of
+  the end (`output/item18-last/end-return.md`) says all 46 passed in
+  the sweep before the loop of looks, and names three as more than
+  stale fixtures: a close with only a scalar still reduces an empty
+  word axis; a packed look still keeps field evidence with an earlier
+  gradient; and the fast nanochat evaluator asks for the score of a
+  candidate that its own stem call cannot interpret.
+- *Not begun:* the prototype of item 1.7 (sigma-pi §19.47).
+
+So item 1.8 is not at its push: its default tier does not pass. I did
+not find these 34 in my reviews of §61 to §66, which ran targeted
+tests only, as §72 has it.
+
+**The text.**
+
+~~~
+You stand in for Codex on BasicModel, whose credits ran out. Alec
+decides every question of design. Another Claude session writes the
+specifications and will review what you return; you write code, tests
+and the return, and you do not accept your own work.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit
+locally with explicit paths (never git add -A), with the attribution
+line your session gives you. Never push, never force-push, never move
+another's ref.
+
+Read first, in doc/plans/2026-11-11-item1-8-last-architecture-round.md:
+§68.83, §68.84 and §68.85 (what is asked and where Codex stopped), §72
+(tests), §73 and §75 (a question is not a stop: write the question and
+the solutions, build the one you recommend in a commit of its own,
+mark it provisional, go on; but do not overturn a recorded decision of
+Alec's in the source), and Codex's return §66 through §66.9. Then
+output/item18-last/end-return.md, fixed-sweep.log and
+archived-sweep-failures.log.
+
+Standing rules: no bound, learning rate, seed, capacity or
+presentation count changes; no test deleted, skipped, marked to fail
+or loosened; no seed pinned to pass; a learning certificate recorded
+and not repaired; a mechanism certificate must pass; both stopping
+gates pass (test/test_mm_xor.py::TestMMXorConvergence::test_convergence
+and test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class).
+
+Do not edit: todo.md; any section of the plans that is not your
+return; doc/plans/2026-11-18-item1-6-felt-math-world.md;
+BasicModel.pdf (it is modified in the tree on purpose);
+../basicmodel-performance; the superproject. The reviewer appends to
+the same specification file while you work: read it again before each
+write, and stage only your own lines.
+
+0. Commit §66.8 and §66.9 as Codex left them, in a commit of their
+   own. They are its words.
+
+1. The thirty-four failing cases of archived-sweep-failures.log. For
+   each, find the producer and say which it is:
+   a. a fixture or contract of what the loop of looks replaced (it
+      reads something that was removed or renamed): port it, keep its
+      assertions, and name what stands in for what;
+   b. a test that leaves its reading to chance: give it its reading
+      through the native decisions (reading_fixtures.read_in_source_order),
+      as 1547b3bd7b does;
+   c. a defect of mechanism: repair it at the producer, with a test
+      that fails before the repair. The three that end-return.md names
+      are of this kind until you show otherwise.
+
+2. After any change to a file of bin/: the exact replay of the
+   lesson's sixteen sentences against
+   output/item18-sentence-tables/entry-lesson (test/attention_thinking_certificate.py
+   lesson, with --replay and --compare, and the PYTHONHASHSEED of that
+   folder's initial.json), and both stopping gates. If a repair changes
+   an update, say which and why, and take the new record.
+
+3. Each case you port or repair passes in twenty consecutive fresh
+   processes, each with its own draw.
+
+4. Then the item's default sweep again, on the finished source:
+   env -u RUN_TRAINED -u RUN_SLOW make test
+   with nothing under RUN_SLOW. It has to end with no failure. First
+   run make -n test: if it plans to delete .venv (requirements.txt is
+   newer than .venv/.installed-bin), do not let it; check with
+   .venv/bin/python -m pip install --dry-run -r requirements.txt that
+   nothing is missing, then touch .venv/.installed-bin. Run it in the
+   background; it takes some forty minutes.
+
+5. Return as §66.10 onward, each heading marked "(Claude, standing in
+   for Codex, 2026-11-18)": the thirty-four, each with its kind, its
+   producer and what changed; the repairs of kind c with their tests;
+   the twenty runs; the replay; the sweep with its counts and seconds;
+   the test files you ran; the source snapshot, as §66.7 gives it.
+
+6. Then, with no wait, the text of §19.47 of
+   doc/plans/2026-11-14-sigma-pi-layers.md: a prototype for item 1.7
+   in tests only, returned as §20 of that document.
+
+For a probe, use
+env -u RUN_TRAINED -u RUN_SLOW PYTHONDONTWRITEBYTECODE=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin:test OMP_NUM_THREADS=3
+with .venv/bin/python -m pytest -p no:cacheprovider -q --no-header. A
+script that reads a model needs eager reading (the eager_reading
+fixture, or reading_fixtures.use_eager_reading), or it compiles for
+many minutes.
+
+End with a short report: what is done, the sweep's result, what is
+provisional, and what you could not do.
+~~~
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression
