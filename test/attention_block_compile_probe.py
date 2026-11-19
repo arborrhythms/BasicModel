@@ -88,7 +88,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--explain', action='store_true',
                         help='resume after graph breaks and report location, reason and multiplicity')
-    parser.add_argument('--resume-past', action='append', default=[], metavar='MODULE.CLASS.METHOD',
+    parser.add_argument('--resume-past', action='append', default=[], metavar='MODULE[.CLASS].FUNCTION',
                         help='in a follow-up explain run, execute an already diagnosed compiler failure eagerly')
     args = parser.parse_args()
     if args.resume_past and not args.explain:
@@ -108,8 +108,10 @@ def main():
                 return method(*args, **kwargs)
             return call
         for name in args.resume_past:
-            module, cls, method = name.rsplit('.', 2)
-            owner = getattr(importlib.import_module(module), cls)
+            module, *parents, method = name.split('.')
+            owner = importlib.import_module(module)
+            for parent in parents:
+                owner = getattr(owner, parent)
             patch.setattr(owner, method, fallback(name, getattr(owner, method)))
         original = BasicModel._run_sentence_word_bricks
         compiled = torch.compile(original,
