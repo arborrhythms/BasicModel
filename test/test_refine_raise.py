@@ -21,8 +21,10 @@ def field_case(raw, patience=2):
     individual = _mint_row(cs, 1, 101)
     cs.add_concept_edge(individual, 0, 1.)
     native, extents = binary_features(cs, torch.tensor([raw]))
-    read = cs.cs_read_memberships(native, extents)
-    _, field = cs.cs_forward_content(read, torch.rand(cs.nVectors, cs.nDim))
+    cs.cs_read_memberships(native, extents)
+    # A concept is one signed value; "both" is read at its basic percepts.
+    field = cs.refinement_field(cs._percept_field)
+    cs._refinement_field = field
     return cs, individual, field
 
 
@@ -142,10 +144,12 @@ def test_extent_containment_does_not_fill_gaps_between_part_witnesses(grouped):
     gap = 2 if grouped else 1
     assert not cs._percept_field.events[..., gap, :].any()
     # Both native literals are contained. A present positive literal and a
-    # present negated literal refute their conjunction (§3.2); they no longer
-    # manufacture a both corner that requests refinement.
-    torch.testing.assert_close(read[0, 0, 0], torch.tensor([0., 1.]))
-    _, field = cs.cs_forward_content(read, torch.rand(cs.nVectors, cs.nDim))
+    # present negated literal do not manufacture a both corner that requests
+    # refinement: the concept is one signed value, and neither of its basic
+    # percepts is read both.
+    assert float(read[0, 0, 0].detach().amin()) == 0
+    assert not cs.order_zero_both(cs._percept_field, [0]).any()
+    field = cs.refinement_field(cs._percept_field)
     for step in range(3):
         requests = observe(cs, field, step)
     assert not cs._refinement_raise_ready[individual, 0]
@@ -159,11 +163,11 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     cs.add_concept_edge(garfield, 0, 1., negated=True)
     cs._promotion_enabled = True
     store = Spaces._concept_alloc_of(cs).layer()
-    # Both primitive poles are now directly observed. Learn the particular's
-    # link to that predicate instead of relearning its already-known absence.
-    with torch.no_grad():
-        store.values[store._index[(felix, 0)]] = 0.
-    optimizer = torch.optim.Adam([store.values], lr=.03)
+    # Both primitive poles are directly observed. The predicate's column of
+    # the order-zero Sigma starts at zero here (its for and Not members have
+    # the same vector in this layout) and is learned with the particular's
+    # link to it.
+    optimizer = torch.optim.Adam([store.values, cs.order_zero.weight], lr=.03)
     native, extents = binary_features(cs, torch.tensor([[49], [48], [65]]))
     dictionary = torch.rand(cs.nVectors, cs.nDim)  # no selected initialization
     target = torch.tensor([[1., 0.], [0., 1.], [0., 0.]])
@@ -183,8 +187,9 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     native, extents = binary_features(cs, torch.tensor([[49, 49]]))
     read = cs.cs_read_memberships(native, extents)
     _, field = cs.cs_forward_content(read, dictionary)
-    torch.testing.assert_close(field[felix, 0, 0], torch.tensor([1., 0.]))
-    observe(cs, field, 32)
+    # The particular is read for, and not against: a pure reading.
+    assert float(field[felix, 0, 0, 0].detach()) > .5 and float(field[felix, 0, 0, 1].detach()) == 0
+    observe(cs, cs.refinement_field(cs._percept_field), 32)
     context = torch.zeros(store.nOutput)
     context[0] = 1.
     evidence = torch.ones(2 * (store.nOutput + 1))
@@ -200,7 +205,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
         loss.backward()
         optimizer.step()
         store.project_parts()
-        observe(cs, field, step)
+        observe(cs, cs.refinement_field(cs._percept_field), step)
     cat = cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence)
     assert cat is not None and cs.mtm.entries[cat].order == 2
     assert set(cs.mtm.entries[cat].support) == {0, felix, garfield}

@@ -219,8 +219,7 @@ def observe_field(owner, field=None, *, active_streams=None):
         active_streams = torch.ones(B, dtype=torch.bool)
     if tuple(active_streams.shape) != (B,):
         raise ValueError('open field activity differs from its streams')
-    owner._refinement_field = field.detach()
-    owner.refine_over_collected(field=field)
+    owner.refine_over_collected()
     addresses = owner._field_inventory_rows(field.device)
     readings = symbols(field).detach()
     activated = {}
@@ -359,6 +358,8 @@ def open_sentence(model, sid, present):
     from SentenceField import open_field
     owner._cs_last_a0 = field.detach()
     _, acts = owner.cs_forward_content(field, None)
+    if getattr(owner, '_mereology_raise', False) and owner._percept_field is not None:
+        owner._refinement_field = owner.refinement_field(owner._percept_field)
     opened = open_field(model, sid, acts)
     model._definition_fold_field = acts.detach()
     from ConceptEvidence import symbols

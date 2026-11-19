@@ -15131,6 +15131,72 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_cs_order0_raw', field.detach())
         return field
 
+    def order_zero_both(self, perception, rows, *, batch=None):
+        """How far each order-zero concept of ``rows`` (``-1`` reads nothing)
+        is read both for and against, ``[len(rows), B, E]`` in ``[0, 1]``;
+        with ``batch``, of that stream alone (``B`` is one).
+
+        A concept's single signed value is never both; a basic percept can
+        be. A basic percept is both where its run of parts is present and its
+        wholes are read on both lanes: the run's presence times the least of
+        the wholes' two lanes. A concept is both by its members, the basic
+        percepts its column was started from, each for or Not:
+        ``1 - prod_q (1 - both_q)``.
+        """
+        rows = torch.as_tensor(rows, dtype=torch.long).tolist()
+        shape = perception.values.shape[1:3]
+        result = perception.values.new_zeros(len(rows), *shape)
+        if perception.boundaries is None or not len(perception.keys) or not rows:
+            return result
+        parts, wholes = perception.boundaries.detach()
+        percept = parts[..., 0] * wholes.amin(-1)
+        if batch is not None:
+            percept = percept[:, batch:batch + 1]
+            result = result[:, batch:batch + 1]
+        index = {key: i for i, key in enumerate(perception.keys)}
+        members = {}
+        for (target, col) in _concept_alloc_of(self).layer(0).features._index:
+            found = index.get(('bp', int(col) // 2))
+            if found is not None:
+                members.setdefault(int(target), set()).add(found)
+        n0 = self._order_caps()[0]
+        for slot, row in enumerate(rows):
+            held = sorted(members.get(row, ())) if 0 <= row < n0 else ()
+            if held:
+                gaps = (1. - percept[held]).clamp_min(0.)
+                result[slot] = 1. - gaps.prod(0)
+        return result
+
+    @torch.no_grad()
+    def order_zero_both_field(self, perception):
+        """:meth:`order_zero_both` at the open field's order-zero slots,
+        ``[n0, B, E]``."""
+        addresses = self._field_inventory_rows()
+        n0 = self._field_caps()[0]
+        return torch.cat([self.order_zero_both(perception,
+            (addresses[:, b] if addresses.ndim == 2 else addresses)[:n0], batch=b)
+            for b in range(perception.values.shape[1])], 1)
+
+    @torch.no_grad()
+    def refinement_field(self, perception):
+        """The field the mereology's refinement reads, ``[S, B, E, 2]``.
+
+        Each order-zero slot holds its concept's both (:meth:`order_zero_both`)
+        on each lane; the orders above compose it as they compose the
+        concepts' field. The selections of the concepts' own field are left
+        as they were.
+        """
+        both = self.order_zero_both_field(perception)
+        a_0 = torch.stack((both, both), -1).to(self.similarity_codebook.W.dtype)
+        kept = {name: self.__dict__.get(name) for name in
+                ('_cs_level_acts', '_cs_level_rows', '_cs_wave_qe')}
+        try:
+            _, field = self.cs_forward_content(a_0, None)
+        finally:
+            for name, value in kept.items():
+                object.__setattr__(self, name, value)
+        return field.detach()
+
     def concept_weights(self, row, *, negated=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
         shared untyped store (cols are global rows; ``nVectors`` is the
@@ -15825,10 +15891,11 @@ class ConceptualSpace(Space):
             addresses = self._field_inventory_rows(sel.device)
             inventory = addresses.gather(0, sel) if addresses.ndim == 2 else addresses[sel]
             self.subspace.set_index(inventory.t().unsqueeze(-1).long())
-        # Attention-to-relation promotion: stash the admitted field for the
-        # Reset(hard) collector (consumed once; the compile-safety hoist).
-        if getattr(self, '_mereology_raise', False):
-            object.__setattr__(self, '_refinement_field', acts.detach())
+        # Attention-to-relation promotion: stash the refinement field (the
+        # concepts' both, read at the basic percepts) for the Reset(hard)
+        # collector (consumed once; the compile-safety hoist).
+        if getattr(self, '_mereology_raise', False) and getattr(self, '_percept_field', None) is not None:
+            object.__setattr__(self, '_refinement_field', self.refinement_field(self._percept_field))
         if getattr(self, "_promotion_enabled", False):
             object.__setattr__(self, "_promo_last_acts", acts.detach())
         return content, acts
@@ -15843,7 +15910,8 @@ class ConceptualSpace(Space):
     def refine_over_collected(self, *, field=None):
         """Route a both reading by its retained support after learning updates.
 
-        Strict improvement of min(positive, negative) restarts patience. The
+        ``field`` is the refinement field (:meth:`refinement_field`): an
+        order-zero concept is both by its basic percepts. Strict improvement of min(positive, negative) restarts patience. The
         history follows the definition inventory through its concept-id map;
         brackets and readiness are released with the current attended field.
         No number of parts, inference passes, or repeated reads can raise it.
@@ -15901,8 +15969,9 @@ class ConceptualSpace(Space):
             # this observer intersects demand with the retained witnesses.
             events = perception.select(batch, extent).event_evidence(
                 [('bp', int(column) // 2) for column in columns.tolist()])
-            native = torch.stack([events[i, ..., int(column) % 2]
-                                  for i, column in enumerate(columns.tolist())])
+            # A member witnesses where its basic percept occurs, on either
+            # lane: a Not member is witnessed by its own presence.
+            native = events.amax(-1)
             attribution = torch.minimum(attribution, native)
             support = (attribution[:, 0, 0] > 0).any(0)
             observation = self.run_structure(spans[batch].float(), valid=support)

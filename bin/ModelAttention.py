@@ -125,6 +125,10 @@ def native_word_poles(model, spans, forms, known):
     whole_spans, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
     field = owner.cs_read_memberships((ids, positions,
         getattr(ws.subspace.what, 'primitive_properties', None), raw, whole_spans), live_spans)
+    # A concept is one signed value; a word is read both where its basic
+    # percepts are.
+    both = owner.order_zero_both_field(owner._percept_field)
+    field = torch.maximum(field, both[..., None].to(field))
     native = owner._cs_field_concept_ids[:field.shape[0]]
     native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
     objects = [[tuple(dict.fromkeys((word, *owner.definitions.objects(word))))
