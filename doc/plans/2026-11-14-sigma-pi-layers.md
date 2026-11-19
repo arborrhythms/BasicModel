@@ -9727,7 +9727,10 @@ chooses from. The old classes are not edited.
     member's presence is read from the set of parts found, not from
     a code. Rule 6's amendment stands: the run of parts is the row's
     presence on both lanes. A conjunction keeps the code rule 5
-    gives it, and is a strict whole of its members like any other.
+    gives it, and is a strict whole of its members like any other:
+    where its other members are found, each member reads both, and
+    the conjunction stands in their place (`BasicPercepts.held`,
+    §23.3c.4).
     The Not of rule 29 stays: the two-sided code does its work only
     where the exclusion is a strict whole, and not for XOR
     (§23.3b.1). *Open, settled in round 3c:* how a row that reads
@@ -9742,7 +9745,9 @@ chooses from. The old classes are not edited.
     column is the mean of its sides, half of each where a member
     has both, so that a member read alone reads one (rule 21) and
     not two: its own against side, witnessed absent, supports it as
-    much as its for side. (First built as the
+    much as its for side. Beside a word that covers its against side
+    a form reads about .42; where its holder stands in its place it
+    reads zero (§23.3c.4). (First built as the
     difference over one squared length, under which `archer` read
     `archery` at .937, §23.3c.2.) The concept reads the reading's
     for vector less its against vector, as now. A reader that asks whether one form lies
@@ -13825,3 +13830,147 @@ Asked by Alec (§19.84). A writer on Opus, with three more it started for parts 
 9. Whether a symbol's address in the where registry is keyed by its own row or its concept's.
 
 *Passages the writer left because the rules do not reach them.* The concept codebook's vector of form and meaning and its placement by context, which rule 9 leaves without a home once a symbol and its concept share no row; `GradientFlow.md` on word order from the writer's cursor, against rule 49; `hetTolerance`; the Gaussian window in `bin/Models.py`, whose description was removed from `STM.md`. Points 4 to 9 and these go to the rounds they belong to: 4, 8 and 9 to round 4; 1, 2, 6 and 7 to round 6; 5 with each rule's round.
+
+### 23.3c.4 Round 3c, closing pass; the round is whole (2026-11-19)
+
+Commits, local on `main`: `3b218df96e`, `bf0660e61d`, `faeb39655c`. The implementer's return is below.
+
+**Review** (Claude). Read: the return. Run here, the round's list with every file an earlier pass added to it and both gates (four processes, 418 s): **1,466 passed, 81 skipped, none failed.** Certificate 23 passes as it stands. **Round 3c is accepted and closed.**
+
+*Accepted.*
+
+- *The six failures were rule 20,* not defects of the source: each test read its sentences once, and on a first reading no unit has a concept. Each now reads until MTM nominates its forms. A seventh, in `test_parts_of_speech.py`, was failing for the same reason and was in no list.
+- *The column is the mean of its sides.* A form reads its own row at one. `archer` reads `archery` at -.016 and `is` reads `this` at -.048.
+- *A conjunction stands in its members' place* (`BasicPercepts.held`, provisional): where a conjunction's other members are found, each member reads both. Without it the conjunction's own concept read .32 where its row was present, and the numeric certificate missed a case by 2.5e-7. With it every case is within 4.5e-7.
+- *The numeric certificate's sign check stays as the fourth pass ported it,* the axes one sign and the conjunction the other. The original check (the axes above zero) fails 15 cases on the grounded configurations, which meet the bar with the signs the other way round.
+
+*Two things that are not as §23.3c.3 said they would be.*
+
+- A form beside a word that covers its against side reads .419, not "a half or more": that word's own against lane takes a little away. Rule 54's sentence is corrected.
+- The rise in codes inside another's by accident was mostly a change in what is counted as true. All such codes went from 2,893 to 2,949 in the sample. Step 7 made other runs into parts, so 709 pairs once counted true are no longer inside at all, and 1,154 accidents are new, a short form's added part covered by chance. Raising the added part's bits to four gives 880 accidents; nothing brings back 582. Left as it is.
+
+*What round 3c leaves measured, on the 19,821 words and the lesson.*
+
+| | Before round 3c | After |
+| --- | ---: | ---: |
+| Width of a code | 352, one lane | 128, two lanes |
+| Words that share a code | 120 on the parts half | 0 |
+| A part's concept read on a form that holds it as a run | 1.0 | .182 |
+| The same, on a form that holds it by accident | 1.0 | .141 |
+| `archer` read on `archery` | 1.0 | -.016 |
+| The lesson's concepts told apart | 6 of 8 | 5 of 5 nominated |
+| The lesson's sixteen sentences | about 20 s | 16.5 s |
+
+*Carried to later rounds.* Round 4: the feature table's record, from which `order_zero_both` still reads a concept's members; the two channels at the Sigma (rule 59); the room (rule 21). Round 6: `archer` read on `reach` (rule 33); the against channel in the salience map.
+
+*Still Alec's to say:* whether the one default sweep is run now. Across round 3 and 3c, fifteen cases failed in files that the lists did not hold; all are found and ported, by widening the list each time.
+
+#### Return of the closing pass
+
+Commits, local on `main`, none pushed, each ending with the Co-Authored-By line:
+
+| Commit | What it holds |
+| --- | --- |
+| `3b218df96e` | 1: four tests that read once now read until MTM nominates their forms (rule 20) |
+| `bf0660e61d` | 2: the column is the mean of its sides; certificate 48 restated; a conjunction's members read both where its other members are found (`BasicPercepts.held`) |
+| `faeb39655c` | 2: the numeric certificate keeps last pass's port to opposite signs (restoring the original in `bf0660e61d` failed the grounded XOR's configurations) |
+
+No seed pinned, no skip or xfail added, no bar or iteration count changed, the spec not edited. Nothing was built for 3.
+
+**1. The six failures: each traced to rule 20**
+
+All six pass on the source of `8b8a2fcf48` and fail from `c9afb238e7` on (round 3, steps 2 to 4: "a form becomes a word ... only when MTM nominates it on its concept_mint_count-th reading"). I checked this by putting each commit's `bin/` into a scratch worktree with the tests of `8b8a2fcf48`. In each case a test reads its sentences once, so on that one reading no unit has a concept. None is a source defect, so each is ported under rule 20, the way round 3's ports were.
+
+| Test | Traced cause | Old | New |
+| --- | --- | --- | --- |
+| `test_meronomy_ladder::test_admitted_phrase_row_snaps_at_the_folded_slot` | `_chunk_reduce_provenance` names a phrase row only where both units carry a concept id. On one reading the units `1` and `2` of `12` carry -1, so the row is -1. | stages `12 plus 1` once | `nominated_forms(m, ["12 plus 1", "1 2"])` first (the digits of `12` are units of their own), then the same staging and the same assertions |
+| `test_meronomy_ladder::test_utility_counts_accrue_once_per_presentation` | A utility observation is proposed only for a resolved unit (`Models.py` ~11494). In two presentations nothing is nominated, so `n` stays 0. | `trained_ladder` runs two training batches | `trained_ladder` reads the training sentences' forms until nominated (`nominated_forms`), then the same two batches and the same assertions |
+| `test_percept_transitivity::test_native_kept_readings_have_transitive_percept_codes` | It runs `test_parts_of_speech::test_kept_readings_alone_supply_argument_views`, which failed for the same reason (no word ids, so no lesson and an `IndexError` in its own checker). That test was failing too and was in no list. | `a red cat` / `the blue dog` read once | `nominated_forms(model, ['a red cat', 'the blue dog'])` first; both files pass |
+| `test_one_backward_standing::test_native_packing_after_training_with_selected_backward` ×3 | Packed and single layouts differ in `truncated`. `14 plus 1` reconstructs as `1\x00plus1`: the unit `4` was never read four times, so it has no row and no way back. `_recon_truncated` is one flag a stream, so in the packed layout it marks `9 plus 1` too, while the single layout does not. | `warm_vocabulary` (`test_packed_reconstruction_parity.py`) reads the rows once | `warm_vocabulary` reads them `concept_mint_count` times, the model's own nomination, so that every unit, `4` included, is a word before either layout is measured. Both files pass. |
+
+`_recon_truncated` being a flag a stream, not a flag a sentence, is how a packed layout reports a truncated reconstruction. It is left as it is: no rule asks for more, and after the port nothing truncates.
+
+**2. The column as the mean of its sides**
+
+`OrderZeroSigma.member_column`: `(P / |P|^2 - N / |N|^2) / 2` where the member has something against it, and `P / |P|^2` where it has nothing. Every writer of a column goes through it (`_start_order_zero_column`, `add_member`, `start_column`, `follow_members`, `BasicPercepts.column`).
+
+Certificate 48 (`test_48_a_concept_reads_by_difference`), before the squash, in three forms: before §19.82 / §19.82 as first built / the mean:
+
+| Concept on | Before | Unhalved | Mean (built) |
+| --- | ---: | ---: | ---: |
+| `archer` on `archer` | 1.0 | 2.0 | **1.0** |
+| `archer` on `archery` (its holder in its place) | .937 | -.032 | **-.016** |
+| `is` on `is` | 1.0 | 2.0 | **1.0** |
+| `is` on `this` | .765 | -.095 | **-.048** |
+| `cat` on `cat` (no holder) | 1.0 | 1.0 | 1.0 |
+| `archer` among `y` (archer's row and y's, each at [1, 0]) | .825 | .839 | **.419** |
+| `archer` on `reach` | 1.0 | 2.0 | 1.0 |
+
+- A form read alone reads one, and its holder in its place reads at or near zero, as you said.
+- **Not as you said:** a form read among words that cover what tells against it reads .419, not a half or more. The half holds where the other word carries nothing against it. Here `y` has a holder, `archery`, which adds archer's letters, so the reading carries archer's letters on its against lane, and that takes .081 more away. The certificate asserts what holds: the reading lies between its holder's reading and one. I did not bend it to a half.
+
+The three rows of the table, dictionary sample, before the squash:
+
+| A part's concept read on | Pairs | Before | Unhalved | Mean (built) |
+| --- | ---: | ---: | ---: | ---: |
+| a form that holds it as a run | 852 | .582 | .361 | **.182** |
+| a form that holds its parts and not the run | 733 | .642 | .532 | **.362** |
+| a form that holds it by accident | 8,317 | .472 | .173 | **.141** |
+
+- Unrelated forms denied by accident: 453,296 of 1,933,835 (23.4%), the same as unhalved, since halving does not change a sign.
+- The lesson: 5 of 5 told apart under each form; 3 rows read both.
+
+**The numeric certificate under the mean, and its repair.** With the mean alone the certificate missed its per-case bar by 2.5e-7, the same in every run: case (1,0) predicted 1.00000125, MSE 7.6e-13. The cause was the conjunction's concept. At (1,1) it read .32 where its own row was present, because its two members entered the combined vector with their against lanes, and those lanes are the conjunction's own coordinates (rule 53 as I built it in step 6). So the readout read the conjunction as an OR, by large weights at float32's edge.
+
+The repair is `BasicPercepts.held(lanes, rows)`, used in `BasicPercepts.read` and `NumericPercepts.read`:
+- A conjunction over a row is one of its holders. Where the conjunction's other members are all found, what tells against the row is found, joined by the union like the first Pi's against entries.
+- So the row reads both: its holder stands in its place, and it enters the combined vector at net zero.
+- The conjunction then reads its own row at tanh(1) at (1,1) and .32 where one member stands alone.
+
+| | (0,0) | (0,1) | (1,0) | (1,1) |
+| --- | --- | --- | --- | --- |
+| fx [for, against] | [0, 0] | [0, .462] | [.762, 0] | [.762, .462] |
+| fy | [0, 0] | [.762, 0] | [0, .462] | [.762, .462] |
+| conjunction | 0 | .321 | .321 | **.762** |
+
+Condition number 50.3, MSE 1.5e-13, every case within 4.5e-7. On `MM_xor.xml` the readout's weights are +6.16 and +6.16 on the axes and -16.87 on the conjunction, the original signs. I restored the original assertion (`weights[:2] > 0 and weights[2] < 0`) in `bf0660e61d`. The full run then failed 15 cases that call the same `certificate` on other configurations: `test_grounded_xor::test_native_unseeded_xor` ×6, `test_word_admission::test_33_grounded_xor_with_word_boundary` ×6 and `test_concept_output::test_native_cli_curriculum…` ×3. Each met the bar (e.g. MSE 5.7e-14) with the signs reversed: axes -5.07, conjunction +12.39. So `faeb39655c` puts back last pass's port, "the axes one sign, the conjunction the other" (rule 53), and all 15 pass. Certificate 23 passes as it stands, and so do both gates.
+
+*Provisional:* `held` is a read rule (both, where a holder's other members are found), not a first-Pi against entry for a member. §23.3c.2's choice that a member gets no against entries from its conjunction is kept for the Pi itself.
+
+**3. Codes inside another's by accident: 582 to 1,364**
+
+Traced on the dictionary sample, pair by pair, at `af7d26bb5c` and at the step-7 source:
+
+| | Before | After |
+| --- | ---: | ---: |
+| codes at or below another's, all | 2,893 | 2,949 |
+| of them with the part's parts a subset ("true") | 2,311 | 1,585 |
+| of them not ("by accident") | 582 | 1,364 |
+| on the parts half alone (at or below) | 8,248 | 9,902 |
+| on the wholes half alone | 13,292 | 12,225 |
+
+- **The containments hardly changed** (2,893 to 2,949). What changed is the split.
+  - 709 pairs counted "true" before are no longer contained, and 17 moved from "true" to "accident". These are pairs like `ami` on `amphiblastic`: anagram-like, the parts a subset, not a run. They were counted "true" only because the old parts were the letters.
+  - Step 7 gives the next part where codes are alike, so different runs became parts, and every form holding such a run carries it. The run then lies outside the parts set of a form that holds the letters and not the run. That changes the classification, mostly, not the codes.
+  - 1,154 accidents are new. In them a short form's added part, at three bits, is covered by accident (`aa` inside `bistephanic`, `aeon` inside `antiopiumite`).
+- **Raising the added part's bits, tried and not built.**
+  - Every added part raised to 4 bits after it is given: 880 accidents, no shared code, 1,586 true.
+  - To 6 bits: 985 accidents, and 2 words share a code again (229 parts added).
+
+  Neither comes near 582, and 6 brings back a shared code. The cause is mainly the reclassification above, not the bits, so I left it.
+
+**The lesson's sixteen sentences**
+
+`test/attention_thinking_certificate.py lesson`: 16 batches, 16.49 s of the record, run alone after the list, at `faeb39655c`. The walks vary from run to run, since their starts are drawn from the system.
+
+**Final counts**
+
+- The list of last pass with the three files (`test_meronomy_ladder`, `test_percept_transitivity`, `test_one_backward_standing`), `test_parts_of_speech` and `test_packed_reconstruction_parity`, 130 files, at `faeb39655c`, `-n 4 --dist loadfile`: **1,566 passed, 93 skipped, 1 xpassed, 0 failed, 1,009 s.**
+- Both stopping gates are in it and pass, and certificate 23 passes as it stands.
+- The run before `faeb39655c` gave 15 failed, 1,551 passed: the numeric certificate's restored sign assertion on the grounded configurations (see 2).
+
+**What I would change in §21**
+
+- **Rule 54:** the mean of the sides reads a form beside a word that covers what tells against it at a half less what that word's own against lane takes away (.419 for `archer` beside `y`), not at a half or more.
+- **Rule 53:** a conjunction's members read both where its other members are found (`held`); without it the conjunction's concept is read as an OR and the numeric certificate stands on float32's last bits.
+- **Certificate 46's printed split** of containments into "true" and "by accident" depends on which runs are parts. A pair test by runs (a form held as a run) would not move when the parts do.
