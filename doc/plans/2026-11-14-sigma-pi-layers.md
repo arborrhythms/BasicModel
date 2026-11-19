@@ -5915,3 +5915,68 @@ is cut today. The guard he decided was on the surprise. To teach the
 mask, the attention factor would stay in the graph while the factor of
 expectation stays cut. This is the open point of §19.32 (which wires
 take the gradient) in its exact form.
+
+### 19.38 Two attentions, kept apart: the locus and the conceptual request (Alec, 2026-11-18; guidance from the literature)
+
+Alec, 2026-11-18: "It helps to clarify the two types of human
+attention; there is the locus of attention, and the top-down
+conceptual attention. We are mixing these two a bit, and could
+probably use guidance from the psychological literature."
+
+**His own book first.** Chapter 16 of *The Whole Part* (the books
+attached to the author's ORCID record) already separates them, and
+adds a third:
+
+- attention as an aperture that narrows awareness to a place, trained
+  "mereologically" (areas of space, a sustained location);
+- attention guided from below (what is intense, unexpected or valent)
+  and from above, where the way down (visualization) works by
+  inhibiting the wholes outside the scope, and is limited to concepts
+  that already exist;
+- attention to a referential level (the occurrence of a thought, or
+  what it refers to).
+
+**The literature** (from memory, by author and year; to be checked
+against the sources before any of it enters a standing document).
+
+| Finding | Source | What it says for the model |
+| --- | --- | --- |
+| Attention to a place and attention to a feature are distinct. Attention to a feature acts over the whole field, also outside the place attended | Treue and Martinez-Trujillo 1999; Saenz, Buracas and Boynton 2002 | The request is not confined to the look's `.where` |
+| The two change gain independently and are controlled from different sources | Hayden and Gallant 2009; Moore and Armstrong 2003; Baldauf and Desimone 2014; Corbetta and Shulman 2002 | Two quantities, two teachers; `attend` is not asked to choose the request |
+| Features are registered in parallel over the field; the locus is needed to bind them into an object | Treisman and Gelade 1980 | The request works at the first look, over everything; `interpret` happens only at the locus |
+| What is wanted guides where the locus goes next, through one map of priority that also takes what stands out | Wolfe 1994; Itti and Koch 2001; Fecteau and Munoz 2006 | The request and the surprise are both signals to `attend`; neither is the place |
+| A held template biases the competition among what is present | Desimone and Duncan 1995 | The request is a state held in conceptual space (already cited in `doc/Architecture.md`) |
+| One field of attention over place and feature multiplies the input before normalization | Reynolds and Heeger 2009 | The gain field `m * a * o` of §19.37, with a normalization it does not have |
+| Two separate numbers, a weight for which object and a bias for which category, multiplied | Bundesen 1990 | The same two factors, stated as a rate |
+| What is unattended is attenuated, not blocked, and breaks through when it is expected or important | Treisman 1964 | The floor; and the tie of the floor to expectation |
+| The locus has a size, and a wider one resolves less; its edge is a gradient | Eriksen and St. James 1986; LaBerge and Brown 1989 | `focus` and `unfocus` are a zoom; the place factor falls off and has no hard edge |
+| What is selected is an object, and attention spreads within its bounds | Duncan 1984; Egly, Driver and Rafal 1994 | The selected set is tokens, not bytes (§19.34) |
+| Orienting is pulled from below or sent from above, and what was selected before also counts | Posner 1980; Corbetta and Shulman 2002; Awh, Belopolsky and Theeuwes 2012 | Surprise, the request, and the lesson's history |
+| In reading, the shape of the next word is taken from outside the locus to aim it, and attention moves a word at a time | McConkie and Rayner 1975; Reichle and others 1998 | A whole asked for ("letters, no spaces") aims the look before the word is known |
+
+**Where we were mixing them** (Claude's reading).
+
+1. §19.32 to §19.36 multiplied the place and the request into one
+   activity for the Pi, as if the request were a second filter inside
+   the look. The literature has the request acting over the whole
+   sentence. Its first use is to say where the locus should go; its
+   second is to dim, inside the locus, what was not asked for.
+2. `attend` was being asked whether it should choose the request
+   (§19.35). In the literature the two have different sources.
+3. The third attention of Chapter 16, to a referential level, is in
+   the model already under another name: `interpretBias` (1.8 §68.79),
+   his "We should be able to treat a word as a word, not as what it
+   represents". It is neither the locus nor the request.
+
+**The three, in the model's names** (a reading; nothing is decided).
+
+| Attention | In the model | Chosen by | Form |
+| --- | --- | --- | --- |
+| The locus | the look's `.where`; `focus` and `unfocus` as its zoom | `attend` | a place factor with `attentionFloor` outside it |
+| The conceptual request | a demand over wholes or concepts, read down to percepts (§19.31, §19.33) | conceptual space: expectation and desire | a factor over kinds, acting on the whole sentence; limited to what is known |
+| The referential level | `interpretBias`: the word, or what it stands for | a number now; experience later | a probability |
+
+`attend` then reads a priority for each token (its surprise, and how
+well it matches the request) and chooses the locus; the Pi matches
+through the gain field of §19.37 at the locus; the grammar interprets
+at the locus only.
