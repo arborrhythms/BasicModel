@@ -1107,4 +1107,13 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         return retain_percepts(retain_introductions(Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
                       **metadata(tuple(range(len(values)))),
                       **bands(dict(leaves=tuple(range(len(values))))))))
-    return retain_percepts(retain_introductions(recover(stack[0], top=True)))
+    try:
+        return retain_percepts(retain_introductions(recover(stack[0], top=True)))
+    finally:
+        # The nested readers refer to one another through their cells, a
+        # cycle that would hold the reading (and its sentence tree) until
+        # the collector runs. Clearing the cells releases it on return.
+        bands = composition = concept = forward_name = generic = head = None
+        identity_head = identity_record = is_clause = metadata = node_order = None
+        number = operation_concept = recover = recover_content = region = None
+        subject_word_id = value = None

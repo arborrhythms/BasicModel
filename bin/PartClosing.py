@@ -393,6 +393,7 @@ class PartClosing:
             nodes.append(node)
             self.prepare(node)
         prepare(context)
+        prepare = None  # the recursive reader would hold the clause in a cycle
         located = set()
         for node in nodes:
             record = self._planned[id(self._terms[id(node)])]
@@ -434,7 +435,10 @@ class PartClosing:
             if len(names) == 1 and names[0][0] == 0:
                 return self.owner._concept_source_order(names[0][1])
             return 0
-        return order(self.prepare(clause), clause.meaning, set())
+        try:
+            return order(self.prepare(clause), clause.meaning, set())
+        finally:
+            order = None  # the recursive reader would hold the clause in a cycle
 
     def _write_occurrence(self,record,*,pair,sentence,metadata,stream,surprise):
         term=record['value']

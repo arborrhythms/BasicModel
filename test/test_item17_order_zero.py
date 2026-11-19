@@ -103,7 +103,10 @@ def test_a_new_percept_needs_no_new_weight():
     read = {name: float(sigma.concepts(combine(torch.tensor([[[1., 0.]]]), code[None], where=place), [0]))
             for name, code in (('cat', cat), ('cats', cats), ('dog', dog))}
     print(read)
-    assert read['cats'] > .9 * read['cat'] and read['dog'] == 0.
+    # A concept reads its own row at tanh(1); a form holding all its parts
+    # reads as much; an unlike vector reads nothing.
+    assert read['cat'] == pytest.approx(torch.tanh(torch.tensor(1.)).item(), abs=1e-5)
+    assert read['cats'] == pytest.approx(read['cat'], abs=1e-5) and read['dog'] == 0.
 
 
 def test_the_mereological_order_of_the_lesson_percepts(lesson):
@@ -204,7 +207,12 @@ def test_the_order_zero_sigma_is_dense_and_not_penalized(lesson):
     rows, a parameter of the model, saved with it, with no penalty."""
     owner = lesson['owner']
     sigma = owner.order_zero
-    assert tuple(sigma.weight.shape) == (owner.basic_percepts.width + 8, owner._order_caps()[0])
+    model = lesson['model']
+    origin = torch.zeros(1, dtype=torch.long)
+    assert sigma.where_width == model.where_registry.encode('text', origin).shape[-1]
+    assert sigma.when_width == model.when_encoding.encode(origin).shape[-1]
+    width = owner.basic_percepts.width + sigma.where_width + sigma.when_width
+    assert tuple(sigma.weight.shape) == (width, owner._order_caps()[0])
     assert any(p is sigma.weight for p in owner.getParameters())
     assert any(key.endswith('order_zero.weight') for key in owner.state_dict())
     assert not hasattr(sigma, 'l1_lambda')
@@ -275,14 +283,18 @@ def test_no_row_on_a_first_reading(lesson):
 def test_square_a_new_concept_reads_only_its_own_row(lesson):
     """Certificate 12: at order zero the concepts equal the nominated rows in
     number; a new concept's column is its row's vector, normalized, with no
-    weight on place and time."""
+    weight on place and time: the row's vector over its squared length, so
+    that its own row reads one before the squash (rule 8b)."""
     owner, basic = lesson['owner'], lesson['basic']
     if 'nominated' not in lesson:
         test_no_row_on_a_first_reading(lesson)
     word, row, c_row = lesson['nominated']
     column = owner.order_zero.weight[:, c_row].detach()
     code = basic.code(row)
-    torch.testing.assert_close(column[:basic.width], code / code.norm())
+    torch.testing.assert_close(column[:basic.width], code / code.square().sum())
+    # Its own row reads one before the squash.
+    x = combine(torch.tensor([[[1., 0.]]]), code[None])
+    torch.testing.assert_close(float(x[0, 0] @ column[:basic.width]), 1., rtol=0, atol=1e-5)
     assert torch.count_nonzero(column[basic.width:]) == 0
     nominated = [r for r in range(len(basic.index)) if bool(basic.promoted[r])]
     concepts = {r: owner.concept_of_basic_percept(r) for r in nominated}

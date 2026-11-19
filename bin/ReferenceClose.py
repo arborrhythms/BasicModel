@@ -951,6 +951,7 @@ class ReferenceClose(nn.Module):
             for child in (*node.children, *node.companions):
                 visit(child)
         visit(clause)
+        visit = None  # the recursive reader would hold the clause in a cycle
         if (clause is not None and clause.order == 1 and clause.reference_request is None
                 and clause.relation is None and clause.point is not None
                 and id(clause) in participants and clause.composition is not None
@@ -986,6 +987,9 @@ class ReferenceClose(nn.Module):
                 lexical(child)
         for node in nodes:
             lexical(node.composition)
+        # The recursive reader holds itself through its cell; clear it so
+        # that the clause it closes over is not kept in a cycle.
+        lexical = None
         # Request roles belong to their immediate clause. Only direct root
         # attachments can supply the root answer; nested role numbers cannot.
         parents = {}

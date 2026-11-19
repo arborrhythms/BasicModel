@@ -88,7 +88,9 @@ class Tree:
     def __init__(self, trace, ideas):
         self._trace = trace
         self.ideas = ideas
-        self._views = {}
+        # A view holds its tree; the tree does not hold its views, so the
+        # tree is released, and its trial with it, when no reader holds it.
+        self._views = weakref.WeakValueDictionary()
         self.semantic_start = trace.first + len(trace.index.steps)
 
     @property
@@ -109,9 +111,10 @@ class Tree:
         return self.trace.point(address - self.trace.first)
 
     def view(self, address):
-        if address not in self._views:
-            self._views[address] = CompositionView(self, address)
-        return self._views[address]
+        view = self._views.get(address)
+        if view is None:
+            view = self._views[address] = CompositionView(self, address)
+        return view
 
     def composition(self, action=None, word=None):
         trace = self.trace

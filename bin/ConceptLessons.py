@@ -12,25 +12,26 @@ import torch
 from util import TheXMLConfig, ProjectPaths
 
 
-def present_native_forms(model, forms):
-    """Present each supplied lesson form to MTM until it nominates the form's
-    basic percept; its row is the nominated one."""
-    cs, ws = model.conceptualSpaces[0], model.wholeSpace
-    native, basic = model.perceptualSpace.percept_store, cs.basic_percepts
-    admitted = []
-    for form in dict.fromkeys(forms):
-        raw = form.encode('utf8') if isinstance(form, str) else bytes(form)
-        parts = tuple(native.spell_out(raw))
-        wholes = ws.property_rows_for_bytes(raw)
-        key = (parts, tuple(dict.fromkeys(map(int, wholes))))
-        if key not in basic.index:
-            for reading in range(cs.concept_mint_count):
-                if cs.nominates(('lesson form', raw), ('lesson', reading)):
-                    break
-        row = basic.reserve(parts, wholes)
-        basic.promote(row)
-        admitted.append(row)
-    return tuple(admitted)
+def read_native_forms(model, texts, encode):
+    """Read the lesson's texts as sentences, by the path a reading takes,
+    until MTM nominates each lexical form in them: one count under the form,
+    a reading being one sentence of one stream. Returns the forms' rows."""
+    cs, ws = model._concept_owner(), model.wholeSpace
+    native = model.perceptualSpace.percept_store
+    rows = {}
+    for _ in range(cs.concept_mint_count):
+        with torch.no_grad():
+            model.forward(encode(texts))
+        serial = int(getattr(model, '_word_observation_serial', 0))
+        for b, text in enumerate(texts):
+            raw = text.encode('utf8') if isinstance(text, str) else bytes(text)
+            parts = tuple(native.spell_out(raw))
+            word = cs.interpret.lookup_word(parts, ws.property_rows_for_bytes(raw), form=raw,
+                                            word_reading=True, reading=(serial, b))
+            if word is not None and word in cs.basic_percepts.words:
+                rows[raw] = cs.basic_percepts.words[word]
+        model.End()
+    return tuple(rows.get(t.encode('utf8') if isinstance(t, str) else bytes(t), -1) for t in texts)
 
 
 def teach_concept_lessons(model):
@@ -51,8 +52,22 @@ def teach_concept_lessons(model):
         primitive.teach(item['row'], item['bytes'], item['memberships'])
     # D2 names collect the basic percepts of the supplied training forms.
     # Admit those forms before constructing their sparse feature optimizer.
-    forms = [example['text'] for item in lesson['names'] for example in item['examples']]
-    present_native_forms(model, forms)
+    device = primitive.members.device
+    width = int(model.inputSpace.outputShape[0])
+
+    def encode(texts):
+        data = torch.zeros(len(texts), 1, width, device=device, dtype=torch.long)
+        for b, text in enumerate(texts):
+            raw = text.encode('utf8')
+            if len(raw) > width:
+                raise ValueError('concept lesson exceeds input width')
+            data[b, 0, :len(raw)] = torch.tensor(list(raw), device=device)
+        return data
+
+    forms = list(dict.fromkeys(example['text'] for item in lesson['names'] for example in item['examples']))
+    was_training = model.training
+    model.eval()
+    read_native_forms(model, forms, encode)
     for item in lesson['names']:
         concept = int(item['concept'])
         if not item['features']:
@@ -67,17 +82,6 @@ def teach_concept_lessons(model):
             cs.add_concept_feature(row, feature['tower'], feature['row'],
                                    feature['weight'], negated=feature.get('negative', False))
     store = cs._concept_allocator.layer(0)
-    device = primitive.members.device
-    width = int(model.inputSpace.outputShape[0])
-
-    def encode(texts):
-        data = torch.zeros(len(texts), 1, width, device=device, dtype=torch.long)
-        for b, text in enumerate(texts):
-            raw = text.encode('utf8')
-            if len(raw) > width:
-                raise ValueError('concept lesson exceeds input width')
-            data[b, 0, :len(raw)] = torch.tensor(list(raw), device=device)
-        return data
 
     def read_name(concept):
         carrier = model._combine_last_cs_sub
@@ -86,12 +90,10 @@ def teach_concept_lessons(model):
             ids = ids[:, None].expand(-1, evidence.shape[1])
         return (evidence.amax(2) * (ids == concept)[..., None]).amax(0)
 
-    was_training = model.training
-    model.eval()
     model.set_sigma(0.)
-    # Name targets never enter forward; optimize the existing feature weights.
-    optimizer = torch.optim.Adam([store.features.values], lr=float(lesson['learning_rate']))
-    store.features._optimizer = optimizer
+    # Name targets never enter forward; optimize the names' columns of the
+    # order-zero Sigma.
+    optimizer = torch.optim.Adam([cs.order_zero.weight], lr=float(lesson['learning_rate']))
     history = []
     for item in lesson['names']:
         examples = item['examples']
@@ -136,6 +138,5 @@ def teach_concept_lessons(model):
         raise ValueError('an output definition requires witnessed source orders')
     model._concept_lesson_receipt = dict(name_losses=history, cases=cases)
     model._concept_lessons_taught = True
-    store.features._optimizer = None
     model.zero_grad(set_to_none=True)
     model.train(was_training)

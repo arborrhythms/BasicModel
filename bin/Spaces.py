@@ -14208,7 +14208,9 @@ class ConceptualSpace(Space):
                     obj = None if word is None else index.deref(word)
                     formed = None if obj is None else (word, obj)
                 else:
-                    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+                    model_of = getattr(self, '_model', None)
+                    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True,
+                        reading=(int(getattr(model_of, '_word_observation_serial', 0)), b))
                     obj = None if word is None else self.interpret.forward(word)
                     formed = None if obj is None else (word, obj)
                 if formed is None:
@@ -14802,8 +14804,6 @@ class ConceptualSpace(Space):
     def basic_percepts(self):
         return self._basic_percepts
 
-    #: The width of a reading's own place and of its own time.
-    ORDER_ZERO_WHERE, ORDER_ZERO_WHEN = 4, 4
     #: A word's evidence slots: its basic percept's run of parts and its wholes.
     REFERENCE_SLOTS = 2
 
@@ -14827,8 +14827,16 @@ class ConceptualSpace(Space):
             return self.order_zero
         from OrderZero import OrderZeroSigma
         content = int(self.basic_percepts.width)
-        sigma = OrderZeroSigma(content + self.ORDER_ZERO_WHERE + self.ORDER_ZERO_WHEN,
-                               self._order_caps()[0], content_width=content)
+        # The widths of a reading's own place and time are the model's
+        # where registry's and when encoding's; a model with neither reads none.
+        model = getattr(self, '_model', None)
+        registry = getattr(model, 'where_registry', None)
+        encoding = getattr(model, 'when_encoding', None)
+        origin = torch.zeros(1, dtype=torch.long)
+        where = 0 if registry is None else int(registry.encode('text', origin).shape[-1])
+        when = 0 if encoding is None else int(encoding.encode(origin).shape[-1])
+        sigma = OrderZeroSigma(content + where + when, self._order_caps()[0], content_width=content)
+        sigma.where_width, sigma.when_width = where, when
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
         self.params.append(sigma.weight)
@@ -14858,8 +14866,9 @@ class ConceptualSpace(Space):
         registry = getattr(model, 'where_registry', None)
         encoding = getattr(model, 'when_encoding', None)
         brackets = perception.where
+        sigma = self.order_zero
         where = when = None
-        if brackets is not None:
+        if brackets is not None and sigma.where_width + sigma.when_width:
             starts = brackets[..., 0].long()
             valid = (brackets[..., 1] > brackets[..., 0])[..., None]
             if registry is not None:
@@ -14869,12 +14878,14 @@ class ConceptualSpace(Space):
                 valid = valid & inside[..., None]
                 where = torch.where(valid, registry.encode('text', torch.where(inside, starts, -1)), 0.)
             else:
-                where = brackets.new_zeros(*starts.shape, self.ORDER_ZERO_WHERE, dtype=codes.dtype)
+                where = brackets.new_zeros(*starts.shape, sigma.where_width, dtype=codes.dtype)
             if encoding is not None and perception.when is not None:
                 when = torch.where(valid, encoding.encode(perception.when[..., 0].long()).to(codes), 0.)
             else:
-                when = where.new_zeros(*starts.shape, self.ORDER_ZERO_WHEN)
-        return combine(perception.values, codes.to(perception.values), where=where, when=when)
+                when = where.new_zeros(*starts.shape, sigma.when_width)
+        combined = combine(perception.values, codes.to(perception.values), where=where, when=when)
+        # A reading with no bracket has no place or time to read.
+        return torch.nn.functional.pad(combined, (0, sigma.nInput - combined.shape[-1]))
 
     def order_zero_field(self, combined, rows):
         """The order-zero concepts of ``rows`` (``-1`` reads nothing) for
@@ -14923,20 +14934,12 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def _start_order_zero_column(self, row, percept, sign):
-        """A member's vector joins the concept's column: the column's content
-        becomes the normalized sum of its own content and the member's
-        normalized vector, the Not of a member negated."""
+        """A member's vector joins the concept's column (rule 8b):
+        ``sign * v / |v|^2`` is added, the Not of a member subtracted."""
         sigma = self.install_order_zero()
         if row >= sigma.nOutput:
             raise ValueError('an order-zero concept lies outside the order-zero Sigma')
-        width = sigma.content_width
-        code = self.basic_percepts.code(percept).to(sigma.weight)
-        length = code.norm()
-        if not length > 0:
-            return
-        content = sigma.weight[:width, row] + sign * code / length
-        size = content.norm()
-        sigma.weight[:width, row] = content / size if size > 0 else 0.
+        sigma.add_member(row, self.basic_percepts.code(percept), sign)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``."""
@@ -16005,9 +16008,10 @@ class ConceptualSpace(Space):
 
     def nominates(self, key, reading=None):
         """MTM nominates a row for ``key`` on its ``concept_mint_count``-th
-        distinct reading; nothing is nominated on its first reading."""
+        distinct reading, one count under the form that every reader of the
+        form adds to; a reading is one sentence of one stream."""
         if reading is None:
-            reading = ('call', len(self.mtm.sightings.get(key, ())))
+            raise ValueError('a nomination counts readings: name the reading')
         count = self.mtm.sight(key, reading)
         if count < self.concept_mint_count:
             return False

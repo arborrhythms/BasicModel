@@ -203,19 +203,29 @@ class OrderZeroSigma(SigmaLayer3):
     def __init__(self, width, concepts, *, content_width):
         super().__init__(int(width), int(concepts), scale=0.0)
         self.content_width = int(content_width)
+        # Of the rest: the reading's own place, then its own time.
+        self.where_width = self.when_width = (int(width) - self.content_width) // 2
 
     @torch.no_grad()
     def start_column(self, column, vectors, signs=None):
-        """The sum of the members' content vectors, normalized; place and
-        time weights at zero. A member with sign -1 is a Not entry."""
+        """A column from its members: place and time weights at zero, then
+        each member added (:meth:`add_member`). A member with sign -1 is a
+        Not entry."""
         vectors = torch.as_tensor(vectors).to(self.weight).reshape(-1, self.content_width)
-        signs = (vectors.new_ones(len(vectors)) if signs is None
-                 else torch.as_tensor(signs).to(vectors))
-        total = (signs[:, None] * vectors).sum(0)
-        length = total.norm()
+        signs = [1.] * len(vectors) if signs is None else [float(x) for x in signs]
         self.weight[:, column] = 0.
-        if length > 0:
-            self.weight[:self.content_width, column] = total / length
+        for vector, sign in zip(vectors, signs):
+            self.add_member(column, vector, sign)
+
+    @torch.no_grad()
+    def add_member(self, column, vector, sign=1.):
+        """Add ``sign * v / |v|^2`` to the column's content, so that the
+        member's own row reads one before the squash; nothing is
+        normalized afterwards."""
+        vector = torch.as_tensor(vector).to(self.weight).reshape(self.content_width)
+        size = vector.square().sum()
+        if size > 0:
+            self.weight[:self.content_width, column] += float(sign) * vector / size
 
     def concepts(self, combined, columns):
         """Each column's signed value for each reading of ``combined``,

@@ -69,14 +69,15 @@ def clause_participants(clause, rules=()):
     Direct semantic clauses need no invented operation. Their explicit
     participant roles are the corresponding position record.
     """
-    nodes, seen = [], set()
-    def collect(node):
+    # A walk in preorder, by a stack: a recursive closure would hold the
+    # clause (and its sentence tree) in a reference cycle.
+    nodes, seen, stack = [], set(), [clause]
+    while stack:
+        node = stack.pop()
         if node is None or id(node) in seen:
-            return
+            continue
         seen.add(id(node)); nodes.append(node)
-        for child in (*node.children, *node.companions):
-            collect(child)
-    collect(clause)
+        stack.extend(reversed((*node.children, *node.companions)))
     roots = []
     owned = {id(child) for node in nodes for child in (*node.children, *node.companions)}
     for node in nodes:
