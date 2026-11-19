@@ -8420,6 +8420,46 @@ This answers the second half of §21's open point 1 in kind: whether
 location is learned depends on its being taught, and this is the
 teacher. Round 2 tries it beside the reading lesson.
 
+### 19.66 Alec: the where parameter stays fixed; one where tensor over subjective space (2026-11-19)
+
+Asked which of §19.65's two readings he meant, Alec:
+
+> The parameter itself must stay fixed if the sinusoid coding is to
+> remain meaningful across all .where
+> And probably this indicates we want a single .where tensor that
+> covers subjective space. If we let it vary, then we can have a
+> nonlinear representation over the somatosensory cortex, which is
+> what gives the somatosensory homunculus big hands and face. Correct?
+
+**Decided.** The parameter's values are not changed by training.
+§19.63, point 2, stands, and the open point of §19.65 is closed. What
+is trained is what reads the where: the concepts' weights on it.
+
+**One where tensor over subjective space** (his "probably"). *In the
+source it is nearly so already:* one registry gives every space its
+places from one address range (`WhereRegistry`: disjoint slices for
+text, numbers, scalars, parts, wholes, symbols and concepts) and one
+encoder codes them all (`install_where_registry` puts the same
+`WhereEncoding` on every subspace). Rule 47's parameter is then that
+one tensor: one row for each address of the registry. *Mine:* built so
+in round 6.
+
+**His question, and Claude's answer: yes, in kind.** In the body's map
+on the cortex the hands and the face take far more surface than their
+skin's area, in proportion to how finely they tell touches apart. The
+same holds in vision, where the centre of the eye takes most of the
+first visual area. It is called cortical magnification (from memory;
+the pages were not read today). A where code that is allowed to vary
+could come to spend more of itself where finer telling apart is
+needed, which is that. *Two things to keep apart:* (1) the code of a
+place, which has to mean the same wherever it is read, and so stays
+fixed, as he says; (2) how much of the code's range a region of
+subjective space is given. The second can vary with the first fixed:
+a place is passed through a learned map that keeps order before the
+fixed sinusoid codes it, so a region that matters is spread over more
+of the range. Nothing of it is built in this item. Recorded for
+`doc/FutureWork.md` at the documentation pass.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9155,11 +9195,11 @@ chooses from. The old classes are not edited.
     - *Mine:* the parameter has one row for each place of the
       registry (`WhereRegistry`), written from `WhereEncoding.encode`,
       and a band is its row, taken by the percept's place. It takes a
-      gradient. *Open (§19.65):* whether training changes its values.
-      Alec: "If we are reading over weights, they need to be
-      optimized, though." Until he says which he means, it is in no
-      optimizer's groups, as §19.63 has it fixed, and round 2 tries
-      it both ways. Concepts read
+      gradient and is in no optimizer's groups: "The parameter itself
+      must stay fixed if the sinusoid coding is to remain meaningful
+      across all .where" (Alec, §19.66). It is the one where tensor
+      of every space, a row for each address of the registry
+      (§19.66). Concepts read
       the where through the weights they have on the where
       coordinates of the combined vector (rules 7 and 8). Those
       weights start at zero for a new concept, since a generalization
@@ -9526,8 +9566,7 @@ section:
    and its alternatives in tests before round 6 builds one, with the
    reading lesson and the reconstruction over both pathways as the
    teachers of location (Alec, §19.65). If reading in order is not
-   learned, the fallback of §19.48 is built. Also there: whether
-   training changes the where parameter's values (§19.65).
+   learned, the fallback of §19.48 is built.
 2. *The salience map where parts are present by degree* (rule 36).
    Round 2 reports it; the map by weights is built.
 3. *Which row "words" is* (rule 35; §19.29). Built as one declared
@@ -9910,11 +9949,9 @@ sentence in order when no location concept is made.
    against the sentence's bytes at their places. Then run step 6
    three ways: taught by the reading loss alone, by this
    reconstruction alone, and by both. Report for each what step 6
-   asks, and which concepts came to have weight on the where. And run
-   the best of them twice more: once with the where parameter given
-   to the optimizer, once without (§19.65: whether training changes
-   its values is open); report what its values did and what it
-   changed.
+   asks, and which concepts came to have weight on the where. The where
+   parameter is fixed in all of them (Alec, §19.66); the run with it
+   given to the optimizer, asked for here at first, is not needed.
 7. If step 6 does not come to read in order, build the fallback of
    §19.48 beside it (a network gives the .where outright; from that
    extent the largest word is taken, or failing a word the largest
