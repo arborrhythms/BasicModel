@@ -1581,7 +1581,9 @@ generation is expected at this stage and is recorded, not tuned away.
    changes the request. **Written as tentative rules 33 to 41 with
    seven questions and my recommended answers (§19.46; Alec: "1.7
    spec."), and a text for Codex for a prototype in tests only
-   (§19.47), which follows the last text of item 1.8.**
+   (§19.47), which follows the last text of item 1.8.** Both texts
+   approved by Alec ("Yes, carry both"); the prototype returns as
+   §20 of that document.
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for

@@ -6601,6 +6601,7 @@ field; then the removals.
 
 Written on 2026-11-18. It builds nothing of the model. It is what
 1.8 §68.84 names as the work that follows it (1.8 §75, point 4).
+*Approved by Alec, 2026-11-18:* "Yes, carry both".
 
 ~~~
 Item 1.7, a prototype in tests only. Read §19.43, §19.45 and §19.46 of

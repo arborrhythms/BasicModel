@@ -34628,7 +34628,8 @@ word. The text is §68.84.
 Written on 2026-11-18. It is the one text to carry. *Amended the same
 day (Alec: "1.7 spec."):* the prototype that was its part E is a text
 of its own in the item 1.7 specification (sigma-pi §19.47), and part
-E names it.
+E names it. *Approved by Alec, 2026-11-18:* "Yes, carry both" (this
+text, then that one).
 
 ~~~
 Item 1.8, the last text. Read §68.83 and §75 of
