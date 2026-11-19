@@ -352,6 +352,8 @@ def word_candidate_scores(model, *, choices, captured=None):
     Every completion of an item uses the same discrete candidate bank. The
     candidate itself is never fed into its forecasting context; padding is
     absent from observed context, and the shared activation head is used.
+    A candidate that was not admitted is no word, so its bank has no
+    formula: nothing is scored and the result is ``None``.
     """
     import torch
     owner=getattr(model.symbolSpace,'expectation',None)
@@ -369,8 +371,10 @@ def word_candidate_scores(model, *, choices, captured=None):
     positions=torch.arange(W,device=words.device)[None]
     last=torch.where(active,positions,-1).amax(-1)
     rows=torch.arange(B,device=words.device)
-    if bool((last<0).any()) or not bool(accepted[rows,last].all()):
-        raise RuntimeError('candidate word was not accepted within attentionBudget')
+    if bool((last<0).any()):
+        raise RuntimeError('a candidate row holds no word')
+    if not bool(accepted[rows,last].all()):
+        return None
     candidate=words[rows,last]
     bank=candidate.reshape(B//choices,choices,D).repeat_interleave(choices,0)
     valid=torch.ones(B,choices,device=words.device,dtype=torch.bool)
@@ -691,9 +695,16 @@ def score_manifest(model, data, manifest, *, limit=None, item_batch_size=1):
                 model, data, batch_items, "intact", choices)
             shuffled = _score_control_batch(
                 model, data, batch_items, "shuffled", choices)
-            intact_scores, intact_targets, _, intact_counts = intact
-            shuffled_scores, _, _, shuffled_counts = shuffled
-            for local, item in enumerate(batch_items):
+            said = intact is not None and shuffled is not None
+            if not said:
+                # A bank with no admitted candidate says nothing: the item
+                # is listed as silent and is not ranked.
+                rows.extend({"id": item["id"], "answer_index": int(item["answer_index"]),
+                             "silent": True} for item in batch_items)
+            else:
+                intact_scores, intact_targets, _, intact_counts = intact
+                shuffled_scores, _, _, shuffled_counts = shuffled
+            for local, item in enumerate(batch_items if said else ()):
                 lo = local * choices
                 hi = lo + choices
                 scores_i = [float(x) for x in intact_scores[lo:hi]]
@@ -719,20 +730,25 @@ def score_manifest(model, data, manifest, *, limit=None, item_batch_size=1):
                 })
             done = min(len(items), start + len(batch_items))
             print(f"Scored {done}/{len(items)} items", flush=True)
-    n = len(rows)
+    ranked = [row for row in rows if not row.get("silent")]
+    n = len(ranked)
+    def mean(values):
+        # Nothing said, nothing averaged.
+        return sum(values) / n if n else None
     metrics = {
-        "items": n,
+        "items": len(rows),
+        "silent": len(rows) - n,
         "choices": choices,
         "chance_top1": 1.0 / choices,
-        "intact_top1": sum(row["intact_rank"] == 1 for row in rows) / n,
-        "intact_mrr": sum(1.0 / row["intact_rank"] for row in rows) / n,
-        "shuffled_top1": sum(row["shuffled_rank"] == 1 for row in rows) / n,
-        "shuffled_mrr": sum(1.0 / row["shuffled_rank"] for row in rows) / n,
-        "intact_true_nll": sum(row["intact_true_nll"] for row in rows) / n,
+        "intact_top1": mean(row["intact_rank"] == 1 for row in ranked),
+        "intact_mrr": mean(1.0 / row["intact_rank"] for row in ranked),
+        "shuffled_top1": mean(row["shuffled_rank"] == 1 for row in ranked),
+        "shuffled_mrr": mean(1.0 / row["shuffled_rank"] for row in ranked),
+        "intact_true_nll": mean(row["intact_true_nll"] for row in ranked),
         "wall_seconds": time.perf_counter() - started,
         **_latent_statistics(target_vectors),
     }
-    metrics["intact_minus_shuffled_top1"] = (
+    metrics["intact_minus_shuffled_top1"] = (None if not n else
         metrics["intact_top1"] - metrics["shuffled_top1"])
     return {"metrics": metrics, "items": rows}
 
@@ -765,8 +781,8 @@ def run_score(args):
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(payload + "\n", encoding="utf-8")
     print(json.dumps(result["metrics"], indent=2))
-    if (args.require_top1 is not None
-            and result["metrics"]["intact_top1"] < args.require_top1):
+    top1 = result["metrics"]["intact_top1"]
+    if args.require_top1 is not None and (top1 is None or top1 < args.require_top1):
         return 1
     return 0
 

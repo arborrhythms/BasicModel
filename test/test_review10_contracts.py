@@ -130,6 +130,8 @@ def test_small_frozen_evaluator_keeps_definition_rows_and_reservations():
     result = gate.score_manifest(model, data, manifest, limit=3)
     assert inventory() == before
     assert result['metrics']['items'] == 3 and result['metrics']['choices'] == 16
+    # The evaluator reads with no sentence: no candidate is admitted, so no
+    # item is scored and each says nothing (1.8 §68.89).
+    assert result['metrics']['silent'] == 3 and result['metrics']['intact_top1'] is None
     for item in result['items']:
-        assert torch.isfinite(torch.tensor(item['intact_scores']+item['shuffled_scores'])).all()
-        assert item['intact_prediction_steps'] > 0 and item['shuffled_prediction_steps'] > 0
+        assert item['silent'] and 'intact_scores' not in item

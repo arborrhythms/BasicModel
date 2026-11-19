@@ -142,7 +142,14 @@ def test_candidate_waves_preserve_the_complete_choice_bank(monkeypatch):
     assert sizes == [2]*4 and offsets == [1]*4 + [2]*4
 
 
-def test_word_gate_matches_full_forward_without_building_unused_answer(monkeypatch):
+def test_word_gate_says_nothing_without_a_sentence_and_builds_no_answer(monkeypatch):
+    """The gate reads with no sentence, so it admits no word and says nothing.
+
+    Alec, 2026-11-19 (1.8 §68.89): "we will just output nothing for non-WFF
+    parses." The full forward's sentence admits both candidates and scores
+    them; the gate's read with no sentence admits none, so its bank has no
+    formula and it returns nothing, without building the sentence or answer.
+    """
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     model.eval()
@@ -161,8 +168,8 @@ def test_word_gate_matches_full_forward_without_building_unused_answer(monkeypat
             raise AssertionError('word evaluation built the unused sentence/answer graph')
         monkeypatch.setattr(model, 'forward', unused_answer)
         actual = gate._score_control_batch(model, data, [item], 'intact', 2)
-    for before, after in zip(reference, actual):
-        torch.testing.assert_close(after, before, rtol=0, atol=0)
+    assert reference is not None and bool(torch.isfinite(reference[0]).all())
+    assert actual is None
 
 
 
@@ -181,8 +188,11 @@ def test_frozen_control_scoring_disables_autograd(monkeypatch):
     monkeypatch.setattr(owner, 'expect', inference)
     item = dict(prefix='hello ', candidates=['world', 'there'])
     with gate.frozen_online_learning(model):
-        gate._score_control_batch(model, data, [item], 'intact', 2)
-    assert calls == [False, False]
+        result = gate._score_control_batch(model, data, [item], 'intact', 2)
+    # With no sentence no candidate is admitted, so nothing is scored
+    # (1.8 §68.89); the one expectation made, the stem's, kept no graph.
+    assert result is None
+    assert calls == [False]
 
 
 
