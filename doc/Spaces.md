@@ -11,11 +11,11 @@
 > **Terminology (one noun per space).** A **percept** is a PartSpace or
 > WholeSpace thing, dimensionally embedded and extensional; its two subtypes
 > are **part-percepts** (atoms, synthesized bottom-up) and **whole-percepts**
-> (properties or regions, analysed top-down). A **concept** is a
-> ConceptualSpace relation tying part-percepts to whole-percepts. A **symbol**
-> is a SymbolSpace zero-dimensional reference to a concept id: symbols are
-> formed strictly downstream of ConceptualSpace, and a symbol is not a
-> WholeSpace row. There are **objects** and **references**, and a reference
+> (properties or regions, analysed top-down). A **concept** is a signed
+> value that a Sigma gives over basic percepts at order zero, or over
+> symbols above it. A **symbol** is a row of a Pi above order zero: it has no
+> dimensions, no vector, place or form of its own, and is held apart from
+> the concepts; a symbol is not a WholeSpace row. There are **objects** and **references**, and a reference
 > is either a **sign**, a quantized version of its referent (the same space,
 > snapped to a codebook row), or a **symbol**. Code identifiers such as
 > `subspace.what` keep their names.
@@ -23,12 +23,15 @@
 > **Perception.** `PartSpace` and `WholeSpace` both subclass `Space`.
 > PartSpace combines ordered parts; WholeSpace divides the field by
 > primitive properties. Neither owns a sigma/pi fold layer. Native codes stay
-> in the same `[0,1]^D` cube; rank is mereological level, not a change of
-> dimensional space. Sigma and pi are conceptual and grammatical operations.
-> Concept presence keeps two nonnegative poles; negation exists only for
-> concepts, not for percepts or symbols. The membership read is independent
-> of distributed codes. Objects are analysed and synthesized by sending them
-> back through the towers: wholes get split and parts get chunked.
+> in the same `[0,1]^D` cube, on two lanes, for and against; rank is
+> mereological level, not a change of dimensional space. The first Pi, over
+> a basic percept's parts and wholes, and the Sigma that reads the basic
+> percepts begin the one structure, Pi, Not, Sigma, that repeats at every
+> order ([Architecture](Architecture.md#sigma-and-pi-layers)). No percept or
+> symbol is negated: a percept carries perceived evidence against on its
+> against lane, and a sign lives only in a weight of a Sigma. Objects are
+> analysed and synthesized by sending them back through the towers: wholes
+> get split and parts get chunked.
 
 > **`subspace.what`: atoms and properties.** On `PartSpace` the `.what` rows
 > are **atoms** (letters and words, gathered by `Codebook.lookup`). On
@@ -207,16 +210,18 @@ compute brick --- see [Architecture.md](Architecture.md)).
 ## Perceptual and conceptual ownership {#sigma-pi-ownership}
 
 Perception is analysis and synthesis of what is present. PartSpace combines
-ordered parts with AND; WholeSpace divides allowed primitive sets with OR
-and reads their pervasion with min over positions. Sigma and pi are
-conceptual operations: pi within the order-0 field, sigma there and over
-previous-order symbols, with symbolization raising order.
+parts bottom-up, a code growing from all zeros by the OR of its parts;
+WholeSpace divides the field top-down, a code shrinking from all ones by the
+AND of its wholes ([Mereology](Mereology.md#percept-code)). At every order
+the same structure follows: a Pi, whose rows are basic percepts at order
+zero and symbols above it, then a Sigma, whose signed weights are each for
+or Not, giving the concepts.
 
 | Space | Owns | Forward |
 |---|---|---|
-| PartSpace | native percept inventory, radix ids and ordered witnesses | synthesize located parts; code = max of constituent codes |
-| ConceptualSpace | persistent definitions, transient attended rows, codes and STM | read memberships, compose field pi/sigma, then symbolize and union |
-| WholeSpace | primitive property memberships and analysis spans | read allowed sets per position and pervasion over runs |
+| PartSpace | native percept inventory, radix ids, the parts and their codes | find the sentence's forms and parts; a form's parts half = the greatest of its parts' codes |
+| ConceptualSpace | the basic percepts' Pi (`BasicPercepts`, `PerceptPi`), the Sigma of order zero (`OrderZeroSigma`), the Pi and Sigma of each order above, and STM | read the first Pi on the rows the lookup names, combine the percepts' codes, read the concepts of order zero, then each order's symbols and concepts |
+| WholeSpace | the table of wholes (`PrimitiveProperties`) and analysis spans | read each whole where a form's run of parts lies; a percept's wholes half = the least of its wholes' codes |
 
 The two perceptual `forward(in_sub, cs_out=None)` signatures remain.
 Subsymbolic passes can change attention or level but apply no learned fold
@@ -347,7 +352,7 @@ their symbols; see [DevelopmentHistory](DevelopmentHistory.md#located-xor-and-na
 | PartSpace | Modal/demuxed what/where/when encoding. Marked radix/meronomy percept stores expose one-sided presence; the orthographic Lexicon remains signed | `[0,1]^d` for percept-store rows; signed projective unit ball for Lexicon rows |
 | ConceptualSpace | One opaque code per concept: no where/when band (`canonical_shape` is `(0, 0)`); a concept has generalised over the where and when modalities and cannot be divided (Architecture, "Concepts are opaque; percepts and symbols are located"). The code is `[form \| meaning]`, every coordinate in `[0,1]`; evidence is two lanes, for and against | positive cube; two evidence lanes in `[0,1]` |
 | WholeSpace | Whole-percept property memberships | `[0,1]` presence |
-| SymbolSpace | 0-D references to ConceptualSpace concept ids | reference activation |
+| SymbolSpace | symbols: rows of a Pi above order zero, each two unsigned lanes, with no dimensions of their own | `[0,1]` on each lane |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
 Grammar and chart machinery lives on downstream `SymbolSpace`; it is not
@@ -371,8 +376,10 @@ see an identical muxed tensor via `materialize()`.
 > **Design.** A percept is a vector of independent **presence** features. Each
 > coordinate is a membership in `[0,1]`: `0` is absent or nothing, `1` is fully
 > present or everything, and intermediate values are partial presence. A
-> percept is one-sided; its opposite is the complement `1-x`, not the signed
-> negation `-x`.
+> percept's code holds two such vectors, its for lane and its against lane;
+> what perception calls a negative number is evidence on the against lane,
+> never a stored negative. For a percept the opposite of 1 is 0, as in
+> Boole (Alec, 2026-11-17).
 
 The percept hypercube is the grounded extent side of the architecture. An LLM
 usually learns such grounding indirectly through token statistics; BasicModel
@@ -403,7 +410,10 @@ A percept feature answers *how present is this?*
 | `1` | everything or fully present |
 | `x in (0,1)` | partial presence |
 
-There is no negative presence. On the percept path:
+There is no negative presence. Evidence against a percept is a presence too,
+on the against lane: the parts that a form holding it adds, the wholes its
+upper bound cuts away ([Mereology](Mereology.md#percept-code)). Zero on both
+lanes is no evidence. On the percept path:
 
 - `ConceptualSpace.factor_percept` (a staticmethod, [`bin/Spaces.py`](../bin/Spaces.py))
   keeps the percept INPUT non-negative (`percept.clamp(min=0)`; percepts are
@@ -411,10 +421,11 @@ There is no negative presence. On the percept path:
   SIGNED in `[-1, +1]`: selection is by absolute value, so an anti-aligned
   row, a "known false" exclusion, is reachable rather than clamped away; a
   zero percept yields zero evidence (the dot-product tautology).
-- The meronymic membership folds (`SigmaLayer2` / `PiLayer2` in
-  [`bin/Layers.py`](../bin/Layers.py), library classes with no production
-  consumer) operate on memberships in `[0,1]` through
-  `log`/`exp`, flooring the bottom element with `EPS_LOG` before `log(0)`.
+- The Pi of every order (`PiLayer3`, and the first Pi `PerceptPi`) operates
+  on memberships in `[0,1]` through `log`/`exp`, flooring the bottom
+  element with `EPS_LOG` before `log(0)` (`membership_log`); its derivative
+  passes wherever a membership lies above the floor and at most one, one
+  included.
 - A marked radix/meronomy Codebook (`is_percept_store`) is read through a UNORM
   straight-through clamp, so forward lookup and reverse decode see the same
   `[0,1]` rows while the float master remains trainable.
@@ -435,9 +446,21 @@ plain case, present or absent. A number is treated the same way.
   are the values. So the order zero concept is a generalization over
   basic percepts." A felt value's percept knits a bound it contains, its
   part, with a bound that contains it, its whole.
-- **Order survives without magnitude.** The bounds' codes are values, so
-  `Ops.partOf` on two of them is less-than. No percept carries an amount,
-  and any two levels can still be compared.
+- **A value is its place in one sorted table of values** (Alec,
+  2026-11-19: "we are enclosing the scalar by a lessthan sort"). The
+  code's coordinates are bins of the felt value, 64 of them: the parts
+  half holds the bins at or below the value, the wholes half is all ones
+  with the bins above it cut away, and the against lane holds the bins
+  above it (`BasicPercepts.value_code`). It is the mechanism of a form's
+  code with the bins as the catalog
+  ([Mereology](Mereology.md#percept-code)).
+- **Order survives without magnitude.** A lower value's parts half lies
+  inside a higher one's, so `Ops.partOf` on two of them is less-than. No
+  percept carries an amount, and any two levels can still be compared. The
+  bins are fixed, 64 for each place, so a value's code does not change when
+  another value arrives; each place has a table of its own, on coordinates
+  of its own, and a collection of values is read by its bounds, not through
+  a column of the Sigma.
 - **A concept generalizes levels.** A concept over several levels takes
   their common part and their covering whole: an interval on one
   dimension, a hyperrectangle on several.
@@ -463,9 +486,11 @@ only different being the percept dims" (Alec, 2026-11-13). One reader,
   distinct. Zero is no presence. No coordinate of the percept cube is
   set aside for one place, so the cube's width does not grow with the
   number of places.
-- **One order-zero concept per place** collects the level percepts met
-  at its place. Its for lane is the reading's membership in that
-  collection (`BasicPercepts.read_collection`), not the felt value.
+- **A collection per place.** Each place has a table of values of its
+  own, on coordinates of its own. A collection of the level percepts met
+  at a place is read by its bounds, 0 or 1, and not through a column of
+  the Sigma (`BasicPercepts.read_collection`); its for lane is the
+  reading's membership in that collection, not the felt value.
 - **Back from the field.** `NumericPercepts.reverse` returns each place's
   number from the level its concept holds.
 - **The scalar beside the words** is the case with no place, and is
@@ -519,12 +544,28 @@ modal basis."
   for each modality (text, a numeric input, the scalar beside the words,
   each sized by its configuration; the scalar's has one address), the
   part rows, the whole rows, the symbols and the live conceptual slots. A
-  symbol's address is its concept's row, two addresses to a row, one for
-  each lane; rows lie in their order's block, so the range gives the order
-  ([Orders §12](Orders.md)). Each modality's input has a range of its own,
-  so the range gives the modality too. Neither is stored beside the vector.
-  The number of place axes would not tell text from XOR, which both have
-  one; the range does.
+  symbol has two addresses, one for each lane; rows lie in their order's
+  block, so the range gives the order ([Orders §12](Orders.md)). Each
+  modality's input has a range of its own, so the range gives the modality
+  too. Neither is stored beside the vector. The number of place axes would
+  not tell text from XOR, which both have one; the range does.
+- **The where is one fixed parameter** (Alec, 2026-11-19: "a pytorch param
+  with the sinusoid written to it"). The `.where` stamped onto percepts
+  flows from one tensor that holds the constant sinusoid, a row for each
+  address of the registry, written from `WhereEncoding.encode`. "The
+  parameter itself must stay fixed if the sinusoid coding is to remain
+  meaningful across all .where": nothing of it is learned, nothing is
+  written into it as a state, and it is in no optimizer's groups. It takes
+  a gradient, so the salience map of a look lands on it, and what it lights
+  there says where to look
+  ([Architecture](Architecture.md#one-attention)). Each percept has its own
+  band, the wires of the parameter's row at its place. A reading's
+  `.where` is its own, the band of the event at its start, and is not
+  combined over its percepts (Alec, 2026-11-19: "It's own, flowing from
+  the fixed .where parameter"); its `.when` likewise. What is learned is
+  what reads the where: the concepts' weights on the where coordinates,
+  which start at zero for a new concept, since a generalization holds no
+  place.
 
 ### Complement, Copart, and Negation {#percept-complement}
 
@@ -559,12 +600,15 @@ beside the observed signal, which the forward path carries unchanged (see
 [Expectation across the architecture](ExpectationRetention.md)). What the
 unsigned carrier does support is withdrawal, the non-affirming `non`, and
 that is how attention works here: the reading scope and the priority surface
-exclude the non-object without predicting it. Negation therefore exists for
-concepts only, not for percepts or symbols (Alec, 2026-11-12: "non- removes
-both positive and negative evidence, while not swaps the two types of
-evidence."). `not` swaps a concept's two evidence lanes, which is its own
-inverse; `non` removes both, keeping the operand as a marked witness, which
-cannot be undone (`NonLayer`; [Logic](Logic.md#evidence-lanes)). Neither
+exclude the non-object without predicting it. No percept or symbol is
+negated. A percept's against lane is perceived evidence, not a negation; the
+one place a sign lives is a weight of a Sigma, a Not entry, which at the
+basic level records that something expected is absent and is taught by
+omission (Alec, 2026-11-17). The operator `not` swaps the two lanes of what
+it is put on, which is its own inverse, and `non` removes both, keeping the
+operand as a marked witness, which cannot be undone (Alec, 2026-11-12:
+"non- removes both positive and negative evidence, while not swaps the two
+types of evidence."; `NonLayer`; [Logic](Logic.md#evidence-lanes)). Neither
 negates a coordinate, so sensation is never subtracted from. Only what is
 conceptualized can be
 attenuated: content that reaches no concept, an unparsed span or a percept
@@ -576,12 +620,14 @@ The meronymic fold/split operators form a bounded lattice:
 
 | Operator | Role | Identity | Absorber |
 |---|---|---|---|
-| sigma | synthesis / union | `0`: `x union empty = x` | `1`: `x union everything = everything` |
-| pi | analysis / intersection | `1`: `x intersection everything = x` | `0`: `x intersection empty = empty` |
+| union | synthesis: parts join | `0`: `x union empty = x` | `1`: `x union everything = everything` |
+| pi | analysis: wholes meet, and a row requires its members | `1`: `x intersection everything = x` | `0`: `x intersection empty = empty` |
 
-These are set-membership roles, distinct from evidence on two conceptual
-poles. A membership zero rules out pervasion at an observed position;
-conceptual `(0,0)` is uncertainty and adds no evidence.
+On values present by degree the union is $1 - \prod_i (1 - x_i)$ and the Pi
+the product $\prod_i x_i$; within a code, which is a bound, they are the
+greatest and the least, and on 0 and 1 the two pairs agree. These are
+set-membership roles. A membership zero rules out a whole where a form's run
+lies; `(0,0)` on the two lanes is no evidence.
 
 ### The Fold Ladder {#fold-ladder}
 
@@ -592,53 +638,83 @@ part formed in a turn does not aggregate again in that turn. Higher rank
 means a larger part or a finer whole, in the same membership cube. It is not
 a sequence of learned perceptual transforms.
 
-A word's distributed code is the **coordinatewise max of its constituent
-codes**. Repeated constituents are idempotent. **Anagrams share this code**;
-only the ordered containment read and retained witness distinguish them.
-The code is useful for similarity and reconstruction but cannot be the
-word's presence test. WholeSpace properties are max over allowed primitive
-memberships, then min over every observed position in a run.
+A word's code is the **set of its parts**: its parts half is the
+coordinatewise greatest of its parts' codes, and its wholes half the least
+of its wholes' codes, its own tightest whole among them
+([Mereology](Mereology.md#percept-code)). Repeated constituents are
+idempotent. Two forms with the same characters, such as anagrams (`cat` and
+`act`) or `1` and `11`, would have the same parts, so the shortest run that
+one holds and the other does not is added as a part, and the two codes
+differ. Over the first 19,821 distinct words of a dictionary, 4 share a code
+at 64 and 64 before that part is added, and none after.
 
-Max and min are the only idempotent t-conorm and t-norm, so a part's code does
-not grow with how often a constituent recurs and a whole's properties do not
-decay with its length. A strict sum (the probabilistic sum
-$1 - \prod_i (1 - m_i)$ or the Einstein sum) would make wholes grow with their
-part count, and a strict t-norm would make long wholes propertyless. A
-whole's max dominates every sub-span's max by construction, so containment
-order holds inside a whole without projection; the cost is that the max
-passes gradient only to the strongest part in each coordinate.
+A code is a bound, so it is built by the greatest and the least, which do
+not grow with how often a constituent recurs or decay with a whole's
+length; a whole's greatest dominates every sub-span's by construction, so
+containment order holds inside a whole without projection. Where the
+percepts of one reading are joined, each present by degree, the parts are
+joined by the union $1 - \prod_p (1 - v_p)$ and the wholes by the product
+$\prod_p w_p$ (Alec, 2026-11-17: "Pi on the gaps"), which pass a gradient
+to every percept and agree with the greatest and the least on 0 and 1.
 
-A percept's identity carries no absolute address and is never an unordered
-aggregate alone: a basic percept is keyed by its ordered part literals
-(repeats kept) and its whole boundaries (`BasicPercepts.reserve`), so `12`,
-`21` and `11` are distinct while sharing reusable digit parts. An occurrence
-is that identity plus the ordered `.where` of its constituents; two
-occurrences of one identity at different positions are the same percept
-twice.
+A percept's identity carries no absolute address: a basic percept is a row
+of the first Pi over its parts and wholes (`BasicPercepts.reserve`), and its
+form is told apart from every other by its set of parts. An occurrence is
+that identity at its own place; two occurrences of one identity at
+different places are the same percept twice.
 
 ### Percept-to-Concept Seam {#percept-concept-seam}
 
-The order-0 definition addresses basic-percept literals, one column per basic
-percept and pole ($2\,bp + \mathrm{pole}$); native parts and properties alone
-are not its members (see
-[One basic-percept basis](#one-basic-percept-basis)).
-A present feature contributes to the pole selected by its
-signed conceptual weight. Required evidence is min over nonzero
-contributions on each pole; alternative definitions are max. Missing
-percepts assert neither. No projection onto codes or evidence floor occurs
-at the seam. Pi edges above this membership read intersect order-0 field
-readings inside the common attention bracket.
+**The combined vector.** For one reading, the first Pi gives each basic
+percept present a value on each lane, and the percepts' codes are combined
+into one vector as wide as the perceptual space, on each lane. Each percept
+enters once, at its net, for less against: above zero what tells for it
+joins the for lane and what tells against it the against lane, below zero
+the reverse, and a percept read equally for and against adds nothing. For
+each coordinate the combination is a Pi on the gaps (Alec, 2026-11-17: "pi
+over the individual percept dims instead of pooling"):
 
-Each percept row's presence and observed complement are
-pooled over the occurrences inside the one convex bracket of attention
-before the definition matrix reads them. Conceptual fields carry no
-per-position tensors or per-concept coordinates. Exact
-co-location stays in perception (fused parts, pervading runs). See
-[Architecture](Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes).
+$$x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$$
+
+with $b_p$ the percept's net value and $v_p$ what it reads
+(`BasicPercepts.read_pair`: the parts half as it is, the wholes half on its
+complement). A percept at zero changes nothing, and $x$ lies in $[0, 1]$
+(`OrderZero.combine`). The reading's own `.where` and `.when` follow the
+content, at the degree the reading is present (`.where` and `.when` are read
+unsigned; a reader of an angle takes $2x - 1$).
+
+**The concepts of order zero.** A dense Sigma reads the combined vector:
+$y = \tanh(x\,U)$, one signed number for each concept, with $U$ of the
+perceptual width by the concepts and no bias (`OrderZeroSigma`). The Sigma
+takes the for channel and the against channel as two inputs, each with
+weights of its own (Alec, 2026-11-19: "the summation step is determined by
+gradient need at sigma"); the against weights start as the for weights
+negated, so a concept starts reading the for vector less the against vector.
+A concept made at order zero starts from its members: its column is, for
+each member, what tells for it over the number of its contributions less
+what tells against it over theirs,
+
+$$u = \sum_k \tfrac{1}{2}\left( \frac{P_k}{|P_k|^2} - \frac{N_k}{|N_k|^2} \right)$$
+
+(`OrderZeroSigma.member_column`; Alec, 2026-11-19: "we can divide all
+contributions by the number of contributions, respectively"), a Not member
+subtracted, and nothing normalized afterwards. Where a member has nothing
+against it its share is $P_k/|P_k|^2$ alone; where it has, its share is the
+mean of its two sides, so that a member read alone reads one before the
+squash (its own against side, witnessed absent, supports it as much as its
+for side), and all that tells against it, present, takes the reading to zero
+however few its coordinates. A new concept has one member,
+its own row, and a member that joins later is added to the column in the
+same way. The Sigma of order zero is dense and is not penalized.
+
+Conceptual fields carry no per-position tensors or per-concept coordinates;
+a concept's place is the reading's, through its weights on the where
+coordinates. See
+[Architecture](Architecture.md#sigma-and-pi-layers).
 
 `WhereRegistry` assigns each model fixed, nonoverlapping ranges for each
-input modality's places, PartSpace rows, all WholeSpace rows, symbol poles
-and the live conceptual slots. Each symbol pole has one address. Text's
+input modality's places, PartSpace rows, all WholeSpace rows, symbol lanes
+and the live conceptual slots. Each symbol lane has one address. Text's
 input percept and symbol occurrences carry the word's input byte start;
 repeated occurrences use their different input locations,
 without extra symbol slots. Mixing serial readers declare word slots, so their
@@ -647,17 +723,19 @@ per-word residual-part capacity (at least the raw InputSpace extent). This
 converts unit counts into byte addresses using the fixed residual layout.
 The address guard still rejects overflow. Aligned readers retain their raw-byte
 extent. The mode is resolved before this fixed registry is constructed. Thought-produced symbols use their symbol-row
-address. The registry encodes locations through one model-owned `.where` ladder. Its long period
+address. The registry encodes locations through one model-owned `.where` ladder, held as
+the one fixed where parameter (see "Modalities" above). Its long period
 covers the registry and its short period resolves adjacent locations. The
 band carries the address; an integer location is decoded from it. Codebook
 identity remains the row index. Every perceptual
 codebook reserves physical `nVectors` at construction, and admission changes
 occupancy in that allocation; checkpoint capacities must match.
 
-Concept ids persist; order-0 field rows bind per turn. The field is common
-to all concepts, and precision belongs only to location. Max over occurrences
-inside the subject keeps both poles. Symbolization raises order; subsequent
-rows use sigma over the preceding symbols, never pi edges.
+Concept ids persist. Above order zero the structure repeats: a Pi whose rows
+are symbols over the concepts below, each symbol two unsigned rows, one on
+each lane, then a Sigma that reads each symbol's two channels with weights
+of their own, starting as one signed input, for less against
+([Architecture](Architecture.md#sigma-and-pi-layers)).
 
 ### Geometry Split {#percept-geometry-split}
 
@@ -677,13 +755,12 @@ The implementation keeps percept and concept/symbol carriers distinct:
 | space | code `[form \| meaning]` in the unit cube: the form in the percept cube, the meaning in two nonnegative lanes |
 | coordinate | form presence; meaning as a placement direction scaled by trust |
 | opposite | `not` exchanges the two evidence lanes; no coordinate is negated |
-| sides | polarity is the pair of evidence lanes (for, against), never a sign |
+| sides | a concept's value is one signed number whose size is its certainty, stored as two unsigned lanes, its positive part for and its negative part against; "both" is two concepts, one for presence and one for absence (Alec, 2026-11-19) |
 | metric | parthood both ways. One function, `ConceptualMatch.match`, compares a content with conceptual space for the reference and field readers and returns how much of each candidate lies in the content and how much of the content lies in each candidate, on the meaning lanes where the code has them. The other parthood reads (the hierarchy, the basic percepts, case selection) call the same measure directly (`IdentityRows.meet_ratios`). The measure is provisional ([Mereology](Mereology.md#parthood-as-shared-size)) |
 | magnitude | the for lane's radius is the concept's trust |
 
-The parallel conceptual field uses independent $(c^+, c^-)$ presences and two
-symbols per code, as detailed below; the against symbol reads its code
-negated, but the stored code is not signed. The orthographic Lexicon (below)
+A symbol has no code: it is two unsigned rows of a Pi, one on each lane, and
+is held in tensors apart from the concepts. The orthographic Lexicon (below)
 keeps a sign, as form content.
 
 A concept's meaning direction is placed, not optimized: at each
@@ -698,9 +775,8 @@ likeness of places, so no place is moved by a value computed from places, and
 a step moves a row only relative to rows of its own order.
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
-`ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
-Their epistemic roles remain distinct even when an implementation path shares
-their geometry.
+signed value a Sigma gives; a symbol is a row of a Pi, which brings one
+concept when MTM nominates it.
 
 ### SBOW Situates Concepts, Not Percepts {#percept-sbow}
 
@@ -768,33 +844,32 @@ directions by a normalized product, a binding in the vector-symbolic sense
 whose sign would be a phase, so it cannot carry negation; the lattice pair is
 offered to grammars as `intersection` and `union`.
 
-One percept vector of `percept_width` coordinates serves every tower and the
-concept codebook (Alec, 2026-10-26). At text-model construction it splits
-into an identity subspace `[0, identity_width)`, the `WordIdentity` pair and
-length coordinates (`identityPairDim`, `identityLengthDim`), and a property
-subspace `[identity_width, percept_width)` of `propertyDim` coordinates (256
-with `propertyOnes = 1`: one coordinate per byte, with no hash collisions).
-The `.where`/`.when` band follows `percept_width`. Numeric configurations have
-no property subspace. The split is fixed at construction, and a checkpoint of
-another layout is rejected.
+One percept vector of `percept_width` coordinates serves every tower (Alec,
+2026-10-26). At text-model construction it splits into a parts half
+`[0, identity_width)` of `identityPairDim` coordinates and a wholes half
+`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64
+(Alec, 2026-11-19), each part or whole drawn on `identityOnes` and
+`propertyOnes` coordinates, 3 by default (`resolve_identity_layout`). Each
+half holds two lanes, for and against (`BasicPercepts.codes` and
+`against_codes`). The `.where`/`.when` band follows `percept_width`. Numeric
+configurations have no wholes half. The split is fixed at construction, and
+a checkpoint of another layout is rejected.
 
-| row | identity coordinates | property coordinates |
+| row | parts half | wholes half |
 |---|---|---|
-| tower-0 atom or word | its atom code, or the join (coordinatewise max) of its atoms' and nested parts' codes | the soft meet $\min_t \left(1 - p_t (1 - c_t)\right)$ of the types $t$ holding over its own bytes, with presence $p_t$ and code $c_t$ (`PrimitiveProperties.fill`); all ones when none holds |
-| tower-1 type | all ones (the top) | its weighted byte extension: the union over member bytes of each byte's bits, weighted by `PrimitiveProperties.members` |
-| basic percept (order-0 form) | the join of its parts' identity codes | the meet (coordinatewise min) of its wholes' property codes; all ones with no whole |
+| part (a character or an added run) | its fixed bits (`WordIdentity.atom_code`) | its bits drawn again in the wholes half's coordinates (`WordIdentity.catalog_code`) |
+| whole (a row of the table of wholes) | not read: a whole bounds only the wholes half | the OR of the catalog codes of the parts that belong to it, or the AND of the wholes it is given by (`PrimitiveProperties.codes`); the class of all characters is all ones |
+| basic percept | for: the greatest of its parts' codes; against: the parts its nearest holders add | for: the least of its wholes' codes, its own tightest whole among them; against: what that bound cuts away (`BasicPercepts.against`) |
 
-A part's content lies in the identity subspace and a type's in the property
-subspace; the other subspace holds the bound that lets one coordinatewise
-order read both. Identity sorts by atom containment and property by
-extension, so a subtype's code is at most its supertype's: the type rows are
-derived from byte membership (a buffer through which gradient reaches
-`members`), not free parameters. Location selects which parts and types an
-occurrence has; no `.where`, `.when` or span coordinate enters a code.
-`BasicPercepts.subspace_bounds` computes the identity join and the property
-meet over basic rows, and `FormContainment.audit` certifies weighted nesting
-within each tower and among basic percepts, reporting ties without failing
-them; no content of tower 0 is compared with content of tower 1. Composed
+A part's content lies in the parts half and a whole's in the wholes half;
+the other half holds the bound that lets one coordinatewise order read both.
+The parts half sorts by containment of parts and the wholes half by what
+belongs to a whole, so a narrower whole's code is at or below a wider one's
+with no rule for it. Location selects which parts and wholes an occurrence
+has; no `.where`, `.when` or span coordinate enters a code.
+`BasicPercepts.subspace_bounds` computes the two halves of a basic row, and
+`FormContainment.audit` certifies nesting within each half and among basic
+percepts, reporting ties without failing them. Composed
 wholes keep the leaf-weighted centroid of `compose_blocks` and its exact
 inverse `split_centroid`, since a join has no inverse; a description's form
 coordinates are likewise folded by centroid so they stay in the cube.
@@ -835,10 +910,11 @@ The encoding is hybrid.
 
 - Vector-to-token identity uses complement-aware presence MSE on the marked
   percept store and wrapped/projective lookup on the signed Lexicon path.
-- The max composition gives a part set's code, and the ordered witness (a
-  basic percept's ordered literals) determines which whole it is. Radix
-  supplies ordered references through a trie; it is not place-value
-  arithmetic.
+- A form's code is the set of its parts, and that set determines which form
+  it is: two forms that would have the same parts are told apart by an
+  added part. Radix supplies the sentence's forms through a trie, its
+  longest match; it is not place-value arithmetic. The way back reads each
+  form's stored characters in order (`RadixLayer.inverse_table`).
 
 Moving percept rows would leave byte structure and configured invertibility
 intact while redirecting nearest-row decode. The model could compose and
@@ -857,7 +933,7 @@ See also [Mereology](Mereology.md) and [Logic](Logic.md).
 |---|---|---|
 | PartSpace radix/meronomy | `[0,1]^d`; presence MSE | percept-presence row |
 | WholeSpace property basis | `[0,1]^d`; property-membership metric | whole-percept property row |
-| SymbolSpace | two pole symbols sharing one concept code; serial references keep their event contract | ConceptualSpace concept id and pole |
+| SymbolSpace | a symbol is two unsigned Pi rows, one for each lane, with no code of its own; serial references keep their event contract | the symbol's row and lane |
 | Conceptual similarity codebook | unit rows; dot product | SBOW concept row |
 
 The ConceptualSpace entry is the concept dictionary's *situating* metric, not
@@ -901,11 +977,9 @@ $\|x\|^2$ add, and the cdist autograd plumbing.
 
 > **Note.** This dot-product metric is the `similarity_codebook`'s retrieval
 > metric (used by the substitutability / SBOW *situating* signal), NOT the
-> forward concept-production path. When the sparse transform is
-> active, a paired field is produced by the snap and the concept pyramid,
-> using independent min/max reductions per pole and a per-batch taper. Its two symbols scale
-> opposite directions of one stored concept code. Dictionary identity and
-> evidence are separate. See **ConceptualSpace → The symbolic phase**.
+> forward concept-production path. Concepts are produced by the Pi and the
+> Sigma of each order, and a symbol has no code. Dictionary identity and
+> evidence are separate. See **ConceptualSpace → The cycle of the orders**.
 
 ConceptualSpace concepts are *named directions* in belief space. $x \cdot
 c_i$ gives the *signed strength of belief that $x$ affirms concept $i$*:
@@ -951,8 +1025,7 @@ stored beside the vector ([Orders §12](Orders.md)). One word form can address
 concepts at several orders; `interpret` reads the expected one, else the one
 of highest order, as specified in
 [Lexicon](Lexicon.md#word-forms-and-concept-orders). A proper name selects
-a particular, not an order-0 event. Order-0 field slots are rebound each
-turn and do not define concept identity.
+a particular, not an order-0 event.
 
 ## Codebook Uniqueness Contract
 
@@ -965,7 +1038,8 @@ Every codebook entry is identified by its **row index** and must carry
   symbol range holds two addresses for each concept row, one for each lane,
   using exact integer coordinates so addresses remain distinct on CPU, CUDA
   and MPS.
-  Constructing another model cannot move these ranges. Content lookup and
+  Constructing another model cannot move these ranges, and the code of each
+  address is held in one fixed parameter (see "Modalities"). Content lookup and
   native relation references do not use where coordinates as identities.
 - **`.what` --- distinct prototype content.** Identical `.what` collapses to the
   same parthood identity (`equal(A, A) = 1`) --- a redundant pair the network
@@ -975,7 +1049,7 @@ How distinctness is kept:
 
 | Source | Mechanism |
 |---|---|
-| PartSpace percept store | native ids from the canonical radix tiling; a basic percept is keyed by its ordered parts and whole boundaries (`BasicPercepts.reserve`) |
+| PartSpace percept store | native ids from the canonical radix tiling; a form's code is the set of its parts, and two forms that would share one are told apart by the shortest run one holds and the other does not (`WordIdentity`); a basic percept is a row of the first Pi over its parts and wholes (`BasicPercepts.reserve`) |
 | PartSpace Lexicon | cosine-margin pode/antipode SBOW training, for trained Lexicons |
 | InputSpace vocabulary | shares PartSpace's Lexicon (text); manual (raw) |
 
@@ -1086,7 +1160,8 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
   embedding lookup).
 - `nWhere` dims (4) — two quadrature pairs encode one registry location.
   One model-owned encoding serves input positions, PartSpace, every
-  WholeSpace, and symbols. The long period is the next power of two covering
+  WholeSpace, and symbols, written once into one fixed parameter, a row
+  for each address (see "Modalities: One Perceptual Space Each"). The long period is the next power of two covering
   the complete registry plus its seam guard. The fine period is at least
   256 positions and grows with large registries to keep float32 coarse-phase
   error inside the branch bound. Integer modulo occurs before float conversion;
@@ -1199,18 +1274,21 @@ concepts, symbols or both.
 
 ## PartSpace
 
-**Role.** Synthesize parts in their designated order and extent. Native
-percept ids come from the canonical radix tiling; a first witness keeps the
-ordered group, and recurrence forms a row at the boundary. Membership reads
-containment by ids, without re-expanding and re-matching bytes.
+**Role.** Find a sentence's forms and their parts. Native percept ids come
+from the canonical radix tiling, one lookup at a sentence's start, and the
+first Pi is read only on the rows that lookup names. A form's code is the
+set of its parts ([Mereology](Mereology.md#percept-code)); a basic percept's
+row is made when MTM nominates it on recurrence. Membership reads the parts
+found, never re-expanding and re-matching bytes.
 
 PartSpace owns the percept store and the configured synthesis front end.
-`synthesize_word_parts` takes the max of active constituent codes in `.what`
-and retains the first active constituent's position band. There is no
-`sigma`, per-pass fold stack or learned transformation of the native cube.
-The ordered witness supplies the exact reverse. `forward(in_sub, cs_out=None)`
-keeps the shared perceptual interface, and conceptual pass-back scales
-attention with a strictly positive floor; it cannot hide novel content.
+`synthesize_word_parts` takes the greatest of active constituent codes in
+`.what` and retains the first active constituent's position band. There is
+no `sigma`, per-pass fold stack or learned transformation of the native
+cube. Each form's stored characters supply the exact way back.
+`forward(in_sub, cs_out=None)` keeps the shared perceptual interface. A look
+dims what lies away from where it asks by degree, with no floor
+([Architecture](Architecture.md#one-attention)).
 
 ### The Two Stems, and Where a Word's Bracket Comes From {#two-stems}
 
@@ -1233,10 +1311,11 @@ and the configuration decides which one runs (`PartSpace._embed_radix`).
   (`word_intervals`), since a slot need not be a whole word.
 
 A **word bracket** is the interval of the row's bytes that a word
-occupies. The first look of a sentence reads the percepts inside every
-word bracket at once (`FamiliarTier.open_sentence`), with a grammar or
-without one, and attention's later looks divide a bracket or go into
-one. `ModelAttention.stage_input` makes the brackets
+occupies. The first look of a sentence, the open run, reads the percepts
+inside every word bracket at once (`FamiliarTier.open_sentence`), with a
+grammar or without one. Attention's later looks are activities over the
+sentence's percept bank and are not made of word brackets
+([Architecture](Architecture.md#one-attention)). `ModelAttention.stage_input` makes the brackets
 (`model._attention_spans`, `[B, W, 2]`) from the intervals the stem
 kept. Every stem keeps each word's interval, as `Meronomy.percept_spans`
 cut it, in `word_intervals` beside `word_texts` on
@@ -1265,17 +1344,15 @@ reads a key, and no walk runs on this stem in the tests.
 
 ## ConceptualSpace
 
-**Role.** Forms concepts from perceptual and symbolic sources. With
-`symbolicOrder > 0` in parallel mode, the post-pump snap produces paired
-positive/negative evidence per occurrence. A feedforward pyramid composes
-that field over the bounded taper span S. `W_sigma` stores disjunctive parts;
-`conceptualPi` additionally reads conjunctive parts in `W_pi` within order 0. Both poles
-share each part's nonnegative exponent, reducing each pole independently. Two symbols
-share one stored concept code. The field feeds the symbol leg and conceptual
-losses, without replacing the subsymbolic carrier. `CS.forward` itself
-performs STM bookkeeping; the pyramid runs once at `_forward_body`'s cutover.
-The [settled design](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
-define the current representation.
+**Role.** Forms concepts from perceptual and symbolic sources, by one
+structure at every order: a Pi, then a Not, then a Sigma. At order zero the
+first Pi's rows are the basic percepts, their codes are combined, and a
+dense Sigma gives the concepts ("Percept-to-Concept Seam" above). Above it a
+Pi makes symbols over the concepts below, a Not entry is from one symbol to
+one concept, and a Sigma makes the concepts of the next order. Symbols and
+concepts are held in separate tensors. `CS.forward` itself performs STM
+bookkeeping. The design is in
+[Architecture](Architecture.md#sigma-and-pi-layers).
 
 **Aligned serial geometry.** The BasicModel path is distinct from the
 sparse-parallel phase described below. PS and WS each expose eight live
@@ -1297,62 +1374,58 @@ for lane being the concept's placement direction scaled by its trust radius.
 That form belongs to a concept of order zero. A concept above order zero
 carries no perceptual form; a reader that needs one takes the form of the
 concept's word, through the definition that maps the word to it.
-Every coordinate lies in $[0, 1]$, and no sign is stored. Polarity and
-certainty are evidence: the two lanes of an occurrence's activation, and a
-symbol's pole (the symbolic phase below reads the against pole as the negated
-code).
+Every coordinate lies in $[0, 1]$, and no sign is stored. A concept's
+activation is one signed number whose size is its certainty, stored as two
+unsigned lanes.
 
 ![A concept: sigma over pi, one signed code, two evidence lanes](diagrams/concept_geometry.svg)
 
-**Owned definitions and carrier.** The conceptual inventory owns sparse
-feature references, order-0 conjunctive and disjunctive edges, and higher-order
-disjunctive edges. The clean-stack STM retains the incoming event and its
-short-lived tree. Conceptual presence is computed from native memberships;
-a distributed code is used for retrieval and composition. Input reconstruction
-starts from the live parallel order-zero field, independently of that tree.
-Reverse conceptual demand descends through higher rows, then attributes basic
-percepts at the field brackets. Observed order-zero evidence stays unchanged
-at the conceptual step; no input perception spans enter the native decoder.
+**Owned matrices and carrier.** The conceptual inventory owns the first Pi
+(`BasicPercepts.pi`, a `PerceptPi` stored as compressed rows with an index
+of columns beside them), the Sigma of order zero (`OrderZeroSigma`), and
+above order zero a Pi and a Sigma for each order, stored as compressed rows
+that grow into capacity allocated beforehand. A row of any Pi exists only
+when MTM nominates it on recurrence, and each row brings one concept, so
+every order's Sigma is square in its rows: as many concepts as rows. The
+clean-stack STM retains the incoming event and its short-lived tree. Input
+reconstruction starts from the live order-zero field, independently of
+that tree. On the way back the Pi inverts exactly, and the Sigma returns
+the combined vector by least squares where there are enough concepts and
+not otherwise; a signed value is split into its two unsigned parts before
+a percept or a symbol holds it (`signed_lanes`: -.5 is .5 on the against
+lane). No input perception spans enter the native decoder.
 
-**The symbolic phase.** With `symbolicOrder > 0` and `serial=false`,
-`BasicModel._forward_body` runs the continuous perceptual pump and then
-`cs_symbolic_phase` on the settled terminal field:
+**The cycle of the orders.** At an order with $n$ concepts:
 
 ```text
-a0 = cs_read_memberships(percepts, extents) # native definitions, pi/sigma at order 0
-a  = pad_concept_axis(a0, sum(caps))
-for order in 1..K:
-    candidate = sigma_previous_order(a)    # max independently on each pole
-    candidate *= detached_use_gate
-    rank = max_pole(union_occurrences(candidate))
-    a[order_slice(order)] = admit_pairs(candidate, top_k(rank, caps[order]))
-pair = union_occurrences(a)                # max; both stays distinct
-symbols[2*i]   =  pair[i, :, 0] * code[i]
-symbols[2*i+1] = -pair[i, :, 1] * code[i]
+y      = tanh(x U)                       # n signed values (SigmaLayer3)
+lanes  = signed_lanes(y)                 # stored as 2n unsigned lanes
+rows   = Pi(lanes)                       # the symbols MTM nominated, each a
+                                         # row on its own lane (PiLayer3)
+y_next = tanh(rows_for W_for + rows_against W_against)
+                                         # the next Sigma: two channels, each
+                                         # with its own weights, starting at
+                                         # W_against = -W_for
 ```
 
-A negated literal swaps source poles. Requirements reduce nonzero
-contributions by min separately on each pole; alternatives use max.
-An empty pole asserts zero. Exponents qualify individual memberships;
-there is no product or probabilistic union across inputs. Located pi
-patterns must match each requested pole at its field bracket before
-readout. Pi edges exist only at order 0. Exact forward rails use bounded
-log charts for gradients. The dictionary is stored once, and a signed
-scalar never collapses both into neither in the field.
+A Pi row is $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$, with its
+diagonal at one or more, the rest at zero or more and its bias at zero or
+less, so a row requires the members it has weight on and never exceeds its
+own reading. A Sigma's weights start at zero or above, so there is no Not
+entry until teaching makes one, and it has no bias. A symbol of order $k$
+reads the concepts of every order below $k$, and between orders only
+activation passes. The entries of every Pi and of every Sigma above order
+zero are learned under a penalty that thins the values of the entries that
+exist; the Sigma of order zero is dense and is not penalized.
 
-`_order_caps()` allocates a tile-based taper `[base, base>>1, ..., 1]`,
-shrinking it to fit the dictionary. Only its span S is materialized.
-`order_slice(0)` reserves the snap rows; higher slices hold compositions and
-the provisional pool. Exponents are trainable and projected nonnegative;
-participation is detached EWMA use. Discovery fixes its gate at one.
-Contexts are a dense CPU S-by-S tensor. Sparse values and pool metadata
-persist once, in the structural sidecar. The module registration supplies
-optimizer identities, not a second checkpoint copy.
-
-The concept allocator also owns ordered constituent records. There is one
-concept row inventory, with conjunctive or disjunctive parts, not different
-row kinds. `symbolicOrder=0` disables this parallel cutover; aligned serial
-grammar continues to use its own event/STM path.
+`_order_caps()` gives the room of each order. Order zero has as many
+concepts as there are basic percepts, and each order above has half the
+units of the one below (Alec, 2026-11-19: "Geometric taper is not a bad
+rule"), connected to the two rows beneath it, its own order's symbols and
+the concepts of the order below; this is storage allocated
+beforehand, not a number of entries expected. A concept's order is read
+from the block its row lies in (`order_slice`). Participation is detached
+EWMA use.
 
 **Activation carrier.** `subspace.activation` remains the ordinary pipeline
 presence gate. The conceptual knowing field is the separate paired
@@ -1405,8 +1478,8 @@ link is an identity-based definition row in `LTM1`
 
 ConceptualSpace owns `self.stm`, a `ShortTermMemory` instance: a per-batch
 working set of unquantized CS "ideas". `CS.forward` is STM bookkeeping, with
-no atomic fold layer; the symbolic transform fires once at the post-pump
-cutover and its outputs never enter the STM (see **The symbolic phase**).
+no atomic fold layer; the concepts of the orders (see **The cycle of the
+orders**) never enter the STM as its chunks.
 
 | Property | Default | Configurable via |
 |---|---|---|
@@ -1449,9 +1522,19 @@ downstream references and grammar dispatch. Consequently a WholeSpace state dict
 tensor sized like the conceptual inventory merely because aligned binding is
 enabled.
 
-**Whole-percept presence.** Each property records graded presence in `[0, 1]`.
-A property allows primitive alternatives by max and pervades an observed
-run by min over positions. Absence supplies no conceptual counterevidence.
+**Whole-percept presence.** Each whole records graded presence in `[0, 1]`
+on two lanes, and may hold by degree, such as a distance on a ratio scale
+(Alec, 2026-11-19). A whole is a row of the table of wholes defined by what
+belongs to it: the catalog parts it holds, or other wholes it is given by
+(`PrimitiveProperties.define_by_rows`). Its code is the OR of its parts'
+catalog codes or the AND of those wholes' codes, and the class of all
+characters is all ones (`PrimitiveProperties.top`); a class of characters
+is the OR of the characters taught to it. A basic percept's row reads each
+of its wholes where its run of parts lies, and not over the whole reading,
+so a space elsewhere in a sentence is no evidence against a word. A whole
+witnessed not to hold, a narrower whole the percept does not lie in, tells
+against it; a whole not observed asserts nothing
+([Mereology](Mereology.md#percept-code)).
 
 **Alignment.** At concept formation, native PS and WS readings bind within
 the same attentive field. This is an alignment of the transient `nOutput`
@@ -1483,31 +1566,32 @@ See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 
 ## Monotonicity of the lift / lower chain
 
-With `monotonic=true`, the P $\to$ C $\to$ S chain is an
-**order-preserving map on a positive cone**.
-
-Three pieces:
-
-1. **Truth-set activations may live on the positive cone** `[0, 1]^{2K}`
-   as user-supplied paired `[pos, neg]` bivectors. The componentwise
-   partial order $\leq$ is the parthood order for that truth surface.
-
-2. **The Pi / Sigma maps are restricted to $W \geq 0$** entry-wise
-   (`monotonic=True` selects `NonNegativeInvertibleLinearLayer` or
-   `NonNegativeLinearLayer`):
+A map whose weights are all zero or above is an **order-preserving map on
+the positive cube**: where one vector is at or below another in every
+coordinate, so are their outputs.
 
 $$
-a \leq b \text{ componentwise} \Longrightarrow Wa \leq Wb \text{ componentwise}
+a \leq b \text{ componentwise} \Longrightarrow f(a) \leq f(b) \text{ componentwise}
 $$
 
-3. **Therefore Pi / Sigma preserve parthood pole-by-pole for truth-set
-   bivectors and other positive-cone activations.**
+Checked on 4,000 pairs of vectors, one at or below the other, it holds for:
 
-The bivector layout keeps the contradiction corner `[1, 1]` distinct from the
-ignorance corner `[0, 0]` under positive matmul --- a single bitonic axis would
-let $aP - aN$ cancel under summation.
+1. **A Pi** with entries of zero or above. Its output lies at or below every
+   input it reads (a product of numbers between 0 and 1), so the Pi makes
+   the order below: what needs all its members.
+2. **The union** $1 - \prod (1 - x)$. Its output lies at or above every input
+   it reads, so it makes the order above: what any member is enough for.
+3. **A Sigma** $\tanh(x\,U)$ with $U$ of zero or above. It rises with every
+   input, but is not always above it.
 
-See [Logic.md Section Parthood as Projection](Logic.md) and
+It fails as soon as a Sigma has one Not entry. So the chain keeps parthood
+lane by lane while no Not entry is read, and a mind whose weights are all
+held at zero or above speaks only of what is. Monotone weights cannot make
+evidence against: that takes the against lane of a percept's code, or a Not
+entry. The two lanes keep "both" `[1, 1]` apart from "neither" `[0, 0]`, where
+one signed axis would let the two cancel under summation.
+
+See [Mereology](Mereology.md#percept-code), [Logic.md](Logic.md) and
 [Philosophy.md](Philosophy.md).
 
 ---
@@ -1580,14 +1664,19 @@ invertible in general.
 
 ## One basic-percept basis
 
-`BasicPercepts` is perception's fixed-capacity table. Its rows name complete
-basic-level occurrences with part and whole boundaries. MTM references those
-occurrences; native parts and properties alone are not its perceptual
-members. Recurrence writes a durable basic row, and supplied training forms
-are declared at admission. Order-0 concepts use only basic-percept literals,
-with column `2*bp + pole`; their sigma/pi read and fixed order-zero working
-extent stay intact. Compose whole reads and typed word slots use this same
-basis.
+`BasicPercepts` is perception's fixed-capacity table. Each row is a basic
+percept, a row of the first Pi (`PerceptPi`) over its parts and wholes, with
+for entries joined by the product and against entries, the parts its
+nearest holders add, joined by the union. A row exists only when MTM
+nominates it on recurrence (`concept_mint_count` readings, a reading being
+one sentence of one stream, so a form that stands twice in a sentence is
+read once); nothing becomes a row on its first reading, and a new word is
+perceived at once but `interpret` cannot find it until its row is
+nominated. Each nominated row brings one concept of order zero, whose column
+of the Sigma starts from the row's own read pair
+(`BasicPercepts.column`). The first Pi holds only the mereology's entries;
+no concept writes into it. Compose whole reads and typed word slots use
+this same basis.
 
 Basic-percept rows are not withdrawn. Reservation appends an identity,
 promotion retains it, and concept forgetting does not remove it; a full
@@ -1602,19 +1691,29 @@ and obtains a separate descended view after understanding. The parallel path
 keeps the symbolic carrier for higher-order readers while taking the same
 descended view for reconstruction.
 
-Reverse attribution divides a concept's demand over its written basic-percept
-alternatives by weight (`cs_percept_attribution`; Alec, 2026-11-10). With
-nonnegative definition weights $w_{c,p}$, alternative $p$ of concept $c$
-receives $d_c\, w_{c,p} / \sum_{p'} w_{c,p'}$ of the demand $d_c$, so the
-attributed total equals the demand and no alternative is asserted at full
-strength. A precise basic-level concept therefore keeps its own identity
-beside a broader property concept.
+The way back inverts each layer as far as it goes. The Sigma of order zero
+returns the combined vector by least squares where there are enough
+concepts, and not otherwise; a signed value on the way back is replaced by
+its two unsigned parts before a percept holds it, so -.5 is .5 on the
+against lane and nothing on the for lane. The first Pi inverts exactly. At
+order zero the way down also carries the vertical spread into the first
+layer: a part that is present raises the rows that read it, and a row gives
+a share to each of its parts, so where a look's percepts were withheld the
+way back reads the expected ones in their place
+([Architecture](Architecture.md#sigma-and-pi-layers)).
 
 `FieldReverse.NativeActivity` holds selected native rows, strengths and continuous
 percepts at the covered positions. `NativeDecode` uses preallocated spelling,
-length and position buffers, and vectorized traversal. Basic percepts place their
-own parts at the field brackets; the reverse reads neither a stored surface nor
-perception spans. `PartSpace.reverse` and `InputSpace.reverse` carry both the
+length and position buffers, and vectorized traversal. A form is put back
+from the form alone, its stored characters in order. Its place is recreated
+with it (Alec, 2026-11-19: "recreated percepts have recreated locations that
+place them in the out buffer"): a concept gives each percept it recreates a
+band of where wires, through the same weights by which it reads the where;
+the band is matched against the code of every place by a softmax over the
+places of the out buffer, and what is put back at a place is the sum over
+the recreated percepts of what each is, times its weight there. So the
+reconstruction's error reaches both the weights that read the what and those
+that read the where. The reverse reads no perception spans. `PartSpace.reverse` and `InputSpace.reverse` carry both the
 byte report and differentiable percept face. A missing aligned field or a failing
 reverse stage raises to the caller.
 

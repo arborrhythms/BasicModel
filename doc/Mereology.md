@@ -52,7 +52,9 @@ error. Geometric relations answer "looks like"; asserted parthood answers
 3. **Fusion is the elementwise max, the order-theoretic join.** `Ops.union`
    is an elementwise max and `Ops.intersection` an elementwise min in which a
    zero coordinate is unspecified. There is no learned perceptual whole-maker
-   beside the join: a part's code is the max of its constituents' codes.
+   beside the join: the parts half of a percept's code is the greatest of
+   its parts' codes, and its wholes half the least of its wholes' codes
+   ("The Percept's Code" below).
 4. **The region partition is a scoring vocabulary only.** No abstraction
    classifier consumes it, the exact `equal == 0` underlap included: no
    adjacency exists over witness dimensions, so disconnection is meaningless
@@ -88,9 +90,10 @@ record): the size of what two things share, over the size of the first.
 > **Terminology.**
 > Below, $A, B$ are **percept** vectors (dimensionally-embedded codes in the
 > `PartSpace`/`WholeSpace` codebooks); `part`/`whole`/`equal` are geometric
-> relations over those percepts. "concept" is reserved for a `ConceptualSpace`
-> relation tying one part-percept to one whole-percept (by reference), and
-> "symbol" for a 0-D `SymbolSpace` reference to a concept.
+> relations over those percepts. "concept" is reserved for a signed value
+> that a Sigma gives over percepts or symbols
+> ([Architecture](Architecture.md#sigma-and-pi-layers)), and "symbol" for a
+> row of a Pi above order zero, which has no dimensions of its own.
 
 For two vectors $A, B$ whose coordinates lie in $[0, 1]$:
 
@@ -249,8 +252,8 @@ Gated behind `<mereologyRaise>` (default off).
 
 The two towers stay **in-kind**: `PartSpace` *composes parts $\to$ parts*
 and `WholeSpace` *analyses wholes $\to$ wholes*, and the **concept is the
-cross-tower link**: an order-0 concept's literals are basic percepts, each of
-which names an occurrence's ordered parts and its whole boundaries (see
+cross-tower link**: an order-0 concept reads the codes of basic percepts,
+each a row of the first Pi over its parts and its wholes (see
 "Basic-percept premises" below). At init PartSpace
 has primitive parts and WholeSpace has supplied property rows defined over
 primitive input. The attended field binds their location and level.
@@ -325,46 +328,30 @@ The architecture carries **two coordinating structures** for the same content, a
 and order-raising is what keeps them in correspondence. We have *both*, not one or
 the other.
 
-- **Explicit (concepts).** A concept is **built directly** (not folded): an
-  index-value relation entry tying a `PartSpace` part-percept code to a `WholeSpace`
-  whole-percept code, with self-reference (`('sym', id)` members) so concepts nest
-  into the taxonomy. Concepts associate part-percepts and whole-percepts **in virtue
-  of a common whole**, and **identity on insertion is keyed to the exact ordered
-  pair** (`ConceptAllocator.relate_idx[(part, whole)]`, `bin/Layers.py`),
-  **not** same-part-OR-same-whole: a repeat insert of the identical pair
-  reinforces the existing concept, but a new pairing that merely shares a part
-  or a whole with an existing concept mints a distinct one. `.where`
-  **varies trial-to-trial** and is *not* the identity or trigger key: it keeps
-  only its spatial/meronomy role (extent, containment). The allocator's
-  relation rows (`ConceptAllocator.parts`, the `LTM1` stratum) are this
-  structure. These relations are the INDEX side; the concept's subsymbolic
-  content (its code and sparse edge decomposition, written at mint by
-  `_populate_concept_weights`) is the representational side (the next
-  bullet).
-- **Implicit (subsymbolic).** Each concept has one distributed code in the
-  ConceptualSpace dictionary. The parallel knowing field carries independent
-  positive and negative evidence per occurrence. `cs_forward_content`
-  composes disjunctive parts by max independently on each pole.
-  `conceptualPi` enables intersections within the order-0 field; their
-  required contributions reduce by min over nonzero evidence per pole.
-  Higher orders combine symbols through sigma and never hold pi edges. Exponents are
-  nonnegative, and a negated part selects the opposite symbol pole. The
-  taper admits both poles together. Final symbol readout unions occurrences
-  and scales the two directions of the one code, preserving both separately
-  from neither. The many-to-one abstraction lives on those part edges.
-  [Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
-  specifies the folds, discovery and reverse; the serial idea-vector path
-  remains distinct from this paired conceptual field.
+- **Explicit (relations).** What is asserted of concepts is held as
+  relations in memory: the `LTM1` rows of two references
+  (`ConceptAllocator.parts`), read by the types of their arguments
+  ("Asserted and geometric parthood" above). `.where` varies from one
+  occurrence to the next and is never an identity or a key: it keeps only
+  its role as a place.
+- **Implicit (the layers).** The same content is held in the matrices of
+  one structure, a Pi, a Not and a Sigma, at every order
+  ([Architecture](Architecture.md#sigma-and-pi-layers)). A row of a Pi is a
+  basic percept at order zero, or a symbol above it, and exists only when
+  MTM nominates it on recurrence; each row brings one concept, a column of
+  the Sigma above it. A concept is one signed value, $\tanh(x\,U)$, whose
+  size is its certainty. Its weights start at zero or above, and a weight
+  below zero is a Not entry, the only place a sign lives. The many-to-one
+  abstraction lives on the Sigma's entries; the Pi's entries are the
+  mereology, a percept over its parts and wholes.
 
-**Coordination.** Definitions persist by concept id, while the attended
-order-0 field binds rows per turn. Native memberships read those definitions;
-their distributed codes support similarity, retrieval and tied
-reconstruction. Above order 0, a definition refers to symbols in the
-preceding order. Symbolization raises the order. A large constituent count
-does not trigger it: automatic context promotion beyond order 1 requires
-discontiguous both support after stalled refinement. The explicit
-definition and its code remain two views of the same concept, with no
-second tower of permanent row identities.
+**Coordination.** An asserted relation and the layers are two views of one
+content: a definition between concepts ("balloons are rubber") is an edge of
+the Sigma taught from its `LTM1` part row (`DefinitionFold`), and kept under
+the penalty that thins every entry no cost supports. Above order 0 a symbol
+of order $k$ reads the concepts of every order below $k$, so orders are not
+strictly ramified, and the order rises only by a nomination, never by the
+number of constituents.
 
 ---
 
@@ -374,13 +361,17 @@ second tower of permanent row identities.
   $[0, 1]$ and exact dominance at 1, with no set-valued operand mixed into
   a distance.
 
-- **Parthood is preserved by Pi / Sigma.** Under `monotonic=true`, Pi/Sigma
-  are restricted to $W \geq 0$. User-supplied truth-set bivectors live on
-  the non-negative paired `[pos, neg]` cone, where componentwise $\leq$ is
-  the parthood partial order. Each lift / lower preserves parthood
-  pole-by-pole for that truth surface. The bivector layout keeps
-  contradiction `[1, 1]` distinct from ignorance `[0, 0]` under positive
-  matmul. See
+- **Parthood is preserved by Pi and Sigma while no Not entry is read.** A
+  map whose weights are all zero or above keeps the order of its inputs:
+  where one vector is at or below another in every coordinate, so are
+  their outputs. Checked on 4,000 such pairs, this holds for a Pi with any
+  entries of zero or above, for $\tanh(x\,U)$ with $U$ of zero or above,
+  and for the union $1 - \prod(1 - x)$, and fails as soon as the Sigma has
+  one Not entry. A Pi's output lies at or below every input it reads and
+  the union's at or above, so the Pi makes the order below and the union
+  the order above. Monotone weights cannot make evidence against; that
+  takes the against lane or a Not entry. The two lanes keep "both" `[1, 1]`
+  apart from "neither" `[0, 0]`. See
   [Spaces.md "Monotonicity of the lift / lower chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
 ---
@@ -446,26 +437,149 @@ span order and nearest-row identity. Moving percept rows with SBOW would fight
 the closure and could redirect token decode. See
 [SBOW Situates Concepts, Not Percepts](Spaces.md#percept-sbow).
 
-### The Part Specification: `.where` Containment
+### The Percept's Code: Parts and Wholes on Two Lanes {#percept-code}
 
-For text, parthood is byte-span containment:
+Alec, 2026-11-19: "parts build bottom-up with zeros as a min, and wholes
+build top-down with ones as a max. This coincides with parts building using
+max/sums, and wholes building using min/products."
+
+**The layout** (Alec, 2026-11-19: "64 and 64 until proven that we need
+more"). A percept's code has a parts half and a wholes half of 64
+coordinates each, and each half has two lanes, evidence for and evidence
+against, every value within 0 to 1. A "negative number" in perception is
+evidence against: Alec's -1 is 1 on the against lane, and zero on both lanes
+is no evidence. No coordinate is set aside for a length or a felt value.
+
+| | Parts half | Wholes half |
+|---|---|---|
+| starts at | all zeros, the bottom | all ones, the top |
+| built | upward, from its parts | downward, from its wholes |
+| a percept's code | the greatest of its parts' codes | the least of its wholes' codes |
+| over the percepts of one reading | the union, $1 - \prod (1 - v)$ | the product, $\prod w$ |
+| for lane | the lower bound: the parts it has | the upper bound: the wholes it lies in |
+| against lane | the upper bound, as evidence against: the parts that the forms holding it add | the lower bound, as evidence against: what its upper bound cuts away |
+
+The greatest and the least are taken for a code, which is a bound; the
+union and the product where percepts are present by degree and are joined
+in one reading. On values of 0 and 1 the two pairs agree. So a percept's
+code is at or above each of its parts' codes and at or below each of its
+wholes' codes (Alec, 2026-11-14).
+
+**A form's code is the set of its parts** (Alec, 2026-11-19). A part is a
+run of adjacent characters. A form's parts are its characters and the longer
+parts that exist and lie inside it. The space is a character like a letter,
+"so that the saliency map can select against it from within parts", and a
+form may hold one (`ice cream`). No end marks are kept, so a form has one
+code wherever it stands: `is` alone and `is` inside `this`. A longer part is
+added only where two forms would otherwise have the same parts ("we should
+also do pairs only when needed"): the part added is the shortest run that
+one of them holds and the other does not (`ry` for `archer` and `archery`).
+A part once added is carried by every form that holds that run, those
+admitted before it and after it. So parthood between forms is exact: a form
+found inside another lies wholly inside its code. The exact code is the list
+of the form's parts (`WordIdentity.atoms_of`); the row of fixed width is its
+fold, each part's fixed bits drawn over the 64 coordinates
+(`WordIdentity.atom_code`). Of the first 19,821 distinct words of a
+dictionary, 4 share a code at 64 and 64 with the wholes half below, and none
+once the next part is added for them.
+
+**What tells against a form** is its strict wholes in the part tower and
+nothing else (Alec, 2026-11-19: "only strict wholes ( in the part tower, not
+the property tower ) are evidence against"). Its against lane in the parts
+half holds the coordinates that its holders add, a holder being a stored
+form that holds it as a run: the `y` of `archery` for `archer`. The holders
+that count are the nearest, those that add the fewest characters
+(`WordIdentity.nearest_holders`), since a short form is held by hundreds of
+words; a form then has 0.72 against entries on average and at most 32.
+Where a coordinate would be both, for stands.
+
+**A whole is a row of the table of wholes** (Alec, 2026-11-19: "we should
+be storing it as a codebook. Starting from the set of all values, we
+discriminate at some boundary"). A whole is defined by what belongs to it: a
+set of characters for a class of characters, a number for a feeling. Its
+code is the OR of the codes of the catalog parts that belong to it, the
+catalog being drawn a second time in the wholes half's own coordinates
+(`WordIdentity.catalog_code`, `PrimitiveProperties.codes`). The whole catalog
+OR'ed is the class of all characters, all ones, which every percept lies in
+(Alec: "A percept cannot have no wholes"). So a class inside another lies
+at or below it with no rule for it, and a class of characters is the OR of
+the characters taught to it ("that would give a principled way to build
+character classes"). A whole may also be given by other wholes ("just like
+parts build from parts, properties may express in terms of other
+properties"): its code is the AND of theirs and lies inside each
+(`PrimitiveProperties.define_by_rows`: "capital letter" by "letter" and
+"capital"). Each known form is its own tightest whole, the OR of its parts'
+catalog codes (`WordIdentity.tightest`). Measured at 64 coordinates, seven
+classes of characters coded by OR (all characters 64 ones, letter 57,
+capital and lower case 44 each, digit and vowel 24 each, whitespace 11)
+are each at or below every class they lie in, and no other pair is so by
+accident. A class of whole words fills the 64 coordinates quickly (one word
+31 ones, five words 57), so a class of more than a few words bounds almost
+nothing.
+
+**The wholes half is read on its complement.** Being an upper bound, it is
+joined over a reading's percepts by the product, and a concept reads the
+coordinates it cuts away, $1 - w$ (`BasicPercepts.read_pair`). Under the
+class of all characters alone nothing is cut away and the half says nothing.
+A reader that asks whether one form lies inside another reads the for lane
+alone, where the part order holds.
+
+**A scalar is the same mechanism over the bins of its value** (Alec,
+2026-11-19: "the exact same mechanism, except part growth and whole
+contraction become the same operation on scalars"). The catalog is the
+value's bins in order, 64 bins of the felt value. The parts half is the bins
+at or below the value; the wholes half is all ones with the bins above it
+cut away; for an exact value the two are one code, and the against lane is
+the bins above. On a line the union of two parts codes is the code of the
+greater value and the intersection of two wholes codes that of the lesser,
+so growing the parts and contracting the wholes move one cut. On two
+dimensions they differ: of the 2,016 pairs of boxes on an 8 by 8 grid the
+intersection is a box in all, and the union in only the 1,232 where one box
+lies inside the other.
+
+**Wholes driven by the concepts** (Alec, 2026-11-19: "a sigma being driven
+by the downward conceptual projection ... synthesis on the way up and
+analysis on the way down"). A conceptual property is one more row of the
+table of wholes, written by the downward projection. It can tell apart what
+no class of characters can, such as `archer` and `archery`, but says nothing
+at a word's first readings, so the next part above is still needed then.
+
+**The way back of a form starts from the form alone** (Alec, 2026-11-19: "we
+are not always doing reconstruction: sometimes we do generation"). No place
+of a part is taken from a reading. "The whole stores its parts in order, and
+longest first": the store keeps each form's characters in order
+(`RadixLayer.inverse_table`), and a code that is no stored form has no
+spelling.
+
+**A string read as a word it is not is taught when it is observed** (Alec,
+2026-11-19). Nothing is added to a form's code for it. What is admitted is
+the part that tells the string from the word, and not the string ("We don't
+want to admit Felixx, we want to admit the part that discriminates it from
+Felix: "xx""), by an idempotent round over cases gathered from the training
+harness's logs (`WordIdentity.admit_part`, `part_between`).
+
+### The Part Specification: the Set of Parts
+
+For text, parthood between forms is read from their codes: one form is a
+part of another exactly when its set of parts lies inside the other's
+("The Percept's Code" above), and so when its code lies wholly inside the
+other's on the for lane:
 
 ```text
-P is-part-of W  iff  span(P) is contained by span(W)
+P is-part-of W  iff  parts(P) is contained by parts(W)
+"bc" in "abcd":  {b, c} is contained by {a, b, c, d}
 ```
 
-`RunStructureLayer` reads the order from `.where` brackets (its
-`contained_mask`). It is exact and complete for contiguous parts,
-including a cross-boundary part that the local build did not combine:
+`.where` is a place and nothing more. There is one where, the place on the
+constant sinusoid; there is no second where for how a thing's parts stand to
+one another, and no test of spans decides a part
+([Spaces](Spaces.md#percept-modalities)). The order inside a form is in its
+code only as far as it tells known forms apart, so a string that is no known
+form may read as one until the part that tells them apart is taught.
 
-```text
-"abcd" = [0,4]   "ab" = [0,2]   "cd" = [2,4]   "bc" = [1,3]
-[1,3] is contained by [0,4]  =>  "bc" is-part-of "abcd"
-```
-
-Thus a synthesizer may build `abcd` locally as `ab join cd` and still recover
-the global constraint involving `bc`. Non-contiguous selections such as `ac`
-lie outside this poset by design.
+The standalone synthesizer below takes its containment edges as given
+(`where_containment_edges`), so a test may build `abcd` locally as
+`ab join cd` and still recover the constraint involving `bc`.
 
 A contiguous event takes its actual mereology. A sentence or clause whose
 words form one run of the input is a whole in WholeSpace's sense: a maximal
@@ -516,7 +630,9 @@ cross-boundary `bc` relation projected to zero violations while remaining in
 ### Analyzer: the `1-x` Mirror
 
 The analyzer is meet-from-$\top$, reflected through `1-x`, and produces
-subordinate parts. It cuts a whole by boundary properties. The first live
+subordinate parts. It cuts a whole by boundary properties. A percept's wholes
+half is this analyzer's result: all ones under the class of all characters,
+cut down by each narrower whole it lies in. The first live
 approximation fixes word boundaries with `OR(space, punctuation)` via
 `char_class_region([WHITESPACE, PUNCT])`. The fuller design grows a composable,
 factorable basis of relational properties such as left/right-of-X and splits a
@@ -534,8 +650,9 @@ With `subsymbolicOrder > 0`, synthesis chunks small parts upward and analysis
 splits large wholes downward, each pass feeding the next. The two towers meet
 at the basic level: the extent at which a part joined from below and a whole
 divided from above coincide and are both attested. That extent is a basic
-percept (`BasicPercepts`), whose row names the occurrence's ordered parts and
-its whole boundaries; recurrence promotes it to a durable row. The level is
+percept (`BasicPercepts`), a row of the first Pi over its parts and wholes,
+which becomes a row only when MTM nominates it on recurrence, never on a
+first reading. The level is
 not fixed in advance: it moves with evidence per domain, as Rosch's basic
 level moves toward the subordinate with expertise (see "Basic-percept
 premises" below).
@@ -553,9 +670,11 @@ moved at each sentence boundary by the recurrence and density of the wholes
 each row's cut would yield (the memory-load criterion: whitespace turns on
 first). The other synthesis modes (`radix`, `lexicon`, `bpe`, `mphf`, `byte`)
 and analysis cuts (`byte`, `word`, `raw`, `sentence`, `grammatical`) are
-legacy front ends dispatched by `bin/Legacy.py`. As built the two towers are
-not mirror images: the join is the only OR in perception, the meet over
-positions is the only AND, and negation enters first at the conceptual level.
+legacy front ends dispatched by `bin/Legacy.py`. The two towers mirror each
+other in the code: the parts half grows from all zeros by the OR of its
+parts, and the wholes half shrinks from all ones by the AND of its wholes.
+Evidence against is perceived, on each half's against lane, and no percept
+is negated: a sign lives only in a weight of the Sigma, a Not entry.
 Rank is mereological level in both towers, and all ranks use the same
 `[0,1]^D` membership cube. Conceptual order counts symbolizations.
 
@@ -620,23 +739,36 @@ parts, which is where part knowledge concentrates (Tversky and Hemenway
 symbolic layer, so no symbolic order needs a mereological read.
 
 Mereological bounds belong to perception. `BasicPercepts.subspace_bounds`
-takes the identity join of parts and the property meet of wholes.
-`FormContainment.audit` checks those basic rows and their boundaries; symbolic
-order-0 feature weights do not supply the containment premises.
-`MereologicalCodes` reads the resulting basic codes and learned conceptual
-context, with no direct two-tower symbolic form derivation. A word's form is
-the weighted centroid of the percepts of its written definitions whenever any
-definition weight is positive, including when the word owns an admitted basic
-percept; only when every weight is zero is the form that basic percept's own
-code, and a word with neither keeps the zero form (`MereologicalCodes.derive`;
-Alec, 2026-11-10). Parts and wholes unite at the basic percept, and above it
-only symbols are collected, as parts. So a concept above order zero carries
-no perceptual form: neither a centroid of the percepts it collects nor a
-copy of its word's code. Alec, 2026-11-12: "symbols should not take the
-centroid of the percepts that they collect; they are epistemic points." A
-reader that needs such a concept's form takes its word's, through the
-definition that maps the word to it. The conceptual field reads live basic
-evidence, including its complementary pole, so property memberships retain their gradient, and
-the compose-time weighted presence rule applies. Reverse divides a concept's
-demand over its written basic-percept alternatives by weight
+takes the greatest of a percept's parts' codes for its parts half and the
+least of its wholes' codes, its own tightest whole among them, for its
+wholes half; `BasicPercepts.against` gives its against lane.
+`FormContainment.audit` checks those rows and their boundaries.
+
+**A basic percept is a row of the first Pi** over its parts and wholes
+(`PerceptPi`, `bin/OrderZero.py`). The row selects for and against (Alec,
+2026-11-19: "Pi should select both strong for and strong against"). Its for
+entries are its parts and wholes, joined by the product, so each must be
+present. Its against entries are the parts that its nearest holders add,
+joined by the union, so any one present tells against it: the row of
+`archer` reads for 1 and against 0 on `archer`, and for 1 and against 1 on
+`archery` (`PerceptPi.opposed`). In a row the run of parts is the percept's
+presence, read wherever it lies in the extent and the same on both lanes,
+since a run of parts has no against of its own. The wholes are read where
+the run lies, on their own lanes: the for lane is the product of the wholes'
+for lanes, and the against lane the union of their against lanes, since one
+whole witnessed not to hold denies the row. So the character `7` under the
+property "capital" reads for 0 and against 1. A single row is for or
+against; "both" stands across the rows of one reading, one row carrying a
+property for and another against (Alec, 2026-11-19).
+
+A row exists only when MTM nominates it on recurrence, and each nominated
+row brings one concept of order zero. The tower of parts and wholes below
+the basic percepts is perception, made on first sight. Parts and wholes
+unite at the basic percept, and above it only symbols are collected. So a
+concept above order zero carries no perceptual form: neither a centroid of
+the percepts it collects nor a copy of its word's code. Alec, 2026-11-12:
+"symbols should not take the centroid of the percepts that they collect;
+they are epistemic points." A reader that needs such a concept's form takes
+its word's, through the definition that maps the word to it. The way back
+inverts the first Pi exactly and gives each percept its parts
 ([Spaces](Spaces.md#common-order-zero-reverse)).
