@@ -26,6 +26,12 @@ def _codes(*supports, width=32):
     return codes
 
 
+def _pairs(codes, against=None):
+    """Read pairs, ``[P, 2, W]``: what tells for each percept (``codes``)
+    and what tells against it (none, unless given)."""
+    return torch.stack((codes, torch.zeros_like(codes) if against is None else against), -2)
+
+
 # The first Pi.
 
 def test_the_first_pi_is_pi_layer3_on_its_rows():
@@ -73,22 +79,33 @@ def test_a_row_with_no_member_present_or_none_at_all_reads_nothing():
 # Certificate 5: order zero.
 
 def test_the_combined_vector_is_one_less_the_product_of_the_gaps():
-    codes = torch.rand(5, 12)
+    """Each percept enters once at its net, for less against: what tells
+    for it joins the for lane and what tells against it the against lane at
+    a net above zero, the reverse below; one read equally both adds
+    nothing."""
+    pairs = torch.rand(5, 2, 12)
     presence = torch.rand(5, 3, 2)
     presence[2] = 0.
-    x = combine(presence, codes)
-    expected = 1 - torch.prod((1 - codes)[:, None, None, :] ** presence[..., None], 0)
-    torch.testing.assert_close(x, expected, atol=1e-5, rtol=1e-5)
+    x = combine(presence, pairs)
+    net = presence[..., 0] - presence[..., 1]
+    up, down = net.clamp_min(0)[..., None], (-net).clamp_min(0)[..., None]
+    gaps = (1 - pairs)[:, None]
+    toward = 1 - torch.prod(gaps[:, :, 0] ** up * gaps[:, :, 1] ** down, 0)
+    away = 1 - torch.prod(gaps[:, :, 1] ** up * gaps[:, :, 0] ** down, 0)
+    torch.testing.assert_close(x, torch.stack((toward, away), -2), atol=1e-5, rtol=1e-5)
     assert bool((x >= 0).all() and (x <= 1).all())
-    # A percept at zero changes nothing.
-    torch.testing.assert_close(combine(presence[[0, 1, 3, 4]], codes[[0, 1, 3, 4]]), x)
+    # A percept at zero changes nothing, and nor does one read both equally.
+    torch.testing.assert_close(combine(presence[[0, 1, 3, 4]], pairs[[0, 1, 3, 4]]), x)
+    both = presence.clone()
+    both[2] = .7
+    torch.testing.assert_close(combine(both, pairs), x)
 
 
 def test_a_readings_own_place_and_time_follow_its_presence_and_are_not_combined():
     codes = _codes((0, 1), (2, 3), width=8)
     presence = torch.tensor([[[.5, 0.]], [[1., 0.]]])  # two percepts, one reading
     where, when = torch.tensor([[.25, .75]]), torch.tensor([[1., .5]])
-    x = combine(presence, codes, where=where, when=when)
+    x = combine(presence, _pairs(codes), where=where, when=when)
     torch.testing.assert_close(x[0, 0, 8:], torch.tensor([.25, .75, 1., .5]))
     torch.testing.assert_close(x[0, 1, 8:], torch.zeros(4))
 
@@ -100,7 +117,7 @@ def test_a_new_percept_needs_no_new_weight():
     cat, cats, dog = _codes((0, 1, 2, 3, 4), (0, 1, 2, 3, 4, 5), (10, 11, 12, 13, 14))
     sigma.start_column(0, cat)
     place = torch.zeros(1, 4)
-    read = {name: float(sigma.concepts(combine(torch.tensor([[[1., 0.]]]), code[None], where=place), [0]))
+    read = {name: float(sigma.concepts(combine(torch.tensor([[[1., 0.]]]), _pairs(code[None]), where=place), [0]))
             for name, code in (('cat', cat), ('cats', cats), ('dog', dog))}
     print(read)
     # A concept reads its own row at tanh(1); a form holding all its parts
@@ -151,7 +168,7 @@ def test_how_many_concepts_are_told_apart(lesson):
     concepts = [concept for _, concept in pairs]
     presence = torch.eye(len(rows))[..., None].expand(-1, -1, 2).clone()
     presence[..., 1] = 0.
-    codes = basic.codes[rows]
+    codes = basic.read_codes(rows)
     x = combine(presence, codes)
     zeros = x.new_zeros(*x.shape[:-1], owner.order_zero.nInput - x.shape[-1])
     y = owner.order_zero.concepts(torch.cat((x, zeros), -1), concepts).detach()
@@ -172,7 +189,7 @@ def test_the_way_back_as_far_as_it_goes():
         sigma.weight.copy_(torch.eye(width) + .1 * torch.rand(width, width))
     codes = torch.rand(3, width - 4)
     presence = torch.rand(3, 2, 2) * .5
-    x = combine(presence, codes, where=torch.rand(2, 2), when=torch.rand(2, 2))
+    x = combine(presence, _pairs(codes), where=torch.rand(2, 2), when=torch.rand(2, 2))
     signed = x[..., 0, :] - x[..., 1, :]
     y = torch.tanh(signed @ sigma.weight)
     back = sigma.reverse(y)
@@ -193,7 +210,7 @@ def test_place_and_time_weights_after_teaching():
     code = _codes((0, 1, 2), width=8)
     sigma.start_column(0, code)
     places = torch.rand(6, 4)
-    x = combine(torch.ones(1, 6, 2) * torch.tensor([1., 0.]), code, where=places[:, :2], when=places[:, 2:])
+    x = combine(torch.ones(1, 6, 2) * torch.tensor([1., 0.]), _pairs(code), where=places[:, :2], when=places[:, 2:])
     optimizer = torch.optim.Adam(sigma.parameters(), lr=.05)
     for _ in range(300):
         optimizer.zero_grad()
@@ -226,21 +243,21 @@ def test_a_word_reads_its_column_of_the_order_zero_sigma():
     code = torch.tensor([.6, .3, 0., 1.])
     column = torch.tensor([.3, .2, .1, .5, .25, -.25])
     place = torch.tensor([[[.1, .9], [.4, .6]]])
-    y = read_word(evidence, mask, torch.cat((column, code))[None, None], place, content_width=4)
+    y = read_word(evidence, mask, torch.cat((column, code, torch.zeros(4)))[None, None], place, content_width=4)
     # The run of parts is the presence on both lanes, the whole on its own:
     # [.9 * .8, .9 * 0] and [.5 * 0, .5 * 1].
     presence = torch.tensor([[[.72, 0.]], [[0., .5]]])  # [P=1 per location, lanes]
     for location in range(2):
-        x = combine(presence[location][:, None], code[None], where=place[:, location])
+        x = combine(presence[location][:, None], _pairs(code[None]), where=place[:, location])
         expected = torch.tanh((x[0, 0] - x[0, 1]) @ column)
         torch.testing.assert_close(y[0, location], expected)
     # The against lane: a present run whose whole is witnessed not to hold
     # reads the percept against; an absent run reads nothing.
     against = read_word(torch.tensor([[[.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
-                        torch.cat((column, code))[None, None], place[:, :1], content_width=4)
+                        torch.cat((column, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
     assert float(against) < 0
     absent = read_word(torch.tensor([[[-.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
-                       torch.cat((column, code))[None, None], place[:, :1], content_width=4)
+                       torch.cat((column, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
     assert float(absent) == 0
 
 
@@ -248,7 +265,7 @@ def test_a_gradient_reaches_only_the_columns_read():
     sigma = OrderZeroSigma(10, 6, content_width=8)
     with torch.no_grad():
         sigma.weight.uniform_(0, .1)
-    x = combine(torch.rand(2, 3, 2), torch.rand(2, 8), where=torch.rand(3, 2))
+    x = combine(torch.rand(2, 3, 2), torch.rand(2, 2, 8), where=torch.rand(3, 2))
     sigma.concepts(x, [1, 4, -1]).sum().backward()
     touched = sigma.weight.grad.abs().sum(0).nonzero().flatten().tolist()
     assert touched == [1, 4]
@@ -296,10 +313,11 @@ def test_square_a_new_concept_reads_only_its_own_row(lesson):
         test_no_row_on_a_first_reading(lesson)
     word, row, c_row = lesson['nominated']
     column = owner.order_zero.weight[:, c_row].detach()
-    code = basic.code(row)
+    # Rule 54: what tells for the row less what tells against it.
+    code = basic.read_vector(row)
     torch.testing.assert_close(column[:basic.width], code / code.square().sum())
     # Its own row reads one before the squash.
-    x = combine(torch.tensor([[[1., 0.]]]), code[None])
+    x = combine(torch.tensor([[[1., 0.]]]), basic.read_codes([row]))
     torch.testing.assert_close(float(x[0, 0] @ column[:basic.width]), 1., rtol=0, atol=1e-5)
     assert torch.count_nonzero(column[basic.width:]) == 0
     nominated = [r for r in range(len(basic.index)) if bool(basic.promoted[r])]
@@ -341,7 +359,7 @@ def _taught(cases, *, rows, codes, steps=2000, project=False, seed):
         return torch.stack(values)
 
     sigma = OrderZeroSigma(codes.shape[1], 1, content_width=codes.shape[1])
-    inputs = torch.stack([combine(presence(present)[:, None], codes)[0] for present in cases])
+    inputs = torch.stack([combine(presence(present)[:, None], _pairs(codes))[0] for present in cases])
     target = torch.tensor(list(cases.values()))
     optimizer = torch.optim.Adam(sigma.parameters(), lr=.05)
     for _ in range(steps):
@@ -353,7 +371,7 @@ def _taught(cases, *, rows, codes, steps=2000, project=False, seed):
                 sigma.weight.clamp_(min=0)
 
     def read(present):
-        return float(sigma.concepts(combine(presence(present)[:, None], codes), [0]))
+        return float(sigma.concepts(combine(presence(present)[:, None], _pairs(codes)), [0]))
     return sigma, read, base
 
 

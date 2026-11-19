@@ -82,7 +82,7 @@ class NumericPercepts:
             if row in basic.conjunctions:
                 lanes[index] = basic.pi(torch.stack(lanes), (row,), members)[0]
         presence = torch.stack(lanes) if lanes else presence
-        codes = (basic.codes[nominated] if nominated else basic.codes[:0]).to(values)
+        codes = (basic.read_codes(nominated) if nominated else basic.codes.new_zeros(0, 2, basic.width)).to(values)
         where = self.model.where_registry.encode('numeric', torch.cat((axes, axes[:1])).expand(B, -1)).to(values)
         moment = self.model.present()
         when = self.model.when_encoding.encode(torch.full((B, A + 1), moment, device=values.device)).to(values)

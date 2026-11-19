@@ -32,6 +32,8 @@ class BasicPercepts(nn.Module):
         self.words = {}
         self.selectors = {}
         self.register_buffer('places', torch.full((self.capacity,), -1, dtype=torch.long))
+        # Which rows are value percepts, written at reservation.
+        self.register_buffer('value_rows', torch.zeros(self.capacity, dtype=torch.bool), persistent=False)
         # Native values are endpoints, not concepts or learned codes. Negative
         # references below the fixed-axis namespace address this bounded table.
         self.register_buffer('value_codes', torch.zeros(self.capacity))
@@ -142,9 +144,11 @@ class BasicPercepts(nn.Module):
                 raise OverflowError('BasicPercepts capacity exhausted')
             self.index[key] = row
             self.occurrences[row] = parts, wholes
+            self.value_rows[row] = (min(parts) < -self.identity_width if members is None
+                                    else all(bool(self.value_rows[m]) for m in members))
             if members is not None:
                 self.conjunctions[row] = tuple(members)
-            if self.pi.append(self.member_keys(row)) != row:
+            if self.pi.append(self.member_keys(row), against=self.against_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             if place is not None:
                 self.places[row] = int(place)
@@ -210,42 +214,92 @@ class BasicPercepts(nn.Module):
         """A percept's against lane, as wide as its code.
 
         Parts half: the parts that the form's nearest holders add, the
-        stored forms that hold it as a run. Wholes half: the codes of the
-        wholes directly inside those it lies in (the class of all characters
-        among them) that it does not lie in. Where a coordinate is also on
-        the for lane, for stands. A value percept and a conjunction have
-        nothing on it. A coordinate holds no more against than the for
-        lane leaves of it, ``1 - for``."""
+        stored forms nearest to holding it as a run (rule 51), where the for
+        lane leaves room, ``min(a, 1 - for)``; a conjunction has none there.
+        Wholes half: what its upper bound cuts away, one less its for lane
+        (rule 52). A value percept has nothing on it."""
         if not 0 <= int(row) < len(self.index):
             raise ValueError('unavailable basic percept reference')
         code = self.code(row)
-        result = torch.zeros_like(code)
-        if int(row) in self.conjunctions:
-            return result
-        parts, wholes = self.occurrences[int(row)]
-        if min(parts) < -self.identity_width:
-            return result
+        parts, _wholes = self.occurrences[int(row)]
+        if int(row) not in self.conjunctions and min(parts) < -self.identity_width:
+            return torch.zeros_like(code)
+        held = code.new_zeros(self.identity_width)
         identity = getattr(self.native, 'identity', None)
-        raw = self._form_of(parts)
+        raw = None if int(row) in self.conjunctions else self._form_of(parts)
         if identity is not None and raw is not None:
             atoms = identity.against_atoms(raw)
             if atoms:
                 bits = torch.stack([identity.atom_code(atom) for atom in atoms]).amax(0)
-                result[:self.identity_width] = bits.to(result)
-        properties = getattr(self.whole, 'primitive_properties', None)
-        if self.property_width and properties is not None and properties.property_width:
-            from PerceptProperties import TOP
-            inside = properties.directly_inside()
-            applies = {TOP, *map(int, wholes)}
-            witnessed = sorted({b for a in applies for b in inside.get(a, ()) if b not in applies})
-            if witnessed:
-                ids = torch.tensor(witnessed, device=self.codes.device, dtype=torch.long)
-                result[self.identity_width:] = self.whole_codes(ids).amax(0).detach().to(result)
-        return torch.minimum(result, 1 - code.detach().clamp(0, 1))
+                held = torch.minimum(bits.to(code), 1 - code[:self.identity_width].detach().clamp(0, 1))
+        return torch.cat((held, 1 - code[self.identity_width:].clamp(0, 1)))
+
+    def against_keys(self, row):
+        """A row's against entries in the first Pi: the parts that its
+        nearest holders add, each as a run of one part (rule 53)."""
+        if int(row) in self.conjunctions:
+            return []
+        parts, _wholes = self.occurrences[int(row)]
+        identity = getattr(self.native, 'identity', None)
+        if identity is None or min(parts) < -self.identity_width:
+            return []
+        raw = self._form_of(parts)
+        if raw is None:
+            return []
+        return [('ps', (identity.atoms[atom],)) for atom in identity.against_atoms(raw)
+                if atom in identity.atoms]
+
+    def _refresh_pi(self):
+        """Write the first Pi again where a row's against entries changed: a
+        form admitted later can be a nearer holder, a part added later a new
+        thing it adds."""
+        identity = getattr(self.native, 'identity', None)
+        if identity is None:
+            return
+        stamp = (len(identity.words), len(identity.added), identity.revision, len(self.index))
+        if getattr(self, '_pi_stamp', None) == stamp:
+            return
+        self._pi_stamp = stamp
+        rows = range(len(self.index))
+        if all(sorted(self.pi.row_against(r)) == sorted(self.against_keys(r)) for r in rows):
+            return
+        self.pi.clear()
+        for row in rows:
+            self.pi.append(self.member_keys(row), against=self.against_keys(row))
 
     def lanes(self, row):
         """A percept's two lanes, ``[2, width]``: for, then against."""
         return torch.stack((self.code(row), self.against(row)))
+
+    def read_pair(self, lanes, values=None):
+        """What a concept reads of a percept, ``[..., 2, width]`` from its
+        lanes ``[..., 2, width]``: first what tells for it, then what tells
+        against it. In the parts half these are its two lanes. The wholes
+        half is read on its complement (rule 54): what the upper bound cuts
+        away tells for the percept, and nothing is read against it there.
+        A value percept (``values``) is read by its for lane until its
+        sorted table is built."""
+        cut = lanes[..., 1, self.identity_width:]
+        positive = torch.cat((lanes[..., 0, :self.identity_width], cut), -1)
+        negative = torch.cat((lanes[..., 1, :self.identity_width], torch.zeros_like(cut)), -1)
+        if values is not None:
+            values = values.to(torch.bool)[..., None]
+            positive = torch.where(values, lanes[..., 0, :], positive)
+            negative = torch.where(values, torch.zeros_like(negative), negative)
+        return torch.stack((positive, negative), -2)
+
+    def read_codes(self, rows):
+        """The stored read pair of each promoted row, ``[..., 2, width]``."""
+        rows = torch.as_tensor(rows, dtype=torch.long, device=self.codes.device)
+        flat = rows.flatten()
+        lanes = torch.stack((self.codes.index_select(0, flat), self.against_codes.index_select(0, flat)), -2)
+        return self.read_pair(lanes, self.value_rows.index_select(0, flat)).reshape(*rows.shape, 2, self.width)
+
+    def read_vector(self, row):
+        """A concept's starting column for a member (rule 54): what tells for
+        it less what tells against it, from its live lanes."""
+        pair = self.read_pair(self.lanes(row), self.value_rows[int(row)])
+        return pair[0] - pair[1]
 
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
@@ -336,10 +390,13 @@ class BasicPercepts(nn.Module):
         for row in rows:
             with_members(row, ordered)
         rows = tuple(ordered)
-        keys, groups = [], []
+        self._refresh_pi()
+        keys, groups, opposed = [], [], []
         for row in rows:
             group = [] if row in self.conjunctions else self.member_keys(row)
             keys.extend(group); groups.append(group)
+            opposed.append(self.pi.row_against(row))
+            keys.extend(opposed[-1])
         native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
             native=self.native, **options)
         values, events, boundaries = [], [], []
@@ -359,7 +416,7 @@ class BasicPercepts(nn.Module):
                       & (spans[:, None, :, 1] <= spans[:, :, None, 1])
                       & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
             lies = (happened[..., None, :, 0] * inside[None, :, None]).amax(-1)
-            value = self._row_values(members, happened, rows, groups, order)
+            value = self._row_values(members, happened, rows, groups, order, opposed)
             event = self._row_lanes(happened, run, rows, order, presence=lies)
             values, events = list(value), list(event)
             # Members come before the conjunctions over them.
@@ -400,38 +457,51 @@ class BasicPercepts(nn.Module):
             native.where, native.when, bands, native.when_band,
             torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape))
 
-    def _row_values(self, members, happened, rows, groups, order):
+    def _row_values(self, members, happened, rows, groups, order, opposed=None):
         """Each row's two lanes for a reading, ``[rows, ..., 2]``.
 
-        The presence is the run's for lane over the reading. Each whole is
-        read where the run lies: its lanes at the events of the run's own
-        parts, the greatest over them. The for lane is the presence times the
-        product of the wholes' for lanes; the against lane is the presence
-        times their union, ``1 - prod (1 - a)``. A row with no whole reads
-        ``[presence, 0]``; a row with no member reads nothing.
+        The presence is the run's for lane over the reading. Each whole, and
+        each against entry, is read where the run lies: its lanes at the
+        events of the run's own parts, the greatest over them. The for lane
+        is the presence times the product of the wholes' for lanes. The
+        against lane is the presence times the union, ``1 - prod (1 - a)``,
+        of the wholes' against lanes and the against entries' presence (rule
+        53: a part that a nearer holder adds, found where the run lies). A
+        row with neither reads ``[presence, 0]``; a row with no member reads
+        nothing.
         """
         if not len(order):
             return members.new_zeros(len(rows), *members.shape[1:])
+        opposed = [[] for _ in groups] if opposed is None else opposed
         position = {key: index for index, key in enumerate(order)}
         runs = [position[group[0]] if group else -1 for group in groups]
-        wholes = [[position[key] for key in group[1:]] for group in groups]
         device = members.device
         run = torch.tensor(runs, dtype=torch.long, device=device)
         held = (run >= 0).reshape(-1, *([1] * (members.ndim - 2))).to(members)
         safe = run.clamp_min(0)
         presence = members.index_select(0, safe)[..., 0] * held
         at_run = happened.index_select(0, safe)[..., 0]
-        width = max((len(w) for w in wholes), default=0)
-        if not width:
-            return torch.stack((presence, torch.zeros_like(presence)), -1)
-        index = torch.tensor([w + [0] * (width - len(w)) for w in wholes], dtype=torch.long, device=device)
-        mask = torch.tensor([[True] * len(w) + [False] * (width - len(w)) for w in wholes], device=device)
-        lanes = happened.index_select(0, index.flatten()).reshape(len(rows), width, *happened.shape[1:])
-        lanes = (at_run[:, None, ..., None] * lanes).amax(-2)
-        mask = mask.reshape(len(rows), width, *([1] * (lanes.ndim - 2)))
-        for_lane = torch.where(mask[..., 0], lanes[..., 0], 1.).prod(1)
-        against = 1. - torch.where(mask[..., 0], 1. - lanes[..., 1], 1.).prod(1)
-        return torch.stack((presence * for_lane, presence * against), -1)
+
+        def where_run_lies(lists):
+            width = max((len(w) for w in lists), default=0)
+            if not width:
+                return None, None
+            index = torch.tensor([w + [0] * (width - len(w)) for w in lists], dtype=torch.long, device=device)
+            mask = torch.tensor([[True] * len(w) + [False] * (width - len(w)) for w in lists], device=device)
+            lanes = happened.index_select(0, index.flatten()).reshape(len(rows), width, *happened.shape[1:])
+            lanes = (at_run[:, None, ..., None] * lanes).amax(-2)
+            return lanes, mask.reshape(len(rows), width, *([1] * (lanes.ndim - 2)))
+
+        lanes, mask = where_run_lies([[position[key] for key in group[1:]] for group in groups])
+        if lanes is None:
+            for_lane, kept = torch.ones_like(presence), torch.ones_like(presence)
+        else:
+            for_lane = torch.where(mask[..., 0], lanes[..., 0], 1.).prod(1)
+            kept = torch.where(mask[..., 0], 1. - lanes[..., 1], 1.).prod(1)
+        entries, mask = where_run_lies([[position[key] for key in keys if key in position] for keys in opposed])
+        if entries is not None:
+            kept = kept * torch.where(mask[..., 0], 1. - entries[..., 0].clamp(0, 1), 1.).prod(1)
+        return torch.stack((presence * for_lane, presence * (1. - kept)), -1)
 
     def _row_lanes(self, members, run, rows, order, *, presence=None):
         """Each row's two lanes from its members' memberships, ``[K, ..., 2]``.
@@ -439,9 +509,11 @@ class BasicPercepts(nn.Module):
         The run of parts is the presence (its for lane, or ``presence``
         where given), on both lanes. The for lane is the presence times the
         product of the wholes' for lanes. The against lane is the presence
-        times the union of the wholes' against lanes, ``1 - prod (1 - a)``:
-        the percept is against where any of its wholes is witnessed not to
-        hold. A row with no whole reads ``[presence, 0]``.
+        times the union, ``1 - prod (1 - a)``, of the wholes' against lanes
+        and of the row's against entries in the first Pi (their presence,
+        or ``presence`` where given): the percept is against where any of
+        its wholes is witnessed not to hold, or where a part that a nearer
+        holder adds is found. A row with neither reads ``[presence, 0]``.
         """
         shape = (-1, *([1] * (members.ndim - 1)))
         run = run.reshape(shape)
@@ -451,7 +523,10 @@ class BasicPercepts(nn.Module):
         kept = torch.where(run[..., 0], held, 1. - members[..., 1])
         lane = lambda m: self.pi(torch.stack((m, m), -1), rows, order)[..., 0]
         present = lane(present)
-        return torch.stack((lane(for_lane), present - lane(kept)), -1)
+        opposed = self.pi.opposed(torch.stack((held, held), -1), rows, order)
+        wholes = present - lane(kept)
+        against = wholes + (present - wholes) * opposed
+        return torch.stack((lane(for_lane), against), -1)
 
     def lookup_rows(self, rows, *, valid=None):
         rows = torch.as_tensor(rows, device=self.codes.device, dtype=torch.long)
@@ -513,6 +588,8 @@ class BasicPercepts(nn.Module):
         self.occurrences[:] = [None] * self.capacity
         self.index = {}
         self.pi.clear()
+        self.value_rows.zero_()
+        self._pi_stamp = None
         self.conjunctions = {}
         conjunctions = dict(state.get('conjunctions', ()))
         places = state.get('places', [-1] * len(state['occurrences']))

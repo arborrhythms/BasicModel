@@ -40,6 +40,15 @@ def layouts():
         yield f'{n}+{n} part or whole', coder('balanced', n, True)
 
 
+def _p5_combine(presence, codes):
+    """P5's combination as the trial measured it: each row's one code taken
+    at its for value onto the for lane and at its against value onto the
+    against lane, ``1 - prod (1 - c)^b`` on each (the source now enters a
+    row once at its net, with a read pair; OrderZero.combine)."""
+    gaps = torch.log((1 - codes).clamp_min(1e-12))
+    return 1 - torch.exp(torch.einsum('p...l,pw->...lw', presence, gaps))
+
+
 # 0. The stand-in codes forms as WordIdentity does.
 
 def test_the_stand_in_codes_as_word_identity_does():
@@ -345,8 +354,7 @@ def test_5_scalar_collections():
             presence = torch.tensor([[lanes_for(v, x)] for v in seen], dtype=torch.float64)
             presence = presence.reshape(len(seen), 1, 2)
             codes = torch.tensor(np.stack([p3(v) for v in seen]))
-            from OrderZero import combine
-            combined = combine(presence, codes)[0].numpy()
+            combined = _p5_combine(presence, codes)[0].numpy()
             return {k: np.tanh((combined[0] - combined[1]) @ u) for k, u in cols.items()}
         print(f'P3 + P5 lanes, {grade}', _scalar_table(read))
 
@@ -360,8 +368,7 @@ def test_5_scalar_collections():
         def read_bare(x, grade=grade):
             seen = sorted(set(collections.values()) | {x})
             presence = torch.tensor([[lanes_for(v, x)] for v in seen], dtype=torch.float64).reshape(len(seen), 1, 2)
-            from OrderZero import combine
-            combined = combine(presence, torch.tensor(np.stack([bare(v) for v in seen])))[0].numpy()
+            combined = _p5_combine(presence, torch.tensor(np.stack([bare(v) for v in seen])))[0].numpy()
             return {k: np.tanh((combined[0] - combined[1]) @ u) for k, u in bare_cols.items()}
         print(f'P3 + P5 lanes, {grade}, wholes half zero but the kind', _scalar_table(read_bare))
 

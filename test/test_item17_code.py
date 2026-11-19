@@ -1,13 +1,15 @@
 """The percept's code: two halves of 64, each on two lanes (sigma-pi §21,
-rules 50 to 52; certificate 46).
+rules 50 to 54; certificates 46 to 48).
 
 A form's code is its parts half and its wholes half on a for lane and an
 against lane, every value within 0 to 1. The parts half's for lane is the
 form's parts; its against lane is what the form's nearest holders add. The
 wholes half's for lane is the AND of the codes of the wholes it lies in: the
 class of all characters (all ones), the classes of characters it lies in,
-and the form itself, its tightest whole. Its against lane is the codes of
-the wholes directly inside those, which it does not lie in.
+and the form itself, its tightest whole. Its against lane is what that
+upper bound cuts away, one less its for lane. The first Pi reads a row's
+against entries by union; a concept reads for less against, the wholes half
+on its complement.
 """
 from types import SimpleNamespace as NS
 
@@ -96,16 +98,17 @@ def test_46_the_code_is_two_halves_of_64_on_two_lanes():
     y = identity.atom_code(('part', 'y'))
     assert bool((lanes[b'archer'][1, :64] >= y * (1 - lanes[b'archer'][0, :64])).all())
     assert lanes[b'archer'][1, :64].any() and not lanes[b'archery'][1, :64].any()
-    # The wholes half's against lane: a lower-case word lies in letter and
-    # word, not in capital (inside letter) nor in digit and the rest
-    # (inside the top).
+    # The wholes half's against lane is what the upper bound cuts away, one
+    # less its for lane (rule 52).
+    for word in rows:
+        torch.testing.assert_close(lanes[word][1, 64:], 1 - lanes[word][0, 64:])
+    # The table: a lower-case word lies in letter and word, not in capital
+    # (inside letter) nor in digit and the rest (inside the top).
     inside = properties.directly_inside()
     names = {row: name for row, (name, _cls) in enumerate(CLASSES)}
     assert {names[r] for r in inside[TOP]} == {'letter', 'word', 'digit', 'whitespace',
                                                 'punctuation', 'control', 'high byte', 'pad'}
     assert {names[r] for r in inside[0]} == {'capital'}
-    witnessed = (basic.whole_codes([4, 1, 2, 3, 5, 6, 7]).amax(0) * (1 - lanes[b'cat'][0, 64:]))
-    torch.testing.assert_close(lanes[b'cat'][1, 64:], witnessed)
     # Cat and cat are told apart by their parts; CAT lies in capital too.
     assert not torch.equal(lanes[b'Cat'][0], lanes[b'cat'][0])
     assert 4 in basic.occurrences[rows[b'CAT']][1]
@@ -204,3 +207,167 @@ def test_a_checkpoint_of_the_old_layout_is_refused_with_the_reason():
     new = BasicPercepts(NS(_basis=native), 64, 64, 4)
     with pytest.raises(ValueError, match='64 parts and 64 wholes wide on each of two lanes'):
         new.load_state_dict(old)
+
+
+# Certificate 47: for and against at the first Pi (rule 53).
+
+def _read_form(basic, book, word, rows):
+    """Each of ``rows``' two lanes on a reading of ``word``, read through the
+    first Pi from the word's characters (byte rows of the store)."""
+    store = basic.native
+    ids = torch.tensor([[store.hash_map[bytes([b])] if bytes([b]) in store.hash_map
+                         else store.insert(bytes([b])) for b in word]])
+    spans = torch.tensor([[[i, i + 1] for i in range(len(word))]])
+    extent = torch.tensor([[[0, len(word)]]])
+    field = basic.read((ids, spans, book.primitive_properties, torch.tensor([list(word)]), extent),
+                       extent, tuple(rows))
+    return torch.stack([field.values[field.keys.index(('bp', row)), 0, 0] for row in rows])
+
+
+def test_47_for_and_against_at_the_first_pi():
+    """The row of ``archer`` reads for 1 and against 0 on ``archer``, for 1
+    and against 1 on ``archery``; the row of ``is`` reads against on
+    ``this``; a row with no holder never reads against from a part. The
+    against entries are the parts the nearest holders add, joined by the
+    union, read by the set of parts found."""
+    words = (b'archer', b'archery', b'is', b'this', b'his', b'cat', b'dog')
+    identity, basic, book, rows = coded(words)
+    pi = basic.pi
+    atoms = {row: atom for atom, row in identity.atoms.items()}
+    entries = {w.decode(): sorted(atoms[key[1][0]][1] for key in pi.row_against(rows[w])) for w in words}
+    print(dict(against_entries=entries))
+    assert entries['archer'] == ['y'] and entries['is'] == ['h']  # his is nearer than this
+    assert not entries['archery'] and not entries['cat']
+    read = lambda form, row: _read_form(basic, book, form, [rows[row]])[0].tolist()
+    assert read(b'archer', b'archer') == [1., 0.]
+    assert read(b'archery', b'archer') == [1., 1.]
+    assert read(b'this', b'is') == [1., 1.] and read(b'his', b'is') == [1., 1.]
+    assert read(b'is', b'is') == [1., 0.]
+    for word in (b'archery', b'cat', b'dog', b'this'):
+        if not identity.holders[word]:
+            for other in words:
+                assert _read_form(basic, book, other, [rows[word]])[0, 1] == 0.
+    # Any one entry is enough: a row with two (is, held by his and by this
+    # at one remove) reads against where either is found.
+    late = coded(words + (b'isa',))
+    entries = sorted(late[0].atoms and {a for a in late[0].against_atoms(b'is')})
+    assert entries == [('part', 'a'), ('part', 'h')]
+    for form in (b'his', b'isa'):
+        assert _read_form(late[1], late[2], form, [late[3][b'is']])[0, 1] == 1.
+
+
+def test_47_the_first_pi_is_written_again_when_a_nearer_holder_comes():
+    identity, basic, book, rows = coded((b'is', b'this'))
+    key = lambda ch: ('ps', (identity.atoms[('part', ch)],))
+    assert sorted(basic.pi.row_against(rows[b'is'])) == sorted([key('h'), key('t')])
+    identity.admit(b'his')
+    basic._refresh_pi()
+    assert basic.pi.row_against(rows[b'is']) == [key('h')]
+    assert basic.pi.row_members(rows[b'is']) == basic.member_keys(rows[b'is'])
+
+
+# Certificate 48: scored by difference (rule 54).
+
+def test_48_a_concept_reads_by_difference():
+    """A column starts as its member's for code less its against code over
+    the squared length, the wholes half read on its complement: a concept
+    reads its own row at tanh(1), a form that holds its form below that,
+    and a form that holds its parts only by accident lower still."""
+    from OrderZero import combine
+    words = (b'archer', b'archery', b'reach', b'is', b'this', b'cat')
+    # reach holds every part of archer (its letters, once each) but not the
+    # run; archer and reach are told apart by a part reach alone holds.
+    identity, basic, book, rows = coded(words)
+    vector = {w: basic.read_vector(rows[w]) for w in words}
+    column = {w: v / v.square().sum() for w, v in vector.items()}
+    def reads(concept, form):
+        lanes = _read_form(basic, book, form, [rows[w] for w in words])
+        x = combine(lanes[:, None], basic.read_codes([rows[w] for w in words]))[0]
+        return float(((x[0] - x[1]) @ column[concept]))
+    own = reads(b'archer', b'archer')
+    holder = reads(b'archer', b'archery')
+    parts_inside = reads(b'archer', b'reach')
+    print(dict(own=own, holder=holder, parts_inside_not_a_run=parts_inside, is_on_this=reads(b'is', b'this'),
+               is_own=reads(b'is', b'is')))
+    assert own == pytest.approx(1., abs=1e-5) and reads(b'is', b'is') == pytest.approx(1., abs=1e-5)
+    # A form holding it reads below its own: the part its holder adds
+    # tells against it.
+    assert holder < own and reads(b'is', b'this') < 1.
+
+
+def test_48_on_the_dictionary_and_the_lesson():
+    """Printed: on the dictionary, what a part's concept reads (before the
+    squash) of a form that holds it as a run, of one whose parts it holds
+    without the run, and of one that holds it by accident (a sample of
+    every 40th word against all, read alone); and the lesson's concepts
+    told apart, each nominated form read through the first Pi, with a row
+    read both entering at its net (built) and as the trial had it."""
+    import code_trial as ct
+    try:
+        words = [w.encode() for w in ct.dictionary()]
+    except OSError:
+        pytest.skip('no /usr/share/dict/words on this host')
+    identity, basic, _book, rows = coded(words)
+    pairs = basic.read_codes([rows[w] for w in words]).double()
+    X = (pairs[:, 0] - pairs[:, 1])
+    F = basic.codes[[rows[w] for w in words]].cpu().numpy() > .5
+    parts = [set(identity.words[w]) for w in words]
+    sums = {'run': [], 'parts': [], 'accident': []}
+    for i in range(0, len(words), 40):
+        u = X[i] / X[i].square().sum()
+        le = (~F[i, :64] | F[:, :64]).all(1)
+        le[i] = False
+        for j in np.flatnonzero(le):
+            kind = 'run' if words[i] in words[j] else 'parts' if parts[i] <= parts[j] else 'accident'
+            sums[kind].append(float(X[j] @ u))
+    print({k: (len(v), round(float(np.mean(v)), 3) if v else None) for k, v in sums.items()})
+    entries = [len(basic.pi.row_against(rows[w])) + len(basic.pi.row_members(rows[w])) for w in words]
+    against = [len(basic.pi.row_against(rows[w])) for w in words]
+    print(dict(against_entries=(min(against), round(float(np.mean(against)), 2), max(against)),
+               entries_a_row=(min(entries), round(float(np.mean(entries)), 2), max(entries)),
+               rows_over_16=sum(e > 16 for e in entries), pi_entries=basic.pi.nnz,
+               allocated=basic.capacity * basic.ENTRIES_PER_ROW))
+    # A holder reads below the part's own reading, and an accident lower
+    # still, on the mean.
+    assert sums['run'] and np.mean(sums['accident']) < np.mean(sums['run']) < 1.
+
+
+def test_48_the_lessons_concepts_told_apart():
+    from OrderZero import EPS_LOG
+    from test_item17_order_zero import _read_lesson
+    model, patch = _read_lesson(16)
+    try:
+        owner = model._concept_owner()
+        basic = owner.basic_percepts
+        book = model.wholeSpace.subspace.what
+        nominated = [r for r in range(len(basic.index)) if bool(basic.promoted[r])
+                     and owner.concept_of_basic_percept(r) is not None and r not in basic.conjunctions]
+        word_of = {row: word for word, row in basic.words.items()}
+        forms = [owner.interpret.lexical_form(word_of[r]) for r in nominated]
+        concepts = [owner.concept_of_basic_percept(r) for r in nominated]
+        pairs = basic.read_codes(nominated)
+        U = owner.order_zero.weight[:basic.width, concepts].detach()
+        def trial(lanes):
+            gaps = torch.log((1 - pairs).clamp_min(EPS_LOG))
+            f, a = lanes[:, 0, None], lanes[:, 1, None]
+            toward = 1 - torch.exp((f * gaps[:, 0] + a * gaps[:, 1]).sum(0))
+            away = 1 - torch.exp((f * gaps[:, 1] + a * gaps[:, 0]).sum(0))
+            return toward - away
+        from OrderZero import combine
+        told = {'net': 0, 'trial': 0}
+        both = 0
+        for index, form in enumerate(forms):
+            raw = form if isinstance(form, bytes) else str(form).encode()
+            lanes = _read_form(basic, book, raw, nominated)
+            both += int(((lanes[:, 0] > 0) & (lanes[:, 1] > 0)).sum())
+            for name, x in (('net', (lambda c: c[0] - c[1])(combine(lanes[:, None], pairs)[0])),
+                            ('trial', trial(lanes))):
+                y = torch.tanh(x @ U)
+                others = torch.cat((y[:index], y[index + 1:]))
+                told[name] += int(len(others) == 0 or bool(y[index] > others.max()))
+        print(dict(nominated=[f.decode() if isinstance(f, bytes) else f for f in forms],
+                   told_apart=told, rows_read_both=both))
+        assert told['net'] >= told['trial']
+    finally:
+        model.End()
+        patch.undo()

@@ -23,7 +23,9 @@ class PerceptPi(nn.Module):
 
     Row ``r`` is a basic percept. Its entries are its members, addressed by a
     member id that names one key of the percept tower (a part run or a
-    whole). Every row also has its own reading on the diagonal; a basic
+    whole). Its for entries are joined by the product; its against entries
+    (the parts that the stored forms nearest to holding it add) are joined
+    by the union, any one present being enough. Every row also has its own reading on the diagonal; a basic
     percept is read only through its members, so its own reading is one and
     adds nothing to the product. The bias is zero. The storage is allocated
     at construction (``rows`` rows and ``entries`` entries) and grows into
@@ -40,6 +42,7 @@ class PerceptPi(nn.Module):
         self.register_buffer('crow', torch.zeros(rows + 1, dtype=torch.long), persistent=False)
         self.register_buffer('col', torch.full((entries,), -1, dtype=torch.long), persistent=False)
         self.register_buffer('value', torch.zeros(2, entries), persistent=False)
+        self.register_buffer('against', torch.zeros(entries, dtype=torch.bool), persistent=False)
         self.register_buffer('ccol', torch.zeros(0, dtype=torch.long), persistent=False)
         self.register_buffer('crow_of', torch.zeros(0, dtype=torch.long), persistent=False)
         self.n_rows = 0
@@ -58,26 +61,38 @@ class PerceptPi(nn.Module):
             self.keys.append(key)
         return found
 
-    def append(self, keys, weight=1.0):
-        """Write the next row over its members at ``weight`` on both lanes."""
+    def append(self, keys, weight=1.0, against=()):
+        """Write the next row over its members at ``weight`` on both lanes,
+        then its against entries."""
         ids = list(dict.fromkeys(self.member(key) for key in keys))
+        opposed = [i for i in dict.fromkeys(self.member(key) for key in against) if i not in ids]
         row, start = self.n_rows, self.nnz
         if row + 1 >= len(self.crow):
             raise OverflowError('the first Pi has no room for another row')
-        if start + len(ids) > len(self.col):
+        if start + len(ids) + len(opposed) > len(self.col):
             raise OverflowError('the first Pi has no room for another entry')
-        end = start + len(ids)
-        if ids:
-            self.col[start:end] = torch.tensor(ids, dtype=torch.long, device=self.col.device)
+        end = start + len(ids) + len(opposed)
+        if end > start:
+            self.col[start:end] = torch.tensor(ids + opposed, dtype=torch.long, device=self.col.device)
             self.value[:, start:end] = float(weight)
+            self.against[start:end] = False
+            self.against[start + len(ids):end] = True
         self.crow[row + 1] = end
         self.n_rows = row + 1
         self._index_columns()
         return row
 
     def row_members(self, row):
+        """A row's for entries."""
         start, end = int(self.crow[row]), int(self.crow[row + 1])
-        return [self.keys[int(member)] for member in self.col[start:end].tolist()]
+        return [self.keys[int(member)] for member, opposed in
+                zip(self.col[start:end].tolist(), self.against[start:end].tolist()) if not opposed]
+
+    def row_against(self, row):
+        """A row's against entries."""
+        start, end = int(self.crow[row]), int(self.crow[row + 1])
+        return [self.keys[int(member)] for member, opposed in
+                zip(self.col[start:end].tolist(), self.against[start:end].tolist()) if opposed]
 
     def rows_reading(self, key):
         """The rows that have ``key`` as an entry, by the column index."""
@@ -111,9 +126,10 @@ class PerceptPi(nn.Module):
         missing = set()
         for slot, row in enumerate(rows):
             start, end = int(self.crow[row]), int(self.crow[row + 1])
-            if start == end:
+            entries = [e for e in range(start, end) if not bool(self.against[e])]
+            if not entries:
                 missing.add(slot)
-            for entry in range(start, end):
+            for entry in entries:
                 key = self.keys[int(self.col[entry])]
                 if key not in position:
                     missing.add(slot)
@@ -141,10 +157,30 @@ class PerceptPi(nn.Module):
             value = value * keep.reshape(-1, *([1] * (value.ndim - 1)))
         return value
 
+    def opposed(self, memberships, rows, keys):
+        """Each of ``rows``' against entries joined by the union on the for
+        lane of their memberships, ``1 - prod (1 - m)``: any one present
+        tells against the row. A row with none, or whose entries are not
+        among ``keys``, reads zero. ``[len(rows), ...]``."""
+        position = {key: index for index, key in enumerate(keys)}
+        result = []
+        for row in rows:
+            found = [position[key] for key in self.row_against(row) if key in position]
+            if not found:
+                result.append(memberships.new_zeros(memberships.shape[1:-1]))
+                continue
+            index = torch.tensor(found, dtype=torch.long, device=memberships.device)
+            present = memberships.index_select(0, index)[..., 0].clamp(0, 1)
+            result.append(1 - (1 - present).prod(0))
+        if not result:
+            return memberships.new_zeros(0, *memberships.shape[1:-1])
+        return torch.stack(result)
+
     def clear(self):
         self.crow.zero_()
         self.col.fill_(-1)
         self.value.zero_()
+        self.against.zero_()
         self.n_rows, self.members, self.keys = 0, {}, []
         self._index_columns()
 
@@ -158,12 +194,15 @@ def read_word(evidence, mask, reading, place, *, content_width):
     value on each lane is the Pi of its members: the product of their
     memberships on that lane, zero where one is at or below the floor; the
     run of parts stands at its presence on both lanes.
-    ``reading`` ``[B, 1, D + C]`` is the concept's column of the order-zero
-    Sigma (``D`` wide) and the basic percept's vector (``C`` wide);
-    ``place`` ``[B, N, D - C]`` is each location's own place and time.
+    ``reading`` ``[B, 1, D + 2C]`` is the concept's column of the order-zero
+    Sigma (``D`` wide) and the basic percept's read pair, what tells for it
+    and what against it (``C`` wide each); ``place`` ``[B, N, D - C]`` is
+    each location's own place and time. The percept enters at its net, as
+    :func:`combine` has it.
     """
-    width = reading.shape[-1] - content_width
-    column, code = reading[..., :width], reading[..., width:]
+    width = reading.shape[-1] - 2 * content_width
+    column = reading[..., :width]
+    pair = reading[..., width:].unflatten(-1, (2, content_width))
     lanes = torch.stack((evidence.clamp(0, 1), (-evidence).clamp(0, 1)), -1)
     # The first slot is the run of parts: the percept's presence, the same
     # on both lanes. The wholes keep their own lanes; with none held, the
@@ -176,8 +215,10 @@ def read_word(evidence, mask, reading, place, *, content_width):
     presence = torch.where(absent, 0., torch.exp(logs))
     whole = mask[..., 1:].any(-1)
     presence = torch.stack((presence[..., 0], torch.where(whole, presence[..., 1], 0.)), -1)
-    gaps = torch.log((1.0 - code).clamp_min(EPS_LOG))
-    content = 1.0 - torch.exp(presence[..., :, None] * gaps[..., None, :])
+    gaps = torch.log((1.0 - pair).clamp_min(EPS_LOG))
+    net = presence[..., 0] - presence[..., 1]
+    up, down = net.clamp_min(0)[..., None, None], (-net).clamp_min(0)[..., None, None]
+    content = 1.0 - torch.exp(up * gaps + down * gaps.flip(-2))
     coordinates = presence[..., :, None] * place[..., None, :]
     combined = torch.cat((content, coordinates), -1)
     return torch.tanh(((combined[..., 0, :] - combined[..., 1, :]) * column).sum(-1))
@@ -187,14 +228,23 @@ def combine(presence, codes, *, where=None, when=None):
     """The combined vector of each reading, on two lanes.
 
     ``presence`` is ``[P, ..., 2]``, each percept's Pi value on the two
-    lanes; ``codes`` is ``[P, W]``, each percept's vector in ``[0, 1]``. The
-    content coordinates are ``1 - prod_p (1 - v_p)^{b_p}``. ``where`` and
-    ``when``, ``[..., D]`` in ``[0, 1]``, are the reading's own place and
-    time; they are taken at the reading's presence, the greatest of its
-    percepts' values on the lane. The result is ``[..., 2, W + D]``.
+    lanes; ``codes`` is ``[P, 2, W]``, what each percept's vector tells for
+    it and what tells against it (``BasicPercepts.read_pair``), in
+    ``[0, 1]``. A percept enters once, at its net, for less against: at a
+    net above zero what tells for it joins the for lane and what tells
+    against it the against lane; below zero the reverse; a percept read
+    both for and against equally adds nothing. Each lane's content is
+    ``1 - prod_p (1 - v_p)^{n_p}``. ``where`` and ``when``, ``[..., D]`` in
+    ``[0, 1]``, are the reading's own place and time; they are taken at the
+    reading's presence, the greatest of its percepts' values on the lane.
+    The result is ``[..., 2, W + D]``.
     """
     gaps = torch.log((1.0 - codes).clamp_min(EPS_LOG)).to(presence)
-    content = 1.0 - torch.exp(torch.einsum('p...l,pw->...lw', presence, gaps))
+    net = presence[..., 0] - presence[..., 1]
+    up, down = net.clamp_min(0), (-net).clamp_min(0)
+    toward = torch.einsum('p...,pw->...w', up, gaps[:, 0]) + torch.einsum('p...,pw->...w', down, gaps[:, 1])
+    away = torch.einsum('p...,pw->...w', up, gaps[:, 1]) + torch.einsum('p...,pw->...w', down, gaps[:, 0])
+    content = 1.0 - torch.exp(torch.stack((toward, away), -2))
     parts = [content]
     present = presence.amax(0) if len(presence) else presence.new_zeros(presence.shape[1:])
     for coordinates in (where, when):

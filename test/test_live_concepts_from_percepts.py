@@ -59,7 +59,8 @@ def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
     prior = torch.full((1, 2, 4), 99.)
     column = torch.tensor([.5, .25, .1, -.1], requires_grad=True)
     code = torch.tensor([.6, 0.])
-    reading = torch.cat((column, code))[None]
+    # The read pair: what tells for the percept, and nothing against it.
+    reading = torch.cat((column, code, torch.zeros(2)))[None]
     event, orders, row, activation, returned_prior, validity, locations = (
         cs.reduce_aligned_word_peers(
             parts, wholes, prior, torch.tensor([[True, False]]),
@@ -108,7 +109,7 @@ def test_native_field_survives_symbolic_selection_and_unbind_returns_terminal_fo
 
 def test_dense_staged_readout_compiles_fullgraph_with_live_gradients():
     evidence = torch.randn(2, 3, 2, requires_grad=True) * .1
-    reading = torch.rand(2, 1, 6 + 2, requires_grad=True)  # a column of 6, a vector of 2
+    reading = torch.rand(2, 1, 6 + 2 * 2, requires_grad=True)  # a column of 6, a read pair of 2 and 2
     place = torch.rand(2, 3, 4)
     mask = torch.rand(2, 3, 2) > .3
     compiled = torch.compile(read_word, backend="eager", fullgraph=True)

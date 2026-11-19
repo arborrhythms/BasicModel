@@ -128,7 +128,9 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     perception, basic, sigma = cs._percept_field, cs.basic_percepts, cs.order_zero
     n0 = sigma.nOutput
     width = sigma.content_width
-    codes = torch.stack([basic.codes[key[1]] for key in perception.keys]).to(evidence)
+    # Each percept's read pair, entered at its net (rule 54).
+    from OrderZero import combine
+    pairs = basic.read_codes([key[1] for key in perception.keys]).to(evidence)
     checked = 0
     for b, text in enumerate(texts):
         reading = bytes(inp[b].reshape(-1).long().tolist()).split(b'\0', 1)[0]
@@ -149,7 +151,7 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
                 for e, (lo, hi) in enumerate(where[b].tolist()):
                     if word.encode() not in reading[lo:hi]:
                         presence = perception.values[:, b, e].to(evidence)
-                        x = 1 - torch.exp(presence.t() @ torch.log((1 - codes).clamp_min(1e-12)))
+                        x = combine(presence, pairs)
                         y = torch.tanh((x[0] - x[1]) @ column[:width])
                         expected = torch.stack((y.clamp_min(0), (-y).clamp_min(0)))
                         torch.testing.assert_close(evidence[indices, b, e].reshape(-1, 2),

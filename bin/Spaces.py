@@ -14807,17 +14807,18 @@ class ConceptualSpace(Space):
     REFERENCE_SLOTS = 2
 
     def order_zero_reading(self, rows, percepts):
-        """Each word's column of the order-zero Sigma and its basic
-        percept's vector, ``[..., D + C]``; zero where either is absent."""
+        """Each word's column of the order-zero Sigma and what its basic
+        percept's vector tells for it and against it (its read pair),
+        ``[..., D + 2C]``; zero where either is absent."""
         sigma, basic = self.order_zero, self.basic_percepts
         rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.weight.device)
         percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.weight.device)
         held = (rows >= 0) & (rows < sigma.nOutput) & (percepts >= 0)
         column = sigma.weight.t().index_select(0, torch.where(held, rows, 0).flatten())
         column = column.reshape(*rows.shape, -1) * held[..., None]
-        code = basic.codes.index_select(0, torch.where(held, percepts, 0).flatten())
-        code = code.reshape(*rows.shape, -1).to(column) * held[..., None]
-        return torch.cat((column, code), -1)
+        pair = basic.read_codes(torch.where(held, percepts, 0))
+        pair = pair.reshape(*rows.shape, -1).to(column) * held[..., None]
+        return torch.cat((column, pair), -1)
 
     def install_order_zero(self):
         """The Sigma of order zero: the perceptual width (a basic percept's
@@ -14859,8 +14860,9 @@ class ConceptualSpace(Space):
         basic = self.basic_percepts
         rows = [key[1] for key in perception.keys]
         promoted = basic.promoted[:len(basic.index)]
-        codes = torch.stack([basic.codes[row] if bool(promoted[row]) else basic.code(row)
-                             for row in rows]) if rows else basic.codes[:0]
+        codes = (torch.stack([basic.read_codes(row) if bool(promoted[row]) else
+                              basic.read_pair(basic.lanes(row), basic.value_rows[row])
+                              for row in rows]) if rows else basic.codes.new_zeros(0, 2, basic.width))
         model = getattr(self, '_model', None)
         registry = getattr(model, 'where_registry', None)
         encoding = getattr(model, 'when_encoding', None)
@@ -14938,7 +14940,7 @@ class ConceptualSpace(Space):
         sigma = self.install_order_zero()
         if row >= sigma.nOutput:
             raise ValueError('an order-zero concept lies outside the order-zero Sigma')
-        sigma.add_member(row, self.basic_percepts.code(percept), sign)
+        sigma.add_member(row, self.basic_percepts.read_vector(percept), sign)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``."""

@@ -43,12 +43,14 @@ def test_02_admitted_word_and_basic_percept_are_positive_before_teaching(eager_r
         with native_provenance(captured.append):record=read_sentence(model,'This.')
         word=next(w for w in record['words'] if w['form']=='This')
         # The word's concept reads its basic percept by its column of the
-        # order-zero Sigma: tanh(v . u), with u started as v/|v|^2 (rule 8b).
+        # order-zero Sigma: tanh(v . u), with u started as v/|v|^2 (rule 8b),
+        # v what tells for the percept less what tells against it (rule 54).
         cs=model._concept_owner()
         concept=next(w for w in captured[-1]['words'] if w['form']=='This')['concepts'][0]
         sigma=cs.order_zero
         column=sigma.weight[:,concept['row']].detach()
-        code=cs.basic_percepts.codes[concept['features'][0]['bp']].to(column)
+        pair=cs.basic_percepts.read_codes([concept['features'][0]['bp']])[0].to(column)
+        code=pair[0]-pair[1]
         assert not column[sigma.content_width:].any()
         expected=float(torch.tanh(code@column[:sigma.content_width]))
         assert expected==pytest.approx(float(torch.tanh(torch.tensor(1.))),abs=1e-6)
