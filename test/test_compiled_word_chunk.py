@@ -408,6 +408,7 @@ def _tiny_canonical_model(
 
 def _stage_fullgraph_tensor_peer(model, samples):
     """Mirror runBatch's eager sentence staging for a focused graph probe."""
+    model.begin_reading()
     model._start_spaces_for_forward()
     raw = model.inputSpace.prepInput(samples)
     model._staged_in_sub = model._lex_embed_stem(raw)

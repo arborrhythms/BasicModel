@@ -284,7 +284,7 @@ class BasicPercepts(nn.Module):
             # that event's span; the same on both lanes (it has no against
             # of its own). The wholes keep their own lanes and must hold over
             # the extent, and over each event.
-            run = torch.tensor([key[0] == 'ps' for key in order], device=members.device)
+            run = torch.tensor([key[0] == 'ps' for key in order], dtype=torch.bool, device=members.device)
             spans = native.spans.to(happened.device)
             inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
                       & (spans[:, None, :, 1] <= spans[:, :, None, 1])

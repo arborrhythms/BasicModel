@@ -305,6 +305,7 @@ def test_aligned_serial_sentence_has_no_space_or_punctuation_identity(monkeypatc
     owner.install_order_zero()
     # A form is a word from the reading in which MTM nominates it.
     for _ in range(owner.concept_mint_count):
+        BasicModel.begin_reading(owner._model)
         BasicModel._stage_serial_concept_rows(model)
     for word in set(words):
         identity = owner.interpret.word_for_form(word)

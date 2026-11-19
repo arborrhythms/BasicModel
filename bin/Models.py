@@ -8381,12 +8381,17 @@ class BasicModel(BaseModel):
             components.begin_forward()
         self._sentence_codes_snapshotted = True
 
+    def begin_reading(self):
+        """Open one reading of the input: every reader of a form until the
+        next reading, and the Reset that closes it, names this reading
+        (ConceptualSpace.reading)."""
+        self._word_observation_serial = int(getattr(self, "_word_observation_serial", 0)) + 1
+        return self._word_observation_serial
+
     @_sentence_query_mask
     def forward(self, inputData, *, incoming_trust=None):
         """Read through the common sentence driver; raw calls never optimize."""
-        # One reading of the input: every reader of a form in this forward,
-        # and its Reset, names the same reading (ConceptualSpace.reading).
-        self._word_observation_serial = int(getattr(self, "_word_observation_serial", 0)) + 1
+        self.begin_reading()
         if not getattr(self, '_sentence_run_active', False) and hasattr(self, 'inputSpace'):
             from Occurrence import stage_sources
             source = getattr(inputData, '_sentence_source', None)
@@ -11437,7 +11442,7 @@ class BasicModel(BaseModel):
                     # raises with nVectors named before partial admission.
                     triple = owner.interpret_word(
                         ordered_parts, sorted(current_wholes), key=key,
-                        occurrence=(self._word_observation_serial, b, p),
+                        occurrence=(int(getattr(self, '_word_observation_serial', 0)), b, p),
                         reading=owner.reading(b))
                     if triple is None:
                         pending.append((b, p, key))

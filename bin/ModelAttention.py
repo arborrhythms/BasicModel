@@ -195,13 +195,15 @@ def stage_input(model):
     native_ids=fi.get('native_indices',fi.get('indices'))
     native_spans=fi.get('native_part_spans',fi.get('part_spans'))
     whole_space=getattr(model,'wholeSpace',None)
+    # Only a model whose word step reads its words nominates them here.
+    reads_words=bool(getattr(model,'_aligned_serial_word_mode',lambda:False)())
 
     def found(b, form, lo, hi):
         """The word of a form, counting this reading of it first: the first
         reader of a form in a reading is where MTM nominates it (rule 20),
         so that attention reads it as known in that reading."""
         word=owner.interpret.word_for_form(form)
-        if (word is not None or not is_lexical_form(form) or whole_space is None
+        if (word is not None or not reads_words or not is_lexical_form(form) or whole_space is None
                 or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):
             return word
         parts=[int(pid) for pid,(start,stop) in zip(native_ids[b].tolist(),native_spans[b].tolist())
