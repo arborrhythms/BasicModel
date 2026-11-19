@@ -37,10 +37,14 @@ def test_bilattice_rule_survives_operator_rename():
 def test_meaning_width_zero_disables_bootstrap_without_changing_form(monkeypatch):
     from test_mm_xor import _fresh_model
     from util import TheXMLConfig
+    from nomination_fixtures import readings_before_nomination
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
+        # The forms are words from the reading in which MTM nominates them.
+        read = lambda: model.forward(model.inputSpace.prepInput(['hello world', 'loving there']))
+        readings_before_nomination(model, read)
         with torch.no_grad():
-            model.forward(model.inputSpace.prepInput(['hello world', 'loving there']))
+            read()
         derived = model._concept_owner().similarity_codebook.mereology
         assert derived.context_audit()
         from MereologicalCodes import MereologicalCodes

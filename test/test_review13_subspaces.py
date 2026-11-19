@@ -133,19 +133,23 @@ def test_support_reports_exact_zeros_and_minimum_absolute_coordinate():
 
 def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_context():
     from test_mm_xor import _fresh_model
+    from nomination_fixtures import readings_before_nomination
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
-    model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+    # The forms are words from the reading in which MTM nominates them.
+    read = lambda: model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+    readings_before_nomination(model, read)
+    read()
     cb = model._concept_owner().similarity_codebook
-    assert cb.mereology.identity_width == 96
-    assert cb.mereology.property_width == 256
-    assert cb.mereology.percept_width == 352
+    assert cb.mereology.identity_width == 64
+    assert cb.mereology.property_width == 64
+    assert cb.mereology.percept_width == 128
     assert cb.mereology.context_width == 128
     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
-    torch.testing.assert_close(atoms[rows>=0][..., :352], cb.lookup_rows(rows[rows>=0])[..., :352])
-    assert not atoms[rows>=0][...,360:].any()
-    assert cb.lookup_rows(rows[rows>=0])[...,360:].any()
+    torch.testing.assert_close(atoms[rows>=0][..., :128], cb.lookup_rows(rows[rows>=0])[..., :128])
+    assert not atoms[rows>=0][...,136:].any()
+    assert cb.lookup_rows(rows[rows>=0])[...,136:].any()
     assert bool(cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all())
     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
     parameter = model.perceptualSpace.subspace.what.W
