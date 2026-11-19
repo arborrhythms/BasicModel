@@ -129,7 +129,12 @@ def as_whole(whole):
 
 
 def pad_whole(whole, width):
+    """A whole's code beside a form's event: the band of place and time
+    that follows the code has no whole and reads zero. A whole wider than
+    the form is refused, never cut."""
     whole = as_whole(whole)
+    if whole.mean.shape[-1] > width or whole.carrier.shape[-1] > width:
+        raise ValueError(f'a whole {whole.mean.shape[-1]} wide cannot stand beside a form {width} wide')
     padding = (0, width-whole.mean.shape[-1])
     return WholeRead(torch.nn.functional.pad(whole.mean, padding), whole.total,
                      torch.nn.functional.pad(whole.carrier, padding))
@@ -356,10 +361,13 @@ def selected(context, arity, like, rule):
     if order is None:
         order = denoted_order(rule, orders, context.get('references', {}).get(arity, ()), None)
     count = count * (order == 0)[..., None]
-    if mean.ndim == like.ndim and mean.shape[1] != like.shape[1]:
-        copies = like.shape[1] // mean.shape[1]
-        mean, count = mean.repeat_interleave(copies, 1), count.repeat_interleave(copies, 1)
-        carrier = carrier.repeat_interleave(copies, 1)
+    # A batched witness ``[B, 1, width]`` is spread over the candidates'
+    # alternatives ``[B, K, width]``. A single operand ``[B, width]`` has no
+    # alternatives axis: its second axis is the code and is never spread.
+    if mean.ndim == like.ndim >= 3 and mean.shape[-2] != like.shape[-2]:
+        copies = like.shape[-2] // mean.shape[-2]
+        mean, count = mean.repeat_interleave(copies, -2), count.repeat_interleave(copies, -2)
+        carrier = carrier.repeat_interleave(copies, -2)
     return WholeRead(mean.to(like), count.to(like), carrier.to(like))
 
 
