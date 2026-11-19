@@ -35286,6 +35286,40 @@ default sweep was not run again.
 rebuilt; `main` is pushed on Alec's word of §68.89 ("complete and push
 1.8 to GitHub"). The superproject's pointer is his.
 
+### 68.91 Alec on the three points of §68.90 (2026-11-19)
+
+**1. The evaluator that measures nothing.** Alec: "verify that we do
+not incorporate that until we are ready. If you need a
+next-word-locator until then, you can write one to be replaced before
+1.5". *Verified by Claude* (a search of the repository's source, tests,
+`Makefile` and scripts): the scoring (`word_candidate_scores`,
+`score_manifest`, `--require-top1`) is called only by the evaluator's
+own `score` command and by two test files
+(`test_nanochat_grammar_eval.py`, `test_review10_contracts.py`). No
+make target, training run or gate calls it. The other modules that
+import from the file (`corpus_lessons`, `eval_operators`, `eval_games`,
+`IntervalLog`, `training_corpus`) take its helpers only
+(`frozen_online_learning`, `build_eval_model`, `_reset_model`,
+`split_name`). So nothing incorporates it, and no next-word locator is
+needed now. *To keep it so:* the `score` command is not to be put into
+a gate or a run until it reads sentences.
+
+**2. With no WFF, reconstruct NULLs.** Alec: "I think we want to
+reconstruct NULLs as a result of not producing a WFF. so maybe a rule
+that applies automatically when we fail to find a WFF." *In the source:*
+a rule `null` exists (`NullLayer`, one operand, "the unary identity a
+unit contributes when it carries no meaning of its own"), and the
+field's extension knows the name; it is not written in
+`data/complete.grammar`. *The gap:* nothing applies a rule when no
+formula is found, and the standalone kernel's head then gives 0.5 in
+every place. Not built in item 1.8. It goes with the read that gives no
+WFF, which he returns to (sigma-pi §19.59, open point 3).
+
+**3. The test left to chance.** Alec: "Lets make sure we return to
+this in 1.6". Recorded in `todo.md` under item 1.6: why the default
+sweeps passed `test_interleave_lifecycle.py` when it failed in fresh
+processes on the same source.
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

@@ -1831,6 +1831,15 @@ generation is expected at this stage and is recorded, not tuned away.
    those sentences in its logs, halves each until a word stands
    alone, and teaches each piece with the word it holds as the
    expected output. Not designed.
+   **A test left to chance, to return to here (Alec, 2026-11-19;
+   1.8 §66.17, §68.91).** `test_interleave_lifecycle.py` failed
+   in 3 of 3 fresh processes on the swept source, since it counted
+   the untrained chooser's draw, and the default sweeps passed
+   it. It now reads in source order. To find: why the sweeps
+   passed it, and whether other tests of the default tier hide
+   the same way. Also here until it reads sentences: the fast
+   word evaluator's `score` command lists every item as silent
+   and is kept out of every gate and run.
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").

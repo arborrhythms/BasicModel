@@ -7869,7 +7869,10 @@ usual." The discussion is finished; the item's text can be written.
    meant (§19.55, §19.57): whether the length or a match at every
    place is added.
 3. A read that gives no WFF (Alec: "we will probably have to return to
-   this"). In item 1.8 it outputs nothing (1.8 §68.89). The mining of
+   this"). In item 1.8 it outputs nothing (1.8 §68.89). Alec,
+   2026-11-19: with no WFF, NULLs are reconstructed, by a rule that
+   applies automatically (1.8 §68.91; the rule `null` exists and
+   nothing applies it). The mining of
    silent outputs with bisection is item 1.6's.
 4. Rule 32, spellings: what a near spelling should read, with the
    width of a row's cone.
