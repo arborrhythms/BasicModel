@@ -649,6 +649,28 @@ measures surprise. The expected activation also primes selection and never
 adds content. The mechanism is in [Expectation](ExpectationRetention.md); this
 section records what the two faculties mean and what they answer to.
 
+**Expectation is not prediction** (Alec, 2026-11-17): "it is not prediction,
+just an aid to understanding and missing data". The model learns by
+reconstructing its input, not by forecasting what comes next, and its
+expectation works on percepts and on the conceptual field, where it fills in
+what was not seen; nothing estimates the next sentence, and nothing is given a
+whole sentence or an idea to expect from. Where one point is wanted, as an
+expected idea, it is read from the expected field.
+
+**The point is a key** (Alec's question, 2026-11-17: does a mind hold an idea,
+"a dynamic point in conceptual space", beside the formula and the field?).
+The evidence for one point standing for a sentence's meaning is thin. What is
+decoded of sentences from brain activity is mostly their words' content
+(Pereira et al. 2018; Kauf et al. 2024), which is a field. Memory keeps the
+meaning of a passage better than its wording (Sachs 1967), but that is not
+one vector either. Judged likeness is described by common and distinctive
+features and need not be symmetric (Tversky 1977), an overlap of fields and
+not a distance between points. A compact code that only addresses has support
+as an index (Teyler & DiScenna 1986). So the model keeps a point for what it
+makes cheap: it addresses a kept row, stimulates the concepts it covers, and
+is compared with another in one product. What is kept and reasoned on is the
+formula and the field.
+
 Two of Alec's statements of 2026-09-20 still fix the roles. The first is that
 expectation is applied around the object and not to it:
 
@@ -756,11 +778,10 @@ is the object.
   remembered frame, the bound roles are what was expected, and what stands
   out is the answer.
 
-Intuition is a separate faculty, `intuit`: a learned map from concepts to
-concepts, read once when a sentence is observed and before any thought, and
-taught by the field thought leaves and by the output cost. Applying a stored
-implication is a step of thought, `infer`, not of intuition
-([Reasoning](Reasoning.md)).
+Intuition, `intuit`, has no map of its own: when thought calls it, it
+deposits the field `expect` gave and carries it up the orders. Applying a
+stored implication is a step of thought, `infer`, not of intuition
+([Reasoning](Reasoning.md#system-1-one-field-map-and-a-read-to-a-point)).
 
 ### Absence is inferred, never perceived
 
@@ -910,8 +931,7 @@ The mechanisms of expectation and attention have close precedents:
   added (Bell 1981; Bell, Han & Sawtell 2008). It is the reafference principle
   (von Holst & Mittelstaedt 1950). In the model that difference is the
   residual, kept beside the content, which is scaled and never subtracted
-  from. In production the same estimate is what is said: generation is the
-  dual of comprehension.
+  from.
 - **Habituation, and its release.** Sokolov's (1963) neuronal model: a
   repeated stimulus builds a model, the response fades, and any mismatch —
   including an omission — brings it back.
@@ -936,9 +956,10 @@ The mechanisms of expectation and attention have close precedents:
 - **Pointer plus tag.** A scripted event is remembered as a pointer to the
   script plus tags for what was atypical; typical actions are falsely
   recognised and atypical ones kept (Graesser, Gordon & Sawyer 1979). In the
-  model the script is the learned expectation and the tags are the rows that
-  surprised it: a row's activity starts from its surprise, so a perfectly
-  predicted sentence is the first thing forgotten.
+  model the script would be the learned expectation and the tags the rows
+  that surprised it. As built it is not: nothing estimates a sentence, so a
+  row starts at a default activity, and what goes unread is forgotten
+  first.
 
 Two findings that strained the first formulation fit the gain. Cortical gain
 control is mostly divisive, not subtractive (Carandini & Heeger 2012), as the
@@ -989,7 +1010,10 @@ Learning and Verbal Behavior 18. Kahneman, Treisman & Gibbs (1992), *The
 reviewing of object files: object-specific integration of information*,
 Cognitive Psychology 24. Kasamatsu & Hirai (1966), *An
 electroencephalographic study on the Zen meditation (Zazen)*, Folia
-Psychiatrica et Neurologica Japonica 20. Keller & Mrsic-Flogel (2018),
+Psychiatrica et Neurologica Japonica 20. Kauf et al. (2024), *Lexical-semantic
+content, not syntactic structure, is the main contributor to ANN-brain
+similarity of fMRI responses in the language network*, Neurobiology of
+Language 5(1). Keller & Mrsic-Flogel (2018),
 *Predictive processing: a canonical cortical computation*, Neuron 100.
 Kellner (2003), *Integrating
 negative knowledge into pramana theory: the development of the
@@ -1002,9 +1026,13 @@ Cerebral Cortex 22. Lati Rinbochay & Napper (1980), *Mind in Tibetan
 Buddhism*, Snow Lion. Lutz, Slagter, Dunne & Davidson (2008), *Attention
 regulation and monitoring in meditation*, Trends in Cognitive Sciences 12(4).
 Palmer (1975), *The effects of contextual scenes on the identification of
-objects*, Memory & Cognition 3. Lord, Ross & Lepper (1979), *Biased
+objects*, Memory & Cognition 3. Pereira et al. (2018), *Toward a universal
+decoder of linguistic meaning from brain activation*, Nature Communications
+9. Lord, Ross & Lepper (1979), *Biased
 assimilation and attitude polarization*, Journal of Personality and Social
-Psychology 37(11). SanMiguel, Widmann, Bendixen, Trujillo-Barreto
+Psychology 37(11). Sachs (1967), *Recognition memory for syntactic and
+semantic aspects of connected discourse*, Perception & Psychophysics 2.
+SanMiguel, Widmann, Bendixen, Trujillo-Barreto
 & Schröger (2013), *Hearing silences: human auditory processing relies on
 preactivation of sound-specific brain activity patterns*, Journal of
 Neuroscience 33. Schultz, Dayan & Montague (1997), *A neural substrate of
@@ -1015,7 +1043,10 @@ dynamic events*, Perception 28. Simons & Levin (1998), *Failure to detect
 changes to people during a real-world interaction*, Psychonomic Bulletin &
 Review 5. Sokolov (1963), *Perception and the
 Conditioned Reflex*, Pergamon. Summerfield & Egner (2009), *Expectation (and
-attention) in visual cognition*, Trends in Cognitive Sciences 13(9). von Holst
+attention) in visual cognition*, Trends in Cognitive Sciences 13(9). Teyler &
+DiScenna (1986), *The hippocampal memory indexing theory*, Behavioral
+Neuroscience 100(2). Tversky (1977), *Features of similarity*, Psychological
+Review 84(4). von Holst
 & Mittelstaedt (1950), *Das Reafferenzprinzip*, Naturwissenschaften 37. Wason
 (1965), *The contexts of plausible denial*, Journal of Verbal Learning and
 Verbal Behavior 4.
@@ -1040,11 +1071,11 @@ compounds its own errors, and one wrong estimate at the top cannot become a
 wrong expectation at every level below. This keeps predictive coding's error
 at every level (Rao & Ballard 1999) without its descending prediction: no
 level's expectation is derived from another's. It was already decided
-(2026-09-20) that surprise is what is learned; this says where. The magnitude
-of the surprise sets a stored row's activity when it is written; each read
-raises it and each forgetting pass decays it, and forgetting drops the least
-active rows, so what was fully expected and never recalled is the first thing
-forgotten.
+(2026-09-20) that surprise is what is learned; this says where. A stored row
+starts at a default activity when it is written, since no surprise of a
+sentence is measured; each read raises it and each forgetting pass decays it,
+and forgetting drops the least active rows, so what is never recalled is the
+first thing forgotten.
 
 The only sampled estimate anywhere is at the choice itself. The choice stays
 discrete and the forward is always one derivation and one row, so the
@@ -1142,6 +1173,22 @@ A concept's meaning carries only a relational position, placed by its
 contexts at each kept close, which is the same statement in the
 architecture's own terms.
 
+The read of a sentence has further ties with Frege (Alec, 2026-11-17). Its
+first stage builds the well-formed formula, the tree of the grammar's
+operations over the sentence's words, before anything is referred to, as
+Frege's concept-script has a form that does not depend on what its signs
+stand for (Frege 1879). Its second stage, at the end of the read, evaluates
+the formula on the objects the words refer to (`Comprehension.Evaluation`),
+and the value is the idea. It takes each object when the whole sentence has
+had its effect, which is the context principle again; and since it computes
+from the objects alone, two words that name one object give that leaf one
+value, as reference is compositional for Frege (1892). By analogy only, a
+word's meta concept, which joins the word to its object, plays the part of a
+sense; an operator of the tree is a function whose places objects fill (Frege
+1891); and the idea's two lanes of evidence stand where Frege put a
+sentence's truth value. The model's idea is not Frege's *Vorstellung*, the
+subjective idea he kept out of logic.
+
 ### Identity across time is a one-member paradigm
 
 The individual that persists — the lion that ran and is now tired — is a
@@ -1196,8 +1243,10 @@ weaker perception; it is the only way an unwitnessed thing gets a kind.
 > evidence.
 
 **References.** Firth (1957), *A synopsis of linguistic theory 1930–1955*,
-in Studies in Linguistic Analysis, Blackwell. Frege (1884), *Die Grundlagen
-der Arithmetik*, §62. Harris (1954), *Distributional structure*, Word 10.
+in Studies in Linguistic Analysis, Blackwell. Frege (1879),
+*Begriffsschrift*. Frege (1884), *Die Grundlagen der Arithmetik*, §62. Frege
+(1891), *Funktion und Begriff*. Frege (1892), *Über Sinn und Bedeutung*,
+Zeitschrift für Philosophie und philosophische Kritik 100. Harris (1954), *Distributional structure*, Word 10.
 Hebb (1949), *The Organization of Behavior*, Wiley. Hume (1739), *A
 Treatise of Human Nature*, I.i.7, "Of abstract ideas". Jakobson (1956),
 *Two aspects of language and two types of aphasic disturbances*, in

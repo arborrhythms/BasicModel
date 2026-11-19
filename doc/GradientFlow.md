@@ -17,9 +17,8 @@ for each loss; the choice of owners neither requires nor removes it.
 | Parameters | `separateChooser=false` (default) | `separateChooser=true` |
 |---|---|---|
 | Understanding parameters: codes, grammar operators and their inverses, conceptual definitions, the compose chooser | Reached by reconstruction R and by the answer side A; A loses only its component that opposes R in each unit | Written only by R-owned costs; the owner-restricted backward excludes supplied-answer gradients |
-| Expectation maps: `expect`'s stack, the sentence and word predictor (`ActivationPredictor`) and the percept predictor | Their own local objectives; sources, targets and consumed forecasts are detached | Same |
+| Expectation maps: `expect`'s stack, the read from a field to one point (`idea_stack`), the word predictor (`ActivationPredictor`) and the percept predictor | Their own local objectives; sources, targets and consumed forecasts are detached | Same |
 | Bracket and word choices | The reading lesson teaches the native logits. Sampled departures receive whole-path credit. | The context projection has the attention owner. The bracket and grammar scorers use the compose policy. |
-| `intuit`'s stack | Its own term against the detached field the kept thought leaves, and the output cost through the live stack; no reconstruction or expectation gradient | Same |
 
 `separateChooser` defaults to `false` (`data/model.xml`): each sentence takes
 the gradients $g_R$ of R and $g_A$ of A over every optimizer parameter,
@@ -110,8 +109,8 @@ separate over the weights"). Either way each sentence makes one optimizer step.
 | Owner | Parameters | Trained by |
 |---|---|---|
 | reconstruction | perception codebooks, conceptual definitions, the compose and generate operators, the compose chooser, and every parameter no other owner claims | the input and order-zero reconstruction losses and compose lessons; the chooser rewards (owner `chooser`) use the same parameter set |
-| expectation | the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`), the shared `ActivationPredictor` (`_inter_predictor`) and word predictor, `expect`'s stack (the conceptual space's own `ActivationPredictor` where `expectationMap` is `predictor`) and the percept predictor (`PerceptExpectation`: context and moments update at each arrival, and its parameters receive the accumulated arrival error once, in the sentence's update) | expectation terms whose targets and sources are detached, so a predictor never trains what it predicts; `expect` by omission (`expectation.concepts`); also `expectation.bind_score_function` |
-| output | output space, answer attention and record reader, `intuit`'s stack and the generate policy; named output concepts also own their sparse coefficients | supplied-answer costs; `intuit`'s stack also takes its term against the field the kept thought leaves (`intuition.field`); the generate policy also takes the generate lessons (owner `generate_lesson`) |
+| expectation | the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`), the shared `ActivationPredictor` (`_inter_predictor`) and word predictor, `expect`'s stack (the conceptual space's own `ActivationPredictor` where `expectationMap` is `predictor`), the read from a field to one point (`idea_stack`) and the percept predictor (`PerceptExpectation`: context and moments update at each arrival, and its parameters receive the accumulated arrival error once, in the sentence's update) | expectation terms whose targets and sources are detached, so a predictor never trains what it predicts; `expect` by omission (`expectation.concepts`); the read to a point by the kept sentence's idea (`expectation.idea`); also `expectation.bind_score_function` |
+| output | output space, answer attention and record reader, the conceptual space's `IntuitionLayer` and the generate policy; named output concepts also own their sparse coefficients | supplied-answer costs; the generate policy also takes the generate lessons (owner `generate_lesson`) |
 | attention | the projection of the understood prefix into the bracket keys | The reading lesson differentiates the bracket logits. With separate ownership its `reading_policy` term reaches the shared chooser and its bracket anchors. |
 
 **Sides.** Compose and thought rewards are
@@ -120,8 +119,11 @@ chooser, side A; the chooser's parameter set is the reconstruction set. The
 output walk's departure credit is owner chooser, side A; its residual lanes
 are side A and, since their objective is reconstruction, owner
 reconstruction. The reconstruction walk keeps its residual and departure
-credit under owner reconstruction, side R (Alec, 2026-11-10). Bind and
-candidate-departure rewards are expectation/A and attention/A.
+credit under owner reconstruction, side R (Alec, 2026-11-10). The bind
+departure's reward is expectation/A (`expectation.bind_score_function`); a
+departure among attention's looks is credited as
+`output.interpret_score_function`, owner chooser (`compose_policy` with a
+separate chooser), side A.
 
 **Where reconstruction is a loss and where it is an audit.** The input's
 live parallel field trains `reconstruction_reverse.what/where/when` through
@@ -150,10 +152,9 @@ the observed order-zero field to the expected one
 ([Expectation](ExpectationRetention.md)), whose output is also the spread
 that primes attention, the chooser and retrieval, read detached; it is
 trained only by omission, against the detached field with the hidden units
-present (`expectation.concepts`). `intuit` is the top-down component, a
-stacked sigma-pi map of its own from concepts to concepts, evaluated once
-when the sentence is observed and trained by the field the kept thought
-leaves, detached, and by the output cost through the live stack. The
+present (`expectation.concepts`). `intuit` has no map of its own: it
+deposits `expect`'s field, detached, in the open basic field and closes it
+along the definitions (`IntuitionField.read`, `FieldProjection.close`). The
 conceptual split and the correction-output form
 are [future work](FutureWork.md#the-residual-split-a-stopped-subtraction-or-the-correction-alec-2026-10-29).
 
@@ -191,7 +192,7 @@ grammar-free. The numeric modality uses the path's composed state through one
 affine head. The path and its two costs are drawn in
 [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11).
 
-A single departure is drawn over attention, compose, candidate, bind, reconstruction, thought or output. Every departure receives its whole-path change in R + A with the proposal correction of that draw, reading its own path's compose departure mask and attention state. Every ordinary cost trained on every path is scaled by 2/(1+K): reconstruction, expectation, compose and generate lessons, attention and their regularizers. The answer trains on the union of the kept path, explore paths departing in compose, and the greedy path when that set includes a compose departure; weights sum to one per stream. Both compositions train the reader because a reader trained only on what is kept reads the kept composition better because it is kept, which biases the comparison toward the incumbent; with one reader the bias returns unless the reader sees both. A departure in attention, among the candidates or in a bind is another reading of the input, to which the supplied answer does not apply, and a path that departed in the thought or a read-out is not asked to answer from a conclusion it did not keep. The rule's known cost is that the rejected composition's share does not decay as the chooser commits. Answer costs and `penalty.output` already carry those reader weights; chooser and `.A` departure costs are booked once and receive no additional all-path multiplier. The exploit's one reading lesson is added once outside the path sum. A no-departure path has an independent registry container, so subsequent bookings cannot leak between paths. The reconstruction/output walk residuals and credits retain their declared owners and R/A sides. Default gradient projection and optional separate owner pullbacks each make one sentence update. There are no `thought_comparison` terms or separately trained comparison-reader parameters.
+A single departure is drawn over attention, compose, bind, reconstruction, thought or output (`SentenceCredit.WALKS`). Every departure receives its whole-path change in R + A with the proposal correction of that draw, reading its own path's compose departure mask and attention state. Every ordinary cost trained on every path is scaled by 2/(1+K): reconstruction, expectation, compose and generate lessons, attention and their regularizers. The answer trains on the union of the kept path, explore paths departing in compose, and the greedy path when that set includes a compose departure; weights sum to one per stream. Both compositions train the reader because a reader trained only on what is kept reads the kept composition better because it is kept, which biases the comparison toward the incumbent; with one reader the bias returns unless the reader sees both. A departure in attention or in a bind is another reading of the input, to which the supplied answer does not apply, and a path that departed in the thought or a read-out is not asked to answer from a conclusion it did not keep. The rule's known cost is that the rejected composition's share does not decay as the chooser commits. Answer costs and `penalty.output` already carry those reader weights; chooser and `.A` departure costs are booked once and receive no additional all-path multiplier. The exploit's one reading lesson is added once outside the path sum. A no-departure path has an independent registry container, so subsequent bookings cannot leak between paths. The reconstruction/output walk residuals and credits retain their declared owners and R/A sides. Default gradient projection and optional separate owner pullbacks each make one sentence update. There are no `thought_comparison` terms or separately trained comparison-reader parameters.
 
 Hard derivations train only what they select: a path's costs reach the operators it applied, and an operator that no path selects receives no gradient beyond the negligible derivative through its candidate score. Its route to credit is a departure, an explore path that selects it, trains it with that path's costs and is compared with the exploit on R + A. The proposal's uniform floor (`explorationUniformFraction`) gives every eligible alternative a positive probability at each departure, and `explorePaths` sets how many explore paths a sentence draws; the two set how quickly an unused operator is tried.
 
@@ -212,7 +213,7 @@ and makes one optimizer step. The separate-owner path remains available with
 | R | reconstruction | Input and order-zero reconstruction (`reconstruction_reverse`, `reconstruction_order_zero`), `reconstruction.part`, `reconstruction.free_percept`, the reconstruction walk's residual and departure credit, memory link coverage and state errors, definition folds. |
 | R | compose_lesson | Compose lessons. |
 | R | expectation | Predictor terms. |
-| R | attention | Reading lessons and candidate cross-entropy. |
+| R | attention | Reading lessons. |
 | R | Each parameter's owner | Regularizers, once in the projected aggregate. |
 | A | output | Answers, prediction and readers. |
 | A | generate_lesson | Generate lessons. |
@@ -310,8 +311,9 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   $W \cdot R_{walk} \cdot K$ when the draw is uniform over $K$ alternatives.
   No differentiable decoder is needed; a tie teaches nothing and the greedy
   argmax supplies no chooser gradient. The choice itself is a hard argmax
-  with no straight-through estimator. Compose, attention, candidate, bind,
-  thought and both generate walks are all credited this way.
+  with no straight-through estimator. The six walks of
+  `SentenceCredit.WALKS`, attention, compose, bind, thought and the two
+  generate walks (reconstruction and output), are all credited this way.
 - **Why reconstruction alone cannot judge a choice.** Operators with exact
   inverses, such as `intersection` and `union` over the same two words,
   recover the same words, so their reconstruction costs tie. What the choice
@@ -456,10 +458,8 @@ lanes and `reconstruction.walk_credit` belong to reconstruction/R. No
 compose-tree teacher trains the generate policy. Shared numerical inverse operators retain their ownership;
 `separateChooser=true` still restricts parameter writes by owner.
 
-Thought deposits carry a differentiable order-zero reading, so this same
-native reverse can credit `intuit`'s stack. `intuit`'s stack takes a
-detached target of every order after the kept thought episode, on serial and
-parallel paths; `expect` is taught by omission instead. Numeric heads retain
+`expect` is taught by omission, and `intuit` deposits its field detached,
+so no thought deposit trains a map of `intuit`'s. Numeric heads retain
 their forward readout with `answerSynthesis=false`.
 
 Compose, generate and reverse share each kernel; a free inverse searches
@@ -534,11 +534,10 @@ the sentence and "batch" the batch-end registration. The full route is
 | `output.compose_score_function`, `output.thought_score_function` | Detached completed-trial cost advantage times the selected log probability | whole term | chooser/A for compose and reconstruction-category thought |
 | `output.walk_credit` | Generate departure's score-function credit | whole term | chooser/A |
 | `expectation.concepts` | `expect`'s field from the lossy field against the detached field with the hidden units present, on order-zero rows; no cost where nothing was hidden | 1 | expectation/R; `expect`'s stack only |
-| `intuition.field` | `intuit`'s field at observation against the detached field the kept thought leaves, every order | 1 | Once, on the kept path; `intuit`'s stack only, target detached |
+| `expectation.idea` | The read from the order-zero field observed at the sentence's open to one point, against the root idea the kept reading leaves (`record.meaning_root`); squared error (`IdeaRead.complete`) | 1 | Kept sentence; `idea_stack` only, input and target detached |
 | `leaf_distill` | Historical root decoder's predicted exact leaves vs retained leaves; origin | `leafDistillWeight` | Batch; decoder and live input root where enabled |
-| `expectation.activation` | Predicted two-lane bank activation vs the next row's actual activation; bounded MSE | `sentenceExpectationLossWeight` | Trial or batch, once; shared predictor only, sources and targets detached |
 | `expectation.word` | Pre-arrival word activation vs the admitted word's two lanes; bounded MSE | `wordExpectationLossWeight` | Trial or batch; shared predictor at the word read, sources and targets detached |
-| `expectation.symbols` | Pre-compose bank activation vs the resulting symbolic field's two lanes; bounded MSE | `wordExpectationLossWeight` | Trial; shared predictor at the S read, sources and targets detached |
+| `expectation.symbols` | Pre-compose bank activation vs the resulting symbolic field's two lanes; bounded MSE | `symbolFieldLossWeight` | Trial; shared predictor at the S read, sources and targets detached |
 | `expectation.components` | Retained innovations plus the current sentence's; one-sparse sparse-coding energy over the change columns only (below) | `independenceWeight` | Trial; E owns columns and relevance; the existing closing comparison credits the global grammar choice |
 | `grammar.compose.choice` | Joint compose probability vs annotated operator; `log(choice count)` | `grammarLessonWeight` | Trial; compose chooser; unlabelled waiting sites excluded |
 | `grammar.generate.choice` | Generate action logits vs annotated action; `log(choice count)` | `grammarLessonWeight` | generate_lesson/A; generate policy only |
@@ -797,4 +796,4 @@ Superseded mechanisms and their measurements are recorded in
 
 ## The field's arithmetic and numeric input
 
-`FieldLogic.power` supplies the weighted least/greatest arithmetic of sparse definitions (`SparseLayer.fold_presence`, which is also the field's `intersection` and `union`) and of the stored rules that `infer` applies, retaining exact Boolean rails and live exponent derivatives. A numeric input has no learned transform: its felt value f(n) is a level percept at its place, and one order-zero concept per place collects the levels met there. The linear output owns concept/lane weights; retired seats clear weights, gradients and optimizer moments. Its input reconstruction reads the field captured by the understanding. Examination-only paths train reconstruction over their field and supervised numeric output where supplied, with a single attention departure per explored path. On a file with field operators only, `intuit`'s stack is the learned step from concepts to concepts, and the output cost is its only teacher. A felt value beside the words is read through the same basic percepts, with no gradient-trained boundary; it is a modality of its own, with its own `.where` range, and the text residual ledger excludes its reading.
+`FieldLogic.power` supplies the weighted least/greatest arithmetic of sparse definitions (`SparseLayer.fold_presence`, which is also the field's `intersection` and `union`) and of the stored rules that `infer` applies, retaining exact Boolean rails and live exponent derivatives. A numeric input has no learned transform: its felt value f(n) is a level percept at its place, and one order-zero concept per place collects the levels met there. The linear output owns concept/lane weights; retired seats clear weights, gradients and optimizer moments. Its input reconstruction reads the field captured by the understanding. Examination-only paths train reconstruction over their field and supervised numeric output where supplied, with a single attention departure per explored path. On a file with field operators only, `intuit` deposits `expect`'s field detached, so the output cost does not reach `expect`. A felt value beside the words is read through the same basic percepts, with no gradient-trained boundary; it is a modality of its own, with its own `.where` range, and the text residual ledger excludes its reading.

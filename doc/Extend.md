@@ -30,8 +30,10 @@ field of understanding. Stated by Alec on 2026-11-12; quotations are his.
 
 In the first three an operator takes intensions and gives an intension: "In
 a linguistic context operators select the best match, they compose and
-generate intentions." Compose builds the idea from the words, thought works
-on ideas, and generate walks an idea back to words.
+generate intentions." Compose builds the formula over the words, and
+comprehension applies its operators to the words' objects to give the idea
+([Language](Language.md#two-stages-the-read-and-comprehension)); thought
+works on ideas, and generate walks an idea back to words.
 
 In the fourth it takes a set of active concepts and gives a set: "We need
 those operators to generate an extension from an intension, which is easy
@@ -60,13 +62,19 @@ new set, which is the field of understanding."
 3. **It follows the tree compose left.** "if we have the STM tree, we can
    just iterate over its existing compose(), calling extend() on each
    operator to process the set of conceptual activations." One call of
-   `compose_extend` for each operator of the kept tree, in the order
+   `compose_extend` for each operator of the tree, in the order
    compose applied them.
 4. **A set in, a set out.** A set is concept references, each with its
    trust on the two lanes (`Extension.ConceptSet`). An operator of two
    operands takes the sets of both and tells them apart by their places in
    the sentence.
 5. **The last call leaves the field of understanding.**
+   Comprehension rides the same walk (Alec, 2026-11-17: "That tree is used
+   to operate on a concept vector, which is the idea ... It can also
+   produce a field"). At each step the walk extends the operands' sets and
+   comprehension applies the same operator's compose to their object
+   values, so one traversal of the tree gives both the idea and the field
+   of understanding (`Extension.understand`).
 6. **An operation on the field, not a lowering.** "it really is an
    operation on the field of active concepts and not necessarily lowering
    the order of a concept." Only `lower` goes from a kind to its members.
@@ -188,8 +196,12 @@ will look like a region in conceptual space (the furry things region)."
 - The operators are the `GrammarLayer` classes of `bin/Language.py`;
   `compose_extend` and `generate_extend` are their methods beside
   `compose` and `generate` (`bin/Layers.py`), carried out by
-  `bin/Extension.py`. `Extension.reading` extends the kept STM tree once,
-  in its compose order.
+  `bin/Extension.py`. `Extension.reading` extends a complete path's tree
+  once, in its compose order; every complete path is walked while it is
+  scored, and the kept path's field is the one written.
+- `Extension.understand` gives each walk a `Comprehension.Evaluation`
+  (`bin/Comprehension.py`), which carries the object values beside the
+  walk and leaves the idea.
 - Recall by extension is `bin/ExtendedRecall.py`.
 - The centroid of a field is `FieldProjection.key`
   (`bin/FieldProjection.py`).

@@ -57,14 +57,14 @@ inverses those stages need are the prerequisite for the whole curriculum.
 |---|---|---|---|
 | 1 | reconstruct, **keep syntax**, fill the missing **words** | the lexical/leaf inverse and the codebook (word to slot and back) | exposure |
 | 2 | reconstruct with **no syntax / no words** (from the idea alone) | the full generative inverse and abstraction | mixed |
-| 3 | predict the **next sentence** | the inter-sentence predictor | exposure, then gradient |
+| 3 | withdrawn: predict the **next sentence** (Alec, 2026-11-17: "we are not doing predictive processing, we are doing input reconstruction") | nothing; no sentence is estimated | none |
 | 4 | answer a question by **reasoning** (no search) | relations, modus ponens (`consequents()`), the tetralemma and trust | gradient |
 | 5 | answer a question by **LTM search** | global attention (the typed `.where`), the read fed back, and exploration | gradient |
 
 Plain next-token or next-sentence prediction under-trains this architecture's
 retrieval and relation machinery (the local window usually suffices, so the
-separate global attention gets no reward); that is why prediction is the
-**substrate** here, not the goal. Stages 4 and 5 train the deliberate layer,
+separate global attention gets no reward); that is why reconstruction of the
+input is the **substrate** here, and prediction is no goal. Stages 4 and 5 train the deliberate layer,
 and stochastic exploration earns its keep in stage 5: search has only a distal
 reward, so it must explore to break symmetry.
 
@@ -818,7 +818,7 @@ restore a speech sound that a noise has replaced without noticing that it
 was missing
 ([Warren, 1970](https://doi.org/10.1126/science.167.3917.392)). Omission is
 also the teacher of expectation
-([Reasoning](Reasoning.md#the-two-networks-of-system-1-alec-2026-11-12)).
+([Reasoning](Reasoning.md#system-1-one-field-map-and-a-read-to-a-point)).
 
 | Knob | Effect |
 |------|--------|
@@ -1102,8 +1102,8 @@ input before omission; `reconstruction.free_percept`, the decoded percepts
 against the percept forecast's residual; the walk residuals and departure
 credits of reconstruction and output; the expectation maps' own terms
 (`expectation.*`, source and target detached), among them `expect`'s
-`expectation.concepts`, taught by omission; `intuit`'s term against the field
-the kept thought leaves (`intuition.field`, target detached); and the explicit
+`expectation.concepts`, taught by omission, and the read from a field to
+one point, `expectation.idea`, taught by the kept sentence's idea; and the explicit
 grammar lessons (`grammarLessonWeight`). `reconstruction.free_bytes`, the decoded
 bytes' identity against the input, and `reconstruction.coverage`, the missing
 positions, are audits with `trained=False`.

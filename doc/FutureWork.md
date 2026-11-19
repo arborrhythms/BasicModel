@@ -821,7 +821,16 @@ bounded at that level
 expectation down the derivation would couple the levels, one wrong estimate
 at the top becoming a wrong expected operand at every round below it. Alec:
 expectation "propagates across the model ... only once the path is
-invertible; before that its sources stay detached". Three parts:
+invertible; before that its sources stay detached".
+
+Part 1 below rested on an estimate of a sentence: a row-level prediction of
+the next sentence's meaning, made at its open from earlier closings. That
+estimate has been removed, and nothing estimates a sentence (Alec,
+2026-11-17: no predictive processing). What stands is expect's map from a
+field to a field, which `intuit` shares, and a taught read from that field
+to one point (`IdeaRead.expected_point`), which nothing reads yet
+([ExpectationRetention](ExpectationRetention.md)). Part 1 therefore has
+nothing to invert until a starting point is chosen. Three parts:
 
 1. **Expectation by inversion.** The row-level prediction, inverted through
    the committed operations, gives an expected operand at every round; the
@@ -1281,10 +1290,10 @@ replaces stacked layers, and each step is charged by the work meter. The cost
 is that discrete choices are credited through the keep rather than by
 backpropagation through a dense map.
 
-`intuit` is built as that choice: a stack of pi and sigma stages from
-concepts to concepts, with small hidden layers (`intuitHidden`,
-`intuitLayers`), read once when the sentence is observed, before thought, and
-taught by the field thought leaves and by the output cost; what it gives may
+`intuit` is built as that choice with no map of its own: it deposits
+`expect`'s field, the stack of pi and sigma stages from concepts to concepts
+(`expectHidden`, `expectLayers`), detached, and closes it along the
+definitions (`IntuitionField.read`, Alec, 2026-11-17); what it gives may
 answer and reconstruct (`ThoughtAnswer.accepted` takes kind `intuition`). The
 firing of stored rules is reached through `infer`
 ([Reasoning](Reasoning.md), "Intuition, understanding and thought"). One
@@ -2004,8 +2013,8 @@ What neither result gives:
 
 - *Size.* The number of terms can grow as $2^{n-1}$ in the number $n$ of
   symbols a sentence combines; parity, of which XOR is the case $n = 2$,
-  needs every one of them. `intuit`'s hidden width, `intuitHidden`, is 64
-  by default. A deep
+  needs every one of them. `expect`'s hidden width, `expectHidden`, which
+  `intuit` uses, is 64 by default. A deep
   composition can need an exponentially wide shallow map (Telgarsky, 2016;
   Eldan and Shamir, 2016).
 - *Learning.* That the map exists does not say System 2's activations teach
@@ -2099,7 +2108,7 @@ remains:
   does. For it a bracket is a box, its parts and wholes are boxes, and the
   fold ladder is a quadtree (above, "Images (future)").
 - *Learning on images.* It is first a measurement, beside the same file
-  with `intuitHidden` at zero, and a bar is set after it.
+  with `expectHidden` at zero, and a bar is set after it.
 - *Grey levels.* Where the levels of a grey image come from.
 - Two modalities at once are not part of it.
 
@@ -2296,7 +2305,7 @@ To specify: a test that the walk of attention (`Attention.narrow_words`)
 takes a sentence's words left to right, under a chooser that has been taught
 on the lesson and on sentences longer than a question; and, where it does
 not, the wire Alec names, in which a step may act only on the bracket that
-holds the first word not yet accepted, kept until the order is learned.
+holds the first word not yet interpreted, kept until the order is learned.
 
 ## A taught reading, shown on a class never asked about (Alec, 2026-11-15)
 
@@ -2383,3 +2392,71 @@ To specify: what the record of an examined place is and how long it lasts;
 whether it forbids a second look, or lowers its score; how both and neither
 over symbols reach `attend`, and which way each points (in or out); and the
 thought operators this follows.
+
+## The field use of every operator (Alec, 2026-11-17; future work)
+
+An operator has four uses: compose, think, generate and extend. In the first
+three it takes and gives ideas, the vectors of sentences and their parts. In
+the fourth it takes the sets of active concepts its operands left, each
+concept with its trust on the two lanes, and gives a set: "the result of the
+operation is the selected field, not the sentence idea or its constituent
+word ideas" (Alec, 2026-11-12). A sentence's field is what is left when every
+operator of its tree has been extended in the order compose applied them.
+On the extension's side an operator has two methods, `compose_extend` (from
+the active concepts to the field of what is read) and `generate_extend`
+(from an idea's field to each operand's part of it, along the generate
+walk); both are methods of `GrammarLayer`, the base of every operator, and
+call `Extension.compose` and `Extension.generate`. "I don't believe that all
+of the operators have a _extension() implemented yet, so lets add that to
+future work unless it is immediately necessary."
+
+What exists. `Extension.compose` gives a contract by the operator's name and
+raises an error for a name it does not know. Of the 48 names it knows, the
+narrowing operators (`intersection`, `compound`, `marker`, `modifier`,
+`verb` and `conjunction` among them) take the `intersection` of their
+operands' sets, and the joining ones (`union`, `disjunction`) their `union`.
+`not` swaps the two lanes and `non` withholds both. The determiners select
+from the set: "a" one generic member, the centroid of the kind's members;
+"the" a known identity; "every" all of it; "some" the stronger half of a kind
+with three members or more. The 27 names of `CONTENT` take one operand's
+set. `interpret` gives the object's set in place of the word's, `ask` selects
+nothing when its operand is open, and every other name of the list passes
+the set through unchanged.
+
+What is open.
+
+- **A relation sentence.** `part`, `whole`, `equal` and `implies` leave their
+  content operand's set unchanged; what a sentence that states a relation
+  should leave as its field is not decided.
+- **`conjunction`** narrows, which suits two evidence pairs that meet; where
+  it joins two kinds ("cats and dogs") it should perhaps join.
+- **`preposition`** passes its object's set through, unsettled.
+- **Attention's acts** on its places have no field use decided: `focus`
+  passes its set through, and `unfocus` has no contract.
+- Several of the pass-throughs (`surface`, `sign`, `bind`, `lift`, `swap`,
+  `generic`) are proposals that have not been confirmed.
+
+The question behind it is one side of a triangle: a sentence's well-formed
+formula (its tree, the WFF), its idea and its field. The WFF gives the idea
+by compose, and the field gives a point by the taught read
+(`IdeaRead`). Between the WFF and the field nothing is settled. Of "Felix
+runs", Alec asked what in the field combines a noun's field with a verb's.
+His position: the two join by `union` when they lie in separate subspaces,
+"which might be justified in light of a spatial and temporal decomposition
+of 4D event space", so the union of a thing's field and a change's field
+loses nothing within one event. Another reading, for a sentence that states:
+the statement is a comparison of the two fields, graded on each lane as the
+share of Felix's field inside running's, the measure of
+[Mereology](Mereology.md#parthood-as-shared-size); when the statement is news, keeping it writes the
+edge that makes the comparison true. Until the side is settled, a WFF's field
+may be computed by way of its idea (Alec, 2026-11-17).
+
+What it would give back. The field the operators leave could teach the
+field map, as the field of a kept sentence does not today, since `intuit`
+uses expect's map and has no teacher of its own; and `compose_extend` over
+what perception alone activated would let the model describe what it sees
+with no words present, so that recognition ("what is this?") needs no rule
+of its own.
+
+To specify: the field use of each open operator above, and which of the two
+readings of a stated relation the field takes.

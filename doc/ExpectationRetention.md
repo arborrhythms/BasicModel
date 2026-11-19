@@ -9,11 +9,19 @@ content. At the percept level the residual is signed and is computed beside
 the observed signal, which the forward path carries unchanged
 ([Percept arrivals](#percept-arrivals)).
 
-`SymbolExpectation` owns one activation predictor shared by the word, composed
-symbol, closing and document reads. It predicts independent for/against
-activations over native identity rows. It has no byte, ARMA, root-only or
-slot-structured prediction head. The three-role memory envelope retains a
-representative identity; the full symbol bank is the forecast.
+Expectation is not prediction: it is an aid to understanding and supplies
+missing data, and it works on percepts and on the field, never on a whole
+sentence or on an idea, which is a computed value (Alec, 2026-11-17). Nothing
+estimates a sentence. No read is made at a sentence's close or for the next
+row of a document, no sentence is taken as a target, and nothing answers what
+comes next.
+
+`SymbolExpectation` owns one activation predictor shared by two reads during
+the read of a sentence: the word read (`WordArrivals`) and the field read of
+the symbols a word's composition gives (`SymbolField`). It predicts
+independent for/against activations over native identity rows, over the whole
+symbol bank. It has no byte, ARMA, root-only or slot-structured prediction
+head.
 Each level predicts what it is about to receive from what has already arrived
 at it, never from its own prediction, so it predicts under zero input as well,
 and no level's expectation is derived from another's by inversion: one wrong
@@ -25,18 +33,22 @@ only, and on the serial path expectation selects no concept.
 
 The conceptual spread that primes attention, the chooser and retrieval is
 `expect`, a learned map of the conceptual space from the whole observed
-order-zero field, both lanes, to the whole expected field over the same rows.
-It is a stacked sigma-pi map (`SigmaPiStack`) with one moderate hidden layer
-(`expectHidden`, 64 by default). A stacked sigma-pi map is a row of pairs
-(`SigmaPiLayer`), each a `PiLayer` under a `SigmaLayer`: a pi unit is
+order-zero field, both lanes, to the whole expected field over the same rows:
+a field to a field, many concepts to as many. It is built only on the
+conceptual space that owns the concepts. It is a stacked sigma-pi map
+(`SigmaPiStack`) with one moderate hidden layer (`expectHidden`, 64 by
+default). A stacked sigma-pi map is a row of pairs,
+each a `PiLayer` under a `SigmaLayer`: a pi unit is
 `tanh(atanh(x) W + b/2)`, the product of its inputs' odds raised to signed
 weights, and a sigma unit is a weighted sum of the pi units. `expect` has one
 pair (`expectLayers`). It keeps the two evidence lanes apart, clips what it
 gives to the field's range of 0 to 1, and starts by adding nothing, since its
 last sigma's weights start at zero.
-`expect` runs once, at the open pass (`ConceptSpread.open_prediction`), and
-attention, the chooser, retrieval and `ConceptSpread.rule_order` read what it
-gives (`_expected_knowing`) detached. Its teacher is omission: where
+At the open pass (`ConceptSpread.open_prediction`) `expect` reads the
+sentence's observed field and publishes what it gives (`_expected_knowing`),
+which attention, the chooser, retrieval and `ConceptSpread.rule_order` read
+detached. It is evaluated again, without publishing, for the forecast of each
+look ([below](#the-forecast-of-a-look)). Its teacher is omission: where
 `Omission.stage` hid part of the sentence, its cost, `expectation.concepts`,
 compares what it expects from the lossy field with the field with the hidden
 units present, which is detached; a sentence with nothing hidden gives it no
@@ -45,11 +57,9 @@ where `expectationMap` is `predictor` (Alec, 2026-11-14: "Let's keep the old
 form on hand in case we want to revert"). Placement does not read the spread,
 since codes must not read a value computed from codes: `expect` reads
 activations, its output is not written to the seen ledger, and no cost of it
-moves a place. Expectation proposes nothing: top-down proposal belongs to
-`intuit`, a stacked sigma-pi map of its own from concepts to concepts, read
-once when the sentence is observed and taught by the field the kept thought
-leaves and by the output cost, with no gradient from reconstruction or
-expectation ([Reasoning](Reasoning.md#the-two-networks-of-system-1-alec-2026-11-12)).
+moves a place. `intuit` has no map of its own: it is this map's field carried
+up the orders ([below](#one-field-map-and-the-read-to-a-point);
+[Reasoning](Reasoning.md#system-1-one-field-map-and-a-read-to-a-point)).
 
 The content gain is $m\,(1 - g\kappa + g\kappa s)$ for gain strength $g$ and
 confidence $\kappa$, where $s$ is the saturated sum of
@@ -79,8 +89,8 @@ Expected activation separately primes selection. It is never added to
 comprehension, so top-down expectation reaches perception only through
 attention, biasing where the reading looks, never as content: a hallucination
 here is a concept conceived without perceptual evidence, not a percept
-predicted into existence. The shipped defaults are four zero gains,
-`expectationPrime=true` and `explorationUniformFraction=0.5` (Alec). The
+predicted into existence. The shipped defaults are two zero gains
+(`perceptExpectationGain`, `symbolExpectationGain`), `expectationPrime=true` and `explorationUniformFraction=0.5` (Alec). The
 selection prime and the exploration fraction are separate from the gains, and
 a nonzero gain must first pass the zero-gain
 [parity configuration](../test/fixtures/item4-parity.json), which keeps
@@ -105,11 +115,8 @@ $(c^+, c^-) \leftarrow (c^+, c^-) - (1 - \tau) \min(c^+, c^-)$, left at 1, a
 no-op; toward 0 the both corner, the expected held beside the arrived,
 collapses to its net lane and nothing captures.
 
-Closing confidence $\kappa$ is per symbol, the maximum of its two predicted
-activations. It is never taken from the representative envelope's role slot.
-Word and S reads use $\kappa = 1$: their predicted lane magnitudes supply the local
-certainty, without a second confidence gate. Closing reads retain an
-explicit presence-confidence gate.
+The word and S reads use $\kappa = 1$: their predicted lane magnitudes supply
+the local certainty, without a second confidence gate.
 
 A native handle identifies an activated symbol in its bank address domain.
 Without a handle, a bank identity requires raw-key distance at most `1e-5`.
@@ -127,8 +134,7 @@ P cannot change that local observation or manufacture an omission for S.
 
 The local residual has excess and omission signs for each evidence lane.
 It trains only the predictor: both target and all source context are detached.
-The row and document gains compose multiplicatively when thought reads the
-closing. A cold document has no document attenuation. Open grammatical
+Open grammatical
 objects keep their expected prime and are spared attenuation. Deep
 expectations have no domain outside the admitted region: there the prior, the
 residual and the content are exactly zero (`Expectation.gain_field`), so no
@@ -141,39 +147,86 @@ prior and content remain available to awareness even when the content gain is
 zero. An omission can support an explicit checked `not` inference; it is
 never an external observation.
 
+## One field map and the read to a point
+
+`expect` and `intuit` are one map (Alec, 2026-11-17). When thought calls
+`intuit` (`IntuitionField.read`), it takes the order-zero block of the field
+`expect` published at the open pass, detached, joins it by maximum into its
+stream's knowing at the live bracket, and propagates it upward by the closure
+of the definitions (`FieldProjection.close`); other orders and other streams
+are kept. `intuit` has no parameters, teacher or cost of its own.
+Propagation downward is not built.
+
+A field can also be read to one point: many concepts to one value of a code's
+width. With no sentence comprehension the read is the centroid of the field's
+codes, weighted by their evidence (`FieldProjection.key`), as the number
+modality reads its field (`NumericPercepts`). Where sentences are comprehended
+the conceptual space that owns the concepts builds a stacked sigma-pi of its
+own for it (`idea_stack`; `ideaHidden` 64, `ideaLayers` 1), and a model that
+comprehends no sentence builds none. Its input is the observed order-zero
+field on both lanes, held detached at the sentence's open
+(`IdeaRead.open_read`); its teacher is the idea that comprehension leaves: after
+the kept close, the read of that field is compared with the kept reading's
+root idea (`record.meaning_root`), detached, by squared error over the streams
+present (`expectation.idea`, `IdeaRead.complete`). Its gradient reaches only
+its own stack. The expected point is this read of `expect`'s field
+(`IdeaRead.expected_point`); nothing reads it yet.
+
+So the two maps have two teachers: the field map learns the whole input from
+what omission hid, and the read to a point learns from the idea that System 2
+concludes. Why a point is kept at all, as a key and not as what is reasoned
+on, is in
+[Philosophy](Philosophy.md#expectation-as-a-gain-attention-as-exclusion).
+
+## The forecast of a look
+
+Before a look is perceived, `expect` forecasts what should be at its place
+from everything seen elsewhere (Alec, 2026-11-16: "span left out").
+`LookForecast` keeps a path's located readings. For a look's bracket it pools,
+on each lane of each order-zero row, the greatest reading among those whose
+extent is disjoint from the bracket; a reading that overlaps the bracket, even
+an earlier reading of the same place, gives nothing. It evaluates `expect` on
+that field without publishing it (`ConceptSpread.expected`) and closes the
+forecast upward with `FieldProjection.close`. Every order-zero address is
+forecast, a silent one too. Once the look is perceived, its field within the
+bracket is compared with the forecast row by row and lane by lane: what was
+read beyond the forecast is the **excess**, and what was forecast beyond what
+was read is the **omission**, each summed over the rows only after the split
+(`LookForecast.difference`). The forecast and both numbers are detached.
+
+At the opening glance each word gets its pair from a forecast with that word
+left out, all words in one batch. In "This is Felix." `Felix` is forecast from
+`This`, `is` and `.`: a word the context makes likely reads with little
+excess, a new name with much. A later look records its own pair in the
+sentence's record (`_sentence_look_fields`) and replaces a word's latest pair
+only when its bracket is that one word; a bracket of several words reads the
+sum of its words' latest pairs (`LookForecast.for_brackets`). The bracket
+chooser reads each bracket's pair through two columns of its context
+projection that start at zero (`AttentionContext.project`), so an untaught
+chooser scores as it would without them. The comparison is reported and is
+not a cost: `expect` is still taught only by omission, at the open pass.
+
 ## The observation and its surprise
 
 `LTM0` is the single durable owner, and it keeps observations, never
-expectations: a forecast is live state, compared at the close and then
-dropped, and no estimate row is written. What the close writes is the kept
-sentence's own row. The sentence predictor's context is a short list of what
-its stream observed; only an external observation enters it, once, after the
-comparison, and once its row is written the context holds it by reference to
-that row's time and reads it from the store when the predictor runs
-(`bind_observation_occurrence`). Provisioned truths and internal thoughts are
-not additional external observations.
+expectations: no forecast survives its sentence and no estimate row is
+written. What the kept close writes is the sentence's own row, and the same
+close admits that row, once, to its stream's recent situation
+(`SymbolExpectation.include_occurrence`), by its occurrence with the row's
+symbols and activations. The situation holds the address and reads the row
+from the store when the word read runs; it is bounded, and cleared when a new
+document begins. Provisioned truths, speculative paths and internal thoughts
+are not admitted.
 
-An estimate predicts content, not time. The predictor receives time only as
-an input: the stamps in its context are expressed as ages from the present,
-and four `RowTime` coordinates after its $4D$ context carry the recent age,
-never an absolute stamp.
+The shared predictor predicts content, not time. It receives time only as an
+input: the stamps in its context are expressed as ages from the present, and
+four `RowTime` coordinates after its $4D$ context carry the recent age, never
+an absolute stamp.
 
-The estimate holds native identity, order and two activation logits for every
-symbol of the bank; the representative envelope holds one native key. At a
-close the image's object mask spares the roles of the field's actual open
-slots (an open relation spares its relation slot), for every entry; it reads
-no grammatical mode.
-
-Surprise is the detached mean squared activation residual over the soft union
-of observed and expected support: each symbol's weight is $\max(o, \hat{e})$ across
-its two lanes, and the weighted error $E$ is bounded as $E/(1+E)$. Confident
-omissions count; empty bank padding does not dilute the score. It applies the
-withheld marks, independent of content norm and gain. Local prediction
-training uses bounded activation MSE. Surprise is what memory keeps of an
-expectation: the row the close writes takes it as its starting activity, so a
-well-expected sentence starts low and is forgotten first unless it is read
-([STM](STM.md#10-ltm-as-the-chain-of-stm-end-states)). Unknown surprise is
-`-1`, and such a row starts at `activityDefault`.
+Since nothing estimates a sentence, no surprise of a sentence is computed: the
+close passes none, and the row it writes starts at `activityDefault`
+([STM](STM.md#10-ltm-as-the-chain-of-stm-end-states)). The writer still takes
+a surprise in $[0, 1]$ as a row's starting activity, and `-1` for unknown.
 
 ## Local prediction credit
 
@@ -188,11 +241,13 @@ word read predicts the next admitted word from its preceding word context;
 the S read predicts the symbolic field before the ensuing composition and
 scores the resulting field. These distinct causal contexts and targets are
 intentional. They do not apply the content gain twice. Each local loss keeps
-its declared weight; neither enters the R+A judge.
+its declared weight (`expectation.word` at `wordExpectationLossWeight`,
+`expectation.symbols` at `symbolFieldLossWeight`); neither enters the R+A
+judge.
 
 Source encodings, observed targets, thought effects and durable history are
-detached. Only the expectation maps (the shared predictor, `expect` and the
-percept predictor) receive local E gradients; in the one
+detached. Only the expectation maps (the shared predictor, `expect`, the read
+to a point and the percept predictor) receive local E gradients; in the one
 backward every consumer reads expectation's output detached at the point of
 use, so its parameters receive exactly their own local terms. Both the
 whole-path keep rule and chooser credit use `R + A`; E is independent. This
@@ -212,10 +267,10 @@ $\varphi / (K - 1)$ among $K$ eligible actions whatever the policy has learned;
 credit uses the actual mixture probability. The paths themselves are described
 in [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11).
 
-The forecast is staged before its target arrives, from the previous accepted
-observation; every path of the sentence reads that snapshot, and the context
-takes the kept external observation once, after the comparison, so
-speculative paths and generated thoughts never count external evidence twice.
+Each forecast is staged before its target arrives; every path of the sentence
+reads that snapshot, and the recent situation takes the kept external
+observation once, at the kept close, so speculative paths and generated
+thoughts never count external evidence twice.
 
 ## Percept arrivals
 
@@ -276,7 +331,10 @@ dark-room problem.
 the retired slot and ARMA predictors loads as follows: its `cast.*` tensors
 are discarded at the discourse loader, with no input projection to replace
 them; its slot and ARMA head tensors migrate to a fresh shared activation
-predictor; and its retained observation rows survive.
+predictor; and its retained observation rows survive. A checkpoint that holds
+the retired `intuit` stack, or an `expect` stack on a conceptual space that
+does not own the concepts, loads with those tensors discarded and a warning;
+one with no read to a point initializes it, with a warning.
 The attention context receives zero-initialized columns for the bank prime
 and the percept residual. Percept moments update only during training on
 external inputs and are checkpointed; an older checkpoint starts them cold.
@@ -286,7 +344,7 @@ with only the open request and gist as needs.
 
 The regression contracts are causal predictions, detached ownership,
 identity preservation at zero gain, no forecast written to memory, exactly-once
-external observations, document/row isolation, local E training, R+A selection,
+external observations, the recent situation's isolation by document, local E training, R+A selection,
 and the actual probability correction for the exploration mixture. The
 behavioural certificates are: a sentence repeated until its symbols are
 predicted at confidence still passes content at the gain floor and is answered

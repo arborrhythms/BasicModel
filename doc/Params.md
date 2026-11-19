@@ -87,10 +87,10 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP when `transformChooser=mlp`; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. Inert for `anchordot`. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
 | `whatThinkingHidden`, `whatThinkingDepth` | int | `16`, `1` | Unread in effect: both are parsed and validated, but the selected-thought chooser they sized is no longer built (thought is scored by `OperationSelectionLayer.thought_logits`). |
-| `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank of the conceptual space's `IntuitionLayer`, which applies stored implications when thought calls `infer`. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. `intuit` itself is a stack of its own (`intuitHidden`). |
+| `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank of the conceptual space's `IntuitionLayer`, which applies stored implications when thought calls `infer`. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. `intuit` has no stack of its own: it deposits `expect`'s field and closes it upward. |
 | `separateChooser` | bool | `false` | False retains live compose features and projects the answer gradient against reconstruction per optimizer unit before one shared step. True is the optional per-owner backward: each cost trains its declared owner, independently of its R/A side. Thought and generate features remain detached. |
 | `reconstructionJitter` | real in `[0,1]` | `0` | Draw one strength `s ~ U[1-j,1]` per sentence and apply it to reconstruction alone, shared by all of the sentence's paths. Zero draws no random number. Output, expectation, attention and chooser credit retain scale 1.0. |
-| `explorePaths` | nonnegative int | `1` | Number of distinct one-departure complete paths beside the greedy path in training. Departures draw over attention, compose, candidate, bind, reconstruction, thought and output; each stream keeps its strictly cheapest path on R + A, ties to the greedy path, and a departure reuses the prefix before it. Evaluation runs the greedy path alone. See [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11). |
+| `explorePaths` | nonnegative int | `1` | Number of distinct one-departure complete paths beside the greedy path in training. Departures draw over attention, compose, bind, reconstruction, thought and output; each stream keeps its strictly cheapest path on R + A, ties to the greedy path, and a departure reuses the prefix before it. Evaluation runs the greedy path alone. See [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11). |
 | `omissionTarget` | float in `[0,1]` | `0.9` | Desired long-term reconstruction accuracy over visible and omitted input. `1` disables omission and its random draws; XOR proofs declare this override. |
 | `omissionLimit` | float in `[0,1]` | `0.5` | Maximum independent word and within-kept-word percept-slot omission rates. One word stays whole. Omission never runs in evaluation. |
 | `omissionHorizon` | positive int | `1024` | Sentence horizon for the visible/omitted accuracy averages at both omission sizes. Both rates and all four averages travel in checkpoints. |
@@ -197,17 +197,17 @@ Training loop and I/O.
 | `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
 | `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |
 | `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
-| `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
+| `sentenceExpectation` | bool | `true` | Enables the field read during the read of a sentence (`SymbolField`) and its residuals. It makes no estimate of a sentence. Explicit `false` bypasses that read while understanding and the single What memory remain available. |
 | `expectationPrime` | bool | `true` | Enables the selection prime in compose and the bracket chooser independently of attenuation. Off only in the declared parity configuration (`test/fixtures/item4-parity.json`); prediction, residuals and retention stay enabled. |
 | `perceptExpectationGain` | float in `[0,1]` | `0` | Scales the detached signed percept residual the bracket chooser reads through its context projection. The forward content is the exact attended observation; this knob does not attenuate it. |
-| `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Attenuation strength $g$ of expectation at the symbol, row and document levels: what was predicted is dimmed toward the floor $1 - g$, and 0 leaves content whole. The row and document gains compose at the closing. See [Expectation](ExpectationRetention.md). |
+| `symbolExpectationGain` | float in `[0,1]` | `0` | Attenuation strength $g$ of the word and field reads: what was predicted is dimmed toward the floor $1 - g$, and 0 leaves content whole. See [Expectation](ExpectationRetention.md). |
 | `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. It sets no optimizer rate: the percept expectation's parameters move in the sentence's one optimizer step. |
 | `expectationOmissionThreshold` | float in `[0,1]` | `0.5` | Minimum for-lane omission confidence for the conceived absence thought. |
 | `expectationEpsilon` | positive finite float | `1e-6` | Denominator floor for normalized percept and symbol residuals. |
 | `expectationSaturation` | enum | `clip` | `clip` uses `min(1, ratio)`; `smooth` uses `magnitude/(denominator+magnitude)`. The entire gain is detached. The signed percept residual is never saturated. |
 | `explorationUniformFraction` | float in `(0,1]` | `0.5` | Uniform share $\varphi$ of a departure's alternative draw, so every eligible non-greedy action keeps positive probability. |
 | `explorationTemperature` | positive finite float | `1` | Temperature of the policy component of the alternative proposal. Credit uses the actual mixture probability. |
-| `sentenceExpectationLossWeight` | float | `0.1` | Weight on shared symbol/closing/document activation MSE. All source context and targets are detached. E trains the predictor independently of the paired R+A judge; zero disables this objective. See [ExpectationRetention](ExpectationRetention.md). |
+| `symbolFieldLossWeight` | nonnegative float | `0.1` | Weight on the field read's activation MSE (`expectation.symbols`). All source context and targets are detached. E trains the predictor independently of the paired R+A judge; zero books no term. See [ExpectationRetention](ExpectationRetention.md). |
 | `independenceWeight` | nonnegative float | `0.1` | Weight of the LTM-population sparse-coding objective, owned by expectation. Applies to grammars declaring individual references. |
 | `independencePriorScale` | positive float | `0.05` | Laplace activation prior and automatic-relevance pressure on unit direction columns; also scales column incoherence. |
 | `independenceMintThreshold` | positive float | `0.2` | Unexplained event-coordinate residual norm required for column admission after four distinct witnesses. Admission remains a kept-closing effect. |
@@ -411,33 +411,34 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `conceptReadoutL1` | nonnegative float | `0.0` | L1 penalty on the incoming connections of the concepts-from-percepts Sigma; 0 disables. |
 | `expectationMap` | string | `sigmaPi` | Form of `expect`, the map from the observed order-zero field to the expected one. `sigmaPi` builds a stack of its own; `predictor` builds an `ActivationPredictor` in its place. |
 | `expectHidden` | int | `64` | Width of the one hidden layer of `expect`'s stack. The stack reads both lanes of the whole observed field over the order-zero rows and gives the whole expected field over the same rows; it is sized once, at construction, by the capacity of the order-zero block. |
-| `intuitHidden` | int | `64` | Hidden width of `intuit`'s stack, from the concepts of every order to the same concepts. `0` builds no stack. |
 | `expectLayers` | int | `1` | Pi and Sigma pairs of `expect`'s stack. |
-| `intuitLayers` | int | `2` | Pi and Sigma pairs of `intuit`'s stack. |
+| `ideaHidden` | positive int | `64` | Width of the hidden layer of the read to a point, from the observed order-zero field, both lanes, to one point of a code's width. Built only on the conceptual space that owns the concepts, and only where sentences are comprehended. |
+| `ideaLayers` | positive int | `1` | Pi and Sigma pairs of the read to a point. |
 | `markerKernels` | int | `8` | Learned kernels of the one-operand `marker` operator. Each kernel is one candidate of the operator, chosen by the chooser from the sentence's context; none is named. |
 | `markerHidden` | int | `64` | Hidden width of each `marker` kernel's stack, from the operand's form block to its meaning block. |
 | `markerLayers` | int | `2` | Pi and Sigma pairs of each `marker` kernel's stack. |
 
-`expectationMap`, `expectHidden`, `expectLayers`, `intuitHidden`, `intuitLayers`,
+`expectationMap`, `expectHidden`, `expectLayers`, `ideaHidden`, `ideaLayers`,
 `markerKernels`, `markerHidden` and `markerLayers` are declared in
 `data/model.xsd`, each with the default above, so a configuration that omits
 them is unchanged. The three maps are one class, a stacked sigma-pi
-(`SigmaPiStack`), a row of pairs (`SigmaPiLayer`), each a `PiLayer` (a
+(`SigmaPiStack`), a row of pairs, each a `PiLayer` (a
 product of its inputs in the log domain, with signed weights) under a
 `SigmaLayer` (a weighted sum). The layer counts count pairs. In a stack of
-more than one pair each sigma but the last gives `tanh` of its sum, and the
-last is clipped to 0 to 1. The two evidence lanes enter as two inputs and
-leave as two outputs, and no stage nets one against the other. The last
+any number of pairs each sigma is a linear sum of its pi units, clipped to the
+field's range of 0 to 1 before the next pair or the reader. The two evidence lanes enter as two inputs and,
+where the output is a field, leave as two outputs; no stage nets one against
+the other. The last
 sigma's weights start at zero, so a new stack gives exactly zero; and its
 first weights come from a private
-generator, so building one changes no other random draw. `expect` runs once,
-at the open pass, and is taught by omission: where units of the sentence were
+generator, so building one changes no other random draw. `expect` publishes
+its field once, at the open pass, and is taught by omission: where units of the sentence were
 hidden, the field with them present is its detached teacher, and a sentence
-with nothing hidden gives it no cost (`expectation.concepts`). `intuit` runs
-once when the sentence is observed, before any thought, and is taught by the
-field the kept path's thought leaves (`intuition.field`) and by the output
-cost. A `marker` kernel passes the form block unchanged and shifts the meaning
-in the chart; a new kernel is the identity.
+with nothing hidden gives it no cost (`expectation.concepts`). `intuit` uses
+`expect`'s field and has no stack. The read to a point is taught by the root
+idea the kept reading leaves (`expectation.idea`). A `marker` kernel passes
+the form block unchanged and shifts the meaning in the chart; a new kernel is
+the identity.
 
 `ConceptualSpace` owns definitions, evidence and STM/event state. On aligned
 BasicModel, native PS and WS views bind by location and the actual concept
@@ -871,7 +872,9 @@ The schema does not declare `reconstruct`, `truthCriterion`, `readout`,
 `wordStore`, `gradientMode`, `useStackRouter`, `lbgMinCount`, `lbgEpsilon`,
 `intraLossWeight`, `reconstructionReferenceWeight`, `verbTeacherWeight`,
 `modalTeacherWeight`, `architecture.learning`, `exploreTemperature`,
-`stmReduceTau`,
+`stmReduceTau`, `rowExpectationGain`, `documentExpectationGain` and
+`sentenceExpectationLossWeight` (nothing estimates a sentence), `intuitHidden`
+and `intuitLayers` (`intuit` has no stack of its own),
 `wherePeriod`, `whenPeriod`, `whenRungRatio` or `language.useGrammar`, so a
 configuration that declares one fails schema validation. Nor does it declare
 the weighted forgetting settings `forgetTrustWeight`, `forgetUtilityWeight`,

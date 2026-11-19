@@ -941,13 +941,13 @@ $$
 the masked-LM information-reconstruction term at the subsymbolic (PS) (see
 [Spaces.md](Spaces.md#within-sentence-ar-retirement-2026-05-14)) plus the
 in-STM next-idea term ([Section 6](#6-intrasentencelayer)) plus the
-inter-sentence next-end-state term ([Section 11](STM.md#11-inter-sentence-prediction))
+inter-sentence next-end-state term ([Section 11](STM.md#11-the-recent-situation))
 plus the discourse ARMA($p$, $q$) term (`BasicModel._discourse_arma_loss`,
 [Models.py](../bin/Models.py); `InterSentenceLayer.observe`,
 [Architecture.md](Architecture.md) — a separate ring-based sentence-rep
 predictor on the SAME `InterSentenceLayer`, distinct from the STM-chain
 `_inter_predictor` of Section 11) plus the optional InfoNCE next-idea
-contrastive term ([Section 11](STM.md#11-inter-sentence-prediction), off by
+contrastive term ([Section 11](STM.md#11-the-recent-situation), off by
 default via `<interContrastiveWeight>`). This is analogous to a
 transformer language model's next-token cross-entropy, but computed **in
 concept space** rather than over a token vocabulary:

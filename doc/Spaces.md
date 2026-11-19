@@ -678,7 +678,7 @@ The implementation keeps percept and concept/symbol carriers distinct:
 | coordinate | form presence; meaning as a placement direction scaled by trust |
 | opposite | `not` exchanges the two evidence lanes; no coordinate is negated |
 | sides | polarity is the pair of evidence lanes (for, against), never a sign |
-| metric | meet ratios over the meaning for containment (`IdentityRows.meet_ratios`); cosine for content reads |
+| metric | parthood both ways. One function, `ConceptualMatch.match`, compares a content with conceptual space for the reference and field readers and returns how much of each candidate lies in the content and how much of the content lies in each candidate, on the meaning lanes where the code has them. The other parthood reads (the hierarchy, the basic percepts, case selection) call the same measure directly (`IdentityRows.meet_ratios`). The measure is provisional ([Mereology](Mereology.md#parthood-as-shared-size)) |
 | magnitude | the for lane's radius is the concept's trust |
 
 The parallel conceptual field uses independent $(c^+, c^-)$ presences and two
@@ -1173,10 +1173,10 @@ hard-reset signal is the cursor's `hard_eos`.
 
 ### Within-sentence AR retirement (2026-05-14)
 
-There is no next-token objective within a sentence: the autoregressive
-objective of this architecture is **next-sentence** prediction, which belongs
-to the discourse layer's activation predictor (see
-[STM.md](STM.md#11-inter-sentence-prediction)). Within-sentence training is
+There is no next-token objective within a sentence, and no next-sentence
+objective either: nothing estimates a sentence, and what carries from one
+sentence to the next is the recent situation (see
+[STM.md](STM.md#11-the-recent-situation)). Within-sentence training is
 IR-only. `InputSpace.forward` emits `[B, N, D]` (left-aligned, right-padded
 to N) and `_forward_per_stage` runs a single masked-LM pass:
 
@@ -1228,19 +1228,22 @@ and the configuration decides which one runs (`PartSpace._embed_radix`).
   percept takes one slot; any other word is spelled out, a slot for
   each part, and the bytes between two words take slots too. The stem
   computes each word's interval (`Meronomy.percept_spans`) to cut the
-  word texts (`word_texts`) and to say which word a slot's part belongs
-  to (`word_groups`).
+  word texts (`word_texts`), to say which word a slot's part belongs
+  to (`word_groups`), and to keep as the word's interval
+  (`word_intervals`), since a slot need not be a whole word.
 
 A **word bracket** is the interval of the row's bytes that a word
 occupies. The first look of a sentence reads the percepts inside every
 word bracket at once (`FamiliarTier.open_sentence`), with a grammar or
 without one, and attention's later looks divide a bracket or go into
 one. `ModelAttention.stage_input` makes the brackets
-(`model._attention_spans`, `[B, W, 2]`). With the word-major stem a
-word's start is the stem's. With the whole-slab stem it is found again
-by a search of the row for the word's text, from the end of the word
-before; the two agree, and item 1.8's loop of looks has the stem hand
-over its intervals in place of the search.
+(`model._attention_spans`, `[B, W, 2]`) from the intervals the stem
+kept. Every stem keeps each word's interval, as `Meronomy.percept_spans`
+cut it, in `word_intervals` beside `word_texts` on
+`PartSpace._forward_input`, and `stage_input` reads them the same way
+on both stems, trimming a word's leading and trailing whitespace. The
+row is not searched again for a word's text. A row with no word texts
+has no brackets.
 
 "hello world" on the whole-slab stem, at a width of eight slots:
 

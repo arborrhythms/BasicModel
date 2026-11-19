@@ -35043,6 +35043,78 @@ in 40 of them; six were defects. This is recorded as it happened, and
 **What is left of item 1.8:** the doc pass of §70.18, the PDF, and the
 push (Alec, 2026-11-18: "For 1.8, you push").
 
+### 68.87 The doc pass of item 1.8, the PDF and the push (Claude, 2026-11-19)
+
+**Applied.** The lists of §68.32, §68.37, §68.55, §70.12, §70.14 and
+§70.19 are applied to the standing documents on `main`, each statement
+checked against the source at `e63d6e55ea`. Four helper agents wrote
+the changes, one per group of documents; Claude read every changed
+line and checked the names and the quotations in the source and in
+this file.
+
+- `doc/Language.md`: the two stages (the read builds the formula,
+  comprehension executes it on the objects), the terms concept and
+  idea, S R S, a word with no object, the loop of looks and
+  `interpretBias`, and the section on sentence expectation.
+- `doc/Extend.md`: comprehension rides the walk that gives the field
+  of understanding.
+- `doc/STM.md` and `doc/Architecture.md`: the tree is the trace of its
+  read (`ReadingIndex`, `SentenceStrata.Trace`), the idea beside its
+  tree under one index, the concepts held, the one match
+  (`ConceptualMatch.match`) with the example of §70.9, a look's
+  forecast, and the recent situation in place of an estimate of a
+  sentence. STM's section 11 is now "The recent situation".
+- `doc/ExpectationRetention.md`, `doc/Reasoning.md`, `doc/Params.md`,
+  `doc/Philosophy.md`: one field map and the read to a point with
+  their two teachers, the forecast of a look, the keys removed and
+  added, expectation is not prediction, the point as a key, and the
+  ties with Frege.
+- `doc/FutureWork.md`: "The field use of every operator"; the entry on
+  expectation by inversion.
+- `doc/Spaces.md`, `doc/GradientFlow.md`, `doc/Training.md`: the
+  metric row, the two stems, the six walks, the costs removed and
+  added, and stage 3 of the curriculum (the next sentence) marked
+  withdrawn in Alec's words of §68.45.
+
+**Where the source differs from this file** (the documents follow the
+source).
+
+1. `STM0` does not subclass `LTM0` (§68.22): both are `IdeaRows`.
+   Checked.
+2. A written row starts at `activityDefault`. The kept close passes no
+   surprise (`comparison = None` in `_commit_sentence`), since no
+   sentence is estimated. Checked.
+3. The stack's Sigma is linear and clipped to the range 0 to 1 at
+   every pair (`SigmaPiStack.forward`); the documents said `tanh`.
+   Checked. `SigmaPiLayer`, named in five places of the documents, is
+   no class of the source; the name is removed.
+4. `Extension.compose` knows 48 names, not 49, and `unfocus` has no
+   contract there (a helper's count; `CONTENT` has 27 names, checked).
+5. bind's expectation prime reads zero, since no sentence is estimated
+   (a helper's reading; not checked by Claude).
+
+**One point for item 1.7, not checked.** The read to a point ends in a
+Sigma clipped to 0 to 1, and its teacher is the kept reading's root
+idea (`record.meaning_root`). If a root idea has a negative
+coordinate, the read cannot reach it. A helper raised this; whether a
+root idea is ever signed there was not checked. It belongs with the
+signs stored as lanes (§68.63).
+
+**Left out, on purpose.** "A mind without buffers" (§68.30) waits for
+its own pass. `doc/STM.md` still says "idea" of a word's or a chunk's
+value in its first sections; the term of §68.26 would need a wider
+rename. The read with no sentence (§66.12) is provisional and is not
+in the documents until Alec's word.
+
+**The PDF** is rebuilt by `make doc`: 19 chapters, 956 formulas, 7.6
+MB.
+
+**The push.** `main` of `basicmodel` is pushed to GitHub once, through
+this commit (Alec, 2026-11-18: "For 1.8, you push"). The remote had not
+moved: 0 commits behind, a fast-forward. It carries the work since
+`3926005f12`: item 1.8's source and tests, the plans, the todo, the
+standing documents and the PDF. The superproject's pointer stays his.
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

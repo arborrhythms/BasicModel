@@ -127,6 +127,32 @@ only binder: a determiner is a cue input to it, and its content test is
 containment, not distance
 ([Mereology](Mereology.md#asserted-and-geometric-parthood)).
 
+**The tree, the concepts held and the idea.** A concept is a part of a
+sentence, and an idea is the vector in conceptual space that corresponds to a
+whole sentence (Alec, 2026-11-17). A sentence's tree is the trace of its read:
+the actions the grammar took, each operation's operands and result
+(`operation_values`) and the leaves, kept by `SentenceStrata.Trace` and
+indexed once for a path by `ReadingIndex`, which gives each action its
+operands, its parent and its word. Nothing is written into `STM0` or `STM1`
+for the tree: `Tree` and `CompositionView` answer from the trace, a node's
+address is the trace's first name plus the node's action, and what the close
+marks on a node is kept with the trace. The tree holds the words' concepts,
+the formula in its syntactic form. Comprehension is a second stage, outside
+the tree: `Comprehension.Evaluation` executes the tree's actions on a small
+stack, shifting and reducing as the tree has them, on the words' objects.
+What it gives is staged beside the tree in the path's `IdeaStack`, an `STM0`,
+so the sentence's idea has the layout of an `LTM0` row, and each row is named
+by the address of the tree node it comes from (`IdeaStack.name_for`): the
+idea and its tree share one index (Alec, 2026-11-17). The concepts held in
+STM, MTM's identities put off the stack at the sentence's start and what the
+sentence says of them, are read and written by comprehension as the read did.
+It starts from a copy of them taken when the sentence begins
+(`HeldConcepts.snapshot`); where the read refreshed an operand from one of
+them, comprehension reads its own copy at that action; where the read wrote
+to one, comprehension writes its own value, in the same order; and before the
+kept close the values STM keeps are comprehension's, not the read's
+(`HeldConcepts.install`).
+
 **MTM's life.** An MTM token, an identity or a candidate, expires when more
 than `mtmHorizon` kept closes (16 by default) have passed in its stream since
 its last reference, and at `mtmCapacity` (64 by default) the token with the
@@ -173,9 +199,12 @@ looks. `AttentionContext.context` projects the current detached inputs
 into its keys. These inputs include the part and whole keys, priming
 heat, the expectation at each conceptual order, the percept residual,
 the occupied STM slots and their places and times, the open need and
-the gist. At a look with one word on one lane, the grammar can
-interpret that word or abstain. Interpretation supplies one word to
-the grammar. Whole-path comparison credits departures in these choices.
+the gist, and beside them each bracket's excess and omission against
+its forecast ([Architecture](Architecture.md#one-attention)). At a look
+with one known word on one lane, the grammar may interpret that word:
+the call is made with probability `architecture.interpretBias` (1 by
+default), and the chooser decides the rest, interpret or abstain.
+Interpretation supplies one word to the grammar. Whole-path comparison credits departures in these choices.
 During the reading lesson each taught focus and grammar decision
 contributes its cross entropy.
 
@@ -684,8 +713,9 @@ document has no row of its own. The working stores keep their batch axes:
 STM, MTM, the expectation context and the policies hold one row per stream.
 The legacy `get_stm_chain` adapter is a read view of the store's rows in time
 order, not a separate writer. An internal thought or provisioned fact cannot
-become an external predecessor through recency alone: sentence expectation
-consumes its own stream's bounded view, rows it observed held by reference.
+become an external predecessor through recency alone: the recent situation
+(Section 11) admits only the rows its own stream's kept closes wrote, held by
+reference.
 [Prediction context](../bin/Layers.py),
 [meaning roles](../bin/Meaning.py).
 
@@ -748,8 +778,8 @@ any store is loaded. [Checkpoint migration](../bin/MemoryCheckpoint.py).
 
 **Activity.** Every row of either store has one activity, a number from 0 to
 1 that says how much the row is in use (`MemoryActivity`). A write sets it
-from the sentence's surprise, or to `activityDefault` (0.5) where the
-surprise is unknown. An access adds `activityStep` (0.1): a row that recall
+to `activityDefault` (0.5): no sentence is estimated (Section 11), so the
+kept close gives no surprise to set it from. An access adds `activityStep` (0.1): a row that recall
 returns, a relation read as evidence, a pair written again; a read on a path
 counts only if that path is kept. A pass of forgetting multiplies every
 activity below one by `activityDecay` (0.9). For example, a row written at
@@ -810,23 +840,26 @@ activation alone cannot establish a degree. See
 [Existence evidence](ExistenceEvidence.md).
 
 ---
-## 11. Inter-sentence prediction
+## 11. The recent situation
 
-The sentence predictor is the shared `ActivationPredictor` of
-`SymbolExpectation`. Before a sentence closes it predicts independent
-for/against activations over the native symbol bank from the stream's recent
-entries and the open situation: live constituents, recent clause frames and
-frames brought into STM by `what`. A frame carries one point, an idea's
-vector or the head of a sentence stored as a relation chain
-(`SituationFrame.from_row`); the stored row keeps both tagged endpoints for a
-relational read. The close it predicts is its target; the forecast is never
-written to `LTM0`, and its surprise at the close sets the starting activity
-of the row the close writes
-([Expectation across the architecture](ExpectationRetention.md#the-observation-and-its-surprise)).
-The predictor carries an imputed identity; composition does not search LTM
-for one. Clearing the situation removes that cross-sentence carrier. Word
-provenance remains the current sentence's own reconstruction record when its
-subject refers to an earlier occurrence.
+No sentence is estimated from the sentences before it, and no close is
+taken as a target (Alec, 2026-11-17). The shared `ActivationPredictor` of
+`SymbolExpectation` is read only within a sentence, by the word read and the
+field read during the read. What carries from one sentence to the next is
+each stream's recent situation. At a kept close each row the close wrote is
+admitted to it by its address, with the symbols and activations the close
+gave it (`SymbolExpectation.include_occurrence`), up to a window of eight. A
+frame read from the situation carries one point, an idea's vector or the
+head of a sentence stored as a relation chain (`SituationFrame.from_row`);
+the stored row keeps both tagged endpoints for a relational read. Its
+readers are the word read's context (`WordExpectation`), the candidate frames
+and event cases of the sentence's reference bank
+(`BasicModel._sentence_reference_bank`), thought's accessible individuals
+(`ThoughtLTMCapability.bind_reference`) and the context records of selected
+thought. Composition does not search LTM for an identity. Clearing the
+situation removes that cross-sentence carrier. Word provenance remains the
+current sentence's own reconstruction record when its subject refers to an
+earlier occurrence.
 
 ## 13. Interaction LTM and the What stack
 
@@ -899,8 +932,8 @@ never edited, and an output that is the model's own.
   the relations the relative predicates draw on.
 - [Reasoning.md](Reasoning.md), [Logic.md](Logic.md): the truth surfaces
   and tetralemma trust.
-- [ExpectationRetention.md](ExpectationRetention.md): the sentence
-  predictor, `expect`, and the surprise that starts a row's activity.
+- [ExpectationRetention.md](ExpectationRetention.md): the shared
+  predictor and `expect`.
 - [Params.md](Params.md): `<stmCapacity>`, `<mtmPrepend>`,
   `<routerWireSerial>`, `<ltmCapacity>`, `<episodicConcepts>` and the
   forgetting settings.
@@ -1009,8 +1042,8 @@ LTM. The short-lived stores reuse the durable layouts: `STM0` shares
 `LTM0`'s idea rows (`IdeaRows`) but keeps its values live, names its rows
 locally and expires instead of persisting, and `STM1` is an `LTM1` whose rows
 expire. An `STM0` store belongs to one stream. Its owner indexes the stores by
-stream (sentence banks and recent stores) or by stream and chunk (thought
-stores).
+stream and path (each path's `IdeaStack`, beside its tree), by stream (the
+recent store) or by stream and chunk (thought stores).
 
 A new thought idea takes a tick of the one model clock that sentences use
 (Alec, 2026-11-10: "One clock"), on the same ladder; reads and updates keep
@@ -1032,7 +1065,7 @@ fewer seat. The maximum, fixed at model construction, is `4 * (W + O)`, using
 the sentence's existing W leaves and O operator seats; overflow beyond that
 ceiling is an error. The bound holds because every input meaning is a leaf or
 an operator and needs one head and at most three occupied role rows; O is the
-pinned operator bound, $3W + 2\,\mathit{stmCapacity}$. Allocating the
+sentence's operation bound, $3W + 2\,\mathit{stmCapacity}$. Allocating the
 maximum in every stream and chunk up front would cost far more memory than
 thoughts use, so a store grows only to the exact count its current thought
 needs, and its contents are never truncated. Reconstructing these transient

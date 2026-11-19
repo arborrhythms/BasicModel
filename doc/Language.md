@@ -98,21 +98,93 @@ parsers they selected, and soft operator superposition, are recorded in
 ## Sentence expectation and interaction memory
 
 `SymbolSubSpace` owns one `WhatInteractionMemory` and one
-`SymbolExpectation`, the activation predictor over the symbol bank for
-words, sentences and rows ([Expectation](ExpectationRetention.md)). Its
-three-role envelope is only the memory interface: it holds one native
-representative, never a predicted syntactic structure. Composition has no
-expectation capability. Subtraction belongs to the closing; the chooser
-receives detached conceived roles. A declared `not.thought` may conclude a
-serial inference, but absence itself executes nothing. The positive
-production prior seeds `<generate>` only.
+`SymbolExpectation`. Nothing estimates a sentence (Alec, 2026-11-17: no
+predictive processing): no estimate is made at a sentence's open from
+earlier closings, and none is compared with the sentence at its close.
+Every sentence is read as the first sentence of a document is read.
+`SymbolExpectation` keeps one activation predictor over the symbol bank,
+shared by the two reads it serves during a sentence, the word read and the
+field read ([Expectation](ExpectationRetention.md)). The field read keeps
+its cost, `expectation.symbols`, weighted by `symbolFieldLossWeight`. It
+also keeps the recent situation: at a kept close each retained row is
+admitted with its symbols and activations (`include_occurrence`), and the
+word read takes its context from those rows. Composition has no expectation
+capability, and no syntactic structure is predicted.
 
-## Open reading and completed fields
+The read from a field to one point has two forms. With no sentence
+comprehended it is the field's centroid (`FieldProjection.key`). A model
+that comprehends sentences also has a sigma-pi stack of its own
+(`ConceptualSpace.idea_stack`; `ideaHidden`, default 64, and `ideaLayers`,
+default 1) from the order-zero field on both lanes to one point. At each
+kept sentence it is taught to give, from the field observed at the
+sentence's open, the idea that comprehension left (`IdeaRead`, cost
+`expectation.idea`). Read on the expected field it gives the expected
+point; nothing in reading uses that point yet.
 
-The selected compose operations are recorded while reading for the tied
-inverse objective and the explore paths' departures. The numerical
-journal captures operands and results at execution time; closing assigns
-grammatical metadata without executing those operators again.
+## Two stages: the read and comprehension
+
+A sentence is understood in two stages (Alec, 2026-11-17). The meaning of a
+sentence comes from the objects its words refer to, not from the words; but
+the read's operations on words cannot help moving the concept activations,
+so the meaning is made apart from them, from the objects, at the end.
+
+**Terms** (Alec, 2026-11-17). A *concept* is, generally, a part of a
+sentence: a word concept, an object concept, an identity held in memory. An
+*idea* is reserved for the one vector in conceptual space that corresponds
+to a sentence. "The cat sleeps" has the concepts *cat*, *sleeps* and their
+objects; its idea is the single vector the sentence comes to.
+
+1. **The read builds the formula.** The grammar builds a tree over the
+   sentence's words: the well-formed formula (WFF) in its syntactic form,
+   the record of the operations chosen and the words they took
+   (`SentenceStrata.Tree`). The tree stays filled with word concepts. The
+   reference operations (`bind`'s choice of an individual, and the order an
+   operation asks of its operand) run during the read, and each records
+   the reference it chose and the order it asked for. The recorded operations
+   serve the tied inverse objective and the explore paths' departures.
+2. **Comprehension executes the formula on the objects.** At the end of the
+   read, comprehension (`Comprehension.Evaluation`) runs the tree's
+   recorded actions in their order on a small stack, shifting each leaf and
+   reducing at each operation as the tree has them. A leaf is the object
+   that `interpret` gives for its word (`InterpretLayer.referent`), read
+   with the word's form (`InterpretLayer.lexical_atoms`); an operand that
+   the read resolved to a reference takes that reference and its recorded
+   order. Each operation applies the same operator's compose to these
+   object values. Comprehension is not in the tree: it writes nothing back
+   into it.
+3. **The stack is what long-term memory receives.** Its entries are ideas
+   and the references between them, in the layout of LTM0's and LTM1's
+   rows (Alec, 2026-11-17). They are held per sentence in an STM0 store
+   with its STM1 (`SentenceStrata.IdeaStack`; STM0 and LTM0 share their
+   row columns, `Memory.IdeaRows`), under the tree's own index, so a
+   sentence's idea and its tree share one address. The closing
+   (`PartClosing.stage`) stages the comprehended clause in that store, and
+   the kept close writes that clause, with the stack's values, to LTM0 and
+   LTM1 through the ordinary writer (`_commit_sentence`); there is no other
+   writer. Comprehension runs inside the scoring of every complete path,
+   and the kept path's result is admitted without running it again
+   (`Comprehension.Result.admitted`).
+
+An absolute sentence leaves one idea. A relative sentence ends as S R S
+(Alec, 2026-11-17): a relation, written to LTM1, over two ideas, written to
+LTM0; the relation's operands are part of what comprehension leaves, not
+working values. "This is Felix" is to be read so, as `part` over two ideas
+([One operation per round](#one-operation-per-round)).
+What cannot be reduced to one idea, such as chained phrases that refer to
+each other (he said (she said (hello))), is left as ideas with the
+references between them.
+
+**A word with no object.** A word that has no object yet still reaches
+comprehension as a leaf: `InterpretLayer.reading` holds a name for it in
+MTM, and the leaf takes that pending name, whose value is the word's own
+vector and whose order is the word row's
+([below](#interpret-word-concept-to-object-concept-2026-09-25)). The name
+gets its definition row at a kept close.
+
+The two stages have ties with Frege (Alec, 2026-11-17): the read writes
+the sentence as a formula whose form does not depend on what its signs
+stand for, and comprehension computes its value from the references of
+its parts ([Philosophy](Philosophy.md)).
 
 After the row is written, generation begins from its actual one-slot or
 three-slot field and the current generate policy. Answer materialization and
@@ -221,11 +293,30 @@ rejected, not treated as a parallel catalogue.
 The compose grammar declares `focus` and `unfocus` with field operands.
 Focus divides a mixed bracket, enters a retained part or looks at one pure
 word. Unfocus restores a divided or entered bracket while all its words remain
-unread. Both operate during examination. At a look with one pure word,
-grammar can choose its unary `interpret` and place the word in the tree.
-The field operators `intersection`, `union` and `not` operate within a
-bracket. The chooser scores the bracket actions with the sentence prefix
-understood so far.
+unread. Both operate during examination. The field operators `intersection`,
+`union` and `not` operate within a bracket. The chooser (`attend`) scores the
+bracket actions with the sentence prefix understood so far. Attention has no
+act that accepts a word.
+
+A sentence is read by one loop of looks (`SentenceLooks.Looks.run`). The first
+look is the whole sentence, every word bracket read at once; each later look
+is one act of `attend`. Every look is perceived and conceptualized, whether or
+not it holds a word: the native percepts inside its bracket are read and the
+concepts of every order are given from them (`SentenceLooks.perceive`), and
+its field is kept, with its place, beside the sentence's own. Then, before
+`attend` acts again, the grammar has its option. Where the look is one known
+word read with one lane (`Attention.interpretation_at`), it may call
+`interpret` on that word. `architecture.interpretBias` (0 to 1, default 1) is
+the probability that the call is made without asking the chooser; in the
+remaining share the grammar's chooser decides it as it decides its other
+one-operand rules (`OperationSelectionLayer.choose_interpret`, `interpret`
+against abstaining), and that decision is recorded, explored and credited
+like its others (`interpret_at_look`). At 1 every offered word is
+interpreted; the bias is to be lowered later, so that a word is interpreted
+when experience shows it is worth it (Alec, 2026-11-18). A word that is
+interpreted is found, perceived and deposited in the tree, and its bracket
+is done. A word that is looked at and not interpreted stays a word: its
+concepts are active in the field, but it is no leaf and joins no tree.
 
 The line between the two is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `change`, `lift`, `lower`, `verb`, `modifier` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. The four connectives "collapse to two, with extent/intent each" (Alec, 2026-11-13): `intersection` and `union` act on a field, the symbolic encoding, and on two operands' vectors in conceptual space. `conjunction` and `disjunction`, a symbolic pair over activation patterns, are kept only by grammar files other than `complete.grammar`.
 
@@ -431,13 +522,15 @@ Peirce's icon, where the percept stands for itself and the leaf value is
 readings chosen by the compose chooser with ordinary credit: `sign`,
 Peirce's index, which opens the pointed-at occurrence's MTM token with the
 null-concept as its kind; or the symbol, the object above, the interpreted
-leaf left standing as that object, with no operation of its own. In reading
-mode the forcing holds (`InterpretLayer.mandatory`): every arriving word is
-interpreted at admission, under every binding, the chooser takes the second
-decision only, and `Interpret.leaf_readings` checks that every forced leaf
-ends as a sign or a symbol. The eager word transaction is the admission of
-the form and the lookup of an existing association; it mints nothing and is
-not the reading. No word is anchored to any reading, and `sign` is available
+leaf left standing as that object, with no operation of its own. Two
+things are forced now. The call of `interpret` at a look is made with
+probability `architecture.interpretBias`, set to 1
+([Grammar](#grammar)); a word never interpreted is no leaf. Given the call,
+the leaf takes the word's object (`InterpretLayer.mandatory`), the chooser
+takes the second decision only, and `Interpret.leaf_readings` checks that
+every forced leaf ends as a sign or a symbol. The eager word transaction is
+the admission of the form and the lookup of an existing association; it
+mints nothing and is not the reading. No word is anchored to any reading, and `sign` is available
 at every interpreted leaf. The forcing is lifted only with a field, or
 inside a certificate. The no-op is built behind the forcing: at the kept
 close a no-op leaf opens its own occurrence's MTM token with the
@@ -965,7 +1058,9 @@ and has the rest commented out.
   successor ([Training](Training.md)).
 - **Attention finds a word for grammar.** `focus` selects its bracket.
   `unfocus` can undo the last narrowing while its words remain unread.
-  Grammar decides whether to `interpret` a pure word at that look.
+  At a look that is one pure word the grammar may call `interpret`, with
+  probability `interpretBias` and otherwise by its chooser
+  ([Grammar](#grammar)).
 
 ## Exist and thought operations at the completed boundary
 

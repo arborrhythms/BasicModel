@@ -505,8 +505,7 @@ attention's gain $m$ is exactly zero outside the region, where a deep
 expectation is absent rather than attenuated, so the unattended field passes
 nothing and reports no omission. Neither changes the native identity or adds predicted
 content to the observation. Expected activations separately prime selection,
-while excess and omission train the predictor and supply the surprise that
-sets a new row's activity.
+while excess and omission train the predictor.
 The existing desire channel remains distinct: desire writes only to
 selection, never into content, so expectation never learns to predict and
 cancel it. An open object keeps its prime and is spared attenuation; a
@@ -875,25 +874,57 @@ has no order on which change, lift, lower, verb or modifier could act. The parse
 these declarations. The former mode-exclusion rule is therefore a consequence
 of representation, with no `serial` or `parallel` mode switch.
 
-The compose grammar declares `focus` and `unfocus` on brackets.
-A focus can split a bracket at a pole disagreement, descend into its retained
-parts or look again at one pure word. Each act spends one unit of the
-presentation's allowance. After a look the grammar can choose `interpret`
-when a single word supports exactly one lane. On interpretation its word brick
-runs and its occurrence enters composition. An abstention leaves the word
-available for another look. A known word cannot be focused below its word
-level. Repeated unknown surfaces share a descent witness.
+The compose grammar declares `focus` and `unfocus` on brackets, and no act
+of attention accepts a word. A focus can split a bracket at a pole
+disagreement, descend into its retained parts or look again at one pure word.
+Each act spends one unit of the presentation's allowance. Every look is
+perceived and conceptualized, whether or not it holds a word: the native
+percepts inside its bracket are read and the concepts of every order are
+given from them (`SentenceLooks.perceive`), and its field is kept in order
+beside the sentence's own. At a look that is one known word read on one lane
+(`Attention.interpretation_at`), the grammar may call `interpret`. The call
+is made with probability `architecture.interpretBias`, and the grammar's
+chooser decides the remaining share, `interpret` against abstaining
+(`OperationSelectionLayer.interpret_at_look`). The bias is 1 by default,
+which forces the call; it is to be lowered later, so that a word is
+interpreted only where experience shows it is worth it, since a word may be
+treated as a word rather than as what it represents (Alec, 2026-11-18). On
+interpretation its word brick runs and its occurrence enters composition; a
+word never interpreted has no brick and is no leaf, though its concepts are
+active in the field. An abstention leaves the word available for another
+look. A known word cannot be focused below its word level. Repeated unknown
+surfaces share a descent witness.
 `unfocus` restores the last split or entered bracket while its words remain unread.
 The fixed WholeSpace `word` whole and the reader use the same maximal ASCII
 letter run; punctuation, whitespace and digits separate words. Digit runs
 remain native percepts for numeric proofs such as XOR_exact.
 
-Before native admission, input narrowing walks the brackets with the same
-chooser; a departure in that walk is the attention walk of the sentence's
-whole-path comparison ("Whole paths and concept episodes" below), judged on the
-same R + A. Native paired evidence, including counterevidence, determines eligibility;
-a Boolean field operation changes the next mask, while a child reads its own
+A sentence has one loop of looks (`SentenceLooks.Looks.run`). The first look
+is the whole sentence, the open pass; each later step is one call of
+`attend`, and what follows from it (the look perceived, the grammar's option
+to interpret, the interpreted word's brick and composition) is done before
+the next, so words arrive in the order they are interpreted. A departure in
+that walk is the attention walk of the sentence's whole-path comparison
+("Whole paths and concept episodes" below), judged on the same R + A. Native
+paired evidence, including counterevidence, determines eligibility; a
+Boolean field operation changes the next mask, while a child reads its own
 native parts.
+
+**A look's forecast.** Before a look is perceived, `expect` is taken on the
+observed field formed from the readings outside the look's bracket and
+closed upward through the definitions (`LookForecast.forecast`), so it says
+what should be in this place given what was seen elsewhere; a reading that
+overlaps the bracket contributes nothing, even an earlier reading of the
+same place. The look's field is then compared with it, per row and lane:
+what was read beyond what was expected is the excess, and what was expected
+beyond what was read is the omission, each summed over rows, two numbers
+for a look (`LookForecast.observe`). At the open pass every word gets its
+pair, forecast with that word left out; a later look replaces the pair of a
+word only when its bracket is that one word, and a bracket of several words
+reads the sum of its words' pairs (`LookForecast.for_brackets`). `attend`
+reads the pairs through the attention context's zero-started projection
+(`AttentionContext.project`), so before any teaching it scores as it would
+without them. The comparison is detached and books no loss.
 
 `attentionBudget` meters perceptual bracket work and attention to symbols in
 thought and recall. It does not meter the words' grammatical restriction of
@@ -908,16 +939,21 @@ One address registry names input, STM, LTM, part, whole and symbol spaces.
 Recall uses typed intervals in those spaces, the common categorical selection
 law and the same work meter. Detached content keys protect codebook ownership.
 The answer owns the learned primed-symbol reader and its initially zero
-consume gate. Priming also enters bracket logits through the codebook prior
-`max_v cos(key, row_v) * boost_v`.
+consume gate. Priming enters bracket logits only through the attention
+context (`AttentionContext.context`); there is no separate codebook prior.
 
-One `SymbolExpectation` owner serves word, symbol, closing and next-row reads.
-It predicts independent for/against activations over native bank identities and
-trains with local activation MSE. Every source and target is detached; observed
-input advances context in both training and inference. The word's positive
-lane is normalized only for rank/NLL reporting. Content gain, expected prime
-and residual lanes have separate consumers. The chronological observation and
-stable-occurrence lifecycle are owned by the same component.
+One `SymbolExpectation` owner serves the word read and the field read during
+the read. It predicts independent for/against activations over native bank
+identities and trains with local activation MSE; the field read's cost is
+`expectation.symbols`, weighted by `symbolFieldLossWeight`. Every source and
+target is detached; observed input advances context in both training and
+inference. The word's positive lane is normalized only for rank/NLL
+reporting. Content gain, expected prime and residual lanes have separate
+consumers. No sentence is estimated and no close is a target (Alec,
+2026-11-17): the same owner keeps each stream's recent situation, to which a
+kept close admits each row it wrote (`include_occurrence`), and the word
+read, the sentence's reference bank and thought read it
+([STM](STM.md#11-the-recent-situation)).
 
 Attention, compose, thought and both generate walks share one comparison per
 sentence ([Whole paths and concept episodes](#whole-paths-and-concept-episodes-2026-11-11)).
@@ -1167,7 +1203,7 @@ reset. The signal router consumes `stm.snapshot()` for its slab input.
 See [Spaces.md](Spaces.md#shorttermmemory).
 
 The STM data model, the predict-then-perceive cadence (serial and
-parallel), the in-STM and inter-sentence predictors, masked-word
+parallel), the in-STM predictor and the recent situation, masked-word
 reconstruction, relative-vs-absolute end-states, and the LTM chain are
 documented in full in the dedicated [STM.md](STM.md) chapter. Note in
 particular that **serial mode runs WITH attention by design**; see
@@ -1990,8 +2026,9 @@ See [Ergodic.md](Ergodic.md).
 `SymbolExpectation` owns the shared activation head. Its bounded chronological
 context contains only actual external observations, with independent evidence
 lanes. Predictions are made before their targets and never feed their own
-future context. The same head is read at symbol arrival, row closing and next
-row prediction. The original identity and activation gain stay separate.
+future context. The same head is read at symbol arrival and by the field
+read during the read; no sentence is estimated, at a close or before the
+next row. The original identity and activation gain stay separate.
 The conceptual spread that primes attention, the chooser and retrieval is not
 this head's: it is `expect`, the conceptual space's own learned map ("C. Parse
 time" above).
@@ -2003,8 +2040,8 @@ with external observations suspended. The context names retained `LTM0` rows
 by their times; no estimate is written as a row.
 [Expectation retention](ExpectationRetention.md) specifies the pair.
 
-The configuration exposes `perceptExpectationGain`, `symbolExpectationGain`,
-`rowExpectationGain` and `documentExpectationGain` in `[0,1]`,
+The configuration exposes `perceptExpectationGain` and `symbolExpectationGain`
+in `[0,1]`,
 `perceptExpectationRate`, positive `expectationEpsilon`, and clipped or smooth
 `expectationSaturation`. `explorationUniformFraction` is in `(0,1]` and
 `explorationTemperature` is positive. The canonical gains are 0 (Alec, 2026-10-19: zero until a measurement against the zero-gain baseline supports another value; 0.5 is a measured setting), with the prime on and `φ = .5`; this default
@@ -2215,8 +2252,9 @@ narrowing walk of [One attention](#one-attention)
 conceptual space). Under identity by construction a word left out of the
 mask is a word missing from the reconstruction, which the path comparison
 charges and credits to the walk's choices. The walk's poles
-are handed off with the scope, and priming through shared wholes
-supplies its prior.
+are handed off with the scope; priming and each bracket's excess and
+omission against its forecast reach the chooser through the attention
+context.
 
 **Two lanes, two positive symbols** (Alec, 2026-09-16; restated
 2026-10-07). Evidence for and evidence against a concept are separate
@@ -2257,7 +2295,8 @@ attenuates percept content, and the forecast's signed residual is attention's
 salience input (below). Symbols of every order use one
 shared predictor of independent for/against activations over the native bank,
 conditioned on detached observed bank activations and STM. The same weights
-are read at composition, closing and document continuation. Identity is read
+are read by the word read and the field read during a sentence; nothing
+estimates a sentence at its close or the next one. Identity is read
 before gain and retained beside it, since scaling can move a vector's nearest
 key and at gain zero leaves none. Content is $c = m \odot a \odot o$; excess
 and omission are separate residual lanes, scoped to the admitted region: an
@@ -2407,8 +2446,8 @@ Trailing columns with zero extent in every stream are omitted before crossing
 events with features and attention brackets. Interior gaps remain, preserving
 canonical tile adjacency.
 
-`intuit` is a learned map from concepts to concepts, evaluated once when the
-sentence is observed ("expect, intuit and marker" below). The firing of a
+`intuit` deposits `expect`'s field and propagates it up the orders ("expect,
+intuit and marker" below). The firing of a
 stored implication leaves it and is reached through `infer` (Alec,
 2026-11-14: "the existing logic can be introduced as implication"). A firing
 holds one order-zero Sigma-over-Pi result and
@@ -2501,7 +2540,7 @@ An MTM occurrence keeps its first available word reading when `MediumTermMemory.
 
 `FamiliarTier.promote_identity` names a token by its introducing word and any explicit defining word. If those words already denote exactly one identity at the promoted order, active or remembered after its definition was forgotten, the token joins that identity and nothing is minted; if they denote two or more, promotion raises before it changes the token or takes a seat. A reading of a name whose definition was forgotten returns its unique remembered denotation through `InterpretLayer.referent` and writes no definition; the kept close grounds it again.
 
-**Activity, forgetting and promotion.** Every row of either store has one `activity` from 0 to 1. A write sets it from the sentence's surprise, or to `activityDefault` (0.5) where that is unknown. An access adds `activityStep` (0.1): a row a recall returns, a relation read as evidence, a pair written again; a read on a path that is not kept does not count. A forgetting pass (`Forgetting.forget`), at a document boundary, at an epoch's start and on a serving write that finds a store over its high water, multiplies every value below one by `activityDecay` (0.9); where a store holds more than `forgetHighWater` (0.9) of its capacity, it drops the least active rows down to `forgetLowWater` (0.7), never a row that a kept row or relation refers to. A value of one is never lowered and its row never dropped. An `LTM0` row whose activity reaches `activityPromotion` (0.9) is promoted once (`MemoryConsolidation.consolidate`): its idea, with its time band zeroed, becomes a new concept, written as the row's referent, and its activity is set to one. The concept's order is its referent's where the row had one, and one above the greatest order among its entry's concepts where it had none. Its meaning is placed at the promoting close. A row read often enough therefore becomes a concept, and a row never read again fades.
+**Activity, forgetting and promotion.** Every row of either store has one `activity` from 0 to 1. A write sets it to `activityDefault` (0.5), since no sentence is estimated and a close has no surprise to set it from. An access adds `activityStep` (0.1): a row a recall returns, a relation read as evidence, a pair written again; a read on a path that is not kept does not count. A forgetting pass (`Forgetting.forget`), at a document boundary, at an epoch's start and on a serving write that finds a store over its high water, multiplies every value below one by `activityDecay` (0.9); where a store holds more than `forgetHighWater` (0.9) of its capacity, it drops the least active rows down to `forgetLowWater` (0.7), never a row that a kept row or relation refers to. A value of one is never lowered and its row never dropped. An `LTM0` row whose activity reaches `activityPromotion` (0.9) is promoted once (`MemoryConsolidation.consolidate`): its idea, with its time band zeroed, becomes a new concept, written as the row's referent, and its activity is set to one. The concept's order is its referent's where the row had one, and one above the greatest order among its entry's concepts where it had none. Its meaning is placed at the promoting close. A row read often enough therefore becomes a concept, and a row never read again fades.
 
 ### Reference dependencies and closing deadlines (2026-11-03)
 
@@ -2535,7 +2574,7 @@ Two exactness tests coexist. The pair search (`LanguageSpace._bounded_binary_rec
 
 Before its first event, an MTM identity's actual meaning is computed from its held references (Alec, 2026-11-05). A reading typed as a word contributes the current concept that `InterpretLayer.referent` resolves: the first live denotation, otherwise the single remembered object not superseded by a recorded raise, otherwise the word; ambiguity raises. A derived-kind reading, a wordless mention and a kept thought contribute their own occurrence rows. The explicit native individual or promoted symbol is also a held concept reference. `MediumTermMemory.value_of` joins these detached meanings by elementwise maximum after `percept_event_width`, preserving the stored carrier's form and location; a chart with no meaning pairs keeps its stored value. The first event freezes only the actual timeline's computed state. Alternative timelines keep their producer's starting states, and an identity with an event thereafter reads its selected timeline's stored state. An eventless identity rejects direct state updates: a kept thought adds its written occurrence instead. Native and ingestion pools retain their conceptual owner, and an ownerless semantic reference raises; numerical pools with synthetic handles keep their explicit value API. Held readings are protected from conceptual reclamation, and `ReferenceClose.accessible` indexes names and reads each token once per call. Consolidation candidates retain their separate weighted live-support read before events.
 
-A mention associates by content only when one of `IdentityRows.meet_ratios`' two coverage ratios over meaning coordinates is exactly one: either the request contains the candidate or the candidate contains the request (Alec, 2026-11-05). This eligibility is shared by the closing/arrival/thought scorer, the compiled STM binding menu and read-time re-identification; witnessed incompatibilities remain exclusions. Empty meaning supplies no identity evidence. Named-token reads, stored-identity re-entry and committing a selected re-identification are joins by identity and retain their existing reference paths. No tolerance, distance threshold or word-class rule replaces exact containment.
+A mention associates by content only when one of the two numbers of the one match is exactly one: either the request contains the candidate or the candidate contains the request (Alec, 2026-11-05). One function compares a content with conceptual space for every client (`ConceptualMatch.match`; Alec, 2026-11-18: match the object, not the word): the compiled STM binding menu (`STMChunks.bind_menu`), the closing, arrival and thought scorer (`ReferenceClose`), MTM's link and merge (`MemoryLink`, `MediumTermMemory.merge`), the field read of a point (`FieldProjection.stimulate`) and the scalar part kernel. It returns parthood both ways, two numbers: how much of the candidate is found in the content, and how much of the content is found in the candidate. Over the coordinates furry, meows, barks and black, the description "cat" is (.8, .8, 0, 0), Felix (.8, .8, 0, .8) and Rex (.8, 0, .8, 0). "Cat" and Felix share 1.6, so .67 of Felix is found in "cat" and all of "cat" in Felix: everything the description says is true of Felix, and Felix is offered. "Cat" and Rex share .8, half of each, and Rex is not offered. With Felix as the content and the kind cat as the candidate the first number is 1: a token implies its type. Where the codebook has a form block the function compares only the meaning coordinates after it, and where the mention at the binding menu is a single word it compares that word's staged object (`ReferenceContext.bind_content`). The measure is provisional and kept inside the one function, so that changing it is a change in one place; it is parthood as shared size ([Mereology](Mereology.md#parthood-as-shared-size)). Witnessed incompatibilities remain exclusions. Empty meaning supplies no identity evidence. Named-token reads, stored-identity re-entry and committing a selected re-identification are joins by identity and retain their existing reference paths. No tolerance, distance threshold or word-class rule replaces exact containment.
 
 The whole-sentence forward with a positive concept order limit remains eager: its sparse store, conceptual inventory and percept parse grow while reading. `enable_compiled_step` declares this host work instead of admitting changing graph shapes. Tensor STM writes leave the host depth mirror untouched during compilation; `_forward_per_stage` refreshes that mirror from live depths at the eager whole-sentence boundary. Native `stage_cs_sub` and `stage_cs_sym` word bricks declare two initial phases through `CompileGuard.carried_state_phase`: fresh state with no autograd history, and carried state with at least one differentiable tensor. The phase admits the first graph for each state; further guard changes within either phase still raise. Target word bytes retain the fixed `wordSurfaceCapacity` axis and are never marked as dynamic residual parts. (2026-11-05.)
 
@@ -2728,13 +2767,13 @@ Output is a sequence of order-0 points, one decode per item; the word order come
 
 The architecture is a dual-process model, and the distinction is structural, not a label on speeds. The line between the two systems "is equivalently at symbols, or higher-order logic (which is what symbols allow)" (Alec, 2026-11-18). The distinction is the design's account of what separates animal from human cognition.
 
-**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts, the order-0 decoder, `intuit` (a learned map from concepts to concepts, evaluated once when the sentence is observed, whose result joins knowing where `Intuition.write_knowing` deposits), `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking at order zero: MTM's promotion of percepts to basic percepts and its behavioral chains, by recurrence. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
+**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts, the order-0 decoder, `intuit` (which deposits `expect`'s field, detached, into the sentence's knowing and propagates it up the orders by the definitions' closure, `IntuitionField.read`), `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking at order zero: MTM's promotion of percepts to basic percepts and its behavioral chains, by recurrence. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
 
 **System 2** is the higher-order logic that symbols allow: symbols, which begin at order 1 with what MTM promotes there, its identities among them, and the higher orders, the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
 
 **The two inverses (Alec, 2026-11-10).** "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." In code names: `BasicModel.reverse` is the System 1 inverse and reads no grammar (`reconstruction_reverse`); with symbols on, `SentenceField.sentence_generated` runs the generate walk on the sentence's own end slots, `OutputOccurrences.generated` places the emitted terminals, and the same `reverse` follows (`reconstruction_order_zero`).
 
-**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 mainly through System 2's activation of the conceptual space, which teaches `intuit`: its target is the detached field the kept path leaves after its thought, so System 1 learns to give at observation what System 2 made of the input. `expect` is taught by omission instead, and the two stay two maps with different teachers. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains `expect`, which belongs to System 1, and credits no System 2 departure.
+**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 through the read from a field to a point: where sentences are comprehended, a stack of its own (`idea_stack`) reads the order-zero field observed at a sentence's open into one point, and its teacher is the root idea the kept reading leaves (`IdeaRead.complete`, cost `expectation.idea`), so System 1 learns to give at observation the idea System 2 made of the input; nothing reads that point yet but its test (`IdeaRead.expected_point`). With no System 2 the read is the field's centroid (`FieldProjection.key`). `expect` is taught by omission, and `intuit` has no map or teacher of its own. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains `expect`, which belongs to System 1, and credits no System 2 departure.
 
 **Gradient.** Under the loop the shared row is perception, the field's parameters (definition exponents, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's, so to first order a step taken for the answer cannot increase reconstruction's loss. Each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning ([GradientFlow](GradientFlow.md#default-projected-gradients)).
 
@@ -2750,7 +2789,7 @@ The architecture is a dual-process model, and the distinction is structural, not
 
 **Modal timelines.** A modal clause continues its subject's most recent alternative timeline and opens one only when the identity has none (`MediumTermMemory.alternative`), so "Joe could have run. He would have been tired." is one branch. This default is adopted for simplicity, not as a claim about discourse; if two counterfactuals of one identity must be kept apart, the chooser can gain an action that opens a new timeline. An alternative starts from the actual event prefix, a later actual event does not advance it, and a branch is never a bind candidate or an identity. An actual (order-zero) request reads the actual timeline only, and an abstract request (order 1 or above) reads every timeline (`TimelineRead`).
 
-**How `bind` scores a candidate.** `ReferenceClose.score` ranks a mention's candidates against a zero-logit own-object (dummy) alternative that a candidate must strictly beat. Requests and candidates are read in conceptual coordinates, never in the percept cube. A candidate is eligible only if it is admissible for the mention's order, its content is not contradicted by what the mention's own close asserts, and one description contains the other: one of the two meet ratios $|q \wedge c|/|c|$ and $|q \wedge c|/|q|$ (`IdentityRows.meet_ratios`, with $\wedge$ the coordinatewise minimum and no distance) equals 1, so an underspecified mention such as a pronoun ties on content and the other features decide. Its logit is one linear policy over twelve detached features (content coverage, the expectation's prediction and prime, form-region containment, recency, roles and four continuity features read from MTM), and the choice is credited by the score function on R + A (`expectation.bind_score_function`). The expectation prime is the only place priming enters `bind`.
+**How `bind` scores a candidate.** `ReferenceClose.score` ranks a mention's candidates against a zero-logit own-object (dummy) alternative that a candidate must strictly beat. Requests and candidates are read in conceptual coordinates, never in the percept cube. A candidate is eligible only if it is admissible for the mention's order, its content is not contradicted by what the mention's own close asserts, and one description contains the other: one of the two numbers $|q \wedge c|/|c|$ and $|q \wedge c|/|q|$ of the one match (`ConceptualMatch.match`, with $\wedge$ the coordinatewise minimum and no distance) equals 1, so an underspecified mention such as a pronoun ties on content and the other features decide. Its logit is one linear policy over twelve detached features (content coverage, the role prediction from MTM's participants and the expectation prime, form-region containment, recency, roles and four continuity features read from MTM), and the choice is credited by the score function on R + A (`expectation.bind_score_function`). The expectation prime is the only place priming enters `bind`; since no sentence is estimated it is empty, and that feature reads zero.
 
 ### Episodic and semantic memory in the two systems (2026-11-11)
 
@@ -2792,13 +2831,13 @@ Reference is resolved in two stages, as in human reading: an immediate bond to a
 
 Recurrence promotes one order above the members through the common membership writer (`MemoryPaths.membership`), which writes one `LTM1` row from each member to the new concept. Idea members use `OCCURRENCE`; events already represented by native relations retain `RELATION`, with no duplicate idea row. A recurring basic collection writes a durable `BasicPercepts` row. Consecutive state links give their stable participants ordinary mention witnesses, so nouns use the same threshold. A name for a member does not automatically name the higher-order collection formed from its repeated uses.
 
-`STM0` subclasses `LTM0`, and `STM1` subclasses `LTM1`; their storage and reads are shared and their retention differs. A pinned sentence stores word and operator-concept occurrences in STM0 and ordered pairs in STM1: `pair(pair(operator,left),right)` or `pair(operator,argument)`. The recent buffer remains `stmCapacity` (eight by default). At the kept close the derivation tree collapses: the pinned applications expire, and LTM0 and LTM1 hold only the compacted idea and semantic relations. No relation in LTM carries an operator, and an operator is never an occurrence, an application row or a membership row in LTM; rows are added to the stores only with strong justification. `Reading` and `Composition` expose views, and thought chunks retain views of the same stores. Reconstruction, conditioning and memory therefore read the shared structure.
+`STM0` and `LTM0` are both `IdeaRows`, and `STM1` subclasses `LTM1`; their storage and reads are shared and their retention differs. A sentence's tree is the trace of its read and is written as no row or pair: `ReadingIndex` works out once, for a path, each recorded action's operands, parent and word, and `SentenceStrata.Trace` keeps the actions, the leaves and each operation's operands and result (`operation_values`). `Tree` and `CompositionView` answer from the trace; a node's address is the trace's first name plus its action, and the close's marks on a node are kept with the trace. The sentence's idea is held beside its tree in the path's `IdeaStack`, an `STM0` with the layout of an `LTM0` row, under the tree's index: each row comprehension stages there is named by the address of the node it comes from (Alec, 2026-11-17; [STM](STM.md#1-stm-data-model)). The recent buffer remains `stmCapacity` (eight by default). At the kept close the trace and its idea stack expire with their trial, and LTM0 and LTM1 hold only the compacted idea and semantic relations. No relation in LTM carries an operator, and an operator is never an occurrence, an application row or a membership row in LTM; rows are added to the stores only with strong justification. `Reading` and `Composition` expose views, and thought chunks retain views of the same stores. Reconstruction, conditioning and memory therefore read the shared structure.
 
 A generative realization from a retained idea requires no input derivation. A syntactic inverse need not be exact, nor recover the original wording, tree or witnesses: decoding is generative matching. From one retained LTM0 idea, the active concepts and each verb's available inverse, the walk proposes constituents and judges their recomposition against the idea, so a sentence can be unfolded after its input STM and derivation are gone. Replaying a known application reads its recorded action context, and a free candidate is checked in its own proposed object basis and verb group. An exact conditional inverse, when its witnesses happen to be present, is one proposal and never a requirement; unknown operands make a search problem rather than a decoding failure, while a broken calculation, such as a missing record on replay or a non-finite value, still raises.
 
-A hard reset expires the recent, pinned and thought stores; no boundary withdraws a retained occurrence or relation. Trial rollback within an epoch restores the already admitted shared context without importing it as a new durable checkpoint; durable imports still validate external references.
+A hard reset expires the recent stores, the sentence traces with their idea stacks, and the thought stores; no boundary withdraws a retained occurrence or relation. Trial rollback within an epoch restores the already admitted shared context without importing it as a new durable checkpoint; durable imports still validate external references.
 
-The pinned banks use the execution bound, `3*n + 2*stmCapacity` operator occurrences for a sentence of at most `n` words, since unary operations and swaps exceed the $n-1$ binary applications. These capacities are constructed once, separately for the three coexisting trial views; no bank resizes ([STM](STM.md)).
+A sentence of at most `n` words may record at most `3*n + 2*stmCapacity` operations, since unary operations and swaps exceed the $n-1$ binary applications; `SentenceStrata.capture` raises beyond it. Each idea stack holds five rows for each word and operation, the close's possible rows for one action. The stacks are constructed once, one for each path and one for the admitted view of each stream; none resizes ([STM](STM.md)).
 
 Repeated unary work at the same operand pays an increasing cost (Alec, 2026-11-09): the first application pays zero, then subsequent applications pay 1, 4, 9, … logit units. The count follows the operand through shifts and swaps and resets when binary composition creates a new span; it adds no cap on unary count. The existing immediate-inverse mask and fixed execution budget remain. This is provisional learning guidance.
 
@@ -2872,13 +2911,12 @@ grammar reading gates all four word multisets; the field count is an audit.
 Byte identity and coverage are value-only audits.
 
 Thought adds no field columns. STM thought ideas carry their model-clock `.when`
-and an empty `.where`; knowing deposits retain a path to `intuit`'s weights.
-`intuit` learns the detached field the kept path leaves after its thought, and
+and an empty `.where`; `intuit` deposits `expect`'s field detached, and
 `expect` learns from omission. Numeric heads keep the forward head with `answerSynthesis=false`.
 
 ### Whole paths and concept episodes (2026-11-11)
 
-Each sentence has one comparison, over whole paths, with no local keep for compose, generation or thought. A path reads and composes the input, generates its reconstruction, publishes that order-zero field, thinks, and generates the thought's answer. No conclusion means no occupied output role and silence. Numeric output uses the same path's composed state through its single affine head. That head is a continuous output modality, a model option within this design rather than another architecture: it reads the concepts, higher orders included, with no grammar, so its path has no output walk and its A is the head's cost on that path's own sentence state. One greedy path runs first; each of `explorePaths` alternatives reuses its prefix and departs once in one of the seven walks. Each stream keeps its strictly cheapest R + A path, with ties keeping the greedy path. Input and recorded thought effects are committed only after the comparison; there is one optimizer step in either ownership mode. The seven walks are attention, compose, candidate, bind, reconstruction, thought and output (`SentenceCredit.WALKS`); a departure is drawn uniformly among the walks that have a legal alternative, then uniformly among that walk's rounds; the explore paths of one sentence take distinct departures. A compose departure must change the state: its alternatives are one representative of each distinct next state other than the greedy one, judged by exact equality of values and references, with identity unaries omitted and STOP excluded once every leaf already reads back exactly (`OperationSelectionLayer._distinct_departures`), since a departure that changes nothing can only tie.
+Each sentence has one comparison, over whole paths, with no local keep for compose, generation or thought. A path reads and composes the input, generates its reconstruction, publishes that order-zero field, thinks, and generates the thought's answer. No conclusion means no occupied output role and silence. Numeric output uses the same path's composed state through its single affine head. That head is a continuous output modality, a model option within this design rather than another architecture: it reads the concepts, higher orders included, with no grammar, so its path has no output walk and its A is the head's cost on that path's own sentence state. One greedy path runs first; each of `explorePaths` alternatives reuses its prefix and departs once in one of the six walks. Each stream keeps its strictly cheapest R + A path, with ties keeping the greedy path. Input and recorded thought effects are committed only after the comparison; there is one optimizer step in either ownership mode. The six walks are attention, compose, bind, reconstruction, thought and output (`SentenceCredit.WALKS`); a departure is drawn uniformly among the walks that have a legal alternative, then uniformly among that walk's rounds; the explore paths of one sentence take distinct departures. A compose departure must change the state: its alternatives are one representative of each distinct next state other than the greedy one, judged by exact equality of values and references, with identity unaries omitted and STOP excluded once every leaf already reads back exactly (`OperationSelectionLayer._distinct_departures`), since a departure that changes nothing can only tie.
 
 **Why whole paths.** The stages are a chain, not parallel branches: the reconstruction walk's words become the order-zero field (`OutputOccurrences.generated`, `SentenceField.publish`), the thought reads that field and writes into it (`Intuition.write_knowing`), and the thought's conclusion is what the output unfolds. A keep at the end of each stage would choose at a local minimum. One comparison at the end of the whole path judges every choice by its effect on both costs: a composition is priced through the thought it leads to and the output that thought produces, so reconstruction R and answer A are two prices of one understanding. More credit is bought with more explore paths, not with local keeps.
 
@@ -2892,7 +2930,7 @@ Each sentence has one comparison, over whole paths, with no local keep for compo
 
 With one explore path a sentence makes at most four generate calls: reconstruction and output for each complete path, fewer when an alternative reuses an earlier stage. One reader sees both compositions: the answer trains on the kept path and, where an explore path departed in compose, shares that exposure equally with that path and the greedy path (`SentenceCredit.reader_weights`), because a reader trained only on what is kept reads the kept composition better for having been kept. The other costs every path books (reconstruction, expectation, the compose and generate lessons, attention and the regularizers) are scaled by $2/(1+K)$ for $K$ explore paths, so their total does not depend on `explorePaths`; A-side choice credits are booked once, at their departure ([Gradient flow](GradientFlow.md#whole-path-credit-and-concept-episodes-2026-11-11)).
 
-Before the keep, thought reads the scored reference plan through a temporary composition view. This preview changes neither the pinned STM metadata nor the plan's commit records. A thought departure restores only its stream's fork, preserving other streams' readings and the latest shared clock. Each complete path retains its own compose departure mask and attention state for credit. A path without a departure reuses the computation with an independent registry container. Only the kept sentence attaches those reference decisions to its stored structure.
+Before the keep, thought reads the scored reference plan through a temporary composition view. This preview changes neither the marks the close keeps with the sentence's trace nor the plan's commit records. A thought departure restores only its stream's fork, preserving other streams' readings and the latest shared clock. Each complete path retains its own compose departure mask and attention state for credit. A path without a departure reuses the computation with an independent registry container. Only the kept sentence attaches those reference decisions to its stored structure.
 
 **Omission.** Training hides content and never corrupts it: a dropped word, or a dropped percept slot of a retained word, has zero content at a kept place and time, so the omission is signalled out of band, because a good model reproduces corruption when it sees corruption. All paths of a sentence share the omitted input. Only detached loss-side targets retain the original: System 2 reconstruction restores it, while System 1 reconstruction scores observed places. The two rates, for words and for percept slots, adapt to the kept path's reconstruction accuracy toward `omissionTarget`, and omission never runs in evaluation ([Training](Training.md)).
 
@@ -2927,7 +2965,7 @@ way, and `isWhole(a, b)` is `isPart(b, a)`.
 Intersections of several concepts are written by promotion on recurrence
 (`FamiliarTier.observe_intersection`, conjunctive edges).
 `FieldProjection.stimulate(point)` reads a point's field over the known
-concepts: coverage by `meet_ratios`, then the fold through definitions; the
+concepts: coverage by the one match (`ConceptualMatch.match`), then the fold through definitions; the
 key of a field is its evidence-weighted centroid (`FieldProjection.key`). A
 file with examination and field operators but no vector operators has its own
 field-only R + A close (`Examination.run`): the kept field writes one `LTM0`
@@ -2982,30 +3020,30 @@ the lane against, so a claim can be true, false, both or neither
 
 ### expect, intuit and marker
 
-`expect` and `intuit` are learned maps from one space to another, not
-explicit rules, and so is each kernel of `marker`. Each is a stacked
-sigma-pi (`SigmaPiStack`), a row of pairs (`SigmaPiLayer`): in each pair a
+`expect` is a learned map from one space to another, not an explicit rule,
+and so is each kernel of `marker`; `intuit` uses `expect`'s map. Each map is a stacked
+sigma-pi (`SigmaPiStack`), a row of pairs: in each pair a
 `PiLayer` takes the product of its inputs in the log domain, and a
 `SigmaLayer` takes a weighted sum of those products. The two lanes enter as
 separate inputs and are never netted, and a new stack adds nothing
 ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
 
 - `expect` has one moderate hidden layer, from the whole observed order-zero
-  field to the whole expected field over the same rows. It runs once at the
-  open pass, is read detached and is taught by omission ("C. Parse time"
-  above). `ActivationPredictor` is built in its place where `expectationMap`
+  field to the whole expected field over the same rows. Its field is
+  published once, at the open pass, read detached and taught by omission
+  ("C. Parse time" above); it is also evaluated, unpublished and untaught,
+  for each look's forecast ("A look's forecast" under
+  [One attention](#one-attention)). `ActivationPredictor` is built in its place where `expectationMap`
   is `predictor`.
-- `intuit` runs from concepts to concepts over every order, with small
-  hidden layers. It is evaluated once when the sentence is observed, before
-  any thought, and what it gives joins the sentence's knowing where
-  `Intuition.write_knowing` deposits, so thought, the answer and the output
-  read it. It is taught by the field the kept path leaves after its thought
-  and by the output cost. In thought, `intuit` states what the map gave, with
-  the evidence kind `intuition`, which can answer; the firing of a stored
-  implication is reached through `infer`
-  ([Reasoning](Reasoning.md#intuition-taught-by-thought)). On a file with
-  field operators only, the map is System 1's learned step and the output
-  cost its only teacher.
+- `intuit` is `expect`'s map and the propagation over the orders (Alec,
+  2026-11-17), with no stack or teacher of its own. When thought calls it,
+  it deposits `expect`'s field from the open pass, detached, into the order-zero
+  block of the sentence's knowing at the observed places, and closes it
+  upward through the definitions (`IntuitionField.read`,
+  `FieldProjection.close`), so thought, the answer and the output read it.
+  In thought it has the evidence kind `intuition`, which can answer; the
+  firing of a stored implication is reached through `infer`
+  ([Reasoning](Reasoning.md#intuition-on-the-field-map)).
 - `marker` is a one-operand family of learned kernels, each from the
   operand's form (percept coordinates) to its meaning (concept coordinates).
   The form passes unchanged, the chosen kernel shifts the meaning in the

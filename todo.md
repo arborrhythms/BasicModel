@@ -1468,6 +1468,11 @@ generation is expected at this stage and is recorded, not tuned away.
    push, and the PDF work is fine."** So Claude pushes `main` of
    `basicmodel` when those steps are done, and tells him first what
    goes; the superproject's pointer stays his.
+   **The doc pass, the PDF and the push (Claude, 2026-11-19; 1.8
+   §68.87).** The doc-pass lists are applied to the standing
+   documents, checked against the source; the PDF is rebuilt; `main`
+   is pushed once, through that commit. Left for Alec's word: the
+   provisional read with no sentence (§66.12, §68.86).
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
