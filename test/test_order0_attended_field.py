@@ -1,5 +1,6 @@
 """11b corrections: recurrent parts and a transient attended concept field."""
-from basic_fixtures import feature as basic_feature
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
+import pytest
 import torch
 
 import Spaces
@@ -54,7 +55,10 @@ def test_inventory_outlives_the_eight_attended_rows():
         ids = cs._cs_field_concept_ids
         slot = (ids == definitions[n][0]).nonzero().flatten()
         assert len(slot) == 1
-        assert read[slot[0], 0, 0, 0] == 1
+        # The concept reads its own row for, at tanh(1), by its column.
+        y, lanes = order_zero_expected(cs, definitions[n][1], published_presence(cs))
+        assert y > .76
+        torch.testing.assert_close(read[slot[0], 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
         assert int(read[..., 0].count_nonzero()) == 1
     assert all(cs._csw_row_of(cid) == row for cid, row in definitions)
 
@@ -92,6 +96,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
         return cs.cs_read_memberships((torch.tensor([[100 + n]]), extent,
             None, torch.tensor([[65]]), extent), extent)
     _, evidence = cs.cs_forward_content(read(11), cs.similarity_codebook.getW())
+    own, _ = order_zero_expected(cs, definitions[11][1], published_presence(cs))
     ids, addresses = cs._cs_field_concept_ids.clone(), cs._cs_field_rows.clone()
     codes = cs._field_codes(cs.similarity_codebook.getW()).detach()
     for name, value in (('activations', evidence), ('ids', ids),
@@ -109,7 +114,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
         MappingProxyType({'frames': ({'reference': ('sym', definitions[11][0])},)}))
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs, conceptualSpaces=[cs]),
                          result, row=0, work=QueryWorkBudget(32))
-    assert cs.subspace._concept_activations[0, 0, -1, 0] == 1
+    assert float(cs.subspace._concept_activations[0, 0, -1, 0].detach()) == pytest.approx(own, abs=1e-5)
     torch.testing.assert_close(cs.subspace._concept_ids, ids)
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
     restored = _cs(nS=64, order=3)
@@ -126,12 +131,15 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
     model, _ = grounded_model(tmp_path, inventory=128)
     cs = model.conceptualSpaces[0]
     words = ('ant', 'bat', 'cat', 'dog', 'elk', 'fox', 'gnu', 'hare', 'ibex', 'jay', 'koala', 'lynx')
-    for word in words:
-        raw = torch.zeros(1, 1, 8, dtype=torch.long)
-        raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
-        model.forward(raw)
-        cs.Reset(hard=True)
-        model.End()
+    # A form becomes a word when MTM nominates it, on its
+    # concept_mint_count-th reading.
+    for _ in range(cs.concept_mint_count):
+        for word in words:
+            raw = torch.zeros(1, 1, 8, dtype=torch.long)
+            raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
+            model.forward(raw)
+            cs.Reset(hard=True)
+            model.End()
     for word in reversed(words):
         raw = torch.zeros(1, 1, 8, dtype=torch.long)
         raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
@@ -181,7 +189,11 @@ def test_batch_members_bind_independently_within_eight_rows():
     a0 = cs.cs_read_memberships((torch.arange(100, 112)[:, None], spans,
         None, torch.full((12, 1), 65), spans), spans)
     assert cs._cs_field_concept_ids[0].tolist() == cids
-    assert a0[0, :, 0, 0].tolist() == [1.] * 12
+    # Each batch member's concept reads its own row, at tanh(1).
+    for b in range(12):
+        y, lanes = order_zero_expected(cs, cs._csw_row_of(cids[b]), published_presence(cs, b))
+        assert y > .76
+        torch.testing.assert_close(a0[0, b, 0], lanes.to(a0), atol=1e-5, rtol=1e-5)
     content, field = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
     assert content.shape[:2] == (12, 2 * sum(cs._field_caps()))
     assert field.shape[:2] == (sum(cs._field_caps()), 12)

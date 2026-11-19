@@ -1,4 +1,4 @@
-from basic_fixtures import feature as basic_feature
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
 from order_fixtures import force_order
 from types import SimpleNamespace
 
@@ -27,7 +27,10 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     spans = torch.tensor([[[0, 1]]])
     read = cs.cs_read_memberships((torch.tensor([[7]]), spans, primitive,
                             torch.tensor([[48]]), spans), spans)
-    torch.testing.assert_close(read[0, 0, 0], torch.tensor([0., 1.]))
+    # The Not member is present: the concept reads against, by its column.
+    y, lanes = order_zero_expected(cs, row, published_presence(cs))
+    assert y < -.76
+    torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
     cs.Reset(hard=True)
     features = Spaces._concept_alloc_of(cs).layer().features
     written = {col for (_, col), i in features._index.items() if float(features.values[i]) > 0}

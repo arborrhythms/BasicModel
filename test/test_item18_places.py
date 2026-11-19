@@ -23,7 +23,6 @@ def test_65_67_image_uses_the_same_reader_and_recovers_every_pixel(monkeypatch):
     assert isinstance(model.numeric_percepts, NumericPercepts)
     assert model.numeric_percepts.dimensions == 784
     assert model.inputSpace.inputShape == [28, 28]
-    assert not model._concept_owner().conceptual_pi
     calls = []
     read = model.outputSpace.read_field
     monkeypatch.setattr(model.outputSpace, 'read_field', lambda *args: (calls.append(True), read(*args))[1])

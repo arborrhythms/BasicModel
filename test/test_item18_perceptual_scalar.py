@@ -6,6 +6,7 @@ import torch
 from Models import BaseModel
 from test_item18_finish import named_scalar_model, scalar_answer
 from nomination_fixtures import recurrent_interpretation
+from basic_fixtures import order_zero_expected
 
 _load_weights = BaseModel.load_weights
 
@@ -103,7 +104,21 @@ def test_point_and_native_read_share_the_collection_boundaries(named_scalar_mode
         torch.testing.assert_close(*actual)
         felt = feeling(torch.tensor(value))
         expected = min(1., float(felt/low), float(high/felt))
-        torch.testing.assert_close(actual[0], torch.tensor([[expected, 0.]]))
+        # The collection's boundaries are read at its basic percepts: each
+        # member's two boundaries at the point, generalized, then required.
+        basic = owner.basic_percepts
+        members = owner.concept_percepts(owner._csw_row_of(objects['alpha']))
+        bounds = basic.read_points(point, members)
+        collection = basic.read_collection(bounds, torch.ones(len(members)).to(bounds))
+        torch.testing.assert_close(collection[0, 0].to(torch.float32), torch.tensor([expected, 0.]))
+        # The concept is one signed number read by its column from the
+        # value percepts present, each at the least of its two boundaries.
+        rows = sorted({col // 2 for col in owner._concept_allocator.layer(0).features._cols
+                       if basic.is_value(col // 2)})
+        values = basic.read_points(point, rows).amin(0)[:, 0, 0]
+        presence = {row: tuple(map(float, value)) for row, value in zip(rows, values)}
+        _, lanes = order_zero_expected(owner, owner._csw_row_of(objects['alpha']), presence)
+        torch.testing.assert_close(actual[0], lanes[None].to(actual[0]), atol=1e-5, rtol=1e-5)
 
 
 def test_value_percepts_use_the_basic_checkpoint_and_shared_retirement(named_scalar_model):

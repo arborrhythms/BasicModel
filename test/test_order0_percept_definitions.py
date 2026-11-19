@@ -1,5 +1,5 @@
 """Order-zero sigma over pi uses native percepts as its literals."""
-from basic_fixtures import feature as basic_feature
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
 import pytest
 import torch
 from types import SimpleNamespace
@@ -29,17 +29,32 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     raw = torch.tensor([[65]])
     spans = torch.tensor([[[0, 1]]])
     result = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)
-    # Negative literals exchange lanes before the conjunctive fold. The
-    # against lane takes the greatest qualified counterevidence; the union
-    # of alternatives then takes the least of their against lanes (§3.2).
-    positive = torch.tensor([min(.25, .36 ** .5, 1-.81, (1-.49) ** .5),
-                             min(.81 ** .5, .49, (1-.25) ** .5, 1-.36)])
-    negative = torch.tensor([max(1-.25, 1-.36 ** .5, .81, 1-(1-.49) ** .5),
-                             max(1-.81 ** .5, 1-.49, 1-(1-.25) ** .5, .36)])
-    expected = torch.stack((positive.max(), negative.min()))
-    torch.testing.assert_close(result[0, 0, 0], expected)
-    # The alternative is an ordinary concept on the same row inventory.
-    torch.testing.assert_close(result[1, 0, 0], torch.stack((positive[1], negative[1])))
+    basic, field = cs.basic_percepts, cs._percept_field
+    rows = [basic.index[((65,), (prop,))] for prop in range(4)]
+    members = primitive.members[:, 65].detach()
+    # Each property keeps both lanes at the basic percept that carries it
+    # (the whole boundary of its collection); the row itself is the Pi of
+    # its part, present, and its property, on each lane.
+    slots = [field.keys.index(('bp', r)) for r in rows]
+    torch.testing.assert_close(field.boundaries[1, slots, 0, 0], torch.stack((members, 1 - members), -1))
+    torch.testing.assert_close(field.values[slots, 0, 0], torch.stack((members, torch.zeros(4)), -1))
+    # Each concept's column is the sum of its members' vectors over their
+    # squared lengths; a negated literal is subtracted (a Not entry).
+    def column(signs):
+        total = torch.zeros(basic.width)
+        for r, sign in zip(rows, signs):
+            code = basic.codes[r].detach()
+            total += sign * code / code.square().sum()
+        return total
+    sigma = cs.order_zero
+    torch.testing.assert_close(sigma.weight[:sigma.content_width, 0].detach(), column((1, 1, -1, -1)))
+    torch.testing.assert_close(sigma.weight[:sigma.content_width, 1].detach(), column((-1, -1, 1, 1)))
+    # Each concept, the alternative an ordinary one on the same inventory,
+    # is one signed number read by its own column, for less against.
+    presence = published_presence(cs)
+    for concept in (0, 1):
+        _, lanes = order_zero_expected(cs, concept, presence)
+        torch.testing.assert_close(result[concept, 0, 0], lanes.to(result), atol=1e-5, rtol=1e-5)
 
 
 def test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids():
@@ -69,13 +84,21 @@ def test_witnesses_write_alternatives_without_conjoining_their_literals():
     store = Spaces._concept_alloc_of(cs).layer()
     row = cs._csw_row_of(A)
     recurrent_interpretation(cs, [8], [2], key='word')
-    [(alternative, weight)] = cs.concept_weights(row)
-    assert weight == 1.
-    assert {col for r, col in store.features._index if r == row} == {2 * cs.basic_percepts.index[((7,), (1,))]}
-    assert {col for r, col in store.features._index if r == alternative} == {2 * cs.basic_percepts.index[((8,), (2,))]}
+    basic = cs.basic_percepts
+    first, second = basic.index[((7,), (1,))], basic.index[((8,), (2,))]
+    # The second witness joins the concept's column as an alternative: no
+    # concept is made for it, no edge, and no conjunction of the two.
+    assert cs.concept_weights(row) == []
+    assert {col for r, col in store.features._index if r == row} == {2 * first, 2 * second}
+    assert not basic.conjunctions
+    sigma = cs.order_zero
+    expected = sum(basic.codes[r] / basic.codes[r].square().sum() for r in (first, second))
+    torch.testing.assert_close(sigma.weight[:sigma.content_width, row].detach(), expected)
     before = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+    weights = sigma.weight.detach().clone()
     recurrent_interpretation(cs, [8], [2], key='word')
     assert before == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+    assert torch.equal(sigma.weight.detach(), weights)
     from test_structural_checkpoint import _model_with
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
     restored = _cs()
@@ -107,7 +130,10 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     extent = torch.tensor([[[0, 4]]])
     result = cs.cs_read_memberships((torch.tensor([letters]), parts,
         ws.subspace.what.primitive_properties, raw, extent), extent)
-    assert result[row, 0, 0, 0] == 1
+    # The word's concept reads its own row, at tanh(1) and as its column gives it.
+    y, lanes = order_zero_expected(cs, row, published_presence(cs))
+    assert y > .76
+    torch.testing.assert_close(result[row, 0, 0], lanes.to(result), atol=1e-5, rtol=1e-5)
     after = cs.cs_read_memberships((torch.tensor([[fused]]), extent,
         ws.subspace.what.primitive_properties, raw, extent), extent)
     torch.testing.assert_close(after, result)

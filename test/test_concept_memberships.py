@@ -1,5 +1,5 @@
 """Order-zero definitions read native features, independently of codes."""
-from basic_fixtures import feature as basic_feature
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
 import pytest
 import torch
 
@@ -25,7 +25,19 @@ def test_one_property_has_the_four_extent_corners():
     cs = _cs()
     native, extents = binary_features(cs, torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]]))
     actual = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(actual[0, :, 0], torch.tensor([[1., 0.], [0., 1.], [1., 1.], [1., 1.]]))
+    # The four corners are read at the basic percepts that carry the
+    # property: the whole boundary of each one's collection, as
+    # BasicPercepts.read returns it. A Not member's lanes are the swap.
+    corners = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [1., 1.]])
+    basic, field = cs.basic_percepts, cs._percept_field
+    for prop, expected in ((0, corners), (1, corners.flip(-1))):
+        for part in (48, 49):
+            index = field.keys.index(('bp', basic.index[((part,), (prop,))]))
+            torch.testing.assert_close(field.boundaries[1, index, :, 0], expected)
+    # The concept is one signed number, for less against.
+    for b in range(4):
+        _, lanes = order_zero_expected(cs, 0, published_presence(cs, b))
+        torch.testing.assert_close(actual[0, b, 0], lanes.to(actual), atol=1e-5, rtol=1e-5)
 
 
 def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
@@ -72,8 +84,13 @@ def test_part_containment_belongs_to_the_subject_extent(literal):
     positions = torch.stack((starts, starts + 1), -1)[None]
     extents = torch.tensor([[[0, 4], [4, 8]]])
     actual = cs.cs_read_memberships((ids, positions, None, raw, positions), extents)
-    # Other positions inside a subject do not deny its present part.
-    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 0.]]))
+    # Other positions inside a subject do not deny its present part: the
+    # concept reads its own row for, at tanh(1), and nothing in the extent
+    # that lacks it.
+    y, lanes = order_zero_expected(cs, 0, published_presence(cs, 0, 0))
+    assert y > .76
+    torch.testing.assert_close(actual[0, 0, 0], lanes.to(actual), atol=1e-5, rtol=1e-5)
+    torch.testing.assert_close(actual[0, 0, 1], torch.zeros(2).to(actual))
     assert cs._percept_field.events[0, 0, 0, :, 1].count_nonzero() == 0
     assert cs._percept_field.events[0, 0, 1, :, 0].count_nonzero() == 0
     # Absent parts supply neither pole, even in a completely observed subject.
@@ -114,12 +131,14 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     spans = torch.tensor([[[0, 1], [1, 2]]])
     extent = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), extent)
-    # The shared weighted intersection qualifies both lanes: the first
-    # feature's .75 against lane becomes 1 - (1 - .75)**.5 = .5.
-    occurrence = torch.tensor([.25 ** .5, max(1 - (1 - .75) ** .5, .36)])
-    native = cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((65,), (prop,))]) for prop in (0, 1)])
-    torch.testing.assert_close(native[:, 0, 0, 0], torch.tensor([[.25, .75], [.36, .64]]))
-    torch.testing.assert_close(read[0, 0, 0], occurrence)
+    # A fractional property keeps both lanes at the basic percepts that
+    # carry it: the whole boundary of each one's collection.
+    field = cs._percept_field
+    rows = [field.keys.index(('bp', cs.basic_percepts.index[((65,), (prop,))])) for prop in (0, 1)]
+    torch.testing.assert_close(field.boundaries[1, rows, 0, 0], torch.tensor([[.25, .75], [.36, .64]]))
+    # The concept is one signed number, for less against, read by its column.
+    _, lanes = order_zero_expected(cs, 0, published_presence(cs))
+    torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
 
 
 def test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar():

@@ -1,4 +1,4 @@
-from basic_fixtures import feature as basic_feature
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
 from order_fixtures import force_order
 from types import SimpleNamespace
 
@@ -66,6 +66,9 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     restored = _cs(nS=64, order=3)
     restored._serial = not source_serial
     restored._concept_binding = binding
+    # The model installs the order-zero Sigma where it binds the basic
+    # percepts; the fixture binds them by hand.
+    restored.install_order_zero()
     target = _model_with(restored, SimpleNamespace())
     target.conceptualSpaces = torch.nn.ModuleList([restored])
     target.word_brackets = not source_serial
@@ -97,12 +100,16 @@ def test_one_active_percept_reaches_every_referencing_concept():
         identities.append(cid)
     native, bracket = _one_part()
     field = cs.cs_read_memberships(native, bracket)
+    presence = published_presence(cs)
     # Attention selects percepts, not a top-eight subset of their definitions.
     # One percept is within the focused 8/8 budget as well as open attention.
     for cid in identities:
         slots = (cs._cs_field_concept_ids == cid).nonzero().flatten()
         assert slots.numel() == 1, f"referenced concept {cid} was truncated from the field"
-        torch.testing.assert_close(field[slots[0], 0, 0], torch.tensor([1., 0.]))
+        y, lanes = order_zero_expected(cs, cs._csw_row_of(cid), presence)
+        # Its own row present at one reads tanh(1).
+        assert y > .76
+        torch.testing.assert_close(field[slots[0], 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)
 
 
 @pytest.mark.parametrize("bracket, expected", [
@@ -120,9 +127,17 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     positions = torch.tensor([[[0, 1], [1, 2]]])
     scope = torch.tensor([[bracket]])
     field = cs.cs_read_memberships((raw, positions, primitive, raw, positions), scope)
-    # A property witnessed true and false within one bracket reports both.
+    # A property witnessed true and false within one bracket reports both, at
+    # the basic percepts that carry it: the whole boundary of each one's
+    # collection, as BasicPercepts.read returns it, holds the two lanes.
     # Narrowing attention isolates either observation; an empty scope is unknown.
-    torch.testing.assert_close(field[0, 0, 0], torch.tensor(expected))
+    percepts = cs._percept_field
+    assert len(percepts.keys) == 2
+    for index in range(len(percepts.keys)):
+        torch.testing.assert_close(percepts.boundaries[1, index, 0, 0], torch.tensor(expected))
+    # The concept is one signed number, for less against.
+    _, lanes = order_zero_expected(cs, 0, published_presence(cs))
+    torch.testing.assert_close(field[0, 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)
 
 
 def test_padding_does_not_create_observed_complements():
@@ -151,7 +166,8 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     spans = torch.tensor([[[0, 1]]])
     native = (torch.tensor([[7]]), spans, primitive, torch.tensor([[65]]), spans)
     store = Spaces._concept_alloc_of(cs).layer()
-    parameter = store.features.values
+    # The concept reads its column of the order-zero Sigma.
+    parameter = cs.order_zero.weight
     initial = parameter.detach().clone()
     optimizer = torch.optim.SGD([parameter], lr=.1)
     losses = []
@@ -166,7 +182,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     before = cs.cs_read_memberships(native, spans).detach()
     cs._serial = not source_serial
     after = cs.cs_read_memberships(native, spans)
-    assert cs._csw_row_of(cid) == row and store.features.values is parameter
+    assert cs._csw_row_of(cid) == row and cs.order_zero.weight is parameter
     torch.testing.assert_close(after, before)
 
 

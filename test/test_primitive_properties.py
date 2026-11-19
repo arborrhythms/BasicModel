@@ -1,6 +1,7 @@
 """Primitive property learning and concept evidence grounded in extents."""
 import torch
 import Spaces
+from basic_fixtures import order_zero_expected, published_presence
 import pytest
 
 from test_cs_sparse_weights import _cs, _mint_row, _mint_field
@@ -13,7 +14,16 @@ def test_different_positions_in_one_extent_supply_the_two_symbols():
     native, _ = binary_features(cs, torch.tensor([[49, 48, 49, 49]]))
     extents = torch.tensor([[[0, 2], [2, 4]]])
     read = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(read[0, 0], torch.tensor([[1., 1.], [1., 0.]]))
+    # Both in the first extent, for in the second, at the basic percepts
+    # that carry the property (the whole boundary of each one's collection).
+    field = cs._percept_field
+    carrying = [field.keys.index(('bp', bp)) for bp in cs.basic_percepts.carrying('ws', 0)]
+    for reading, expected in ((0, [1., 1.]), (1, [1., 0.])):
+        for slot in carrying:
+            torch.testing.assert_close(field.boundaries[1, slot, 0, reading], torch.tensor(expected))
+        # The concept is one signed number, for less against.
+        _, lanes = order_zero_expected(cs, 0, published_presence(cs, 0, reading))
+        torch.testing.assert_close(read[0, 0, reading], lanes.to(read), atol=1e-5, rtol=1e-5)
     assert cs._percept_field.events.shape[1:] == (1, 2, 8, 2)
     assert not hasattr(cs, "_cs_position_evidence")
 

@@ -4,8 +4,9 @@ import torch
 
 import Spaces
 from ConceptEvidence import corners, symbols, union
+from basic_fixtures import order_zero_expected, published_presence
 from test_concept_memberships import binary_features
-from test_cs_sparse_weights import _cs, _mint_row, _mint_field, _field_forward
+from test_cs_sparse_weights import _cs, _mint_row, _mint_field
 
 
 def field(cs, batch=1, occurrences=1):
@@ -29,26 +30,19 @@ def test_membership_read_keeps_both_until_symbol_readout():
     cs = _cs()
     native, extents = binary_features(cs, torch.tensor([[49, 48]]))
     read = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(cs._percept_field.event_evidence([
-        ('bp', bp) for bp in cs.basic_percepts.carrying('ws', 0)]).amax(0)[0, 0, :2],
-                               torch.tensor([[1., 0.], [0., 1.]]))
-    torch.testing.assert_close(read[0, 0], torch.ones(1, 2))
-    torch.testing.assert_close(symbols(read)[0, 0], torch.ones(2))
-    torch.testing.assert_close(corners(symbols(read))[0, 0], torch.tensor([0., 0., 1., 0.]))
-
-
-@pytest.mark.parametrize('pair', [(0., 0.), (1., 1.)])
-def test_per_pole_folds_preserve_both_and_neither(pair):
-    cs = _cs()
-    row = _mint_field(cs, 101)
-    for col in (0, 1):
-        cs.add_concept_edge(row, col, 1.)
-    a = field(cs)
-    a[:2, 0, 0] = torch.tensor(pair)
-    _, result = _field_forward(cs, a, torch.zeros(64, 8))
-    torch.testing.assert_close(result[row, 0, 0], torch.tensor(pair), atol=1e-6, rtol=0)
-
-
+    field = cs._percept_field
+    carrying = [field.keys.index(('bp', bp)) for bp in cs.basic_percepts.carrying('ws', 0)]
+    # The property is present at the first event.
+    torch.testing.assert_close(field.event_evidence([field.keys[i] for i in carrying]).amax(0)[0, 0, 0],
+                               torch.tensor([1., 0.]))
+    # Seen true and false in the extent, it is both at the basic percepts
+    # that carry it: the whole boundary of each one's collection.
+    torch.testing.assert_close(field.boundaries[1, carrying, 0, 0], torch.ones(len(carrying), 2))
+    # The concept, and the symbol read from it, are one signed number:
+    # for less against, never both.
+    _, lanes = order_zero_expected(cs, 0, published_presence(cs))
+    torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
+    assert float(corners(symbols(read.detach()))[0, 0, 2]) == 0.
 
 
 def test_kind_both_member_and_absent_member_is_both():

@@ -156,11 +156,16 @@ def test_membership_read_is_input_dependent_and_differentiable():
         primitive.members[:, 48:50] = torch.tensor([[.2, .8], [.7, .3]])
     read = cs.cs_read_memberships(native, extents)
     assert read.shape == (cs._order_caps()[0], 1, 1, 2)
-    assert bool((read[0] > 0).all()) and bool((read[0] < 1).all())
+    # Fractional properties keep both lanes inside (0, 1) at the basic
+    # percepts that carry them (the whole boundary of each collection).
+    field = cs._percept_field
+    bounds = field.boundaries[1, :, 0, 0]
+    assert bool((bounds > 0).all()) and bool((bounds < 1).all())
     read[..., 0].sum().backward()
     assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
-    matrix = Spaces._concept_alloc_of(cs).layer().features
-    assert matrix.values.grad is not None and matrix.values.grad.abs().sum() > 0
+    # The concept reads its column of the order-zero Sigma.
+    sigma = cs.order_zero
+    assert sigma.weight.grad is not None and sigma.weight.grad.abs().sum() > 0
     with torch.no_grad():
         primitive.members[:, 48:50] *= .5
     assert not torch.equal(cs.cs_read_memberships(native, extents), read)
