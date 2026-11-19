@@ -1902,6 +1902,19 @@ generation is expected at this stage and is recorded, not tuned away.
    Alec, 2026-11-18: "1.5 is the compilation to make it fast". The
    attention and the percept bank of one sentence, placed here for
    part of that day, are item 1.7's (sigma-pi §19.44).
+   **Added 2026-11-19 (Alec: "Please add this to the 1.5 work ...
+   most seem like things you can do in parallel with 1.6").** Five
+   steps from the last profile, in the plan under "Where a sentence's
+   time goes": score the candidate paths as one batch or score fewer
+   (45% of a sentence); look up a sentence's percepts once; no read of
+   a tensor on the host inside a sentence (24,547 a sentence); no hook
+   on every saved tensor; and the recurrence over the words as the
+   floor, moved by batch size and bf16. *Claude's reading:* the first,
+   third and fourth can be built beside item 1.6. The profile is taken
+   again on the source item 1.7 leaves before any text is written.
+   The largest speed-up Alec names, a fragment such as "the cat" read
+   as one noun by an S1 that S2 has taught, is made an option at the
+   end of item 1.7 (sigma-pi §21, rule 58) and measured here.
    **Part 1, computation by wiring, not by moving data** (item 1.6
    until 2026-11-18; Alec, 2026-11-17: "can you investigate the
    possibility of pushing the architecture in this zero-data movement
