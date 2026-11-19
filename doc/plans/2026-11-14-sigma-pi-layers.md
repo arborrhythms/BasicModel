@@ -8628,6 +8628,18 @@ It does, and it is what rules 50 to 53 build. Each half bounds the percept on bo
 
 **On point 3** (*Claude's view, for him to overrule*). The dual is sound: weights of zero or above keep the order, a Pi lies at or below what it reads and a union at or above (§19.70). A whole driven by the concepts would hold of a word as such, which no class of characters can, so it is the kind of whole that can tell `archer` from `archery`. Two things argue for building it after the code and not with it. It needs the downward projection, which is rule 30's and round 5's. And it tells words apart only once the concepts are learned; at a word's first readings it says nothing, so the next part (rule 56) is still needed then. So: round 3c builds the wholes half as a code of rows of the table of wholes, with the character classes as its rows; a conceptual property is then one more row of that table, written by the downward projection; and round 5 tries that in tests first, as an extension of §23.3b's toy.
 
+### 19.74 Alec: the two-sided read as the Sigma's way down beside the Pi (2026-11-19)
+
+On §19.73's read (the parts half joined by the union and read directly, the wholes half joined by the product and read on its complement): "This looks like sigma^-1(p) + pi(p) on the percepts. I don't know if it is a complete replacement for the pi-not-sigma, insofar as it does both operations."
+
+**Claude's reading.** His description fits. A percept is bounded from below by the Pi over its parts, and from above by its wholes; a whole is what a Sigma makes of its members, and the bound it puts on a member is that Sigma read downward. So the percept sits between a Pi from below and a Sigma's way down from above.
+
+**Whether it replaces Pi, Not, Sigma** (*Claude's view; the part that can be measured is being measured, §23.3b's second addition*).
+
+- *It is the same structure, not another one.* Pi, Not, Sigma is a row of members, an entry for or Not, and a class. The two-sided code is that cell seen from the percept in its middle: the Pi below it, the Sigma above it read downward, and the Not as the against lane.
+- *It does part of the Not's work with no learned entry.* A strict whole tells against its part (§19.73). So where a row AB has been nominated, the concept of A reads against on a reading that holds AB, and negative patterning (A alone, B alone, not both) may need no Not entry at all. Not measured yet.
+- *It does not replace the three things the layers add.* It is one fixed step, so it composes nothing: an order above zero still needs its own cycle. It learns nothing: what tells against is given by the towers, so an exclusion that is not a strict whole (X inhibits A where no row AX exists) still needs a Not entry learned from omission (rule 29). And a concept still has to be read upward from the percepts, which is the Sigma forward.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
