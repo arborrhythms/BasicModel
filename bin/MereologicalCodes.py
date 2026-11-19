@@ -74,6 +74,8 @@ class MereologicalCodes(nn.Module):
         if (not math.isfinite(self.placement_rate) or self.placement_rate < 0
                 or self.negative_count < 0 or not math.isfinite(self.negative_weight) or self.negative_weight < 0):
             raise ValueError('placement rate and negative controls must be finite and nonnegative')
+        from FeatureTable import FeatureTable
+        self._feature_table = FeatureTable()
         self._form_revision = self._inventory_revision = None
         self.last_rederived_rows = self.form_rows_derived = 0
 
@@ -374,14 +376,6 @@ class MereologicalCodes(nn.Module):
         return {row: [(percept, max(0., poles[0]-poles[1])) for percept, poles in sorted(edges.items())]
                 for row, edges in definitions.items()}
 
-    def _percept_centroid(self, edges):
-        selected = [(percept, weight) for percept, weight in edges if weight > 0]
-        if not selected:
-            return self.owner.similarity_codebook.W.new_zeros(self.percept_width)
-        values = torch.stack([self.owner.basic_percepts.code(percept) for percept, _ in selected])
-        weights = values.new_tensor([weight for _, weight in selected])
-        return (values*weights[:, None]).sum(0)/weights.sum()
-
     @torch.no_grad()
     def containment_audit(self, *, before=None, after=None):
         """Observe both subspaces and their native containment, without writes."""
@@ -403,52 +397,37 @@ class MereologicalCodes(nn.Module):
         cached = owner.similarity_codebook.W
         indices = torch.as_tensor(indices, dtype=torch.long, device=cached.device)
         shape = indices.shape
-        requested = indices.flatten().cpu().tolist()
-        unique = list(dict.fromkeys(requested))
-        row_index = {row: i for i, row in enumerate(unique)}
+        unique, inverse = torch.unique(indices.flatten(), return_inverse=True)
+        if bool(((unique < 0) | (unique >= len(cached))).any()):
+            raise IndexError('concept row is outside the constructed inventory')
         self._invalidate_forms()
-        out = cached.new_zeros(len(unique), self.code_width)
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(owner)
-        retained = set()
-        for row in unique:
-            cid = owner.concept_id_at_row(row)
-            if (cid is not None and cid not in alloc.retired and
-                    ('concept' in alloc.symbol_types.get(cid, ()) or cid in alloc.individuals
-                     or cid in alloc.form_regions.values())):
-                retained.add(row)
-        basic = {row for row in unique if owner._row_order(row) == 0}
-        needed = [row for row in unique if row in basic and row not in retained and not bool(self._form_valid[row])]
-        if needed:
-            for row, edges in self._definitions(needed).items():
-                # Positive written definitions own their weighted centroid.
-                # Only an all-zero definition falls back to the word's own
-                # admitted basic percept; an unadmitted row stays zero.
-                word = owner.concept_id_at_row(row)
-                percept = owner.basic_percepts.words.get(word)
-                form = (self._percept_centroid(edges) if any(weight > 0 for _, weight in edges)
-                        else owner.basic_percepts.code(percept) if percept is not None
-                        else self._percept_centroid(edges))
-                self._forms[row].copy_(form)
-                self._form_valid[row] = True
+        basic = unique < owner._order_caps()[0]
+        retained, fallback = self._feature_table.inventory(alloc, owner.basic_percepts, self._form_valid)
+        kept = retained[unique]
+        needed = unique[basic & ~kept & ~self._form_valid[unique]]
+        if len(needed):
+            self._forms[needed] = self._feature_table.forms(owner, alloc.layer().features,
+                                                           needed, fallback[needed])
             self.form_rows_derived += len(needed)
-        for row in basic:
-            out[row_index[row], :self.percept_width] = (
-                cached[row, :self.percept_width] if row in retained else self._forms[row])
-            self._form_valid[row] = True
-        for row in set(unique) - basic:
-            self._forms[row].zero_()
-            self._form_valid[row] = True
+        self._forms[unique[~basic]] = 0
+        self._form_valid[unique] = True
+        out = cached.new_zeros(len(unique), self.code_width)
+        out[basic, :self.percept_width] = torch.where(kept[basic, None],
+            cached[unique[basic], :self.percept_width], self._forms[unique[basic]])
         from PerceptCollections import definitions, code
         collections = definitions(owner)
-        for row in basic:
-            if row in collections:
-                out[row_index[row], :self.percept_width] = code(owner, row)[:self.percept_width]
-        if unique and self.meaning_pairs:
+        if collections:
+            for row in collections:
+                where = (unique == row) & basic
+                if bool(where.any()):
+                    out[where, :self.percept_width] = code(owner, row)[:self.percept_width]
+        if len(unique) and self.meaning_pairs:
             start, k = self.percept_event_width, self.meaning_pairs
             out[:, start:start+k] = self.positive_codes(unique)
             out[:, start+k:start+2*k] = cached[unique][:, start+k:start+2*k]
         # Bands remain zero. Placement supplies only for evidence; written
         # against evidence keeps its own magnitude and direction.
-        result = out[torch.tensor([row_index[r] for r in requested], device=out.device, dtype=torch.long)]
+        result = out[inverse]
         return result.reshape(*shape, self.code_width)

@@ -2418,8 +2418,7 @@ class Codebook(Tensor):
             if isinstance(idx, slice):
                 idx = torch.arange(len(self.W), device=self.W.device)[idx]
             idx = torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
-            value = (torch.stack([self.mereology.derive(row,b=b) for b,row in enumerate(idx)])
-                     if streams else self.mereology.derive(idx,b=stream))
+            value = self.mereology.derive(idx, b=stream)
             if not streams and stream == 0:
                 with torch.no_grad():
                     self.W[idx] = value.detach()
