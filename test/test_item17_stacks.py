@@ -103,8 +103,15 @@ def _learns_the_combinations(stack, lanes, target, presentations):
 def test_depth_one_two_and_four_pairs():
     """The target: the four word combinations, each read as its omitted
     word, with 1,000 presentations on five starts drawn from the system.
-    Measured first: one pair and two pairs learn it on every start; four
-    pairs is recorded."""
+
+    Measured (2026-11-19, 1,000 presentations, starts drawn from the
+    system): one pair learned it on 40 of 40 starts and on 200 of 200 more;
+    two pairs on 40 of 40 and on 198 of 200 more (2 of 240 missed, .0083).
+    The bar is a share of the five starts that these rates miss less than
+    once in a thousand runs: at least 4 of 5 for each (two pairs at .0083
+    miss it once in about 1,460 runs; one pair, taking one miss in 240,
+    once in about 5,800; all 5 of 5 would be missed once in 24 runs at
+    two pairs). Four pairs is recorded."""
     from SigmaPiStack import SigmaPiStack
     lanes, target = _word_combinations()
     starts = _drawn_starts(5)
@@ -113,7 +120,7 @@ def test_depth_one_two_and_four_pairs():
                for pairs in (1, 2, 4)}
     print(dict(depth={pairs: sum(values) for pairs, values in learned.items()}, starts=starts,
                presentations=1000))
-    assert all(learned[1]) and all(learned[2])
+    assert sum(learned[1]) >= 4 and sum(learned[2]) >= 4
 
 
 _DEVICES = ['cpu'] + (['mps'] if torch.backends.mps.is_available() else [])
