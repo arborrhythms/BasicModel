@@ -8353,6 +8353,73 @@ where match, which neither §19.63 nor this answer gives.
 **What is open after these answers** is listed once, at the end of
 §21, each point with what is built meanwhile.
 
+### 19.65 Alec on four of Claude's choices in §21 (2026-11-19)
+
+Claude put to him the choices of §21 that he might overrule. He
+answered four, by the numbers of that list, and added a paragraph on
+how location is taught.
+
+**The teaching of a string read as a word it is not** (rule 46).
+
+> We don't want to admit Felixx, we want to admit the part that
+> discriminates it from Felix: "xx".
+
+*Decided.* The teaching admits a part, not the string. Claude's reading
+in §19.64, point 3, that the string is admitted as a form of its own,
+is withdrawn. *Mine:* the part is the shortest run that the string
+holds and the word does not, which is rule 43's own step. The string
+gets no row. Once the part exists, the parts found in `felixx` are no
+longer exactly the parts of `felix`, so it is not read as `felix`
+wherever a word is the form whose parts are exactly those found
+(§19.55; rule 44). Admitting a part that exists changes nothing, so
+the round is idempotent as before.
+
+**The where parameter** (rule 47; Claude had it in no optimizer's
+groups).
+
+> If we are reading over weights, they need to be optimized, though.
+
+*Two readings, and Claude has asked which.* (a) The parameter's own
+values are changed by training. That would take back §19.63, point 2
+("It would be fixed, as are the positions getting stamped into the
+percepts"). (b) The weights that the salience map is read over have to
+be trained weights, which the concepts' weights on the where are. *A
+fact that bears on it:* a gradient reaches a tensor that takes one
+whether or not an optimizer holds it, so the salience map lights the
+parameter either way; an optimizer is needed only to change its
+values. *Meanwhile:* round 2 tries it both ways, and round 6 builds
+what he says.
+
+**"Objects", beside "words"** (rule 35).
+
+> Since we create the meta by hand, we might as well add the "objects"
+> concept also.
+
+*Decided.* A concept "objects" is declared as "words" is: one concept
+that every object's concept is a member of. *Mine:* an object here is
+what `interpret` finds or makes for a word, the blank object among
+them (rule 20).
+
+**How location is taught.**
+
+> Reading in order will create location concepts as long as we are
+> teaching location. So we might teach the reconstruction over bytes
+> as built through a conjunction of the what and where pathways;
+> recreated percepts have recreated locations that place them in the
+> out buffer, so the error is over both pathways.
+
+*Decided, as a direction ("we might").* Location concepts come from
+teaching location, and the reconstruction is a teacher of it. The
+bytes that are put back are built through a conjunction of the what
+pathway and the where pathway: a percept that is recreated has a
+location that is recreated with it, and that location is what places
+it in the out buffer. So the reconstruction's error is over both
+pathways. It is rule 49 of §21. *Mine there:* the form of the
+conjunction, and where the source places what it puts back today.
+This answers the second half of §21's open point 1 in kind: whether
+location is learned depends on its being taught, and this is the
+teacher. Round 2 tries it beside the reading lesson.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -8515,8 +8582,8 @@ here is new: each rule names where it was decided.
 - *Open:* not settled. What is built meanwhile is said, and the round
   that builds it reports it.
 
-Rules 1 to 42 keep the numbers they had. Rules 43 to 48 are new
-numbers for what §19.53 to §19.64 decided.
+Rules 1 to 42 keep the numbers they had. Rules 43 to 49 are new
+numbers for what §19.53 to §19.65 decided.
 
 **What it builds.** One structure at every order: a Pi, then Not, then
 a Sigma. Percepts, and above order zero symbols, are unsigned rows of
@@ -8668,14 +8735,18 @@ chooses from. The old classes are not edited.
     (Alec, §19.64, point 3). Nothing is added to a form's code or to
     the match for it: no length that has to agree, and no match at
     every place. The teaching is an idempotent round over cases
-    gathered from the training harness's logs. *Mine:* the teaching
-    admits the string as a form of its own. Rule 43 then gives it a
-    part that the other form lacks (`felixx` and `felix` differ by
-    `xx`), and its own row, the larger, is the one taken at its place
-    (rule 37). Admitting a form that is known changes nothing. The
-    store's side is this item's (certificate 28). The harness's log of
-    a word put back as another word, and the round that gathers the
-    cases, are item 1.6's.
+    gathered from the training harness's logs. What is admitted is
+    the part that discriminates the string from the word, and not the
+    string (Alec, §19.65: "We don't want to admit Felixx, we want to
+    admit the part that discriminates it from Felix: "xx""). *Mine:*
+    the part is the shortest run that the string holds and the word
+    does not, rule 43's own step; the string gets no row; once the
+    part exists, the parts found in the string are no longer exactly
+    the word's, so it is not read as the word wherever a word is the
+    form whose parts are exactly those found (rule 44). Admitting a
+    part that exists changes nothing. The store's side is this item's
+    (certificate 28). The harness's log of a word put back as another
+    word, and the round that gathers the cases, are item 1.6's.
 
 **C. Order zero.**
 
@@ -8969,8 +9040,12 @@ chooses from. The old classes are not edited.
     that perception keeps its one teacher. `attend`'s map starts at
     the request "words" alone. The node "words" is one concept that
     every word's concept is a member of, and its Not entry on the
-    space is declared with it. *Open:* which row of the source that
-    concept is (§19.29).
+    space is declared with it. A concept "objects" is declared beside
+    it (Alec, §19.65: "Since we create the meta by hand, we might as
+    well add the "objects" concept also"): one concept that every
+    object's concept is a member of, an object being what `interpret`
+    finds or makes for a word. *Open:* which rows of the source these
+    two are (§19.29).
 36. *The salience map* (Alec, §19.43; §19.48, answer 2; §19.53;
     §19.60; §19.64, point 1). The request is carried down through the
     matrices of the way up as a gradient of the asked concepts by the
@@ -9080,8 +9155,11 @@ chooses from. The old classes are not edited.
     - *Mine:* the parameter has one row for each place of the
       registry (`WhereRegistry`), written from `WhereEncoding.encode`,
       and a band is its row, taken by the percept's place. It takes a
-      gradient and is in no optimizer's groups; a certificate holds
-      it equal to the code before and after training. Concepts read
+      gradient. *Open (§19.65):* whether training changes its values.
+      Alec: "If we are reading over weights, they need to be
+      optimized, though." Until he says which he means, it is in no
+      optimizer's groups, as §19.63 has it fixed, and round 2 tries
+      it both ways. Concepts read
       the where through the weights they have on the where
       coordinates of the combined vector (rules 7 and 8). Those
       weights start at zero for a new concept, since a generalization
@@ -9101,8 +9179,8 @@ chooses from. The old classes are not edited.
       next. A sum over the sinusoid is broad, a quarter of the short
       rung's period, 64 places; a product over the where wires is
       narrow (§20.5), and it would need rows of a Pi to have entries
-      on the where wires. And whether reading in order is learned
-      with no location concept made. Round 2 tries both.
+      on the where wires. Round 2 tries both. Location concepts come
+      of teaching location (rule 49).
     - *If it is not learned, the fallback is his* (§19.48): a network
       gives the `.where` outright, and from that extent the largest
       word is taken, or failing a word the largest concept.
@@ -9125,6 +9203,29 @@ chooses from. The old classes are not edited.
     take it (rule 42) ends so. *Open:* whether the sentence is tried
     again in the same pass ("we can try again"). The mining of such
     sentences by bisection is item 1.6's (1.8 §68.89).
+49. *Location is taught, and the reconstruction teaches it* (Alec,
+    §19.65). "Reading in order will create location concepts as long
+    as we are teaching location." The bytes that are put back are
+    built through a conjunction of the what pathway and the where
+    pathway: a percept that is recreated has a location that is
+    recreated with it, and that location places it in the out buffer.
+    So the reconstruction's error is over both pathways. *Mine:* on
+    the way back a concept gives each percept it recreates a band of
+    where wires, through the same weights by which it reads the
+    where. The band is matched against the code of every place, and
+    the match is the percept's weight at that place of the out
+    buffer. What is put back at a place is the sum over the recreated
+    percepts of what each is, times its weight there. The error
+    against the sentence's bytes at their places then reaches the
+    weights that read the what and the weights that read the where.
+    It takes the place of putting a percept back at the span its read
+    had (`SentenceField.native_target`, `FieldReverse.reverse`,
+    `Models.reverseReconstruct`; to be read again in round 6).
+    *Open:* the form of the match of a recreated band against the
+    places (the product over the wires and their complements, as
+    §20.5's place row had it, is what round 2 tries first); and how
+    it sits with rule 30, where the way back reads what the spread
+    expects.
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -9252,11 +9353,12 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     0.82 today; (c) the count of forms that read as wholly inside a
     form they are not inside is printed, with `cat` in `caat` named.
 28. *A string that is no form* (rule 46). (a) With `felix` known and
-    `felixx` not, what `felixx` is read as is printed, with `caat`
-    and `xileF`. (b) After `felixx` is admitted, it is read as itself
-    and `felix` is not taken at its place. (c) Admitting it again
-    changes nothing: the store's rows, codes and keys are equal
-    before and after.
+    `felixx` not, the two have the same parts; what `felixx`, `caat`
+    and `xileF` are read as is printed. (b) After the part `xx` is
+    admitted, the parts of `felixx` hold one that `felix` lacks,
+    `felix` still lies wholly inside them, and `felixx` is no form of
+    the store. (c) Admitting the part again changes nothing: the
+    store's rows, codes and keys are equal before and after.
 29. *The way back of a form* (rule 45). Every form the lesson stores
     is put back exactly from the form alone; `read_parts` and
     `assemble_pairs` are named nowhere in `bin/`.
@@ -9322,6 +9424,12 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     the lesson's sixteen sentences beside item 1.8's, with
     certificate 10; and the operations of one look beside one way up
     (§20.4 counted 2.3).
+45. *The reconstruction is over what and where* (rule 49). (a) A
+    percept recreated with the band of another place is put back at
+    that place, and the error says so. (b) The gradient of the
+    reconstruction's error reaches the weights that read the where.
+    (c) *Learning:* after the reconstruction is taught on the lesson's
+    sentences, which concepts have weight on the where is printed.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -9383,13 +9491,15 @@ section:
 3. The lengths go from a form's code (rule 43).
 4. The lookup moves to the device in item 1.5, and the table of the
    longest parts with it (rules 44 and 45).
-5. The teaching of a string read as a word it is not admits it as a
-   form; the harness's part is item 1.6's (rule 46).
+5. The part admitted for a string read as a word it is not is the
+   shortest run the string holds and the word does not; the harness's
+   part is item 1.6's (rule 46).
 6. The bank's tokens are the stem's units, with a form that spans
    several as an event of its own (rule 33).
 7. The node "words" is one concept that every word's concept is a
-   member of, with its Not entry on the space declared; `attend`'s
-   map starts at that request (rule 35).
+   member of, with its Not entry on the space declared; an object, for
+   "objects", is what `interpret` finds or makes for a word;
+   `attend`'s map starts at the request "words" (rule 35).
 8. Of a look's error, only the request and the weights that read the
    where are taught (rule 35).
 9. The salience map by the transposes, with the kept derivatives
@@ -9405,13 +9515,19 @@ section:
     47).
 15. `silence` as a registered layer applied at the closing; the row
     it writes; NULL put back; the cost booked (rule 48).
+16. The form of the conjunction in the reconstruction: a recreated
+    band matched against every place's code, as a percept's weight in
+    the out buffer (rule 49).
 
 **Open, with what is built meanwhile.**
 
 1. *The where match, and whether location is learned with no location
-   concept made* (rule 47). Round 2 tries the recommended form and
-   its alternatives in tests before round 6 builds one. If reading in
-   order is not learned, the fallback of §19.48 is built.
+   concept made* (rules 47 and 49). Round 2 tries the recommended form
+   and its alternatives in tests before round 6 builds one, with the
+   reading lesson and the reconstruction over both pathways as the
+   teachers of location (Alec, §19.65). If reading in order is not
+   learned, the fallback of §19.48 is built. Also there: whether
+   training changes the where parameter's values (§19.65).
 2. *The salience map where parts are present by degree* (rule 36).
    Round 2 reports it; the map by weights is built.
 3. *Which row "words" is* (rule 35; §19.29). Built as one declared
@@ -9472,11 +9588,11 @@ review each return against the source before the next round goes."
 | Round | What it builds | Rules of §21 | Certificates | Returns as |
 | --- | --- | --- | --- | --- |
 | 1 | the two layers, the stacks, and the code of a form | 1 to 3, 18, 29; 5, 43, 45, 46 | 1, 2, 3, 7, 22; 27, 28, 29 | §23.1 |
-| 2 | the looks, tried in tests only | 33 to 39, 47 | reported; 31, 33, 34 and 35 on the trial's own bank | §23.2 |
+| 2 | the looks, tried in tests only | 33 to 39, 47, 49 | reported; 31, 33, 34 and 35 on the trial's own bank | §23.2 |
 | 3 | order zero, and rows by nomination | 6, 7, 8, 8b, 19, 20, 21 | 5, 11, 12, 23 (a) to (c) | §23.3 |
 | 4 | symbols and the orders above | 4, 9 to 14, 19, 22; the meta concept and the blank object | 4, 6, 13, 18, 23 (d) | §23.4 |
 | 5 | the vertical spread, the order of learning, thought's reads | 23 to 28, 30, 31 | 14 to 17, 19, 20, 21, 24, 25, 26 | §23.5 |
-| 6 | the looks, in the model | 32 to 42, 47, 48 | 30 to 44 | §23.6 |
+| 6 | the looks, in the model | 32 to 42, 47, 48, 49 | 30 to 45 | §23.6 |
 | 7 | the readers, the measurements and the sweep | 16, 17 | 8, 9, 10 | §23.7 |
 
 - Each round is carried by one implementer, Claude on Opus standing in
@@ -9494,6 +9610,11 @@ review each return against the source before the next round goes."
   `RUN_SLOW` in any round.
 - A round's text is amended in place where an earlier return changes
   it, with the date. Round 6's waits for round 2's return.
+- *Amended 2026-11-19, after §19.65:* rule 46 and certificate 28 (a
+  part is admitted, not the string; round 1), the declared concepts
+  "words" and "objects" (rounds 3 and 4), step 6b of round 2, and
+  rule 49 with certificate 45 (round 6). The implementers of rounds 1
+  and 2, already running, were told.
 - *Checked by Claude, 2026-11-19, at `b3d2e3ae89`:* the names of code
   in §21 and in these texts are in the source, but for those said to
   be new; both stopping gates exist; and
@@ -9691,7 +9812,7 @@ Return as §23.1.
 
 ~~~
 Round 2 of item 1.7: a trial of the looks, in tests only. Rules 33
-to 39 and 47 of §21. Read §19.45, §19.48, §19.49, §19.53, §19.60 to
+to 39, 47 and 49 of §21. Read §19.45, §19.48, §19.49, §19.53, §19.60 to
 §19.64 and §20, and test/looks_prototype.py, which this extends.
 
 It changes no file of bin/ and no existing test but the prototype's
@@ -9772,6 +9893,28 @@ sentence in order when no location concept is made.
    it from five different starts and report each one. Fix no seed
    so that it comes out. It is a learning result: report it as it
    is.
+6b. Added on 2026-11-19, from §19.65 and rule 49. Alec: "Reading in
+   order will create location concepts as long as we are teaching
+   location. So we might teach the reconstruction over bytes as built
+   through a conjunction of the what and where pathways; recreated
+   percepts have recreated locations that place them in the out
+   buffer, so the error is over both pathways." Build that
+   reconstruction on this bank: on the way back a concept gives each
+   percept it recreates a band of where wires, through the weights by
+   which it reads the where; the band is matched against the code of
+   every place (first the product over the wires and their
+   complements, as §20.5's place row; then any other form you would
+   propose); the match is the percept's weight at that place of the
+   out buffer; what is put back at a place is the sum over the
+   percepts of what each is, times its weight there; the error is
+   against the sentence's bytes at their places. Then run step 6
+   three ways: taught by the reading loss alone, by this
+   reconstruction alone, and by both. Report for each what step 6
+   asks, and which concepts came to have weight on the where. And run
+   the best of them twice more: once with the where parameter given
+   to the optimizer, once without (§19.65: whether training changes
+   its values is open); report what its values did and what it
+   changed.
 7. If step 6 does not come to read in order, build the fallback of
    §19.48 beside it (a network gives the .where outright; from that
    extent the largest word is taken, or failing a word the largest
@@ -9817,7 +9960,10 @@ that round 1 returned. Read §18.24, §19.10 and §19.17 to §19.20.
    admission (admit_training_forms of bin/Corpus.py,
    admit_native_forms of bin/ConceptLessons.py). The grammar's
    declared concepts and the frozen thought predicates are as rule
-   20 has them. One concept for each row (rule 21): promotions of
+   20 has them. Two more are declared here (rule 35): "words", which
+   every word's concept is made a member of when its row is
+   nominated, with a Not entry on the space; and "objects", whose
+   members round 4 writes. One concept for each row (rule 21): promotions of
    classes, identities and percept collections become nominations
    of rows.
 4. Combination and the Sigma (rules 7, 8 and 8b): the Pi on the
@@ -9878,7 +10024,9 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
 6. The blank object and the meta concept (rule 20): interpret makes
    both for a word with no object, in place of the pending name
    (InterpretLayer.reading, PrependedSymbols). The blank object's
-   vector is zero, and no read divides by its length.
+   vector is zero, and no read divides by its length. Each object
+   that interpret finds or makes for a word is made a member of the
+   declared concept "objects" (rule 35).
 7. The penalty (rules 15 and 22): §18.3's, measured first, on the
    Pi's entries and on the Sigma's entries above order zero. The
    structure of a meta concept is never thinned.
@@ -9932,8 +10080,9 @@ sentences before and after. Return as §23.5.
 *This text is amended from round 2's return before it is carried.*
 
 ~~~
-Round 6 of item 1.7. Rules 32 to 42, 47 and 48 of §21. Certificates
-30 to 44. Read §19.45, §19.48, §19.49, §19.53 and §19.60 to §19.64;
+Round 6 of item 1.7. Rules 32 to 42 and 47 to 49 of §21.
+Certificates 30 to 45. Read §19.45, §19.48, §19.49, §19.53 and
+§19.60 to §19.65;
 round 2's return (§23.2); and Claude's review of it, which says
 which form of the where match is built.
 
@@ -9973,7 +10122,8 @@ which form of the where match is built.
    option at a look and interpretBias stay (interpret_at_look). Say
    what becomes of FocusLayer, UnfocusLayer and attention_operations,
    and of the grammar files that declare them.
-6. The node "words" (rule 35), with its Not entry on the space.
+6. The node "words" (rule 35), declared in round 3 with its Not
+   entry on the space, is what the request starts at.
 7. One gain field (rule 40): Expectation.gain_field takes the
    look's activity as its attention and the look's forecast as its
    expected. LookForecast.difference goes.
@@ -9992,7 +10142,13 @@ which form of the where match is built.
     (SentenceLooks.perceive, ModelAttention.handoff); the key
     attentionFloor (bin/AttentionContext.py, bin/AttentionObjective.py,
     data/model.xml, data/model.xsd); the tests of spans on the host.
-11. Certificates 30 to 44 in a new test/test_item17_looks.py. A
+11. The reconstruction over what and where (rule 49): a recreated
+    percept has a recreated band, which places it in the out buffer;
+    the error is over both. Read where the source places what it
+    puts back today (SentenceField.native_target, reverse of
+    bin/FieldReverse.py, Models.reverseReconstruct). The form of the
+    conjunction is the one round 2's return and its review name.
+12. Certificates 30 to 45 in a new test/test_item17_looks.py. A
     test that reads a model supplies its reading and does not leave
     it to the chooser's draw (1.8 specification, §66.9). The
     prototype's three files go when the model's own tests state what
