@@ -22,12 +22,11 @@ def read_native_forms(model, texts, encode):
     for _ in range(cs.concept_mint_count):
         with torch.no_grad():
             model.forward(encode(texts))
-        serial = int(getattr(model, '_word_observation_serial', 0))
         for b, text in enumerate(texts):
             raw = text.encode('utf8') if isinstance(text, str) else bytes(text)
             parts = tuple(native.spell_out(raw))
             word = cs.interpret.lookup_word(parts, ws.property_rows_for_bytes(raw), form=raw,
-                                            word_reading=True, reading=(serial, b))
+                                            word_reading=True, reading=cs.reading(b))
             if word is not None and word in cs.basic_percepts.words:
                 rows[raw] = cs.basic_percepts.words[word]
         model.End()
@@ -122,7 +121,7 @@ def teach_concept_lessons(model):
                 cs.observe_open_field()
                 for stream in range(len(texts)):
                     cs.mtm.close(None, stream=stream, references=
-                        cs._field_activated_references.get(stream, ()))
+                        getattr(cs, '_field_activated_references', {}).get(stream, ()))
                 cs._field_activated_references = {}
                 cs.mtm.promote_candidates(cs)
                 model.End()

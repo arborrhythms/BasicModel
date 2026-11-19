@@ -76,9 +76,12 @@ def test_linear_field_reader_and_definitions_have_their_declared_writers(tmp_pat
         teach_concept_lessons(model)
         optimizer=model.getOptimizer(lr=.01)
         groups=model.objective_parameter_groups(optimizer)
-        coefficients=model.conceptualSpaces[0]._concept_allocator.layer(0).values
-        assert any(p is coefficients for p in groups['reconstruction'])
-        assert not any(p is coefficients for p in groups['output'])
+        cs=model.conceptualSpaces[0]
+        # The taught names are columns of the order-zero Sigma; the orders
+        # above keep their coefficients in the store.
+        for coefficients in (cs.order_zero.weight, cs._concept_allocator.layer(0).values):
+            assert any(p is coefficients for p in groups['reconstruction'])
+            assert not any(p is coefficients for p in groups['output'])
         assert all(any(p is q for q in groups['output'])
                    for p in model.outputSpace.field_readout.parameters())
     finally:
@@ -109,11 +112,17 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         gradients = torch.autograd.grad(cost.sum(), (observation['answer_field'].evidence,), retain_graph=True, allow_unused=True)
         assert any(g is not None and bool(g.abs().any()) for g in gradients)
         return cost
+    raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+    # A word is found on its concept_mint_count-th reading (sigma-pi §21,
+    # rule 20): the readings before the trial's own.
+    for _ in range(model._concept_owner().concept_mint_count - 1):
+        with torch.no_grad():
+            model.forward(model.inputSpace.prepInput(raw))
+        model.End()
     monkeypatch.setattr(SentenceField, 'reconstruct', read)
     monkeypatch.setattr(Models.BasicModel, '_sentence_numeric_error', score)
     optimizer = model.getOptimizer(lr=.01)
     try:
-        raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
         batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
         model.runBatch(train=True, optimizer=optimizer, batchSize=4, split='train', batch_override=batch)
         assert len(reconstructed) == len(answered) == 2

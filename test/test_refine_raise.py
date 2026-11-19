@@ -176,7 +176,11 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
         optimizer.zero_grad()
         read = cs.cs_read_memberships(native, extents)
         _, field = cs.cs_forward_content(read, dictionary)
-        loss = (field[felix, :, 0] - target).square().mean()
+        # The predicate learns on its own reading, the particular's link on
+        # the particular's (the fold above order zero passes nothing back
+        # through a reading of exactly zero).
+        loss = ((read[0, :, 0] - target).square().mean()
+                + (field[felix, :, 0] - target).square().mean())
         if initial is None:
             initial = float(loss.detach())
         loss.backward()

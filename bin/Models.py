@@ -11106,7 +11106,7 @@ class BasicModel(BaseModel):
                 form = data[lo:hi].decode('latin1')
                 word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
                     ws.property_rows_for_bytes(data[lo:hi]), form=data[lo:hi], word_reading=True,
-                    reading=(int(getattr(self, '_word_observation_serial', 0)), b))
+                    reading=owner.reading(b))
                 if word is not None:
                     object_id, object_row, object_order = owner.interpret.reading(word, batch=b)
                     grammar_words.append((b, lo, hi, form, selected[-1], word,

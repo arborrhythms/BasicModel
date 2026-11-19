@@ -14208,9 +14208,8 @@ class ConceptualSpace(Space):
                     obj = None if word is None else index.deref(word)
                     formed = None if obj is None else (word, obj)
                 else:
-                    model_of = getattr(self, '_model', None)
                     word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True,
-                        reading=(int(getattr(model_of, '_word_observation_serial', 0)), b))
+                        reading=self.reading(b))
                     obj = None if word is None else self.interpret.forward(word)
                     formed = None if obj is None else (word, obj)
                 if formed is None:
@@ -16074,6 +16073,13 @@ class ConceptualSpace(Space):
     def declare_word_classes(self):
         return self._prebuild_declared(self.WORD_CLASSES, _concept_alloc_of(self).declared_classes,
                                        'declared')
+
+    def reading(self, stream):
+        """A reading, for MTM's count of a form: one sentence of one stream,
+        the sentence named by the model's present time (both trials of a
+        sentence share it). A model with no clock reads at time zero."""
+        present = getattr(getattr(self, '_model', None), 'present', None)
+        return (int(present()) if callable(present) else 0, int(stream))
 
     def nominates(self, key, reading=None):
         """MTM nominates a row for ``key`` on its ``concept_mint_count``-th
