@@ -1533,10 +1533,16 @@ class ReferenceClose(nn.Module):
                     refs=tuple(refs), children=children,
                     companions=tuple(rewrite(c) for c in value.companions))
             return rebuilt[id(node)]
-        result = rewrite(clause)
-        prepared_candidates = tuple(rewrite(node) for node in arrival_nodes)
+        try:
+            result = rewrite(clause)
+            prepared_candidates = tuple(rewrite(node) for node in arrival_nodes)
+            extra = [rewrite(item['node']) for item in plan['items'] if item.get('lexical')]
+        finally:
+            # Each rewrite calls itself through its closure's cell, a cycle
+            # that would hold the rebuilt clauses, and the sentence trees
+            # their identities name, until the collector ran. Clear the cells.
+            rewrite = rewrite_term = None
         arrivals = {}
-        extra = [rewrite(item['node']) for item in plan['items'] if item.get('lexical')]
         for item in plan.get('arrivals', ()):
             selected = item['selected']
             if isinstance(selected, tuple) and selected[:1] == ('arrival',) and selected not in arrivals:
