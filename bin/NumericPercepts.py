@@ -81,7 +81,7 @@ class NumericPercepts:
         for index, row in enumerate(nominated):
             if row in basic.conjunctions:
                 lanes[index] = basic.pi(torch.stack(lanes), (row,), members)[0]
-        presence = torch.stack(lanes) if lanes else presence
+        presence = basic.held(torch.stack(lanes), nominated) if lanes else presence
         codes = (basic.read_codes(nominated) if nominated else basic.codes.new_zeros(0, 2, basic.width)).to(values)
         where = self.model.where_registry.encode('numeric', torch.cat((axes, axes[:1])).expand(B, -1)).to(values)
         moment = self.model.present()

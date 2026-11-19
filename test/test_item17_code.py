@@ -278,36 +278,57 @@ def _difference(positive, negative):
     return vector / vector.square().sum()
 
 
+def _unhalved(positive, negative):
+    """The column as §19.82 first had it: ``P / |P|^2 - N / |N|^2``."""
+    from OrderZero import OrderZeroSigma
+    if not bool(negative.square().sum() > 0):
+        return OrderZeroSigma.member_column(positive)
+    return 2 * OrderZeroSigma.member_column(positive, negative)
+
+
 def test_48_a_concept_reads_by_difference():
-    """A column starts as what tells for its member over the squared length
-    of that, less what tells against it over the squared length of that
-    (``P / |P|^2 - N / |N|^2``): all that tells for reads one and all that
-    tells against takes the reading to zero, however few its coordinates. So
-    `archer` reads `archery`, and `is` reads `this`, at or near zero, while
-    `reach`, which holds archer's letters and not the run, has nothing that
-    tells against archer. Its own row reads one, and one more from its own
-    against lane where it has a holder."""
+    """A column starts as the mean of its member's sides (rule 54, §19.82 as
+    amended in §23.3c.3): what tells for it over its squared length and what
+    tells against it over its own, ``(P / |P|^2 - N / |N|^2) / 2``; a member
+    with nothing against it gives its for side alone. So a form read alone
+    reads one (rule 21); a form read among words that cover what tells
+    against it reads less than one; a form whose holder stands in its
+    place (`archery` for `archer`, `this` for `is`) reads at or near zero;
+    a form read beside a word that covers what tells against it reads
+    between, a half where that word carries nothing against it.
+    `reach` holds archer's letters and not the run: see below."""
     from OrderZero import combine
-    words = (b'archer', b'archery', b'reach', b'is', b'this', b'cat')
+    words = (b'archer', b'archery', b'reach', b'is', b'this', b'cat', b'y')
     identity, basic, book, rows = coded(words)
     column = {w: basic.column(rows[w]) for w in words}
     before = {w: _difference(*basic.read_pair(basic.lanes(rows[w]))) for w in words}
+    unhalved = {w: _unhalved(*basic.read_pair(basic.lanes(rows[w]))) for w in words}
     def reads(concept, form, columns=column):
         lanes = _read_form(basic, book, form, [rows[w] for w in words])
         x = combine(lanes[:, None], basic.read_codes([rows[w] for w in words]))[0]
         return float(((x[0] - x[1]) @ columns[concept]))
-    pairs = ((b'archer', b'archer'), (b'archer', b'archery'), (b'archer', b'reach'),
-             (b'is', b'is'), (b'is', b'this'), (b'cat', b'cat'))
-    table = {f'{c.decode()} on {f.decode()}': (round(reads(c, f, before), 3), round(reads(c, f), 3))
+    def among(concept, others, columns=column):
+        # The concept's row present with other words' rows, each at [1, 0].
+        present = [rows[concept]] + [rows[w] for w in others]
+        x = combine(torch.tensor([[[1., 0.]]] * len(present)), basic.read_codes(present))[0]
+        return float(((x[0] - x[1]) @ columns[concept]))
+    pairs = ((b'archer', b'archer'), (b'archer', b'archery'), (b'archer', b'reach'), (b'is', b'is'), (b'is', b'this'), (b'cat', b'cat'))
+    table = {f'{c.decode()} on {f.decode()}': (round(reads(c, f, before), 3),
+                                              round(reads(c, f, unhalved), 3), round(reads(c, f), 3))
              for c, f in pairs}
-    print('before the squash (before, built)', table)
-    # The own row: what tells for it reads one; where it has a holder its
-    # own against lane reads one more.
+    table['archer among y'] = tuple(round(among(b'archer', [b'y'], c), 3) for c in (before, unhalved, column))
+    print('before the squash (before 19.82, 19.82 unhalved, built)', table)
+    # Each form read alone reads one, with a holder or without.
     for word in (b'archer', b'is', b'cat'):
-        holders = bool(basic.lanes(rows[word])[1, :64].any())
-        assert reads(word, word) == pytest.approx(1. + holders, abs=1e-4)
-    # A holder's added part takes the reading to zero or below.
+        assert reads(word, word) == pytest.approx(1., abs=1e-4)
+    # A holder standing in its place takes the reading to zero or below.
     assert reads(b'archer', b'archery') <= 1e-4 and reads(b'is', b'this') <= 1e-4
+    # Among words that cover what tells against it (archer's row present
+    # with the row of y, the part archery adds), above its holder's reading
+    # and below its own. It reads a half less what the other word's own
+    # against lane takes away: y's holder archery adds archer's letters,
+    # which the reading then carries against.
+    assert reads(b'archer', b'archery') < among(b'archer', [b'y']) < 1.
     # reach holds every letter of archer, not the run, and nothing that
     # tells against archer. The first Pi reads archer's row present on it
     # (its set of parts is found there, rule 53), so the reading carries
@@ -316,7 +337,8 @@ def test_48_a_concept_reads_by_difference():
 
 
 def test_48_on_the_dictionary_and_the_lesson():
-    """Printed, before §19.82 and as built: what a part's concept reads
+    """Printed, before §19.82, as §19.82 first had it and as built (the mean
+    of the sides, §23.3c.3): what a part's concept reads
     (before the squash) of a form that holds it as a run, of one whose parts
     it holds without the run, and of one that holds it by accident (a
     sample of every 40th word against all, read alone); how often an
@@ -334,12 +356,13 @@ def test_48_on_the_dictionary_and_the_lesson():
     X = (pairs[:, 0] - pairs[:, 1])
     F = basic.codes[index].cpu().numpy() > .5
     parts = [set(identity.words[w]) for w in words]
-    sums = {form: {'run': [], 'parts': [], 'accident': []} for form in ('before', 'built')}
-    unrelated = {'before': [0, 0], 'built': [0, 0]}
+    sums = {form: {'run': [], 'parts': [], 'accident': []} for form in ('before', 'unhalved', 'built')}
+    unrelated = {'before': [0, 0], 'unhalved': [0, 0], 'built': [0, 0]}
     from OrderZero import OrderZeroSigma
     for i in range(0, len(words), 40):
         P, N = pairs[i]
-        columns = dict(before=_difference(P, N), built=OrderZeroSigma.member_column(P, N))
+        columns = dict(before=_difference(P, N), unhalved=_unhalved(P, N),
+                       built=OrderZeroSigma.member_column(P, N))
         le = (~F[i, :64] | F[:, :64]).all(1)
         le[i] = False
         kinds = {}

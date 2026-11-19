@@ -383,7 +383,8 @@ class BasicPercepts(nn.Module):
 
     def column(self, row):
         """A member's share of a concept's starting column (rule 54; Alec,
-        §19.82), from its live lanes: ``P / |P|^2 - N / |N|^2``
+        §19.82, §23.3c.3), from its live lanes: the mean of its sides,
+        ``(P / |P|^2 - N / |N|^2) / 2``, or ``P / |P|^2`` with nothing against
         (``OrderZeroSigma.member_column``)."""
         from OrderZero import OrderZeroSigma
         positive, negative = self.read_pair(self.lanes(row))
@@ -515,6 +516,8 @@ class BasicPercepts(nn.Module):
                 if row in self.conjunctions:
                     values[index] = self.pi(torch.stack(values), (row,), members)[0]
                     events[index] = self.pi(torch.stack(events), (row,), members)[0]
+            values = list(self.held(torch.stack(values), rows))
+            events = list(self.held(torch.stack(events), rows))
         for group in groups:
             if not group:
                 zero = native.values.new_zeros(native.values.shape[1:])
@@ -619,6 +622,31 @@ class BasicPercepts(nn.Module):
         wholes = present - lane(kept)
         against = wholes + (present - wholes) * opposed
         return torch.stack((lane(for_lane), against), -1)
+
+    def held(self, lanes, rows):
+        """Each row's lanes ``[K, ..., 2]`` with what its conjunctions add:
+        a conjunction over a row is one of its holders (rule 53), so where
+        the conjunction's other members are all found, what tells against
+        the row is found, and the row is read both (its holder stands in
+        its place). Joined by the union, as the first Pi's against entries."""
+        rows = [int(row) for row in rows]
+        position = {row: index for index, row in enumerate(rows)}
+        holders = {row: [members for whole, members in self.conjunctions.items()
+                         if row in members and bool(self.promoted[whole])
+                         and all(m in position for m in members)] for row in rows}
+        if not any(holders.values()):
+            return lanes
+        result = list(lanes)
+        for row, found in holders.items():
+            if not found:
+                continue
+            index = position[row]
+            others = torch.stack([torch.stack([lanes[position[m]][..., 0] for m in members if m != row]).amin(0)
+                                  for members in found])
+            added = 1 - (1 - others.clamp(0, 1)).prod(0)
+            against = 1 - (1 - lanes[index][..., 1]) * (1 - lanes[index][..., 0] * added)
+            result[index] = torch.stack((lanes[index][..., 0], against), -1)
+        return torch.stack(result)
 
     def lookup_rows(self, rows, *, valid=None):
         rows = torch.as_tensor(rows, device=self.codes.device, dtype=torch.long)
