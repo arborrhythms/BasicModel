@@ -609,3 +609,54 @@ class ValueTable:
 
 def pad(vectors, width):
     return np.stack([np.pad(v, (0, width - len(v))) for v in vectors])
+
+
+# ---------------------------------------------------------------------------
+# The first Pi with entries on both lanes (§19.71, point 2).
+
+def against_entries(coder, holders):
+    """A row's against entries: the parts that the forms holding it as a
+    run add to it (``y`` of ``archery`` and ``s`` of ``archers`` for
+    ``archer``)."""
+    return {w: frozenset(a for h in holders.get(w, ()) for a in coder.parts[h] - coder.parts[w])
+            for w in coder.words}
+
+
+def pi_row(coder, row, reading, against, *, join, by='set'):
+    """The two lanes of ``row``'s basic percept on a reading of the form
+    ``reading``. A member's membership is 0 or 1: by the reading's set of
+    parts (``set``) or by its code holding the member's code (``code``).
+    For: the product of the row's parts. Against: the run's presence times
+    the join of the against entries, their product (``product``: every one
+    present) or their union (``union``, 1 - prod(1 - m): any one)."""
+    if by == 'set':
+        parts = coder.parts[reading]
+        held = parts.__contains__
+    else:
+        mask = coder.part_mask(reading)
+        held = lambda atom: (coder.atom_mask(atom) & ~mask) == 0
+    present = float(all(held(a) for a in coder.parts[row]))
+    entries = against[row]
+    if not entries:
+        return present, 0.
+    found = [held(a) for a in entries]
+    joined = all(found) if join == 'product' else any(found)
+    return present, present * float(joined)
+
+
+def graded_table_code(table, value, grade):
+    """The sorted table's two lanes for ``value``, with a value's evidence
+    graded by its distance on the felt chart: ``against`` grades the against
+    lane at an entry above, ``1 - felt(v) / felt(t)``; ``both`` also grades
+    the for lane at an entry below, ``felt(t) / felt(v)``. Returns the for
+    lane less the against lane (the two are never both above zero at one
+    entry)."""
+    crisp = table.code(value)
+    result = crisp.copy()
+    for other in table.values:
+        for i in table.place(other):
+            if other > value and grade in ('against', 'both') and crisp[i] < 0:
+                result[i] = -(1 - felt(value) / felt(other))
+            elif other <= value and grade == 'both' and crisp[i] > 0:
+                result[i] = max(result[i] if result[i] < 1 else 0., felt(other) / felt(value))
+    return result

@@ -502,3 +502,90 @@ def test_p7_learned_wholes_half_toy():
                        member_vs_class_code=order, read_back_auc=aucs,
                        mean_cosine_between_classes=(round(start_cos, 3), round(cosines(), 3)),
                        coordinates_per_class=support, coordinates_used_by_several=shared, nested_er_ter=nested))
+
+
+# §19.71, point 2: a row of the first Pi with against entries.
+
+def test_6b_the_first_pi_with_against_entries():
+    c = coder('balanced', 64, True)
+    holders = dictionary_holders()
+    against = ct.against_entries(c, holders)
+    counts = [len(against[w]) for w in c.words]
+    total = [len(c.parts[w]) + len(against[w]) for w in c.words]
+    print(dict(against_entries=(min(counts), round(float(np.mean(counts)), 2), max(counts)),
+               rows_with_none=sum(x == 0 for x in counts),
+               all_entries_a_row=(min(total), round(float(np.mean(total)), 2), max(total)),
+               rows_over_16=sum(x > 16 for x in total)))
+    P, _ = c.matrices()
+    pairs = {'held as a run': [], 'parts inside, not a run': [], 'accidental (code only)': []}
+    for i in range(0, len(c.words), 40):
+        le = (~P[i] | P).all(1)
+        le[i] = False
+        for j in np.flatnonzero(le):
+            a, b = c.words[i], c.words[j]
+            if c.parts[a] <= c.parts[b]:
+                pairs['held as a run' if a in b else 'parts inside, not a run'].append((a, b))
+            else:
+                pairs['accidental (code only)'].append((a, b))
+    for kind, group in pairs.items():
+        for by in ('set', 'code'):
+            row = {}
+            for join in ('product', 'union'):
+                lanes = np.array([ct.pi_row(c, a, b, against, join=join, by=by) for a, b in group])
+                row[join] = dict(for_mean=round(float(lanes[:, 0].mean()), 3),
+                                 against_fired=int((lanes[:, 1] > 0).sum()),
+                                 net_mean=round(float((lanes[:, 0] - lanes[:, 1]).mean()), 3))
+            print(kind, len(group), 'by', by, row)
+    # By construction: a row reads its own form for, and never against.
+    for w in c.words[::97]:
+        for join in ('product', 'union'):
+            assert ct.pi_row(c, w, w, against, join=join) == (1., 0.)
+    for a, b in (('archer', 'archery'), ('archer', 'archers'), ('ab', 'abaca')):
+        if a in c.order and b in c.order:
+            print(a, 'on', b, 'against entries', sorted(against[a])[:12],
+                  {join: ct.pi_row(c, a, b, against, join=join) for join in ('product', 'union')})
+
+
+def test_6b_the_lessons_rows_with_against_entries(lesson):
+    owner, basic, identity = lesson['owner'], lesson['basic'], lesson['identity']
+    rows, forms = _lesson_forms(owner, basic)
+    vocabulary = [w.decode() for w in identity.words]
+    c = ct.Coder('balanced', 64, alternate=True).admit_all(vocabulary)
+    against = ct.against_entries(c, ct.holders_of(vocabulary))
+    print({f: sorted(against[f]) for f in forms})
+    for by in ('set', 'code'):
+        for join in ('product', 'union'):
+            net = np.array([[np.subtract(*ct.pi_row(c, row, reading, against, join=join, by=by))
+                             for row in forms] for reading in forms])
+            own = np.diag(net).copy()
+            other = net - np.diag(own) - 2 * np.eye(len(net))
+            apart = int((own > other.max(1) + 1e-9).sum())
+            print(dict(by=by, join=join, told_apart=apart, of=len(forms),
+                       rows_read_both=int(sum(ct.pi_row(c, r, x, against, join=join, by=by) == (1., 1.)
+                                              for r in forms for x in forms if r != x)),
+                       others_net_mean=round(float(net[~np.eye(len(net), dtype=bool)].mean()), 3)))
+
+
+# §19.71, point 3: the sorted table, graded by distance.
+
+def test_5_the_sorted_table_graded_by_distance():
+    collections = dict(alpha=1, beta=1, gamma=2)
+    for mode in ('exact', 'bins'):
+        for grade in ('crisp', 'against', 'both'):
+            table = ct.ValueTable(64, mode)
+            for v in collections.values():
+                table.see(v)
+
+            def read(x):
+                table.see(x)
+                code = ct.graded_table_code(table, x, grade)
+                result = {}
+                for k, v in collections.items():
+                    member = ct.graded_table_code(table, v, grade)
+                    width = max(len(member), len(code))
+                    u = ct.columns(ct.pad([member], width))[0]
+                    result[k] = np.tanh(ct.pad([code], width)[0] @ u)
+                return result
+            rows = _scalar_table(read, (1, 2, 4, 1.5))
+            margins = {x: round(r['alpha'] - r['gamma'], 3) for x, r in rows.items()}
+            print(f'table {mode}, {grade}', rows, 'alpha less gamma', margins)
