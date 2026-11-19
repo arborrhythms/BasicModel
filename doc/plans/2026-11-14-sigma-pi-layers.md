@@ -8769,6 +8769,20 @@ On §23.3c.2's finding (a concept reads a form that holds its own form at .937 o
 
 That is what was being said, and this is the remedy. A column becomes what tells for its member over the number of coordinates that tell for it, less what tells against it over the number that tell against it: `P / |P|² - N / |N|²`. A reading that holds everything that tells for and nothing that tells against reads one; one that also holds everything that tells against reads zero, however few those coordinates are. It is the weighting that §23.3c.2 set out to measure. Rule 54 says so now. What is still measured is its cost: how often the few against coordinates of a form are covered by another form by accident.
 
+### 19.83 Alec: the taper stays; the two channels after the Not need not be combined (2026-11-19)
+
+Asked by him: "We currently have concepts square on 1/2 the percepts?" Yes, in room: the concept rows are shared between the orders by a geometric taper (`ConceptualSpace._order_caps`), which gives order zero about half of the concept rows, while the basic percepts have a capacity of their own (about 2,050 concepts of order zero for 4,096 rows in the lesson's configuration). Claude then wrote a step for round 4 that removed the taper. His answer:
+
+"Geometric taper is not a bad rule. Interconnection should be: order zero is n:n on basic percepts, order 1 is n/2 (with taper) connected to 3n/2, since it connects to both lower rows. I'm not certain we need that many, but that would be our preallocated storage."
+
+"So since after the Not layer we still have two channels, those need not be combined: we can have a concept for presence and a concept for absence, if we so choose. So the summation step is determined by gradient need at sigma."
+
+**The room** (*decided*). The taper stays. Order zero has as many concepts as there are basic percepts, n to n. Each order above has half the units of the one below. *Claude's reading of "both lower rows":* the n/2 concepts of order one may connect to the two rows beneath them, their own order's n/2 symbols and the n concepts of order zero, 3n/2 in all; and so on upward. This is storage allocated beforehand, not a number of entries expected. What is wrong today is only that order zero's room is taken from the same count as the orders above and comes out at half the basic percepts'.
+
+**The two channels** (*his; Claude's reading of it, to be confirmed*). Rule 3 has a concept read one combined input, for less against, so the two channels are joined by a fixed subtraction before the Sigma. He says they need not be: the Sigma can take the for channel and the against channel as two inputs with weights of their own, and what a concept does with them is learned. A concept for presence weighs the for channel; a concept for absence weighs the against channel; a concept that weighs them equally and oppositely is the one rule 3 has now. So the fixed subtraction becomes the start of two sets of weights (the against weights begun as the for weights negated), and the gradient moves them apart where it needs to.
+
+*Not said by him, and put to him:* whether a concept's own value stays one signed number (rule 3, his §19.24), with only its inputs' weights set free, or whether a concept too may give two channels. Built on the first unless he says otherwise.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9787,6 +9801,20 @@ chooses from. The old classes are not edited.
       take (its past error against the composition); and whether the
       grammar may compose further over an idea it took.
 
+59. *The two channels are not joined before the Sigma* (Alec, §19.83:
+    "after the Not layer we still have two channels, those need not
+    be combined: we can have a concept for presence and a concept
+    for absence, if we so choose. So the summation step is
+    determined by gradient need at sigma"). The Sigma takes the for
+    channel and the against channel as two inputs, each with its own
+    weights; rule 3's one input of for less against is where the
+    weights start, the against weights the for weights negated. A
+    concept for presence, a concept for absence and a concept of
+    their difference are then three settings of one read, and the
+    gradient chooses. *Mine:* a concept's own value stays one signed
+    number, as rule 3 has it. *Open, put to Alec:* whether a concept
+    too may give two channels.
+
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
 *learning*.
@@ -10034,6 +10062,13 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     read idea lies from the idea composed from the words, before and
     after teaching, and against the idea of another constituent, is
     printed.
+51. *Two channels at the Sigma* (rule 59). (a) At its start every
+    concept reads what it read with one input of for less against,
+    to rounding. (b) The gradient of an error reaches the for
+    weights and the against weights apart. (c) *Learning:* a concept
+    taught to be present where a percept is witnessed against, and
+    to say nothing where it is witnessed for, is learned with
+    weight on the against channel alone; the weights are printed.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -10784,20 +10819,30 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    (_bind_attended_concepts, cs_percept_attribution,
    PerceptCollections.definitions, concept_of_basic_percept,
    concept_percepts, add_concept_feature) read and write the record.
-10. The room for concepts is square with the rows beneath (rule 21;
-   Alec, 2026-11-19: "We currently have concepts square on 1/2 the
-   percepts?"). Today the concept rows are shared between the orders
-   by a geometric taper (ConceptualSpace._order_caps: each order has
-   half the rows of the one below, so order zero has about half of
-   nVectors), while the basic percepts have their own capacity
-   (basicPerceptCapacity). In the lesson's configuration that is
-   about 2,050 concepts of order zero for 4,096 rows. Rule 21 has
-   one concept for each row at every order, "with no halving
-   between orders". Give order zero room for as many concepts as
-   there are rows of the first Pi, and each order above room for as
-   many concepts as it has symbols; say what becomes of
-   orderAllocation, of the geometric default and of nVectors in the
-   configurations, and what the order-zero Sigma's size then is.
+10. The room for concepts (rule 21; Alec, §19.83: "Geometric taper
+   is not a bad rule. Interconnection should be: order zero is n:n
+   on basic percepts, order 1 is n/2 (with taper) connected to
+   3n/2, since it connects to both lower rows ... that would be our
+   preallocated storage"). The taper stays. Order zero has room for
+   as many concepts as there are basic percepts (today the taper
+   starts inside nVectors, so order zero has about half of it:
+   about 2,050 concepts for 4,096 rows in the lesson's
+   configuration). Each order above has half the units of the one
+   below, and its Sigma has room to connect to the two rows beneath
+   it, its own order's symbols and the order below's concepts. Say
+   what becomes of nVectors, basicPerceptCapacity and
+   orderAllocation in the configurations, and what is allocated.
+11. The two channels at the Sigma (rule 59; Alec, §19.83: "after the
+   Not layer we still have two channels, those need not be combined
+   ... the summation step is determined by gradient need at
+   sigma"). The Sigma of every order, the dense one of order zero
+   among them, takes the for channel and the against channel as two
+   inputs with weights of their own, in place of one input of for
+   less against. The against weights start as the for weights
+   negated, so that at its start every concept reads what it reads
+   now and every certificate that passes still passes; say so by a
+   test. A concept's own value stays one signed number unless Alec
+   says otherwise (§19.83). Certificate 51.
 
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences before
