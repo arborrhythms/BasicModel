@@ -14904,8 +14904,8 @@ class ConceptualSpace(Space):
         """Bind sparse definitions for this read; the view owns no parameters."""
         store = _concept_alloc_of(self).layer(0)
         rows = self._field_inventory_rows() if inventory_rows is None else inventory_rows
-        view = store.bind(rows.tolist())
-        view.conjunctive = store.conjunctive.bind(rows.tolist())
+        view = store.bind(rows)
+        view.conjunctive = store.conjunctive.bind(rows)
         defined = self._concept_part_rows(store.features, rows.device)
         valid = (rows >= 0) & (rows < len(defined))
         view.feature_defined = defined[rows.clamp(0, len(defined) - 1)] & valid
@@ -14913,51 +14913,65 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def _bind_attended_concepts(self, required, matrix):
-        """Gather every definition reachable from active native percept poles."""
+        """Gather every definition reachable from active native percept poles.
+
+        The closure over the definition edges runs on the device (item 1.5);
+        only the reached rows come back to the host, to be grouped by order.
+        """
         store = _concept_alloc_of(self).layer()
+        device = required.device
+        S = int(store.nOutput)
         active = (required.amax((2, 3)) > 0 if required.shape[2] else
                   required.new_zeros(required.shape[:2], dtype=torch.bool))
-        dependencies, standing = [], set()
+        B = int(required.shape[1])
+        rows_t, _ = matrix._indices(device)
+        # Zero-weight candidate edges still need their inputs to receive
+        # learning credit; the fold keeps their value zero.
+        targets, sources = [], []
+        standing = torch.zeros(S, dtype=torch.bool, device=device)
         for parent in (store, store.conjunctive):
             if parent is store.conjunctive and not self.conceptual_pi:
                 continue
-            for (target, column), pos in parent._index.items():
-                # Zero-weight candidate edges still need their inputs to
-                # receive learning credit; the fold keeps their value zero.
-                source = column % (store.nOutput + 1)
-                if source < store.nOutput:
-                    dependencies.append((target, source))
-                elif column == store.nOutput:
-                    standing.add(target)
-        orders = max(2, int(self._symbolic_order)) + 1
-        by_batch = []
-        retired = _concept_alloc_of(self).retired
-        for batch in range(required.shape[1]):
-            reached = standing | {row for edge, row in enumerate(matrix._rows)
-                if bool(active[edge, batch])}
+            if not parent.nnz:
+                continue
+            pr, pc = parent._indices(device)
+            source = pc % (S + 1)
+            dependent = source < S
+            targets.append(pr[dependent])
+            sources.append(source[dependent])
+            standing[pr[pc == S]] = True
+        reached = torch.zeros(S, B, dtype=torch.long, device=device)
+        if len(rows_t):
+            reached = reached.index_add(0, rows_t, active.to(torch.long))
+        reached = (reached > 0) | standing[:, None]
+        if targets:
+            dep_t, dep_s = torch.cat(targets), torch.cat(sources)
             while True:
-                parents = {target for target, source in dependencies if source in reached}
-                if parents <= reached:
+                parents = torch.zeros(S, B, dtype=torch.long, device=device).index_add(
+                    0, dep_t, reached[dep_s].to(torch.long)) > 0
+                fresh = parents & ~reached
+                if not bool(fresh.any()):
                     break
-                reached |= parents
-            groups = [[] for _ in range(orders)]
-            for row in sorted(reached):
-                if self.concept_id_at_row(row) in retired:
-                    continue
-                order = self._row_order(row)
-                if order < orders:
-                    groups[order].append(row)
-            by_batch.append(groups)
+                reached = reached | fresh
+        orders = max(2, int(self._symbolic_order)) + 1
+        retired = _concept_alloc_of(self).retired
+        by_batch = [[[] for _ in range(orders)] for _ in range(B)]
+        for row, batch in reached.nonzero().tolist():
+            if self.concept_id_at_row(row) in retired:
+                continue
+            order = self._row_order(row)
+            if order < orders:
+                by_batch[batch][order].append(row)
         caps = [max([min(self._order_caps()[0], int(self.outputShape[0])) if k == 0 else 0]
                     + [len(groups[k]) for groups in by_batch]) for k in range(orders)]
         addresses = [[row for k, group in enumerate(groups)
                       for row in (group + [-1] * (caps[k] - len(group)))]
                      for groups in by_batch]
-        rows = torch.tensor(addresses, dtype=torch.long, device=required.device).t()
+        rows = torch.tensor(addresses, dtype=torch.long, device=device).t()
         ids = [[self.concept_id_at_row(row) if row >= 0 else None for row in batch]
                for batch in addresses]
         ids = torch.tensor([[cid if cid is not None else -1 for cid in batch] for batch in ids],
-                           dtype=torch.long, device=required.device).t()
+                           dtype=torch.long, device=device).t()
         if rows.shape[1] == 1 or torch.equal(rows, rows[:, :1].expand_as(rows)):
             rows, ids = rows[:, 0], ids[:, 0]
         object.__setattr__(self, '_cs_field_caps', tuple(caps))
@@ -15007,8 +15021,8 @@ class ConceptualSpace(Space):
                      torch.arange(self.nVectors, device=membership.device))
         for b in range(B):
             rows = addresses[:, b] if addresses.ndim == 2 else addresses
-            bound = matrix.bind(rows.tolist(), paired=False)
-            selected = torch.tensor(bound._inventory_edges, device=required.device, dtype=torch.long)
+            bound = matrix.bind(rows, paired=False)
+            selected = torch.as_tensor(bound._inventory_edges, device=required.device, dtype=torch.long)
             literals = required.index_select(0, selected)[:, b]
             prototype = membership.new_zeros(0, E)
             field = torch.stack([
@@ -15029,63 +15043,111 @@ class ConceptualSpace(Space):
         """Intersect and union predicates of the shared subject before encoding.
 
         Native percept poles have already been pooled inside the bracket.
-        Dependencies are evaluated once in topological order, preserving
-        sparse identity; an extent's both corner is only a diagnosis.
+        Dependencies are evaluated once per topological level, every row of a
+        level in one fold (item 1.5), preserving sparse identity; an extent's
+        both corner is only a diagnosis.
         """
         store = self._concept_field_store(inventory_rows)
         n0, B, E, _ = field.shape
         S = store.nOutput
+        device = field.device
         working = torch.cat((field, field.new_zeros(S - n0, B, E, 2)))
         raw = working.clone()
-        deps = {r: set() for r in range(n0)}
+        if n0 == 0:
+            if publish:
+                object.__setattr__(self, '_cs_order0_raw', raw[:0].detach())
+            return working[:0]
+        targets, sources = [], []
         for matrix in (store, store.conjunctive):
             if matrix is store.conjunctive and not self.conceptual_pi:
                 continue
-            for (r, c), edge in matrix._index.items():
-                source = c % (S + 1)
-                if (r < n0 and source < n0 and float(matrix.values[edge].detach()) > 0
-                        and not bool(matrix._missing_sources[edge])):
-                    deps[r].add(source)
-        pi_rows = self._concept_part_rows(store.conjunctive, field.device)
-        pending, done = set(range(n0)), set()
-        while pending:
-            ready = sorted(r for r in pending if deps[r] <= done)
-            if not ready:
+            if matrix.values is None or not matrix.nnz:
+                continue
+            r, c = matrix._indices(device)
+            source = c % (S + 1)
+            # A positive, present edge between field rows is a dependency.
+            ok = ((r < n0) & (source < n0) & (matrix.values.detach().to(device) > 0)
+                  & ~matrix._missing_sources.to(device))
+            targets.append(r[ok])
+            sources.append(source[ok])
+        level = torch.zeros(n0, dtype=torch.long, device=device)
+        if targets:
+            dep_t, dep_s = torch.cat(targets), torch.cat(sources)
+            for _ in range(n0 + 1):
+                proposed = torch.zeros_like(level).scatter_reduce(
+                    0, dep_t, level[dep_s] + 1, reduce='amax', include_self=True)
+                if torch.equal(proposed, level):
+                    break
+                level = proposed
+            else:
                 raise ValueError('cyclic order-0 concept definitions')
-            for row in ready:
-                positive, negative = working.unbind(-1)
-                source = torch.cat((positive.reshape(S, B * E), field.new_ones(1, B * E),
-                                    negative.reshape(S, B * E), field.new_zeros(1, B * E)))
-                own = field[row:row+1].reshape(1, B * E, 2)
-                own_mask = store.feature_defined[row:row+1]
-                if self.conceptual_pi and bool(pi_rows[row]):
-                    own = torch.stack((
-                        store.conjunctive.fold_presence(source, conjunctive=True, start=row, end=row+1,
-                            own=own[..., 0], own_mask=own_mask, own_known=own.any(-1)),
-                        store.conjunctive.fold_presence(source, conjunctive=True, dual=True, start=row, end=row+1,
-                            own=own[..., 1], own_mask=own_mask, own_known=own.any(-1))), -1)
-                    own_mask = torch.ones_like(own_mask)
-                result = torch.stack((
-                    store.fold_presence(source, start=row, end=row+1,
-                        own=own[..., 0], own_mask=own_mask, own_known=own.any(-1)),
-                    store.fold_presence(source, dual=True, start=row, end=row+1,
-                        own=own[..., 1], own_mask=own_mask, own_known=own.any(-1))), -1).reshape(1, B, E, 2)
-                inventory = (self._field_inventory_rows() if inventory_rows is None else inventory_rows)
-                symbol = self.concept_id_at_row(int(inventory[row]))
-                if symbol is not None and any(role == 'candidate_literal' for role, _
-                        in _concept_alloc_of(self).store_of(symbol).constituents(symbol)):
-                    # A located literal's field support initializes its form;
-                    # that context cannot assert a different native sequence.
-                    result = result * (field[row:row+1, ..., :1] > 0)
-                index = torch.tensor([row], device=field.device)
-                raw = raw.index_copy(0, index, result)
-                working = working.index_copy(0, index, result)
-                done.add(row)
-                pending.remove(row)
+        inventory = (self._field_inventory_rows() if inventory_rows is None else inventory_rows)
+        alloc = _concept_alloc_of(self)
+        literal = torch.zeros(n0, dtype=torch.bool, device=device)
+        literal_rows = []
+        for position, row in enumerate(inventory[:n0].tolist()):
+            symbol = self.concept_id_at_row(int(row))
+            if symbol is not None and any(role == 'candidate_literal' for role, _
+                    in alloc.store_of(symbol).constituents(symbol)):
+                literal_rows.append(position)
+        if literal_rows:
+            literal[literal_rows] = True
+        pi_rows = self._concept_part_rows(store.conjunctive, device)[:n0]
+        own = field.reshape(n0, B * E, 2)
+        feature_mask = store.feature_defined[:n0]
+        # A zero-weight edge is absent from the positive dependency graph,
+        # but its gradient still reads the source. Within each positive level
+        # keep the old order for shared inputs and for a sibling read/write.
+        inputs = [set() for _ in range(n0)]
+        for matrix in (store, store.conjunctive) if self.conceptual_pi else (store,):
+            for row, col in zip(matrix._rows, matrix._cols):
+                source = col % (S + 1)
+                if row < n0 and source < n0:
+                    inputs[row].add(source)
+        levels = {}
+        for row, depth in enumerate(level.tolist()):
+            levels.setdefault(depth, []).append(row)
+        ranges = []
+        for depth in sorted(levels):
+            start, end, reads = -1, -1, set()
+            for row in levels[depth]:
+                sources = inputs[row]
+                if (row != end or row in reads or not reads.isdisjoint(sources)
+                        or any(start <= source < end for source in sources)):
+                    if end > start:
+                        ranges.append((start, end))
+                    start, reads = row, set()
+                end = row + 1
+                reads.update(sources)
+            ranges.append((start, end))
+        for start, end in ranges:
+            selected = slice(start, end)
+            positive, negative = working.unbind(-1)
+            source = torch.cat((positive.reshape(S, B * E), field.new_ones(1, B * E),
+                                negative.reshape(S, B * E), field.new_zeros(1, B * E)))
+            current, current_mask = own[selected], feature_mask[selected]
+            pins = pi_rows[selected]
+            if self.conceptual_pi and bool(pins.any()):
+                conjunctive = torch.stack((
+                    store.conjunctive.fold_presence(source, conjunctive=True, start=start, end=end,
+                        own=current[..., 0], own_mask=current_mask, own_known=current.any(-1)),
+                    store.conjunctive.fold_presence(source, conjunctive=True, dual=True, start=start, end=end,
+                        own=current[..., 1], own_mask=current_mask, own_known=current.any(-1))), -1)
+                current = torch.where(pins[:, None, None], conjunctive, current)
+                current_mask = pins | current_mask
+            known = current.any(-1)
+            result = torch.stack((
+                store.fold_presence(source, start=start, end=end,
+                    own=current[..., 0], own_mask=current_mask, own_known=known),
+                store.fold_presence(source, dual=True, start=start, end=end,
+                    own=current[..., 1], own_mask=current_mask, own_known=known)), -1).reshape(end-start, B, E, 2)
+            result = torch.where(literal[selected, None, None, None], result * (field[selected, ..., :1] > 0), result)
+            index = torch.arange(start, end, device=device)
+            raw = raw.index_copy(0, index, result)
+            working = working.index_copy(0, index, result)
         if publish:
             object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
         return working[:n0]
-
 
     def concept_weights(self, row, *, conjunctive=False, negated=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
@@ -16361,13 +16423,17 @@ class ConceptualSpace(Space):
         """Only percepts and kinds discovered from them have witnessed where."""
         alloc = _concept_alloc_of(self)
         ly = alloc.layer(0)
-        out = []
-        for row, cid in self._row_to_concept().items():
-            if cid in alloc.retired:
-                continue
-            if self._order0_inventory_row(row) or bool(ly.witnessed[row]):
-                out.append(row)
-        return out
+        revision = (id(ly._tensor_rows), len(ly._tensor_rows),
+                    getattr(ly, '_record_revision', 0), frozenset(alloc.retired),
+                    id(ly.witnessed), ly.witnessed._version, self._order_caps()[0])
+        cached = self.__dict__.get('_witnessed_row_cache')
+        if cached is None or revision != cached[0]:
+            rows = [row for row, cid in self._row_to_concept().items() if cid not in alloc.retired]
+            index = torch.tensor(rows, dtype=torch.long, device=ly.witnessed.device)
+            selected = index[(index < self._order_caps()[0]) | ly.witnessed[index]]
+            cached = revision, tuple(selected.tolist())
+            object.__setattr__(self, '_witnessed_row_cache', cached)
+        return list(cached[1])
 
 
 

@@ -5323,43 +5323,41 @@ class SparseLayer(Layer):
         Inventory addresses stay in the persistent definition. Missing source
         concepts contribute zero evidence; the standing poles keep their rails.
         """
-        addresses = [int(r) for r in inventory_rows]
-        lookup = {r: i for i, r in enumerate(addresses) if r >= 0}
+        device = self._device()
+        addresses = torch.as_tensor(inventory_rows, dtype=torch.long, device=device)
         size = len(addresses)
         view = SparseLayer(2 * (size + 1) if paired else self.nInput,
-                           size, nonlinear=False, device=self._device())
-        selected, rows, cols, missing = [], [], [], []
-        for pos, (row, col) in enumerate(zip(self._rows, self._cols)):
-            target = lookup.get(row)
-            if target is None:
-                continue
-            absent = False
-            if paired:
-                source, pole = col % (self.nOutput + 1), col // (self.nOutput + 1)
-                source = size if source == self.nOutput else lookup.get(source)
-                if source is None:
-                    # Both poles of an unattended source are unknown. Keep
-                    # its exponent and mask membership on both fold passes.
-                    absent = True
-                    source, pole = size, 1
-                col = source + pole * (size + 1)
-            selected.append(pos)
-            rows.append(target)
-            cols.append(col)
-            missing.append(absent)
-        view._rows, view._cols = rows, cols
-        view._index = {pair: i for i, pair in enumerate(zip(rows, cols))}
+                           size, nonlinear=False, device=device)
+        # If an inventory repeats a row, the old address map takes its last seat.
+        lookup = addresses.new_full((self.nOutput + 1,), -1)
+        valid = (addresses >= 0) & (addresses < self.nOutput)
+        seats = torch.arange(size, device=device)
+        lookup.scatter_reduce_(0, addresses[valid], seats[valid], reduce='amax')
+        lookup[self.nOutput] = size
+        parent_rows, parent_cols = self._indices(device)
+        local = lookup[parent_rows]
+        selected = (local >= 0).nonzero().flatten()
+        rows, cols = local[selected], parent_cols[selected]
+        missing = torch.zeros_like(rows, dtype=torch.bool)
+        if paired:
+            source = lookup[cols % (self.nOutput + 1)]
+            missing = source < 0
+            cols = torch.where(missing, 2 * size + 1, source + (cols // (self.nOutput + 1)) * (size + 1))
+        # Preserve the original edge identity when missing sources share a seat.
+        # Sparse topology readers still inspect the host index; transfer it once.
+        host = torch.stack((rows, cols, selected), dim=1).tolist()
+        view._rows = [row for row, _, _ in host]
+        view._cols = [col for _, col, _ in host]
+        view._index = {(row, col): i for i, (row, col, _) in enumerate(host)}
+        view._dev_cache = (rows.device, rows, cols)
         if self.values is not None:
-            index = torch.tensor(selected, device=self.values.device, dtype=torch.long)
-            object.__setattr__(view, 'values', self.values.index_select(0, index))
+            object.__setattr__(view, 'values', self.values.index_select(0, selected))
         view._inventory_edges = selected
-        view._missing_sources = torch.tensor(missing, dtype=torch.bool)
+        view._missing_sources = missing
         view._paired_sources = paired
         view._feature_sources = getattr(self, '_feature_sources', False)
-        # Pair original sources, not the attended addresses: several missing
-        # sources can share the view's silent bias slot without being opposites.
         source_columns = getattr(self, '_fold_source_columns', self._cols)
-        view._fold_source_columns = tuple(source_columns[pos] for pos in selected)
+        view._fold_source_columns = tuple(source_columns[pos] for _, _, pos in host)
         view._fold_source_offset = getattr(self, '_fold_source_offset', self.nInput // 2)
         return view
 
