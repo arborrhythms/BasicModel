@@ -5980,3 +5980,74 @@ against the sources before any of it enters a standing document).
 well it matches the request) and chooses the locus; the Pi matches
 through the gain field of §19.37 at the locus; the grammar interprets
 at the locus only.
+
+### 19.39 One mechanism: the locus is where the request matches (Alec, 2026-11-18; in discussion)
+
+Alec, 2026-11-18, on §19.38: "Unless locus of attention is also
+top-down, the where also being driven by conceptual content? That
+seems more simple, if we can do it."
+
+**It can be done for the match, and it is a position the literature
+holds.** §19.38 put the separation too firmly. What the literature
+separates is asking for a place and asking for a kind. Biased
+competition (Desimone and Duncan 1995) and Bundesen (1990) treat a
+place as one more thing a bias from above can name, with no spotlight
+of its own: the locus is whatever wins. In guided search (Wolfe 1994)
+the locus is computed from the match of what is wanted. From memory,
+as in §19.38.
+
+**The mechanism exists in the source.** A demand over concepts has no
+coordinates; it is given a place by the percepts present
+(`cs_percept_attribution`: "Concept rows have no event coordinates;
+only the supplied perception can locate a demand"), and
+`_passback_scope_ps` already turns that into a strength for each part
+(§19.33). The locus is then the tokens the request matches. No
+coordinates are chosen by anything.
+
+**What it would be.** One request from conceptual space, matched
+against the sentence's percept tensor; the match is the activity the
+Pi reads through (§19.34, §19.37); the locus is where that activity is
+high. The bracket table and a chooser of places are not needed for
+this.
+
+**Four things the acts of `attend` do today that a match of content
+does not give.**
+
+1. *Moving on.* A request for words matches `red`, `cat` and `sleeps`
+   alike. What was read has to give way. In the literature this is
+   inhibition of return (Posner and Cohen 1984): what was just attended
+   is dimmed for a time, and a serial scan falls out of one fixed
+   priority. In the model it is the "record of having examined a
+   particular place" he set aside as future work on 2026-11-18, and
+   here it is needed: a token that was interpreted is dimmed (the
+   `done` mark of a bracket today).
+2. *Order.* Which of the three first. The tree is composed in the
+   order the words are interpreted, so reading needs the earlier word
+   to win. A content has no place, so this is a preference over place.
+3. *Closer.* An unknown word is entered by its parts (`focus`,
+   descend). By request that is "smaller wholes, inside this token",
+   and "this token" is a place.
+4. *One at a time.* The match is graded and several tokens are active;
+   `interpret` wants one word. Either something picks a winner, which
+   he has asked me not to propose, or the test is graded (the question
+   already carried to this item).
+
+**So the simple form needs one more thing: a place that can be asked
+for as content.** Points 2 and 3 are requests about place. *Read, not
+traced to the end:* the place of an event in the sentence is a pair of
+integers today (`spans`); the code that `WhereRegistry` gives a percept
+says which percept it is in perceptual space, not where it stands in
+the sentence. A code for the position that a request can match is
+what §19.32 called teaching the place "in the same way". Words of
+place are item 1.6's.
+
+**What `attend` becomes** (a reading). The chooser of the request: of
+the kind asked for and of its grain (a word, its letters, a larger
+whole), with the place following from the match. Its and, or and not
+are already operations on content. It then chooses among kinds where
+today it chooses among brackets.
+
+**Size.** The loop of looks built in item 1.8, its lesson
+(`AttentionLesson.ReadingTargets`) and its departures are written over
+acts on brackets. This replaces them, so it is rule 32's size and not
+a step inside item 1.8.
