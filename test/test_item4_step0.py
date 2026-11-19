@@ -166,8 +166,11 @@ def test_bounded_bracket_scoring_preserves_menu_draw_and_gradients(kind):
     legal[0, :3, :3] = True
     legal[1, :2, 1:4] = True
     space = torch.zeros(2, 64, dtype=torch.long)
-    prior = torch.randn(2, 64)
-    options = dict(prior=prior, masked_action=torch.tensor([0, 2]), return_details=True)
+    # Since the forecast of a look the per-bracket term is no longer a
+    # scalar prior on the scores: it is a context per bracket, added to
+    # the keys before they are scored.
+    context = torch.randn(2, 64, 8)
+    options = dict(context=context, masked_action=torch.tensor([0, 2]), return_details=True)
     state = torch.get_rng_state()
     expected = full.attend(keys, legal, space, **options)
     after = torch.get_rng_state()

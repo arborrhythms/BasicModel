@@ -43,16 +43,21 @@ def test_parity_configuration_removes_selection_prime_without_muting_the_predict
         head._inter_last_meaning = [SimpleNamespace(prediction=predicted) for _ in range(2)]
         # Observe the actual inputs to the zero-initialized projection. A stale
         # discourse prediction is not this sentence's active order prime.
+        # Since the forecast of a look the context applies the projection's
+        # weights in AttentionContext.project (with the look's surprise
+        # pairs), not through the layer's forward, so its inputs are read there.
+        import AttentionContext
         inputs = []
-        hook = model.attention_context.register_forward_pre_hook(
-            lambda layer, args: inputs.append(args[0].detach().clone()))
-        try:
-            stm = model.conceptualSpace.CSLang.state
-            context(model, stm, None)
-            model.expectation_prime_enabled = True
-            context(model, stm, None)
-        finally:
-            hook.remove()
+        project = AttentionContext.project
+        def observed(mapping, values, surprise=None):
+            assert mapping is model.attention_context
+            inputs.append(values.detach().clone())
+            return project(mapping, values, surprise)
+        monkeypatch.setattr(AttentionContext, 'project', observed)
+        stm = model.conceptualSpace.CSLang.state
+        context(model, stm, None)
+        model.expectation_prime_enabled = True
+        context(model, stm, None)
         before, after = inputs
         start = sum(model._attention_geometry[0])
         stop = start + len(model._concept_owner()._order_caps())*model.conceptualSpace.stm.concept_dim

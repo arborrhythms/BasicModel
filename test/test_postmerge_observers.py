@@ -19,7 +19,7 @@ def test_inventory_comparison_checks_optimizer_and_stream(tmp_path):
 
 def test_stepped_trace_and_provenance_preserve_read_and_state(tmp_path,monkeypatch,eager_reading):
     import Assessment
-    from postmerge_word_lanes import stepped_trace,native_provenance,word_deposits
+    from postmerge_word_lanes import native_provenance,word_deposits
     from test_assessment import snapshot,equal
     from test_compiled_word_chunk import _tiny_canonical_model
     model=_tiny_canonical_model(tmp_path,monkeypatch,batch_size=1)
@@ -29,10 +29,10 @@ def test_stepped_trace_and_provenance_preserve_read_and_state(tmp_path,monkeypat
         before=snapshot(model)
         plain=Assessment.read_sentence(model,'alpha novel',trace=True)
         records=[]; deposits=[]
-        with monkeypatch.context() as patch:
-            patch.setattr(Assessment,'_attention_trace',stepped_trace)
-            with native_provenance(records.append), word_deposits(deposits.append):
-                observed=Assessment.read_sentence(model,'alpha novel',trace=True)
+        # The stepped observer of the walk is Assessment's own trace since
+        # the loop of looks (it follows Looks.run); the lane observers stay.
+        with native_provenance(records.append), word_deposits(deposits.append):
+            observed=Assessment.read_sentence(model,'alpha novel',trace=True)
         assert records and records[-1]['words']
         assert any(row['kind']=='deposit' and row['count'] for row in deposits)
         assert all(not row['negative'] for row in deposits if row['kind']=='deposit')

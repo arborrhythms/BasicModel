@@ -107,7 +107,9 @@ def test_86_pinned_sentence_keeps_the_selected_kernel(tmp_path, monkeypatch):
             program = SimpleNamespace(actions=actions, leaves=value, concept_ids=torch.tensor([word]),
                 operation_values=torch.stack((torch.zeros_like(frame), frame)))
             tree = bank.capture(program, language, 0).tree
-            torch.testing.assert_close(tree.actions(), actions, rtol=0, atol=0)
+            # The tree reads its kept action trace (ReadingIndex) since the
+            # tables round; it no longer rebuilds the actions from a bank.
+            torch.testing.assert_close(tree.trace.index.actions, actions, rtol=0, atol=0)
             assert tree.forest() == ((2, index, 1, (0, 0)),)
             found.append(rule.kernel_index)
             bank.clear()

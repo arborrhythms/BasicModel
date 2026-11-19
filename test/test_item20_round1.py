@@ -92,21 +92,33 @@ def test_reading_nonoperation_has_empty_rows_and_no_row_zero_gradient(kind):
         _choice_ref_relations=torch.ones(1, 2, 2, dtype=torch.bool),
         _choice_log_probabilities=torch.tensor([[-.3, -.7]]),
         _case_state=(None, None, None, torch.full((1, 2, 8), .7), torch.ones(1, 2, dtype=torch.bool)))
+    # Since the tables round the entries index their reading (ReadingIndex):
+    # it reads the declared unary rule and accepts only a reading a walk can
+    # record, so a transposition needs two operands on the stack. The
+    # language therefore declares its one unary rule, the transposition
+    # stands where it is legal, and the rows are named by their role.
+    language = SimpleNamespace(_compose_unary_rules=(SimpleNamespace(method_name='generic'),),
+                               _compose_binary_rules=())
     owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=0)), _reconstruction_stack=lambda: journal,
-                            _concept_owner=lambda: None, languageSpace=SimpleNamespace(),
+                            _concept_owner=lambda: None, languageSpace=language,
                             conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
                                 strata=SimpleNamespace(capture=lambda *args, **kwargs: None))))
-    program = (torch.tensor([[0, 1]]), torch.tensor([[[kind, -1, 0], [2, 0, -1], [0, -1, 1]]]),
-               torch.tensor([[0]]), torch.tensor([[-1, 0, -1]]))
+    actions = ([[0, -1, 0], [2, 0, -1], [0, -1, 1]] if kind == 0 else
+               [[0, -1, 0], [0, -1, 1], [3, -1, -1], [2, 0, -1]])
+    operation, = [row for row, action in enumerate(actions) if action[0] == 2]
+    nonoperations = [row for row, action in enumerate(actions) if action[0] in (0, 3)]
+    assert kind in [actions[row][0] for row in nonoperations]
+    program = (torch.tensor([[0, 1]]), torch.tensor([actions]), torch.tensor([[0]]),
+               torch.tensor([[0 if row == operation else -1 for row in range(len(actions))]]))
     entry, = BasicModel._program_entries(owner, program, torch.ones(1, 2, 8),
         torch.tensor([[1, 2]]), torch.tensor([[1, 2]]), torch.ones(1, 2), torch.ones(1, 3, 8))
     for name in ('operation_values', 'operation_refs', 'operation_relations', 'case_values', 'case_selected'):
         table = getattr(entry, name)
         fill = -1 if name == 'operation_refs' else 0
-        assert (table[[0, 2]] == fill).all()
-        assert not torch.equal(table[0], table[1])
-    torch.testing.assert_close(entry.operation_values[1].flatten(), values[0, 1])
-    assert entry.operation_probabilities[[0, 2]].tolist() == [0., 0.]
+        assert (table[nonoperations] == fill).all()
+        assert not torch.equal(table[nonoperations[0]], table[operation])
+    torch.testing.assert_close(entry.operation_values[operation].flatten(), values[0, 1])
+    assert entry.operation_probabilities[nonoperations].tolist() == [0.] * len(nonoperations)
     entry.operation_values.sum().backward()
     assert not values.grad[0, 0].any() and (values.grad[0, 1] == 1).all()
 

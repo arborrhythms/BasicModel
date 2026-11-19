@@ -87,8 +87,11 @@ def test_complete_paths_train_in_one_step_and_commit_once(monkeypatch):
             forced = result.compose_forced_slots
             if forced is None:
                 # Later walks reuse the base reading without a new compose fork.
+                # The reading walks are attention, compose and bind (walks
+                # 0 to 2 of SentenceCredit.WALKS since the candidate walk
+                # was folded into attention).
                 walk = kwargs['draw']['walk']
-                assert not ((walk >= 0) & (walk < 4)).any()
+                assert not ((walk >= 0) & (walk < 3)).any()
                 forced = torch.zeros_like(state[1][15], dtype=torch.bool)
             constraints.append((m._compose_fork.taken.clone(),
                                 forced.detach().clone()))
@@ -124,10 +127,13 @@ def test_complete_paths_train_in_one_step_and_commit_once(monkeypatch):
         audit=m._last_sentence_credit
         draw=audit['departure']
         narrowing=draw['narrowing']
-        # One departure across the seven walks; later departures reuse
-        # the already completed reading and its compose prefix.
+        # One departure across the walks; later departures reuse the
+        # already completed reading and its compose prefix. The loop of
+        # looks folded the candidate walk into attention, and a word's
+        # interpretation is a round of the compose walk with its own
+        # record, so it stands where the candidate round stood.
         rounds = torch.stack([draw[name + '_round'] for name in
-            ('attention', 'compose', 'candidate', 'bind', 'reconstruction', 'thought', 'output')], -1)
+            ('attention', 'compose', 'interpret', 'bind', 'reconstruction', 'thought', 'output')], -1)
         assert rounds.ge(0).sum(-1).eq(draw['walk'].ge(0).long()).all()
         composed = draw['compose_round'] >= 0
         changed_compose=(observed[0][1] != observed[1][1]).any(-1)

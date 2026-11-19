@@ -48,6 +48,10 @@ def test_free_walk_reports_missing_leaves_without_underflow(tmp_path, monkeypatc
     m = _traversal_model(tmp_path)
     m.eval()
     _stop(m)
+    # Since the loop of looks the words read are the chooser's decisions;
+    # the coverage report needs the multiword inputs read, so they are supplied.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(m, monkeypatch)
     try:
         out = _run(m, ["12 plus 1", "3 plus 4"])
         assert len(out) == 21
@@ -117,11 +121,15 @@ def test_cleared_journal_cannot_change_the_free_reconstruction(tmp_path):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_reconstruction_uses_held_word_support_after_attention_changes(tmp_path):
+def test_reconstruction_uses_held_word_support_after_attention_changes(tmp_path, monkeypatch):
     from test_output_walk import _stop
     m = _traversal_model(tmp_path)
     m.eval()
     _stop(m)
+    # The held support exists only for words the sentence read; since the
+    # loop of looks that is the chooser's decision, so it is supplied.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(m, monkeypatch)
     try:
         _run(m, ["12 plus 1"])
         record = next(iter(m._sentence_understandings.values()))

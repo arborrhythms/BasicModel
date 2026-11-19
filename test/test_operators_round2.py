@@ -41,7 +41,9 @@ def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
     monkeypatch.setattr(WalkTrials,'departure_at',choose)
     draw=departure(attention,torch.tensor([[False,True,True,True]]),
                    active=torch.tensor([True]), compose_round=torch.tensor([1]))
-    assert seen[0].tolist()==[[True,True,False,False,False,False,False]]
+    # Six walks since the loop of looks folded the candidate walk into
+    # attention: attention, compose, bind, reconstruction, thought, output.
+    assert seen[0].tolist()==[[True,True,False,False,False,False]]
     assert seen[1].tolist()==[[True,False,True]]
     assert draw['rounds'].item()==5
     assert draw['walk_count'].item()==2
@@ -66,8 +68,30 @@ def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
         torch.testing.assert_close(gradient[0,column],(value(plus)-value(minus))/2e-5)
 
 
+def read_at_looks(chooser,keys,spans,known,*,poles,budget):
+    """Attention's walk with grammar interpreting each word it is offered.
+
+    Since the loop of looks attention has no accept act: a word is accepted,
+    and its value handed off, when grammar interprets it at a look
+    (``record_interpretation``), as ``SentenceLooks.Looks.run`` does. Here
+    grammar takes every word offered; attention's own acts are unchanged.
+    """
+    from Attention import (open_narrowing,narrow_step,narrowing_view,interpretation_at,
+                           record_interpretation,close_narrowing)
+    state=open_narrowing(chooser,keys,spans,known,budget=budget,poles=poles)
+    slot=torch.zeros(keys.shape[0],dtype=torch.long)
+    rows=torch.ones(keys.shape[0],dtype=torch.bool)
+    while True:
+        _,allowed=interpretation_at(state,slot)
+        record_interpretation(state,slot,allowed&rows)
+        if len(state.actions)>=int(state.budget) or not bool(narrowing_view(state)[8].any()):
+            break
+        narrow_step(state)
+        slot,rows=state.look_slot,state.look_active
+    return close_narrowing(state)
+
+
 def field_read(op):
-    from Attention import narrow_words
     calls=0
     def choose(keys,legal,space,**kwargs):
         nonlocal calls
@@ -75,7 +99,7 @@ def field_read(op):
         calls+=1
         return selected,keys.new_ones(1),legal.flatten(1).sum(-1)>1,dict(
             probability=keys.new_ones(1),alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
-    return narrow_words(SimpleNamespace(attention_operations=tuple(range(6)),attend=choose),
+    return read_at_looks(SimpleNamespace(attention_operations=tuple(range(6)),attend=choose),
         torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),torch.ones(1,2,dtype=torch.bool),
         poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=8)
 
@@ -91,7 +115,6 @@ def test_field_pair_survives_bracket_split(op,pair):
 
 @pytest.mark.parametrize('op,pair',[(3,[1.,0.]),(4,[1.,0.]),(5,[0.,1.])])
 def test_field_scope_resolves_witnesses_acquired_by_later_descent(op,pair):
-    from Attention import narrow_words
     calls=0
     def choose(keys,legal,space,**kwargs):
         nonlocal calls
@@ -99,7 +122,7 @@ def test_field_scope_resolves_witnesses_acquired_by_later_descent(op,pair):
         calls+=1
         return selected,keys.new_ones(1),legal.flatten(1).sum(-1)>1,dict(
             probability=keys.new_ones(1),alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
-    reading=narrow_words(SimpleNamespace(attention_operations=tuple(range(6)),attend=choose),
+    reading=read_at_looks(SimpleNamespace(attention_operations=tuple(range(6)),attend=choose),
         torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),torch.zeros(1,2,dtype=torch.bool),
         poles=torch.zeros(1,2,2),budget=8)
     assert reading.descended.all() and reading.accepted.all()

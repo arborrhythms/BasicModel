@@ -20,6 +20,10 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         return values
     monkeypatch.setattr(torch, 'while_loop', eager_while)
     model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+    # The loop of looks lets attention choose the order of the words; the
+    # pushes below are checked in source order, so that order is supplied.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     # This separator fixture supplies the same binary form operation to
     # composition and its fixed inverse below. An arbitrary fresh unary
     # can erase a word before the separator boundary is exercised.
@@ -69,7 +73,8 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
     def observed_push(*args):
         frame = inspect.currentframe().f_back
         if frame.f_code.co_name == 'stage_cs_lang':
-            pushes.append((int(frame.f_locals['index']), args[2].detach().clone()))
+            pushes.append((int(frame.f_locals['index']), args[2].detach().clone(),
+                           bool(frame.f_locals.get('at_close'))))
         return push(*args)
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
     commit = model._commit_sentence
@@ -111,9 +116,16 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
             separator = torch.tensor([source[int(lo):int(hi)].isspace()
                                       for lo, hi in native_spans])
             assert not native[b, separator].any()
-        assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
-        expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
-        assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected
+        # Since the loop of looks a position reaches the word brick only
+        # when it is looked at as a word, so the separator is never pushed,
+        # not even with a closed gate. The sentence then closes with its own
+        # step at the last source position, which deposits nothing.
+        words = [(p, gate) for p, gate, closing in pushes if not closing]
+        closes = [(p, gate) for p, gate, closing in pushes if closing]
+        assert [p for p, _ in words] == [0, 2]
+        assert [gate.reshape(-1).tolist() for _, gate in words] == [[True]*4] * 2
+        assert [p for p, _ in closes] == [3 if trailing else 2]
+        assert [gate.reshape(-1).tolist() for _, gate in closes] == [[False]*4]
         assert len(readings) == 1
         decoded, unavailable = readings[0]
         assert all(len(text.split()) == 2 for text in decoded), decoded

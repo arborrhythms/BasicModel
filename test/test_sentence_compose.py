@@ -43,6 +43,11 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     def reading_departure(*args, **kwargs):
         return draw(*args, **dict(kwargs, reconstruction=None, thought=None, output=None))
     monkeypatch.setattr(SentenceCredit, 'departure', reading_departure)
+    # Since the loop of looks a word is perceived when it arrives at a look,
+    # so which words arrive, and when, is the chooser's draw. The words are
+    # read in source order here so the count of perceptions is fixed.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.inputSpace.data.has_supervised_outputs = False
     optimizer = model.getOptimizer(lr=1e-4)
     import util
@@ -95,7 +100,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         # Input staging also builds a detached reporting slab. Count the
         # live word perception shared by the two compose/backward paths.
         if torch.is_grad_enabled() and not torch.compiler.is_compiling():
-            perceived.append(len(model._sentence_fields))
+            perceived.append((len(model._sentence_fields), model._sentence_trial))
             if len(model._sentence_fields) == 1:
                 disc = model.symbolSpace.expectation
                 assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
@@ -159,7 +164,13 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
                 torch.testing.assert_close(actual.meaning.role_mask, occupied)
                 assert not hasattr(actual, 'actions')
         if not compiled:
-            assert perceived == [0, 0, 1, 1]
+            # One perception for each word's first arrival in a row: in each
+            # sentence the one-word row is read at the opening look, the
+            # other row's two words at their own looks. Every call of a
+            # sentence sees exactly the sentences committed before it, and
+            # the explore path reuses those perceptions without a call.
+            assert [count for count, _ in perceived] == [0, 0, 0, 1, 1, 1]
+            assert all(trial == 'exploit' for _, trial in perceived), perceived
     finally:
         model.End()
         model.symbolSpace.soft_reset()

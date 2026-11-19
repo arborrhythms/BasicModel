@@ -431,7 +431,10 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     narrowing=torch.ones_like(draw['narrowing']),
                     attention_round=torch.full_like(draw['attention_round'],-1),
                     compose_round=torch.full_like(draw['compose_round'],-1),
-                    candidate_round=torch.full_like(draw['candidate_round'],-1))
+                    # The candidate walk is part of attention since the loop
+                    # of looks; an interpretation round is the compose
+                    # walk's own record and is pinned the same way.
+                    interpret_round=torch.full_like(draw['interpret_round'],-1))
                 return draw
             patch.setattr(SentenceCredit,'departure',replay)
             observe = model._sentence_observation

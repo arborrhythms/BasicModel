@@ -17,16 +17,16 @@
   ],
   "readers": [
     {
-      "file": "bin/AttentionTraversal.py",
-      "function": "FieldTraversal.report",
+      "file": "bin/AttentionContext.py",
+      "function": "context",
       "attributes": [
-        "when"
+        "nWhen"
       ],
-      "role": "attention field read",
+      "role": "attention context reader",
       "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 96,
-      "reads": "absolute"
+      "now": "Learned inputs use age, computed from the present tick and the observation band or interval; the stamped when of the percept keys is replaced by its age band.",
+      "line": 77,
+      "reads": "age"
     },
     {
       "file": "bin/BasicPercepts.py",
@@ -305,18 +305,6 @@
       "reads": "absolute"
     },
     {
-      "file": "bin/ModelCandidateAttention.py",
-      "function": "context",
-      "role": "candidate support reader",
-      "previous_absolute_time": false,
-      "now": "Learned inputs use age, computed from the present tick and the observation band or interval.",
-      "attributes": [
-        "nWhen"
-      ],
-      "line": 92,
-      "reads": "age"
-    },
-    {
       "file": "bin/Models.py",
       "function": "BasicModel._advance_when_time",
       "previous_absolute_time": false,
@@ -520,18 +508,6 @@
     },
     {
       "file": "bin/SentenceAttention.py",
-      "function": "SentenceField.place",
-      "attributes": [
-        "when"
-      ],
-      "role": "attention field read",
-      "previous_absolute_time": false,
-      "now": "Retains exact absolute word brackets for reports; scorer keys receive age bands and structural input receives within-sentence differences.",
-      "line": 122,
-      "reads": "difference"
-    },
-    {
-      "file": "bin/SentenceAttention.py",
       "function": "SentenceField.placements",
       "role": "candidate support reader",
       "previous_absolute_time": false,
@@ -540,6 +516,18 @@
         "when"
       ],
       "line": 105,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/SentenceAttention.py",
+      "function": "SentenceField.report",
+      "attributes": [
+        "when"
+      ],
+      "role": "attention field read",
+      "previous_absolute_time": false,
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 157,
       "reads": "absolute"
     },
     {
@@ -599,6 +587,18 @@
       "line": 53,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/SentenceLooks.py",
+      "function": "perceive",
+      "attributes": [
+        "_cs_field_when"
+      ],
+      "role": "attention field read",
+      "previous_absolute_time": false,
+      "now": "Transports the conceptual field when bands into the look's field; the look forecast reads evidence and where only.",
+      "line": 7,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -1822,5 +1822,57 @@
       "previous_absolute_time": false,
       "now": "The order-zero face retains its open field occurrence times."
     }
+  ],
+  "loop_of_looks_removed_readers": [
+    {
+      "file": "bin/AttentionTraversal.py",
+      "function": "FieldTraversal.report",
+      "attributes": [
+        "when"
+      ],
+      "role": "attention field read",
+      "previous_absolute_time": false,
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 96,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/ModelCandidateAttention.py",
+      "function": "context",
+      "role": "candidate support reader",
+      "previous_absolute_time": false,
+      "now": "Learned inputs use age, computed from the present tick and the observation band or interval.",
+      "attributes": [
+        "nWhen"
+      ],
+      "line": 92,
+      "reads": "age"
+    },
+    {
+      "file": "bin/SentenceAttention.py",
+      "function": "SentenceField.place",
+      "attributes": [
+        "when"
+      ],
+      "role": "attention field read",
+      "previous_absolute_time": false,
+      "now": "Retains exact absolute word brackets for reports; scorer keys receive age bands and structural input receives within-sentence differences.",
+      "line": 122,
+      "reads": "difference"
+    }
+  ],
+  "loop_of_looks_added_readers": [
+    [
+      "bin/AttentionContext.py",
+      "context"
+    ],
+    [
+      "bin/SentenceAttention.py",
+      "SentenceField.report"
+    ],
+    [
+      "bin/SentenceLooks.py",
+      "perceive"
+    ]
   ]
 }

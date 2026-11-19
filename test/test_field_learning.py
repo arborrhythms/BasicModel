@@ -74,11 +74,18 @@ def test_boundary_candidates_stay_in_the_preceding_symbolic_order():
                for row, col in matrix._index if row == two)
 
 
-def test_primed_reading_writes_the_shared_field_scope(tmp_path, eager_reading):
+def test_primed_reading_writes_the_shared_field_scope(tmp_path, eager_reading, monkeypatch):
     from test_packed_reconstruction_parity import build_model
+    from reading_fixtures import read_in_source_order
     model=build_model(tmp_path,word_capacity=8)
+    # Since the loop of looks attention has no accept act of its own: a
+    # word is done when grammar interprets it at a look, inside the
+    # sentence, and each look's perception writes the scope. The stem's
+    # attention-only read therefore marks nothing done. Read the sentence,
+    # with its word decisions supplied, and check the scope it leaves.
+    read_in_source_order(model, monkeypatch)
     raw=model.inputSpace.prepInput(['first last'])
-    with torch.no_grad():model._lex_embed_stem(raw)
+    with torch.no_grad():model.understand(raw)
     table=model._attention_words.table
     assert table.done.any()
     last=(table.done.long()*torch.arange(1,table.done.shape[1]+1)).argmax(-1)

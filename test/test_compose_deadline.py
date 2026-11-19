@@ -16,7 +16,12 @@ def test_shared_stack_contract_allows_unary_until_the_deadline(tmp_path, monkeyp
     path = tmp_path / 'deadline.xml'
     config.write(path)
     model, _, _ = _fresh_model(str(path))
-    assert [rule.method_name for rule in model.languageSpace._compose_unary_rules] == ['generic']
+    # Since the loop of looks a composing grammar also declares the
+    # mandatory word interpretation. It is the leaf's inverse, never a
+    # chooser option, so the one choosable unary is still generic.
+    unary = model.languageSpace._compose_unary_rules
+    assert [rule.method_name for rule in unary if not rule.mandatory] == ['generic']
+    assert [rule.method_name for rule in unary if rule.mandatory] == ['interpret']
 
     chooser = model.languageSpace._tree_layer(2).chooser
     score = chooser.score_unary

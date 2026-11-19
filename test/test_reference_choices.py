@@ -64,7 +64,11 @@ def test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit():
     # The only eligible walk is this bind. The draw changes no grammar scope.
     draw = departure(None, torch.zeros(1, 0, dtype=torch.bool), active=torch.tensor([True]),
                      binds=torch.ones(1, 1, dtype=torch.bool))
-    assert draw['walk'].tolist() == [3] and draw['bind_round'].tolist() == [0]
+    # The bind walk is the third of the six walks since the loop of looks
+    # folded the candidate walk into attention (SentenceCredit.WALKS).
+    from SentenceCredit import WALKS
+    assert WALKS.index('bind') == 2
+    assert draw['walk'].tolist() == [2] and draw['bind_round'].tolist() == [0]
     greedy = resolver.preview(noun(atoms, words), chunk_context(resolver, frames))
     explore = resolver.preview(noun(atoms, words), chunk_context(resolver, frames), departure=int(draw['bind_round'][0]))
     a, b = greedy['decisions'][0], explore['decisions'][0]
