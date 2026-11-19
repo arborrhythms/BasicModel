@@ -56,6 +56,11 @@ def test_packed_sentence_boundary_cuts_prior_writes_and_retains_perception(tmp_p
     model.reconstruction_placement = 'eager'
     model._chart_compose_per_word = lambda: None
     force_absolute_reading(model)
+    # Since the loop of looks attention's walk decides which words each
+    # sentence reads; the second sentence must read one for its cost to
+    # reach the batch perception, so the words are read in source order.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.inputSpace.data.has_supervised_outputs = False
     optimizer = model.getOptimizer(lr=.0001)
     original_begin, original_step = SentenceTraining.begin_sentence, model._sentence_train_step

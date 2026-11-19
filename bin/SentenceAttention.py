@@ -118,6 +118,11 @@ class SentenceField:
         occupied = live.any(-1)
         result = {}
         for name, bands in (('where', self.where), ('when', self.when)):
+            if live.shape[-1] == 0:
+                # A presentation with no word (a scalar alone) still closes.
+                # No slot holds a word's witness, so nothing is placed.
+                result[name] = bands.new_zeros(*occupied.shape, 2)
+                continue
             mask = live.to(bands.device)
             low = torch.where(mask, bands[:, None, :, 0], torch.inf).amin(-1)
             high = torch.where(mask, bands[:, None, :, 1], -torch.inf).amax(-1)

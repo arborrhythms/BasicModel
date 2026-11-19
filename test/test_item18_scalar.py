@@ -115,3 +115,23 @@ def test_scalar_only_presentation_closes_and_reconstructs_its_modalities(tmp_pat
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+def test_a_close_with_no_word_places_nothing():
+    """A scalar alone has an empty word axis; its close must still read the slots.
+
+    The sentence closes after its arrivals even when no word arrived. The
+    close reads the placements of the STM slots, which then hold no word's
+    witness: every slot is unoccupied and nothing is placed.
+    """
+    from SentenceAttention import SentenceField
+    field = object.__new__(SentenceField)
+    streams, slots = 2, 3
+    field.support_window = torch.zeros(streams, slots, 0)
+    field.where = torch.zeros(streams, 0, 2)
+    field.when = torch.zeros(streams, 0, 2)
+    field.support = torch.zeros(streams, 0, 1, 2)
+    placed = field.placements()
+    for name in ('where', 'when', 'lanes'):
+        assert placed[name].shape == (streams, slots, 2)
+        assert not bool(placed[name].any())
