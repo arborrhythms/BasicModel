@@ -8640,6 +8640,35 @@ On §19.73's read (the parts half joined by the union and read directly, the who
 - *It does part of the Not's work with no learned entry.* A strict whole tells against its part (§19.73). So where a row AB has been nominated, the concept of A reads against on a reading that holds AB, and negative patterning (A alone, B alone, not both) may need no Not entry at all. *Measured, §23.3b.1:* so it is, but only with a conjunction coded by coordinates of its own, and then XOR cannot be met at all; with a conjunction's code as built, XOR needs no Not and the other two do. An exclusion with no row needs a learned Not either way. It is not a replacement.
 - *It does not replace the three things the layers add.* It is one fixed step, so it composes nothing: an order above zero still needs its own cycle. It learns nothing: what tells against is given by the towers, so an exclusion that is not a strict whole (X inhibits A where no row AX exists) still needs a Not entry learned from omission (rule 29). And a concept still has to be read upward from the percepts, which is the Sigma forward.
 
+### 19.75 Alec: the part catalog as the basis of the wholes (2026-11-19)
+
+Three messages, in his words.
+
+1. "OK. If we let the pi teach bottom-up, what can we use as a basis for the concepts to teach wholes? Can we have that same part catalog OR'ed and set to equal all ones as a code?"
+2. "so \"a and b are parts\" on the way up, synthesizing, and \"not c or d\" on the way down, analyzing?"
+3. "that would give a principled way to build character classes."
+
+**Answer to 1: yes.** A whole's code is the OR of the codes of the catalog parts that belong to it, and the whole catalog OR'ed is the top, all ones. This replaces rule 52's three coordinates of a whole's own (Claude's), and it needs no rule for a whole inside another: the order follows from the members. Measured at 64 coordinates (scratch; the trial repeats it):
+
+| Class of characters, coded by OR | Ones of 64 |
+| --- | ---: |
+| all characters | 64 |
+| letter | 57 |
+| capital; lower case | 44; 44 |
+| digit; vowel | 24; 24 |
+| whitespace | 11 |
+
+Every class inside another is at or below it, by construction, and no other pair of the seven is so by accident.
+
+Two limits, measured.
+
+- *A class of words fills the 64 coordinates quickly.* One word has 31 ones; the OR of 3 words has 51, of 5 words 57, of 10 words 62. The share of other words that lie inside a class of k words is .001, .013, .056, .26 and .69 for k of 1, 2, 3, 5 and 10. So a class of characters bounds well, and a class of more than a few words bounds almost nothing. That is true of an upper bound, but it means a large class of words cannot tell a member from another word.
+- *In the same coordinates as the parts, a whole cannot tell apart what the parts cannot.* `archer` and `archery` have one parts code, so every OR that holds one holds the other. With the same catalog drawn a second time for the wholes half, and each form taken as its own tightest whole (as a value is admitted "as both its tightest part and its whole"), 19,820 of the 19,821 words have a code of their own, against 19,761 on the parts half alone. That is a way for the wholes half to tell words apart (§19.73) with no whole made for the purpose. *Claude's, being tried.*
+
+**Answer to 2: yes.** On the way up a percept is "a and b are parts": the product over its parts, every one of which must be present, which is its lower bound on the for lane. On the way down it is "not (c or d)": the parts of the catalog outside its upper bound, any one of which tells against it, which is the union on the against lane. The two joins are the ones the trial measured for the first Pi (§23.3b: the product for, the union against).
+
+**On 3.** So it does: a character class is the OR of the characters taught to it, and "letter", "digit" and "capital" need not be declared with their bytes.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -8937,9 +8966,14 @@ chooses from. The old classes are not edited.
    own lanes and must hold over the extent. So a percept whose parts
    are there and whose whole is witnessed not to hold reads against
    (the character `7` under the property "capital": for 0, against
-   1), and one whose whole is witnessed both ways reads both. As
-   first built the against lane was the product of the members'
-   against lanes, which the run of parts made zero.
+   1). As first built the against lane was the product of the
+   members' against lanes, which the run of parts made zero.
+   *Amended again (§23.3.5):* a row's value reads its wholes where
+   its run lies, not over the whole reading, so a space elsewhere in
+   a sentence is not evidence against a word; and its against lane
+   is the union of its wholes' against lanes, since one whole
+   witnessed not to hold denies the row. A row is then for or
+   against, and both stands across the rows of a reading.
 44. *The lookup of a sentence's forms, on the device* (Alec, §19.55,
     §19.57; §19.64, point 2). The parts of a sentence are found at
     every place by one product for each character length. The word is
@@ -9109,9 +9143,10 @@ chooses from. The old classes are not edited.
     reading is one sentence of one stream, so a form that stands
     twice in a sentence is read once; and there is one count, kept by
     MTM under the form, that every reader of the form adds to. A
-    reading is named by the model's present time and the stream
-    (`ConceptualSpace.reading`), which the trials of one sentence
-    share, so that two trials of a sentence count once (§23.3.4). This
+    reading is one forward of the model for one stream, named by a
+    serial that `begin_reading` advances (`ConceptualSpace.reading`),
+    so that every reader of a form in that forward counts once
+    (§23.3.5). This
     replaces the basic percept
     reserved at a word's first reading (`BasicPercepts.reserve` in
     the word loop of `bin/Models.py`), the lessons' declared
@@ -9612,9 +9647,10 @@ certificate is recorded and not repaired (1.8 §43); those are marked
    no bias; an entry is for or Not, never both. A property seen both
    true and false is read as both at its basic percept, whose two
    lanes can both be above zero, and not at a concept (Alec, §19.68).
-   This needs rule 6's reading of a row's run of parts on both lanes
-   (§23.3.4): as round 3 first built the row, its against lane was
-   always zero, and both stood only in its wholes' two lanes.
+   Both stands across the basic percepts of one reading, one row
+   carrying the property for and another against, which is the two
+   lanes of the reading's combined vector; a single row is for or
+   against (rule 6, §23.3.5).
 4. *The cycle:* the next Sigma reads one combined input, for less
    against, for each symbol; no symbol is made at a concept's
    allocation; a promotion is the nomination of a row, which brings
@@ -10448,6 +10484,14 @@ round 3's last repair pass returned. Read §19.69 to §19.71 and
 build, checked against the source; take its arithmetic, not its
 integers).
 
+0. Carried from the review of round 3's last pass (§23.3.5): a
+   row's value reads its wholes where its run of parts lies, not
+   over the reading's extent (rule 6); an event at a whole extent
+   keeps the extent. "Both" of a concept is then read across its
+   members' rows: the least of what its members give for and what
+   they give against. test_word_admission's test_29 passes for
+   MM_text.xml, and the ports of round 3 that assert both at one
+   row are restated across the rows.
 1. Before any edit, list every place that fixes or reads the
    widths, the block of 32 or coordinate 95 (the survey of §19.69:
    resolve_identity_layout, WordIdentity, RadixLayer's construction,
@@ -12422,3 +12466,163 @@ A "Not entry" is a column weight below -.01. The untaught columns are rule 54's 
 **Answer to Alec.** The two-sided code does the Not's work for exclusions that are strict wholes in the part tower: a nominated AB or AX, coded with coordinates of its own. It does not replace the learned Not for an exclusion with no row, and as combined here it cannot do XOR.
 
 The combination is mine. It carries a member's against code whenever the member is present, and a row read against carries its for code onto the against lane. Rule 54's combination may differ. *Mine:* a row read both (for and against) should contribute its net (for less against) once, and not cancel the whole's own coordinates. That should keep both patterning and XOR, but I did not run it.
+
+### 23.3.5 Round 3, the last repair pass: return and review (2026-11-19)
+
+Asked in §23.3.4's table. The implementer's return is below. Commits, local on `main`: `41a5bb4aed`, `a7e317041f`, `64a27f0e27`, `ea611d21bf`, `589efd8228`, `cff0a0b8f6`, `07be0c67a9`, `ca35c72cd4`.
+
+**Review** (Claude). Read: the return. Run here, the 101 files the round touched, `test_item18_stack.py` and both gates (four processes, 259 s): **10 failed, 1,278 passed, 67 skipped**, the same ten as the implementer's run. Both gates pass.
+
+*Accepted.*
+
+- The classes "words" and "objects" are reserved with the grammar's declarations.
+- The reading that stored nothing is traced and repaired: attention asked whether a form was known before the word loop had nominated it. A reading is now one forward, named by a serial (`begin_reading`), and rule 20 says so. 18 runs of 18 after the repair.
+- The grounded fixture and the probe are ported.
+- The bars of the logic certificate are a measured share: at least 8 of 10 (solved 200 of 200 for each task; read back 200, 199 and 199 of 200).
+- *A row's against lane is the union of its wholes' against lanes,* where the text asked for the product. The product is always zero for a real word, one of whose wholes always holds. This agrees with what the trial then measured for the first Pi (§23.3b).
+
+*The ten failures.*
+
+- Nine are the scalar and numeric cases that wait for round 3c (rule 55).
+- One is new: `test_word_admission::test_29_each_reading_publishes_only_its_words[MM_text.xml]`. Rule 6 as amended read a row's wholes over the reading's extent. In a configuration whose one reading is the whole sentence, "letter" is then witnessed false at the space, every word's row reads both, and every concept reads zero.
+
+*Decided for it* (*mine*): a row's value reads its wholes where its run of parts lies, not over the whole reading. A word's wholes are true of its own bytes, and a space elsewhere in the sentence is not evidence against the word. Rule 6 says so now. Then each row is for or against and not both, and "both" stands across the rows of one reading: one percept carrying the property for and another carrying it against, which is the two lanes of the reading's combined vector. This is how §23.3.1 first had it, and it is still "at the basic percepts" (§19.68). An event at a whole extent keeps the extent, as the located-part test states it. Built in round 3c, step 0.
+
+#### Return of the last repair pass
+
+Commits, local on `main`, none pushed:
+
+| Commit | What it holds |
+| --- | --- |
+| `41a5bb4aed` | rule 6 |
+| `a7e317041f`, `64a27f0e27` | the word classes |
+| `ea611d21bf` | the against lane as a union; the grounded fixture |
+| `589efd8228` | the probe |
+| `cff0a0b8f6` | one reading per forward; attention nominates |
+| `07be0c67a9` | `begin_reading`; the gate; an empty member list |
+| `ca35c72cd4` | the logic bars |
+
+Messages end with "Co-Authored-By: Claude Opus 5.5". No seed is pinned, and no skip or xfail was added.
+
+**Final count.** The 101 files of `r3_files.txt` that exist, with both stopping gates (`test_concept_readout_l1.py` and `test_item1_5_memberships.py` were retired in the round; `test_item18_stack.py` is in the list), run with `-n 4 --dist loadfile`, gave **10 failed, 1,278 passed, 67 skipped, 1 xpassed, 248 s.**
+- Nine of the 10 are the scalar and numeric cases you named: `test_item18_perceptual_scalar` 4, `test_item18_scalar` 3, `test_item18_places::test_66`, `test_item18_stack::test_80`.
+- The tenth is `test_word_admission::test_29_each_reading_publishes_only_its_words[MM_text.xml]`. It is a consequence of amended rule 6, below, and is left for your decision.
+- Both gates pass.
+
+The lesson's sixteen sentences (`attention_thinking_certificate.py lesson`) ran 16 batches in 22.49 s of the record, 27.3 s of the process.
+
+**1. Rule 6, amended**
+
+**Built** in `BasicPercepts.read`, for values and events, through a new `BasicPercepts._row_lanes`:
+- The run of parts is the percept's presence, the same on both lanes.
+  - For a value, presence is the run's for lane over the extent.
+  - For an event, presence is the run's for lane at any event lying inside that event's span, so a located part need not pervade.
+- The for lane is presence × Π (the wholes' for lanes).
+- The against lane is presence × (1 − Π (1 − the wholes' against lanes)). **Provisional; this departs from the text, see below.**
+- A row with no whole reads `[presence, 0]`.
+
+`OrderZero.read_word` follows the same rule: slot 0, the run, is the presence on both lanes; the wholes slot keeps its lanes; with no whole held, the against lane reads nothing.
+
+`NumericPercepts.read` does not apply: its level percepts are value percepts and have no run or wholes.
+
+`ConceptualSpace.order_zero_both` now reads each basic percept's both as the least of its row's two lanes, `perception.values.amin(-1)`, and its own arithmetic on the boundaries is gone. It still reads a concept's members from the feature table, which round 4 removes; the read must move with that record.
+
+**Where the text could not be built as written.** The text says the against lane is presence times the *product* of the wholes' against lanes. In a real model that does not hold up:
+- Every word has wholes that hold on all its bytes ("digit", "letter"), so one of its against lanes is always 0.
+- The product is then always 0, and a word can never read against or both.
+- Measured: in the grounded fixture, the percept `0` has wholes (1, 10), and whole 1 is always for. Over `01` it read `[1, 0]`, where the property was seen both ways.
+
+So I built the against lane as the union of the wholes' against lanes, ``1 − Π(1 − a)``: a conjunction is denied when any of its members is denied. With one whole this is the same as the text. Provisional.
+
+**Where the rule bites: one case left failing.** The rule reads the wholes over the reading's extent. In `test_29[MM_text]` the only reading is the whole sentence, [0, 11]. There a word's letter whole is seen false at the space, so every word's row reads `[1, 1]`:
+- x_for equals x_against, so every concept reads 0 and every reading's symbols are zero.
+- The last assertion, that the four readings' symbols differ, therefore fails.
+- It passed at `6d01f5258c`, before the rule.
+
+That is what the rule says ("must hold over the extent"), and the located-part test needs it at events. An alternative is to read the wholes of a *value* over the run's own occurrence and keep the extent for events. But that also makes the four-corner percepts pure, so a property's "both" would no longer stand at any one row (certificate 3). **Question for you:** keep the rule and restate this assertion, or read a value's wholes at the run's occurrence?
+
+**Ported cases** (old assertion → new; every expected value is computed in the test):
+
+| File | Test | Old | New |
+| --- | --- | --- | --- |
+| `test_concept_memberships` | `test_one_property_has_the_four_extent_corners` | the whole boundary of each percept's collection equals the corners | each row equals presence × corners (presence: the part is in the extent), and the swap for the other property |
+| `test_concept_memberships` | `test_fractional_feature_weights…` | the whole boundaries are `[[.25,.75],[.36,.64]]` | the rows are `[[.25,.75],[.36,.64]]` |
+| `test_concept_evidence` | `test_membership_read_keeps_both…` | the boundaries are all ones | the rows are all ones |
+| `test_field_binding` | `test_observed_complement_is_pooled_inside_one_bracket` ×4 | the boundary equals `expected` | each part's row equals presence in the bracket × `expected` |
+| `test_field_binding` | `test_native_learning_updates_one_definition…` ×2 | property taught at .5 | taught at .8. At .5 the row reads `[.5, .5]` and the column has nothing to learn |
+| `test_primitive_properties` | `test_different_positions_in_one_extent…` | the boundaries are `[1, 1]` and `[1, 0]` | each row equals presence × those |
+| `test_evidence_folds` | `test_seam_never_invents_counterevidence…` | the boundary is `[0, 1]`; the row is `[0, 0]` | the row of property 0 reads `[0, 1]` (against); the Not member's row reads `[1, 0]` |
+| `test_order0_percept_definitions` | `test_order0_unions_alternative…` ×2 | boundaries `[m, 1−m]`; rows `[m, 0]` | rows `[m, 1−m]` |
+| `test_cs_sparse_weights` | `test_membership_read_is_input_dependent…` | `[48, 49]` on the identity-only fixture; the input dependence only at the percepts | `with_property_half` fixture and the single byte `[48]`. The rows are `[[.2,.8],[.7,.3]]`; the concept's column gets a gradient and the concept changes with its input. Over `[48, 49]` every row reads both and the concept nothing |
+| `test_item20_round5_percepts` | `test_basic_read_ties_both_towers…` | `[1,0]·[.4,.6] = [.4, 0]` | `1·[.4, .6]`; the receipt's negative is .6 |
+| `test_item17_order_zero` | `test_a_word_reads_its_column…` | location 1's presence `[0, 0]`; a run at −.5 reads against | location 1 `[0, .5]` (run .5, whole −1); against: run .5 and whole −1 is below zero; a run at −.5 reads exactly 0 |
+| `test_subsymbolic_loop` | `test_selected_typed_scope…` | at the full scope each percept `[1, 0]` | `[1, 1]` (each part present and its property witnessed both ways); the narrow scope is unchanged |
+| `test_refine_raise` | `field_case` and the learned particular ×3 | identity-only fixture; my earlier port trained the column | `with_property_half` gives the basic percepts a property half (helper in `test/basic_fixtures.py`). The learned particular is back to the original form: the link is zeroed and learned with `store.values` alone; the assertion is for > .5, against 0 |
+| `test_item17_order_zero` | `test_sentence_trees_are_released…` | any `Tree` in the garbage | this model's trees only. Another model of the module released its own during the test (1 failure in 3 whole-file runs) |
+
+**2. The classes of words and objects**
+
+`PartsOfSpeech.order_reservations` counts `len(ConceptualSpace.WORD_CLASSES)` with the order-one reservations, and `Models.nConceptCodes` now reads `sum(order_reservations(TheGrammar)[1:])` in place of its own count.
+
+Adding the classes at the Models call site alone broke the aligned capacity check ("aligned VQ active-prefix mismatch: []") in models with no grammar declarations, because the codebook's rows no longer matched `nConceptCodes`.
+
+`test_relation_closing` and `test_familiar_tier` pass: 47 passed.
+
+**3. The reading that stored nothing (`test_epoch_history`)**
+
+**Traced.** In the reading that nominates `alpha`, attention (`ModelAttention.stage_input`) computed `known` *before* the word loop nominated the form. So attention read `alpha` as unknown. The walk of the selected path then sometimes found no sentence: its field was None, `ready` was empty, no thought ran, and LTM stayed at 0 rows. Before the round the form was declared at corpus load and was known from its first reading.
+
+Two more defects were on the path:
+- The word loop's `interpret_word` keyed its reading `(serial, b)` while the other readers used `(present time, b)`, so one sentence could count twice.
+- The present time had not yet advanced when the words were staged.
+
+**Repaired:**
+- `BasicModel.begin_reading()` advances the reading serial once at each forward, before the words are staged.
+- `ConceptualSpace.reading(b)` is `(serial, b)` for every reader and for the Reset that follows. `interpret_word` takes `reading=` and the word loop passes it. Rule 20 now says the reading is the model's present time and the stream; the code keys it by a per-forward serial instead, so the rule's text should be amended to match.
+- In attention's known-word read, a form not yet known is looked up with this reading first, so the first reader of a form in a reading is where MTM nominates it. This happens only in a model whose word step reads its words (`_aligned_serial_word_mode`). Without that gate, the XOR concept lesson's forms became words and its cases vanished (`test_objective_ownership`).
+
+**Count:** 12 of 12 passed after the repair, then 6 of 6 after the gate. Before it, 1 of 8 runs failed, and 4 of 8 with the single reading key alone.
+
+Fixtures that stage without a forward now open their reading: `test_compiled_word_chunk._stage_fullgraph_tensor_peer` calls `model.begin_reading()`, and `test_trust_round1`'s staging loop calls `BasicModel.begin_reading(owner._model)`.
+
+**4. The grounded fixture**
+
+`test_grounded_xor.learn_grounded_xor` now:
+- reads its forms with `nominated_forms`;
+- teaches `cs.order_zero.weight`;
+- asserts the name against on 00 and for on 11, and both at its percepts by `order_zero_both`, `[0, 1, 1, 0]`, in place of `a_0 == [[0,1],[1,1],[1,1],[1,0]]`;
+- has its marker "The second presentation admits" restored, so `test_definition_integrity` cuts the function there.
+
+`test_definition_integrity` reads and commits the four forms `concept_mint_count` times before asserting their word concepts.
+
+The rest of `learn_grounded_xor` after the cut is run by no test and still names the feature table.
+
+**5. The probe**
+
+`test_assessment::test_probe_restores…`: `alpha beta` is read `concept_mint_count` times (with `readings_before_nomination`) before the probe; the assertions are unchanged.
+
+**6. The logic certificates (`test_and_or_and_not_are_learned_and_read_back`)**
+
+Measured on 200 starts a task drawn from the system, 2,000 presentations:
+
+| Task | Solved, penalty on both | Read back | Not entries as stated | Solved, no penalty |
+| --- | ---: | ---: | ---: | ---: |
+| conjunction | 200 | 200 | 200 | 200 |
+| disjunction | 200 | 199 | 200 | 200 |
+| negation | 200 | 199 | 200 | 200 |
+
+**The bar:** at least 8 of 10 for solved and read back. Taking one miss in 200 (.005) for every rate:
+- 8 of 10 is missed once in about 68,000 runs;
+- 9 of 10 would be missed once in about 900 runs, which does not meet the bar;
+- 10 of 10 would be missed about once in 20.
+
+The Not-entry statements are unchanged. The rates are in the docstring. No penalty or presentation count was changed.
+
+**Choices, provisional**
+
+1. A row's against lane is the union of its wholes' against lanes, not their product.
+2. `order_zero_both` reads a concept's members from the feature table until round 4.
+3. A reading is one forward (`begin_reading`), named by a serial.
+4. Attention nominates a form at its known-word read, only where the model reads words.
+5. The identity-only fixtures that need a property and its Not told apart take `with_property_half`.
+6. `test_29[MM_text]` is left failing, pending your answer on where a value's wholes are read.
