@@ -14,7 +14,8 @@ def test_input_reconstruction_reaches_perception_and_not_the_grammar(tmp_path, m
     read = owner.cs_read_memberships
     def memberships(*args, **kwargs):
         field = read(*args, **kwargs)
-        opened.append(owner._concept_allocator.layer(0).features.values)
+        # The order-zero concepts read their columns of the order-zero Sigma.
+        opened.append(owner.order_zero.weight)
         return field
     monkeypatch.setattr(owner, 'cs_read_memberships', memberships)
     original = model._sentence_path_cost
@@ -37,6 +38,9 @@ def test_input_reconstruction_reaches_perception_and_not_the_grammar(tmp_path, m
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', capture)
     try:
+        # The forms are words, nominated by MTM before this reading.
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['alpha beta'])
         source = model.inputSpace.prepInput(['alpha beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=1,
                        batch_override=(source, torch.empty(1, 0)))

@@ -527,6 +527,9 @@ def test_kept_verbal_output_reaches_the_live_understanding_and_conditioner(tmp_p
         return result
     monkeypatch.setattr(WholePaths, 'output', output)
     try:
+        # The forms are words, nominated by MTM before this reading.
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['alpha beta'])
         optimizer = model.getOptimizer(lr=.003)
         model.runBatch(train=True, optimizer=optimizer, batchSize=1,
             batch_override=(model.inputSpace.prepInput(['alpha beta']), torch.empty(1, 0)))

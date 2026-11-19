@@ -184,6 +184,10 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
         return result
 
     restored = None
+    # 'alpha' was read before; the first epoch's reading is the one that
+    # nominates it.
+    from nomination_fixtures import forms_short_of_nomination
+    forms_short_of_nomination(model, ['alpha.'])
     try:
         monkeypatch.setattr(Forgetting,'model_boundary',observed_boundary)
         monkeypatch.setattr(model,'runEpoch',observed_epoch)

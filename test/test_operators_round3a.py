@@ -173,6 +173,9 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monk
     from Language import ConjunctionLayer, DisjunctionLayer
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     try:
+        # The forms are words, nominated by MTM before the epoch.
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['hello world', 'loving there'])
         optimizer = model.getOptimizer(lr=.01)
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
         identity = model.perceptualSpace.percept_store.identity
