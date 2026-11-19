@@ -11021,9 +11021,9 @@ Read against the source: the round's four commits (`e9f72750b5`, `c9afb238e7`, `
 
 **For Alec.**
 
-1. *A property seen both true and false now reads zero at its concept,* as a property never seen does. This follows from rule 3 (a concept is one signed number; §19.24's numbers), and the largest group of the unported tests asserts the old `[1, 1]`. The two cases still differ below the concept, in the two lanes of the combined vector. The tests are restated so unless he says that both must stay readable at the concept.
-2. *The property half of a code is the same in every word of the lesson* (finding 4). Whether the concepts of order zero should read it at their start, or only the identity half.
-3. Still open from round 1: whether the part block takes the 32 empty coordinates (120 of 19,821 words share a row of 64).
+1. *A property seen both true and false now reads zero at its concept,* as a property never seen does. This follows from rule 3 (a concept is one signed number; §19.24's numbers), and the largest group of the unported tests asserts the old `[1, 1]`. The two cases still differ below the concept, in the two lanes of the combined vector. *Answered, §19.68:* the tests are pointed at basic percepts, where both still holds.
+2. *The property half of a code is the same in every word of the lesson* (finding 4). *Answered, §19.68:* the whole code is right; the code is checked there to be as he states it, before the round and after.
+3. Still open from round 1: whether the part block takes the 32 empty coordinates. Put again with an example in §19.68 (63 of 19,821 words take another word's row at 64 coordinates, 5 at 96).
 
 ### 23.3.2 Round 3, repairs after §23.3.1 (Claude on Opus, standing in for Codex, 2026-11-19)
 
