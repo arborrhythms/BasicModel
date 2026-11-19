@@ -1751,6 +1751,16 @@ generation is expected at this stage and is recorded, not tuned away.
    Round 2 tries the looks in tests only, before round 6 builds them:
    the form of the where match, and whether reading in order is
    learned with no location concept made, are open until it returns.
+   **Added the same day (§19.68 to §19.81).** Two rounds joined the
+   seven. *Round 3c, the percept's code* (rules 50 to 57): 64 for the
+   parts and 64 for the wholes on two lanes, for and against; the
+   parts built up from all zeros, the wholes down from all ones, on
+   the part catalog; the Pi selecting for and against; a scalar by
+   the same mechanism. It was tried in tests first (§23.3b). *Round
+   6b, a recurrent fragment read as one word* (rule 58): `the cat`
+   read as a noun by a concept that System 2 has taught, as an option
+   for the grammar. The rules now run to 58 and the certificates to
+   50.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
