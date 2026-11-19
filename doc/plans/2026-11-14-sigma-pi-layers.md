@@ -8763,6 +8763,12 @@ Yes. The two halves are built the same way in opposite directions:
 
 So the basic level already reads a whole sentence at one time into an idea that System 2 teaches. What is missing is the same read for a part of a sentence: a look over the words of one constituent, taught by that constituent's idea, with its part of speech read too, and the grammar's option to take it.
 
+### 19.82 Alec: each side divided by the number of its contributions (2026-11-19)
+
+On §23.3c.2's finding (a concept reads a form that holds its own form at .937 of its own reading, since three coordinates tell against and some fifty tell for): "If you are saying that we have too much positive evidence and too little negative evidence, we can divide all contributions by the number of contributions, respectively."
+
+That is what was being said, and this is the remedy. A column becomes what tells for its member over the number of coordinates that tell for it, less what tells against it over the number that tell against it: `P / |P|² - N / |N|²`. A reading that holds everything that tells for and nothing that tells against reads one; one that also holds everything that tells against reads zero, however few those coordinates are. It is the weighting that §23.3c.2 set out to measure. Rule 54 says so now. What is still measured is its cost: how often the few against coordinates of a form are covered by another form by accident.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9692,9 +9698,15 @@ chooses from. The old classes are not edited.
     (§23.3b.1). *Open, settled in round 3c:* how a row that reads
     both enters the combined vector.
 54. *What a concept reads* (rule 8b on the two lanes). A column starts
-    as its member's for code less its against code, over the squared
-    length; the concept reads the reading's for vector less its
-    against vector, as now. A reader that asks whether one form lies
+    as what tells for its member less what tells against it, each
+    side divided by the number of its own contributions (Alec,
+    §19.82: "we can divide all contributions by the number of
+    contributions, respectively"): `P / |P|² - N / |N|²`. So all
+    that tells for reads one, and all that tells against takes it
+    to zero, however few its coordinates. (First built as the
+    difference over one squared length, under which `archer` read
+    `archery` at .937, §23.3c.2.) The concept reads the reading's
+    for vector less its against vector, as now. A reader that asks whether one form lies
     inside another reads the for lane alone, where the part order
     holds. *Mine (§19.73; measured in §23.3b's addition):* the wholes
     half is read on its complement. Being an upper bound, it is
