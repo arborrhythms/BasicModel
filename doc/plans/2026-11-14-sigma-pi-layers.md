@@ -11118,3 +11118,13 @@ None is a regression of a mechanism that I found. Each needs its assertion resta
 
 - Certificate 7's depth bar, "every start", should be a share of the drawn starts, or the presentations stated, since one start in five now misses at two pairs.
 - Rule 8b could say that a later member does not rescale the earlier ones. That is how it is built: each member is added at its own scale.
+
+*Added after Alec's §19.68 (2026-11-19).*
+
+- **Porting "both" to the basic percept.** This is the direction for the unported cases that read `[1, 1]` at a concept: the first Pi's row, as `BasicPercepts.read` returns it, can hold both lanes above zero, and the concept reads for less against. It is not yet applied to any case. One finding changes its scope: `test_refine_raise`'s 10 cases are not only assertions. `ConceptualSpace.refine_over_collected` (the mereology's refine and raise) routes on a concept read as "both" (`field.amin(-1)`, the least of a concept's two lanes). Under rule 3 a concept is never both, so this reader never fires at order zero. It needs pointing at the basic percepts' lanes in `bin/`, which is a reader to change and not a test to restate. *Recommended:* refine on the "both" of the basic percepts that a concept's column reads. Not built.
+- **The wholes half of the lesson words' codes.** Round 3 adds no path that trains the wholes' codes:
+  - A basic percept's code is a buffer, copied once at promotion (`BasicPercepts.promote`).
+  - `order_zero_reading` and `order_zero_input` read that copy, and `U` takes the gradient.
+  - `percept_code_evidence` is unchanged.
+
+  What round 3 did change is *when* the copy is taken: a word's row is now promoted at its third reading, not before the first sentence (`admit_training_forms` declared it). By then the wholes' learned codes have been trained for some sentences, so the copy holds whatever fractional values they have reached. Whether any have reached them differs between runs. That explains 16 such values in one run and none in another. Nothing is built for it.
