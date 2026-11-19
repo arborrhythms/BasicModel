@@ -16462,8 +16462,9 @@ class BasicModel(BaseModel):
         nvec_concept = self._nvec("ConceptualSpace", nConcepts)
         nvec_whole_properties = self._nvec("WholeSpace", nSymbols)
         nvec_output  = self._nvec("OutputSpace",     nOutput)
-        from PartsOfSpeech import formal_arguments, operation_names
-        self.nConceptCodes = int(nvec_concept) + (len(formal_arguments(TheGrammar.rules_upward)) + len(operation_names(TheGrammar.rules_upward)))
+        from PartsOfSpeech import order_reservations
+        # The declared seats above order zero come on top of the free rows.
+        self.nConceptCodes = int(nvec_concept) + sum(order_reservations(TheGrammar)[1:])
         # Symbols are downstream references into the conceptual inventory;
         # they do not allocate a second learned prototype table. Preserve the
         # historical attribute name for consumers that ask for reference
@@ -16689,11 +16690,6 @@ class BasicModel(BaseModel):
             # those declared order-zero seats before tapering the free rows;
             # the compose argument/operator reservations are additional seats.
             order_reservations = grammar_reservations(TheGrammar)
-            # The declared classes of words and objects are seated at order
-            # one with the grammar's declarations (declare_word_classes).
-            order_reservations = (order_reservations[0],
-                order_reservations[1] + len(ConceptualSpace.WORD_CLASSES),
-                *order_reservations[2:])
             stage_space_concept = [int(stage_space_concept[0]) +
                 sum(order_reservations[1:]), stage_space_concept[1]]
             cs = ConceptualSpace(

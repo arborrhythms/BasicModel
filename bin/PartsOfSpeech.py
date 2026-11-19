@@ -33,9 +33,12 @@ def formal_arguments(rules):
 
 
 def order_reservations(grammar):
-    """The fixed grammar seats, grouped by their declared concept order."""
+    """The fixed declared seats, grouped by their declared concept order: the
+    thought operations at zero; the grammar's formal arguments and the
+    declared classes of words and objects at one; the operators at two."""
+    from Spaces import ConceptualSpace
     return (sum(operation.predicate_identity is None for operation in grammar.thought_operations),
-            len(formal_arguments(grammar.rules_upward)),
+            len(formal_arguments(grammar.rules_upward)) + len(ConceptualSpace.WORD_CLASSES),
             len(operation_names(grammar.rules_upward)))
 
 
