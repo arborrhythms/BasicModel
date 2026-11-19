@@ -29275,6 +29275,55 @@ The four failures of the first run and their producers: `test_item20_round6_loop
 
 *Provisional, for Alec:* the read with no sentence (§66.12): where no sentence owns admission and the grammar declares `interpret`, the grammar has its option at each look. *Not changed and still open from Codex's return:* the trust radius's host calculation, the named exception of §66.5 and §66.8, listed for item 1.5.
 
+### 66.17 The read with no sentence, taken back (Claude, standing in for Codex, 2026-11-19)
+
+The text of §68.89, done. Alec's rule: "we will just output nothing for non-WFF parses."
+
+*What was taken back.* The three commits of §66.12's provisional repair, by three new commits, newest first: `8d82859d0a` takes back `64a8be7fc1`, `6b5d775c50` takes back `0a7f25a805`, `abb2d17192` takes back `26666553c0`. History is not rewritten. `Attention.interpret_words` is gone, and outside a sentence run `ModelAttention.stage_input` again hands off `read()`, attention's walk alone, which admits no word. `bin/Attention.py`, `bin/ModelAttention.py` and `test/test_loop_of_looks.py` are again as they were before `26666553c0` (no difference from `1c9b6af572`); since then the only change under `bin/` is the evaluator's, below. §66.12's other two repairs (a close with no word; the look fields at a packed boundary) stand.
+
+*What each caller now does.*
+
+- **The fast word evaluator** (`fac90435e9`). It raised `candidate word was not accepted within attentionBudget`. Now `word_candidate_scores` returns `None` where a candidate of its call was not admitted: no score is made and the expectation is not asked. A row with no word at all still raises (`a candidate row holds no word`), since that is a malformed bank, not silence. Its caller `score_manifest` lists such an item as `"silent": true`, with its id and answer index, and does not rank it. Its metrics gain `silent`; `items` counts every item selected; each average is over the items that said something, and is `None` when none did. `run_score --require-top1` fails (exit 1, no exception) when nothing was said. Because the evaluator always reads with no sentence, **every item is now silent on any model**: the evaluator measures nothing until words can be admitted outside a sentence (the item 1.6 harness of §68.89) or it reads sentences.
+- **The standalone sentence kernel:** no change. It already says nothing. On the output-walk fixture ("12 plus 1", "3 plus 4"), with nothing admitted, it composes no word: the idea (`_stm_single_S`) is all zero, the stack's depth is −1, the sentence roots are zero, every derivation target is −1, and nothing raises. Output from the held completed field still runs and leaves the kernel's record as it was. One thing is not silence in form: the forward's public prediction, the head's value with no idea composed, is 0.5 in every place. It is not a word. I changed nothing there. *The question:* should a parse with no formula also withhold the head's prediction? I recommend not, since the rule speaks of words and none is said. Where the kernel runs in production, `runBatch` and the raw forward stage inside `_sentence_run`, and the sentence owns admission. So the kernel reads with no sentence only where no sentence run is open, as in the tests that stage it by hand, or where a configuration has no sentence ends.
+
+*The limit of the evaluator's silence.* One call of `word_candidate_scores` scores a batch of items (`--item-batch-size`, default 1). If any candidate of the call was not admitted, the whole call says nothing, so with a batch above 1 an item whose candidates were all admitted would be silenced by a sibling. That is the smallest change, and today it never differs from silence by item, since with no sentence nothing is admitted. When the 1.6 harness admits words outside a sentence, silence should go by item.
+
+*The tests.* No test is skipped or marked as expected to fail, and no seed is pinned.
+
+| Case | What it states now |
+| --- | --- |
+| `test_nanochat_grammar_eval.py::test_frozen_control_scoring_disables_autograd` | The frozen scoring returns nothing, and the one expectation made, the stem's, ran without autograd (`[False]`; it was `[False, False]`, the second being the score's) |
+| `test_nanochat_grammar_eval.py::test_word_gate_matches_full_forward_without_building_unused_answer`, **renamed** `test_word_gate_says_nothing_without_a_sentence_and_builds_no_answer` | It asserted that the gate's scores equal the full forward's; that cannot hold now, since the full forward's sentence admits the candidates and the gate's read cannot. It states: the full forward scores them (finite), the gate returns nothing, and the gate still never calls the forward |
+| `test_review10_contracts.py::test_small_frozen_evaluator_keeps_definition_rows_and_reservations` | Unchanged: the definition rows and reservations are untouched, 3 items of 16 choices. The finite-score and prediction-step assertions give way to: all three silent, no top-1, no scores |
+| `test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present` | The kernel's record is present and empty: no word accepted, the idea zero, no target (it asserted some target). Output's assertions are unchanged |
+| `test_one_attention.py::test_normal_input_stages_greedy_and_defers_comparison_to_sentence`, `test_normal_narrowing_omits_padding_and_preserves_the_complete_walk` | They watch `narrow_words` again, as before the repair, and now also assert that the stem's walk admits no word |
+| `test_sentence_owned_attention.py::test_non_sentence_configuration_keeps_one_staged_charged_walk` | Unchanged. It already asserts that the read with no sentence accepts nothing ("examination alone never interprets"), now the rule for every grammar |
+| `test_loop_of_looks.py::test_5_a_read_with_no_sentence_interprets_at_its_looks` | **Removed** with the repair (`abb2d17192`): it asserted that a read with no sentence admits its three words, which is now false. In its place, `test_5_a_read_with_no_sentence_admits_no_word`, the same fixture: the grammar is never asked, no word is accepted, no leaf is marked, none is done. §68.89 speaks of two tests of this file; one came with the repair (the file's log since `ca1aa2bd46` shows only `26666553c0`) |
+
+Before the ports, with the repair taken back, the three evaluator cases raised and the output-walk case found no target (4 failed, 3 passed, 27.97 s); after, all fourteen cases of the evaluator's file and the other targets pass.
+
+*Two more files, found by the short series* (each in a commit of its own; no assertion changed):
+
+- `test_reverse_traversal.py::test_free_walk_reports_missing_leaves_without_underflow` and `test_reconstruction_uses_held_word_support_after_attention_changes` **depended on the repair** and §66.12 did not name them. They were given source order in `9126658343`, before the repair, and passed with it. Their helper `_run` stages the stem *before* it enters the sentence boundary, so its read is a read with no sentence, which now admits nothing: no leaf was reported missing, and the held support was zero. `runBatch` and the raw forward stage inside `_sentence_run`. These two cases now do too: they open the boundary themselves, and `_run` skips its own when one is open (`23c157247a`). The helper is unchanged, because `test_tied_reconstruction_migration.py` imports it.
+- `test_interleave_lifecycle.py`: four cases (`test_open_read_covers_exact_native_input[True]`, `test_failed_open_read_leaves_the_input_and_teacher_address`, `test_input_encoder_bytes_and_packed_sentence_boundaries[False]` and `[True]`) are **a reading left to chance**, the kind b of §68.85, **not the repair**. Their forward reads through the sentence, whose admissions are the untrained chooser's draw: in a probe, the same text had anywhere from 0 to 6 words admitted from one process to the next. The file failed in 3 of 3 fresh processes on the swept source `b656480f7d` too, and in 3 of 4 on the present one, on different cases each time (`[False]` of the open read among them). The sweeps passed it, and I have not found why. Every case of the file that counts admitted words now reads in source order (`read_in_source_order`). That is those four, `[False]` of the open read, and the restored checkpoint, which had not failed but counts the same draw (`21f86bc81c`). 5 of 5 processes then pass all 7.
+
+*The short series* (§68.89, step 4; `env -u RUN_TRAINED -u RUN_SLOW`, nothing under `RUN_SLOW`; each process `pytest -p no:cacheprovider`, `PYTHONPATH=bin:test`, as the sweep's workers). The files are every test file that names `Attention`, `ModelAttention`, `SentenceLooks`, `eval_nanochat_grammar` or `_forward_with_compiled_sentence_state` (44), and the six more that stage the standalone kernel (`_stage_fullgraph_tensor_peer`): 50 files, one process each, eight at a time, plus both stopping gates in one process.
+
+| Run | Source | What | Processes | Passed | Skipped | Failed | Seconds |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| First | `86889d8400` | the 8 ported cases, five fresh processes | 5 | 40 | 0 | 0 | 34 |
+| First | `86889d8400` | the 50 files and the gates, one process each | 51 | 686 | 82 | **6** | 275 |
+| **Second** | **`21f86bc81c`** | the 16 ported cases (the 8, and the 8 of the two files above), five fresh processes | 5 | **80** | 0 | **0** | **44** |
+| **Second** | **`21f86bc81c`** | the 50 files and the gates, one process each | 51 | **692** | **82** | **0** | **265** |
+
+Seconds are wall time, eight processes at a time (the per-file seconds sum to 642 and 621). The six failures of the first run are the six cases of the two files above. Both stopping gates passed (2 passed in 3.70 s). `test_loop_of_looks.py` and `test_one_attention.py` are among the fifty.
+
+*One more pass, beyond the text.* The reverse-traversal pair showed that a port made before the repair could have passed only because of it. So every test file my earlier ports touched (`9126658343`, `1c9b6af572`, `84b06720bc`, `597344dbb2`, `b656480f7d`) and not among the fifty also ran once, one process each, on `21f86bc81c`: **18 files, 122 passed, 3 skipped, 0 failed**, 31 s.
+
+*The lesson replay,* because `bin/` changed (§68.85 step 2): the sixteen sentences against `output/item18-sentence-tables/entry-lesson`, `PYTHONHASHSEED=2505367290`, on `21f86bc81c`: **16 of 16 records equal** (`matches_base_exactly`), in **41.31 s** (`output/item18-standin/lesson-replay-3`). *Not run,* as §68.89 says: the default sweep.
+
+*Commits,* local on `main`: `8d82859d0a`, `6b5d775c50`, `abb2d17192` (the three taken back); `fac90435e9` (the evaluator); `86889d8400` (the ports); `23c157247a` and `21f86bc81c` (the two files the series found); this return. Nothing is pushed. This section settles the "Provisional, for Alec" item of §66.16.
+
 ## 67. The rest of item 1.8, in order (Claude, 2026-11-16; a doc pass)
 
 Every rule of item 1.8 is now written. This is where each part is, in
