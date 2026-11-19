@@ -107,7 +107,7 @@ def _harness(words, gates, *, chunk):
         _ar_percept_reference_roles=torch.zeros(batch, width, 8, dtype=torch.long),
         _ar_part_reference_vectors=torch.zeros(batch, width, 8, dim),
         _ar_whole_reference_vectors=torch.zeros(batch, width, 8, dim),
-        _ar_readout_coefficients=torch.ones(batch, width, 9),
+        _ar_order_zero_reading=torch.ones(batch, width, 9),
         _ar_basic_percept_ids=part_ids[..., 0].clone(),
         _ar_whole_reference_presence=torch.ones(batch, width, 3, 8),
         # These sentence-wide surfaces must not be sliced by the adapter.
@@ -561,8 +561,11 @@ def test_tensor_peer_ws_stages_distinct_word_local_property_views(
         tmp_path, monkeypatch):
     """WS stages each word's primitive observations for its learned read."""
     model = _tiny_canonical_model(tmp_path, monkeypatch)
-    _stage_fullgraph_tensor_peer(
-        model, ["Alpha 7 !", "lower case"])
+    # A word's reference bank is staged from the reading in which MTM
+    # nominates it.
+    for _ in range(model._concept_owner().concept_mint_count):
+        _stage_fullgraph_tensor_peer(
+            model, ["Alpha 7 !", "lower case"])
     counts = model.wholeSpace._staged_word_primitive_counts
     weights = model.wholeSpace.subspace.what.primitive_properties.on_counts(counts)
     active = model.inputSpace._word_active_mask

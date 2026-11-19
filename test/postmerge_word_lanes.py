@@ -137,20 +137,19 @@ def native_provenance(sink):
     def observed(model, spans, forms, known):
         owner = model._concept_owner()
         read = owner.cs_read_memberships
-        fold = owner._compose_order0
         native_read = PerceptField.read_percepts
         originals = {name: (name in vars(owner), vars(owner).get(name))
-                     for name in ('cs_read_memberships', '_compose_order0')}
-        captured, direct, natives = [], [], []
+                     for name in ('cs_read_memberships',)}
+        captured, natives = [], []
         def native(*args, **kwargs):
             result = native_read(*args, **kwargs)
             natives.append(result)
             return result
-        def folding(field, **kwargs):
-            direct.append(field.detach().clone())
-            return fold(field, **kwargs)
         def reading(*args, **kwargs):
             result = read(*args, **kwargs)
+            # The order-zero concepts as the Sigma of order zero read them,
+            # before the orders above.
+            direct = owner._cs_order0_raw
             perception = owner._percept_field
             ids = owner._cs_field_concept_ids[:result.shape[0]]
             matrix = owner._concept_allocator.layer(0).features
@@ -167,7 +166,8 @@ def native_provenance(sink):
                         physical = owner._csw_row_of(cid)
                         indices = (identities == cid).nonzero().flatten()
                         evidence = result[indices,b,p].amax(0) if len(indices) else result.new_zeros(2)
-                        before = direct[b][indices,0,p].amax(0) if len(indices) else evidence.new_zeros(2)
+                        order0 = indices[indices < direct.shape[0]]
+                        before = direct[order0,b,p].amax(0) if len(order0) else evidence.new_zeros(2)
                         edges=[]
                         for (r,c), edge in matrix._index.items():
                             if r != physical: continue
@@ -194,13 +194,13 @@ def native_provenance(sink):
                         store=owner._concept_allocator.layer(0)
                         definitions={name:[dict(column=c,weight=float(m.values[e].detach()))
                             for (r,c),e in m._index.items() if r==physical]
-                            for name,m in [('union',store),('intersection',store.conjunctive)]}
+                            for name,m in [('union',store)]}
                         concepts.append(dict(concept=cid,row=physical,evidence=evidence.detach().tolist(),
                             before_definitions=before.tolist(),features=edges,definitions=definitions))
                     entries.append(dict(form=form,position=p,span=spans[b,p].tolist(),concepts=concepts))
             captured.extend(entries)
             return result
-        owner.cs_read_memberships,owner._compose_order0=reading,folding
+        owner.cs_read_memberships=reading
         PerceptField.read_percepts=native
         try:
             result=original(model,spans,forms,known)

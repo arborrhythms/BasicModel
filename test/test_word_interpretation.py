@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 import torch
-from nomination_fixtures import recurrent_word
+from nomination_fixtures import recurrent_word, readings_before_nomination
 
 
 @pytest.mark.parametrize('configuration', ['MM_text.xml', 'XOR_grammar.xml', 'aligned'])
@@ -25,6 +25,8 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
     sentences = ['hi no', 'hi go', 'we no', 'we go']
     try:
         inputs = model.inputSpace.prepInput(sentences)
+        # A form is a word from the reading in which MTM nominates it.
+        readings_before_nomination(model, lambda: model(inputs))
         with torch.no_grad():
             _, symbols, _, _ = model(inputs)
         owner = model._concept_owner()
@@ -194,6 +196,8 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
     model = build_model(tmp_path, word_capacity=8)
     owner = model._concept_owner()
     operator = owner.interpret
+    # A form is a word from the reading in which MTM nominates it.
+    readings_before_nomination(model, lambda: model.understand(model.inputSpace.prepInput(['the wug sat'])))
     calls = []
     readings = []
     converting = []

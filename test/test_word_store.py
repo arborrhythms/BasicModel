@@ -742,7 +742,9 @@ def _surface_snapshot_model():
     m = _model()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    # A form is a word from the reading in which MTM nominates it.
+    for _ in range(m._concept_owner().concept_mint_count):
+        _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
     # These inverse-surface certificates exercise supplied object definitions.
     # Bare admission now retains a form until such an object is witnessed.
     from reading_fixtures import supply_object

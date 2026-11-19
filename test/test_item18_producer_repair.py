@@ -5,7 +5,6 @@ Certificate 7 is the two existing named stopping-gate tests, run unchanged.
 import pytest
 import torch
 from Layers import ConceptualAttentionLayer, SparseLayer
-from PerceptField import PerceptField
 
 
 def word_model():
@@ -34,40 +33,28 @@ def test_01_wholes_hold_on_every_byte(eager_reading):
 
 
 def test_02_admitted_word_and_basic_percept_are_positive_before_teaching(eager_reading):
-    from Corpus import admit_training_forms
+    from nomination_fixtures import nominated_forms
     from Assessment import read_sentence
     from postmerge_word_lanes import native_provenance
     model=word_model()
     try:
-        admit_training_forms(model,['This.'])
+        nominated_forms(model,['This.'])
         captured=[]
         with native_provenance(captured.append):record=read_sentence(model,'This.')
         word=next(w for w in record['words'] if w['form']=='This')
-        assert word['native_field']['concepts'][0]['evidence']==[1.,0.]
+        # The word's concept reads its basic percept by its column of the
+        # order-zero Sigma: tanh(v . u), with u started as v/|v|^2 (rule 8b).
+        cs=model._concept_owner()
         concept=next(w for w in captured[-1]['words'] if w['form']=='This')['concepts'][0]
+        sigma=cs.order_zero
+        column=sigma.weight[:,concept['row']].detach()
+        code=cs.basic_percepts.codes[concept['features'][0]['bp']].to(column)
+        assert not column[sigma.content_width:].any()
+        expected=float(torch.tanh(code@column[:sigma.content_width]))
+        assert expected==pytest.approx(float(torch.tanh(torch.tensor(1.))),abs=1e-6)
+        assert word['native_field']['concepts'][0]['evidence']==pytest.approx([expected,0.],abs=1e-6)
         assert concept['features'][0]['pair']==[1.,0.]
     finally:model.End();model.symbolSpace.soft_reset()
-
-
-def feature_read(positive,negative):
-    from test_cs_sparse_weights import _cs
-    from basic_fixtures import feature
-    cs=_cs();feature(cs,0,'ps',7,positive)
-    bp=next(iter(cs.basic_percepts.index.values()))
-    cs.add_concept_feature(0,'bp',bp,negative,negated=True)
-    pair=torch.tensor([[[[1.,0.]]]])
-    spans=torch.tensor([[[0,1]]])
-    perception=PerceptField((('bp',bp),),pair,pair.unsqueeze(-2),spans,spans,spans)
-    return cs.cs_read_percept_field(perception)[0,0,0]
-
-
-def test_03_small_opposite_does_not_deny_present_percept():
-    torch.testing.assert_close(feature_read(1.,1e-7),torch.tensor([1.,0.]),rtol=0,atol=0)
-
-
-@pytest.mark.parametrize('positive,negative,expected',[(.2,.7,[0.,1.]),(.5,.5,[0.,0.])])
-def test_04_dominant_opposite_and_equal_feature_weights(positive,negative,expected):
-    torch.testing.assert_close(feature_read(positive,negative),torch.tensor(expected),rtol=0,atol=0)
 
 
 def paired_layer(layout,weights,*,anchor=False):

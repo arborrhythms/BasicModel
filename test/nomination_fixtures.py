@@ -26,6 +26,19 @@ def nominated_forms(model, texts):
     return tuple(result)
 
 
+def readings_before_nomination(model, read):
+    """The model's own readings that come before the one in which its forms
+    are found: ``read()`` (one reading of the text) ``concept_mint_count - 1``
+    times, each closed by ``model.End()``. The caller's next reading of the
+    same text is the ``concept_mint_count``-th, in which MTM nominates the
+    forms read in each one."""
+    import torch
+    for _ in range(model._concept_owner().concept_mint_count - 1):
+        with torch.no_grad():
+            read()
+        model.End()
+
+
 def recurrent_interpretation(owner, *args, **kwargs):
     """``ConceptualSpace.interpret_word`` read until MTM nominates the form."""
     last = kwargs.pop('occurrence', ('fixture', owner.concept_mint_count, 0))

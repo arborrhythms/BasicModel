@@ -3,7 +3,7 @@ import inspect
 from pathlib import Path
 import pytest
 import torch
-from nomination_fixtures import recurrent_word, nominated_forms, recurrent_interpretation
+from nomination_fixtures import recurrent_word, nominated_forms, recurrent_interpretation, readings_before_nomination
 
 
 def snapshot(cs):
@@ -101,6 +101,8 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     model.eval()
     texts = ['hello world', 'hello there', 'loving world', 'loving there']
     inp = model.inputSpace.prepInput(texts)
+    # A form is a word from the reading in which MTM nominates it.
+    readings_before_nomination(model, lambda: model(inp))
     with torch.no_grad():
         _, symbols, _, _ = model(inp)
     # §68.73: these are the starting source's staged brackets, including
@@ -118,6 +120,15 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     evidence = carrier._concept_activations
     where = carrier._concept_where
     words = ('hello', 'loving', 'world', 'there')
+    # A concept of order zero reads every reading by its column of the
+    # order-zero Sigma (rules 3 and 8). Where its word is absent, what is
+    # published for it is the column's read of the percepts present there,
+    # tanh((x_for - x_against) . u), and no more. A concept above order zero
+    # publishes nothing there.
+    perception, basic, sigma = cs._percept_field, cs.basic_percepts, cs.order_zero
+    n0 = sigma.nOutput
+    width = sigma.content_width
+    codes = torch.stack([basic.codes[key[1]] for key in perception.keys]).to(evidence)
     checked = 0
     for b, text in enumerate(texts):
         reading = bytes(inp[b].reshape(-1).long().tolist()).split(b'\0', 1)[0]
@@ -127,9 +138,22 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
                 if address is None:
                     continue
                 indices = (rows[:, b] if rows.ndim == 2 else rows) == address
+                if address >= n0:
+                    for e, (lo, hi) in enumerate(where[b].tolist()):
+                        if word.encode() not in reading[lo:hi]:
+                            assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)
+                            checked += 1
+                    continue
+                column = sigma.weight[:, address].detach().to(evidence)
+                assert not column[width:].any(), 'an untaught column reads no place or time'
                 for e, (lo, hi) in enumerate(where[b].tolist()):
                     if word.encode() not in reading[lo:hi]:
-                        assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)
+                        presence = perception.values[:, b, e].to(evidence)
+                        x = 1 - torch.exp(presence.t() @ torch.log((1 - codes).clamp_min(1e-12)))
+                        y = torch.tanh((x[0] - x[1]) @ column[:width])
+                        expected = torch.stack((y.clamp_min(0), (-y).clamp_min(0)))
+                        torch.testing.assert_close(evidence[indices, b, e].reshape(-1, 2),
+                            expected.expand(int(indices.sum()), 2), msg=str((configuration, text, word, lo, hi)))
                         checked += 1
     assert checked > 0
     for left, right in ((0, 1), (0, 2), (1, 2)):
