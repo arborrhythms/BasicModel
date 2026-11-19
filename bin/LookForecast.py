@@ -93,8 +93,9 @@ class LookForecast:
         evidence = self._located(field)
         actual = self.read(evidence, field.where, spans)
         pair = difference(actual, forecast)
-        covered = contained(spans, self.spans)
-        self.latest = torch.where(covered[:, 0, :, None], pair, self.latest)
+        live = self.spans[..., 1] > self.spans[..., 0]
+        same_word = live & (self.spans == spans).all(-1)
+        self.latest = torch.where(same_word[..., None], pair, self.latest)
         self.locations = torch.cat((self.locations, field.where), 1)
         self.observations = torch.cat((self.observations, evidence[:, :, :self.basic_count]), 1)
         return pair

@@ -99,9 +99,16 @@ def test_glance_predicts_each_live_extent_in_one_batch(tmp_path, monkeypatch):
         assert batches == [int(live.sum())]
         assert not forecast.latest[~live].any()
         whole = torch.stack((spans[:, 0, 0], spans[..., 1].amax(-1)), -1)[:, None]
-        pair = forecast.observe(field, whole, torch.ones_like(forecast.forecast(whole)))
-        torch.testing.assert_close(forecast.latest[live], pair.expand_as(forecast.latest)[live])
-        assert not forecast.latest[~live].any()
+        initial = forecast.latest.clone()
+        inside = spans[:, :1].clone()
+        inside[..., 1] -= 1
+        assert (inside[..., 1] > inside[..., 0]).all()
+        for selected in (whole, inside):
+            prediction = torch.ones_like(forecast.forecast(selected))
+            pair = forecast.observe(field, selected, prediction)
+            assert pair.shape == (1, 1, 2) and pair.any()
+            torch.testing.assert_close(forecast.latest, initial, rtol=0, atol=0)
+            torch.testing.assert_close(forecast.for_brackets(whole)[:, 0], initial.sum(1))
     finally:
         model.End()
         model.symbolSpace.soft_reset()
