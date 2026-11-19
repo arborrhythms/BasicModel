@@ -7858,6 +7858,8 @@ usual." The discussion is finished; the item's text can be written.
 0. The form of the gradient salience map (§19.60): the plain
    gradient misses words that are fully present; recommended, each
    Sigma passed before its squash.
+1. How `attend` knows the current position and moves the place
+   (§19.61, four points not designed).
 1. How the word is found from its parts on the device without a
    product against every form (§19.57: 5.9 ms against 197,014 forms,
    growing with the dictionary).
@@ -7883,13 +7885,13 @@ Begin item 1.7 of BasicModel (the Sigma and Pi layers, the looks, and
 the perceptual basis). Read first, in
 basicmodel/doc/plans/2026-11-14-sigma-pi-layers.md: section 19.59 (what
 is decided and what is open, with the sections that hold each),
-then 19.21 (rules 1 to 32) and 19.51 to 19.60. Read the item 1.7 entry
+then 19.21 (rules 1 to 32) and 19.51 to 19.61. Read the item 1.7 entry
 of basicmodel/todo.md. Your memory holds how we work.
 
 Do, in this order:
 1. Write the rules of item 1.7 once, as one clean statement of the
    perceptual basis and the looks (rules 1 to 42 as they now stand,
-   with what 19.52 to 19.60 changed folded in), as a new section of
+   with what 19.52 to 19.61 changed folded in), as a new section of
    that file. Mark what is mine, what is yours, and what is open.
 2. Put the open points of 19.59 to me, each with what you would take.
    Do not hold the text for them: build on what you recommend unless I
@@ -7957,6 +7959,56 @@ the percepts of the sentence, from the open run's kept derivatives;
 each Sigma is passed before its squash, so that a concept already lit
 still returns its percepts. To be confirmed by him, and tried on
 inputs where parts are present by degree, in the item's first round.
+
+### 19.61 Alec: weights for the what, perhaps, but not for the where; how the where moves (2026-11-19)
+
+Alec: "Maybe by the weights is OK to attend to percepts/concepts, but
+not for locations? How is attention scheduled to specify the .where
+that moves from one word to the next, and how are we updating that
+based on current position in the sentence?"
+
+**How the where moves, as things stand.**
+
+- *Built, item 1.8.* The where is a bracket, an interval of the
+  sentence. The first look is the whole sentence; each later look is
+  one act of the chooser on the bracket table (`narrow_step`: `focus`,
+  `unfocus`, the field's and, or, not). The chooser's context is the
+  understood prefix: the occupied STM slots with their places and
+  times, the heat of the three spaces, and each bracket's excess and
+  omission (`AttentionContext.context`). A word that was interpreted
+  marks its bracket done. The order is taught by the reading lesson
+  (`AttentionLesson.ReadingTargets`). So the current position is held
+  as the table's done marks and the places of what is in STM.
+- *Tried, item 1.7's prototype* (§20.8, `order_trial`). The request of
+  a look is the meta concept "word" and one place. The first place is
+  the sentence's start; each later place is the end of the word read
+  last plus a step. The place is given as its code on the sinusoid,
+  made continuous, and a place row reads each percept at its own
+  place. Only the step was taught, by the gradient of a loss that asks
+  for the next word, through that code. It went from -3 to +1.07 in 20
+  steps and then read all sixteen sentences in order.
+- *In the rules* (§19.51, rule 38). No order is built in; reading in
+  order is taught and a test of it gates the grammar tests. That the
+  place comes from where the last word ended is Claude's note from the
+  trial, not a rule.
+
+**So his "not for locations" is how it already is, in the trial.** The
+where of a look is not read from weights. It is a value `attend` gives
+at each call, computed from the current position, and what is learned
+is how to compute it. The what part is where the choice of §19.60
+lies.
+
+**Not designed.**
+
+1. What `attend` reads to know the current position in item 1.7: the
+   end of the word interpreted last (the trial), the places of what is
+   in STM (1.8's context), or both.
+2. The end of a word. A place's code holds its start only; the end is
+   the start and the length of the form that matched.
+3. What happens after a look that interprets nothing (the place must
+   still move), and whether the done mark stays.
+4. Places that are not the next word: a look back, or a wider look
+   (`unfocus`).
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
