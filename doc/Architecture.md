@@ -2,7 +2,8 @@
 
 The subject is the system's design as a whole: the pipeline and its spaces
 ([Overview](#overview)), attention ([One attention](#one-attention)),
-the two spaces joined by one index, the sentence loop
+the two spaces and the layers that join them
+([Sigma and Pi Layers](#sigma-and-pi-layers)), the sentence loop
 ([Whole paths](#whole-paths-and-concept-episodes-2026-11-11)), memory's role
 and the two systems
 ([Dual process](#dual-process-system-1-knowing-and-system-2-2026-11-09)). Loss
@@ -19,12 +20,13 @@ rule across representation, prediction, thinking and output are in
 
 ![Three pieces: LLM vs BasicModel](diagrams/three_pieces.svg)
 
-> **Terminology (2026-06-21 convention).** One noun per-space: a **percept** is
-> a perceptual thing (PartSpace/WholeSpace, dimensionally-embedded, extensional;
-> *part* and *whole* are its two subtypes); a **concept** is a ConceptualSpace
-> relation tying one part-percept to one whole-percept (the Concept codebook);
-> a **symbol** is a SymbolSpace 0-D reference to a concept. The CS "symbol
-> table" is therefore the **Concept codebook** below.
+> **Terminology.** One noun per space: a **percept** is a perceptual thing
+> (PartSpace/WholeSpace, a code on two lanes within 0 to 1; *part* and *whole*
+> are its two subtypes, and a basic percept is a row of the first Pi over its
+> parts and wholes); a **concept** is one signed value a Sigma gives in
+> ConceptualSpace; a **symbol** is a row of a Pi above order zero over
+> concepts, split from its concept and with no dimensions
+> ([Sigma and Pi Layers](#sigma-and-pi-layers)).
 
 The architecture has three pieces, expressed through one attention mechanism
 (see [One attention](#one-attention) for the current execution contract):
@@ -102,7 +104,7 @@ a sentence is the idea under construction — and each word is a
 - **Three indices.** Language individuates along which thing (determiner),
   which stretch of time (tense and aspect) and which alternative (modal).
   These are indices of the symbolic projection and of the LTM row; a concept
-  stays one code; the reading in "Two spaces, one index" below derives its perceptual and context components.
+  stays one signed value, its form a percept ("Two spaces" below).
 - **Regions are derived, never stored.** Membership is invariance under the
   operator and subsumption is absorption, so `part`, `whole` and `isEqual` are
   tests on the same algebra.
@@ -177,21 +179,15 @@ $\sum_k \alpha_k \cdot \mathrm{key}_k$. Six stores (the `SPACE_*` ids):
 | `LTM` | the shared clause store (rows, references and trust) |
 | `PART` | the PartSpace codebook (part-percepts) |
 | `WHOLE` | the WholeSpace property codebook (whole-percepts only) |
-| `SYMBOL` | the downstream SymbolSpace reference namespace (1:1 with concepts) |
+| `SYMBOL` | the symbols, rows of the Pi above order zero |
 
-`PART`/`WHOLE` appear whenever their tower has a codebook; `SYMBOL` only under
-`<symbolTower>`. Pointing `.where` at a codebook/LTM store is recall; at the input
+`PART`/`WHOLE` appear whenever their tower has a codebook. Pointing `.where` at a codebook/LTM store is recall; at the input
 window it is reading — one mechanism, the type tag distinguishes them. The
 selected read enters the answer through a gate initialized at zero, so output
 loss trains retrieval.
 
-The symbol namespace is a **reference**, not a learned copy: it tracks concept
-ids so the two cannot diverge or dissociate. A symbol's IDENTITY is that integer
-concept reference and allocates no independent learned or EMA row; its VALUE,
-the signed 0-D activation from the symbolic phase, is grad-bearing. The
-activations' gradient path is the conceptual SBOW over the settled slab parked
-at the post-pump cutover; the once-built SS leg itself is a state-contract sync
-whose product no loss consumes.
+A symbol is held apart from its concept: it has no vector, place, form or
+trust read as a direction, and its value is the activation of its row.
 
 These six stores are the substrate for the four foundations of mindfulness; the
 mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is in
@@ -204,89 +200,29 @@ CS = ConceptualSpace, SS = SymbolSpace).
 
 ### A. Symbolic weights (the two-phase forward)
 
-The concept store's weights live in a dedicated **`SparseLayer`**
-(`bin/Layers.py`), not a SigmaLayer option: SigmaLayer's atanh-entry contract
-expects logit-domain codes in $[-1, 1]$, while these maps consume
-*presences/activations*, a different input domain. The substrate contract is
-the transpose autoencoder pair: forward $= \tanh(W x)$, reverse
-$= \tanh(W^T y)$; export-safe scatter-add kernel by default,
-`torch.sparse.mm` opt-in. Edges append host-side at mint (`add_edge`,
-idempotent, tail-preserving value growth) and are removed by pruning rounds
-(`remove_edges`; `ConceptualSpace.prune_concept_links` keeps the closest links
-using within-tower relations only). One square untyped
-**`ConceptualAttentionLayer`** subclasses this substrate; its forward
-composition is a feedforward sigma pyramid.
+The concept store's weights are the Pi and the Sigma of each order
+([Sigma and Pi Layers](#sigma-and-pi-layers)): at order zero the first Pi over
+the basic percepts' parts and wholes and a dense Sigma over the combined
+vector; above it a Pi of symbols over concepts and a Sigma of concepts over
+symbols, both stored as compressed rows on the device with an index of
+columns, grown into room allocated beforehand by the geometric taper
+(`_order_caps`). A promotion writes an edge at one; the penalty thins the
+values of the entries that exist.
 
-**The forward has one terminal cutover.** Input attention first reads the open
-bracket and narrows it under `attentionBudget`. PartSpace combines located parts;
-WholeSpace divides the field by primitive properties. Perception has no learned
-sigma/pi fold layers. `bindingDepth` constructs the binding layers through which
-the carrier passes; it does not repeat an independent attention loop. The
-concept inventory and the per-word grammar retain their structural bounds.
+**The forward has one terminal cutover.** Input attention first reads the
+whole sentence in the open run, and later looks are activities over its
+percept bank under `attentionBudget` ([One attention](#one-attention)).
+`bindingDepth` constructs the binding layers through which the carrier
+passes; it does not repeat an independent attention loop. The concept
+inventory and the per-word grammar retain their structural bounds.
 
-**Pass-back scales, never gates (Alec, September 24).** Attribution of the
-current conceptual demand yields a strength `a ∈ [0,1]` for each PartSpace
-slot. Its content is scaled by `0.5 + 0.5*a`: attributed parts approach full
-strength, while unattributed parts retain half their input strength on every
-pass. The where/when band is unchanged. New content within the extent stays
-visible and can form a concept even when existing concepts do not define it.
-
-Phase B symbolizes the terminal field and runs the bounded higher-order
-pyramid. It performs sigma over the preceding order's symbols; no pi edge
-exists in this loop. Codes support similarity and tied reconstruction,
-while the feature definitions supply evidence. The paired field reaches the
-symbol leg and conceptual losses without replacing the native carriers.
-
-**The `ConceptualAttentionLayer` is SYMBOLIC-ONLY and owns BOTH readings of concept
-structure.** The
-weighted reading uses disjunctive and conjunctive COO matrices, each
-$[S \times 2(S+1)]$, over one bounded concept inventory (`ConceptualAttentionLayer`, bin/Layers.py) -- named for
-what it IS, bottom-up attention over the concept inventory (see "Parse
-time" sec C); `SparseLayer` is how it works (it subclasses the substrate
-above). Edges carry nonnegative exponents and address a positive or negative
-symbol pole. Population from existing concept records
-writes one edge per SYMBOLIC constituent (row = the relation, col = the
-constituent); order-0 native references write the feature definition. A
-trailing-bias-column edge (col $S$) supplies the bound for relations under
-the EVERYTHING pole
-(bias-bounded chain links, un-refined asserted concepts; a concrete whole
-retires it). Self-edges raise (the Quine atom $x = \{x\}$); longer cycles
-are deliberate -- a documented fact of un-ramsified taxonomies and of human
-minds, which nothing observes or damps at runtime.
-
-The feedforward concept pyramid (`cs_forward_content`) retains
-`[concept, batch, extent, 2]`. The order-0 membership read composes field
-requirements before encoding; subsequent rungs only union symbol evidence.
-The taper ranks the stronger pole and admits the pair together. Extents
-remain separate. The [current equations](#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
-define independent pole reductions and attribution descent.
-
-`_order_caps()` sizes the per-rung taper. While the sparse concept
-transform is active (`_sparse_active`), it is a tile-based taper
-`[base, base>>1, .., 1]` (`conceptLayers` bounds the inventory's orders,
-`base = min(outputShape[0], nVectors)`, shrunk until the taper fits the
-inventory). The taper is a placement preference: definitions and raised
-classes seat in the tail, and every reachable row is gathered into the
-attended field. Off that path, the caps fall back to a 50/50
-`(n_snap, n_pool)` split (`n_snap = max(1, N // 2)`).
-
-Alongside this weighted reading, the store holds the DISCRETE relation
-table: ordered role-tagged constituent records (`embed_pair` stores the
-sec-4c ordered pair
+Alongside the weighted reading, the store holds the discrete relation table:
+ordered role-tagged constituent records (`embed_pair` stores the ordered pair
 $[\text{whole}, \text{part}]$, whole first: whole $\Rightarrow$ part / if
-$\to$ then; `discretize_row` is exact on the binary-ordered subset). A thin
-shared `ConceptAllocator` owns global concept ids, order derivation
-(bookkeeping only under v3 -- nothing migrates by order), the
-raise/retire/singleton sets, and the idempotency caches; ConceptualSpace
-keeps orchestration only. Each bounded evidence activation IS a 0-D
-symbol: the once-built SS leg retains the two poles at the row-aligned identity
-(order-0 codes follow their feature definitions; the leg syncs the SS state contract, while the
-activations' GRADIENT path is the conceptual SBOW over the settled slab
-parked at the cutover). The native read places the attended percepts
-in the order-0 field; the selected bracket supplies the region or mereological
-scope. `attentionBudget` bounds perceptual operations. Perception has no learned
-$\sigma$/$\pi$ fold layers. Distributed codes serve similarity, retrieval and the
-tied reconstruction; they do not determine conceptual presence.
+$\to$ then). A thin shared `ConceptAllocator` owns global concept ids, the
+raise and singleton sets, and the idempotency caches; ConceptualSpace keeps
+orchestration only. Distributed codes serve similarity, retrieval and the
+reconstruction; they do not determine conceptual presence.
 
 #### Relation-table entry contract
 
@@ -305,23 +241,17 @@ preserve the whole/part distinction exactly, while recursive nesting and wave
 iteration make the sequence order operational. In short: repeated entries for
 one concept define a set; recursively nested relation concepts define a vine.
 
-The lattice poles are VECTORS of the presence domain: **NOTHING**
-$= [0,0,\ldots]$ (bottom; a part contributing $W \cdot 0 = 0$ -- no edge)
-and **EVERYTHING** $= [1,1,\ldots]$ (top; a whole realized as the trailing
-bias column). Order-0 concepts reserve their distributed row and read
-their signed feature definitions over native PS percepts and WS properties.
-A fresh object's standing bounds supply no perceptual membership; its
-definition awaits testimony. Feature addresses preserve the source rows
-by reference, without duplicating their codes. Word/object associations are
-definitions, `LTM1` rows of a word and its object. Completed sentences store
-their actual end state; they keep no word chain or derivation. A
-1:1 tie between SYM refs is the SINGLETON principle (Alec 2026-07-02): the
-unit-set $\{x\}$ -- a whole containing exactly one symbolic part -- is the constructive primitive
-behind if$\to$then ($\{x\} \Rightarrow x$) and the recursion vine, and it is
-stored structure that `resolve_identities` never collapses (only ties
-between concrete raw codes resolve away). The one untyped square
-`ConceptualAttentionLayer` replaces stratification by order, so a link of any
-order arrives one pyramid rung later; see "Parse time" (§C).
+The lattice poles are vectors of the presence domain: **NOTHING**
+$= [0,0,\ldots]$, the bottom from which the parts build, and **EVERYTHING**
+$= [1,1,\ldots]$, the top from which the wholes cut. A fresh object's
+standing bounds supply no perceptual membership; its definition awaits
+testimony. Word/object associations are definitions, `LTM1` rows of a word
+and its object. Completed sentences store their actual end state; they keep
+no word chain or derivation. A 1:1 tie between references is the SINGLETON
+principle (Alec 2026-07-02): the unit-set $\{x\}$, a whole containing
+exactly one symbolic part, is the constructive primitive behind
+if$\to$then ($\{x\} \Rightarrow x$) and the recursion vine, and it is stored
+structure that `resolve_identities` never collapses.
 
 ### B. Reconstruction (parts $\to$ `.what`, wholes $\to$ `.where`)
 
@@ -486,16 +416,11 @@ FORGETTING of existing ones, no WEIGHT drift on them
 edge values) — the codebook row/content stays live and keeps tracking
 perception; only its DEFINITION is fixed.
 
-**The readout site is the concept pyramid's per-order top-K**
-(`cs_forward_content`; the FF pyramid is COMPOSITION, not attention — the
-selection over it is where attention acts). The CS surface projects
-directly onto the inventory rows as the ranking score
-(`_relevance_priority` $=$ boost $-$ 1; rank $= |cand| \cdot (1 +
-\mathrm{score})$, spreading upward through edge magnitudes, admitted rows
-only) — selection changes, activations never distort. The pyramid's
-Admitted rows write back through `prime_seen`. The priority score is read
-on the parallel path. The serial path does not use this inventory ranking.
-`primingDecay` sets the seen decay.
+**Priming is read by attention's context.** The priority surface enters a look
+only through the attention context (`AttentionContext.context`) that `attend`
+maps to its request ([One attention](#one-attention)); it changes which
+concepts are asked for, and never distorts an activation. Rows a reading
+admits write back through `prime_seen`. `primingDecay` sets the seen decay.
 
 **Attention and expectation share a gain mechanism (2026-10-19).**
 Attention contains the admitted region; expectation attenuates predicted
@@ -562,11 +487,11 @@ alone; this remains a limitation even though perception retains span metadata.
 
 ## Cognitive grounding: dense-perceptual vs sparse-symbolic (2026-07-02)
 
-The design splits representation into a **dense, invertible, subsymbolic**
-integrator (the corpus-callosum mixing matrix, which mixes part/whole *content*
-in high dimension) and a **sparse, symbolic** composer (the `ConceptualAttentionLayer`,
-which composes *scalar activations* of named concepts; it subclasses the
-`SparseLayer` substrate). This is not an
+The design splits representation into a **dense, subsymbolic** integrator
+(the Sigma of order zero, dense over the combined vector of the percepts'
+part and whole *content*) and a **sparse, symbolic** composer (the Pi and
+the Sigma above order zero, stored as compressed rows, which compose the
+*scalar values* of concepts through symbols). This is not an
 arbitrary engineering choice; the split, and specifically *why sparsity belongs
 only on the symbolic side*, tracks several convergent findings on human
 cognition.
@@ -581,9 +506,9 @@ cognition.
   cognitive answer to "why sparse, and why only symbolically" — the perceptual
   manifold wants the dense mixing; the binding of individuated things into
   reusable conjunctions (the joint/sentence concept over word-symbols) wants
-  sparsity. A **symbol is a scalar handle on a grounded direction** (the atom),
-  which is precisely a hippocampal index into cortex; the transpose decode
-  ($\tanh(W^\top y)$) is pattern **reinstatement**. Caveat: this maps the
+  sparsity. A **symbol is a handle with no dimensions on grounded concepts**,
+  which is precisely a hippocampal index into cortex; the way back down
+  through the Sigma and the Pi is pattern **reinstatement**. Caveat: this maps the
   *sparse-symbolic vs dense-perceptual* axis onto hippocampus-vs-cortex — NOT
   the ramsified *orders* (abstraction is a separate, graded
   anterior-temporal / prefrontal axis).
@@ -609,15 +534,15 @@ cognition.
   architecture is a concrete stance on the oldest fight in cognitive science:
   **content stays connectionist** (dense, continuous, invertible mixing),
   **structure becomes symbolic** (discrete, reusable, composable edges), and the
-  **interface is the activation readout** — the point where mixed content is
-  read through feature memberships into the two symbols of a named thing. The discrete edges buy the
+  **interface is the first block** — the basic percepts' Pi and the dense
+  Sigma that reads their combined content into concepts of order zero. The discrete edges buy the
   compositionality/systematicity that pure distributed codes are accused of
   lacking, while the dense mixing keeps perception continuous and
   gradient-trainable.
 
 - **Grounded cognition** (Barsalou 1999; contra amodal symbol systems). Because
-  the distributed code follows the concept's definition and its two
-  activations carry the observed evidence, the symbols are not amodal Fodorian tokens — they are
+  a concept is a Sigma over perceived codes and its value carries the
+  observed evidence, the symbols are not amodal Fodorian tokens — they are
   grounded pointers-with-magnitude, closer to perceptual-symbol "simulators."
   Retaining graded memberships is cognitively load-bearing: graded activation *is* typicality / salience
   (Rosch's graded membership), which a cosine would discard.
@@ -662,7 +587,46 @@ Boyes-Braem (1976), *Basic objects in natural categories*, Cognitive Psychology
 Press. Olshausen & Field (1996), *Emergence of simple-cell receptive field
 properties by learning a sparse code*, Nature 381 (sparse *activation* over a
 dense dictionary — the dictionary/atom side here — as distinct from the sparse
-*relational graph* of the `ConceptualAttentionLayer`).
+*relational graph* of the sparse matrices above order zero).
+
+## Biological plausibility
+
+**What is plausible.**
+
+- *Two lanes and the Not entries.* Light and dark have a channel each from the
+  first synapse of the retina: the ON pathway inverts the photoreceptor's
+  signal at one synapse and the OFF pathway keeps it. So evidence against, at
+  the level of percepts, is the evidence for of an opposite, carried on a lane
+  of its own and driven positively, as the against lane is. Excitation and
+  inhibition are carried by different cells (Dale's principle), so each sign
+  is a thing in the circuit, as a Not entry is; a cue that signals the
+  omission of an expected outcome becomes a conditioned inhibitor (Rescorla
+  1969), and animals learn A or B but not both where a unit for the compound
+  takes inhibitory strength (Pearce 1994): a Pi, a sign and a Sigma.
+- *A local rule of excess and omission.* What was read beyond what was
+  expected, and what was expected and did not come, are two signals at each
+  row of the one gain field ([One attention](#one-attention)); the two signs of
+  an error are carried by two populations (Keller and Mrsic-Flogel 2018), and
+  dopamine neurons dip at an omitted reward (Schultz, Dayan and Montague
+  1997).
+- *Two pathways, what and where.* Object identity and location run on two
+  pathways that are distinct and linked (the two-streams account, whose
+  independence is contested), and features are held on maps tied to one map
+  of locations, so that attending to a location gathers the features found
+  there (feature integration). A percept's band of fixed where wires, with
+  the salience map lighting it, and a look as the intersection of what and
+  where, are that arrangement (Alec, 2026-11-19).
+- *A mind without buffers* (Alec, 2026-11-17). STM is a tree that might be
+  unfolded by the same process as conceptual recursion, kept by a trace of
+  activation and not by a buffer that is read and written; with the extension
+  (a field of active concepts) in place of the intension, the mind works by
+  activating structures rather than by reading and writing contents.
+
+**What is not.** Inverses and backpropagation. Brains approximate and
+predict; they do not compute exact inverses, and the exact way back of the Pi
+and the least-squares way back of the Sigma are instrumental, for
+reconstruction and gradient. Nor is there evidence that a brain propagates an
+error backward through its layers as the training does.
 
 ## Overview
 
@@ -677,9 +641,9 @@ Reverse:  OutputSpace -> SymbolSpace -> ConceptualSpace -> {PartSpace, WholeSpac
 
 There is no per-stage feedback loop between the spaces:
 
-- **Perception shares one attention.** PS reads native parts at the selected
-  bracket. The open read and later narrowing share `attentionBudget`; the
-  constructed binding layers carry their result forward.
+- **Perception shares one attention.** The open run reads the whole
+  sentence, and each later look is an activity over its percept bank; the
+  looks share `attentionBudget`, and theconstructed binding layers carry their result forward.
 - **The symbolic loop is grammar over STM**: pairwise grammar operations
   dispatched by the signal router (`LanguageLayer`). `Lift` and `Lower` share
   the GrammarLayer dispatch surface with `Intersection`, `Union`, etc.
@@ -719,9 +683,9 @@ is released with the attended field; only scalar refinement history persists.
 | Space | Role | Owns | Notes |
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
-| **PartSpace** | Bottom-up ordered part synthesis | Radix parts, native codes and `<synthesis>` policy | Recurrence forms parts; codes are max over constituents. Canonical ids and ordered containment determine presence. |
-| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: membership read + FF concept pyramid, $K$ = `conceptLayers - 1`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | Top-down division by primitive properties | Property codebook (`self.subspace.what`) and `<analysis>` policy | Max over allowed primitives per position, min pervasion over a run. Readings share the attended field with PS; there is no perceptual pi layer. |
+| **PartSpace** | Bottom-up ordered part synthesis | Radix parts, native codes and `<synthesis>` policy | A form's code is the set of its parts, the greatest of their codes in a parts half of 64 coordinates on two lanes. Recurrence forms parts; one lookup a sentence reads the percept bank. |
+| **ConceptualSpace** | STM container + main grammatical CPU + the layers of every order | STM (`ShortTermMemory`, depth ~8); the first Pi of basic percepts (`PerceptPi`) and the dense Sigma of order zero (`OrderZeroSigma`); above them the Pi of symbols and the Sigma of concepts, as compressed rows; the relation store (`ConceptAllocator` + ordered records) | `forward(subspace, word_subspace=None)`: STM bookkeeping only. The layers read each reading once; grammar ops are dispatched via the signal router. |
+| **WholeSpace** | Top-down division by properties | The table of wholes (`PrimitiveProperties`) and `<analysis>` policy | A whole's code is the OR of the catalog parts that belong to it, or the AND of other wholes; a percept's wholes half is the least of its wholes' codes, from all ones. A whole is read where a run lies. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The native perception and conceptual carrier contract is:
@@ -731,9 +695,8 @@ PS.forward(x):  return native_part_read(x)
 CS.forward(subspace, word_subspace):
     STM[1..7] = STM[0..6];  STM[0] = folded          # newest at slot 0, shift toward higher indices, oldest (slot 7) drops off; mode-dispatched, the pump stays subsymbolic
 # POST-PUMP cutover (sparse-active, once per forward, in _forward_body):
-#   content, acts = cs.cs_symbolic_phase(last_cs.materialize(), extents=extents, percepts=native)
-#   # membership read -> concept pyramid (K = conceptLayers - 1)
-#   last_cs._concept_activations = acts;  SS leg built ONCE;  SBOW parks the settled slab
+#   the bank's basic percepts -> first Pi (for and against) -> combined vector
+#   -> dense Sigma of order zero -> at each order above: Pi of symbols, Sigma of concepts
 SS:  no atomic forward operator; hosts write-required grammar ops
      (the CS->SS symbol bind leg is SymbolSpace.forward_concept_to_symbol, .forward()-mediated)
 ```
@@ -749,7 +712,7 @@ and its evidence-weighted centroid in conceptual width. At the open end
 of the sentence, every present word bracket is read once, before grammar
 narrows attention. Positive field rows join lexical rows for the one
 `prime_seen` step; that same field opens or updates
-candidates, including located conjunctions under `conceptualPi`, without
+candidates, including conjunctions of witnessed rows, without
 minting. A candidate never re-mints what exists: when its support is one
 witnessed row, or it matches a witnessed row of its order by the same literal
 or the same support, the observation is a use of that row (an access, with
@@ -861,86 +824,143 @@ See [Params.md](Params.md) for all XML parameters. See
 
 ### One attention
 
-Attention reads a typed bracket, then narrows it with the common operation
-chooser. The first bracket covers the input. That open read takes no optimizer
-step and writes no codebook: it supplies context before native admission and
-grammatical composition. The table carries padded intervals `[B, K, 2]`,
-validity, space, level, completion and spent work; `K = attentionBudget`.
+Attention is content based. A look asks for concepts, and what it returns is
+found by what the sentence's percepts are and where they stand; nothing
+selects by position or by time alone, no place is given to a look as a
+number, and a look is not made of the intervals the input is split into
+(Alec, 2026-11-18: "If that is forced to words, then the lexer is doing the
+models job"). What the grammar does with a look, the literal and silence are
+in [Language](Language.md#the-looks); this section gives the mechanism.
 
-Within a bracket, the field offers the order-independent operations `and`,
-`or` and `not` on paired observed presences. Across brackets, grammar operates
-on identified symbols. This follows from the operand types: a pooled field
-has no order on which change, lift, lower, verb or modifier could act. The parser checks
-these declarations. The former mode-exclusion rule is therefore a consequence
-of representation, with no `serial` or `parallel` mode switch.
+**The percept bank.** At a sentence's start one lookup reads its percepts
+into one bank, on the device. For each event the bank holds its row of the
+first Pi, which is what the event is (a form's row where the store knows the
+form, and the rows of the form's parts); its place, which is its start; its
+band of where wires; its time; the token it belongs to; and its activity on
+two lanes. The events are the lookup's rows, not bytes. A known form that
+spans several tokens (`ice cream`) is an event of its own at its start. The
+first Pi is read only on the rows the lookup names, and nothing on a look's
+path reads a span of the input again.
 
-The compose grammar declares `focus` and `unfocus` on brackets, and no act
-of attention accepts a word. A focus can split a bracket at a pole
-disagreement, descend into its retained parts or look again at one pure word.
-Each act spends one unit of the presentation's allowance. Every look is
-perceived and conceptualized, whether or not it holds a word: the native
-percepts inside its bracket are read and the concepts of every order are
-given from them (`SentenceLooks.perceive`), and its field is kept in order
-beside the sentence's own. At a look that is one known word read on one lane
-(`Attention.interpretation_at`), the grammar may call `interpret`. The call
-is made with probability `architecture.interpretBias`, and the grammar's
-chooser decides the remaining share, `interpret` against abstaining
-(`OperationSelectionLayer.interpret_at_look`). The bias is 1 by default,
-which forces the call; it is to be lowered later, so that a word is
-interpreted only where experience shows it is worth it, since a word may be
-treated as a word rather than as what it represents (Alec, 2026-11-18). On
-interpretation its word brick runs and its occurrence enters composition; a
-word never interpreted has no brick and is no leaf, though its concepts are
-active in the field. An abstention leaves the word available for another
-look. A known word cannot be focused below its word level. Repeated unknown
-surfaces share a descent witness.
-`unfocus` restores the last split or entered bracket while its words remain unread.
-The fixed WholeSpace `word` whole and the reader use the same maximal ASCII
-letter run; punctuation, whitespace and digits separate words. Digit runs
-remain native percepts for numeric proofs such as XOR_exact.
+**A look is an activity over the bank.** An event's activity in a look is its
+own activity, times its what match, times its where match: a percept is in
+the look to the degree that both what it is and where it stands are salient
+(Alec, 2026-11-19). Before the where, an event's activity is its share of the
+request capped at its own activity; the share already carries the activity,
+so the two are not multiplied, and an event that two asked rows share is
+counted once. What is not active is absent on both lanes and is never
+evidence against. Attention dims; it does not cut: what lies away from where
+the request looks is lowered by degree, by the radius and the magnitude of
+what asks, with no floor.
+
+**The request** is the output of `attend`: a mask over all concepts, on the
+two lanes, and learned. It names a place in the tree of concepts, and the
+more particular the concept asked for, the fewer words it selects. `attend`'s
+map starts at the request "words", one declared concept that every word's
+concept is a member of, with a Not entry on the space character, so that
+asking for words lowers a part that holds a space. A concept "objects", one
+that every object's concept is a member of (an object being what `interpret`
+finds or makes for a word), is declared beside it (Alec, 2026-11-19).
+`attend` reads the context it reads today (`AttentionContext.context`: the
+understood prefix with its places and times, the heat of the spaces, the
+surprise) and maps it to the request. It asks for the word level in general
+and moves the location it asks for with the state of STM, so as to find the
+next word not yet read. No order is built in: reading in order is taught
+(the reading lesson, [Training](Training.md)), and a test of it gates the
+grammar's tests. A look with the same request gives the same result whatever
+was looked at before it.
+
+**The salience map** carries the request down to the percepts. It is the
+gradient of the asked concepts by the percepts of the sentence, taken from the
+open run, the first look, in which the whole sentence is read at once. Each
+Sigma is passed by its weights, which is before its squash, so that a concept
+already lit still returns its percepts (Alec, 2026-11-19: "You said weights
+were better, lets do that"); each Pi is passed by the derivative of its
+product at the values of the open run. It is computed by the transposes of
+the same sparse matrices, with the Pi's derivatives kept from the open run,
+and no second backward pass is made inside the forward. Where a token holds
+several copies of one row, its membership is the greatest of them, and each
+copy at the greatest takes the whole derivative. The map lands on two
+domains: on each event's activity, the what, and on each event's band of
+where wires. On the lesson's 304 requests it returned exactly the asked words
+that are present, in 304 of 304.
+
+**The where is a pathway of its own, on fixed wires** (Alec, 2026-11-19). The
+`.where` stamped onto percepts flows from one parameter that holds the
+constant sinusoid, with one row for each address of the registry
+(`WhereRegistry`), written from `WhereEncoding.encode`; it is the one where
+tensor of every space. A percept's band is its row, taken by its place. The
+parameter takes a gradient and is in no optimizer's groups: "The parameter
+itself must stay fixed if the sinusoid coding is to remain meaningful across
+all .where". What lights on a band says where to look. An event's where share
+is the sum over its band of the salience times the wire's value; the where
+match is that share referred to the sentence's most salient place and passed
+through the Pi's exponential, so it is one at the most salient place, lower
+away from it by the magnitude of what was asked, and one everywhere when
+nothing of where was asked, so that a request with no where part selects the
+level and leaves every place in. The match is read at a form's place, its
+start, and applied once to the form's reading on both lanes, never inside the
+product of a row's parts. There is one where: none for how a thing's parts
+stand to one another. No location concept is made: concepts read the where
+through the weights they have on the where coordinates of the combined
+vector, which start at zero for a new concept and are learned, so concepts
+of location form where location is taught ("Concepts have the location to
+abstract over, and a gradient incentivizing them to do so"). With those
+weights the word at a place was returned in 16 of 16 sentences, and reading
+in order was learned from every start.
+
+**The returned set.** The way up is run again on the bank with the look's
+activity, and what it gives, each concept at its token, is the returned set.
+The salience map selects the level and the where selects the word.
+`interpret` takes the most active word concept of the set, exactly: a
+selection with no degree. Of forms that begin at one place the largest, the
+longer extent, is the word, so `the` is not taken at `there`. Where several
+are still equally the most active, the request has identified no word, and
+one is taken by a draw that the outcome of its path credits, as an explore
+path's departure is credited (`explorePaths`, `SentenceCredit.WALKS`). Where
+the set holds no word concept, nothing is interpreted. A form that was
+interpreted is lowered in the bank's activity over its extent. Every look is
+perceived and conceptualized, whether or not it returns a word.
 
 A sentence has one loop of looks (`SentenceLooks.Looks.run`). The first look
-is the whole sentence, the open pass; each later step is one call of
-`attend`, and what follows from it (the look perceived, the grammar's option
-to interpret, the interpreted word's brick and composition) is done before
-the next, so words arrive in the order they are interpreted. A departure in
-that walk is the attention walk of the sentence's whole-path comparison
-("Whole paths and concept episodes" below), judged on the same R + A. Native
-paired evidence, including counterevidence, determines eligibility; a
-Boolean field operation changes the next mask, while a child reads its own
-native parts.
+is the open run; each later look is one call of `attend`, and what follows
+from it (the look perceived, the grammar's option to interpret, the word
+composed as it arrives) is done before the next, so words arrive in the order
+they are interpreted. A departure in that loop is the attention walk of the
+sentence's whole-path comparison ("Whole paths and concept episodes" below),
+judged on the same R + A.
+
+**What a look teaches.** The gradient of a look's selection lands on the
+request, on which concepts are asked for and on what produces that asking,
+and `attend` exposes to the error the weights that read the where. The
+mereology's entries of the first Pi and the weights that read the what take
+none of it, so that perception keeps its one teacher. The reconstruction
+teaches location too: the bytes put back are built through a conjunction of
+the what pathway and the where pathway, so its error reaches both
+([Training](Training.md)).
 
 **A look's forecast.** Before a look is perceived, `expect` is taken on the
-observed field formed from the readings outside the look's bracket and
-closed upward through the definitions (`LookForecast.forecast`), so it says
-what should be in this place given what was seen elsewhere; a reading that
-overlaps the bracket contributes nothing, even an earlier reading of the
-same place. The look's field is then compared with it, per row and lane:
-what was read beyond what was expected is the excess, and what was expected
-beyond what was read is the omission, each summed over rows, two numbers
-for a look (`LookForecast.observe`). At the open pass every word gets its
-pair, forecast with that word left out; a later look replaces the pair of a
-word only when its bracket is that one word, and a bracket of several words
-reads the sum of its words' pairs (`LookForecast.for_brackets`). `attend`
-reads the pairs through the attention context's zero-started projection
-(`AttentionContext.project`), so before any teaching it scores as it would
-without them. The comparison is detached and books no loss.
+observed field formed from the readings outside the look and closed upward
+through the definitions (`LookForecast.forecast`), so it says what should be
+here given what was seen elsewhere. A look's activity is the `attention` of
+`Expectation.gain_field`, and the look's forecast is its `expected`: there is
+one gain field for attention and expectation. Its excess (what was read
+beyond what was expected) and its omission (what was expected beyond what was
+read) are the surprise `attend` reads, through the attention context's
+zero-started projection (`AttentionContext.project`), so before any teaching
+it scores as it would without them. The comparison is detached and books no
+loss.
 
-`attentionBudget` meters perceptual bracket work and attention to symbols in
-thought and recall. It does not meter the words' grammatical restriction of
-the domain of discourse. The static grammar round count and word capacity
-remain bounds on compiled tensor shapes. `bindingDepth` counts constructed
-binding layers and `conceptLayers` sizes the concept inventory; neither is a
-second attentional or symbolic-loop allowance. There is one conceptual field
-read, with the refine-before-raise rule and its patience guard.
-
-The scope handed back to mereology comes from the selected bracket table.
+`attentionBudget` meters looks, and attention to symbols in thought and
+recall; it does not meter the words' grammatical restriction of the domain
+of discourse. The static grammar round count and word capacity remain bounds
+on compiled tensor shapes. `bindingDepth` counts constructed binding layers;
+neither it nor the room of the orders is a second attentional allowance.
 One address registry names input, STM, LTM, part, whole and symbol spaces.
-Recall uses typed intervals in those spaces, the common categorical selection
-law and the same work meter. Detached content keys protect codebook ownership.
-The answer owns the learned primed-symbol reader and its initially zero
-consume gate. Priming enters bracket logits only through the attention
-context (`AttentionContext.context`); there is no separate codebook prior.
+Recall is a match of content ([Recall and answers](#recall-and-answers)),
+under the same work meter. Priming enters a request only through the
+attention context (`AttentionContext.context`); there is no separate
+codebook prior.
 
 One `SymbolExpectation` owner serves the word read and the field read during
 the read. It predicts independent for/against activations over native bank
@@ -1247,134 +1267,93 @@ See [Logic.md](Logic.md), [Mereology.md](Mereology.md), and
 
 ---
 
-### Two spaces, one index: symbol and concept
+### Two spaces: the form, the concept and the symbol
 
-A concept lives in conceptual space; its symbol, its form, lives in perceptual
-space. The shared index pairs them. The implementation remains one vector,
-`[form | meaning]`, but its two faces name positions in two spaces. Letters
-that are only parts of a symbol require no conceptual row.
+A word's form lives in perceptual space and its concept in conceptual space,
+and nothing shares a row between them. The form is a percept: its code is the
+set of its parts and the wholes it lies in, on two lanes, within 0 to 1
+([Mereology](Mereology.md#percept-code)). Its basic percept is a row of the
+first Pi, and the concept that row brings is one signed value, a Sigma over
+the combined vector of what is there ([Sigma and Pi Layers](#sigma-and-pi-layers)).
+Above order zero a symbol is a row of a Pi over concepts, split from its
+concept and with no dimensions: it has no vector, place, form or trust read
+as a direction. Letters that are only parts of a form require no conceptual
+row.
 
-There is no free order-zero word row. The paired dictionary cache is
-overwritten from the derivation each forward. Perception reconstruction alone
-trains native PS/WS prototypes and 11b evidence; the sentence reading detaches
-both. Its root remains live to train the sentence choosers.
+What joins a word to its object is a meta concept, which `interpret` makes
+when it interprets the word and the meta concept does not yet exist, one
+order above the higher of the word and its object and reaching both in one
+step ([Orders](Orders.md)). A definition is the `LTM1` row of a word and its
+object, named by their references and never by content, so what training
+does to either cannot make the definition point elsewhere. The word and its
+object are each learned from their own occurrences, and their meta concept
+from their consistent association; nothing joins independent tokens
+([Language](Language.md)).
 
-A word's native lower bound is the join `L` of its parts. Its form is
-`c = L + α(U−L)`, where `U = L ∨ ⋀ L(neighbour)` over its adjacent-word
-wholes. Each pair's form is the join of its constituents. `W_P` counts native
-part atoms; `W_U` counts distinct addressed pair occurrences, and
-`α = W_U/(W_P+W_U)`. The containment projection caps contained words by their
-containers in decreasing part count, never below `L`. Equal part sets share
-the cap. The index key is `[c == 1]`; binding projects `c` with a fixed
-matrix.
-
-The closing image acts only after the complete perceptual block:
-its form content and reserved coordinates are untouched. Interpretation and
-retained leaves multiply both blocks by activation magnitude and exchange
-meaning poles for a negative activation. The image remains zero without a
-prior forecast; thought reads the conceived complement while storage keeps the observation.
-
-Generally characterized codes have zero location/time coordinates. Sentence
-occurrences carry source-relative brackets and addressed provenance. A word's
-meaning is placed by context at kept closes ("Placement" under C. Parse time),
-on the for pole; the against pole holds only written evidence.
-
-At every order, identity comes from below through the fold of forms and meaning
-comes from above through contexts. At orders ≥ 1, composition of meanings also
-joins from below. Order-zero meaning is context only. Same-context concepts
-coinciding in conceptual space is correct and is not counted or repaired.
-Their symbols can have different forms. Max/min folds of forms can coincide,
-and product composition preserves partner differences only on the other
-operand's support; form support and root geometry are measured at both endpoints.
-
-Composition acts on each block independently: the form block of a composition
-is the leaf-weighted centroid of its operands' forms, and the meaning block is
-composed by the operation's exact rule, learned action or kernel ("Operations
-on meaning, centroids on form" below). Form normalization never rescales
-meaning.
-
-`canonical_shape("ConceptualSpace")` remains `(0,0)`. Lexical identity is read
-by scale-free perceptual cosine and retains either activation pole's spelling.
-The class reader's fixed unit-root transform is a readout convention, not a
-unit-sphere constraint on codes. The field path retains its existing ownership.
-
-All concepts are read within one attentive field; none is individually
-located. The field has exactly one bracket and one interval; occurrence
-brackets belong to the percept events, not to the field or to any concept
-(below). Level finding and selection of a region of interest are
-the narrowing of that one bracket.
+At every order, identity comes from below, through the Pi rows of a
+concept's members, and meaning from above, through the contexts that teach
+its Sigma. A concept read in a look has the look's where and when; a concept
+row has neither, since a generalization holds no place or time. Same-context
+concepts coinciding in conceptual space is correct and is not counted or
+repaired.
 
 ### One where, one when, many whats: the field, attention and the two modes
 
-Native percept events own occurrence brackets. The conceptual seam pools their
-poles before reading definitions and includes every supported identity.
+A percept event has its own place; a reading has its own place and time; a
+concept row has neither.
 
 **Three kinds of thing, and only one chooses its coordinates.**
 
 | Thing | `.where` | `.when` | `.what` |
 |---|---|---|---|
-| a percept event, a symbol occurrence | its own bracket | its sentence's model-time bracket $[t, t+1]$ | one code |
-| a **field** — a reading; an LTM row is a closed field | **one** convex bracket | **one** interval | **many** codes: the parts and wholes inside the bracket |
-| a **concept row** in the store | none | none | its definition over percept poles |
+| a percept event | its band of where wires, from its place (its start) | its sentence's model-time bracket $[t, t+1]$ | one code, on two lanes |
+| a **reading**, a look's field; an LTM row is a closed one | its own place, from the fixed where parameter | its own time | **many** codes, combined on the gaps into one vector for each lane |
+| a **concept row** in the store | none | none | its column of the Sigma, over the combined vector or over the symbols below |
 
-A concept *in a field* therefore has a where and a when — the field's —
-and a multiplicity of `.what` perceptual codes that are parts or wholes of
-that (where, when) location. A concept *row* has neither coordinate. The
-captured field and answer program retain that pair. A stored row keeps its
-`.when` once per row, never per concept, and input location stays with the
-percepts: no row `where` column exists.
+A concept *in a reading* therefore has the reading's where and when and the
+combined code of the percepts present. A concept *row* has neither
+coordinate, since a generalization holds no place or time; its weights on the
+where coordinates of the combined vector are what it learns of location. A
+stored row keeps its `.when` once per row, never per concept, and input
+location stays with the percepts: no row `where` column exists.
 
-**The conceptual field is a percept activation vector.** For every
-percept row, its presence and its observed complement, each **pooled over
-the occurrences inside the bracket** — the union at readout that 11b
-performs per symbol, moved down to the seam. In serial mode sixteen pairs
-are nonzero (eight parts, eight wholes: the attended field); in parallel
-mode every active percept is. Above it sit the sparse definition matrix
-(one COO row per order-0 concept over percept poles, read by the 11c
-folds) and the symbol matrix. Nothing else is conceptual; the where stays
-with the percept events.
+**The conceptual field is the concepts of a reading.** Each concept reads the
+reading's combined vector, the two lanes of what is present joined by the Pi
+on the gaps, through its column of the Sigma, and above order zero the
+symbols nominated over the order below. The where stays with the percept
+events and the reading ([Sigma and Pi Layers](#sigma-and-pi-layers)).
 
-**Parallel mode is not a mode (Alec, 2026-10-28).** A sentence's attention starts fully open for one pass and then, where the grammar has serial options, narrows word by word; the field read, the knowing and `intuit` are that one-pass calculus. A grammar with no serial options therefore forces `intuit` to reach S: with `intuit` the grammar's only rule, `intuit` alone completes the field and the thought finishes. No conceptual-mode flag exists, and `<serial>` is rejected at configuration.
+**Parallel mode is not a mode (Alec, 2026-10-28).** A sentence's attention starts fully open for one pass and then, where the grammar has serial options, looks word by word; the field read, the knowing and `intuit` are that one-pass calculus. A grammar with no serial options therefore forces `intuit` to reach S: with `intuit` the grammar's only rule, `intuit` alone completes the field and the thought finishes. No conceptual-mode flag exists, and `<serial>` is rejected at configuration.
 
-**Attention is one convex bracket.** Open attention (parallel mode) sets
-the bracket to the whole input; focused attention (serial mode) narrows it
-to the current word's extent and neighbourhood; the region-of-interest
-move is narrowing the bracket, which is attention as non-affirming
-exclusion ([Philosophy](Philosophy.md#expectation-as-a-gain-attention-as-exclusion)).
-No per-concept `.where` channel exists: it would give concepts individual
-locations, which the opacity note above forbids. What one convex bracket
-cannot express — attending to two disjoint regions at once — is exactly
-what a higher-order concept is for.
+**Attention is an activity over the percepts.** Open attention, the open run,
+reads the whole sentence at once; a later look is an activity over the
+sentence's percept bank, the intersection of what each percept is and where
+it stands as the request makes them salient ([One attention](#one-attention)).
+What lies away from where the request looks is lowered by degree, which is
+attention as non-affirming exclusion
+([Philosophy](Philosophy.md#expectation-as-a-gain-attention-as-exclusion)): it
+dims and does not cut, and what is not active is never evidence against. No
+concept has a `.where` of its own.
 
-**Both is the field's report.** If a property holds on one occurrence
-inside the bracket and fails on another, its percept pair pools to
-`(1, 1)` before any concept reads it, and the concept reads *both*. That
-is not an error: it is the field reporting that the bracket pools
-heterogeneous occurrences, the *both* corner of the tetralemma the
-architecture was built to handle. The two remedies are the two prompts
-already decided: **narrow the bracket** (attend, `focus`), or **raise
-order** when the heterogeneity is the thing to name (sigma over symbols).
-Convexity is what keeps the two remedies distinct: a contiguous support
-refines within order 0; a support discontiguous *within* the bracket
-raises order. The same holds in time: a concept present at one moment and
-absent at another inside the field's interval reads *both*, and the
-remedies are narrowing to one row or naming the change — a process, an
-event, a habit.
+**Both stands across percepts, and two concepts name it.** A single row of
+the first Pi is for or against. If a property holds on one occurrence in a
+reading and fails on another, one row carries it for and another against,
+and the reading's combined vector holds it on both lanes; that is the *both*
+corner of the tetralemma, reported by the field, not an error. Above the
+percepts *both* is two concepts, one for presence and one for absence, each
+one signed value. The remedies are a narrower look, or a concept of higher
+order when the heterogeneity is the thing to name. The same holds in time: a
+concept present at one moment and absent at another within a reading's
+interval is two concepts, and the remedies are a look at one row or naming
+the change (a process, an event, a habit).
 
-**Exact co-location is perception's.** Pi over pooled activations
-computes co-presence within the bracket, which equals co-location only
-when the bracket is one occurrence — the same `∃x A ∧ ∃x B ≠ ∃x (A ∧ B)`
-that rules out pi over symbols, now at the seam. So the conjunctions that
-must be exact are perceptual: PartSpace's fused part (*A at 1 and B at
-2*, one recurring unit), WholeSpace's pervading run, property
-intersections on a run. A conceptual intersection is bracket-scoped and
-may read *both*. XOR becomes simpler: `10` and `01` are two fused parts,
-two distinct percepts, so the cases are pi over those presences and sigma
-unions them, while the *both* corner of "is a one" over the word bracket
-is the reading that prompts the division. Attribution still reaches
-`.where`: reverse pi attributes a reading to percept rows by wire, and
-their events carry the brackets, so the refine-before-raise run count
-moves to perception's side.
+**Exact co-location is perception's.** A Pi over the concepts of a reading
+computes co-presence within the reading, which equals co-location only when
+the reading is one occurrence: `∃x A ∧ ∃x B ≠ ∃x (A ∧ B)`. So the
+conjunctions that must be exact are perceptual: a form, whose parts lie
+inside its run; a whole read where the run lies. XOR of two perceived words is
+learned at the basic level given a row for the pair: `10` and `01` are two
+forms, two distinct percepts, and the Sigma reads them.
 
 **When (Alec, 2026-11-10).** Every store uses `RowTime.encoder()` and its fixed horizon;
 `BasicModel.when_time` is the saved clock. The model advances one tick
@@ -1405,9 +1384,9 @@ of its own extension (`EpisodicMemory.for_meaning`). A close that writes only
 an `LTM1` relation keeps no entry. The columns follow compaction, forgetting
 and checkpoints with their rows.
 
-A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks
-the rows of the window by their entries ("Recall and answers" below) and
-publishes the recalled rows' concepts as the querying stream's knowing
+A recall in the thought loop (`ThoughtLTMCapability.query`) finds rows by the
+query's idea ("Recall and answers" below) and publishes the recalled rows'
+entries as the querying stream's knowing
 (`EpisodicMemory.reinstate`): the two poles are
 rebuilt from the sign, the readings are laid out by their concepts' surface
 lengths one position apart, and each carries the original sentence's tick. The
@@ -1445,24 +1424,25 @@ Composition reads content on either side of the declared percept band
 (`GrammarLayer.content_operand` zeroes it) and carries the band through
 unchanged.
 
-**Open and focused readings share one structure.** The order-0 rows,
-definitions, symbol pairs and memberships belong to one inventory. The open
-bracket reads it before narrowing; grammar composes the resulting word symbols.
-The former mode exclusion follows from operand types: field operations act
-within brackets, grammar operations act across symbols. There is no schedule
-flag and no second context forward. The open read takes no gradient step;
-native admission follows the selected narrowing walk.
+**Open and focused readings share one structure.** The basic percepts,
+symbols and concepts of every order belong to one inventory. The open run
+reads the whole sentence through it; each later look reads the same bank at
+the activity the request gives it, and grammar composes the words the looks
+return. Field operations act on the request's two lanes and on a reading's
+concepts; grammar operations act across symbols. There is no schedule flag
+and no second context forward. The open run takes no gradient step.
 The psychological motivation is recorded in
 [Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25).
 
-**`interpret`: word-concept to object-concept.** Every read word is
-interpreted under every binding: the unary replaces a new word by its object
-in the same inventory row, with no order-raising fold. A definition is the
-`LTM1` row of a word and its object, named by their symbols and never by
-content, so what training does to either code cannot make the definition
-point elsewhere; `DefinitionIndex` is a cache rebuilt from those rows, and
-generation uses it in reverse. The eager word boundary owns this transaction
-before graph execution. See
+**`interpret`: word-concept to object-concept.** At a look, `interpret`
+takes the most active word concept of the returned set and replaces the
+word by its object, with probability `interpretBias` and otherwise as the
+grammar's chooser decides ([Language](Language.md#the-looks)). For a word
+with no object it makes a blank object, a new concept with no members whose
+value starts at zero, together with the meta concept. A definition is the
+`LTM1` row of a word and its object, named by their references and never by
+content; `DefinitionIndex` is a cache rebuilt from those rows, and
+generation uses it in reverse. See
 [Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25).
 
 ### Loop and parameter ownership (tied reconstruction, 2026-09-16)
@@ -1602,36 +1582,73 @@ See [Thought-operator contracts](QueryContracts.md).
 
 ## Sigma and Pi Layers
 
-For weight matrix $W \in \mathbb{R}^{m \times n}$ and input $x \in
-\mathbb{R}^n$:
+The model has one structure at every order: a Pi, then a Not, then a Sigma
+(Alec, 2026-11-17). A Pi makes rows that need all their members; a Sigma
+weighs rows into concepts; a Not entry is a Sigma weight below zero. Values
+are kept on two lanes, each within 0 to 1: evidence for and evidence against.
+A "negative number" in perception is evidence against, held as a positive
+value on the against lane (Alec, 2026-11-19: "we are on a positive unit
+hypercube with two lanes; evidence for and evidence against"); zero on both
+lanes is no evidence. On percepts the opposite of 1 is 0, not -1, as in
+Boole: a row of the Pi is the and, $xy$; a gap is the not, $1 - x$; and the
+Pi on the gaps is the or, $1 - (1 - x)(1 - y)$.
 
-Sigma layer:
+**The Pi** (`PiLayer3`, `bin/Layers.py`). Square and sparse, on unsigned
+values, one lane at a time:
 
-$$y_j = W x + b = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
+$$z_k = \exp\!\big(W_k \log \mathrm{clamp}(m_k, \epsilon, 1) + b_k\big)$$
 
-Pi layer (log-space linear):
+for lane $k$, for or against. Each $W_k$ is the contractive LDU of
+[the invertible layer](#invertible-linear-layer-ldu): the diagonal at one or
+more, the other entries at zero or more, the bias at zero or less. So a row
+requires the members it has weight on and never exceeds its own reading, and
+its way back is the exact LDU solve. A row has weight only on rows of its own
+lane. The derivative passes wherever a membership lies above the floor
+$\epsilon$ and at most one, one included (`membership_log`); below the floor
+it passes none. Its entries are zero or above, so a Pi keeps an order already
+there: where one input is at or below another, so are its rows, and a row is
+at or below every input it reads. Each percept, and above order zero each
+symbol, is two unsigned rows, one for each lane.
 
-$$s_i = \log\!\frac{1 + x_i}{1 - x_i} = 2\,\mathrm{atanh}(x_i)$$
-$$z_j = \sum_i W_{ji}\, s_i + b_j$$
-$$y_j = \frac{e^{z_j} - 1}{e^{z_j} + 1} = \tanh(z_j / 2)$$
+**The Sigma** (`SigmaLayer3`). For each concept one signed number,
 
-Forward maps $[-1,1] \to (0,\infty)$ via `_to_mult`, log, linear, exp,
-`_from_mult`. Domain and range both $[-1,1]$. Reverse inverts each step:
-`_to_mult(y)`, log, $W^{-1}(z - b)$, exp, `_from_mult`.
+$$y = \tanh(x\,U) \in [-1, 1],$$
 
-**Motivation.** The classical product form $y_j = b_j \prod_i (1 + W_{ji}
-x_i)$ becomes, after taking logs, a sum. The code moves into a
-log-multiplicative domain via atanh, performs a linear op there, returns
-via tanh. The atanh transform stretches values near $\pm 1$ toward infinity,
-making the layer sensitive to strong activations.
+with no bias. Each input has one signed weight: its positive part is the
+input's *for entry* and its negative part its *Not entry*, so an entry is
+never both. A weight starts at zero or above, so there is no Not entry until
+teaching makes one, and a Not entry is the only place a sign lives in the
+model. A concept is one signed value whose size is its certainty ("Signed
+sigma; good, this is knowing in the signed hyperball", Alec, 2026-11-17). It
+is stored as two unsigned lanes (`signed_lanes`): .5 is .5 for and nothing
+against, and -.5 is nothing for and .5 against, so a single reading of one
+concept is never "both". "Both" is two concepts, one for presence and one for
+absence, each with its own value (Alec, 2026-11-19: "The concept remains a
+signed fuzzy keen on certainty, but we can represent "both" with two
+concepts"). Where an answer is read from a Sigma, the signed number is read.
+Its way back returns the input by least squares where there are as many
+concepts as inputs or more, and not otherwise; a signed value on the way back
+is replaced by its two unsigned parts before a percept or a symbol holds it.
 
-**Monotonicity of the lift / lower chain.** Under `monotonic=True`,
-Pi/Sigma select non-negative linear layers, giving $W \geq 0$. Positive
-matrices are monotone on the positive cone, so lift / lower preserve
-parthood for activations represented in that cone. Truth-set bivectors
-remain live for user-supplied truths; they are explicit truth/operator
-surfaces rather than a space-wide output mode.
-See [Spaces.md](Spaces.md#monotonicity-of-the-lift--lower-chain).
+**Two channels at the Sigma** (Alec, 2026-11-19: "after the Not layer we still
+have two channels, those need not be combined ... So the summation step is
+determined by gradient need at sigma"). The Sigma takes the for channel and
+the against channel of what it reads as two inputs, each with its own
+weights. Its weights start as one input of for less against, the against
+weights the for weights negated, and the gradient moves them apart where it
+needs to: a concept for presence, a concept for absence and a concept of
+their difference are three settings of one read.
+
+**The fused pair** (`SigmaPiLayer`). A Pi and then a Sigma with no way back,
+fused into one expression so that a row of pairs is captured as one graph:
+
+$$y = \tanh\!\big((\exp(\log f \cdot P_{for}) - \exp(\log g \cdot P_{against}))\,U\big)$$
+
+for the input's for lanes $f$ and against lanes $g$, with the Pi free (any
+weights of zero or more, no diagonal law, no bias). `SigmaPiStack` is a row of
+such pairs: each pair gives one signed number for each of its outputs, which
+the next pair reads as its two lanes, and the last Sigma starts at zero, so
+an untaught stack gives zero ([expect, intuit and marker](#expect-intuit-and-marker)).
 
 #### Decided in direction: a concept is sigma over pi (Alec, 2026-09-21)
 
@@ -1653,334 +1670,219 @@ It is graded DNF — sets with similarity, not logic formulas:
 people find explicit disjunctive rules hard (Bruner, Goodnow & Austin 1956)
 and natural categories are graded (Rosch & Mervis 1975).
 
-**Concepts are assemblages of wholes and parts** (Alec, 2026-09-22). Every
-row of the concept store is a concept; there are no kinds of row. A
-concept's *parts* are the concepts it is computed from and its *wholes* are
-the concepts it enters. With the pi stage on, a concept's parts are of two
-kinds: **conjunctive** parts, all of which it needs, and **disjunctive**
-parts, any of which suffices. A concept whose parts are all conjunctive is a
-conjunction; one whose parts are all disjunctive is a union; most are both.
+**What co-occurs is a necessary part of the whole it forms; what substitutes
+is a sufficient part of the kind it forms** (Alec, 2026-09-22). Necessary
+parts are the members of a Pi row, all of which it needs; sufficient parts
+are the inputs of a Sigma, any of which raises it. A conjunction of concepts
+is promoted as a new symbol, a Pi row over its members, under a new concept,
+a Sigma over that symbol. A kind over things the mind witnesses (words and
+other percepts) is discovered by substitution: concepts that fill the same
+context on different occasions. A kind over objects that cannot yet be
+witnessed rests on testimony: the closing writes the asserted part row ("cats
+are animals") between the object concepts the words resolve to, with the
+source's trust kept on the `LTM1` row, never on the edge; it is taught as a
+Sigma edge from that row (`DefinitionFold`). Substitution in a context ("the
+cat / the dog sat on the mat") is evidence of a word's part of speech or
+sense, never of an object's kind. A relation between higher-order symbols
+(cats are animals) is settled by a bounded traversal of the taxonomy, charged
+to the shared work meter ([Taxonomy queries](TaxonomyQueries.md)); translating
+a word to its object never walks it.
 
-**Two structures, and the taxonomy is the higher-order concepts** (Alec,
-2026-09-22: "let's leave the taxonomy the same as the higher order concepts.
-That means that by default, we are doing sigma, not sigma+pi for increasing
-order").
+#### The first layer: basic percepts and the concepts of order zero
 
-- *The meronomy of percepts*: parts and wholes at order 0, in the perceptual
-  towers and their `.where`; below it, WholeSpace's property rows type the
-  percept field. This is the hierarchy that is learned directly over letters
-  and words.
-- *The hierarchy of concepts*: the pyramid's higher-order concepts **are**
-  the knowledge hierarchy — a meronomy of types, and so the taxonomy. A
-  higher-order concept is a type: any of its members suffices, which is the
-  union, and that is why **sigma alone is the default** for increasing
-  order. Taxonomic access walks this structure: a relation between
-  higher-order symbols (cats are animals) is not a fact about activation
-  geometry, so it is settled by a bounded traversal of the taxonomy, charged
-  to the shared work meter ([Taxonomy queries](TaxonomyQueries.md)).
-  Translating a word to its object never walks it: that is the direct
-  definition index. The pi stage is an optional discriminative extension in
-  the order-0 field, `<conceptualPi>`, off by default: conjunctions with
-  negation, for XOR-type concepts.
-- *Two ways in, and a maxim.* **What co-occurs is a necessary part of the
-  whole it forms; what substitutes is a sufficient part of the kind it
-  forms** (Alec, 2026-09-22). Necessary parts are pi, and make a meronomy of
-  concepts; sufficient parts are sigma, and make the taxonomy. The pyramid
-  is a **taxonomy of kinds, not a meronomy** (Alec): by default it discovers
-  kinds, and wholes of co-present concepts are the grammar's — an idea is
-  exactly that, with roles. A kind over things the mind **witnesses** — words
-  and other percepts — is **discovered** by substitution: concepts that fill
-  the same context on different occasions, the same where at different
-  times, which is the evidence the promotion observer's context weights
-  already collect. A kind over **objects** cannot be witnessed until the
-  mind has a video feed; its membership rests on **testimony**: the
-  closing writes the asserted part row ("cats are animals") into
-  this same structure, between the object concepts the words resolve to,
-  with the source's trust kept on the LTM row, never on the edge. With
-  `<conceptualPi>` on, the pyramid also discovers **wholes** from presence
-  in the same space and time, and every co-present concept is a necessary
-  part of the whole it forms; the XOR gate needs this, for conjunctions with
-  negation. Substitution in a context ("the cat / the dog sat on the mat")
-  is evidence of a word's part of speech or sense, according to the grain
-  of the context; it is never evidence of an object's kind.
+**A basic percept is a row of the first Pi** over its parts and wholes
+(`PerceptPi`, `bin/OrderZero.py`). It becomes a row only when MTM nominates it
+on recurrence, after `concept_mint_count` readings (a reading being one
+forward of the model for one stream, so a form that stands twice in a
+sentence is read once); nothing becomes a row on its first reading (Alec,
+2026-11-17). The tower of parts and wholes below the basic percepts is
+perception and is made on first sight. Each nominated row brings one concept.
+A new word is therefore perceived at once, but `interpret` cannot find it
+until its basic percept is nominated, and its concept comes with that row.
 
-**The computation (11c, Alec, September 24).** A concept carries
-`(c⁺, c⁻) ∈ [0,1]²`. A negated literal swaps its poles. On each pole
-independently, required evidence uses **min over nonzero contributions**,
-or zero if none; alternatives use **max**. A = `(1,0)` and B = `(0,1)`
-therefore give `(1,1)` for A and B, and `(1,0)` for A and not B.
-`(0,0)` is complete uncertainty and contributes nothing. Negation changes
-the selected pole, never the reducer. A literal's nonnegative exponent
-qualifies its membership as `q**w` for a requirement and
-`1-(1-q)**w` for an alternative. Zero is an unwritten weight.
+The first Pi selects for and against (Alec, 2026-11-19: "Pi should select both
+strong for and strong against"). A row's *for entries* are its parts and
+wholes, joined by the product: every one must be present. Its *against
+entries* are the parts that the stored forms nearest to holding it add (the
+`y` of `archery` for `archer`), joined by the union, since any one present is
+enough. In a row the run of parts is the percept's presence, read wherever it
+lies in the extent and the same on both lanes, since a run of parts has no
+against of its own. The wholes are read on their own lanes where the run
+lies, so a space elsewhere in a sentence is not evidence against a word. A
+row's against lane is the union of its wholes' against lanes and of its
+against entries found present, read from the set of parts found in the span
+and never from a code. So the row of `archer` reads for 1 and against 0 on
+`archer`, and for 1 and against 1 on `archery`; the character `7` under the
+property "capital" reads for 0, against 1. A single row is for or against;
+"both" stands across the rows of a reading, one row carrying a property for
+and another against. The Pi of order zero holds only these entries of the
+mereology; no concept writes into it, and it stays full rank.
 
-`W_π` connects order-0 concepts in the field, and only there.
-`W_σ` unions alternatives at order 0, or the preceding order's symbols
-above it. **Symbolization raises order; sigma and pi do not.**
-`conceptualPi` defaults off and enables field conjunctions; it never
-permits a pi edge in the symbolic loop. Sparse gathers and scatter
-min/max evaluate the two poles with the same exponent. The taper ranks
-the stronger pole and keeps the pair together. Repetition cannot inflate
-a union: max(.8, .8) is .8, at any number of positions or alternatives.
+**The percept's code** is 64 coordinates for parts and 64 for wholes, each on
+the two lanes. Parts build bottom up from all zeros, wholes top down from all
+ones; each half bounds the percept on both sides; a form's code is the set of
+its parts, and a whole's code is the OR of the catalog parts that belong to it
+or the AND of other wholes. The code and its measurements are in
+[Mereology](Mereology.md#percept-code).
 
-**Why symbols combine but cannot be cut.** A symbol names a region after
-its occurrence readings have been pooled within an extent. Its identity
-has no internal coordinates, although its occurrence is a located percept.
-Union commutes with this pooling: `max_x A(x) ∨ max_x B(x)` equals
-`max_x (A(x) ∨ B(x))`. Intersection does not: A on the left and B on the
-right activate both names without an overlapping region. Pi must return
-to their retained field occurrences. Higher orders therefore contain sigma
-and symbolization, never pi over pooled symbols. A both corner diagnoses
-heterogeneity; it is not itself an intersection or a learned XOR row.
+**The combined vector.** For each lane, the vectors of the percepts of one
+reading are combined into one vector as wide as the perceptual space, by a Pi
+on the gaps:
 
-**Negation exists only for concepts, not percepts (or symbols).** Present
-percepts supply one-sided memberships. A signed conceptual definition
-sorts them into support and counterevidence. Absence supplies neither;
-`c⁻` is never `1-c⁺`, and there is no De Morgan dual reducer.
-Distributed codes serve similarity, retrieval and tied reconstruction;
-the membership definition supplies the read.
+$$x_i = 1 - \prod_p (1 - v_{p,i})^{b_p},$$
 
-**The open points, settled (Alec, 2026-09-22).**
+with $b_p$ the Pi's value for percept $p$ and $v_p$ its vector (Alec,
+2026-11-17: ""Pi on the gaps". You mean pi over the individual percept dims
+instead of pooling? Good."). A percept enters once, at its net, for less
+against: at a net above zero what tells for it joins the for lane and what
+tells against it the against lane, below zero the reverse, and a percept read
+equally both ways adds nothing (`OrderZero.combine`). The parts half, a lower
+bound, is joined by this union. The wholes half, an upper bound, is read on
+its complement, the coordinates its wholes cut away, $1 - w$; the union of
+the complements is the complement of the product of the wholes, so over a
+reading the wholes are joined by the product, the dual of the parts. On
+values of 0 and 1 the union and the product agree with the greatest and the
+least by which a code is built. A reading's `.where` and `.when` are its own
+and are not combined over its percepts (Alec, 2026-11-19: "It's own, flowing
+from the fixed .where parameter we mentioned"); combined, they say how many
+percepts a reading has and no longer where it is. They are read unsigned, at
+the degree that the reading is present; a reader of an angle takes $2x - 1$.
 
-1. **The store is a sparse matrix, and now two.** The concept store already
-   is a sparse `(I, J, weight)` matrix: `SparseLayer` holds host COO rows
-   and columns with one learnable value per edge, and
-   `_populate_concept_weights` writes one edge per constituent of a minted
-   concept. The allocator's `(whole, part)` records are the host-side list
-   of the same matrix. With the pi stage on there are two such matrices,
-   `W_π` for conjunctive parts and `W_σ` for disjunctive parts; a concept's
-   parts are the columns of its rows, and it gains a part by `add_edge`.
+**The concepts of order zero** (`OrderZeroSigma`) are the Sigma above on $x$,
+with $U$ dense, the perceptual width by the concepts, reading the two
+channels of $x$. The Sigma of order zero is not penalized. A concept's column
+starts from its member: what tells for the member over the number of its
+contributions, less what tells against it over the number of its own,
 
-   **1a. Sequences live in LTM, not the concept store** (Alec). A sequence
-   is an episode, a conjunction of particular things in order, and it is the
-   rows the closings write, `LTM0` ideas in the order of their times, joined
-   by `LTM1` rows of two tagged references where a sentence asserts a
-   relation; the predictor learns its regularities. Such a chain
-   approximates episodic memory with three limits: it serializes what was
-   simultaneous, a long chain strains generativity, and it keeps only what
-   was said. What was active but unsaid is kept beside it: each row
-   keeps the `episodicConcepts` strongest readings of its field of
-   understanding beside its idea
-   ([Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
+$$u = \tfrac{1}{2}\Big(\frac{P}{|P|^2} - \frac{N}{|N|^2}\Big)$$
 
-   **1b. One-hot and distributed — keep both, as now (confirmed, Alec
-   2026-09-22).** The *identity* of a concept is its persistent concept id, and a symbol is
-   that concept's activation times its aligned identity, so the one-hot
-   symbol comes free with the row. The membership read
-   (`cs_read_memberships`) supplies the paired presence at the entrance to
-   the conceptual layer, and the symbolic readout retains both poles at
-   that shared row identity. The
-   *content* of a concept is its code, a distributed vector on the unit
-   sphere, used by similarity, retrieval by cue, composition into
-   off-codebook ideas and the tied reconstruction, and placed by
-   distribution. Three forms stay apart: a *field* is an activation per
-   concept over the whole codebook at once, graded, parallel and in both
-   lanes; a *code* is one row, the field's nearest-row projection, which is
-   how a word arrives; an *idea* is what composition makes of codes, one
-   vector in no codebook, tied to the codebook by generation, since it must
-   unfold through the tied inverse into operations and codes.
-   The DNF operates on the per-row activations, its edges run between rows,
-   and it never touches the codes.
+(Alec, 2026-11-19: "we can divide all contributions by the number of
+contributions, respectively"). The column is the mean of its two sides where
+the member has something against it, and $P/|P|^2$ alone where it has not, so
+that a member read alone reads one: its own against side, witnessed absent,
+supports it as much as its for side. All that tells against, present, takes
+the reading to zero however few its coordinates: `archer` reads `archery` at
+-.032 before the squash and `is` reads `this` at -.095. What tells for a form is its parts and what its upper bound cuts
+away; what tells against it is what its holders add. A member that joins
+later is added to the column the same way, a Not member subtracted, and
+nothing is normalized afterwards. The weights on the where and when
+coordinates start at zero, since a generalization holds no place, and are
+learned. The 12 frozen thought predicates stay columns at zero, read by
+thought as references and never by perception.
 
-2. **Unknown weights start at zero; witnessing writes each pole.** A
-   present percept co-active with a concept's positive symbol writes a
-   positive weight; co-active with its negative symbol it writes a negative
-   weight. Nothing is written from absent percepts. Signed weights are
-   stored as a nonnegative exponent and a source pole. Learning refines the
-   magnitude; the closing can assert either pole. Witnessing runs at the sentence
-   boundary over retained position pairs, before the next field is bound.
+**A scalar** is the same mechanism over the bins of its value (Alec,
+2026-11-19: "the exact same mechanism, except part growth and whole
+contraction become the same operation on scalars"). The catalog is 64 bins of
+the felt value, and each place has a table of its own, on coordinates of its
+own, so that two axes are not one code; a bin has one coordinate and shares
+none. The parts half is the bins at or below the value, the wholes half is
+all ones with the bins above it cut away, the two are one code, and its
+against lane is what the wholes half cuts away (`BasicPercepts.value_code`).
+The way back reads the exact value from the table of values. A collection of
+values is read by its bounds, 0 or 1, and not through a column of the Sigma:
+collections at 1, 1 and 2 read for, for and against at an input of 1, and a
+value arriving at 1.5 lies above the one and below the other.
 
-3. **Field conjunctions and symbolic unions.** Both matrices use sparse
-   gathers and reductions. Dependencies within order 0 are evaluated in
-   topological order. Located requirements match their designated brackets
-   inside the subject before the readout union. Above order 0, each row
-   reads only the preceding order's symbols through sigma. `conceptLayers`
-   sizes that inventory; it is independent of the perceptual attention budget.
+#### Above order zero
 
-4. **Idempotent union.** Max replaces probabilistic union. Weak repeated
-   evidence stays weak and exact zero stays zero at every scope. No floor,
-   accumulation limit, or extra regularizer is required. The existing
-   definition-sparsity penalty applies to feature and concept weights.
+**Symbols are split from concepts and have no dimensions** (Alec, 2026-11-14).
+They are separate tensors. A symbol has no vector, place, form or trust read
+as a direction, and it stores no `.where` or `.when`; its `.where` is written
+when STM reads it. A symbol is two unsigned rows of a Pi, one for each lane,
+and it brings one concept. It is made when MTM nominates it on recurrence, or
+by `interpret` for a meta concept; never at a concept's allocation.
 
-5. **Descent is attribution.** With an observed field, intersect a demand
-   with its cases' evidence to select the supported cases. Without a field,
-   choose a case by the existing weighted chooser. Descend through sigma,
-   then attribute order-0 requirements through their native memberships.
-   There is no sigma inverse or balanced probabilistic split: a many-to-one
-   union is not invertible, and a choice does not belong inside a layer.
-   Attention and expectation use this concept-to-percept route.
-   `ConceptualSpace.cs_reverse_presence` implements it: higher orders descend
-   through sigma cases, intersections are expanded only at order 0, and the
-   source pole and the common extent stay explicit. Imagination is reverse
-   sigma to a chosen case followed by reverse pi to percepts.
+**The cycle.** At an order with $n$ concepts there are $n$ signed values,
+stored as $2n$ unsigned lanes. The rows above that MTM has nominated, the
+symbols, read those lanes, each row its own lane, and the next Sigma reads
+each symbol's two channels. A Not entry above order zero is from one symbol
+to one concept: the concept reads that symbol's pair swapped. The Sigma
+above order zero reads no vector and pools nothing. A symbol of order $k$
+reads the concepts of every order below $k$; the orders are not strictly
+ramified (Alec, 2026-11-17). Between conceptual orders only activation
+passes: a pull within one order does not pass through a symbol.
 
-#### Primitive properties and grounded extents
+**Room.** Each nominated row brings one concept, so at every order the
+concepts equal the rows in number, and a new concept reads only its own row,
+at one. Concepts have no nomination or promotion of their own: MTM's
+promotions of classes, identities and percept collections are nominations of
+rows. The storage is allocated beforehand by a geometric taper (Alec,
+2026-11-19: "Geometric taper is not a bad rule"): order zero has as many
+concepts as basic percepts, and each order above has half the units of the
+one below and connects to the two rows beneath it. The Pi and the Sigma above
+order zero are stored as compressed rows on the device, with an index of
+columns beside them, and grow into that capacity.
 
-WholeSpace analyzes properties of the input; PartSpace composes its parts.
-Both start from the same observed byte positions, but own independent
-distributed codes. Byte identity and the observed-position mask are the
-primitive observations. A code in one tower never identifies a code in the
-other. The bridge is a shared input extent, with the positions or roles
-inside that extent retained.
+**Learning.** Membership is learned under a penalty on the Pi's entries and
+on the Sigma's entries above order zero, both thinned (Alec, 2026-11-17); with
+the Pi alone penalized what is learned cannot be read from the rows. The
+penalty thins the values of entries that exist; it does not make a matrix
+sparse. A promotion above order zero writes an edge at one into the capacity
+allocated beforehand. The structure of a meta concept is never thinned. A
+row enters a set, or two rows are taken as neighbours, by the mereology or by
+a promotion, never by the likeness of their codes. Thought reads the
+matrices: `parts(c)` and `wholes(c)` give the entries and weights of a
+concept's Pi row and of the rows above that read it, with the Not entries
+told apart ([Reasoning](Reasoning.md)).
 
-**The property basis.** A WholeSpace property is a learned membership over
-the complete set of 256 byte primitives. Its coefficients are bounded in
-`[0, 1]`. For primitive presences `x_b` and memberships `w_rb`, its read is
-the union `q_r = max_b (w_rb x_b)`. On a single observed byte this
-reduces to reading that primitive's learned coefficient. The implementation
-may gather that coefficient without constructing a dense one-hot tensor;
-there is no fixed byte-tag lookup supplying the answer beside the learned
-definition. The complement of a property is available only on observed
-positions: `observed · (1 − q_r)`. A missing observation supplies neither
-presence nor complement.
+#### Both, absence and XOR
 
-The familiar letter, digit, whitespace and punctuation properties, and
-their capital/control/high-byte/pad refinements, are a priori teaching
-examples over byte primitives. Their names and initial teaching data are
-the prior; their runtime definitions are learned coefficients, owned and
-checkpointed once with the property inventory. Later training reads and
-updates those same coefficients. An arbitrary byte subset can be learned;
-the vocabulary of predefined property names does not bound the algebra.
+Animal cognition "sees particular events not happening, but it does not
+negate ideas" (Alec, 2026-11-17). At the basic level a Not entry is from one
+element of the combined vector to one concept. It records that something
+expected is absent, and what teaches it is an omission, the concept expected
+and not come. With no omission taught the basic level has no Not entry,
+raising an input never lowers a concept, and no concept is against. What
+tells a human mind from an animal's is the recursion of the structure, which
+symbols enable, and not the Not. The operator `not` of a sentence or a
+thought swaps the lanes of what it is put on (`FieldLogic.reduce`) and can be
+put on any symbol, with no omission to teach it. With every weight held at
+zero or above, so that no Not entry is read, a mind speaks only of what is.
 
-**Folds and reverse.** WholeSpace unions alternatives and intersects
-properties to narrow a region. Runs with a constant property signature
-retain the existing segmentation contract; boundary and singleton policies
-continue to be learned separately. PartSpace conjoins the required parts
-of a whole, each at its own position. These are bounded max/min
-operations. The reverse of a property read distributes support through
-the same primitive memberships; it is an attribution, not an inverse of
-a many-to-one classification. Native surface reconstruction uses the
-forward's located conceptual evidence and radix activity. It keeps no
-ordered byte witness or percept-event stack and is best effort.
+The two-sided code does part of the Not's work with no learned entry: a
+strict whole tells against its part. An exclusion that is not a strict whole
+(X inhibits A where no row AX exists) still needs a Not entry learned from
+omission. On the two-lane code, with a conjunction coded as the mereology
+codes it and Not entries free, negative patterning ("A or B, not both"),
+conditioned inhibition ("A alone, not A with X") and XOR are all learned.
+The basic level alone learns XOR of two perceived words with no Not entry,
+given a row for the pair. XOR is one of the standing stopping gates, trained
+from primitive byte input with no selected seed, floor or accumulation
+ceiling; null results are reported as null.
 
-#### Membership read and extent truth corners
+#### The vertical spread and the way back
 
-**Alec's formulation, with the 11c evidence correction.** A concept's
-own signed weights read the towers' feature memberships at occurrences in
-one attentive field. Required evidence uses min independently on each pole,
-ignoring zero contributions; alternatives and readout use max. Precision
-exists only for location (`.where`), never at the conceptual level. In
-location, parts ⊆ concept ⊆ wholes; in presence the entailment runs back
-to the required parts. See [Where Is Context](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22).
+**A fan up and a share down** (Alec, 2026-11-17), on the structure's own
+matrices, Pi and Sigma alike, by the size of their weights. Up: a concept's or
+a symbol's value is split among the rows that read it, each by its weight's
+share of all the weights it is read with. Down: a row's value is split among
+its inputs, each by its weight's share of the row. What a row receives is
+summed over its parents and children, at most one, and a Not entry passes to
+the other lane. Siblings get less than the concept that caused them. The
+spread runs once up and once down, from order zero's expectation and the
+observed field, and writes only the expected field at every order
+(`_expected_knowing`); it adds no parameter and no teacher and changes no
+evidence. It is what `intuit` runs after it deposits `expect`'s field, and a
+model with no symbols never runs it over the orders. It also runs at the end
+of the read, before comprehension takes its leaves' objects, so that an
+object a sentence's words primed is preferred.
 
-**The membership read.** PartSpace and WholeSpace have independent native
-addresses. A present feature contributes its membership raised to the
-weight's magnitude, on the positive pole for a positive weight and the
-negative pole for a negative weight. Each pole reduces its nonzero required
-contributions by min, and returns zero if empty. No numeric complement of an
-absent feature supplies evidence. Alternative definitions use max on each
-pole; there is no dual fold at the seam.
+**The spread reaches the first layer.** On the Pi of order zero a part that
+is present raises the rows that read it, and a row gives a share to each of
+its parts, so a part that is missing receives from the rows its neighbours
+raised. It writes expected percepts, and a row still requires its members.
+At the reconstruction, where a look's percepts were withheld, the way back
+reads the expected ones in their place: this is imagination, the inverse of
+perception, from a concept down to basic percepts.
 
-**Pervasion is necessary for a whole, not a part.** PartSpace containment
-is a lookup over the ordered canonical part ids inside the subject extent,
-shared by its positions. WholeSpace first reads its allowed primitive set
-at each observed position, then takes ordinary min across all positions in
-the run. An observed zero rules out pervasion; missing support asserts
-nothing. The pervasion calculation and the conceptual evidence reducer
-have different domains. Negation exists only for concepts, not percepts
-(or symbols).
-
-For a word such as "love", the PS literal is the ordered group of existing
-part ids, with repetition and adjacency retained. A first witness creates
-no PartSpace row. The same containment reader reads either that group or
-a single percept id inside the subject extent. Positions carry the radix's
-canonical longest-match tiling; the read neither expands bytes nor searches
-other tilings. Recurrence may promote the group into one percept. The radix
-records its id ancestry, and the definition then addresses that row without
-changing its membership read or learned exponent. A part formed in a turn
-does not aggregate further in that turn: formation stops aggregation.
-The WholeSpace literal is the word-like property pervading the span. A word
-usually has one such part and whole; a concept can have several necessary
-percepts in each of several sufficient alternatives. Witnessing
-(`ConceptualSpace._witness_concept_poles`) writes only the basic percepts a
-definition already holds, on each pole co-active with a present percept; it
-adds no percept to a definition, so a partial observation never mints a new
-sufficient alternative. Word concepts are not witnessed this way: a word's form
-evidence belongs to perception's reconstruction, so a conceptual contradiction
-cannot negate a word's observed bytes.
-The meronomic refinement and pruning pass treats each alternative's own
-conjunction separately; accumulated references across different witnesses
-are not one over-collected conjunction and cannot retire the union.
-
-**The attended field.** Alec: eight parts from PartSpace and eight wholes
-from WholeSpace are the attended space of perception, a span in `.what`
-restricting both mereological level and location. Conceptual space arises
-from that field. (This is the focused form; open attention reads every
-active percept.) Order-0 rows are therefore bound per turn. A read gathers
-definitions referencing the attended memberships, admits them up to the
-caps by membership support, and composes the existing taper over that field.
-Sparse definitions and their weights persist in the inventory keyed by
-concept id; an attended row has no permanent owner. Sparse views gather
-those weights without copying their learning state. Sentences in a batch
-bind independently within the same caps. Retained evidence carries its own
-concept ids and code snapshot after the view is released.
-Context weights use persistent inventory addresses resolved from concept
-ids, stored sparsely; a reused field slot cannot transfer another concept's
-context. Checkpoints, the priming bridge, symbols and thought effects resolve
-concept ids instead of treating packed field offsets as identities.
-
-**Occurrences and extents.** Constant-signature runs remain positions;
-word units remain subject extents. PartSpace part spans and WholeSpace
-runs retain their input brackets. The two towers' features meet on those
-brackets; identical spans count once. With raw analysis, uniform carrier
-regions are clipped to each input's last observed byte and wholly padded
-regions are empty. Each subject retains its own position evidence: the
-extent's part containment meets each position's property pervasion, then
-the definition reads sigma over its percept conjunctions. The separate
-union at readout ranges over occurrences wholly inside
-the subject's extent, separately for each symbol. Both can arise across these occurrences or from conflicting required
-evidence within one occurrence. Retained pairs and brackets belong to the
-shared field; no concept owns a `.where`. They travel beside the field,
-symbol readout and checkpoints. Above order 0, sigma reads the preceding
-order's symbols, within each subject extent.
-
-**Codes and learning.** Distributed codes serve similarity,
-retrieval and tied reconstruction. Their order-0 rows follow the signed
-feature definition at the sentence boundary; changing a code cannot change
-a membership read. The existing definition-sparsity penalty also reads
-feature weights. There is no additional regularizer.
-The boundary replaces order-0 distributed rows with their definitions'
-codes, so the SBOW gradient on those rows is inert as a lasting update.
-It does not teach the membership definition through the stored code.
-
-An observed positive definition can offer zero-magnitude candidates from
-its lower-order context, including the opposite source pole. Gradients can
-make a candidate nonzero. A present feature witnessed with the negative
-symbol can write a negative weight directly. Candidate preparation occurs at the sentence
-boundary beside `promotion_observe`. `getParameters` only reads parameters.
-Sparse growth preserves optimizer ownership and frozen-row gradient barriers.
-Participation remains an EWMA of use, never a gradient parameter.
-
-**The primitive-input XOR gate.** P = "is a one" reads `(1,0)` on
-`11`, `(0,1)` on `00`, and `(1,1)` on `01`/`10`. Those are diagnostic
-corners. The learned XOR row's **positive pole** is the asserted output.
-The retained position pairs let order-0 conjunctions match the two pure
-mixed cases: P⁺ on the left with P⁻ on the right, and the converse.
-All requested located witnesses must occur inside the subject; a missing
-witness is no match, and invents no counterevidence. Ordinary per-pole min
-then reduces their support. Symbolizing those field cases lets an order-1
-sigma row learn their union. Every pi edge remains at order 0.
-
-The gate trains from primitive byte input, with four and eight provisional
-conjunctions and three unseeded runs each. All four located cases are offered
-without selecting for XOR. The output alternatives start at zero; the row
-must improve from its initial error and learn the two mixed cases. Tests
-inspect the located pi definitions, prohibit pi in the symbolic loop, and
-require unrelated content to read exactly zero at position, extent and
-symbol scope. `(A ∨ B) ∧ ¬(A ∧ B)` is a composition check in the field,
-not the training target. No selected seed, floor or accumulation ceiling is
-allowed; null results are reported as null.
-
-**Normalization lifetime.** Post-optimizer maximum normalization
-applies only to assigned provisional disjunctive rows. Discovered and
-closing-written definitions retain their learned exponent scale.
-
-**Shared symbol index.** Concept id `c` has logical symbol addresses `2*c`
-and `2*c+1`. A parallel carrier packs two poles per attended concept and
-retains the ids beside those packed offsets; rebinding an offset cannot
-rename a symbol. The codebook keeps one code per inventory concept. Serial
-word references already carry their inventory addresses and are not halved.
-Readers use their declared index domain.
+**The way back.** The Pi inverts exactly; the Sigma returns the combined
+vector by least squares where there are enough concepts, and not otherwise.
+Teaching does not assume an exact inverse. On the way back a concept gives
+each percept it recreates a band of where wires, through the same weights by
+which it reads the where; the band is matched against every place of the out
+buffer by a softmax over the places, and what is put back at a place is the
+sum over the recreated percepts of what each is, times its weight there
+([One attention](#one-attention)).
 
 ---
 
@@ -2067,7 +1969,7 @@ reuse it. The meter is host bookkeeping, not a semantic feature, memory owner,
 checkpoint field, parameter, loss, or additional compiled-result slot.
 Standalone audited readers may use their existing local bounds without one.
 The normal selected-meaning controller instantiates the meter from
-`attentionBudget`, shares it with perceptual narrowing, and charges its own
+`attentionBudget`, shares it with the looks, and charges its own
 query/finish/descent/return choices,
 and records each exact delta once in the row-local ordinary history. `what(Q)`
 reuses that object rather than starting a child allowance. The meter remains
@@ -2097,37 +1999,33 @@ surviving rows and ordinary-thought roots. A bounded derived view preserves
 ordered role edges, repeated references, scope and each occurrence's own
 evidence; it does not add a parallel semantic store. See [nested retention](NestedRetention.md).
 
-## Two spaces, one index: the symbol in perceptual space, the concept in conceptual space (decided, Alec, 2026-10-04)
+## The sign: the form in perceptual space, the concept in conceptual space (Alec, 2026-10-04)
 
-**The sign.** A concept lives in conceptual space; its symbol, its form,
-lives in perceptual space; the shared index pairs them (Saussure's signifier
-and signified). The stored representation is one vector `[form | meaning]`
-with per-block operations, the same object as two aligned vectors in two
-spaces. SymbolSpace is the index that joins a form to a concept and has no
-geometry of its own.
+**The sign.** A concept lives in conceptual space and its form in perceptual
+space (Saussure's signifier and signified). They share no row: the form is a
+percept with its code, the concept one signed value, and the symbol above
+order zero a row of a Pi with no dimensions ("Two spaces" above). A word is
+joined to its object by a meta concept and by the `LTM1` row of their
+definition.
 
-**The form (order 0).** A word's position in perceptual space is the join
-of its parts at full presence: `L = ∨_{p : d_p > 0} c_p`, the coordinate-wise
-max over the part codes whose net evidence `d = relu(e⁺ − e⁻)` is positive.
-These parts are boundary-marked adjacent letter
-pairs and cumulative length atoms. Pair codes have three deterministic bits
-in a 64-coordinate block; length atoms occupy a separate 32-coordinate
-thermometer, exact through length 32. A collision adds each word's own
-positional triple, extending its deterministic bit stream until the forms
-separate, with later positions and then quadruples as the fallback. The
-sparse form is the index key. Binding and pair search use a fixed 96-by-64
-dense projection; the index, containment audit and exact byte read retain
-the sparse form. Byte rows still serve character classes and descent.
-Evidence selects a part; it does not scale it. Certainty is the leaf's
-activation (the projection coefficient `(leaf·c)/(c·c)`), not the code's
-magnitude: form codes are at full presence. The
-adjacent-word wholes set the ceiling `U = L ∨ ⋀ L(neighbour)`. Their distinct
-address witnesses set the centroid weight. The containment cap preserves the
-native order and never lowers a coordinate below `L`.
-A higher-order form is the leaf-weighted centroid of its operands' forms (below). The address bands
-(`.where`, `.when`) are zero in a code: the particular lives in its
-occurrence row, the type in the codebook, and the mereological structure of a
-genus is its structure (typed parts, arranged), not a location.
+**The form (order 0).** A word's position in perceptual space is its code:
+the set of its parts in a parts half of 64 coordinates and the wholes it lies
+in in a wholes half of 64, each on the two lanes. A part is a run of adjacent
+characters; the parts of a form are its characters, the space among them,
+and the longer parts that exist and lie inside it. No end marks and no
+lengths are coded, so `is` has one code alone and inside `this`, and one form
+is a part of another exactly when its set of parts lies inside the other's.
+A longer part is added only where two forms would otherwise have the same
+parts, as the shortest run that one holds and the other does not, and once
+added it is carried by every form that holds that run. Of 19,821 dictionary
+words, 4 share a code at 64 and 64 before that step and none after it. Each
+part has three fixed coordinates drawn from its bytes, so the codes are
+fixed functions of the parts, not parameters (`WordIdentity.atom_code`,
+`form`). Evidence selects a part; it does not scale it: form codes are at
+full presence, and certainty is the activation of what reads them. The
+address bands (`.where`, `.when`) are zero in a code: the particular lives in
+its occurrence row, the type in the codebook. The code, its wholes half and
+its two lanes are in [Mereology](Mereology.md#percept-code).
 
 **One forward snapshot.** Meaning means and centroid forms are frozen before
 lexical staging. Both trials, the inverse and readback use that snapshot until
@@ -2137,11 +2035,14 @@ Readback merges the two aliases into the same word identity.
 
 **Codes are perception's.** In the conceptual derivation the percept
 prototypes and the 11b evidence are detached: no gradient from the sentence
-path (pair search, byte audit, answer head) reaches them. Identity atoms and
-their dense projection are fixed; only a recorded collision extends a minted
-atom's bit stream. Other percept prototypes retain perception's reconstruction
-owner. Identified words read their exact bytes from the indexed row; their
-rung-zero reconstruction term is an audit, with zero expected error.
+path (pair search, byte audit, answer head) reaches them. The parts' codes
+are fixed; a part is added only where two forms would collide, or where a
+string read as a word it is not is taught, and then the part that tells the
+two apart is admitted, not the string (Alec, 2026-11-19: "We don't want to
+admit Felixx, we want to admit the part that discriminates it from Felix:
+"xx""). Other percept prototypes retain perception's reconstruction owner. A
+form is put back from the form alone: the whole stores its parts in order,
+and a code that is no stored form has no spelling.
 
 **The concept.** Order-zero meaning is placed by context at kept closes, from
 a starting code drawn privately from the concept's content key ("Placement"
@@ -2236,41 +2137,30 @@ pair set and length are the collisions that a distinguishing atom is minted
 for. The
 content block must hold the inventory as a sparse superposition.
 
-**Attention is a mask over `.where`** (Alec, 2026-10-07). It starts as the
-sentence's global scope and narrows to a mask on each word in turn, so the
-serial grammar and the other non-parallel operations process one word at a
-time. It does not decide which words matter; every word is visited. Its
-loss is what its mask leaves out of the target; the region inside the mask
-pays the percept/concept chain's cost. Over a wide scope the field is
-heterogeneous and the pair accumulates *both*; the walk's answer to both is
-to `focus` (`narrowing_mask`: both permits `focus` at the disagreement, pure
-permits grammar to `interpret`, neither permits `focus` on the byte parts) until each bracket is homogeneous, where the
-concept is unipolar and pervades the object — union and pervasion coincide
-on a pure extent (Alec, 2026-10-07). *Both* therefore never enters a leaf
-from an identified word; it re-arises only by composition. This is the
-narrowing walk of [One attention](#one-attention)
-(the open bracket, `focus` and `unfocus`, with optional `interpret` at a word, the scope handed to
-conceptual space). Under identity by construction a word left out of the
-mask is a word missing from the reconstruction, which the path comparison
-charges and credits to the walk's choices. The walk's poles
-are handed off with the scope; priming and each bracket's excess and
-omission against its forecast reach the chooser through the attention
-context.
+**Attention dims; it does not cut.** A look selects by what it asks for and
+by where that is found, and lowers by degree what lies away from it
+([One attention](#one-attention)). It does not decide alone which words
+matter: `attend` asks for the word level in general, and every word is read.
+A word that no look returns is a word missing from the reconstruction, which
+the path comparison charges and credits to the walk's choices. Priming and
+each look's excess and omission against its forecast reach `attend` through
+the attention context. *Both* in a reading stands across the rows of its
+basic percepts; a single word's row is for or against, so *both* enters a
+leaf only by composition.
 
-**Two lanes, two positive symbols** (Alec, 2026-09-16; restated
-2026-10-07). Evidence for and evidence against a concept are separate
-quantities in separate lanes, and each lane is the magnitude of its own
-positively-valued symbol — the concept's one code, signless, in perceptual
-space. A leaf is `[form × presence | code × c⁺ | code × c⁻]`; the attention
-walk's poles are that pair; operators act lane by lane; a stored relation
-keeps the pair, and an idea with evidence on both lanes is stored as two
-rows, one for each lane. Nothing on the path forms the pair's difference or
-sign: a single signed activation cannot tell *both* `(1,1)` from *neither*
-`(0,0)`. The order alternation is then intact without a second symbol after
-a zeroth-order concept's location: percepts (perceptual) → the concept, an
-aggregation of parts and wholes (conceptual) → its symbols, the location
-at two magnitudes (perceptual) → the first-order concept, composition over
-symbols (conceptual) → the sentence's location (perceptual) → …
+**Two lanes** (Alec, 2026-09-16; restated 2026-10-07 and 2026-11-19).
+Evidence for and evidence against are separate quantities on separate lanes,
+each within 0 to 1. A percept's code, a basic percept's row and a symbol's
+rows are held on the two lanes, and a percept or a row can read on both. A
+concept is one signed value whose size is its certainty, stored as its two
+unsigned parts, never both above zero; *both* is two concepts, one for
+presence and one for absence ([Sigma and Pi Layers](#sigma-and-pi-layers)).
+The grammar's leaves and ideas keep the pair, operators act lane by lane,
+and an idea with evidence on both lanes is stored as two rows, one for each
+lane. The order alternation is: percepts (perceptual), then the concepts of
+order zero, a Sigma over their combined code (conceptual), then the symbols,
+Pi rows over those concepts with no dimensions, then the concepts of order
+one, a Sigma over symbols, and so on.
 
 **Two hard derivations as expectation and surprise.** The forward is always
 a tree. The greedy derivation is what the model expects of itself; one
@@ -2758,7 +2648,7 @@ The model has three stages and one loop. **Input** is perception: forms are read
 
 Reconstruction is "input (thinking)* output": the input's knowing is reversed after zero or more thinking steps. With no thinking step it is the **input reconstruction**, which involves no symbol and no grammar. After understanding it is the **order-zero reconstruction**: the grammar inverse unfolds the sentence's untransformed end slots, the occurrence writer locates the emitted terminals at new brackets, and the same decoder reverses that generated order-zero field; symbols take part, and are charged only when their alteration loses the input. Output differs from reconstruction only in that knowing was changed in between. The decoder is shared by construction, so every reconstruction step trains the decoder that output uses, and generation is the dual of comprehension without a second decoder. The loop closes without thinking, which is why thinking is optional.
 
-In code names: the parallel conceptual field `a_0` that `FamiliarTier.open_sentence` computes by `cs_read_memberships`, once per sentence before either compose trial, packaged as `Understanding.ConceptualField(concept_ids, evidence, where, when)`, is the input's knowing. `BasicModel.reverse(x, field=...)` is the decoder, running through basic percepts to bytes and reading no perception spans. `BasicModel.generate` is the symbolic walk: its occurrence writer turns each emitted terminal into an order-$0'$ occurrence by the `readback_scores` argmax over the terminal bank, so thought's last step lands on the codebook, and thought-written higher rows descend to order 0 by `cs_reverse_presence`. Output is `generate`, the occurrence writer, then `reverse` on the order-$0'$ field in output order. The cost terms are `reconstruction_reverse.what/where/when` for the input reconstruction and `reconstruction_order_zero.what/where/when` for the order-zero reconstruction; the reconstruction walk's residual lanes and departure credit are booked on reconstruction/R, and output's on output/A.
+In code names: the parallel conceptual field `a_0` that `FamiliarTier.open_sentence` computes through the layers of every order, once per sentence before either compose trial, packaged as `Understanding.ConceptualField(concept_ids, evidence, where, when)`, is the input's knowing. `BasicModel.reverse(x, field=...)` is the decoder, running through basic percepts to bytes and reading no perception spans. `BasicModel.generate` is the symbolic walk: its occurrence writer turns each emitted terminal into an order-$0'$ occurrence by the `readback_scores` argmax over the terminal bank, so thought's last step lands on the codebook, and thought-written higher rows descend to order 0 by the way back of the Sigma and the Pi. Output is `generate`, the occurrence writer, then `reverse` on the order-$0'$ field in output order. The cost terms are `reconstruction_reverse.what/where/when` for the input reconstruction and `reconstruction_order_zero.what/where/when` for the order-zero reconstruction; the reconstruction walk's residual lanes and departure credit are booked on reconstruction/R, and output's on output/A.
 
 Two acceptance checks define the loop: (1) the input's own order 0 fed through `reverse` as if it were thought's output equals the reconstruction byte for byte; (2) with STM and MTM emptied before the open, the input reconstruction is unchanged.
 
@@ -2768,15 +2658,15 @@ Output is a sequence of order-0 points, one decode per item; the word order come
 
 The architecture is a dual-process model, and the distinction is structural, not a label on speeds. The line between the two systems "is equivalently at symbols, or higher-order logic (which is what symbols allow)" (Alec, 2026-11-18). The distinction is the design's account of what separates animal from human cognition.
 
-**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts, the order-0 decoder, `intuit` (which deposits `expect`'s field, detached, into the sentence's knowing and propagates it up the orders by the definitions' closure, `IntuitionField.read`), `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking at order zero: MTM's promotion of percepts to basic percepts and its behavioral chains, by recurrence. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
+**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the first block of Pi, Not and Sigma that makes the order-0 concepts, the order-0 decoder, `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking at order zero: MTM's nomination of basic percepts and its behavioral chains, by recurrence. `intuit` deposits `expect`'s field and, in a mind with symbols, runs the vertical spread over the orders ([Sigma and Pi Layers](#sigma-and-pi-layers)); a model with no symbols never runs the spread above order zero. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
 
 **System 2** is the higher-order logic that symbols allow: symbols, which begin at order 1 with what MTM promotes there, its identities among them, and the higher orders, the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
 
 **The two inverses (Alec, 2026-11-10).** "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." In code names: `BasicModel.reverse` is the System 1 inverse and reads no grammar (`reconstruction_reverse`); with symbols on, `SentenceField.sentence_generated` runs the generate walk on the sentence's own end slots, `OutputOccurrences.generated` places the emitted terminals, and the same `reverse` follows (`reconstruction_order_zero`).
 
-**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 through the read from a field to a point: where sentences are comprehended, a stack of its own (`idea_stack`) reads the order-zero field observed at a sentence's open into one point, and its teacher is the root idea the kept reading leaves (`IdeaRead.complete`, cost `expectation.idea`), so System 1 learns to give at observation the idea System 2 made of the input; nothing reads that point yet but its test (`IdeaRead.expected_point`). With no System 2 the read is the field's centroid (`FieldProjection.key`). `expect` is taught by omission, and `intuit` has no map or teacher of its own. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains `expect`, which belongs to System 1, and credits no System 2 departure.
+**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's places or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 through the read from a field to a point: where sentences are comprehended, a stack of its own (`idea_stack`) reads the order-zero field observed at a sentence's open into one point, and its teacher is the root idea the kept reading leaves (`IdeaRead.complete`, cost `expectation.idea`), so System 1 learns to give at observation the idea System 2 made of the input (`IdeaRead.expected_point` gives it on demand). The same read is an option for part of a sentence (Alec, 2026-11-19): a look over two or more words returns their percepts together, the basic level reads them at one time into one idea, the idea the grammar composes from the same words one by one is its teacher, and the grammar may take the read idea as the meaning of one constituent in place of the operations that compose it. No form, row or symbol is made for such a fragment ("we don't need "the cat" to be a form"); the option is off unless a configuration sets it ([Language](Language.md)). With no System 2 the read is the field's centroid (`FieldProjection.key`). `expect` is taught by omission, and `intuit` has no map or teacher of its own. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains `expect`, which belongs to System 1, and credits no System 2 departure.
 
-**Gradient.** Under the loop the shared row is perception, the field's parameters (definition exponents, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's, so to first order a step taken for the answer cannot increase reconstruction's loss. Each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning ([GradientFlow](GradientFlow.md#default-projected-gradients)).
+**Gradient.** Under the loop the shared row is perception, the field's parameters (the entries of the Pi and the Sigma, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's, so to first order a step taken for the answer cannot increase reconstruction's loss. Each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning ([GradientFlow](GradientFlow.md#default-projected-gradients)).
 
 ### Memory as the development stage of conceptual space
 
@@ -2810,14 +2700,14 @@ The mechanism is described under "When" in [One where, one when, many whats](#on
 
 - *System 1 supplies it and System 2 narrows it.* `EpisodicMemory.stage` selects the entry from the kept path's field of understanding: the set the kept compose tree's `compose_extend` calls leave over the sentence's activations, which the open attention pass (`FamiliarTier.open_sentence`) and the input's knowing supply ("Extend and the field of understanding" below). So an entry is a few concepts of knowing, as the sentence's operators left them, kept.
 - *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the entry to `ClauseRows.write_clause` with the row its kept close writes; a kept thought's row takes the strongest of its own extension (`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation keeps no entry.
-- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks the window's rows by their entries and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
-- *Memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only an entry comes back as a field.
+- *System 2 returns to it, and what returns is System 1's state.* A recall in the thought loop (`ThoughtLTMCapability.query`) finds rows by the query's idea and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
+- *Memory is read by content and by reference* (the thought grammar's recall by the idea, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only an entry comes back as a field. An entry is what a recall returns, not what it searches.
 - *No learning rides on an entry.* It is stored detached, and a review books no loss of its own.
 
 **Limits.**
 
 1. An entry is written only with an `LTM0` row, and review needs the thought loop: the loop with no thinking step has no episodic memory.
-2. An episode is reached by its content; a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
+2. An episode is reached through the idea of its row; a search of the entries themselves is not designed, and a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
 3. Promotion reads an entry only for the order of a row with no referent, one above the greatest order among its concepts; MTM's promotion by recurrence works over its own collections.
 
 ### References and shared strata (2026-11-09)
@@ -2846,11 +2736,28 @@ Each configured primitive has one concept seat, declared at construction with it
 
 ### Basic percepts and the two spaces (2026-11-09)
 
-Parts and wholes meet in perception's `BasicPercepts`; a row's code is the identity join of its parts and the property meet of its wholes. The live basic-percept read takes the cross-tower minimum and carries gradient to `PrimitiveProperties.members`. Order-0 definitions contain only columns `2*bp + pole`; non-word concepts collect the basic percepts carrying their native property or part. Sigma/pi composition and `working[:n0]` retain their contract. Symbols have no direct two-tower mereological read.
+Parts and wholes meet in perception's `BasicPercepts`. A row's code is the
+greatest of its parts' codes in the parts half and the least of its wholes'
+codes in the wholes half, each on the two lanes (`BasicPercepts.subspace_bounds`,
+`against`), and the row is read through the first Pi, whose for entries are
+its parts and wholes and whose against entries are what its nearest holders
+add ([Sigma and Pi Layers](#sigma-and-pi-layers)). The gradient of a read
+reaches `PrimitiveProperties.members`. A concept of order zero reads the
+combined vector through its column of the dense Sigma; it does not collect
+basic percepts as entries. Symbols have no direct two-tower mereological
+read.
 
-Compose-time whole centroids and per-word typed slots use basic percepts with the existing presence-weighted derivative. The default table has 262144 preallocated rows; lesson files may use smaller fixed capacities. A reserved occurrence reads its own parts and wholes until recurrence promotes its durable row. Supplied training forms are declared at admission. Reverse runs through this basis for reconstruction and output: admitted forms and ordered native parts expand to their constituent byte events at their recorded offsets.
+A row exists only when MTM nominates it on recurrence. A form read once is
+perceived and has no basic percept, no concept and no durable row; the
+lessons declare no forms. The table's capacity is allocated beforehand
+(262,144 rows by default; lesson files may use smaller fixed capacities), and
+the first Pi's storage with it, 16 entries a row on average. The way back
+runs through this basis for reconstruction and output: a form is put back
+from the form alone, its stored characters in order.
 
-When native perception fuses an ordered run, the basic-percept read follows the new row's recorded part ancestry, preserving order, multiplicity and the parts' event extents. It does not reconstruct a second tiling from bytes or rewrite concept columns. Native field lessons declare their supplied forms before fitting feature weights, and retain the existing sparse optimizer migration when another word supplies a new feature. The field's recurrent literal cases collect basic percepts under the existing FamiliarTier mechanism; the collection-link path itself creates no order-0 concept.
+When native perception fuses an ordered run, the basic-percept read follows
+the new row's recorded part ancestry, preserving order, multiplicity and the
+parts' event extents. It does not reconstruct a second tiling from bytes.
 
 The three memory errors have owner `reconstruction`, side `R`: `memory.link_coverage`, `memory.verb_state`, and `memory.modal_state`. Coverage is judged on every link. Its trial comparison is detached; the kept-close registry carries its live reader derivative. A kept close applies its lexical word-trust observations after its selected links have been written, so these observations preserve a word's radius between a link choice and that choice's containment check. Each observed word view is then learned once. The two state errors are training-only relative errors, with the no-change prediction as baseline and later reference values detached. They train the verb/modifier action parameters.
 
@@ -2886,11 +2793,13 @@ independent. `BasicModel.reverse(*, field)` then follows basic percepts
 to native parts, the vectorized radix decode and InputSpace. It produces detached
 bytes and a continuous percept face for training. No saved input spans or
 compose forest enter that decode, and aligned calls without a field raise.
-On the way to the basic percepts, at order 0, `cs_percept_attribution` divides each
-concept's demand over its written alternatives in proportion to their
-definition weights, so the attributed parts sum to the demand instead of every
-alternative being asserted at full strength, and a precise basic-level concept
-keeps its own identity beside a broader property concept. A word's form is the
+On the way to the basic percepts, the Sigma of order zero returns the
+combined vector by least squares where there are as many concepts as inputs
+or more, and the first Pi inverts exactly; where a look's percepts were
+withheld, the way back reads the expected percepts the vertical spread wrote
+in their place ([Sigma and Pi Layers](#sigma-and-pi-layers)). Each recreated
+percept is placed in the out buffer by the band of where wires its concept
+gives it, matched against every place ([One attention](#one-attention)). A word's form is the
 weighted centroid of the percepts of its positive written definitions, and the
 code of its own admitted basic percept only when every definition weight is
 zero (`MereologicalCodes.derive`). Both rules are Alec's (2026-11-10).
@@ -2945,14 +2854,17 @@ Before the keep, thought reads the scored reference plan through a temporary com
 ### The operators
 
 A grammar file declares three kinds of operator, and what a file declares
-decides what runs. Examination operators are attention's acts on the bracket,
-`focus`, `unfocus` and the grammar decision to `interpret` ([One attention](#one-attention)); the
-attention loop runs in every file that declares one. Field operators are
-`intersection`, `union` and `not`, with one definition of their logic:
-`SparseLayer.fold_presence`'s weighted least and greatest on the two lanes,
-`intersection` taking the least on the lane for and the greatest on the lane
-against, `union` the reverse, `not` swapping the lanes and `non` withholding
-both. Vector operators are all the others. Tier-local `pi` and `sigma` remain
+decides what runs. Examination operators are attention's, `focus` and
+`unfocus`, which act on the request's two lanes, and the grammar decision to
+`interpret` ([One attention](#one-attention)); the loop of looks runs in every
+file that declares one. Field operators are `intersection`, `union` and
+`not`, with one definition of their logic on the two lanes: the weighted
+least and greatest, `intersection` taking the least on the lane for and the
+greatest on the lane against, `union` the reverse, `not` swapping the lanes
+and `non` withholding both. On readings of 0 and 1 these agree with the
+layers' product logic; on graded readings the layers give the product and
+the union and the field operators the least and the greatest, and the two are
+left to differ ([Logic](Logic.md)). Vector operators are all the others. Tier-local `pi` and `sigma` remain
 substrate declarations; the default keeps the parallel body.
 
 The operators `data/complete.grammar` keeps, and the rule of each, are in
@@ -2963,8 +2875,8 @@ share `MeaningAction` ("Operations on meaning, centroids on form" above);
 `compound_unary`; and in thought `define` writes two relations, `part` each
 way, and `isWhole(a, b)` is `isPart(b, a)`.
 
-Intersections of several concepts are written by promotion on recurrence
-(`FamiliarTier.observe_intersection`, conjunctive edges).
+Intersections of several concepts are written by promotion on recurrence: MTM
+nominates a symbol, a Pi row over the members, which brings a new concept.
 `FieldProjection.stimulate(point)` reads a point's field over the known
 concepts: coverage by the one match (`ConceptualMatch.match`), then the fold through definitions; the
 key of a field is its evidence-weighted centroid (`FieldProjection.key`). A
@@ -2995,14 +2907,32 @@ operator's extend does is in [Extend](Extend.md).
 
 ### Recall and answers
 
-Memory is addressed by content: no read selects rows by time. A question is
-extended like any sentence, and its field of understanding is the side it is
-matched on. Each operand's set gives one result over the window of the newest
-`ltmWindow` rows, each row's entry matched order by order and never reduced
-across orders (`EpisodicMemory.matches`, `relevance`), and the question's
-operators combine the results as their `compose_extend` combines sets. An
-answer is read from a recalled row by walking its idea with `generate` and
-taking the part of its field at the operand where the question's open
+Memory is addressed by content: no read selects rows by time, and none by
+position. Attention and the query on LTM are two readers with two keys
+(Alec, 2026-11-19: "Right now attention selects the concepts that it wants to
+attend to, and uses that to select where/what on percepts. Query on LTM is
+using the idea, a point in conceptual space, to search semantic memory"):
+
+| | Its key | What it searches | By |
+| --- | --- | --- | --- |
+| Attention | the concepts it wants, the request | the percepts of the sentence, their what and their where | the weights of the way up, carried downward ([One attention](#one-attention)) |
+| The query on LTM | the idea, a point in conceptual space | semantic memory | a match of points in conceptual space |
+
+The query's key is the idea of the question, the composed vector a question
+leaves like any sentence. It searches semantic memory, the ideas of `LTM0`
+and the relations of `LTM1`, by the one match (`ConceptualMatch.match`),
+which compares meaning coordinates and never a form's code: of a candidate
+$c$ against the content $q$ it gives the two coverages $|q \wedge c|/|c|$
+and $|q \wedge c|/|q|$, with $\wedge$ the coordinatewise least and no
+distance, on each lane independently. The percept's code is a form's, in
+perceptual space, and does not enter the query (two spaces, no leakage).
+The window is the newest `ltmWindow` rows, and reading a row is charged to the
+work meter. A recalled row's entry, the few concepts of its moment, is
+published as the querying stream's knowing (`EpisodicMemory.reinstate`),
+so that a recalled experience is reviewed as an attended field.
+
+An answer is read from a recalled row by walking its idea with `generate`
+and taking the part of its field at the operand where the question's open
 operand stands: with "I ate rice" stored, the question with its object open
 is answered by the part at the object ([Extend](Extend.md)).
 
@@ -3022,11 +2952,15 @@ the lane against, so a claim can be true, false, both or neither
 ### expect, intuit and marker
 
 `expect` is a learned map from one space to another, not an explicit rule,
-and so is each kernel of `marker`; `intuit` uses `expect`'s map. Each map is a stacked
-sigma-pi (`SigmaPiStack`), a row of pairs: in each pair a
-`PiLayer` takes the product of its inputs in the log domain, and a
-`SigmaLayer` takes a weighted sum of those products. The two lanes enter as
-separate inputs and are never netted, and a new stack adds nothing
+and so is each kernel of `marker` and the read from a field to a point
+(`idea_stack`); `intuit` uses `expect`'s map. Each map is a `SigmaPiStack`, a
+row of fused `SigmaPiLayer` pairs of the same structure as the layers: in
+each pair a Pi over the two lanes of what it reads, with entries of zero or
+more, and a Sigma whose entries are for or Not, giving one signed number in
+-1 to 1 for each output, with no clip and no way back. The stacks read
+concepts, which are scalars, as their two lanes. `expectLayers` and
+`ideaLayers` are 1 pair and `markerLayers` 2, and a new stack, whose last
+Sigma starts at zero, adds nothing
 ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
 
 - `expect` has one moderate hidden layer, from the whole observed order-zero
@@ -3039,9 +2973,10 @@ separate inputs and are never netted, and a new stack adds nothing
 - `intuit` is `expect`'s map and the propagation over the orders (Alec,
   2026-11-17), with no stack or teacher of its own. When thought calls it,
   it deposits `expect`'s field from the open pass, detached, into the order-zero
-  block of the sentence's knowing at the observed places, and closes it
-  upward through the definitions (`IntuitionField.read`,
-  `FieldProjection.close`), so thought, the answer and the output read it.
+  block of the sentence's knowing at the observed places, and runs the
+  vertical spread, once up and once down, writing the expected field at
+  every order ([Sigma and Pi Layers](#sigma-and-pi-layers)), so thought, the
+  answer and the output read it.
   In thought it has the evidence kind `intuition`, which can answer; the
   firing of a stored implication is reached through `infer`
   ([Reasoning](Reasoning.md#intuition-on-the-field-map)).
@@ -3064,15 +2999,19 @@ word.
 ### Numbers and places
 
 A numeric input is percepts on a file with field operators. A reading is a
-level percept at its place, one basic percept for each place and level met,
-and one order-zero concept per place collects them
-(`BasicPercepts.read_collection`). `NumericPercepts` is the one reader for
+level percept at its place, one basic percept for each place and level met.
+A value's code is its place among 64 bins of the felt value: the bins at or
+below it tell for it and the bins above it tell against it, by the mechanism
+of the parts and the wholes, where growing the parts and contracting the
+wholes are one operation, and each place has a table of its own
+([Sigma and Pi Layers](#sigma-and-pi-layers)). A
+collection of values is read by its bounds (`BasicPercepts.read_collection`). `NumericPercepts` is the one reader for
 any number of dimensions, and its reverse returns each number from its
 level. Output on such a file is one linear layer over the field
 (`OutputSpace.read_field`); the XOR proofs read 0 and 1 on two dimensions,
 with XOR = x1 + x2 - 2(x1 and x2), and `data/MM_image.xml` reads 28 by 28
 images with field operators only. The scalar beside the words is read the
-same way, a word's concept over it being an order-zero concept that collects
-basic percepts, and the native reference menu admits the current scalar
+same way, a word's concept over it being a collection read by its bounds,
+and the native reference menu admits the current scalar
 event and its perceived individuals. The modalities and their percepts are
 in [Spaces](Spaces.md#percept-modalities).
