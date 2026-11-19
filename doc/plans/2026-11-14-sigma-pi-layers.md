@@ -6483,6 +6483,12 @@ is Claude's.
     on it reads a span on the host. *Default:* the tokens are the
     stem's, as the first look reads them, until rule 32's Pi makes
     them.
+    *Added, 2026-11-18 (Claude, from the measurement in
+    `doc/plans/2026-11-14-item1-5.md`):* the lookup of the sentence's
+    percepts is made once, at this one place, and the Pi is read only
+    on the rows it names, not on every row of the dictionary. How the
+    lookup is computed (the trie on the host today, a table on the
+    device later) is item 1.5's and changes no result.
 34. *A look is an activity over the bank* (§19.32, §19.34). It takes
     the place of the bracket's interval and of the containment test.
     An event's activity in a look is its own, times the place factor
@@ -6790,7 +6796,7 @@ with the chooser deciding the rest.
 
 | Rule | Change |
 | --- | --- |
-| 33, the bank | none |
+| 33, the bank | none here; one lookup for a sentence, and the Pi read only on the rows it names (added in rule 33) |
 | 34, a look is an activity | the activity is the intersection of the what match and the where match (answer 2) |
 | 35, the request | it is the output of `attend`, over all concepts, and is learned (answers 1, 2, 6); it may still name a whole |
 | 36, the pullback | it projects onto two domains, the what codebook and the where sinusoid (answer 2) |
