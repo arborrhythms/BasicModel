@@ -12,8 +12,7 @@ def snapshot(cs):
     store = alloc.layer()
     return (alloc.next_id, dict(alloc.symbols), dict(cs.interpret._pending),
             {key: tuple(value) for key, value in store._constituents.items()},
-            dict(store.features._index),
-            () if store.features.values is None else tuple(store.features.values.detach().tolist()),
+            dict(alloc.order_zero_members),
             dict(store._tensor_rows), dict(store._index))
 
 

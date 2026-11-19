@@ -102,8 +102,8 @@ class Probe:
         for cs in self.model.conceptualSpaces:
             derived = getattr(cs.similarity_codebook, 'mereology', None)
             if derived is not None:
-                from Spaces import _concept_alloc_of
-                codes.add(id(_concept_alloc_of(cs).layer().features.values))
+                if getattr(cs, 'order_zero', None) is not None:
+                    codes.add(id(cs.order_zero.weight))
         members = {id(p) for g in optimizer.param_groups for p in g['params']}
         captured = []
         for name, p in named.items():

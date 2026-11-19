@@ -60,44 +60,16 @@ def test_02_admitted_word_and_basic_percept_are_positive_before_teaching(eager_r
 
 
 def paired_layer(layout,weights,*,anchor=False):
-    if layout=='feature':
-        layer=ConceptualAttentionLayer.square(3).features
-        layer.nInput=6
-        columns=(0,1)
-    else:
-        layer=ConceptualAttentionLayer.square(3)
-        columns=(0,4)
-    for c,w in zip(columns,weights):layer.add_edge(2,c,weight=w)
-    if anchor:layer.add_edge(2,2 if layout=='feature' else 1,weight=1.)
+    layer=ConceptualAttentionLayer.square(3)
+    for c,w in zip((0,4),weights):layer.add_edge(2,c,weight=w)
+    if anchor:layer.add_edge(2,1,weight=1.)
     return layer
 
 
 def fold(layer,layout,*,conjunctive=False,values=None):
     values=(.25,.8,1. if conjunctive else 0.) if values is None else values
-    if layout=='feature':
-        pairs=torch.tensor([[values[0],values[1]],[values[1],values[0]],
-                            [values[2],1-values[2]]])[:layer.nnz]
-        return layer.fold_presence(torch.empty(0,1),start=2,end=3,conjunctive=conjunctive,
-                                   edge_memberships=pairs[:,:1],edge_known=torch.ones(layer.nnz,1,dtype=torch.bool))
     u=torch.tensor([[values[0]],[values[2]],[0.],[1.],[values[1]],[1-values[2]],[0.],[0.]])
     return layer.fold_presence(u,start=2,end=3,conjunctive=conjunctive)
-
-
-@pytest.mark.parametrize('weights',[(.8,.2),(.2,.8),(.5,.5)])
-@pytest.mark.parametrize('conjunctive',[False,True])
-def test_05_feature_pair_gradients_and_zero_floor(weights,conjunctive):
-    layer=paired_layer('feature',weights,anchor=True)
-    out=fold(layer,'feature',conjunctive=conjunctive)
-    gradient,=torch.autograd.grad(out.sum(),layer.values)
-    if weights[0]!=weights[1]:
-        assert gradient[0]!=0
-    torch.testing.assert_close(gradient[0],-gradient[1],rtol=0,atol=0)
-    if weights[0]==weights[1]:
-        # The old unpaired zero-edge rule is still the local derivative.
-        control=SparseLayer(6,3);control.add_edge(2,0,weight=0.);control.add_edge(2,1,weight=0.);control.add_edge(2,2,weight=1.)
-        g,=torch.autograd.grad(fold(control,'feature',conjunctive=conjunctive).sum(),control.values)
-        torch.testing.assert_close(gradient[:2],torch.stack((g[0]-g[1],g[1]-g[0])),rtol=0,atol=0)
-        assert bool(gradient[0]==0)==bool(g[0]==g[1])
 
 
 @pytest.mark.parametrize('weights,expected',[( (1.,1e-7),[1.,0.]),((.2,.7),[0.,1.]),((.5,.5),[0.,0.])])

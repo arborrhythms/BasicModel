@@ -5394,7 +5394,6 @@ class SparseLayer(Layer):
         view._inventory_edges = selected
         view._missing_sources = missing
         view._paired_sources = paired
-        view._feature_sources = getattr(self, '_feature_sources', False)
         source_columns = getattr(self, '_fold_source_columns', self._cols)
         view._fold_source_columns = tuple(source_columns[pos] for _, _, pos in host)
         view._fold_source_offset = getattr(self, '_fold_source_offset', self.nInput // 2)
@@ -5408,18 +5407,16 @@ class SparseLayer(Layer):
         The existing straight-through floor also passes credit at a zero sum.
         """
         raw = self.values.clone().to(like)
-        feature = getattr(self, '_feature_sources', False)
-        if feature or getattr(self, '_paired_sources', False):
+        if getattr(self, '_paired_sources', False):
             rows, _ = self._indices(like.device)
             offset = getattr(self, '_fold_source_offset', self.nInput // 2)
             cache = getattr(self, '_fold_partners', None)
-            if cache is None or cache[0] is not rows or cache[1] != (feature, offset):
+            if cache is None or cache[0] is not rows or cache[1] != offset:
                 columns = getattr(self, '_fold_source_columns', self._cols)
                 lookup = {(row, col): i for i, (row, col) in enumerate(zip(self._rows, columns))}
-                positions = [lookup.get((row, col ^ 1 if feature else
-                             (col + offset) % (2 * offset)), len(columns))
+                positions = [lookup.get((row, (col + offset) % (2 * offset)), len(columns))
                              for row, col in zip(self._rows, columns)]
-                cache = (rows, (feature, offset), torch.tensor(positions,
+                cache = (rows, offset, torch.tensor(positions,
                          dtype=torch.long, device=like.device))
                 self._fold_partners = cache
             padded = torch.cat((raw, raw.new_zeros(1)))
@@ -5594,14 +5591,6 @@ class ConceptualAttentionLayer(SparseLayer):
         self._tensor_row_keys = {} # derived reverse map; updated at allocation/load
         self._row_next = {}        # region base -> next unallocated local row
 
-        # Feature addresses interleave PS/WS and membership/complement:
-        # 4*row + 2*tower + pole. No distributed coordinate is an address.
-        self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
-        self.features._feature_sources = True
-        self.features._sidecar_owned = True
-        # A PS literal may be an ordered group before recurrence forms a
-        # percept. Metadata belongs to its sparse edge, including its pole.
-        self.feature_groups = {}
         self._sidecar_owned = True
         self._paired_sources = nInput == 2 * (nOutput + 1)
         for name, value in (
@@ -5620,7 +5609,7 @@ class ConceptualAttentionLayer(SparseLayer):
         return (self,)
 
     def definition_matrices(self):
-        return self, self.features
+        return (self,)
 
     @torch.no_grad()
     def project_parts(self):
@@ -5628,8 +5617,6 @@ class ConceptualAttentionLayer(SparseLayer):
         for matrix in self.part_matrices():
             if matrix.values is not None:
                 matrix.values.clamp_min_(0)
-        if self.features.values is not None:
-            self.features.values.clamp_(0, 1)
 
     def migrate_part_moments(self, optimizer):
         """A signed-to-pole checkpoint conversion reverses first moments."""
@@ -5655,7 +5642,6 @@ class ConceptualAttentionLayer(SparseLayer):
             matrix._index = {pair: i for i, pair in enumerate(zip(matrix._rows, matrix._cols))}
             matrix.nInput, matrix.nOutput = 2 * (size + 1), size
             matrix._dev_cache = None
-        self.features.nOutput = size
         for name, value in list(self.named_buffers(recurse=False)):
             if value.ndim == 1:
                 fill = {'refinement_best': float('inf'),
@@ -5680,60 +5666,37 @@ class ConceptualAttentionLayer(SparseLayer):
         return self.attribute_presence(presence)
 
     def parts_extras(self):
-        """Checkpoint both parts matrices and row-aligned discovery state."""
-        matrices = {}
-        for name, matrix in (('features', self.features),):
-            matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
-                                  nInput=matrix.nInput,
-                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone())
-        return dict(version=6, matrices=matrices,
-                    feature_groups=dict(self.feature_groups),
-                    buffers={name: value.detach().cpu().clone()
-                             for name, value in self.named_buffers(recurse=False)})
+        """Checkpoint the row-aligned discovery state."""
+        return dict(version=7, buffers={name: value.detach().cpu().clone()
+                                        for name, value in self.named_buffers(recurse=False)})
+
+    @staticmethod
+    def saved_feature_record(saved):
+        """The order-zero members recorded by a checkpoint's feature table
+        (versions 1 to 6), as :class:`ConceptMembers` entries: each written
+        edge, ``(row, percept, negated) -> weight``. An
+        edge at weight zero is recorded at zero and started nothing."""
+        blob = ((saved or {}).get('matrices') or {}).get('features') or {}
+        rows, cols, values = blob.get('rows', ()), blob.get('cols', ()), blob.get('values')
+        if values is None or not len(rows):
+            return {}
+        if len(rows) != len(cols) or values.numel() != len(rows):
+            raise ValueError('malformed conceptual parts checkpoint')
+        return {(int(row), int(col) // 2, bool(int(col) % 2)): max(0., float(value))
+                for row, col, value in zip(rows, cols, values.reshape(-1).tolist())}
 
     def load_parts_extras(self, saved, *, old_size=None):
         if saved is None:
             return
         if any(blob.get('locations') for blob in saved.get('matrices', {}).values()):
             raise ValueError('positional concept definitions predate item 9b; re-teach exact conjunctions as native fused percepts')
-        if saved.get('version') not in (1, 2, 3, 4, 5, 6):
+        if saved.get('version') not in (1, 2, 3, 4, 5, 6, 7):
             raise ValueError('unsupported conceptual parts checkpoint')
-        self.feature_groups = dict(saved.get('feature_groups', {}))
-        old_span = self.nOutput if old_size is None else old_size
-        if saved['matrices'].get('conjunctive', {}).get('rows'):
+        if saved.get('matrices', {}).get('conjunctive', {}).get('rows'):
             raise ValueError('conjunctive concept definitions over order zero are gone; '
                              'a conjunction of percepts is a basic percept nominated by MTM')
-        for name in ('features',):
-            matrix = getattr(self, name)
-            blob = saved['matrices'].get(name, dict(rows=[], cols=[], values=None, nInput=1))
-            if name == 'features':
-                matrix.nInput = int(blob['nInput'])
-            rows, cols, values = blob['rows'], blob['cols'], blob['values']
-            if name != 'features' and saved['version'] == 1:
-                cols = [(self.nOutput if c == old_span else c) +
-                        (self.nOutput + 1 if values is not None and values[i] < 0 else 0)
-                        for i, c in enumerate(cols)]
-                if values is not None:
-                    matrix._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
-                    values = values.abs()
-            elif name != 'features' and old_size is not None:
-                cols = [(self.nOutput if c % (old_span + 1) == old_span
-                         else c % (old_span + 1)) + (c // (old_span + 1)) * (self.nOutput + 1)
-                        for c in cols]
-            if (len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows)
-                    or (values is not None and values.numel() != len(rows))
-                    or any(not 0 <= r < matrix.nOutput for r in rows)
-                    or any(not 0 <= c < matrix.nInput for c in cols)):
-                raise ValueError('malformed conceptual parts checkpoint')
-            matrix._rows, matrix._cols = list(rows), list(cols)
-            matrix._index = {pair: i for i, pair in enumerate(zip(rows, cols))}
-            matrix._init_vals = [] if values is None else values.tolist()
-            matrix._dev_cache = None
-            matrix._edge_ids = list(range(len(rows)))
-            matrix._next_edge_id = len(rows)
-            matrix._parameter_edge_ids = tuple(matrix._edge_ids)
-            matrix.values = None if values is None else nn.Parameter(
-                values.to(self._device()).clone(), requires_grad=name != 'where')
+        # A feature table of versions 1 to 6 is read once into the
+        # allocator's record of order-zero members (saved_feature_record).
         for name, value in saved['buffers'].items():
             if name not in self._buffers:
                 continue  # Pre-familiar checkpoints may carry retired pool state.
@@ -5898,9 +5861,7 @@ class ConceptualAttentionLayer(SparseLayer):
         ncol = int(self.nInput)
         free = max(0, int(free_size))
         rows_t, cols_t = self._indices(vals.device)
-        concept_col = (torch.ones_like(cols_t, dtype=torch.bool)
-                       if getattr(self, '_feature_sources', False) else
-                       (cols_t % (self.nOutput + 1)) < self.nOutput
+        concept_col = ((cols_t % (self.nOutput + 1)) < self.nOutput
                        if getattr(self, '_paired_sources', False) else cols_t < ncol - 1)
         rows, weights = rows_t[concept_col], vals[concept_col].clamp_min(0)
         # Sort edges by magnitude, then stably group rows. Segment ranks
@@ -5912,6 +5873,80 @@ class ConceptualAttentionLayer(SparseLayer):
         starts = torch.cat((torch.ones_like(rows[:1], dtype=torch.bool), rows[1:] != rows[:-1]))
         base = torch.where(starts, positions, 0).cummax(0).values
         return weights[(positions - base) >= free].sum()
+
+
+class ConceptMembers(dict):
+    """The record of the basic percepts each order-zero concept was started
+    from: ``(row, percept, negated) -> weight``, a plain record and not a
+    parameter. A member of positive weight is added to its concept's column
+    of the order-zero Sigma when it is recorded; one of weight zero is
+    recorded and starts nothing. ``negated`` marks a Not member.
+    ``revision`` changes with every write, for the readers that cache an
+    index of it."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.revision = 0
+
+    def _changed(self):
+        self.revision += 1
+
+    def add(self, row, percept, negated=False, weight=1.0):
+        """Record a member; true when it was not recorded before."""
+        key = (int(row), int(percept), bool(negated))
+        if key in self:
+            return False
+        if not float(weight) >= 0:
+            raise ValueError('an order-zero member is recorded at a weight of zero or more')
+        super().__setitem__(key, float(weight))
+        self._changed()
+        return True
+
+    def discard(self, row, percepts):
+        """Forget ``row``'s members among ``percepts``, either sign."""
+        percepts = {int(p) for p in percepts}
+        drop = [key for key in self if key[0] == int(row) and key[1] in percepts]
+        for key in drop:
+            super().__delitem__(key)
+        if drop:
+            self._changed()
+        return len(drop)
+
+    def __setitem__(self, key, weight):
+        super().__setitem__(key, float(weight))
+        self._changed()
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._changed()
+
+    def clear(self):
+        super().clear()
+        self._changed()
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        self._changed()
+
+    def members(self, row, *, negated=False):
+        """The percepts of ``row`` with the given sign, in order."""
+        return sorted({p for (r, p, n) in self if r == int(row) and n == bool(negated)})
+
+    def rows_of(self, percept, *, negated=False):
+        """The rows started from ``percept`` with the given sign, in order."""
+        return sorted({r for (r, p, n) in self if p == int(percept) and n == bool(negated)})
+
+    def rows(self):
+        return sorted({r for (r, _, _) in self})
+
+    def started(self):
+        """The members that entered their columns, of positive weight."""
+        return {key: weight for key, weight in self.items() if weight > 0}
+
+    def net(self, row, percept):
+        """The member's weight for less its weight as a Not member."""
+        return (self.get((int(row), int(percept), False), 0.)
+                - self.get((int(row), int(percept), True), 0.))
 
 
 class ConceptAllocator:
@@ -5943,6 +5978,7 @@ class ConceptAllocator:
         self.operator_concepts = {}
         self.formal_arguments = {}       # declared argument -> ordinary higher-order concept
         self.declared_classes = {}       # "words", "objects" -> declared class concept
+        self.order_zero_members = ConceptMembers()  # the percepts each order-zero concept started from
         self.order_from_row = None       # construction-owned physical block read
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
@@ -6152,15 +6188,14 @@ class ConceptAllocator:
         if structural or order >= 0:
             return order
         layer = self.layer()
-        features = getattr(layer, 'features', None)
-        if features is not None:
-            # Rebuild only when feature topology changes, never per word.
-            revision = (id(features._index), features._next_edge_id, len(features._index))
-            if getattr(self, '_percept_revision', None) != revision:
-                self._percept_rows = set(features._rows)
-                self._percept_revision = revision
-            if layer.row_of(('shared', cid)) in self._percept_rows:
-                return 0
+        members = self.order_zero_members
+        # Rebuild only when the record changes, never per word.
+        revision = (id(members), members.revision)
+        if getattr(self, '_percept_revision', None) != revision:
+            self._percept_rows = set(members.rows())
+            self._percept_revision = revision
+        if layer.row_of(('shared', cid)) in self._percept_rows:
+            return 0
         return 0 if cid in self.identity else -1
 
     def settle(self, cid):

@@ -34,7 +34,7 @@ def test_net_evidence_subspaces_and_detached_native_sources():
     assert not result.requires_grad
     assert not result[67:].any()
     assert not isinstance(ws.W, nn.Parameter)
-    assert ps.W.requires_grad and alloc.layer().features.values.requires_grad
+    assert ps.W.requires_grad and cs.order_zero.weight.requires_grad
     ws.getW().sum().backward()
     assert ws.primitive_properties.members.grad.abs().sum() > 0
 

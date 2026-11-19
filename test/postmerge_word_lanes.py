@@ -152,7 +152,7 @@ def native_provenance(sink):
             direct = owner._cs_order0_raw
             perception = owner._percept_field
             ids = owner._cs_field_concept_ids[:result.shape[0]]
-            matrix = owner._concept_allocator.layer(0).features
+            record = owner._concept_allocator.order_zero_members
             basic = owner.basic_percepts
             native = natives[-1] if natives else None
             entries=[]
@@ -169,9 +169,9 @@ def native_provenance(sink):
                         order0 = indices[indices < direct.shape[0]]
                         before = direct[order0,b,p].amax(0) if len(order0) else evidence.new_zeros(2)
                         edges=[]
-                        for (r,c), edge in matrix._index.items():
+                        for (r,bp,negated), weight in record.items():
                             if r != physical: continue
-                            bp, neg = c//2, c%2
+                            neg = int(negated)
                             key=('bp',bp)
                             if key not in perception.keys: continue
                             i=perception.keys.index(key)
@@ -188,7 +188,7 @@ def native_provenance(sink):
                                             live=events.any(-1).nonzero().flatten()
                                             components.append(dict(key=k,pair=value.detach().tolist(),
                                                 events=[dict(span=native.spans[b,int(e)].tolist(),pair=events[e].detach().tolist()) for e in live]))
-                            edges.append(dict(bp=bp,negated=neg,weight=float(matrix.values[edge].detach()),
+                            edges.append(dict(bp=bp,negated=neg,weight=weight,
                                 parts=parts,wholes=wholes,pair=perception.values[i,b,p].detach().tolist(),
                                 native=components))
                         store=owner._concept_allocator.layer(0)
@@ -255,16 +255,15 @@ def main():
         optimizer=get_optimizer(model,*a,**kw)
         step=optimizer.step
         def observed_step(*a,**kw):
-            owner=model._concept_owner(); matrix=owner._concept_allocator.layer(0).features
-            indices=dict(matrix._index); before=matrix.values.detach().clone()
-            gradient=None if matrix.values.grad is None else matrix.values.grad.detach().clone()
+            owner=model._concept_owner(); weight=owner.order_zero.weight
+            before=weight.detach().clone()
+            gradient=None if weight.grad is None else weight.grad.detach().clone()
             result=step(*a,**kw)
             changes=[]
-            for (row,column),index in indices.items():
-                after=float(matrix.values[index].detach())
-                if after != float(before[index]):
-                    changes.append(dict(row=row,column=column,before=float(before[index]),after=after,
-                        gradient=None if gradient is None else float(gradient[index])))
+            for row,column in (weight.detach()!=before).nonzero().tolist():
+                changes.append(dict(row=row,column=column,before=float(before[row,column]),
+                    after=float(weight[row,column].detach()),
+                    gradient=None if gradient is None else float(gradient[row,column])))
             with (args.output/'writes.jsonl').open('a') as f:
                 f.write(json.dumps(dict(presentation=count,writer=type(optimizer).__name__+'.step',changes=changes))+'\n')
             return result

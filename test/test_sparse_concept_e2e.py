@@ -79,11 +79,11 @@ def test_interpreted_object_keeps_the_native_features_in_one_row():
     assert cs.concept_weights(a_row) == []          # no edges at order 0
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
     assert cs.concept_wholes(A) == [int(WORD)]
-    features = Spaces._concept_alloc_of(cs).layer().features
+    record = Spaces._concept_alloc_of(cs).order_zero_members
     # §3.10 collects basic percepts: the part run and its whole belong to
     # that percept, rather than separate columns on the concept.
     percept = cs.basic_percepts.words[A]
-    assert {col for row, col in features._index if row == a_row} == {2 * percept}
+    assert {(p, n) for row, p, n in record if row == a_row} == {(percept, False)}
     assert cs.basic_percepts.occurrences[percept] == ((1, 2), (int(WORD),))
     b_row = cs._csw_concept_row(0, B)
     assert A == B and b_row == a_row == cs._csw_row_of(A)
@@ -111,7 +111,7 @@ def test_population_inactive_is_noop():
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
     recurrent_interpretation(cs, [1, 2], WORD, key="cat")
-    assert Spaces._concept_alloc_of(cs).layer().features.nnz > 0
+    assert len(Spaces._concept_alloc_of(cs).order_zero_members) > 0
 
 
 def test_order_block_overflow_is_safe():
@@ -192,13 +192,16 @@ def test_sparse_concept_forward_smoke():
 def test_getparameters_includes_csw_after_population():
     cs = _cs_active()
     base = set(id(p) for p in cs.getParameters())
-    recurrent_interpretation(cs, [1, 2], WORD, key="cat")     # populates weights
+    A, _ = recurrent_interpretation(cs, [1, 2], WORD, key="cat")
     after = cs.getParameters()
+    # An order-zero concept writes no edge of the definition store; what
+    # learns is its column of the order-zero Sigma, a parameter.
     csw = [matrix.values for matrix in Spaces._concept_alloc_of(cs).layer().definition_matrices()
            if matrix.values is not None]
-    assert csw                                              # weights exist
+    assert not csw
     after_ids = set(id(p) for p in after)
-    assert all(id(p) in after_ids for p in csw)             # all included
+    assert id(cs.order_zero.weight) in after_ids
+    assert float(cs.order_zero.weight[:, cs._csw_row_of(A)].abs().sum()) > 0
     assert len(after) >= len(base)
 
 
@@ -317,10 +320,10 @@ def test_two_phase_forward_cutover_stamps_terminal_activations(monkeypatch):
     # so these reads test the cutover rather than minting fresh definitions.
     from configuration_fixtures import freeze_admission
     freeze_admission(m, x, monkeypatch)
-    features = Spaces._concept_alloc_of(cs0).layer().features
-    assert features.nnz > 0
-    with torch.no_grad():
-        features.values.zero_()
+    record = Spaces._concept_alloc_of(cs0).order_zero_members
+    assert len(record) > 0
+    for key in tuple(record):
+        record[key] = 0.
     W = cs0.similarity_codebook.getW()
     start0, end0 = cs0._field_order_slice(0)
     before = W.detach().clone()

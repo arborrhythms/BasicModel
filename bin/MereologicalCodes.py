@@ -292,7 +292,8 @@ class MereologicalCodes(nn.Module):
             W = getattr(cb, 'W', None)
             native.append(None if W is None else (id(W), W._version))
         identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
-        return (id(layer.features.values), None if layer.features.values is None else layer.features.values._version, len(layer.features._index),
+        members = _concept_alloc_of(self.owner).order_zero_members
+        return (id(members), members.revision,
                 tuple(native), self.owner.basic_percepts.revision, None if identity is None else identity.revision)
 
     def _invalidate_forms(self):
@@ -371,12 +372,12 @@ class MereologicalCodes(nn.Module):
     def _definitions(self, rows):
         """Net evidence over basic percepts, the only order-zero literal kind."""
         from Spaces import _concept_alloc_of
-        layer = _concept_alloc_of(self.owner).layer()
+        members = _concept_alloc_of(self.owner).order_zero_members
         definitions = {int(row): {} for row in rows}
-        for (row, column), pos in layer.features._index.items():
+        for (row, percept, negated), weight in members.items():
             if row in definitions:
-                poles = definitions[row].setdefault(column // 2, [0., 0.])
-                poles[column % 2] += float(layer.features.values[pos].detach())
+                poles = definitions[row].setdefault(percept, [0., 0.])
+                poles[int(negated)] += weight
         return {row: [(percept, max(0., poles[0]-poles[1])) for percept, poles in sorted(edges.items())]
                 for row, edges in definitions.items()}
 
@@ -412,7 +413,7 @@ class MereologicalCodes(nn.Module):
         kept = retained[unique]
         needed = unique[basic & ~kept & ~self._form_valid[unique]]
         if len(needed):
-            self._forms[needed] = self._feature_table.forms(owner, alloc.layer().features,
+            self._forms[needed] = self._feature_table.forms(owner, alloc.order_zero_members,
                                                            needed, fallback[needed])
             self.form_rows_derived += len(needed)
         self._forms[unique[~basic]] = 0

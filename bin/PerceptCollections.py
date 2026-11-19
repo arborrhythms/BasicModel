@@ -7,11 +7,10 @@ def definitions(owner):
     alloc = owner._concept_allocator
     rows = {owner._csw_row_of(cid): cid for cid, kinds in alloc.symbol_types.items()
             if 'percept_collection' in kinds and cid not in alloc.retired}
-    matrix = alloc.layer(0).features
     result = {row: [] for row in rows if row is not None}
-    for (row, column), index in matrix._index.items():
-        if row in result and column % 2 == 0 and float(matrix.values[index].detach()) > 0:
-            result[row].append((column // 2, matrix.values[index]))
+    for (row, percept, negated), weight in alloc.order_zero_members.items():
+        if row in result and not negated and weight > 0:
+            result[row].append((percept, weight))
     return {row: edges for row, edges in result.items() if edges}
 
 
@@ -23,7 +22,7 @@ def read(owner, points):
 def read_collection(owner, points, edges):
     basic = owner.basic_percepts
     return basic.read_collection(basic.read_points(points, [p for p, _ in edges]),
-                                 torch.stack([w for _, w in edges]).to(points))
+                                 points.new_tensor([w for _, w in edges]))
 
 
 @torch.no_grad()

@@ -149,26 +149,29 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
 
 
-def test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar():
+def test_the_member_record_has_no_penalty_and_an_old_feature_table_is_read_once():
     cs = _cs()
     for feature, weight in enumerate((.8, -.6, .4)):
         basic_feature(cs, 0, 'ws', feature, weight, parts=(65,))
-    store = Spaces._concept_alloc_of(cs).layer()
-    penalty = cs.definition_sparsity_loss(1.)
-    torch.testing.assert_close(penalty, torch.tensor(.4))
-    penalty.backward()
-    torch.testing.assert_close(store.features.values.grad, torch.tensor([0., 0., 1.]))
-    saved = store.parts_extras()
-    restored = _cs()
-    restored._sparse_families(0)
-    other = Spaces._concept_alloc_of(restored).layer()
-    other.load_parts_extras(saved)
-    assert other.features._index == store.features._index
-    assert other.features.nInput == store.features.nInput
-    torch.testing.assert_close(other.features.values, store.features.values)
-    assert not any('features.values' in key for key in cs.state_dict())
-
-
+    alloc = Spaces._concept_alloc_of(cs)
+    store = alloc.layer()
+    record = alloc.order_zero_members
+    # The record is no parameter: it has no penalty and no gradient.
+    assert cs.definition_sparsity_loss(1.) is None
+    assert store.definition_matrices() == (store,)
+    assert not any('features' in key for key in cs.state_dict())
+    percepts = [cs.basic_percepts.index[((65,), (feature,))] for feature in range(3)]
+    assert dict(record) == {(0, percepts[0], False): .8, (0, percepts[1], True): .6,
+                            (0, percepts[2], False): .4}
+    # A checkpoint's old feature table is read once into the record; an
+    # edge at zero (a learning candidate) is recorded at zero.
+    old = dict(version=6, buffers={}, matrices={'features': dict(
+        rows=[0, 0, 0, 0], cols=[2 * percepts[0], 2 * percepts[1] + 1, 2 * percepts[2], 2 * percepts[2] + 1],
+        nInput=2 * cs.basic_percepts.capacity, values=torch.tensor([.8, .6, .4, 0.]))})
+    read = store.saved_feature_record(old)
+    assert {key: value for key, value in read.items() if value > 0} == pytest.approx(dict(record))
+    assert read[0, percepts[2], True] == 0.
+    assert 'matrices' not in store.parts_extras()
 
 
 def test_pruning_a_feature_preserves_the_other_tower_at_the_same_address():
@@ -178,14 +181,14 @@ def test_pruning_a_feature_preserves_the_other_tower_at_the_same_address():
     basic_feature(cs, row, 'ws', 7, -.5, parts=(65,))
     cs._prepare_part_learning()
     cs._drop_concept_edge(100, 7, side='part')
-    matrix = Spaces._concept_alloc_of(cs).layer().features
+    record = Spaces._concept_alloc_of(cs).order_zero_members
     bp = cs.basic_percepts.index[((65,), (7,))]
-    assert set(matrix._index) == {(row, 2*bp), (row, 2*bp+1)}
+    assert set(record) == {(row, bp, True)}
     cs._drop_concept_edge(100, 7, side='whole')
-    assert matrix.nnz == 0 and matrix.values is None
+    assert not record
 
 
-def test_feature_growth_preserves_frozen_rows_and_optimizer_moments(tmp_path):
+def test_member_record_keeps_frozen_rows_out_of_the_learned_columns(tmp_path):
     from test_grounded_xor import grounded_model
     model, _ = grounded_model(tmp_path)
     cs = model.conceptualSpaces[0]
@@ -194,22 +197,17 @@ def test_feature_growth_preserves_frozen_rows_and_optimizer_moments(tmp_path):
     basic_feature(cs, frozen, 'ws', 0, .5, parts=(65,))
     basic_feature(cs, live, 'ws', 1, .5, parts=(65,))
     cs.freeze_concept(100)
-    optimizer = model.getOptimizer(lr=.001)
-    matrix = Spaces._concept_alloc_of(cs).layer().features
-    matrix.values.sum().backward()
-    optimizer.step()
-    optimizer.zero_grad()
-    old = matrix.values
-    moment = optimizer.state[old]['momentum_buffer'].clone()
+    model.getOptimizer(lr=.001)
+    record = Spaces._concept_alloc_of(cs).order_zero_members
+    assert {row for row, _, _ in record} == {frozen, live}
+    # The record is no parameter; the columns it started are the order-zero
+    # Sigma's, and a frozen concept's column receives no gradient.
+    assert not any(isinstance(value, torch.Tensor) for value in record.values())
     cs._prepare_part_learning()
-    cs._maybe_rebuild_optimizer_for_csw()
-    assert matrix.values is not old
-    torch.testing.assert_close(optimizer.state[matrix.values]['momentum_buffer'][:2], moment)
-    assert sum(p is matrix.values for group in optimizer.param_groups for p in group['params']) == 1
-    assert not any(p is old for group in optimizer.param_groups for p in group['params'])
-    matrix.values.sum().backward()
-    assert float(matrix.values.grad[0]) == 0
-    assert float(matrix.values.grad[1]) == 1
+    assert {row for row, _, _ in record} == {frozen, live}
+    cs.order_zero.weight.sum().backward()
+    assert float(cs.order_zero.weight.grad[:, frozen].abs().sum()) == 0
+    assert float(cs.order_zero.weight.grad[:, live].abs().sum()) > 0
 
 
 def test_definition_boundary_preserves_gradient_owned_codes(tmp_path):

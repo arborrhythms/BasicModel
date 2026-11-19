@@ -192,9 +192,13 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     def gradient(prefix, parameters):
         terms = [errors._value(term).sum() for name, term in errors._terms.items() if name.startswith(prefix)]
         return torch.autograd.grad(sum(terms), parameters, retain_graph=True, allow_unused=True)
-    derivatives = gradient('reconstruction_order_zero.', (*inverse, cs._concept_allocator.layer(0).features.values))
-    assert any(g is not None and torch.isfinite(g).all() and bool(g.abs().any()) for g in derivatives[:-1])
-    assert derivatives[-1] is not None and bool(derivatives[-1].abs().any())
+    derivatives = gradient('reconstruction_order_zero.', inverse)
+    assert any(g is not None and torch.isfinite(g).all() and bool(g.abs().any()) for g in derivatives)
+    # The selected definition is the allocator's record of the concept's
+    # order-zero members, a plain record: the decode reads its weights and
+    # passes nothing back to it.
+    record = cs._concept_allocator.order_zero_members
+    assert record and all(type(weight) is float for weight in record.values())
     assert all(g is None for g in gradient('reconstruction_reverse.', (*inverse, *policy.parameters())))
     # A nonexact proposal supplies the residual lane, using the same inverse's
     # native recomposition parameters rather than a search-gradient surrogate.

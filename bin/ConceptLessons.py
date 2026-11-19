@@ -125,11 +125,8 @@ def teach_concept_lessons(model):
                 cs._field_activated_references = {}
                 cs.mtm.promote_candidates(cs)
                 model.End()
-    cases = sorted({r for r, col in store.features._index
+    cases = sorted({r for r in alloc.order_zero_members.rows()
                     if cs._order0_inventory_row(r) and cs.concept_id_at_row(r) in alloc.raised})
-    # Exclude directly taught names; cases are the recurrent native parts.
-    cases = [r for r in cases if any(target == r
-                                   for target, col in store.features._index)]
     if not cases:
         raise ValueError('concept lessons did not witness any located field conjunctions')
     orders = [alloc.order_of(cs.concept_id_at_row(row)) for row in cases]

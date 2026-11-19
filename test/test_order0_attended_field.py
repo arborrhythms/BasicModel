@@ -211,7 +211,7 @@ def test_location_writer_keeps_an_ordered_group_before_recurrence(tmp_path):
     store = Spaces._concept_alloc_of(cs).layer(0)
     # D2: a part-only location is a selector over admitted basic percepts.
     assert {key[2] for key in cs.basic_percepts.selectors if key[1] == 'ps'} == {(part,) for part in parts}
-    assert not store.feature_groups
+    assert not Spaces._concept_alloc_of(cs).order_zero_members
     assert ps.percept_store.get_id(b'abba') is None
 
 

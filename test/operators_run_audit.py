@@ -14,7 +14,8 @@ def json_value(value):
 def native_parameters(model):
     candidates = [model.perceptualSpace.subspace.what.W]
     candidates += [ws.subspace.what.W for ws in [model.wholeSpace]]
-    candidates += [cs._concept_allocator.layer().features.values for cs in model.conceptualSpaces]
+    candidates += [cs.order_zero.weight for cs in model.conceptualSpaces
+                   if getattr(cs, 'order_zero', None) is not None]
     ids = {id(p) for p in candidates if torch.is_tensor(p) and p.requires_grad}
     return [(name,p) for name,p in model.named_parameters() if id(p) in ids]
 

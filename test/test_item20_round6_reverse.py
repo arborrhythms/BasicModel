@@ -145,9 +145,10 @@ def test_admitted_word_identity_survives_an_empty_feature_gate(monkeypatch):
         codebook = owner.similarity_codebook
         identity = model.perceptualSpace.percept_store.identity
         with torch.no_grad():
-            for (target, _), index in owner._concept_allocator.layer().features._index.items():
-                if target == row:
-                    owner._concept_allocator.layer().features.values[index] = 0.
+            record = owner._concept_allocator.order_zero_members
+            for key in tuple(record):
+                if key[0] == row:
+                    record[key] = 0.
             codebook.mereology._form_valid[row] = False
             code = codebook.lookup_rows(torch.tensor(row))
         assert identity.read(code[:identity.width]) == raw

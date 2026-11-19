@@ -1,4 +1,5 @@
-"""Device indices for deriving concept forms from their recorded basic percepts."""
+"""Device indices for deriving concept forms from their recorded basic percepts
+(the allocator's record of order-zero members)."""
 import torch
 
 
@@ -30,22 +31,20 @@ class FeatureTable:
             self.inventory_revision = revision
         return self.retained, self.fallback
 
-    def refresh(self, matrix, basic, device):
-        revision = (id(matrix._index), matrix._next_edge_id, len(matrix._index),
-                    id(basic), basic.revision, device)
+    def refresh(self, record, basic, device):
+        revision = (id(record), record.revision, id(basic), basic.revision, device)
         if revision == self.revision:
             return
         pairs = {}
-        for (row, column), position in matrix._index.items():
-            percept, pole = divmod(column, 2)
-            pair = pairs.setdefault((row, percept), [-1, -1])
-            pair[pole] = position
+        for (row, percept, negated), weight in record.items():
+            pair = pairs.setdefault((row, percept), [0., 0.])
+            pair[int(negated)] = weight
         keys = sorted(pairs)
         def indices(items):
             return torch.tensor(items, dtype=torch.long, device=device)
         self.rows = indices([row for row, _ in keys])
         self.percepts = indices([percept for _, percept in keys])
-        self.positions = indices([pairs[key] for key in keys]).reshape(-1, 2)
+        self.weights = torch.tensor([pairs[key] for key in keys], device=device).reshape(-1, 2)
         self.towers = []
         for side in (0, 1):
             percepts, members = [], []
@@ -80,23 +79,16 @@ class FeatureTable:
             blocks.append(block)
         return torch.cat(blocks, -1)
 
-    def forms(self, owner, matrix, rows, fallback):
+    def forms(self, owner, record, rows, fallback):
         basic = owner.basic_percepts
-        self.refresh(matrix, basic, rows.device)
+        self.refresh(record, basic, rows.device)
         lookup = rows.new_full((owner.nVectors,), -1)
         lookup[rows] = torch.arange(len(rows), device=rows.device)
         target = lookup[self.rows]
         present = target >= 0
-        positions = self.positions[present]
-        # The old reader subtracted the two native weights before converting
-        # the result to the percept chart. Preserve that order for mixed dtypes.
-        dtype = torch.float32 if matrix.values is None else torch.promote_types(
-            torch.float32, matrix.values.dtype)
-        dtype = torch.promote_types(dtype, basic.codes.dtype)
-        values = basic.codes.new_zeros(positions.shape, dtype=dtype)
-        if len(positions):
-            valid = positions >= 0
-            values[valid] = matrix.values[positions[valid]].to(values)
+        # A member's weight less its weight as a Not member, then the
+        # percept chart.
+        values = self.weights[present].to(torch.promote_types(torch.float32, basic.codes.dtype))
         weights = values[:, 0] - values[:, 1]
         positive = weights > 0
         target, weights = target[present][positive], weights[positive].to(basic.codes)

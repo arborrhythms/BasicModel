@@ -78,8 +78,8 @@ def test_word_form_uses_positive_definitions_then_its_own_percept(gate):
     own = owner.basic_percepts.words[owner.concept_id_at_row(row)]
     torch.testing.assert_close(book.lookup_rows(row)[:3],
                                .25 * native.W[4] + .75 * native.W[7])
-    with torch.no_grad():
-        allocator.layer().features.values.zero_()
+    for key in tuple(allocator.order_zero_members):
+        allocator.order_zero_members[key] = 0.
     torch.testing.assert_close(book.lookup_rows(row)[:3], owner.basic_percepts.code(own))
 
 

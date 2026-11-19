@@ -168,8 +168,8 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     cs.mtm.promote_candidates(cs)
     assert all(cs.mtm.entries[key].symbol is not None for key in cases)
     rows = [cs._csw_row_of(cs.mtm.entries[key].symbol) for key in cases]
-    assert all(any(r == row
-                   for r, col in store.features._index) for row in rows)
+    record = cs._concept_allocator.order_zero_members
+    assert all(any(r == row for r, _, _ in record) for row in rows)
     assert not hasattr(store, 'conjunctive')
     force_order(cs, 20001, 1)
     xor = cs._csw_concept_row(1, 20001)
@@ -210,13 +210,13 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
            'concept_updates': 32, 'initial_mse': initial_mse, 'mse': mse, 'output': output.tolist(),
            'conjunctions': len(rows), 'counts': [cs.mtm.entries[key].count for key in cases],
            'xor_parts': cs.concept_weights(xor),
-           'native_cases': [(r, c) for r, c in store.features._index if r in rows]})
+           'native_cases': [(r, p, n) for r, p, n in record if r in rows]})
     assert mse < 1e-6
     torch.testing.assert_close(output, target, atol=1e-6, rtol=0)
     assert not torch.equal(initial, store.values)
     learned = [(r, weight) for r, weight in cs.concept_weights(xor) if weight > 0]
     assert len(learned) == 2
-    assert all(store.features.values[store.features._index[0, 2 * bp]] > 0
+    assert all(record[0, bp, False] > 0
                for bp in cs.basic_percepts.carrying('ws', 9))
     # Pi is the first layer's, over basic percepts; the higher-order XOR
     # row contains only sigma edges to the cases.
@@ -234,8 +234,8 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         # New lexical rows retain their own native field. The learned cases
         # and XOR still exclude every control, on both evidence lanes.
         literals = [('bp', bp) for bp in set((*cs.basic_percepts.carrying('ws', 9),
-            *cs.basic_percepts.carrying('ws', 10), *(column // 2
-                for row, column in store.features._index if row in rows)))]
+            *cs.basic_percepts.carrying('ws', 10), *(percept
+                for row, percept, _ in record if row in rows)))]
         assert cs._percept_field.event_evidence(literals).count_nonzero() == 0
         bound = leg._concept_inventory_rows
         selected = torch.isin(bound, torch.tensor([0, xor, *rows]))

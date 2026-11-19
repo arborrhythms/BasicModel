@@ -3937,7 +3937,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
-            "declared_classes",
+            "declared_classes", "order_zero_members",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4104,7 +4104,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
-            "declared_classes",
+            "declared_classes", "order_zero_members",
         )
         for name in fields:
             if name not in saved:
@@ -4242,6 +4242,12 @@ class BaseModel(Mereology, nn.Module):
 
             layer.load_parts_extras(blob.get("parts"),
                                     old_size=saved_n_output if square_expansion else None)
+            if "order_zero_members" not in saved:
+                # A checkpoint from before the record: its feature table
+                # recorded the same members, read once.
+                alloc.order_zero_members.clear()
+                alloc.order_zero_members.update(
+                    layer.saved_feature_record(blob.get("parts")))
 
         # Migration is deferred until the common store's semantic rows load.
         if saved.get('word_obj_meta') or saved.get('interpretations'):

@@ -16,11 +16,10 @@ from test_concept_memberships import binary_features
 def test_bound_field_can_include_unwritten_inventory_addresses():
     cs = _cs(nS=128, order=2)
     store = Spaces._concept_alloc_of(cs).layer()
-    # A definition-free feature store may precede the expanded inventory.
+    # A definition-free store may precede the expanded inventory.
     store.grow_inventory(128)
-    store.features.nOutput = 112
     view = cs._concept_field_store(torch.tensor([0, 112, 127, -1]))
-    assert not view.feature_defined.any()
+    assert view.nnz == 0 and view.nOutput == 4
 
 
 
@@ -78,10 +77,8 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     assert target.word_brackets is (not source_serial)
     assert restored._serial is (not source_serial)
     assert restored._csw_row_of(cid) == row
-    old_store = Spaces._concept_alloc_of(source).layer(0)
-    new_store = Spaces._concept_alloc_of(restored).layer(0)
-    assert new_store.features._index == old_store.features._index
-    torch.testing.assert_close(new_store.features.values, old_store.features.values)
+    assert (dict(Spaces._concept_alloc_of(restored).order_zero_members)
+            == dict(Spaces._concept_alloc_of(source).order_zero_members))
     torch.testing.assert_close(restored.similarity_codebook.getW(), source.similarity_codebook.getW())
     after = restored.cs_read_memberships(native, bracket)
     slot = (restored._cs_field_concept_ids == cid).nonzero().flatten().item()

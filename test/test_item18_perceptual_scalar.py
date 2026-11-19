@@ -46,8 +46,8 @@ def test_scalar_object_collects_value_bounded_basic_percepts(named_scalar_model)
     cid = objects['alpha']
     assert owner._concept_allocator.order_of(cid) == 0
     row = owner._csw_row_of(cid)
-    features = owner._concept_allocator.layer(0).features
-    percepts = [col // 2 for target, col in features._index if target == row]
+    record = owner._concept_allocator.order_zero_members
+    percepts = [percept for target, percept, _ in record if target == row]
     assert percepts
     basic = owner.basic_percepts
     from NumericPercepts import feeling
@@ -175,7 +175,7 @@ def test_percept_reference_promotes_without_an_event_row(named_scalar_model):
     assert identity is not None
     assert owner._concept_allocator.order_of(identity) == 0
     row = owner._csw_row_of(identity)
-    assert (row, 2 * percept) in owner._concept_allocator.layer(0).features._index
+    assert (row, percept, False) in owner._concept_allocator.order_zero_members
     assert owner._closed_clause_store().location(reference) is None
 
 

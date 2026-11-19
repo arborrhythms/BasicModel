@@ -134,11 +134,10 @@ def test_contained_ordered_group_reconstructs_at_its_extent():
     understanding = model.understand(_bytes(texts))
     # Isolate PartSpace attribution. Its group spans the word extent even
     # when WholeSpace divides it into single-position property runs.
-    features = cs._concept_allocator.layer(0).features
-    with torch.no_grad():
-        for (_, column), index in features._index.items():
-            if cs.basic_percepts.occurrences[column // 2][1]:
-                features.values[index] = 0
+    record = cs._concept_allocator.order_zero_members
+    for key in tuple(record):
+        if cs.basic_percepts.occurrences[key[1]][1]:
+            record[key] = 0.
     reverse, _ = model.reverseReconstruct(understanding)
     assert model._decode_reconstructed_inputs(reverse, []) == texts
     model.End()

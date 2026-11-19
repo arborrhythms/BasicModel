@@ -218,7 +218,7 @@ def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
     a0 = getattr(cs0, "_cs_last_a0", None)
     assert a0 is not None and torch.is_tensor(a0)
     store = Spaces._concept_alloc_of(cs0).layer()
-    assert store.features.nnz > 0, 'the boundary must admit witnessed features'
+    assert len(Spaces._concept_alloc_of(cs0).order_zero_members) > 0, 'the boundary must admit witnessed features'
     carrier = m._combine_last_cs_sub
     leg = m.symbolSpace.forward_concept_to_symbol(carrier)
     raw = seen['raw']

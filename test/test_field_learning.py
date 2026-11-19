@@ -32,8 +32,8 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     assert y < -.76
     torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
     cs.Reset(hard=True)
-    features = Spaces._concept_alloc_of(cs).layer().features
-    written = {col for (_, col), i in features._index.items() if float(features.values[i]) > 0}
+    record = Spaces._concept_alloc_of(cs).order_zero_members
+    written = {2 * percept + int(negated) for (_, percept, negated), weight in record.items() if weight > 0}
     present = cs.basic_percepts.index[((7,), ())]
     absent = cs.basic_percepts.index[((8,), ())]
     assert 2 * present + 1 in written

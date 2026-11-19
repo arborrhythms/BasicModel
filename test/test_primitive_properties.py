@@ -188,9 +188,13 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path
     model.forward(x)
     carrier = model._combine_last_cs_sub
     optimizer = model.getOptimizer(lr=.001)
-    parameter = Spaces._concept_alloc_of(cs).layer().features.values
+    # The order-zero member is recorded with the allocator and saved in its
+    # sidecar; what learns is the concept's column of the order-zero Sigma.
+    parameter = cs.order_zero.weight
     assert sum(p is parameter for g in optimizer.param_groups for p in g['params']) == 1
-    assert not any(v.data_ptr() == parameter.data_ptr() for v in model.state_dict().values())
+    record = Spaces._concept_alloc_of(cs).order_zero_members
+    members = dict(record)
+    assert members
     evidence = carrier._concept_activations.clone()
     perception = cs._percept_field.clone()
     where, when = carrier._concept_where.clone(), carrier._concept_when.clone()
@@ -198,7 +202,10 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path
     for name in ('activations', 'where', 'when'):
         object.__setattr__(carrier, '_concept_' + name, None)
     cs._percept_field = None
+    record.clear()
     model._restore_structural_extras(saved)
+    assert dict(Spaces._concept_alloc_of(cs).order_zero_members) == members
+    assert Spaces._concept_alloc_of(cs).order_zero_members is record
     restored = model.conceptualSpaces[-1].subspace
     torch.testing.assert_close(restored._concept_activations, evidence)
     torch.testing.assert_close(restored._concept_where, where)

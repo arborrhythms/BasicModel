@@ -338,9 +338,9 @@ class InterpretLayer(GrammarLayer):
             discovering = any(cs.concept_id_at_row(row) not in lexical
                               for row in cs._witnessed_rows())
         if discovering:
-            features = alloc.layer()
-            case = next((row for (row, col) in features.features._index
-                         if len(parts) == 1 and col // 2 in cs.basic_percepts.carrying('ps', parts[0]) and bool(features.assigned[row])), None)
+            store = alloc.layer()
+            case = next((row for (row, percept, _) in alloc.order_zero_members
+                         if len(parts) == 1 and percept in cs.basic_percepts.carrying('ps', parts[0]) and bool(store.assigned[row])), None)
             obj = None if case is None else cs.concept_id_at_row(case)
             try:
                 self._preflight(inventory=False)

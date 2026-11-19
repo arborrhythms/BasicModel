@@ -18,11 +18,10 @@ def reference(owner, rows):
                      or concept in store.form_regions.values()))
         if owner._row_order(row) == 0:
             edges = {}
-            matrix = store.layer().features
-            for (source, column), index in matrix._index.items():
+            for (source, percept, negated), weight in store.order_zero_members.items():
                 if source == row:
-                    pair = edges.setdefault(column // 2, [0., 0.])
-                    pair[column % 2] += float(matrix.values[index].detach())
+                    pair = edges.setdefault(percept, [0., 0.])
+                    pair[int(negated)] += weight
             weighted = [(p, f-a) for p, (f, a) in sorted(edges.items()) if f > a]
             if row in definitions(owner):
                 output[:charts.percept_width] = code(owner, row)[:charts.percept_width]
@@ -54,7 +53,8 @@ def test_scattered_percepts_match_single_grouped_negative_and_retained_rows():
         assert torch.equal(actual, expected)
     check()
     with torch.no_grad():
-        alloc.layer().features.values.mul_(.75)
+        for key in tuple(alloc.order_zero_members):
+            alloc.order_zero_members[key] *= .75
         native.W[4, 1] += .25
     check()
     alloc.individuals.add(owner.concept_id_at_row(a))

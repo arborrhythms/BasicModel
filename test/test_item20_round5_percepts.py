@@ -207,10 +207,9 @@ def test_one_admitted_form_uses_one_basic_percept_and_only_two_pole_columns(monk
         parts, wholes = basic.occurrences[bp]
         expected = torch.cat(basic.subspace_bounds(bp))
         torch.testing.assert_close(basic.code(bp), expected)
-        definitions = owner._concept_allocator.layer().features
+        record = owner._concept_allocator.order_zero_members
         word_row = owner._csw_row_of(word)
-        assert {column for (row, column) in definitions._index if row == word_row} == {2*bp}
-        assert definitions.nInput == 2*basic.capacity
+        assert {(percept, negated) for (row, percept, negated) in record if row == word_row} == {(bp, False)}
         receipt('basic-admission-layout', dict(forms=1, repeated_admission_new_rows=0,
             basic_rows=before, word_column=2*bp, stride=2, capacity=basic.capacity,
             parts=len(parts), wholes=len(wholes), centroid=True))

@@ -87,24 +87,23 @@ def test_witnesses_write_alternatives_without_conjoining_their_literals():
     # The second witness joins the concept's column as an alternative: no
     # concept is made for it, no edge, and no conjunction of the two.
     assert cs.concept_weights(row) == []
-    assert {col for r, col in store.features._index if r == row} == {2 * first, 2 * second}
+    record = Spaces._concept_alloc_of(cs).order_zero_members
+    assert {(p, n) for r, p, n in record if r == row} == {(first, False), (second, False)}
     assert not basic.conjunctions
     sigma = cs.order_zero
     expected = sum(basic.codes[r] / basic.codes[r].square().sum() for r in (first, second))
     torch.testing.assert_close(sigma.weight[:sigma.content_width, row].detach(), expected)
-    before = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+    before = (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
     weights = sigma.weight.detach().clone()
     recurrent_interpretation(cs, [8], [2], key='word')
-    assert before == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+    assert before == (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
     assert torch.equal(sigma.weight.detach(), weights)
     from test_structural_checkpoint import _model_with
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
     restored = _cs()
     _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)
-    other = Spaces._concept_alloc_of(restored).layer()
-    assert other.features._index == store.features._index
+    assert dict(Spaces._concept_alloc_of(restored).order_zero_members) == dict(record)
     assert restored.concept_weights(row) == cs.concept_weights(row)
-    torch.testing.assert_close(other.features.values, store.features.values)
 
 
 def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
@@ -135,9 +134,10 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     after = cs.cs_read_memberships((torch.tensor([[fused]]), extent,
         ws.subspace.what.primitive_properties, raw, extent), extent)
     torch.testing.assert_close(after, result)
-    count = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+    record = Spaces._concept_alloc_of(cs).order_zero_members
+    count = (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
     recurrent_interpretation(cs, [fused], whole, key='love')
-    assert count == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+    assert count == (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
     cs.refine_over_collected()
     assert A not in Spaces._concept_alloc_of(cs).retired
 
@@ -147,7 +147,7 @@ def test_alternatives_do_not_trigger_conjunctive_overcollection():
     for n in range(6):
         word, A = recurrent_interpretation(cs, [20 + n], [10 + n], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
-    before = dict(store.features._index)
+    before = dict(Spaces._concept_alloc_of(cs).order_zero_members)
     cs.refine_over_collected()
     assert A not in Spaces._concept_alloc_of(cs).retired
-    assert store.features._index == before
+    assert dict(Spaces._concept_alloc_of(cs).order_zero_members) == before

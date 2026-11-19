@@ -14918,20 +14918,15 @@ class ConceptualSpace(Space):
         if not 0 <= int(feature) < len(basic.index):
             raise ValueError('a concept literal must reference an admitted basic percept')
         if getattr(self, '_frozen_concepts', None) and row in self._frozen_rows():
-            return None
-        store = self._sparse_families(0)
-        matrix = store.features
-        matrix.nInput = 2*basic.capacity
-        col = 2*int(feature) + int(negated or weight < 0)
-        known = (row, col) in matrix._index
-        # The feature table records which percepts a concept was started
-        # from; the concept reads its column of the order-zero Sigma.
-        self._maybe_rebuild_optimizer_for_csw()
-        result = matrix.add_edge(row, col, weight=abs(float(weight)))
-        self._maybe_rebuild_optimizer_for_csw()
-        if not known and weight:
-            self._start_order_zero_column(row, int(feature), -1. if col % 2 else 1.)
-        return result
+            return False
+        # The allocator records which percepts a concept was started from;
+        # the concept reads its column of the order-zero Sigma.
+        negated = bool(negated or weight < 0)
+        added = _concept_alloc_of(self).order_zero_members.add(
+            row, int(feature), negated, abs(float(weight)))
+        if added and weight:
+            self._start_order_zero_column(row, int(feature), -1. if negated else 1.)
+        return added
 
     @torch.no_grad()
     def _start_order_zero_column(self, row, percept, sign):
@@ -14954,31 +14949,22 @@ class ConceptualSpace(Space):
         if not changed:
             return
         sigma = self.install_order_zero()
-        record = _concept_alloc_of(self).layer(0).features
-        weights = record.values.detach() if record.values is not None else None
-        for (row, col), index in record._index.items():
-            member = int(col) // 2
-            if member not in changed or (weights is not None and float(weights[index]) == 0.):
-                continue
-            if row >= sigma.nOutput:
+        for row, member, negated in tuple(_concept_alloc_of(self).order_zero_members.started()):
+            if member not in changed or row >= sigma.nOutput:
                 continue
             (p0, n0), (p1, n1) = changed[member]
-            sign = -1. if int(col) % 2 else 1.
+            sign = -1. if negated else 1.
             delta = OrderZeroSigma.member_column(p1, n1) - OrderZeroSigma.member_column(p0, n0)
             sigma.weight[:sigma.content_width, row] += sign * delta.to(sigma.weight)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``."""
-        store = _concept_alloc_of(self).layer(0)
-        rows = sorted({target for (target, col) in store.features._index
-                       if col == 2 * int(percept)})
+        rows = _concept_alloc_of(self).order_zero_members.rows_of(percept)
         return rows[0] if rows else None
 
     def concept_percepts(self, row):
         """The basic percepts an order-zero concept was started from."""
-        store = _concept_alloc_of(self).layer(0)
-        return sorted({col // 2 for (target, col) in store.features._index
-                       if target == int(row) and col % 2 == 0})
+        return _concept_alloc_of(self).order_zero_members.members(row)
 
     def _refresh_basic_selectors(self):
         basic = self.basic_percepts
@@ -15030,18 +15016,16 @@ class ConceptualSpace(Space):
         """Bind sparse definitions for this read; the view owns no parameters."""
         store = _concept_alloc_of(self).layer(0)
         rows = self._field_inventory_rows() if inventory_rows is None else inventory_rows
-        view = store.bind(rows)
-        defined = self._concept_part_rows(store.features, rows.device)
-        valid = (rows >= 0) & (rows < len(defined))
-        view.feature_defined = defined[rows.clamp(0, len(defined) - 1)] & valid
-        return view
+        return store.bind(rows)
 
     @torch.no_grad()
-    def _bind_attended_concepts(self, required, matrix):
+    def _bind_attended_concepts(self, required, rows_t):
         """Gather every definition reachable from active native percept poles.
 
-        The closure over the definition edges runs on the device (item 1.5);
-        only the reached rows come back to the host, to be grouped by order.
+        ``required[k]`` is the reading of the order-zero member whose concept
+        is ``rows_t[k]`` (:class:`ConceptMembers`). The closure over the
+        definition edges runs on the device (item 1.5); only the reached rows
+        come back to the host, to be grouped by order.
         """
         store = _concept_alloc_of(self).layer()
         device = required.device
@@ -15049,9 +15033,7 @@ class ConceptualSpace(Space):
         active = (required.amax((2, 3)) > 0 if required.shape[2] else
                   required.new_zeros(required.shape[:2], dtype=torch.bool))
         B = int(required.shape[1])
-        rows_t, _ = matrix._indices(device)
-        # Zero-weight candidate edges still need their inputs to receive
-        # learning credit; the fold keeps their value zero.
+        rows_t = rows_t.to(device)
         targets, sources = [], []
         standing = torch.zeros(S, dtype=torch.bool, device=device)
         for parent in (store,):
@@ -15127,22 +15109,22 @@ class ConceptualSpace(Space):
         Each reading's active basic percepts are combined, and the Sigma of
         order zero reads the combination (``OrderZero``).
         """
-        store = _concept_alloc_of(self).layer(0)
-        matrix = store.features
+        members = tuple(_concept_alloc_of(self).order_zero_members)
         if publish:
             object.__setattr__(self, '_percept_field', perception)
             object.__setattr__(self, '_cs_field_where', perception.where)
             object.__setattr__(self, '_cs_field_when', perception.when)
             # A recorded member that this read does not hold is absent.
             read = set(perception.keys)
-            held = [i for i, col in enumerate(matrix._cols) if ('bp', col // 2) in read]
-            membership = perception.values.new_zeros(len(matrix._cols), *perception.values.shape[1:])
+            held = [i for i, (_, percept, _) in enumerate(members) if ('bp', percept) in read]
+            membership = perception.values.new_zeros(len(members), *perception.values.shape[1:])
             if held:
-                keys = [('bp', matrix._cols[i] // 2) for i in held]
+                keys = [('bp', members[i][1]) for i in held]
                 membership[held] = perception.values.index_select(0, perception.selected(keys))
-            columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
-            required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
-            self._bind_attended_concepts(required, matrix)
+            negated = torch.tensor([n for _, _, n in members], device=membership.device, dtype=torch.bool)
+            required = torch.where(negated[:, None, None, None], membership.flip(-1), membership)
+            self._bind_attended_concepts(required, torch.tensor(
+                [row for row, _, _ in members], dtype=torch.long))
         combined = self.order_zero_input(perception)
         B = combined.shape[0]
         n0 = self._field_caps()[0] if publish else self._order_caps()[0]
@@ -15164,7 +15146,7 @@ class ConceptualSpace(Space):
 
         A concept's single signed value is never both; it is read both
         across its members' rows, the basic percepts its column was started
-        from (read from the feature record): the least of what they give for
+        from (the allocator's record of its members): the least of what they give for
         and what they give against, each joined by the union. A member gives
         its for lane as for and its against lane as against; a Not member
         the reverse.
@@ -15180,13 +15162,11 @@ class ConceptualSpace(Space):
             result = result[:, batch:batch + 1]
         index = {key: i for i, key in enumerate(perception.keys)}
         members = {}
-        record = _concept_alloc_of(self).layer(0).features
-        weights = record.values.detach() if record.values is not None else None
-        for (target, col), position in record._index.items():
-            found = index.get(('bp', int(col) // 2))
-            # A member recorded at weight zero did not enter the column.
-            if found is not None and (weights is None or float(weights[position]) != 0.):
-                members.setdefault(int(target), set()).add((found, int(col) % 2))
+        # A member recorded at weight zero did not enter the column.
+        for target, percept, negated in _concept_alloc_of(self).order_zero_members.started():
+            found = index.get(('bp', percept))
+            if found is not None:
+                members.setdefault(target, set()).add((found, int(negated)))
         n0 = self._order_caps()[0]
         for slot, row in enumerate(rows):
             held = sorted(members.get(row, ())) if 0 <= row < n0 else ()
@@ -15249,11 +15229,10 @@ class ConceptualSpace(Space):
         """Total edge count over the DISTINCT family layers (v3: every order
         shares ONE store, so dedup by identity before summing)."""
         seen, total = set(), 0
-        for s in (getattr(self, "_sparse_fam", None) or {}).values():
-            for ly in (s, s.features):
-                if ly is not None and id(ly) not in seen:
-                    seen.add(id(ly))
-                    total += ly.nnz
+        for ly in (getattr(self, "_sparse_fam", None) or {}).values():
+            if ly is not None and id(ly) not in seen:
+                seen.add(id(ly))
+                total += ly.nnz
         return total
 
     def getParameters(self):
@@ -15271,12 +15250,11 @@ class ConceptualSpace(Space):
             if id(parameter) not in seen:
                 base.append(parameter)
                 seen.add(id(parameter))
-        for s in (getattr(self, "_sparse_fam", None) or {}).values():
-            for ly in (s, s.features):
-                if (ly is not None and ly.values is not None
-                        and id(ly.values) not in seen):
-                    seen.add(id(ly.values))
-                    base.append(ly.values)
+        for ly in (getattr(self, "_sparse_fam", None) or {}).values():
+            if (ly is not None and ly.values is not None
+                    and id(ly.values) not in seen):
+                seen.add(id(ly.values))
+                base.append(ly.values)
         return base
 
     @torch.no_grad()
@@ -15305,19 +15283,6 @@ class ConceptualSpace(Space):
                 column = source + pole * offset
                 if bool(evidence[pole] > 0) and (row, column) not in store._index:
                     store.add_edge(row, column, weight=0.)
-                    changed = True
-        feature = store.features
-        if feature.values is not None:
-            defined = [(row, col) for (row, col), pos in list(feature._index.items())
-                       if row not in frozen and float(feature.values[pos]) > 0]
-            for row, col in defined:
-                opposite = col ^ 1
-                if (row, opposite) not in feature._index:
-                    feature.nInput = max(feature.nInput, opposite + 1)
-                    feature.add_edge(row, opposite, weight=0.)
-                    group = _concept_alloc_of(self).layer(0).feature_groups.get((row, col))
-                    if group is not None:
-                        _concept_alloc_of(self).layer(0).feature_groups[row, opposite] = group
                     changed = True
         observed = getattr(self, '_cs_last_a0', None)
         active = []
@@ -15441,15 +15406,6 @@ class ConceptualSpace(Space):
             ly.fold_presence(x, start=start, end=end),
             ly.fold_presence(x, start=start, end=end, dual=True)), -1)
         return result.reshape(end - start, B, L, 2)
-
-    @staticmethod
-    def _concept_part_rows(matrix, device):
-        """Only positive exponents define a part; zero is unassigned."""
-        rows, _ = matrix._indices(device)
-        mass = torch.zeros(matrix.nOutput, device=device)
-        if matrix.values is not None:
-            mass = mass.index_add(0, rows, matrix.values.detach().to(device).clamp_min(0))
-        return mass > 0
 
     def cs_forward_content(self, a_0, dictionary):
         """Compose paired evidence within occurrences, then read two symbols.
@@ -15577,17 +15533,21 @@ class ConceptualSpace(Space):
         """
         addresses = self._field_inventory_rows(field.device) if inventory_rows is None else inventory_rows
         inferred = self.cs_reverse_presence(field, observed=observed, inventory_rows=addresses)
-        features = _concept_alloc_of(self).layer(0).features
-        rows, columns = features._indices(field.device)
-        count = len(rows)
+        record = _concept_alloc_of(self).order_zero_members
+        members = tuple(record)
+        count = len(members)
+        rows = torch.tensor([row for row, _, _ in members], dtype=torch.long, device=field.device)
+        columns = torch.tensor([2 * percept + int(negated) for _, percept, negated in members],
+                               dtype=torch.long, device=field.device)
         output = field.new_zeros(2 * count, field.shape[1], field.shape[2], 1)
         # Basic percepts are alternative witnesses of a concept. Attribute
-        # its demand over the written alternatives, rather than asserting
+        # its demand over the recorded alternatives, rather than asserting
         # every alternative at full strength. A precise basic-level concept
         # then retains its own identity beside a broader property concept.
-        weights = (features._fold_weights(field) if features.values is not None
-                   else field.new_zeros(count))
-        totals = weights.new_zeros(features.nOutput).scatter_add(0, rows, weights)
+        # A member's weight is its record's, less its record as a Not member.
+        weights = field.new_tensor([max(0., record.net(row, percept) * (-1. if negated else 1.))
+                                    for row, percept, negated in members]).reshape(count)
+        totals = weights.new_zeros(int(self.nVectors)).scatter_add(0, rows, weights)
         shares = weights / totals[rows].clamp_min(torch.finfo(weights.dtype).tiny)
         native_columns = (columns - columns % 2)[:, None] + torch.arange(2, device=field.device)
         for b in range(field.shape[1]):
@@ -15600,7 +15560,7 @@ class ConceptualSpace(Space):
                 output[2 * present + pole, b, :, 0] = values * shares[present, None]
         spans = None
         if perception is not None:
-            keys = [('bp', col // 2) for col in features._cols]
+            keys = [('bp', percept) for _, percept, _ in members]
             events = perception.event_evidence(keys)
             # Same native row, two poles. Repetition cannot increase support.
             events = events.permute(0, 4, 1, 2, 3).flatten(0, 1).to(output)
@@ -15859,8 +15819,7 @@ class ConceptualSpace(Space):
         evidence = getattr(self, '_cs_order0_raw', None)
         if perception is None or not torch.is_tensor(evidence):
             return
-        store = _concept_alloc_of(self).layer(0)
-        matrix = store.features
+        members = tuple(_concept_alloc_of(self).order_zero_members)
         addresses = self._field_inventory_rows()
         pending = set()
         words = self._word_definition_ids()
@@ -15868,14 +15827,15 @@ class ConceptualSpace(Space):
         for b in range(evidence.shape[1]):
             bound = addresses[:, b] if addresses.ndim == 2 else addresses
             inverse = {row: slot for slot, row in enumerate(bound.tolist()) if row >= 0}
-            for row, col in tuple(matrix._index):
+            for row, percept, negated in members:
                 slot = inverse.get(row)
                 cid = self.concept_id_at_row(row)
                 if (slot is None or slot >= len(evidence) or cid is None
                         or cid in words or self.is_frozen(cid)):
                     continue
-                group = (col // 2,)
-                key = ('bp', col // 2)
+                col = 2 * percept + int(negated)
+                group = (percept,)
+                key = ('bp', percept)
                 index = lookup.get(key)
                 if index is None:
                     continue
@@ -16423,8 +16383,7 @@ class ConceptualSpace(Space):
             basic = self.basic_percepts
             basic.selectors = {key: weight for key, weight in basic.selectors.items()
                 if not (key[0] == c_row and key[1] == tower and int(code) in key[2])}
-            rows = basic.carrying(tower, int(code))
-            ly.features.remove_edges([(int(c_row), 2*row+pole) for row in rows for pole in (0, 1)])
+            _concept_alloc_of(self).order_zero_members.discard(c_row, basic.carrying(tower, int(code)))
         if getattr(self, '_frozen_concepts', None):
             self._refresh_frozen_values_hook()
 
