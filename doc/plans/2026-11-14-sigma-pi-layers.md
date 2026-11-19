@@ -8466,6 +8466,23 @@ that learns pulls its neighbours with it and places that are next to
 one another stay so. It is in `doc/FutureWork.md` ("A where that gives
 more of its range to what matters"), with what is left to specify.
 
+### 19.67 Alec: a reading's where is its own (2026-11-19)
+
+Round 2 found that with the `.where` of a reading combined over its
+percepts, as rule 7 combines their vectors, the where coordinates say
+how many percepts a reading has and no longer where it is (§23.2.1).
+Asked whether a reading's `.where` and `.when` are its own or the
+combination, with the example of `Felix` at place 8 and at place 20,
+Alec:
+
+> It's own, flowing from the fixed .where parameter we mentioned.
+
+**Decided.** A reading's `.where` is its own place, and it flows from
+the fixed where parameter (rule 47), not from a combination over the
+reading's percepts. The what part of the vectors is still combined by
+the Pi on the gaps, as he confirmed on 2026-11-17. *Mine:* the `.when`
+is the reading's own in the same way; he named the where.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -8811,13 +8828,14 @@ chooses from. The old classes are not edited.
    $x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$, with $b_p$ the Pi's value
    for percept $p$ on that lane and $v_p$ its full vector. `.where`
    and `.when` are read unsigned; since item 1.8 they are stored so
-   (1.8 §59.62), and a reader of an angle takes $2x - 1$. *Mine, from
-   round 2 (§23.2.1), and put to Alec:* the `.where` and `.when`
-   coordinates of a reading are not combined over its percepts. A
-   reading has one place and one time, its own, read at the degree
-   that it is present. Combined over the percepts they say how many
-   percepts there are and no longer where (0 of 48 places read in the
-   trial).
+   (1.8 §59.62), and a reader of an angle takes $2x - 1$. The `.where`
+   of a reading is not combined over its percepts (Alec, §19.67:
+   "It's own, flowing from the fixed .where parameter we mentioned").
+   A reading has one place, its own, and its where wires come from
+   the where parameter of rule 47. Combined over the percepts they
+   say how many percepts there are and no longer where (round 2,
+   §23.2.1: 0 of 48 places read). *Mine:* the `.when` likewise, and
+   both are read at the degree that the reading is present.
 8. *The concepts of order zero* (Alec, §18.24, rule 23): the Sigma of
    rule 3 on $x$, with $U$ dense, of the perceptual width by the
    concepts. It replaces the fold of `ConceptualSpace._compose_order0`,
@@ -9597,8 +9615,9 @@ section:
    Round 2 found that it cuts weak words. The map by weights is
    built, as Alec decided; whether a weak word should come back is
    his.
-2b. *The where and the when of a reading* (rule 7): not combined over
-   its percepts. Built so in round 3, put to Alec.
+2b. *The where and the when of a reading* (rule 7). *Closed by Alec
+   (§19.67):* the where is the reading's own. The when likewise is
+   mine.
 3. *Which row "words" is* (rule 35; §19.29). Built as one declared
    concept.
 4. *What becomes of the 32 coordinates of the length block* (rule
