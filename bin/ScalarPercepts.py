@@ -27,7 +27,11 @@ def code(owner, value):
 def bare(owner, points):
     """Points that are a value's code and nothing else."""
     basic = owner.basic_percepts
-    place = owner.where_registry.slices['scalar'][0]
+    registry = getattr(owner, 'where_registry', None)
+    if registry is None or 'scalar' not in registry.slices:
+        # No scalar place: no point is a value's code.
+        return torch.zeros(points.shape[:-1], dtype=torch.bool, device=points.device)
+    place = registry.slices['scalar'][0]
     return (basic.bin_of(points[..., :basic.width], place) >= 0) & ~points[..., basic.width:].ne(0).any(-1)
 
 
