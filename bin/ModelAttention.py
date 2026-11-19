@@ -254,12 +254,9 @@ def stage_input(model):
         # The sentence owns admission. Preparation exposes an opening,
         # without spending a second row-wide walk before composition.
         return
-    # No sentence owns admission here. Where the grammar declares
-    # interpretation, attention looks and the grammar may interpret at each
-    # look, with the decisions of the sentence's looks. Examination alone
-    # never interprets: it walks once, as before.
-    interprets=getattr(chooser,'interpret_index',None) is not None
-    reading=_word_carrier(interpret_words(**arguments()),W) if interprets else read()
+    # No sentence owns admission here. Attention looks and the grammar may
+    # interpret at each look, with the decisions of the sentence's looks.
+    reading=_word_carrier(interpret_words(**arguments()),W)
     model._attention_greedy=reading
     model._attention_words=reading
     model._attention_spans=spans
