@@ -52,6 +52,10 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     model.inputSpace.data.train_input = ['a red cat', 'the blue dog']
     model.inputSpace.data.train_output = [torch.zeros(1),torch.zeros(1)]
     model.inputSpace.data.text_answers = {'train':['cat','dog']}
+    # Rule 20: MTM nominates a form after recurrence; the words are read
+    # until nominated, so that the one reading below is of known words.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['a red cat', 'the blue dog'])
     monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': [
         dict(text='a red cat', tree=['surface',0,['add',1,2]], waits=True),
         dict(text='the blue dog', tree=['surface',0,['add',1,2]], waits=True)]}, raising=False)

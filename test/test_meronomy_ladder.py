@@ -154,6 +154,12 @@ def trained_ladder():
         m = _build_ladder()
         # Numeric labels retain the forward head (loop D4).
         m.answer_synthesis = False
+        # Rule 20: MTM nominates a form after recurrence. The training
+        # sentences' forms are read until nominated, so that the two
+        # presentations below resolve their units to concepts.
+        from nomination_fixtures import nominated_forms
+        texts = [str(text) for text in m.inputSpace.data.train_input]
+        nominated_forms(m, texts)
         optimizer = m.getOptimizer(lr=1e-3)
         with redirect_stdout(output):
             m.runEpoch(optimizer=optimizer, batchSize=1, split="train", max_batches=2)
@@ -416,6 +422,10 @@ def test_admitted_phrase_row_snaps_at_the_folded_slot():
     from Memory import ShortTermMemory
     m = _chunk_forced_ladder()
     cs = m._concept_owner()
+    # Rule 20: MTM nominates a form after recurrence; a unit carries a
+    # concept id once its form is nominated (the digits of 12 are units).
+    from nomination_fixtures import nominated_forms
+    nominated_forms(m, ["12 plus 1", "1 2"])
     _stage_tensor_peer(m, ["12 plus 1"])
     stm = m.conceptualSpace.stm
     from PrependedSymbols import word_view

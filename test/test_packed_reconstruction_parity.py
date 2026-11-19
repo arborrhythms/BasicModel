@@ -145,15 +145,19 @@ def measure_layout(model, rows, *, packed):
 
 
 def warm_vocabulary(model, rows):
+    """Read the rows' sentences until MTM nominates their units (rule 20: a
+    form becomes a word on its ``concept_mint_count``-th reading), so that
+    neither layout meets a unit with no row and no way back."""
     from What import What
     surfaces = [s for row in rows for s in row]
-    with torch.no_grad():
-        model.runBatch(train=False, batchSize=len(surfaces), split="validation",
-                       batch_override=(model.inputSpace.prepInput(surfaces),
-                                       torch.empty(len(surfaces), 0)),
-                       questions=tuple(What.inference(b, split="validation")
-                                       for b in range(len(surfaces))))
-    reset(model, packed=False, final=True, batch=len(surfaces))
+    for _ in range(model._concept_owner().concept_mint_count):
+        with torch.no_grad():
+            model.runBatch(train=False, batchSize=len(surfaces), split="validation",
+                           batch_override=(model.inputSpace.prepInput(surfaces),
+                                           torch.empty(len(surfaces), 0)),
+                           questions=tuple(What.inference(b, split="validation")
+                                           for b in range(len(surfaces))))
+        reset(model, packed=False, final=True, batch=len(surfaces))
 
 
 @pytest.mark.slow
