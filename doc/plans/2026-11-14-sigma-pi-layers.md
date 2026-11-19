@@ -7681,6 +7681,101 @@ is a quarter fewer parts, and parthood reads as well: `is` has the part
 letters and these 737 parts in place of every pair, so the first
 products are smaller still. Not run again with this map.
 
+### 19.57 Alec: test the part map on Metal; "words" presses against the space; reconstruction (2026-11-19)
+
+Alec:
+
+> So if I understand correctly, the proposed "part powerset" is more
+> efficient? Lets test that out, at least it runs on MPS and gives us
+> the full set of parts on wires, as we had hoped.
+>
+> Please do make sure that selecting "words" in the concept tree gives
+> negative pressure to the " " characters.
+>
+> On reconstruction, if we reconstruct a word poorly in virtue of not
+> being able to combine parts at the right locations, will the
+> inaccurate reconstruction create a differentiating word? Regardless,
+> reconstruction will have to proceed from the specific concept, which
+> will need to associate the part arrays (what) with matching location
+> arrays (where).
+
+**1. The test on Metal** (Claude; scratch script
+`part_map_mps_test.py`). The part map of §19.56: the 26 letters and
+736 added parts, 762 in all (392 pairs, 297 of 3 letters, 43 of 4, 4
+of 5), for 197,014 forms; a form holds 15.9 parts. A sentence is 20
+words, 201 characters. Stage 1 gives the parts at every place, one
+product for each length. Stage 2 gives the words: the parts matched
+inside each run of letters, in one product against the parts of every
+form; a word is the row whose parts are exactly those.
+
+| | On Metal | On the host |
+| --- | ---: | ---: |
+| Words found, and the right ones | 500 of 500 | 500 of 500 |
+| Stage 1, the parts at every place | 0.50 ms | 0.44 ms |
+| Stage 2, the words, against all 197,014 forms | 5.92 ms | 8.00 ms |
+| Both | 6.25 ms | 8.45 ms |
+
+One sentence gives an array of 201 places by 762 parts with 369 parts
+at places, on the device.
+
+*Is it more efficient?* In what is stored, yes: 762 parts in place of
+a code of 96 coordinates for each form and a trie. In getting the
+parts onto wires, it is of the same order as today's lookup (0.2 to
+0.4 ms for a sentence with the model on Metal, the item 1.5 plan), and
+it is products alone. In finding which form the parts make, not as
+run here: one product against every form is 5.9 ms and grows with the
+dictionary. That step need not be made against every form (rule 33:
+the Pi is read on the rows that can be meant); how it is narrowed on
+the device is not designed.
+
+**2. "Words" presses against the space** (Alec). A request that
+selects the node "words" in the concept tree gives the space a
+negative entry: a Not entry on the space (rule 3). *Added to rule 35.*
+*Certificate:* with a form of two words known (`ice cream`), a request
+for "words" lowers the part that holds the space below the two words
+inside it, and without that request the larger form is the one that
+fits (§19.30); on the lesson's sentences no part selected by "words"
+holds a space. *Not simulated:* the run above bounded a word by the
+spaces outright.
+
+**3. A word put back together wrongly** (his question). Run by Claude
+with the same part map (3,000 words of four letters or more; scratch
+script `poor_reconstruction_check.py`). A wrong string is read as the
+set of parts found in it:
+
+| The wrong string | Strings | Read as the same word | As another word | As no word |
+| --- | ---: | ---: | ---: | ---: |
+| two neighbouring letters exchanged | 22,609 | 0.1% | 0.3% | 99.6% |
+| one letter left out | 25,609 | 0.5% | 3.7% | 95.8% |
+| one letter said twice | 25,609 | 6.0% | 0.1% | 93.9% |
+| a pair of letters said twice | 22,267 | 11.3% | 0.1% | 88.6% |
+| the word's own pairs joined in another order, same length | 7,390 | 2.3% | 6.5% | 91.2% |
+
+- *Mostly it makes no word,* which is seen as an error.
+- *Sometimes it makes another word* (`pilage` with a letter said
+  twice is `pillage`; `peopler` with a letter left out is `people`).
+  That is a differentiating word in his sense, as Claude reads it.
+- *Sometimes it still reads as the word that was meant,* and the part
+  map cannot tell: `pimpleprooof` reads as `pimpleproof`. The part map
+  tells known forms from one another, not a known form from every
+  string. Where the length is compared as well, none of the strings
+  with a letter or a pair added or left out reads as the same word;
+  what is left is 0.1% of the exchanges and 2.3% of the other orders.
+
+**4. Reconstruction proceeds from the specific concept** (Alec). The
+concept associates its part arrays (what) with matching location
+arrays (where). *Claude's reading:* a form keeps, beside the parts it
+holds, the place of each within it. The read needs only the set; the
+way back needs the places. Stage 1 gives them: each part is matched
+at a place, and within a word those places are the where array for
+its what array (`this`: `t` at 0, `h` at 1, `i` at 2, `s` at 3, `th`
+at 0, `hi` at 1, `is` at 2, `thi` at 0). The letters with their places
+are the word's own characters, so the two arrays put a form back
+exactly. *In the source today* the store keeps each form's characters
+(`inverse_table`). *To note:* this is the arrangement of a thing's
+parts, the second where that §19.48, answer 4, set aside for the
+read; it returns here for the way back only.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

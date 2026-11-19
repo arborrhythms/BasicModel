@@ -1692,6 +1692,15 @@ generation is expected at this stage and is recorded, not tuned away.
    **Pairs, too, only where needed (Alec; §19.56):** from the
    letters up, 737 parts suffice (392 of the 617 pairs, 297 of 3
    letters, 43 of 4, 5 of 5), by a greedy estimate.
+   **Tested on Metal (Alec asked; §19.57):** the parts at every
+   place in 0.50 ms a sentence, on the device; the words from the
+   parts, 500 of 500 right, 5.9 ms against all 197,014 forms.
+   **"Words" presses against the space (Alec):** a Not entry on
+   the space, added to rule 35 with a certificate. **A word put
+   back wrongly** mostly reads as no word (89 to 99.6 in 100),
+   sometimes as another word, sometimes still as the word meant.
+   **Reconstruction proceeds from the specific concept (Alec),**
+   which associates its part arrays with location arrays.
    The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it
