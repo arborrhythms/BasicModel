@@ -6601,43 +6601,201 @@ field; then the removals.
 
 Written on 2026-11-18. It builds nothing of the model. It is what
 1.8 §68.84 names as the work that follows it (1.8 §75, point 4).
-*Approved by Alec, 2026-11-18:* "Yes, carry both".
+*Approved by Alec, 2026-11-18:* "Yes, carry both". *Amended later the
+same day, after his answers of §19.48 and before Codex had begun it:*
+the two domains of the pullback, the dimming by the asking row, a
+request for a place, the fallback, and a trial of reading in order.
 
 ~~~
-Item 1.7, a prototype in tests only. Read §19.43, §19.45 and §19.46 of
-doc/plans/2026-11-14-sigma-pi-layers.md, and §75 of
+Item 1.7, a prototype in tests only. Read §19.43, §19.45, §19.46 and
+§19.48 of doc/plans/2026-11-14-sigma-pi-layers.md, and §75 of
 doc/plans/2026-11-11-item1-8-last-architecture-round.md, which holds
 here: a question is not a stop; build what you recommend, mark it
 provisional, go on. Work in /Users/arogers/github/WikiOracle/basicmodel
 on main. Local commits only; never push main, never force-push. Change
 no file of bin/ and no existing test. It decides nothing and is not
-wired into the model.
+wired into the model. Where §19.48 differs from §19.46, §19.48 stands.
 
 1. Under test/, build a small first layer whose rows are products over
    a sentence's percepts, as rule 2 of §19.21 gives the Pi, with a
-   Sigma above it. The sentence's percepts are held once as indices
-   and spans (rule 33), with the stem's tokens as its readings.
-2. On it, the steps of §19.45: a request over concept rows; the
-   pullback to a share for each percept (rule 36), by the transposes
-   of the same matrices and, beside it, by the framework's backward
-   pass, to show they agree; the way up again on that share; the
-   returned set (rule 37).
-3. Run it on the lesson's sixteen sentences with three requests: a
-   word's concept; the fixed word whole; a word that is absent.
-   Report, for each, what is returned and at which token, beside the
-   projection of the weights alone.
+   Sigma above it. The sentence's percepts are held once (rule 33):
+   for each, its row in the what codebook and its place as
+   WhereEncoding gives it, the constant sinusoid. The stem's tokens
+   are its readings.
+2. On it, the steps of §19.45. A request over concept rows is pulled
+   back through the Pi onto two domains, the what codebook and the
+   where sinusoid, and the activity of each active percept is the
+   intersection of its match in the two (§19.48, answer 2). Do the
+   pullback by the transposes of the same matrices and, beside it, by
+   the framework's backward pass, to show they agree. Then the way up
+   again on that activity, and the returned set (rule 37).
+3. Run it on the lesson's sixteen sentences with four requests: a
+   word's concept; the fixed word whole; a word that is absent; and a
+   row that is narrow on where, a place. Report, for each, what is
+   returned and at which token, beside the projection of the weights
+   alone.
 4. Report the cost in operations beside one pass of the way up, and
-   what the binding by token does and does not prevent (a sentence
-   that holds every letter of a word it does not hold).
-5. Then the dimming of rule 39: with a floor of 0.1 outside one token,
-   what the returned set holds for the other tokens when the factor is
-   applied once to a token's reading, and when it is applied inside
-   the product.
-6. If that is done and nothing else is waiting: whether the four rungs
-   of where form a coordinate a region can bound (§19.40, "Not
-   known"). A measurement, in tests only.
+   what the binding by token does and does not prevent: a sentence
+   that holds every letter of a word it does not hold, and two words
+   of the same letters in another order.
+5. The dimming of rule 39 as §19.48 has it: by the asking row's radius
+   and magnitude, with no fixed floor. Report what the returned set
+   holds for the other tokens as the radius narrows and widens, when
+   the factor is applied once to a token's reading and when it is
+   applied inside the product.
+6. The where sinusoid as a coordinate: how sharply a region around one
+   place takes in its neighbours on the long rung and on the short
+   one, and whether the short rung's repeats let in places far away.
+7. The fallback of §19.48, beside the returned sets of 3: a .where
+   given outright, and from that extent the largest word, or failing
+   a word the largest concept.
+8. If the rest is done: a small trial of §19.48, answers 1 and 5. With
+   the gradient on the request alone, can the request be taught to
+   return the words of a sentence one at a time and in order? Report
+   what was taught, on how many sentences, and what it found.
 
 Return it as §20 of doc/plans/2026-11-14-sigma-pi-layers.md: the files,
 each result as a table, what surprised you, and what you would change
-in rules 33 to 41. Name the test files you ran.
+in rules 33 to 42. Name the test files you ran.
 ~~~
+
+### 19.48 Alec's answers on the looks (2026-11-18), and what they change in rules 33 to 42
+
+Alec answered the questions of §19.46 and the readings put to him with
+them. His words are quoted whole; what follows each is Claude's
+reading unless marked otherwise.
+
+**1. Which wires take the selection's gradient.** "Those wires are just
+the specification of the concepts that create the pullback".
+
+- The gradient lands on the request: on which concepts are asked for,
+  and on what produces that asking. This is what §19.46 recommended.
+
+**2. Remove or dim.**
+
+> dim it: but since attend is using the PI, the radius of the hypercone
+> (and the magnitude) should determine that within the mereological
+> field. since we allow the PI to specify both content and position, we
+> need it to project onto two domains (the what codebook and a where
+> domain that is just the constant sinusoid), and then take the
+> intersection of those two across the active percepts. That will give
+> us a set of the sentence which has been conceptually specified. If
+> the output of attention is onto all concepts, then that wiring will
+> be learned.
+>
+> Again, this is a prototype, we can always fall back to a discrete
+> approximation if it doesn't work: select .where explicitly via
+> network and select the largest word (falling back to largest
+> concept) from that extent.
+
+- *Dim, and the Pi says by how much.* What lies outside is lowered by
+  the hypercone of the row that asks: its radius and its magnitude.
+  The default of §19.46, a separate floor (`attentionFloor`), is
+  withdrawn.
+- *Two domains.* A request, pulled back through the Pi, is projected
+  onto the what codebook and onto the where domain. The where domain
+  is the constant sinusoid: `WhereEncoding` (`bin/Spaces.py`), the
+  fixed two-rung code of a place, sines and cosines of its address,
+  with nothing learned in it. Only a place's start is in that code;
+  its end is not.
+- *The intersection.* For each active percept of the sentence, its
+  match in the what domain and its match in the where domain are
+  intersected. What is left is the part of the sentence that the
+  concepts specified.
+- *The output of `attend` is over all concepts.* So the request is
+  what `attend` gives, and its wiring is learned. The default of
+  §19.46, that the request comes from desire and not from `attend`, is
+  withdrawn. This also answers question 6 as Claude meant it (below).
+- *The fallback, if the prototype does not work:* a network gives the
+  `.where` outright, and from that extent the largest word is taken
+  (§19.30), or failing a word the largest concept.
+
+**3. The tests for one word and one lane, and the "Felix" case.** Not
+answered. It stays open. His answer to 2 bears on it: where the cone
+dims by degree, a test that counts any value above zero reads every
+word of the sentence at every look.
+
+**4. The two wheres.** "I don't think we need this: see 2".
+
+- There is one where, the place on the sinusoid, and the Pi bounds it.
+  Condition 1 of §19.40 is withdrawn as a requirement. Whether a row
+  then tells `cat` from `act` is what the prototype measures (§19.47,
+  point 4), and is not argued further here.
+
+**5. What moves the look on, and in what order.** "presumably we want
+to find words in order before doing any grammar on them. this can be
+taught, and should be a test that gates grammar tests".
+
+- Reading the words in order is taught, not built in. The default of
+  §19.46, the earliest candidate first as a rule, is withdrawn.
+- A test that the words of a sentence are found in order gates the
+  grammar tests, as the assessment's first rung gates its others.
+- *Not said:* whether every word is found before any is composed.
+  Today each word is composed as it arrives (1.8 §60.1, rule 6).
+
+**6. Who changes the request inside a sentence.** "what?" The question
+was badly put. In one sentence `attend` is called several times, and
+each call asks for some concepts; the question was what decides, at
+each call, which concepts are asked for. His answer to 2 settles it as
+Claude reads it: `attend` itself, whose output is over all concepts.
+
+**7. Whether the reading lesson goes.** "see 5". It stays, and what it
+teaches is finding the words in order. `AttentionLesson.ReadingTargets`
+is rewritten for requests in place of acts on brackets, and is not
+removed.
+
+**The readings.** "Slow run: good. Part C: good. Codex's limit: OK.
+interpretBias: OK." So: the one overnight slow run is at item 1.6's
+submission (1.8 §72 as first written); part C of item 1.8 ended at
+§66; under 1.8 §75 Codex does not overturn a recorded decision of his
+in the source; and `interpretBias` is the probability of the call,
+with the chooser deciding the rest.
+
+**A word that is looked at and not interpreted.**
+
+> Ah. "Is the conceptual activation that is created by the call to
+> attend() something that should be treated as a word, and if not,
+> what happens to the sentence". We can embed the word in the tree as a
+> literal with the understanding that it should have been quoted "meow
+> said the cat" might have a sign as the first word instead of a
+> symbol. But since that wont play grammatically, it probably has to
+> take the place of a clause in the sentence. We should allow it into
+> the sentence only if there is a grammatical rule to take care of it
+> (like sign()), otherwise it will not be a WFF.
+
+- *Rule 42 (new, tentative).* A word left uninterpreted may enter the
+  tree as a literal, a sign and not a symbol, as if it had been
+  quoted. It stands where a clause would. It enters only where the
+  grammar has a rule that takes it, such as `sign`; where none does,
+  the sentence is not well formed.
+- *What exists.* The rule is there: `SignLayer` (`bin/Interpret.py`,
+  `rule_name = 'sign'`, one operand, "Keep the lexical carrier for
+  generation"), declared in `data/complete.grammar`, and the kept
+  close already sets apart "a leaf kept as a sign"
+  (`FamiliarTier.commit_read_words`). *Read, not traced:* what does
+  not exist is the way to it from a look. A word reaches the grammar
+  today only when `interpret` is called on it, so a word left
+  uninterpreted is in no tree; and `sign` takes a word, where his
+  literal takes the place of a clause.
+
+**The rules of §19.46 as they now stand.**
+
+| Rule | Change |
+| --- | --- |
+| 33, the bank | none |
+| 34, a look is an activity | the activity is the intersection of the what match and the where match (answer 2) |
+| 35, the request | it is the output of `attend`, over all concepts, and is learned (answers 1, 2, 6); it may still name a whole |
+| 36, the pullback | it projects onto two domains, the what codebook and the where sinusoid (answer 2) |
+| 37, the returned set | none |
+| 38, `attend` | the order is taught and tested; no built-in order (answer 5) |
+| 39, dimming | by the asking row's radius and magnitude; no separate floor (answer 2) |
+| 40, one gain field | none |
+| 41, the where | one where, the sinusoid; no second where for arrangement (answer 4) |
+| 42, a literal | new (above) |
+
+**Certificates added.** The words of a sentence are found in order,
+and this gates the grammar tests (answer 5). A literal enters only
+under a rule that takes it (rule 42).
+
+**Still open with him.** Question 3. And whether his answer to 6 is as
+read.

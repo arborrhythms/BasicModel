@@ -1446,7 +1446,10 @@ generation is expected at this stage and is recorded, not tuned away.
    **The push (Alec, 2026-11-18): "We should push after 1.8".** After
    Codex's return of §68.84 (the repair and the item's one default
    sweep) is reviewed, the doc pass is applied and the PDF rebuilt.
-   Nothing is pushed before that.
+   Nothing is pushed before that. **Alec, 2026-11-18: "For 1.8, you
+   push, and the PDF work is fine."** So Claude pushes `main` of
+   `basicmodel` when those steps are done, and tells him first what
+   goes; the superproject's pointer stays his.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
@@ -1588,6 +1591,25 @@ generation is expected at this stage and is recorded, not tuned away.
    (§19.47), which follows the last text of item 1.8.** Both texts
    approved by Alec ("Yes, carry both"); the prototype returns as
    §20 of that document.
+   **His answers (2026-11-18; §19.48).** The gradient lands on "the
+   specification of the concepts that create the pullback". A look
+   dims, by "the radius of the hypercone (and the magnitude)", with
+   no separate floor. The Pi projects "onto two domains (the what
+   codebook and a where domain that is just the constant sinusoid)"
+   and the two are intersected "across the active percepts"; "the
+   output of attention is onto all concepts", so the request is
+   `attend`'s and is learned. No second where for arrangement.
+   Finding "words in order before doing any grammar on them" is
+   taught and "should be a test that gates grammar tests", so the
+   reading lesson stays. A word left uninterpreted may enter as a
+   literal in the place of a clause, "only if there is a grammatical
+   rule to take care of it (like sign())" (rule 42). The fallback if
+   the prototype fails: an explicit `.where` and the largest word in
+   it. His confirmations: the slow run at item 1.6, part C ended,
+   Codex's limit, `interpretBias`. The prototype text §19.47 is
+   amended to match. **Still open:** the tests for one word and one
+   lane with the "Felix" case (not answered), and whether question
+   6 is answered as read.
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for
