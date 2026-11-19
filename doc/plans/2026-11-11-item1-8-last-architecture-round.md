@@ -33919,7 +33919,11 @@ be binary, but that is not necessary".
 3. *A floor:* a lane under a configured small value does not count. No
    draw; it is a threshold, which he has asked me not to propose.
 
-The text of §68.82 follows the first and waits for his word.
+The text of §68.82 follows the first.
+
+*Answered (Alec, 2026-11-18):* "Yes, carry it". The first choice
+stands: the producer is repaired now, and what "both lanes at once"
+means for graded lanes is answered with item 1.7.
 
 **Smaller points, none of them blocking.**
 
@@ -33936,8 +33940,8 @@ The text of §68.82 follows the first and waits for his word.
 
 ### 68.82 Codex text: the fourth continuation (what moves a whole property's membership; the forecast's rule 3; then tables as tensors)
 
-Written on 2026-11-18, on the first choice of §68.81. It waits for
-Alec's word; it is the one text to carry.
+Written on 2026-11-18, on the first choice of §68.81. Approved by
+Alec the same day ("Yes, carry it"); it is the one text to carry.
 
 ~~~
 Item 1.8, the loop of looks: the fourth continuation. Read §68.81 of

@@ -1421,8 +1421,9 @@ generation is expected at this stage and is recorded, not tuned away.
    the surprise of the words it covers; rule 3 is amended (mine), and
    what such a look conceives is item 1.7's rule 32. **The one
    text for Codex is §68.82** (the producer, rule 3, the measurements
-   again, then straight on to §65.4, the last text of item 1.8); it
-   waits for Alec's word.
+   again, then straight on to §65.4, the last text of item 1.8),
+   approved by Alec ("Yes, carry it"). Returns: §64.7 onward, then
+   §66.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
