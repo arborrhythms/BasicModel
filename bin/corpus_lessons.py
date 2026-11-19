@@ -341,9 +341,10 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                         both=all(any(reading[pole] > 0 for reading in entry.readings) for pole in (2,3)))
                         for key, entry in owner.mtm.entries.items() if entry.order is not None],
                     answers_scored=answers, observations=observations,
-                    ltm1_rows=[dict(row=i, references=alloc.parts.references(i),
+                    ltm1_rows=[dict(row=i, references=pair,
                         evidence=[float(alloc.parts.truth_plus[i]), float(alloc.parts.truth_minus[i])],
-                        activity=float(alloc.parts.activity[i])) for i in alloc.parts.indices().tolist()],
+                        activity=float(alloc.parts.activity[i]))
+                        for i, pair in alloc.parts.reference_pairs(alloc.parts.indices()).items()],
                     attention=attention, placements=placements, step_seconds=step_times,
                     step_training_seconds=training_times, step_diagnostic_seconds=diagnostic_times,
                     class_both=dict(both=sum(x for x,_ in fold_counts),

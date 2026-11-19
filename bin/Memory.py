@@ -2385,7 +2385,7 @@ class LTM1(MemoryStore, nn.Module):
     """A tagged ordered pair, its two trust lanes, and its activity."""
     OCCURRENCE, SYMBOL, RELATION = OCCURRENCE, SYMBOL, RELATION
     columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'activity')
-    caches = ('_pairs', '_parts', '_wholes', '_references', '_index_version',
+    caches = ('_pairs', '_parts', '_wholes', '_references', '_endpoints', '_index_version',
               'relation_order', '_order_revision', 'effective_plus',
               'effective_minus', '_effective_source')
     auxiliary = {'count': 'occupied relation rows', 'layout_version': 'checkpoint schema'}
@@ -2412,7 +2412,7 @@ class LTM1(MemoryStore, nn.Module):
         self.clear_caches()
 
     def clear_caches(self):
-        self._pairs, self._parts, self._wholes, self._references = {}, {}, {}, {}
+        self._pairs, self._parts, self._wholes, self._references, self._endpoints = {}, {}, {}, {}, {}
         self._index_version = self._order_revision = None
         self.relation_order.fill_(-1)
         self._effective_source = None
@@ -2439,11 +2439,11 @@ class LTM1(MemoryStore, nn.Module):
     @property
     def revision(self):
         return (id(self.refs), self.refs._version, self.ref_kinds._version,
-                self.truth_plus._version, self.truth_minus._version, len(self))
+                self.truth_plus._version, self.truth_minus._version, self.count._version)
 
     @property
     def _topology_revision(self):
-        return (id(self.refs), self.refs._version, self.ref_kinds._version, len(self))
+        return (id(self.refs), self.refs._version, id(self.ref_kinds), self.ref_kinds._version, id(self.count), self.count._version)
 
     @property
     def symbol_revision(self):
@@ -2470,8 +2470,9 @@ class LTM1(MemoryStore, nn.Module):
             if kind == SYMBOL and owner is not None and value in owner._concept_allocator.symbols:
                 return positive_length(owner, value)
             return 1.
-        for row in self.relation_order[:len(self)].tolist():
-            scale = min(endpoint(*ref) for ref in self.references(row))
+        rows = self.relation_order[:len(self)].tolist()
+        for row, pair in self.reference_pairs(rows).items():
+            scale = min(endpoint(*ref) for ref in pair)
             self.effective_plus[row] = self.truth_plus[row] * scale
             self.effective_minus[row] = self.truth_minus[row] * scale
         self._effective_source = revision
@@ -2505,9 +2506,8 @@ class LTM1(MemoryStore, nn.Module):
     def _index(self):
         if self._index_version == self._topology_revision:
             return
-        self._pairs, self._parts, self._wholes, self._references = {}, {}, {}, {}
-        for row in self.indices().tolist():
-            left, right = self.references(row)
+        self._pairs, self._parts, self._wholes, self._references, self._endpoints = {}, {}, {}, {}, {}
+        for row, (left, right) in self.reference_pairs(self.indices()).items():
             if (left, right) in self._pairs:
                 raise ValueError('duplicate tagged relation')
             self._index_pair(row, left, right)
@@ -2516,27 +2516,24 @@ class LTM1(MemoryStore, nn.Module):
     def _index_pair(self, row, left, right):
         import bisect
         self._pairs[left, right] = row
-        self._parts.setdefault(right, []).append(left)
-        self._parts[right].sort(key=lambda ref: self._pairs[ref, right])
-        self._wholes.setdefault(left, []).append(right)
-        self._wholes[left].sort(key=lambda ref: self._pairs[left, ref])
+        self._endpoints[row] = left, right
+        bisect.insort(self._parts.setdefault(right, []), left, key=lambda ref: self._pairs[ref, right])
+        bisect.insort(self._wholes.setdefault(left, []), right, key=lambda ref: self._pairs[left, ref])
         for reference in {left, right}:
             bisect.insort(self._references.setdefault(reference, []), row)
 
     def protected_references(self, rows=None):
-        pending = list(self.indices().tolist() if rows is None else rows)
+        pending = self.indices().tolist() if rows is None else list(rows)
         seen, references = set(), set()
         while pending:
-            row = pending.pop()
-            if row in seen:
-                continue
-            seen.add(row)
-            for reference in self.references(row):
-                references.add(reference)
-                if reference[0] == RELATION:
-                    if not self.contains(reference[1]):
-                        raise ValueError('dangling relation reference')
-                    pending.append(reference[1])
+            pairs = self.reference_pairs(pending)
+            seen.update(pairs)
+            for pair in pairs.values():
+                references.update(pair)
+            children = {value for pair in pairs.values() for kind, value in pair if kind == RELATION}
+            pending = sorted(children - seen)
+            if pending and not all(self.contains_rows(pending)):
+                raise ValueError('dangling relation reference')
         return references
 
     @torch.no_grad()
@@ -2594,9 +2591,9 @@ class LTM1(MemoryStore, nn.Module):
     def retain(self, indices):
         indices = torch.as_tensor(indices, dtype=torch.long, device=self.refs.device)
         selected = set(indices.tolist())
-        if len(selected) != len(indices) or any(not self.contains(i) for i in selected):
+        if len(selected) != len(indices) or not all(self.contains_rows(indices)):
             raise ValueError('invalid LTM1 retention selection')
-        if any(kind == RELATION and child not in selected for row in selected for kind, child in self.references(row)):
+        if any(kind == RELATION and child not in selected for pair in self.reference_pairs(indices).values() for kind, child in pair):
             raise ValueError('cannot discard a retained relation dependency')
         erase = torch.ones(self.capacity, dtype=torch.bool, device=self.refs.device)
         erase[indices] = False
@@ -2657,9 +2654,11 @@ class LTM1(MemoryStore, nn.Module):
     @staticmethod
     def ordered_rows(refs, kinds):
         """Topological order for a live slab or an epoch snapshot."""
-        occupied = set(kinds[:, 0].ne(0).nonzero().flatten().tolist())
+        rows = kinds[:, 0].ne(0).nonzero().flatten()
+        children = {row: [v for k, v in pair if k == RELATION]
+                    for row, pair in LTM1._read_pairs(refs, kinds, rows).items()}
         visiting, visited, ordered = set(), set(), []
-        for root in sorted(occupied):
+        for root in children:
             pending = [(root, False)]
             while pending:
                 row, finished = pending.pop()
@@ -2670,12 +2669,11 @@ class LTM1(MemoryStore, nn.Module):
                 elif row in visiting:
                     raise ValueError('cyclic relation reference')
                 elif row not in visited:
-                    if row not in occupied:
+                    if row not in children:
                         raise ValueError('dangling relation reference')
                     visiting.add(row)
                     pending.append((row, True))
-                    pending.extend((value, False) for kind, value in
-                                   zip(kinds[row].tolist(), refs[row].tolist()) if kind == RELATION)
+                    pending.extend((value, False) for value in children[row])
         return ordered
 
 
@@ -2691,19 +2689,57 @@ class LTM1(MemoryStore, nn.Module):
         self._order_revision = self._topology_revision
 
 
-    def references(self, row):
-        if not self.contains(row):
-            raise IndexError('unavailable relation')
-        return tuple(zip(self.ref_kinds[int(row)].tolist(), self.refs[int(row)].tolist()))
+    @staticmethod
+    def _read_pairs(refs, kinds, rows):
+        # One transfer for both tagged endpoints and the row they belong to.
+        packed = torch.cat((rows[:, None], kinds[rows], refs[rows]), dim=1)
+        return {row: ((ka, a), (kb, b)) for row, ka, kb, a, b in packed.tolist()}
 
+    def reference_pairs(self, rows):
+        """Read the requested handles, preserving their order, including after reuse."""
+        if torch.is_tensor(rows):
+            rows = rows.tolist()
+        if self._index_version == self._topology_revision:
+            try:
+                return {i: self._endpoints[i] for i in rows}
+            except KeyError:
+                raise IndexError('unavailable relation') from None
+        handles = torch.as_tensor(rows, dtype=torch.long, device=self.refs.device)
+        if not all(self.contains_rows(rows)):
+            raise IndexError('unavailable relation')
+        return self._read_pairs(self.refs, self.ref_kinds, handles)
+
+    def reference_if_present(self, row):
+        """A bounded traversal may reach a symbol that is not a relation."""
+        row = int(row)
+        if self._index_version == self._topology_revision:
+            return self._endpoints.get(row)
+        if not self.contains(row):
+            return None
+        return tuple(zip(self.ref_kinds[row].tolist(), self.refs[row].tolist()))
+
+    def references(self, row):
+        pair = self.reference_if_present(row)
+        if pair is None:
+            raise IndexError('unavailable relation')
+        return pair
 
     def indices(self):
         return self.ref_kinds[:, 0].ne(0).nonzero().flatten()
 
+    def contains_rows(self, rows):
+        if self._index_version == self._topology_revision:
+            rows = rows.tolist() if torch.is_tensor(rows) else rows
+            return [i in self._endpoints for i in rows]
+        handles = torch.as_tensor(rows, dtype=torch.long, device=self.refs.device)
+        admitted = (handles > 0) & (handles < self.capacity)
+        return (admitted & self.ref_kinds[handles.clamp(0, self.capacity-1)].ne(0).all(-1)).tolist()
 
     def contains(self, row):
-        return 0 < int(row) < self.capacity and bool(self.ref_kinds[int(row)].ne(0).all())
-
+        row = int(row)
+        if self._index_version == self._topology_revision:
+            return row in self._endpoints
+        return 0 < row < self.capacity and bool(self.ref_kinds[row].ne(0).all())
 
     def find(self, part, whole, *, ref_kinds=(SYMBOL, SYMBOL)):
         self._index()

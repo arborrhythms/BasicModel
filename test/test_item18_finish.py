@@ -200,8 +200,7 @@ def test_relation_write_updates_reference_indexes_without_rebuild(monkeypatch):
     rebuilds = []
     original = bank._index
     def index():
-        version = (id(bank.refs), bank.refs._version, bank.ref_kinds._version,
-                   len(bank))
+        version = bank._topology_revision
         if bank._index_version != version:
             rebuilds.append(version)
         return original()

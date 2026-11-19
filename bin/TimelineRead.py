@@ -126,12 +126,13 @@ def read(store, description, *, max_records, work, fallback):
     from Memory import RELATION, SYMBOL
     from ChainRead import envelope
     roots = {reference if isinstance(reference, tuple) else ('sym', reference)}
-    records = []
+    records, selected = [], []
     for row in store.parts.indices().tolist():
         if scanned >= max_records or not work.consume('record'):
             incomplete.append('event_read_limit'); break
         scanned += 1
-        left, right = store.parts.references(row)
+        selected.append(row)
+    for row, (left, right) in store.parts.reference_pairs(selected).items():
         if envelope(store, left) not in roots:
             continue
         if right[0] == RELATION:

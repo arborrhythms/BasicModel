@@ -72,8 +72,10 @@ class EntryRead:
                 seen.add(reference)
                 if not work.consume('record'):
                     missing.append('identity_recall_limit'); break
-                if reference[0] == 'sym' and self.parts.contains(reference[1]):
-                    pending.extend(envelope(self, item) for item in self.parts.references(reference[1]))
+                if reference[0] == 'sym':
+                    pair = self.parts.reference_if_present(reference[1])
+                    if pair is not None:
+                        pending.extend(envelope(self, item) for item in pair)
                     continue
                 if reference[0] != 'ltm':
                     continue
