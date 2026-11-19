@@ -13,6 +13,9 @@ def test_open_read_covers_exact_native_input(tmp_path,monkeypatch,packed,eager_r
     import ModelAttention
     from test_packed_reconstruction_parity import build_model
     model=build_model(tmp_path,word_capacity=16 if packed else 8)
+    # The words a sentence admits are the chooser's draw; they are supplied.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model,monkeypatch)
     texts=['the wug sat','the wug flew'];seen=[]
     original=ModelAttention.read_code_field
     def read(codes,valid):
@@ -50,6 +53,8 @@ def test_checkpoint_has_no_pending_attention_queue(tmp_path,monkeypatch,eager_re
     assert not any('mode_schedule' in key for key in state['state_dict'])
     target=tmp_path/'target';target.mkdir();restored=build_model(target,word_capacity=8)
     assert restored.load_weights(checkpoint,strict=True,require_match=True)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(restored,monkeypatch)  # the admitted words are a draw
     assert not hasattr(restored,'mode_schedule')
     with torch.no_grad():restored(restored.inputSpace.prepInput(['the wug flew']))
     assert int(restored._attention_words.accepted.sum())==3
@@ -59,6 +64,8 @@ def test_failed_open_read_leaves_the_input_and_teacher_address(tmp_path,monkeypa
     import ModelAttention
     from test_packed_reconstruction_parity import build_model
     model=build_model(tmp_path,word_capacity=8)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model,monkeypatch)  # the admitted words are a draw
     raw=model.inputSpace.prepInput(['the wug sat']);saved=raw.clone()
     model.teacher.stage_batch_sources('validation',[0])
     def fail(*args,**kwargs):raise RuntimeError('open failed')
@@ -73,9 +80,11 @@ def test_failed_open_read_leaves_the_input_and_teacher_address(tmp_path,monkeypa
 
 
 @pytest.mark.parametrize('packed',[False,True])
-def test_input_encoder_bytes_and_packed_sentence_boundaries(tmp_path,packed,eager_reading):
+def test_input_encoder_bytes_and_packed_sentence_boundaries(tmp_path,monkeypatch,packed,eager_reading):
     from test_packed_reconstruction_parity import build_model
     model=build_model(tmp_path,word_capacity=16)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model,monkeypatch)  # the admitted words are a draw
     texts=['abc1 cat','dog 01']
     raw=model.inputSpace.prepPackedInput([texts]) if packed else model.inputSpace.prepInput(texts)
     with torch.no_grad():model(raw)
