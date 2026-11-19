@@ -11,6 +11,7 @@ import torch
 from FamiliarTier import promote_identity
 from Memory import OCCURRENCE, RELATION, SYMBOL
 from test_presentation_memory import begin, fixture, model_for, write
+from nomination_fixtures import recurrent_word
 
 
 def receipt(name, data):
@@ -55,7 +56,7 @@ def test_relative_member_write_expires_with_its_epoch(member_order, evidence):
         symbols.append(known_concept(owner, point))
     a,b,target = symbols
     if member_order == 0:
-        a,b = [owner.interpret.lookup_word([n], [], form=bytes([n])) for n in (97,98)]
+        a,b = [recurrent_word(owner.interpret, [n], [], form=bytes([n])) for n in (97,98)]
     inside = alloc.parts.add(a,b)
     assert owner._concept_source_order(inside) == member_order and alloc.order_of(target) == 1
     operands = (Composition(points[0], reference=inside, order=member_order),
@@ -79,7 +80,7 @@ def test_ambiguous_named_promotion_fails_before_minting():
     resolver,store,points = fixture()
     owner = resolver.components.owner
     alloc = owner._concept_allocator
-    word = owner.interpret.lookup_word([23], [], form='label')
+    word = recurrent_word(owner.interpret, [23], [], form='label')
     ids = []
     for i,point in enumerate(points[:2]):
         occ = write(store, point, ('separate',i))

@@ -237,8 +237,12 @@ class InterpretLayer(GrammarLayer):
         if inventory:
             self.owner._preflight_concept_row(0)
 
-    def lookup_word(self, parts, wholes, *, form=None, word_reading=False):
-        """Fuse and recognise before changing any identity or definition."""
+    def lookup_word(self, parts, wholes, *, form=None, word_reading=False, reading=None):
+        """Fuse and recognise before changing any identity or definition.
+
+        A form that names no word yet becomes one only when MTM nominates its
+        basic percept, on its ``concept_mint_count``-th reading (``reading``
+        names the reading); until then it is perceived and not found."""
         from Spaces import _concept_alloc_of
         cs = self.owner
         alloc, index = _concept_alloc_of(cs), cs.definitions
@@ -285,6 +289,8 @@ class InterpretLayer(GrammarLayer):
             # Different parts, unlike moving property evidence, are an
             # alternative witnessed definition of this word's object.
             obj = index.deref(word)
+            if not cs.nominates(('alternative', word, parts), reading):
+                return word
             if word not in self._field_pending:
                 try:
                     cs._preflight_concept_row(0)
@@ -316,9 +322,11 @@ class InterpretLayer(GrammarLayer):
                 self._description_revision += 1
                 index.add(row)
             return word
+        if not cs.nominates(('form', form) if form is not None else ('parts', parts), reading):
+            return None
         # In the discovering field, interpretation names the case it admits.
         # It never allocates a competing concept row for the same unit.
-        discovering = word_reading and cs._promotion_enabled and cs.conceptual_pi and cs._sparse_active()
+        discovering = word_reading and cs._promotion_enabled and cs._sparse_active()
         if discovering and getattr(ps, '_forward_input', None):
             # An empty field has no object knowledge from which to discover
             # a case. Temporary reading forcing then admits the definition

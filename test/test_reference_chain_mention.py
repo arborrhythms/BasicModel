@@ -9,11 +9,12 @@ from Memory import SYMBOL
 from Meaning import ConceptualMeaning
 from chunk_fixtures import context
 from test_clause_acceptance import SentenceFixture
+from nomination_fixtures import recurrent_word
 
 
 def unresolved_description(f, *, lexical_kind=False):
     known = f.noun('known')
-    word = f.cs.interpret.lookup_word([81], [], form='unbound')
+    word = recurrent_word(f.cs.interpret, [81], [], form='unbound')
     left = Composition(f.registry._payload(('sym', known)),
                        reference=f.words['known'][0] if lexical_kind else known,
                        order=1, leaves=(0,))

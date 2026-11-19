@@ -10,7 +10,6 @@
 
     <bindingDepth>2</bindingDepth>
     <conceptLayers>2</conceptLayers>
-    <conceptualPi>true</conceptualPi>
     <attentionPromotion>true</attentionPromotion>
     <symbolTower>true</symbolTower>
     <conceptBinding>aligned</conceptBinding>

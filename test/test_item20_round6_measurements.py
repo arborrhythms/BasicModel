@@ -3,6 +3,7 @@ from dataclasses import replace
 from types import SimpleNamespace as NS
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def test_empty_named_bind_keeps_its_reading_order_through_retention():
@@ -12,7 +13,7 @@ def test_empty_named_bind_keeps_its_reading_order_through_retention():
     from FamiliarTier import commit_read_words
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = owner.interpret.lookup_word([117], (), form='pending-name')
+    word = recurrent_word(owner.interpret, [117], (), form='pending-name')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept, trust=.1)
     key = pool.named(word, value=atoms[0], when=0)
@@ -62,7 +63,7 @@ def test_promoted_name_keeps_its_order_when_an_old_mention_reads_the_definition(
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     alloc = owner._concept_allocator
-    word = owner.interpret.lookup_word([118], (), form='retained-definition')
+    word = recurrent_word(owner.interpret, [118], (), form='retained-definition')
     key = pool.named(word, value=atoms[0], when=0)
     row = store.append_idea(atoms[0])
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
@@ -101,7 +102,7 @@ def test_eventful_identity_keeps_the_checked_thought_as_a_member(named):
                       role_refs=(('sym', concept), None, None))
     first = store.occurrence_of(store.append_meaning(initial))
     if named:
-        word = owner.interpret.lookup_word([119], (), form='thought-member')
+        word = recurrent_word(owner.interpret, [119], (), form='thought-member')
         owner.interpret.define(word, concept, trust=.1)
         key = pool.named(word, value=atoms[0])
     else:
@@ -140,7 +141,7 @@ def test_surface_only_introduction_uses_its_written_order_for_later_aliases(flag
     from Meaning import ConceptualMeaning
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([120], (), form='surface-only')
+    word = recurrent_word(owner.interpret, [120], (), form='surface-only')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept)
     identity = dict(handle=1, origins=torch.zeros(1, 3, dtype=torch.long))

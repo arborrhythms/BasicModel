@@ -17,7 +17,6 @@
       <autoload>false</autoload>
     </training>
     <conceptBinding>aligned</conceptBinding>
-    <conceptualPi>true</conceptualPi>
     <attentionPromotion>true</attentionPromotion>
   </architecture>
   <InputSpace>

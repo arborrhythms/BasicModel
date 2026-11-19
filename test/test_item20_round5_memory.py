@@ -9,6 +9,7 @@ from types import SimpleNamespace as NS
 import pytest
 import torch
 from test_meaning_kernels import paired
+from nomination_fixtures import recurrent_word
 
 
 def receipt(name, data):
@@ -221,7 +222,7 @@ def test_word_member_order_is_its_read_concept_not_the_clause_order():
     from MemoryLink import Occurrence, member_order
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = owner.interpret.lookup_word([101], (), form='member')
+    word = recurrent_word(owner.interpret, [101], (), form='member')
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
     key = None
@@ -250,7 +251,7 @@ def test_reference_departure_filters_collection_order_before_selection():
     from ReferenceContext import SituationFrame
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = owner.interpret.lookup_word([102], (), form='reference-menu')
+    word = recurrent_word(owner.interpret, [102], (), form='reference-menu')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept)
     with torch.no_grad():
@@ -449,7 +450,7 @@ def test_alias_order_follows_the_words_denotation_for_symbol_and_name_references
     from Meaning import ConceptualMeaning
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([103], (), form='alias-order')
+    word = recurrent_word(owner.interpret, [103], (), form='alias-order')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept)
     assert owner._concept_source_order(word) == 0
@@ -482,7 +483,7 @@ def test_shared_definition_witness_resolves_a_null_token_only_once(monkeypatch):
     from Memory import OCCURRENCE, SYMBOL
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    label = owner.interpret.lookup_word([104], (), form='shared-sign')
+    label = recurrent_word(owner.interpret, [104], (), form='shared-sign')
     row = store.append_meaning(ConceptualMeaning.from_description(atoms[0]*0),
         )
     address = store.occurrence_of(row)
@@ -512,7 +513,7 @@ def test_kept_word_read_reenters_a_definition_learned_after_its_pending_path():
     from FamiliarTier import commit_read_words
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = owner.interpret.lookup_word([105], (), form='later-definition')
+    word = recurrent_word(owner.interpret, [105], (), form='later-definition')
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     def close(position):
@@ -543,7 +544,7 @@ def test_unnamed_reference_reenters_a_pending_words_later_definition():
     from Meaning import ConceptualMeaning
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = owner.interpret.lookup_word([114], (), form='later-reference')
+    word = recurrent_word(owner.interpret, [114], (), form='later-reference')
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
@@ -982,7 +983,7 @@ def test_shared_composition_admission_validates_arrivals_before_binding():
     from Meaning import ConceptualMeaning
     from chunk_fixtures import context
     resolver,store,atoms=fixture();owner=resolver.components.owner
-    word=owner.interpret.lookup_word([97],(),form='arrival-word')
+    word=recurrent_word(owner.interpret, [97],(),form='arrival-word')
     point=atoms[0]
     language=NS(_compose_binary_rules=(),_compose_unary_rules=(),parts_of_speech=NS(seats={}))
     entry=Reading(rows=torch.tensor([0]),word_rows=torch.tensor([0]),activations=torch.ones(1),
@@ -1009,7 +1010,7 @@ def test_two_reference_sites_of_one_shared_occurrence_do_not_self_bind():
     from chunk_fixtures import context
     resolver, store, atoms = fixture()
     owner, point = resolver.components.owner, atoms[0]
-    word = owner.interpret.lookup_word([97], (), form='shared-word')
+    word = recurrent_word(owner.interpret, [97], (), form='shared-word')
     language = NS(_compose_binary_rules=(), _compose_unary_rules=(), parts_of_speech=NS(seats={}))
     entry = Reading(rows=torch.tensor([0]), word_rows=torch.tensor([0]), activations=torch.ones(1),
         leaves=point[None], actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([0]),
@@ -1072,8 +1073,8 @@ def test_written_alias_retains_the_selected_pending_name_and_its_order():
     from chunk_fixtures import context
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    selected_word = owner.interpret.lookup_word([112], (), form='pending-choice')
-    earlier_word = owner.interpret.lookup_word([101], (), form='earlier-choice')
+    selected_word = recurrent_word(owner.interpret, [112], (), form='pending-choice')
+    earlier_word = recurrent_word(owner.interpret, [101], (), form='earlier-choice')
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(selected_word)].copy_(atoms[0])
     owner.interpret.define(earlier_word, known_concept(owner, atoms[0], order=1))
@@ -1151,7 +1152,7 @@ def test_same_close_binding_keeps_the_introductions_own_mention():
     from chunk_fixtures import context
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    words = [owner.interpret.lookup_word([letter], (), form=f'pending-{letter}')
+    words = [recurrent_word(owner.interpret, [letter], (), form=f'pending-{letter}')
              for letter in (97, 98)]
     point = atoms[0] + atoms[1]
     operands = tuple(Composition(atoms[i], reference=word, word_id=word,

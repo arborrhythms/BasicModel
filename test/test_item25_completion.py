@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from Memory import SYMBOL, OCCURRENCE
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('operation', ['equal', 'part'])
@@ -90,7 +91,7 @@ def test_three_distinct_members_at_either_end_name_one_class(shared_first):
     from test_orders_learned import equality_fixture
     owner, store, alloc = equality_fixture()
     members = [named_individual(owner, store, alloc, str(i), 3*i+1) for i in range(4)]
-    word = owner.interpret.lookup_word([20], [21], form='group')
+    word = recurrent_word(owner.interpret, [20], [21], form='group')
     raised = set(alloc.raised)
     for i, member in enumerate(members):
         ends = (word, member) if shared_first else (member, word)
@@ -136,7 +137,7 @@ def test_raise_count_rejects_one_and_obeys_a_larger_count(monkeypatch):
         ConceptAllocator()
     count = 4
     owner, store, alloc = equality_fixture()
-    word = owner.interpret.lookup_word([1], [2], form='group')
+    word = recurrent_word(owner.interpret, [1], [2], form='group')
     for i in range(count):
         equal_close(owner, store, event(owner, store, i+1), word)
         assert bool(alloc.raised) == (i+1 == count)
@@ -208,7 +209,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
     assert alloc.raise_count == 3
     relata = []
     for i, form in enumerate(('a', 'b', 'c')):
-        label = owner.interpret.lookup_word([i+1], (), form=form)
+        label = recurrent_word(owner.interpret, [i+1], (), form=form)
         row = store.append_meaning(ConceptualMeaning.from_description(points[i]), )
         occurrence = store.occurrence_of(row)
         token = pool.open(occurrence, kind=None, value=points[i], when=i)
@@ -229,7 +230,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
     support[:,store.when_start:store.when_start+4] = False
     assert support.any(1).all() and (support.sum(0) <= 1).all()
 
-    word = owner.interpret.lookup_word([4], (), form='this')
+    word = recurrent_word(owner.interpret, [4], (), form='this')
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(points[3])
     assert not owner.definitions.objects(word)
@@ -367,7 +368,7 @@ def _sign_equation(f, form, label, position):
     for spelling in (form, label):
         word = owner.interpret.word_for_form(spelling)
         if word is None:
-            word = owner.interpret.lookup_word([len(owner._concept_allocator.word_forms)+1], (), form=spelling)
+            word = recurrent_word(owner.interpret, [len(owner._concept_allocator.word_forms)+1], (), form=spelling)
             with torch.no_grad():
                 owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(torch.eye(store.nDim)[len(words)])
         identity, row, order = owner.interpret.reading(word)
@@ -725,7 +726,7 @@ def _optional_reading(f, tree):
         if isinstance(node, str):
             word = owner.interpret.word_for_form(node)
             if word is None:
-                word = owner.interpret.lookup_word([len(owner._concept_allocator.word_forms)+1], (), form=node)
+                word = recurrent_word(owner.interpret, [len(owner._concept_allocator.word_forms)+1], (), form=node)
                 with torch.no_grad():
                     owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(torch.eye(f.store.nDim)[len(words)])
             identity, row, order = owner.interpret.reading(word)
@@ -834,7 +835,7 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
     # The no-op has no inverse operation. Read-back is its retained form.
     assert decisions[-1] == 'no_op'
     assert torch.equal(site['node'].composition.point, reading.leaves[-1])
-    bark_word = owner.interpret.lookup_word([92], (), form='bark')
+    bark_word = recurrent_word(owner.interpret, [92], (), form='bark')
     bark = owner.new_concept()
     force_order(owner, bark, 2)
     row = owner._csw_concept_row(2, bark)
@@ -842,7 +843,7 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
         owner.similarity_codebook.W[row].copy_(torch.eye(store.nDim)[4])
     owner.interpret.define(bark_word, bark)
     predicate = store._concept_point(bark)
-    that = owner.interpret.lookup_word([91], (), form='That')
+    that = recurrent_word(owner.interpret, [91], (), form='That')
     term = Composition(form, reference=that, word_id=that, order=1, leaves=(0,))
     mention = Clause(ConceptualMeaning.from_description(form), point=form, order=1,
         subject_word_id=that, composition=term,

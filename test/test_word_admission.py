@@ -3,6 +3,7 @@ import inspect
 from pathlib import Path
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def snapshot(cs):
@@ -24,7 +25,7 @@ def test_23_fuse_parts_before_word_admission(tmp_path):
     ps.percept_store.observe_chunk(b'love')
     fused = ps.percept_store.observe_chunk(b'love')
     assert ps.fuse_parts(parts) == [fused]
-    word = cs.interpret.lookup_word(parts, ws.property_rows_for_bytes('love'), form='love')
+    word = recurrent_word(cs.interpret, parts, ws.property_rows_for_bytes('love'), form='love')
     assert set(cs.concept_parts(word)) == set(ps.percept_store.identity.admit(b'love'))
     cs.interpret.forward(word)
     assert cs.interpret.word_for_form('love') == word
@@ -36,9 +37,9 @@ def test_23_fuse_parts_before_word_admission(tmp_path):
 def test_23_same_parts_after_property_change_write_nothing():
     from test_cs_sparse_weights import _cs
     cs = _cs()
-    word = cs.interpret.lookup_word([7], [1], form='word', word_reading=True)
+    word = recurrent_word(cs.interpret, [7], [1], form='word', word_reading=True)
     before = snapshot(cs)
-    assert cs.interpret.lookup_word([7], [2], form='word', word_reading=True) == word
+    assert recurrent_word(cs.interpret, [7], [2], form='word', word_reading=True) == word
     assert snapshot(cs) == before
 
 
@@ -53,7 +54,7 @@ def test_26_full_row_inventory_leaves_no_word_identity():
         assert cs._csw_concept_row(0, 1000 + row) == row
     before = snapshot(cs)
     try:
-        word = cs.interpret.lookup_word([7], [1], form='unseated', word_reading=True)
+        word = recurrent_word(cs.interpret, [7], [1], form='unseated', word_reading=True)
     except RuntimeError as error:
         assert 'capacity' in str(error) or 'exhausted' in str(error)
     else:
@@ -65,7 +66,7 @@ def test_29_shared_whole_does_not_evidence_an_absent_word():
     from test_cs_sparse_weights import _cs
     from PerceptProperties import PrimitiveProperties
     cs = _cs()
-    word = cs.interpret.lookup_word([7], [0], form='word', word_reading=True)
+    word = recurrent_word(cs.interpret, [7], [0], form='word', word_reading=True)
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [65], [1.])
     raw = torch.tensor([[65, 65]])

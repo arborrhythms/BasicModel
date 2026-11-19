@@ -11,13 +11,14 @@ from test_word_interpretation import _operator
 from reading_fixtures import finish_reading
 from test_clause_acceptance import SentenceFixture
 from definition_fixtures import witness_object
+from nomination_fixtures import recurrent_word
 
 
 def test_part_testimony_symbols_the_parent_one_order_above_the_object():
     cs, interpret = _operator()
-    word_cat = interpret.lookup_word([7], [1], form='cat')
+    word_cat = recurrent_word(interpret, [7], [1], form='cat')
     cat = witness_object(cs, word_cat)
-    word_animal = interpret.lookup_word([8], [1], form='animal')
+    word_animal = recurrent_word(interpret, [8], [1], form='animal')
     animal = witness_object(cs, word_animal)
     parent = cs.index_part_row(cat, animal)
     assert parent != animal
@@ -32,9 +33,9 @@ def test_part_testimony_symbols_the_parent_one_order_above_the_object():
 
 def test_definition_rows_generalize_over_several_words_and_objects():
     cs, interpret = _operator()
-    first = interpret.lookup_word([7], [1], form='bank')
+    first = recurrent_word(interpret, [7], [1], form='bank')
     river = witness_object(cs, first)
-    second = interpret.lookup_word([8], [1], form='shore')
+    second = recurrent_word(interpret, [8], [1], form='shore')
     money = witness_object(cs, second)
     interpret.define(first, money)
     interpret.define(second, river)
@@ -47,7 +48,7 @@ def test_definition_rows_generalize_over_several_words_and_objects():
 
 def test_definition_binding_preserves_ambiguous_objects_until_selection():
     cs, interpret = _operator()
-    word = interpret.lookup_word([7], [1], form='bank')
+    word = recurrent_word(interpret, [7], [1], form='bank')
     first = witness_object(cs, word)
     second = cs.new_concept()
     force_order(cs, second, 1)
@@ -78,12 +79,12 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
-    first = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
+    first = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((8,), .3))
     second = cs.new_concept(order=1)
     with torch.no_grad():
         cs.similarity_codebook.W[cs._csw_row_of(second)].fill_(.7)
-    interpret.define(interpret.lookup_word([8], [1], form='animal'), second)
-    predicate = interpret.forward(interpret.lookup_word([9], [1], form='part'))
+    interpret.define(recurrent_word(interpret, [8], [1], form='animal'), second)
+    predicate = interpret.forward(recurrent_word(interpret, [9], [1], form='part'))
     store = LTM0(8, capacity=16)
     model = SimpleNamespace()
     attach_clause_index(model, store, cs)
@@ -107,8 +108,8 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
-    left = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
-    right = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
+    left = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((8,), .3))
+    right = witness_object(cs, recurrent_word(interpret, [8], [1], form='animal'), point=torch.full((8,), .7))
     store = LTM0(8, capacity=1)
     attach_clause_index(SimpleNamespace(), store, cs)
     source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),

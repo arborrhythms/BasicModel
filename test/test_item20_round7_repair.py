@@ -10,6 +10,7 @@ from Meaning import ConceptualMeaning
 from Memory import LTM0
 from RowTime import encoder
 from Occurrence import operand_name
+from nomination_fixtures import recurrent_word
 
 
 def test_pending_selected_phrase_keeps_its_own_occurrence_when_the_head_is_resolved():
@@ -19,7 +20,7 @@ def test_pending_selected_phrase_keeps_its_own_occurrence_when_the_head_is_resol
     from chunk_fixtures import context
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([122], (), form='pending-witness')
+    word = recurrent_word(owner.interpret, [122], (), form='pending-witness')
     earlier = known_concept(owner, atoms[1], order=1)
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
         bindings={'_forward_references': ((0, word),), '_open_references': (('referent', 0),)}),
@@ -87,7 +88,7 @@ def test_nested_introduction_prepares_its_child_before_claiming_the_written_orde
     from FamiliarTier import promote_identity
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([122], (), form='lexical-witness')
+    word = recurrent_word(owner.interpret, [122], (), form='lexical-witness')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept, trust=1.)
     child = replace(mention(atoms[0], reference=concept),
@@ -250,7 +251,7 @@ def test_lexical_introduction_and_checked_thought_keep_the_written_member_order(
     from FamiliarTier import promote_identity
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([122], (), form='lexical-witness')
+    word = recurrent_word(owner.interpret, [122], (), form='lexical-witness')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept, trust=1.)
     node = mention(atoms[0], reference=word)

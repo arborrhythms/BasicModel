@@ -2,6 +2,7 @@
 from dataclasses import replace
 from types import SimpleNamespace as NS
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def test_expired_pending_path_reenters_a_later_native_definition():
@@ -10,7 +11,7 @@ def test_expired_pending_path_reenters_a_later_native_definition():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     pool = owner.mtm
-    word = owner.interpret.lookup_word([115], (), form='later-empty')
+    word = recurrent_word(owner.interpret, [115], (), form='later-empty')
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     def close(position):
@@ -37,7 +38,7 @@ def test_rereading_the_same_position_at_a_new_order_preserves_the_original_membe
     from FamiliarTier import commit_read_words
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = owner.interpret.lookup_word([116], (), form='later-order')
+    word = recurrent_word(owner.interpret, [116], (), form='later-order')
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     root = store.append_idea(atoms[0], name=601)

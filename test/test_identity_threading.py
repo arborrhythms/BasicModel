@@ -9,6 +9,7 @@ from Memory import MediumTermMemory
 from Memory import STMChunks as chunks
 from chunk_fixtures import Walk, choice, value as working_value
 from Spaces import LanguageOperationChoice
+from nomination_fixtures import recurrent_word
 
 
 def address(number):
@@ -724,7 +725,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
     if cached:
         form_exposure(resolver, atoms[4], atoms[0])
     else:
-        word = owner.interpret.lookup_word([101], (), form='fixture-cue')
+        word = recurrent_word(owner.interpret, [101], (), form='fixture-cue')
         with torch.no_grad():
             owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[4])
     monkeypatch.setattr(resolver, 'select', lambda choices, logits, **kwargs: 1)

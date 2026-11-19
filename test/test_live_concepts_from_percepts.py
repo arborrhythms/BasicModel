@@ -1,12 +1,12 @@
-"""Live Sigma handoff: addressed evidence, sparse learning, and exact carriers."""
+"""Live order-zero handoff: addressed evidence, the word's Sigma, and exact carriers."""
 import copy
 
 import pytest
 import torch
 from torch import nn
 
-from Layers import IndexedSigmaConceptsFromPercepts, SigmaConceptsFromPercepts
-from Optimizer import RowLocalAdam
+from Layers import SigmaConceptsFromPercepts
+from OrderZero import OrderZeroSigma, read_word
 from Spaces import ConceptualSpace
 
 
@@ -17,67 +17,9 @@ def _space():
     cs.concept_dim = 4
     cs.expect_stack = cs.idea_stack = None
     cs.inputShape = cs.outputShape = [2, 4]
-    cs.concepts_from_percepts = IndexedSigmaConceptsFromPercepts(8, 16)
+    # A basic percept's vector is two wide; a location's place is two wide.
+    cs.order_zero = OrderZeroSigma(4, 16, content_width=2)
     return cs
-
-
-def test_indexed_readout_matches_plain_sigma_with_independent_concept_rows():
-    layer = IndexedSigmaConceptsFromPercepts(3, 16).double()
-    plain = SigmaConceptsFromPercepts(3, 2).double()
-    with torch.no_grad():
-        plain.input_weights.copy_(torch.tensor([[.4, -.2], [.1, .3], [-.7, .9]]))
-        plain.concept_bias.copy_(torch.tensor([[.1, -.4]]))
-        layer.coefficients[3, :-1].copy_(plain.input_weights[:, 0])
-        layer.coefficients[7, :-1].copy_(plain.input_weights[:, 1])
-        layer.coefficients[3, -1] = .1
-        layer.coefficients[7, -1] = -.4
-    evidence = torch.tensor([[.2, .6, -.1]], dtype=torch.float64)
-    actual = layer(evidence.expand(2, -1), torch.tensor([3, 7]))
-    torch.testing.assert_close(actual, plain(evidence)[0])
-
-
-def test_eight_total_references_not_four_per_role_and_no_slot_reassignment():
-    layer = IndexedSigmaConceptsFromPercepts(8, 16)
-    slots = layer.admit_references(3, range(7), [12])
-    assert slots[:2] == ((0, 0), (1, 12))
-    assert len(slots) == 8 and sum(role == 0 for role, _ in slots) == 7
-    assert layer.admit_references(3, [99], [13]) == slots
-    pair = layer.admit_references(5, [91], [12])
-    assert pair == ((0, 91), (1, 12))  # two references need no six fillers
-
-
-def test_sparse_update_changes_only_selected_concepts_and_unknown_is_zero():
-    layer = IndexedSigmaConceptsFromPercepts(8, 1_000_000)
-    before = layer.coefficients[[0, 2, 17, 100]].detach().clone()
-    optimizer = RowLocalAdam(layer.parameters(), lr=.01)
-    rows = torch.tensor([2, 17, -1])
-    output = layer(torch.ones(3, 8) * .1, rows)
-    assert output[-1] == 0
-    output.sum().backward()
-    grad = layer.coefficients.grad
-    assert grad.is_sparse and grad._nnz() <= 3
-    assert torch.isfinite(grad.coalesce().values()).all()
-    optimizer.step()
-    after = layer.coefficients[[0, 2, 17, 100]].detach()
-    assert torch.equal(before[[0, 3]], after[[0, 3]])
-    assert not torch.equal(before[1:3], after[1:3])
-    assert optimizer.state[layer.coefficients]["exp_avg"].numel() < 1000
-
-
-def test_indexed_checkpoint_roundtrip_growth_and_invalid_reference_rejection():
-    source = IndexedSigmaConceptsFromPercepts(8, 16)
-    source.admit_references(3, [11, 12], [4])
-    with torch.no_grad():
-        source.coefficients[3, 1] = -.25
-    saved = copy.deepcopy(source.state_dict())
-    restored = IndexedSigmaConceptsFromPercepts(8, 32)
-    restored.load_state_dict(saved, strict=True)
-    restored.load_reference_state(source.reference_state())
-    assert restored.references == source.references
-    torch.testing.assert_close(restored.coefficients[:16], source.coefficients)
-    assert (restored.coefficients[16:, :-1] == .5).all()
-    with pytest.raises(ValueError, match="invalid"):
-        restored.load_reference_state({"version": 1, "references": {3: [(2, 11)]}})
 
 
 def test_identified_evidence_masks_padding_without_erasing_observed_negative_match():
@@ -115,14 +57,22 @@ def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
     rows = torch.tensor([[3]])
     atoms = torch.tensor([[[1., -1., 999., 999.]]])
     prior = torch.full((1, 2, 4), 99.)
+    column = torch.tensor([.5, .25, .1, -.1], requires_grad=True)
+    code = torch.tensor([.6, 0.])
+    reading = torch.cat((column, code))[None]
     event, orders, row, activation, returned_prior, validity, locations = (
         cs.reduce_aligned_word_peers(
             parts, wholes, prior, torch.tensor([[True, False]]),
             rows[:, 0], torch.tensor([2]), torch.tensor([True]),
             staged_rows=rows, staged_atoms=atoms, part_n_what=2, whole_n_what=2,
-            percept_evidence=evidence, evidence_mask=mask,
-            return_location_activations=True))
-    expected = torch.tensor([[.75, .3]]).tanh()
+            percept_evidence=evidence[..., :2], evidence_mask=mask[..., :2],
+            order_zero_reading=reading, return_location_activations=True))
+    # The basic percept's Pi over its two members on the for lane, then its
+    # vector on the gaps and the location's own place, read by the column.
+    presence = torch.tensor([.8 * .7, .6])
+    place = torch.tensor([[3., 4.], [7., 8.]])
+    combined = torch.cat((1 - (1 - code) ** presence[:, None], presence[:, None] * place), -1)
+    expected = (combined @ column.detach()).tanh()[None]
     torch.testing.assert_close(locations, expected)
     torch.testing.assert_close(activation, expected[:, 0])
     torch.testing.assert_close(event[..., :2], expected.unsqueeze(-1) * atoms[:, :, :2])
@@ -131,7 +81,7 @@ def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
     assert torch.count_nonzero(returned_prior[:, 1]) == 0
     event[..., :1].sum().backward()
     assert torch.count_nonzero(evidence.grad[~mask]) == 0
-    assert cs.concepts_from_percepts.coefficients.grad.is_sparse
+    assert column.grad is not None and torch.count_nonzero(column.grad) > 0
 
 
 def test_native_field_survives_symbolic_selection_and_unbind_returns_terminal_folds():
@@ -157,16 +107,15 @@ def test_native_field_survives_symbolic_selection_and_unbind_returns_terminal_fo
 
 
 def test_dense_staged_readout_compiles_fullgraph_with_live_gradients():
-    evidence = torch.randn(2, 3, 8, requires_grad=True) * .1
-    coefficients = torch.rand(2, 1, 9, requires_grad=True)
-    mask = torch.rand(2, 3, 8) > .3
-    compiled = torch.compile(SigmaConceptsFromPercepts.from_coefficients,
-                             backend="eager", fullgraph=True)
-    result = compiled(evidence, coefficients, mask=mask)
-    torch.testing.assert_close(result, SigmaConceptsFromPercepts.from_coefficients(
-        evidence, coefficients, mask=mask))
+    evidence = torch.randn(2, 3, 2, requires_grad=True) * .1
+    reading = torch.rand(2, 1, 6 + 2, requires_grad=True)  # a column of 6, a vector of 2
+    place = torch.rand(2, 3, 4)
+    mask = torch.rand(2, 3, 2) > .3
+    compiled = torch.compile(read_word, backend="eager", fullgraph=True)
+    result = compiled(evidence, mask, reading, place, content_width=2)
+    torch.testing.assert_close(result, read_word(evidence, mask, reading, place, content_width=2))
     result.sum().backward()
-    assert coefficients.grad is not None and torch.isfinite(coefficients.grad).all()
+    assert reading.grad is not None and torch.isfinite(reading.grad).all()
 
 
 def test_observed_property_absence_is_negative_and_padding_is_unobserved():
@@ -207,7 +156,6 @@ def test_native_field_lifecycle_clears_only_reset_rows_then_releases_graph():
     cs = _space()
     cs.layers = nn.ModuleList()
     cs.subspace, cs.CSsub = Carrier(), Carrier()
-    cs.concepts_from_percepts.admit_references(3, [1], [2])
     field = cs.commit_percept_field(
         [torch.ones(2, 1, 4, requires_grad=True)],
         [torch.ones(2, 2, 4, requires_grad=True)],
@@ -231,7 +179,6 @@ def test_native_field_lifecycle_clears_only_reset_rows_then_releases_graph():
     object.__setattr__(cs.CSsub, "_percept_field", field)
     cs.Start()
     assert cs.CSsub._percept_field is None
-    assert cs.concepts_from_percepts.references[3] == ((0, 1), (1, 2))
 
 
 def _checkpoint_space():
@@ -241,62 +188,36 @@ def _checkpoint_space():
     cs.mtm = MediumTermMemory()
     from Spaces import Codebook
     from types import MethodType
-    book = SimpleNamespace(W=cs.concepts_from_percepts.coefficients)
+    book = SimpleNamespace(W=cs.order_zero.weight)
     book.placement_extras = MethodType(Codebook.placement_extras, book)
     book.load_placement_extras = MethodType(Codebook.load_placement_extras, book)
     cs.similarity_codebook = book
     cs.legacy = nn.Linear(2, 2)
     cs.concept_source_readout = SigmaConceptsFromPercepts(9, 1)
-    cs.layers = nn.ModuleList([cs.legacy, cs.concepts_from_percepts,
-                              cs.concept_source_readout])
+    cs.layers = nn.ModuleList([cs.legacy, cs.concept_source_readout])
     return cs
 
 
 def test_pre_readout_checkpoint_initializes_only_new_modules_with_strict_loading():
     source, target = _checkpoint_space(), _checkpoint_space()
     checkpoint = {key: value for key, value in source.state_dict().items()
-                  if key.startswith(("legacy.", "layers.0."))}
-    initial_readout = target.concepts_from_percepts.coefficients.detach().clone()
+                  if key.startswith(("legacy.", "layers.0.", "order_zero."))}
+    initial_readout = target.concept_source_readout.sigma.layer.W.detach().clone()
     target.load_state_dict(checkpoint, strict=True)
     torch.testing.assert_close(target.legacy.weight, source.legacy.weight)
-    torch.testing.assert_close(target.concepts_from_percepts.coefficients, initial_readout)
+    torch.testing.assert_close(target.concept_source_readout.sigma.layer.W, initial_readout)
     partial = copy.deepcopy(source.state_dict())
-    del partial["concepts_from_percepts.coefficients"]
+    del partial["concept_source_readout.sigma.layer.W"]
     with pytest.raises(RuntimeError, match="Missing key"):
         target.load_state_dict(partial, strict=True)
 
 
 def test_conceptual_checkpoint_metadata_and_tensor_state_roundtrip_together():
     source, target = _checkpoint_space(), _checkpoint_space()
-    refs = source.concepts_from_percepts.admit_references(3, [11], [2])
     with torch.no_grad():
-        source.concepts_from_percepts.coefficients[3, 0] = -.8
+        source.order_zero.weight[0, 3] = -.8
     assert all(torch.is_tensor(value) for value in source.state_dict().values())
     target.load_state_dict(source.state_dict(), strict=True)
     target.load_vocab_extras(source.vocab_extras())
-    assert target.concepts_from_percepts.references[3] == refs
-    torch.testing.assert_close(target.concepts_from_percepts.coefficients,
-                               source.concepts_from_percepts.coefficients)
+    torch.testing.assert_close(target.order_zero.weight, source.order_zero.weight)
     assert not getattr(target, "_legacy_whole_structure", None)
-
-
-def test_autoload_capacity_preflight_expands_all_readout_aliases_in_place():
-    from Models import BaseModel
-    model = BaseModel()
-    model.name, model.concept_binding, model.word_brackets = "ReadoutCheckpoint", "aligned", True
-    model.nConceptCodes = model.nSymbols = 16
-    cs = _checkpoint_space()
-    model.conceptualSpaces = nn.ModuleList([cs])
-    live = dict(model.state_dict())
-    saved = {key: value.detach().clone() for key, value in live.items()}
-    keys = [key for key in saved if key.endswith(".coefficients")]
-    assert len(keys) == 2  # named owner plus layers compatibility alias
-    for key in keys:
-        saved[key] = torch.full((8, 9), .123)
-    assert model._expand_aligned_codebook_checkpoint_state(saved, live) == len(keys)
-    assert len({saved[key].data_ptr() for key in keys}) == 1
-    for key in keys:
-        assert saved[key].shape == live[key].shape
-        assert (saved[key][:8] == .123).all()
-        assert (saved[key][8:, :-1] == .5).all()
-    model.load_state_dict(saved, strict=True)

@@ -3,6 +3,7 @@ import torch
 from PartsOfSpeech import PartsOfSpeech
 from definition_fixtures import agreeing_views
 from test_review13_subspaces import fixture
+from nomination_fixtures import recurrent_word
 
 
 def argument_inventory(arguments, count=4):
@@ -12,7 +13,7 @@ def argument_inventory(arguments, count=4):
     parts = PartsOfSpeech(arguments, owner)
     # The fixture owns its concept space for as long as its grammar catalogue.
     object.__setattr__(parts, '_fixture_owner', owner)
-    words = tuple(owner.interpret.lookup_word([4+i], (), form=f'form-{i}') for i in range(count))
+    words = tuple(recurrent_word(owner.interpret, [4+i], (), form=f'form-{i}') for i in range(count))
     for i, word in enumerate(words):
         row = owner._csw_row_of(word)
         bank.mereology.placement[row] = torch.eye(bank.mereology.meaning_pairs)[i]

@@ -19,11 +19,11 @@ def test_copied_definition_index_is_owned_by_the_copied_store():
 def test_two_pending_words_cannot_overbook_the_last_definition_row():
     m=model(); cs=m._concept_owner(); store=m.symbolSpace.ltm_store
     store.parts.capacity = cs._concept_allocator.next_id + 3
-    first=cs.interpret.lookup_word([7],[],form='first')
+    first=recurrent_word(cs.interpret, [7],[],form='first')
     alloc=cs._concept_allocator
     before=alloc.next_id,dict(alloc.symbols),dict(alloc.layer()._tensor_rows)
     with pytest.raises(RuntimeError,match='capacity'):
-        cs.interpret.lookup_word([8],[],form='second')
+        recurrent_word(cs.interpret, [8],[],form='second')
     assert before==(alloc.next_id,dict(alloc.symbols),dict(alloc.layer()._tensor_rows))
     obj=witness_object(cs, first)
     assert cs.interpret.forward(first)==obj
@@ -52,6 +52,7 @@ def test_word_definition_survives_identity_resolution_and_pruning():
 
 from pathlib import Path
 from types import SimpleNamespace
+from nomination_fixtures import recurrent_word
 
 def test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting():
     m = model()
@@ -71,7 +72,7 @@ def test_pending_field_word_reservation_survives_checkpoint(tmp_path):
     from test_grounded_xor import grounded_model
     m, _ = grounded_model(tmp_path)
     cs = m._concept_owner()
-    word = cs.interpret.lookup_word([48, 48], [1], form='00', word_reading=True)
+    word = recurrent_word(cs.interpret, [48, 48], [1], form='00', word_reading=True)
     assert word in cs.interpret._field_pending
     saved = m._collect_structural_extras()
     fresh, _ = grounded_model(tmp_path)
@@ -122,7 +123,7 @@ def test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache(
 def test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition():
     m = model()
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
-    word = cs.interpret.lookup_word([7], [], form='m')
+    word = recurrent_word(cs.interpret, [7], [], form='m')
     row = cs._csw_row_of(word)
     before = len(store), cs._concept_allocator.next_id
     assert cs.interpret.no_object(word)

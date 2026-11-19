@@ -14,12 +14,13 @@ from ReferenceContext import SituationFrame
 from ThoughtReferences import bindings, open_slots, with_slots
 from test_medium_term_memory import keep, snapshot, unchanged
 from test_reference_close import fixture
+from nomination_fixtures import recurrent_word
 
 
 def world(*, pending_atom=None):
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    words = {word: owner.interpret.lookup_word([unit], [], form=word)
+    words = {word: recurrent_word(owner.interpret, [unit], [], form=word)
              for word, unit in (('x', 120), ('three', 116), ('wrong', 119))}
     with torch.no_grad():
         # §50: this bare request has the native chart's zero meaning.
@@ -179,7 +180,7 @@ def test_unary_bind_keeps_the_objectless_word_site(monkeypatch):
     from reading_fixtures import record_reading
     from test_bind_thought import native
     f = native(monkeypatch)
-    word = f.cs.interpret.lookup_word([101], (), form='m')
+    word = recurrent_word(f.cs.interpret, [101], (), form='m')
     from Spaces import _concept_alloc_of
     f.words['m'] = word, word
     program = replace(f.program(('bind', 'm')), close_references=True,

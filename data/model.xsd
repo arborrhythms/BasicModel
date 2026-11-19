@@ -191,7 +191,6 @@
            Live by default (0.05); 0 restores pure decay+bump. -->
       <!-- Discover concepts in a row pool by witnessed context and use. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptMintCount" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
@@ -1129,9 +1128,6 @@
       </xs:element>
       <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
-           0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
-      <xs:element name="conceptReadoutL1" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Category utility / chunk admission (doc/plans/2026-09-10-meronomy-
            fold-ladder.md, contracts 4 and 7): Laplace smoothing of the
            utility counts, the minimum evidence before a concept's utility is
@@ -1228,7 +1224,6 @@
       <xs:element name="perWordStemSerial" type="xs:boolean" minOccurs="0"/>
       <!-- Per-space override of architecture.attentionPromotion. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptMintCount" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>

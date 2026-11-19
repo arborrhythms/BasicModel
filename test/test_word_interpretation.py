@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('configuration', ['MM_text.xml', 'XOR_grammar.xml', 'aligned'])
@@ -83,7 +84,7 @@ def test_default_interpret_reuses_existing_kind_without_minting():
     from test_word_interpretation import _operator
     from Spaces import _concept_alloc_of
     cs, interpret = _operator()
-    word = interpret.lookup_word([7], [], form='cat')
+    word = recurrent_word(interpret, [7], [], form='cat')
     kind = interpret.forward(word, order=2)
     before = dict(_concept_alloc_of(cs).symbols)
     assert interpret.forward(word) == kind
@@ -95,7 +96,7 @@ def test_default_interpret_reuses_a_witnessed_association():
     from test_word_interpretation import _operator
     from Spaces import _concept_alloc_of
     cs, interpret = _operator()
-    word = interpret.lookup_word([7], [], form='cat')
+    word = recurrent_word(interpret, [7], [], form='cat')
     kind = cs.new_concept()
     force_order(cs, kind, 2)
     cs._csw_concept_row(2, kind)
@@ -121,7 +122,7 @@ def _operator():
 
 def test_interpret_reuses_definition_and_reverses_by_identity():
     cs, interpret = _operator()
-    word = interpret.lookup_word([7], [1], form='wug')
+    word = recurrent_word(interpret, [7], [1], form='wug')
     assert interpret.forward(word) == interpret.reverse(word) == word
     assert interpret.no_object(word)
     supplied = cs.new_concept()
@@ -145,7 +146,7 @@ def test_interpret_reuses_definition_and_reverses_by_identity():
 
 def test_grammar_resolution_distinguishes_particular_and_kind():
     cs, interpret = _operator()
-    word = interpret.lookup_word([7], [1], form='cat')
+    word = recurrent_word(interpret, [7], [1], form='cat')
     supplied = cs.new_concept()
     force_order(cs, supplied, 0)
     cs._csw_concept_row(0, supplied)
@@ -179,10 +180,10 @@ def test_tensor_face_replaces_content_and_preserves_occurrence_coordinates():
 
 def test_ordered_word_lookup_keeps_anagrams_distinct():
     cs, interpret = _operator()
-    ab = interpret.lookup_word([1, 2], [], form='ab')
-    ba = interpret.lookup_word([2, 1], [], form='ba')
+    ab = recurrent_word(interpret, [1, 2], [], form='ab')
+    ba = recurrent_word(interpret, [2, 1], [], form='ba')
     assert ab != ba
-    assert interpret.lookup_word([1, 2], [], form='ab') == ab
+    assert recurrent_word(interpret, [1, 2], [], form='ab') == ab
 
 
 
@@ -265,7 +266,7 @@ def test_selected_relation_grammar_ends_the_interpreted_kinds(monkeypatch):
     from Models import _append_observed_meaning
     from test_selected_relation_meaning import _program_owner
     cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch, order_limit=2)
-    words = [cs.interpret.lookup_word([part], [], form=form)
+    words = [recurrent_word(cs.interpret, [part], [], form=form)
              for part, form in ((7, 'cats'), (8, 'animals'))]
     for word in words:
         obj = cs.new_concept()
@@ -314,7 +315,7 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     cs, interpret = _operator()
     cs._concept_binding = 'aligned'
     cs._serial = True
-    word = interpret.lookup_word([7], [], form='wug')
+    word = recurrent_word(interpret, [7], [], form='wug')
     from definition_fixtures import witness_object
     member = witness_object(cs, word)
     # The later concept member belongs to a class, seated one order above
@@ -330,7 +331,7 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     row = cs._csw_row_of(obj)
     original = tuple(cs.concept_parts(obj))
     cs._serial = False  # witness the later definition through the parallel field
-    witnessed = witness_object(cs, interpret.lookup_word([8], [], form='witnessed'))
+    witnessed = witness_object(cs, recurrent_word(interpret, [8], [], form='witnessed'))
     cs.add_part(obj, ('sym', witnessed))
     cs._populate_concept_weights(obj)
     assert all(part in cs.concept_parts(obj) for part in original)
@@ -351,17 +352,17 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
 def test_known_word_survives_full_inventory_without_partial_alternative(monkeypatch):
     from copy import deepcopy
     cs, interpret = _operator()
-    word = interpret.lookup_word([7], [1], form='cat')
+    word = recurrent_word(interpret, [7], [1], form='cat')
     obj = interpret.forward(word)
     before = deepcopy(cs.definitions.description(word))
     ids = dict(_concept_alloc_of(cs).symbols)
     def full(*args):
         raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
     monkeypatch.setattr(cs, '_preflight_concept_row', full)
-    assert interpret.lookup_word([8], [1], form='cat', word_reading=True) == word
+    assert recurrent_word(interpret, [8], [1], form='cat', word_reading=True) == word
     assert interpret.forward(word) == obj
     assert cs.definitions.description(word) == before
     assert dict(_concept_alloc_of(cs).symbols) == ids
     assert cs.concept_admission_stats()['dropped']['word alternative'] == 1
     with pytest.raises(RuntimeError, match='capacity exhausted'):
-        interpret.lookup_word([8], [1], form='cat')
+        recurrent_word(interpret, [8], [1], form='cat')

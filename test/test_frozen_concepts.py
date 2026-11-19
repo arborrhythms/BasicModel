@@ -41,7 +41,7 @@ def _fixture():
 def test_frozen_no_forming():
     """No NEW connections form on a frozen concept's row."""
     cs, rA, _rB = _fixture()
-    ly = cs._sparse_families(0)[1]
+    ly = cs._sparse_families(0)
     cs.freeze_concept(301)
     nnz = ly.nnz
     assert cs.add_concept_edge(rA, 6) is None
@@ -62,7 +62,7 @@ def test_frozen_weights_no_grad():
     """Backprop cannot move a frozen concept's edge values; unfrozen
     edges keep training."""
     cs, rA, rB = _fixture()
-    ly = cs._sparse_families(0)[1]
+    ly = cs._sparse_families(0)
     cs.freeze_concept(301)
     a_0 = torch.zeros(8, 1)
     a_0[3, 0] = 0.9

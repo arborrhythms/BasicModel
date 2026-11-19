@@ -11,7 +11,7 @@ from test_cs_sparse_weights import _cs, _mint_row
 def test_required_parts_keep_support_and_counterevidence_separate():
     """A true and B false refute their intersection; negating B supports it."""
     cs = _cs()
-    _, store = cs._sparse_families(0)
+    store = cs._sparse_families(0)
     matrix = store.conjunctive
     offset = store.nOutput + 1
     for target, negative_b in ((2, False), (3, True)):
@@ -29,7 +29,7 @@ def test_required_parts_keep_support_and_counterevidence_separate():
 
 def test_swapped_evidence_combination_is_distinct_from_a_both_pole_test():
     cs = _cs()
-    _, store = cs._sparse_families(0)
+    store = cs._sparse_families(0)
     matrix = store.conjunctive
     offset = store.nOutput + 1
     matrix.add_edge(1, 0, 1.)
@@ -47,7 +47,7 @@ def test_swapped_evidence_combination_is_distinct_from_a_both_pole_test():
 
 def test_unknown_concept_withholds_conjunctive_support_without_refuting():
     cs = _cs()
-    _, store = cs._sparse_families(0)
+    store = cs._sparse_families(0)
     for source in (0, 1):
         store.conjunctive.add_edge(2, source, 1.)
     source = torch.zeros(store.nInput, 1)

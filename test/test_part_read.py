@@ -3,6 +3,7 @@ import pytest
 import torch
 
 from test_clause_acceptance import SentenceFixture
+from nomination_fixtures import recurrent_word
 
 
 
@@ -76,7 +77,7 @@ def test_answer_read_checks_a_named_composite_before_descending_its_head(monkeyp
     row = f.store.write_clause(f.clause(('verb', ('verb', 'content', 'ending'), 'outer')))
     reference = f.store.occurrence_of(row)
     named = f.store.raw_meaning_of(row).role_refs[0][1]
-    word = f.cs.interpret.lookup_word([83], [], form='bound-name')
+    word = recurrent_word(f.cs.interpret, [83], [], form='bound-name')
     f.cs.interpret.define(word, named)
     value = replace(ConceptualMeaning.from_description(f.store.slots[row]),
         role_refs=(reference, None, None), bindings={'_bound_roles': (('referent', 0),)})
@@ -91,7 +92,7 @@ def test_answer_read_follows_admitted_surface_with_a_composed_marker(monkeypatch
     from BindingAnswers import matches
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
-    marker = f.cs.interpret.lookup_word([84], [], form='unbound-form')
+    marker = recurrent_word(f.cs.interpret, [84], [], form='unbound-form')
     with torch.no_grad():
         f.cs.similarity_codebook.W[f.cs._csw_row_of(marker)].sigmoid_()
     f.words['unbound-form'] = marker, marker

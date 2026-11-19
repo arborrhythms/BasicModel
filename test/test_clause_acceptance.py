@@ -15,6 +15,7 @@ from Queries import GrammaticalThoughtRegistry
 from Understanding import Reading
 from test_cs_sparse_weights import _cs
 from part_fixtures import stored_pair
+from nomination_fixtures import recurrent_word
 
 
 class SentenceFixture:
@@ -71,7 +72,7 @@ class SentenceFixture:
 
     def noun(self, word, *, order=0):
         if word not in self.words:
-            wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+            wid = recurrent_word(self.cs.interpret, [len(self.words) + 1], [], form=word)
             # These certificates supply object meanings. A bare new form
             # alone now deliberately remains an unbound reference site.
             obj = self.cs.new_concept(order=order)

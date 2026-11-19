@@ -22,6 +22,7 @@ from constituent_corpus import KINDS, corpus
 from test_clause_acceptance import SentenceFixture
 from test_item6_2_thinking import world, run
 from reading_fixtures import record_reading
+from nomination_fixtures import recurrent_word
 
 
 def native(monkeypatch):
@@ -186,7 +187,7 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     occurrence(f, f.atoms[other], f.atoms[5], identity=distractor_identity)
     expected = f.identities[target]
     marker = f'm{kind}{other}'
-    word = f.cs.interpret.lookup_word([100+kind*4+other], (), form=marker)
+    word = recurrent_word(f.cs.interpret, [100+kind*4+other], (), form=marker)
     assert f.cs.interpret.forward(word) == word and f.cs.interpret.no_object(word)
     from Spaces import _concept_alloc_of
     assert word in _concept_alloc_of(f.cs).word_forms[marker]
@@ -375,7 +376,7 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
     f = native(monkeypatch)
-    word = f.cs.interpret.lookup_word([101], (), form='m')
+    word = recurrent_word(f.cs.interpret, [101], (), form='m')
     from Spaces import _concept_alloc_of
     with torch.no_grad():
         f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
@@ -399,7 +400,7 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
 def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
     from ClauseJournal import finish_clause
     f = native(monkeypatch)
-    word = f.cs.interpret.lookup_word([101], (), form='m')
+    word = recurrent_word(f.cs.interpret, [101], (), form='m')
     with torch.no_grad():
         f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
     f.words['m'] = word, word

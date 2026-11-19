@@ -4,8 +4,14 @@ from torch import nn
 
 
 class BasicPercepts(nn.Module):
+    #: Entries of the first Pi allocated for each row, on average.
+    ENTRIES_PER_ROW = 16
+    #: The size of the keyed draw that raises a conjunction above its members.
+    INCREMENT = .1
+
     def __init__(self, native, identity_width, property_width, capacity):
         super().__init__()
+        from OrderZero import PerceptPi
         self.capacity = int(capacity)
         if self.capacity < 1:
             raise ValueError('basicPerceptCapacity must be positive')
@@ -28,6 +34,11 @@ class BasicPercepts(nn.Module):
         self.register_buffer('value_codes', torch.zeros(self.capacity))
         self.register_buffer('value_count', torch.zeros((), dtype=torch.long))
         self.revision = 0
+        # Each basic percept is a row of the first Pi over its parts and
+        # wholes; the rows are written in the order the percepts are reserved.
+        self.pi = PerceptPi(self.capacity, self.capacity * self.ENTRIES_PER_ROW)
+        # A conjunction of basic percepts is a row whose members are rows.
+        self.conjunctions = {}
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)
@@ -105,11 +116,22 @@ class BasicPercepts(nn.Module):
     def bind(self, whole):
         object.__setattr__(self, 'whole', whole)
 
-    def reserve(self, parts, wholes, *, word=None, place=None):
+    def reserve_conjunction(self, members):
+        """A row of the first Pi whose members are basic percepts."""
+        members = tuple(sorted(dict.fromkeys(map(int, members))))
+        if len(members) < 2 or any(not 0 <= m < len(self.index) for m in members):
+            raise ValueError('a conjunction joins two or more basic percepts')
+        parts = tuple(dict.fromkeys(part for m in members for part in self.occurrences[m][0]))
+        wholes = set.intersection(*(set(self.occurrences[m][1]) for m in members))
+        return self.reserve(parts, tuple(sorted(wholes)), members=members)
+
+    def reserve(self, parts, wholes, *, word=None, place=None, members=None):
         parts, wholes = tuple(map(int, parts)), tuple(dict.fromkeys(map(int, wholes)))
         if not parts:
             raise ValueError('a basic percept needs identity parts')
         key = (parts, wholes) if place is None else (parts, wholes, int(place))
+        if members is not None:
+            key = ('conjunction', tuple(members))
         row = self.index.get(key)
         if row is None:
             row = len(self.index)
@@ -117,6 +139,10 @@ class BasicPercepts(nn.Module):
                 raise OverflowError('BasicPercepts capacity exhausted')
             self.index[key] = row
             self.occurrences[row] = parts, wholes
+            if members is not None:
+                self.conjunctions[row] = tuple(members)
+            if self.pi.append(self.member_keys(row)) != row:
+                raise RuntimeError('the first Pi disagrees with the basic percept rows')
             if place is not None:
                 self.places[row] = int(place)
             self.revision += 1
@@ -156,10 +182,17 @@ class BasicPercepts(nn.Module):
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
             raise ValueError('unavailable basic percept reference')
+        members = self.conjunctions.get(int(row))
+        if members is not None:
+            # The greatest over its members' codes and a small draw keyed to
+            # the row, so that it lies above each member and is not their sum.
+            greatest = torch.stack([self.code(member) for member in members]).amax(0)
+            draw = torch.rand(greatest.shape, generator=torch.Generator().manual_seed(int(row)))
+            return (greatest + self.INCREMENT * draw.to(greatest)).clamp(max=1.)
         return torch.cat(self.subspace_bounds(int(row)))
 
     @torch.no_grad()
-    def promote(self, row, *, declared=False):
+    def promote(self, row):
         row = int(row)
         if not self.promoted[row]:
             self.codes[row].copy_(self.code(row))
@@ -167,6 +200,27 @@ class BasicPercepts(nn.Module):
             self.count += 1
             self.revision += 1
         return row
+
+    def _leaves(self):
+        ancestry = getattr(self.native, 'part_groups', {})
+        def leaves(part, visiting=()):
+            if part in visiting:
+                raise ValueError('cyclic native part references')
+            return tuple(leaf for child in ancestry[part]
+                         for leaf in leaves(child, (*visiting, part))) if part in ancestry else (part,)
+        return leaves
+
+    def member_keys(self, row):
+        """The keys of a basic percept's members in the percept tower: its
+        run of parts and each of its wholes. A value percept has none."""
+        if int(row) in self.conjunctions:
+            return [('bp', member) for member in self.conjunctions[int(row)]]
+        parts, wholes = self.occurrences[int(row)]
+        if min(parts) < -self.identity_width:
+            return []
+        leaves = self._leaves()
+        return [('ps', tuple(leaf for part in parts for leaf in leaves(part))),
+                *(('ws', whole) for whole in wholes)]
 
     def read(self, percepts, brackets, rows, **options):
         """Tie both towers live, with the complementary pole from properties."""
@@ -178,11 +232,7 @@ class BasicPercepts(nn.Module):
         # Concept columns and basic-percept identities remain unchanged when
         # perception promotes an ordered run to one native row.
         ancestry = getattr(self.native, 'part_groups', {})
-        def leaves(part, visiting=()):
-            if part in visiting:
-                raise ValueError('cyclic native part references')
-            return tuple(leaf for child in ancestry[part]
-                         for leaf in leaves(child, (*visiting, part))) if part in ancestry else (part,)
+        leaves = self._leaves()
         if ancestry:
             ids, spans, primitive, raw, whole_spans = percepts
             expanded = []
@@ -207,38 +257,50 @@ class BasicPercepts(nn.Module):
                     ids[batch, :len(events)] = values[:, 0]
                     spans[batch, :len(events)] = values[:, 1:]
             percepts = ids, spans, primitive, raw, whole_spans
+        requested = rows
+        def with_members(row, seen):
+            for member in self.conjunctions.get(row, ()):
+                with_members(member, seen)
+            seen.setdefault(row, None)
+            return seen
+        ordered = {}
+        for row in rows:
+            with_members(row, ordered)
+        rows = tuple(ordered)
         keys, groups = [], []
         for row in rows:
-            parts, wholes = self.occurrences[row]
-            group = ([] if min(parts) < -self.identity_width else
-                     [('ps', tuple(leaf for part in parts for leaf in leaves(part))),
-                      *(('ws', part) for part in wholes)])
+            group = [] if row in self.conjunctions else self.member_keys(row)
             keys.extend(group); groups.append(group)
         native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
             native=self.native, **options)
         values, events, boundaries = [], [], []
+        if rows:
+            order = list(dict.fromkeys(keys))
+            selected = native.selected(order)
+            value = self.pi(native.values.index_select(0, selected), rows, order)
+            event = self.pi(native.events.index_select(0, selected), rows, order)
+            values, events = list(value), list(event)
+            # Members come before the conjunctions over them.
+            members = [('bp', r) for r in rows]
+            for index, row in enumerate(rows):
+                if row in self.conjunctions:
+                    values[index] = self.pi(torch.stack(values), (row,), members)[0]
+                    events[index] = self.pi(torch.stack(events), (row,), members)[0]
         for group in groups:
             if not group:
-                values.append(native.values.new_zeros(native.values.shape[1:]))
-                events.append(native.events.new_zeros(native.events.shape[1:]))
-                boundaries.append(torch.stack((values[-1], values[-1])))
+                zero = native.values.new_zeros(native.values.shape[1:])
+                boundaries.append(torch.stack((zero, zero)))
                 continue
-            selected = native.selected(group)
-            value = native.values.index_select(0, selected)
-            event = native.events.index_select(0, selected)
-            def minimum(v):
-                def pole(rows, channel):
-                    known = rows[..., channel] > 0 if channel else rows.any(-1)
-                    bound = torch.where(known, rows[..., channel], torch.inf).amin(0)
-                    return torch.where(known.any(0), bound, 0.)
-                positive = pole(v, 0)
-                negative = pole(v[1:], 1) if len(v) > 1 else torch.zeros_like(positive)
-                return torch.stack((positive, negative), -1)
-            # A property of a word does not assert the word's presence.
-            values.append(minimum(value) * value[0, ..., :1].gt(0))
-            events.append(minimum(event) * value[0, ..., None, :1].gt(0))
-            whole = torch.stack((minimum(value[1:])[..., 0], minimum(value)[..., 1]), -1) if len(value) > 1 else torch.stack(
-                (torch.ones_like(value[0, ..., 0]), torch.zeros_like(value[0, ..., 0])), -1)
+            value = native.values.index_select(0, native.selected(group))
+            # The boundaries of a collection: the run of parts, and the
+            # least of its wholes on the for lane with the least on the
+            # against lane over the run and the wholes.
+            def least(v, channel):
+                known = v[..., channel] > 0 if channel else v.any(-1)
+                bound = torch.where(known, v[..., channel], torch.inf).amin(0)
+                return torch.where(known.any(0), bound, 0.)
+            whole = (torch.stack((least(value[1:], 0), least(value[1:], 1)), -1) if len(value) > 1
+                     else torch.stack((torch.ones_like(value[0, ..., 0]), torch.zeros_like(value[0, ..., 0])), -1))
             boundaries.append(torch.stack((value[0], whole)))
         shape = (0, *native.values.shape[1:])
         value = torch.stack(values) if values else native.values.new_zeros(shape)
@@ -303,7 +365,8 @@ class BasicPercepts(nn.Module):
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(version=2, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), places=self.places[:len(self.index)].tolist()))
+        return _pack_state(dict(version=2, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), places=self.places[:len(self.index)].tolist(),
+                                conjunctions=tuple(self.conjunctions.items())))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
@@ -314,10 +377,14 @@ class BasicPercepts(nn.Module):
             raise ValueError('fixed numeric axes have no level witnesses; an old numeric checkpoint cannot be imported')
         self.occurrences[:] = [None] * self.capacity
         self.index = {}
+        self.pi.clear()
+        self.conjunctions = {}
+        conjunctions = dict(state.get('conjunctions', ()))
         places = state.get('places', [-1] * len(state['occurrences']))
         self.places.fill_(-1)
-        for (parts, wholes), place in zip(state['occurrences'], places):
-            self.reserve(parts, wholes, place=None if place < 0 else place)
+        for row, ((parts, wholes), place) in enumerate(zip(state['occurrences'], places)):
+            self.reserve(parts, wholes, place=None if place < 0 else place,
+                         members=conjunctions.get(row))
         self.words = dict(state['words'])
         self.selectors = dict(state['selectors'])
         if state.get('scalar_state') is not None:

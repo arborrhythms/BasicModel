@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def world(*, meaning_pairs=2):
@@ -53,7 +54,7 @@ def test_word_reads_its_single_remembered_object_after_definition_forgetting():
     owner = resolver.components.owner
     model = model_for(owner, store)
     begin(model)
-    name = owner.interpret.lookup_word([109], [], form='remembered')
+    name = recurrent_word(owner.interpret, [109], [], form='remembered')
     obj = owner.new_concept()
     from order_fixtures import force_order
     force_order(owner, obj, 1)

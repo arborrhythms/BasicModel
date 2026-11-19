@@ -4,6 +4,7 @@ import Spaces
 import pytest
 
 from test_cs_sparse_weights import _cs, _mint_row, _mint_field
+from nomination_fixtures import recurrent_word
 
 
 def test_different_positions_in_one_extent_supply_the_two_symbols():
@@ -157,7 +158,7 @@ def test_native_fused_case_has_no_concept_location(tmp_path):
     raw[0, 0, :2] = torch.tensor([49, 48])
     model.forward(raw)
     # Word admission is the writer of native feature membership.
-    word = cs.interpret.lookup_word(ps.percept_store.spell_out(b'10'), (), form=b'10',
+    word = recurrent_word(cs.interpret, ps.percept_store.spell_out(b'10'), (), form=b'10',
                                     word_reading=True)
     assert word is not None
     store = Spaces._concept_alloc_of(cs).layer()

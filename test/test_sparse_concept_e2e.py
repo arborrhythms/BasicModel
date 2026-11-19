@@ -249,7 +249,7 @@ def test_csw_weights_update_under_optimizer_step():
     cs.add_concept_edge(r2, 2, weight=1.0)
     what = torch.randn(16, _D)
     a_0 = torch.rand(8, 2)
-    vals = cs._sparse_families(1)[1].values
+    vals = cs._sparse_families(1).values
     before = vals.detach().clone()
     opt = torch.optim.SGD([vals], lr=1.0)
     content, _ = cs.cs_forward_content(_evidence(a_0), what)

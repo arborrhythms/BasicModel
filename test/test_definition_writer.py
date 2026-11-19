@@ -10,12 +10,13 @@ from ClauseRow import Clause, Composition
 from Definitions import DefinitionIndex
 from Meaning import ConceptualMeaning
 from test_clause_acceptance import SentenceFixture
+from nomination_fixtures import recurrent_word
 
 
 def _setup(monkeypatch):
     f = SentenceFixture(monkeypatch)
     first, second = f.noun('first'), f.noun('second')
-    word = f.cs.interpret.lookup_word([81], [], form='later')
+    word = recurrent_word(f.cs.interpret, [81], [], form='later')
     genuine = f.cs.new_concept()
     f.cs.add_part(genuine, 81)
     f.cs._csw_concept_row(0, genuine)

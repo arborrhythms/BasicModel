@@ -306,7 +306,7 @@ def test_prune_removes_bias_edge_of_dropped_everything():
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
     cs._populate_concept_weights(c)
-    _p, ly = cs._sparse_families(0)                  # THE shared store
+    ly = cs._sparse_families(0)                  # THE shared store
     before = ly.nnz
     row = cs._csw_rows[(1, c)]
     bias = int(cs.nVectors)

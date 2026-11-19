@@ -5,6 +5,7 @@ import json
 import pytest
 import torch
 from test_item18_trust import truth_model
+from nomination_fixtures import recurrent_word
 
 
 def test_first_definition_edge_joins_its_objective_optimizer():
@@ -50,7 +51,7 @@ def test_later_sentence_reads_a_promoted_name_from_its_current_reference():
     from PrependedSymbols import SymbolEntries, refresh_words, word_view, lookup_view
     from test_cs_sparse_weights import _cs
     owner = _cs(nS=128, order=2, dim=16)
-    word = owner.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(owner.interpret, [1], [2], form='label')
     transient, row, order = owner.interpret.reading(word)
     entries = SymbolEntries(1, 2, 2, 16)
     for field, values in (
@@ -161,7 +162,7 @@ def test_word_bank_refresh_keeps_the_previous_sentences_gradient():
 def test_73_one_word_keeps_its_objects_at_each_order():
     from test_cs_sparse_weights import _cs
     owner = _cs(nS=128, order=3, dim=16)
-    word = owner.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(owner.interpret, [1], [2], form='label')
     member = owner.new_concept()
     owner.add_part(member, 7)
     owner._csw_concept_row(0, member)

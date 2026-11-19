@@ -4165,140 +4165,6 @@ class SigmaConceptsFromPercepts(ConceptsFromPercepts):
         return self
 
 
-class IndexedSigmaConceptsFromPercepts(Layer):
-    """Plain Sigma readouts, stored row-locally for a large concept bank.
-
-    This is the indexed storage form of SigmaConceptsFromPercepts, not a
-    different activation formula. One concept owns up to ``nInput`` stable
-    (part/whole, code) reference slots and one affine row. There are no gates,
-    source means, or learned selectors. Optional weak connection L1 is applied
-    by the row-local optimizer's diagonal-metric proximal step, not by an
-    additional autograd penalty. Lookup is O(admitted concepts), with sparse
-    gradients for RowLocalAdam; compiled loops consume the gathered rows.
-
-    Reference admission happens only at the eager vocabulary boundary. Slots
-    never silently change identity when new references arrive. All source
-    percepts remain in the collective field even when this bounded readout
-    cannot admit another reference.
-    """
-
-    def __init__(self, nInput, capacity, *, l1_lambda=0.0):
-        super().__init__(int(nInput), int(capacity))
-        if self.nInput < 1 or self.nOutput < 1:
-            raise ValueError("indexed Sigma dimensions must be positive")
-        self.l1_lambda = float(l1_lambda)
-        if not math.isfinite(self.l1_lambda) or self.l1_lambda < 0:
-            raise ValueError("readout L1 must be finite and nonnegative")
-        self.coefficients = nn.Parameter(torch.full((self.nOutput, self.nInput + 1), .5))
-        with torch.no_grad():
-            self.coefficients[:, -1].zero_()
-        self.references = {}
-
-    def admit_references(self, row, parts, wholes):
-        """Append stable typed slots, reserving neither fillers nor four per role."""
-        row = int(row)
-        if not 0 <= row < self.nOutput:
-            raise ValueError("concept row is outside indexed Sigma capacity")
-        slots = list(self.references.get(row, ()))
-        parts = sorted(set(int(code) for code in parts if int(code) >= 0))
-        wholes = sorted(set(int(code) for code in wholes if int(code) >= 0))
-        # Interleave initially so both mereological roles are represented;
-        # either side can use spare slots when the other has fewer references.
-        for rank in range(max(len(parts), len(wholes))):
-            for role, codes in ((0, parts), (1, wholes)):
-                if rank < len(codes):
-                    ref = (role, codes[rank])
-                    if ref not in slots and len(slots) < self.nInput:
-                        slots.append(ref)
-        self.references[row] = tuple(slots)
-        return tuple(slots)
-
-    def lookup_coefficients(self, rows):
-        known = rows >= 0
-        values = F.embedding(rows.clamp_min(0).long(), self.coefficients, sparse=True)
-        return torch.where(known.unsqueeze(-1), values, torch.zeros_like(values))
-
-    def forward(self, percepts, rows, *, mask=None):
-        known = rows >= 0
-        admitted = known.unsqueeze(-1).expand_as(percepts)
-        if mask is not None:
-            admitted = torch.logical_and(admitted, mask)
-        return SigmaConceptsFromPercepts.from_coefficients(
-            percepts, self.lookup_coefficients(rows), mask=admitted)
-
-    def conceptsFromPercepts(self, percepts, rows, *, mask=None):
-        return self(percepts, rows, mask=mask)
-
-    @torch.no_grad()
-    def l1_batch(self, rows, reference_roles):
-        """Observed rows, connection mask, normalized strength and report cost.
-
-        Average incoming L1 over DISTINCT observed concepts, not sentence
-        occurrences or dictionary capacity. Only admitted typed references
-        count; reserved slots and bias are excluded. Returned cost is detached:
-        the optimizer applies this objective once via its proximal update.
-        No vocabulary-wide scan or dense gradient is constructed.
-        """
-        if not self.l1_lambda:
-            return None
-        if (rows.dtype != torch.long or reference_roles.dtype != torch.long
-                or rows.device != self.coefficients.device
-                or reference_roles.device != rows.device
-                or tuple(reference_roles.shape) != (*rows.shape, self.nInput)):
-            raise ValueError("readout L1 requires concept rows and their typed reference slots")
-        flat_rows = rows.reshape(-1)
-        roles = reference_roles.reshape(-1, self.nInput)
-        connections = (roles == 0) | (roles == 1)
-        valid = (flat_rows >= 0) & connections.any(dim=-1)
-        selected, inverse = torch.unique(flat_rows[valid], sorted=True, return_inverse=True)
-        if not selected.numel():
-            return None
-        counts = torch.zeros(selected.numel(), self.nInput,
-                             dtype=torch.long, device=rows.device)
-        counts.index_add_(0, inverse, connections[valid].long())
-        mask = F.pad(counts > 0, (0, 1), value=False)  # bias is not an input
-        coefficients = self.coefficients.index_select(0, selected)
-        strength = self.l1_lambda / selected.numel()
-        cost = strength * torch.where(mask, coefficients.abs(), 0).sum()
-        return selected, mask, strength, cost
-
-    def reverse(self, y):
-        raise NotImplementedError("decode the collective percept field, not the scalar readout")
-
-    def reference_state(self):
-        """Metadata saved with ConceptualSpace.vocab_extras, not tensor state."""
-        return {"version": 1, "references": dict(self.references)}
-
-    def load_reference_state(self, state):
-        if not isinstance(state, dict) or state.get("version") != 1:
-            raise ValueError("unsupported indexed Sigma reference schema")
-        references = {}
-        for row, slots in state.get("references", {}).items():
-            row = int(row)
-            slots = tuple((int(role), int(code)) for role, code in slots)
-            if (not 0 <= row < self.nOutput or len(slots) > self.nInput
-                    or len(set(slots)) != len(slots)
-                    or any(role not in (0, 1) or code < 0 for role, code in slots)):
-                raise ValueError("invalid indexed Sigma reference slots")
-            references[row] = slots
-        self.references = references
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        key = prefix + "coefficients"
-        value = state_dict.get(key)
-        if torch.is_tensor(value) and tuple(value.shape) != tuple(self.coefficients.shape):
-            if value.dim() == 2 and int(value.shape[1]) == self.nInput + 1:
-                # A larger reserve adds unused rows; learned rows and their
-                # reference identities retain their original addresses.
-                restored = self.coefficients.detach().clone()
-                count = min(int(value.shape[0]), self.nOutput)
-                restored[:count].copy_(value[:count])
-                state_dict[key] = restored
-        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
-                                     missing_keys, unexpected_keys, error_msgs)
-
-
 class PiLayer(GrammarLayer):
     r"""Multiplicative chart map used by the grammar's LowerLayer:
     ``[-1, 1] -> [-1, 1]``.
@@ -5728,8 +5594,6 @@ class ConceptualAttentionLayer(SparseLayer):
         self._tensor_row_keys = {} # derived reverse map; updated at allocation/load
         self._row_next = {}        # region base -> next unallocated local row
 
-        self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
-                                      device=device, forbid_self_edges=True)
         # Feature addresses interleave PS/WS and membership/complement:
         # 4*row + 2*tower + pole. No distributed coordinate is an address.
         self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
@@ -5738,8 +5602,8 @@ class ConceptualAttentionLayer(SparseLayer):
         # A PS literal may be an ordered group before recurrence forms a
         # percept. Metadata belongs to its sparse edge, including its pole.
         self.feature_groups = {}
-        self._sidecar_owned = self.conjunctive._sidecar_owned = True
-        self._paired_sources = self.conjunctive._paired_sources = nInput == 2 * (nOutput + 1)
+        self._sidecar_owned = True
+        self._paired_sources = nInput == 2 * (nOutput + 1)
         for name, value in (
                 ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
@@ -5753,10 +5617,10 @@ class ConceptualAttentionLayer(SparseLayer):
             self.register_buffer(name, value, persistent=False)
 
     def part_matrices(self):
-        return self, self.conjunctive
+        return (self,)
 
     def definition_matrices(self):
-        return self, self.conjunctive, self.features
+        return self, self.features
 
     @torch.no_grad()
     def project_parts(self):
@@ -5818,7 +5682,7 @@ class ConceptualAttentionLayer(SparseLayer):
     def parts_extras(self):
         """Checkpoint both parts matrices and row-aligned discovery state."""
         matrices = {}
-        for name, matrix in (('conjunctive', self.conjunctive), ('features', self.features)):
+        for name, matrix in (('features', self.features),):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
                                   nInput=matrix.nInput,
                                   values=None if matrix.values is None else matrix.values.detach().cpu().clone())
@@ -5836,7 +5700,10 @@ class ConceptualAttentionLayer(SparseLayer):
             raise ValueError('unsupported conceptual parts checkpoint')
         self.feature_groups = dict(saved.get('feature_groups', {}))
         old_span = self.nOutput if old_size is None else old_size
-        for name in ('conjunctive', 'features'):
+        if saved['matrices'].get('conjunctive', {}).get('rows'):
+            raise ValueError('conjunctive concept definitions over order zero are gone; '
+                             'a conjunction of percepts is a basic percept nominated by MTM')
+        for name in ('features',):
             matrix = getattr(self, name)
             blob = saved['matrices'].get(name, dict(rows=[], cols=[], values=None, nInput=1))
             if name == 'features':
@@ -6075,6 +5942,7 @@ class ConceptAllocator:
         self.word_forms = {}             # surface -> set of persistent concept ids
         self.operator_concepts = {}
         self.formal_arguments = {}       # declared argument -> ordinary higher-order concept
+        self.declared_classes = {}       # "words", "objects" -> declared class concept
         self.order_from_row = None       # construction-owned physical block read
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary

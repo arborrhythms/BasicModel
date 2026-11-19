@@ -13,6 +13,7 @@ from IdentityRows import mint
 from Meaning import ConceptualMeaning
 from definition_fixtures import agreeing_views, learned_operation
 from test_review13_subspaces import fixture as paired_fixture
+from nomination_fixtures import recurrent_word
 
 
 def operation_fixture(monkeypatch):
@@ -48,7 +49,7 @@ def operation_fixture(monkeypatch):
 
 def words(fixture, count):
     # Different admitted units keep their own word identities.
-    ids = [fixture.cs.interpret.lookup_word([4+i], (), form=f'token{i}') for i in range(count)]
+    ids = [recurrent_word(fixture.cs.interpret, [4+i], (), form=f'token{i}') for i in range(count)]
     bank=fixture.cs.similarity_codebook
     for i, word in enumerate(ids):
         row=fixture.cs._csw_row_of(word)

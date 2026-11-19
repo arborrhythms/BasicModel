@@ -12,16 +12,23 @@ import torch
 from util import TheXMLConfig, ProjectPaths
 
 
-def admit_native_forms(model, forms):
-    """Declare supplied field-lesson percepts in their existing native basis."""
+def present_native_forms(model, forms):
+    """Present each supplied lesson form to MTM until it nominates the form's
+    basic percept; its row is the nominated one."""
     cs, ws = model.conceptualSpaces[0], model.wholeSpace
     native, basic = model.perceptualSpace.percept_store, cs.basic_percepts
     admitted = []
     for form in dict.fromkeys(forms):
         raw = form.encode('utf8') if isinstance(form, str) else bytes(form)
         parts = tuple(native.spell_out(raw))
-        row = basic.reserve(parts, ws.property_rows_for_bytes(raw))
-        basic.promote(row, declared=True)
+        wholes = ws.property_rows_for_bytes(raw)
+        key = (parts, tuple(dict.fromkeys(map(int, wholes))))
+        if key not in basic.index:
+            for reading in range(cs.concept_mint_count):
+                if cs.nominates(('lesson form', raw), ('lesson', reading)):
+                    break
+        row = basic.reserve(parts, wholes)
+        basic.promote(row)
         admitted.append(row)
     return tuple(admitted)
 
@@ -35,8 +42,8 @@ def teach_concept_lessons(model):
         path = Path(ProjectPaths.DATA_DIR) / path
     lesson = json.loads(path.read_text())
     cs, ws = model.conceptualSpaces[0], model.wholeSpace
-    if not (cs._sparse_active() and cs.conceptual_pi and cs._promotion_enabled):
-        raise ValueError('concept lessons require symbolic order, conceptual pi and promotion')
+    if not (cs._sparse_active() and cs._promotion_enabled):
+        raise ValueError('concept lessons require symbolic order and promotion')
     primitive = ws.subspace.what.primitive_properties
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
@@ -45,7 +52,7 @@ def teach_concept_lessons(model):
     # D2 names collect the basic percepts of the supplied training forms.
     # Admit those forms before constructing their sparse feature optimizer.
     forms = [example['text'] for item in lesson['names'] for example in item['examples']]
-    admit_native_forms(model, forms)
+    present_native_forms(model, forms)
     for item in lesson['names']:
         concept = int(item['concept'])
         if not item['features']:

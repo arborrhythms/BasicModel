@@ -14,16 +14,17 @@ SPLITS = ('train', 'validation', 'test')
 
 
 def admit_training_forms(model, texts, answers=(), *, split='train'):
-    """Admit the phase's training vocabulary, without presenting its meanings.
+    """Admit the phase's training forms to perception, without words.
 
-    This eager phase boundary uses the same native atoms and word rows as
-    reading. It cannot mint an object, open an occurrence or prime a word.
+    This eager phase boundary admits the same native atoms and forms as
+    reading. A form becomes a word only when MTM nominates its basic percept
+    on recurrence; it cannot mint a word, an object or an occurrence here.
+    Returns the admitted lexical forms with their parts.
     """
     if split != 'train':
         raise ValueError('form admission accepts training data only')
     from Meronomy import percept_spans
     from WordSurfaces import is_lexical_form
-    owner=model._concept_owner()
     identity=model.perceptualSpace.percept_store.identity
     forms=set()
     answers = tuple(answers)
@@ -46,18 +47,7 @@ def admit_training_forms(model, texts, answers=(), *, split='train'):
         parts=identity.admit(raw)
         if not is_lexical_form(raw):
             continue
-        wholes=model.wholeSpace.property_rows_for_bytes(raw)
-        identity.basic.bind(model.wholeSpace.subspace.what)
-        word=owner.interpret.lookup_word(parts,wholes,form=raw,word_reading=False)
-        if word is None:
-            raise RuntimeError(f'training form admission failed: {raw!r}')
-        basic = identity.basic
-        basic.bind(model.wholeSpace.subspace.what)
-        descriptor = owner.definitions.description(word) or owner.interpret._pending.get(word)
-        wholes = () if descriptor is None else descriptor['wholes']
-        row = basic.reserve(parts, wholes, word=word)
-        basic.promote(row, declared=True)
-        admitted.append((raw,word))
+        admitted.append((raw,tuple(parts)))
     model._supplied_training_forms = tuple(sorted(supplied))
     return tuple(admitted)
 

@@ -14,6 +14,7 @@ from ReferenceContext import SituationFrame
 from ThoughtReferences import bindings, open_slots, with_slots
 from order_fixtures import force_order
 from test_reference_close import fixture
+from nomination_fixtures import recurrent_word
 
 
 def identity(owner, point, *, order=1):
@@ -28,7 +29,7 @@ def identity(owner, point, *, order=1):
 def forward_row(*, event=False, object_name=False):
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([118], (), form='v')
+    word = recurrent_word(owner.interpret, [118], (), form='v')
     obj = identity(owner, atoms[0])
     owner.interpret.define(word, obj)
     name = obj if object_name else word

@@ -3,7 +3,7 @@
   <architecture>
     <data><dataType>numeric</dataType><dataset>images</dataset><imageCorpus>shapes</imageCorpus></data>
     <conceptLayers>1</conceptLayers><bindingDepth>3</bindingDepth>
-    <conceptBinding>aligned</conceptBinding><conceptualPi>false</conceptualPi>
+    <conceptBinding>aligned</conceptBinding>
     <attentionPromotion>true</attentionPromotion>
     <training><autoload>false</autoload><learningRate>0.005</learningRate><numEpochs>400</numEpochs></training>
   </architecture>

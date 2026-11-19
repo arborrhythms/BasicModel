@@ -3,13 +3,14 @@ import pytest
 import torch
 
 from test_orders_learned import equality_fixture, event, equal_close
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('mismatch_first', (False, True))
 def test_unlike_order_equality_keeps_evidence_without_a_partial_raise(mismatch_first):
     from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(cs.interpret, [1], [2], form='label')
     first = event(cs, store, 1)
     other = event(cs, store, 2, order=1)
     second = event(cs, store, 3)

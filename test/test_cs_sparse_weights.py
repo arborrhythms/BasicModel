@@ -105,9 +105,9 @@ def test_shared_untyped_square_store():
     the store's trailing column S (callers pass col == nVectors); self-edges
     raise (the Quine atom); the learnable values register EXACTLY ONCE."""
     cs = _cs(nS=16, order=2)                         # taper (8, 4, 2): S = 14
-    _p, s1 = cs._sparse_families(1)
+    s1 = cs._sparse_families(1)
     assert _p is s1.conjunctive                       # same concepts, conjunctive parts
-    assert s1 is cs._sparse_families(2)[1]           # ONE shared store
+    assert s1 is cs._sparse_families(2)           # ONE shared store
     assert (s1.nOutput, s1.nInput) == (16, 34)       # [S+1 inputs x S outputs]
     assert s1.roles is None                          # untyped: no role blocks
     row = cs.order_slice(1)[0]
@@ -134,7 +134,7 @@ def test_any_edge_on_snap_row_fails_loud():
             assert False, "snap-row edges must raise (codebook rows, not edges)"
         except ValueError:
             pass
-    _p, s0 = cs._sparse_families(0)
+    s0 = cs._sparse_families(0)
     assert s0.nnz == 0
 
 
@@ -142,7 +142,7 @@ def test_family_values_grow_tail_preserving():
     cs = _cs()                                       # n_snap = 32
     cs.add_concept_edge(32, 0)
     cs.add_concept_edge(32, 1)
-    _p, s = cs._sparse_families(0)
+    s = cs._sparse_families(0)
     with torch.no_grad():
         s.values.copy_(torch.tensor([3.0, 4.0]))
     cs.add_concept_edge(33, 2, weight=9.0)           # grow

@@ -9,6 +9,7 @@ import torch
 from Forgetting import ForgettingConfig, forget, model_boundary
 from Memory import LTM0, STM0
 from Meaning import ConceptualMeaning
+from nomination_fixtures import recurrent_word
 
 
 def config(**kwargs):
@@ -184,8 +185,8 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     from test_word_interpretation import _operator
     from ClauseRow import Clause, attach_clause_index
     cs, interpret = _operator()
-    left = interpret.forward(interpret.lookup_word([7], [1], form='cat'))
-    right = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
+    left = interpret.forward(recurrent_word(interpret, [7], [1], form='cat'))
+    right = interpret.forward(recurrent_word(interpret, [8], [1], form='animal'))
     store = LTM0(8, capacity=4)
     attach_clause_index(SimpleNamespace(), store, cs)
     with torch.no_grad():

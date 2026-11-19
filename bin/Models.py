@@ -2250,6 +2250,8 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_cs, '_model', self)
             object.__setattr__(_cs, '_basic_percepts', self.perceptualSpace.basic_percepts)
             _cs.basic_percepts.bind(self.wholeSpace.subspace.what)
+            _cs.install_order_zero()
+            _cs.declare_word_classes()
 
         self.numeric_percepts = None
         from GrammarPhases import SUBSTRATE
@@ -2661,37 +2663,6 @@ class BaseModel(Mereology, nn.Module):
         backward_owned(costs, owners, scale=scale, audit=writers,
             pullback=getattr(self, '_sentence_pullback', None) if sentence else None)
 
-    def _configure_concept_readout_l1(self, optimizer, *, stage=True):
-        """Stage one weak-L1 update and return its detached reporting cost.
-
-        Match the first-stage owner used by _stage_sparse_concept_support;
-        shared stage aliases must not multiply either the cost or the update.
-        L1 is an intentional sparse-basis tradeoff, not reconstruction or
-        output error, and does not enter autograd a second time.
-        """
-        spaces = list(getattr(self, "conceptualSpaces", None) or ())
-        owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
-        readout = getattr(owner, "concepts_from_percepts", None)
-        if readout is None or not readout.l1_lambda:
-            return None
-        isp = getattr(self, "inputSpace", None)
-        rows = word_view(isp, 'concept_rows')
-        roles = getattr(isp, "_ar_percept_reference_roles", None)
-        if not torch.is_tensor(rows) or not torch.is_tensor(roles):
-            return None  # no live indexed concept readout in this presentation
-        sentence = getattr(self, '_open_sentence_slot', None)
-        ids = getattr(isp, '_packed_sentence_ids', None)
-        if sentence is not None and torch.is_tensor(ids):
-            rows = torch.where(ids == sentence, rows, -1)
-        batch = readout.l1_batch(rows, roles)
-        if batch is None:
-            return None
-        selected, mask, strength, cost = batch
-        self._concept_readout_l1_strength = readout.l1_lambda
-        if stage:
-            configure_l1_proximal(optimizer, readout.coefficients, selected, mask, strength)
-        return cost
-
     def getOptimizer(self, lr=0.01):
         """Reconstruction uses momentum descent; predictors and readers use Adam.
 
@@ -2773,10 +2744,6 @@ class BaseModel(Mereology, nn.Module):
             intuition = getattr(cs, "intuition", None)
             if intuition is not None:
                 sparse_ptrs.update(p.data_ptr() for p in intuition.parameters())
-            readout = getattr(cs, "concepts_from_percepts", None)
-            coefficients = getattr(readout, "coefficients", None)
-            if isinstance(coefficients, nn.Parameter) and coefficients.requires_grad:
-                row_local_ptrs.add(coefficients.data_ptr())
             cb = getattr(cs, "similarity_codebook", None)
             if cb is None or id(cb) in seen_codebooks:
                 continue
@@ -3239,17 +3206,9 @@ class BaseModel(Mereology, nn.Module):
         concept_codebook_ids = {
             id(cb) for cb in self._aligned_capacity_codebooks()
         }
-        readout_ids = {
-            id(cs.concepts_from_percepts)
-            for cs in list(getattr(self, "conceptualSpaces", None) or ())
-            if getattr(cs, "concepts_from_percepts", None) is not None
-        }
         row_keys = ("W", "vq.cluster_size", "vq.embed_avg",
                     "vq._b_norms_sq", "vq.active_mask")
         for name, module in named:
-            if id(module) in readout_ids:
-                eligible.add(f"{name}.coefficients" if name else "coefficients")
-                continue
             if (not isinstance(module, Codebook)
                     or id(module) not in concept_codebook_ids):
                 continue
@@ -3978,6 +3937,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
+            "declared_classes",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4144,6 +4104,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
+            "declared_classes",
         )
         for name in fields:
             if name not in saved:
@@ -4281,11 +4242,6 @@ class BaseModel(Mereology, nn.Module):
 
             layer.load_parts_extras(blob.get("parts"),
                                     old_size=saved_n_output if square_expansion else None)
-            if getattr(cs, '_sparse_active', lambda: False)() and any(
-                    not cs._order0_inventory_row(r)
-                    or not cs._order0_inventory_row(c % (layer.nOutput + 1))
-                    for r, c in layer.conjunctive._index):
-                raise ValueError('checkpoint pi edges require order-0 field concepts')
 
         # Migration is deferred until the common store's semantic rows load.
         if saved.get('word_obj_meta') or saved.get('interpretations'):
@@ -9363,7 +9319,7 @@ class BasicModel(BaseModel):
         # Reverse never writes these pre-loop perception products. Retain
         # their original graph nodes across every sentence's realization.
         perception = ('_ar_part_reference_vectors', '_ar_whole_reference_vectors',
-                      '_ar_readout_coefficients', '_ar_whole_reference_presence')
+                      '_ar_order_zero_reading', '_ar_whole_reference_presence')
         for k, v in vars(obj).items():
             if torch.is_tensor(v) and not isinstance(v, nn.Parameter) and k not in perception:
                 saved[k] = v.clone()
@@ -11149,7 +11105,8 @@ class BasicModel(BaseModel):
                     continue
                 form = data[lo:hi].decode('latin1')
                 word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
-                    ws.property_rows_for_bytes(data[lo:hi]), form=data[lo:hi], word_reading=True)
+                    ws.property_rows_for_bytes(data[lo:hi]), form=data[lo:hi], word_reading=True,
+                    reading=(int(getattr(self, '_word_observation_serial', 0)), b))
                 if word is not None:
                     object_id, object_row, object_order = owner.interpret.reading(word, batch=b)
                     grammar_words.append((b, lo, hi, form, selected[-1], word,
@@ -11359,7 +11316,7 @@ class BasicModel(BaseModel):
         isp._ar_concept_lookup_sentence_ids = None
         for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
                      "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
-                     "_ar_readout_coefficients", "_ar_whole_reference_presence"):
+                     "_ar_order_zero_reading", "_ar_whole_reference_presence"):
             setattr(isp, name, None)
         aligned = self._aligned_serial_word_mode()
         if not aligned:
@@ -11418,8 +11375,9 @@ class BasicModel(BaseModel):
         object_row_host = [[-1] * W for _ in range(B)]
         object_cid_host = [[-1] * W for _ in range(B)]
         object_order_host = [[-1] * W for _ in range(B)]
-        reference_codes = [[[-1] * 8 for _ in range(W)] for _ in range(B)]
-        reference_roles = [[[-1] * 8 for _ in range(W)] for _ in range(B)]
+        slots = owner.REFERENCE_SLOTS
+        reference_codes = [[[-1] * slots for _ in range(W)] for _ in range(B)]
+        reference_roles = [[[-1] * slots for _ in range(W)] for _ in range(B)]
         pending = []
         # Perceptual passes change attention, not conceptual order. Native
         # word definitions are order 0; only symbolization raises an object.
@@ -11484,7 +11442,11 @@ class BasicModel(BaseModel):
                     word_id = int(triple[0])
                     alloc = getattr(owner, "_concept_allocator", None)
                 A = int(word_id)
-                basic_rows[b][p] = basic.reserve(sorted(current_parts), sorted(current_wholes), word=A)
+                # The word's basic percept is a row only once MTM nominated it.
+                basic_rows[b][p] = basic.words.get(A, -1)
+                if basic_rows[b][p] < 0:
+                    pending.append((b, p, key))
+                    continue
                 object_id, object_row, object_order = owner.interpret.reading(A, batch=b)
                 stored_parts = _raw_int_refs(owner.concept_parts(A))
                 stored_wholes = _raw_int_refs(owner.concept_wholes(A))
@@ -11512,8 +11474,9 @@ class BasicModel(BaseModel):
                     form = (anchors.get(value.casefold())
                             if isinstance(value, str) else None)
                     lexical_forms[int(row)] = form if isinstance(form, str) else None
-                slots = owner.concepts_from_percepts.admit_references(
-                    row, (basic_rows[b][p],), (basic_rows[b][p],))
+                # A word's evidence slots: its basic percept's run of parts
+                # and its wholes.
+                slots = ((0, basic_rows[b][p]), (1, basic_rows[b][p]))
                 for slot, (role, code) in enumerate(slots):
                     reference_codes[b][p][slot] = code
                     reference_roles[b][p][slot] = role
@@ -11574,7 +11537,7 @@ class BasicModel(BaseModel):
         isp._ar_whole_reference_vectors = F.pad(
             whole_vectors[..., :int(ws.nWhat)],
             (0, max(0, int(ws.nWhat) - int(whole_vectors.shape[-1]))))
-        isp._ar_readout_coefficients = owner.concepts_from_percepts.lookup_coefficients(rows)
+        isp._ar_order_zero_reading = owner.order_zero_reading(rows, isp._ar_basic_percept_ids)
         primitive_counts = ws._staged_word_primitive_counts
         if torch.is_tensor(primitive_counts):
             # Reference ids name basic percepts; the staged witness names
@@ -15039,19 +15002,6 @@ class BasicModel(BaseModel):
                 # <loadBalanceWeight> knob stands by for any future
                 # signal-router rule load-balancing; no consumer yet.
 
-            if train:
-                batch_objective = self.errors.total()
-                readout_l1 = self._configure_concept_readout_l1(optimizer,
-                    stage=batch_objective is not None and batch_objective.requires_grad)
-                if readout_l1 is not None:
-                    # Reporting only: the single optimizer step handles the
-                    # non-smooth L1 term in Adam's diagonal metric. Adding its
-                    # subgradient here would penalize every connection twice.
-                    self.record_loss(
-                        "concept_readout_l1", readout_l1 / self._concept_readout_l1_strength,
-                        weight=self._concept_readout_l1_strength,
-                        space="ConceptualSpace", category="reg", trained=False)
-
             if train and trial_mode == 'predict':
                 for term in self.errors._terms.values():
                     if term['category'] in ('reconstruction', 'prediction', 'embedding', 'grammar'):
@@ -16616,7 +16566,6 @@ class BasicModel(BaseModel):
             and _serial_meta
             and _serial_requested)
         _shared_concept_dictionary = None
-        _shared_percept_readout = None
         # Fold provenance is keyed by the same stable concept identities as the
         # shared aligned dictionary.  Keep one host-side registry across every
         # conceptual stage as well: stage 0 resolves/adopts identities, while
@@ -16752,8 +16701,6 @@ class BasicModel(BaseModel):
                     if _share_concept_dictionary else None),
                 indexed_similarity_codebook=_aligned_codebook_sources,
                 derived_similarity_codebook=_serial_requested,
-                shared_percept_readout=(
-                    _shared_percept_readout if _share_concept_dictionary else None),
                 order_limit=self.concept_order_limit,
                 order_reservations=order_reservations,
             )
@@ -16763,7 +16710,6 @@ class BasicModel(BaseModel):
                     _shared_concept_fold_support)
             if _share_concept_dictionary and _shared_concept_dictionary is None:
                 _shared_concept_dictionary = cs.similarity_codebook
-                _shared_percept_readout = cs.concepts_from_percepts
             if _aligned_codebook_sources:
                 # The serial aligned path reaches the million-row dictionary
                 # only through indexed concept identities.  Preserve that
@@ -18850,7 +18796,7 @@ class BasicModel(BaseModel):
             "_word_last_slot_mask",
             "_ar_percept_reference_codes", "_ar_percept_reference_roles",
             "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
-            "_ar_readout_coefficients", "_ar_basic_percept_ids", "_ar_whole_reference_presence",
+            "_ar_order_zero_reading", "_ar_basic_percept_ids", "_ar_whole_reference_presence",
         )
         dynamic_part_names = {
             "_ar_word_part_ids",
@@ -19294,7 +19240,7 @@ class BasicModel(BaseModel):
                 staged_atoms=isp._ar_concept_lookup_atoms,
                 part_n_what=part_what, whole_n_what=whole_what,
                 percept_evidence=evidence, evidence_mask=evidence_mask,
-                readout_coefficients=isp._ar_readout_coefficients[:, p])
+                order_zero_reading=isp._ar_order_zero_reading[:, p])
             cs_input = cs.commit_from(PS_sub, concept_event)
             cs_symbol_input = None
         else:
@@ -19726,7 +19672,7 @@ class BasicModel(BaseModel):
             getattr(isp, "_ar_percept_reference_roles", None),
             getattr(isp, "_ar_part_reference_vectors", None),
             getattr(isp, "_ar_whole_reference_vectors", None),
-            getattr(isp, "_ar_readout_coefficients", None),
+            getattr(isp, "_ar_order_zero_reading", None),
             getattr(isp, "_ar_whole_reference_presence", None),
             getattr(isp, "_packed_sentence_end_mask", None),
             getattr(isp, "_packed_sentence_intermediate_end_mask", None),
@@ -19988,7 +19934,6 @@ class BasicModel(BaseModel):
         self._assert_finite_train_state('after sentence backward')
         # The same proximal regularizer belongs to each actual smooth update.
         # Input-only batches may have no additional batch-end backward at all.
-        self._configure_concept_readout_l1(optimizer)
         from ActionLearning import snapshot as snapshot_steps
         step_before = snapshot_steps(self)
         if self.ergodic:
@@ -20347,13 +20292,6 @@ class BasicModel(BaseModel):
             if held:
                 observation['walk_credit'][owner] = torch.stack(held).sum(0)
             setattr(self, attr, None)
-        if getattr(self, '_sentence_training', False):
-            configure_l1 = getattr(self, '_configure_concept_readout_l1', None)
-            penalty = None if configure_l1 is None else configure_l1(None, stage=False)
-            if penalty is not None:
-                strength = self._concept_readout_l1_strength
-                errors.add('concept_readout_l1', penalty / strength, weight=strength,
-                           category='reg', trained=False)
         self._sentence_cost_registry = errors
         self._sentence_gradient_objectives = {name: errors.total(objective=name)
             for name in ('reconstruction', 'expectation', 'output')}
@@ -21676,7 +21614,7 @@ class BasicModel(BaseModel):
         reference_roles = getattr(isp, '_ar_percept_reference_roles', None)
         part_reference_vectors = getattr(isp, '_ar_part_reference_vectors', None)
         whole_reference_vectors = getattr(isp, '_ar_whole_reference_vectors', None)
-        readout_coefficients = getattr(isp, '_ar_readout_coefficients', None)
+        order_zero_reading = getattr(isp, '_ar_order_zero_reading', None)
         whole_reference_presence = getattr(isp, '_ar_whole_reference_presence', None)
         # Ordinary batches can differ from provisioning and from each other.
         # Rebuild their boundaries at the host entry; a compiled forward
@@ -21840,10 +21778,10 @@ class BasicModel(BaseModel):
             zero_whole,                   # terminal WS fold
             words.new_zeros(B, 1, 1, percept_dim),
             words.new_zeros(B, 1, whole_locations, whole_dim),
-            torch.full((B, 8), -1, dtype=torch.long, device=words.device),
-            torch.full((B, 8), -1, dtype=torch.long, device=words.device),
-            words.new_zeros(B, n_locations, 8),
-            torch.zeros(B, n_locations, 8, dtype=torch.bool, device=words.device),
+            torch.full((B, cs.REFERENCE_SLOTS), -1, dtype=torch.long, device=words.device),
+            torch.full((B, cs.REFERENCE_SLOTS), -1, dtype=torch.long, device=words.device),
+            words.new_zeros(B, n_locations, cs.REFERENCE_SLOTS),
+            torch.zeros(B, n_locations, cs.REFERENCE_SLOTS, dtype=torch.bool, device=words.device),
         )
         cs_sym_state = (
             zero_concept.clone(),         # published CSSym lane
@@ -21947,9 +21885,9 @@ class BasicModel(BaseModel):
             commit = torch.logical_and(commit, row_gate)
             part_sources = (ps.synthesize_word_parts(local_ids, local_mask, local_offsets),)
             whole_sources = (ws.compute_word_property_event(local_properties),)
-            local_codes = _gather_word(reference_codes, index).reshape(B, 8)
-            local_roles = _gather_word(reference_roles, index).reshape(B, 8)
-            local_coefficients = _gather_word(readout_coefficients, index).reshape(B, 9)
+            local_codes = _gather_word(reference_codes, index).reshape(B, cs.REFERENCE_SLOTS)
+            local_roles = _gather_word(reference_roles, index).reshape(B, cs.REFERENCE_SLOTS)
+            local_reading = _gather_word(order_zero_reading, index).reshape(B, -1)
             evidence, evidence_mask = cs.percept_code_evidence(
                 part_sources[-1], whole_sources[-1],
                 _gather_word(part_reference_vectors, index).squeeze(1),
@@ -21978,7 +21916,7 @@ class BasicModel(BaseModel):
                 staged_rows=lookup_rows, staged_atoms=isp._ar_concept_lookup_atoms,
                 part_n_what=int(ps.nWhat), whole_n_what=int(ws.nWhat),
                 percept_evidence=evidence, evidence_mask=evidence_mask,
-                readout_coefficients=local_coefficients)
+                order_zero_reading=local_reading)
             next_sub = torch.where(
                 row_gate.unsqueeze(-1), event, current_cs_sub[0])
             payload = (

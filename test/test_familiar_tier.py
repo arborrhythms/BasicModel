@@ -8,6 +8,7 @@ from torch.nn import functional as F
 from test_review13_subspaces import fixture, word
 from ConceptIndex import index_part_row
 from Memory import SYMBOL, OCCURRENCE
+from nomination_fixtures import recurrent_word
 
 
 def placed_fixture():
@@ -70,7 +71,7 @@ def test_recurrent_named_token_defines_its_name_when_a_bound_mention_has_no_read
     from FamiliarTier import promote_identity
     from test_orders_learned import equality_fixture, event
     cs, store, _ = equality_fixture()
-    word = cs.interpret.lookup_word([1], [], form='name')
+    word = recurrent_word(cs.interpret, [1], [], form='name')
     point = cs.similarity_codebook.lookup_rows(cs._csw_row_of(word))
     key = cs.mtm.named(word, value=point)
     for place in range(cs.concept_mint_count):
@@ -89,8 +90,8 @@ def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice
     from test_orders_learned import equality_fixture, equal_close
     from Meaning import ConceptualMeaning
     cs, store, alloc = equality_fixture()
-    subject = cs.interpret.lookup_word([1], [], form='new-name')
-    label = cs.interpret.lookup_word([2], [], form='new-kind')
+    subject = recurrent_word(cs.interpret, [1], [], form='new-name')
+    label = recurrent_word(cs.interpret, [2], [], form='new-kind')
     value = cs.similarity_codebook.lookup_rows(cs._csw_row_of(subject))
     # First sentence's noun site retains an unnamed identity, with the native
     # occurrence's ordinary order; neither the token nor the word gets one.
@@ -504,7 +505,7 @@ def test_named_promotion_counts_kept_words_independently_of_bind_aliases():
     from test_orders_learned import equality_fixture
     owner, store, _ = equality_fixture()
     assert owner.concept_mint_count == 3
-    label, other = (owner.interpret.lookup_word([unit], [], form=form)
+    label, other = (recurrent_word(owner.interpret, [unit], [], form=form)
                     for unit, form in enumerate(('label', 'other'), 1))
     for doc, word in enumerate((label, label, other, label)):
         _, row, _ = owner.interpret.reading(word)

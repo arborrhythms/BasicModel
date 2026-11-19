@@ -3,6 +3,7 @@ from Memory import STM0
 import copy
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def identity_bank(capacity=512):
@@ -126,11 +127,11 @@ def test_live_mint_rekeys_pending_and_completed_definitions(tmp_path, complete_f
     cs = model._concept_owner()
     bank = model.perceptualSpace.percept_store.identity
     try:
-        first = cs.interpret.lookup_word([], [], form='calaba')
+        first = recurrent_word(cs.interpret, [], [], form='calaba')
         from reading_fixtures import supply_object
         if complete_first:
             supply_object(cs, first)
-        second = cs.interpret.lookup_word([], [], form='cabala')
+        second = recurrent_word(cs.interpret, [], [], form='cabala')
         if not complete_first:
             supply_object(cs, first)
         supply_object(cs, second)

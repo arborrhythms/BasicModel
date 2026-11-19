@@ -28,7 +28,7 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
     slots = 2 * pool if field_slots is None else field_slots
     values = {
         'architecture/conceptLayers': 2,
-        'architecture/bindingDepth': 2, 'architecture/conceptualPi': True,
+        'architecture/bindingDepth': 2,
         'architecture/symbolTower': True, 'architecture/conceptBinding': 'aligned',
         'architecture/attentionPromotion': True, 'ConceptualSpace/mtmCapacity': 64,
         'architecture/training/autoload': False, 'architecture/training/maskRate': 0.,

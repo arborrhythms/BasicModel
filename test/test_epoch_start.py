@@ -11,6 +11,7 @@ from FamiliarTier import promote_identity
 from Memory import OCCURRENCE, RELATION, SYMBOL
 from Meaning import ConceptualMeaning
 from test_presentation_memory import begin, fixture, model_for, write
+from nomination_fixtures import recurrent_word
 
 
 
@@ -80,7 +81,7 @@ def test_other_order_active_definition_does_not_hide_remembered_identity():
     owner=resolver.components.owner
     model=model_for(owner,store)
     begin(model)
-    word=owner.interpret.lookup_word([23],[],form='label')
+    word=recurrent_word(owner.interpret, [23],[],form='label')
     first=write(store,points[0],'first')
     token=owner.mtm.open(first,kind=None,value=points[0],when=0,reading=word)
     known=promote_identity(owner,token,word=word)

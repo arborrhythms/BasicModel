@@ -10,6 +10,7 @@ import torch
 
 from FamiliarTier import observe_candidate, witnessed_match
 from test_attention_promotion import _fixture, _close
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('translation', [-1e-23, 0., 1e-23])
@@ -118,7 +119,7 @@ def test_lexical_letters_open_nothing_but_nonlexical_located_case_does():
     cs.mtm.restore(None)
     model = cs._model
     cs._model = None
-    word = cs.interpret.lookup_word((4,7), (), form=b'ab')
+    word = recurrent_word(cs.interpret, (4,7), (), form=b'ab')
     cs._model = model
     observe_native_cases(cs, 0, support)
     assert not cs.mtm.entries
@@ -147,7 +148,7 @@ def test_reading_pending_name_survives_documents_then_defines_on_recurrence():
     from test_presentation_memory import model_for
     from Meaning import ConceptualMeaning
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word((4,7), (), form='label')
+    word = recurrent_word(cs.interpret, (4,7), (), form='label')
     ids = []
     for document in range(cs.concept_mint_count):
         identity, row, order = cs.interpret.reading(word)
@@ -179,7 +180,7 @@ def test_reading_pending_name_survives_documents_then_defines_on_recurrence():
 
 def test_pending_reading_checkpoint_before_first_kept_mention():
     cs, rows = _fixture()
-    word = cs.interpret.lookup_word((4,7), (), form='label')
+    word = recurrent_word(cs.interpret, (4,7), (), form='label')
     before = cs.interpret.reading(word)
     saved = copy.deepcopy(cs.mtm.state())
     cs.mtm.restore(None)
@@ -196,7 +197,7 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
     cs, store, alloc = equality_fixture()
     model = model_for(cs, store)
     model_boundary(model, epoch_boundary=True)
-    word = cs.interpret.lookup_word((4, 7), (), form='label')
+    word = recurrent_word(cs.interpret, (4, 7), (), form='label')
     identity, row, order = cs.interpret.reading(word)
     value = cs.similarity_codebook.lookup_rows(row)
     index = store.append_meaning(ConceptualMeaning.from_description(value),
@@ -237,7 +238,7 @@ def pending_reading_journal(monkeypatch):
     from ClauseJournal import finish_clause
     f = SentenceFixture(monkeypatch)
     program = f.program(('part', 'left', 'right'))
-    words = [f.cs.interpret.lookup_word((81 + n,), (), form='pending-' + str(n))
+    words = [recurrent_word(f.cs.interpret, (81 + n,), (), form='pending-' + str(n))
              for n in range(2)]
     readings = [f.cs.interpret.reading(word) for word in words]
     ids, rows, orders = map(torch.tensor, zip(*readings))
@@ -342,7 +343,7 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
     token, entry = next(iter(f.cs.mtm.entries.items()))
     event = entry.events[0]
     verb = f.words['move'][1]
-    target = (f.cs.interpret.lookup_word((81,), (), form='unresolved-event') if pending else verb)
+    target = (recurrent_word(f.cs.interpret, (81,), (), form='unresolved-event') if pending else verb)
     symbol = f.store.parts.add(f.words['subject'][1], target, truth_plus=.6, truth_minus=.4)
     occurrence = ('sym', symbol)
     assert f.store.location(occurrence) == occurrence
@@ -375,7 +376,7 @@ def test_named_alias_follows_merge_restore_and_horizon_expiry():
     store = STM0(4, capacity=4, relation_capacity=8192)
     attach_clause_index(SimpleNamespace(), store, owner)
     object.__setattr__(owner, '_clause_store_ref', weakref.ref(store))
-    word = owner.interpret.lookup_word([3], (), form='alias')
+    word = recurrent_word(owner.interpret, [3], (), form='alias')
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].fill_(1)
     occurrences = [store.occurrence_of(store.write_clause(
@@ -404,7 +405,7 @@ def test_forward_name_is_not_filled_by_its_own_defined_word():
     from Meaning import ConceptualMeaning
     from ThoughtReferences import open_slots
     cs, rows = _fixture()
-    word = cs.interpret.lookup_word((4,7), (), form='label')
+    word = recurrent_word(cs.interpret, (4,7), (), form='label')
     witness_object(cs, word)
     value = cs.similarity_codebook.lookup_rows(cs._csw_row_of(word))
     meaning = replace(ConceptualMeaning.from_description(value),
@@ -421,7 +422,7 @@ def test_kept_word_mention_retains_its_pending_referent():
     from FamiliarTier import commit_read_words
     from ThoughtReferences import open_slots
     cs, rows = _fixture()
-    word = cs.interpret.lookup_word((4,7), (), form='label')
+    word = recurrent_word(cs.interpret, (4,7), (), form='label')
     identity, row, order = cs.interpret.reading(word)
     reading = SimpleNamespace(word_ids=torch.tensor([word]),
         leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
@@ -448,7 +449,7 @@ def test_thought_part_persists_a_named_token_through_its_native_reference(monkey
     import Occurrence
     model, registry, store, (a, b, _) = world()
     cs = model.conceptualSpace
-    word = cs.interpret.lookup_word((81,), (), form='pending-label')
+    word = recurrent_word(cs.interpret, (81,), (), form='pending-label')
     _, row, _ = cs.interpret.reading(word)
     reading = SimpleNamespace(word_ids=torch.tensor([word]),
         leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
@@ -564,8 +565,8 @@ def test_defining_clause_promotes_a_named_reading_before_recurrence():
     from test_orders_learned import equality_fixture, equal_close
     from Meaning import ConceptualMeaning
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word((4,), (), form='subject')
-    kind = cs.interpret.lookup_word((7,), (), form='kind')
+    word = recurrent_word(cs.interpret, (4,), (), form='subject')
+    kind = recurrent_word(cs.interpret, (7,), (), form='kind')
     identity, row, order = cs.interpret.reading(word)
     token = cs.mtm.token_of(identity)
     value = cs.similarity_codebook.lookup_rows(row)

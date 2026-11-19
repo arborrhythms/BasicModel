@@ -7,6 +7,7 @@ import torch
 
 from ReferenceContext import denoted_order, OrderReference
 from order_fixtures import force_order
+from nomination_fixtures import recurrent_word
 
 
 def equality_fixture():
@@ -59,7 +60,7 @@ def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monke
     from QueryWork import QueryWorkBudget
     from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(cs.interpret, [1], [2], form='label')
     first, second = event(cs, store, 1), event(cs, store, 2)
     monkeypatch.setattr(QueryWorkBudget, 'consume', lambda *a, **k: pytest.fail('equality raise charged work'))
     pointer = alloc.singleton_values.data_ptr()
@@ -87,7 +88,7 @@ def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monke
 def test_only_distinct_published_identities_raise(same_token, same_value, raises):
     from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='category')
+    word = recurrent_word(cs.interpret, [1], [2], form='category')
     first = event(cs, store, 1, order=1, value=.25, token=True)
     second = event(cs, store, 2, order=1, value=.25 if same_value else .75, token=not same_token)
     # Distinct occurrence addresses need distinct source keys even when their
@@ -113,7 +114,7 @@ def test_only_distinct_published_identities_raise(same_token, same_value, raises
 def test_one_identity_equality_and_weak_testimony_do_not_raise(monkeypatch):
     import util
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(cs.interpret, [1], [2], form='label')
     first, second = event(cs, store, 1), event(cs, store, 2)
     equal_close(cs, store, first, word)
     assert not alloc.raised
@@ -269,7 +270,7 @@ def test_first_equality_witness_slab_is_bounded_and_restorable():
 def test_forgotten_first_equality_renews_its_existing_snapshot_seat():
     from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(cs.interpret, [1], [2], form='label')
     first, second, third = (event(cs, store, place) for place in (1, 2, 3))
     equal_close(cs, store, first, word)
     pointer = alloc.singleton_members[word][2].data_ptr()

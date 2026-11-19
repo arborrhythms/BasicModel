@@ -183,9 +183,6 @@ def prepare(model, state, structural, vocab, training=None):
         layer['cols'] = columns(layer['cols'])
         layer['nOutput'], layer['nInput'] = new_size, 2*(new_size+1)
         parts = layer['parts']
-        conjunction = parts['matrices']['conjunctive']
-        conjunction['cols'] = columns(conjunction['cols'])
-        conjunction['nInput'] = 2*(new_size+1)
         for matrix in parts['matrices'].values():
             matrix['rows'] = [inverse[row] for row in matrix['rows']]
         parts['feature_groups'] = {(inverse[row], col): value
@@ -263,8 +260,7 @@ def prepare(model, state, structural, vocab, training=None):
             for key, value in tuple(blob.items()):
                 if torch.is_tensor(value) and value.ndim and value.shape[0] == old_size:
                     blob[key] = remap(value, fill=key == 'derived')
-        modules = {id(space.similarity_codebook),
-                   *(id(candidate.concepts_from_percepts) for candidate in shared_spaces)}
+        modules = {id(space.similarity_codebook)}
         prefixes = [name+'.' for name, module in model.named_modules(remove_duplicate=False)
                     if id(module) in modules]
         for key, value in tuple(state.items()):

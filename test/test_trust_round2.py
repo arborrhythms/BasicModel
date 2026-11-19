@@ -12,6 +12,7 @@ from definition_fixtures import agreeing_views, learned_operation
 from test_clause_acceptance import SentenceFixture
 from test_review13_subspaces import fixture as paired_fixture
 from ConceptTrust import positive_length
+from nomination_fixtures import recurrent_word
 
 
 def through_operation(clause, name):
@@ -33,7 +34,7 @@ def operation_fixture(monkeypatch):
     owner, bank, _, alloc = paired_fixture(meaning_pairs=4, capacity=160,
         order_reservations=order_reservations(grammar))
     f = SentenceFixture(monkeypatch, cs=owner, native_cube=False)
-    words = [owner.interpret.lookup_word([part], (), form=form)
+    words = [recurrent_word(owner.interpret, [part], (), form=form)
              for part, form in ((4, 'dax'), (7, 'wug'))]
     for i, word in enumerate(words):
         row=owner._csw_row_of(word)
@@ -122,7 +123,7 @@ def test_curriculum_measurements_match_hand_counts_and_lexical_report(monkeypatc
     from corpus_lessons import lexical_report
     f, words, _, _ = operation_fixture(monkeypatch)
     owner = f.cs
-    third = owner.interpret.lookup_word([4,7], (), form='blick')
+    third = recurrent_word(owner.interpret, [4,7], (), form='blick')
     # Two of three words have ten views; the new third has none.
     a, b = mint(owner, torch.eye(owner.nDim)[3]), mint(owner, torch.eye(owner.nDim)[4])
     for _ in range(2):
@@ -148,7 +149,7 @@ def test_curriculum_measurements_match_hand_counts_and_lexical_report(monkeypatc
 
 def test_curriculum_readiness_requires_a_measured_radius_not_the_operand_fallback():
     owner = paired_fixture(meaning_pairs=0)[0]
-    word = owner.interpret.lookup_word([4], (), form='dax')
+    word = recurrent_word(owner.interpret, [4], (), form='dax')
     assert positive_length(owner, word) == 1.
     measured = owner.trust_measurements()
     assert measured['admitted_words'] == 1

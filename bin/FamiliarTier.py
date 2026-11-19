@@ -264,8 +264,7 @@ def observe_field(owner, field=None, *, active_streams=None):
                     break
             observe_candidate(owner, order, context, batch=batch,
                               pair=tuple(float(x) for x in paired[focal]), focal=focal)
-        if owner.conceptual_pi:
-            observe_native_cases(owner, batch, used)
+        observe_native_cases(owner, batch, used)
         # MTM's leading entries are read through their live member codes;
         # similarity to this field is use, not an invented positive witness.
         if used:
@@ -931,8 +930,15 @@ def promote_candidates(owner):
             entry.refinement.get('literal_key', literal))
         if literal is not None:
             if literal[0] == 'field':
-                for member, pole in literal[1]:
-                    owner.add_concept_edge(row, member, 1., conjunctive=True, negated=bool(pole))
+                # A conjunction of order-zero concepts is a row of the first
+                # Pi over their basic percepts. A member read on its against
+                # lane, or a member with several percepts, is not one row's
+                # member at order zero; no row is written for it.
+                percepts = [owner.concept_percepts(member) for member, _ in literal[1]]
+                if all(not pole for _, pole in literal[1]) and all(len(p) == 1 for p in percepts):
+                    percept = owner.basic_percepts.reserve_conjunction([p for p, in percepts])
+                    owner.basic_percepts.promote(percept)
+                    owner.add_concept_feature(row, 'bp', percept, 1.)
             elif literal[0] == 'ps':
                 # The existing field-case curriculum witnesses an entire
                 # native run. Its parts/wholes become one basic percept at

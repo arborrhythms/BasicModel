@@ -2,10 +2,11 @@
 import pytest
 
 from test_orders_learned import equality_fixture, event, equal_close
+from nomination_fixtures import recurrent_word
 
 
 def named_individual(cs, store, alloc, name, offset):
-    word = cs.interpret.lookup_word([offset], [offset + 1], form=name)
+    word = recurrent_word(cs.interpret, [offset], [offset + 1], form=name)
     first, second = event(cs, store, offset), event(cs, store, offset + 1)
     equal_close(cs, store, first, word)
     equal_close(cs, store, second, word)
@@ -39,7 +40,7 @@ def test_two_witnessed_individuals_name_a_kind_without_forcing_any_order():
     left = named_individual(cs, store, alloc, 'alpha', 1)
     other = named_individual(cs, store, alloc, 'beta', 4)
     third = named_individual(cs, store, alloc, 'gamma', 7)
-    word = cs.interpret.lookup_word([5], [6], form='category')
+    word = recurrent_word(cs.interpret, [5], [6], form='category')
     pointer = alloc.singleton_values.data_ptr()
     symbol_equality(cs, store, left, word)
     assert alloc.order_of(word) == 0
@@ -57,7 +58,7 @@ def test_two_witnessed_individuals_name_a_kind_without_forcing_any_order():
 @pytest.mark.parametrize('member_first', (False, True))
 def test_an_unbound_label_keeps_first_witnesses_of_different_orders_independent(member_first):
     cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([5], [6], form='category')
+    word = recurrent_word(cs.interpret, [5], [6], form='category')
     individual = named_individual(cs, store, alloc, 'alpha', 1)
     occurrence = event(cs, store, 5)
     before = len(alloc.raised)

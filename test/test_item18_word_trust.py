@@ -3,6 +3,7 @@ import math
 
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 pytestmark = pytest.mark.assessment_rung(1)
 
@@ -12,7 +13,7 @@ def test_88_read_word_fixes_its_objects_radius_without_freezing_its_content():
     from definition_fixtures import agreeing_views
     from ConceptTrust import observe, positive_length
     owner, store, obj, atoms = learned(1)
-    word = owner.interpret.lookup_word([4], [], form='wug')
+    word = recurrent_word(owner.interpret, [4], [], form='wug')
     agreeing_views(owner, word)
     row = owner.interpret.define(word, obj)
     assert positive_length(owner, obj) == 1.
@@ -31,7 +32,7 @@ def test_88_read_word_fixes_its_objects_radius_without_freezing_its_content():
 def test_88_stated_definition_keeps_the_callers_trust(trust):
     from test_trust_round1 import learned
     owner, store, obj, atoms = learned(1)
-    word = owner.interpret.lookup_word([4], [], form='wug')
+    word = recurrent_word(owner.interpret, [4], [], form='wug')
     from test_thought_model_fixture import trusted_premises
     trusted_premises(owner, ('sym', word), ('sym', obj))
     before = owner.similarity_codebook.trust.lengths.clone()
@@ -47,7 +48,7 @@ def test_89_expectation_selects_among_orders_and_is_local_to_the_stream():
     from ConceptSpread import open_prediction
     from types import SimpleNamespace
     owner = _cs(nS=128, order=2, dim=16)
-    word = owner.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(owner.interpret, [1], [2], form='label')
     low, high = owner.new_concept(order=0), owner.new_concept(order=1)
     for obj in (low, high):
         owner.interpret.define(word, obj)
@@ -122,7 +123,7 @@ def test_89_written_prediction_is_local_across_constructed_streams():
     from ConceptSpread import open_prediction
     owner, parent_row, _ = _chain_cs()
     low, high = (owner.concept_id_at_row(row) for row in (3, parent_row))
-    word = owner.interpret.lookup_word([1], [2], form='label')
+    word = recurrent_word(owner.interpret, [1], [2], form='label')
     from test_thought_model_fixture import trusted_premises
     trusted_premises(owner, ('sym', word), ('sym', low), ('sym', high))
     for obj in (low, high):

@@ -1,6 +1,7 @@
 """Contracts corrected by the item-2.0 round-6 review."""
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('repetitions', [1, 2])
@@ -14,7 +15,7 @@ def test_kept_event_link_precedes_its_words_new_trust_views(repetitions):
 
     owner, bank, _, _ = fixture(meaning_pairs=4)
     owner._model.wholeSpace = NS(subspace=NS(what=None))
-    word = owner.interpret.lookup_word([4], [], form='word')
+    word = recurrent_word(owner.interpret, [4], [], form='word')
     row = owner._csw_row_of(word)
     bank.mereology.place_rows([row], torch.zeros(len(bank.W)), b'event-word')
     observe(owner, word, bank.lookup_rows(row))
@@ -241,8 +242,8 @@ def test_arrival_eligibility_reads_the_identity_after_shared_site_preparation(or
     from test_reference_arrivals import equality
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    subject = owner.interpret.lookup_word([120], [], form='pending-form')
-    word = owner.interpret.lookup_word([121], [], form='arriving-form')
+    subject = recurrent_word(owner.interpret, [120], [], form='pending-form')
+    word = recurrent_word(owner.interpret, [121], [], form='arriving-form')
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept)
     with torch.no_grad():
@@ -326,8 +327,8 @@ def test_arrival_menu_keeps_the_planned_member_instead_of_a_duplicate_occurrence
     from test_reference_close import fixture, known_concept
     from test_reference_arrivals import equality
     resolver,store,a=fixture();owner=resolver.components.owner
-    subject=owner.interpret.lookup_word([120],[],form='pending-form')
-    word=owner.interpret.lookup_word([121],[],form='arriving-form')
+    subject=recurrent_word(owner.interpret, [120],[],form='pending-form')
+    word=recurrent_word(owner.interpret, [121],[],form='arriving-form')
     concept=known_concept(owner,a[0],order=1)
     owner.interpret.define(word,concept)
     with torch.no_grad():

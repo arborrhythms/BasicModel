@@ -2,6 +2,7 @@
 from dataclasses import replace
 from types import SimpleNamespace as NS
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def test_input_reconstruction_reaches_perception_and_not_the_grammar(tmp_path, monkeypatch):
@@ -126,7 +127,7 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     radix = cs.basic_percepts.native
     # These terminals are admitted lexical identities, not anonymous rows
     # made spellable only by a mocked surface method.
-    ids = [cs.interpret.lookup_word([radix.insert(raw)], (), form=raw.decode())
+    ids = [recurrent_word(cs.interpret, [radix.insert(raw)], (), form=raw.decode())
            for raw in (b'a', b'b')]
     rows = [cs._csw_row_of(cid) for cid in ids]
     for row, raw in zip(rows, (b'a', b'b')):

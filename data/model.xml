@@ -67,10 +67,8 @@
          explicitly when they need a symbolic loop limit. -->
     <!-- <conceptLayers>1</conceptLayers> -->
 
-    <!-- Concept rows compose by union; the optional conjunctive pass
-         discovers co-present wholes. Pool participation is an EWMA of use. -->
+    <!-- Concept rows compose by union. Pool participation is an EWMA of use. -->
     <attentionPromotion>false</attentionPromotion>
-    <conceptualPi>false</conceptualPi>
     <conceptMintCount>3</conceptMintCount>
     <conceptUseFloor>0.5</conceptUseFloor>
     <conceptMatchCos>0.8</conceptMatchCos>

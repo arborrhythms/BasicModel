@@ -4,6 +4,7 @@ import pytest
 import torch
 
 from test_review13_subspaces import fixture
+from nomination_fixtures import recurrent_word
 
 
 def operation_measurement(occupations, name='change'):
@@ -81,7 +82,7 @@ def argument_fixture(*names):
     from definition_fixtures import agreeing_views
     cs, bank, _, alloc = fixture(meaning_pairs=4)
     speech = PartsOfSpeech(names or ('change_argin1', 'change_argin2'), cs)
-    words = tuple(cs.interpret.lookup_word([part], (), form=form)
+    words = tuple(recurrent_word(cs.interpret, [part], (), form=form)
                   for part, form in ((4, 'dax'), (7, 'wug')))
     for i, word in enumerate(words):
         row = cs._csw_row_of(word)
@@ -156,7 +157,7 @@ def test_form_only_charts_record_members_without_learning_from_form_geometry(for
     from ConceptTrust import positive_length
     cs, bank, _, _ = fixture(meaning_pairs=0)
     from ConceptHierarchy import observe_member
-    word = cs.interpret.lookup_word([4], (), form='dax')
+    word = recurrent_word(cs.interpret, [4], (), form='dax')
     if formal:
         speech = PartsOfSpeech(('change_argin1',), cs)
         parent = speech.concepts['change_argin1']
@@ -182,7 +183,7 @@ def test_ordinary_nested_classes_place_within_each_order_without_a_grammar_catal
     from ConceptHierarchy import observe_member, direction
     from definition_fixtures import agreeing_views
     cs, bank, _, alloc = fixture(meaning_pairs=4)
-    words = [cs.interpret.lookup_word([part], (), form=form)
+    words = [recurrent_word(cs.interpret, [part], (), form=form)
              for part, form in ((4, 'dax'), (7, 'wug'), (8, 'zup'))]
     rows = [cs._csw_row_of(word) for word in words]
     for i, row in enumerate(rows):
@@ -254,7 +255,7 @@ def test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_ru
     cs = _cs(nS=32, order=3)
     bank = cs.similarity_codebook
     assert getattr(bank, 'mereology', None) is None
-    word = cs.interpret.lookup_word([4], (), form='dax')
+    word = recurrent_word(cs.interpret, [4], (), form='dax')
     if formal:
         speech = PartsOfSpeech(('change_argin1',), cs)
         parent = speech.concepts['change_argin1']
@@ -309,7 +310,7 @@ def test_revised_fit_is_coverage_and_radius_is_commitment():
     speech.add(a,'group_argin1');speech.add(b,'group_argin1');place_types(cs)
     row=cs._csw_row_of(speech.concepts['group_argin1'])
     bank.mereology.placement[row] = torch.tensor([1., 1., 0., 0.]) / 2**.5
-    outsider=cs.interpret.lookup_word([9],(),form='outsider')
+    outsider=recurrent_word(cs.interpret, [9],(),form='outsider')
     outside_row=cs._csw_row_of(outsider)
     bank.mereology.placement[outside_row]=torch.nn.functional.normalize(torch.tensor([.2,.98,0.,0.]),dim=0)
     bank.mereology.placement_witnesses[outside_row]=1
@@ -352,7 +353,7 @@ def test_revised_form_only_operation_reports_unmeasurable_definiteness():
     from PartsOfSpeech import PartsOfSpeech
     cs,bank,_,alloc=fixture(meaning_pairs=0)
     speech=PartsOfSpeech(('change_argin1','change_argin2'),cs)
-    a,b=[cs.interpret.lookup_word([i],(),form=f'term{i}') for i in (4,7)]
+    a,b=[recurrent_word(cs.interpret, [i],(),form=f'term{i}') for i in (4,7)]
     speech.observe_use('change',((a,),(b,)))
     from ConceptTrust import positive_length
     assert positive_length(cs, speech.seats['change'].concept) == 0.

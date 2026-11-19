@@ -1,6 +1,7 @@
 """The whole derivation owns its keep, exposure, and single departure credit."""
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def test_thought_content_growth_preserves_structure_and_trial_rollback():
@@ -594,7 +595,7 @@ def test_thought_preview_keeps_scored_reference_arrivals_unchanged():
     from WholePaths import fields
     resolver, store, atoms = fixture()
     owner, point = resolver.components.owner, atoms[0]
-    word = owner.interpret.lookup_word([97], (), form='arrival-word')
+    word = recurrent_word(owner.interpret, [97], (), form='arrival-word')
     language = NS(_compose_binary_rules=(), _compose_unary_rules=(), parts_of_speech=NS(seats={}))
     entry = Reading(rows=torch.tensor([0]), word_rows=torch.tensor([0]), activations=torch.ones(1),
         leaves=point[None], actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([0]),

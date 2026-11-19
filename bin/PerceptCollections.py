@@ -34,15 +34,6 @@ def collect(owner, row, percepts):
     owner.similarity_codebook.W[row].copy_(code(owner, row))
 
 
-def read_native(owner, perception):
-    if perception.boundaries is None:
-        return {}
-    return {row: owner.basic_percepts.read_collection(
-                perception.boundaries.index_select(1, perception.selected([('bp', p) for p, _ in edges])),
-                torch.stack([w for _, w in edges]).to(perception.values))
-            for row, edges in definitions(owner).items()}
-
-
 def code(owner, row):
     edges = definitions(owner)[row]
     point = owner.similarity_codebook.W.new_zeros(owner.similarity_codebook.W.shape[-1])

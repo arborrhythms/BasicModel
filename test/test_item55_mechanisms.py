@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 ROOT = Path(__file__).resolve().parents[1]
 CLOCKS = (0, 25, 50, 100, 200, 400, 777, 1500, 3000)
@@ -108,7 +109,7 @@ def _stream_code_banks(tmp_path,monkeypatch):
             # Admit the form this placement certificate observes. A free
             # sentence may instead bind it to an accessible cover, whose
             # native identity cache deliberately does not vary by stream.
-            word=owner.interpret.lookup_word((), (), form='cat')
+            word=recurrent_word(owner.interpret, (), (), form='cat')
             cid=owner.interpret.forward(word)
             row=owner._csw_row_of(cid)
             point=book.lookup_rows(torch.tensor(row))
@@ -125,7 +126,7 @@ def _stream_code_banks(tmp_path,monkeypatch):
             # Placement now consumes the kept reading online, not stored
             # memberships. One word seat accumulates contexts across streams.
             for form in ('context-a', 'context-b'):
-                other=owner.interpret.lookup_word((), (), form=form)
+                other=recurrent_word(owner.interpret, (), (), form=form)
                 other_row=owner._csw_row_of(other)
                 owner._sentence_seen_rows[0].fill_(-1)
                 owner._sentence_seen_rows[0, :2] = torch.tensor([row,other_row])

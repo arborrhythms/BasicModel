@@ -8,6 +8,7 @@ import sys
 import unittest
 
 import torch
+from nomination_fixtures import recurrent_word
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -43,7 +44,7 @@ def _word_concept(model, raw):
     store = model.perceptualSpace.percept_store
     parts = store.identity.admit(raw)
     owner = model._concept_owner()
-    return owner.interpret.lookup_word(parts, (), form=raw), store.identity.word_rows[raw]
+    return recurrent_word(owner.interpret, parts, (), form=raw), store.identity.word_rows[raw]
 
 
 def _idea_store(model):

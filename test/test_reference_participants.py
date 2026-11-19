@@ -12,6 +12,7 @@ from Meaning import ConceptualMeaning
 from ReferenceContext import SituationFrame
 from test_medium_term_memory import keep, snapshot, unchanged
 from test_reference_arrivals import world, named, described
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('attachment', ('surface', 'predicate', 'punctuation'))
@@ -74,7 +75,7 @@ def test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu
     from reading_fixtures import record_reading
     from test_bind_thought import native
     f = native(monkeypatch)
-    word = f.cs.interpret.lookup_word([101], (), form='m')
+    word = recurrent_word(f.cs.interpret, [101], (), form='m')
     f.words['m'] = word, word
     program = replace(f.program('m'), close_references=True,
                       leaf_orders=torch.zeros(1, dtype=torch.long))
@@ -98,7 +99,7 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     from test_reference_close import known_concept as mint
     words = dict(three=mint(owner, atoms[0]), wrong=mint(owner, atoms[1]))
     occupations = PartsOfSpeech(('change_argin1', 'change_argin2'), owner)
-    labels = {name: owner.interpret.lookup_word([120+i], (), form=name)
+    labels = {name: recurrent_word(owner.interpret, [120+i], (), form=name)
               for i, name in enumerate(words)}
     for name, word in labels.items():
         owner.interpret.define(word, words[name])

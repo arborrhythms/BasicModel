@@ -45,8 +45,7 @@ from embed import (
 from data import Data, TheData
 from Layers import (Layer, PiLayer, SigmaLayer, NegationLayer,
                     RunStructureLayer,
-                    SigmaConceptsFromPercepts,
-                    IndexedSigmaConceptsFromPercepts)  # custom layers
+                    SigmaConceptsFromPercepts)  # custom layers
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
 from Layers import (LETTER as _CLS_LETTER, DIGIT as _CLS_DIGIT,
                     WHITESPACE as _CLS_WHITESPACE, PUNCT as _CLS_PUNCT,
@@ -9453,7 +9452,7 @@ class InputSpace(Space):
         self._ar_concept_lookup_sentence_ids = None
         for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
                      "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
-                     "_ar_readout_coefficients", "_ar_whole_reference_presence"):
+                     "_ar_order_zero_reading", "_ar_whole_reference_presence"):
             setattr(self, name, None)
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
@@ -9506,7 +9505,7 @@ class InputSpace(Space):
         self._ar_concept_lookup_sentence_ids = None
         for name in ("_ar_percept_reference_codes", "_ar_percept_reference_roles",
                      "_ar_part_reference_vectors", "_ar_whole_reference_vectors",
-                     "_ar_readout_coefficients", "_ar_whole_reference_presence"):
+                     "_ar_order_zero_reading", "_ar_whole_reference_presence"):
             setattr(self, name, None)
         self._ar_word_truncated_mask = None
         self._sentence_word_truncated_mask = None
@@ -12760,7 +12759,6 @@ class ConceptualSpace(Space):
                  shared_similarity_codebook=None,
                  indexed_similarity_codebook=False,
                  derived_similarity_codebook=False,
-                 shared_percept_readout=None,
                  order_limit=None, order_reservations=(), owns_concepts=True,
                  comprehends_sentences=False):
         """Initialize ConceptualSpace; allocate state for the class contract.
@@ -12985,8 +12983,6 @@ class ConceptualSpace(Space):
             raise ValueError("mereologyRefinePatience must be positive")
         self.run_structure = RunStructureLayer(contiguity_tol=0.)
         self.layers.append(self.run_structure)
-        self.conceptual_pi = bool(TheXMLConfig.space(
-            "ConceptualSpace", "conceptualPi", False))
         self._promotion_enabled = bool(TheXMLConfig.space(
             "ConceptualSpace", "attentionPromotion", False))
         self.concept_use_floor = float(TheXMLConfig.space(
@@ -13187,18 +13183,6 @@ class ConceptualSpace(Space):
         # subspace index; the codebook is the lookup basis materialize uses.
         object.__setattr__(self.subspace, "_index_basis", _sim_cb)
 
-        # The simplest effective readout from the controlled comparison:
-        # affine Sigma + tanh, with optional weak connection lasso and no gates.
-        # Concept rows own their typed reference slots and coefficients;
-        # there is no vocabulary-wide projection or magnitude-only activation.
-        self.concepts_from_percepts = (
-            shared_percept_readout if shared_percept_readout is not None else
-            IndexedSigmaConceptsFromPercepts(
-                8, max(1, int(self.nVectors)),
-                l1_lambda=float(TheXMLConfig.space(
-                    section, "conceptReadoutL1", default=0.0))))
-        self.layers.append(self.concepts_from_percepts)
-        self.params += list(self.concepts_from_percepts.parameters())
         # Category utility and chunk admission (fold-ladder plan, contracts
         # 4 and 7): Laplace smoothing, minimum evidence, the recurrence count
         # before a candidate is admissible, and the structural prior logit of
@@ -13258,8 +13242,7 @@ class ConceptualSpace(Space):
         # Pre-readout checkpoints have neither new module. Initialize only
         # entirely absent modules; a partial new checkpoint must still fail
         # strict loading. Existing modules/optimizer state are not rewritten.
-        for name, module in (("concepts_from_percepts", self.concepts_from_percepts),
-                             ("concept_source_readout", self.concept_source_readout)):
+        for name, module in (("concept_source_readout", self.concept_source_readout),):
             module_prefix = prefix + name + "."
             index = next(i for i, child in enumerate(self.layers) if child is module)
             alias_prefix = prefix + f"layers.{index}."
@@ -14169,7 +14152,7 @@ class ConceptualSpace(Space):
         rejected_intervals = set()
         model = getattr(self, '_model', None)
         forced = (getattr(model, '_reading_word_percepts', None) is not None
-                  and not (self._promotion_enabled and self.conceptual_pi and self._sparse_active()))
+                  and not (self._promotion_enabled and self._sparse_active()))
 
         def _surface_key(b, g, parts):
             if (word_texts is not None and b < len(word_texts)
@@ -14758,7 +14741,7 @@ class ConceptualSpace(Space):
         return start, start + caps[o]
 
     def _sparse_families(self, order):
-        """Register both part matrices over the shared concept inventory."""
+        """Register the shared definition store over the concept inventory."""
         fams = getattr(self, "_sparse_fam", None)
         if fams is None:
             fams = {}
@@ -14768,23 +14751,20 @@ class ConceptualSpace(Space):
         if got is None:
             store = _concept_alloc_of(self).layer(0)
             self.add_module("concept_parts_layer", store)
-            got = (store.conjunctive, store)
+            got = store
             fams[o] = got
         return got
 
-    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
-                         negated=False):
+    def add_concept_edge(self, row, col, weight=0.0, *, negated=False):
         """Add a nonnegative exponent; a negated part addresses its c-minus.
 
-        W_pi intersects order-0 field concepts. Order-0 W_sigma unions
-        alternatives in that field; higher W_sigma reads the preceding
-        order's symbols. The trailing column is the standing EVERYTHING.
+        Order-0 W_sigma unions alternatives in that field; higher W_sigma
+        reads the preceding order's symbols. The trailing column is the
+        standing EVERYTHING.
         """
         r = int(row)
         order0 = self._order0_inventory_row(r)
         source0 = self._order0_inventory_row(int(col))
-        if conjunctive and not (order0 and source0):
-            raise ValueError('conjunctive edges require order-0 field concepts')
         if order0 and not source0:
             raise ValueError('order-0 alternatives require order-0 field concepts')
         if not order0 and int(col) != int(self.nVectors):
@@ -14799,8 +14779,7 @@ class ConceptualSpace(Space):
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
             return None
         # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
-        pi, sigma = self._sparse_families(0)
-        ly = pi if conjunctive else sigma
+        ly = self._sparse_families(0)
         # Global bias convention col == nVectors; translate to the store's
         # own bias column (nOutput -- the taper span).
         _c = int(col)
@@ -14823,6 +14802,86 @@ class ConceptualSpace(Space):
     def basic_percepts(self):
         return self._basic_percepts
 
+    #: The width of a reading's own place and of its own time.
+    ORDER_ZERO_WHERE, ORDER_ZERO_WHEN = 4, 4
+    #: A word's evidence slots: its basic percept's run of parts and its wholes.
+    REFERENCE_SLOTS = 2
+
+    def order_zero_reading(self, rows, percepts):
+        """Each word's column of the order-zero Sigma and its basic
+        percept's vector, ``[..., D + C]``; zero where either is absent."""
+        sigma, basic = self.order_zero, self.basic_percepts
+        rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.weight.device)
+        percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.weight.device)
+        held = (rows >= 0) & (rows < sigma.nOutput) & (percepts >= 0)
+        column = sigma.weight.t().index_select(0, torch.where(held, rows, 0).flatten())
+        column = column.reshape(*rows.shape, -1) * held[..., None]
+        code = basic.codes.index_select(0, torch.where(held, percepts, 0).flatten())
+        code = code.reshape(*rows.shape, -1).to(column) * held[..., None]
+        return torch.cat((column, code), -1)
+
+    def install_order_zero(self):
+        """The Sigma of order zero: the perceptual width (a basic percept's
+        vector, then the reading's place and time) by the order-zero rows."""
+        if getattr(self, 'order_zero', None) is not None:
+            return self.order_zero
+        from OrderZero import OrderZeroSigma
+        content = int(self.basic_percepts.width)
+        sigma = OrderZeroSigma(content + self.ORDER_ZERO_WHERE + self.ORDER_ZERO_WHEN,
+                               self._order_caps()[0], content_width=content)
+        sigma.to(self.similarity_codebook.W.device)
+        self.order_zero = sigma
+        self.params.append(sigma.weight)
+        # A frozen concept is read as a reference and never by perception.
+        sigma.weight.register_hook(self._zero_frozen_columns)
+        return sigma
+
+    def _zero_frozen_columns(self, grad):
+        frozen = [row for row in self._frozen_rows() if row < grad.shape[1]]
+        if not frozen:
+            return grad
+        grad = grad.clone()
+        grad[:, frozen] = 0
+        return grad
+
+    def order_zero_input(self, perception):
+        """Each reading's combined vector on two lanes, ``[B, E, 2, D]``:
+        the active basic percepts combined on the gaps, then the reading's
+        own place and time at the degree that it is present."""
+        from OrderZero import combine
+        basic = self.basic_percepts
+        rows = [key[1] for key in perception.keys]
+        promoted = basic.promoted[:len(basic.index)]
+        codes = torch.stack([basic.codes[row] if bool(promoted[row]) else basic.code(row)
+                             for row in rows]) if rows else basic.codes[:0]
+        model = getattr(self, '_model', None)
+        registry = getattr(model, 'where_registry', None)
+        encoding = getattr(model, 'when_encoding', None)
+        brackets = perception.where
+        where = when = None
+        if brackets is not None:
+            starts = brackets[..., 0].long()
+            valid = (brackets[..., 1] > brackets[..., 0])[..., None]
+            if registry is not None:
+                where = torch.where(valid, registry.encode('text', starts.clamp_min(0)), 0.)
+            else:
+                where = brackets.new_zeros(*starts.shape, self.ORDER_ZERO_WHERE, dtype=codes.dtype)
+            if encoding is not None and perception.when is not None:
+                when = torch.where(valid, encoding.encode(perception.when[..., 0].long()).to(codes), 0.)
+            else:
+                when = where.new_zeros(*starts.shape, self.ORDER_ZERO_WHEN)
+        return combine(perception.values, codes.to(perception.values), where=where, when=when)
+
+    def order_zero_field(self, combined, rows):
+        """The order-zero concepts of ``rows`` (``-1`` reads nothing) for
+        each reading of ``combined``, ``[len(rows), B, E, 2]``."""
+        from Layers import signed_lanes
+        rows = torch.as_tensor(rows, dtype=torch.long, device=combined.device)
+        n0 = self._order_caps()[0]
+        columns = torch.where((rows >= 0) & (rows < n0), rows, -1)
+        y = self.order_zero.concepts(combined, columns)
+        return signed_lanes(y, dim=-1).permute(2, 0, 1, 3)
+
     def add_concept_feature(self, row, tower, feature, weight=0.0, *, negated=False):
         """Concept literals address basic percepts; native selectors collect them."""
         row = int(row)
@@ -14844,14 +14903,49 @@ class ConceptualSpace(Space):
             raise ValueError('a concept literal must reference an admitted basic percept')
         if getattr(self, '_frozen_concepts', None) and row in self._frozen_rows():
             return None
-        _, store = self._sparse_families(0)
+        store = self._sparse_families(0)
         matrix = store.features
         matrix.nInput = 2*basic.capacity
         col = 2*int(feature) + int(negated or weight < 0)
+        known = (row, col) in matrix._index
+        # The feature table records which percepts a concept was started
+        # from; the concept reads its column of the order-zero Sigma.
         self._maybe_rebuild_optimizer_for_csw()
         result = matrix.add_edge(row, col, weight=abs(float(weight)))
         self._maybe_rebuild_optimizer_for_csw()
+        if not known and weight:
+            self._start_order_zero_column(row, int(feature), -1. if col % 2 else 1.)
         return result
+
+    @torch.no_grad()
+    def _start_order_zero_column(self, row, percept, sign):
+        """A member's vector joins the concept's column: the column's content
+        becomes the normalized sum of its own content and the member's
+        normalized vector, the Not of a member negated."""
+        sigma = self.install_order_zero()
+        if row >= sigma.nOutput:
+            raise ValueError('an order-zero concept lies outside the order-zero Sigma')
+        width = sigma.content_width
+        code = self.basic_percepts.code(percept).to(sigma.weight)
+        length = code.norm()
+        if not length > 0:
+            return
+        content = sigma.weight[:width, row] + sign * code / length
+        size = content.norm()
+        sigma.weight[:width, row] = content / size if size > 0 else 0.
+
+    def concept_of_basic_percept(self, percept):
+        """The order-zero concept a nominated row brought, or ``None``."""
+        store = _concept_alloc_of(self).layer(0)
+        rows = sorted({target for (target, col) in store.features._index
+                       if col == 2 * int(percept)})
+        return rows[0] if rows else None
+
+    def concept_percepts(self, row):
+        """The basic percepts an order-zero concept was started from."""
+        store = _concept_alloc_of(self).layer(0)
+        return sorted({col // 2 for (target, col) in store.features._index
+                       if target == int(row) and col % 2 == 0})
 
     def _refresh_basic_selectors(self):
         basic = self.basic_percepts
@@ -14904,7 +14998,6 @@ class ConceptualSpace(Space):
         store = _concept_alloc_of(self).layer(0)
         rows = self._field_inventory_rows() if inventory_rows is None else inventory_rows
         view = store.bind(rows)
-        view.conjunctive = store.conjunctive.bind(rows)
         defined = self._concept_part_rows(store.features, rows.device)
         valid = (rows >= 0) & (rows < len(defined))
         view.feature_defined = defined[rows.clamp(0, len(defined) - 1)] & valid
@@ -14928,9 +15021,7 @@ class ConceptualSpace(Space):
         # learning credit; the fold keeps their value zero.
         targets, sources = [], []
         standing = torch.zeros(S, dtype=torch.bool, device=device)
-        for parent in (store, store.conjunctive):
-            if parent is store.conjunctive and not self.conceptual_pi:
-                continue
+        for parent in (store,):
             if not parent.nnz:
                 continue
             pr, pc = parent._indices(device)
@@ -14978,27 +15069,31 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_field_concept_ids', ids)
 
     def cs_read_memberships(self, percepts, extents, *, publish=True):
-        """Pool native percept poles inside each bracket, then read definitions.
+        """Read the nominated basic percepts inside each bracket, then the
+        order-zero concepts from their combined vectors.
 
         The reading axis batches independent attention brackets. No concept
         owns a position; the retained native events own attribution locations.
         """
         self._refresh_basic_selectors()
-        store = _concept_alloc_of(self).layer(0)
-        matrix = store.features
-        keys = [('bp', col // 2) for col in matrix._cols]
+        basic = self.basic_percepts
+        rows = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
         model = self._model
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
         when = torch.stack((positions, positions + 1), -1)
-        perception = self.basic_percepts.read(percepts, extents, [key[1] for key in keys],
+        perception = basic.read(percepts, extents, rows,
             dtype=self.similarity_codebook.W.dtype, when=when,
             registry=getattr(model, 'where_registry', None),
             when_encoding=getattr(model, 'when_encoding', None))
         return self.cs_read_percept_field(perception, publish=publish)
 
     def cs_read_percept_field(self, perception, *, publish=True):
-        """Read memberships of the current open-attention percept field."""
+        """The order-zero concepts of the current open-attention percept field.
+
+        Each reading's active basic percepts are combined, and the Sigma of
+        order zero reads the combination (``OrderZero``).
+        """
         store = _concept_alloc_of(self).layer(0)
         matrix = store.features
         keys = [('bp', col // 2) for col in matrix._cols]
@@ -15006,156 +15101,30 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_percept_field', perception)
             object.__setattr__(self, '_cs_field_where', perception.where)
             object.__setattr__(self, '_cs_field_when', perception.when)
-        membership = perception.values.index_select(0, perception.selected(keys))
-        columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
-        required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
-        from PerceptCollections import read_native
-        collections = read_native(self, perception)
-        if publish:
+            membership = perception.values.index_select(0, perception.selected(keys))
+            columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
+            required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
             self._bind_attended_concepts(required, matrix)
-        fields, raw_fields = [], []
-        B, E = membership.shape[1:3]
+        combined = self.order_zero_input(perception)
+        B = combined.shape[0]
         n0 = self._field_caps()[0] if publish else self._order_caps()[0]
         addresses = (self._field_inventory_rows() if publish else
-                     torch.arange(self.nVectors, device=membership.device))
+                     torch.arange(self.nVectors, device=combined.device))
+        fields = []
         for b in range(B):
             rows = addresses[:, b] if addresses.ndim == 2 else addresses
-            bound = matrix.bind(rows, paired=False)
-            selected = torch.as_tensor(bound._inventory_edges, device=required.device, dtype=torch.long)
-            literals = required.index_select(0, selected)[:, b]
-            prototype = membership.new_zeros(0, E)
-            field = torch.stack([
-                bound.fold_presence(prototype, conjunctive=True, start=0, end=n0,
-                    dual=bool(pole), edge_memberships=literals[..., pole], edge_known=literals.any(-1))
-                for pole in (0, 1)], -1).unsqueeze(1)
-            if collections:
-                field = torch.stack([collections[int(row)][b:b+1] if int(row) in collections else field[i]
-                                     for i, row in enumerate(rows[:n0])])
-            fields.append(self._compose_order0(field, inventory_rows=rows, publish=publish))
-            if publish:
-                raw_fields.append(self._cs_order0_raw)
+            fields.append(self.order_zero_field(combined[b:b+1], rows[:n0]))
+        field = torch.cat(fields, 1)
         if publish:
-            object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
-        return torch.cat(fields, 1)
+            object.__setattr__(self, '_cs_order0_raw', field.detach())
+        return field
 
-    def _compose_order0(self, field, *, inventory_rows=None, publish=True):
-        """Intersect and union predicates of the shared subject before encoding.
-
-        Native percept poles have already been pooled inside the bracket.
-        Dependencies are evaluated once per topological level, every row of a
-        level in one fold (item 1.5), preserving sparse identity; an extent's
-        both corner is only a diagnosis.
-        """
-        store = self._concept_field_store(inventory_rows)
-        n0, B, E, _ = field.shape
-        S = store.nOutput
-        device = field.device
-        working = torch.cat((field, field.new_zeros(S - n0, B, E, 2)))
-        raw = working.clone()
-        if n0 == 0:
-            if publish:
-                object.__setattr__(self, '_cs_order0_raw', raw[:0].detach())
-            return working[:0]
-        targets, sources = [], []
-        for matrix in (store, store.conjunctive):
-            if matrix is store.conjunctive and not self.conceptual_pi:
-                continue
-            if matrix.values is None or not matrix.nnz:
-                continue
-            r, c = matrix._indices(device)
-            source = c % (S + 1)
-            # A positive, present edge between field rows is a dependency.
-            ok = ((r < n0) & (source < n0) & (matrix.values.detach().to(device) > 0)
-                  & ~matrix._missing_sources.to(device))
-            targets.append(r[ok])
-            sources.append(source[ok])
-        level = torch.zeros(n0, dtype=torch.long, device=device)
-        if targets:
-            dep_t, dep_s = torch.cat(targets), torch.cat(sources)
-            for _ in range(n0 + 1):
-                proposed = torch.zeros_like(level).scatter_reduce(
-                    0, dep_t, level[dep_s] + 1, reduce='amax', include_self=True)
-                if torch.equal(proposed, level):
-                    break
-                level = proposed
-            else:
-                raise ValueError('cyclic order-0 concept definitions')
-        inventory = (self._field_inventory_rows() if inventory_rows is None else inventory_rows)
-        alloc = _concept_alloc_of(self)
-        literal = torch.zeros(n0, dtype=torch.bool, device=device)
-        literal_rows = []
-        for position, row in enumerate(inventory[:n0].tolist()):
-            symbol = self.concept_id_at_row(int(row))
-            if symbol is not None and any(role == 'candidate_literal' for role, _
-                    in alloc.store_of(symbol).constituents(symbol)):
-                literal_rows.append(position)
-        if literal_rows:
-            literal[literal_rows] = True
-        pi_rows = self._concept_part_rows(store.conjunctive, device)[:n0]
-        own = field.reshape(n0, B * E, 2)
-        feature_mask = store.feature_defined[:n0]
-        # A zero-weight edge is absent from the positive dependency graph,
-        # but its gradient still reads the source. Within each positive level
-        # keep the old order for shared inputs and for a sibling read/write.
-        inputs = [set() for _ in range(n0)]
-        for matrix in (store, store.conjunctive) if self.conceptual_pi else (store,):
-            for row, col in zip(matrix._rows, matrix._cols):
-                source = col % (S + 1)
-                if row < n0 and source < n0:
-                    inputs[row].add(source)
-        levels = {}
-        for row, depth in enumerate(level.tolist()):
-            levels.setdefault(depth, []).append(row)
-        ranges = []
-        for depth in sorted(levels):
-            start, end, reads = -1, -1, set()
-            for row in levels[depth]:
-                sources = inputs[row]
-                if (row != end or row in reads or not reads.isdisjoint(sources)
-                        or any(start <= source < end for source in sources)):
-                    if end > start:
-                        ranges.append((start, end))
-                    start, reads = row, set()
-                end = row + 1
-                reads.update(sources)
-            ranges.append((start, end))
-        for start, end in ranges:
-            selected = slice(start, end)
-            positive, negative = working.unbind(-1)
-            source = torch.cat((positive.reshape(S, B * E), field.new_ones(1, B * E),
-                                negative.reshape(S, B * E), field.new_zeros(1, B * E)))
-            current, current_mask = own[selected], feature_mask[selected]
-            pins = pi_rows[selected]
-            if self.conceptual_pi and bool(pins.any()):
-                conjunctive = torch.stack((
-                    store.conjunctive.fold_presence(source, conjunctive=True, start=start, end=end,
-                        own=current[..., 0], own_mask=current_mask, own_known=current.any(-1)),
-                    store.conjunctive.fold_presence(source, conjunctive=True, dual=True, start=start, end=end,
-                        own=current[..., 1], own_mask=current_mask, own_known=current.any(-1))), -1)
-                current = torch.where(pins[:, None, None], conjunctive, current)
-                current_mask = pins | current_mask
-            known = current.any(-1)
-            result = torch.stack((
-                store.fold_presence(source, start=start, end=end,
-                    own=current[..., 0], own_mask=current_mask, own_known=known),
-                store.fold_presence(source, dual=True, start=start, end=end,
-                    own=current[..., 1], own_mask=current_mask, own_known=known)), -1).reshape(end-start, B, E, 2)
-            result = torch.where(literal[selected, None, None, None], result * (field[selected, ..., :1] > 0), result)
-            index = torch.arange(start, end, device=device)
-            raw = raw.index_copy(0, index, result)
-            working = working.index_copy(0, index, result)
-        if publish:
-            object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
-        return working[:n0]
-
-    def concept_weights(self, row, *, conjunctive=False, negated=False):
+    def concept_weights(self, row, *, negated=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
         shared untyped store (cols are global rows; ``nVectors`` is the
         bias column), sorted by col. Empty when none."""
         alloc = getattr(self, "_concept_allocator", None)
         ly = None if alloc is None else alloc._layers.get(0)
-        if ly is not None and conjunctive:
-            ly = ly.conjunctive
         if ly is None or ly.values is None:
             return []
         r = int(row)
@@ -15172,8 +15141,8 @@ class ConceptualSpace(Space):
         """Total edge count over the DISTINCT family layers (v3: every order
         shares ONE store, so dedup by identity before summing)."""
         seen, total = set(), 0
-        for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
-            for ly in (p, s, s.features):
+        for s in (getattr(self, "_sparse_fam", None) or {}).values():
+            for ly in (s, s.features):
                 if ly is not None and id(ly) not in seen:
                     seen.add(id(ly))
                     total += ly.nnz
@@ -15194,8 +15163,8 @@ class ConceptualSpace(Space):
             if id(parameter) not in seen:
                 base.append(parameter)
                 seen.add(id(parameter))
-        for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
-            for ly in (p, s, s.features):
+        for s in (getattr(self, "_sparse_fam", None) or {}).values():
+            for ly in (s, s.features):
                 if (ly is not None and ly.values is not None
                         and id(ly.values) not in seen):
                     seen.add(id(ly.values))
@@ -15250,8 +15219,8 @@ class ConceptualSpace(Space):
             active = (binding[rows, batches] if binding.ndim == 2 else binding[rows]).unique().tolist()
             active = [r for r in active if r >= 0]
         seen = set()
-        for matrices in (getattr(self, '_sparse_fam', None) or {}).values():
-            for matrix in matrices:
+        for store in (getattr(self, '_sparse_fam', None) or {}).values():
+            for matrix in (store,):
                 if id(matrix) in seen or matrix.values is None:
                     continue
                 seen.add(id(matrix))
@@ -15486,8 +15455,6 @@ class ConceptualSpace(Space):
             previous = result
             source_field = result * higher[:, None, None, None]
             result = torch.maximum(result, descend(store, source_field, 0, S))
-            if self.conceptual_pi:
-                result = torch.maximum(result, descend(store.conjunctive, source_field, 0, S, conjunctive=True))
             if torch.equal(previous, result):
                 break
         return result
@@ -15739,26 +15706,16 @@ class ConceptualSpace(Space):
             part_ids = tuple(part for part in parts if isinstance(part, int) and part >= 0)
             whole_ids = tuple(whole for whole in wholes if isinstance(whole, int) and whole >= 0)
             if part_ids and word_reading:
+                # The word's basic percept is the row MTM nominated, and the
+                # concept reads its column; an alternative percept of the
+                # same word joins that column.
                 percept = self.basic_percepts.reserve(part_ids, whole_ids, word=concept_id)
-                store = alloc.layer(0)
-                def written(row):
-                    return {col // 2 for (target, col), index in store.features._index.items()
-                            if target == row and col % 2 == int(pole) and float(store.features.values[index]) > 0}
-                own, target = written(c_row), c_row
-                if not coactive and own and own != {percept}:
-                    if any(written(row) == {percept} for row, _ in self.concept_weights(c_row)):
-                        return
-                    if not ConceptualSpace._automatic_concept_admitted(self, 1, reason='percept alternative'):
-                        return
-                    self._preflight_concept_row(0)
-                    alternative = ConceptualSpace.new_concept(self)
-                    for part in part_ids:
-                        self.add_part(alternative, part)
-                    for whole in whole_ids:
-                        self.add_whole(alternative, whole)
-                    target = self._csw_concept_row(0, alternative)
-                    self.add_concept_edge(c_row, target, 1.)
-                self.add_concept_feature(target, 'bp', percept, 1., negated=bool(pole))
+                self.basic_percepts.promote(percept)
+                self.add_concept_feature(c_row, 'bp', percept, 1., negated=bool(pole))
+                words = alloc.declared_classes.get('words')
+                words_row = None if words is None else self._csw_row_of(words)
+                if words_row is not None and (words_row, c_row) not in alloc.layer()._index:
+                    self.add_concept_edge(words_row, c_row, 1.)
             else:
                 groups = (part_ids,) if coactive and part_ids else tuple((part,) for part in part_ids)
                 for group in groups:
@@ -16028,6 +15985,25 @@ class ConceptualSpace(Space):
 
     def prebuild_formal_arguments(self, arguments):
         return self._prebuild_declared(arguments, _concept_alloc_of(self).formal_arguments, 'formal-argument')
+
+    #: The classes declared with their rows at construction: every word's
+    #: concept is a member of "words", every object's of "objects".
+    WORD_CLASSES = ('words', 'objects')
+
+    def declare_word_classes(self):
+        return self._prebuild_declared(self.WORD_CLASSES, _concept_alloc_of(self).declared_classes,
+                                       'declared')
+
+    def nominates(self, key, reading=None):
+        """MTM nominates a row for ``key`` on its ``concept_mint_count``-th
+        distinct reading; nothing is nominated on its first reading."""
+        if reading is None:
+            reading = ('call', len(self.mtm.sightings.get(key, ())))
+        count = self.mtm.sight(key, reading)
+        if count < self.concept_mint_count:
+            return False
+        self.mtm.sightings.pop(key, None)
+        return True
 
     def prebuild_operator_concepts(self, names):
         return self._prebuild_declared(names, _concept_alloc_of(self).operator_concepts, 'operator', order=2)
@@ -16483,7 +16459,8 @@ class ConceptualSpace(Space):
         from WordSurfaces import is_lexical_form
         if not is_lexical_form(key):
             return None
-        word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+        reading = None if occurrence is None else tuple(occurrence)[:2]
+        word = self.interpret.lookup_word(word_parts, word_whole, form=key, reading=reading)
         if word is None:
             return None
         obj = self.interpret.forward(word, occurrence=occurrence)
@@ -17551,7 +17528,7 @@ class ConceptualSpace(Space):
             self, part_sources, whole_sources, concept_row, concept_order,
             active_rows, stm_state, *, staged_rows=None, staged_atoms=None,
             part_n_what, whole_n_what, percept_evidence=None,
-            evidence_mask=None, readout_coefficients=None):
+            evidence_mask=None, order_zero_reading=None):
         """Compatibility wrapper for the pure aligned peer reduction.
 
         The canonical peer scheduler now computes SS independently, then calls
@@ -17579,7 +17556,7 @@ class ConceptualSpace(Space):
             staged_rows=staged_rows, staged_atoms=staged_atoms,
             part_n_what=part_n_what, whole_n_what=whole_n_what,
             percept_evidence=percept_evidence, evidence_mask=evidence_mask,
-            readout_coefficients=readout_coefficients)
+            order_zero_reading=order_zero_reading)
 
     def reduce_aligned_word_peers(
             self, part_sources, whole_sources,
@@ -17588,7 +17565,7 @@ class ConceptualSpace(Space):
             staged_rows=None, staged_atoms=None,
             part_n_what, whole_n_what,
             return_location_activations=False, percept_evidence=None,
-            evidence_mask=None, readout_coefficients=None):
+            evidence_mask=None, order_zero_reading=None):
         """Pure CS reduction of completed ``{PS, WS, SS}`` peer outputs.
 
         PS and WS supply their complete native fold ladders.  SS supplies the
@@ -17636,18 +17613,16 @@ class ConceptualSpace(Space):
         rows = row.reshape(B, 1).expand(B, n_locations)
         orders = order.reshape(B, 1).expand(B, n_locations)
 
-        K = int(self.concepts_from_percepts.nInput)
+        K = self.REFERENCE_SLOTS
         if (not torch.is_tensor(percept_evidence)
                 or tuple(percept_evidence.shape) != (B, n_locations, K)
                 or not torch.is_tensor(evidence_mask)
                 or tuple(evidence_mask.shape) != (B, n_locations, K)
                 or evidence_mask.dtype != torch.bool):
             raise ValueError("aligned concept readout requires identified [B,N,K] evidence and mask")
-        if readout_coefficients is None:
-            readout_coefficients = self.concepts_from_percepts.lookup_coefficients(row)
+        if order_zero_reading is None:
+            raise ValueError("aligned concept readout requires the staged order-zero reading")
         admitted = torch.logical_and(evidence_mask, rows.ge(0).unsqueeze(-1))
-        location_activations = SigmaConceptsFromPercepts.from_coefficients(
-            percept_evidence, readout_coefficients.unsqueeze(1), mask=admitted)
         # Coordinates are explicit metadata. Use a real part location where
         # it exists, otherwise the corresponding whole location; padding and
         # the number of folds must never rescale WHERE/WHEN.
@@ -17657,6 +17632,14 @@ class ConceptualSpace(Space):
                     < int(part_sources[0].shape[1])).reshape(1, n_locations, 1)
         band = torch.where(has_part, part_band, whole_band)
         band = torch.where(active.reshape(B, 1, 1), band, torch.zeros_like(band))
+        from OrderZero import read_word
+        sigma = self.order_zero
+        place = band[..., :sigma.nInput - sigma.content_width]
+        if place.shape[-1] != sigma.nInput - sigma.content_width:
+            place = torch.zeros(*band.shape[:-1], sigma.nInput - sigma.content_width,
+                                dtype=band.dtype, device=band.device)
+        location_activations = read_word(percept_evidence, admitted, order_zero_reading.unsqueeze(1),
+                                         place, content_width=sigma.content_width)
         decoded = self.decode_sparse_concept_rows(
             rows, location_activations.unsqueeze(1), band.unsqueeze(1),
             staged_rows=staged_rows, staged_atoms=staged_atoms)
@@ -17697,7 +17680,7 @@ class ConceptualSpace(Space):
             concept_row, concept_order, active_rows, *,
             staged_rows=None, staged_atoms=None,
             part_n_what, whole_n_what, percept_evidence=None,
-            evidence_mask=None, readout_coefficients=None):
+            evidence_mask=None, order_zero_reading=None):
         """Form CSsub from the completed PS/WS ladders only.
 
         The aligned serial word transaction has two distinct recurrences:
@@ -17727,7 +17710,7 @@ class ConceptualSpace(Space):
             part_n_what=part_n_what, whole_n_what=whole_n_what,
             return_location_activations=True,
             percept_evidence=percept_evidence, evidence_mask=evidence_mask,
-            readout_coefficients=readout_coefficients)
+            order_zero_reading=order_zero_reading)
 
     def promote_symbol_reference(
             self, symbol_rows, symbol_activations, symbol_bands,
@@ -18670,9 +18653,6 @@ class ConceptualSpace(Space):
             extras["concept_fold_support"] = {
                 int(cid): record for cid, record in fold_support.items()
             }
-        readout = getattr(self, "concepts_from_percepts", None)
-        if readout is not None:
-            extras["percept_readout_references"] = readout.reference_state()
         return extras
 
     def load_vocab_extras(self, extras):
@@ -18692,10 +18672,6 @@ class ConceptualSpace(Space):
             raise ValueError('item 3.0 placement requires angular recurrence in the LTM0 checkpoint')
         # Legacy document provenance is not a membership reader. Covers
         # are retained rows; no source sidecar is restored.
-
-        reference_state = extras.get("percept_readout_references")
-        if reference_state is not None:
-            self.concepts_from_percepts.load_reference_state(reference_state)
 
         fold_blob = extras.get("concept_fold_support")
         if isinstance(fold_blob, dict):

@@ -1055,6 +1055,8 @@ class MediumTermMemory(MemoryStore):
         self.pending_step = 0
         self.field_width = min(256, int(n_vectors)) if field_width is None else int(field_width)
         self.match_cos, self.mint_count = float(match_cos), int(mint_count)
+        # The readings of each form not yet nominated, by reading.
+        self.sightings = {}
         if self.field_width < 1 or not 0 < self.match_cos <= 1 or self.mint_count < 1:
             raise ValueError('invalid familiar-tier construction bounds')
         self.candidate_counter = 0
@@ -1698,10 +1700,20 @@ class MediumTermMemory(MemoryStore):
             readings=entry.readings, refinement=copy.deepcopy(entry.refinement),
             timelines=tuple(tuple(map(event_state, timeline.events))
                             for timeline in entry.timelines)) for key, entry in self.entries.items()),
-            names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
+            names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()),
+            sightings=tuple((key, tuple(readings)) for key, readings in self.sightings.items()))
+
+    def sight(self, key, reading):
+        """Record one reading of a form not yet nominated; the number of
+        distinct readings of it."""
+        readings = self.sightings.setdefault(key, set())
+        readings.add(reading)
+        return len(readings)
 
     def restore(self, state, *, device=None):
         """Validate a complete pool before replacing its current context."""
+        self.sightings = {} if state is None else {
+            key: set(readings) for key, readings in state.get('sightings', ())}
         if state is None:
             self.entries, self.names, self.pending = {}, {}, {}
             self.pending_step = 0

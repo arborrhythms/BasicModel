@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import torch
 import pytest
+from nomination_fixtures import recurrent_word
 
 
 def test_2_first_document_matches_recorded_object_readings(monkeypatch):
@@ -454,7 +455,7 @@ def test_5_comprehension_reads_the_final_preferred_object(monkeypatch):
     from Extension import reading
     from Comprehension import Evaluation
     owner, interpret = _operator()
-    word = interpret.lookup_word([7], [1], form='wug')
+    word = recurrent_word(interpret, [7], [1], form='wug')
     objects = []
     for _ in range(2):
         identity = owner.new_concept()
@@ -494,7 +495,7 @@ def test_comprehension_takes_staged_pending_name_without_writing_mtm(monkeypatch
     from Understanding import Reading
     from Comprehension import Evaluation
     owner, interpret = _operator()
-    word = interpret.lookup_word([7], [1], form='wug')
+    word = recurrent_word(interpret, [7], [1], form='wug')
     identity, row, order = interpret.reading(word, batch=0)
     assert identity != word and interpret.referent(word, batch=0) == word
     point = owner.similarity_codebook.lookup_rows(torch.tensor(row), stream=0)
@@ -544,7 +545,7 @@ def test_comprehension_uses_the_observed_words_form_for_a_higher_order_object(tm
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     try:
         owner = model._concept_owner()
-        word = owner.interpret.lookup_word([7], [1], form='wug')
+        word = recurrent_word(owner.interpret, [7], [1], form='wug')
         obj = owner.new_concept()
         force_order(owner, obj, 1)
         row = owner._csw_concept_row(1, obj)
@@ -579,7 +580,7 @@ def test_comprehension_keeps_the_selected_operands_recorded_order(tmp_path, monk
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     try:
         owner, language = model._concept_owner(), model.languageSpace
-        word = owner.interpret.lookup_word([7], [1], form='wug')
+        word = recurrent_word(owner.interpret, [7], [1], form='wug')
         pending, row, order = owner.interpret.reading(word, batch=0)
         assert owner._concept_source_order(pending) == -1
         local, rule = next((index, rule) for index, rule in enumerate(language._compose_binary_rules)
@@ -614,7 +615,7 @@ def test_pending_constituent_with_unknown_order_closes_without_allocating_an_ord
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     try:
         owner, language = model._concept_owner(), model.languageSpace
-        words = [owner.interpret.lookup_word([i], [1], form=form)
+        words = [recurrent_word(owner.interpret, [i], [1], form=form)
                  for i, form in ((7, 'wug'), (8, 'dax'))]
         assert all(owner.interpret.no_object(word) for word in words)
         rows = torch.tensor([owner._csw_row_of(word) for word in words])

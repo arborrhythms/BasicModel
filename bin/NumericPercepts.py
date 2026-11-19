@@ -35,20 +35,24 @@ class NumericPercepts:
             self.rows.append(row)
 
     def read(self, inputs):
-        from FieldProjection import inventory, close, close_bracket
-        from PerceptCollections import definitions, collect, read_collection
+        """Each axis place and the input's bracket are readings. A reading's
+        active basic percepts are the level percepts it holds and the
+        nominated conjunctions over them; the order-zero Sigma reads their
+        combination, and the definitions above order zero are closed."""
+        from FieldProjection import inventory, close
+        from PerceptCollections import collect
         from FamiliarTier import observe_intersection, promote_candidates
+        from OrderZero import combine
         owner = self.model._concept_owner()
         raw = inputs.reshape(len(inputs), -1)
         values = feeling(raw if raw.is_floating_point() else raw.float())
         if values.shape[1] != self.dimensions:
             raise ValueError('numeric input disagrees with its declared dimensions')
         basic = owner.basic_percepts
-        places = self.model.where_registry.intervals('numeric',
-            torch.arange(self.dimensions, device=values.device).expand(len(inputs), -1))
+        B, A = len(inputs), self.dimensions
+        axes = torch.arange(A, device=values.device)
+        places = self.model.where_registry.intervals('numeric', axes.expand(B, -1))
         percepts = torch.full_like(places[..., 0], -1)
-        # Level references, not raw input numbers, own reconstruction. The
-        # same boundary reader serves scalar words and numeric place concepts.
         for axis, row in enumerate(self.rows):
             observed = []
             for value in values[:, axis].unique():
@@ -59,34 +63,38 @@ class NumericPercepts:
                 observed.append(percept)
             if observed:
                 collect(owner, row, observed)
-        collections = definitions(owner)
-        points = values.new_zeros(len(inputs), self.dimensions, basic.width)
-        points[..., basic.identity_width - 1] = values
-        points[..., basic.width - 1] = values
-        rows = inventory(owner)
-        evidence = values.new_zeros(len(rows), len(inputs), self.dimensions, 2)
-        for axis, row in enumerate(self.rows):
-            edges = collections.get(row, ())
-            if edges:
-                read = read_collection(owner, points[:, axis:axis+1], edges)
-                evidence[rows.index(row), :, axis] = read[:, 0] * (values[:, axis] > 0)[:, None]
-        if self.model.training and owner.conceptual_pi:
-            for batch in range(len(inputs)):
+        if self.model.training:
+            for batch in range(B):
                 lanes = [(row, 0) for axis, row in enumerate(self.rows) if float(values[batch,axis]) > 0]
                 observe_intersection(owner, lanes, batch=batch)
                 owner.mtm.close(None, stream=batch, references=getattr(owner, '_field_activated_references', {}).get(batch, ()))
             promote_candidates(owner)
-            expanded = inventory(owner)
-            if expanded != rows:
-                old = {row: evidence[i] for i, row in enumerate(rows)}
-                evidence = torch.stack([old.get(row, evidence.new_zeros(len(inputs),self.dimensions,2)) for row in expanded])
-                rows = expanded
+        # Readings: each axis place, then the bracket over the whole input.
+        nominated = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
+        presence = values.new_zeros(len(nominated), B, A + 1, 2)
+        for index, row in enumerate(nominated):
+            held = percepts == row
+            presence[index, :, :A, 0] = held.to(values)
+            presence[index, :, A, 0] = held.any(1).to(values)
+        members = [('bp', row) for row in nominated]
+        lanes = list(presence)
+        for index, row in enumerate(nominated):
+            if row in basic.conjunctions:
+                lanes[index] = basic.pi(torch.stack(lanes), (row,), members)[0]
+        presence = torch.stack(lanes) if lanes else presence
+        codes = (basic.codes[nominated] if nominated else basic.codes[:0]).to(values)
+        where = self.model.where_registry.encode('numeric', torch.cat((axes, axes[:1])).expand(B, -1)).to(values)
+        moment = self.model.present()
+        when = self.model.when_encoding.encode(torch.full((B, A + 1), moment, device=values.device)).to(values)
+        combined = combine(presence, codes, where=where, when=when)
+        rows = inventory(owner)
+        evidence = owner.order_zero_field(combined, rows)
         evidence = close(owner, rows, evidence)
         ids = torch.tensor([owner.concept_id_at_row(row) for row in rows], device=values.device)
-        when = torch.full_like(places, self.model.present())
-        field = ConceptualField(ids, evidence, places, when, percepts)
         bracket = torch.stack((places[:, 0, 0], places[:, -1, 1]), -1)
-        return close_bracket(owner, field, bracket)
+        where = torch.cat((places, bracket[:, None]), 1)
+        when = torch.full_like(where, moment)
+        return ConceptualField(ids, evidence, where, when, percepts)
 
     def reverse(self, field):
         owner = self.model._concept_owner()

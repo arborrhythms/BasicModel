@@ -14,6 +14,7 @@ from ThoughtReferences import open_slots, with_slots
 from test_medium_term_memory import keep, mention, snapshot, unchanged, seats, unchanged_after_consolidation
 from test_reference_arrivals import equality, named, described, world
 from test_reference_choices import noun
+from nomination_fixtures import recurrent_word
 
 
 @pytest.mark.parametrize('observed_exclusion', (False, True))
@@ -27,7 +28,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
         owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(pending_content)
     for unit, (word, point) in enumerate((('y', a[5]), ('box', a[0]), ('ball', a[1]),
                                          ('red', a[2]), ('blue', a[3]), ('two', a[4])), 200):
-        words[word] = owner.interpret.lookup_word([unit], (), form=word)
+        words[word] = recurrent_word(owner.interpret, [unit], (), form=word)
         if word != 'y':
             obj = owner.new_concept()
             force_order(owner, obj, 0)

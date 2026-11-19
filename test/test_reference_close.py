@@ -13,6 +13,7 @@ from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
 from ReferenceContext import SituationFrame
 from part_fixtures import part_references, assert_part_references
+from nomination_fixtures import recurrent_word
 
 
 def fixture(*, percept=False):
@@ -49,7 +50,7 @@ def form_exposure(resolver, cue, content):
     """The fixture supplies a previously known native cue region."""
     from test_reference_close import known_concept as mint
     owner = resolver.components.owner
-    word = owner.interpret.lookup_word([101], (), form='fixture-cue')
+    word = recurrent_word(owner.interpret, [101], (), form='fixture-cue')
     row = owner._csw_row_of(word)
     owner.similarity_codebook.W[row].copy_(cue)
     mint(owner, content, form=word)

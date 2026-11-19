@@ -79,7 +79,6 @@
   </PartSpace>
   <ConceptualSpace>
     <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
-    <conceptReadoutL1>0.01</conceptReadoutL1>
     <nInput>8</nInput>
     <nInputDim>192</nInputDim>
     <nVectors>2048</nVectors>

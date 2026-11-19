@@ -2,6 +2,7 @@ from order_fixtures import force_order
 import pytest
 import torch
 from ReferenceContext import ReferenceBank, resolve_operand
+from nomination_fixtures import recurrent_word
 
 
 def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
@@ -322,7 +323,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     from Spaces import _concept_alloc_of
     from ReferenceContext import SituationAddress
     owner = model._concept_owner()
-    owner.interpret.lookup_word(tuple(map(ord, 'alpha')), (), form='alpha')
+    recurrent_word(owner.interpret, tuple(map(ord, 'alpha')), (), form='alpha')
     for word in owner.word_concepts('alpha'):
         assert owner._concept_allocator.order_of(word) == 0
     occurrence = store.occurrence_of(index)

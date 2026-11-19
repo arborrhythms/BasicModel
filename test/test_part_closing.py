@@ -4,6 +4,7 @@ from chunk_fixtures import context as chunk_context
 import pytest
 import torch
 from test_clause_acceptance import SentenceFixture
+from nomination_fixtures import recurrent_word
 
 
 def test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes(monkeypatch):
@@ -88,7 +89,7 @@ def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
     participant = f.noun('participant')
-    word = f.cs.interpret.lookup_word([81], [], form='new-form')
+    word = recurrent_word(f.cs.interpret, [81], [], form='new-form')
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
     right = Composition(torch.eye(8)[3], word_id=word)
     value = torch.maximum(left.point, right.point)
@@ -108,7 +109,7 @@ def test_bound_terminal_keeps_its_object_without_defining_a_new_word(monkeypatch
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
     identity = f.noun('existing-object')
-    word = f.cs.interpret.lookup_word([82], [], form='new-form')
+    word = recurrent_word(f.cs.interpret, [82], [], form='new-form')
     point = f.registry._payload(('sym', identity))
     term = Composition(point, reference=identity, word_id=word)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
@@ -187,7 +188,7 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
     from Meaning import ConceptualMeaning
     from PartsOfSpeech import operation_name
     f = SentenceFixture(monkeypatch)
-    words = [f.cs.interpret.lookup_word([91+i], [], form=f'leaf-{i}') for i in range(3)]
+    words = [recurrent_word(f.cs.interpret, [91+i], [], form=f'leaf-{i}') for i in range(3)]
     leaves = [Composition(f.registry._payload(('sym', word)), reference=word,
                           word_id=word) for word in words]
     lower = Composition(leaves[1].point, (leaves[1],), operation='lower',
@@ -360,7 +361,7 @@ def test_surface_phrase_keeps_the_unknown_head_word_without_minting(monkeypatch)
     f = SentenceFixture(monkeypatch)
     native = f.noun('participant')
     marker = Composition(f.registry._payload(('sym', native)), reference=native)
-    word = f.cs.interpret.lookup_word([84], [], form='new-head')
+    word = recurrent_word(f.cs.interpret, [84], [], form='new-head')
     description = Composition(torch.eye(8)[3], word_id=word)
     phrase = Composition(description.point, (marker, description), operation='surface',
                          formal_name='surface', head_role=2)

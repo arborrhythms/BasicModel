@@ -18,12 +18,12 @@ def close(owner, rows, evidence):
     # This closure reads the same sparse definitions as the native fold.
     # Opposite columns are one signed source here too.
     folded_weights = {matrix: matrix._fold_weights(evidence)
-                      for matrix in (store.conjunctive, store)
+                      for matrix in (store,)
                       if matrix.values is not None}
     definitions = {}
     for row in positions:
         definitions[row] = []
-        for matrix, operation in ((store.conjunctive, 'intersection'), (store, 'union')):
+        for matrix, operation in ((store, 'union'),):
             edges = [(column % (store.nOutput+1), column >= store.nOutput+1, index)
                      for (target, column), index in matrix._index.items()
                      if target == row and float(folded_weights[matrix][index].detach()) > 0]

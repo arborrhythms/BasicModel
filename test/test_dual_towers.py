@@ -308,7 +308,7 @@ def test_pyramid_grads_reach_every_rung():
         class_over(cs0, [('sym', obj)])
     opt = m.getOptimizer(lr=0.01)
     m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
-    fams = cs0._sparse_families(0)
-    vals = [ly.values for ly in fams if getattr(ly, "values", None) is not None]
+    store = cs0._sparse_families(0)
+    vals = [ly.values for ly in (store,) if getattr(ly, "values", None) is not None]
     assert vals, "the concept store must expose trainable edge values"
     assert all(v.grad is None or torch.isfinite(v.grad).all() for v in vals)

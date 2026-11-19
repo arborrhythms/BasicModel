@@ -7,6 +7,7 @@ from torch import nn
 
 from BasicPercepts import BasicPercepts
 from test_item20_round5_memory import receipt
+from nomination_fixtures import recurrent_word
 
 
 def percepts(capacity=4):
@@ -251,12 +252,12 @@ def test_admitted_form_with_weak_definition_remains_known_without_a_denotation()
     from test_cs_sparse_weights import _cs
     from order_fixtures import force_order
     owner = _cs()
-    word = owner.interpret.lookup_word((97,), (), form='weak-definition')
+    word = recurrent_word(owner.interpret, (97,), (), form='weak-definition')
     concept = owner.new_concept(); force_order(owner, concept, 0)
     owner._csw_concept_row(0, concept)
     owner.interpret.define(word, concept, evidence=(0., 0.))
     assert word in owner.definitions.word_ids and not owner.definitions.objects(word)
-    assert owner.interpret.lookup_word((97,), (), form='weak-definition') == word
+    assert recurrent_word(owner.interpret, (97,), (), form='weak-definition') == word
     before = dict(owner._concept_allocator.symbols)
     assert owner.interpret.forward(word) is None
     assert owner._concept_allocator.symbols == before

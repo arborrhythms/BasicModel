@@ -86,8 +86,7 @@
     <chunkPromotionThreshold>2</chunkPromotionThreshold>
   </PartSpace>
   <ConceptualSpace>
-    <attentionPromotion>true</attentionPromotion><conceptualPi>true</conceptualPi>
-    <conceptReadoutL1>0.01</conceptReadoutL1>
+    <attentionPromotion>true</attentionPromotion>
     <nInput>8</nInput>
     <nInputDim>1000</nInputDim>
     <nVectors>1048576</nVectors>

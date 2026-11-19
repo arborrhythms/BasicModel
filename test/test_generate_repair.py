@@ -4,6 +4,7 @@ from types import MethodType, SimpleNamespace
 
 import pytest
 import torch
+from nomination_fixtures import recurrent_word
 
 
 def controlled_walk(monkeypatch, mode):
@@ -179,7 +180,7 @@ def identity_fixture():
     from Meaning import ConceptualMeaning
     from test_orders_learned import equality_fixture
     owner, store, alloc = equality_fixture()
-    word = owner.interpret.lookup_word((4, 7), (), form='label')
+    word = recurrent_word(owner.interpret, (4, 7), (), form='label')
     identity, row, order = owner.interpret.reading(word)
     value = owner.similarity_codebook.lookup_rows(row)
     index = store.append_meaning(ConceptualMeaning.from_description(value),

@@ -9,12 +9,13 @@ from IdentityRows import mint, point
 from Meaning import ConceptualMeaning
 from test_review13_subspaces import fixture as paired_fixture
 from ConceptTrust import observe, positive_length
+from nomination_fixtures import recurrent_word
 
 
 def test_named_word_identity_survives_below_binding_threshold_and_rebuild():
     from definition_fixtures import agreeing_views
     owner, store, obj, atoms = learned(1)
-    word = owner.interpret.lookup_word([4], [], form='wug')
+    word = recurrent_word(owner.interpret, [4], [], form='wug')
     agreeing_views(owner, word)
     description = dict(owner.interpret._pending[word], identity_key='round1e-form')
     row = owner.interpret.define(word, obj, description=description, trust=1.)
@@ -47,7 +48,7 @@ def test_named_word_identity_survives_below_binding_threshold_and_rebuild():
 def test_second_naming_below_threshold_keeps_description_and_merges_pair():
     from definition_fixtures import agreeing_views
     owner, store, obj, _ = learned(1)
-    word = owner.interpret.lookup_word([4], [], form='wug')
+    word = recurrent_word(owner.interpret, [4], [], form='wug')
     agreeing_views(owner, word)
     row = owner.interpret.define(word, obj, evidence=(.8,.1))
     alloc = owner._concept_allocator
@@ -64,12 +65,12 @@ def test_second_naming_below_threshold_keeps_description_and_merges_pair():
 def test_lookup_below_threshold_reuses_named_word_without_allocating():
     from definition_fixtures import agreeing_views
     owner, store, obj, _ = learned(1)
-    word = owner.interpret.lookup_word([4], [], form='wug')
+    word = recurrent_word(owner.interpret, [4], [], form='wug')
     agreeing_views(owner, word)
     owner.interpret.define(word, obj, trust=1.)
     before = owner._concept_allocator.next_id, len(store.parts)
     assert owner.definitions.objects(word) == ()
-    assert owner.interpret.lookup_word([4], [], form='wug') == word
+    assert recurrent_word(owner.interpret, [4], [], form='wug') == word
     assert (owner._concept_allocator.next_id, len(store.parts)) == before
 
 
@@ -186,7 +187,7 @@ def test_three_operands_do_not_multiply_trust():
 
 def test_definition_threshold_follows_effective_positive_evidence():
     owner, store, _, atoms = learned(0)
-    word = owner.interpret.lookup_word([4], [], form='x')
+    word = recurrent_word(owner.interpret, [4], [], form='x')
     content = owner.similarity_codebook.trust.content[owner._csw_row_of(word)].clone()
     original, genuine = built(owner, atoms[2]), built(owner, atoms[3])
     view(owner, store, word, content, 0)
@@ -248,7 +249,7 @@ def test_kept_word_views_use_written_content_and_for_radius_only():
     from FamiliarTier import commit_read_words
     owner, bank, _, _ = paired_fixture(meaning_pairs=4)
     owner._model.wholeSpace = SimpleNamespace(subspace=SimpleNamespace(what=None))
-    word = owner.interpret.lookup_word([4], [], form='word')
+    word = recurrent_word(owner.interpret, [4], [], form='word')
     row = owner._csw_row_of(word)
     content = bank.lookup_rows(row).clone()
     reading = SimpleNamespace(word_ids=torch.tensor([word]), leaves=content[None], symbol_where=None)
@@ -328,7 +329,7 @@ def test_views_cost_no_rows_and_relations_do_not_count_as_views():
 def test_untracked_chart_keeps_signed_content_and_whole_norm(paired, monkeypatch):
     from test_cs_sparse_weights import _cs
     owner = paired_fixture(meaning_pairs=0)[0] if paired else _cs(nS=32)
-    word = owner.interpret.lookup_word([4], [], form='word')
+    word = recurrent_word(owner.interpret, [4], [], form='word')
     bank = owner.similarity_codebook
     value = bank.lookup_rows(owner._csw_row_of(word)).clone()
     before = bank.W.clone()
@@ -355,7 +356,7 @@ def test_untracked_chart_keeps_signed_content_and_whole_norm(paired, monkeypatch
 
 def test_unplaced_word_has_radius_along_its_id_seed():
     owner, store, _ = fixture()
-    word = owner.interpret.lookup_word([4], [], form='word')
+    word = recurrent_word(owner.interpret, [4], [], form='word')
     row = owner._csw_row_of(word)
     content = owner.similarity_codebook.trust.content[row].clone()
     for n in range(3):
@@ -393,7 +394,7 @@ def test_ordered_mereology_rises_without_reclosing_and_falls_with_stability():
     first = parts.add(wug, bird, truth_plus=1.)
     second = parts.add(bird, winged, truth_plus=1.)
     chain = parts.add((RELATION,first), (RELATION,second), truth_plus=1.)
-    word = owner.interpret.lookup_word([4], [], form='wug')
+    word = recurrent_word(owner.interpret, [4], [], form='wug')
     from definition_fixtures import agreeing_views
     agreeing_views(owner, word)
     named = owner.interpret.define(word, wug, trust=1.)
@@ -434,7 +435,7 @@ def test_negation_merges_counterevidence_and_structural_close_never_lowers():
 
 def test_configured_truth_over_unread_words_keeps_its_source_pair():
     owner, store, _ = fixture()
-    words = [owner.interpret.lookup_word([i],[],form=str(i)) for i in (4,7)]
+    words = [recurrent_word(owner.interpret, [i],[],form=str(i)) for i in (4,7)]
     row = relation(owner,store,*words,pair=(1.,0.),trust=.9)
     assert tuple(map(float,store.parts.evidence(row))) == (0.,0.)
     assert float(store.parts.truth_plus[row]) == pytest.approx(.9)
@@ -475,7 +476,7 @@ def test_item107_generic_sentence_never_names_its_chain(monkeypatch):
     grammar = Grammar(); grammar.load_from_grammar_file('complete.grammar')
     owner,_,atoms=fixture(capacity=160, order_reservations=order_reservations(grammar))
     f=SentenceFixture(monkeypatch,native_cube=False,cs=owner)
-    word=owner.interpret.lookup_word([4],[],form='wug')
+    word=recurrent_word(owner.interpret, [4],[],form='wug')
     original,genuine=built(owner,atoms[1]),built(owner,atoms[2])
     left=Composition(point(owner,original),reference=original)
     right=Composition(owner.similarity_codebook.trust.content[owner._csw_row_of(word)].clone(),reference=word,word_id=word)
@@ -577,7 +578,7 @@ def test_null_kind_named_from_held_signs_reaches_the_definition_threshold(signs)
     from FamiliarTier import promote_identity
     from definition_fixtures import agreeing_views
     owner,store,_=fixture()
-    word=owner.interpret.lookup_word([4],[],form='Felix')
+    word=recurrent_word(owner.interpret, [4],[],form='Felix')
     agreeing_views(owner,word)
     empty=torch.zeros(11)
     # These are explicitly held observations of one token. This certifies
@@ -620,7 +621,7 @@ def test_seatless_word_definition_uses_only_its_objects_radius(views):
     owner.definitions.rebuild()
     assert owner.definitions.objects(word) == ((obj,) if radius >= .5 else ())
     assert owner._csw_row_of(word) is None
-    seated = owner.interpret.lookup_word([4], [], form='unobserved')
+    seated = recurrent_word(owner.interpret, [4], [], form='unobserved')
     assert owner._csw_row_of(seated) is not None
     assert positive_length(owner, seated) == 0.
 
@@ -653,7 +654,7 @@ def test_sign_closes_wait_for_one_remembered_kind_then_join(tracked):
     owner, _, _, alloc = paired_fixture(meaning_pairs=4 if tracked else 0)
     owner._symbolic_order = 3
     store = owner._fixture_occurrences
-    label = owner.interpret.lookup_word([4], (), form='Felix')
+    label = recurrent_word(owner.interpret, [4], (), form='Felix')
     agreeing_views(owner, label)
     first = close_named_sign(owner, store, label, 0)
     target, = owner.interpret.remembered_objects(label)
@@ -701,7 +702,7 @@ def test_pending_sign_expires_without_an_identity_or_member_row():
     from Memory import OCCURRENCE, SYMBOL
     owner, store, _ = fixture()
     alloc = owner._concept_allocator
-    label = owner.interpret.lookup_word([4], (), form='Felix')
+    label = recurrent_word(owner.interpret, [4], (), form='Felix')
     agreeing_views(owner, label)
     close_named_sign(owner, store, label, 0)
     target, = owner.interpret.remembered_objects(label)
@@ -732,7 +733,7 @@ def test_sign_sentence_observes_a_remembered_endpoint_before_joining(monkeypatch
                                        order_reservations=order_reservations(grammar))
     owner._symbolic_order = 3
     f = SentenceFixture(monkeypatch, cs=owner, native_cube=False)
-    label = owner.interpret.lookup_word([4], (), form='Felix')
+    label = recurrent_word(owner.interpret, [4], (), form='Felix')
     agreeing_views(owner, label)
     _sign_equation(f, 'This', 'Felix', 0)
     target, = owner.interpret.remembered_objects(label)
