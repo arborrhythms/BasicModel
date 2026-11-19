@@ -268,12 +268,26 @@ def _outcomes(task, *, pi_penalty, sigma_penalty, starts=10):
 
 @pytest.mark.parametrize('task', sorted(_TASKS))
 def test_and_or_and_not_are_learned_and_read_back(task):
+    """Each task on ten starts drawn from the system, 2,000 presentations.
+
+    Measured (2026-11-19, 200 drawn starts a task, with the penalty on
+    both): solved 200, 200 and 200 of 200 (conjunction, disjunction,
+    negation); read back 200, 199 and 199; the Not entries as stated
+    (none for conjunction and disjunction, one or more for negation) on
+    200 of 200 each. With no penalty, solved 200 of 200 each.
+
+    A bar is a share of the ten starts that the measured rate misses less
+    than once in a thousand runs. Taking one miss in 200 (.005) for every
+    rate: at least 8 of 10 (missed once in about 68,000 runs; 9 of 10
+    would be missed once in about 900, and 10 of 10 once in about 20).
+    The Not entries are stated over the starts, as measured."""
+    bar = 8
     both = _outcomes(task, pi_penalty=.003, sigma_penalty=.003)
     unpenalized = _outcomes(task, pi_penalty=0., sigma_penalty=0.)
     pi_alone = _outcomes(task, pi_penalty=.003, sigma_penalty=0.)
     print(dict(task=task, penalty_on_both=both, no_penalty=unpenalized, penalty_on_pi=pi_alone))
-    assert both['solved'] == len(both['seeds']) and unpenalized['solved'] == len(unpenalized['seeds'])
-    assert both['read_back'] == len(both['seeds'])
+    assert both['solved'] >= bar and unpenalized['solved'] >= bar
+    assert both['read_back'] >= bar
     if task == 'negation':
         assert both['not_entries'] >= len(both['seeds'])
     else:
