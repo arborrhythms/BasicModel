@@ -419,8 +419,10 @@ def test_the_basic_level_learns_xor_of_two_perceived_words_with_no_not_entry():
 
 # The lesson's sixteen sentences, read once for the tests that read a model.
 
-@pytest.fixture(scope='module')
-def lesson():
+def _read_lesson(sentences):
+    """The lesson's model after its first ``sentences`` sentences (a count,
+    or a function of the model), one stream; returns the model and the
+    patch to undo."""
     from pytest import MonkeyPatch
     from reading_fixtures import use_eager_reading
     patch = MonkeyPatch()
@@ -440,6 +442,7 @@ def lesson():
     curriculum = json.loads(Path('data/corpus-lessons.json').read_text())
     texts, targets = stage_documents(TheData, curriculum['stages'][0])
     admit_training_forms(model, texts, targets)
+    sentences = sentences(model) if callable(sentences) else int(sentences)
     count = 0
 
     class Complete(Exception):
@@ -448,13 +451,57 @@ def lesson():
     def batch(*args, **kwargs):
         nonlocal count
         count += 1
-        if count == 16:
+        if count == sentences:
             raise Complete
     try:
         present(model, split='train', optimizer=optimizer, batch_size=1, after_batch=batch)
     except Complete:
         pass
+    return model, patch
+
+
+@pytest.fixture(scope='module')
+def lesson():
+    model, patch = _read_lesson(16)
     owner = model._concept_owner()
     yield dict(model=model, owner=owner, basic=owner.basic_percepts)
     model.End()
     patch.undo()
+
+
+def test_sentence_trees_are_released_without_the_collector():
+    """With automatic collection off, the lesson reads more sentences than
+    a stream has trials; every trial's tree is released when its sentence
+    closes, so no capture finds its trials all retained and the collector
+    finds no sentence tree."""
+    import gc
+    from SentenceStrata import Tree
+    read = []
+
+    def sentences(model):
+        trials = model.conceptualSpace.stm.strata.trials
+        read.append(trials + 2)
+        return trials + 2
+    enabled = gc.isenabled()
+    gc.collect()
+    gc.disable()
+    try:
+        model, patch = _read_lesson(sentences)
+        try:
+            strata = model.conceptualSpace.stm.strata
+            print(f'{read[0]} sentences read, {strata.trials} trials a stream')
+            assert all(lease is None or lease() is None for lease in strata._leases)
+            gc.set_debug(gc.DEBUG_SAVEALL)
+            try:
+                gc.collect()
+                left = [item for item in gc.garbage if isinstance(item, Tree)]
+            finally:
+                gc.set_debug(0)
+                gc.garbage.clear()
+            assert not left
+        finally:
+            model.End()
+            patch.undo()
+    finally:
+        if enabled:
+            gc.enable()
