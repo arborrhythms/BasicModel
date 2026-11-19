@@ -100,8 +100,10 @@ def test_sentence_reverse_reaches_native_prototypes_and_evidence(monkeypatch):
     observations = []
     def backward(self,total,*args,**kwargs):
         if getattr(self, '_sentence_backward', False):
+            # The native prototypes, and the order-zero Sigma that reads the
+            # basic percepts (rule 8b; the feature table is no longer read).
             parameters = [self.perceptualSpace.subspace.what.W]
-            parameters += [cs._concept_allocator.layer().features.values for cs in self.conceptualSpaces]
+            parameters += [self._concept_owner().order_zero.weight]
             parameters = list({id(p):p for p in parameters if torch.is_tensor(p) and p.requires_grad}.values())
             pullback = getattr(self, '_sentence_pullback', None)
             grads = (pullback.gradients(total,parameters) if pullback is not None else
@@ -113,8 +115,13 @@ def test_sentence_reverse_reaches_native_prototypes_and_evidence(monkeypatch):
     try:
         raw,target = next(iter(data.data_loader(split='train',num_streams=4)))
         batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
-        model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',batch_override=batch)
-        assert observations and any(any(row) for row in observations), observations
+        # A form has no basic percept before MTM nominates it (rule 20): the
+        # batch is read until the reading in which its forms are nominated.
+        for _ in range(model._concept_owner().concept_mint_count):
+            observations.clear()
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',batch_override=batch)
+        assert int(model._concept_owner().basic_percepts.count) > 0
+        assert observations and all(any(row[i] for row in observations) for i in range(len(observations[0]))), observations
     finally:
         model.End(); model.symbolSpace.soft_reset(); torch._dynamo.reset()
 

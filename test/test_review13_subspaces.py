@@ -138,8 +138,12 @@ def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_conte
     # The forms are words from the reading in which MTM nominates them.
     read = lambda: model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
     readings_before_nomination(model, read)
-    read()
     cb = model._concept_owner().similarity_codebook
+    # The rows whose context exists before the reading that is staged: a
+    # form nominated in an earlier reading (rule 20) already has one.
+    known = cb.mereology.placement_witnesses.gt(0).nonzero().flatten().tolist()
+    context_before = {row for row in known if bool(cb.lookup_rows(row)[136:].any())}
+    read()
     assert cb.mereology.identity_width == 64
     assert cb.mereology.property_width == 64
     assert cb.mereology.percept_width == 128
@@ -148,7 +152,10 @@ def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_conte
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
     torch.testing.assert_close(atoms[rows>=0][..., :128], cb.lookup_rows(rows[rows>=0])[..., :128])
-    assert not atoms[rows>=0][...,136:].any()
+    # An object's atom is its form, with its row's own context as it stood
+    # when the sentence was staged: none for a row made in this reading.
+    for row, atom in zip(rows[rows>=0].tolist(), atoms[rows>=0]):
+        assert bool(atom[136:].any()) == (row in context_before), row
     assert cb.lookup_rows(rows[rows>=0])[...,136:].any()
     assert bool(cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all())
     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
