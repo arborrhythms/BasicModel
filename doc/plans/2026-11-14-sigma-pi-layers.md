@@ -8637,7 +8637,7 @@ On §19.73's read (the parts half joined by the union and read directly, the who
 **Whether it replaces Pi, Not, Sigma** (*Claude's view; the part that can be measured is being measured, §23.3b's second addition*).
 
 - *It is the same structure, not another one.* Pi, Not, Sigma is a row of members, an entry for or Not, and a class. The two-sided code is that cell seen from the percept in its middle: the Pi below it, the Sigma above it read downward, and the Not as the against lane.
-- *It does part of the Not's work with no learned entry.* A strict whole tells against its part (§19.73). So where a row AB has been nominated, the concept of A reads against on a reading that holds AB, and negative patterning (A alone, B alone, not both) may need no Not entry at all. Not measured yet.
+- *It does part of the Not's work with no learned entry.* A strict whole tells against its part (§19.73). So where a row AB has been nominated, the concept of A reads against on a reading that holds AB, and negative patterning (A alone, B alone, not both) may need no Not entry at all. *Measured, §23.3b.1:* so it is, but only with a conjunction coded by coordinates of its own, and then XOR cannot be met at all; with a conjunction's code as built, XOR needs no Not and the other two do. An exclusion with no row needs a learned Not either way. It is not a replacement.
 - *It does not replace the three things the layers add.* It is one fixed step, so it composes nothing: an order above zero still needs its own cycle. It learns nothing: what tells against is given by the towers, so an exclusion that is not a strict whole (X inhibits A where no row AX exists) still needs a Not entry learned from omission (rule 29). And a concept still has to be read upward from the percepts, which is the Sigma forward.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
@@ -9532,7 +9532,10 @@ chooses from. The old classes are not edited.
     bounds"), the coordinates of the narrower wholes it does not lie
     in; *mine:* those directly inside the wholes that apply (over
     every whole the lane fills 55.6 of 64). A property that is
-    itself a degree holds that degree (Alec, §19.71).
+    itself a degree holds that degree (Alec, §19.71). *Mine
+    (§23.3b.1):* the class of all characters becomes a row of the
+    table that cuts nothing, with the declared classes directly
+    inside it; today the top is only implied.
 53. *The Pi selects for and against* (Alec, §19.71: "Pi should select
     both strong for and strong against"). A row of the first Pi has
     for entries, its parts and wholes as now, and against entries,
@@ -9541,7 +9544,12 @@ chooses from. The old classes are not edited.
     product fired on 52 of 852 held forms, the union on all), and a
     member's presence is read from the set of parts found, not from
     a code. Rule 6's amendment stands: the run of parts is the row's
-    presence on both lanes.
+    presence on both lanes. A conjunction keeps the code rule 5
+    gives it, and is a strict whole of its members like any other.
+    The Not of rule 29 stays: the two-sided code does its work only
+    where the exclusion is a strict whole, and not for XOR
+    (§23.3b.1). *Open, settled in round 3c:* how a row that reads
+    both enters the combined vector.
 54. *What a concept reads* (rule 8b on the two lanes). A column starts
     as its member's for code less its against code, over the squared
     length; the concept reads the reading's for vector less its
@@ -9551,7 +9559,9 @@ chooses from. The old classes are not edited.
     half is read on its complement. Being an upper bound, it is
     joined over a reading's percepts by the product, where rule 7
     joins the parts half by the union, and a concept reads the
-    coordinates cut away, `1 - w`.
+    coordinates cut away, `1 - w`. Measured (§23.3b.1): never worse
+    than the direct read, and an accidental containment reads .21
+    where the direct read gave .999.
 55. *A scalar is its place in one sorted table of values* (Alec,
     §19.70: "The scalar parts will just be values below, sorted by
     the less-than operation. Wholes in this case will be the same
@@ -10458,7 +10468,9 @@ integers).
    row, mean 2.95, and 4,869 rows above the first Pi's 16 entries a
    row). Wholes half: each whole a row of the table of wholes with
    three coordinates of its own, a whole inside another carrying
-   the other's. Its for lane is the upper bound: all ones under the
+   the other's; the class of all characters is a row that cuts
+   nothing, the declared classes directly inside it (it is not a
+   row today). Its for lane is the upper bound: all ones under the
    class of all characters, less the coordinates of each narrower
    whole that applies (§19.73). Its against lane holds the wholes
    directly inside those that apply, which do not apply (§19.72). The bytes a property
@@ -10468,7 +10480,13 @@ integers).
    coordinates.
 4. The first Pi (rule 53): against entries, joined by union, read
    by the set of parts found. Storage as rule 19 has it; say what
-   the entries a row now come to.
+   the entries a row now come to. A conjunction row is a strict
+   whole of its members and keeps the code rule 5 gives it. Settle
+   how a row that reads both for and against enters the combined
+   vector (§23.3b.1, point 6): try its net, for less against, once,
+   and take the form under which certificate 23 passes as it
+   stands and every row's own concept reads its own reading above
+   every other row's.
 5. The concept's read (rule 54): a column from the for code less
    the against code; the readers of containment
    (FormContainment, ConceptualMatch.match, the lookup) read the
@@ -12252,3 +12270,155 @@ The toy uses 2,000 dictionary words (seed 3650077308) and seven classes: holds `
 **P6, broad variant ("every other catalog part is negative evidence"): against.** It tells all 8 of the lesson apart, but it fills the parts half with ±1. The read then becomes a symmetric likeness, and the part order is lost.
 
 **P7: the union form under weights of zero or above gives the order by construction,** a member at or above its class code. The classes separated without being told to. The toy cannot answer whether such a learned half scales, or whether it would build the order between classes.
+
+### 23.3b.1 The trial's two additions: the wholes half read on its complement, and whether the two-sided code replaces the Not (2026-11-19)
+
+Asked after §19.73 and §19.74. Commits `61f28d7ddf` and `f4db841959`, the same two test files; local, not pushed. Run here: 19 passed in 91 s. The implementer's text is below.
+
+**Review** (Claude).
+
+1. *The complement read is taken* (rule 54). It never does worse than reading the upper bound directly, and it removes what the direct read got wrong: a part's concept reads a form that holds it by accident at .21 where the direct read gave .999, and a whole's class no longer ranks its members below the rest (the two measures go from .25 and .49 to .45 and .54). Beside the against lane of the parts half it changes nothing on the lesson, since every lesson word has the same wholes.
+2. *The class of all characters is not a row in the source today.* The top is implied (`BasicPercepts.subspace_bounds` returns all ones with no whole). Round 3c makes it a row of the table of wholes that cuts nothing, with the eight classes directly inside it.
+3. *`Cat` and `cat` have one code in the wholes half,* since "capital" holds of a form only when it holds on every byte. Their parts halves differ. Noted, not changed.
+4. *The against lane of the wholes half* holds 19 coordinates for a lower-case word with the nine declared wholes (capital, and the six classes beside letter). It saturated only with the wholes made over bytes, which rule 56 no longer makes.
+5. *The two-sided code is not a replacement for Pi, Not, Sigma* (Alec's question, §19.74). Measured on the basic level's three tasks:
+   - It meets negative patterning and conditioned inhibition with no Not entry only when a conjunction's code is three coordinates of its own; then it cannot meet XOR in any way, and a conjunction's own concept reads its own reading at zero.
+   - With a conjunction's code as the source builds it (the greatest of its members' codes and a keyed draw, rule 5), XOR is met with no Not entry, and the other two need Not entries, as today.
+   - An exclusion that is not a strict whole (X inhibits A where no row AX exists) needs a learned Not either way.
+   So a conjunction keeps the code it has, the Not stays, and certificate 23 stays as it is, to be passed on the two-lane code.
+6. *Left for round 3c to settle* (*mine*): how a row that reads both for and against enters the combined vector. The trial moved its for code onto the against lane, which is what cancelled a conjunction's own coordinates. The implementer's suggestion, not run: it contributes its net, for less against, once.
+
+#### The implementer's text for the two additions
+
+**The wholes half as an upper bound, read on its complement**
+
+What was built (`code_trial.complement_code`, three tests `test_7_*`, all at 64+64 on the coder with a part or a whole in turn):
+- *For lane of the wholes half:* the coordinates a form's wholes cut away from all ones, read directly as `1 - w`. The class of all characters cuts none.
+- *Against lane of the wholes half:* the own coordinates of the wholes directly inside those that apply which do not apply.
+- *Parts half:* unsigned, or P6 (the parts a form's holders add, on the against lane).
+- *Column:* for less against, over its squared length.
+
+Combining a reading's wholes halves by the product is not exercised here, because every reading is of one percept. On a percept's own coordinates the product of `w` equals one less the union of the cuts.
+
+**1. The lesson.**
+
+At the export of `41a5bb4aed`, 7 rows were nominated in this run (`that` was not):
+
+| Code | Told apart | Ties | Others' mean before / after the squash |
+|---|---:|---:|---|
+| P2 unsigned | 6 of 7 | 1 | .917 / .724 |
+| Parts half only | 6 | 1 | .428 / .386 |
+| P6 signed | 7 | 0 | .784 / .651 |
+| **Complement, parts unsigned** | 6 | 1 | .839 / .683 |
+| **Complement, parts P6** | 7 | 0 | .784 / .651 |
+| Complement, the wholes half alone | 0 | 7 | 1.0 / .762 |
+
+At HEAD the lesson nominates 5 rows (`is`, `Felix`, `What`, `Ciao`, `Who`), and every code tells all 5 apart.
+
+- *The complement lowers others' readings,* from .92 to .84 with the parts unsigned.
+- *It does not separate anything P6 did not.* With P6's parts it is P6 to the third decimal. The wholes half alone ties on every lesson word, because they all have the same wholes (letter and word).
+
+**2. The sample's parthoods** (64+64, 2,312 true and 6,127 accidental; mean, with the count at one in brackets):
+
+| Code | Part reads whole: true | Accidental | Whole reads part: true | Accidental |
+|---|---:|---:|---:|---:|
+| P2 unsigned | 1.000 (2,312) | .999 | .62 | .45 |
+| P6 signed | .30 | .13 | .32 | .03 |
+| **Complement, parts unsigned** | .52 (417) | .21 | .45 | .19 |
+| **Complement, parts P6** | .29 | .13 | .31 | .03 |
+
+**3. The centroid** of the class under the made whole 55 (9 bytes, 469 forms):
+
+| Code | Parts / wholes share | Not common | Held AUC | Cosine AUC |
+|---|---|---:|---:|---:|
+| P2 unsigned | .34 / .66 | .27 | .25 | .49 |
+| P6 signed | .27 / .73 | .63 | .51 | .51 |
+| **Complement, parts unsigned** | .36 / .64 | .44 | .45 | .54 |
+| **Complement, parts P6** | .28 / .72 | .65 | .51 | .51 |
+
+A random class of 300 scores .50 on both AUCs. No declared whole differs across the dictionary sample: every word is lower-case letters and lies in letter and word, so a made whole is the only class under a whole there is. The complement moves the class from below non-members to level with them. Its members are still not nearer the centroid, because the against lane is saturated (5 below).
+
+**4. The nine declared wholes in this form:**
+
+| Whole | Bytes | Coordinates cut | Directly inside it |
+|---|---:|---:|---|
+| All characters (top) | 256 | 0 (all ones) | letter, word, digit, whitespace, punctuation, control, high byte, pad |
+| Letter | 52 | 6 (its own 3, and word's 3, since they have one byte set) | capital |
+| Word | 52 | 6 | capital |
+| Capital (inside letter) | 26 | 9 (its own, letter's and word's) | none |
+| Digit, whitespace, punctuation, control, high byte, pad | | 3 each | none |
+
+**The class of all characters is not a row in the source.**
+- *The property rows:* `_CANONICAL_PROPERTY_ROWS` (`bin/Spaces.py:18926`) has the nine rows above and no tenth.
+- *The sentinel:* `EVERYTHING = 101` (`bin/Layers.py:3668`) is a key-only sentinel of the relation lattice, never a property row.
+- *The implicit top:* `BasicPercepts.subspace_bounds` returns all ones when a percept has no whole, which is the top left implicit.
+- *So:* the class would be a new row. It cuts nothing, so it needs no coordinates. It is needed only as the parent whose children (digit, whitespace and the rest) go on the against lane.
+
+**5. What holds and what breaks.**
+- *Rule 5 holds on the for lane, by construction* (asserted): the wholes half, all ones less the cut, is at or below each of its wholes' codes and below the top.
+- *The against lane of a lower-case word* (`cat`, `is`) holds capital and the six classes under the top: control, digit, high byte, pad, punctuation and whitespace. That is 19 coordinates.
+- *A capitalised word (`Cat`, `What`) has the same against lane,* because capital must hold on every byte. In the wholes half `Cat` and `cat` are one code on both lanes.
+- *An all-capital word* (`CAT`) cuts 9 coordinates, and its against lane holds the six only (16 coordinates).
+- *A form of mixed classes* (`c4t`) cuts nothing, and has letter, word and the six on its against lane (22 coordinates).
+- **It breaks with made wholes.** Every whole made over letters lies directly inside letter, so every made whole that does not apply goes on every word's against lane. On the dictionary at 64 a word has 91.7 wholes on its against lane on average (84.7 of them made), covering 53.6 of 64 coordinates. Its for lane cuts 7.4. This is the same saturation as P6's wholes half.
+
+*Mine:* either restrict the against lane to declared siblings (kinds), or do not make wholes over bytes to tell words apart (as recommended under P4). With declared wholes only, the against lane is 16 to 22 coordinates and the same for every word of one kind.
+
+
+**Whether the two-sided code replaces the Not at the basic level**
+
+**What was built** (`code_trial.BasicLevel`, `test_8_*`; seed 1918762231). Certificate 23's basic level is rebuilt in the trial: base words of 3 ones in 24 coordinates, and nominated conjunction rows. A Sigma column starts at zero and is taught for 2,000 Adam steps.
+
+On the two-lane code:
+- *A row's against entries* are the conjunctions that hold it (its strict wholes in the part tower), joined by the union. Row A reads for 1 and against 1 on a reading that holds AB.
+- *A row's against code* is what those wholes add to it.
+- *The combined vector* takes each row's for code at its for value onto the for lane and its against code onto the against lane. At its against value it takes the two the other way round. A concept reads for less against.
+
+Two ways of saying "what AB adds to A" were tried:
+- **(d)** AB's code less A's code: B's coordinates and the keyed draw, as `BasicPercepts.code` builds a conjunction.
+- **(o)** 3 coordinates of AB's own, as a part has. It adds nothing of B's.
+
+A "Not entry" is a column weight below -.01. The untaught columns are rule 54's (for less against, over the squared length); their negative weights come from the against lane of the code, not from learning.
+
+| Task | Way | Met | Not entries | Readings |
+|---|---|---|---:|---|
+| Negative patterning (A 1, B 1, AB 0) | 1, as built, Not free | yes | 18 | A .99, B .99, AB 0 |
+| | 2d, untaught: concepts A / B / {A,B} | (A reads AB at -.004) | 8 / 7 / 14 | A's concept: A .76, B -.57, AB 0; B's concept: A -.75 |
+| | 3d, taught, weights ≥ 0 | **no** | 0 | all 0 |
+| | 4d, taught, Not free | yes | 13 | A .99, B .99, AB 0 |
+| | 2o, untaught: concepts A / B / {A,B} | {A,B}: **yes, untaught** | 6 / 3 / 6 | {A,B}: A .91, B .87, AB 0 |
+| | **3o, taught, weights ≥ 0** | **yes** | **0** | A 1.0, B 1.0, AB 0 |
+| | 4o, taught, Not free | yes | 6 | A 1.0, B 1.0, AB 0 |
+| Conditioned inhibition (A 1, AX 0, B 1; the row AX nominated) | 1, as built | yes | 18 | A 1.0, AX 0, B 1.0, X -.99 |
+| | 3d, weights ≥ 0 | no | 0 | all 0 |
+| | 4d, Not free | yes | 14 | X -1.0 |
+| | 2o, untaught {A,B} | yes, untaught | 6 | A .91, AX 0, B .87, X .32 |
+| | **3o, weights ≥ 0** | **yes** (but X alone reads 0, not below it) | **0** | A 1.0, AX 0, B 1.0, X 0 |
+| | 4o, Not free | yes | 6 | X .87 |
+| XOR of two perceived words (a row for each pair) | 1, as built | yes | 12 | .00, .98, .98, .00 |
+| | 2d, untaught | no | 0 | all about 0 |
+| | **3d, weights ≥ 0** | **yes** | **0** | .14, .77, .96, .18 |
+| | 4d, Not free | yes | 6 | .00, .96, .97, .00 |
+| | 2o / 3o / 4o | **no, in every way** | 0 | all 0 |
+| X inhibits A, no row AX | 1, as built | yes | 3 | X -1.0 |
+| | 3d, weights ≥ 0 | no | 0 | all 0 |
+| | 4d, Not free | yes | 18 | |
+| | **3o, weights ≥ 0** | **no** | 0 | A .5, AX .5 |
+| | 4o, Not free | yes | 6 | A 1.0, AX 0, X -1.0 |
+
+**What the two-sided code does without a Not entry.** It depends on what a strict whole is taken to add.
+- **Own coordinates (o).** Negative patterning and conditioned inhibition are met with no Not entry, taught under weights of zero or above. Patterning is even met untaught, by the concept with the two members A and B. A strict whole that has been nominated tells against its members, as Alec reads it.
+  - *The limit:* X alone then reads 0, not "expected absent" (below 0), as certificate 23 (b) has it.
+- **Coordinates of the other member (d).** The two tasks fail without a Not. A alone carries B's coordinates on its against lane, so "A is 1" and "B is 1" cannot both hold under weights of zero or above: every reading is 0.
+
+**XOR:** met with no Not entry under (d), at .14 / .77 / .96 / .18, as the source meets it today. It is not met under (o) in any way, even with a Not:
+- every reading holds a pair, so each member row reads both, for and against;
+- the members' against codes then cancel the pair's own coordinates, and every reading is 0.
+
+**The same cancellation is a defect in its own right.** A conjunction's own concept reads its own reading at 0 (the row "AB (its row)" in the test's output).
+
+**What cannot be met without a learned Not at all:** X inhibiting A where no row AX has been nominated. The exclusion is not a strict whole in the part tower, so nothing puts X on A's against lane. Taught under weights of zero or above, A and A-with-X both read .5. With a Not it is met, with 6 entries.
+
+**Answer to Alec.** The two-sided code does the Not's work for exclusions that are strict wholes in the part tower: a nominated AB or AX, coded with coordinates of its own. It does not replace the learned Not for an exclusion with no row, and as combined here it cannot do XOR.
+
+The combination is mine. It carries a member's against code whenever the member is present, and a row read against carries its for code onto the against lane. Rule 54's combination may differ. *Mine:* a row read both (for and against) should contribute its net (for less against) once, and not cancel the whole's own coordinates. That should keep both patterning and XOR, but I did not run it.
