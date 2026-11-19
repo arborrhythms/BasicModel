@@ -8720,6 +8720,20 @@ So on a line every set of parts and every whole is a stretch from the bottom of 
 
 So in two dimensions contracting the wholes keeps the shape and growing the parts does not: they are different operations, and between the lower bound and the upper bound there is a region that belongs to neither. The order is no longer a single line, so two regions need not lie one inside the other.
 
+### 19.79 Alec: one coordinate a byte is not needed (2026-11-19)
+
+On §23.3c's "a wholes half of 64 cannot keep a coordinate for each byte": "Is it necessary to keep one coordinate per byte? If each analysis is an analysis of previous analyses, then I would think a 64-dim subspace is sufficient (it does not need to be aligned with the euclidean basis)."
+
+**No, and it is not kept.** The sentence described the layout that goes: a property's code was the set of bytes it holds on, 256 coordinates, one a byte. In 64 each byte has three coordinates that it shares with other bytes, a class is the OR of its members, and the top is all ones (rule 52). The sentence meant only that the widths cannot be narrowed before the wholes are coded this way, so the two steps are built as one.
+
+**What 64 has been measured to hold.**
+
+- Seven classes of characters coded by OR: each class inside another is at or below it, and no other pair is so by accident (§19.75).
+- Wholes each cut from an earlier one, three coordinates a cut: no accident among 9, 18 among the 2,450 pairs of 50, 182 among the 39,800 pairs of 200 (§23.3b).
+- The limit found is a class of words taught by OR, which fills the 64 coordinates at about five words (§23.3b.2). That is a limit of the OR over whole words, not of the width for a chain of analyses.
+
+**On "not aligned with the euclidean basis"** (*Claude's note*). The code is not aligned with the bytes. It is still tied to its coordinates in one way: the part order is read coordinate by coordinate (a code is at or below another when it is so in every coordinate). A code learned through weights of zero or above keeps that order (§19.70); a rotation of the 64 coordinates would not. So a subspace that is not aligned with the coordinates at all needs the order stated another way, for example as a cone that the learned map carries with it. That belongs with the wholes driven by the concepts, which round 5 tries in tests (rule 57).
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
