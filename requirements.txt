@@ -13,5 +13,3 @@ pytest
 pytest-xdist
 executorch
 lxml
-pypandoc_binary
-typst
