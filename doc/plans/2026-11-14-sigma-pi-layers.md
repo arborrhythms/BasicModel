@@ -13240,3 +13240,243 @@ The first implementer's patch was applied and kept, with additions; nothing of i
   - On the dictionary the against lane of the wholes half is nearly the complement of its for lane (mean 33.9 of 64 against, 30.1 for). With the class codes this wide, "the wholes directly inside, which do not apply" covers nearly everything outside the bound. Steps 4 and 5 should know that the complement read and this lane carry almost the same thing.
 - **The class of all characters:** it is a row of the table of wholes, not of the WholeSpace codebook (rows are fixed at 9 in 12 configurations).
 - **Certificate 46** could also assert that a row given by other rows lies at or below each (§19.80). It is asserted here.
+
+### 23.3c.2 Round 3c, third pass: steps 4 and 5 (2026-11-19)
+
+Commits, local on `main`: `53002cf171`, `df96ccc58f`, `c2e55622fd`. The implementer's return is below.
+
+**Review** (Claude). Read: the return. Run here, the round's list with the files that name the widths and both gates (four processes, 367 s): **9 failed, 1,401 passed, 71 skipped.** The nine are the scalar and numeric cases of step 6. Both gates pass.
+
+*Accepted.*
+
+- The first Pi has against entries, the parts that a form's nearest holders add, joined by union and read from the set of parts found where the run lies. `archer` reads for 1 and against 0 on `archer`, and for 1 and against 1 on `archery` (certificate 47). A row has 3.72 entries on average and 35 at most, so the 16 a row allocated hold.
+- The wholes half's against lane is what its for lane cuts away, stored once.
+- A concept's column starts from what tells for its member (its parts, and what its upper bound cuts away) less what tells against it (what its holders add), over the squared length.
+- *A row that reads both enters the combined vector at its net,* for less against, once; a row read equally both adds nothing. The other form, the row's code on the against lane, is not taken. Not only does it cancel a conjunction's coordinates (§23.3b.1): the parts of `archer` are parts of `archery`, so putting the denied `archer` on the against lane of a reading of `archery` would take away `archery`'s own reading.
+- The two regressions of round 3 were both rule 20 at work and are ported: nothing exists at order zero in a first batch for an error to reach, and a word nominated a reading earlier already has its context when a later reading is staged.
+- Certificate 23 passes as it stands. The readers of containment read the for lane, unchanged.
+
+*One finding, for the next pass and for Alec.* A concept still reads a form that holds its own form nearly as high as its own:
+
+| The concept of | Read on | Before the squash |
+| --- | --- | ---: |
+| `archer` | `archer` | 1.0 |
+| `archer` | `archery`, which holds it | .937 |
+| `is` | `this`, which holds it | .765 |
+| `archer` | `reach`, which holds its parts and not the run | 1.0 |
+| a part, on the dictionary sample | a form that holds it as a run | .536 on average |
+| | a form that holds it by accident | .515 on average |
+
+The row of `archer` is denied on `archery` at the Pi, as rule 53 asks. The concept's reading is another matter: it reads the code of what is there, and `archery`'s code holds nearly all of `archer`'s. What tells against is the three coordinates of `y`, against some fifty that tell for. So the concept is still scored mostly by likeness. Alec asked for difference (§19.70) and for strong against (§19.71). *To be measured in the next pass* (*mine*): the against part of a column weighted so that the presence of all that tells against takes the reading to zero, and what that costs where the against coordinates are covered by accident.
+
+*Not settled by three runs:* whether the lesson's walks changed. Its starts are drawn from the system, and the time (16.8 to 22.7 s after, 15.3 to 19.8 s before) and the walks vary as much between runs as between the two sources.
+
+#### Return of the third pass
+
+Local commits on `main`, none pushed, each ending with the Co-Authored-By line:
+
+| Commit | What it holds |
+| --- | --- |
+| `53002cf171` | (a) the trial's two checks of its stand-in, at the parts half's 64 |
+| `df96ccc58f` | (b) the two round-3 regressions, traced and ported to rule 20 |
+| `c2e55622fd` | steps 4 and 5: the first Pi's against entries, the wholes half's against lane as the cut, the read pair, the combination at the net, certificates 47 and 48, the ports |
+
+No seed pinned, no skip or xfail added, the spec not edited.
+
+**(a) The trial's two tests**
+
+In `test/test_item17_code_trial.py`:
+- `test_the_stand_in_codes_as_word_identity_does`
+  - old: `RadixLayer(96)`, `WordIdentity(…, length_dim=32)`, forms compared at `[:96]`;
+  - new: `RadixLayer(64)`, `WordIdentity(store, pair_dim=64)`, `form(w) == parts_vector(w)[:64]`.
+- `test_3_the_lessons_concepts_under_each_layout`
+  - old: `stand_in == codes[:, :96]`;
+  - new: `parts_vector(f)[:64] == codes[:, :64]`.
+
+The stand-in as built keys forms on their parts alone, as `WordIdentity` does, so the same coder checks the source.
+
+One more edit to that file was forced by step 4, outside what (a) allowed. `test_5_scalar_collections` called `OrderZero.combine` with one code a row, at the old combination; step 4 changed that function. Its two calls now go through a local `_p5_combine`: the old formula, "each row's one code at its for value onto the for lane and at its against value onto the against lane". The trial's numbers are unchanged. `code_trial.py` is not edited.
+
+**(b) The two regressions**
+
+**`test_review14_contracts::test_sentence_reverse_reaches_native_prototypes_and_evidence`.**
+- **Cause:** rule 20 (round 3: no row on a first reading). I traced every parameter's gradient over consecutive training batches of `XOR_grammar.xml`. In the first batch no form is nominated (`basic_percepts.count` 0), so the reconstruction's error reaches only the symbol space's predictor. From the reading in which the forms are nominated it reaches:
+  - `perceptualSpace._owned_bases.what.W`, the native prototypes;
+  - the owner's `order_zero.weight`;
+  - `primitive_properties.members`;
+  - the idea stack.
+
+  The feature table's `values` are not read by a forward since round 3, so no gradient reaches them. That and rule 20 are the whole cause.
+- **Port:**
+  - old: one batch; any gradient on PS `W` or on any CS's `features.values`;
+  - new: the batch is run `concept_mint_count` times; `basic_percepts.count > 0`; in that last batch both the prototypes and the owner's `order_zero.weight` take a gradient.
+  - It asserts the owner's order-zero Sigma alone because the second conceptual space's Sigma takes none.
+
+**`test_review13_subspaces::test_actual_serial_code…`.**
+- **Cause:** rule 20 again.
+  - A grammar object's atom is its form plus its row's own context past the code's width (`Interpret.lexical_atoms`: "concept rows keep only their own meaning"), captured at staging.
+  - Before round 3 every row was made in the reading the test staged, so no context existed yet and the tail was zero.
+  - With nomination (the test reads its sentences until MTM nominates the forms), `hello` is nominated a reading earlier than `world` and `there`, since it occurs twice a reading. Its context exists at staging, so its atom carries it.
+- **Port:**
+  - old: `not atoms[...,136:].any()`;
+  - new: an object's atom tail is non-zero exactly for the rows whose context existed before the staged reading. The form block still equals the codebook's, and the codebook still carries the context.
+
+Both pass now.
+
+**Step 4: the first Pi (rule 53)**
+
+**`bin/OrderZero.py`, `PerceptPi`.**
+- A new `against` buffer marks the entries.
+- `append(keys, weight, against=())` writes the for entries, then the against entries, in the one compressed store; entries a row draw on the same allocation.
+- `forward` takes the product over for entries alone.
+- `opposed(memberships, rows, keys)` joins a row's against entries by the union, `1 - prod(1 - m)`.
+- `row_members` lists the for entries; `row_against` lists the against entries.
+
+**`bin/BasicPercepts.py`.**
+- `against_keys(row)`: a form row's against entries, `('ps', (atom row,))` for each part its nearest holders add. A conjunction and a value have none.
+- `reserve` writes them into the Pi.
+- `_refresh_pi()`: when the identity's words, added parts or revision change, any row whose against entries changed causes the Pi to be written again from the occurrences. A nearer holder admitted later, or a new part, changes a row's entries; asserted by `test_47_the_first_pi_is_written_again_when_a_nearer_holder_comes`. *Mine:* rewriting the whole Pi is simple and costs one pass over the rows.
+- `read`: the against keys join the keys read. `_row_values` reads them where the run lies, like the wholes, from the set of parts found in the span (`PartSpace.part_memberships`' identity path, never a code). Against = presence × (1 − Π(1 − wholes' against) × Π(1 − entries present)). `_row_lanes` (events) does the same through `PerceptPi.opposed`.
+
+**A conjunction row.**
+- It keeps the code rule 5 gives it.
+- Its members get no against entries from it: a conjunction is no stored form that holds a run, so rule 51's holders do not include it. The trial showed that giving a member its conjunction's coordinates against it breaks patterning without a Not (§23.3b.1, (d)).
+- A conjunction has no against entries of its own.
+- Its wholes half's against lane is the cut, like any row's.
+- A conjunction of value percepts is read as a value until step 6.
+- *Provisional.*
+
+**Entries a row, and whether 16 a row hold.** On the 19,821 words (`test_48_on_the_dictionary_and_the_lesson`):
+- against entries 0 / 0.72 / 32;
+- all entries a row (run, wholes, against) 3 / 3.72 / 35;
+- 44 rows above 16;
+- 73,701 entries in all against 317,392 allocated (16 a row).
+
+So the average holds by a wide margin, and no row needs the allocation rebalanced.
+
+**How a row read both enters the combined vector.**
+- Built: its net, for less against, once (`OrderZero.combine`; `read_word` the same way).
+- Each percept has a read pair: what tells for it (P) and what tells against it (N).
+  - At a net n > 0, P joins the for lane and N the against lane, at degree n.
+  - At n < 0 the reverse.
+  - A row read equally both adds nothing.
+- The trial's form put each row's for code on the for lane at its for value and on the against lane at its against value, which cancelled a conjunction's own coordinates.
+- Measured, both ways in `test_48_the_lessons_concepts_told_apart`, each nominated form read through the first Pi:
+  - net: 5 of 5 told apart;
+  - the trial's form: 5 of 5;
+  - 3 rows read both across the five readings.
+- Certificate 23 (a) to (c), `test_item17_order_zero`, passes as it stands. Its synthetic rows never read both, so the two forms agree there.
+- Net is taken: it is the trial implementer's own suggestion, and it cannot cancel a row's own coordinates. *Provisional.*
+
+**Certificate 47** (`test_item17_code.py`):
+- `archer` on `archer` reads [1, 0]; on `archery` [1, 1].
+- `is` on `this` and on `his` reads [1, 1]; on `is`, [1, 0].
+- A row with no holder never reads against from a part.
+- Any one of two entries is enough: `is` held by `his` and `isa` reads against on either.
+- The Pi is written again when a nearer holder comes.
+
+**Step 5: what a concept reads (rule 54)**
+
+**The wholes half's against lane is the cut**, one less its for lane (rule 52 as decided). `BasicPercepts.against` writes it so for every row but a value percept, and `against_codes` stores it. The lane from "the wholes directly inside" is gone. `PrimitiveProperties.directly_inside` stays as the table's own relation and is asserted in certificate 46; no reader in `bin/` calls it now.
+
+**The read pair** (`BasicPercepts.read_pair`, `read_codes`, `read_vector`).
+- P is the parts half's for lane joined to the wholes half's cut. N is the parts half's against lane joined to nothing.
+- So the parts half is joined over a reading by the union and read directly. The wholes half is read on its complement, and the union of the cuts is one less the product of the bounds, which is rule 54's product.
+- A column starts as `read_vector = P - N` over its squared length (`ConceptualSpace._start_order_zero_column`).
+- The readers moved to the pairs:
+  - `ConceptualSpace.order_zero_input`;
+  - `order_zero_reading` (now `[column | P | N]`);
+  - `OrderZero.read_word`;
+  - `NumericPercepts.read`.
+- **Value percepts** keep (for lane, nothing) until step 6's sorted table (`value_rows`). Otherwise their mostly empty wholes half would be read as cut everywhere. *Provisional, for step 6.*
+
+**The readers of containment read the for lane alone, unchanged:**
+- `FormContainment.audit` reads `basic.code` (the for lane) and `whole_codes`.
+- `ConceptualMatch.match` reads codebook rows derived from the for lane through `MereologicalCodes`.
+- The lookup: `RadixLayer.lookup_with_id` and `WordIdentity.row_for_form` read the parts half's key; `PartSpace.part_memberships` reads sets of parts.
+- `BasicPercepts.collection_code`, `read_points` and `subspace_bounds` read the for lane.
+
+**Certificate 48** (`test_item17_code.py`). `archer` reads its own row at 1.0 before the squash (tanh(1) after), and `is` reads its own at 1.0. Readings below its own:
+
+| Concept on | Reads (before the squash) |
+| --- | ---: |
+| `archery` (a holder) | .937 |
+| `this` (a holder of `is`) | .765 |
+| `reach` (holds every part of `archer`, not as a run; their parts sets are told apart by a part `reach` alone holds) | 1.0 |
+
+On the dictionary sample (every 40th word read alone against all), what a part's concept reads before the squash:
+
+| Pairs | Count | Mean reading |
+| --- | ---: | ---: |
+| holds it as a run | 852 | .536 |
+| holds its parts, not the run | 1,459 | .476 |
+| holds it by accident (by code only) | 5,937 | .515 |
+
+- The trial measured .30 and .13 with the parts half's against lane alone, and .76 and .62 with the complement alone.
+- Together here, the cut, which is about half of a code, dominates; the against entries take off what a nearest holder adds.
+- An accident reads below a true holder, but only just. A form holding the parts without the run reads lowest.
+
+**The lesson's told-apart count:** 5 of 5 nominated (`is`, `Felix`, `What`, `Ciao`, `Who`) under the net and under the trial's form. At this source the lesson nominates these five; the trial's 7 of 8 and 8 of 8 were on an export with eight.
+
+**Ports (old → new)**
+
+| File | Test | Old | New |
+| --- | --- | --- | --- |
+| `test_item17_order_zero` | `test_the_combined_vector_is_one_less_the_product_of_the_gaps` | `1 - prod (1-c)^b` per lane, one code | read pairs at the net, computed in the test; a percept at zero and a percept read equally both change nothing |
+| `test_item17_order_zero` | place and time; new percept; way back; weights after teaching; gradient; certificate 23 (a) to (c) | `combine(presence, codes)` | `combine(presence, _pairs(codes))`, nothing against; values unchanged |
+| `test_item17_order_zero` | `test_how_many_concepts_are_told_apart` | `basic.codes[rows]` | `basic.read_codes(rows)` |
+| `test_item17_order_zero` | `test_a_word_reads_its_column…` (3 calls) | reading `[column, code]` | `[column, code, 0]` |
+| `test_item17_order_zero` | `test_square_a_new_concept_reads_only_its_own_row` | column = `code/|code|²` | column = `read_vector/|read_vector|²`; own row reads 1 by `read_codes` |
+| `basic_fixtures` | `order_zero_expected` | each code on each lane at `b` | the read pairs at the net |
+| `basic_fixtures` | `with_property_half` | a whole's code is a pattern of 2 ones in 8 | the whole's code cuts that pattern from all ones, so its cut is the old pattern. Without it, `test_refine_raise::test_learned_particular…` read .51 to .65 against .70 to .87 and failed 2 of 96; after, .65 to .84 and 0 of 72 |
+| `test_item18_producer_repair` | `test_02` | `code @ column` from `basic.codes` | `(P - N) @ column` from `read_codes` |
+| `test_word_admission` | `test_29` | `1 - exp(presence @ log(1 - codes))` | `combine(presence, read_codes(...))` |
+| `test_live_concepts_from_percepts` | two `read_word` fixtures | reading `[column, code]`; random 6 + 2 | `[column, code, 0]`; random 6 + 2·2 |
+| `test_item17_code` | certificate 46 | wholes against = the codes of the wholes directly inside | wholes against = 1 − for, for every word |
+| `test_item17_code_trial` | test 0, test 3 (a); test 5 | as above | as above |
+| `test_review14_contracts`, `test_review13_subspaces` | (b) | as above | as above |
+
+**Choices**
+
+1. The net combination, provisional.
+2. A conjunction's members get no against entries from it, and a conjunction has none of its own; provisional.
+3. The Pi is written again whole when any row's against entries change, provisional.
+4. Value percepts, and conjunctions of values, are read by their for lane until step 6; provisional.
+5. `with_property_half`'s wholes are upper bounds; provisional, a fixture port.
+6. Against entries are read where the run lies, as rule 6 reads the wholes, so a holder's added part elsewhere in a sentence does not count; provisional.
+
+**The lesson's sixteen sentences**
+
+Six runs, three at the source before steps 4 and 5 (by stash) and three after; two of each ran two processes at a time:
+
+| Runs | Seconds of the record |
+| --- | --- |
+| before | 15.9 (alone), 15.3, 19.8 |
+| after | 22.7 (alone), 16.8, 17.7 |
+
+The previous pass measured 19.8.
+
+**The walks.**
+- They differ from run to run at either source: the starts are drawn from the system.
+- No difference shows that holds across runs:
+  - batches whose memory's link-coverage cost is non-zero: before 3, 0 and 13 of 16; after 1, 3 and 0;
+  - walks that reach the 32-step limit: before 13, 3 and 2; after 4, 3 and 15.
+- So the read by difference changes no walk I can tell from three runs.
+- A seeded comparison would need a seed fixed for the purpose, which the standing rules forbid.
+
+**Counts**
+
+The list is unchanged from the last pass, `test_review13_subspaces` and `test_review14_contracts` included, and run with `-n 4 --dist loadfile`. The run before the last commit (identical source; tests differing only in certificate 46's restated assertion) gave **10 failed, 1,436 passed, 71 skipped, 1 xpassed, 379 s.**
+- The nine scalar and numeric cases.
+- `test_refine_raise::test_learned_particular…[1]`, repaired since by the fixture port above.
+
+The final run after the last commit is below.
+
+**Final run, at `c2e55622fd`:** **9 failed, 1,437 passed, 71 skipped, 1 xpassed, 385 s.**
+- The 9 are the scalar and numeric cases of step 6:
+  - `test_item18_perceptual_scalar` 4;
+  - `test_item18_scalar` 3;
+  - `test_item18_places::test_66`;
+  - `test_item18_stack::test_80`.
+- Both stopping gates pass: `test_mm_xor::TestMMXorConvergence::test_convergence` and `test_item25_completion::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+- `test_review13_subspaces`, `test_review14_contracts` and `test_item17_code_trial` pass whole.
