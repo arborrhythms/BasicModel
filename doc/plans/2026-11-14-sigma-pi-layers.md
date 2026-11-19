@@ -8602,6 +8602,22 @@ His answers to §19.70.
 2. On the property (+1 where it applies, -1 where it is witnessed not to, 0 where nothing is known): "the property is correct, but we might also have a continuous application (e.g the distance between the values for a ratio scale)." So a property's value on a lane may be any degree from 0 to 1, not only 0 or 1.
 3. On whether zero means "not known": "we are on a positive unit hypercube with two lanes; evidence for and evidence against. When I am talking about a negative number in the perceptual context, that is just a shorthand for positive evidence against." *Decided.* The code stays within 0 to 1 on each of two lanes. His -1 is 1 on the against lane. Zero on both lanes is no evidence. "All zeros for nothing and all ones for everything" (§19.68) stands on each lane, and §19.70's reading of the signed code as two lanes is his.
 
+### 19.72 Alec: each half bounds on both sides (2026-11-19)
+
+"I'm excited about using parts as negative upper bounds also, and wholes as negative lower bounds. Hopefully that makes sense to you as a balanced methodology?"
+
+It does, and it is what rules 50 to 53 build. Each half bounds the percept on both sides, one side on each lane:
+
+| Half | For lane | Against lane |
+| --- | --- | --- |
+| Parts | the lower bound: the parts it has (`a r c h e` for `archer`) | the upper bound, as evidence against: the parts that a form holding it adds (`y`, `s`) |
+| Wholes | the upper bound: the wholes it lies in ("letter" for `felix`) | the lower bound, as evidence against: the narrower wholes it does not lie in ("capital") |
+| A value (2 in a table of 1, 2, 4) | the values at or below it (1, 2) | the values above it (4) |
+
+*Taken from it* (*mine*, for the bounds that rules 51 and 52 left to be measured): the against lane holds the nearest bound on its side and not every one. In the parts half that is what the nearest holders add; in the wholes half it is the wholes directly inside those that apply and that do not apply. This gives the wholes half the bound that §23.3b found it needs (over every whole the lane fills 55.6 of 64 coordinates), in place of "wholes of the same kind".
+
+*Settled by §19.71 with it:* a percept with no whole has nothing on either lane of its wholes half, since zero on both lanes is no evidence. Rule 5's "at or below each whole's" is now the for lane's upper bound: the percept holds the coordinates of each whole it lies in.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9471,9 +9487,11 @@ chooses from. The old classes are not edited.
     the form's parts (rule 43). Against: the coordinates that the
     forms holding it add, a holder being a stored form that holds it
     as a run (the `y` of `archery` for `archer`). Where a coordinate
-    would be both, for stands. *Mine:* which holders count is
-    bounded, since a short form is held by hundreds of words; the
-    bound is measured in the build.
+    would be both, for stands. This is the part table used as an
+    upper bound, by evidence against (Alec, §19.72: "parts as
+    negative upper bounds"). *Mine:* the holders that count are the
+    nearest, since a short form is held by hundreds of words; how
+    near is measured in the build.
 52. *The wholes half is a code of rows of the table of wholes*
     (Alec, §19.70: "we should be storing it as a codebook. Starting
     from the set of all values, we discriminate at some boundary";
@@ -9483,12 +9501,14 @@ chooses from. The old classes are not edited.
     never holds the bytes. *Mine:* each row has three coordinates of
     its own, drawn as a part's are, and a whole inside another
     carries the other's. For: the coordinates of the wholes that
-    apply. Against: the coordinates of the wholes witnessed not to
-    apply, *mine:* among wholes of the same kind as those that apply
-    (over every whole the lane fills 55.6 of 64). A property that is
-    itself a degree holds that degree (Alec, §19.71). *Open, put to
-    Alec:* with no whole the half is all zeros, where rule 5 has a
-    code "at or below each whole's" and round 3 built all ones.
+    apply, the upper bound. Against: the lower bound, as evidence
+    against (Alec, §19.72: "wholes as negative lower bounds"), the
+    coordinates of the narrower wholes it does not lie in; *mine:*
+    those directly inside the wholes that apply (over every whole
+    the lane fills 55.6 of 64). A property that is itself a degree
+    holds that degree (Alec, §19.71). With no whole the half has
+    nothing on either lane (§19.71: zero on both lanes is no
+    evidence); round 3 built all ones.
 53. *The Pi selects for and against* (Alec, §19.71: "Pi should select
     both strong for and strong against"). A row of the first Pi has
     for entries, its parts and wholes as now, and against entries,
@@ -9866,7 +9886,8 @@ section:
 3. *Which row "words" is* (rule 35; §19.29). Built as one declared
    concept.
 4. *What becomes of the 32 coordinates of the length block* (rule
-   43). They stay empty.
+   43). *Closed by Alec (§19.70):* the block goes; the code is 64 and
+   64 (rule 50).
 5. *After a look that interprets nothing, and looks that are not the
    next word* (rule 38; §19.61). Built: the request moves because the
    state of STM and the bank's activity moved; a look that changes
@@ -9882,8 +9903,10 @@ section:
 9. *Whether `data/shamatha.grammar` keeps its `not` rule* (§19.15).
    It is kept.
 10. *Whether the basic level's against lane is fed by perceived
-    opposites* (1.8 §57.6) as well as by omissions. It keeps what
-    perception gives.
+    opposites* (1.8 §57.6) as well as by omissions. *Closed by Alec
+    (§19.71, §19.72):* it is fed by what is perceived, the parts that
+    a holder adds and the narrower wholes that do not apply (rules 51
+    to 53).
 11. *What becomes of the attention walk's own pair* once the one
     Sigma's value is the pair (§19.24). It goes with the fold that
     reads it.
@@ -10395,13 +10418,14 @@ integers).
    data/BasicModel.ckpt and of the tests that load it.
 3. Two lanes (rules 50 to 52): a percept's code is a for vector and
    an against vector. Parts half: for as rule 43 has it; against
-   from the parts that the form's holders add, the holders bounded
-   (measure the bound: the trial found 0 to 235 against entries a
+   from the parts that the form's nearest holders add (§19.72;
+   measure how near: the trial found 0 to 235 against entries a
    row, mean 2.95, and 4,869 rows above the first Pi's 16 entries a
    row). Wholes half: each whole a row of the table of wholes with
    three coordinates of its own, a whole inside another carrying
    the other's; for where it applies, against where it is witnessed
-   not to apply, among wholes of its kind. The bytes a property
+   not to apply, among the wholes directly inside those that apply
+   (§19.72). The bytes a property
    holds on stay in PrimitiveProperties.members and decide which
    wholes a form has; PrimitiveProperties.codes and the codebook
    rows written from it at begin_forward give way to the rows'
