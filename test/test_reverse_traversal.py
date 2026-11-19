@@ -53,7 +53,10 @@ def test_free_walk_reports_missing_leaves_without_underflow(tmp_path, monkeypatc
     from reading_fixtures import read_in_source_order
     read_in_source_order(m, monkeypatch)
     try:
-        out = _run(m, ["12 plus 1", "3 plus 4"])
+        # Staged inside the sentence, as runBatch stages it: a read with no
+        # sentence admits no word (1.8 §68.89).
+        with m._sentence_run():
+            out = _run(m, ["12 plus 1", "3 plus 4"])
         assert len(out) == 21
         active = m.inputSpace._word_active_mask
         assert tuple(m._recon_ideas.shape) == (*active.shape, int(m.conceptualSpace.stm.concept_dim))
@@ -131,7 +134,9 @@ def test_reconstruction_uses_held_word_support_after_attention_changes(tmp_path,
     from reading_fixtures import read_in_source_order
     read_in_source_order(m, monkeypatch)
     try:
-        _run(m, ["12 plus 1"])
+        # Staged inside the sentence, as runBatch stages it (1.8 §68.89).
+        with m._sentence_run():
+            _run(m, ["12 plus 1"])
         record = next(iter(m._sentence_understandings.values()))
         def recover():
             return m._reconstruct_sentences(record.root, record.word_values,
