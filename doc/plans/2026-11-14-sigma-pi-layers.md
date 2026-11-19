@@ -5722,7 +5722,9 @@ said so.
 
 ### 19.35 How the request meets attention (Claude's reading, for discussion; Alec, 2026-11-18: "I don't know how this would integrate with attention")
 
-Nothing here is decided. It is what the source suggests.
+Nothing here is decided. It is what the source suggests. *It answers
+for attention as brackets; he meant attention as the filter that dims
+what is outside its area, which is §19.36.*
 
 **Attention already holds the mask** (read at `bfd2c606a3`). Inside
 `Attention.narrow_step` a bracket is `covered`: for each word of the
@@ -5783,3 +5785,71 @@ do not share a teacher.
 - If a look only lowers what was not asked for (§19.33), "one token"
   is no longer a count, and the test becomes graded, as the test for
   one lane already has to (1.8 §68.81).
+
+### 19.36 With attention as the filter that dims what is outside its area (Claude's reading, for discussion)
+
+Alec, 2026-11-18, correcting §19.35: "Sorry, with attention as the
+filter that we talked about before that dims out-of-area content."
+§19.35 answered for attention as brackets. This section answers for
+the filter.
+
+**The filter in the record.**
+
+- `doc/Architecture.md`: "Attention is a mask over `.where`" (Alec,
+  2026-10-07).
+- `doc/Spaces.md`: "conceptual pass-back scales attention with a
+  strictly positive floor; it cannot hide novel content."
+- `Models._passback_scope_ps` (§19.33): a part's activity is scaled by
+  one half plus one half of its strength, and the strength is zero
+  outside `_passback_scope_where`. "Attention changes salience, never
+  visibility."
+- `architecture.attentionFloor`, 0.1, is still read and checked and is
+  used by nothing since the loop of looks.
+- The priming surface (`doc/Architecture.md`): "desire boosts, hate
+  suppresses with floor 0 - suppression, never a veto".
+
+**The integration: one activity, two factors, each with a floor.** For
+each event of the sentence's percept tensor, the activity the Pi
+matches through is its own activity, times a place factor (one inside
+the look's area, the floor outside), times a request factor (one for a
+kind asked for, the floor for the rest). Nothing reaches zero.
+
+*On "red cat sleeps"*, looking at `cat`, words asked for, a floor of
+0.1: `cat` is matched at 1, `red` and `sleeps` at 0.1, and the two
+spaces at 0.01.
+
+**What follows from it.**
+
+1. *The factor is applied once to a token's reading, on both lanes.*
+   Inside the conjunction of a word's parts a floor of 0.1 on each of
+   five letters would give 0.00001, and on the against lane it would
+   read as denial. Dimmed means less present on both lanes, never
+   denied (§19.34, condition 1).
+2. *The exact tests cannot read a dimmed field.* They count any value
+   above zero (`narrowing_view`), which is how "Felix" at 0.0002
+   against came to count as two lanes (1.8 §68.81). In a dimmed field
+   every look holds every word at the floor, so every look would be
+   "several words". Two ways:
+   - *Two readings of the one activity (recommended for as long as the
+     tests are exact).* The Pi, the surprise and the priming read the
+     dimmed field, so a new thing outside the area is still seen and
+     can draw attention. The tests for a word and for one lane read
+     only what is at full strength, as the bracket gives them today.
+   - *Graded tests.* One reading, and "one word" and "one lane" become
+     matters of degree. This is the question carried to this item from
+     1.8 §68.81.
+3. *Dimming is the easy way to teach the place.* He deferred learning
+   `.where` by gradient "unless you see a way to do that easily".
+   Under a hard mask an event outside the area does not reach the cost,
+   so the cost says nothing about whether it should have been inside.
+   With a positive floor it reaches the cost in proportion to the
+   floor, and each event's place factor has a gradient. What takes that
+   gradient, and how it lives beside the discrete acts of `attend`, is
+   not designed.
+4. *The floor has a parameter.* `attentionFloor` would mean again what
+   its name says. Whether the request's floor is the same number is not
+   decided.
+
+*What of §19.35 stands:* attention supplies the place and conceptual
+space the request; attention's tests are taken on what comes back at
+full strength (point 2, first way).
