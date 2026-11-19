@@ -8669,6 +8669,22 @@ Two limits, measured.
 
 **On 3.** So it does: a character class is the OR of the characters taught to it, and "letter", "digit" and "capital" need not be declared with their bytes.
 
+### 19.76 Alec: the code in one sentence (2026-11-19)
+
+"This feels good: parts build bottom-up with zeros as a min, and wholes build top-down with ones as a max. This coincides with parts building using max/sums, and wholes building using min/products."
+
+This is rules 50 to 54 as they stand, and it is their statement:
+
+| | Parts half | Wholes half |
+| --- | --- | --- |
+| Starts at | all zeros, the bottom | all ones, the top |
+| Built | upward, from its parts | downward, from its wholes |
+| A percept's code | the greatest of its parts' codes (`BasicPercepts.subspace_bounds`) | the least of its wholes' codes |
+| Over the percepts of one reading (rule 7, rule 54) | the union, `1 - Π(1 - v)`, the sum of the product logic | the product, `Π w` |
+| Is a | lower bound | upper bound |
+
+The greatest and the least are used for a code, which is a bound. The union and the product are used where percepts are present by degree and are joined in a reading. On values of 0 and 1 the two pairs agree.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
