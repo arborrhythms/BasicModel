@@ -8844,9 +8844,18 @@ chooses from. The old classes are not edited.
    order zero.
 
 8b. *A concept made at order zero starts from its members* (*mine*):
-   a new column of $U$, the sum of its members' vectors, normalized,
-   which the network then learns; under rule 21 a new concept has one
-   member, its own row. What promotion, `PerceptCollections.collect`
+   a new column of $U$, the sum over its members of each member's
+   vector divided by that vector's squared length,
+   $u = \sum_k v_k / |v_k|^2$ (a Not member subtracted), which the
+   network then learns; under rule 21 a new concept has one member,
+   its own row. So a concept reads each of its members at one or
+   more before the squash, and another reading by the share of a
+   member's vector that the reading holds. A member that joins later
+   is added to the column in the same way, and nothing is normalized
+   afterwards. (Until §23.3.1 this
+   said "normalized". At unit length a row of 60 ones reads 7.7
+   before the squash, and the eight word concepts of the lesson each
+   read every word at .9999986 and more.) What promotion, `PerceptCollections.collect`
    and the lessons write today (an edge in the feature matrix,
    `add_concept_feature`) becomes such a column. The Pi of order zero
    holds only the mereology's entries, a percept over its parts and
@@ -8930,7 +8939,11 @@ chooses from. The old classes are not edited.
     only when MTM nominates it on recurrence (`concept_mint_count`);
     nothing becomes a row on its first reading. *Mine:* the tower of
     parts and wholes below the basic percepts is perception and is
-    made on first sight, as now. This replaces the basic percept
+    made on first sight, as now. *Mine (§23.3.1):* for the count, a
+    reading is one sentence of one stream, so a form that stands
+    twice in a sentence is read once; and there is one count, kept by
+    MTM under the form, that every reader of the form adds to. This
+    replaces the basic percept
     reserved at a word's first reading (`BasicPercepts.reserve` in
     the word loop of `bin/Models.py`), the lessons' declared
     admission (`Corpus.admit_training_forms`,
@@ -8960,7 +8973,8 @@ chooses from. The old classes are not edited.
     concept, so every order's Sigma is square: as many concepts as
     inputs, with no halving between orders. A concept starts reading
     only its own row, at one; at order zero that is the column of $U$
-    given by the row's own vector, normalized. Concepts have no
+    given by the row's own vector divided by its squared length
+    (*mine*, rule 8b). Concepts have no
     nomination or promotion of their own: MTM's promotions of
     classes, identities and percept collections become nominations of
     rows. The one writer of a concept's further inputs stays: a kept
@@ -10128,6 +10142,15 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    structure of a meta concept is never thinned.
 8. Certificates 4, 6, 13, 18 and 23 (d) in a new
    test/test_item17_symbols.py.
+9. Carried from the review of round 3 (§23.3.1): the feature table
+   of order zero (store.features of the order-zero store) goes. No
+   forward reads its weights since round 3, yet they are still a
+   parameter with a penalty and an optimizer group. What it still
+   records, the percepts a concept was started from, is kept as a
+   plain record with the allocator and saved with it. Its readers
+   (_bind_attended_concepts, cs_percept_attribution,
+   PerceptCollections.definitions, concept_of_basic_percept,
+   concept_percepts, add_concept_feature) read and write the record.
 
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences before
@@ -10230,8 +10253,10 @@ which form of the where match is built.
    option at a look and interpretBias stay (interpret_at_look). Say
    what becomes of FocusLayer, UnfocusLayer and attention_operations,
    and of the grammar files that declare them.
-6. The node "words" (rule 35), declared in round 3 with its Not
-   entry on the space, is what the request starts at.
+6. The node "words" (rule 35), declared in round 3, is what the
+   request starts at. Its Not entry on the space is built here
+   (round 3 did not build it, there being no concept of the space;
+   §23.3.1): say where the entry lives, and build it there.
 7. One gain field (rule 40): Expectation.gain_field takes the
    look's activity as its attention and the look's forecast as its
    expected. LookForecast.difference goes.
@@ -10936,3 +10961,42 @@ Also: the first Pi equals a `PiLayer3` row on its members; its storage does not 
 **What I would change in §21.** Rule 8b should say whether a column started from its row is to be scaled so that `tanh` does not saturate (for example to the unit length of the read, not of the code). Rule 20 should say what a reading is for counting (a sentence, or an occurrence). Rule 35 should say at which order "words" sits and where its Not entry on the space lives before the space has a concept.
 
 **For Alec.** (1) The saturation above, which decides whether order-zero concepts can be told apart in the model. (2) Whether the feature table may stay as the record of a concept's starting members (choice 4). (3) A conjunction with a member on its against lane has no row at order zero (choice 6).
+
+### 23.3.1 Review of round 3 (Claude, 2026-11-19)
+
+Read against the source: the round's four commits (`e9f72750b5`, `c9afb238e7`, `750dc484bd`, `eb434a94d0`), all of `bin/OrderZero.py`, the diffs of `bin/BasicPercepts.py`, `bin/Interpret.py`, `bin/Memory.py`, `bin/Corpus.py`, `bin/ConceptLessons.py`, `bin/FamiliarTier.py`, `bin/NumericPercepts.py` and `bin/Models.py`, the new functions of `bin/Spaces.py`, and a sample of the ported tests. Run here: the certificates, both stopping gates, the fixture of the sixteen sentences repeated, and one measurement of my own.
+
+**Not accepted whole. Round 4 does not go until the round is finished** (the list below, returned as §23.3.2). What is built is to rules 6, 7, 19, 20 and 21 as far as I read it, the certificates pass, and both gates pass (2 passed, 3.4 s).
+
+**To be finished or repaired in this round.**
+
+1. *Step 7 is not finished.* 115 cases in 49 files fail, against 1 in the same files before the round. A round leaves the files that name what it changed passing.
+2. *The fixture of the sixteen sentences now fails some of the time,* with "all constructed sentence trials are still retained" (`SentenceStrata.capture`, reached from `_capture_reading_programs` at a sentence's close). Counted over builds of the fixture: 2 failures in 10 on the round's source (one in `test_item17_order_zero.py`, one in `test_item17_stacks.py`); 0 in 10 on an export of `8b8a2fcf48`. So it is the round's. A trial is released when its tree is collected (`_leases` holds a weak reference), so something in the round keeps a sentence's trees until the collector happens to run. In the failing run the reading had found no word (rows all -1), which the first sentences now do, since no word is nominated before its third reading.
+3. *The start of a column* (rule 8b, changed here; it was mine). Built as the row's vector at unit length. Measured on the lesson's eight nominated rows (`BASICMODEL_DEVICE=cpu`, the fixture's model; width 352, of which 96 identity and 256 property):
+
+   | Column | Own row | Another row, greatest | Another row, mean | Read highest by its own concept |
+   | --- | --- | --- | --- | --- |
+   | unit length (built) | .9999994 to .9999998 | .9999997 | .9999986 | 8 of 8, in the seventh decimal |
+   | divided by its squared length | .7616 | .7616 | .7223 | 6 of 8 |
+   | the same, on the identity half alone | .7616 | .7616 | .4069 | 7 of 8 |
+   | the dual basis (each row read at one, every other at zero) | .7616 | 0 | 0 | 8 of 8 |
+
+   A code has 57 to 65 ones, so at unit length its own row reads 7.5 to 8.1 before the squash. Rule 21 says a concept starts reading its own row at one; rule 8b now says the column is each member's vector divided by its squared length, summed. Then another row reads by the share of the member's vector that it holds, which is the parthood of the one form in the other (a form whose parts are all in another reads one, as `is` in `this`). The dual basis is not taken: it tells the rows apart only while there are no more rows than the width, it changes the older columns whenever a row is added, and it would make `cat`'s concept read `cats` at zero once `cats` has a row.
+4. *Why another row still reads .72:* in the lesson every one of the eight codes has the same 52 ones in its property half, and 5 to 13 ones in its identity half. The property half is the same in every word and is most of each code. Put to Alec below; nothing is built for it.
+5. *Two counts of readings.* `present_native_forms` counts a lesson's forms under its own key (`'lesson form'`) with readings it makes itself, apart from the count that `lookup_word` keeps under `('form', form)`. Rule 20 (amended here) has one count under the form. The lesson reads its forms by the path a reading takes.
+6. *A reader that names no reading:* `Spaces.py:14211` calls `lookup_word` with no `reading`, which `nominates` counts as a new reading at every call. In `bin/` every caller names its reading.
+7. *The widths of a reading's place and time are written as 4 and 4* (`ORDER_ZERO_WHERE`, `ORDER_ZERO_WHEN`) beside the registry and the encoding that give them. They are read from those.
+
+**Accepted as built** (the writer's choices 1, 2, 3, 7, 8 and 11 of §23.3). The first Pi's storage and its column index are rule 19's. The keyed draw of a conjunction's code is rule 5's. No seed is pinned for an assertion and no skip is added: the starts of the learning certificates and of the stacks are drawn from the system and printed. Step 8 is done (the stacks here: depth on drawn starts as returned; and, or and not 10 of 10).
+
+**Carried.**
+
+- Round 4, step 9: the feature table of order zero goes (choice 4). Its weights are still a parameter with a penalty and an optimizer group, and no forward reads them.
+- Round 6, step 6: the Not entry of "words" on the space (choice 9).
+- A conjunction with a member on its against lane gets no row (choice 6). This is as rule 29 has it: a row of the Pi does not cross lanes, and Not is the Sigma's. Its concept is left with a column at zero, which can learn. Nothing more is built unless it is observed to matter.
+
+**For Alec.**
+
+1. *A property seen both true and false now reads zero at its concept,* as a property never seen does. This follows from rule 3 (a concept is one signed number; §19.24's numbers), and the largest group of the unported tests asserts the old `[1, 1]`. The two cases still differ below the concept, in the two lanes of the combined vector. The tests are restated so unless he says that both must stay readable at the concept.
+2. *The property half of a code is the same in every word of the lesson* (finding 4). Whether the concepts of order zero should read it at their start, or only the identity half.
+3. Still open from round 1: whether the part block takes the 32 empty coordinates (120 of 19,821 words share a row of 64).
