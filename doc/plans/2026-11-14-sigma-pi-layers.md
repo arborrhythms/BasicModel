@@ -8781,7 +8781,7 @@ Asked by him: "We currently have concepts square on 1/2 the percepts?" Yes, in r
 
 **The two channels** (*his; Claude's reading of it, to be confirmed*). Rule 3 has a concept read one combined input, for less against, so the two channels are joined by a fixed subtraction before the Sigma. He says they need not be: the Sigma can take the for channel and the against channel as two inputs with weights of their own, and what a concept does with them is learned. A concept for presence weighs the for channel; a concept for absence weighs the against channel; a concept that weighs them equally and oppositely is the one rule 3 has now. So the fixed subtraction becomes the start of two sets of weights (the against weights begun as the for weights negated), and the gradient moves them apart where it needs to.
 
-*Not said by him, and put to him:* whether a concept's own value stays one signed number (rule 3, his §19.24), with only its inputs' weights set free, or whether a concept too may give two channels. Built on the first unless he says otherwise.
+*Put to him:* whether a concept's own value stays one signed number (rule 3, his §19.24), with only its inputs' weights set free, or whether a concept too may give two channels. **His answer:** "The concept remains a signed fuzzy keen on certainty, but we can represent "both" with two concepts." *Decided.* A concept stays one signed value whose size is its certainty. Both is not a state of one concept: it is two concepts, one for presence and one for absence, each with its own value.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
@@ -9811,9 +9811,11 @@ chooses from. The old classes are not edited.
     weights start, the against weights the for weights negated. A
     concept for presence, a concept for absence and a concept of
     their difference are then three settings of one read, and the
-    gradient chooses. *Mine:* a concept's own value stays one signed
-    number, as rule 3 has it. *Open, put to Alec:* whether a concept
-    too may give two channels.
+    gradient chooses. A concept's own value stays one signed number
+    whose size is its certainty, and both is given by two concepts,
+    one for presence and one for absence (Alec, §19.83: "The concept
+    remains a signed fuzzy keen on certainty, but we can represent
+    "both" with two concepts").
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -9840,7 +9842,8 @@ certificate is recorded and not repaired (1.8 §43); those are marked
    Both stands across the basic percepts of one reading, one row
    carrying the property for and another against, which is the two
    lanes of the reading's combined vector; a single row is for or
-   against (rule 6, §23.3.5).
+   against (rule 6, §23.3.5). Above the percepts both is two
+   concepts, one for presence and one for absence (rule 59).
 4. *The cycle:* the next Sigma reads one combined input, for less
    against, for each symbol; no symbol is made at a concept's
    allocation; a promotion is the nomination of a row, which brings
@@ -10841,8 +10844,8 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    less against. The against weights start as the for weights
    negated, so that at its start every concept reads what it reads
    now and every certificate that passes still passes; say so by a
-   test. A concept's own value stays one signed number unless Alec
-   says otherwise (§19.83). Certificate 51.
+   test. A concept's own value stays one signed number, and both is
+   two concepts (Alec, §19.83). Certificate 51.
 
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences before
