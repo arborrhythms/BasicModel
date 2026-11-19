@@ -8848,6 +8848,29 @@ On §23.3c.4 (in a sample of 496 words read against 19,821, some 1,360 codes lie
 
 *What is not known, and is tried in tests before a rule is written* (*mine*). Whether it can be done in 64 coordinates. A code has 31 ones of 64 on average and up to 51, so a short form's few ones fall inside a long form's by chance often, and each repair gives the short form, and every form that truly holds it, more ones. Raising the bits of an added part did not converge in round 3c (880 accidents left at four bits, 985 and two shared codes at six). What has not been tried is choosing the coordinates that separate two forms, in place of drawing them. The trial measures, at 64 and at 96 and 128: whether every accident can be removed as forms are admitted; what it does to the ones in a code and to the time of an admission; and if it cannot be done at 64, that is the proof Alec asked for before the width grows (§19.70).
 
+### 19.87 Alec on two of the docs writer's open points: what raises an order, and what a concept's vector is (2026-11-19)
+
+Of the nine points of §23.D he was first given two; he answered both and asked for the rest ("You mentioned 2 of nine questions, here are two answers, please ask the rest").
+
+**What prompts a raise of order, now that both is two concepts.** "Implicitly: any concepts formed above symbols. Explicitly: Felix is a cat. Ciao is a cat. So we have two conceptual part relations, both in LTM, which means we need to generalize over the cat concept, so we form a second cat concept at the higher order to range over both. MTM should be the place where that higher-order concept is created, by creating a higher order symbol over those two if not present. We have a little bit of an explicit/implicit redundancy in the creation of symbols, let's discuss. Perhaps they should take over PI's role in promotion, since PI now multiplies over percept and symbol content."
+
+*Decided:* the two prompts, and that MTM is where the higher concept is made. This is his rule of 2026-10-21 (`doc/Orders.md`, "Definitions raise, by equivalence class") said again, and `doc/Mereology.md`'s paragraph on order-raising is rewritten to it. *Open, for the discussion he asks for:* the redundancy between a symbol made from statements and a symbol made from recurrence, and whether the first takes over promotion.
+
+*The two routes as the rules have them, for that discussion.*
+
+| | By recurrence (implicit) | By statement (explicit) |
+| --- | --- | --- |
+| What prompts it | a set of concepts found together again and again; MTM counts the readings (rule 20) | two kept relations that share a side; a word that fills an argument (rule 21) |
+| What it makes | a row of the Pi over those concepts: all of them together | a class one order above its members: any one of them is enough |
+| What it writes | a Pi row, and the one concept that row brings | entries of the higher concept's Sigma on its members' symbols |
+| Its count | `concept_mint_count` readings (three) | two statements, by his example |
+
+They make different things, a conjunction and a class. The redundancy is in the second column's need of a symbol for each member: a class reads symbols, so "Felix" must have a symbol, a row over its one concept, before "cat" can read it, and rule 21 has that symbol wait for MTM to nominate it by recurrence.
+
+**What becomes of a concept's vector of form and meaning once a symbol and its concept share no row.** "We have percepts and concepts. Concepts continue to bear meaning, percepts are the perceived positive and negative aspects of them (or more precisely, hyperconic regions of them). Perhaps I am not understand your question, in which case an example please."
+
+*The example he asks for.* Today the row of the concept `cat` in the concept codebook holds two blocks side by side: a copy of the form's code (the 128 coordinates of the percept `cat`, and 8 of place and time), and then its meaning. The grammar composes on the meaning block. The form block is there so that a word can be put back from its concept, and `MereologicalCodes.derive` writes it from the percept's code. *The question:* does the concept's row keep the copy of the form, or is it the meaning alone, with the form reached through the layers (the concept's column and the first Pi)? *Claude's reading of his answer:* the meaning alone; the form is the percept's. To be confirmed.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

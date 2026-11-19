@@ -258,17 +258,27 @@ each a row of the first Pi over its parts and its wholes (see
 has primitive parts and WholeSpace has supplied property rows defined over
 primitive input. The attended field binds their location and level.
 
-The decision to raise uses evidence and geometry. A *both* reading prompts
-refinement in the order-0 field. Its retained supporting occurrences are
-attributed through the symbol definitions and tested by `RunStructureLayer`.
-Contiguous support continues pi refinement; discontiguous support can be
-symbolized one order higher by sigma after local refinement has stalled.
-A large number of constituents is never a reason to raise. Ordinary
-symbolization establishes an order-1 individual; context promotion beyond
-that order uses `ConceptualSpace.maybe_raise_order` and the same convergence
-gate. No WS fold-depth node is minted as a substitute for conceptual order.
-See [Architecture](Architecture.md) for the rule and its
-patience parameter.
+An order is raised in two ways (Alec, 2026-11-19).
+
+*Implicitly:* any concept formed above symbols is one order above the
+concepts those symbols read.
+
+*Explicitly, by statements that share a side* (Alec, 2026-10-21: "'Is' does
+not cross order by itself, but when used with multiple identical RHS or LHS,
+it creates an equivalence class"). "Felix is a cat" and "Ciao is a cat" are
+two part relations kept in LTM with one whole. They call for a concept that
+ranges over both, so a second concept of cat is formed one order higher. MTM
+is where it is made: it makes a symbol of the higher order over the two
+members if there is none ([Orders](Orders.md), "Orders are learned").
+
+A reading that is both, for at one of a concept's percepts and against at
+another, still prompts refinement in the order-0 field
+(`ConceptualSpace.refine_over_collected`): its retained supporting
+occurrences are tested by `RunStructureLayer`, contiguous support continues
+the refinement, and discontiguous support can be symbolized one order
+higher after local refinement has stalled. A large number of constituents
+is never a reason to raise. No WS fold-depth node is minted as a substitute
+for conceptual order.
 
 `ps_children_of_whole` reads the native percept parts reachable through a
 concept's word bindings. Such bindings do not by themselves establish an
