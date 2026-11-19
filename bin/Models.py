@@ -16689,6 +16689,11 @@ class BasicModel(BaseModel):
             # those declared order-zero seats before tapering the free rows;
             # the compose argument/operator reservations are additional seats.
             order_reservations = grammar_reservations(TheGrammar)
+            # The declared classes of words and objects are seated at order
+            # one with the grammar's declarations (declare_word_classes).
+            order_reservations = (order_reservations[0],
+                order_reservations[1] + len(ConceptualSpace.WORD_CLASSES),
+                *order_reservations[2:])
             stage_space_concept = [int(stage_space_concept[0]) +
                 sum(order_reservations[1:]), stage_space_concept[1]]
             cs = ConceptualSpace(
