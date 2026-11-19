@@ -183,6 +183,10 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
     model.reconstruct_in_loop = False
     model.loss.reconstruction_scale = 0.
     model.stateless = False
+    # The ended sentence keeps a field only if its words were read; since the
+    # loop of looks that is the chooser's draw, so they are read in order.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     publish = model._publish_sentence_scratch
     observed_layouts = []
     def scratch(state):

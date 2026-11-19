@@ -51,6 +51,10 @@ def test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar(
     from EpisodicMemory import entry_set
     model = native(tmp_path, monkeypatch)
     force_absolute_reading(model)
+    # The episodic entry needs the sentence's words read; since the loop of
+    # looks that is the chooser's draw, so they are read in source order.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     try:
         with torch.no_grad():
