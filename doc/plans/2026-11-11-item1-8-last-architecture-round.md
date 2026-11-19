@@ -28870,6 +28870,275 @@ nothing forward but is still undone backward, and is still listed as an
 edge. Under §57.6's rule 2 ("Wherever a row is folded") both read the
 netted weights. §58.8 says what each does now.
 
+## 66. Part C return through the trust calculation (Codex, 2026-11-18)
+
+**For Alec and Claude.** The sentence trace, form table, relation indexes and attended-definition folds replay exactly. The first sentence now makes 9,870 host reads, down from 80,434. Closing still leads at 4,919. Its largest reader is the concept trust radius. Moving that calculation to ordinary device arithmetic changes the second trained parameter update. The proposed exception and its measured cost are in §66.5. This is an intermediate return under §65.2 rules 2d and 7.
+
+### 66.1 Scope and inventory
+
+The starting implementation is §64.11, `bf7de20d3d0e7f84106278d440559ead64805814`, snapshot `86a8b2a53d4992ba571a9266b9a08b158b7680777a63306f6a6182a24b997b45`. Alec accepted exact purity for this baseline and required the graded case to be addressed later. The item 1.7 entry in `todo.md` now carries the “Felix” case and the question of which interpretation offers its learned complement should permit.
+
+The counted interval begins at input staging and ends at sentence completion. The first native text is “This is Felix.” Counts cover both trial paths and their closing work. The trace-only timing point precedes the final batched interface and finite-point validations. The subsequent form, membership and closing counts include those validations.
+
+| First sentence | preparation | close | generate walks | thought | word step | restoration | walk | Total host reads |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| §64 | 16,278 | 54,069 | 9,113 | 656 | 306 | 10 | 2 | 80,434 |
+| Trace | 16,278 | 19,886 | 9,113 | 627 | 306 | 10 | 2 | 46,222 |
+| Form table | 4,092 | 10,092 | 3,991 | 607 | 306 | 10 | 2 | 19,100 |
+| Relation and membership tables | 2,021 | 8,356 | 2,395 | 607 | 306 | 10 | 2 | 13,697 |
+| Closing readers | 1,631 | 4,919 | 2,395 | 607 | 306 | 10 | 2 | 9,870 |
+
+| Run | Tensor API calls | Dispatched operations | Host reads | Scalar dispatches | Dynamic nonzero |
+| --- | --- | --- | --- | --- | --- |
+| First, §64 | 1,378,330 | 1,726,149 | 80,434 | 56,814 | 661 |
+| First, closing readers | 1,048,204 | 1,305,321 | 9,870 | 7,552 | 288 |
+| Sixteen, §64 | 24,051,222 | 28,507,371 | 2,219,189 | 1,642,250 | 14,331 |
+| Sixteen, trace | 21,818,065 | 26,809,425 | 1,426,591 | 1,345,294 | 6,747 |
+| Sixteen, returned | 18,281,231 | 21,416,364 | 775,457 | 726,288 | 8,506 |
+
+On the starting sentence the largest readers were `MereologicalCodes.derive` (27,315), `LTM1.references` (19,776), `LTM1.contains` (10,570) and `LTM1.__len__` (4,514). The comprehension inventory covered 43 readings and 91 appended durable rows over sixteen sentences. Its maxima were 32 actions, one root, two comprehension stack entries and eight occupied held-concept seats out of eight. There were zero held arrivals. The inventories and the host-object observer matched the unobserved post-update states on every measured batch.
+
+### 66.2 Changes and mechanism certificates
+
+| Step | Files and readers | Certificate and outcome |
+| --- | --- | --- |
+| One trace, §65.5 | `Models._program_entries` builds `ReadingIndex`. `Understanding.Reading`, `SentenceStrata.Trace`, `Tree`, `CompositionView`, `capture` and `trace_point` keep the recorded actions, leaves, node addresses, points and closing marks. `MemberRead` and `SentenceBoundary` use the trace lifetime. The idea and recent stores retain their address domains. | `test_tree_reads_the_trace_without_accessing_relation_rows` failed on the original relation write and passed on the trace. All 43 action/leaf records and all 91 named row additions matched. No native ignored action column differed. The isolated certificate covers normalization, expiry and zero tree-related relation calls. |
+| Shared index readers | `ClauseJournal`, `Comprehension`, `DerivationReconstruction`, `Extension`, `FormCentroids`, `Interpret`, `PartsOfSpeech`, `ReferenceContext`, `SentenceCredit`, `Assessment`, `GrammarEvidence` and `eval_operators` read the shared steps. Each reader still computes its own semantic results. | The native action record carries object, presence, group and validity. The action sequence and grammar arities determine its operand actions. The index resolves those addresses and parents once. Certificate 7 compares the result to the old pinned tree. |
+| Forms, §65.2.2a | `FeatureTable.refresh`, `inventory`, `codes` and `forms` give `MereologicalCodes.derive` one device topology. `Codebook.lookup_rows` gathers all streams at once. Each basic percept combines the maximum of its parts with the minimum of its wholes. The concept then averages the positively weighted percept codes in their native order. | `test_item1_5_derive.py` compares the previous per-row read for repeated, grouped, negative, whole, retained and streamed cases. Weight edits and repeated reads exercise invalidation. 33 focused checks passed. Grouping by reduction length preserves the order of each floating-point sum. |
+| Relations, §65.2.2b | `Memory.LTM1` keeps ordered pairs, both directions and endpoints on each add. Bulk reads serve index reconstruction, dependency order, effective evidence, retention, protection and the corpus report. `TimelineRead` charges its bounded selection before reading its pairs. `EntryRead.recall_identities` reads each visited endpoint from the same index after charging its DFS visit. `stratum` reads that pair. | The endpoint oracle rebuilt the old dictionaries from both tagged columns. Results matched on insertion, duplicate writes, hole reuse, nested references, retention and load. Missing and half-empty handles still fail validation. 73 focused checks passed. |
+| Memberships, §65.2.2c | `SparseLayer.bind` gathers selected edges on the device and retains original source-column pairing. `ConceptualSpace._bind_attended_concepts` closes reachability across streams, including zero-weight candidates. `_compose_order0` folds independent contiguous ranges in dependency order. `_witnessed_rows` caches on allocation, retirement, witness and block revisions. | The ported property, group, chain, Pi, negation and cycle cases compare attended inventories, both fields and gradients to the old loops. A simultaneous sibling fold initially gave zero credit where the native unwritten edge received 0.1222. Keeping sibling read/write order and shared gradient destinations fixed that failure. Seven membership comparisons passed. The witnessed-row certificate covers allocation, changed witness flags, retirement and mutation of the returned list. |
+| Closing readers, §65.2.2d | `ChunkJournal.capture` transfers publication metadata together. `Comprehension.Evaluation` reads the held-write actions together. `ClauseJournal._finish_clause` shares per-action endpoint and identity metadata while continuing to read live numerical frames. `ConceptTrust.refresh` combines the known-row check with the view count, and `project` reads order from the contiguous block. | Exact lesson and gate replays. The old and new native trust arithmetic also passed the observed-agreement rounding case in `test_trust_round1.py`. |
+| Sentence entry and capture | `Models._run_tensor_peer_word_pipeline` resolves incoming trust before calling `_run_sentence_word_bricks`. The latter receives that scalar. `attention_block_compile_probe.py` records resumable breaks by file, line, reason and inventory kind, and can run a previously identified failing function eagerly in a diagnostic follow-up. | The strict probe moved from `math.isfinite(trust)` to `if not bool(present.any())` at sentence-slot selection. Every eager step still matched. §66.6 records where resumed capture reached. |
+
+The run also checks the reference-request and leaf-reading callers that receive the index before capture. Closing can still attach or replace a composition at a node until its trial expires.
+
+### 66.3 Exact replays and elapsed seconds
+
+The certificate compares full parameter tensors, optimizer state, registered costs, chooser records and the random streams after every update. The saved starting stream was used throughout. Both stopping gates passed. The gate observer recorded 29 numerical XOR updates and the shared-class denotation result at every step.
+
+| Step | Exact lesson updates | Exact gate records | Lesson seconds, single run |
+| --- | --- | --- | --- |
+| Trace | 16/16 | 30/30 | 43.846 |
+| Forms | 16/16 | 30/30 | 36.995 |
+| Relations | 16/16 | 30/30 | 37.743 |
+| Memberships, including the sibling repair | 16/16 | 30/30 | 38.063 |
+| Closing readers | 16/16 | 30/30 | 42.209 |
+| Sentence-entry trust | 16/16 | 30/30 | 41.391 |
+
+| Presentation | Text | §64 seconds | Returned seconds |
+| --- | --- | --- | --- |
+| 1 | This is Felix. | 3.2133 | 2.9632 |
+| 2 | What is this? | 2.1469 | 2.0597 |
+| 3 | That is Ciao. | 2.2089 | 2.0866 |
+| 4 | What is that? | 2.1399 | 1.9548 |
+| 5 | Here is Felix. | 2.1630 | 2.0527 |
+| 6 | Who is here? | 2.0887 | 2.0167 |
+| 7 | There is Ciao. | 2.9277 | 2.8303 |
+| 8 | Who is there? | 2.5139 | 2.4332 |
+| 9 | That is Felix. | 2.9904 | 2.5883 |
+| 10 | What is that? | 3.4005 | 3.1500 |
+| 11 | This is Ciao. | 3.7558 | 3.8393 |
+| 12 | What is this? | 3.7488 | 3.6348 |
+| 13 | Here is Ciao. | 3.4431 | 3.2226 |
+| 14 | Who is here? | 2.7754 | 2.6761 |
+| 15 | There is Felix. | 2.7229 | 2.6249 |
+| 16 | Who is there? | 2.6576 | 2.4164 |
+| All | 16 presentations | 44.8968 | 42.5495 |
+
+These last two runs placed only the state observer after each batch. Other measurements ran on the same machine. The host-call counts are the reproducible performance measure here.
+
+### 66.4 Test ports and paired failures
+
+The tree, node marks and lease assertions in `test_item18_tree_first.py`, `test_item20_round5_memory.py`, `test_item20_round5_unary.py` and `test_item20_round5_repair.py` read the trace. `test_sentence_journal.py` supplies the binary grammar rule its two isolated numerical journals record. `test_item18_finish.py` checks a relation index rebuild against the live topology revision, which now uses the count tensor’s version. All of their memory, addressing, gradient and ordering assertions remain.
+
+The trace-focused run passed 54 tests. Form and relation runs passed 33 and 73 respectively. The corrected membership run passed 42. The final focused run passed 60, including both stopping gates. Overlapping runs are reported separately. Additional suites included `test_lexical_reference_orders.py`, `test_review13_subspaces.py`, `test_form_subspaces.py`, `test_percept_collection_binding.py`, `test_modal_timelines.py`, `test_relation_references.py`, `test_item18_reduction.py`, `test_concept_memberships.py`, `test_cs_sparse_weights.py`, `test_definition_fold.py`, `test_chunk_journal_origins.py` and `test_concept_sigma_pi.py`.
+
+Using the same saved stream and invocation, the combined journal/tree suite gave **65 passed, 3 failed, 1 skipped** on both the original source and this return. `test_negated_sigma_reads_keep_unsigned_word_deposits_and_ideas` saw no pushed word. `test_comprehension_stages_native_values_without_mutating_words_or_mtm` saw no kept idea. `test_identity_admission_uses_the_deposited_word_order` saw no admission to observe. An independent paired run also reproduced `test_native_numeric_paths_share_one_head_and_one_update[2]` on both sources with “binary operation underflows the recorded forest.” Unforced invocations can expose a different empty path, including `test_1_word_deposit_keeps_its_value_row_and_order`. The equality certificate uses the originally recorded stream.
+
+### 66.5 Trust rounding, reproduced on the training path
+
+The next largest reader at the close is `ConceptTrust.refresh`, at 778 host reads on the first sentence. The existing radius is calculated in host binary64 as `agreement / views * -math.expm1(-views / trust_views)`, then rounded once into the radius column. For words with a direct grant it writes exactly one. The trust at issue here is the concept’s accumulated agreement across views. The incoming trust of a sentence was separately moved to its caller.
+
+There were **7,084** refreshes with positive view count, a known row and no direct grant during the sixteen presentations. Evaluating the radius with native float32 tensor operations changed **409** of those outputs on CPU and **413** on Metal. On Metal one agreeing observation with trustViews 3 gave **0.28346866369247437**, against **0.28346869349479675** stored by the original. Supplying the original exponential coefficient rounded to the chart dtype still changed **356/7,084** Metal results. With three views and agreement 1.974835753440857 this gave **0.41611140966415405**, while the original gave **0.41611143946647644**.
+
+A diagnostic replay using only the float32 substitution reached sixteen updates. It first differed on presentation 2, “What is this?”, in three parameters of the symbol context predictor and in its optimizer state. In total **15/16 parameter states, 15/16 optimizer states, 7/16 chooser records and 5/16 registered-cost records** differed. Those changes were excluded from the returned source. Local binary64 tensor arithmetic rounded identically to the native float32 column on these 7,084 reads. Metal rejects the conversion to binary64. Even on CPU the two binary64 exponential implementations differ at 111 and 112 views with trustViews 3 before rounding to the chart.
+
+**Question sent to Alec under §65.2 rules 2d and 7.** May this radius keep the native CPU calculation while the other sentence graph breaks are addressed? I recommend the explicit exception and an exact device implementation as follow-up. Requiring the calculation on Metal in this item calls for exact arithmetic beyond its native float32 implementation. The retained code continues to use the original arithmetic.
+
+### 66.6 Capture inventory
+
+The strict `fullgraph=True` probe on the original stopped at the default trust multiplier, where Dynamo could not trace the result of Python `math.isfinite`. On the returned source it passed that point, then stopped at the data-dependent test of the packed sentence-slot mask in `Models._run_sentence_word_bricks`.
+
+In a separate fresh model, `torch._dynamo.explain` resumed after ordinary breaks. The original’s first unsuppressed pass recorded 630 compiler events before a recursion error tracing `Comprehension.from_stack`. The continued pass allowed the compiler’s logged eager fallbacks. With native conditionals, both sources then hit a higher-order operator failure at `LanguageSpace.reverse_binary_step`. Its conditional traced `CompoundLayer.select_view`, which adds the count of ungrounded operands into `kernel_test_count`. Dynamo rejects captured buffer mutation inside `torch.cond`. Running just the diagnosed binary inverse eagerly in another diagnostic exposed the same write in the conditional in `Generative.selected_residual`. Sixteen inverse invocations had occurred by then on each source. The production operator, its counter and both control paths are intact.
+
+The native first sentence also performed **40** live sparse parameter replacements. Thirteen grew the feature vector from 13 to 26 entries during preparation. Twenty-seven grew the concept matrix from no parameter to 27 entries during closing. All had an attached optimizer, and 39 old leaves received pending-credit hooks. The parameter constructor is a default graph break. In the isolated Adam/pending-credit regression, letting Dynamo trace the constructor, or constructing the new parameter outside the graph and tracing its migration, each passed. Parameter growth alone did not establish a need to change the optimizer contract.
+
+| Diagnostic pass | Logged sites | Logged reasons including repeats | Graphs on completion | Outcome |
+| --- | --- | --- | --- | --- |
+| §64 native | 179 | 736 | — | Compound count inside conditional |
+| Tables native | 230 | 757 | — | Compound count inside conditional |
+| §64 with inverse eager | 181 | 740 | — | Compound count inside conditional |
+| Returned with inverse eager | 235 | 764 | — | Compound count inside conditional |
+| §64 with inverse and residual eager | List cleared | — | 1264 | Completed |
+| Returned with inverse and residual eager | List cleared | — | 1343 | Completed |
+| §64 following selected branches | 211 | 645 | 1265 | Completed |
+| Returned following selected branches | 256 | 711 | 1344 | Completed |
+
+The first two-boundary follow-up completed on both sources, with 32 calls to the inverse and two to the residual. Its earlier collector lost its per-site list when `explain` cleared its global log at the end. The graph totals survived. The corrected collector uses the returned reasons on success and the live reasons on failure. A two-graph scalar-extraction test verifies that correction. The conditional follow-up exposes the branch actually taken inside the diagnostic. Its compiler events are separate from the native conditional failure. Results are for the executed first sentence and the installed compiler’s own specialization limits. Unseen alternatives and opaque eager fallbacks are outside that census. Repeated compiler events count trace attempts and specializations. The native inventory in §66.1 counts actual host reads. A single graph across lengths or batch sizes has yet to be certified. Following the executed branches yielded 1,265 graphs originally and 1,344 on the returned source. Dynamo defines its graph-break count as graphs minus one. It supplied reason records for 645 and 711 events respectively. Both completed runs fell back at `Comprehension.from_stack`, `Comprehension.detached`, `SentenceBoundary.detached` and `SentenceUnderstanding.detached`. They hit the compiler’s specialization limit 35 and 31 times respectively.
+
+<details>
+<summary>Compiler break locations, reasons, kinds and counts</summary>
+
+The native columns are the resumable pass up to the compound inverse, on the §64 source and after the table changes. The last two columns follow the chosen conditional branches through the sentence on the original and returned sources. Locations use each version’s own line numbers. An omitted multiplier means one event. The inventory kinds from §53.3 are T for table reads, M for meanings or references, U for menus, C for choice or control, and X for text or metadata.
+
+| File | Reason | Kind | §64 native | Tables native | §64 branches | Returned branches |
+| --- | --- | --- | --- | --- | --- | --- |
+| BasicPercepts.py | Data dependent operator | T | 266 ×2, 285 ×2 | 266 ×2, 285 ×2 | 266 ×2 | 266 ×2 |
+| BasicPercepts.py | Dynamic shape operator | T | 53 ×3, 262 ×4, 264 ×4, 285 ×6 | 53 ×4, 262 ×4, 264 ×4, 285 ×6 | 53 ×3, 262 ×4, 285 ×6 | 53 ×4, 262 ×4, 285 ×6 |
+| BasicPercepts.py | Scalar extraction | T | 46 ×19, 51 ×2, 262 ×2 | 46 ×20, 51 ×3, 262 ×2 | 46 ×15, 51 ×2, 262 ×2 | 46 ×16, 51 ×3, 262 ×2 |
+| CaseSelection.py | Data dependent operator | U | 165 ×2 | 165 ×2 | 165 ×2 | 165 ×2 |
+| CaseSelection.py | comprehension_graph_break | U | 214 | 214 | — | — |
+| ChunkJournal.py | Data dependent operator | M | 376, 405, 408, 415 | 376, 405, 408, 415 | 376, 405, 408, 415 | 376, 405, 408, 418 |
+| ChunkJournal.py | Scalar extraction | M | 395 | 395 | 395 | 395 |
+| ChunkJournal.py | Tensor.tolist() with non-integer tensor | M | — | — | — | 415 |
+| ChunkJournal.py | comprehension_graph_break | M | 415 | 415 | — | — |
+| ClauseJournal.py | C-implemented special method without VariableTracker model | M | — | 46 | — | — |
+| ClauseJournal.py | Data dependent operator | M | — | 76 ×2 | — | 76 |
+| ClauseJournal.py | Scalar extraction | M | — | 136, 393 ×3, 469 ×2 | — | 138, 395 ×3, 471 ×5 |
+| ClauseJournal.py | Tensor.tolist() with non-integer tensor | M | — | 133 | — | 135 |
+| ClauseRow.py | Scalar extraction | M | 119 ×3 | 119 ×3 | 119 ×2 | 119 ×2 |
+| Comprehension.py | Data dependent operator | M | — | — | — | 125 |
+| ConceptPlacement.py | Data dependent operator | C | — | — | 81 | 81 |
+| ConceptPlacement.py | Dynamic shape operator | C | — | — | 81 | 81 |
+| ConceptTrust.py | Scalar extraction | T | — | — | 71 ×11, 98 ×9, 100 ×2, 101 ×2, 103 ×6, 129 ×6, 207 ×2, 209 | 71 ×11, 100 ×9, 103 ×2, 215 ×2, 217 |
+| ConceptTrust.py | comprehension_graph_break | T | — | — | 129 ×6 | — |
+| EpisodicMemory.py | Scalar extraction | C | — | — | 40 | 40 |
+| Expectation.py | Scalar extraction | T | 539 ×5, 564 ×2, 565 ×2, 566 ×2 | 539 ×5, 564 ×2, 565 ×2, 566 ×2 | 539 ×5, 564 ×2, 565 ×2, 566 ×2 | 539 ×5, 564 ×2, 565 ×2, 566 ×2 |
+| Expectation.py | Unexpected type in sourceless builder | T | 31 | 31 | — | — |
+| Extension.py | Data dependent operator | M | 73 ×3 | 75 ×3 | 73 ×5 | 75 ×5 |
+| Extension.py | Dynamic shape operator | M | 62 ×5, 71 ×2, 231 ×3, 272, 273 | 64 ×5, 73 ×2, 233 ×3, 274, 275 | 62 ×4, 71 ×2, 231 ×5, 272 | 64 ×4, 73 ×2, 233 ×5, 274 |
+| FamiliarTier.py | Data dependent operator | T | 314 | 314 | 15, 314 | 15, 314 |
+| FamiliarTier.py | Scalar extraction | T | 215 ×2 | 215 ×2 | 215 | 215 |
+| FeatureTable.py | Data dependent operator | T | — | 114 | — | — |
+| FeatureTable.py | Dynamic shape operator | T | — | 90 ×2, 99, 102 ×3, 103 ×2, 104, 107 ×2, 114 ×2 | — | 90 ×2, 99, 102 ×3, 103 ×2, 107 ×2, 114 |
+| FeatureTable.py | Scalar extraction | T | — | 63 ×2 | — | 63 |
+| FieldProjection.py | Scalar extraction | C | — | — | 29 | 29 |
+| FieldProjection.py | step_unsupported | C | — | — | 24 | 24 |
+| FieldReverse.py | Data dependent operator | T | 85 ×5, 112 | 85 ×5, 112 | 85 ×4, 112 ×3 | 85 ×4, 112 ×3 |
+| FieldReverse.py | Scalar extraction | T | 50 ×5, 90, 94 | 50 ×5, 90, 94 | 50 ×6, 90, 94 ×2 | 50 ×6, 90, 94 ×2 |
+| FieldReverse.py | mapping proxy affected by dictionary mutation | T | 75 | 75 | 75 | 75 |
+| FormCentroids.py | Attempted to call function marked as skipped | M | 320 ×2 | 322 ×2 | — | — |
+| FormCentroids.py | Data dependent operator | M | 321 ×3 | 323 ×3 | 321 ×3 | 323 ×3 |
+| Generative.py | Attempted to call function marked as skipped | C | 399 | 399 | — | — |
+| Generative.py | Call to a time function | C | 364 ×4, 369 | 364 ×4, 369 | 364 ×2 | 364 ×2 |
+| Generative.py | Data dependent operator | C | 400, 515 | 400, 515 | 400, 515 | 400, 515 |
+| Generative.py | Dynamic shape operator | C | 515 ×10 | 515 ×10 | 515 ×17 | 515 ×17 |
+| Generative.py | Scalar extraction | C | — | — | 272 | 272 |
+| HeldConcepts.py | Data dependent operator | M | 107 ×2 | 107 ×4 | 107 ×2 | 107 ×3 |
+| IdentityRows.py | Scalar extraction | M | 37 ×13, 115 ×5 | 37 ×13, 115 ×5 | 37 ×4, 115 ×2 | 37 ×5, 115 ×2 |
+| Interpret.py | Data dependent operator | M | 36, 205, 207 ×2 | 207, 209 ×2 | 36, 205, 207 ×2 | 207, 209 ×2 |
+| Interpret.py | Scalar extraction | M | 217 ×4 | 219 ×4 | 217 ×4 | 219 ×4 |
+| IntuitionField.py | Dynamic shape operator | T | 13 ×2 | 13 ×2 | 13 ×2 | 13 ×2 |
+| Language.py | Data dependent operator | X | 11670 ×2 | 11670 ×2, 12046 ×2, 12049 | — | 12046, 12049 |
+| Language.py | Dynamic shape operator | X | 6897, 11670 ×4 | 6897, 11670 ×4 | 6897, 11670 ×2 | 6897, 11670 ×2 |
+| Language.py | Scalar extraction | X | — | 12053 | 12495 ×3 | 12053, 12495 ×3 |
+| Layers.py | Attempted to call function marked as skipped | T | — | 5335 ×3 | — | — |
+| Layers.py | Attempted to use torch.nn.Parameter() constructor with Dynamo | T | 5126 ×16 | 5126 ×16 | 5126 ×15 | 5126 ×15 |
+| Layers.py | Data dependent operator | T | — | 5348 ×2 | — | 5348 ×2 |
+| Layers.py | Dynamic shape operator | T | — | 5335 ×22, 5339 ×6 | — | 5335 ×17, 5339 ×7 |
+| Layers.py | step_unsupported | T | 9333 ×2 | 9331 ×2 | 9333 ×2 | 9331 ×2 |
+| LookForecast.py | Dynamic shape operator | T | 67 ×3, 74 ×3 | 67 ×3, 74 ×3 | 67 ×3, 74 ×3 | 67 ×3, 74 ×3 |
+| Meaning.py | Scalar extraction | M | 122 ×17, 125 ×5, 179 | 122 ×14, 125 ×5, 179 | 122 ×7, 125 ×13, 179 | 122 ×9, 125 ×12, 179 |
+| Meaning.py | Tensor.tolist() with non-integer tensor | M | 186 ×4 | 186 ×2 | — | — |
+| Memory.py | Attempted to call function marked as skipped | T | 2812 ×2 | 2848 | 2812 | 2848 |
+| Memory.py | Data dependent operator | T | 1994 ×6, 2562, 2697 ×5 | 1994 ×2 | 1994 ×5, 2562, 2697 ×5 | 1994 ×5 |
+| Memory.py | Data-dependent guard | T | — | 2463 ×54, 2507 ×21, 2731, 2740 ×8 | — | 2463 ×15, 2507 ×2, 2731, 2740 ×17 |
+| Memory.py | Dynamic shape operator | T | 1100, 1961, 1962, 2101 ×2, 2562, 2660 ×2, 2701 ×6, 2803 ×3 | 1100, 1961, 1962, 2101, 2657 ×4, 2728 ×8, 2839 | 1961, 1962, 2562, 2660 ×2, 2701 ×6, 2803 ×4 | 1961, 1962, 2657, 2728 ×6, 2839 ×2 |
+| Memory.py | Scalar extraction | T | 1160 ×7, 1198 ×2, 1917 ×65, 2116 ×3, 2160, 2434 ×3, 2437 ×93, 2603 ×5, 2705 ×13, 2800 ×12, 2804, 2810 ×3, 2812 ×8 | 1160 ×7, 1198 ×2, 1917 ×38, 2116, 2160, 2600, 2836 ×4, 2846, 2848 | 1160 ×2, 1917 ×32, 2042 ×2, 2048 ×2, 2049 ×2, 2116 ×4, 2160 ×2, 2434 ×3, 2437 ×19, 2603 ×2, 2705 ×21, 2800 ×6, 2804 ×2, 2810 ×3, 2812 ×8 | 1160 ×2, 1917 ×24, 2042 ×2, 2048 ×2, 2049 ×2, 2116 ×2, 2160 ×2, 2600, 2836 ×3, 2846 ×2, 2848 ×3 |
+| Memory.py | Tensor.tolist() with non-integer tensor | T | — | 2736 ×9 | — | 2736 ×12 |
+| Memory.py | comprehension_graph_break | T | 1375 ×3 | 1375 ×3 | — | — |
+| Memory.py | generic_jump SymNodeVariable() | T | — | 2463, 2507 ×3, 2683, 2702, 2731, 2740 ×2 | — | 2463 ×2, 2507 ×4, 2683 ×4, 2702 ×4, 2731 ×2, 2740 ×3 |
+| Memory.py | generic_jump TensorVariable() | T | — | — | 1115 | 1115 |
+| MemoryActivity.py | ContextVar mutation not supported | T | 151, 170 | 151, 170 | — | — |
+| MemoryLink.py | Scalar extraction | M | 94 ×2 | 94 ×2 | 94 | 94 |
+| MemoryLink.py | step_unsupported | M | 320 | 320 | — | — |
+| MereologicalCodes.py | Data dependent operator | T | 406 ×26 | — | 406 ×15 | 103 ×2, 107 |
+| MereologicalCodes.py | Data-dependent guard | T | 294 ×23 | 296 ×2 | 294 ×11 | — |
+| MereologicalCodes.py | Dynamic shape operator | T | — | 400 ×26, 409 ×2, 414 ×3, 417 ×3, 418 ×4 | 123 ×4, 124 ×2, 205 | 125 ×4, 126 ×2, 207, 400 ×15, 409 ×2, 414 ×3, 417 ×3, 418 ×2 |
+| MereologicalCodes.py | Scalar extraction | T | 373 | 401 ×19 | 20 ×3 | 20 ×3, 401 ×13 |
+| MereologicalCodes.py | comprehension_graph_break | T | 381 ×2, 421 ×5 | — | 421 ×8 | — |
+| Meronomy.py | Data dependent operator | C | — | — | 371 ×2 | 371 ×2 |
+| ModelAttention.py | Attempted to call function marked as skipped | C | 349 | 349 | — | — |
+| ModelAttention.py | Scalar extraction | C | 391 ×3, 397, 398 ×4, 400 ×4 | 391 ×3, 397, 398 ×4, 400 ×4 | 391 ×2, 398 ×4, 400 ×4 | 391 ×2, 398 ×4, 400 ×4 |
+| ModelAttention.py | comprehension_graph_break | C | 349 | 349 | 349 | 349 |
+| Models.py | Attempted to use torch.nn.Parameter() constructor with Dynamo | C | — | — | 9202 ×4 | 9202 ×4 |
+| Models.py | Data dependent operator | C | 11951 ×2, 12780, 12781, 12782 | 11951 ×2, 12780, 12781, 12782 | 9697 ×2, 11951, 12780, 12781, 12782, 20526 | 9697 ×2, 11951, 12780, 12781, 12782, 20528 |
+| Models.py | Dynamic shape operator | C | 12969, 13078 ×6 | 12969, 13080 ×6 | 12969, 13078 ×6 | 12969, 13080 ×6 |
+| Models.py | Scalar extraction | C | 431 ×4, 11923 ×4, 12758, 12971, 12990, 13808 ×17, 13814, 20068, 20150 ×2, 21217, 21223 | 431 ×4, 11923 ×4, 12758, 12971, 12990, 13810 ×17, 13816, 20070, 20152 ×2, 21219, 21225 | 431 ×5, 11923 ×2, 12758, 12971, 12990, 13559, 13808 ×8, 13814, 19947, 20150 ×2, 21165, 21223, 21284 | 431 ×5, 11923 ×2, 12758, 12971, 12990, 13561, 13810 ×8, 13816, 19949, 20152 ×2, 21166, 21224, 21285 |
+| Models.py | Skip inlining torch.compiler.disable()d function | C | — | — | 23592 | 23595 |
+| Models.py | Tensor.tolist() with non-integer tensor | C | 12783, 12785 | 12783, 12785 | 12783, 12785 | 12783, 12785 |
+| Models.py | comprehension_graph_break | C | 6893, 20068, 20069, 20200, 20779 | 6893, 20070, 20071, 20092, 20202, 20781 | 13625, 20068, 20069, 20779 | 13627, 20070, 20071, 20781 |
+| Models.py | step_unsupported | C | 21293 | 21295 | 21293 ×2 | 21294 ×2 |
+| Occurrence.py | comprehension_graph_break | M | 155 | 155 | — | — |
+| Omission.py | Dynamic shape operator | C | — | — | 235 | 235 |
+| OutputOccurrences.py | Data dependent operator | C | — | — | 21 | 21 |
+| PartClosing.py | Data dependent operator | M | 514 | 514 | — | — |
+| PartsOfSpeech.py | Data dependent operator | C | — | — | 164 | 166, 263 |
+| PartsOfSpeech.py | Scalar extraction | C | — | — | 350 | 352 |
+| PartsOfSpeech.py | comprehension_graph_break | C | 119 | 121 | 354 | 356 |
+| PerceptField.py | Dynamic shape operator | T | 97 ×2, 99 ×2 | 97 ×2, 99 ×2 | 97 ×2, 99 ×2 | 97 ×2, 99 ×2 |
+| PerceptField.py | Scalar extraction | T | 72 ×12 | 72 ×12 | 72 ×9 | 72 ×9 |
+| PrependedSymbols.py | Data dependent operator | X | 93 | 93 | — | — |
+| PrependedSymbols.py | Dynamic shape operator | X | 93 | 93 | 93 | 93 |
+| PrependedSymbols.py | Scalar extraction | X | 186 ×8, 205 | 186 ×8, 205 | 186 ×8 | 186 ×8 |
+| PrependedSymbols.py | Unsupported function call (delayed) | X | 64 ×3 | 64 ×3 | 64 | 64 |
+| ReadingIndex.py | Data dependent operator | M | — | 23 | — | — |
+| ReferenceClose.py | Data dependent operator | M | 671 | 671 | 671, 1861 | 671, 1861 |
+| ReferenceClose.py | Scalar extraction | M | 241 | 241 | — | — |
+| ReferenceClose.py | Unsupported method call | M | 382 ×2, 398, 434 | 382 ×2, 398, 434 | — | — |
+| ReferenceClose.py | Unsupported ndarray method call | M | 82 ×3 | 82 ×3 | 82 | 82 |
+| RowTime.py | Attempted to call function marked as skipped | C | — | — | 114 | 114 |
+| RowTime.py | Scalar extraction | C | — | — | 111, 114, 153 | 111 ×2, 114, 153 ×4 |
+| SentenceAttention.py | Dynamic shape operator | C | 10 ×3 | 10 ×3 | 10 ×5 | 10 ×5 |
+| SentenceAttention.py | Scalar extraction | C | 84 ×4, 87 ×2, 130 | 84 ×4, 87 ×2, 130 | 84 ×3 | 84 ×3 |
+| SentenceCompose.py | Attempted to call function marked as skipped | C | 39 ×8 | 39 ×8 | — | — |
+| SentenceCredit.py | Data dependent operator | C | — | — | 126 | 128 |
+| SentenceCredit.py | Scalar extraction | C | — | — | 148 ×2 | 150 ×2 |
+| SentenceCredit.py | Tensor.tolist() with non-integer tensor | C | — | — | 122 ×2 | 124 ×2 |
+| SentenceField.py | Data dependent operator | T | 10 ×12, 127 ×2 | 10 ×12, 127 ×2 | 10 ×7, 127 | 10 ×7, 127 |
+| SentenceField.py | Scalar extraction | T | 125 ×2 | 125 ×2 | 125, 228 ×2 | 125, 228 ×2 |
+| SentenceField.py | comprehension_graph_break | T | — | — | 92 | 92 |
+| SentenceFork.py | Scalar extraction | C | 53 ×3, 61 | 53 ×3, 61 | 53 ×3, 61 | 53 ×3, 61 |
+| SentenceLooks.py | Scalar extraction | C | 46, 69 ×5, 71 | 46, 69 ×5, 71 | 46, 69 ×9, 71 ×2 | 46, 69 ×9, 71 ×2 |
+| SentenceLooks.py | dataclass fields failure | C | 76 | 76 | 76 | 76 |
+| SentenceStrata.py | Scalar extraction | M | — | 69 | — | 69 ×2 |
+| SentenceStrata.py | comprehension_graph_break | M | 164 ×2 | — | — | — |
+| SentenceUnderstanding.py | Scalar extraction | C | — | — | 190 ×2, 191 | 190 ×2, 191 |
+| Spaces.py | Attempted to call function marked as skipped | T | — | — | 19319 ×3 | 19384 ×3 |
+| Spaces.py | Data dependent operator | T | 10804 ×4, 14908 ×8, 14909 ×6, 15424 ×2 | 10803 ×4, 14959 ×2, 15088 ×2, 15108 ×5, 15485 ×2, 16434 ×2 | 10804 ×4, 14908 ×7, 14909 ×8, 15424 ×5, 15461 | 10803 ×4, 15088 ×2, 15108 ×5, 15485 ×5 |
+| Spaces.py | Dynamic shape operator | T | — | 14959 ×5, 16433 ×6 | 18915, 19016, 19324 | 14959 ×4, 16433 ×6, 18980, 19081, 19389 |
+| Spaces.py | Scalar extraction | T | 14938 ×3, 15175, 15331 ×4, 16369 ×2 | 15236, 15392 ×4 | 9647, 9775, 14938 ×2, 15331 ×4, 16369, 18899 ×3, 18912, 19000 ×5, 19013, 20068 | 9646, 9774, 15392 ×4, 18964 ×3, 18977, 19065 ×5, 19078, 20133 |
+| Spaces.py | Tensor.tolist() with non-integer tensor | T | — | — | 9894 ×2 | 9893 ×2 |
+| Spaces.py | Uninitialized nn.Module | T | 256, 860 | 256, 860 | — | — |
+| Spaces.py | Unsupported ndarray method call | T | — | — | 9394 | 9393 |
+| Spaces.py | comprehension_graph_break | T | 15174 | 15235 | — | — |
+| Spaces.py | generic_jump TensorVariable() | T | — | — | 19415 | 19480 |
+| Spaces.py | step_unsupported | T | 14936 ×2 | — | 14936 ×2 | — |
+| Understanding.py | Scalar extraction | M | — | 129 ×4, 134, 166, 167, 173, 176, 177, 187, 192, 193, 194, 195, 196, 197, 204, 205, 206, 208, 209, 214, 215 | 316 | 129, 134, 166 ×2, 167, 173, 176, 177, 187 ×2, 192, 193, 194, 195, 196, 197, 204 ×2, 205, 206, 208, 209, 214 ×2, 215 ×2, 311 |
+| WalkTrials.py | Scalar extraction | C | — | — | 208, 209 | 208, 209 |
+| WhereRegistry.py | mapping proxy affected by dictionary mutation | T | 40 ×4 | 40 ×4 | 40 ×4 | 40 ×4 |
+| WholePaths.py | Scalar extraction | C | 217 | 217 | 11, 204, 214, 217 ×2 | 11, 204, 214, 217 ×2 |
+| WholePaths.py | comprehension_graph_break | C | — | — | 432 | 432 |
+| WordIdentity.py | Unsupported ndarray method call | X | 175 | 175 | — | — |
+| WordIdentity.py | attempted to trace numpy function unsupported by PyTorch | X | 175 ×13 | 175 ×13 | 175 ×11 | 175 ×11 |
+| reading_fixtures.py | Scalar extraction | C | 381 | 381 | 381 | 381 |
+
+</details>
+
+### 66.7 Status and returned source
+
+The production checkpoints for trace, forms, relations, memberships, closing readers and entry trust are `d26314ba62`, `62bfa1860a`, `1d981f13a5`, `8986950de1`, `1c05dc92f6` and `41c664e107`. The finished probe is in local commit `bccdae6b58`. The working source snapshot covers **1,228 files**, SHA-256 **`06f1b005f5985274f563d0699f83f633a4a34881c2f13df3ea5d05f5ee25fead`**. All work is local. Rule 7 is open on the trust radius. The remaining capture work and the single whole-item default sweep of §72 are pending. The targeted runs used the ordinary tier.
+
 ## 67. The rest of item 1.8, in order (Claude, 2026-11-16; a doc pass)
 
 Every rule of item 1.8 is now written. This is where each part is, in
