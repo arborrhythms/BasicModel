@@ -8685,6 +8685,19 @@ This is rules 50 to 54 as they stand, and it is their statement:
 
 The greatest and the least are used for a code, which is a bound. The union and the product are used where percepts are present by degree and are joined in a reading. On values of 0 and 1 the two pairs agree.
 
+### 19.77 Alec: no conflict with Pi, Not, Sigma; the wholes built as sets of the catalog, as the parts are (2026-11-19)
+
+"OK. none of this should conflict with pi-not-sigma, correct? the part codes are built with powerset matrices as discussed previously, and the whole codes can presumably be built the same way (except that that the powersets cover exclusion rather than inclusion)."
+
+**No conflict.** The code is what a percept's vector holds; Pi, Not, Sigma is what reads it. Rule 29 stands, a conjunction keeps the code rule 5 gives it, and certificate 23 stays as written.
+
+- *Measured in the trial* (§23.3b.1): on the two-lane code, with a conjunction coded as the source codes it and Not entries free, negative patterning, conditioned inhibition and XOR are all met.
+- *Not yet shown in the model:* round 3c has to pass certificate 23 on the two-lane code, and has to settle how a row that reads both for and against enters the combined vector. The trial's first choice for that cancelled a conjunction's own coordinates.
+
+**The parts as sets of the catalog.** A form's code is the set of its parts (rule 43), and each row of the first Pi holds that set as its for entries: a matrix of rows by catalog parts, one where the part is included. What item 1.7 builds of this is the code, folded into 64 coordinates, and the rows. Finding a word on the device from its set of parts as an address is item 1.5's (rule 44).
+
+**The wholes the same way.** Yes. A whole is a row of the table of wholes, and what defines it is a set of the same catalog: the parts that belong to it (rule 52). What a percept excludes is then the complement of its upper bound, the catalog parts outside every whole it lies in. *Mine:* the table stores each whole's members, and the exclusion is read as the complement and never listed, since for a known form it is nearly the whole catalog. The one exclusion that is listed is the first Pi's against entries, which hold only what a form's nearest strict wholes add (rules 51 and 53; Alec, §19.73). The address of a set of wholes for a lookup in one probe, which he asked for in §19.70, goes with item 1.5's lookup.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
