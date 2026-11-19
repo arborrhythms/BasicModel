@@ -73,7 +73,8 @@ def test_program_reads_compact_journal_by_global_address_and_keeps_value_gradien
         _choice_ref_relations=relations, _choice_journal_columns=columns)
     clock_reads = []
     model = SimpleNamespace(_reconstruction_stack=lambda: trace,
-        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), languageSpace=SimpleNamespace(),
+        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))),
+        languageSpace=SimpleNamespace(_compose_binary_rules=(SimpleNamespace(method_name='sum'),)),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
     program = (torch.tensor([[2, 3]]),
@@ -229,7 +230,8 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
         symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7)),
                                     _word_reference_orders=torch.tensor([[0,2]])),
-        languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
+        languageSpace=SimpleNamespace(resolve_lexical_references=resolve,
+            _compose_binary_rules=(SimpleNamespace(method_name='sum'),)),
         _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512),
             _csw_row_of=lambda cid: {101: 10, 102: 11}.get(cid)),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(

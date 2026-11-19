@@ -412,8 +412,10 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     handles = {identity:i+1 for i,identity in enumerate(ids)}
     origins = row.new_zeros(len(ids),3)
     actual,alternative = [],[]
-    by_column = {int(column):index for index,column in enumerate(columns.tolist())
-                 if bool(journalled[index])}
+    live_actions = journalled.tolist()
+    by_column = {column: index for index, (column, live) in enumerate(zip(columns.tolist(), live_actions))
+                 if live}
+    publications = row[:, [2, 3, 36, 6, 7, 11, 9]].tolist()
     pos = {int(position):index for index,position in enumerate(positions.tolist())}
     leaves = row.new_zeros(len(positions))
     for identity in ids:
@@ -456,17 +458,15 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
         base = (pool.value_of(token).to(values) if token is not None else values.new_zeros(values.shape[-1]//3))
         branch = (pool.value_of(token, timeline=len(pool.entries[token].timelines)-1).to(values)
                   if token is not None and len(pool.entries[token].timelines)>1 else base)
-        for column in range(row.shape[0]):
-            transaction = row[column]
-            if int(transaction[2]) == identity and int(transaction[36]) == 3:
+        for column, (subject, obj, publication, bound, event, suppressed, timeline) in enumerate(publications):
+            if subject == identity and publication == 3:
                 operands = values[batch,column].reshape(3,-1)
-                base = torch.maximum(operands[0],operands[2]) if int(transaction[6]) > 0 else operands[2]
-            if int(transaction[3]) == identity and bool(transaction[7]) and not bool(transaction[11]):
+                base = torch.maximum(operands[0],operands[2]) if bound > 0 else operands[2]
+            if obj == identity and event and not suppressed:
                 operands = values[batch,column].reshape(3,-1)
-                publication = int(transaction[36])
                 current = (operands[1] if publication == 1 else
                     torch.maximum(operands[0],operands[1]) if publication == 2 else operands[2])
-                if int(transaction[9]) > 0:
+                if timeline > 0:
                     branch = current
                 else:
                     base = current
@@ -490,10 +490,10 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     events = selected[:,2:8].clone()
     for column in (0,1,2,4):
         events[:,column] = events.new_tensor([handles.get(int(identity),0 if column != 4 or int(identity)==0 else -1)
-                                              for identity in events[:,column]])
+                                              for identity in events[:,column].tolist()])
     events = torch.where(journalled[:,None],events,0)
     timeline = selected[:,8:12].clone()
-    timeline[:,2] = timeline.new_tensor([by_column.get(int(origin)-1,-1)+1 for origin in timeline[:,2]])
+    timeline[:,2] = timeline.new_tensor([by_column.get(int(origin)-1,-1)+1 for origin in timeline[:,2].tolist()])
     timeline = torch.where(journalled[:,None],timeline,0)
     width = values.shape[-1]//3
     writes = selected[:,IDEA_WRITES:IDEA_WRITES+18].reshape(-1,3,6).clone()

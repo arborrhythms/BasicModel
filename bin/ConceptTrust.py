@@ -95,18 +95,27 @@ class ConceptTrust(nn.Module):
         if not self.tracks(identity) or identity == NULL_CONCEPT or self.owner.is_frozen(identity):
             return
         row = self.owner._csw_row_of(identity)
-        if row is None or not bool(self.known[row]):
+        if row is None:
             return
-        views = int(self.views[row])
+        views = int(torch.where(self.known[row], self.views[row], -1))
+        if views < 0:
+            return
         length = (float(self.agreement[row]) / views * -math.expm1(-views / self.trust_views)
                   if views else 0.)
-        self.lengths[row, 0] = 1. if bool(self.read_objects[row]) else length
+        self.lengths[row, 0] = torch.where(self.read_objects[row],
+            self.lengths.new_tensor(1.), self.lengths.new_tensor(length))
         self.project([row])
 
     @torch.no_grad()
     def project(self, rows=None):
         bank = self.owner.similarity_codebook
-        rows = self.allocated.nonzero().flatten() if rows is None else torch.as_tensor(rows, device=bank.W.device, dtype=torch.long)
+        if rows is None:
+            rows = self.allocated.nonzero().flatten()
+        else:
+            negative = bool((rows < 0).any()) if torch.is_tensor(rows) else any(index < 0 for index in rows)
+            if negative and getattr(bank, 'mereology', None) is not None:
+                raise IndexError('concept row is outside the constructed inventory')
+            rows = torch.as_tensor(rows, device=bank.W.device, dtype=torch.long)
         if not len(rows):
             return
         values = bank.W[rows].clone()
@@ -126,8 +135,7 @@ class ConceptTrust(nn.Module):
             direction = torch.nn.functional.normalize(direction, dim=-1)
         values[:, start:start+width] = direction * self.lengths[rows, 0, None]
         if derived is not None:
-            higher = torch.tensor([self.owner._row_order(int(row)) > 0 for row in rows],
-                                  dtype=torch.bool, device=rows.device)
+            higher = rows >= self.owner._order_caps()[0]
             values[higher, :derived.percept_event_width] = 0.
         bank.W[rows] = values
 

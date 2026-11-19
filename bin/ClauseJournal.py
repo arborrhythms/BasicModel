@@ -101,6 +101,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
     frames = number('operation_values')
     if frames is None:
         raise ValueError('the open reading has no numerical operation journal')
+    identity_actions = None if program.identity_actions is None else program.identity_actions.tolist()
+    relation_actions = None if program.operation_relations is None else program.operation_relations.tolist()
     stack, introductions = [], {}
     local_uses = set()
     if program.identity_actions is not None:
@@ -197,7 +199,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
             operand['value'] = actual
             if program.operation_relations is not None:
-                operand['has_point'] = not bool(program.operation_relations[action, role])
+                operand['has_point'] = not bool(relation_actions[action][role])
             if number('operation_refs') is not None:
                 selected = operand
                 while selected['children']:
@@ -205,7 +207,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                     if not headed:
                         break
                     selected = selected['children'][headed-1]
-                reference = int(number('operation_refs')[action, role])
+                reference = selected_refs[role]
                 rule = catalog[local]
                 mode = operation_modes(rule).get('argin'+str(role+1))
                 binding_order, binding_mode = binding_spec(
@@ -293,9 +295,9 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                           has_point=not relation_rule and (all(child['has_point'] for child in operands)
                               or getattr(catalog[local], 'clause_form', None) in ('S', 'VP')))
         if program.identity_actions is not None:
-            record = program.identity_actions[action]
-            parent['identity_handle'] = int(record[0])
-            parent['identity_event'] = tuple(record.tolist())
+            record = identity_actions[action]
+            parent['identity_handle'] = record[0]
+            parent['identity_event'] = tuple(record)
             parent['identity_action'] = action
         if number('timeline_actions') is not None:
             stamp, alternative, origin, suppressed = number('timeline_actions')[action].tolist()

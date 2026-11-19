@@ -122,6 +122,7 @@ class Evaluation:
         self.orders = (torch.full_like(self.ids, -1) if program.leaf_orders is None
                        else program.leaf_orders.clone())
         self.frames = torch.zeros_like(program.operation_values)
+        self.held_writes = None if program.held_writes is None else program.held_writes.tolist()
         self.refs = (program.actions.new_full((len(program.actions), 2), -1)
                      if program.operation_refs is None else program.operation_refs.clone())
         self.case_values = None if program.case_values is None else torch.zeros_like(program.case_values)
@@ -302,8 +303,8 @@ class Evaluation:
         # Replacing a later row must not mutate their shared tensor version.
         frame = torch.stack((operands[0][0], operands[1][0] if len(operands) == 2 else value*0, value))
         self.frames = self.frames.index_copy(0, self.ids.new_tensor([at]), frame[None])
-        if self.program.held_writes is not None:
-            for witness in self.program.held_writes[at]:
+        if self.held_writes is not None:
+            for witness in self.held_writes[at]:
                 self.held.publish(witness,self.frames[at,:2],value,self.frames,physical)
         if self.timeline is not None:
             self.timeline[at, 0] = order
