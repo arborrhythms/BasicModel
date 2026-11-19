@@ -2489,3 +2489,40 @@ To specify: what tells the map which regions matter (how often a region
 is attended, or how much error it carries); the neighbourhood and how it
 narrows with learning; and how readings stored under an earlier state of
 the map are read after it has moved.
+
+## A wholes half learned downward from concepts (Alec, 2026-11-19; future work)
+
+Alec: "We might also want to let the wholes be learned properties of
+the top-down conceptual projection, so a pi on half and a sigma on the
+other half?" The parts half of a percept's code is built upward, a Pi
+over its parts. The wholes half would be learned downward: the
+projection of the concepts that hold of the percept, through weights
+of zero or above.
+
+What is known. A map with weights of zero or above keeps the order of
+its inputs. A Pi output lies at or below every input it reads, and a
+union output, `1 - Π(1 - x)`, lies at or above every input it reads, so
+the two layers make the two directions of the order over one vector. A
+toy in item 1.7 (2,000 words, seven classes, 64 coordinates) put each
+class in coordinates of its own without being told to, and the union
+form placed a member at or above its class. A class inside another came
+out unordered, and the toy was too small to say whether it scales.
+
+To specify: what teaches the half (the read back of the concepts, or
+the reconstruction); how a class inside another comes to lie inside it;
+and how the learned half sits with the table of wholes, whose rows are
+boundaries that are given.
+
+## Every other part as evidence against (Alec, 2026-11-19; future work)
+
+Alec: "To some extent, all parts in the catalog other than those that
+are parts are negative evidence." Item 1.7 builds the narrow form: a
+form's against lane holds what the forms holding it add. The broad
+form, every part of the catalog that the form does not hold, was tried
+as a code in 64 coordinates. It told all eight of the lesson's words
+apart, but it filled the parts half, a part and its whole then read
+each other equally, and the part order was lost.
+
+To specify: where the broad evidence belongs if not in the code (the
+lookup already takes the form whose parts are exactly those found), and
+at what width, if any, it can stand beside the part order.
