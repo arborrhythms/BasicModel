@@ -35126,6 +35126,81 @@ recommendation is withdrawn. His proposal, Claude's reading of it and
 what is proposed in the repair's place are in sigma-pi §19.53, point
 5. Nothing is changed in the source until he has said so.
 
+### 68.89 The repair of §66.12 is removed; a parse with no WFF outputs nothing (Alec, 2026-11-19), and the text for the stand-in
+
+Alec, 2026-11-19:
+
+> If your current repair for read-with-no-sentence is the intrusive
+> one, please remove it we will just output nothing for non-WFF parses.
+> that much we can do for 1.8, and since it is a point (.X) item we
+> should at least runs a short series of tests for coverage. In a
+> future item (your choice), the training harness can mine the logs for
+> instances of silent output and do bisection to teach words
+> recognition without sentence parses.
+>
+> So with these small fixes, complete and push 1.8 to GitHub, and
+> provide text for 1.7 to begin in a new conversation with you. Please
+> spin off implementers in Opus as usual.
+
+**Decided.** The repair of §66.12 goes. A read that gives no
+well-formed formula outputs nothing. Item 1.8 is then complete and is
+pushed, on a short series of tests and not a second sweep. *The future
+item, Claude's choice:* item 1.6, the proving ground, whose harness
+mines its logs for silent outputs and bisects those sentences to teach
+the recognition of words with no sentence parse (recorded in
+`todo.md`).
+
+**Text for the stand-in (Claude on Opus), to do now.**
+
+~~~
+Item 1.8, the last change: remove the provisional repair of §66.12
+(1.8 specification, doc/plans/2026-11-11-item1-8-last-architecture-
+round.md, §68.88 and §68.89 for Alec's words). Work on main in
+basicmodel, in this checkout. Commit locally with explicit paths; do
+not push; do not rewrite history (the three commits are on GitHub).
+
+What to do.
+1. Take back the three commits 26666553c0, 0a7f25a805 and 64a8be7fc1
+   by new commits. Attention.interpret_words goes, and
+   ModelAttention.stage_input no longer gives the grammar an option
+   outside a sentence run. A read with no sentence is again attention's
+   walk alone, and it admits no word.
+2. Alec's rule for what follows: "we will just output nothing for
+   non-WFF parses." Where no word is admitted there is no formula, and
+   the caller gets nothing: no word, no score, silence. Nothing raises
+   for that reason alone. Find what the two callers do today when
+   nothing is admitted (the fast word evaluator,
+   eval_nanochat_grammar.word_candidate_scores, and the standalone
+   sentence kernel), and make the smallest change that has them return
+   nothing in that case. Do not add another path that admits words
+   outside a sentence.
+3. The tests. The cases that depended on the repair (§66.12 names
+   them: the three evaluator cases, the output-walk case, the two
+   observers in test_one_attention.py, the case of
+   test_sentence_owned_attention.py, and the two new tests of
+   test_loop_of_looks.py that came with the repair) are ported to state
+   the rule: with no sentence nothing is admitted and nothing is said.
+   No test is skipped or marked as expected to fail. A test that can
+   no longer state anything true is removed, and the return names it
+   and says why.
+4. A short series of tests, not the default sweep: each ported case in
+   five fresh processes; then once, in one process each, every test
+   file that names Attention, ModelAttention, SentenceLooks, the
+   evaluator or the sentence kernel, and both gates
+   (test_loop_of_looks.py, test_one_attention.py among them). Use the
+   flags of §72 (no RUN_SLOW, no RUN_TRAINED). Report the counts and
+   the seconds.
+
+A question is not a stop (§75): where something is unclear, write the
+question and the choices, build the one you recommend in a commit of
+its own marked provisional, and go on.
+
+Return: a section §66.17 in the 1.8 specification with what was
+taken back, what each caller now does, each test ported or removed
+with its reason, and the counts of the short series; commit it. Then
+stop: Claude reviews, and nothing follows this text for you.
+~~~
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression
