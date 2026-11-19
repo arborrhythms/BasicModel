@@ -1519,6 +1519,15 @@ generation is expected at this stage and is recorded, not tuned away.
    the .where (even if it is composed of smaller words)". It is the
    dynamic stop of `doc/FutureWork.md` seen from `interpret`; placed
    with rule 32 by Claude, and in no text of item 1.8.
+   **A look may carry a content condition (§19.31; Alec,
+   2026-11-18, a direction):** "a bit of top-down priming for a
+   content match", a wanted whole ("a set of letters and no spaces,
+   numbers, or punctuation") with the `.where`, which limits reading
+   to words and can be left off. The row exists (WholeSpace's fixed
+   word property), and so does the wish (`set_reading`, the frozen
+   concept "reading", called by nothing); a look's read takes no
+   condition yet, and the stem makes the cut. Placed with rule 32 by
+   Claude, and in no text of item 1.8.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work

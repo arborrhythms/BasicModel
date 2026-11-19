@@ -4536,6 +4536,9 @@ budget of rule 28; the speed certificate.
 10. `interpret` takes the largest word that fits the look (§19.30):
     what largest measures, overlapping large words, and what makes
     several words one word.
+11. A look carries a place and, optionally, a primed whole (§19.31):
+    who sets the condition, what a graded priming does, and which
+    row it names.
 
 **For the documentation pass** that lands with item 1.7 (`doc/*.md` is
 not edited now: another pass over those files is uncommitted, in the
@@ -5416,3 +5419,101 @@ the other ("New York" and "York City" in "New York City"); whether the
 smaller words stay reachable by a further `focus` after the large one
 is declined or interpreted; and what makes a unit of several words a
 word (a meta concept of its own, §19.29).
+
+### 19.31 A look may carry a content condition: priming a whole, with the place (Alec, 2026-11-18; a direction)
+
+Alec, 2026-11-18, after the review of the loop of looks (1.8 §68.81):
+
+> My guess is that letting the architecture attend and supply .where
+> coordinates will work better eventually, but will require more
+> training up front. Allowing it to do a bit of top-down priming for a
+> content match would probably work better than just supplying .where;
+> like, if it can say " I want percepts that have a whole that consists
+> of a set of letters and no spaces, numbers, or punctuation" in
+> conjunction with .where basically limits reading to words, but still
+> gives the architecture the ability not to filter by content. So
+> there is a top-down conditioning based on expectation or desire to
+> read a word. Can we allow that easily?
+
+**In plain terms.** A look today is a place and nothing else. He adds
+a second thing a look may say: which kind of whole it wants there. On
+"red cat sleeps", a look at the whole line that wants "a whole of
+letters only" gets three things back, `red`, `cat` and `sleeps`; the
+same look with no wish gets the line as it is, spaces included. The
+cut into words is then something the model asks for, and can leave
+off, where today the stem makes it before the model reads.
+
+**What exists (read in the source at `bfd2c606a3`).**
+
+- *The content he names is a row.* WholeSpace holds nine canonical
+  whole properties (`_CANONICAL_PROPERTY_ROWS` in `bin/Spaces.py`):
+  letter, digit, whitespace, punctuation, capital, control, high byte,
+  pad and word. Row 8, word, is fixed: its members are exactly the
+  letters and cannot be taught
+  (`PrimitiveProperties.define_word`, "An immutable whole over exactly
+  the reader's letter predicate"). Row 0, letter, is of the same kind and
+  is taught; it is the property whose membership drifts in 1.8 §68.81.
+- *The wish is a concept, and its priming is built.* A frozen concept
+  named "reading", and `BaseModel.set_reading(desire, valence)`: it
+  desires that concept and, while it is on, desires each batch's
+  word-whole rows in WholeSpace ("the hard-coded concept ->
+  word-isolating-wholes wiring"). Desire and expectation are one
+  surface (`relevance_weights`: one plus the expected field plus
+  desire). Nothing calls `set_reading` today but its test
+  (`test/test_frozen_concepts.py`).
+- *The place is passed down.* A look writes `_passback_scope_where`,
+  and `Models._passback_scope_ps` is described as retargeting
+  perception by "native percept identities, which choose the
+  mereological units, and field brackets, which choose the region".
+  *Not checked:* whether that second route runs anywhere in the loop
+  of looks.
+- *The read takes many brackets at once.* `cs_read_memberships` reads
+  one field for each bracket it is given; the first look gives it
+  every word bracket (`FamiliarTier.open_sentence`).
+
+**The gap.**
+
+1. *The cut into words is made by the stem and is not asked for.*
+   `Meronomy.word_spans` takes the maximal runs of letters,
+   `WholeSpace.stage_analysis_spans` cuts the input by runs of one
+   type, and `pin_word_spans` pins the words. Attention's brackets are
+   made of those intervals. This is "the lexer is doing the models job"
+   (§19.28).
+2. *A look's read takes a place and no condition.*
+   `SentenceLooks.perceive` gives `cs_read_memberships` the look's
+   extent as one bracket. Desire and expectation reach `attend` as a
+   signal (1.8 §60.1, rule 9) and do not shape what a look returns.
+3. *So a look at several words reads nothing* (1.8 §68.81, finding 2):
+   no whole holds on every byte of an extent with a space in it.
+
+**What it would be** (Claude's reading of his words, to be specified
+with rule 32).
+
+- A look is a place and, optionally, a primed whole. With a whole
+  primed, the look returns the maximal runs inside the place on which
+  that whole holds, each read as its own bracket. With none, it
+  returns the place as one extent, as now.
+- With row 8 primed, those runs are the stem's word intervals by
+  construction, since row 8 and `word_spans` use one predicate
+  (`Meronomy._letter`). So the first look and every later look become
+  one operation, a look at several words reads its words in parallel,
+  and the stem's pin can become a check and then go.
+- The wish is on from the start (`set_reading`, as `interpretBias` is 1
+  from the start), so reading words need not be learned from nothing,
+  and it can be lowered or chosen later.
+
+**How easily.** The read itself is small: `perceive` gives the read
+the runs in place of the one extent, and the forecast of a look
+already takes several readings. Larger, and rule 32's: attention's
+brackets no longer made of the stem's intervals, and the stem's cut
+removed.
+
+*Placed here by Claude, not by Alec:* with rule 32. It is in no text of
+item 1.8.
+
+*Unspecified:* who sets the condition at a look (the standing desire
+of "reading", the expected field, or a choice of `attend`); what a
+graded priming does, since the surface is a number and a run either is
+returned or is not; whether several wholes may be primed at once
+(letters and digits); whether the condition names row 8 or the taught
+row 0; and what a look returns for the bytes between the runs.
