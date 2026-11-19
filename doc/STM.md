@@ -647,16 +647,24 @@ activity.
 **Retrieval.** There is no word index over memory and no index from a
 concept to its rows. Retrieval by a word is
 either a match by content or a lookup of the `LTM1` rows that reference the
-word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read has the
-question's idea as its key, a point in conceptual space, and searches
-semantic memory, the ideas of `LTM0` and the relations of `LTM1`, by the one
-match of points in conceptual space (`ConceptualMatch.match`), which compares
-meaning coordinates and never a form's code (Alec, 2026-11-19: "Query on LTM
-is using the idea, a point in conceptual space, to search semantic memory").
-It reads the newest `ltmWindow` rows; a row a read returns has its activity
-raised, and its entry is published as the stream's knowing
-([Architecture](Architecture.md#recall-and-answers)). Explicitly addressed
-rows are read directly (`EntryRead.cued_rows`).
+word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read takes
+the question's field of understanding, the set of active concepts its
+operators leave when applied to its words' sets (for "red ball", what the
+sets of red and of ball share): each operand's set gives one result over the
+newest `ltmWindow` rows, matched against their entries in `LTM0` order by
+order and never reduced across orders or across rows, and the question's
+operators combine the results as they combine sets (`EpisodicMemory.matches`,
+`relevance`, `ExtendedRecall.matches`). Both sides are concepts, never percept
+codes: a question's set holds each active concept with its value, and a
+row's entry holds each kept concept as one signed value whose size is its
+certainty, on the lane of its sign. At each order, a row's result is the sum
+over its entries of that order of the entry's strength times the question's
+value for that concept on the entry's lane, divided by the question's squared
+length at that order, and at most one; only an entry's strongest reading of a
+concept on a lane counts. The results of the orders are joined by the least,
+as `intersection` joins them. Rows are ranked by that result, newer first
+among ties; a row a read returns has its activity raised. Explicitly
+addressed rows are read directly (`EntryRead.cued_rows`).
 
 **One history.** `LTM0` and `LTM1` are one history for the whole model: no
 row records which stream wrote it, and the rows a batch of several streams

@@ -168,9 +168,12 @@ signed `trust`, its entry (the strongest members of its field of
 understanding, `episodic_concepts` and `episodic_values`), its optional
 `referent` and its `activity`; LTM1 keeps relations of two tagged references.
 Memory is read by content, never by time. A recall reads the latest
-`ltmWindow` rows by the question's idea, a point in conceptual space,
-matched against semantic memory by the one match of meaning coordinates
-(`ConceptualMatch.match`), and only the rows read are charged.
+`ltmWindow` rows: each operand of the question's extended tree gives one
+result over the window, matched order by order and never reduced across
+orders (`EpisodicMemory.matches`, `relevance`), and the question's operators
+combine the results as their `compose_extend` combines sets
+(`ExtendedRecall.matches`). The rows are ranked by that result, newest first
+among equals (`EpisodicMemory.query`), and only the rows read are charged.
 Beside them, `EntryRead.cued_rows` reads the explicitly referenced and already
 retrieved occurrences and the LTM0 rows that LTM1 relations tie to the cue's
 concepts; an address permits a read and supplies no resemblance of its own.

@@ -1384,9 +1384,9 @@ of its own extension (`EpisodicMemory.for_meaning`). A close that writes only
 an `LTM1` relation keeps no entry. The columns follow compaction, forgetting
 and checkpoints with their rows.
 
-A recall in the thought loop (`ThoughtLTMCapability.query`) finds rows by the
-query's idea ("Recall and answers" below) and publishes the recalled rows'
-entries as the querying stream's knowing
+A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks
+the rows of the window by their entries ("Recall and answers" below) and
+publishes the recalled rows' concepts as the querying stream's knowing
 (`EpisodicMemory.reinstate`): the two poles are
 rebuilt from the sign, the readings are laid out by their concepts' surface
 lengths one position apart, and each carries the original sentence's tick. The
@@ -2700,14 +2700,14 @@ The mechanism is described under "When" in [One where, one when, many whats](#on
 
 - *System 1 supplies it and System 2 narrows it.* `EpisodicMemory.stage` selects the entry from the kept path's field of understanding: the set the kept compose tree's `compose_extend` calls leave over the sentence's activations, which the open attention pass (`FamiliarTier.open_sentence`) and the input's knowing supply ("Extend and the field of understanding" below). So an entry is a few concepts of knowing, as the sentence's operators left them, kept.
 - *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the entry to `ClauseRows.write_clause` with the row its kept close writes; a kept thought's row takes the strongest of its own extension (`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation keeps no entry.
-- *System 2 returns to it, and what returns is System 1's state.* A recall in the thought loop (`ThoughtLTMCapability.query`) finds rows by the query's idea and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
-- *Memory is read by content and by reference* (the thought grammar's recall by the idea, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only an entry comes back as a field. An entry is what a recall returns, not what it searches.
+- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks the window's rows by their entries and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
+- *Memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only an entry comes back as a field.
 - *No learning rides on an entry.* It is stored detached, and a review books no loss of its own.
 
 **Limits.**
 
 1. An entry is written only with an `LTM0` row, and review needs the thought loop: the loop with no thinking step has no episodic memory.
-2. An episode is reached through the idea of its row; a search of the entries themselves is not designed, and a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
+2. An episode is reached by its content; a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
 3. Promotion reads an entry only for the order of a row with no referent, one above the greatest order among its concepts; MTM's promotion by recurrence works over its own collections.
 
 ### References and shared strata (2026-11-09)
@@ -2908,28 +2908,34 @@ operator's extend does is in [Extend](Extend.md).
 ### Recall and answers
 
 Memory is addressed by content: no read selects rows by time, and none by
-position. Attention and the query on LTM are two readers with two keys
-(Alec, 2026-11-19: "Right now attention selects the concepts that it wants to
-attend to, and uses that to select where/what on percepts. Query on LTM is
-using the idea, a point in conceptual space, to search semantic memory"):
+position. Attention and the query on LTM are two readers with two keys:
 
 | | Its key | What it searches | By |
 | --- | --- | --- | --- |
 | Attention | the concepts it wants, the request | the percepts of the sentence, their what and their where | the weights of the way up, carried downward ([One attention](#one-attention)) |
-| The query on LTM | the idea, a point in conceptual space | semantic memory | a match of points in conceptual space |
+| The query on LTM | the question's field of concepts | the rows of LTM, by `LTM0`'s entries | a match of concepts, order by order |
 
-The query's key is the idea of the question, the composed vector a question
-leaves like any sentence. It searches semantic memory, the ideas of `LTM0`
-and the relations of `LTM1`, by the one match (`ConceptualMatch.match`),
-which compares meaning coordinates and never a form's code: of a candidate
-$c$ against the content $q$ it gives the two coverages $|q \wedge c|/|c|$
-and $|q \wedge c|/|q|$, with $\wedge$ the coordinatewise least and no
-distance, on each lane independently. The percept's code is a form's, in
-perceptual space, and does not enter the query (two spaces, no leakage).
-The window is the newest `ltmWindow` rows, and reading a row is charged to the
-work meter. A recalled row's entry, the few concepts of its moment, is
-published as the querying stream's knowing (`EpisodicMemory.reinstate`),
-so that a recalled experience is reviewed as an attended field.
+A question is extended like any sentence, and its field of understanding,
+the concepts the question's operators leave with their values on the two
+lanes, is the side it is matched on (`EpisodicMemory.query`). What it is
+matched against is each row's entry, the few concepts of its moment, each one
+concept with its strength signed by its lane (`episodic_concepts`,
+`episodic_values`; "When" under
+[One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes)).
+Each operand's set gives one result over the window of the newest
+`ltmWindow` rows, each row's entry matched order by order and never reduced
+across orders or across rows (`EpisodicMemory.matches`, `relevance`): at each
+order, the strengths of the row's entries that name a concept of the
+question, each times the question's value for that concept on the entry's
+lane, are summed and divided by the squared length of the question's values
+at that order, capped at one, and the orders' results are joined by the
+least. A stored against reading opposes the positive question. The
+question's operators combine the operands' results as their `compose_extend`
+combines sets (`ExtendedRecall.matches`). The rows are ranked by the result,
+the newest first among equals; reading a row is charged to the work meter,
+and the recalled rows' entries are published as the querying stream's knowing
+(`EpisodicMemory.reinstate`). Neither side holds a percept's code: both are
+concepts, matched by their references.
 
 An answer is read from a recalled row by walking its idea with `generate`
 and taking the part of its field at the operand where the question's open

@@ -142,16 +142,21 @@ Over the rows of memory it leaves one row.
   enough to reconstitute the sentence verbatim." Two ideas can have one
   extension: a kind of one member and that member leave equal entries. A
   row's optional referent, what its idea is of, tells them apart.
-- **Recall.** A question's row is found by its idea, a point in conceptual
-  space matched against semantic memory
-  ([Architecture](Architecture.md#recall-and-answers)); extend is how the
-  answer is read from what is found. A recalled row's idea is walked
+- **Recall.** Extend is the mechanism of recall. A question is extended
+  over its own tree like any sentence, and its field of understanding is
+  the side it is matched on. One term's result over the rows of memory is
+  one product, matched order by order and never reduced across orders
+  (`EpisodicMemory.matches`, `relevance`); each operator of the question's
+  tree then combines its operands' results as its extend says
+  (`ExtendedRecall.matches`): narrowing intersects, joining unions, `not`
+  and `non` act on the lanes, and `lower` selects one row. The operand a
+  question leaves open selects nothing. A recalled row's idea is walked
   back to its sentence and extended, and the part of its field at the
   operand that stands, under the same operators from the root, where the
   question's open operand stands is the answer (`ExtendedRecall.answer`);
   where the two trees do not agree that far, no answer is read from that
   row. A row keeps only the strongest members of its field, so the
-  walk gives its whole field. A
+  products find the candidates and the walk gives their whole fields. A
   question with no open operand is read on its region instead, by
   existence and by pervasion
   ([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
