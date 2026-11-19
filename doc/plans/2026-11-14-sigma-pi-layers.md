@@ -9640,9 +9640,10 @@ chooses from. The old classes are not edited.
     as a run (the `y` of `archery` for `archer`). Where a coordinate
     would be both, for stands. This is the part table used as an
     upper bound, by evidence against (Alec, §19.72: "parts as
-    negative upper bounds"). *Mine:* the holders that count are the
-    nearest, since a short form is held by hundreds of words; how
-    near is measured in the build.
+    negative upper bounds"). *Mine, measured (§23.3c.1):* the
+    holders that count are those that add the fewest characters,
+    since a short form is held by hundreds of words. A form then
+    gets 0.72 against entries on average and at most 32.
 52. *The wholes half is on the basis of the part catalog* (Alec,
     §19.70: "we should be storing it as a codebook. Starting from
     the set of all values, we discriminate at some boundary";
@@ -9662,8 +9663,11 @@ chooses from. The old classes are not edited.
     of the codes of the wholes the percept lies in; a code is at or
     below each of its wholes' (rule 5). Against, the lower bound as
     evidence against (Alec, §19.72: "wholes as negative lower
-    bounds"): the narrower wholes it does not lie in; *mine:* those
-    directly inside the wholes that apply. A property that is itself
+    bounds"): the narrower wholes it does not lie in. *Mine
+    (§23.3c.1):* this lane is what the upper bound cuts away, one
+    less the for lane; built from the wholes directly inside those
+    that apply it came out nearly that, and it is the lane rule 54
+    reads. A property that is itself
     a degree holds that degree (Alec, §19.71). *Mine, measured
     (§23.3b.2):* the catalog is drawn a second time for this half,
     in coordinates of its own; each known form is its own tightest
@@ -13049,3 +13053,190 @@ With it, the text models' event width is 136 (128 + 8). **Both gates passed**, a
 - Rule 6 should say that a reading's value reads a whole where the run lies and an event reads it over its span. Both are needed: the first for `test_29`, the second for the located-part certificate.
 - Certificate 3 and rule 6 should name where "both" stands. It stands across a concept's members' rows, a property's for at one row and its against at another, and seldom at one row.
 - Rule 50 should note that the wholes half at 64 cannot keep a byte's own coordinate. So step 2 needs rule 52's catalog code at once, and the two steps are one change.
+
+### 23.3c.1 Round 3c, second pass: steps 2 and 3 (2026-11-19)
+
+A fresh implementer on Opus took the round from the first pass's patch. Commits, local on `main`: `58ee0cf8bc`, `fe62f6756a`, `18167a2c59`, `e6be993401`. Its return is below.
+
+**Review** (Claude). Read: the return. Run here, the round's list with the files that name the widths and both gates (four processes, 315 s): **13 failed, 1,377 passed, 68 skipped**, the same thirteen as the implementer's run. Both gates pass. On an export of `8b8a2fcf48`, `test_review13_subspaces.py` and the one case of `test_review14_contracts.py` pass (7 passed).
+
+*Accepted.*
+
+- The code is 64 and 64; the block of 32, `identityLengthDim` and the exact byte layout are gone, with no switch left.
+- The wholes half is on the part catalog: every byte a part of it, a row's code the OR of its parts' codes or the AND of other rows' codes (§19.80), the class of all characters all ones, each form its own tightest whole.
+- Both lanes are stored (`BasicPercepts.against`, `against_codes`); nothing reads the against lane yet.
+- The defect the old width hid is repaired at its producer (`FormCentroids.selected` took the code axis for an axis of alternatives), and `pad_whole` refuses a whole wider than the form.
+- The trees: `ReferenceClose._prepare` held its clauses through two closures that call themselves. 24 whole-file runs of 24 pass.
+- A checkpoint of the old layout is refused with the reason, and a test asserts it. No test loads `data/BasicModel.ckpt`.
+
+*Measured on the 19,821 words, on the source.* 8 words share a code (4 pairs), against 120 on the parts half alone. 582 codes lie inside another's by accident in the sample, against 5,937 on the parts half alone; 2,311 lie inside truly.
+
+*The thirteen failures.*
+
+- Nine are the scalar and numeric cases of step 6.
+- Two are the trial's checks of its stand-in against the source's old layout. They are ported to the new layout in the next pass (the parts half at 64).
+- Two are regressions of round 3 that no earlier list held, since their files were not touched: `test_review14_contracts::test_sentence_reverse_reaches_native_prototypes_and_evidence` (no gradient reaches the percepts) and `test_review13_subspaces::test_actual_serial_code…` (the grammar's object atoms carry values past the code's width). Both passed before the round. Returned with the next pass.
+
+*Decided from the return* (*mine*).
+
+1. *Rule 51, how near:* the holders that count are those that add the fewest characters. A form then gets 0.72 against entries on average and at most 32, against 2.95 and 236 with every holder.
+2. *Rule 52, the against lane of the wholes half is what the upper bound cuts away,* one less its for lane, by definition. As built from "the wholes directly inside, which do not apply" it came out nearly that already (33.9 of 64 coordinates against, 30.1 for), and rule 55 has a scalar's against lane so. It is the lane that rule 54's complement read reads, so the two are one thing and are stored once.
+3. *The class of all characters* is a row of the table of wholes and takes no row of the WholeSpace codebook, twelve configurations having exactly nine.
+
+#### Return of the second pass
+
+Local commits on `main`, none pushed, each ending with the Co-Authored-By line:
+
+| Commit | What it holds |
+| --- | --- |
+| `58ee0cf8bc` | D: the 256-wide whole, repaired at its producer (`FormCentroids.selected`); `pad_whole` refuses a whole wider than the form |
+| `fe62f6756a` | E: `ReferenceClose._prepare` clears its recursive rewrites' cells |
+| `18167a2c59` | steps 2 and 3: widths 64 + 64, the wholes half on the catalog, the rows given by other rows (§19.80), the two lanes, the checkpoint refusal, certificate 46, the ports |
+| `e6be993401` | two width tests that read one sentence once now read it until MTM nominates its forms |
+
+The first implementer's patch was applied and kept, with additions; nothing of it was dropped. No seed pinned, no skip or xfail added, the spec file not edited, the two trial files not edited.
+
+**What was built, by file and function**
+
+**`bin/WordIdentity.py`**
+- `resolve_identity_layout` (patch): refuses `identityLengthDim`; width = `identityPairDim` + `propertyDim` (64 + 64); `propertyOnes` 3.
+- `WordIdentity.__init__`: `length_dim` gone; `width = pair_dim`; new `property_ones`; new `holders`, `_atom_rows`, `_catalog`.
+- `catalog_code(atom)` (new): a part's code in the wholes half, the catalog drawn a second time (`PerceptProperties.catalog_coordinates`, prefix `\x00whole-basis/`), with `propertyOnes` ones plus whatever extra bits the part was given in the parts half. A character's code equals its byte's row in the table of wholes.
+- `tightest(rows)` (new): a form's own tightest whole, the OR of its parts' catalog codes (atoms, and nested word rows through `part_atoms`); `None` where a row is no part of the catalog. Cached by rows and identity revision.
+- `_hold(raw)` (new, called from `admit`): keeps `holders`, each stored form's holders (stored forms holding it as a run), incrementally; rebuilt in `load_vocab_extras`.
+- `nearest_holders(raw)`, `against_atoms(raw)` (new): the nearest holders are those that add the fewest characters; the against atoms are the parts they add.
+
+**`bin/PerceptProperties.py`**
+- `PrimitiveProperties.__init__` (patch, then mine): every byte a catalog part with 3 coordinates of the wholes half; the exact 256/1 layout removed; default `ones=3`; construction refuses a catalog whose OR is not all ones.
+- `TOP` (= -1), `top()`: the class of all characters, the OR of the whole catalog, all ones.
+- `directly_inside()`: each whole of the table (the top and every row that holds of some byte) with the wholes directly inside it; rows over one byte set (letter, word) are one level. Cached by revision.
+- §19.80, the coordinator's addition: `define_by_rows(row, rows)`, `given_by`, `_given_codes`, and `coefficients` for such a row. A row given by other rows has the AND of their codes and holds of a byte as far as all of them do; saved through `get_extra_state` / `set_extra_state` (packed, as `BasicPercepts` packs its record). It falls out of the table as built: `directly_inside` puts it inside each of its rows with no extra rule.
+
+**`bin/BasicPercepts.py`**
+- `against_codes` (new buffer): the against lane, written at `promote` beside `codes`.
+- `subspace_bounds`: the wholes half is the AND of the top, the classes it lies in, and `_tightest(parts)`.
+- `against(row)` (new). Parts half: the codes of the parts its nearest holders add (the form read back by `identity.spelling(parts)`). Wholes half: the codes of the wholes directly inside those it lies in (the top among them) that it does not lie in. Then `min(against, 1 - for)`, so where a coordinate would be both, for stands. A value percept and a conjunction have nothing on it (provisional: the values are step 6, the conjunctions step 4).
+- `lanes(row)` (new): `[2, width]`, for then against.
+- `_load_from_state_dict`: a table of another width is refused with the reason.
+
+**`bin/MereologicalCodes.py`**: the layout refusal names both layouts and says nothing is converted.
+
+**`bin/Spaces.py`, `bin/corpus_capacity.py`** (patch, plus `property_ones` passed to `WordIdentity`): the RadixLayer construction, `enable_derived_codes` and the WholeSpace construction read 64 + 64.
+
+**`data/model.xml`, `data/model.xsd`** (patch): `identityLengthDim` gone; `propertyDim` 64, `propertyOnes` 3. No other configuration names `identityLengthDim`.
+
+**Nothing reads the against lane.** `code(row)` is the for lane as before, and every reader still reads it. The for lane's wholes half did change (it now carries the tightest whole), which is step 3's for lane.
+
+**Scalars, untouched.** `_boundary_codes` still writes a value at the last coordinate of each half (now 63 and 127); no form's code writes there. I touched no scalar reader. The same nine cases fail as at HEAD.
+
+**The numbers the rules left to be measured**
+
+**How near a holder must be (rule 51).** I measured four ways on the dictionary: against entries a row (least / mean / greatest), and rows above 16 entries in all.
+
+| Holders that count | Entries | Rows above 16 in all |
+| --- | --- | ---: |
+| all | 0 / 2.95 / 236 | 4,886 |
+| those adding the fewest parts | 0 / 0.63 / 18 | 3,418 |
+| **those adding the fewest characters (built)** | **0 / 0.72 / 32** | 3,500 |
+| exactly one character more | 0 / 0.18 / 32 | 2,770 |
+| no holder between (direct) | 0 / 2.48 / 223 | 4,734 |
+
+- I built "the fewest characters": the shortest stored forms that hold it. With "fewest parts", `archer` could lose `archery`, because `archery` adds `y` and `ry`.
+- 16,044 rows have no holder. Most rows above 16 are long words, from their own parts.
+- **Provisional.**
+
+**On the first 20,000 words of `/usr/share/dict/words`** (19,821 distinct, as the trial takes them), with the source's `WordIdentity`, `BasicPercepts` and `PrimitiveProperties`, the nine declared classes, and every word reserved and coded. Printed by `test_46_printed_on_the_dictionary`, and by a scratch script that agrees.
+- **Against entries a form gets:** least 0, mean 0.72, greatest 32.
+- **Against ones:** in the parts half 0 / 1.37 / 38; in the wholes half 15 / 33.86 / 59.
+- **For ones in the wholes half:** 5 / 30.14 / 49.
+- **Words that share a code:** 8 on the for lanes and 8 with both lanes (4 pairs; the trial's (i, t) gave 4 pairs). On the parts half alone 120 words share one (WordIdentity's 63 shared rows). The against lane tells no further pair apart.
+- **Codes at or below another's by accident** on the for lane, a sample of every 40th word against all: 582, against 2,311 true. The parts half alone gives 5,937 by accident.
+- No coordinate is one on both lanes.
+
+**One difference from the trial.** A class's code is the OR of its member *characters'* codes, as §22.3c step 3 says. The trial's `class_code` also ORed the catalog's longer parts whose characters belong to the class. The count of shared words comes out the same.
+
+**D: the 256-wide whole, its producer and its repair**
+
+- **The producer** is `FormCentroids.selected`, not `capture` or the bank.
+  - It spreads a witness over a candidate's alternatives by `mean.ndim == like.ndim and mean.shape[1] != like.shape[1]`.
+  - In the comprehension of a supplied answer, both the witness and the operand are 2-D `[1, width]`, so axis 1 is the code. The 128-wide whole was repeated `like.shape[1] // 128` times: 256 wide, with a count 2 wide.
+  - At HEAD, `pad_whole` padded the whole to 352. With the patch, F.pad with a negative pad cropped it to 136, and the count's width broke `MeaningKernels.centroid`.
+- **It failed only some runs.** `test_mixed_supplied_numeric…` failed in about 2 of 3 runs, whenever the walk reached that comprehension. I traced it with a plugin that printed `PAD [(1, 256), (1, 2), (1, 256)] 136`.
+- **Repair.**
+  - `selected` spreads only along an alternatives axis `[-2]` that exists (`ndim >= 3`).
+  - `pad_whole` refuses a whole wider than the form. It still pads the 8 coordinates of place and time, which have no whole.
+- **After:** 5 of 5 runs pass, and `test_output_path_supervised` and `test_prepared_answer_boundary` pass whole.
+
+**E: the trees test**
+
+- **Cause.** `ReferenceClose._prepare` defines `rewrite` and `rewrite_term`, which call themselves through their closure cells: function → closure → cell → function.
+  - That cycle held their memo dicts (`rebuilt`, `composed`) of `ClauseRow.Clause`s.
+  - Each clause's `identity['result_composition']` is a `SentenceStrata.CompositionView`, which holds a `Tree`.
+  - So the leases were released, and the trees waited for the collector.
+- **Found by** `gc.get_referrers`, walked from the leftover trees: Tree ← CompositionView ← identity dict ← Clause ← memo dict ← cell of `ReferenceClose._prepare.<locals>.rewrite`.
+- **Repair.** The calls run in `try` / `finally: rewrite = rewrite_term = None`, which clears the cells. It is a cycle of the source's own making; the test is unchanged.
+- **Count:** 24 of 24 whole-file runs of `test_item17_order_zero.py` pass (two sets of 12, four processes at a time). The first pass saw about 1 failure in 3.
+
+**Ported tests (old → new)**
+
+| File | Test | Old | New |
+| --- | --- | --- | --- |
+| `test_form_subspaces` (patch) | layout, exact union, tower-1 refresh, retired fills, the meet, the checkpoint | 96 + 256, the byte's own coordinate | 64 + 64; a byte's coordinate is one its catalog code holds and its neighbour's does not (`at`); the union is the OR of the member bytes' codes |
+| `test_form_subspaces` | `test_cost_certificate…` | 17 rows; no `[17, 17]` tensor | 37 rows; no `[37, 37]`. A catalog column holds 2 to 21 bytes, so a 17-byte column made a 17 × 17 slice by coincidence |
+| `test_form_subspaces` (patch) | `test_native_lesson_certificate` | one reading | `concept_mint_count` readings |
+| `test_dimensional_governance` (patch) | two mismatch messages | 360 | 136 |
+| `test_item17_forms` (patch) | `test_the_code_holds_no_end_marks_and_no_lengths` | the length block is empty | the code is the parts half alone (64); parts reach past coordinate 32 |
+| `test_wholespace_property_migration` (patch, plus mine) | byte_bits shape; seat count; the property inventory | `(256, 256)` | `(256, 64)`; the word classes counted; the table's packed `_extra_state` (rows given by rows) is not an inventory row |
+| `test_review13_subspaces` (patch, plus mine) | widths and slices | 96 / 256 / 352 / 360 | 64 / 64 / 128 / 136; reads its sentences until nomination |
+| `test_output_path_supervised` (patch) | native widths | 488 / 1256 / 360 | 264 / 1032 / 136 |
+| `test_review14_contracts` | `towers()` and slices | `property_width` 256, 259 | 64, 67 |
+| `test_operators_round3a` | `identity_bank` | `RadixLayer(96)` | `RadixLayer(64)` |
+| `test_operators_round3a` | the a×n loop | `form[64:]` is 32 zeros | `form` is `pair_dim` = 64 wide; the 32 forms of `a` still have 32 keys |
+| `test_operators_round3a` | the live grammar | `sparse[:96]` | `sparse[:identity.width]` |
+| `test_item20_round5_percepts` | `percepts()` and the recurrence fixture | `BasicPercepts(…, 3, 256, …)`; `_cs(dim=259)`; `STM0(259)` | `3, P` (64); `basic.width` |
+| `test_item55_mechanisms` | `test_nested_wholes` | `RadixLayer(96)` ×2 | `RadixLayer(64)` |
+| `test_operators_final` | `test_meaning_width_zero…` | one forward | read until nomination; passes now (it failed at HEAD) |
+
+**Choices (provisional unless marked)**
+
+1. The nearest holders are those adding the fewest characters.
+2. A conjunction row and a value percept have an empty against lane (steps 4 and 6 settle them).
+3. Against is capped at `1 - for`; on 0/1 codes that is "for stands".
+4. The top is the row `TOP` of `PrimitiveProperties`' table: its members are all bytes, its code the OR of the catalog. It takes no row of the WholeSpace codebook, since 12 configurations have exactly 9 rows and no free one. Construction refuses a catalog that does not cover the half.
+5. A class code is the OR of its member characters (the spec's words), not of the longer parts too (the trial's).
+6. A catalog part given more bits in the parts half gets as many more in the wholes half.
+7. The form behind a basic percept, for its holders, is read back by `identity.spelling(parts)`. A shared row reads as the form admitted first.
+8. A row given by other rows: its coefficients are the least of theirs and its code the AND of their codes; `members` is overwritten with the least at definition.
+
+**The checkpoint**
+
+- `data/BasicModel.ckpt` (4.6 GB, Sep 12) does not load. `MereologicalCodes` refuses its `_form_layout` and names both layouts, and `BasicPercepts` refuses a code of another width with the reason. Nothing converts it.
+- No test loads it:
+  - `test_tied_reconstruction_objective` writes the key shapes of the grammar heads by hand (unchanged);
+  - `test_word_loop_buckets_and_orders` reads only `weightsPath` from the XML.
+- Asserted:
+  - `test_item17_code::test_a_checkpoint_of_the_old_layout_is_refused_with_the_reason` (a 96 + 256 table into 64 + 64);
+  - `test_form_subspaces::test_checkpoint_rejects_a_different_subspace_layout`.
+
+**Final counts**
+
+**The full list, run once.** The list was the 102 files of `r3_files.txt` that exist, plus `test_item18_stack`, `test_item17_forms`, `test_item17_layers`, `test_item17_code`, `test_item17_code_trial`, `test_mm_xor`, and every other file that names the widths: `test_form_subspaces`, `test_dimensional_governance`, `test_wholespace_property_migration`, `test_review13_subspaces`, `test_review14_contracts`, `test_operators_final`, `test_generation_selection_backward`, `test_generative_residual_finite` and `test_observer_identity`. Run with `-n 4 --dist loadfile`: **13 failed, 1,427 passed, 71 skipped, 1 xpassed, 327 s.**
+- The 9 scalar and numeric cases of step 6: `test_item18_perceptual_scalar` 4, `test_item18_scalar` 3, `test_item18_places::test_66`, `test_item18_stack::test_80`.
+- 2 trial cases. `test_the_stand_in_codes_as_word_identity_does` calls `WordIdentity(…, length_dim=32)`, and `test_3_the_lessons_concepts_under_each_layout` compares with `codes[:, :96]`. Both check the stand-in against the source as it was, and you said to leave the two files as they are. Each needs one line ported: drop `length_dim` and compare at 64, or compare the parts half `[:64]`. Your word.
+- 2 that fail at HEAD as well (checked by stash at `272ed33d86`). Neither is in your list; both were added because they name the widths.
+  - `test_review14_contracts::test_sentence_reverse_reaches_native_prototypes_and_evidence`: no gradient reaches the percepts in one training batch.
+  - `test_review13_subspaces::test_actual_serial_code…`: now that it reads its sentences until nomination, it fails further on. The grammar object atoms carry the meaning complement past 136, which is no code width (`atoms[...,136:]` is not zero).
+- Not failing any more: `test_item17_order_zero`'s trees test (24 of 24 runs) and `test_operators_final` (it failed at HEAD).
+
+**Checked after that run.** The new checkpoint test (2 passed), the 24 runs of `test_item17_order_zero` (all passed), and the lesson below. Both stopping gates passed in the full run (`test_mm_xor::…test_convergence` and `test_item25_completion::test_a_previously_named_shared_concept_denotes_its_raised_class`).
+
+**The lesson's sixteen sentences** (`attention_thinking_certificate.py lesson`): 16 batches, 19.78 s of the record (19.1 s summed over batches), 22.2 s of the process. Before: 20.47 s and 24.7 s.
+
+**What I would change in §21**
+
+- **Rule 51:** say how near: the holders that add the fewest characters (mean 0.72 against entries a row, greatest 32).
+- **Rule 52.**
+  - Say that the class codes are ORs over member characters, which here equals the trial's count.
+  - On the dictionary the against lane of the wholes half is nearly the complement of its for lane (mean 33.9 of 64 against, 30.1 for). With the class codes this wide, "the wholes directly inside, which do not apply" covers nearly everything outside the bound. Steps 4 and 5 should know that the complement read and this lane carry almost the same thing.
+- **The class of all characters:** it is a row of the table of wholes, not of the WholeSpace codebook (rows are fixed at 9 in 12 configurations).
+- **Certificate 46** could also assert that a row given by other rows lies at or below each (§19.80). It is asserted here.
