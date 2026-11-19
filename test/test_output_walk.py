@@ -665,14 +665,18 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monke
             derivation = replace(derivation, conceptual_answer=torch.stack([value.roles for value in meanings]),
                 sentence_states=tuple(SentenceEndState(value) for value in meanings),
                 answer_meanings=tuple((value,) for value in meanings))
-        # The standalone kernel leaves an unrelated open reading record.
-        # Output must ignore it and continue from the held completed field.
+        # The standalone kernel leaves an unrelated open reading record. It
+        # reads with no sentence, so it admits no word and says nothing: no
+        # idea, no action in its record (1.8 §68.89). Output must ignore the
+        # record and continue from the held completed field.
         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
         with torch.no_grad():
             out = m._forward_with_compiled_sentence_state(None)
             m._publish_compiled_sentence_state(out)
+            assert not bool(m._attention_words.accepted.any())
+            assert not bool(m._stm_single_S.any())
             targets = m._derivation_targets(None, m._walk_budget())
-            assert bool((targets >= 0).any())
+            assert not bool((targets >= 0).any())
             choices = [t.clone() for t in m._reconstruction_stack().choices()]
             _stop(m)
             stopped = m.reverseOutput(u, derivation)

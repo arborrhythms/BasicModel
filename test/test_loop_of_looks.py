@@ -357,3 +357,36 @@ def test_4_verbal_xor_offers_its_declared_interpretation():
         assert {'conjunction', 'disjunction'} <= set(model.languageSpace._generate_binary_names)
     finally:
         model.End()
+
+
+def test_5_a_read_with_no_sentence_admits_no_word(tmp_path, monkeypatch, eager_reading):
+    """Outside a sentence nothing is admitted, and so nothing is said.
+
+    No act of attention accepts a word (§60.4), and the grammar interprets
+    only at a sentence's looks. A read with no sentence (a stem read, as the
+    word evaluator makes) is attention's walk alone: it reaches the words and
+    admits none. Alec, 2026-11-19 (1.8 §68.89): "we will just output nothing
+    for non-WFF parses."
+    """
+    from test_packed_reconstruction_parity import build_model
+    from reading_fixtures import read_in_source_order
+    model = build_model(tmp_path, word_capacity=8)
+    read_in_source_order(model, monkeypatch)
+    calls = []
+    chooser = model._stm_reducer()
+    interpret = chooser.interpret_at_look
+    def observed(*args, **kwargs):
+        calls.append(None)
+        return interpret(*args, **kwargs)
+    monkeypatch.setattr(chooser, 'interpret_at_look', observed)
+    raw = model.inputSpace.prepInput(['first second last'])
+    with torch.no_grad():
+        model._lex_embed_stem(raw)
+    reading = model._attention_words
+    spans = model._attention_spans  # separators have an empty extent
+    live = spans[..., 1] > spans[..., 0]
+    assert int(live.sum()) == 3
+    assert calls == []
+    assert not reading.accepted.any()
+    assert not model.inputSpace._ar_grammar_leaf_mask.bool().any()
+    assert int(reading.table.done.sum()) == 0

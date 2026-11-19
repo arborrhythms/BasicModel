@@ -414,6 +414,8 @@ def test_normal_input_stages_greedy_and_defers_comparison_to_sentence(monkeypatc
  assert calls==['greedy'], calls
  assert model._attention_read is not None
  assert model._attention_words is model._attention_greedy
+ # With no sentence the read is attention's walk alone: no word is admitted.
+ assert not model._attention_words.accepted.any()
  assert not hasattr(model, '_attention_score_term')
  assert not hasattr(model, '_last_attention_comparison')
 
@@ -572,3 +574,5 @@ def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypa
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
     assert calls == [3]
     assert model._attention_words.values.shape[:2] == model.inputSpace._word_active_mask.shape
+    # With no sentence the read is attention's walk alone: no word is admitted.
+    assert not model._attention_words.accepted.any()
