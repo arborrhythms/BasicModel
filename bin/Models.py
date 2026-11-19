@@ -20948,11 +20948,10 @@ class BasicModel(BaseModel):
 
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word,
-                                *, incoming_trust=None):
+                                *, incoming_trust):
         from SentenceCompose import select_rows
         from WholePaths import finish as finish_path, credit as path_credit, objectives as path_objectives
-        trust = (self.conceptualSpace._incoming_trust_multiplier()
-                 if incoming_trust is None else float(incoming_trust))
+        trust = incoming_trust
         # Raw forward enters here without runBatch's eager setup. Compiled
         # reconstruction must find its autograd anchors already allocated.
         _ensure_grad_anchors(words.device)
@@ -22533,12 +22532,14 @@ class BasicModel(BaseModel):
             def stage_cs_sym(payload, feedback, index, live, current_sym):
                 return payload, (payload[0],)
         if sentence_transactions:
+            trust = (self.conceptualSpace._incoming_trust_multiplier()
+                     if incoming_trust is None else float(incoming_trust))
             (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
              feedback, trip_count) = self._run_sentence_word_bricks(
                 words, active, sentence_ids, stm_state, cs_sub_state,
                 cs_sym_state, cs_lang_state, empty_feedback,
                 stage_cs_sub, stage_cs_sym, canonical,
-                stage_cs_lang, incoming_trust=incoming_trust)
+                stage_cs_lang, incoming_trust=trust)
         else:
             (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
              feedback, trip_count) = (

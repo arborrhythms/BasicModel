@@ -51,3 +51,24 @@ def test_ordered_index_survives_duplicate_reuse_retain_and_checkpoint():
         store.reference_pairs([1, 2])
     with pytest.raises(ValueError, match='invalid LTM1 retention selection'):
         store.retain([1, 2])
+
+
+def test_witness_cache_follows_allocation_witness_writes_and_retirement():
+    from test_cs_sparse_weights import _cs, _mint_row
+    owner = _cs()
+    a = _mint_row(owner, 0, 9010)
+    b = _mint_row(owner, 1, 9011)
+    allocator = owner._concept_allocator
+    layer = allocator.layer(0)
+    def reference():
+        return [r for r, cid in owner._row_to_concept().items()
+                if cid not in allocator.retired and (owner._order0_inventory_row(r) or bool(layer.witnessed[r]))]
+    assert owner._witnessed_rows() == reference()
+    assert a in reference() and b not in reference()
+    layer.witnessed[b] = True
+    assert owner._witnessed_rows() == reference() and b in reference()
+    allocator.retired.add(9010)
+    assert owner._witnessed_rows() == reference() and a not in reference()
+    returned = owner._witnessed_rows()
+    returned.clear()
+    assert owner._witnessed_rows() == reference()

@@ -754,3 +754,14 @@ def test_sign_sentence_observes_a_remembered_endpoint_before_joining(monkeypatch
     assert alloc.parts.find(left, right) == source
     assert (float(alloc.parts.truth_plus[source]), float(alloc.parts.truth_minus[source])) == pair
     assert {i for i, kinds in alloc.symbol_types.items() if 'object' in kinds} == {target}
+
+
+def test_trust_keeps_the_native_rounding_of_an_observed_agreement():
+    owner, _, identity, _ = learned(1)
+    row = owner._csw_row_of(identity)
+    trust = owner.similarity_codebook.trust
+    trust.views[row] = 3
+    trust.agreement[row] = 1.974835753440857
+    trust.refresh(identity)
+    expected = float(trust.agreement[row]) / 3 * -math.expm1(-3 / trust.trust_views)
+    assert torch.equal(trust.lengths[row, 0], trust.lengths.new_tensor(expected))
