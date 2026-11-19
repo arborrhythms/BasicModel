@@ -17,6 +17,10 @@ def test_sentence_trials_share_the_open_field_and_common_reverse(tmp_path, monke
         concept_rows=32, training_overrides={'reconstructionPlacement': 'eager'},
         architecture_overrides={'separateChooser': separate})
     model._tensor_peer_while_eager = True
+    # The generation below needs both words read and composed; since the
+    # loop of looks which words are read is the chooser's draw.
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.inputSpace.data.has_supervised_outputs = False
     fields, records = [], []
     original = model._sentence_path_cost
