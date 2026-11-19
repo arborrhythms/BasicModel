@@ -128,13 +128,16 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     scope = torch.tensor([[bracket]])
     field = cs.cs_read_memberships((raw, positions, primitive, raw, positions), scope)
     # A property witnessed true and false within one bracket reports both, at
-    # the basic percepts that carry it: the whole boundary of each one's
-    # collection, as BasicPercepts.read returns it, holds the two lanes.
-    # Narrowing attention isolates either observation; an empty scope is unknown.
-    percepts = cs._percept_field
+    # the rows of the basic percepts that carry it: the part's presence in
+    # the bracket times the property's two lanes (rule 6). Narrowing
+    # attention isolates either observation; an empty scope is unknown.
+    percepts, basic = cs._percept_field, cs.basic_percepts
     assert len(percepts.keys) == 2
-    for index in range(len(percepts.keys)):
-        torch.testing.assert_close(percepts.boundaries[1, index, 0, 0], torch.tensor(expected))
+    inside = raw[0, bracket[0]:bracket[1]]
+    for part in (48, 49):
+        index = percepts.keys.index(('bp', basic.index[((part,), (0,))]))
+        presence = float((inside == part).any())
+        torch.testing.assert_close(percepts.values[index, 0, 0].detach(), presence * torch.tensor(expected))
     # The concept is one signed number, for less against.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))
     torch.testing.assert_close(field[0, 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)
@@ -162,7 +165,10 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     row = cs._csw_concept_row(0, cid)
     basic_feature(cs, row, 'ws', 0, 1., parts=(7,))
     primitive = PrimitiveProperties(1)
-    primitive.teach(0, [65], [.5])
+    # A membership of .5 makes the row read [.5, .5] (rule 6): its combined
+    # for and against vectors are equal and the column reads nothing to
+    # learn from. The property is held at .8, so the row reads [.8, .2].
+    primitive.teach(0, [65], [.8])
     spans = torch.tensor([[[0, 1]]])
     native = (torch.tensor([[7]]), spans, primitive, torch.tensor([[65]]), spans)
     store = Spaces._concept_alloc_of(cs).layer()

@@ -149,18 +149,24 @@ def test_source_code_activation_is_nonneg_presence_by_default():
 
 def test_membership_read_is_input_dependent_and_differentiable():
     from test_concept_memberships import binary_features
-    cs = _cs(nS=16, order=1)
-    native, extents = binary_features(cs, torch.tensor([[48, 49]]))
+    # The basic percepts have a property half, so a property and its Not
+    # have different vectors and the concept's column does not cancel.
+    from basic_fixtures import with_property_half
+    cs = with_property_half(_cs(nS=16, order=1))
+    # One byte: over [48, 49] each property is seen both ways and every row
+    # reads the same on its two lanes, so the concept reads nothing.
+    native, extents = binary_features(cs, torch.tensor([[48]]))
     primitive = native[2]
     with torch.no_grad():
         primitive.members[:, 48:50] = torch.tensor([[.2, .8], [.7, .3]])
     read = cs.cs_read_memberships(native, extents)
     assert read.shape == (cs._order_caps()[0], 1, 1, 2)
     # Fractional properties keep both lanes inside (0, 1) at the basic
-    # percepts that carry them (the whole boundary of each collection).
-    field = cs._percept_field
-    bounds = field.boundaries[1, :, 0, 0]
-    assert bool((bounds > 0).all()) and bool((bounds < 1).all())
+    # percepts' rows that carry them: the part present, its property .2 for
+    # and .8 against, the other .7 and .3.
+    field, basic = cs._percept_field, cs.basic_percepts
+    rows = field.values[[field.keys.index(('bp', basic.index[((48,), (p,))])) for p in (0, 1)], 0, 0]
+    torch.testing.assert_close(rows.detach(), torch.tensor([[.2, .8], [.7, .3]]))
     # The basic percepts read the property memberships differentiably.
     field.values[..., 0].sum().backward(retain_graph=True)
     assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
@@ -168,14 +174,13 @@ def test_membership_read_is_input_dependent_and_differentiable():
     read.sum().backward()
     sigma = cs.order_zero
     assert sigma.weight.grad is not None and sigma.weight.grad.abs().sum() > 0
-    # The fixture's basic percepts have no property half, so the column of a
-    # property and its Not cancels; the input dependence is read at the
-    # basic percepts.
+    # The read depends on its input, at the basic percepts and at the concept.
     values = field.values.detach().clone()
     with torch.no_grad():
         primitive.members[:, 48:50] *= .5
-    cs.cs_read_memberships(native, extents)
+    changed = cs.cs_read_memberships(native, extents)
     assert not torch.equal(cs._percept_field.values.detach(), values)
+    assert not torch.equal(changed.detach(), read.detach())
 
 
 def test_membership_read_never_updates_the_dictionary():

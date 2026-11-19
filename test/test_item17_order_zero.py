@@ -227,15 +227,21 @@ def test_a_word_reads_its_column_of_the_order_zero_sigma():
     column = torch.tensor([.3, .2, .1, .5, .25, -.25])
     place = torch.tensor([[[.1, .9], [.4, .6]]])
     y = read_word(evidence, mask, torch.cat((column, code))[None, None], place, content_width=4)
-    presence = torch.tensor([[[.72, 0.]], [[0., 0.]]])  # [P=1 per location, lanes]
+    # The run of parts is the presence on both lanes, the whole on its own:
+    # [.9 * .8, .9 * 0] and [.5 * 0, .5 * 1].
+    presence = torch.tensor([[[.72, 0.]], [[0., .5]]])  # [P=1 per location, lanes]
     for location in range(2):
         x = combine(presence[location][:, None], code[None], where=place[:, location])
         expected = torch.tanh((x[0, 0] - x[0, 1]) @ column)
         torch.testing.assert_close(y[0, location], expected)
-    # The against lane: an absent whole reads the percept against.
-    against = read_word(torch.tensor([[[-.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
+    # The against lane: a present run whose whole is witnessed not to hold
+    # reads the percept against; an absent run reads nothing.
+    against = read_word(torch.tensor([[[.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
                         torch.cat((column, code))[None, None], place[:, :1], content_width=4)
     assert float(against) < 0
+    absent = read_word(torch.tensor([[[-.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
+                       torch.cat((column, code))[None, None], place[:, :1], content_width=4)
+    assert float(absent) == 0
 
 
 def test_a_gradient_reaches_only_the_columns_read():
@@ -494,7 +500,11 @@ def test_sentence_trees_are_released_without_the_collector():
             gc.set_debug(gc.DEBUG_SAVEALL)
             try:
                 gc.collect()
-                left = [item for item in gc.garbage if isinstance(item, Tree)]
+                # This model's trees (another model of the module may
+                # release its own here).
+                stores = {id(store) for store in strata.idea_stores}
+                left = [item for item in gc.garbage
+                        if isinstance(item, Tree) and id(item.ideas) in stores]
             finally:
                 gc.set_debug(0)
                 gc.garbage.clear()

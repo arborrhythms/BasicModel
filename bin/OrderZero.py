@@ -156,7 +156,8 @@ def read_word(evidence, mask, reading, place, *, content_width):
     basic percept's members (its run of parts and its wholes) at each
     location, and ``mask`` which are its members there. The basic percept's
     value on each lane is the Pi of its members: the product of their
-    memberships on that lane, zero where one is at or below the floor.
+    memberships on that lane, zero where one is at or below the floor; the
+    run of parts stands at its presence on both lanes.
     ``reading`` ``[B, 1, D + C]`` is the concept's column of the order-zero
     Sigma (``D`` wide) and the basic percept's vector (``C`` wide);
     ``place`` ``[B, N, D - C]`` is each location's own place and time.
@@ -164,10 +165,17 @@ def read_word(evidence, mask, reading, place, *, content_width):
     width = reading.shape[-1] - content_width
     column, code = reading[..., :width], reading[..., width:]
     lanes = torch.stack((evidence.clamp(0, 1), (-evidence).clamp(0, 1)), -1)
+    # The first slot is the run of parts: the percept's presence, the same
+    # on both lanes. The wholes keep their own lanes; with none held, the
+    # against lane reads nothing.
+    run = evidence[..., :1].clamp(0, 1)[..., None].expand(*evidence.shape[:-1], 1, 2)
+    lanes = torch.cat((run, lanes[..., 1:, :]), -2)
     held = mask[..., None]
     logs = torch.where(held, membership_log(lanes), 0.).sum(-2)
     absent = (held & (lanes <= EPS_LOG)).any(-2) | ~held.any(-2)
     presence = torch.where(absent, 0., torch.exp(logs))
+    whole = mask[..., 1:].any(-1)
+    presence = torch.stack((presence[..., 0], torch.where(whole, presence[..., 1], 0.)), -1)
     gaps = torch.log((1.0 - code).clamp_min(EPS_LOG))
     content = 1.0 - torch.exp(presence[..., :, None] * gaps[..., None, :])
     coordinates = presence[..., :, None] * place[..., None, :]

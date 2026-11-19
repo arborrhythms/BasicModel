@@ -277,8 +277,33 @@ class BasicPercepts(nn.Module):
         if rows:
             order = list(dict.fromkeys(keys))
             selected = native.selected(order)
-            value = self.pi(native.values.index_select(0, selected), rows, order)
-            event = self.pi(native.events.index_select(0, selected), rows, order)
+            members = native.values.index_select(0, selected)
+            happened = native.events.index_select(0, selected)
+            # A run of parts is the percept's presence: present wherever it
+            # lies in the extent, and at an event wherever it lies inside
+            # that event's span; the same on both lanes (it has no against
+            # of its own). The wholes keep their own lanes and must hold over
+            # the extent, and over each event.
+            run = torch.tensor([key[0] == 'ps' for key in order], device=members.device)
+            if bool(run.any()):
+                presence = members[..., :1].expand_as(members)
+                members = torch.where(run.reshape(-1, *([1] * (members.ndim - 1))), presence, members)
+                spans = native.spans.to(happened.device)
+                inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
+                          & (spans[:, None, :, 1] <= spans[:, :, None, 1])
+                          & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
+                lies = (happened[..., None, :, 0] * inside[None, :, None]).amax(-1)
+                at_events = lies[..., None].expand_as(happened)
+                happened = torch.where(run.reshape(-1, *([1] * (happened.ndim - 1))), at_events, happened)
+            value = self.pi(members, rows, order)
+            event = self.pi(happened, rows, order)
+            # A row with no whole reads its presence on the for lane alone.
+            unwhole = torch.tensor([row not in self.conjunctions and len(group) == 1
+                                    for row, group in zip(rows, groups)], device=value.device)
+            if bool(unwhole.any()):
+                value = value.clone(); event = event.clone()
+                value[unwhole, ..., 1] = 0.
+                event[unwhole, ..., 1] = 0.
             values, events = list(value), list(event)
             # Members come before the conjunctions over them.
             members = [('bp', r) for r in rows]

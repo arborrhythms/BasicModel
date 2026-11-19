@@ -15136,19 +15136,17 @@ class ConceptualSpace(Space):
         with ``batch``, of that stream alone (``B`` is one).
 
         A concept's single signed value is never both; a basic percept can
-        be. A basic percept is both where its run of parts is present and its
-        wholes are read on both lanes: the run's presence times the least of
-        the wholes' two lanes. A concept is both by its members, the basic
-        percepts its column was started from, each for or Not:
+        be: it is both to the degree of the least of its row's two lanes. A
+        concept is both by its members, the basic percepts its column was
+        started from (read from the feature record), each for or Not:
         ``1 - prod_q (1 - both_q)``.
         """
         rows = torch.as_tensor(rows, dtype=torch.long).tolist()
         shape = perception.values.shape[1:3]
         result = perception.values.new_zeros(len(rows), *shape)
-        if perception.boundaries is None or not len(perception.keys) or not rows:
+        if not len(perception.keys) or not rows:
             return result
-        parts, wholes = perception.boundaries.detach()
-        percept = parts[..., 0] * wholes.amin(-1)
+        percept = perception.values.detach().amin(-1)
         if batch is not None:
             percept = percept[:, batch:batch + 1]
             result = result[:, batch:batch + 1]

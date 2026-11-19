@@ -14,13 +14,17 @@ def test_different_positions_in_one_extent_supply_the_two_symbols():
     native, _ = binary_features(cs, torch.tensor([[49, 48, 49, 49]]))
     extents = torch.tensor([[[0, 2], [2, 4]]])
     read = cs.cs_read_memberships(native, extents)
-    # Both in the first extent, for in the second, at the basic percepts
-    # that carry the property (the whole boundary of each one's collection).
-    field = cs._percept_field
-    carrying = [field.keys.index(('bp', bp)) for bp in cs.basic_percepts.carrying('ws', 0)]
-    for reading, expected in ((0, [1., 1.]), (1, [1., 0.])):
-        for slot in carrying:
-            torch.testing.assert_close(field.boundaries[1, slot, 0, reading], torch.tensor(expected))
+    # Both in the first extent, for in the second, at the rows of the basic
+    # percepts that carry the property: a part's presence in the extent
+    # times the property's two lanes over it (rule 6).
+    field, basic = cs._percept_field, cs.basic_percepts
+    raw = torch.tensor([49, 48, 49, 49])
+    for reading, (start, end), expected in ((0, (0, 2), [1., 1.]), (1, (2, 4), [1., 0.])):
+        for part in (48, 49):
+            slot = field.keys.index(('bp', basic.index[((part,), (0,))]))
+            presence = float((raw[start:end] == part).any())
+            torch.testing.assert_close(field.values[slot, 0, reading].detach(),
+                                       presence * torch.tensor(expected))
         # The concept is one signed number, for less against.
         _, lanes = order_zero_expected(cs, 0, published_presence(cs, 0, reading))
         torch.testing.assert_close(read[0, 0, reading], lanes.to(read), atol=1e-5, rtol=1e-5)

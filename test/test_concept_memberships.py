@@ -25,15 +25,18 @@ def test_one_property_has_the_four_extent_corners():
     cs = _cs()
     native, extents = binary_features(cs, torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]]))
     actual = cs.cs_read_memberships(native, extents)
-    # The four corners are read at the basic percepts that carry the
-    # property: the whole boundary of each one's collection, as
-    # BasicPercepts.read returns it. A Not member's lanes are the swap.
+    # The four corners are read at the rows of the basic percepts that
+    # carry the property (rule 6): the part's presence in the extent times
+    # the property's two lanes over it. The other property's lanes are the
+    # swap.
+    raw = torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]])
     corners = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [1., 1.]])
     basic, field = cs.basic_percepts, cs._percept_field
     for prop, expected in ((0, corners), (1, corners.flip(-1))):
         for part in (48, 49):
             index = field.keys.index(('bp', basic.index[((part,), (prop,))]))
-            torch.testing.assert_close(field.boundaries[1, index, :, 0], expected)
+            presence = (raw == part).any(-1).float()[:, None]
+            torch.testing.assert_close(field.values[index, :, 0].detach(), presence * expected)
     # The concept is one signed number, for less against.
     for b in range(4):
         _, lanes = order_zero_expected(cs, 0, published_presence(cs, b))
@@ -131,11 +134,11 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     spans = torch.tensor([[[0, 1], [1, 2]]])
     extent = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), extent)
-    # A fractional property keeps both lanes at the basic percepts that
-    # carry it: the whole boundary of each one's collection.
+    # A fractional property keeps both lanes at the rows of the basic
+    # percepts that carry it: the part present, times the property's lanes.
     field = cs._percept_field
     rows = [field.keys.index(('bp', cs.basic_percepts.index[((65,), (prop,))])) for prop in (0, 1)]
-    torch.testing.assert_close(field.boundaries[1, rows, 0, 0], torch.tensor([[.25, .75], [.36, .64]]))
+    torch.testing.assert_close(field.values[rows, 0, 0].detach(), torch.tensor([[.25, .75], [.36, .64]]))
     # The concept is one signed number, for less against, read by its column.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))
     torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)

@@ -47,11 +47,11 @@ def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
     spans = torch.tensor([[[0, 1]]])
     source = (torch.tensor([[0]]), spans, primitive, torch.tensor([[97]]), spans)
     field = basic.read(source, spans, (row,))
-    # A basic percept is a row of the first Pi (rule 6): on each lane the
-    # product of its members' memberships on that lane. Its part is present
-    # wholly for and not against, its whole .4 for and .6 against.
-    part, whole_pair = torch.tensor([1., 0.]), torch.tensor([.4, .6])
-    torch.testing.assert_close(field.values[0, 0, 0], part * whole_pair)
+    # A basic percept is a row of the first Pi (rule 6): its run of parts is
+    # its presence on both lanes, its whole read on its own lanes. Its part
+    # is present wholly, its whole .4 for and .6 against.
+    presence, whole_pair = 1., torch.tensor([.4, .6])
+    torch.testing.assert_close(field.values[0, 0, 0], presence * whole_pair)
     gradient, = torch.autograd.grad(field.values[0, 0, 0, 0], (primitive.members,))
     assert gradient[0, 97] == 1 and gradient.count_nonzero() == 1
     absent = (torch.tensor([[1]]), spans, primitive, torch.tensor([[97]]), spans)
@@ -60,7 +60,7 @@ def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
     result = audit(basic)
     assert result['premises'] == 'basic_percepts'
     assert not result['tower0']['violating_pairs'] and not result['tower1']['violating_pairs']
-    receipt('basic-read-gradient', dict(positive=.4, negative=0., absent=0,
+    receipt('basic-read-gradient', dict(positive=.4, negative=.6, absent=0,
         member_gradient=float(gradient[0, 97]), audit=result))
 
 

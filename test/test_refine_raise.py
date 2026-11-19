@@ -1,5 +1,5 @@
 """Refinement precedes a raise; geometry belongs to the current field."""
-from basic_fixtures import feature as basic_feature
+from basic_fixtures import feature as basic_feature, with_property_half
 from types import SimpleNamespace
 
 import pytest
@@ -11,7 +11,7 @@ from test_concept_memberships import binary_features
 
 
 def field_case(raw, patience=2):
-    cs = _cs(nS=128, order=2)
+    cs = with_property_half(_cs(nS=128, order=2))
     cs._mereology_raise = True
     cs.mereology_refine_patience = patience
     from clock_fixtures import install
@@ -163,11 +163,11 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     cs.add_concept_edge(garfield, 0, 1., negated=True)
     cs._promotion_enabled = True
     store = Spaces._concept_alloc_of(cs).layer()
-    # Both primitive poles are directly observed. The predicate's column of
-    # the order-zero Sigma starts at zero here (its for and Not members have
-    # the same vector in this layout) and is learned with the particular's
-    # link to it.
-    optimizer = torch.optim.Adam([store.values, cs.order_zero.weight], lr=.03)
+    # Both primitive poles are now directly observed. Learn the particular's
+    # link to that predicate instead of relearning its already-known absence.
+    with torch.no_grad():
+        store.values[store._index[(felix, 0)]] = 0.
+    optimizer = torch.optim.Adam([store.values], lr=.03)
     native, extents = binary_features(cs, torch.tensor([[49], [48], [65]]))
     dictionary = torch.rand(cs.nVectors, cs.nDim)  # no selected initialization
     target = torch.tensor([[1., 0.], [0., 1.], [0., 0.]])
@@ -176,11 +176,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
         optimizer.zero_grad()
         read = cs.cs_read_memberships(native, extents)
         _, field = cs.cs_forward_content(read, dictionary)
-        # The predicate learns on its own reading, the particular's link on
-        # the particular's (the fold above order zero passes nothing back
-        # through a reading of exactly zero).
-        loss = ((read[0, :, 0] - target).square().mean()
-                + (field[felix, :, 0] - target).square().mean())
+        loss = (field[felix, :, 0] - target).square().mean()
         if initial is None:
             initial = float(loss.detach())
         loss.backward()

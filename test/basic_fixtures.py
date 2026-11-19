@@ -44,3 +44,25 @@ def order_zero_expected(owner, row, presence):
         lanes.append(1. - gap)
     y = torch.tanh(((lanes[0] - lanes[1]) * u.cpu()).sum())
     return float(y), torch.tensor([max(float(y), 0.), max(-float(y), 0.)])
+
+
+def with_property_half(cs, width=8):
+    """Give the fixture's basic percepts a property half (a whole's code is
+    a fixed pattern of ones), so that two percepts with one run of parts and
+    different wholes have different vectors and a concept over a property
+    and its Not does not cancel. Done at construction, before any row."""
+    from types import SimpleNamespace
+    from BasicPercepts import BasicPercepts
+    old = cs.basic_percepts
+    basic = BasicPercepts(old.native, old.identity_width, width, old.capacity)
+    patterns = torch.zeros(4, width)
+    for whole in range(4):
+        patterns[whole, whole::4] = 1.
+
+    def lookup_rows(ids):
+        ids = torch.as_tensor(ids, dtype=torch.long)
+        return torch.cat((torch.zeros(*ids.shape, basic.identity_width), patterns[ids % 4]), -1)
+    basic.bind(SimpleNamespace(lookup_rows=lookup_rows))
+    cs._fixture_basic_percepts = basic
+    object.__setattr__(cs, '_basic_percepts', basic)
+    return cs
