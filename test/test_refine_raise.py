@@ -143,17 +143,17 @@ def test_extent_containment_does_not_fill_gaps_between_part_witnesses(grouped):
     # Extent pooling must leave the intervening native event unsupported.
     gap = 2 if grouped else 1
     assert not cs._percept_field.events[..., gap, :].any()
-    # Both native literals are contained. A present positive literal and a
-    # present negated literal do not manufacture a both corner that requests
-    # refinement: the concept is one signed value, and neither of its basic
-    # percepts is read both.
+    # Both native literals are contained. The concept is one signed value;
+    # across its members' rows it is both, its positive literal giving for
+    # and its present negated literal against.
     assert float(read[0, 0, 0].detach().amin()) == 0
-    assert not cs.order_zero_both(cs._percept_field, [0]).any()
+    torch.testing.assert_close(cs.order_zero_both(cs._percept_field, [0]), torch.ones(1, 1, 1))
     field = cs.refinement_field(cs._percept_field)
     for step in range(3):
         requests = observe(cs, field, step)
-    assert not cs._refinement_raise_ready[individual, 0]
-    assert not requests
+    # The extent does not fill the gap between the two witnesses: each
+    # request finds them in two runs, never one.
+    assert requests and all(r['runs'] == 2 for r in requests)
 
 
 @pytest.mark.parametrize('run', range(3))

@@ -282,15 +282,15 @@ class BasicPercepts(nn.Module):
             # A run of parts is the percept's presence: present wherever it
             # lies in the extent, and at an event wherever it lies inside
             # that event's span; the same on both lanes (it has no against
-            # of its own). The wholes keep their own lanes and must hold over
-            # the extent, and over each event.
+            # of its own). A reading's value reads the wholes where the run
+            # lies; an event reads them over the event's span.
             run = torch.tensor([key[0] == 'ps' for key in order], dtype=torch.bool, device=members.device)
             spans = native.spans.to(happened.device)
             inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
                       & (spans[:, None, :, 1] <= spans[:, :, None, 1])
                       & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
             lies = (happened[..., None, :, 0] * inside[None, :, None]).amax(-1)
-            value = self._row_lanes(members, run, rows, order)
+            value = self._row_values(members, happened, rows, groups, order)
             event = self._row_lanes(happened, run, rows, order, presence=lies)
             values, events = list(value), list(event)
             # Members come before the conjunctions over them.
@@ -330,6 +330,39 @@ class BasicPercepts(nn.Module):
         return PerceptField(tuple(('bp', row) for row in rows), value, event, native.spans,
             native.where, native.when, bands, native.when_band,
             torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape))
+
+    def _row_values(self, members, happened, rows, groups, order):
+        """Each row's two lanes for a reading, ``[rows, ..., 2]``.
+
+        The presence is the run's for lane over the reading. Each whole is
+        read where the run lies: its lanes at the events of the run's own
+        parts, the greatest over them. The for lane is the presence times the
+        product of the wholes' for lanes; the against lane is the presence
+        times their union, ``1 - prod (1 - a)``. A row with no whole reads
+        ``[presence, 0]``; a row with no member reads nothing.
+        """
+        if not len(order):
+            return members.new_zeros(len(rows), *members.shape[1:])
+        position = {key: index for index, key in enumerate(order)}
+        runs = [position[group[0]] if group else -1 for group in groups]
+        wholes = [[position[key] for key in group[1:]] for group in groups]
+        device = members.device
+        run = torch.tensor(runs, dtype=torch.long, device=device)
+        held = (run >= 0).reshape(-1, *([1] * (members.ndim - 2))).to(members)
+        safe = run.clamp_min(0)
+        presence = members.index_select(0, safe)[..., 0] * held
+        at_run = happened.index_select(0, safe)[..., 0]
+        width = max((len(w) for w in wholes), default=0)
+        if not width:
+            return torch.stack((presence, torch.zeros_like(presence)), -1)
+        index = torch.tensor([w + [0] * (width - len(w)) for w in wholes], dtype=torch.long, device=device)
+        mask = torch.tensor([[True] * len(w) + [False] * (width - len(w)) for w in wholes], device=device)
+        lanes = happened.index_select(0, index.flatten()).reshape(len(rows), width, *happened.shape[1:])
+        lanes = (at_run[:, None, ..., None] * lanes).amax(-2)
+        mask = mask.reshape(len(rows), width, *([1] * (lanes.ndim - 2)))
+        for_lane = torch.where(mask[..., 0], lanes[..., 0], 1.).prod(1)
+        against = 1. - torch.where(mask[..., 0], 1. - lanes[..., 1], 1.).prod(1)
+        return torch.stack((presence * for_lane, presence * against), -1)
 
     def _row_lanes(self, members, run, rows, order, *, presence=None):
         """Each row's two lanes from its members' memberships, ``[K, ..., 2]``.

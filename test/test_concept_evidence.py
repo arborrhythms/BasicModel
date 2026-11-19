@@ -35,9 +35,14 @@ def test_membership_read_keeps_both_until_symbol_readout():
     # The property is present at the first event.
     torch.testing.assert_close(field.event_evidence([field.keys[i] for i in carrying]).amax(0)[0, 0, 0],
                                torch.tensor([1., 0.]))
-    # Seen true and false in the extent, it is both at the rows of the
-    # basic percepts that carry it (each part is present in the extent).
-    torch.testing.assert_close(field.values[carrying, 0, 0].detach(), torch.ones(len(carrying), 2))
+    # Seen true and false in the extent, it is both across the rows of the
+    # basic percepts that carry it: the row of 49 reads for where it lies,
+    # the row of 48 against.
+    basic = cs.basic_percepts
+    for part, expected in ((49, [1., 0.]), (48, [0., 1.])):
+        index = field.keys.index(('bp', basic.index[((part,), (0,))]))
+        torch.testing.assert_close(field.values[index, 0, 0].detach(), torch.tensor(expected))
+    torch.testing.assert_close(cs.order_zero_both(field, [0]), torch.ones(1, 1, 1))
     # The concept, and the symbol read from it, are one signed number:
     # for less against, never both.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))

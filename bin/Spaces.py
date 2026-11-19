@@ -15135,33 +15135,39 @@ class ConceptualSpace(Space):
         is read both for and against, ``[len(rows), B, E]`` in ``[0, 1]``;
         with ``batch``, of that stream alone (``B`` is one).
 
-        A concept's single signed value is never both; a basic percept can
-        be: it is both to the degree of the least of its row's two lanes. A
-        concept is both by its members, the basic percepts its column was
-        started from (read from the feature record), each for or Not:
-        ``1 - prod_q (1 - both_q)``.
+        A concept's single signed value is never both; it is read both
+        across its members' rows, the basic percepts its column was started
+        from (read from the feature record): the least of what they give for
+        and what they give against, each joined by the union. A member gives
+        its for lane as for and its against lane as against; a Not member
+        the reverse.
         """
         rows = torch.as_tensor(rows, dtype=torch.long).tolist()
         shape = perception.values.shape[1:3]
         result = perception.values.new_zeros(len(rows), *shape)
         if not len(perception.keys) or not rows:
             return result
-        percept = perception.values.detach().amin(-1)
+        lanes = perception.values.detach()
         if batch is not None:
-            percept = percept[:, batch:batch + 1]
+            lanes = lanes[:, batch:batch + 1]
             result = result[:, batch:batch + 1]
         index = {key: i for i, key in enumerate(perception.keys)}
         members = {}
-        for (target, col) in _concept_alloc_of(self).layer(0).features._index:
+        record = _concept_alloc_of(self).layer(0).features
+        weights = record.values.detach() if record.values is not None else None
+        for (target, col), position in record._index.items():
             found = index.get(('bp', int(col) // 2))
-            if found is not None:
-                members.setdefault(int(target), set()).add(found)
+            # A member recorded at weight zero did not enter the column.
+            if found is not None and (weights is None or float(weights[position]) != 0.):
+                members.setdefault(int(target), set()).add((found, int(col) % 2))
         n0 = self._order_caps()[0]
         for slot, row in enumerate(rows):
             held = sorted(members.get(row, ())) if 0 <= row < n0 else ()
             if held:
-                gaps = (1. - percept[held]).clamp_min(0.)
-                result[slot] = 1. - gaps.prod(0)
+                given = torch.stack([lanes[found].flip(-1) if negated else lanes[found]
+                                     for found, negated in held])
+                joined = 1. - (1. - given).clamp_min(0.).prod(0)
+                result[slot] = joined.amin(-1)
         return result
 
     @torch.no_grad()

@@ -127,17 +127,20 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     positions = torch.tensor([[[0, 1], [1, 2]]])
     scope = torch.tensor([[bracket]])
     field = cs.cs_read_memberships((raw, positions, primitive, raw, positions), scope)
-    # A property witnessed true and false within one bracket reports both, at
-    # the rows of the basic percepts that carry it: the part's presence in
-    # the bracket times the property's two lanes (rule 6). Narrowing
-    # attention isolates either observation; an empty scope is unknown.
+    # A property witnessed true and false within one bracket reports both,
+    # across the rows of the basic percepts that carry it: each row is its
+    # part's presence in the bracket times the property's lanes where the
+    # part lies (rule 6; it holds at 49 and not at 48). Narrowing attention
+    # isolates either observation; an empty scope is unknown.
     percepts, basic = cs._percept_field, cs.basic_percepts
     assert len(percepts.keys) == 2
     inside = raw[0, bracket[0]:bracket[1]]
+    at = {49: torch.tensor([1., 0.]), 48: torch.tensor([0., 1.])}
     for part in (48, 49):
         index = percepts.keys.index(('bp', basic.index[((part,), (0,))]))
         presence = float((inside == part).any())
-        torch.testing.assert_close(percepts.values[index, 0, 0].detach(), presence * torch.tensor(expected))
+        torch.testing.assert_close(percepts.values[index, 0, 0].detach(), presence * at[part])
+    torch.testing.assert_close(cs.order_zero_both(percepts, [0])[0, 0, 0], torch.tensor(min(expected)))
     # The concept is one signed number, for less against.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))
     torch.testing.assert_close(field[0, 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)

@@ -25,18 +25,23 @@ def test_one_property_has_the_four_extent_corners():
     cs = _cs()
     native, extents = binary_features(cs, torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]]))
     actual = cs.cs_read_memberships(native, extents)
-    # The four corners are read at the rows of the basic percepts that
-    # carry the property (rule 6): the part's presence in the extent times
-    # the property's two lanes over it. The other property's lanes are the
-    # swap.
+    # Each row of a basic percept that carries the property reads its part's
+    # presence times the property's lanes where the part lies (rule 6):
+    # property 0 holds at 49 and not at 48; property 1 the reverse.
     raw = torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]])
-    corners = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [1., 1.]])
     basic, field = cs.basic_percepts, cs._percept_field
-    for prop, expected in ((0, corners), (1, corners.flip(-1))):
+    at = {(0, 49): [1., 0.], (0, 48): [0., 1.], (1, 49): [0., 1.], (1, 48): [1., 0.]}
+    for prop in (0, 1):
         for part in (48, 49):
             index = field.keys.index(('bp', basic.index[((part,), (prop,))]))
             presence = (raw == part).any(-1).float()[:, None]
-            torch.testing.assert_close(field.values[index, :, 0].detach(), presence * expected)
+            torch.testing.assert_close(field.values[index, :, 0].detach(),
+                                       presence * torch.tensor(at[prop, part]))
+    # The four corners, true, false, both and both, are read across the
+    # concept's members' rows: for where only for is given, against where
+    # only against, both where each is.
+    corners = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [1., 1.]])
+    torch.testing.assert_close(cs.order_zero_both(field, [0])[0, :, 0], corners.amin(-1))
     # The concept is one signed number, for less against.
     for b in range(4):
         _, lanes = order_zero_expected(cs, 0, published_presence(cs, b))
