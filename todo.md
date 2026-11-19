@@ -1615,9 +1615,16 @@ generation is expected at this stage and is recorded, not tuned away.
    the prototype fails: an explicit `.where` and the largest word in
    it. His confirmations: the slow run at item 1.6, part C ended,
    Codex's limit, `interpretBias`. The prototype text §19.47 is
-   amended to match. **Still open:** the tests for one word and one
-   lane with the "Felix" case (not answered), and whether question
-   6 is answered as read.
+   amended to match. **Then answered (§19.49):** "we want to select
+   the most active word-concept to put on the stack during
+   interpret(), so it must be exact", so `interpret` takes the most
+   active word concept of what comes back, with no draw (Claude's
+   reading: with one signed number for a concept, "Felix" at for 1
+   and against 0.0002 is then read). And "attend will apply the
+   top-down mask on concepts that gets pulled back"; as a proof of
+   concept, "pulling back the meta-concept to isolate words in the
+   percept codebook". None of the seven questions is open; the rules
+   are written when the prototype returns.
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for

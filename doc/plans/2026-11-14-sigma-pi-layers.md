@@ -6604,17 +6604,20 @@ Written on 2026-11-18. It builds nothing of the model. It is what
 *Approved by Alec, 2026-11-18:* "Yes, carry both". *Amended later the
 same day, after his answers of §19.48 and before Codex had begun it:*
 the two domains of the pullback, the dimming by the asking row, a
-request for a place, the fallback, and a trial of reading in order.
+request for a place, the fallback, and a trial of reading in order;
+and after §19.49, the meta concept as the first request and the most
+active word concept as what is taken.
 
 ~~~
-Item 1.7, a prototype in tests only. Read §19.43, §19.45, §19.46 and
-§19.48 of doc/plans/2026-11-14-sigma-pi-layers.md, and §75 of
+Item 1.7, a prototype in tests only. Read §19.43, §19.45, §19.46,
+§19.48 and §19.49 of doc/plans/2026-11-14-sigma-pi-layers.md, and §75 of
 doc/plans/2026-11-11-item1-8-last-architecture-round.md, which holds
 here: a question is not a stop; build what you recommend, mark it
 provisional, go on. Work in /Users/arogers/github/WikiOracle/basicmodel
 on main. Local commits only; never push main, never force-push. Change
 no file of bin/ and no existing test. It decides nothing and is not
-wired into the model. Where §19.48 differs from §19.46, §19.48 stands.
+wired into the model. Where §19.48 and §19.49 differ from §19.46,
+they stand.
 
 1. Under test/, build a small first layer whose rows are products over
    a sentence's percepts, as rule 2 of §19.21 gives the Pi, with a
@@ -6629,11 +6632,15 @@ wired into the model. Where §19.48 differs from §19.46, §19.48 stands.
    pullback by the transposes of the same matrices and, beside it, by
    the framework's backward pass, to show they agree. Then the way up
    again on that activity, and the returned set (rule 37).
-3. Run it on the lesson's sixteen sentences with four requests: a
-   word's concept; the fixed word whole; a word that is absent; and a
-   row that is narrow on where, a place. Report, for each, what is
-   returned and at which token, beside the projection of the weights
-   alone.
+3. Run it on the lesson's sixteen sentences with five requests: the
+   meta concept that words are included in, as one row over the word
+   concepts (the proof of concept of §19.49); a word's concept; the
+   fixed word whole; a word that is absent; and a row that is narrow
+   on where, a place. Report, for each, what is returned and at which
+   token, beside the projection of the weights alone. From each
+   returned set take the most active word concept, as interpret will
+   (§19.49, answer 3): report whether it is the word meant, and where
+   two are equally active.
 4. Report the cost in operations beside one pass of the way up, and
    what the binding by token does and does not prevent: a sentence
    that holds every letter of a word it does not hold, and two words
@@ -6650,9 +6657,10 @@ wired into the model. Where §19.48 differs from §19.46, §19.48 stands.
    given outright, and from that extent the largest word, or failing
    a word the largest concept.
 8. If the rest is done: a small trial of §19.48, answers 1 and 5. With
-   the gradient on the request alone, can the request be taught to
-   return the words of a sentence one at a time and in order? Report
-   what was taught, on how many sentences, and what it found.
+   the gradient on the request alone, the meta concept asked for and
+   a place beside it, can the request be taught to make the words of
+   a sentence the most active one at a time and in order? Report what
+   was taught, on how many sentences, and what it found.
 
 Return it as §20 of doc/plans/2026-11-14-sigma-pi-layers.md: the files,
 each result as a table, what surprised you, and what you would change
@@ -6798,4 +6806,59 @@ and this gates the grammar tests (answer 5). A literal enters only
 under a rule that takes it (rule 42).
 
 **Still open with him.** Question 3. And whether his answer to 6 is as
-read.
+read. *Both answered the same day: §19.49.*
+
+### 19.49 Alec's answers to questions 3 and 6 (2026-11-18)
+
+**3. The tests for one word and one lane.** "we want to select the most
+active word-concept to put on the stack during interpret(), so it must
+be exact."
+
+- *What `interpret` takes.* Of the word concepts in the returned set
+  (rule 37), the most active one is put on the stack. It is a
+  selection, with no draw and no degree: exact.
+- *What it withdraws.* The graded offer that §19.46 recommended for
+  the "Felix" case (1.8 §68.81, the second choice) is not taken.
+  `interpretBias` stays what it is, the probability that the call is
+  made at all (1.8 §60.1, rule 5b).
+- *The dimmed field* (§19.48, answer 2) is then no difficulty for the
+  test: every word of the sentence may be present to some degree, and
+  the one that is most active is taken.
+- *The "Felix" case, as Claude reads it; his to correct.* In this
+  item a concept is one signed number (rule 3, the Sigma). A reading
+  of for 1 and against 0.0002 is an activity just under one. It is
+  still the most active word concept at its place, so it is
+  interpreted. The count of lanes above zero, which left the word
+  unread in item 1.8, is no longer what is tested. This is how the
+  decision carried from 1.8 §64.7 ("Keep this baseline as long as we
+  address it later") is addressed.
+- *Left to the rules, with Claude's defaults:* where the returned set
+  holds no word concept, nothing is interpreted; and where two are
+  equally active, the one found first is taken.
+
+**6. Who decides what each call of `attend` asks for.** "yes, attend
+will apply the top-down mask on concepts that gets pulled back.
+Eventually this will be top-down conceptual attention, as proof of
+concept it could work by pulling back the meta-concept to isolate
+words in the percept codebook."
+
+- *Confirmed:* the request is `attend`'s own output, a mask over the
+  concepts, and it is what is pulled back (§19.48, answers 1 and 2).
+- *The proof of concept.* The request is the meta concept that words
+  are included in (§19.29). Pulled back, it isolates the words among
+  the percepts of the sentence. Later the mask is whatever conceptual
+  attention asks for.
+- *With answer 5 of §19.48,* as Claude reads the three together: the
+  meta concept alone returns every word of the sentence equally
+  active. The where part of the request (the second domain of answer
+  2) is what makes one of them the most active, and reading in order
+  is `attend` learning to move that place along.
+
+**Rules 37 and 38, as they now stand.** The returned set is the way up
+on the pulled-back activity; `interpret` takes its most active word
+concept, exactly. One `attend` is: give the mask over concepts, pull
+it back onto the what codebook and the where sinusoid, intersect, go
+up, and hand the returned set to the grammar.
+
+**Nothing of §19.46's seven questions is open.** The rules can be
+written when the prototype (§19.47) has returned.
