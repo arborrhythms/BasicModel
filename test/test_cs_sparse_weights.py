@@ -161,14 +161,21 @@ def test_membership_read_is_input_dependent_and_differentiable():
     field = cs._percept_field
     bounds = field.boundaries[1, :, 0, 0]
     assert bool((bounds > 0).all()) and bool((bounds < 1).all())
-    read[..., 0].sum().backward()
+    # The basic percepts read the property memberships differentiably.
+    field.values[..., 0].sum().backward(retain_graph=True)
     assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
     # The concept reads its column of the order-zero Sigma.
+    read.sum().backward()
     sigma = cs.order_zero
     assert sigma.weight.grad is not None and sigma.weight.grad.abs().sum() > 0
+    # The fixture's basic percepts have no property half, so the column of a
+    # property and its Not cancels; the input dependence is read at the
+    # basic percepts.
+    values = field.values.detach().clone()
     with torch.no_grad():
         primitive.members[:, 48:50] *= .5
-    assert not torch.equal(cs.cs_read_memberships(native, extents), read)
+    cs.cs_read_memberships(native, extents)
+    assert not torch.equal(cs._percept_field.values.detach(), values)
 
 
 def test_membership_read_never_updates_the_dictionary():
