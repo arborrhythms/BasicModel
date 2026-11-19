@@ -10246,3 +10246,295 @@ and 44. It is the round that may be pushed; the push is Alec's word.
 
 Each round's return is a section here, §23.1 to §23.7, written by its
 implementer, with Claude's review after it.
+
+### 23.2 Round 2: the looks, tried in tests only (Claude on Opus, standing in for Codex, 2026-11-19)
+
+No file of `bin/` and no existing test was changed; the prototype's three
+files were left as they were. Nothing is wired into the model. Every
+form below that the rules leave open is a choice of this trial, built in
+its test files only, and so provisional throughout.
+
+**The files.**
+
+- `test/looks_round2.py`. `part_map` and `Lexicon` (rule 43, built in
+  the test: characters with the space, a run added only where two forms
+  have the same parts, carried by every form that holds it; on this
+  vocabulary one part is added, `ac`, for `cat` and `act`). `Bank.read`
+  (rule 33: for each stem unit its form's row where known and its parts'
+  rows at their places; `ice cream` a token of its own at its start).
+  `Trial.up` (rule 2's Pi, rule 7's combination with the four where
+  coordinates, rule 3's Sigma with one concept for each row, "words"
+  with a Not entry on the space; `Trial.theta`, the where parameter,
+  written from `WhereEncoding` at capacity 4096, in no optimizer).
+  `salience` (framework backward) and `salience_by_transposes`
+  (rule 36). `look`, `where_match`, `interpret`, `returned`. `Reader`,
+  `context`, `read_in_order`, `teach_order` (step 6). `reconstruct`,
+  `place_weights`, `shift_band`, `rebuilt_letters` (step 6b, rule 49).
+- `test/looks_round2_report.py`, which prints every table below.
+- `test/test_item17_looks_round2.py`, 21 tests of the claims of steps 1,
+  3, 5 and 8.
+
+**My choices, each needed to run it** (commit `a0f9bef801` unless said).
+
+1. A row's what is its own coordinate at value 1 − 1/e, so rule 7 gives
+   1 − exp(−b): graded, with a derivative everywhere (at value 1 it is
+   0^b, which has neither).
+2. A concept reads its own row at G = 3; "words" reads each word concept
+   at G and has a Not entry of 2G on the space's concept, so that a part
+   holding a space has a net negative share.
+3. A form's Pi row has weight 1 on its own row and on each part of its
+   code (a set, so 1, not a count).
+4. The where of a reading. Rule 7 as written combines the bands of every
+   event of a reading ("combined"). Two others were tried: the band of
+   the event at the reading's start alone, by its Pi value ("head"); and
+   that band whatever is present ("start").
+5. Places are sentence-local from 0, at the prototype's capacity 4096
+   (short period 256, origin shift 128).
+6. `interpret`: of equals that begin at one place the largest is kept;
+   equals left at different places are a tie, and a tie is never counted
+   as reading the word.
+7. Step 6's context: four slots of the taken words, each the code of its
+   start, occupied, and its age; and a bias. The request is linear in
+   it, over "words" and every row's concept, starting at "words" alone.
+   The done mark sets a taken token's activity to 0. Each look's map is
+   taken from a run on the current activity. Training is teacher-forced.
+8. Step 6b (commit `0c6f4dfe5f`): a token's own word concept recreates
+   its characters in order (rule 45). The recreated band is the place
+   the concept's where weights read best, ½ + U/2, moved on by each
+   character's offset by rotating each rung. The error is squared, over
+   one coordinate per row, at every place of the sentence.
+
+**Certificate 31 (a): transposes against the backward** (atol 1e-6
+asserted).
+
+| Where of a reading | Sigma passed by | Comparisons | Largest difference |
+| --- | --- | ---: | ---: |
+| combined | slope | 160 | 3.6e-14 |
+| combined | weights | 160 | 2.3e-12 |
+| head | slope / weights | 160 / 160 | 3.6e-14 / 2.0e-12 |
+| start | slope / weights | 160 / 160 | 3.6e-14 / 7.1e-14 |
+
+**Step 3: the 304 requests** (19 sentences, 15 words and "words";
+returned = word concepts at 0.01 or more).
+
+| Carried down by | Exactly the asked words present | Misses one present | Returns one not asked |
+| --- | ---: | ---: | ---: |
+| the plain gradient (Sigma by its slope) | 229 | 75 | 0 |
+| the gradient, each Sigma before its squash | 304 | 0 | 0 |
+| the rows' entries alone | 304 | 0 | 0 |
+
+A word that is absent returns nothing; `Fe li x` and `xileF` never return
+`Felix`, since a form's row requires its own row.
+
+**Step 4: parts present by degree** (`Here is Felix.`; the value of
+`Felix`; "times" is rule 34, own activity times the share capped at one;
+"min" is the share capped at the event's own activity).
+
+| Case | Open run | Asked `Felix`: by weights, times | entries, times | entries, min | Asked "words": by weights | entries |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| the whole word at .3 | .002 | 0 | .001 | .002 | 0 | .002 |
+| three of five parts at .5 | .339 | .000 | .339 | .339 | .326 | .339 |
+| parts falling 1 to .2 | .113 | 0 | .068 | .113 | 0 | .113 |
+| twice, at 1 and .4 (the second) | .012 | 0 | .012 | .012 | 0 | .012 |
+
+The plain gradient returns nothing in any case. Every way that returns
+anything takes the same word (`Felix`, and in "twice" the copy at 1). They
+differ in value. Under the gradient by weights a part's share is
+G² e^{−b} b, the presence of the row it is in, so a row below about .11
+gets a share under one and is cut a second time on the way up. A reader
+would call the rows' entries right on value: the look returns the word
+at the degree the open run found it, and it takes away nothing that the
+request asked for. The gradient's ranking is input-sensitive as Alec
+wanted, but here it shows only as cutting weak words. Rule 34 also
+counts the activity twice: the share already carries it. The "min" rule
+fixes that and gives the open run's values exactly by entries.
+
+**Step 5: the where match** ("words" with a concept given weight on the
+where by the test, at each word's start in turn, on the 16 sentences;
+sentences wholly right / places right of 48; k is the magnitude).
+
+| Where of a reading | Way | (a) §21's form | (b) capped share | (c) forward reading |
+| --- | --- | --- | --- | --- |
+| combined | (i) Sigma weights | 0 / 0 at every k | 0 / 0 | 0 / 16 at every k |
+| combined, head, start | (ii) Pi row | 0 / 16 at k 12.5, 0 / 0 at 800 | 0 / 0 | 16 / 48 at every k |
+| head | (i) | 16 / 48 at k 1 to 100; 0 / 32 at 1,000 and 10,000 | 0 / 28 at k 1, else 0 | as (a) |
+| start | (i) | 16 / 48 at every k (1 to 10,000) | 0 / 28 at k 1, else 0 | 16 / 48 at every k |
+
+- "Words" alone, nothing of where asked: every word returned at its open
+  value, none lowered, in 16 of 16 for (a) and (c), and 0 of 16 for (b),
+  which cuts everything when nothing of where is asked.
+- *(a) with (ii) cannot work.* A peaked Pi row has a gradient of zero at
+  its own place, so the grad·value share is zero there. This is a test:
+  `test_the_where_share_of_a_peaked_pi_row_is_nothing_at_its_own_place`.
+- *Rule 7 as written blurs the where.* It combines the bands of every
+  event of a reading, five or six for a word. The coordinates then
+  depend on how many events there are more than on the place: the
+  long-rung cosine is .998 at every place and saturates, and the short
+  cosine adds up over the events. The where of a reading has to be its
+  start's band.
+- *Head, at large k, the asked word is cut by its own place, but through
+  the what.* "Head" weights the band by the head row's presence, so the
+  where concept's gradient also lands on the activities, with either
+  sign. At k = 1,000 it lands negatively on the asked word's events and
+  their what share clamps to 0. On "This is Felix." asking `Felix`'s
+  place, with head, (i), (a) and applied once: This/is/Felix are
+  .947/.955/.956 at k 1, .365/.835/.956 at k 100, and 0/0/0 at k 1,000.
+  "Start" has no such path and holds at every k.
+- *Applied inside the products* (each event at its own place), (a) cuts
+  the asked word at every k (`is` taken at k 1 for `Felix`). Applied
+  once to the reading, it does not.
+- (c) with (ii) dims the others to e^{−G} = .048: This/is .115/.773 at
+  k 12.5 and .048/.048 at 800, with `Felix` at .956 throughout.
+
+**Step 6: reading in order, no location concept made.** Curriculum: one-
+word sentences (10 steps), two-word (10), the lesson (60); Adam, rate
+0.05, full batch; the request starts at "words" alone plus noise of 0.01
+on its other entries, from a seed drawn from the system and printed; the
+where weights start at zero. "Held out": six sentences of known forms in
+orders the lesson never shows (`is This Felix?`, `Ciao is that cat.`).
+"Match off": the learned reader with the where match set to one.
+
+| Where of a reading | Taught | Starts reading all 16 in order | When | Held out | Match off | Weights that came to read the where |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| combined | request and where weights | 5 of 5 | lesson step 10 to 20 | 4, 4, 4, 4, 4 of 6 | 8, 10, 16, 16, 16 | word concepts (`there`, `Felix`, `Ciao`), norm 1.0 to 1.7 |
+| head | request and where weights | 5 of 5 | two-word step 5 | 6 of 6 each | 0 each | character concepts the request asks (`x`, `F`, `T`...), 1.7; word concepts 0.82 |
+| start | request and where weights | 0 of 5 (16 at two-word step 5, then lost; ends 12, 12, 12, 12, 12) | | 2 to 4 of 6 | 0 | `i`, `T`, `There`, 2.3 to 3.0 |
+| each | the request alone | 0 of 15 | | 0 | | none |
+
+- *It is learned with no location concept made,* in 5 of 5 starts with
+  combined and 5 of 5 with head. Only under head is the where match
+  doing the work: it reads held-out orders 6 of 6, and with the match
+  off it reads nothing. Under combined, the word concepts' where
+  weights act in the forward pass and the order is tied to content: 4
+  of 6 held out.
+- *Start fails for a reason of its own.* A concept's where weights light
+  it at a token where its form is absent: `is` at the `?` of "Who is
+  here?". The where must be weighted by presence.
+- *The request alone learns nothing,* and its gradient is exactly 0
+  (checked at the start: loss 28.67 = 16 ln 6, gradient norm 0). "Words"
+  at 1 gives every word event a share of about 3.3, the cap at one holds
+  it there, and the cap passes no gradient.
+- Each run takes 2.0 to 2.2 s on the host.
+
+**Step 7 was not done:** step 6 reads in order.
+
+**Step 6b: the reconstruction over both pathways** (rule 49). As step 6,
+five starts each; the where parameter is fixed (§19.66). "Rebuilt" is the
+lesson's letters whose own character has the most weight at their place,
+of 164.
+
+| Where of a reading | Taught by | Match | In order (starts) | Held out | Rebuilt | Where weights on |
+| --- | --- | --- | --- | ---: | ---: | --- |
+| head | reading | | 16 (5 of 5) | 6 | 18 to 22 | characters 1.4, words 0.8 |
+| head | reconstruction | product (§20.5, k 200) | 0 (0 of 5) | 0 | 10 | nothing: 0.00 |
+| head | reconstruction | softmax (mine) | 16 (5 of 5), from one-word step 10 | 4 | 78 | word concepts only (`That`, `Here`, `There`), 1.36 |
+| head | both | product | 16 (5 of 5) | 6 | 18 to 20 | characters 1.45, words 0.83 |
+| head | both | softmax | 16 (5 of 5), from one-word step 10 | 6 | 77 | characters 2.45, words 1.56 |
+| combined | reading | | 16 (5 of 5) | 4 | 13 to 27 | words 1.15 |
+| combined | reconstruction | product | 0 (0 of 5) | 0 | 10 | nothing |
+| combined | reconstruction | softmax | 0 (0 of 5) | 0 | 78 | words 1.35 |
+| combined | both | product | 16 (5 of 5) | 2 to 4 | 17 to 19 | words 1.05 |
+| combined | both | softmax | 16 (4 of 5) | 3 to 4 | 77 to 80 | words 1.4 |
+
+- *The product match never starts.* A recreated band at rest (½ on
+  every wire) is far from every place's code: a long-rung cosine of .998
+  and a short one near 0. At k 200, and at 12.5 when tried, the match is
+  zero everywhere and passes no gradient. The softmax over the buffer's
+  places learns at once.
+- *The reconstruction alone teaches location,* and under head it reads
+  in order with no reading loss (5 of 5). What it makes are word
+  concepts that hold the place their word usually has: first words
+  early. So 4 of 6 held out read, against 6 with the reading loss.
+  Rebuilt stays at 78 of 164: a concept has one where for all its
+  occurrences, so `is` at places 4, 5 and 6 cannot all be put back.
+- *Best: head, both teachers, softmax.* It reads 16 of 16 from the first
+  stage, holds out 6 of 6, and rebuilds 77.
+- *A note, kept though §19.66 dropped it.* The best run, five starts
+  with the where parameter in the optimizer: 16 of 16 in four starts
+  and 12 in one; held out 2 of 6 in each; rebuilt 34 to 53. Its values
+  moved by up to 0.69 to 1.0 on places 0 to 19, so the code no longer
+  means the same place. Without it in the optimizer: 16 of 16, 6 of 6,
+  77, and a change of 0.
+
+**Step 8.** With "words", `ice cream` is at 0.000 and `ice` and `cream`
+are at .956, and the space event's what share is 0. With no "words", a
+place at 8 (Pi row, (c)) takes `ice cream`, the largest of the two forms
+there; "words" with the same place takes `ice`. On the lesson's 16 no
+part selected by "words" holds a space. `qzv Felix xwpt.` returns
+`{(1, Felix)}` alone, and `Felix` is taken. `qzFelixvb.`, the word inside
+a run of garbage letters, returns nothing: the stem's units hold no form
+inside a unit until the lookup finds parts at every place (rule 44). The
+declared "objects" was not added.
+
+**Tests run** (BASICMODEL_DEVICE=cpu, RUN_SLOW and RUN_TRAINED unset):
+
+- `test/test_item17_looks_round2.py` with `test/test_item17_looks_prototype.py`:
+  30 passed, 6.1 s.
+- Both stopping gates (`test_mm_xor.py::TestMMXorConvergence::test_convergence`,
+  `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`):
+  2 passed, 3.8 s, on the tree with round 1's uncommitted edits of
+  `bin/`.
+- `test/looks_round2_report.py` printed the tables, in about 4 minutes.
+
+No test was ported or retired.
+
+**Commits.** `a0f9bef801` (the trial and its report), `cfafe38aef` (its
+tests), `0c6f4dfe5f` (step 6b), and this return.
+
+**What surprised me.**
+
+1. Rule 7's combination makes the where of a reading count its percepts.
+   No form of the match can read a place through it.
+2. The grad·value share of a peaked row is zero at its own peak.
+3. The cap at one leaves a request that asks for "words" at full no
+   gradient at all.
+4. The reconstruction alone taught reading in order. It did so through
+   where the words usually are, which is content and not position.
+5. Under head, the location came to be carried by character concepts
+   that the request asks for at about ±2. Those are concepts of
+   location over the network, as §19.63 expected, though not the ones
+   anyone would name.
+
+**Recommended for round 6.** Build the where match as (a), exp(s − max s)
+on the salience map's share over the head band, applied once to a
+reading. The where should be read by way (i), the concepts' Sigma
+weights on the where coordinates. Those coordinates should be the band
+of the event at the reading's start, weighted by its presence ("head"),
+and not rule 7's combination over every event.
+
+Why:
+
+- It is Alec's pathway: the map lands on wires and the concepts' weights
+  read them.
+- It learned in order in 5 of 5 starts, held out 6 of 6, and its match
+  is what does the work.
+- Combined fails step 5. Start lights absent concepts. (a) with (ii) has
+  no gradient at the place. (b) cuts everything.
+
+Its limit is the leak onto the what at magnitudes near 1,000. Learned
+magnitudes stayed under 3. Teach both losses, with the softmax match for
+rule 49.
+
+**What I would change in §21.**
+
+- *Rule 34:* the look's activity is the share capped at the event's own
+  activity, min(own, share), in place of own times the capped share. The
+  share already carries the activity.
+- *Rule 36:* keep the gradient by weights, as decided. Note that it cuts
+  a row present below about 1/G² of its gain. Also note that the cap of
+  rule 34 gives no gradient to a request already at or above one: at
+  the start the request learns only through the where.
+- *Rule 37:* of equals, the largest at each place first, then a tie if
+  places differ, as built here.
+- *Rule 38:* the done mark is enough for order once the where is learned.
+  No step needs teaching.
+- *Rule 39:* the where match is applied once to a reading, never inside
+  the products. Inside, it cut the asked word in every form tried.
+- *Rule 47:* state that the where coordinates of a reading are its start
+  event's band, weighted by its presence, and not rule 7's combination.
+  State (a) as the match.
+- *Rule 49:* the match of a recreated band against the places as a
+  softmax over the buffer's places. The product of §20.5 passes no
+  gradient from rest.
+- *Rule 7:* say that .where and .when are not combined across a
+  reading's percepts.
