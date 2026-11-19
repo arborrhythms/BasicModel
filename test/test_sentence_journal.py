@@ -115,6 +115,8 @@ def test_packed_word_and_closing_leave_other_sentence_rows_unchanged(tmp_path, m
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     chooser = model.languageSpace._tree_layer(2).chooser
     score_unary = chooser.score_unary
     def prefer_unary(*args, **kwargs):
@@ -135,13 +137,13 @@ def test_packed_word_and_closing_leave_other_sentence_rows_unchanged(tmp_path, m
     run = model._run_sentence_word_bricks
     def observe_words(*args, **kwargs):
         compose = args[-1]
-        def observe(payload, index, live, lang, stm):
+        def observe(payload, index, live, lang, stm, *, at_close=None):
             nonlocal allowed
             allowed = payload[7].reshape(-1).bool()
             inactive = ~allowed
             inactive_words.append(int(inactive.sum()))
             before = tuple(v.clone() for v in (*lang, *stm))
-            result = compose(payload, index, live, lang, stm)
+            result = compose(payload, index, live, lang, stm, at_close=at_close)
             for field, (old, new) in enumerate(zip(before, (*result[0], *result[1]))):
                 if not torch.equal(old[inactive], new[inactive]):
                     changed.append((model._open_sentence_slot, int(index), field))

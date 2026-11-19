@@ -185,10 +185,12 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=488, answer_syn
 
 @pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
 @pytest.mark.parametrize("output_loop", [False, True])
-def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop, concept_width, eager_reading):
+def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop, concept_width, eager_reading, monkeypatch):
     from dataclasses import replace
     from test_output_walk import _capture_program_probe, _stop
     m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(m, monkeypatch)
     m.eval()
     if output_loop:
         _stop(m)

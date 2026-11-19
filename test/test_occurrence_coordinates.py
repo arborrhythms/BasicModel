@@ -21,12 +21,13 @@ def test_reset_clears_only_the_selected_fields_time_band(tmp_path):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path):
+def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path, monkeypatch):
     from test_packed_reconstruction_parity import build_model
     from What import What
     model = build_model(tmp_path, word_capacity=8)
     raw = model.inputSpace.prepInput(['the cat sat'])
-    from reading_fixtures import capture_readings
+    from reading_fixtures import capture_readings, read_in_source_order
+    read_in_source_order(model, monkeypatch)
     with capture_readings(model) as readings, torch.no_grad():
         model.runBatch(train=False, split='validation', batchSize=1,
             batch_override=(raw, torch.empty(1, 0)),
@@ -129,10 +130,11 @@ def test_repeated_percept_occurrences_use_input_starts_and_one_time(model):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
+def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model, monkeypatch):
     from What import What
     text = 'cat cat sat'
-    from reading_fixtures import capture_readings
+    from reading_fixtures import capture_readings, read_in_source_order
+    read_in_source_order(model, monkeypatch)
     with capture_readings(model) as readings, torch.no_grad():
         model.runBatch(train=False, split='validation', batchSize=1,
             batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)),

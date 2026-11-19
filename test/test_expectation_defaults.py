@@ -61,6 +61,8 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
     model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.train()  # the runtime call must apply its own declared training gate
     discourse = model.symbolSpace.expectation
     before = [p.detach().clone() for p in discourse.parameters()]

@@ -45,6 +45,8 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     from AttentionLesson import prompt_need
     import GrammarLessons
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=2, word_buckets='16', concept_meaning_width=8)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model._tensor_peer_while_eager = True
     model.inputSpace.data.has_supervised_outputs = True
     model.inputSpace.data.train_input = ['a red cat', 'the blue dog']

@@ -518,7 +518,7 @@ def symbol_interpretation(monkeypatch):
 
 
 @pytest.mark.usefixtures('symbol_interpretation')
-def test_native_read_sites_carry_one_token_across_three_documents(eager_reading):
+def test_native_read_sites_carry_one_token_across_three_documents(eager_reading, monkeypatch):
     from data import TheData
     from Models import BaseModel
     from MathChainTraining import present
@@ -531,6 +531,8 @@ def test_native_read_sites_carry_one_token_across_three_documents(eager_reading)
     TheData.processLM({split:dict(text=['.'] if split == 'train' else [],label=[])
                       for split in ('train','validation','test')})
     model = BaseModel.from_config(str(root/'data/MM_corpus_orders.xml'), data=TheData)[0]
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     stage_documents(TheData, dict(documents=[dict(document=i,key=str(i),records=[
         dict(key=str(i),sentences=['label.'])]) for i in range(3)]))
     identities = []

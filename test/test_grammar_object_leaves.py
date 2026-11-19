@@ -26,6 +26,8 @@ def test_grammar_deposits_each_word_with_its_own_code(tmp_path, monkeypatch, con
             # Keep an absolute composition for this lexical read-back.
             from reading_fixtures import force_absolute_reading
             force_absolute_reading(model)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.eval()
     seen = []
     push = ShortTermMemory.functional_push_step_masked

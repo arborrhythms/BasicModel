@@ -113,7 +113,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     from data import Data
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_packed_reconstruction_parity import reset
-    from reading_fixtures import force_absolute_reading
+    from reading_fixtures import force_absolute_reading, read_in_source_order
     from LearningEvaluation import FINEWEB_CORPUS, checkpoint_readiness
     from eval_fineweb_learning import load_model, read_validation
     from What import What
@@ -136,6 +136,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     model.reconstruction_placement = 'eager'
     # This is checkpoint/prediction plumbing with an explicitly supplied
     # absolute reading, not a measurement of the untrained parser.
+    read_in_source_order(model, monkeypatch)
     force_absolute_reading(model)
     data = model.inputSpace.data
     manifest = dict(dataset='text', corpus=FINEWEB_CORPUS,
@@ -177,6 +178,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
                            for i in range(4)]}
     monkeypatch.setattr(Data, 'load', heldout)
     loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
+    read_in_source_order(loaded, monkeypatch)
     force_absolute_reading(loaded)
     try:
         report = read_validation(loaded, sentences=4)
