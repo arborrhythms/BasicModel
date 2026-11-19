@@ -1443,6 +1443,10 @@ generation is expected at this stage and is recorded, not tuned away.
    capable mind, and we still have oppostunity to review." It
    proposes, builds its recommendation in a commit of its own, marks
    it provisional and goes on; each text names what comes next.
+   **The push (Alec, 2026-11-18): "We should push after 1.8".** After
+   Codex's return of §68.84 (the repair and the item's one default
+   sweep) is reviewed, the doc pass is applied and the PDF rebuilt.
+   Nothing is pushed before that.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
