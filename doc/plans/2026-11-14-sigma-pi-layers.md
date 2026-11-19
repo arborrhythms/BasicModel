@@ -7426,6 +7426,144 @@ evaluator can read inside a sentence run at small cost, and whether
 item 1.8 as built passes his test where the garbage is separate runs
 of letters.
 
+### 19.54 Alec on §19.53: the complete part graph, no end marks, a space character (2026-11-19)
+
+Alec:
+
+> Parthood of forms, the code of a form: Lets explore the powerset of
+> parts of a whole, over the existing parts. So the complete part
+> graph, and the most efficient storage of that graph.
+>
+> Salience and where: I guess we had salience selecting where also;
+> perhaps we need more training, and we need to specify where in the
+> conceptual tree (which will restrict the salience beyond just
+> "words").
+>
+> A read with no WFF: we will probably have to return to this
+>
+> The read with no sentence: same as a read with no WFF, your solution
+> sounds better: maybe generate the one-word read by bisecting the
+> failed sentence for training parts, expecting the word thus isolated.
+>
+> Q 1. lets discuss the powerset of parts instead of just pairs, see
+> above. Do drop the end marks, add a space character so that the
+> saliency may can select against if from within parts. 2. see above
+
+**Decided** (Alec). The end marks go: a form's code no longer marks its
+first and last letter. A space character is added, so that the
+salience map can select against it from within parts. The code of a
+form is to be explored over its parts of every size, not its pairs
+alone.
+
+**The reading of "the powerset of parts"** (*Claude's*). A whole's
+code is the set of the existing parts inside it, of every size. That
+set is one point of the powerset over the existing parts; the sum of
+two wholes is the union of their sets, and one is a part of the other
+when its set lies inside the other's. The complete part graph is the
+relation "is inside" among the existing parts. A part is taken here as
+a run of adjacent characters; a collection of letters that are not
+adjacent (`t` and `s` of `this`) is not taken as a part.
+
+**What the space does** (*Claude's reading*). The space is a part like
+a letter. A part that holds a space has the space among its parts, and
+a request selects against it by a Not entry on the space (rule 3).
+What is left lies within words, and the largest of those at a place is
+the word (§19.30). The same character lets a form of two words exist
+(`ice cream`, his example), which a request that does not select
+against the space can take. What makes something a word is then the
+level a request asks for, and no longer part of the form's code: `is`
+has one code wherever it stands, inside `this` or alone. *In the source
+today:* the space has a property row of its own (`whitespace`, among
+WholeSpace's canonical properties), and the store is built so that no
+stored part crosses a space (`RadixLayer(word_bounded=True)`).
+
+**The complete part graph, measured** (Claude; the system's word list,
+197,015 forms of 2 to 12 letters, no end marks; scratch script
+`part_graph_check.py`). Two choices of which parts exist:
+
+| | E: only the parts that exist (the list's own forms, and single letters) | C: every run of letters of every form |
+| --- | ---: | ---: |
+| Nodes | 197,040 | 1,493,626 (7.6 for each form) |
+| Every pair "is inside", written out | 1,881,807 (9.55 for each form) | not counted |
+| Only the pairs "is immediately inside" | 522,429 (2.65 for each form) | 2,987,200 (two for each node) |
+| Parts in a form's code | 17.7 | 42.8 |
+
+- *The most compact exact storage of the graph is its immediate
+  edges.* A partial order is fully given by the pairs with nothing
+  between them (its transitive reduction, the Hasse diagram:
+  https://en.wikipedia.org/wiki/Transitive_reduction). Everything
+  inside a form is found again by walking down. In E that is 522,429
+  edges in place of 1,881,807 pairs, 3.6 times fewer.
+- *In C the immediate edges are exactly two for a node:* the part
+  without its last letter and the part without its first. This is his
+  rule of 2026-11-18 (the item 1.5 plan: a whole stored as the overlap
+  of its two parts). A whole is fixed by its two parts in order: of
+  1,493,600 pairs of parts none has two wholes. So in C a sentence's
+  parts can be built from the letters up, one table lookup for each
+  length, at every place at once.
+- *E has no such build.* 524 forms hold no known form at all, and a
+  form is not made from its known parts (`this` is not made of `his`
+  and `hi`). In E the parts of a sentence are found by the lookup at
+  each start place, as today, and the graph says only which form is
+  inside which.
+
+**The code, from the graph.** With one coordinate for each existing
+part, a form's code is the set of the parts inside it, itself
+included. Then parthood is exact both ways: a form is inside another
+exactly when its set is inside the other's, and no two forms share a
+code. The set is small (17.7 parts in E) and the space of coordinates
+is as large as the number of parts, so the code is stored as a short
+list and not as a wide row. Folded into a row of fixed width, three
+coordinates for each part (E):
+
+| Width | A form not inside reads as wholly inside | Forms that share a code |
+| ---: | ---: | ---: |
+| 96 (today's) | 20 of 273,750 | 154 |
+| 256 | 1 of 273,750 | 12 |
+| 512 | 0 of 273,750 | 2 |
+| 1,024 | 0 of 273,750 | 0 |
+
+A form inside another reads as wholly inside in every case, at every
+width, by construction.
+
+**For discussion, with what Claude would take.**
+
+1. *Which parts exist.* *Recommended:* E, the parts the store already
+   holds, since that is "over the existing parts" as he put it, and it
+   is a fifth of the nodes. C is the one to take if the parts of a
+   sentence are to be built from the letters up by lookups on the
+   device, which is item 1.5's question (the radix trie as a tensor).
+2. *How the code is held.* *Recommended:* the short list of parts as
+   the exact code, and a folded row of 512 for where a fixed width is
+   needed.
+3. *The lengths 1 to n* of today's code. With a coordinate of its own
+   for each form they are no longer needed to tell forms apart. Not
+   looked at further.
+
+**Salience and where** (Alec). The salience was to select the where as
+well (§19.48, answer 2: the Pi specifies both content and position);
+that may need more training. And the request is to say *where in the
+conceptual tree*, which restricts the salience beyond "words".
+*Claude's reading:* a request names a node of the tree of concepts, at
+any order, and the more particular the node, the fewer words the map
+selects; the meta concept "word" is the broadest such node and the
+proof of concept only. §19.53's two selections stand as the simple
+case, not as a rule that the map never selects the where.
+
+**A read with no WFF** (Alec): "we will probably have to return to
+this". Open.
+
+**The read with no sentence** (Alec). It is the same matter as a read
+with no WFF. Of what §19.53, point 5, proposed: "your solution sounds
+better". And a way to make the one-word reads: bisect the failed
+sentence into parts for training, and expect the word thus isolated.
+*Claude's reading:* the repair is to be taken back as proposed, and a
+sentence that fails is halved until a word stands alone, each piece a
+read whose expected output is what it holds. Since he returns to the
+read with no WFF later, nothing is changed in the source now; this
+goes with the item's text, unless he says to take the repair back
+sooner.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

@@ -1671,8 +1671,20 @@ generation is expected at this stage and is recorded, not tuned away.
    point he asked for (the structure as composed is valid) is a
    certificate. **The read with no sentence:** he finds the repair
    intrusive; proposed in its place, for his word, a test of a word
-   among garbage letters (1.8 §68.88). **The item's text for
-   Codex (§19.8) waits: "wait until discussion finishes".**
+   among garbage letters (1.8 §68.88). **Alec, then (§19.54):**
+   the end marks of a form's code go; a space character is added,
+   so that the salience map can select against it from within
+   parts; the code is to be explored over a whole's parts of every
+   size ("the complete part graph, and the most efficient storage
+   of that graph"). Measured: stored as its immediate edges the
+   graph over the existing parts is 522,429 edges for 197,015
+   forms; with every run of letters a node, two edges a node and
+   a whole fixed by its two parts. The request is to say where in
+   the conceptual tree. A read with no WFF: "we will probably have
+   to return to this"; the read with no sentence goes with it
+   ("your solution sounds better"; one-word reads by bisecting a
+   failed sentence). **The item's text for Codex (§19.8)
+   waits: "wait until discussion finishes".**
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull
    (back?), and examining the set of returned word concepts for
