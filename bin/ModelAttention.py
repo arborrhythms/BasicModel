@@ -2,7 +2,7 @@
 import torch
 import math
 from torch.nn import functional as F
-from Attention import narrow_words, open_narrowing, read_code_field
+from Attention import interpret_words, narrow_words, open_narrowing, read_code_field
 
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
@@ -254,7 +254,9 @@ def stage_input(model):
         # The sentence owns admission. Preparation exposes an opening,
         # without spending a second row-wide walk before composition.
         return
-    reading=read()
+    # No sentence owns admission here. Attention looks and the grammar may
+    # interpret at each look, with the decisions of the sentence's looks.
+    reading=_word_carrier(interpret_words(**arguments()),W)
     model._attention_greedy=reading
     model._attention_words=reading
     model._attention_spans=spans
