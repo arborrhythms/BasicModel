@@ -8616,7 +8616,17 @@ It does, and it is what rules 50 to 53 build. Each half bounds the percept on bo
 
 *Taken from it* (*mine*, for the bounds that rules 51 and 52 left to be measured): the against lane holds the nearest bound on its side and not every one. In the parts half that is what the nearest holders add; in the wholes half it is the wholes directly inside those that apply and that do not apply. This gives the wholes half the bound that §23.3b found it needs (over every whole the lane fills 55.6 of 64 coordinates), in place of "wholes of the same kind".
 
-*Settled by §19.71 with it:* a percept with no whole has nothing on either lane of its wholes half, since zero on both lanes is no evidence. Rule 5's "at or below each whole's" is now the for lane's upper bound: the percept holds the coordinates of each whole it lies in.
+*Corrected by Alec, §19.73:* this section first said that a percept with no whole has nothing on either lane of its wholes half. There is no such percept: every percept lies in the class of all characters, which is all ones.
+
+### 19.73 Alec: only a strict whole is evidence against; the wholes half has a top; wholes should discriminate (2026-11-19)
+
+1. "Re: \"Every other part is evidence against\", thats my mistake: only strict wholes ( in the part tower, not the property tower ) are evidence against." *Decided.* What tells against a form is the forms that hold it, in the part tower. This is rule 51 as written. The broad form is withdrawn and is not kept as future work.
+2. "A percept cannot have no wholes (on the property pyramid), since we have the character class of all characters as an upper bound (which is all ones), just like individual characters form lower bounds on the parts pyramid." *Decided,* and it corrects §19.72's last paragraph and rule 52 as first written. The for lane of the wholes half is an upper bound. It is all ones under the class of all characters, which every percept lies in, and each narrower whole the percept lies in cuts it down. Rule 5 stands as written: a code is at or below each of its wholes'. Claude had taken "zero on both lanes is no evidence" (§19.71) to mean that half is empty with no whole; there is no such percept.
+3. "Wholes should be able to discriminate. I'm wondering, since we have pi selecting parts, if we want a sigma being driven by the downward conceptual projection (instead of character classes, and being driven by conceptual properties); this has a good dual feel, since it is doing synthesis on the way up and analysis on the way down. (Although both can be reached by inverses)."
+
+**What follows for the read** (*mine*; being measured, §23.3b's addition). The trial found that an upper bound read as the parts half is read says nearly nothing: it is the same in almost every word, it is 60 to 86% of a code, and a class's members are marked by missing ones. That is a fault of the read and not of the code. The parts half is a lower bound: percepts of one reading are joined by the union, and a concept reads the coordinates present. The wholes half is an upper bound, so it takes the dual: percepts are joined by the product, and a concept reads the coordinates cut away, `1 - w`. Under the top class alone nothing is cut and the half says nothing, as it should.
+
+**On point 3** (*Claude's view, for him to overrule*). The dual is sound: weights of zero or above keep the order, a Pi lies at or below what it reads and a union at or above (§19.70). A whole driven by the concepts would hold of a word as such, which no class of characters can, so it is the kind of whole that can tell `archer` from `archery`. Two things argue for building it after the code and not with it. It needs the downward projection, which is rule 30's and round 5's. And it tells words apart only once the concepts are learned; at a word's first readings it says nothing, so the next part (rule 56) is still needed then. So: round 3c builds the wholes half as a code of rows of the table of wholes, with the character classes as its rows; a conceptual property is then one more row of that table, written by the downward projection; and round 5 tries that in tests first, as an extension of §23.3b's toy.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
@@ -9500,15 +9510,17 @@ chooses from. The old classes are not edited.
     character property, a number for a feeling. The percept's vector
     never holds the bytes. *Mine:* each row has three coordinates of
     its own, drawn as a part's are, and a whole inside another
-    carries the other's. For: the coordinates of the wholes that
-    apply, the upper bound. Against: the lower bound, as evidence
-    against (Alec, §19.72: "wholes as negative lower bounds"), the
-    coordinates of the narrower wholes it does not lie in; *mine:*
-    those directly inside the wholes that apply (over every whole
-    the lane fills 55.6 of 64). A property that is itself a degree
-    holds that degree (Alec, §19.71). With no whole the half has
-    nothing on either lane (§19.71: zero on both lanes is no
-    evidence); round 3 built all ones.
+    carries the other's. For: the upper bound (Alec, §19.73: "A
+    percept cannot have no wholes ... the character class of all
+    characters as an upper bound (which is all ones)"). It is all
+    ones under the class of all characters, less the coordinates of
+    each narrower whole the percept lies in, so a code is at or
+    below each of its wholes' (rule 5). Against: the lower bound, as
+    evidence against (Alec, §19.72: "wholes as negative lower
+    bounds"), the coordinates of the narrower wholes it does not lie
+    in; *mine:* those directly inside the wholes that apply (over
+    every whole the lane fills 55.6 of 64). A property that is
+    itself a degree holds that degree (Alec, §19.71).
 53. *The Pi selects for and against* (Alec, §19.71: "Pi should select
     both strong for and strong against"). A row of the first Pi has
     for entries, its parts and wholes as now, and against entries,
@@ -9523,7 +9535,11 @@ chooses from. The old classes are not edited.
     length; the concept reads the reading's for vector less its
     against vector, as now. A reader that asks whether one form lies
     inside another reads the for lane alone, where the part order
-    holds.
+    holds. *Mine (§19.73; measured in §23.3b's addition):* the wholes
+    half is read on its complement. Being an upper bound, it is
+    joined over a reading's percepts by the product, where rule 7
+    joins the parts half by the union, and a concept reads the
+    coordinates cut away, `1 - w`.
 55. *A scalar is its place in one sorted table of values* (Alec,
     §19.70: "The scalar parts will just be values below, sorted by
     the less-than operation. Wholes in this case will be the same
@@ -9539,13 +9555,18 @@ chooses from. The old classes are not edited.
     §23.3b): the shortest run that one holds and the other does not
     (`ry`). At 64 and 64 with both lanes 35 of 19,821 words are left
     so. No whole over bytes is made for this (one holds of 122 forms
-    on average). *Open, put to Alec:* whether a whole should hold of
-    a form as such, so that a word may be told apart by a whole as
-    readily as by a part (§19.69).
-57. *Not built in this item:* "every other part of the catalog is
-    evidence against" as a code (it loses the part order, §23.3b);
-    and the wholes half learned downward from concepts (§19.70; the
-    toy does not answer it). Both go to `doc/FutureWork.md`.
+    on average). Alec, §19.73: "Wholes should be able to
+    discriminate"; the whole that can is one driven by the concepts
+    (rule 57), which says nothing at a word's first readings, so the
+    part is needed meanwhile.
+57. *Wholes driven by the concepts* (Alec, §19.70, §19.73: "a
+    sigma being driven by the downward conceptual projection ...
+    synthesis on the way up and analysis on the way down"). Not
+    built in round 3c. A conceptual property is one more row of the
+    table of wholes, written by the downward projection of rule 30;
+    round 5 tries it in tests first (*mine*). "Every other part of
+    the catalog is evidence against" is withdrawn (Alec, §19.73):
+    only a form's strict wholes in the part tower tell against it.
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -9760,8 +9781,10 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     lanes, every value within 0 to 1; a form's for lane is at or
     above each of its parts' in the parts half; the for lane of a
     form lies at or below that of a form holding it; no coordinate
-    is one on both lanes; a percept with no whole and no holder has
-    nothing on its against lane. Printed for the 19,821 words: the
+    is one on both lanes; a percept under the class of all
+    characters alone has a wholes half of all ones on its for lane,
+    and one with no holder has nothing on the against lane of its
+    parts half; a code is at or below each of its wholes'. Printed for the 19,821 words: the
     words that share a code (35 before rule 56, none after), and the
     codes inside another's by accident on the for lane.
 47. *For and against at the first Pi* (rule 53): the row of `archer`
@@ -10423,9 +10446,10 @@ integers).
    row, mean 2.95, and 4,869 rows above the first Pi's 16 entries a
    row). Wholes half: each whole a row of the table of wholes with
    three coordinates of its own, a whole inside another carrying
-   the other's; for where it applies, against where it is witnessed
-   not to apply, among the wholes directly inside those that apply
-   (§19.72). The bytes a property
+   the other's. Its for lane is the upper bound: all ones under the
+   class of all characters, less the coordinates of each narrower
+   whole that applies (§19.73). Its against lane holds the wholes
+   directly inside those that apply, which do not apply (§19.72). The bytes a property
    holds on stay in PrimitiveProperties.members and decide which
    wholes a form has; PrimitiveProperties.codes and the codebook
    rows written from it at begin_forward give way to the rows'
@@ -10436,7 +10460,9 @@ integers).
 5. The concept's read (rule 54): a column from the for code less
    the against code; the readers of containment
    (FormContainment, ConceptualMatch.match, the lookup) read the
-   for lane.
+   for lane. The wholes half is joined over a reading's percepts by
+   the product and read on its complement, as §23.3b's addition
+   measured it.
 6. The scalars (rule 55): the sorted table in place of the value at
    a last coordinate; bins of the felt value; a column that follows
    its member. ScalarPercepts.reconstruct and decode lose their
@@ -10545,6 +10571,18 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    TestCrossModalTie, TestBellSalivate), each printing the values
    that §19.23 and §19.25 name. Where 25 and 26 say "learned" they
    are certificates of learning.
+
+7. Wholes driven by the concepts (rule 57; Alec, §19.73), tried in
+   tests only, as an extension of test/code_trial.py's last toy and
+   on the lesson's model: a conceptual property is one more row of
+   the table of wholes, and a percept's wholes half takes it from
+   the downward projection of the concepts that hold of it (step
+   3's way down), through weights of zero or above. Return: whether
+   it tells apart words that their parts leave alike (the tie of
+   `that` and `What`); whether a class inside another comes to lie
+   inside it; what a word's wholes are before its concepts are
+   learned; and what you would build. Nothing in bin/ reads it in
+   this round.
 
 Run: the new test file and the testpoints; every test file that
 names what you changed; both stopping gates; the lesson's sixteen
@@ -11844,7 +11882,7 @@ So at 64 the against lane tells 25 more words apart and leaves 35 sharing a code
 2. **The against lane works as Alec said it would** (§19.70, "scored by similarity and not difference"). On the lesson 7 of 8 concepts are told apart, against 6 at every width on one lane. `is` no longer reads `this` at one. The tie left is `that` and `What`: the letters of `that` all lie in `What`, and neither holds the other as a run.
 3. **The Pi's against entries are joined by union** (§19.71, point 1): the product fired on 52 of the 852 pairs where a form holds another as a run, the union on all 852. Membership is read by the set of parts found, since by code the union also fires on 4,384 accidental pairs. A short form held by many words gets up to 235 against entries (mean 2.95), so they must be bounded; how is not measured.
 4. **"Every other part of the catalog is evidence against" is not taken as a code** (§19.70). It tells all 8 of the lesson apart, but it fills the parts half, a part and its whole then read each other equally, and the order is lost.
-5. **Claude's "all ones less" for the wholes half (§19.69, point 2) is dropped.** It is nearly the same in every word, gives 60 to 86% of every code and of every centroid, raises every concept's reading of another word from .46 to .92, and marks the members of a class by missing ones, so that they rank below non-members. Alec's form (§19.70, §19.71) is taken: ones on the for lane at the coordinates of the wholes that apply, ones on the against lane at those witnessed not to apply. *This makes the wholes half all zeros with no whole,* where rule 5 has a code "at or below each whole's". Put to Alec.
+5. **Claude's "all ones less" for the wholes half (§19.69, point 2) is dropped.** It is nearly the same in every word, gives 60 to 86% of every code and of every centroid, raises every concept's reading of another word from .46 to .92, and marks the members of a class by missing ones, so that they rank below non-members. Alec's form (§19.70, §19.71) is taken: ones on the for lane at the coordinates of the wholes that apply, ones on the against lane at those witnessed not to apply. *This makes the wholes half all zeros with no whole,* where rule 5 has a code "at or below each whole's". Put to Alec. **Corrected by Alec, §19.73:** the for lane stays the upper bound, all ones under the class of all characters; what is changed is the read of that half, which is taken on its complement (rule 54).
 6. **The against lane of the wholes half must be bounded** to wholes of the same kind as those that apply: taken over every whole it fills 55.6 of 64 coordinates.
 7. **A whole made over bytes to tell two words apart is dropped** (§19.69, point 4). It ended every shared code, but one such whole holds of 122 forms on average (up to 469) and changes 3,817 codes. The 35 words left get rule 43's next part (`ry` for `archer` and `archery`), unless Alec wants a whole that holds of a form as such.
 8. **The scalars work by Alec's sorted table** (§19.70) and by no form of an intensity written at its own coordinates. With the table, a collection at 1 reads .76 at 1 and 0 at 2. Two conditions: the entries take coordinates by bins of the felt value in 64, and a concept's column follows its member's code as the table grows, since a column frozen when the table held one value reads every larger value fully. The boundary is 0 or 1; graded by distance it tells the collections apart half as well (§19.71, point 2, stands for a property that is itself a degree).

@@ -2508,21 +2508,16 @@ class in coordinates of its own without being told to, and the union
 form placed a member at or above its class. A class inside another came
 out unordered, and the toy was too small to say whether it scales.
 
+Alec, later the same day: "Wholes should be able to discriminate. I'm
+wondering, since we have pi selecting parts, if we want a sigma being
+driven by the downward conceptual projection (instead of character
+classes, and being driven by conceptual properties); this has a good
+dual feel, since it is doing synthesis on the way up and analysis on
+the way down. (Although both can be reached by inverses)." Item 1.7
+builds the wholes half as a code of rows of a table of wholes, with
+the character classes as its rows, and tries a conceptual property as
+one more row in tests (sigma-pi plan, rule 57).
+
 To specify: what teaches the half (the read back of the concepts, or
 the reconstruction); how a class inside another comes to lie inside it;
-and how the learned half sits with the table of wholes, whose rows are
-boundaries that are given.
-
-## Every other part as evidence against (Alec, 2026-11-19; future work)
-
-Alec: "To some extent, all parts in the catalog other than those that
-are parts are negative evidence." Item 1.7 builds the narrow form: a
-form's against lane holds what the forms holding it add. The broad
-form, every part of the catalog that the form does not hold, was tried
-as a code in 64 coordinates. It told all eight of the lesson's words
-apart, but it filled the parts half, a part and its whole then read
-each other equally, and the part order was lost.
-
-To specify: where the broad evidence belongs if not in the code (the
-lookup already takes the form whose parts are exactly those found), and
-at what width, if any, it can stand beside the part order.
+and what a word's wholes are before its concepts are learned.
