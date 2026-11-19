@@ -7831,6 +7831,77 @@ each place (way 3). It serves reconstruction and generation alike,
 since it starts from the form. Point 4 of §19.57, the location arrays
 taken from the read, is withdrawn.
 
+### 19.59 Where item 1.7 stands, and the text to begin it in a new conversation (Claude, 2026-11-19)
+
+Alec, 2026-11-19, of §19.52 to §19.58: "So this gives us a clean
+perceptual basis spec for 1.7." And: "provide text for 1.7 to begin in
+a new conversation with you. Please spin off implementers in Opus as
+usual." The discussion is finished; the item's text can be written.
+
+**What is decided, and where.**
+
+| Matter | Decided | Section |
+| --- | --- | --- |
+| The layers: Pi, Not, Sigma at every order; symbols split from concepts | rules 1 to 32 | §19.21 |
+| The looks: the bank, the request, the returned set, `attend`, dimming, one gain field, one where, a literal | rules 33 to 42 | §19.51 |
+| No derivative in a look: the request is carried down by the way back | rule 36 restated | §19.52 |
+| The salience map selects the level, the `.where` selects the word; what stays selected is drawn and judged by its outcome | rule 37 restated | §19.53 |
+| The request names a place in the conceptual tree; "words" gives the space a Not entry | rule 35 | §19.54, §19.57 |
+| A form's code: no end marks; a space character; its parts of every size | Alec | §19.54 |
+| The part map: from the letters up, a part of any length only where two forms would be the same; a part added is carried by every form that holds it | Alec; 762 parts for 197,014 forms by a greedy estimate | §19.56 |
+| The parts of a sentence by one product for each character length, on the device | Alec; 0.50 ms a sentence on Metal | §19.55, §19.57 |
+| The way back, for generation too: the whole stores its parts in order, the longest at each place | Alec's alternative, taken | §19.58 |
+| Test points: the structure as composed is valid; a word among garbage letters; "words" lowers a form that holds a space | certificates | §19.53, §19.57 |
+
+**Open, to settle in the item or with Alec.**
+
+1. How the word is found from its parts on the device without a
+   product against every form (§19.57: 5.9 ms against 197,014 forms,
+   growing with the dictionary).
+2. A pair that is no known part leaves no trace (`felixx` read as
+   `felix`), and a wrongly rebuilt word sometimes reads as the word
+   meant (§19.55, §19.57): whether the length or a match at every
+   place is added.
+3. A read that gives no WFF (Alec: "we will probably have to return to
+   this"). In item 1.8 it outputs nothing (1.8 §68.89). The mining of
+   silent outputs with bisection is item 1.6's.
+4. Rule 32, spellings: what a near spelling should read, with the
+   width of a row's cone.
+5. `PiLayer2` passes no gradient at a membership of exactly one
+   (§19.50); and, not checked, whether the read to a point, clipped to
+   0 to 1, can reach a root idea with a negative coordinate (1.8
+   §68.87).
+
+**The text to begin with** (for a new conversation with Claude; Alec
+pastes it):
+
+~~~
+Begin item 1.7 of BasicModel (the Sigma and Pi layers, the looks, and
+the perceptual basis). Read first, in
+basicmodel/doc/plans/2026-11-14-sigma-pi-layers.md: section 19.59 (what
+is decided and what is open, with the sections that hold each),
+then 19.21 (rules 1 to 32) and 19.51 to 19.58. Read the item 1.7 entry
+of basicmodel/todo.md. Your memory holds how we work.
+
+Do, in this order:
+1. Write the rules of item 1.7 once, as one clean statement of the
+   perceptual basis and the looks (rules 1 to 42 as they now stand,
+   with what 19.52 to 19.58 changed folded in), as a new section of
+   that file. Mark what is mine, what is yours, and what is open.
+2. Put the open points of 19.59 to me, each with what you would take.
+   Do not hold the text for them: build on what you recommend unless I
+   say otherwise.
+3. Write the item's text for the implementers as one hand-off in that
+   file (it replaces 19.8), in rounds, each with its targeted tests and
+   its certificates, the test points of 19.53 and 19.57 among them.
+   One default sweep at the item's push round; no slow tier.
+4. Start the implementers in Opus, in the same checkout, and review
+   each return against the source before the next round goes.
+
+Item 1.8 is complete and on GitHub. Commit your own work locally; do
+not push unless I say.
+~~~
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

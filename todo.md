@@ -1707,6 +1707,11 @@ generation is expected at this stage and is recorded, not tuned away.
    entries a form, as fast on Metal as a table of characters.
    Taken, on his word to do what is most efficient; the location
    arrays from the read are withdrawn.
+   **The discussion is finished (Alec, 2026-11-19: "this gives us a
+   clean perceptual basis spec for 1.7").** What is decided and
+   what is open are in one table in §19.59, with the text that
+   begins the item in a new conversation; the implementers run in
+   Opus.
    The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it
@@ -1807,6 +1812,14 @@ generation is expected at this stage and is recorded, not tuned away.
       (a numeral's word tied to its felt intensity, a word of place
       tied to the relation of two places, two words with one
       perceptual basis tied to one object).
+   **Silent outputs, mined and bisected (Alec, 2026-11-19; placed
+   here by Claude, 1.8 §68.89).** "the training harness can mine
+   the logs for instances of silent output and do bisection to
+   teach words recognition without sentence parses." A parse that
+   gives no WFF outputs nothing since item 1.8; the harness finds
+   those sentences in its logs, halves each until a word stands
+   alone, and teaches each piece with the word it holds as the
+   expected output. Not designed.
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
