@@ -1438,8 +1438,9 @@ occurred, so two documents may share a location. There is one history: the
 rows of several streams enter it in the order of their streams, and a sentence
 read again is a new row with a later stamp.
 
-**Bands are positions.** Signed location and time coordinates are positions,
-not membership evidence, and cannot enter the $[0,1]$ membership chart.
+**Bands are positions.** Location and time coordinates are positions, not
+membership evidence: they are unsigned sinusoid values in $[0,1]$, and they
+are kept out of the membership chart.
 Composition reads content on either side of the declared percept band
 (`GrammarLayer.content_operand` zeroes it) and carries the band through
 unchanged.
