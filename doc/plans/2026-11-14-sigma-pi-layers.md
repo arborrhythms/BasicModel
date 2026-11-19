@@ -11217,3 +11217,344 @@ Read against the source: `4ead362420` and `3a069d421e` (`bin/OrderZero.py`, `bin
 Their returns are folded in as §23.3.4.
 
 **Noted, nothing built.** A basic percept's code is copied once, when its row is promoted (`BasicPercepts.promote`), and rows are now promoted at a third reading, not before the first sentence. The wholes' own codes are learned and go on moving after the copy. So the copy can hold values between 0 and 1 (the 16 of §19.68), and it is not renewed.
+
+### 23.3.4 Round 3, finished by three implementers; review (Claude, 2026-11-19)
+
+Step 7 of round 3 was given to three implementers on Opus on separate files (§23.3.3). Their returns are below as they wrote them. Their commits are local on `main`; nothing is pushed.
+
+**Review.** Read: the three returns; the source diff of implementer A (`ConceptualSpace.order_zero_both`, `refinement_field`, `reading`, the concept lesson); a sample of the ports. Run here, every test file the round touched and six more (101 files, four processes, 236 s): **16 failed, 1,267 passed, 67 skipped.** Before the finish the same files failed 109 cases. Both gates pass in A's run.
+
+*The 16, by cause.*
+
+| Cause | Cases | What is done |
+| --- | --- | --- |
+| A basic percept's row has no against lane, and a located part annihilates it (rule 6 as first built) | `test_concept_memberships` 1 | Rule 6 is amended (*mine*, §21): the run of parts is the percept's presence, on both lanes. Returned to an implementer |
+| "words" and "objects" take free rows of order one (`PartsOfSpeech.order_reservations` does not reserve them) | `test_relation_closing` 2, `test_familiar_tier` 1 | Returned: they are reserved with the grammar's declarations |
+| The reading that nominates a form sometimes stores nothing | `test_epoch_history` 1 (3 runs in 8, by C's count; it passed 6 of 6 before the round) | Returned: to be traced and repaired |
+| A fixture still imports the removed lesson admission | `test_definition_integrity` 1 | Returned |
+| A word read on first sight, not ported | `test_assessment::test_probe_restores_memory_clocks_parameters_and_random_streams` (passes on `8b8a2fcf48`) | Returned |
+| A learning certificate with the bar "every start" | `test_item17_stacks::test_and_or_and_not_are_learned_and_read_back[negation]`: read back on 9 of 10 drawn starts | Returned: the bar is a measured share, as the depth bar now is |
+| The scalar readers under the dense Sigma: a value's code is one number, so values are not told apart; two readers of a collection; the numeric certificate's two axes read alike | `test_item18_perceptual_scalar` 4, `test_item18_scalar` 3, `test_item18_places` 1 (and `test_item18_stack` 1 in B's run) | **Left failing.** They wait for the code of §19.69 (an intensity as a whole of its own kind), which is tried in tests first |
+
+*Accepted.* The ports of B and C, with their provisional choices; the retirements (two cases whose fold rule 8 deleted, three whose feature weights rule 8b removed), each with its replacing certificate. A's one reading key (the model's present time and the stream; rule 20 says so now), the test of the trees, and the depth bar (at least 4 of 5; two pairs measured at 238 of 240 starts).
+
+*Changed by this review.* A and B found, each by its own path, that "both" did not hold at a basic percept's row: its against lane was the product of its members' against lanes, and a run of parts has none. A built the read from the wholes' two lanes at the run's presence (`order_zero_both`), through the record of a concept's members in the feature table, which round 4 removes. With rule 6 amended the row itself holds both, and the read comes from the row's two lanes.
+
+*Trailers.* A's commits end with "Co-Authored-By: Claude Opus 5.5", the model that wrote them.
+
+#### Return of implementer A: the source, the refine and raise, the concept lesson, the trees, the depth bar
+
+
+Commits, local on `main`, none pushed: `677205d8fa` (both at the basic percepts), `1fc2af6fa2` (one reading key; the concept lesson), `bf75c156dc` (the trees test), `4dcba4fc74` (the depth bar), `06af7ae461` (a guard in the word poles). Commit messages end with "Co-Authored-By: Claude Opus 5.5", the model that wrote them, and not "Claude Fable 5.2" as the coordinator's text asked.
+
+**1. Where "both" is read**
+
+*The coordinator's reading cannot fire as the source stands (provisional, my replacement built).* The proposal was p = tanh(x_for · u), n = tanh(x_against · u), both = min(p, n). Measured on `test_refine_raise`'s fixture, it fails for three reasons:
+
+- `x_against` is always zero. A basic percept's Pi row reads its run of parts on the for lane only, so the row's against lane is the run's against (0) times the wholes' against. On `[49, 48]` all four rows read `[1, 0]`. A row of the first Pi as built never holds both lanes above zero, so certificate 3's sentence "a basic percept, whose two lanes can both be above zero" is not true of `BasicPercepts.read`'s value.
+- "Both" does survive in the row's members. `PerceptField.boundaries[1]`, the wholes' two lanes, reads `[1, 1]` on `[49, 48]` and `[49, 65, 48]`, and `[1, 0]` or `[0, 1]` on the pure readings.
+- The column cannot tell its for members from its Not members here. In this identity-only layout (`property_width` 0), `bp((48,),(0,))` and `bp((48,),(1,))` have the same vector, so the concept's column `u = Σ ±v/|v|²` is exactly zero. No read through `u` can work in this fixture.
+
+*What is built:*
+
+- `ConceptualSpace.order_zero_both(perception, rows, *, batch=None)`. A basic percept is both to the degree `parts_for × min(wholes_for, wholes_against)`, read from `perception.boundaries`. That is the row's arithmetic with the run of parts read at its presence on both lanes. A concept is both through its members, `1 − Π_q (1 − both_q)` over the basic percepts its column was started from. Those members are read from the feature table, the record that choice 4 keeps until round 4. **Provisional:** when round 4 removes the table, this reader must move with the record.
+- `order_zero_both_field(perception)`: the same read at the open field's order-zero slots.
+- `refinement_field(perception)`. Each order-zero slot holds `(both, both)`, and `cs_forward_content` composes the orders above with their folds unchanged. The concepts' own `_cs_level_*` selections are restored afterwards.
+- `refine_over_collected` routes on `refinement_field`. `cs_symbolic_phase` and FamiliarTier's open-attention path stash it as `_refinement_field`. `observe_field` no longer treats the concepts' field as the refinement field: it calls `refine_over_collected()`.
+- The witnesses of a member in the refinement read its basic percept's events on either lane (`events.amax(-1)`). Before, a Not member read its against-lane event, which is now always zero.
+
+*Each reader of "both" found:*
+
+| Reader | What became of it |
+| --- | --- |
+| `Spaces.refine_over_collected` (`field.amin(-1)`) | Pointed at `refinement_field`. |
+| `Spaces.concept_over_collected` (`_refinement_both`) | Follows the refine. |
+| `ModelAttention.native_word_poles` → `Attention.pooled_read` / `narrowing_view` (`both = positive & negative`), `AttentionLesson.ReadingTargets`, `IntervalLog` word both-rate, `Assessment._attention_trace` | The producer is pointed. A word's poles are `max(concept lanes, order_zero_both)`, read only where a percept field is published (`06af7ae461`). |
+| `FamiliarTier.observe_candidate` (`error = min over lanes of max over readings`), `corpus_lessons.py:341` | Left. They read both across retained readings (for in one sentence, against in another), which rule 3 still allows. **Provisional.** |
+| `DefinitionFold` (`q.amin(-1)`) | Left: it reads classes above order zero (round 4). |
+| Other `amin(-1)` hits in bin/ (`Attention` spans, `BasicPercepts.property_presence`, `FieldReverse`, `FormCentroids`, `PerceptProperties`, `SentenceAttention`, `Language` residual) | Not lane readers. |
+
+*Ported cases in `test/test_refine_raise.py` (12 cases, all pass):*
+
+- `field_case` and every case that used it (7 cases):
+  - Old: refine on `cs_forward_content(read)`'s field.
+  - New: refine on `cs.refinement_field(cs._percept_field)`, also stashed as `_refinement_field`.
+  - The requests, ops, runs and readiness asserted are unchanged.
+- `test_extent_containment_does_not_fill_gaps_between_part_witnesses` (×2):
+  - Old: `read[0,0,0] == [0, 1]`.
+  - New: the concept is one signed value (`read[0,0,0].amin() == 0`), and `order_zero_both` of its row is zero. "No requests" and "not ready" are unchanged.
+- `test_learned_particular_stays_at_one_scattered_kind_raises_to_two` (×3):
+  - Old: Adam on `store.values` with the particular's link zeroed; then `field[felix,0,0] == [1, 0]` exactly.
+  - New: Adam on `store.values` and `cs.order_zero.weight`, the link left at one. The loss is the predicate's own reading plus the particular's. The fold above order zero passes nothing back through a reading of exactly zero, and the column is exactly zero in 3 of 40 builds, which stalled every update. The assertion is now `field[felix,0,0,0] > .5` and the against lane `== 0`, a pure reading. The refine and raise steps read the refinement field.
+  - 0 of 40 builds fail the new form. The first form failed 3 of 40.
+
+**2. The concept lesson (`test/test_objective_ownership.py`, 6 pass)**
+
+*Producer found and repaired in bin/: one reading key everywhere.* A form's readings were keyed `(_word_observation_serial, stream)`. Only the word step advances that serial, so in XOR_symbols and XOR_grammar every sentence counted as the same reading and no form was ever nominated. Also, a serial that advances per trial counted the two trials of one sentence twice.
+
+- New `ConceptualSpace.reading(stream) = (model.present(), stream)`: the sentence's model time, which both trials share. A model with no clock reads at time 0.
+- Used by `Models` (word step), `_autobind_property_concepts` and `ConceptLessons.read_native_forms`.
+- `teach_concept_lessons` closes with `getattr(cs, '_field_activated_references', {})`, since the attribute is absent when nothing was activated.
+
+*Ported cases:*
+
+- `test_linear_field_reader_and_definitions_have_their_declared_writers`:
+  - Old: `layer(0).values` is in reconstruction and not in output.
+  - New: the same for `cs.order_zero.weight` and for `layer(0).values`.
+- `test_trial_consumers_share_one_record_and_answer_cannot_write_it`:
+  - Old: one training batch.
+  - New: the same batch read `concept_mint_count − 1` times first, with no_grad and `End`, so the trial is the nominating reading. The assertions are unchanged.
+
+**3. Trees released without the collector**
+
+`test_item17_order_zero.py::test_sentence_trees_are_released_without_the_collector`. With `gc.disable()`, restored in a `finally`, the lesson's configuration reads trials + 2 sentences (5 sentences, 3 trials a stream). It then asserts:
+
+- every lease of the strata is released;
+- `gc.collect()` under `DEBUG_SAVEALL` finds no `SentenceStrata.Tree`.
+
+The lesson fixture is factored into `_read_lesson(sentences)`. Checked against the defect: with `Tree._views` made a plain dict again, the test fails (Trees found by the collector). Restored after the check.
+
+**4. Depth (`test_depth_one_two_and_four_pairs`)**
+
+Measured at 1,000 presentations on starts drawn from the system:
+
+| Pairs | First 40 starts | 200 more starts | Missed overall |
+| --- | --- | --- | --- |
+| One | 40 of 40 | 200 of 200 | 0 of 240 |
+| Two | 40 of 40 | 198 of 200 | 2 of 240 (.0083) |
+
+The bar is now at least 4 of 5 for each:
+
+- At two pairs' measured rate, a run misses 4 of 5 with probability 6.8e-4.
+- At one pair, taking one miss in 240 (.0042), the probability is 1.7e-4.
+- At two pairs the old bar of 5 of 5 fails 4.1% of runs, about once in 24.
+
+The rates are in the docstring. Four pairs is recorded only.
+
+**5. Counts**
+
+| Run | Result |
+| --- | --- |
+| My four files with both stopping gates | 49 passed, 128 s (12 refine_raise, 6 objective_ownership, 19 item17_order_zero, 10 item17_stacks, 2 gates) |
+| Earlier run: item17_order_zero (18 then) with both gates | 20 passed, 39 s |
+| The 32 other test files naming a function I changed (`refine_over_collected`, `observe_open_field`, `native_word_poles`, `teach_concept_lessons`, `_word_observation_serial`, `cs_symbolic_phase` and others) | 22 failed, 466 passed, 34 skipped, 64 s, with `-n 4` |
+
+Of those 22, 21 fail the same way on an export of `814403353a`: test_assessment 1, test_concept_capacity_policy 1, test_concept_output 3, test_cs_symbol_table 1, test_final_generation 3, test_definition_integrity 1, test_item4_review 3, test_loop_of_looks 2, test_one_attention 2, test_sentence_protocol 1, test_sparse_concept_e2e 1, test_math_chain 1, test_interpret_bias 1. All are other implementers' files.
+
+The one new failure, `test_assessment::test_native_lane_attribution_keeps_extent_identity_and_all_tied_sources`, was a stub owner with no percept field. It is fixed in bin/ (`06af7ae461`). test_assessment, test_one_attention, test_sentence_owned_attention and test_stream_state_shapes then gave 3 failed and 71 passed, and the 3 fail at base too.
+
+*For the other implementers:* the reading key changed from the word-step serial to `(present time, stream)`. A model that reads its own sentences now nominates a form after `concept_mint_count` sentences, not after `concept_mint_count` word-step calls. A fixture that counted on two trials per sentence counting twice now needs another sentence.
+
+**What I would change in §21**
+
+- Certificate 3, Alec's §19.68 sentence: say where a basic percept's both is read. As built, the first Pi's value never has both lanes above zero, since the run of parts has no against lane. Both lives in its wholes' lanes, read at the run's presence. State that or change the row's arithmetic.
+- Rule 20: name the reading as the model's present time and the stream, both trials sharing it, rather than a serial.
+- Rule 8b: two basic percepts that differ only in their wholes have the same vector in an identity-only layout, so a column over a for member and a Not member of them is zero. Either such layouts are not order-zero fixtures, or the record of a column's members has to stay (choice 4).
+
+#### Return of implementer B: the field tests
+
+
+Commits, local on `main`, nothing pushed: `d41683e3d4` (the ports), `2f74ffab4c` (the membership read's gradient, made stable). No file of `bin/` was edited.
+
+**Starting point.** My 15 files at `814403353a`: 40 failed, 89 passed. **At the end** (at `2f74ffab4c`, with `1fc2af6fa2` of another implementer under it): **10 failed, 117 passed**, 36 to 39 s, the same in three runs. Each of the 10 is a source defect, listed below. `test_grounded_xor.py` and `test_live_concepts_from_percepts.py` passed from the start.
+
+**The helper (`test/basic_fixtures.py`)**
+
+- `order_zero_expected(owner, row, presence)` computes a concept's read in the test, from the basic percepts' codes and the concept's column of `cs.order_zero.weight`:
+  - `x = 1 - prod_p (1 - v_p)^{b_p}` on each lane, then `tanh((x_for - x_against) . u)`;
+  - it returns the signed value and its two lanes.
+  - Place and time are left out: a column's weights there start at zero, and no ported test teaches them.
+- `published_presence(owner, batch, reading)` gives each basic percept's two lanes from the published `cs._percept_field`.
+
+**Where "both" is read: provisional**
+
+Every test that read `[1, 1]` (or a fractional both) at a concept now reads it at the basic percepts that carry the property. The value read is **the whole boundary of each percept's collection**, `cs._percept_field.boundaries[1, percept]`, which `BasicPercepts.read` returns.
+
+A row's own Pi value can't be used for this. A row's against lane is the product of its members' against lanes, and its run of parts has no against lane (`BasicPercepts.read_points`, the part lane stacked with zero; `PerceptPi.forward`). So whenever a row has a run of parts, its against lane is zero.
+
+This matches what `677205d8fa` (`ConceptualSpace.order_zero_both`) reads for refinement: the parts boundary times the least of the wholes' lanes.
+
+**For the coordinator:** certificate 3 says a basic percept's "two lanes can both be above zero". The row's Pi value can't satisfy that. Only its collection's whole boundary can. Either certificate 3 means the boundary, or a row's against lane needs another definition.
+
+**Cases ported**
+
+| File | Test | Old assertion | New assertion |
+| --- | --- | --- | --- |
+| `test_field_binding.py` | `test_inventory_checkpoint_preserves_definition_between_modes` (4) | load of a checkpoint holding `order_zero.weight` into a space with no order-zero Sigma (refused: unexpected key) | the restored space installs its Sigma, as the model does where it binds the basic percepts (`restored.install_order_zero()`). The assertions are unchanged: the definition and the read survive the change of mode |
+| `test_field_binding.py` | `test_one_active_percept_reaches_every_referencing_concept` | each of 12 concepts reads `[1, 0]` | each reads `order_zero_expected(...)`, and its own row is above .76 (tanh(1)) |
+| `test_field_binding.py` | `test_observed_complement_is_pooled_inside_one_bracket` (4) | concept `[1,1]`, `[1,0]`, `[0,1]`, `[0,0]` for the four brackets | the same four corners at the whole boundary of both basic percepts carrying the property; the concept equals `order_zero_expected` |
+| `test_field_binding.py` | `test_native_learning_updates_one_definition_for_both_modes` (2) | teaches `store.features.values` | teaches `cs.order_zero.weight`; the same parameter is read in both modes |
+| `test_concept_memberships.py` | `test_one_property_has_the_four_extent_corners` | concept `[[1,0],[0,1],[1,1],[1,1]]` | the four corners at the whole boundary of the property's percepts; swapped lanes for the Not property's percepts; the concept equals `order_zero_expected` for each batch |
+| `test_concept_memberships.py` | `test_part_containment_belongs_to_the_subject_extent` (2) | `[[1,0],[0,0]]` | the extent holding the part reads `order_zero_expected` (above .76); the other reads `[0,0]`. The event assertions are unchanged |
+| `test_concept_memberships.py` | `test_fractional_feature_weights_use_per_pole_min_and_max_extent_union` | row events `[[.25,.75],[.36,.64]]`; concept from the weighted fold, `.25**.5`, `1-(1-.75)**.5` | the whole boundaries of the two percepts are `[[.25,.75],[.36,.64]]`; the concept equals `order_zero_expected`. Rule 8b removed the weighted fold: a column is `v/|v|^2` whatever the literal's weight |
+| `test_order0_percept_definitions.py` | `test_order0_unions_alternative_percept_conjunctions` (2) | the fold with exponents and lane exchange; the union over the alternative by an order-zero edge | the four properties' whole boundaries are `[m, 1-m]`; the rows' values are `[m, 0]`. Each column is `sum sign*c/|c|^2`, with a Not literal subtracted (computed in the test). Each concept, the alternative too, equals `order_zero_expected` for its own column. The order-zero Sigma reads no concept-to-concept edge |
+| `test_order0_percept_definitions.py` | `test_witnesses_write_alternatives_without_conjoining_their_literals` | a second witness makes an alternative concept with an edge of weight 1 | the second witness's basic percept joins the word concept's column. There is no new concept, no edge and no conjunction. Both members are in the feature record, the column equals `c1/|c1|^2 + c2/|c2|^2`, and a repeat changes nothing (counts and `U`) |
+| `test_order0_percept_definitions.py` | `test_word_group_becomes_a_recurrent_row_without_changing_its_read` | `result[row] == 1` | `order_zero_expected` (above .76); fused and unfused still read the same |
+| `test_order0_attended_field.py` | `test_inventory_outlives_the_eight_attended_rows` | `== 1` | `order_zero_expected` (above .76); still exactly one concept read |
+| `test_order0_attended_field.py` | `test_bound_snapshot_and_checkpoint_keep_concept_ids` | thought effect writes `1` | it writes the concept's own read, `order_zero_expected` |
+| `test_order0_attended_field.py` | `test_more_than_eight_words_reuse_the_attended_field` | each word read once, then found | each word read `concept_mint_count` times, then found. It failed at `677205d8fa` (defect 2 below), and passes on the reading of `1fc2af6fa2` |
+| `test_order0_attended_field.py` | `test_batch_members_bind_independently_within_eight_rows` | `[1.]*12` | each batch member's concept equals `order_zero_expected` (above .76) |
+| `test_concept_evidence.py` | `test_membership_read_keeps_both_until_symbol_readout` | per-event `[[1,0],[0,1]]`; concept, symbol and corner "both" | the first event reads for; both is at the whole boundary of the percepts carrying the property; the concept equals `order_zero_expected`; its corner "both" is 0 (rule 3) |
+| `test_evidence_folds.py` | `test_seam_never_invents_counterevidence_from_an_absent_property` | concept `[0,1]` | the counterevidence is observed at the basic percepts: property 0's boundary is `[0,1]`, its row reads `[0,0]`, and the Not member's row reads `[1,0]`. The concept equals `order_zero_expected`. Absent property, nothing read: unchanged |
+| `test_field_learning.py` | `test_sentence_boundary_writes_present_percepts_at_the_negative_pole` | concept `[0,1]` | with the Not member present the concept reads against: `y < -.76` and equals `order_zero_expected`. The boundary writes are unchanged |
+| `test_cs_sparse_weights.py` | `test_membership_read_is_input_dependent_and_differentiable` | concept lanes both in (0,1); gradient to `primitive.members` and to `features.values` from the concept; the concept changes with the members | the whole boundaries are in (0,1); the members' gradient is read from the basic percepts' values; `cs.order_zero.weight` gets a gradient from the concept (both lanes); the input dependence is read at the basic percepts. *Why:* the fixture's column cancels to rounding (below), so the concept's own gradient to the members was 0 in some runs (3 of 6) |
+| `test_primitive_properties.py` | `test_different_positions_in_one_extent_supply_the_two_symbols` | concept `[[1,1],[1,0]]` | the whole boundaries of the percepts carrying the property are `[1,1]` and `[1,0]` in the two extents; the concept equals `order_zero_expected` in each |
+| `test_item18_perceptual_scalar.py` | `test_point_and_native_read_share_the_collection_boundaries` | concept `[[min(1, f/low, high/f), 0]]` | `BasicPercepts.read_collection` over the collection's members' `read_points` is `[min(1, f/low, high/f), 0]`; the concept equals `order_zero_expected` over the value percepts' presences. **Still fails, at its first assertion** (defect 4) |
+| `test_item18_places.py` | `test_65_67_image_uses_the_same_reader_and_recovers_every_pixel` | `assert not owner.conceptual_pi` | line removed: rule 6 removed the key. The rest is unchanged |
+
+The 10 that were failing in `test_item18_perceptual_scalar` (3 more), `test_item18_scalar` (3), `test_item18_places::test_66` and `test_item18_stack::test_80` are not ported: they are source defects (below).
+
+**Retired, with the certificate that replaces it**
+
+- `test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither` (2 cases). It folded two order-zero concepts into a third by `_compose_order0`, which rule 8 deleted. The order-zero Sigma reads the combined vector and no other concept. Replaced by `test_item17_order_zero.py::test_the_combined_vector_is_one_less_the_product_of_the_gaps`. For both and neither, by the basic-percept reads ported above. The per-pole fold above order zero is still tested by `test_kind_both_member_and_absent_member_is_both` in the same file.
+- `_field_forward` in `test_cs_sparse_weights.py` is kept, since `test_concept_sigma_pi.py` (not mine) imports it.
+
+**Source defects (tests left failing)**
+
+1. **A row's event at a whole extent is annihilated by a located part.** Fails: `test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must`.
+   - *Where:* `bin/BasicPercepts.py:281`, `event = self.pi(native.events.index_select(0, selected), rows, order)`.
+   - *What happens:* a run of parts' event at the whole extent is its pervasion of the extent. So the Pi of a row whose part is located inside the extent reads 0 at the whole, even where the part is present and the property pervades.
+   - *Measured:* parts 7, 8 under `49 49`; the row `((7,),(0,))`. At the whole extent it was `[1,0]` and is now `[0,0]`, in all three batches.
+   - *Before:* the least ignored a member with no evidence at that event, and gated it by the run's presence over the extent.
+   - *Who reads it:* `refine_over_collected` (`Spaces.py`, `event_evidence`).
+   - Either the event of a row takes its run of parts over the extent, or the test's statement goes. That is a decision, not a port.
+2. **A reading counted by a serial that only the word step advances.** Fails: `test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field`, at `677205d8fa`.
+   - *Where:* `Spaces.py:14213` (`_autobind_property_concepts`) named its reading `(model._word_observation_serial, b)`, and only `Models.py:11354` advances that serial.
+   - *What happens:* in a model whose forward doesn't run the word step (the grounded model), every sentence was reading `(0, b)`, and a form was never nominated. Measured: sightings `{('form','ant'): {(0,0)}}` after four forwards.
+   - *Now:* `1fc2af6fa2` (another implementer) replaces the serial with `ConceptualSpace.reading(b)`, and the test passes. I report it so the fix is known to close this case.
+3. **The scalar readers threshold an order-zero concept at one.** Fails: `test_item18_perceptual_scalar.py::test_intervals_generalize_their_percepts_and_have_distinct_codes`, `::test_value_percepts_use_the_basic_checkpoint_and_shared_retirement`, `::test_value_collection_restores_through_the_integrated_checkpoint`; `test_item18_scalar.py::test_scalar_boxes_are_counted_native_definitions`, `::test_scalar_perception_keeps_percept_and_concept_references`, `::test_scalar_only_presentation_closes_and_reconstructs_its_modalities`.
+   - *Where:* `bin/ScalarPercepts.py:106` (`reconstruct`) and `:117` (`decode`) keep a collection only where its evidence is at least 1. A Sigma concept never reaches 1, so every value reconstructs `()`.
+   - *Lowering the threshold would not repair it.* Read on the fixture's model (alpha and beta at 1, gamma at 2):
+
+     | Value | alpha | beta | gamma |
+     | ---: | ---: | ---: | ---: |
+     | 1 | .927 | .927 | .856 |
+     | 2 | .932 | .932 | .864 |
+     | 4 | .910 | .910 | .831 |
+
+   - *Why:* a value percept's code is one felt number on two coordinates. So a column `c/|c|^2` reads every value present by its share, and the collections no longer tell values apart.
+   - The readers, and whether a value collection is read by the Sigma at all, need a decision.
+4. **Two readers of a percept collection.** Fails: `test_item18_perceptual_scalar.py::test_point_and_native_read_share_the_collection_boundaries`, at `torch.testing.assert_close(*actual)`.
+   - *Where:* `bin/FieldProjection.py:100-104` (`stimulate`) reads a collection by `PerceptCollections.read`, the old boundary fold. `ScalarPercepts.reading` reads it by `cs_read_percept_field`, the Sigma.
+   - *Measured:* they differ by up to .29.
+   - My new assertions after that line pass when the equality is left out (checked once on a scratch copy, then deleted).
+5. **The numeric XOR certificate misses its bar.** Fails: `test_item18_places.py::test_66_numeric_certificate_on_level_percepts`, `test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built`, both through `test/numeric_xor.py::certificate`.
+   - *Measured, the same in every run:* MSE 1.0e-12 (under its bar), but case (1,1) predicts −1.90e-6, against the per-case bar of 1e-6. Predictions: 3.4e-9, .9999995, .9999995, −1.9e-6. Readout weights on the two axes and the conjunction: 9.23, 9.23, −19.00.
+   - *Found:* the two axis concepts (rows 0 and 1) read identical evidence. Each reads `.7616` wherever either axis is present, and `.9635` on the bracket of (1,1), because the two level percepts have one code (value, not place; §23.3 "What surprised me"). The axis features are collinear, and 32 L-BFGS iterations stop short of the bar.
+   - *Cause, provisional:* the shared code of the level percepts (`BasicPercepts._boundary_codes`, a value percept's code is its value alone). I change no bound or iteration count.
+
+**Choices, each provisional**
+
+1. "Both" at a basic percept is read at the whole boundary of its collection, not at the row's Pi value (see above).
+2. `order_zero_expected` reads the content alone, since a column's place and time weights start at zero and no ported test teaches them.
+3. An extent with its own row present is asserted at its computed value and above tanh(1) − ε (`y > .76`), not at `tanh(1)` exactly, since other percepts present can raise it.
+4. In `test_inventory_checkpoint_preserves_definition_between_modes`, the restored space calls `install_order_zero()` itself, as `Models` does where it binds the basic percepts. The fixture (`test/definition_fixtures.py`, not mine) binds the basic percepts without it.
+
+**Found, not a defect of a ported test**
+
+The fixture's basic percepts have no property half (`test/definition_fixtures.py`, `BasicPercepts(native, cs.nDim, 0, …)`). So a property's rows have their part's code, and a concept over a property and its Not has a column that cancels to rounding. This affects `test_one_property_has_the_four_extent_corners`, `test_order0_unions_alternative_percept_conjunctions`, `test_seam_never_invents_counterevidence_from_an_absent_property` and `test_membership_read_is_input_dependent_and_differentiable`: there the concept reads about 0, and the property-level statements are asserted at the basic percepts. Recommended to that file's owner: give the fixture a property half, so these concepts read their sign.
+
+**Files run (the last of three runs, at `2f74ffab4c`)**
+
+All 15 files together: **10 failed, 117 passed**, 36 to 39 s, the same 10 in each of three runs. Each file's count:
+
+| File | Passed | Failed |
+| --- | ---: | ---: |
+| `test_field_binding` | 14 | 0 |
+| `test_concept_memberships` | 10 | 1 |
+| `test_order0_percept_definitions` | 6 | 0 |
+| `test_order0_attended_field` | 9 | 0 |
+| `test_concept_evidence` | 12 | 0 |
+| `test_evidence_folds` | 5 | 0 |
+| `test_field_learning` | 3 | 0 |
+| `test_cs_sparse_weights` | 17 | 0 |
+| `test_primitive_properties` | 12 | 0 |
+| `test_item18_perceptual_scalar` | 6 | 4 |
+| `test_item18_scalar` | 2 | 3 |
+| `test_item18_places` | 3 | 1 |
+| `test_item18_stack` | 3 | 1 |
+| `test_grounded_xor` and `test_live_concepts_from_percepts` | rest | 0 |
+
+`test_cs_sparse_weights::test_membership_read_is_input_dependent_and_differentiable` was also run alone 10 times: 10 passed.
+
+#### Return of implementer C: the word, reading and model tests
+
+
+Commits, local on `main`, nothing pushed: `7ba3f694cc`, `6c49f554a5`, `56be3e6697`, `febbd8e426`, `8ae6d230af`, `fa1b930eda`, `b7914f92e1`, `fd48f8afcd`, `fdbf36964d`. No file of `bin/` was edited. No seed was pinned, and no skip or xfail was added.
+
+**The fixtures** (`test/nomination_fixtures.py`, extended):
+
+- `readings_before_nomination(model, read)`: the model's own reading of the text, `concept_mint_count - 1` times, each closed by `End()`. The test's next reading is the one in which the forms are found.
+- `forms_short_of_nomination(model, texts)`, and `short_of_nomination(interpret, ...)` for a bare space: each form is read `concept_mint_count - 1` times, so the test's own reading is the one that nominates it. This keeps "first encounter" tests about the first reading in which the word exists.
+- `lexical_forms(model, texts)`: `nominated_forms` and the helper above now also work for a percept store without word identities (`RadixLayer`, the field models). They spell the form out the way reading does.
+
+**Ported cases** (old assertion → new).
+
+| File | Test(s) | Old | New |
+| --- | --- | --- | --- |
+| `test_word_interpretation` | `test_every_read_word_has_a_concept_and_symbol` ×3, `test_every_serial_word_runs_interpret_before_composition` | words found on one reading of the sentences | same assertions, on the reading after `readings_before_nomination` |
+| `test_word_admission` | `test_29_each_reading_publishes_only_its_words` ×3 | no evidence for a word's concept at an extent without the word | readings as above. For a concept of order zero, the evidence there equals `[relu(y), relu(-y)]` with `y = tanh((x_for − x_against)·u)`, where `x = 1 − Π(1 − code)^presence` over the percepts present and `u` is the column. This is computed in the test from the codes and the column; the column's place and time weights are zero. A concept above order zero keeps "no evidence" |
+| `test_definition_rows` | `test_27_definition_rewitness_keeps_its_when_and_store_position` | re-witness by `admit` (now three readings, so three steps of activity) | a known word is found on one reading: one `interpret_word` with a fresh occurrence, then +1 step |
+| `test_definition_rows` | `test_31_read_forms_wait_for_object_testimony…` ×3 | one model reading | `readings_before_nomination`, then the same assertions |
+| `test_word_store` | three surface tests (`_surface_snapshot_model`) | staged once before objects are supplied | staged `concept_mint_count` times, so the words exist; assertions unchanged |
+| `test_compiled_word_chunk` | the three harness tests | harness supplied `_ar_readout_coefficients` | supplies `_ar_order_zero_reading` (the staged name the chunk adapter slices) |
+| `test_compiled_word_chunk` | `test_tensor_peer_ws_stages_distinct_word_local_property_views` | staged once | staged `concept_mint_count` times |
+| `test_item18_producer_repair` | `test_02_admitted_word_and_basic_percept_are_positive_before_teaching` | `admit_training_forms`; the word's evidence `[1, 0]` | `nominated_forms`; evidence `[tanh(code·u), 0]`, computed from the code and the column and checked to be tanh(1); the basic percept's pair still `[1, 0]` |
+| `test/postmerge_word_lanes.native_provenance` | used by the above and by `test_postmerge_observers` | wrapped `_compose_order0`; read `store.conjunctive` | "before definitions" is `_cs_order0_raw` (the order-zero Sigma's read); union definitions only |
+| `test_trust_round1` | `test_aligned_serial_sentence_has_no_space_or_punctuation_identity` ×2 | one staging on a bare space | `install_order_zero()`, staged `concept_mint_count` times |
+| `test_relation_closing` | `test_mixing_relation_keeps_admitted_object_ids…[first-encounter]` | first model reading | `forms_short_of_nomination`, then the reading that nominates (the first encounter) |
+| `test_one_attention` | `test_normal_field_answer_reaches_final_field…`, `test_native_pole_read_omits_padding…` | forms read on sight | `nominated_forms` before the reading |
+| `test_occurrence_coordinates` | `test_native_program_captures_the_symbol_band…`, `test_input_symbols_keep_their_word_starts…` | the same | `nominated_forms` before. The time stays encode(1), which prior readings would have moved |
+| `test_output_path_supervised` | `test_native_answer_uses_owned_ideas…` ×2 | the same | `nominated_forms` |
+| `test_item20_round5_percepts` | `test_basic_read_ties_both_towers…` | a basic percept read `[.4, .6]` (the least of its members) | `[1, 0] * [.4, .6] = [.4, 0]`: a row of the first Pi, the product on each lane (rule 6). The receipt's negative becomes 0 |
+| `test_item20_round5_percepts` | `test_native_typed_slots_and_composed_whole…` | `admit_training_forms` | `nominated_forms` |
+| `test_concept_output` | `test_native_cli_curriculum_learns_output…` ×3 | without the intersection, MSE `= .25` (the affine fit) | `1e-6 < MSE ≤ .25`: XOR is not learned without it. The order-zero concepts are a squashed read of the combined percepts (rules 7 and 8), so a readout of them does somewhat better than affine (.2058). **Provisional.** |
+| `test_concept_capacity_policy` | `test_serial_property_autobind_does_not_persist_sentence_chain` | one autobind admits both forms | each form read short of nomination first; then the one autobind nominates them |
+| `test_sparse_concept_e2e` | `_cs_active` (`test_symbolic_phase_unwritten_definitions_are_neither`) | bare space | the fixture installs the order-zero Sigma after binding the basic percepts |
+| `test_cs_symbol_table` | `test_word_object_testimony_retains_distinct_reoccurrences` | second `recurrent_interpretation` (three readings, so fixture occurrences in the testimony) | a known word is found on one reading: one `interpret_word` at `(1, 0)` |
+| `test_live_references` | `test_public_reading_fuses_the_reference…` | `beta` found on its first reading | `beta` read short of nomination, so the test's reading nominates it |
+| `test_reading_round` | `test_native_read_sites_carry_one_token_across_three_documents` | `label` a word from the first document | `nominated_forms` before the three documents; pending, then promoted at the third, unchanged |
+| `test_familiar_tier` | `test_mixing_keeps_lexical_witnesses_across_ten_presentations` | words found on the first presentation | `nominated_forms` before the ten presentations |
+| `test_item20_round6_gradients` | `test_input_reconstruction_reaches_perception…` | gradient reaches `layer(0).features.values` | gradient reaches `cs.order_zero.weight` (the concepts' reader), with `nominated_forms` before |
+| `test_whole_paths` | `test_kept_verbal_output_reaches_the_live_understanding…` | forms on sight | `nominated_forms` |
+| `test_operators_round3a` | `test_live_grammar_uses_sparse_index…` | words from one epoch (two readings each) | `nominated_forms` before the epoch |
+| `test_epoch_history` | `test_native_train_keeps_last_grounding…` | `alpha` minted in epoch 1 | `forms_short_of_nomination`, so epoch 1's reading nominates it |
+| `test_item20_round34_repair` (outside my list) | the perception tensors scanned | `_ar_readout_coefficients` | `_ar_order_zero_reading` |
+| `test_subsymbolic_loop`, `test_item20_round6_loop` (outside my list) | three tests | `ConceptLessons.admit_native_forms` | `nominated_forms` |
+| `test_subsymbolic_loop` | `test_selected_typed_scope_changes_the_attentive_extent` | concept reads `[1, 1]`, then `[0, 1]` at the narrower scope | pointed at the basic percepts (§19.68): the member's percept (whole 9) and the Not member's percept (whole 10) each read `[1, 0]`; at the narrower scope only the Not member's percept is present |
+| `test_postmerge_observers` (outside my list) | `test_stepped_trace_and_provenance…` | forms on sight | `nominated_forms` before |
+
+**Retired.** `test_item18_producer_repair.py`: `test_03_small_opposite_does_not_deny_present_percept`, `test_04_dominant_opposite_and_equal_feature_weights` (2 cases), and their helper `feature_read`. They state that a concept's signed feature *weights* decide its read: a small opposite weight does not deny, a dominant one does. Under rules 3 and 8b a column is `Σ ± v/|v|²` and no feature weight enters it, so a member and its Not on one percept cancel at any weights. Measured: (1, 1e-7), (.2, .7) and (.5, .5) all read `[0, 0]`, and (1, 0) reads tanh(1). They are replaced by `test_item17_order_zero.py::test_square_a_new_concept_reads_only_its_own_row` (certificate 12) and `::test_a_word_reads_its_column_of_the_order_zero_sigma`. **Provisional:** this can be restated instead as "a member and its Not cancel" if preferred.
+
+**Source defects found** (no edit to `bin/`).
+
+1. *Fixed meanwhile by another commit (`1fc2af6fa2`).* When I started, `Models._stage_reading_word_concepts` (Models.py:11109) named the reading `(_word_observation_serial, b)`. Only `_stage_serial_concept_rows` (Models.py:11354, after the non-aligned early return at 11322) advances that serial, so on the non-aligned path every sentence was reading `(0, b)` and no form was nominated by recurrence. Now that it reads `owner.reading(b)` (the model's present time), the ports above pass without a stand-in.
+2. **The declared classes "words" and "objects" take ordinary order-one rows.** `PartsOfSpeech.order_reservations` (bin/PartsOfSpeech.py:35), added at Models.py:16691 to the inventory, reserves the grammar's declared arguments. It does not reserve the two classes that `declare_word_classes` seats at order one (Models.py:2254 → Spaces.py `_prebuild_declared`). They therefore consume the configuration's free order-one rows.
+   - `test_relation_closing::…[first-encounter]` and `[admitted]` (`orderAllocation` 8 0 0) fail at construction: "concept order 1 capacity exhausted before formal argument concepts".
+   - `test_familiar_tier::test_mixing_keeps_lexical_witnesses…`: MM_grammar's two free order-one rows are taken, every identity promotion is refused ("order 1 block (42 rows) is full"), and no object is named.
+
+   Checked with a scratch plugin (not committed) that adds `len(WORD_CLASSES)` to the order-one reservation: both files pass (47 passed). *Recommended:* reserve the word classes with the grammar's declarations.
+3. **The reading in which a form is nominated sometimes stores nothing.** `test_epoch_history::test_native_train_keeps_last_grounding…` fails 3 runs in 8: after epoch 1 the LTM holds 0 rows and the new word has only its pending name with no occurrence (`{114: []}`). In the other runs it holds 2 or 3 rows.
+   - The word existing before the reading (`nominated_forms`): 3 rows in 6 of 6 runs.
+   - The starting commit `8b8a2fcf48`, where the word is made at first sight: the test passes 6 of 6.
+
+   So the reading in which the word loop nominates a form mid-sentence (Models.py:11104–11114, the word held pending until it exists) sometimes keeps no clause. *Not traced further.*
+4. *Not mine:* `test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery` executes the source of `test_grounded_xor.learn_grounded_xor`. That function still imports `ConceptLessons.admit_native_forms`, and the file belongs to another implementer. The test passes or fails with that port.
+
+**Choices.**
+
+- *Provisional:* tests whose point is the model's own reading of a text (word interpretation, admission, definition rows) are ported by the model's own repeated readings. Tests whose point is downstream (answers, gradients, attention, coordinates) are ported by `nominated_forms`. Tests about a first encounter are ported by `forms_short_of_nomination`, so the asserted reading is the nominating one.
+- A known word is re-read once, not by `recurrent_interpretation`, wherever the test counts readings or testimony.
+- Every expected order-zero value is computed in the test from the codes and the column, not copied from a run.
+
+**Final counts.** My 77 files of the round plus the 4 above, at `fdbf36964d` with the source as it then stood, in 6 processes (loadfile), took 192 s: **5 failed, 1,099 passed, 67 skipped, 1 xpassed.** At the start the same 77 files gave 47 failed, 1,037 passed.
+
+The 5 failures:
+
+| Test | Cause |
+| --- | --- |
+| `test_relation_closing` ×2 and `test_familiar_tier` ×1 | defect 2 |
+| `test_epoch_history` ×1 | defect 3; it fails 3 runs in 8 and passed alone 2 of 3 |
+| `test_definition_integrity` ×1 | defect 4, not mine |
+
+`test_item20_round6_gradients::test_knowing_deposit_keeps_the_selected_intuition_weights_live` passes in this run.
