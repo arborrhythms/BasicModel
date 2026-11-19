@@ -7647,6 +7647,40 @@ device with products alone, and V2 is the part map of §19.54 put to
 work. Not decided: which of the two forms, and whether it is built in
 this item or with item 1.5's lookup.
 
+### 19.56 Alec: pairs, too, only where needed (2026-11-19)
+
+Alec, of Claude's "all pairs, plus a longer part only where needed":
+"in fact we should also do pairs only when needed."
+
+So the part map starts from the letters, and a part of any length,
+pairs included, is added only where two forms would otherwise have the
+same parts. Measured by Claude on the same list (197,015 forms, with
+`bananana`; scratch script `minimal_part_map_check.py`). The parts are
+chosen greedily: a group of forms with the same parts so far is split
+by the shortest run that divides it most evenly, and a part once added
+is carried by every form that holds it. This is an estimate and not
+the least possible set.
+
+| | Count |
+| --- | ---: |
+| Forms that have the same letters as another form | 140,320, in 35,979 groups (the largest of 63) |
+| Parts added so that no two forms are the same | 737: 392 pairs, 297 of 3 letters, 43 of 4, 5 of 5 |
+| Pairs needed, of the 617 that occur | 392 |
+| Parts in a form's code (its letters and its added parts) | 15.9 |
+| Forms that still share their parts | 0 |
+| A form inside another reads as inside | 45 of 45 in the sample |
+| A form not inside another reads as inside | 14 of 517,334 |
+
+Against §19.54's map (617 pairs and 367 longer parts, 984 in all) it
+is a quarter fewer parts, and parthood reads as well: `is` has the part
+`is`, `this` has `hi`, `is`, `th` and `thi`, so `is` is wholly inside
+`this`; `cat` has `at` and `ca`, `act` has `ac` and `ct`. `banana` and
+`bananana` differ by `nanan`, as before.
+
+*What it changes in §19.55.* The matrices for each length hold the
+letters and these 737 parts in place of every pair, so the first
+products are smaller still. Not run again with this map.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

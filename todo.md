@@ -1689,6 +1689,9 @@ generation is expected at this stage and is recorded, not tuned away.
    367 longer parts) the parts matched inside a word give exactly
    that word, 400 of 400; a pair that is no known part leaves no
    trace (`felixx` read as `felix`).
+   **Pairs, too, only where needed (Alec; §19.56):** from the
+   letters up, 737 parts suffice (392 of the 617 pairs, 297 of 3
+   letters, 43 of 4, 5 of 5), by a greedy estimate.
    The request is to say where in
    the conceptual tree. A read with no WFF: "we will probably have
    to return to this"; the read with no sentence goes with it
