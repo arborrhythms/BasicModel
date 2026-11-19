@@ -454,6 +454,9 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
     monkeypatch.setattr(FamiliarTier, 'promote_identity', counted)
     force_absolute_reading(model)
     model.eval()
+    # The forms are words, nominated by MTM before the ten presentations.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, [' '.join(forms)])
     witnesses = []
     try:
         for presentation in range(10):

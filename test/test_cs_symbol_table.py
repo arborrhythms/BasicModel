@@ -386,6 +386,7 @@ def test_word_object_testimony_retains_distinct_reoccurrences():
     from reading_fixtures import supply_object
     B = supply_object(cs, A)
     assert cs.interpret.forward(A, occurrence=(0, 0)) == B
-    assert recurrent_interpretation(cs, [1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
+    # A known word is found on one reading.
+    assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
     assert cs._concept_allocator.testimony_seen[B] == {(0, 0), (1, 0)}
     assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B

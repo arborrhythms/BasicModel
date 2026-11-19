@@ -8,13 +8,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @contextmanager
-def order_allocation(name, shares, *, vectors=None):
-    """Declare the unchanged inventory's free row counts before construction,
-    with the inventory given ``vectors`` rows where it needs more room."""
+def order_allocation(name, shares):
+    """Declare the unchanged inventory's free row counts before construction."""
     tree = ET.parse(ROOT/'data'/name)
     section = tree.find('ConceptualSpace')
-    if vectors is not None:
-        section.find('nVectors').text = str(int(vectors))
     allocation = section.find('orderAllocation')
     if allocation is None:
         allocation = ET.SubElement(section, 'orderAllocation')

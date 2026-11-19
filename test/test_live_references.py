@@ -324,6 +324,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     from ReferenceContext import SituationAddress
     owner = model._concept_owner()
     recurrent_word(owner.interpret, tuple(map(ord, 'alpha')), (), form='alpha')
+    # 'beta' was read before; the reading below is the one that nominates it.
+    from nomination_fixtures import short_of_nomination
+    short_of_nomination(owner.interpret, tuple(map(ord, 'beta')), (), form='beta')
     for word in owner.word_concepts('alpha'):
         assert owner._concept_allocator.order_of(word) == 0
     occurrence = store.occurrence_of(index)

@@ -536,6 +536,9 @@ def test_native_read_sites_carry_one_token_across_three_documents(eager_reading,
     read_in_source_order(model, monkeypatch)
     stage_documents(TheData, dict(documents=[dict(document=i,key=str(i),records=[
         dict(key=str(i),sentences=['label.'])]) for i in range(3)]))
+    # The form is a word, nominated by MTM before the three documents.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['label.'])
     identities = []
     def observed(model, split, rows, result):
         cs = model._concept_owner()
