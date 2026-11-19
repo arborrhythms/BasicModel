@@ -10194,6 +10194,37 @@ lesson's sixteen sentences before and after, as in round 1. Return
 as §23.3.
 ~~~
 
+### 22.3b The balanced code, tried in tests only (added 2026-11-19, after §19.69)
+
+~~~
+A trial in tests only of §19.69's proposal, points 1 to 4, with rule
+6 as amended. Nothing in bin/ and no existing file is edited. New
+files: test/code_trial.py, test/test_item17_code_trial.py. Started
+on Claude's recommendation while the three points put to Alec in
+§19.69 are open; his answers change the build, not the trial.
+
+For the code as built (352) and for two halves of 96 and of 128,
+measure and return:
+1. On the 19,821 words: the words that take another word's code;
+   the parts and the wholes that the telling apart made; of the
+   pairs that collided, how many a whole over bytes could tell apart
+   at all; the ones in each half; the codes at or below another's
+   truly and by accident, in each half.
+2. The nine declared wholes coded by coordinates of their own: each
+   at or below the wholes it lies in; the pairs so by accident with
+   9, 50 and 200 wholes.
+3. On the lesson's nominated rows: how many concepts of order zero
+   are read highest by their own row, and what another row reads.
+4. The centroid of a class of codes: what each half gives it, and
+   whether members read nearer to it than others do.
+5. The scalar collections of item 1.8 with an intensity as a whole
+   of its own kind: whether values 1, 2 and 4 are told apart, and
+   whether the two axes of the numeric certificate read differently.
+6. What cannot be built as proposed, and what to do in its place.
+
+Assert only what holds by construction. Return as §23.3b.
+~~~
+
 ### 22.4 Round 4: symbols and the orders above
 
 ~~~
