@@ -279,11 +279,16 @@ class OrderZeroSigma(SigmaLayer3):
 
     @staticmethod
     def member_column(positive, negative=None):
-        """A member's share of a column (rule 54): what tells for it less
-        what tells against it, over that difference's squared length."""
-        vector = positive if negative is None else positive - negative
-        size = vector.square().sum()
-        return vector / size if size > 0 else torch.zeros_like(vector)
+        """A member's share of a column (rule 54; Alec, §19.82): what tells
+        for it over its own squared length, less what tells against it over
+        its own, ``P / |P|^2 - N / |N|^2``. Each side is divided by its own
+        count of contributions, so all that tells for reads one, and all
+        that tells against takes the reading to zero however few its
+        coordinates. A member with nothing against it gives ``P / |P|^2``."""
+        def share(vector):
+            size = vector.square().sum()
+            return vector / size if size > 0 else torch.zeros_like(vector)
+        return share(positive) if negative is None else share(positive) - share(negative)
 
     @torch.no_grad()
     def add_member(self, column, vector, sign=1., *, against=None):

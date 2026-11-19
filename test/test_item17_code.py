@@ -309,8 +309,10 @@ def test_48_a_concept_reads_by_difference():
     # A holder's added part takes the reading to zero or below.
     assert reads(b'archer', b'archery') <= 1e-4 and reads(b'is', b'this') <= 1e-4
     # reach holds every letter of archer, not the run, and nothing that
-    # tells against archer: it reads as the share of archer's code it holds.
-    assert 0 < reads(b'archer', b'reach') <= reads(b'archer', b'archer')
+    # tells against archer. The first Pi reads archer's row present on it
+    # (its set of parts is found there, rule 53), so the reading carries
+    # archer's own read pair and the concept reads reach as it reads its own.
+    assert reads(b'archer', b'reach') == pytest.approx(reads(b'archer', b'archer'), abs=1e-4)
 
 
 def test_48_on_the_dictionary_and_the_lesson():

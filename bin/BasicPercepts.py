@@ -382,8 +382,9 @@ class BasicPercepts(nn.Module):
         return self.read_pair(lanes).reshape(*rows.shape, 2, self.width)
 
     def column(self, row):
-        """A member's share of a concept's starting column (rule 54), from
-        its live lanes (``OrderZeroSigma.member_column``)."""
+        """A member's share of a concept's starting column (rule 54; Alec,
+        §19.82), from its live lanes: ``P / |P|^2 - N / |N|^2``
+        (``OrderZeroSigma.member_column``)."""
         from OrderZero import OrderZeroSigma
         positive, negative = self.read_pair(self.lanes(row))
         return OrderZeroSigma.member_column(positive, negative)
