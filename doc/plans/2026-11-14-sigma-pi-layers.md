@@ -8798,6 +8798,8 @@ So they are two readers with two keys, and neither is to be made into the other:
 | Attention | the concepts it wants (the request, rule 35) | the percepts of the sentence, their what and their where | the weights of the way up, carried downward (rule 36) |
 | The query on LTM | the idea, a point in conceptual space | semantic memory | a match of points in conceptual space (`ConceptualMatch.match`, which compares meaning coordinates and not a form's code) |
 
+**Checked against the source, and it differs from his account.** The query on LTM does not take the idea as a point. `EpisodicMemory.query` takes its cue as a field of concepts, and `ExtendedRecall.matches` with `EpisodicMemory.matches` ranks the rows of the window by the question's field against each row's episodic entry (`episodic_concepts`, `episodic_values`), order by order, never summed across orders or rows. That is the search he names as one we "could" make. `ConceptualMatch.match`, the match of points in conceptual space, serves `interpret`'s clients (1.8 §70.11) and not this query. So the table's second row should read: key, the question's field of concepts; searched, the rows of LTM by their episodic entries. The docs state what the source does. Put to Alec: whether the query should become a search by the idea.
+
 **Corrected.** Claude first wrote here that the percept's two-lane code had changed the content under both readers, and proposed one measure of content for both. That was wrong for the query on LTM: it matches meanings in conceptual space, and the percept's code is a form's (two spaces, no leakage). The proposal is withdrawn. Nothing of rules 50 to 54 changes the query.
 
 **What is left open, and it is small.** For attention, rule 36 carries the request down through the Sigma's weights, and since rule 59 those are on two channels. *Mine, built provisionally in round 6:* a percept that tells against a requested concept lowers its salience and never takes it below nothing. Searching episodic memory by the idea, and priming attention from semantic memory, are not designed and not planned (his words above); they are noted in `doc/FutureWork.md`.
@@ -13799,3 +13801,27 @@ New: `test_item17_code::test_49_collections_of_values_are_told_apart`, `::test_4
 - **Rule 54 / 8b with §19.82:** a member's own row reads one before the squash, and one more where something tells against it (its own against lane is read by `-N / |N|^2`). And 23.4% of unrelated forms in the sample are denied by accident.
 - **Rule 53:** the first Pi reads `archer` present on `reach` (its set of parts), so a concept still cannot tell a form from one that holds its letters in another order; only the run (rule 6's presence) could.
 - **Rule 56:** the next part is given before any part's bits are raised; with the whole code compared, no word of the 19,821 is left sharing one, and no shared row is kept.
+
+### 23.D The docs brought into accord (2026-11-19)
+
+Asked by Alec (§19.84). A writer on Opus, with three more it started for parts of the work, rewrote `doc/*.md` to §21's rules: 19 files, 2,145 lines added and 1,673 removed. Commits, local on `main`: `3c1e5fbdb7` (Architecture), `1f3ae00e57` (Mereology, Spaces), `6d2e331e44` (Language, STM, Orders, Logic, Reasoning, Extend, Lexicon), `3605faca06` (Training, Params, BasicModel, GradientFlow, AccessibleMind, SymbolFirewall, ExpectationRetention), `b377c89ee9` (DevelopmentHistory), and one more for the correction below.
+
+**Review** (Claude). Read: the changes by file, the new section of `doc/Mereology.md` on the percept's code in full, and a scan of all added text for notes of status or history. The PDF builds: 19 chapters, 971 formulas. Not read line by line: the other 1,900 added lines; they are read when each round's part of the docs is revisited.
+
+*One correction, Claude's fault.* The writer was told to state Alec's account of the query on LTM (the idea as key, searching semantic memory). The source does otherwise (§19.84), and the docs' passages on recall are restored to what the source does.
+
+*What the docs state ahead of the source.* They state the design, so they describe as present what rounds 4 to 7 have still to build: symbols split from concepts, the looks, the two channels at the Sigma, the fragment read at one time.
+
+*Points the writer found that the rules do not decide.*
+
+1. How the against channel of the Sigma's weights enters the salience map (rules 36 and 59). Round 6, provisional form in §19.84.
+2. Whether a word present by degree comes back from the salience map (§21, open point 2).
+3. The query on LTM: above.
+4. What prompts a raise of order, now that both is two concepts: `doc/Mereology.md`, "Order-raising", still rests on the conceptual Pi of order zero that rule 6 removed.
+5. Keys the rules name without a name in the source: rule 28's threshold, rule 58's option, rule 15's penalty term.
+6. Who owns the weights that read the where under `separateChooser`: they sit in the order-zero Sigma, which the reconstruction owns.
+7. What "readings outside the look" means for a look's forecast when a look is an activity by degree.
+8. Whether rule 59's two channels cover the stacks (`SigmaPiLayer`).
+9. Whether a symbol's address in the where registry is keyed by its own row or its concept's.
+
+*Passages the writer left because the rules do not reach them.* The concept codebook's vector of form and meaning and its placement by context, which rule 9 leaves without a home once a symbol and its concept share no row; `GradientFlow.md` on word order from the writer's cursor, against rule 49; `hetTolerance`; the Gaussian window in `bin/Models.py`, whose description was removed from `STM.md`. Points 4 to 9 and these go to the rounds they belong to: 4, 8 and 9 to round 4; 1, 2, 6 and 7 to round 6; 5 with each rule's round.
