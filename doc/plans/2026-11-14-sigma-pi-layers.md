@@ -8789,19 +8789,18 @@ Asked by him: "We currently have concepts square on 1/2 the percepts?" Yes, in r
 
 **The docs.** `doc/*.md` is being rewritten now to §21's rules, by subject, with no note of what is built (a writer on Opus, reviewed by Claude). The documentation pass was to follow the item's last round; this brings its greater part forward, and what rounds 4 to 7 change is added when they land.
 
-**Why attention and LTM lookup need more work.** Both find things by content, and the content changed under them. A percept's code is now two halves on two lanes, a lower bound and an upper bound, each with evidence for and against (rules 50 to 52). The two readers of content were written for one unsigned vector:
+**Alec's account of the two, the same day.** "Right now attention selects the concepts that it wants to attend to, and uses that to select where/what on percepts. Query on LTM is using the idea, a point in conceptual space, to search semantic memory. We could search episodic memory or use a semantic prime for attention, but I'm not clear that is necessary or even beneficial."
 
-- *LTM lookup* compares by shared size on one lane: the overlap of a question's content with a row's, over the size of each (`ConceptualMatch.match`; 1.8 §70.11, where Alec approved one match for every client and called its measure provisional).
-- *Attention* carries the request down through the weights of the way up (rule 36) onto each percept's activity and its where. Since rule 59 the Sigma has weights on two channels, and rule 36 does not say what the against channel's weights do to a percept's salience.
+So they are two readers with two keys, and neither is to be made into the other:
 
-**What is not decided, with what Claude would take.**
+| | Its key | What it searches | By |
+| --- | --- | --- | --- |
+| Attention | the concepts it wants (the request, rule 35) | the percepts of the sentence, their what and their where | the weights of the way up, carried downward (rule 36) |
+| The query on LTM | the idea, a point in conceptual space | semantic memory | a match of points in conceptual space (`ConceptualMatch.match`, which compares meaning coordinates and not a form's code) |
 
-1. *One measure of content for both.* Take rule 54's read as the match: what a row holds of the content that tells for, less what it holds of the content that tells against, each side divided by the number of its own contributions (§19.82). It is not symmetric, as parthood is not: a question lies in a row, not a row in a question. LTM lookup uses it on stored rows, and attention's salience is the same read carried backward.
-2. *The against channel in salience.* A percept that tells against a requested concept lowers its salience and does not go below nothing: attention is drawn to what tells for, and what tells against is not looked at for that request.
-3. *The wholes half in a match.* It is read on its complement, as rule 54 reads it, so that what a question excludes counts and the top class adds nothing.
-4. *What a question is matched on in LTM.* Unchanged: the field of its understanding, order by order, never summed across orders or across rows (`EpisodicMemory.matches`).
+**Corrected.** Claude first wrote here that the percept's two-lane code had changed the content under both readers, and proposed one measure of content for both. That was wrong for the query on LTM: it matches meanings in conceptual space, and the percept's code is a form's (two spaces, no leakage). The proposal is withdrawn. Nothing of rules 50 to 54 changes the query.
 
-Until he answers, the lookup keeps its shared-size match on the for lane, and round 6 builds rule 36 with point 2 as its provisional form.
+**What is left open, and it is small.** For attention, rule 36 carries the request down through the Sigma's weights, and since rule 59 those are on two channels. *Mine, built provisionally in round 6:* a percept that tells against a requested concept lowers its salience and never takes it below nothing. Searching episodic memory by the idea, and priming attention from semantic memory, are not designed and not planned (his words above); they are noted in `doc/FutureWork.md`.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
@@ -10235,12 +10234,11 @@ section:
     if the two vectors come to overlap). Built: the blank is made as
     rule 20 says; what removing is, beside concepts kept forever, is
     not built.
-14. *The measure of content for attention and for LTM lookup* on the
-    two-lane code (§19.84; Alec: "Attention definitely needs more
-    work, since it is content based, as is LTM lookup"). Built
-    meanwhile: the lookup keeps its shared-size match on the for
-    lane; round 6 lets a percept that tells against a requested
-    concept lower its salience, never below nothing.
+14. *The against channel in the salience map* (rules 36 and 59;
+    §19.84). Built in round 6: a percept that tells against a
+    requested concept lowers its salience, never below nothing. The
+    query on LTM is not touched by the percept's code: it matches
+    the idea, a point in conceptual space, against semantic memory.
 13. *What holds a succession,* the bell and then the food, across two
     sentences (§19.25). Built: a row that MTM nominates for the two
     when the succession recurs, read by rule 30's spread.

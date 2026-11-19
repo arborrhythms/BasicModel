@@ -2521,3 +2521,18 @@ one more row in tests (sigma-pi plan, rule 57).
 To specify: what teaches the half (the read back of the concepts, or
 the reconstruction); how a class inside another comes to lie inside it;
 and what a word's wholes are before its concepts are learned.
+
+## Searching episodic memory, and a semantic prime for attention (Alec, 2026-11-19; future work)
+
+Alec: "Right now attention selects the concepts that it wants to attend
+to, and uses that to select where/what on percepts. Query on LTM is
+using the idea, a point in conceptual space, to search semantic memory.
+We could search episodic memory or use a semantic prime for attention,
+but I'm not clear that is necessary or even beneficial."
+
+Two crossings of what the model has. The first: the idea of a question
+is matched against semantic memory today; it could also be matched
+against episodic memory. The second: attention's request is a set of
+concepts chosen by `attend`; it could also be primed by what semantic
+memory returns for the sentence so far. Neither is designed. Before
+either is, show a reading that fails without it.
