@@ -8753,17 +8753,15 @@ Yes. The two halves are built the same way in opposite directions:
 
 "I think the best speedup will eventually be a trained model's ability to propagate compound grammatical fragments by using an S1 that S2 has taught, so we will use the basic level to replace meanings like "the cat" which can be read as a noun directly instead of a lowered count noun. We should ensure that this path is at least an option for the grammar, probably at the tail end of this 1.7 item."
 
-**What the source and the rules already have for it.**
+**Corrected by Alec the same day.** Claude first wrote this as the fragment becoming a form with a row and a concept of its own. Alec: "we don't need "the cat" to be a form; we need both words to be processed by the basic level at one time, but not necessarily as one symbol, and produce an idea that would closely correspond to those words processed separately and grammatically."
 
-- A form may hold a space (rule 43), so `the cat` can be a form.
-- MTM nominates a form on recurrence, and its row brings one concept at the basic level (rules 20 and 21).
-- A look returns a set, and `interpret` takes the largest word at a place first (rule 38), so a fragment that is a form is taken before its words.
-- Perception already fuses a recurrent run of parts into one row (`RadixLayer`'s `part_groups`; `fuse_parts`).
-- The read from a field to a point is taught by System 2's idea (1.8 §68.53).
+**What the source already has for it.** The read from a field to a point, taught by System 2's idea (1.8 §68.53; `bin/IdeaRead.py`, "A kept sentence's idea teaches an independent read of its open field"):
 
-**What is missing.** Nothing presents a constituent that the grammar composed to MTM as a form. Nothing teaches a fragment's concept the meaning and the part of speech that the composition gave it. And the grammar has no stated option to take the fragment or its words.
+- `open_read` keeps the basic field of the sentence at its open;
+- `complete` reads that field through the idea stack (`ConceptualSpace.idea_stack`, a `SigmaPiStack`) and books its error against the kept sentence's root idea (`expectation.idea`);
+- `expected_point` gives the read idea on demand, and nothing in the model takes it today.
 
-Built as rule 58 and round 6b, as an option that is off unless a configuration sets it.
+So the basic level already reads a whole sentence at one time into an idea that System 2 teaches. What is missing is the same read for a part of a sentence: a look over the words of one constituent, taught by that constituent's idea, with its part of speech read too, and the grammar's option to take it.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
@@ -9735,35 +9733,43 @@ chooses from. The old classes are not edited.
     the catalog is evidence against" is withdrawn (Alec, §19.73):
     only a form's strict wholes in the part tower tell against it.
 
-58. *A recurrent fragment is read as one word* (Alec, §19.81: "we
-    will use the basic level to replace meanings like "the cat" which
+58. *A fragment is read at one time by the basic level* (Alec,
+    §19.81: "the basic level to replace meanings like "the cat" which
     can be read as a noun directly instead of a lowered count noun.
     We should ensure that this path is at least an option for the
-    grammar"). An option, off unless a configuration sets it; with it
-    off nothing changes.
-    - *The fragment becomes a form.* A run of two or more words that
-      the kept reading composed as one constituent is presented to
-      MTM as a form, the space a character (rule 43). MTM nominates
-      it on recurrence like any form (rule 20), and its row brings
-      one concept at the basic level (rule 21).
-    - *System 2 teaches it.* The fragment's concept is taught the
-      meaning that the composition gave the constituent, and takes
-      the constituent's part of speech (a noun for `the cat`), not
-      that of any word in it. While both are read, the composed
-      meaning is the teacher and the fragment's reading is corrected
-      against it.
-    - *The grammar reads it as one word.* At a look the fragment is
-      the largest word at its place and is taken first (rule 38); the
-      grammar composes over it as over a word of its part of speech,
-      and the walk is shorter by the operations the fragment
-      replaced.
-    - *Mine:* which constituents are presented (those of the kept
-      reading, bounded in length); the key's name; and that the
-      composition is still run beside the fragment while the fragment
-      is being taught. *Open:* when the composition may stop being
-      run for a fragment; a fragment whose words inflect (`the
-      cats`); and a fragment whose composed meaning changes with its
-      context.
+    grammar"; "we don't need "the cat" to be a form; we need both
+    words to be processed by the basic level at one time, but not
+    necessarily as one symbol, and produce an idea that would closely
+    correspond to those words processed separately and
+    grammatically"). An option, off unless a configuration sets it;
+    with it off nothing changes. No form, row or symbol is made for
+    the fragment.
+    - *One look over the words.* A look whose extent holds two or
+      more words returns their percepts together, and the basic
+      level reads them at one time: rule 7's combined vector over
+      all of them, and the concepts of order zero.
+    - *The idea is read from that field.* The read from a field to a
+      point (`IdeaRead`, `ConceptualSpace.idea_stack`) gives one idea
+      for the look, as it gives one for a whole sentence today.
+    - *System 2 teaches it.* When the grammar composes the same
+      words one by one into a constituent, that constituent's idea
+      is the target of the read on the look's field, as the kept
+      sentence's root idea is the target of the sentence's read
+      (`IdeaRead.complete`).
+    - *The grammar may take it.* At such a look the grammar has the
+      option to take the read idea as the meaning of one constituent
+      and go on, in place of the operations that compose it. *Mine:*
+      the constituent's part of speech is read from the same field,
+      from the grammar's declared argument concepts (rule 20), and
+      is taught by the class the composed constituent filled.
+    - *Mine:* which looks are read this way (those whose extent the
+      kept reading composed as one constituent, bounded in length);
+      the key's name; that the composition still runs beside the
+      read while the read is taught; and that the option is taken
+      with a probability that starts at zero, as `interpretBias`
+      starts at one. *Open:* what says a read idea is good enough to
+      take (its past error against the composition); and whether the
+      grammar may compose further over an idea it took.
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -10000,15 +10006,17 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     known ones is read between them; the scalar tests of item 1.8
     left failing by round 3 pass (§23.3.4), and the numeric
     certificate keeps its bar.
-50. *A fragment read as one word* (rule 58). (a) With the option
-    off, the lesson's walks are those of round 6. (b) A constituent
-    of two words composed in `concept_mint_count` readings has a row
-    and a concept at the basic level, and not before. (c) At a later
-    reading the look returns the fragment as one word, the grammar
-    reads it with the constituent's part of speech, and the walk has
-    fewer operations; the counts are printed. (d) *Learning:* how far
-    the sentence's meaning read through the fragment lies from the
-    meaning composed from its words, before and after teaching, is
+50. *A fragment read at one time* (rule 58). (a) With the option
+    off, the lesson's walks are those of round 6. (b) No form, row or
+    symbol exists for a fragment after it has been read and taught.
+    (c) The read of a look over a constituent's words has the shape
+    of the constituent's composed idea, and its error against it
+    reaches the idea stack and nothing else. (d) With the option on,
+    the grammar takes the read idea at such a look as one
+    constituent of the read part of speech, and the walk has fewer
+    operations; the counts are printed. (e) *Learning:* how far the
+    read idea lies from the idea composed from the words, before and
+    after teaching, and against the idea of another constituent, is
     printed.
 
 **What stays.** The grammar's option at a look and `interpretBias`
@@ -10918,36 +10926,41 @@ sentences before and after, with the host reads of a sentence.
 Return as §23.6.
 ~~~
 
-### 22.6b Round 6b: a recurrent fragment read as one word (added 2026-11-19, after §19.81)
+### 22.6b Round 6b: a fragment read at one time by the basic level (added 2026-11-19, after §19.81)
 
 ~~~
 Round 6b of item 1.7, after round 6 and before round 7. Rule 58 of
 §21; certificate 50. It is an option: with its key off, the source
-behaves as round 6 left it. Read §19.81.
+behaves as round 6 left it. Read §19.81, with Alec's correction: no
+form, row or symbol is made for a fragment.
 
-1. Before any edit, find what exists and return it: how perception
-   fuses a recurrent run of parts into one row (RadixLayer's
-   part_groups and _pending_part_groups, fuse_parts); how a form
-   that holds a space is admitted and read (rule 43, round 1); where
-   the kept reading holds a constituent's span, its part of speech
-   and its meaning at the close; how a word gets its part of speech;
-   and how interpret takes the largest word at a place (rule 38,
-   round 6).
-2. A constituent of two or more words in the kept reading is
-   presented to MTM as a form, counted by the one count of rule 20,
-   and nominated on recurrence. Bound its length and say the bound.
-3. Its concept is taught by the composition: the meaning the
-   constituent was given, and its part of speech. While it is being
-   taught the composition is still run, and is the teacher.
-4. The grammar's option: at a look the fragment is returned and
-   taken as one word of its part of speech. One configuration key,
-   in data/model.xml and the schema, off by default; name it.
+1. Before any edit, find what exists and return it: the read from a
+   field to a point and its teaching (bin/IdeaRead.py: open_read,
+   complete, expected_point; ConceptualSpace.idea_stack; 1.8
+   §68.53); where the kept reading holds a constituent's span, the
+   class it filled and its idea at the close; what a look over
+   several words returns after round 6 (rules 32 to 38); and where
+   the grammar's option at a look and interpretBias are decided
+   (rule 5b of 1.8 §60.1, OperationSelectionLayer.interpret_at_look).
+2. The read of a part of a sentence: for a look whose extent holds
+   the words of one constituent of the kept reading, the basic
+   field of that look is read through the idea stack, as open_read
+   and complete do for the sentence. Bound the constituent's length
+   and say the bound.
+3. System 2 teaches it: the constituent's composed idea is the
+   read's target; the class the constituent filled is the target of
+   the part of speech read from the same field. The composition
+   still runs, and is the teacher.
+4. The grammar's option: at such a look it may take the read idea
+   as one constituent of the read part of speech. One configuration
+   key in data/model.xml and the schema, with the probability of
+   taking it, at zero by default; name it.
 5. Certificate 50 in a new test/test_item17_fragments.py.
 
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences with
 the key off and on. Return as §23.6b, with the operations of a walk
-with the fragment and without it, for item 1.5.
+with the read taken and without it, for item 1.5.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep

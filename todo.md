@@ -1757,9 +1757,10 @@ generation is expected at this stage and is recorded, not tuned away.
    parts built up from all zeros, the wholes down from all ones, on
    the part catalog; the Pi selecting for and against; a scalar by
    the same mechanism. It was tried in tests first (§23.3b). *Round
-   6b, a recurrent fragment read as one word* (rule 58): `the cat`
-   read as a noun by a concept that System 2 has taught, as an option
-   for the grammar. The rules now run to 58 and the certificates to
+   6b, a fragment read at one time by the basic level* (rule 58):
+   the words of `the cat` read together into one idea that System 2
+   teaches, close to the idea composed from them one by one, as an
+   option for the grammar; no form or symbol is made for it. The rules now run to 58 and the certificates to
    50.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
@@ -1922,9 +1923,10 @@ generation is expected at this stage and is recorded, not tuned away.
    floor, moved by batch size and bf16. *Claude's reading:* the first,
    third and fourth can be built beside item 1.6. The profile is taken
    again on the source item 1.7 leaves before any text is written.
-   The largest speed-up Alec names, a fragment such as "the cat" read
-   as one noun by an S1 that S2 has taught, is made an option at the
-   end of item 1.7 (sigma-pi §21, rule 58) and measured here.
+   The largest speed-up Alec names, the words of a fragment such as
+   "the cat" read at one time by an S1 that S2 has taught, is made an
+   option at the end of item 1.7 (sigma-pi §21, rule 58) and measured
+   here.
    **Part 1, computation by wiring, not by moving data** (item 1.6
    until 2026-11-18; Alec, 2026-11-17: "can you investigate the
    possibility of pushing the architecture in this zero-data movement
