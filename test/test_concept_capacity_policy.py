@@ -132,6 +132,11 @@ def test_serial_property_autobind_does_not_persist_sentence_chain():
     pid = torch.tensor([[10, 11, 20, 21]])
     groups = torch.tensor([[0, 0, 1, 1]])
     words = [["ab", "cd"]]
+    # The forms were read before; this reading is the one that nominates them.
+    from nomination_fixtures import short_of_nomination
+    ws = _property_ws()
+    for form, parts in (("ab", [10, 11]), ("cd", [20, 21])):
+        short_of_nomination(cs.interpret, parts, ws.property_rows_for_bytes(form), form=form)
 
     cs._autobind_property_concepts(
         pid, torch.randn(1, 4, _D), groups, words, words,

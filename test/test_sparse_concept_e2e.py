@@ -45,7 +45,11 @@ def _cs_active(nS=64, order=3):
     cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D], order_limit=order)
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
-    return with_definitions(cs)
+    cs = with_definitions(cs)
+    # The Sigma of order zero, which a model installs where it binds the
+    # basic percepts.
+    cs.install_order_zero()
+    return cs
 
 
 def _build(name):

@@ -14,6 +14,14 @@ def recurrent_word(interpret, *args, **kwargs):
     return word
 
 
+def short_of_nomination(interpret, *args, **kwargs):
+    """``InterpretLayer.lookup_word`` read ``concept_mint_count - 1`` times,
+    so that the next reading of the form, by whichever reader, nominates it."""
+    for reading in range(interpret.owner.concept_mint_count - 1):
+        word = interpret.lookup_word(*args, reading=('fixture', reading), **kwargs)
+        assert word is None, 'a form read short of nomination is not a word'
+
+
 def lexical_forms(model, texts):
     """``(raw, parts)`` for each lexical form of ``texts``: admitted to
     perception by ``Corpus.admit_training_forms`` where the percept store
@@ -50,9 +58,7 @@ def forms_short_of_nomination(model, texts):
     owner = model._concept_owner()
     for raw, parts in lexical_forms(model, texts):
         wholes = model.wholeSpace.property_rows_for_bytes(raw)
-        for reading in range(owner.concept_mint_count - 1):
-            word = owner.interpret.lookup_word(parts, wholes, form=raw, reading=('fixture', reading))
-            assert word is None, (raw, 'a form read short of nomination is not a word')
+        short_of_nomination(owner.interpret, parts, wholes, form=raw)
 
 
 def readings_before_nomination(model, read):
