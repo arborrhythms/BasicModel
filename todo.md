@@ -1660,7 +1660,18 @@ generation is expected at this stage and is recorded, not tuned away.
    rows' own entries (304 of 304 requests exact). "If we have
    equally active words, then we have not identified the correct
    word": the tie rule "first found" is withdrawn. Rules 36 and 37
-   are restated in §19.52 for his word. **The item's text for
+   are restated in §19.52 for his word. **Alec again, the same day
+   (§19.53):** the salience map selects the word level and the
+   `.where` selects the word; where several stay selected, one is
+   drawn and judged by its outcome; a read that gives no WFF is an
+   error to propagate, and teaching starts with minimal sentences.
+   **Parthood of forms is to be fixed:** `is` is found in `this` at
+   0.82, not 1 (4 of 36 such pairs whole); three ways are measured,
+   the store's own `nested` widened is recommended, and the test
+   point he asked for (the structure as composed is valid) is a
+   certificate. **The read with no sentence:** he finds the repair
+   intrusive; proposed in its place, for his word, a test of a word
+   among garbage letters (1.8 §68.88). **The item's text for
    Codex (§19.8) waits: "wait until discussion finishes".**
    **`attend`, tentatively (Alec, 2026-11-18; §19.45):** "we ask for
    percepts by selecting some set of concepts, doing the pull

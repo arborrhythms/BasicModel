@@ -35115,6 +35115,17 @@ moved: 0 commits behind, a fast-forward. It carries the work since
 `3926005f12`: item 1.8's source and tests, the plans, the todo, the
 standing documents and the PDF. The superproject's pointer stays his.
 
+### 68.88 Alec on the read with no sentence (2026-11-19)
+
+Asked whether to keep the provisional repair of §66.12, Alec: "The
+interpret had been finding the object corresponding to an object. Maybe
+we can Test word recognition in a bunch of garbage letters, and set the
+desired output to be just the word? I feel your solution is a bit
+intrusive." Claude had recommended keeping it (§68.86); that
+recommendation is withdrawn. His proposal, Claude's reading of it and
+what is proposed in the repair's place are in sigma-pi §19.53, point
+5. Nothing is changed in the source until he has said so.
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

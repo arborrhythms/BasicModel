@@ -7253,6 +7253,179 @@ in the conversation (1.8 §66.12 holds it); his word on keeping it is
 still to come. The item's text for Codex (§19.8) is not written until
 this discussion is finished: "wait until discussion finishes".
 
+### 19.53 Alec on §19.52: the salience map selects the level, the where selects the word; parthood of forms; a read that gives no WFF (2026-11-19)
+
+Alec:
+
+> The salience map is great for attention, it does seem to be selecting
+> the relevant words, but if it selects multiple we want it to narrow,
+> perhaps by running the pi or entire network with the chosen word
+> (probably better done randomly) as rightly or wrongly chosen... but
+> the salience map shouldn't be selecting everything, it just selects
+> word-level, and the choice of word is done by the .where selection
+>
+> If in the mereology "is" is not a part of "this", we have to fix it
+> (or are you saying no parthood can be determined because you are
+> looking at the whole space and they have the same code?) Please add a
+> test point to ensure the validity of the structure as composed.
+>
+> Equally active words. See what I said above about .where being used
+> to select the right word horizontally, while the salience selects the
+> right level.
+>
+> If the read does not produce a WFF, that's an error to propagate and
+> we can try again. But the best way around this is to start with
+> minimal sentences, where the error drives exactly the difference
+> between a shorter successful parse and the erroneous parse.
+>
+> Questions 1. See above 2. The interpret had been finding the object
+> corresponding to an object. Maybe we can Test word recognition in a
+> bunch of garbage letters, and set the desired output to be just the
+> word? I feel your solution is a bit intrusive.
+
+**The term.** The map that a request leaves over the percepts of a
+sentence is the *salience map*. *Claude's reading:* he names the map,
+however it is computed, and §19.52 computes it by the way back with no
+derivative. If he means the gradient kind by that name, rule 36 goes
+back to it and he will say.
+
+**1. Two selections** (Alec). The salience map selects the level: the
+word level. It does not pick the word. The `.where` selects the word,
+"horizontally". So the meta concept "word" returning the three words
+of "This is Felix." is the map doing its part, and the where does the
+rest. In rule 35's terms the request has a what part, which gives the
+level, and a where part, which gives the word.
+
+**2. When several are still selected, narrow** (Alec): "perhaps by
+running the pi or entire network with the chosen word (probably better
+done randomly) as rightly or wrongly chosen". *Claude's reading:* one
+of the selected words is taken by a draw, the Pi or the whole network
+is run with it, and the outcome shows whether it was rightly chosen.
+
+- *In the source already.* A draw of this kind is a departure. Each
+  explore path departs once, in attention or in another walk, and is
+  judged by the cost of its whole path (`explorePaths`,
+  `SentenceCredit.WALKS`); the grammar's decision at a look is
+  recorded, explored and credited that way (`interpret_at_look`).
+- *The gap.* Today the draw is over acts on brackets and over the
+  grammar's option. Here it is over the words that the map and the
+  where left selected.
+
+**Rule 37, restated** (*Claude's reading; his to confirm*). The
+salience map gives the words of the sentence at the word level, and of
+forms that begin at one place the largest (§19.30). The where selects
+one of them and `interpret` takes it. Where several remain selected,
+one is taken by a draw, and the draw is credited by the outcome of its
+path as a departure is. §19.52's "nothing is interpreted" is
+withdrawn.
+
+**3. A read that gives no WFF** (Alec). It is an error; the error is
+propagated, and the sentence may be tried again. The way around it is
+the order of teaching: begin with minimal sentences, so that a parse
+that fails differs from a shorter parse that succeeds by one step, and
+the error drives exactly that step. *Claude's reading:* the lessons
+that teach reading begin with the shortest sentences and grow a step at
+a time. It bears on rule 38 (the reading lesson, and the test of
+reading in order that gates the grammar tests) and on rule 42 (a
+literal with no rule to take it is not well formed). It also bears on
+item 1.6's corpus, which is another session's plan and is not edited
+from here. *Not traced:* what the source books today when a sentence
+does not reduce; the forced reductions of the closing make every
+sentence end as a row.
+
+**4. Parthood of forms: `is` in `this`.** His question first: no, the
+two do not have the same code, and no two of 20,000 words did
+(§19.52). Parthood is determined, and it comes out partial. Measured
+on the store itself (`RadixLayer` with `WordIdentity`, 29 words, one
+suffix lesson for `cats`; scratch script `structure_check.py`):
+
+| The test | Result |
+| --- | --- |
+| Every part the store records for a form lies wholly inside the form's code | 233 of 233 |
+| A known form found inside a known form lies wholly inside it | 4 of 36 pairs |
+| A form that is not inside another reads as wholly inside it | 1: `cat` in `caat` |
+
+| Part | Whole | How much of the part is found in the whole |
+| --- | --- | ---: |
+| `is` | `this` | 0.82 |
+| `his` | `this` | 0.86 |
+| `at` | `cat` | 0.89 |
+| `here` | `there` | 0.88 |
+| `the` | `there` | 1.00 |
+| `cat` | `cats` | 1.00 (recorded by the suffix lesson) |
+
+*Why.* A form's code is the pairs of `#word#`, with the two ends
+marked, and the lengths 1 to n. `is` begins a word and the `is` in
+`this` does not, so one of its three pairs is missing there. The store
+records a form inside a form only as a stem and one marker witnessed
+in a suffix lesson (`observe_nested`; its comment: "There is no
+vocabulary-wide substring search").
+
+*So it is to be fixed, by his word.* The item 1.5 plan noted this on
+2026-11-18 as what today's codes do not give "if it is ever wanted:
+exact parthood between forms", when keeping the codes was confirmed.
+It is now wanted. Three ways, measured by Claude on the system's word
+list (197,015 forms of 2 to 12 letters; 1,897,751 pairs of a form
+inside a form, 9.6 for each form; scratch script
+`parthood_options_check.py`):
+
+| The code of a form | A form inside reads wholly inside | A form not inside reads wholly inside | Coordinates on, of 96 | Forms that share a code |
+| --- | ---: | ---: | ---: | ---: |
+| today's | 5% | 0 of 270,182 | 32 | 36 |
+| today's, joined with the code of every known form found inside it | 100% | 100 of 270,421 | 44 | 224 |
+| its pairs with no end marks, and its lengths | 100% | 43 of 270,121 | 28 | 161 |
+| the overlap tree (his, in the item 1.5 plan) | 100%, exactly | none | a row for every form inside a form, 9.4 rows for each word, and a wider code | none |
+
+With 256 coordinates for the pairs in place of 64, the second way has
+8 false parts and 68 shared codes, and the third 7 and 113.
+
+*Recommended:* the second. It is the store's own mechanism: `form()`
+already joins a form's code with the codes of its recorded parts
+(`nested`), and what changes is what is recorded, every known form
+found inside and not only a stem and its marker. It keeps the end
+marks, which keep words apart. *Not designed:* how a form learned later
+is added to the longer forms that already hold it (the store rekeys
+every form when `nested` changes today), and how many collision mints
+it needs at this scale.
+
+**The test point he asked for** (a certificate of this item, numbered
+when the rules are settled): *the structure as composed is valid.* On
+the lesson's words, after a suffix lesson and after a collision mint:
+
+- (a) every part the store records for a form, each atom and each
+  recorded form inside it, lies wholly inside the form's code (today
+  233 of 233);
+- (b) every known form found inside a known form lies wholly inside
+  it, read by the one match (`ConceptualMatch.match`): `is` in `this`
+  reads 1 (today 0.82; 4 of 36 pairs);
+- (c) the count of forms that read as wholly inside a form they are not
+  inside is reported, with `cat` in `caat` named (today 1); what a
+  near spelling should read is rule 32's.
+
+Part (a) holds today and (b) fails today; (b) passes when the fix is
+built.
+
+**5. The read with no sentence** (1.8 §66.12). *Claude's reading of
+his words:* the repair is not wanted as built. `interpret` finds the
+object that corresponds to a word; the repair calls it from the
+preparation of the input, outside a sentence, which is a second copy
+of the decision the sentence's loop makes. His proposal in its place:
+test word recognition among garbage letters, with the word alone as
+the desired output. As Claude reads it, that is an ordinary case of
+input and output run as a sentence, so nothing reads outside a
+sentence. It is also the proof of concept of the looks (§19.49, answer
+6: the meta concept pulled back isolates the words), so it is a
+certificate of this item: *a word among garbage letters is returned,
+and it alone is said.*
+
+*Proposed, for his word:* the three commits of the repair are taken
+back (`26666553c0`, `0a7f25a805`, `64a8be7fc1`); the two callers, the
+fast word evaluator and the standalone kernel, read inside a sentence
+run or lose those cases; his test is added. *Not checked:* whether the
+evaluator can read inside a sentence run at small cost, and whether
+item 1.8 as built passes his test where the garbage is separate runs
+of letters.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
