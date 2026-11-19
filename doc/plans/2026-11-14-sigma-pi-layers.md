@@ -5600,3 +5600,60 @@ departures.
 *Placed here by Claude:* rule 32 and rule 30 of this item give the
 request and the look; the wiring is part 1 of item 1.5. It is in no
 text of item 1.8.
+
+### 19.33 Asking for concepts: the translation to percepts as the filter (Alec, 2026-11-18; in discussion)
+
+Alec, 2026-11-18: "Can we also filter by asking for certain concepts
+and relying on the translation to percepts to act as a filter?"
+
+**Yes, and an earlier form of it is in the source** (read at
+`bfd2c606a3`).
+
+- *The translation.* `ConceptualSpace.cs_percept_attribution`:
+  "Attribute each requested pole through definitions to percept
+  events." A demand over concepts, on both lanes, is read back through
+  the definitions of order zero (`cs_reverse_presence`), shared over a
+  concept's written basic percepts by their weights, and placed on the
+  events of the perception it is given ("Concept rows have no event
+  coordinates; only the supplied perception can locate a demand").
+- *The filter.* `Models._passback_scope_ps` takes the conceptual field,
+  attributes it to the percept events, keeps what lies inside
+  `_passback_scope_where`, and scales the activity of each part by
+  one half plus one half of its strength: "Attention changes salience,
+  never visibility. A half-strength floor preserves novel percepts".
+- *Where it runs.* At a stage after the first in the loop over
+  conceptual stages ("the top-down attention handoff"). The loop of
+  looks does not call it. *Not checked:* whether it runs in today's
+  lesson at all.
+
+**What it is on an example** (read from the code, not run). Asking for the concept of `cat` on "red
+cat sleeps": the demand goes down to the basic percept of the form
+`cat`, that percept's event is at bytes 4 to 7, and the mask keeps that
+token and lowers the others. It is a search for a thing already known.
+
+**The gap, against §19.32.**
+
+1. *It returns codes.* A new subspace is built with scaled content, and
+   the attribution loops over rows on the host. As wires it is the
+   first layer's matrix read backward (a request over basic-percept
+   rows) and then the gather of §19.32.
+2. *It never removes.* Its floor of one half is a rule of that design.
+   His words of §19.32 ("returns tokens of those types") remove what was
+   not asked for. Which holds is his.
+3. *It goes down one layer only.* The demand is read through the
+   definitions of order zero. Asking for a class or a meta concept
+   needs the demand shared down the orders first, which is the spread
+   of rule 30.
+4. *It finds only what is written.* An exact way down returns the
+   percepts of the definitions and nothing else (§19.22; §19.23: today
+   0 of 5 bytes are filled at a withheld word). A word not yet known is not of
+   any asked concept, and is returned only under the floor of point 2,
+   or by a request for a whole (§19.31), which admits it.
+
+**So the two requests differ in kind** (Claude's reading): a whole asks
+for a kind of form and admits what is new; a concept asks for a known
+content and is a search. Both are one mask.
+
+*On the open point 1 of §19.32:* this translation runs through the
+definitions' own weights, so a gradient through it teaches the
+definitions unless it is cut there.

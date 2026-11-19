@@ -1534,6 +1534,10 @@ generation is expected at this stage and is recorded, not tuned away.
    within the .where span", a mask on what is active, learned by
    gradient; learning the place the same way is deferred. Open:
    which wires take the gradient, and what a returned token is.
+   A request may also name concepts (§19.33): the translation to
+   percepts exists (`cs_percept_attribution`, `_passback_scope_ps`),
+   outside the loop of looks, with a floor of one half that never
+   removes.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
