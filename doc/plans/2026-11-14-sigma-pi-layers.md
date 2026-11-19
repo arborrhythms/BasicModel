@@ -8594,6 +8594,14 @@ So yes: the Pi makes the order below and the union makes the order above, over o
 - *Stored as two lanes.* A signed value is its for part and its against part (§19.24), so the code is a for vector and an against vector, and no number below zero is stored.
 - *Not yet squared with §19.68,* where he said "all zeros for nothing and all ones for everything": in a signed code zero is "not known". Put to him.
 
+### 19.71 Alec: the Pi selects for and against; two lanes on the positive cube; a property may apply by degree (2026-11-19)
+
+His answers to §19.70.
+
+1. "Pi should select both strong for and strong against." *Decided.* A row of the Pi has entries on both lanes: members whose presence is evidence for it, and members whose presence is evidence against it. As built a row has only the first kind (§19.70); the second is new. *Mine, for the trial to measure:* whether a row's against value is the product over its against entries (every one must be present) or their union (any one is enough). For `archer`, held by both `archery` and `archers`, the `y` or the `s` alone should tell against it, which is the union.
+2. On the property (+1 where it applies, -1 where it is witnessed not to, 0 where nothing is known): "the property is correct, but we might also have a continuous application (e.g the distance between the values for a ratio scale)." So a property's value on a lane may be any degree from 0 to 1, not only 0 or 1.
+3. On whether zero means "not known": "we are on a positive unit hypercube with two lanes; evidence for and evidence against. When I am talking about a negative number in the perceptual context, that is just a shorthand for positive evidence against." *Decided.* The code stays within 0 to 1 on each of two lanes. His -1 is 1 on the against lane. Zero on both lanes is no evidence. "All zeros for nothing and all ones for everything" (§19.68) stands on each lane, and §19.70's reading of the signed code as two lanes is his.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
