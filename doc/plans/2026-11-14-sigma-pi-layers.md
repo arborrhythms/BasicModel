@@ -6133,7 +6133,7 @@ percept pass of item 1.5. The Codex text of this item (§19.8) was
 written before §19.31 to §19.40 and should not be carried until they
 are settled.
 
-### 19.41 Placed in item 1.6 (Alec, 2026-11-18)
+### 19.41 Placed in item 1.6 (Alec, 2026-11-18; corrected by §19.42: he meant the wiring work, item 1.5)
 
 Alec, 2026-11-18, on §19.40: "This is the 1.6 work I think."
 
@@ -6172,3 +6172,77 @@ what of rule 32 remains in this item.
 slow tier is run once at its submission, and the architecture is to
 change no more after it (1.8 §72), so this work has to be inside item
 1.6's submission.
+
+### 19.42 Placed in item 1.5; the filter from above and the selection from below (Alec, 2026-11-18)
+
+Alec, 2026-11-18, correcting §19.41:
+
+> Ah, yeah. The wiring work and single sentence percept banks, becomes
+> 1.5. So this discussion about attention moves there also.
+>
+> I think we may already be doing what we need. A projection of the
+> conceptual activation down to the basic percept pi would be the right
+> filter, but it is not 1:1 (and I don't know how to extract the range
+> spec from that). carrying the matching percepts under that pi to the
+> conceptual activation would do the proper selection one by one, but
+> that is computationally expensive.
+>
+> Thoughts?
+
+**Placement.** §19.31 to §19.40 are item 1.5's, with the wiring and the
+percept bank of one sentence. §19.41 read "1.6" as the number modality
+and is withdrawn in that.
+
+**The two routes, in the source** (read at `bfd2c606a3`).
+
+- *From above.* `cs_percept_attribution` projects a demand over
+  concepts down through the definitions of order zero to the basic
+  percepts, sharing it over a concept's alternatives by their weights
+  (§19.33).
+- *From below.* The first look reads every word of the sentence in one
+  pass and gives each its concepts (`FamiliarTier.open_sentence`,
+  kept in `_sentence_open_fields`, one reading for each word with its
+  place). The comparison of a content with conceptual space is one
+  function (`ConceptualMatch.match`, 1.8 §70).
+
+**Thoughts (Claude).**
+
+1. *No range has to be extracted from the projection.* The projection
+   gives kinds: which basic percepts are asked for. The range is read
+   off the bank: each percept of the sentence has its place, and the
+   places of those that match are the range. This is what
+   `_passback_scope_ps` does, and it is condition 2 of §19.40: the
+   where is an answer. If one range is wanted as numbers (to hand to a
+   row of the Pi as a region), it is the centre and the spread of the
+   matching activity along where, which needs no threshold. *The form
+   is mine.*
+2. *Not being 1:1 does no harm to a filter that only dims.* One
+   percept serves several concepts, so the projection lets through
+   more than was asked. Over-inclusion is the safe direction for
+   something that lowers what is outside it and never removes
+   (§19.36). It would not be safe as the selection itself.
+3. *The selection from below is already paid for at the words.* The
+   first look has carried every word up to its concepts once. To
+   select among them is to compare the request with each word's
+   reading, one `match` for each word, on tensors that exist. It is
+   costly only where the first look made no reading: inside a word, or
+   over several words taken as one.
+4. *So the two are two stages, not two choices.* From above, cheap and
+   over-inclusive, to dim and to say where to look; from below, exact,
+   at the few places that survive. This is guidance and then binding
+   (§19.38: Wolfe 1994; Treisman and Gelade 1980), and it is how the
+   exact tests can stay exact: they are taken on the selection from
+   below.
+
+**What is and is not "already being done".** Both computations exist.
+Neither is what a look selects by: the loop of looks selects by
+brackets, the projection runs only in the old pass-back outside it,
+and both build new tensors with loops on the host.
+
+**One consequence of the placement, to be settled.** Item 1.5 is
+written as wiring that keeps results equal, and it follows item 1.6,
+after which "the architecture changes no more" and the slow tier has
+run (1.8 §72). Reading the percept bank once and replacing the where
+tests by coordinates can keep results equal. Selecting by a request
+where brackets select today, and dimming where a bracket cuts, change
+what the model does.
