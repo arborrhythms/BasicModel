@@ -8749,6 +8749,22 @@ Yes. The two halves are built the same way in opposite directions:
 
 "Capital letter" is "letter" and "capital"; its code is the AND of theirs and lies inside both. Rule 52 says so now: a row of the table of wholes is given either by the catalog parts that belong to it, or by other rows of the table.
 
+### 19.81 Alec: a compound fragment read as one word by an S1 that S2 has taught (2026-11-19)
+
+"I think the best speedup will eventually be a trained model's ability to propagate compound grammatical fragments by using an S1 that S2 has taught, so we will use the basic level to replace meanings like "the cat" which can be read as a noun directly instead of a lowered count noun. We should ensure that this path is at least an option for the grammar, probably at the tail end of this 1.7 item."
+
+**What the source and the rules already have for it.**
+
+- A form may hold a space (rule 43), so `the cat` can be a form.
+- MTM nominates a form on recurrence, and its row brings one concept at the basic level (rules 20 and 21).
+- A look returns a set, and `interpret` takes the largest word at a place first (rule 38), so a fragment that is a form is taken before its words.
+- Perception already fuses a recurrent run of parts into one row (`RadixLayer`'s `part_groups`; `fuse_parts`).
+- The read from a field to a point is taught by System 2's idea (1.8 §68.53).
+
+**What is missing.** Nothing presents a constituent that the grammar composed to MTM as a form. Nothing teaches a fragment's concept the meaning and the part of speech that the composition gave it. And the grammar has no stated option to take the fragment or its words.
+
+Built as rule 58 and round 6b, as an option that is off unless a configuration sets it.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9719,6 +9735,36 @@ chooses from. The old classes are not edited.
     the catalog is evidence against" is withdrawn (Alec, §19.73):
     only a form's strict wholes in the part tower tell against it.
 
+58. *A recurrent fragment is read as one word* (Alec, §19.81: "we
+    will use the basic level to replace meanings like "the cat" which
+    can be read as a noun directly instead of a lowered count noun.
+    We should ensure that this path is at least an option for the
+    grammar"). An option, off unless a configuration sets it; with it
+    off nothing changes.
+    - *The fragment becomes a form.* A run of two or more words that
+      the kept reading composed as one constituent is presented to
+      MTM as a form, the space a character (rule 43). MTM nominates
+      it on recurrence like any form (rule 20), and its row brings
+      one concept at the basic level (rule 21).
+    - *System 2 teaches it.* The fragment's concept is taught the
+      meaning that the composition gave the constituent, and takes
+      the constituent's part of speech (a noun for `the cat`), not
+      that of any word in it. While both are read, the composed
+      meaning is the teacher and the fragment's reading is corrected
+      against it.
+    - *The grammar reads it as one word.* At a look the fragment is
+      the largest word at its place and is taken first (rule 38); the
+      grammar composes over it as over a word of its part of speech,
+      and the walk is shorter by the operations the fragment
+      replaced.
+    - *Mine:* which constituents are presented (those of the kept
+      reading, bounded in length); the key's name; and that the
+      composition is still run beside the fragment while the fragment
+      is being taught. *Open:* when the composition may stop being
+      run for a fragment; a fragment whose words inflect (`the
+      cats`); and a fragment whose composed meaning changes with its
+      context.
+
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
 *learning*.
@@ -9954,6 +10000,16 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     known ones is read between them; the scalar tests of item 1.8
     left failing by round 3 pass (§23.3.4), and the numeric
     certificate keeps its bar.
+50. *A fragment read as one word* (rule 58). (a) With the option
+    off, the lesson's walks are those of round 6. (b) A constituent
+    of two words composed in `concept_mint_count` readings has a row
+    and a concept at the basic level, and not before. (c) At a later
+    reading the look returns the fragment as one word, the grammar
+    reads it with the constituent's part of speech, and the walk has
+    fewer operations; the counts are printed. (d) *Learning:* how far
+    the sentence's meaning read through the fragment lies from the
+    meaning composed from its words, before and after teaching, is
+    printed.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -10860,6 +10916,38 @@ AttentionLesson, AttentionContext, LookForecast or WhereRegistry,
 each in a fresh process; both stopping gates; the lesson's sixteen
 sentences before and after, with the host reads of a sentence.
 Return as §23.6.
+~~~
+
+### 22.6b Round 6b: a recurrent fragment read as one word (added 2026-11-19, after §19.81)
+
+~~~
+Round 6b of item 1.7, after round 6 and before round 7. Rule 58 of
+§21; certificate 50. It is an option: with its key off, the source
+behaves as round 6 left it. Read §19.81.
+
+1. Before any edit, find what exists and return it: how perception
+   fuses a recurrent run of parts into one row (RadixLayer's
+   part_groups and _pending_part_groups, fuse_parts); how a form
+   that holds a space is admitted and read (rule 43, round 1); where
+   the kept reading holds a constituent's span, its part of speech
+   and its meaning at the close; how a word gets its part of speech;
+   and how interpret takes the largest word at a place (rule 38,
+   round 6).
+2. A constituent of two or more words in the kept reading is
+   presented to MTM as a form, counted by the one count of rule 20,
+   and nominated on recurrence. Bound its length and say the bound.
+3. Its concept is taught by the composition: the meaning the
+   constituent was given, and its part of speech. While it is being
+   taught the composition is still run, and is the teacher.
+4. The grammar's option: at a look the fragment is returned and
+   taken as one word of its part of speech. One configuration key,
+   in data/model.xml and the schema, off by default; name it.
+5. Certificate 50 in a new test/test_item17_fragments.py.
+
+Run: the new test file; every test file that names what you
+changed; both stopping gates; the lesson's sixteen sentences with
+the key off and on. Return as §23.6b, with the operations of a walk
+with the fragment and without it, for item 1.5.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
