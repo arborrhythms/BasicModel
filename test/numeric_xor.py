@@ -42,7 +42,12 @@ def certificate(config='data/MM_xor.xml'):
     row = owner.concept_of_basic_percept(conjunction)
     rows = [*model.numeric_percepts.rows,row]
     weights = model.outputSpace.field_readout.weight[0,torch.tensor(rows)*2]
-    assert (weights[:2]>0).all() and weights[2]<0
+    # Rule 53: the conjunction is a strict whole of its two level percepts,
+    # so each axis reads against where the other is present, and the
+    # readout takes the conjunction with the sign opposite the two axes'.
+    assert torch.sign(weights[0]) == torch.sign(weights[1]) != 0
+    assert torch.sign(weights[2]) == -torch.sign(weights[0])
+    against = model.outputSpace.field_readout.weight[0,torch.tensor(rows)*2+1]
     print(dict(answers=prediction.detach().tolist(),weights=weights.detach().tolist(),
-        promoted_row=int(row),mse=error))
+        against=against.detach().tolist(),promoted_row=int(row),mse=error))
     return model,prediction,error

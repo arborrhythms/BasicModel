@@ -32,10 +32,10 @@ class BasicPercepts(nn.Module):
         self.words = {}
         self.selectors = {}
         self.register_buffer('places', torch.full((self.capacity,), -1, dtype=torch.long))
-        # Which rows are value percepts, written at reservation.
-        self.register_buffer('value_rows', torch.zeros(self.capacity, dtype=torch.bool), persistent=False)
-        # Native values are endpoints, not concepts or learned codes. Negative
-        # references below the fixed-axis namespace address this bounded table.
+        # The table of values: each value percept's felt value, exact. Its
+        # code is its place among the bins of the felt value (rule 55);
+        # the table is what the way back reads. Negative references below
+        # the fixed-axis namespace address it.
         self.register_buffer('value_codes', torch.zeros(self.capacity))
         self.register_buffer('value_count', torch.zeros((), dtype=torch.long))
         self.revision = 0
@@ -54,22 +54,86 @@ class BasicPercepts(nn.Module):
     def whole_codes(self, references):
         return self._boundary_codes(references, whole=True)
 
-    def _boundary_codes(self, references, *, whole):
+    @staticmethod
+    def value_bin(felt, width):
+        """The bin of a felt value among ``width`` bins of the felt chart,
+        ``floor(width * felt)``, the last holding a felt value of one."""
+        felt = torch.as_tensor(felt)
+        return (felt * width).floor().long().clamp(0, width - 1)
+
+    @staticmethod
+    def value_coordinates(width, place):
+        """The coordinate of each bin of the catalog of one place's values:
+        a keyed draw, as the parts of a form are drawn, with one coordinate a
+        bin and none shared, so that the order of the line is read
+        coordinate by coordinate. Each place has its own table of values (a
+        variable of its own); a value with no place keeps the bins in order."""
+        if place is None or int(place) < 0:
+            return torch.arange(width)
+        generator = torch.Generator().manual_seed(0x5ca1a7 + int(place))
+        return torch.randperm(width, generator=generator)
+
+    def value_code(self, felt, width, place=None):
+        """A value's code in a half ``width`` wide (rule 55). The catalog is
+        its place's bins of the felt value, each a part with one coordinate
+        of its own (:meth:`value_coordinates`). Parts half: the OR of the
+        bins at or below the value, built up from all zeros. Wholes half: all
+        ones with the bins above it cut away. On a line these are one code."""
+        bins = self.value_bin(felt, width).to(self.codes.device)
+        ordered = (torch.arange(width, device=self.codes.device) <= bins[..., None]).to(self.codes.dtype)
+        coordinates = self.value_coordinates(width, place).to(self.codes.device)
+        result = torch.zeros_like(ordered)
+        result[..., coordinates] = ordered
+        return result
+
+    def _boundary_codes(self, references, *, whole, place=None):
         ids = torch.as_tensor(references, device=self.codes.device, dtype=torch.long)
         width = self.property_width if whole else self.identity_width
         result = self.codes.new_zeros(*ids.shape, width)
         values = ids < -self.identity_width
         if bool(values.any()):
-            seats = -ids[values] - self.identity_width - 1
-            if bool((seats >= self.value_count).any()):
-                raise ValueError('unavailable value percept reference')
-            result[values, -1] = self.value_codes[seats]
+            # A value is its own tightest part and its own whole: its code in
+            # either half is its cut of its place's sorted bins.
+            result[values] = self.value_code(self.felt_of(ids[values]), width, place)
         if bool((~values).any()):
             bank = self.whole if whole else self.native._basis
             native = bank.lookup_rows(ids[~values])
             result[~values] = (native[..., self.identity_width:self.width] if whole
                                else native[..., :self.identity_width])
         return result
+
+    def felt_of(self, references):
+        """The exact felt value in the table of each value reference."""
+        ids = torch.as_tensor(references, device=self.codes.device, dtype=torch.long)
+        seats = -ids - self.identity_width - 1
+        if bool(((seats < 0) | (seats >= self.value_count)).any()):
+            raise ValueError('unavailable value percept reference')
+        return self.value_codes[seats]
+
+    def felt(self, rows):
+        """The way back: the exact felt value of each value percept row,
+        read from the table of values. A code gives only the bin, to 1/64 of
+        the felt chart (:meth:`bin_of`)."""
+        rows = torch.as_tensor(rows, dtype=torch.long)
+        references = [self.occurrences[int(row)][0][0] for row in rows.flatten().tolist()]
+        if any(reference >= -self.identity_width for reference in references):
+            raise ValueError('only a value percept has a felt value')
+        return self.felt_of(references).reshape(rows.shape)
+
+    def bin_of(self, codes, place=None):
+        """The bin a value code of ``place`` cuts at, from its parts half: the
+        last of its run of ones from the first bin. ``-1`` where a half is no
+        such run, or where the two halves, being as wide, do not cut alike."""
+        def run(half):
+            half = half[..., self.value_coordinates(half.shape[-1], place).to(half.device)]
+            count = half.eq(1).long().sum(-1)
+            prefix = torch.arange(half.shape[-1], device=half.device) < count[..., None]
+            return count, half.eq(prefix.to(half)).all(-1) & (count > 0)
+        count, valid = run(codes[..., :self.identity_width])
+        if self.property_width:
+            other, whole = run(codes[..., self.identity_width:self.width])
+            valid = valid & whole & ((other == count) | (self.property_width != self.identity_width))
+        return torch.where(valid, count - 1, -1)
 
     @torch.no_grad()
     def perceive_value(self, value, *, place=None):
@@ -98,7 +162,10 @@ class BasicPercepts(nn.Module):
                           codes[..., self.identity_width:].amax(0)))
 
     def read_points(self, points, rows):
-        """Read the two native boundaries of each basic percept separately."""
+        """Read the two native boundaries of each basic percept separately,
+        each 0 or 1 (rule 55): the point holds the percept's parts, and the
+        percept's wholes hold the point. A boundary that does not hold is
+        witnessed against: the point lies outside it."""
         from IdentityRows import meet_ratios
         codes = self.lookup_rows(rows).to(points)
         lower = codes[:, :self.identity_width]
@@ -106,8 +173,9 @@ class BasicPercepts(nn.Module):
         part, _ = meet_ratios(points[None, ..., :self.identity_width].clamp_min(0), lower[:, None, None])
         whole, _ = meet_ratios(upper[:, None, None],
             points[None, ..., self.identity_width:self.width].clamp_min(0))
-        zero = torch.zeros_like(part)
-        return torch.stack((torch.stack((part, zero), -1), torch.stack((whole, zero), -1)))
+        tolerance = 1e-6
+        part, whole = (part >= 1 - tolerance).to(points), (whole >= 1 - tolerance).to(points)
+        return torch.stack((torch.stack((part, 1 - part), -1), torch.stack((whole, 1 - whole), -1)))
 
     @staticmethod
     def read_collection(boundaries, weights):
@@ -144,8 +212,6 @@ class BasicPercepts(nn.Module):
                 raise OverflowError('BasicPercepts capacity exhausted')
             self.index[key] = row
             self.occurrences[row] = parts, wholes
-            self.value_rows[row] = (min(parts) < -self.identity_width if members is None
-                                    else all(bool(self.value_rows[m]) for m in members))
             if members is not None:
                 self.conjunctions[row] = tuple(members)
             if self.pi.append(self.member_keys(row), against=self.against_keys(row)) != row:
@@ -186,14 +252,16 @@ class BasicPercepts(nn.Module):
         whole."""
         parts, wholes = self.occurrences[int(row)]
         ids = torch.tensor(parts, device=self.codes.device, dtype=torch.long)
-        identity = self.part_codes(ids).amax(0)
+        # A value's catalog is its place's (rule 55).
+        place = int(self.places[int(row)])
+        identity = self._boundary_codes(ids, whole=False, place=place).amax(0)
         if not self.property_width:
             return identity, identity.new_empty(0)
         if wholes:
             if self.whole is None and any(reference >= -self.identity_width for reference in wholes):
                 raise ValueError('basic percept property read requires its WholeSpace')
             ids = torch.tensor(wholes, device=self.codes.device, dtype=torch.long)
-            properties = self.whole_codes(ids).amin(0)
+            properties = self._boundary_codes(ids, whole=True, place=place).amin(0)
         else:
             properties = identity.new_ones(self.property_width)
         tightest = self._tightest(parts)
@@ -217,13 +285,11 @@ class BasicPercepts(nn.Module):
         stored forms nearest to holding it as a run (rule 51), where the for
         lane leaves room, ``min(a, 1 - for)``; a conjunction has none there.
         Wholes half: what its upper bound cuts away, one less its for lane
-        (rule 52). A value percept has nothing on it."""
+        (rule 52); for a value, the bins above it (rule 55)."""
         if not 0 <= int(row) < len(self.index):
             raise ValueError('unavailable basic percept reference')
         code = self.code(row)
         parts, _wholes = self.occurrences[int(row)]
-        if int(row) not in self.conjunctions and min(parts) < -self.identity_width:
-            return torch.zeros_like(code)
         held = code.new_zeros(self.identity_width)
         identity = getattr(self.native, 'identity', None)
         raw = None if int(row) in self.conjunctions else self._form_of(parts)
@@ -232,7 +298,32 @@ class BasicPercepts(nn.Module):
             if atoms:
                 bits = torch.stack([identity.atom_code(atom) for atom in atoms]).amax(0)
                 held = torch.minimum(bits.to(code), 1 - code[:self.identity_width].detach().clamp(0, 1))
+        # A conjunction over this percept is a strict whole of it like any
+        # other (rule 53): what its other members add tells against it.
+        holders = [members for whole, members in self.conjunctions.items()
+                   if int(row) in members and bool(self.promoted[whole])]
+        if holders:
+            added = torch.stack([self.code(member)[:self.identity_width] for members in holders
+                                 for member in members if member != int(row)]).amax(0)
+            held = torch.maximum(held, torch.minimum(added.to(code),
+                1 - code[:self.identity_width].detach().clamp(0, 1)))
         return torch.cat((held, 1 - code[self.identity_width:].clamp(0, 1)))
+
+    @torch.no_grad()
+    def follow(self, rows):
+        """Write again the stored against lane of ``rows``, whose holders may
+        have changed, and return each changed row's read pair before and
+        after, for the concepts' columns to follow (rule 55)."""
+        changed = {}
+        for row in map(int, rows):
+            if not bool(self.promoted[row]):
+                continue
+            before = self.read_codes([row])[0].clone()
+            self.against_codes[row].copy_(self.against(row))
+            after = self.read_codes([row])[0]
+            if not torch.equal(before, after):
+                changed[row] = before, after.clone()
+        return changed
 
     def against_keys(self, row):
         """A row's against entries in the first Pi: the parts that its
@@ -271,21 +362,16 @@ class BasicPercepts(nn.Module):
         """A percept's two lanes, ``[2, width]``: for, then against."""
         return torch.stack((self.code(row), self.against(row)))
 
-    def read_pair(self, lanes, values=None):
+    def read_pair(self, lanes):
         """What a concept reads of a percept, ``[..., 2, width]`` from its
         lanes ``[..., 2, width]``: first what tells for it, then what tells
         against it. In the parts half these are its two lanes. The wholes
         half is read on its complement (rule 54): what the upper bound cuts
         away tells for the percept, and nothing is read against it there.
-        A value percept (``values``) is read by its for lane until its
-        sorted table is built."""
+        A value percept is read the same way (rule 55)."""
         cut = lanes[..., 1, self.identity_width:]
         positive = torch.cat((lanes[..., 0, :self.identity_width], cut), -1)
         negative = torch.cat((lanes[..., 1, :self.identity_width], torch.zeros_like(cut)), -1)
-        if values is not None:
-            values = values.to(torch.bool)[..., None]
-            positive = torch.where(values, lanes[..., 0, :], positive)
-            negative = torch.where(values, torch.zeros_like(negative), negative)
         return torch.stack((positive, negative), -2)
 
     def read_codes(self, rows):
@@ -293,13 +379,14 @@ class BasicPercepts(nn.Module):
         rows = torch.as_tensor(rows, dtype=torch.long, device=self.codes.device)
         flat = rows.flatten()
         lanes = torch.stack((self.codes.index_select(0, flat), self.against_codes.index_select(0, flat)), -2)
-        return self.read_pair(lanes, self.value_rows.index_select(0, flat)).reshape(*rows.shape, 2, self.width)
+        return self.read_pair(lanes).reshape(*rows.shape, 2, self.width)
 
-    def read_vector(self, row):
-        """A concept's starting column for a member (rule 54): what tells for
-        it less what tells against it, from its live lanes."""
-        pair = self.read_pair(self.lanes(row), self.value_rows[int(row)])
-        return pair[0] - pair[1]
+    def column(self, row):
+        """A member's share of a concept's starting column (rule 54), from
+        its live lanes (``OrderZeroSigma.member_column``)."""
+        from OrderZero import OrderZeroSigma
+        positive, negative = self.read_pair(self.lanes(row))
+        return OrderZeroSigma.member_column(positive, negative)
 
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
@@ -415,7 +502,9 @@ class BasicPercepts(nn.Module):
             inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
                       & (spans[:, None, :, 1] <= spans[:, :, None, 1])
                       & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
-            lies = (happened[..., None, :, 0] * inside[None, :, None]).amax(-1)
+            lies = happened[..., None, :, 0] * inside[None, :, None]
+            # A reading with no event (a value alone, no word) holds no run.
+            lies = lies.amax(-1) if lies.shape[-1] else lies.sum(-1)
             value = self._row_values(members, happened, rows, groups, order, opposed)
             event = self._row_lanes(happened, run, rows, order, presence=lies)
             values, events = list(value), list(event)
@@ -489,7 +578,9 @@ class BasicPercepts(nn.Module):
             index = torch.tensor([w + [0] * (width - len(w)) for w in lists], dtype=torch.long, device=device)
             mask = torch.tensor([[True] * len(w) + [False] * (width - len(w)) for w in lists], device=device)
             lanes = happened.index_select(0, index.flatten()).reshape(len(rows), width, *happened.shape[1:])
-            lanes = (at_run[:, None, ..., None] * lanes).amax(-2)
+            lanes = at_run[:, None, ..., None] * lanes
+            # With no event in the reading there is nowhere for the run to lie.
+            lanes = lanes.amax(-2) if lanes.shape[-2] else lanes.sum(-2)
             return lanes, mask.reshape(len(rows), width, *([1] * (lanes.ndim - 2)))
 
         lanes, mask = where_run_lies([[position[key] for key in group[1:]] for group in groups])
@@ -588,7 +679,6 @@ class BasicPercepts(nn.Module):
         self.occurrences[:] = [None] * self.capacity
         self.index = {}
         self.pi.clear()
-        self.value_rows.zero_()
         self._pi_stamp = None
         self.conjunctions = {}
         conjunctions = dict(state.get('conjunctions', ()))

@@ -87,6 +87,12 @@ def test_level_percepts_have_native_bounds_and_distinct_places():
         parts, wholes = basic.occurrences[percept]
         assert parts and wholes
         assert basic.places[percept] == model.where_registry.slices['numeric'][0] + axis
-        torch.testing.assert_close(basic.part_codes(parts).amax(), feeling(torch.tensor(1.)))
-        torch.testing.assert_close(basic.whole_codes(wholes).amax(), feeling(torch.tensor(1.)))
+        # Rule 55: in each half, the bins of its place at or below the value;
+        # each place is a table of its own.
+        felt, place = feeling(torch.tensor(1.)), int(basic.places[percept])
+        torch.testing.assert_close(basic.code(percept), torch.cat((
+            basic.value_code(felt, basic.identity_width, place),
+            basic.value_code(felt, basic.property_width, place))))
+        torch.testing.assert_close(basic.felt([percept])[0], felt.to(basic.value_codes))
+    assert not torch.equal(basic.code(percepts[0]), basic.code(percepts[1]))
     assert basic.width == model.perceptualSpace.nWhat

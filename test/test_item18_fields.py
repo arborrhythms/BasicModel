@@ -50,7 +50,9 @@ def test_numeric_scale_order_and_level_code():
     rows = [basic.perceive_value(value, place=0) for value in felt[1:]]
     codes = basic.lookup_rows(rows)
     assert len(basic.index) == len(rows)
-    assert codes[:,:3].count_nonzero() == 0 and codes[:,4:7].count_nonzero() == 0
+    # Rule 55: each half holds the bins of its place at or below the value.
+    for row, value, code in zip(rows, felt[1:], codes):
+        torch.testing.assert_close(code, torch.cat((basic.value_code(value, 4, 0), basic.value_code(value, 4, 0))))
     assert bool(Ops.partOf(codes[0],codes[1]))
     assert not bool(Ops.partOf(codes[1],codes[0]))
 

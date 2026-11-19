@@ -102,8 +102,12 @@ class NumericPercepts:
             raise ValueError('numeric reconstruction requires its field\'s level percepts')
         basic = owner.basic_percepts
         valid = field.percepts >= 0
-        codes = basic.lookup_rows(field.percepts, valid=valid).to(field.evidence)
-        values = codes[..., basic.identity_width - 1]
+        # The way back reads each level percept's value from the table of
+        # values; its code holds only the bin (rule 55).
+        values = torch.zeros(field.percepts.shape, device=field.evidence.device, dtype=basic.value_codes.dtype)
+        if bool(valid.any()):
+            values[valid] = basic.felt(field.percepts[valid].cpu()).to(values)
+        values = values.to(field.evidence)
         present = torch.stack([field.evidence[field.concept_ids == owner.concept_id_at_row(row), :, axis, 0].amax(0) > 0
                                for axis, row in enumerate(self.rows)], -1)
         values = torch.where(present, values, 0.)

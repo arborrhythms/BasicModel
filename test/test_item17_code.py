@@ -1,5 +1,5 @@
 """The percept's code: two halves of 64, each on two lanes (sigma-pi §21,
-rules 50 to 54; certificates 46 to 48).
+rules 50 to 55; certificates 46 to 49).
 
 A form's code is its parts half and its wholes half on a for lane and an
 against lane, every value within 0 to 1. The parts half's for lane is the
@@ -278,8 +278,7 @@ def test_48_a_concept_reads_by_difference():
     # reach holds every part of archer (its letters, once each) but not the
     # run; archer and reach are told apart by a part reach alone holds.
     identity, basic, book, rows = coded(words)
-    vector = {w: basic.read_vector(rows[w]) for w in words}
-    column = {w: v / v.square().sum() for w, v in vector.items()}
+    column = {w: basic.column(rows[w]) for w in words}
     def reads(concept, form):
         lanes = _read_form(basic, book, form, [rows[w] for w in words])
         x = combine(lanes[:, None], basic.read_codes([rows[w] for w in words]))[0]
@@ -371,3 +370,69 @@ def test_48_the_lessons_concepts_told_apart():
     finally:
         model.End()
         patch.undo()
+
+
+# Certificate 49: the scalars (rule 55).
+
+def test_49_collections_of_values_are_told_apart():
+    """Collections at 1, 1 and 2 (alpha, beta, gamma) are told apart at the
+    inputs 1, 2 and 4, each by its boundaries, 0 or 1; a value that arrives
+    between two known ones lies above the one and below the other, and
+    inside a collection over the two. A value's code is the bins of its
+    place at or below it, in both halves; the way back reads the table."""
+    from BasicPercepts import BasicPercepts
+    from NumericPercepts import feeling, number
+    basic = BasicPercepts(None, 64, 64, 32)
+    basic.bind(None)
+    place = 7
+    felt = lambda v: feeling(torch.tensor(float(v))).to(basic.value_codes)
+    percept = {v: basic.perceive_value(felt(v), place=place) for v in (1., 2., 4., 1.5)}
+    collections = dict(alpha=[percept[1.]], beta=[percept[1.]], gamma=[percept[2.]],
+                       between=[percept[1.], percept[2.]])
+    def point(v):
+        return torch.cat((basic.value_code(felt(v), 64, place), basic.value_code(felt(v), 64, place)))[None, None]
+    def read(v):
+        return {name: basic.read_collection(basic.read_points(point(v), rows),
+                                            torch.ones(len(rows)))[0, 0].tolist()
+                for name, rows in collections.items()}
+    readings = {v: read(v) for v in (1., 2., 4., 1.5)}
+    print('collections read', readings)
+    held = lambda v: {name for name, (f, a) in readings[v].items() if f > a}
+    assert held(1.) == {'alpha', 'beta', 'between'}
+    assert held(2.) == {'gamma', 'between'}
+    assert held(4.) == set()
+    assert held(1.5) == {'between'}
+    # Each value's code: a cut of its place's bins, the same in both halves;
+    # one value's code lies inside a greater one's.
+    codes = {v: basic.code(r) for v, r in percept.items()}
+    for v, code in codes.items():
+        assert basic.bin_of(code, place) == int(BasicPercepts.value_bin(felt(v), 64))
+        torch.testing.assert_close(code[:64], code[64:])
+    assert bool((codes[1.] <= codes[1.5]).all() and (codes[1.5] <= codes[2.]).all())
+    # The way back: the table of values holds each exactly.
+    for v, r in percept.items():
+        assert float(number(basic.felt([r])[0])) == pytest.approx(v, rel=1e-5)
+    # What a concept reads of the values by its column (rule 8b): alpha's
+    # reading of 1.5 lies between its readings of 1 and of 2.
+    from OrderZero import OrderZeroSigma
+    pairs = {v: basic.read_pair(basic.lanes(r)) for v, r in percept.items()}
+    column = {name: sum(basic.column(r) for r in rows) for name, rows in collections.items()}
+    sigma = {v: {name: round(float(torch.tanh((pairs[v][0] - pairs[v][1]) @ u)), 3)
+                 for name, u in column.items()} for v in pairs}
+    print('by the column', sigma)
+    assert sigma[2.]['alpha'] <= sigma[1.5]['alpha'] <= sigma[1.]['alpha']
+    assert sigma[1.]['gamma'] <= sigma[1.5]['gamma'] <= sigma[2.]['gamma']
+
+
+def test_49_the_numeric_certificate_keeps_its_bar():
+    """The numeric XOR's two axes read apart, each place being a table of its
+    own, and the certificate's bar holds (``numeric_xor.certificate``)."""
+    from numeric_xor import certificate
+    model, prediction, error = certificate()
+    owner = model._concept_owner()
+    values = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]]).unsqueeze(-1)
+    field = model.numeric_percepts.read(values)
+    axes = [owner.concept_id_at_row(row) for row in model.numeric_percepts.rows]
+    features = [field.evidence[field.concept_ids == cid][0].amax(1).tolist() for cid in axes]
+    print(dict(fx=features[0], fy=features[1], mse=error))
+    assert features[0] != features[1]

@@ -5,28 +5,37 @@ from NumericPercepts import feeling, number
 from Understanding import ConceptualField
 
 
+def _felt(owner, value):
+    point = owner.similarity_codebook.W
+    dtype = torch.float32 if point.device.type == 'mps' else torch.float64
+    return feeling(torch.tensor(float(value), device=point.device, dtype=dtype))
+
+
 def code(owner, value):
-    """The felt value in the part and whole towers' own scalar coordinates."""
+    """A value's code (rule 55): in each half the bins of the felt value at
+    or below it. Zero, felt as nothing, has no code."""
     basic = owner.basic_percepts
     point = owner.similarity_codebook.W.new_zeros(owner.similarity_codebook.W.shape[-1])
-    dtype = torch.float32 if point.device.type == 'mps' else torch.float64
-    felt = feeling(torch.tensor(float(value), device=point.device, dtype=dtype)).to(point)
-    point[basic.identity_width-1] = felt
-    point[basic.width-1] = felt
+    felt = _felt(owner, value)
+    if float(felt) > 0:
+        place = owner.where_registry.slices['scalar'][0]
+        point[:basic.identity_width] = basic.value_code(felt, basic.identity_width, place)
+        point[basic.identity_width:basic.width] = basic.value_code(felt, basic.property_width, place)
     return point
 
 
 def bare(owner, points):
+    """Points that are a value's code and nothing else."""
     basic = owner.basic_percepts
-    a, b = basic.identity_width-1, basic.width-1
-    return (points[..., a] > 0) & (points[..., a] == points[..., b]) & (points.ne(0).sum(-1) == 2)
+    place = owner.where_registry.slices['scalar'][0]
+    return (basic.bin_of(points[..., :basic.width], place) >= 0) & ~points[..., basic.width:].ne(0).any(-1)
 
 
 def perceive(owner, value):
-    point = code(owner, value)
-    if not bool(point.any()):
+    felt = _felt(owner, value)
+    if not float(felt) > 0:
         return None
-    return owner.basic_percepts.perceive_value(point[owner.basic_percepts.identity_width-1],
+    return owner.basic_percepts.perceive_value(felt.to(owner.basic_percepts.value_codes),
         place=owner.where_registry.slices['scalar'][0])
 
 
@@ -59,52 +68,51 @@ def commit(model, sid, active):
 
 
 def reading(owner, points):
-    """One scalar-place reading through the text modality's concept reader."""
-    from PerceptField import PerceptField
-    basic = owner.basic_percepts
-    matrix = owner._concept_allocator.layer(0).features
-    rows = sorted({col // 2 for col in matrix._cols})
+    """One scalar-place reading: each percept collection read at the points
+    by its boundaries, the reader that ``FieldProjection.stimulate`` uses
+    (``PerceptCollections.read``)."""
+    from PerceptCollections import read
     B, E = points.shape[:2]
-    boundaries = basic.read_points(points, rows)
-    native = torch.tensor([min(basic.occurrences[row][0]) < -basic.identity_width for row in rows],
-                          dtype=torch.bool, device=points.device)
-    boundaries = boundaries * native[None, :, None, None, None]
-    values = torch.minimum(boundaries[0], boundaries[1])
+    collections = read(owner, points)
+    rows = sorted(collections)
+    ids = torch.tensor([owner.concept_id_at_row(row) for row in rows], device=points.device, dtype=torch.long)
+    evidence = (torch.stack([collections[row] for row in rows]) if rows
+                else points.new_zeros(0, B, E, 2))
     where = owner.where_registry.intervals('scalar', torch.zeros(B, E, device=points.device, dtype=torch.long))
-    when = torch.zeros_like(where)
-    perception = PerceptField(tuple(('bp', row) for row in rows), values,
-        values[..., None, :], where, where, when, boundaries=boundaries)
-    names = ('_percept_field', '_cs_field_where', '_cs_field_when', '_cs_field_caps',
-             '_cs_field_rows', '_cs_field_concept_ids', '_cs_order0_raw')
-    previous = {name: owner.__dict__.get(name) for name in names}
-    try:
-        evidence = owner.cs_read_percept_field(perception)
-        return ConceptualField(owner._cs_field_concept_ids, evidence, where, when, None)
-    finally:
-        for name, value in previous.items():
-            if value is None:
-                owner.__dict__.pop(name, None)
-            else:
-                object.__setattr__(owner, name, value)
+    return ConceptualField(ids, evidence, where, torch.zeros_like(where), None)
+
+
+def holds(evidence):
+    """A collection holds a value where it reads it for more than against:
+    the boundary is 0 or 1 (rule 55), so no threshold is needed."""
+    return evidence[..., 0] > evidence[..., 1]
 
 
 def reconstruct(owner, *, word=None, value=None):
-    from PerceptCollections import objects, code as concept_code
+    from PerceptCollections import objects, definitions
     if value is None:
-        known = tuple(cid for cid in objects(owner, word) if owner._csw_row_of(cid) in concepts(owner))
+        collections = concepts(owner)
+        known = tuple(cid for cid in objects(owner, word) if owner._csw_row_of(cid) in collections)
         if len(known) != 1:
             return None
-        point = concept_code(owner, owner._csw_row_of(known[0]))
-        return float(number(point[owner.basic_percepts.identity_width-1]))
+        # The way back: a collection's number is its lower bound, the least
+        # of its members' values, read from the table of values.
+        members = [percept for percept, _ in definitions(owner)[owner._csw_row_of(known[0])]]
+        return float(number(owner.basic_percepts.felt(members).amin()))
     if value <= 0:
         return ()
     field = reading(owner, code(owner, value)[None, None])
-    ids = field.concept_ids
-    ids = ids[:, 0] if ids.ndim == 2 else ids
     collections = concepts(owner)
-    return tuple(form for cid, evidence in zip(ids.tolist(), field.evidence[:, 0, 0, 0])
-                 if owner._csw_row_of(cid) in collections and float(evidence.detach()) >= 1.
+    return tuple(form for cid, evidence in zip(field.concept_ids.tolist(), field.evidence[:, 0, 0])
+                 if owner._csw_row_of(cid) in collections and bool(holds(evidence.detach()))
                  and (form := owner.interpret.lexical_form(cid)) is not None)
+
+
+def _scalar_readings(owner, field, batch):
+    """The readings of ``field`` at the scalar place."""
+    start, end = owner.where_registry.slices['scalar']
+    where = field.where[batch]
+    return (where[..., 0] >= start) & (where[..., 1] <= end) & (where[..., 1] > where[..., 0])
 
 
 def decode(owner, field, percepts=()):
@@ -112,18 +120,19 @@ def decode(owner, field, percepts=()):
     result = []
     for batch in range(field.evidence.shape[1]):
         ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, batch]
-        evidence = field.evidence[:, batch, :, 0].amax(-1)
-        objects = [cid for cid, value in zip(ids.tolist(), evidence)
-                   if owner._csw_row_of(cid) in collections and float(value.detach()) >= 1.]
+        lanes = field.evidence[:, batch].detach()
+        scalar = _scalar_readings(owner, field, batch).to(lanes.device)
+        held = (holds(lanes) & scalar).any(-1)
+        objects = [cid for cid, value in zip(ids.tolist(), held)
+                   if owner._csw_row_of(cid) in collections and bool(value)]
         words = tuple(form for cid in objects if (form := owner.interpret.lexical_form(cid)) is not None)
         percept = percepts[batch] if batch < len(percepts) else None
         if percept is not None:
-            felt = owner.basic_percepts.code(percept)[owner.basic_percepts.identity_width-1]
-            value = float(number(felt))
+            value = float(number(owner.basic_percepts.felt([percept])[0]))
         else:
             named = [owner.interpret.reverse(cid) for cid in objects]
             if not named:
-                named = [cid for cid, value in zip(ids.tolist(), evidence) if float(value.detach()) > 0
+                named = [cid for cid, value in zip(ids.tolist(), lanes[..., 0].amax(-1)) if float(value) > 0
                          and cid in owner.definitions.word_ids]
             candidates = [value for word in named if (value := reconstruct(owner, word=word)) is not None]
             value = candidates[0] if len(set(candidates)) == 1 else None

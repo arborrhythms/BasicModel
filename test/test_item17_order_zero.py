@@ -313,9 +313,8 @@ def test_square_a_new_concept_reads_only_its_own_row(lesson):
         test_no_row_on_a_first_reading(lesson)
     word, row, c_row = lesson['nominated']
     column = owner.order_zero.weight[:, c_row].detach()
-    # Rule 54: what tells for the row less what tells against it.
-    code = basic.read_vector(row)
-    torch.testing.assert_close(column[:basic.width], code / code.square().sum())
+    # Rule 54: the member's share, from what tells for and against it.
+    torch.testing.assert_close(column[:basic.width], basic.column(row))
     # Its own row reads one before the squash.
     x = combine(torch.tensor([[[1., 0.]]]), basic.read_codes([row]))
     torch.testing.assert_close(float(x[0, 0] @ column[:basic.width]), 1., rtol=0, atol=1e-5)

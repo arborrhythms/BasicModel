@@ -14861,7 +14861,7 @@ class ConceptualSpace(Space):
         rows = [key[1] for key in perception.keys]
         promoted = basic.promoted[:len(basic.index)]
         codes = (torch.stack([basic.read_codes(row) if bool(promoted[row]) else
-                              basic.read_pair(basic.lanes(row), basic.value_rows[row])
+                              basic.read_pair(basic.lanes(row))
                               for row in rows]) if rows else basic.codes.new_zeros(0, 2, basic.width))
         model = getattr(self, '_model', None)
         registry = getattr(model, 'where_registry', None)
@@ -14935,12 +14935,37 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def _start_order_zero_column(self, row, percept, sign):
-        """A member's vector joins the concept's column (rule 8b):
-        ``sign * v / |v|^2`` is added, the Not of a member subtracted."""
+        """A member joins the concept's column (rule 8b, rule 54):
+        ``sign * (P / |P|^2 - N / |N|^2)`` from what tells for it and what
+        tells against it is added, the Not of a member subtracted."""
         sigma = self.install_order_zero()
         if row >= sigma.nOutput:
             raise ValueError('an order-zero concept lies outside the order-zero Sigma')
-        sigma.add_member(row, self.basic_percepts.read_vector(percept), sign)
+        positive, negative = self.basic_percepts.read_pair(self.basic_percepts.lanes(int(percept)))
+        sigma.add_member(row, positive, sign, against=negative)
+
+    @torch.no_grad()
+    def follow_members(self, changed):
+        """A concept's column follows its members' codes (rule 55): where a
+        member's read pair changed (``BasicPercepts.follow``), its share is
+        taken out of every column started from it and its new share put in,
+        so that what was learned of the rest of the column stays."""
+        from OrderZero import OrderZeroSigma
+        if not changed:
+            return
+        sigma = self.install_order_zero()
+        record = _concept_alloc_of(self).layer(0).features
+        weights = record.values.detach() if record.values is not None else None
+        for (row, col), index in record._index.items():
+            member = int(col) // 2
+            if member not in changed or (weights is not None and float(weights[index]) == 0.):
+                continue
+            if row >= sigma.nOutput:
+                continue
+            (p0, n0), (p1, n1) = changed[member]
+            sign = -1. if int(col) % 2 else 1.
+            delta = OrderZeroSigma.member_column(p1, n1) - OrderZeroSigma.member_column(p0, n0)
+            sigma.weight[:sigma.content_width, row] += sign * delta.to(sigma.weight)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``."""

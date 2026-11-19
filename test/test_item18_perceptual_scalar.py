@@ -6,7 +6,6 @@ import torch
 from Models import BaseModel
 from test_item18_finish import named_scalar_model, scalar_answer
 from nomination_fixtures import recurrent_interpretation
-from basic_fixtures import order_zero_expected
 
 _load_weights = BaseModel.load_weights
 
@@ -56,8 +55,14 @@ def test_scalar_object_collects_value_bounded_basic_percepts(named_scalar_model)
     for percept in percepts:
         parts, wholes = basic.occurrences[percept]
         assert parts and wholes
-        assert basic.part_codes(parts).amax().item() == pytest.approx(value.item())
-        assert basic.whole_codes(wholes).amax().item() == pytest.approx(value.item())
+        # Rule 55: in each half, the bins of its place at or below the value.
+        place = int(basic.places[percept])
+        code = basic.code(percept)
+        torch.testing.assert_close(code[:basic.identity_width],
+                                   basic.value_code(value, basic.identity_width, place))
+        torch.testing.assert_close(code[basic.identity_width:],
+                                   basic.value_code(value, basic.property_width, place))
+        assert basic.felt([percept]).item() == pytest.approx(value.item())
 
 
 def test_intervals_generalize_their_percepts_and_have_distinct_codes(named_scalar_model):
@@ -94,31 +99,24 @@ def test_point_and_native_read_share_the_collection_boundaries(named_scalar_mode
     word = owner.interpret.word_for_form('alpha')
     row = store.append_idea(code(owner, 3.))
     observe(owner, word, 3., store.occurrence_of(row), stream=0)
-    from NumericPercepts import feeling
-    low, high = feeling(torch.tensor([1., 3.]))
     for value in (.5, 1., 2., 3., 4.):
         point = code(owner, value)[None, None]
         native, projected = reading(owner, point), stimulate(owner, point)
         actual = [field.evidence[field.concept_ids == objects['alpha'], 0, 0]
                   for field in (native, projected)]
         torch.testing.assert_close(*actual)
-        felt = feeling(torch.tensor(value))
-        expected = min(1., float(felt/low), float(high/felt))
+        # Rule 55: the boundary is 0 or 1. The collection over [1, 3] holds
+        # a value inside it and is witnessed against outside it.
+        expected = [1., 0.] if 1. <= value <= 3. else [0., 1.]
         # The collection's boundaries are read at its basic percepts: each
         # member's two boundaries at the point, generalized, then required.
         basic = owner.basic_percepts
         members = owner.concept_percepts(owner._csw_row_of(objects['alpha']))
         bounds = basic.read_points(point, members)
         collection = basic.read_collection(bounds, torch.ones(len(members)).to(bounds))
-        torch.testing.assert_close(collection[0, 0].to(torch.float32), torch.tensor([expected, 0.]))
-        # The concept is one signed number read by its column from the
-        # value percepts present, each at the least of its two boundaries.
-        rows = sorted({col // 2 for col in owner._concept_allocator.layer(0).features._cols
-                       if basic.is_value(col // 2)})
-        values = basic.read_points(point, rows).amin(0)[:, 0, 0]
-        presence = {row: tuple(map(float, value)) for row, value in zip(rows, values)}
-        _, lanes = order_zero_expected(owner, owner._csw_row_of(objects['alpha']), presence)
-        torch.testing.assert_close(actual[0], lanes[None].to(actual[0]), atol=1e-5, rtol=1e-5)
+        torch.testing.assert_close(collection[0, 0].to(torch.float32), torch.tensor(expected))
+        # The one reader is that read of the collection's boundaries.
+        torch.testing.assert_close(actual[0], collection[0, 0][None].to(actual[0]))
 
 
 def test_value_percepts_use_the_basic_checkpoint_and_shared_retirement(named_scalar_model):

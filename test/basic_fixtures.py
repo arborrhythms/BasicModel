@@ -41,7 +41,7 @@ def order_zero_expected(owner, row, presence):
     gaps = [torch.ones(sigma.content_width, dtype=torch.float64) for _ in range(2)]
     for percept, values in presence.items():
         pair = (basic.read_codes([percept])[0] if bool(basic.promoted[percept])
-                else basic.read_pair(basic.lanes(percept), basic.value_rows[percept])).detach().cpu().double()
+                else basic.read_pair(basic.lanes(percept))).detach().cpu().double()
         net = float(values[0]) - float(values[1])
         toward, away = (pair[0], pair[1]) if net >= 0 else (pair[1], pair[0])
         gaps[0] = gaps[0] * (1. - toward).clamp_min(1e-6) ** abs(net)
