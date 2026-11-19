@@ -11639,3 +11639,383 @@ The 5 failures:
 | `test_definition_integrity` ×1 | defect 4, not mine |
 
 `test_item20_round6_gradients::test_knowing_deposit_keeps_the_selected_intuition_weights_live` passes in this run.
+
+### 23.3b The balanced code, tried in tests only: return and review (2026-11-19)
+
+The text is §22.3b, as amended by §19.70 and §19.71 while it ran. The implementer's return is below as written. Its commits are `7581cc20d7` and `fefd8c079b`, two new test files and nothing else; local, not pushed.
+
+**Review** (Claude). Read: the return, and the trial's coder and tests where a claim rests on them. Run here: `test/test_item17_code_trial.py`, 15 passed in 89 s. The stand-in is checked against the source inside the tests (the same rows, shared rows and added parts as `WordIdentity` on 3,000 words; the lesson model's parts half).
+
+*One claim corrected.* "All 19,821 signed codes are distinct at every width" was counted with the coder that also makes wholes, under which the unsigned codes are distinct already. With parts only (rule 43), counted here:
+
+| Parts and wholes | Distinct of 19,821, one lane | Distinct, two lanes |
+| --- | ---: | ---: |
+| 64 and 64 | 19,761 | 19,786 |
+| 96 and 96 | 19,816 | 19,818 |
+
+So at 64 the against lane tells 25 more words apart and leaves 35 sharing a code. They still need a step.
+
+*What the trial decides, and what it leaves.*
+
+1. **64 and 64 stands** (Alec, §19.70). Nothing measured proves a need for more once the code has its against lane: a part's concept reads a form that truly holds it at .30 and one that holds it by accident at .13, where on one lane both read 1.0.
+2. **The against lane works as Alec said it would** (§19.70, "scored by similarity and not difference"). On the lesson 7 of 8 concepts are told apart, against 6 at every width on one lane. `is` no longer reads `this` at one. The tie left is `that` and `What`: the letters of `that` all lie in `What`, and neither holds the other as a run.
+3. **The Pi's against entries are joined by union** (§19.71, point 1): the product fired on 52 of the 852 pairs where a form holds another as a run, the union on all 852. Membership is read by the set of parts found, since by code the union also fires on 4,384 accidental pairs. A short form held by many words gets up to 235 against entries (mean 2.95), so they must be bounded; how is not measured.
+4. **"Every other part of the catalog is evidence against" is not taken as a code** (§19.70). It tells all 8 of the lesson apart, but it fills the parts half, a part and its whole then read each other equally, and the order is lost.
+5. **Claude's "all ones less" for the wholes half (§19.69, point 2) is dropped.** It is nearly the same in every word, gives 60 to 86% of every code and of every centroid, raises every concept's reading of another word from .46 to .92, and marks the members of a class by missing ones, so that they rank below non-members. Alec's form (§19.70, §19.71) is taken: ones on the for lane at the coordinates of the wholes that apply, ones on the against lane at those witnessed not to apply. *This makes the wholes half all zeros with no whole,* where rule 5 has a code "at or below each whole's". Put to Alec.
+6. **The against lane of the wholes half must be bounded** to wholes of the same kind as those that apply: taken over every whole it fills 55.6 of 64 coordinates.
+7. **A whole made over bytes to tell two words apart is dropped** (§19.69, point 4). It ended every shared code, but one such whole holds of 122 forms on average (up to 469) and changes 3,817 codes. The 35 words left get rule 43's next part (`ry` for `archer` and `archery`), unless Alec wants a whole that holds of a form as such.
+8. **The scalars work by Alec's sorted table** (§19.70) and by no form of an intensity written at its own coordinates. With the table, a collection at 1 reads .76 at 1 and 0 at 2. Two conditions: the entries take coordinates by bins of the felt value in 64, and a concept's column follows its member's code as the table grows, since a column frozen when the table held one value reads every larger value fully. The boundary is 0 or 1; graded by distance it tells the collections apart half as well (§19.71, point 2, stands for a property that is itself a degree).
+9. **The numeric certificate's two axes** read alike as built (condition number 7e16) and apart with the against lane (8.9).
+10. **The learned wholes half** (§19.70) is not answered by the toy: the classes took coordinates of their own unprompted and the union form ordered a member at or above its class, but a class inside another came out unordered, and seven classes in 64 coordinates is too easy.
+
+*Storage.* Two lanes of 128 are 256 numbers a code, against 352 now. For a form both lanes hold only 0 and 1.
+
+#### Return of the trial's implementer
+
+Commits, local on `main`, none pushed:
+
+- `7581cc20d7`: the trial.
+- `fefd8c079b`: §19.71, the first Pi with against entries and the graded table.
+
+Both add only two new files: `test/code_trial.py` and `test/test_item17_code_trial.py`, now 15 tests. I edited nothing in `bin/` and no existing file.
+
+Run: `env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest test/test_item17_code_trial.py -q -s -p no:cacheprovider`. All 15 pass at HEAD in 80 s. The lesson fixture takes about 30 s of that. The slowest other test takes 19 s.
+
+**The lesson fixture was broken for a while by another commit.** During my run the lesson model could not be built at `a7e317041f` (another implementer's commit): `aligned VQ active-prefix mismatch: []` at `Models.py:3053`, and `test_item17_order_zero.py`'s `_read_lesson` failed the same way. I took the lesson numbers on an export of `41a5bb4aed` in the scratchpad. On the final run at HEAD, with the other implementer's working tree as it was, the lesson builds and all 15 tests pass.
+
+**Storage (§19.71, point 1).** The signed code is held as two unsigned lanes, for and against, each from 0 to 1, and a concept reads the for vector less the against vector. Alec's "-1" is a 1 on the against lane. The trial computes for less against directly, which gives the same numbers as the two lanes.
+
+**What I built**
+
+- **A stand-in for `WordIdentity`** (`code_trial.Coder`). It keeps its codes as integers, one bit per coordinate, so the 19,821 words are coded in under a second per layout. It uses the source's own `bit_stream`, `distinguishing_run`, byte ranges and `combine`. It follows the same `_settle`/`_separate` steps: a new part where the two forms' parts are the same, then more ones for an added part, then a shared row.
+  - **Check against the source (asserted):** on the first 3,000 words it gives every form the same row as `WordIdentity`, the same 23 shared rows and the same 77 added parts.
+  - **On the lesson (asserted):** its parts half equals `basic.codes[:, :96]` of the lesson model.
+- **The layouts tried:**
+  - *As built:* 96 + 256. Forms are compared on the parts half only.
+  - *N + N "part only":* P1 and P2. Both halves are compared.
+  - *N + N "part or whole":* P1, P2 and P4.
+  - The widths are N = 64, 96 and 128.
+- **The signed code (P6):**
+  - *Parts half:* +1 at the coordinates of the form's own parts. -1 at the coordinates of the parts that its holders add (a holder is a stored form that contains it as a run). 0 elsewhere. Where a coordinate would be both, +1 stands, and those cases are counted.
+  - *Wholes half:* +1 at the coordinates of the wholes that apply, -1 at those of the wholes that do not.
+  - *Broad variant:* -1 at the coordinates of every catalog part the form does not hold.
+  - *Reading:* a concept's column is the signed code over its squared length. It reads the for lane less the against lane.
+- **The scalar codes:**
+  - P3: the felt value written at the coordinates of its kind, read alone or through P5's lanes on the row.
+  - Alec's sorted table of values. Each entry is given coordinates in one of three ways: one coordinate each, a bin of the felt value in 64, or 3 coordinates drawn from the value's name.
+- **The centroid metrics** (point 4), **the numeric XOR's two axes**, and **P7** (a wholes half learned under weights of zero or above).
+- **Seeds** are drawn from the system and printed. These numbers are from one run. The seeds were 4115849462 (point 2), 81041814 (centroids) and 3650077308 (P7).
+- **Asserted** only what holds by construction or checks the stand-in:
+  - a code is at or above its parts' codes, and at or below its wholes' codes, in both layouts;
+  - every whole is at or below the wholes it lies in;
+  - under P6, the for lane of a part's parts half is at or below its holder's;
+  - the stand-in equals the source.
+
+**1. The dictionary (19,821 words; a sample of 496, every 40th word, against all)**
+
+The coordinator's parts-half numbers are reproduced: 63 shared rows and 5,937 accidents at 64; 5 and 719 at 96; 4 and 613 at 128.
+
+| Layout | Words sharing a code | Parts made | Ones raised on a part | Wholes made | Collision events | Of them, byte sets differ / same | Ones in parts half (least/mean/greatest) | Ones in wholes half |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| As built, 96+256 | 63 | 219 | 76 | 0 | 554 | 296 / 258 | 5 / 31.5 / 51 | 52 (every word) |
+| 64+64, part only | 63 | 219 | 76 | 0 | 554 | 296 / 258 | 5 / 31.5 / 51 | 58 (every word) |
+| **64+64, part or whole** | **0** | 218 | 41 | **105** | 357 | 105 / 252 | 5 / 29.7 / 47 | 1 / 56.6 / 58 |
+| 96+96, part only | 5 | 218 | 23 | 0 | 260 | 24 / 236 | 6 / 33.0 / 56 | 90 |
+| 96+96, part or whole | 0 | 218 | 22 | 16 | 252 | 16 / 236 | 6 / 32.9 / 56 | 55 / 89.8 / 90 |
+| 128+128, part only | 4 | 218 | 5 | 0 | 255 | 34 / 221 | 5 / 32.4 / 55 | 122 |
+| 128+128, part or whole | 0 | 218 | 4 | 19 | 240 | 19 / 221 | 5 / 32.4 / 55 | 74 / 121.6 / 122 |
+
+- **Collision events count re-settles,** so one pair can be counted more than once.
+- **As built, every event that ended in a shared row had different byte sets.** There were 266 such events (`archer`/`archery`). A whole over bytes could have told every one of them apart. No pair with the same bytes ended up shared, because rule 43's part always tells those apart.
+
+**Codes at or below another's** (sample against all):
+
+| Layout | Parts half: true / accident | Wholes half, strictly below: true / accident (distinct wholes halves) | Whole code: true / accident |
+|---|---:|---:|---:|
+| As built | 2,311 / 5,937 | 0 / 0 (1) | 2,311 / 5,937 |
+| 64+64, part only | 2,311 / 5,937 | 0 / 0 (1) | 2,311 / 5,937 |
+| 64+64, part or whole | 2,312 / 6,127 | 1,519,194 / **5,623** (637) | 2,312 / 5,976 |
+| 96+96, part only | 2,312 / 719 | 0 / 0 (1) | 2,312 / 719 |
+| 96+96, part or whole | 2,312 / 719 | 361,314 / 0 (62) | 2,312 / 708 |
+| 128+128, part only | 2,312 / 613 | 0 / 0 (1) | 2,312 / 613 |
+| 128+128, part or whole | 2,312 / 614 | 753,974 / 0 (70) | 2,312 / 606 |
+
+**One whole made over bytes changes the code of many forms.** It holds of every form whose bytes it covers:
+
+| Width | Forms under each made whole: mean | Greatest | Forms in at least one made whole |
+|---|---:|---:|---:|
+| 64 | 122.5 | 469 | 3,817 |
+| 96 | 83.6 | 351 | 864 |
+| 128 | 145.8 | 661 | 1,568 |
+
+**2. The wholes alone (P2: each whole has 3 coordinates of its own and carries those of the wholes it lies in)**
+
+The synthetic wholes are the declared nine, then each new whole is a random half of an earlier whole's bytes (seed 4115849462).
+
+| Width | Wholes | True pairs (at or below) | Not ordered | Accidents / pairs | Codes shared (sets of the same bytes) |
+|---|---:|---:|---:|---:|---:|
+| 64 | 9 | 4 | 0 | 0 / 72 | 1 (1: letter = word) |
+| 64 | 50 | 113 | 0 | 18 / 2,450 | 5 (4) |
+| 64 | 200 | 911 | 0 | 182 / 39,800 | 17 (15) |
+| 96 | 9 / 50 / 200 | 4 / 113 / 911 | 0 | 0 / 0 / 17 | 1 / 4 / 15 |
+| 128 | 9 / 50 / 200 | 4 / 113 / 911 | 0 | 0 / 0 / 15 | 1 / 4 / 15 |
+
+- **The order holds by construction.** At 64:
+  - capital lies in letter and word, and has 9 coordinates removed;
+  - letter and word lie in each other and have one code;
+  - the other six have 3 coordinates each.
+- **The wholes half as an address** (§19.70, point 4). The address is the mask of the wholes removed, packed and looked up in a dictionary. That is one probe, as a form is found by its set of parts. It is exact while no two sets of wholes fold to one mask:
+
+  | Width | Wholes | Distinct sets of wholes | Sets sharing a mask |
+  |---|---:|---:|---:|
+  | 64 | 114 | 638 | 1 |
+  | 96 | 25 | 62 | 0 |
+  | 128 | 28 | 70 | 0 |
+
+- **Wholes as a codebook.** A whole is a row of a table defined by where it cuts the values: a set of bytes for characters, a number for a feeling. Only its 3 coordinates go into the percept's code, never the 256 bytes. That is what the trial builds. Which bytes a whole holds on stays in the table and decides which forms it holds of.
+
+**3. The lesson (8 nominated rows: is, What, Who, Felix, that, Ciao, this, there; a vocabulary of 16 forms)**
+
+The test counts a reading as told apart when its own concept reads it above every other. A reading that another concept takes at its own value, to rounding, is now counted as a tie, not as told apart.
+
+| Code | Told apart | Ties | Others' mean (before the squash) | Others' mean (after) | Others' greatest |
+|---|---:|---:|---:|---:|---:|
+| The model as built, its learned columns | 7 (other runs 2 and 5) | 0 | .924 | .727 | .773 |
+| The model's codes, rule 8b columns | 6 | 2 | .914 | .722 | .762 |
+| The stand-in as built | 6 | 2 | .914 | .722 | .762 |
+| 64+64 P2, unsigned (part only or part or whole) | 6 | 2 | .921 | .726 | .762 |
+| 64+64, parts half only | 6 | 2 | .456 | .407 | .762 |
+| **64+64 P6, signed** | **7** | 1 | .798 | .658 | .762 |
+| 64+64 P6, broad | 8 | 0 | .636 | .553 | .732 |
+| 96+96 P2 / P6 / broad | 6 / 7 / 8 | 2 / 1 / 0 | .931 / .750 / .594 | | |
+| 128+128 P2 / P6 / broad | 6 / 7 / 8 | 2 / 1 / 0 | .947 / .761 / .603 | | |
+
+- **Why the unsigned code ties twice.** The two ties are `this` (read at one by the concept of `is`) and `What` (read at one by the concept of `that`, whose letters t, h, a all lie in What). Width does not change this.
+- **Why the signed code still ties once.** P6 removes the `is` tie: `this` holds `is` as a run, so `is` has -1 at `t` and `h`. It keeps `that`/`What`, because `that` is not a run of `What`.
+- **The coordinator's ".72"** is the mean reading after the squash. Before the squash it is .91.
+- **Unsigned, the wholes half adds the most.** It raises every reading of another from .46 (parts half only) to .92, because it is the same, nearly all ones, in every word.
+
+**4. The centroid**
+
+A dictionary class's numbers are below. "Parts share" and "wholes share" are the shares of the centroid's mass that each half gives. "Not common" is the share of the centroid that is not the centroid of everything. The two AUCs are the chance that a member scores above a non-member: by the share of the centroid a code holds, and by cosine. A random class of 300 is the control.
+
+| Code | Class | Parts / wholes share | Not common | Held AUC | Cosine AUC |
+|---|---|---|---:|---:|---:|
+| As built | holds `q` (215) | .38 / .62 | .09 | .68 | .96 |
+| As built | holds `an` (4,283) | .40 / .60 | .07 | .80 | .94 |
+| As built | the bytes of made whole 55 (469) | .32 / .68 | .11 | .35 | .86 |
+| As built | random 300 | .38 / .62 | .02 | .49 | .51 |
+| 64+64 P2 | holds `q` | .34 / .66 | .11 | .76 | .98 |
+| 64+64 P2 | holds `an` | .37 / .63 | .07 | .79 | .89 |
+| 64+64 P2 | under made whole 55 | .34 / .66 | .27 | **.25** | **.49** |
+| 64+64 P2 | random 300 | .34 / .66 | .02 | .50 | .52 |
+| 64+64 P6 | holds `q` / holds `an` | .31 / .69 | .12 / .08 | .76 / .76 | .90 / .78 |
+| 64+64 P6 | under made whole 55 | .27 / .73 | .63 | .51 | .51 |
+| 96+96 P6 | under made whole 55 | .29 / .71 | .42 | .75 | .62 |
+| Lesson, as built | the 8 nominated of 16 | .16 / .84 | .28 | .79 | .92 |
+| Lesson, 64+64 P2 | same | .14 / .86 | .07 | .79 | .92 |
+| Lesson, 64+64 P6 | same | .27 / .73 | .18 | .84 | .86 |
+
+**What "meaningful" can mean as a number:**
+- the **cosine AUC** of members against non-members (.5 for a random class);
+- the **share of the centroid that is not common**.
+
+**What the numbers say:**
+- *Unsigned, the wholes half gives 60 to 86% of the centroid's mass,* yet it is nearly the same in every word. So most of the centroid says nothing.
+- *A class under a whole is marked by missing ones under P2.* The share held and cosine then rank its members below non-members (AUC .25 and .49).
+- *P6 does not fix that at 64.* There the signed wholes half is saturated: 114 wholes are drawn into 64 coordinates, so a word has -1 at 56 of them on average. At 96, with 25 wholes, the AUC is .62 to .75.
+
+**5. The scalars (alpha and beta at 1, gamma at 2), and the two axes of the XOR**
+
+| Code | Value 1: α, β, γ | Value 2 | Value 4 | Value 1.5 (arrives later) |
+|---|---|---|---|---|
+| As built, the code alone | .76, .76, .65 | .86, .86, .76 | .91, .91, .83 | |
+| P3 64+64, unsigned | .76, .76, .76 | .76, .76, .76 | .77, .77, .76 | |
+| P3 + P5 lanes, graded, wholes half all ones | .77, .77, .77 | .07, .07, .08 | .03, .03, .03 | |
+| P3 + P5 lanes, crisp, wholes half all ones | .77, .77, .77 | .01, .01, .02 | .01, .01, .01 | |
+| P3 + P5 lanes, graded, the kind's coordinates only | **.927, .927, .856** | .90, .90, .82 | .92, .92, .84 | |
+| P3 + P5 lanes, crisp, the kind's coordinates only | .93, .93, .86 | .64, .64, .53 | .40, .40, .32 | |
+| Sorted table, columns as made | .76, .76, 0 | .76, .76, .76 | .76, .76, .76 | .76, .76, .76 |
+| **Sorted table, columns re-made from the member's current code** | **.76, .76, 0** | **0, 0, .76** | **-.32, -.32, .32** | .46, .46, .46 |
+| Sorted table, bins of the felt value in 64, re-made | same as above | | | |
+| Sorted table, 3 hashed coordinates, re-made | .76, .76, 0 | 0, 0, .76 | -.25, -.25, .46 | .43, .43, .43 |
+
+- **P3 fails in every form tried.**
+  - *Unsigned:* the all-ones wholes half dominates, and every value reads alike.
+  - *With the row's lanes:* the against lane of a lower value's row is combined coordinate by coordinate. Over the ones the rows share, it cancels everything, so gamma reads .08 at its own value.
+  - *With the value at the kind's coordinates only:* this reproduces the model's numbers as built at value 1 exactly (.927, .927, .856, §23.3.4). Gamma still reads below alpha at every value.
+- **Alec's sorted table works, if each concept's column follows its member's current code.**
+  - The values are told apart at 1, 2 and 4.
+  - A value that arrives between two known ones (1.5) reads as between them: .46 for both.
+  - If a column is frozen when its concept is made, alpha's column holds only "+1 at 1" (the table then held only 1), and alpha reads every value at or above 1 fully.
+  - So the column must keep a reference to its member, not a copy of its vector, or be re-made when the table grows.
+- **Coordinates in 64 for the table.** Bins of the felt value (`floor(64 · felt(v))`) need no re-coding when a value arrives. Two values in one bin cannot be told apart; the resolution is 1/64 of the felt chart.
+  - A thermometer over all 64 bins needs no re-made column. Worked by hand, not run: alpha reads 2 at .78 before the squash against its own 1.0, which tells the values apart only weakly.
+  - One coordinate a value does not scale. With exact entries a coordinate's meaning also shifts with each insertion.
+
+
+**The sorted table, graded by distance** (§19.71, point 3), with columns re-made:
+- *against* grades the against lane at an entry above the value: `1 - felt(v) / felt(t)`;
+- *both* also grades the for lane at an entry below: `felt(t) / felt(v)`.
+
+The exact entries and the bins of 64 give the same numbers.
+
+| Grading | Value 1: α, γ | Value 2: α, γ | Value 4: α, γ | Value 1.5: α, γ | α less γ at 1 / 2 / 4 |
+|---|---|---|---|---|---|
+| 0 or 1 | .76, 0 | 0, .76 | -.32, .32 | .46, .46 | .76 / -.76 / -.64 |
+| against graded | .76, .37 | .63, .76 | .37, .72 | .67, .57 | .39 / -.13 / -.36 |
+| both graded | .76, .34 | .49, .76 | .12, .63 | .59, .55 | .43 / -.27 / -.51 |
+
+- *The graded table tells the collections apart worse.* Each margin is half or less of the crisp margin, and at value 2 alpha still reads .49 to .63.
+- *What grading gains:* a reading that falls off with distance, so alpha reads 4 lower than 2.
+- At 1.5 the graded table reads alpha above gamma, although on the felt chart 1.5 lies nearer 2 (.478 against .409 and .523).
+
+*Mine:* use 0 or 1 for which collection a value belongs to. Keep the graded degree for a property that is itself a degree (a ratio scale), where it is the value read and not the boundary.
+
+**The numeric XOR's two axes** (each level percept at level one; the cases are (0,0), (1,0), (0,1), (1,1); the conjunction feature is one on (1,1) only):
+
+| Code | fx over the cases | fy over the cases | Axes alike | Condition of [1, fx, fy, and] | Exact XOR fit |
+|---|---|---|---|---:|---|
+| As built | 0, .762, .762, .920 | 0, .762, .762, .920 | yes | 7e16 | yes, through fx + fy |
+| P2 64+64 (a kind whole for each axis) | 0, .762, .741, .762 | 0, .741, .762, .762 | no (barely) | 132 | yes |
+| **P6 64+64** | 0, .762, -.322, .322 | 0, -.322, .762, .322 | no | **8.9** | yes |
+
+The certificate's miss is conditioning, not rank: as built, an exact fit exists through fx + fy. P6 makes the problem well conditioned.
+
+**6. The signed code (P6): a form and its holder, unsigned against signed**
+
+The 2,312 true parthoods of the sample, and the accidental ones. Each cell is the mean, with the least in brackets.
+
+| Width | Code | Part's concept reads the whole: true | Accidental | Whole's concept reads the part: true | Accidental |
+|---|---|---:|---:|---:|---:|
+| 64 | unsigned | 1.000 (1.0) | .999 | .62 | .45 |
+| 64 | **signed** | **.30** (-.59) | **.13** | .32 | .03 |
+| 64 | broad | .47 | .20 | .47 (symmetric) | .20 |
+| 96 | unsigned / signed / broad | 1.0 / .46 / .73 | 1.0 / .64 / .66 | .84 / .60 / .73 | .81 / .60 / .66 |
+| 128 | unsigned / signed / broad | 1.0 / .40 / .74 | 1.0 / .00 / .36 | .84 / .54 / .74 | .61 / -.15 / .36 |
+
+**Single pairs at 64** (part's concept on the whole, then whole's concept on the part):
+
+| Pair | Unsigned | Signed | Broad |
+|---|---|---|---|
+| `archer`, `archery` | 1.0, .885 | .663, .783 | .858, .858 |
+| `ab`, `abaca` | 1.0, .403 | .15, .20 | .42, .42 |
+
+**What the signed code costs at 64:**
+- *Parts half:* a word has -1 at 2.9 coordinates on average. There were 31,426 coordinates that were both, where +1 stood.
+- *Wholes half:* a word has -1 at 55.6 of 64 coordinates, because 114 wholes are drawn into 64 coordinates. There were 147,191 coordinates that were both.
+- *Broad variant:* a word has -1 at 34.3 coordinates of its parts half, so the half is almost entirely ±1. There were 588,855 coordinates that were both. The read becomes symmetric, a likeness: the part's and the whole's readings of each other are equal, and the order is gone.
+
+All 19,821 signed codes are distinct at every width.
+
+**Effect:**
+- The signed code drops a part's reading of its whole from 1 to about .3. It drops accidental containments further (.13 at 64, .00 at 128).
+- This is the discrimination by difference Alec asked for.
+- It also means a part's concept no longer reads its holder at one. A reader that relies on that read for containment, the match of a part inside a form, must read the for lane alone. On the for lane the order holds (asserted).
+
+**The first Pi with against entries (§19.71, point 2)**
+
+A row's against entries are the parts that the forms holding it as a run add to it: for `archer`, the `y` of `archery` and the parts of its other holders. A member's membership is 0 or 1. It is read either by the reading's set of parts or by its code holding the member's code. The against lane is the run's presence times the join of the against entries. The proposal coder is used, at 64+64 with a part or a whole.
+
+**How many against entries a row gets** (19,821 words):
+- least 0, mean 2.95, greatest 235;
+- 16,044 rows have none (no stored form holds them);
+- all entries of a row, parts and against together: least 2, mean 15.65, greatest 238;
+- 4,869 rows have more than 16, the first Pi's allocation a row on average.
+
+The short forms that many words hold get almost the whole catalog: `ab` gets 235.
+
+**The sample's pairs** (496 words against all), the row of the first form on a reading of the second:
+
+| Pairs | Count | Membership read by | Product: against fires | Product: for less against | Union: against fires | Union: for less against |
+|---|---:|---|---:|---:|---:|---:|
+| The whole holds the part as a run | 852 | set | 52 | .94 | **852** | **0** |
+| The whole holds the part as a run | 852 | code | 55 | .94 | 852 | 0 |
+| Parts inside, not a run (anagram-like) | 1,460 | set | 12 | .99 | 1,188 | .19 |
+| Parts inside, not a run | 1,460 | code | 12 | .99 | 1,203 | .18 |
+| Accidental (by code only) | 6,127 | set | 0 (for is 0) | 0 | 0 | 0 |
+| Accidental (by code only) | 6,127 | code | 60 | .99 | 4,384 | .28 |
+
+- `archer` on `archery`: product (1, 0), union (1, 1).
+- `ab` on `abaca`: the same.
+- A row reads its own form at (1, 0) under both joins (asserted).
+
+**The lesson** (8 rows read on the 8 nominated forms):
+
+| Membership read by | Join | Told apart | Read both | Others' for less against, mean |
+|---|---|---:|---:|---:|
+| set or code | product | 6 of 8 | 0 | .036 |
+| set or code | **union** | **7 of 8** | 1 (`is` on `this`) | .018 |
+
+The lesson's only against entries are `is`'s: T, h and t, from `This` and `this`. The product misses `this`, because `this` has no `T`. The `that`/`What` tie stays under both joins, since neither form holds the other as a run.
+
+**The numbers support the union** (any one entry is enough). The product fires on 52 of the 852 parts held as a run, and only where the whole holds every part that any holder adds. The union fires on all 852.
+- *Cost of the union:* it also fires on 1,188 of the 1,460 pairs whose parts are inside without being a run, and on 4,384 of the 6,127 accidental pairs when membership is read by code.
+- *Cost in entries:* a row's against entries grow with the forms that hold it, so short forms take most of the catalog.
+
+*Mine:* cap a row's against entries at its nearest holders (those that add one part) rather than all of them. Not measured.
+
+**The first Pi selects only for (before §19.71)**
+
+Confirmed, with one correction. A row's entries are its members with weight `float(weight)`, 1 by default, written on both lanes alike (`bin/OrderZero.py:61-72`, HEAD). Its value on each lane is the product of its members' memberships on that lane.
+- A member at or below the floor annihilates the row (`OrderZero.py:135-137`).
+- A row with a member not among the keys reads zero (`OrderZero.py:138-141`).
+- There is no entry that a member must be absent for, and no complement read.
+
+The correction: a row does read against. Its against lane is the product of its members' against lanes, with the run of parts taken at its presence on both lanes (`bin/BasicPercepts.py:213` `member_keys`; `:282-292` at HEAD). So the row reads against when its wholes are witnessed not to hold, but only while every member is present. Absence enters order zero only through the Sigma: a Not member's column is subtracted (`OrderZero.py:229-236`, `add_member` with sign -1).
+
+**P7: a wholes half learned downward (toy)**
+
+The toy uses 2,000 dictionary words (seed 3650077308) and seven classes: holds `er`, holds `ter` (which lies inside `er`), holds `in`, holds `an`, holds `z`, nine letters or more, and a random tenth. Each class has one concept. The wholes half is learned in 64 coordinates under weights of zero or above, and taught by reading the classes back with rule 8b columns.
+
+| Form | Against lane | Member's half against its class's code | Read-back AUC | Mean cosine between classes, start → end | `ter` against `er` |
+|---|---|---|---|---|---|
+| union, `1 - prod(1 - W)` | no | **at or above, every class (by construction)** | 1.0 for every class | .77 → .00 | neither ordered; 1 shared coordinate |
+| union | yes | at or above | 1.0 | .74 → .06 | neither; 0 shared |
+| sigma, `tanh(m W)` | no | neither | 1.0 | .76 → .00 | neither; 1 shared |
+| sigma | yes | neither | 1.0 | .77 → .04 | neither; 0 shared |
+
+- **Order.** The union form orders a member's vector at or above its class's code, which is the opposite way from P2's "at or below a whole". Its complement gives P2's way. The sigma form does not order.
+- **Different coordinates.** The classes came out in different coordinates without being told to.
+- **The against lane is not needed** to read the classes back. With it, the loss stays at .27, because the target was not adjusted for the against lane.
+- **Nested classes are not ordered.** `ter`, a subclass of `er`, gets its own coordinates.
+- **What the toy cannot answer.** It does not show whether a learned code builds the order between classes, or whether it scales. Seven given classes in 64 coordinates is too easy.
+
+**Recommendations**
+
+**P1, width: keep 64 + 64.** The numbers prove nothing more is needed if the code is signed (P6).
+- *Shared codes.* At 64, 63 words of 19,821 share a code (0.3%) with parts only, and none with a part or a whole.
+- *What 96 buys.* The cost of 64 is accidental containment in the parts half: 5,937 against 719 at 96. That matters only to an unsigned read, where an accidental containment reads 1.0. Signed, an accidental containment reads .13 at 64 against .30 for a true one.
+- *What strains at 64 is the wholes half.* Collisions make 105 wholes at 64, against 16 at 96. In 64 coordinates they give 5,623 accidental strictly-below pairs and saturate P6's -1. That is a matter of how wholes are made (P4), not of width.
+
+**P2, a whole coded by coordinates of its own: build it.** The order holds by construction, and a set of wholes is a one-probe address.
+- Do not let the read take the wholes half as "all ones less". It is the same in nearly every form, gives 60 to 86% of every code's mass, raises every concept's reading of every other (from .46 to .92), and makes a class under a whole read as missing ones.
+- The wholes half should enter the read signed, as P6 has it.
+
+**P3, the intensity as a whole holding the value: drop it.** No form tried tells the collections apart.
+- Use Alec's sorted table: parts are the values at or below (+1), wholes the values above (-1).
+- Give the entries coordinates by bins of the felt value in 64.
+- Make each concept's column follow its member's current code, by reference or re-made when the table grows. A frozen column reads every larger value fully.
+
+**P4, a part or a whole in turn: no, as tried.** Alternating ends every shared code, but a whole over bytes made for one pair holds of 122 forms on average at 64 (up to 469), and changes 3,817 codes. It can only separate pairs with different bytes, and at 64 it crowds the wholes half.
+- *Instead:* where two forms' parts differ by a character whose bits are covered (`archer`/`archery`), add rule 43's next part, the shortest run one holds and the other does not (`ry`).
+- Keep made wholes for kinds, not for telling words apart.
+- Or make a word's whole hold of the form as such. That is Alec's open question from §19.69; the numbers favour it, because a whole over bytes fans out.
+
+**P5, a row's lanes: keep the rule.** It cannot carry the scalar readers with P3's codes. Lanes combined coordinate by coordinate cancel wherever rows share coordinates. Under the sorted table, the for and against are in the code itself, and the row's lanes need no more.
+
+**P6, the signed code: recommended.**
+- *Parts half:* -1 from the parts that a form's holders add, its holders being the stored forms that contain it as a run.
+- *Effect:* on the lesson it tells 7 of 8 apart, against 6 at every unsigned width. The one tie left is `that`/`What`: `that`'s letters all lie in `What`, but it is not a run of it. On the XOR's two axes the condition number drops from 7e16 to 8.9. It reads a true part at about .3 and an accidental one at .13.
+- *Wholes half:* restrict -1 to the wholes witnessed not to apply among the siblings of the wholes that do (the same kind). Every whole that does not apply saturates 64 coordinates.
+- *Readers of containment* (the match of a part inside a form) must read the for lane alone.
+
+**P6, the first Pi (§19.71): give a row against entries joined by union.** The product almost never fires (52 of 852 parts held as a run). The union fires on all 852, and tells the lesson's `is` from `this` (7 of 8). Its entries average 2.95 a row, with 15.65 entries in all a row against the allocation of 16, but run to 235 for a short form.
+- Bound them: the nearest holders, or a cap with the rest left to the Sigma's Not.
+- Read membership by set, not by code. By code the union also fires on 4,384 accidental containments.
+
+**The scalars, graded (§19.71): 0 or 1 for the boundary.** The graded table tells the collections apart about half as well.
+
+**P6, broad variant ("every other catalog part is negative evidence"): against.** It tells all 8 of the lesson apart, but it fills the parts half with ±1. The read then becomes a symmetric likeness, and the part order is lost.
+
+**P7: the union form under weights of zero or above gives the order by construction,** a member at or above its class code. The classes separated without being told to. The toy cannot answer whether such a learned half scales, or whether it would build the order between classes.
