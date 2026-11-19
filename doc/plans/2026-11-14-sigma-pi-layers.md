@@ -8698,6 +8698,28 @@ The greatest and the least are used for a code, which is a bound. The union and 
 
 **The wholes the same way.** Yes. A whole is a row of the table of wholes, and what defines it is a set of the same catalog: the parts that belong to it (rule 52). What a percept excludes is then the complement of its upper bound, the catalog parts outside every whole it lies in. *Mine:* the table stores each whole's members, and the exclusion is read as the complement and never listed, since for a known form it is nearly the whole catalog. The one exclusion that is listed is the first Pi's against entries, which hold only what a form's nearest strict wholes add (rules 51 and 53; Alec, §19.73). The address of a set of wholes for a lookup in one probe, which he asked for in §19.70, goes with item 1.5's lookup.
 
+### 19.78 Alec: a scalar by the same mechanism; on a line, growing the parts and contracting the wholes are one operation (2026-11-19)
+
+"OK! and for scalar values, the exact same mechanism, except part growth and whole contraction become the same operation on scalars (in 2D, they will be different operations I think). Please verify."
+
+**Verified** (a check in scratch, starts drawn from the system).
+
+*One dimension.* The catalog is the bins of the value, in order (rule 55: 64 bins of the felt value). The parts half of a value is built upward from all zeros, the bins at or below it; the wholes half is built downward from all ones, the bins above it cut away. On 20,000 drawn pairs of values:
+
+- the two halves of one value are the same code;
+- the union of two parts codes is the parts code of the greater value, and the intersection of two wholes codes is the wholes code of the lesser, so each stays a single cut;
+- what the wholes half cuts away is exactly the bins above the value, which is rule 55's against lane;
+- growing the parts from 20 to 37 sets bins 21 to 37, and contracting the wholes from 37 to 20 clears bins 21 to 37: the same bins, one cut moved, upward for the parts and downward for the wholes.
+
+So on a line every set of parts and every whole is a stretch from the bottom of one order, a bound is one cut, and the two operations are one. The scalar is rule 52's mechanism with nothing added: the catalog is the bins, the top is all ones, and a value is its own tightest whole.
+
+*Two dimensions.* On an 8 by 8 grid, with a region coded by its cells and a box the region at or below a corner, over all 2,016 pairs of boxes:
+
+- the intersection of two boxes is a box in all 2,016;
+- the union is a box in 1,232, exactly the pairs where one box lies inside the other; in the other 784 it is an L, and between it and the smallest box that holds it lie 3.5 cells on average and up to 49.
+
+So in two dimensions contracting the wholes keeps the shape and growing the parts does not: they are different operations, and between the lower bound and the upper bound there is a region that belongs to neither. The order is no longer a single line, so two regions need not lie one inside the other.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9636,7 +9658,13 @@ chooses from. The old classes are not edited.
     the less-than operation. Wholes in this case will be the same
     table as parts, so we are enclosing the scalar by a lessthan
     sort"). For a value, the values at or below it are for and the
-    values above it are against. *Mine, measured:* the entries take
+    values above it are against. It is rule 52's mechanism with the
+    table's bins as the catalog (Alec, §19.78: "the exact same
+    mechanism, except part growth and whole contraction become the
+    same operation on scalars"; verified there): the parts half is
+    the bins at or below the value, the wholes half is all ones with
+    the bins above it cut away, the two are one code for an exact
+    value, and the against lane is what the wholes half cuts away. *Mine, measured:* the entries take
     coordinates by bins of the felt value in 64; the boundary is 0 or
     1; and a concept's column follows its member's code as the table
     grows, since a column frozen at its making reads every larger
