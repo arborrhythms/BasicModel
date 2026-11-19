@@ -9737,7 +9737,11 @@ chooses from. The old classes are not edited.
     §19.82: "we can divide all contributions by the number of
     contributions, respectively"): `P / |P|² - N / |N|²`. So all
     that tells for reads one, and all that tells against takes it
-    to zero, however few its coordinates. (First built as the
+    to zero, however few its coordinates. *Mine (§23.3c.3):* the
+    column is the mean of its sides, half of each where a member
+    has both, so that a member read alone reads one (rule 21) and
+    not two: its own against side, witnessed absent, supports it as
+    much as its for side. (First built as the
     difference over one squared length, under which `archer` read
     `archery` at .937, §23.3c.2.) The concept reads the reading's
     for vector less its against vector, as now. A reader that asks whether one form lies
@@ -9754,7 +9758,10 @@ chooses from. The old classes are not edited.
     the less-than operation. Wholes in this case will be the same
     table as parts, so we are enclosing the scalar by a lessthan
     sort"). For a value, the values at or below it are for and the
-    values above it are against. It is rule 52's mechanism with the
+    values above it are against. *Mine, built (§23.3c.3):* each
+    place has a table of its own, on coordinates of its own; and a
+    collection of values is read by its bounds, 0 or 1, not through
+    a column of the Sigma. It is rule 52's mechanism with the
     table's bins as the catalog (Alec, §19.78: "the exact same
     mechanism, except part growth and whole contraction become the
     same operation on scalars"; verified there): the parts half is
@@ -13580,3 +13587,217 @@ The final run after the last commit is below.
   - `test_item18_stack::test_80`.
 - Both stopping gates pass: `test_mm_xor::TestMMXorConvergence::test_convergence` and `test_item25_completion::test_a_previously_named_shared_concept_denotes_its_raised_class`.
 - `test_review13_subspaces`, `test_review14_contracts` and `test_item17_code_trial` pass whole.
+
+### 23.3c.3 Round 3c, fourth pass: steps 6 to 9 and Alec's column (2026-11-19)
+
+Commits, local on `main`: `f56ce45acb`, `676e8cabdf`, `426d39af77`, `3b4ae20f88`. The implementer's return is below.
+
+**Review** (Claude). Read: the return, and the diff of the numeric certificate's test. Run here, the round's list with the files that name the widths, three more files and both gates (four processes, 427 s): **6 failed, 1,453 passed, 76 skipped.** The nine scalar and numeric cases pass; both gates pass; certificate 23 passes as it stands. On an export of `8b8a2fcf48` the three files of the six failures pass whole (47 passed).
+
+*Accepted.*
+
+- *The scalars* (rule 55) go through the forms' own functions: a value is the bins at or below it in each half, one code for both; the against lane is what the wholes half cuts away; the value at a last coordinate is gone, and the way back reads the value from the table. Collections at 1, 1 and 2 read for, for and against at input 1; against, against and for at 2; all against at 4; and 1.5 lies above the one and below the other.
+- *A value collection is read by its bounds,* 0 or 1, by one reader (`FieldProjection.stimulate` and `ScalarPercepts.reading`), and not through a column of the Sigma. It is a lower bound and an upper bound, which is what a row is; the readers' threshold at one is gone.
+- *Each place has a table of its own,* its bins on keyed coordinates. With one table the two axes of the numeric certificate had one code. This is §19.69's point that kinds lie in different subspaces.
+- *A conjunction is a holder of its members* (rule 53 as written; the third pass had left it out). With it the two axes read apart, and the numeric certificate's condition number falls from 1e17 to 15.5. Its test's sign check is restated: the readout takes the conjunction with the sign opposite the two axes'. Its bars, the error and each case within 1e-6, are unchanged.
+- *Telling apart* (rule 56): no word of the 19,821 shares a code. The next part is given before any bit is raised (223 parts added, none raised). `WordIdentity.shared` is gone with its readers.
+- *Alec's column* (§19.82) is built: `archer` on `archery` reads -.032 where it read .937, and `is` on `this` -.095 where it read .765.
+
+*Changed by this review* (*mine*).
+
+1. *A member's own row reads two where it has a holder.* Its for side reads one, and its against side, witnessed absent on the reading's against lane, reads one more. Rule 21 has a concept read its own row at one. So the column is the mean of its sides: with both sides it is half of each, and with nothing against it is the for side alone. Then a form read alone reads one, a form read among other words that cover what tells against it reads a half or more, and a form whose holder stands in its place reads zero. Rule 54 says so.
+2. *`archer` reads `reach` in full.* The row of `archer` is satisfied on `reach`, whose letters hold all of `archer`'s, and `reach` is no holder since it does not hold `archer` as a run. This is the certificate reading a row that no lookup named. In the model the first Pi is read only on the rows the lookup names (rule 33, round 6), and the lookup finds parts as runs. Nothing is changed; round 6's certificate reads this pair.
+3. *23.4% of pairs of unrelated forms read at zero or below* because the few coordinates that tell against one are covered by the other. That is a reading of "not this", which is true of an unrelated form; no form is denied where it stands, since a form's own against side supports it (point 1). Noted.
+
+*Returned to the implementer.*
+
+- Six failures in three files that no list held, all passing before round 3: `test_meronomy_ladder` (2), `test_percept_transitivity` (1), `test_one_backward_standing` (3, the packing after training).
+- The codes inside another's by accident rose from 582 to 1,364 in the sample after step 7, not traced. Bits are no longer raised on an added part, which may be why.
+- Point 1 above.
+
+*For Alec.* Each pass of round 3 and 3c has turned up failures in files that the round's list did not hold, eight cases so far, because the list is made of the files a round touches. Whether to run the one default sweep now, at the end of round 3c, and not only at the item's push round (1.8 §72 has one sweep an item).
+
+#### Return of the fourth pass
+
+Commits, local on `main`, none pushed, each ending with the Co-Authored-By line:
+
+| Commit | What it holds |
+| --- | --- |
+| `f56ce45acb` | step 6: the scalars (rule 55), the conjunction as a strict whole of its members, columns that follow, certificate 49, the nine cases' ports |
+| `676e8cabdf` | step 6, a repair found by the full run: a model with no scalar place reads no point as a value (`ScalarPercepts.bare`) |
+| `426d39af77` | step 7: forms told apart by the whole code; `WordIdentity.shared` goes |
+| `3b4ae20f88` | step 8: Alec's column, `P / |P|^2 - N / |N|^2` (§19.82); certificate 48 restated; the measurement's table before and after |
+
+No seed pinned, no skip or xfail added, no bar or iteration count changed, the spec not edited. The commits `e9cd8e0567`, `18b3d57f33`, `82ddc17637` and `105009492a` between mine are the coordinator's (spec only).
+
+**What was built, by file and function**
+
+**`bin/BasicPercepts.py`**
+- `value_bin(felt, width)`: `floor(width * felt)`, the last bin holding a felt value of one.
+- `value_coordinates(width, place)` (new): the catalog of one place's values. Each bin is a part with one coordinate of its own, drawn by a keyed permutation of the half's coordinates, keyed to the place (a value with no place keeps the bins in order). *Provisional*, see "the two axes" below.
+- `value_code(felt, width, place)` (new): the bins of the place at or below the value: the parts half built up from zeros, the wholes half all ones with the bins above it cut away; one code.
+- `_boundary_codes(references, whole, place)`: a value reference's code is `value_code` of its table entry in either half. The value at the last coordinate of each half is gone.
+- `subspace_bounds(row)`: passes the row's place to the value branch; otherwise unchanged (parts the greatest of the parts' codes, wholes the least of the wholes' codes).
+- `felt_of(references)`, `felt(rows)` (new): the way back, the exact felt value from the table of values. `bin_of(codes, place)` (new): the bin a value code cuts at, or -1 where a code is no cut of its place's bins.
+- `against(row)`: the value special case is gone: a value's wholes half against lane is what its upper bound cuts away, the bins above it (rule 55), as for any row. New: a conjunction over a row is one of its holders (rule 53, "a strict whole of its members like any other"), so what the conjunction's other members add lies on the row's parts-half against lane. *Provisional.*
+- `follow(rows)` (new): writes again the stored against lane of rows whose holders changed and returns their read pairs before and after.
+- `read_points`: each boundary is 0 or 1 (rule 55), and a boundary that does not hold reads against, so a collection reads `[1, 0]` inside its range and `[0, 1]` outside.
+- `read_pair(lanes)`: the value argument is gone; a value is read as a form is. `read_codes` likewise; `value_rows` (buffer) is removed.
+- `read_vector` is replaced by `column(row)`: a member's share of a column, `OrderZeroSigma.member_column` on its live read pair.
+- `read`, `_row_values`: a reading with no event (a value alone, no word) holds no run; the reductions over an empty event axis no longer fail. This was the cause of `test_scalar_only_presentation…`'s failure at HEAD.
+
+**`bin/ScalarPercepts.py`**
+- `code(owner, value)`: the value's code at the scalar place in both halves; zero has no code.
+- `bare(owner, points)`: a point that is a value's code at the scalar place and nothing else (`bin_of`); a model with no scalar place has none (`676e8cabdf`).
+- `perceive`: from the felt value, not from coordinate 95.
+- `reading(owner, points)`: the one reader, `PerceptCollections.read` (each collection by its boundaries), the same as `FieldProjection.stimulate` uses. The Sigma path through `cs_read_percept_field` is gone from it.
+- `holds(evidence)` (new): for above against. `reconstruct` and `decode` keep a collection that holds the value; the threshold at one is gone. `decode` reads only the readings at the scalar place (`_scalar_readings`). `reconstruct(word=...)` returns the collection's lower bound from the table (the least of its members' values), as it returned the lower bound's coordinate before.
+
+**`bin/NumericPercepts.py`**: `reverse` reads each level percept's value from the table (`BasicPercepts.felt`).
+
+**`bin/OrderZero.py`**: `OrderZeroSigma.member_column(P, N)` (new) is the one place a member's share is made: `P / |P|^2 - N / |N|^2` (step 8; `(P - N) / |P - N|^2` in step 6's commit). `add_member(column, P, sign, against=N)` and `start_column(..., against=...)` use it.
+
+**`bin/Spaces.py`**: `ConceptualSpace._start_order_zero_column` adds the member's share from its read pair. `follow_members(changed)` (new): where a member's read pair changed, every column started from it has the old share taken out and the new one put in, so what the network learned of the rest of the column stays. `order_zero_input` reads `read_pair(lanes)`.
+
+**`bin/FamiliarTier.py`**: after a conjunction is promoted, its members' lanes are written again and their columns follow (`basic.follow`, `owner.follow_members`).
+
+**`bin/WordIdentity.py`** (step 7)
+- `code(raw, override)` (new): the parts half (`form`) and the form's own tightest whole, the OR of its parts' catalog codes, both read from its parts. `catalog_code(atom, bits)` takes the bits as `form`'s override does.
+- `_reindex`, `_settle`, `_unkey`: a form is keyed by its whole code. `_separate`: while two forms have one code, rule 43's next part, `_next_part`, the shortest run one holds and the other does not that is not a part yet; bits are raised only where no run is left; where nothing tells them apart, `_settle` raises an error (never reached on the dictionary).
+- `shared`, `SHARED_PREFIX` and the shared-row branch of `_settle` are gone; `vocab_extras`/`load_vocab_extras` no longer carry `shared`. `by_parts` (new) indexes each parts half's forms.
+- `row_for_form(form)`: by the whole code where the code is that wide; a parts half alone names a form only where it is the one stored with that parts half. `spelling(rows)`: the fold of the rows' codes and `tightest(rows)`, so it is exact.
+
+**Where the scalars share the forms' functions, and where not**
+
+Shared: `subspace_bounds` (greatest of the parts' codes, least of the wholes' codes, through `_boundary_codes`), `against` (the wholes half's cut), `read_pair`, `read_codes`, `column`/`member_column`, `combine`, `collection_code` (the least of the members' parts halves, the greatest of their wholes halves: the parts code of low and the wholes code of high), `read_points`/`read_collection`.
+
+Not shared:
+1. The catalog's codes. A byte's catalog part has 3 drawn coordinates that it shares with other bytes; a bin has one coordinate of its own and none shared, so that the order of the line is read coordinate by coordinate (§19.79's note). On a line the parts code (an OR of bins) and the wholes code (all ones cut) are then one code, as §19.78 verified.
+2. A value has no parts-half against lane of its own: a bin has no stored holder form. (The bin above would be its "nearest holder"; tried by hand, it makes a value's own reading jump at the edge of a collection, so it is not built.) Its conjunctions are its holders, as for any row.
+3. A collection of values is read by its boundaries, not by its Sigma column (below).
+
+**The readings asked for**
+
+Certificate 49 (`test_item17_code.py::test_49_collections_of_values_are_told_apart`), a table at one place; collections alpha and beta at 1, gamma at 2, and "between" over 1 and 2. The one reader, [for, against]:
+
+| Input | alpha | beta | gamma | between |
+| ---: | --- | --- | --- | --- |
+| 1 | [1, 0] | [1, 0] | [0, 1] | [1, 0] |
+| 2 | [0, 1] | [0, 1] | [1, 0] | [1, 0] |
+| 4 | [0, 1] | [0, 1] | [0, 1] | [0, 1] |
+| 1.5, arriving between | [0, 1] | [0, 1] | [0, 1] | [1, 0] |
+
+By the column (rule 8b, each collection's members' shares; after the squash): at 1 alpha .762, gamma .712; at 2 alpha .712, gamma .762; at 4 alpha .662, gamma .719; at 1.5 alpha .734, gamma .741. A value that arrives between two known ones reads between them under the column, and lies above the one and below the other under the boundaries. The column of a single thermometer reads by the distance in bins (`64 - |b1 - b2|` over 64): it tells the values apart only weakly, as §23.3b predicted for a thermometer over all 64 bins.
+
+**What still has to follow, and the way back.** With the bins fixed in 64 a value's code never changes when another value arrives, so nothing follows the table. What does change is a member's against lane when a holder is admitted later: a conjunction over it (or, for a form, a nearer holder). Columns started from a member follow that change (`follow_members`), by taking out its old share and putting in the new one. A collection's bound (`collection_code`, the codebook row) is written again at each `collect`, as before. The way back reads the value from the table of values (`felt`), exactly; a code alone gives only its bin, to 1/64 of the felt chart (`bin_of`).
+
+**The two axes of the numeric certificate** (`test_49_the_numeric_certificate_keeps_its_bar`; `numeric_xor.certificate`), each axis concept's [for, against] at its greatest over the readings, cases (0,0), (0,1), (1,0), (1,1):
+
+| | (0,0) | (0,1) | (1,0) | (1,1) |
+| --- | --- | --- | --- | --- |
+| fx | [0, 0] | [0, .245] | [.762, 0] | [.762, .245] |
+| fy | [0, 0] | [.762, 0] | [0, .245] | [.762, .245] |
+| conjunction | 0 | .321 | .321 | .321 |
+
+Condition number of [1, features] 15.5 (7e16 at HEAD). MSE 1.8e-14, every case within 1e-6; readout weights on the for lanes of the axes -1.19, -1.19, of the conjunction +6.22. How the axes came apart, measured in turn:
+- the thermometer at one place for both axes: the two level percepts have one code, the axes read alike (cond 1.2e17), MSE .167;
+- the place's coordinate added to a column (rule 13), tried and not kept: .7608 against .7616, too weak;
+- each place a table of its own (`value_coordinates`): fx reads the other axis at .32, cond 83, MSE 2.3e-12 but case (1,0) at 1.000002 (float32, weights near 24);
+- the conjunction as a holder of its members, with columns that follow: as above, every case within 1e-6.
+
+The readout takes the conjunction with the sign opposite the axes, as before, but now positive: the conjunction's concept reads each member at .32 (its share), so it is read as the OR-like feature and the axes' against lanes do the rest. The certificate's sign assertion is ported (below).
+
+**Telling apart (step 7)**
+
+On the first 20,000 words of `/usr/share/dict/words` (19,821 distinct), `test_46_printed_on_the_dictionary`:
+
+| | Before (af7d26bb5c) | After |
+| --- | ---: | ---: |
+| words sharing a code, for lanes | 8 | **0** |
+| words sharing a code, both lanes | 8 | **0** |
+| words sharing the parts half alone | 120 | 148 |
+| shared rows (`WordIdentity.shared`) | 63 | gone |
+| added parts | 219 | 223 |
+| parts whose bits were raised | 57 | 0 |
+| codes inside another's, sample: true / by accident | 2,311 / 582 | 1,585 / 1,364 |
+
+None is left, so `WordIdentity.shared` went with its readers: six places in `bin/WordIdentity.py` (`__init__`, `_reindex`, `_separate`, `_settle` twice, `vocab_extras`/`load_vocab_extras`) and two tests (`test_operators_round3a`, `test_item17_code_trial`). No reader outside `WordIdentity` read it. *To look at:* the accidental containments more than doubled. Fewer raised bits leave the parts half denser where forms collide on it alone (148 against 120), and the sample's split into "true" and "accident" (by sets of parts) moved about 730 pairs; I did not trace it further.
+
+**The measurement (step 8, now built; Alec, §19.82)**
+
+`test_48_on_the_dictionary_and_the_lesson`, before the squash; "before" is `(P - N) / |P - N|^2`, "built" is `P / |P|^2 - N / |N|^2`:
+
+| A part's concept read on | Pairs | Before | Built |
+| --- | ---: | ---: | ---: |
+| a form that holds it as a run | 852 | .582 | **.361** |
+| a form that holds its parts and not the run | 733 | .642 | .532 |
+| a form that holds it by accident | 8,317 | .472 | **.173** |
+
+- **Unrelated forms denied by accident:** of the 1,933,835 sample pairs where an unrelated form (neither its code nor its parts) is read above zero by the for part alone, the built column takes 453,296 (23.4%) to zero or below because what tells against the part is covered by accident; before, none.
+- **The lesson:** 5 of 5 nominated (`is`, `Felix`, `What`, `Ciao`, `Who`) told apart before and as built, by the model's own columns and by both column forms; 4 rows read both.
+- **First Pi:** against entries 0 / .72 / 32 a row, entries 3 / 3.72 / 35, 46 rows above 16, 73,829 entries of 317,392.
+
+Certificate 48 restated (`test_48_a_concept_reads_by_difference`), before the squash, before → built:
+
+| Concept on | Before | Built |
+| --- | ---: | ---: |
+| `archer` on `archer` | 1.0 | 2.0 |
+| `archer` on `archery` | .937 | **-.032** |
+| `archer` on `reach` | 1.0 | 2.0 |
+| `is` on `is` | 1.0 | 2.0 |
+| `is` on `this` | .765 | **-.095** |
+| `cat` on `cat` (no holder) | 1.0 | 1.0 |
+
+- A member's own row reads one, and **one more** where it has a holder: its reading carries its own against lane, and `-N / |N|^2` reads that lane at one. So rule 8b's "its own row reads one before the squash" holds only for a member with nothing against it.
+- `archer` reads `reach` as its own (2.0). `reach` holds archer's letters and not the run, and nothing that tells against archer; the first Pi reads archer's row present on `reach` (its set of parts is found there, rule 53), so the reading carries archer's own read pair.
+- Certificate 23 passes as it stands; both gates pass.
+
+**Ported tests (old → new, and the rule)**
+
+| Test | Old | New | Rule |
+| --- | --- | --- | --- |
+| `test_item18_perceptual_scalar::test_scalar_object_collects_value_bounded_basic_percepts` | `part_codes(parts).amax()` and `whole_codes(wholes).amax()` equal felt(1) | each half equals `value_code(felt(1), its place)`; the table holds felt(1) | 55 |
+| `test_item18_perceptual_scalar::test_point_and_native_read_share_the_collection_boundaries` | native = projected; the boundary fold = `[min(1, felt/low, high/felt), 0]`; native = the Sigma read of the value percepts present | native = projected; the fold = `[1, 0]` inside [1, 3], `[0, 1]` outside; native = the fold | 55 (the boundary is 0 or 1; one reader) |
+| `test_item18_fields::test_numeric_scale_order_and_level_code` | codes zero but at coordinates 3 and 7 | each half is `value_code` at place 0; the part order still holds | 55 |
+| `test_item18_places::test_level_percepts_have_native_bounds_and_distinct_places` | parts and wholes amax equal felt(1) | the code is `value_code` at its place; the table holds felt(1); the two axes' codes differ | 55 (each place a table, provisional) |
+| `test/numeric_xor.py::certificate` (`test_66`, `test_80`, `test_49`) | axes' weights > 0, conjunction's < 0 | the axes' weights one sign, the conjunction's the other; against-lane weights printed | 53 (the conjunction a strict whole of its members), provisional |
+| `test_item17_order_zero::test_square_a_new_concept_reads_only_its_own_row` | column = `read_vector / |read_vector|^2` | column = `basic.column(row)` | 54, §19.82 |
+| `basic_fixtures.order_zero_expected` | `read_pair(lanes, value_rows)` | `read_pair(lanes)` | 55 |
+| `test_item17_code::test_48_a_concept_reads_by_difference` | own 1; holder < own; `is` on `this` < 1 | own 1, or 2 with a holder; `archer` on `archery` and `is` on `this` at or below zero; `archer` on `reach` as its own | 54, §19.82 |
+| `test_item17_code::test_48_on_the_dictionary_and_the_lesson` | accident < run < 1 (mean) | as built, run < parts-not-run (mean); table before and after printed | §19.82 |
+| `test_item17_code::test_48_the_lessons_concepts_told_apart` | net ≥ trial | the same, with both column forms printed | §19.82 |
+| `test_item17_code::test_46_printed_on_the_dictionary` | printed | and no two words share a code | 56 |
+| `test_operators_round3a::test_masked_part_extends_bits_and_an_inseparable_row_is_shared` (2), now `…_extends_bits_or_the_next_part_tells_them_apart` | separable: `bal` at 4 bits, nothing shared; not: `shared == {cabala: calaba}` | both: `bal`, then the next part, before any bits are raised; the codes differ, each reads back its form, no row shared | 56 |
+| `test_item17_code_trial::test_the_stand_in_codes_as_word_identity_does` | every row of 3,000 equal, the same shared count and added parts | rows equal on the 956 forms that hold no part the two made differently (the stand-in still raises bits and shares) | 56 |
+| `test_hash_order_producers::test_collision_queue_follows_admission_order` | observes `form` at the queue's line | observes `code` there | 56 |
+
+New: `test_item17_code::test_49_collections_of_values_are_told_apart`, `::test_49_the_numeric_certificate_keeps_its_bar`.
+
+**Choices (provisional unless marked)**
+
+1. **The one reader of a value collection is its boundaries** (`PerceptCollections.read`, the fold that `stimulate` already used), each 0 or 1 with the outside witnessed against. It gives interval semantics ([1, 3] holds 1.5) and needs no threshold. The Sigma column of a collection (rule 8b) is still started and still read in the text and numeric paths; the scalar slot no longer reads it. The alternative I measured by hand: a column from the collection's bound with Alec's against weighting at the two edge bins reads 1 inside and below zero outside, but a reading's own against lane then adds to it at the edges. Rule 8 for collections is the reviewer's call.
+2. **Each place is a table of its own**, its bins drawn to coordinates by a keyed permutation. Without it the numeric certificate cannot keep its bar.
+3. **A conjunction is a holder of its members** on their against lanes (not as first-Pi entries, which stay as §23.3c.2 left them), and columns follow a member's changed lanes.
+4. `decode` reads only the scalar place's readings, so a text reading of a value collection's column cannot name a value.
+5. `reconstruct(word=...)` returns the collection's lower bound.
+6. In step 7 the key is the for lanes of both halves (the parts half and the form's own tightest whole). The against lanes are not in the key: the parts-half against lane depends on the holders, not on the parts found, so a lookup could not compute it; the wholes half's is one less its for lane. On the dictionary the against lane told no further pair apart (§23.3c.1). The classes a form lies in are not in the key either (they are the WholeSpace's); a pair alike but for its classes gets a part it did not need.
+7. `row_for_form` with a parts half alone answers only where that parts half is one stored form's.
+
+**The lesson's sixteen sentences**
+
+`test/attention_thinking_certificate.py lesson`, 16 batches each: before (at `af7d26bb5c`) 21.87 s of the record, after 19.54 s, run at the same time as each other. The walks differ between runs at either source (starts drawn from the system): the first sentence walked 32 and 24 steps before, 7 and 7 after, in these two runs.
+
+**Final counts**
+
+- The round's list: the files of `r3_files.txt`, with `test_item18_stack`, `test_item17_forms`, `test_item17_layers`, `test_item17_code`, `test_item17_code_trial`, `test_review13_subspaces`, `test_review14_contracts`, `test_operators_final`, `test_form_subspaces`, `test_dimensional_governance`, `test_wholespace_property_migration`, both gates, and every other file that names what I changed (125 files), at `3b4ae20f88`, `-n 4 --dist loadfile`: **6 failed, 1,553 passed, 88 skipped, 1 xpassed, 1,084 s.**
+- The 6 fail at the starting HEAD `af7d26bb5c` too (run there in a scratch worktree), and none is in `r3_files.txt`; I added their files because they name `WordIdentity` or the order-zero columns: `test_meronomy_ladder` ×2, `test_percept_transitivity` ×1, `test_one_backward_standing::test_native_packing_after_training_with_selected_backward` ×3 (a packed and a single layout differ in `truncated`).
+- After step 6 alone (`f56ce45acb`, 116 files): 1 failed, 1,449 passed; the one (`test_item20_round6_gradients`, `ScalarPercepts.bare` with no where registry) repaired in `676e8cabdf`.
+- The nine scalar and numeric cases pass. Both stopping gates pass (`test_mm_xor::…test_convergence`, `test_item25_completion::test_a_previously_named_shared_concept_denotes_its_raised_class`). Certificate 23 passes as it stands.
+
+**What I would change in §21**
+
+- **Rule 55:** say that each place keeps its own table of values (a variable of its own), its bins taking coordinates of their own by a draw keyed to the place; without it two axes at one value have one code. Say that a value collection is read by its boundaries, 0 or 1, and that what follows is a member's against lane when a holder comes, not the table.
+- **Rule 53:** a conjunction is a holder of its members for their against lanes (not for the first Pi's entries).
+- **Rule 54 / 8b with §19.82:** a member's own row reads one before the squash, and one more where something tells against it (its own against lane is read by `-N / |N|^2`). And 23.4% of unrelated forms in the sample are denied by accident.
+- **Rule 53:** the first Pi reads `archer` present on `reach` (its set of parts), so a concept still cannot tell a form from one that holds its letters in another order; only the run (rule 6's presence) could.
+- **Rule 56:** the next part is given before any part's bits are raised; with the whole code compared, no word of the 19,821 is left sharing one, and no shared row is kept.
