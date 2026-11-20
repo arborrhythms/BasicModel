@@ -477,8 +477,13 @@ class TestStructureValid(unittest.TestCase):
         words = sorted(self.forms)
         false = [(a.decode(), b.decode()) for a in words for b in words
                  if a != b and a not in b and self._found(a, b) == 1.]
-        print(dict(read_inside_but_not_inside=len(false), forms=false))
-        self.assertIn(('cat', 'caat'), false)
+        cat_in_caat = self._found(b'cat', b'caat')
+        print(dict(read_inside_but_not_inside=len(false), forms=false, cat_in_caat=cat_in_caat))
+        # No code lies inside another's by accident: a form reads wholly
+        # inside only a form it is a part of, and `cat` reads below one in
+        # `caat`.
+        self.assertEqual(false, [])
+        self.assertLess(cat_in_caat, 1.)
 
 
 if __name__ == "__main__":
