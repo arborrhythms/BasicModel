@@ -29,8 +29,10 @@ test or accumulate the resulting propositions.
 > ConceptualSpace thing, one signed value whose size is its certainty: an
 > order-zero concept is a Sigma over the signed values the Not gives for the
 > basic percepts present, and a concept of a higher order a Sigma over symbols;
-> **symbol** = a row of a Pi over concepts (no dimensions, INTENSIONAL,
-> bringing one concept). WholeSpace itself holds whole-percepts.
+> **symbol** = a row of a Pi over the conceptual space of one order (no
+> dimensions, INTENSIONAL), a thing, a region of sameness that may hold one
+> concept or several; there is no symbol of a concept. A Pi makes things and
+> a Sigma makes kinds. WholeSpace itself holds whole-percepts.
 
 ---
 
@@ -120,16 +122,19 @@ sure that what we are doing is interpretable in those terms").
   weights at zero or above, any one term being enough.
 - **Not** is the Not between the Pi and the Sigma, the only place a sign is
   changed (Alec, 2026-11-19: "that would give it the ability to change sign,
-  which should be restricted to not"). It joins each row's two values into
-  one signed value, for less against, and a Not entry gives one concept a
-  row's pair exchanged; the size of an entry is the Sigma's weight and its
-  sign is the Not's. On percepts the opposite of one is zero, not minus one
+  which should be restricted to not"). It is a layer of options: from each
+  row's two unsigned values it offers two signed values, the value, for less
+  against, and the not-value, the pair exchanged, "so that concepts can
+  choose value or not-value (since we want to allow concepts of absence as
+  well as concepts of presence)" (Alec, 2026-11-19). A Not entry is a
+  concept's entry that reads the not-value; the size of an entry is the
+  Sigma's weight and the choice of option is the Not's. On percepts the opposite of one is zero, not minus one
   (Alec, 2026-11-17: "Omission teaches not: yes, for percepts, the opposite
   of 1 is 0, not -1, as in Boole"): a Not entry at the basic level records
   that something expected is absent. It is made implicitly by the gradient,
-  where teaching carries an entry through zero, and explicitly by omission
-  or by a declared Not member. Above it, a Not entry reads a symbol's pair
-  of rows exchanged.
+  where teaching carries an entry through zero, which is how an omission
+  teaches it, and explicitly by a declared Not member. Above it, a Not entry
+  reads a symbol's not-value.
 
 These are conjunction and disjunction, the symbolic level's two; the least
 and the greatest of graded values, intersection and union, are the basic
