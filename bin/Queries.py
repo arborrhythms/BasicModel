@@ -1586,31 +1586,39 @@ def _part(context, arguments):
         max_expansions=context.max_expansions, **keyword)
 
 
+def _structure_owner(context):
+    space = _concept_space(context)
+    if isinstance(space, ThoughtConceptualCapability):
+        return object.__getattribute__(space, '_ThoughtConceptualCapability__space')
+    model = getattr(getattr(context, 'reasoner', None), 'model', None)
+    owner = getattr(model, '_concept_owner', None)
+    return owner() if callable(owner) else space
+
+
 def _neighbors(context, arguments):
+    """``parts`` and ``wholes`` read the Sigma and the Pi themselves
+    (:mod:`StructureRead`): each reference with its weight, whether its
+    entry is a Not entry, and its words. LTM1's part table stays the
+    evidence of ``isPart``'s proofs."""
+    from StructureRead import parts, wholes
     role = next(iter(arguments))
     reference = arguments[role]
-    direction = 'up' if role == 0 else 'down'
-    # Preserve incomplete diagnostics even when no neighbor is available.
-    nodes, records = capture_limits(
-        context.work, context.max_nodes, context.max_records)
-    view = capture_taxonomy(
-        _concept_space(context), max_nodes=nodes, max_records=records,
-        focus=(reference,), work=context.work)
-    edges = view.neighbors(reference, direction=direction)
-    values, incomplete = [], list(view.incomplete)
-    for index in range(len(edges)):
+    owner = _structure_owner(context)
+    cid = int(reference[1]) if isinstance(reference, tuple) else int(reference)
+    read = wholes if role == 0 else parts
+    entries = read(owner, cid, work=context.work)
+    values, incomplete = [], []
+    for index, entry in enumerate(entries):
         if index >= context.max_expansions:
             incomplete.append('traversal_limit')
             break
-        if context.work is not None and not context.work.consume('expansion'):
-            incomplete.append('work_budget')
-            break
-        edge = edges[index]
-        values.append({'reference': edge.whole if role == 0 else edge.part,
-                       'source': edge, 'trust': 1.0})
+        values.append({'reference': entry.reference, 'weight': entry.weight,
+                       'negated': entry.negated, 'words': entry.words,
+                       'source': entry, 'trust': entry.weight})
+    if context.work is not None and getattr(context.work, 'exhausted', False):
+        incomplete.append('work_budget')
     return {'value': values, 'incomplete': tuple(dict.fromkeys(incomplete)),
-            'nodes_scanned': view.nodes_scanned,
-            'records_scanned': view.records_scanned,
+            'nodes_scanned': len(entries), 'records_scanned': 0,
             'edges_expanded': len(values)}
 
 
