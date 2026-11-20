@@ -38,11 +38,12 @@ def test_identified_evidence_masks_padding_without_erasing_observed_negative_mat
     assert not mask[0, 1, 0] and not mask[0, 1, 3]  # no padded part observation
     assert evidence[0, 0, 0] > 0 and evidence[0, 0, 3] < 0
     evidence.sum().backward()
-    assert part.grad is not None and whole.grad is not None
-    assert torch.isfinite(part.grad).all() and torch.isfinite(whole.grad).all()
+    assert part.grad is not None and torch.isfinite(part.grad).all()
     assert torch.count_nonzero(part.grad[..., :2]) > 0
-    assert torch.count_nonzero(whole.grad[..., :2]) > 0
     assert torch.count_nonzero(part.grad[..., 2:]) == 0  # bands are not evidence
+    # The wholes' content is the memberships read through the properties'
+    # codes: the order-zero evidence reads it and does not teach it.
+    assert whole.grad is None
 
 
 def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():

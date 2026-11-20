@@ -6,7 +6,7 @@ from Spaces import PartSpace
 from PerceptProperties import PrimitiveProperties
 
 
-def test_compact_native_events_preserve_values_locations_and_property_gradients():
+def test_compact_native_events_preserve_values_locations_and_teach_no_property():
     primitive=PrimitiveProperties(1)
     with torch.no_grad():primitive.members[0,65]=.3;primitive.members[0,66]=.7
     raw=torch.tensor([[65,66],[65,66]])
@@ -28,10 +28,8 @@ def test_compact_native_events_preserve_values_locations_and_property_gradients(
     torch.testing.assert_close(compact.spans,torch.cat((spans,whole),1),rtol=0,atol=0)
     assert compact.values[0,:,0,0].eq(1).all() and not compact.values[:,:,2].any()
     torch.testing.assert_close(compact.events[1,:,1,-1],torch.tensor([[.3,.3],[.3,.3]]))
-    a,=torch.autograd.grad(short.values[1].sum(),primitive.members,retain_graph=True)
-    b,=torch.autograd.grad(compact.values[1].sum(),primitive.members)
-    torch.testing.assert_close(a,b,rtol=0,atol=0)
-    assert a.abs().sum()>0
+    # The order-zero read reads the memberships and teaches them nothing.
+    assert not short.values.requires_grad and not compact.values.requires_grad
     selected=compact.select(1,1)
     assert selected.events.shape==(2,1,1,3,2)
     torch.testing.assert_close(selected.event_evidence(keys),compact.events[:,1:2,1:2])

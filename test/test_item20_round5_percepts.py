@@ -41,7 +41,7 @@ def test_basic_table_is_preallocated_and_full_raises_without_resize():
         full_raises=True, resized=False, centroid=True))
 
 
-def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
+def test_basic_read_ties_both_towers_and_does_not_teach_the_properties():
     basic, native, whole = percepts()
     row = basic.reserve((0,), (0,))
     primitive = whole.primitive_properties
@@ -53,8 +53,9 @@ def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
     # is present wholly, its whole .4 for and .6 against.
     presence, whole_pair = 1., torch.tensor([.4, .6])
     torch.testing.assert_close(field.values[0, 0, 0], presence * whole_pair)
-    gradient, = torch.autograd.grad(field.values[0, 0, 0, 0], (primitive.members,))
-    assert gradient[0, 97] == 1 and gradient.count_nonzero() == 1
+    # The read gives the memberships no gradient: order zero reads which
+    # bytes belong to a property and does not teach it.
+    assert not field.values.requires_grad
     absent = (torch.tensor([[1]]), spans, primitive, torch.tensor([[97]]), spans)
     assert basic.read(absent, spans, (row,)).values.count_nonzero() == 0
     from FormContainment import audit
@@ -62,7 +63,7 @@ def test_basic_read_ties_both_towers_and_keeps_the_property_gradient():
     assert result['premises'] == 'basic_percepts'
     assert not result['tower0']['violating_pairs'] and not result['tower1']['violating_pairs']
     receipt('basic-read-gradient', dict(positive=.4, negative=.6, absent=0,
-        member_gradient=float(gradient[0, 97]), audit=result))
+        member_gradient=0., audit=result))
 
 
 def test_basic_read_preserves_ordered_part_witnesses_after_native_fusion():

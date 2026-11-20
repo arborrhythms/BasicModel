@@ -167,13 +167,13 @@ def test_membership_read_is_input_dependent_and_differentiable():
     field, basic = cs._percept_field, cs.basic_percepts
     rows = field.values[[field.keys.index(('bp', basic.index[((48,), (p,))])) for p in (0, 1)], 0, 0]
     torch.testing.assert_close(rows.detach(), torch.tensor([[.2, .8], [.7, .3]]))
-    # The basic percepts read the property memberships differentiably.
-    field.values[..., 0].sum().backward(retain_graph=True)
-    assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
-    # The concept reads its entries in the order-zero Sigma.
+    # The concept reads its entries in the order-zero Sigma, and the basic
+    # percepts read the property memberships without teaching them: a
+    # concept's error does not say which bytes belong to a property.
     read.sum().backward()
     sigma = cs.order_zero
     assert sigma.value.grad is not None and sigma.value.grad.abs().sum() > 0
+    assert not field.values.requires_grad and primitive.members.grad is None
     # The read depends on its input, at the basic percepts and at the concept.
     values = field.values.detach().clone()
     with torch.no_grad():

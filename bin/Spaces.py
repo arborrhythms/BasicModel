@@ -13289,7 +13289,10 @@ class ConceptualSpace(Space):
         parts, n_parts = fit(part_event)
         wholes, n_wholes = fit(whole_event)
         p = self.matched_code_evidence(parts, part_references, part_n_what)
-        w = self.matched_code_evidence(wholes, whole_references, whole_n_what)
+        # The wholes' content is the memberships of bytes in the properties
+        # read through their codes; the order-zero concept reads it and does
+        # not teach it.
+        w = self.matched_code_evidence(wholes.detach(), whole_references, whole_n_what)
         roles = reference_roles.unsqueeze(1)
         locations = torch.arange(N, device=parts.device).reshape(1, N, 1)
         part_valid = torch.logical_and(roles == 0, locations < n_parts)

@@ -95,7 +95,10 @@ def read_percepts(percepts, brackets, keys, *, part_reader, native=None,
         ids = torch.tensor([keys[i][1] for i in ws], device=raw.device)
         inside = contained.any(1)
         selected = counts[inside]
-        pair = primitive.evidence_on_counts(selected, rows=ids)
+        # The order-zero read reads the declared memberships and does not
+        # teach them: a concept's error does not say which bytes belong to
+        # a property.
+        pair = primitive.evidence_on_counts(selected, rows=ids).detach()
         complete = selected.sum(-1) == (spans[..., 1] - spans[..., 0])[inside]
         pair = pair * complete[..., None, None]
         placed = pair.new_zeros(B, P, len(ws), 2)
