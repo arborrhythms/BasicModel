@@ -18488,3 +18488,174 @@ Read-only, for Alec's "Please verify that any neurally-read temporal value shoul
 *Not determined by the census:* whether `reduce_pressure` receives a gradient at all; whether some stamps that learned readers take are live or always nothing; and the call paths of a few learned modules were not followed to their end (the percept towers' layers, the grammar's operator kernels, the output's field readout).
 
 **Review (Claude).** The rule holds for nearly everything, and where it does not the cases are of two kinds. Two are times by anyone's reading and are to be brought to a sinusoidal code in round 6's step 16: the attention context's interval of ages, and the gap since a candidate's last mention. Three are counts or positions that may not be times; they are put to Alec, and Claude's first choice is that a depth, a count of slots and a budget of rounds are not temporal and stay numbers, while the offset between a question and its target is temporal and is given as a code (its two ends already are).
+
+### 23.4.8 Round 4, ninth pass: the store's columns are symbols, rows of the symbols' Pi; a kind reads symbols from every lower epistemic level (2026-11-20)
+
+*The return of the implementer (Claude on Opus).* Checkout `/Users/arogers/github/WikiOracle/basicmodel`, branch `main`, started at `2468953dde`. Local commits, not pushed, each ending with the Co-Authored-By line:
+
+| Commit | What |
+| --- | --- |
+| `ca0f51c24b` | the store's columns made things: basic percepts' rows and symbols (built to the brief's item 2, then withdrawn by Alec) |
+| `7a9d5f6ab2` | changed forward: every column a symbol; a kind of words reads symbols over the words' order-zero concepts; a symbol's constituents of one order; the guard removed |
+
+No seed pinned in a test, no skip or xfail added, no bar or iteration count changed, nothing under `doc/` edited, nothing under `RUN_SLOW` run. The least and the greatest (`fold_presence`, `attribute_presence`, `_fold_weights`), the SS leg and `ConceptEvidence.decode`, attention's table and the walk's rules, the byte-property memberships, `test_81` and the expectation and intuition maps are not changed.
+
+#### What fails or is unfinished, first
+
+1. **`test_item18_expect.py::test_81`** fails, as carried to round 5 (not mine).
+2. **`test_serial_concepts.py::test_update_has_one_promotion_after_placement_and_no_close_observer`** failed once in the second whole run of the list (`assert 0 == 1`, no promotion), on the commit-1 source, and passed in four runs of its file alone (one of them on that source). Its producer is not named; it shares a worker with other files under `--dist loadfile`. *(The implementer was stopped before its third run was recorded.)*
+3. **Item 2 of the brief, built and withdrawn** (Alec: a basic percept is an occurrence, no basis for a noun). It is in `ca0f51c24b` and changed forward in the second commit; nothing of it is left (below, "What was built and then changed").
+4. **Item 5's joining of a second concept to a symbol is not built** (withdrawn by the coordinator). The table does not assume one constituent: a row may hold several, read by their product, and a test restores one of two.
+5. **Item (c)'s "made in its declaration"** is built as "made where the operator class first takes its argument" (`PartsOfSpeech.observe_seat` → `ConceptHierarchy.observe_member` → `_populate_concept_weights` → `things_reading`), *provisional*. Writing the class's entries at the grammar's declaration would have put 72 entries on the store at construction and reached every operator class in every reading's closure (`_bind_attended_concepts` follows every entry, zero or not), which changes which classes are seated and ranked; making the symbols at the declaration without entries would leave symbols that no kind reads, against (c)'s second clause.
+6. **A cover over members of its own order at order zero writes nothing in the store** (`_populate_concept_weights`, the witness path, for an order-zero row): an MTM candidate of order zero (`FamiliarTier.cover_members` from `promote_candidates`) used to write store entries from an order-zero row onto order-zero rows. Those entries were never folded in the forward (the store's fold runs from order one), but `concept_weights` reported them. *Provisional*; the order-zero candidate's members are read, if at all, by the order-zero Sigma, which this pass does not touch. One test ported for it (`test_reading_round`).
+
+#### What was built and then changed (item 2)
+
+Commit `ca0f51c24b` had the store's lane block hold the basic percepts' capacity (`BasicPercepts.capacity`, given to the store when the model binds its basic percepts) and the symbol table's, with the bias. A kind of words put its entry on the word's basic percept where `ConceptAllocator.brought` recorded that the percept's nomination brought the word's concept; the store read a basic percept's row from the reading (`PerceptField.values`, passed with the field from `cs_read_percept_field` into `cs_forward_content`, `_concept_rung_presence` and `DefinitionFold.loss`), and, in a field with no reading (`FieldProjection.close`, the reverse, case staging), at the seat of the brought concept. Measured then: the lesson's store held (one run, lr 0) 60 entries, 54 on basic percepts and 6 on symbols; `words` read 1.0 where its words were present (the concept had read tanh 1 = .76), and in 306 of the 318 reads where `words` was seated against 41 of 353 before, because a basic percept is read where the reading holds it whether or not the word's concept is seated. It also needed one cut: the gradient of a kind's error through the basic percept's row reached the byte-property memberships through the properties' codes and moved the declared ones off one (`test_the_lessons_training_keeps_every_declared_membership_and_reads_no_known_word_both`), so the row's values were read detached.
+
+Changed forward in the second commit: the basic-percept columns, their room (`set_room`, the call in `BaseModel` at the binding of the basic percepts), the inverse of `brought` (`ConceptAllocator.percepts_bringing`), the store's reference to `brought`, the reading's percepts in `cs_forward_content`, `_concept_rung_presence`, `cs_read_percept_field`, `_bind_attended_concepts`, `refinement_field` and `DefinitionFold`, `PerceptField.select_streams` and the detach all went. `bin/DefinitionFold.py` and `bin/PerceptField.py` are as at `2468953dde`.
+
+#### Every writer and reader changed, by file and function
+
+**What a column is now.** The store `ConceptualAttentionLayer` is made by `square(n, symbols=None)`: `n` concept rows read `2 (Ns + 1)` columns, two lane blocks (for, against), each holding one column for each symbol the table has room for (`Ns`, by default `n`) and the bias. A thing is `('sym', s)`; the bias is `None`. Column `s + lane (Ns + 1)` is symbol `s` in that lane; `Ns + lane (Ns + 1)` is the bias. No column is a concept's row, and the store's row count enters no column's arithmetic.
+
+| File, function | What it became |
+| --- | --- |
+| `bin/Symbols.py`, `SymbolTable` | `revision` (bumped at `make` and `restore`, for the store's caches); `fit(concept)`: of the symbols whose rows read the concept, the one with the fewest constituents, the first made among equals. `read` is the product, as before. |
+| `bin/Layers.py`, `ConceptualAttentionLayer.square` | the layout above; `_paired_sources` and `_room` set here (a store made otherwise has no thing columns) |
+| `…`, `symbol_table` (new, a property) | the store owns the table (room `_room`); `ConceptAllocator.symbol_table()` returns it |
+| `…`, `lane_width`, `column_of_thing`, `thing_of_column`, `column_lane`, `bias_column` (new) | the only encoding and decoding of a column |
+| `…`, `thing_rows`, `column_rows`, `_thing_spec` (new) | the store rows of a symbol's constituents (by `_tensor_rows`), cached by the table's revision and the row map's size |
+| `…`, `add_edge` | refuses a column of a symbol the table has not made |
+| `…`, `_edge_sources` (new; `SparseLayer._edge_sources` returns the column) | `SparseLayer.add_edge`'s self test: a row may not read a symbol that holds its own concept, on either lane (was `c % (n+1) == r`) |
+| `…`, `bind(inventory_rows)` | a view over the symbols the seated rows' entries read: `2 (T + 1)` columns, `view._things`, `view._thing_seats` (`[T, K]`, the seats of each symbol's constituents), `view._thing_complete`; an entry whose symbol has an unseated constituent is missing, as an unseated source was |
+| `…`, `grow_inventory` | no column moves (a column is a symbol); only the row count grows |
+| `…`, `definition_sparsity_penalty` | the bias test by `bias_column` |
+| `bin/Layers.py`, `SparseLayer.bind` | the paired branch (`cols % (n+1)`) removed; it binds rows only |
+| `bin/Layers.py`, `thing_lanes`, `thing_input`, `seat_lanes`, `thing_priorities` (new) | the reads of a bound view: a symbol's lanes from its constituents' seats (a gather where every symbol has one constituent, the product on each lane otherwise); the view's input `[for; 1; against; 0]`; a result over the columns carried back to the seats of the constituents (the greatest where several reach one seat); a symbol's priority, the greatest of its constituents' |
+| `bin/Layers.py`, `ConceptAllocator` | `_symbol_table` removed; `symbol_table()` is the store's |
+| `bin/Spaces.py`, `ConceptualSpace.things_reading` (new) | the one resolver: the symbol by which the kind on a row reads the concept on another, found by `fit`, else made by `nominate_symbol` with handle `('kind', reader's concept, member's concept)` where `make`; the order is checked before anything is made |
+| `…`, `add_concept_edge(row, col, weight, negated, make=True)` | writes on the symbol `things_reading` gives (or the bias at `nVectors`); refuses an order-zero row (its kinds are the order-zero Sigma's) |
+| `…`, `add_thing_edge` (new), `_check_thing_order` (new) | an entry on a given symbol; refused, with the reason, where a constituent is of the kind's order or above, or where the constituents are of more than one order |
+| `…`, `concept_entries`, `reads_concept` (new) | the store positions by which a kind reads a concept (the symbol found without making) |
+| `…`, `concept_weights` | a symbol's entry is reported as the rows of its constituents; the bias as `nVectors` |
+| `…`, `_populate_concept_weights` | the witness path (class raise, `observe_member`, `cover_members`): each member through `things_reading`, merged by maximum; nothing for an order-zero row. The word path: `words` reads a symbol over the word's order-zero concept (`reads_concept`, `add_concept_edge`). The `('sym', x)` path: `concept_entries`, else `add_concept_edge` |
+| `…`, `_prepare_part_learning` | witnesses through `things_reading` (made, the class being recognized); the other lane of each read symbol by `column_of_thing`; the active context offers only symbols that exist (`make=False`, *provisional*: a context is not a kind's recognition) |
+| `…`, `_set_concept_edge_value`, `_bias_col` | by `concept_entries`; `bias_column()` |
+| `…`, `_bind_attended_concepts` | the closure over `column_rows` (a kind is reached through the concepts its symbols hold); the bias marks standing rows |
+| `…`, `_concept_rung_presence` | `thing_input(view, field)` in place of `[field for; 1; field against; 0]` |
+| `…`, `cs_forward_content` | the relevance hop reads `thing_priorities` |
+| `…`, `cs_reverse_presence` | `observed` through `thing_input`; the request carried back by `seat_lanes` |
+| `…`, `nominate_symbol` | its docstring: MTM's nomination or a kind's need |
+| `bin/FieldProjection.py`, `close` | an entry's sources are its symbol's constituents' rows, their product on each lane (the bias, `None`, as before) |
+| `bin/CaseSelection.py`, `stage_case_bank` | the edge walk by `column_rows`; the cases by `seat_lanes` |
+| `bin/Models.py`, `_collect_structural_extras` | the layer's blob is marked `columns: 'symbols'` with its room `symbols: Ns` |
+| `bin/Models.py`, `_restore_allocator_extras`, `_read_rows_as_things` (new) | a marked blob is read as it is (another room keeps each column's symbol and lane); an unmarked one is read once (below); a marked one whose table holds a symbol under a handle that `_symbols_nominated_by_mtm` would drop is refused (dropping would move every symbol column) |
+| `bin/GrammarConceptCheckpoint.py`, `prepare` | a marked blob's columns do not move with the concept rows, and its `nInput` is kept |
+
+The six files that decoded a column (§23.4.6) decode it now only through the store's functions; `test_cert_a` checks by source that no `nOutput + 1` (or `n + 1`, `_bias + 1`) is left in `Layers.py`, `Spaces.py`, `FieldProjection.py`, `CaseSelection.py` and `DefinitionFold.py`. `Models.py` and `GrammarConceptCheckpoint.py` keep that arithmetic only to decode an unmarked (old) checkpoint.
+
+#### Where a symbol is made, and its handle
+
+One maker, `ConceptualSpace.nominate_symbol`, called by MTM's two nominations (`FamiliarTier.promote_candidates`, `promote_identity`, handles as before) and by `ConceptualSpace.things_reading`, where a kind needs a member that no symbol holds. The kinds recognized: the class raise and MTM's candidates (`cover_members`), a kept reading's filler of an argument (`observe_member` from `PartsOfSpeech.add`), an operator class taking its argument (`observe_seat`), `words` reading a nominated word (`_populate_concept_weights`), a chunked phrase over its members (`_commit_chunk_admissions`), a witnessed class (`_prepare_part_learning`), and an old checkpoint's columns. The handle is `('kind', the kind's concept, the member's concept)`. Two makings cannot collide: a making happens only where `fit` finds no symbol holding the member, and a symbol made under that handle holds the member and is never dropped, so the same handle is never made twice; two different kinds needing one member make one symbol (the second finds the first by `fit`). Nothing addresses "the" symbol of a concept: a reader asks for a fit, and a concept may be held by several symbols.
+
+In the lesson (16 sentences, lr 0, one run): 18 symbols, 14 made for kinds (one kind over five order-zero word concepts; four operator classes over nine arguments) and 4 nominated by MTM (`name`, `collection`, two `candidate`); every one is read by a kind or is MTM's.
+
+#### The guard, and that it is gone
+
+While the store's readers were changed, `ConceptualAttentionLayer._position` wrote thing `t` at position `P + Ns - 1 - t` of its lane block (`_THING_COLUMN_GUARD = True` in `bin/Layers.py`), so that a column read the old way (`c % (n+1)`) could not land on the row it once named. The first whole run of the list under the guard found what was left: 59 failures, each a test that wrote or read a column by hand or tested what the pass changed (ported below); no reader in `bin/` read a column the old way. The guard was removed in the second commit (`_position` and the constant are gone); `grep _THING_COLUMN_GUARD bin/` finds nothing.
+
+#### Certificates (`test/test_item17_symbols.py`)
+
+| Test | What it shows | Result |
+| --- | --- | --- |
+| `test_cert_a_no_column_of_the_store_is_addressed_by_a_concepts_row` | (a) by source, as above; after the lesson every entry reads a symbol of the table or the bias (126 entries, 126 on symbols, in one run), and `nInput == 2 (Ns + 1)` | passes |
+| `test_cert_b_words_reads_a_word_through_a_symbol_over_its_concept` | (b) every entry of `words` is on a symbol whose one constituent is an order-zero word concept; with that concept seated at .76, `words` reads .76; at 0, nothing | passes |
+| `test_cert_c_an_operator_class_reads_its_arguments_through_symbols` | (c) every entry of an operator class is on a symbol whose constituents are arguments, made for a kind or by MTM (18 entries in one run); every symbol of the table is read by a kind or is MTM's (14 read, 4 MTM's) | passes |
+| `test_cert_d_green_things_collect_from_every_lower_epistemic_level` | (d) one kind of order two with entries on a symbol over an order-zero concept and a symbol over an order-one concept reads either (.8 or .8 → above .5; neither → 0); an entry on a concept of its own order is refused ("collects symbols of lower epistemic levels only"), before any symbol is made; a symbol over concepts of orders 0 and 1 is refused ("constituents are concepts of one order") | passes |
+| `test_cert_e_a_symbol_of_two_constituents_reads_their_product_once` | (e) a symbol of two constituents (.5, .2) and (.8, .5) reads (.4, .1), by `SymbolTable.read` (a `SparsePiLayer3`, the class of the basic percepts' Pi) and by the store's view; a kind that reads it has one entry and the view one column | passes |
+| `test_cert_f_nothing_is_one_to_one` | (f) one symbol read by two kinds, one kind reading three symbols, one concept in two symbols | passes |
+| `test_cert_8_an_old_store_whose_columns_were_concept_rows_is_read_once_as_symbols` | item 8: three old entries (a word's row, a class's row on the against lane, the bias) become the MTM symbol that held the word (found), a symbol made for the class `('kind', kind, class)`, and the bias, values kept | passes |
+
+Certificate 6's first clause (no column of the store is a concept's row) is met, for the source and after the lesson.
+
+#### Where the store's values changed, and by how much
+
+With every symbol at one constituent, a symbol passes its concept's lanes, and the store's read is what it was. Measured on the lesson's sixteen readings at lr 0, seeded in the measuring script only (`torch`, `random`, `numpy` at 0, `PYTHONHASHSEED=0`) so that both sources read the same readings: 1,100 outer calls (902 of `_concept_rung_presence`, 198 of `cs_reverse_presence`), 96 store entries in each, the inputs identical, **greatest difference of the outputs 0.0**, at `2468953dde` against the final source. Without the seeds two runs of the same source differ (457 against 1,100 calls), which is the walk.
+
+At the first commit (item 2, withdrawn) the values did change, as stated above (1.0 against .76, and `words` lit in 306 reads against 41).
+
+#### Cost
+
+| Measure | Before (`2468953dde`) | After |
+| --- | ---: | ---: |
+| The store's read, recorded calls run 20 times on fixed readings, seconds per pass, `_concept_rung_presence` (902 calls) | .214, .216 | .235, .233 |
+| the same, `cs_reverse_presence` (198 calls) | .105, .108 | .151, .149 |
+| The lesson's 16 sentences (`attention_thinking_certificate.py lesson`), mean seconds over 12 runs, three at a time | 19.92 (16.1 to 24.4) | 20.22 (18.0 to 24.2) |
+
+The read with the symbols between costs about 8% more in the rung (a gather from the seats, `thing_lanes`, where every symbol has one constituent) and about 40% more in the reverse (the request carried back to the seats by a scatter, `seat_lanes`), and the view is built by a host loop over the selected entries' symbols. Together that is about .065 seconds per lesson of sixteen sentences, inside the lesson's spread; its words were 50.9 (35 to 64) before and 50.2 (25 to 64) after, which measure the walk and not this pass.
+
+#### Ported tests
+
+| File::test | Old | New |
+| --- | --- | --- |
+| `test_cs_sparse_weights` (9 tests: `add_concept_edge_dedup_and_query`, `family_values_grow_tail_preserving`, six `forward_content_*`, `level_stats_are_report_only`) | entries onto store rows that hold no concept; the first two from order-zero rows 32 and 33 | `readable(cs, …)` records a concept on each source row first; the first two read from order-one rows 35 and 36 (order zero's kinds are the order-zero Sigma's); every assertion unchanged |
+| `test_concept_sigma_pi` (3), `test_frozen_concepts` (3), `test_relevance_bases` (3 through `_minted_cs`), `test_definition_attribution` (3), `test_iterated_symbolic_wave` (1), `test_sparse_concept_e2e::test_csw_weights_update_under_optimizer_step`, `test_concept_evidence` (2: `kind_both_member…`, `discovered_and_end…`) | entries onto rows that hold no concept | `readable(…)` first; assertions unchanged |
+| `test_concept_evidence::test_production_snap_background_is_neither` (3), `test_order0_percept_definitions::test_order0_unions_alternative_percept_conjunctions` (2) | an order-zero row's store entry onto order-zero rows | that entry is refused ("order-zero Sigma"); the remaining assertions unchanged (they read the order-zero Sigma) |
+| `test_sparse_concept_e2e::test_symbolic_order_does_not_admit_a_same_order_edge` | refused, "preceding order" | refused, "lower epistemic levels only" |
+| `test_item18_producer_repair` (17: the paired-layer tests, `cancelled_definition…`, `pairing_survives_binding…`) | columns 0, 4 (row 0's lanes), 1 (row 1), u by column | the columns of symbols holding rows 0 and 1 (`store_columns`), u by those columns (`by_column`); the plain-layer control unchanged; the binding test's u is the view's own (`[for; 1; against; 0]` over one symbol) and its missing pair reads 0 |
+| `test_sparse_layer` (3) | `add_edge(3, 3)` refused; `add_edge(2, 0)`, `u[0]` | the self test on both lanes of a symbol holding row 3; the symbol column of row 0 |
+| `test_definition_sparsity` (5) | raw columns `1 + k`, `n`, `2n + 1`; grad keyed by column | the symbol columns of rows `1 + k` (`store_columns`), `bias_column(0/1)` |
+| `test_refine_raise::test_learned_particular…` (3), `test_definition_fold::test_witnessed_lanes…` (3 places), `test_attention_promotion::test_cover_merges…` | `store._index[(row, source)]`, `_index[row, a + n + 1]` | `cs.concept_entries(row, source)[0]`, `concept_entries(row, a, lane=1)[0]` |
+| `test_structural_checkpoint::test_integrated_checkpoint…` | `add_edge(5, 2)`; `_cols == [2]` | the column of a symbol over `word`; `_cols == [column]` and it reads the word's row |
+| `test_definition_integrity::test_retired_meta…`, `test_definition_rows::test_32_retired…` | — | unchanged; they failed in the first commit (an old column read as two basic percepts) and pass now |
+| `test_reading_round::test_literal_reuse_adds_coverage_by_maximum` | an order-zero candidate's cover merged by maximum (`after[member] == weight`, `after[rows[2][1]] == 2.`) | the candidate is of order zero and its cover writes no store entry (`before == after == {}`); the merge by maximum is `test_attention_promotion`'s, at order one |
+| `test_item17_symbols::test_6_a_symbol_has_its_own_index…` | — | adds `fit` (fewest constituents; `None` for a concept no symbol holds) |
+| `test_item17_symbols::test_4_a_nomination_above_order_zero…` | every symbol brought a concept of order one or more | so for MTM's; a `('kind', …)` symbol may hold a member of any lower order |
+| `test_item17_symbols::test_71_no_symbol_is_made_for_a_concept_and_every_symbol_is_mtms` | `nominate_symbol` called by MTM's two nominations only; every symbol MTM's | and by `Spaces.things_reading`; every symbol is MTM's or a `('kind', kind, member)` symbol holding the member alone and read by that kind |
+
+`test/symbol_fixtures.py` (new): `readable(cs, *rows)` records concept `1_000_000 + row` on a bare row; `symbol_columns`; `store_columns(store, *rows, lane)` on a bare store.
+
+#### What an old checkpoint becomes
+
+A layer blob without the mark `columns: 'symbols'` wrote its columns as concept rows (`nInput == n + 1`, signed, or `2 (n + 1)`). It is read once: each entry's row and lane are decoded with the saved row count; after the table and `brought` are restored, `_read_rows_as_things` makes each entry's column the symbol that `things_reading` gives for the kind and the concept on that row (found, or made `('kind', …)`), in the same lane; the bias stays the bias; positions and values are kept. A column whose row holds no concept is refused with the reason ("store row … holds no concept"). *Provisional*: read, not refused, since its columns meant exactly what a symbol of one constituent passes.
+
+#### Choices, each provisional where marked
+
+1. The fit: of the symbols holding a concept, the fewest constituents, then the first made (the coordinator's reading; *provisional*).
+2. Symbols made where the operator class first takes its argument, not at the declaration (above; *provisional*).
+3. The active context of `_prepare_part_learning` offers only existing symbols (*provisional*).
+4. An order-zero cover writes nothing in the store (*provisional*).
+5. The symbol room is the store's row count, as the table had it (*provisional*; §19.83's "n/2 symbols" for order one is a per-order share of it, and the table is not split by order).
+6. An old checkpoint is read, not refused (*provisional*).
+7. A symbol whose constituent is unseated is missing in a read (no evidence), as an unseated concept was.
+
+#### Final counts on the list
+
+*(The implementer was stopped before its third run was recorded.)*
+
+Both stopping gates pass (`test_mm_xor.py::TestMMXorConvergence::test_convergence`, `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`), in the list.
+
+#### What is left for the next pass, step by step
+
+1. *The Not and the sparse Sigma above order zero, in place of the least and the greatest.* The store's view already reads one input pair for each symbol (`thing_input`); `fold_presence`'s least and greatest and `_fold_weights`'s pairing of the two lanes are replaced by the Not's two options for each symbol (value, not-value) and a `SparseSigmaLayer3` over them with weights at zero or above; a Not entry reads a symbol's not-value (certificate 23 (d)). Readers to change: `_concept_rung_presence`, `cs_reverse_presence` (its `attribute_presence` becomes the Sigma's transpose, then `seat_lanes`), `FieldProjection.close` (its `FieldLogic.reduce('union')`), `CaseSelection.stage_case_bank`, `DefinitionFold.loss`, `definition_sparsity_penalty`, and the relevance hop.
+2. Certificate 4's first clause (the next Sigma reads one combined input for each symbol) after step 1.
+3. *The SS leg* (step (d)): `ConceptEvidence.decode`'s symbol rows that carry the concept's code go; the leg carries each symbol's two lanes (`thing_lanes` gives them) and no code: `_publish_symbol_snapshot`, `commit_symbolic_peer_results`, `symbol_states`, `_current_discourse_s`, `LTM0(content_width=symbol_dim)`, `SymbolExpectation`.
+4. The view's build is a host loop (`ConceptualAttentionLayer.bind`); it could be cached by the store's topology revision and the seated rows if the reverse's cost matters.
+5. How two concepts that are the same thing come to lie in one symbol is open with Alec (the table already reads a row of several constituents by their product).
+
+#### What I would change in §21 or §22.4
+
+- **Rule 71, "Mine"**: say that a kind's entry is always on a symbol, and that the symbol is found by fit or made where the kind is recognized, named by the making; remove "a kind of words has its entries on the words' basic percepts".
+- **Rule 10**: "It is made when MTM nominates it (rule 20), or by `interpret` for a meta concept" should add "or where a kind needs a member that no symbol holds"; its constituents are concepts of one order.
+- **Rule 20**, "The one writer of a concept's further inputs …, as an entry on the word's symbol once MTM has nominated it": the symbol is made at the entry, not waited for.
+- **Rule 26** ("a symbol of order k reads the concepts of every order below k") reads against Alec's "a symbol's cone is tested only against concepts at its order": a symbol holds concepts of one order, and it is the kind (the Sigma) that collects from every lower epistemic level. Rule 26 should say so.
+- **§22.4** should name the operator class's symbols as made at its first taking of an argument (or say why at its declaration).
+
+#### Review (Claude, 2026-11-20)
+
+**How the pass ended.** Its agent was stopped while its last run was going, and could not be resumed. Its first commit (`ca0f51c24b`) was made and run by it. Its second, the change forward after Alec's correction (§19.106: a kind of words reads symbols and not basic percepts), stood finished in the working tree and uncommitted, with this return already written for it. Claude ran the spot tests on that tree (the pass's certificates in `test/test_item17_symbols.py`, `test/test_cs_symbol_table.py`, `test/test_attention_promotion.py`, and both stopping gates: **64 passed**) and committed it as `7a9d5f6ab2`, by explicit paths, unchanged.
+
+**Not verified.** The list has not been run on `7a9d5f6ab2` by anyone: the implementer's two whole runs were on the first commit. Under the standing rule of 2026-11-20 the list is run once at the round's end. Nor has Claude read the changed source against the return beyond its first sections; that reading is owed before the round's last pass is briefed.
+
+**Taken from the return, for the round's last pass.** The store's columns are symbols and no column is a concept's row, so certificate 6's first clause is met for the store. The symbol of an operator class's argument is made where the class first takes it and not at the grammar's declaration (*provisional*, the return's point 5, with its reason). A cover over members of its own order at order zero writes nothing in the store (point 6). One test failed once beside other files and never alone (`test_serial_concepts.py::test_update_has_one_promotion_after_placement_and_no_close_observer`); it joins the list of tests to be measured before the item's sweep.
