@@ -169,6 +169,22 @@ sparse credit alone: the scorer learned content, not position. It gates on
 reads and the lesson's cross-entropy instead of list reconstruction (Alec,
 2026-10-10).
 
+**Attention is taught by successive approximation** (Alec, 2026-11-20:
+"Animals are taught via successive approximation under behavioral
+conditioning paradigms, I imagine the same might work here; we can't teach
+focus directly, but we can reward behaviors that require a successively
+narrow focus"). No rule says where to look, no rule forbids a walk an act,
+and no cost is put on a look as such. The lessons are ordered so that each
+can be done only with a narrower focus than the one before: the sentence,
+then its words in order, then a word's parts. What is rewarded is the
+behaviour, by its outcome.
+
+**A sequence is sung over the output.** A test of sequence learning is
+"singing a song over the output" (Alec, 2026-11-20): a learned sequence is
+produced over the output, each item from the one before, with no input
+between. The first song is counting, which "might be simpler than moving
+focus reliably over words".
+
 **One departure, read at the end.** The order also follows from how choices
 are credited. A path departs once from the greedy derivation, completes the
 rest greedily, and its cost $R + A$ is read at the end of the sentence; a chain
@@ -850,8 +866,9 @@ masked-word training, whose authors name the cloze task as its source
 restore a speech sound that a noise has replaced without noticing that it
 was missing
 ([Warren, 1970](https://doi.org/10.1126/science.167.3917.392)). Omission is
-also the teacher of expectation
-([Reasoning](Reasoning.md#system-1-one-field-map-and-a-read-to-a-point)).
+also a teacher of expectation, through the reconstruction's error, and it
+teaches expectation alone
+([Reasoning](Reasoning.md#system-1-two-networks-and-a-read-to-a-point)).
 
 | Knob | Effect |
 |------|--------|
