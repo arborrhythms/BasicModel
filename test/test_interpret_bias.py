@@ -27,6 +27,10 @@ def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading, tmp_
     model = BaseModel.from_config(
         explore_configuration(tmp_path), data=TheData)[0]
     admit_training_forms(model, [text])
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20): the words exist before the reading observed.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, [text])
     model.eval()
     bricks, words, offers, calls = [], [], [], []
     observe, remember, run = ModelAttention.observe_percept, SentenceField.remember, Looks.run
