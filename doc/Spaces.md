@@ -214,13 +214,14 @@ parts bottom-up, a code growing from all zeros by the OR of its parts;
 WholeSpace divides the field top-down, a code shrinking from all ones by the
 AND of its wholes ([Mereology](Mereology.md#percept-code)). At every order
 the same structure follows: a Pi, whose rows are basic percepts at order
-zero and symbols above it, then a Sigma, whose signed weights are each for
-or Not, giving the concepts.
+zero and symbols above it, each row with two values, for and against; then
+the Not, which joins each row's two values into one signed value; then a
+sparse Sigma, whose weights are at zero or above, giving the concepts.
 
 | Space | Owns | Forward |
 |---|---|---|
 | PartSpace | native percept inventory, radix ids, the parts and their codes | find the sentence's forms and parts; a form's parts half = the greatest of its parts' codes |
-| ConceptualSpace | the basic percepts' Pi (`BasicPercepts`, `PerceptPi`), the Sigma of order zero (`OrderZeroSigma`), the Pi and Sigma of each order above, and STM | read the first Pi on the rows the lookup names, combine the percepts' codes, read the concepts of order zero, then each order's symbols and concepts |
+| ConceptualSpace | the basic percepts' Pi (`BasicPercepts`, `PerceptPi`), the Not and the Sigma of order zero (`order_zero_not`, `order_zero`), the Pi, Not and Sigma of each order above, and STM | read the first Pi on the rows the lookup names, join each row's two values in the Not, read the concepts of order zero from those signed values, then each order's symbols and concepts |
 | WholeSpace | the table of wholes (`PrimitiveProperties`) and analysis spans | read each whole where a form's run of parts lies; a percept's wholes half = the least of its wholes' codes |
 
 The two perceptual `forward(in_sub, cs_out=None)` signatures remain.
@@ -460,7 +461,7 @@ plain case, present or absent. A number is treated the same way.
   bins are fixed, 64 for each place, so a value's code does not change when
   another value arrives; each place has a table of its own, on coordinates
   of its own, and a collection of values is read by its bounds, not through
-  a column of the Sigma.
+  the Sigma.
 - **A concept generalizes levels.** A concept over several levels takes
   their common part and their covering whole: an interval on one
   dimension, a hyperrectangle on several.
@@ -488,8 +489,8 @@ only different being the percept dims" (Alec, 2026-11-13). One reader,
   number of places.
 - **A collection per place.** Each place has a table of values of its
   own, on coordinates of its own. A collection of the level percepts met
-  at a place is read by its bounds, 0 or 1, and not through a column of
-  the Sigma (`BasicPercepts.read_collection`); its for lane is the
+  at a place is read by its bounds, 0 or 1, and not through the Sigma
+  (`BasicPercepts.read_collection`); its for lane is the
   reading's membership in that collection, not the felt value.
 - **Back from the field.** `NumericPercepts.reverse` returns each place's
   number from the level its concept holds.
@@ -562,10 +563,8 @@ modal basis."
   band, the wires of the parameter's row at its place. A reading's
   `.where` is its own, the band of the event at its start, and is not
   combined over its percepts (Alec, 2026-11-19: "It's own, flowing from
-  the fixed .where parameter"); its `.when` likewise. What is learned is
-  what reads the where: the concepts' weights on the where coordinates,
-  which start at zero for a new concept, since a generalization holds no
-  place.
+  the fixed .where parameter"). Only the first Pi reads the where, as a
+  look's match of place; no concept has a weight on a where wire.
 
 ### Complement, Copart, and Negation {#percept-complement}
 
@@ -602,9 +601,10 @@ unsigned carrier does support is withdrawal, the non-affirming `non`, and
 that is how attention works here: the reading scope and the priority surface
 exclude the non-object without predicting it. No percept or symbol is
 negated. A percept's against lane is perceived evidence, not a negation; the
-one place a sign lives is a weight of a Sigma, a Not entry, which at the
-basic level records that something expected is absent and is taught by
-omission (Alec, 2026-11-17). The operator `not` swaps the two lanes of what
+one place a sign is changed is the Not, and a Not entry, from one row to one
+concept, at the basic level records that something expected is absent; it is
+made by the gradient or taught by omission (Alec, 2026-11-17 and
+2026-11-19). The operator `not` swaps the two lanes of what
 it is put on, which is its own inverse, and `non` removes both, keeping the
 operand as a marked witness, which cannot be undone (Alec, 2026-11-12:
 "non- removes both positive and negative evidence, while not swaps the two
@@ -651,11 +651,9 @@ at 64 and 64 before that part is added, and none after.
 A code is a bound, so it is built by the greatest and the least, which do
 not grow with how often a constituent recurs or decay with a whole's
 length; a whole's greatest dominates every sub-span's by construction, so
-containment order holds inside a whole without projection. Where the
-percepts of one reading are joined, each present by degree, the parts are
-joined by the union $1 - \prod_p (1 - v_p)$ and the wholes by the product
-$\prod_p w_p$ (Alec, 2026-11-17: "Pi on the gaps"), which pass a gradient
-to every percept and agree with the greatest and the least on 0 and 1.
+containment order holds inside a whole without projection. The code is
+read by the first Pi alone, for the what and for the where; nothing joins
+the codes of a reading's percepts.
 
 A percept's identity carries no absolute address: a basic percept is a row
 of the first Pi over its parts and wholes (`BasicPercepts.reserve`), and its
@@ -665,51 +663,40 @@ different places are the same percept twice.
 
 ### Percept-to-Concept Seam {#percept-concept-seam}
 
-**The combined vector.** For one reading, the first Pi gives each basic
-percept present a value on each lane, and the percepts' codes are combined
-into one vector as wide as the perceptual space, on each lane. Each percept
-enters once, at its net, for less against: above zero what tells for it
-joins the for lane and what tells against it the against lane, below zero
-the reverse, and a percept read equally for and against adds nothing. For
-each coordinate the combination is a Pi on the gaps (Alec, 2026-11-17: "pi
-over the individual percept dims instead of pooling"):
+**The rows' signed values.** For one reading, the first Pi gives each basic
+percept present two values, for and against, from its parts, its properties
+and its against entries; it is the only reader of the perceptual code (Alec,
+2026-11-19: "the perceptual code is used exclusively to distribute codes in
+the hypercube, and the only thing touching that is the pi"). The Not
+(`NotLayer3`, `order_zero_not`) joins each row's two values into one signed
+value, for less against, $s_i = f_i - g_i$ in $[-1, 1]$; an entry of the Not
+gives one concept that row's pair exchanged, $g_i - f_i$. The reading's own
+`.where` is its own, and its `.when` is the stamp of the model's clock; the
+where enters at the first Pi, as a look's match of place.
 
-$$x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$$
+**The concepts of order zero.** A sparse Sigma (`SparseSigmaLayer3`,
+`order_zero`) reads those signed values: for a concept $c$,
 
-with $b_p$ the percept's net value and $v_p$ what it reads
-(`BasicPercepts.read_pair`: the parts half as it is, the wholes half on its
-complement). A percept at zero changes nothing, and $x$ lies in $[0, 1]$
-(`OrderZero.combine`). The reading's own `.where` and `.when` follow the
-content, at the degree the reading is present (`.where` and `.when` are read
-unsigned; a reader of an angle takes $2x - 1$).
+$$y_c = \tanh\Big(\sum_i w_{ci}\, s_i\Big),$$
 
-**The concepts of order zero.** A dense Sigma reads the combined vector:
-$y = \tanh(x\,U)$, one signed number for each concept, with $U$ of the
-perceptual width by the concepts and no bias (`OrderZeroSigma`). The Sigma
-takes the for channel and the against channel as two inputs, each with
-weights of its own (Alec, 2026-11-19: "the summation step is determined by
-gradient need at sigma"); the against weights start as the for weights
-negated, so a concept starts reading the for vector less the against vector.
-A concept made at order zero starts from its members: its column is, for
-each member, what tells for it over the number of its contributions less
-what tells against it over theirs,
+the sum over the concept's entries, $w_{ci}$ at zero or above and $s_i$ the
+signed value of row $i$, exchanged through a Not entry. It has no bias, and
+its rows are compressed, as at every order above. It is monotone: with no
+Not entry, raising a row's value never lowers a concept. The size of an
+entry is the Sigma's weight and its sign is the Not's; the gradient makes a
+Not entry where it carries an entry through zero, and a declared Not member
+makes one explicitly. Order zero is n:n on basic percepts: each nominated
+row brings one concept, which starts reading only its own row, at one, and a
+member that joins later writes an entry at one on its row. A concept reads no
+percept's code, no place and no time, so it answers only to the rows it is
+given: the concept of `alpha` reads nothing on "beta delta", and where a
+form's holder stands in its place (`archer` in `archery`) the row reads
+against and its concept reads nothing. The Sigma of order zero is not
+penalized.
 
-$$u = \sum_k \tfrac{1}{2}\left( \frac{P_k}{|P_k|^2} - \frac{N_k}{|N_k|^2} \right)$$
-
-(`OrderZeroSigma.member_column`; Alec, 2026-11-19: "we can divide all
-contributions by the number of contributions, respectively"), a Not member
-subtracted, and nothing normalized afterwards. Where a member has nothing
-against it its share is $P_k/|P_k|^2$ alone; where it has, its share is the
-mean of its two sides, so that a member read alone reads one before the
-squash (its own against side, witnessed absent, supports it as much as its
-for side), and all that tells against it, present, takes the reading to zero
-however few its coordinates. A new concept has one member,
-its own row, and a member that joins later is added to the column in the
-same way. The Sigma of order zero is dense and is not penalized.
-
-Conceptual fields carry no per-position tensors or per-concept coordinates;
-a concept's place is the reading's, through its weights on the where
-coordinates. See
+Conceptual fields carry no per-position tensors or per-concept coordinates.
+A concept is opaque and keeps the `.where` and `.when` it was given; no
+concept has a weight on a where wire. See
 [Architecture](Architecture.md#sigma-and-pi-layers).
 
 `WhereRegistry` assigns each model fixed, nonoverlapping ranges for each
@@ -1177,8 +1164,10 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
   observed in one field has the same advancing subjective `when_time`.
   Per-word reconstruction excludes these shared dimensions, while grammar
   still transports them. Any field-time objective should score the timestamp
-  once per field. Spaces and tense operators share this encoding; the exact
-  long-integer clock remains alongside it. Tense is the onset-vs-`now`
+  once per field. The model has one integer clock, and its code is made by
+  one encoder when the clock advances and held on the model beside it;
+  every reader, the spaces and the tense operators among them, reads it
+  there. Tense is the onset-vs-`now`
   relation; `shift_time` rotates both pairs coherently, each at its own
   $\omega$. Both `.where` and `.when` are start-only two-rung ladders
   (`WhereEncoding`, `WhenStartDurationEncoding`).
@@ -1346,8 +1335,9 @@ reads a key, and no walk runs on this stem in the tests.
 
 **Role.** Forms concepts from perceptual and symbolic sources, by one
 structure at every order: a Pi, then a Not, then a Sigma. At order zero the
-first Pi's rows are the basic percepts, their codes are combined, and a
-dense Sigma gives the concepts ("Percept-to-Concept Seam" above). Above it a
+first Pi's rows are the basic percepts, each with two values, the Not joins
+each row's two values into one signed value, and a sparse Sigma over those
+values gives the concepts ("Percept-to-Concept Seam" above). Above it a
 Pi makes symbols over the concepts below, a Not entry is from one symbol to
 one concept, and a Sigma makes the concepts of the next order. Symbols and
 concepts are held in separate tensors. `CS.forward` itself performs STM
@@ -1382,41 +1372,44 @@ unsigned lanes.
 
 **Owned matrices and carrier.** The conceptual inventory owns the first Pi
 (`BasicPercepts.pi`, a `PerceptPi` stored as compressed rows with an index
-of columns beside them), the Sigma of order zero (`OrderZeroSigma`), and
-above order zero a Pi and a Sigma for each order, stored as compressed rows
+of columns beside them), the Not and the sparse Sigma of order zero
+(`order_zero_not`, `order_zero`), and above order zero a Pi, the Not and a
+Sigma for each order, the Pi and the Sigma stored as compressed rows
 that grow into capacity allocated beforehand. A row of any Pi exists only
 when MTM nominates it on recurrence, and each row brings one concept, so
 every order's Sigma is square in its rows: as many concepts as rows. The
 clean-stack STM retains the incoming event and its short-lived tree. Input
 reconstruction starts from the live order-zero field, independently of
 that tree. On the way back the Pi inverts exactly, and the Sigma returns
-the combined vector by least squares where there are enough concepts and
-not otherwise; a signed value is split into its two unsigned parts before
+the rows' signed values by least squares where there are enough concepts
+and not otherwise; a signed value is split into its two unsigned parts before
 a percept or a symbol holds it (`signed_lanes`: -.5 is .5 on the against
 lane). No input perception spans enter the native decoder.
 
 **The cycle of the orders.** At an order with $n$ concepts:
 
 ```text
-y      = tanh(x U)                       # n signed values (SigmaLayer3)
+y_c    = tanh(sum_i w_ci s_i)           # n signed values (SparseSigmaLayer3)
 lanes  = signed_lanes(y)                 # stored as 2n unsigned lanes
 rows   = Pi(lanes)                       # the symbols MTM nominated, each a
                                          # row on its own lane (PiLayer3)
 signed = Not(rows)                       # for less against, one value a
                                          # symbol; an entry of the Not
                                          # exchanges a pair for one concept
-y_next = tanh(signed W)                  # the next Sigma, W at zero or above
+y_next = tanh(sum_i w_ci signed_i)      # the next Sigma, w at zero or above
 ```
 
 A Pi row is $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$, with its
 diagonal at one or more, the rest at zero or more and its bias at zero or
 less, so a row requires the members it has weight on and never exceeds its
-own reading. A Sigma's weights start at zero or above, so there is no Not
-entry until teaching makes one, and it has no bias. A symbol of order $k$
+own reading. A Sigma's weights are at zero or above and it has no bias, so
+it is monotone; the size of an entry is the Sigma's and its sign is the
+Not's. A Not entry is made implicitly, where the gradient carries an entry
+through zero, and explicitly, by a declared Not member. A symbol of order $k$
 reads the concepts of every order below $k$, and between orders only
 activation passes. The entries of every Pi and of every Sigma above order
 zero are learned under a penalty that thins the values of the entries that
-exist; the Sigma of order zero is dense and is not penalized.
+exist; the Sigma of order zero is sparse and is not penalized.
 
 `_order_caps()` gives the room of each order. Order zero has as many
 concepts as there are basic percepts, and each order above has half the
@@ -1581,12 +1574,12 @@ Checked on 4,000 pairs of vectors, one at or below the other, it holds for:
    the order below: what needs all its members.
 2. **The union** $1 - \prod (1 - x)$. Its output lies at or above every input
    it reads, so it makes the order above: what any member is enough for.
-3. **A Sigma** $\tanh(x\,U)$ with $U$ of zero or above. It rises with every
-   input, but is not always above it.
+3. **A Sigma** $\tanh(\sum_i w_{ci} s_i)$ with every $w_{ci}$ at zero or
+   above. It rises with every input, but is not always above it.
 
 It fails as soon as a Sigma has one Not entry. So the chain keeps parthood
-lane by lane while no Not entry is read, and a mind whose weights are all
-held at zero or above speaks only of what is. Monotone weights cannot make
+lane by lane while no Not entry is read, and a mind that reads no Not entry
+speaks only of what is. Monotone weights cannot make
 evidence against: that takes the against lane of a percept's code, or a Not
 entry. The two lanes keep "both" `[1, 1]` apart from "neither" `[0, 0]`, where
 one signed axis would let the two cancel under summation.
@@ -1692,7 +1685,7 @@ keeps the symbolic carrier for higher-order readers while taking the same
 descended view for reconstruction.
 
 The way back inverts each layer as far as it goes. The Sigma of order zero
-returns the combined vector by least squares where there are enough
+returns the rows' signed values by least squares where there are enough
 concepts, and not otherwise; a signed value on the way back is replaced by
 its two unsigned parts before a percept holds it, so -.5 is .5 on the
 against lane and nothing on the for lane. The first Pi inverts exactly. At
