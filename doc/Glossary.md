@@ -316,9 +316,14 @@ percepts into the activation space on all existing concepts" (Alec,
 of the sentence, and the first look of a sentence takes all of it at once.
 
 **Expectation.** A guess at the network's activation, computed in the
-architecture, on the structure's own Pi, Not and Sigma. It is built in, turned
-on by a parameter of the model, and taught by the reconstruction in stages:
-percepts, concepts, output. It "is not counted as evidence, it is just
+architecture, on the structure's own Pi, Not and Sigma. It is built in and
+turned on by a parameter of the model. It is made at each `attend()`: "we want
+to expect perceptual and symbolic activation and then learn that stage by
+stage as we move over the orders" (Alec, 2026-11-20). At each order what was
+expected is compared with what arrives there, and it is not trained through
+the way up and the way down again. The top-down reconstruction is a different
+thing: it fills in a blind spot, from what the framework of percepts and
+concepts assumes of what is missing. Expectation "is not counted as evidence, it is just
 removing some of the burden from later layers" (Alec, 2026-11-19). It joins
 the signal as a gain on what arrives, with its gradient stopped, and as a
 prime of selection. What it gives is the *expected field*.
