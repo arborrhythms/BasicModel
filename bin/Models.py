@@ -2266,6 +2266,9 @@ class BaseModel(Mereology, nn.Module):
             _cs.basic_percepts.bind(self.wholeSpace.subspace.what)
             _cs.install_order_zero()
             _cs.declare_word_classes()
+            # The definition store is a module of the space from its
+            # construction, so a captured forward never sees it added.
+            _cs._sparse_families(0)
 
         self.numeric_percepts = None
         from GrammarPhases import SUBSTRATE
