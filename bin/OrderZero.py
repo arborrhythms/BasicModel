@@ -224,7 +224,10 @@ def read_word(evidence, mask, reading, place, *, content_width):
     content = 1.0 - torch.exp(up * gaps + down * gaps.flip(-2))
     coordinates = presence[..., :, None] * place[..., None, :]
     combined = torch.cat((content, coordinates), -1)
-    return torch.tanh((combined * column).sum((-2, -1)))
+    # x_for U + x_against A, as OrderZeroSigma reads it: the one input of
+    # for less against, then what the against channel adds where A is not -U.
+    net = ((combined[..., 0, :] - combined[..., 1, :]) * column[..., 0, :]).sum(-1)
+    return torch.tanh(net + (combined[..., 1, :] * (column[..., 1, :] + column[..., 0, :])).sum(-1))
 
 
 def combine(presence, codes, *, where=None, when=None):
@@ -340,9 +343,18 @@ class OrderZeroSigma(SigmaLayer3):
         if vector.square().sum() > 0:
             self.add_share(column, float(sign) * self.member_column(vector, against))
 
+    @staticmethod
+    def _read(combined, weight, against):
+        """``x_for U + x_against A``, written as rule 3's one input of for
+        less against, ``(x_for - x_against) U``, and what the against
+        channel adds where it has left ``-U``, ``x_against (A + U)``: the
+        same sum, and at a column's start exactly the one-input read."""
+        return ((combined[..., 0, :] - combined[..., 1, :]) @ weight
+                + combined[..., 1, :] @ (against + weight))
+
     def forward(self, x):
         """The concepts of a combined vector ``[..., 2, width]``."""
-        return torch.tanh(x[..., 0, :] @ self.weight + x[..., 1, :] @ self.against)
+        return torch.tanh(self._read(x, self.weight, self.against))
 
     def concepts(self, combined, columns):
         """Each column's signed value for each reading of ``combined``,
@@ -352,7 +364,7 @@ class OrderZeroSigma(SigmaLayer3):
         index = columns.clamp_min(0)
         weight = self.weight.index_select(1, index) * valid
         against = self.against.index_select(1, index) * valid
-        return torch.tanh(combined[..., 0, :] @ weight + combined[..., 1, :] @ against)
+        return torch.tanh(self._read(combined, weight, against))
 
     def reverse(self, y):
         """The input's two lanes by least squares through the for weights
