@@ -2033,6 +2033,15 @@ generation is expected at this stage and is recorded, not tuned away.
    (`9151b6f10b`, about 1,400 lines over `EntryRead`, `LTM1`, `Layers`,
    `MediumTermMemory` and `Spaces`) is a reference, ported onto main after
    2.0's move of the three stores into `bin/Memory.py`, not merged.
+   **Added 2026-11-19 (Alec: "lets explore implementing the explore paths
+   as separate batches which share data structures and sequencing in
+   1.5"):** a sentence's explore paths become rows of the batch over one
+   shared reading and one sequence of steps, in place of running one
+   after another with the state saved and put back; with it,
+   `explorePaths` above one is measured against a larger batch. The
+   design and its order of work are in
+   [the item 1.5 plan](doc/plans/2026-11-14-item1-5.md) ("The explore
+   paths as rows of the batch").
 - **1. Compiler work.** *Built by Claude, side by side with item 0.5 on
    Codex (Alec, 2026-11-09): the generated math corpus, its generator and its
    frozen manifest are item 0.5's; the comparison of compiled and eager runs
