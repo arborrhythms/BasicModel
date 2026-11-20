@@ -19530,3 +19530,7 @@ Spot tests by the pass; both gates pass on `c39d24b625`. The list and the lesson
 #### The list at round 5's end (Claude, 2026-11-20)
 
 On round 5's last source (`c39d24b625`, run in a clone at `1253f6f257`, which adds only text), 278 files, six processes: 2 failed, 3,135 passed, 152 skipped, in 1,256 s. The two: `test_item18_expect.py::test_81` (recorded above; the pair candidates, to round 6's first pass) and `test_runtime_split_ingestion.py::test_store_truths_records_truths`, which rests on a walk. Round 4 ended at 22 failed and the repair at 7. The lesson over twelve runs is recorded with round 6's first return.
+
+#### The lesson at round 5's end (Claude, 2026-11-20)
+
+`lesson --runs 12` on round 5's last source, no seed chosen: words found 43.8 of 64 in the mean (6 to 64; each run 48, 18, 6, 64, 64, 23, 64, 59, 43, 62, 28, 47); 72 first walks at the cap, every one a walk that repeats a state; a known word read both, 12 times in all; 27.9 s a run. After the two rules against the loop were removed it found 14 to 64 words (§23.4.6's review), so this is the same lesson: its walks loop, as §23.L diagnosed, and round 5 neither helped nor hurt it within what twelve runs can show. It is round 6's to change, with the table gone and the membership gradient returned.
