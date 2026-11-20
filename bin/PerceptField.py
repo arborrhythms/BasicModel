@@ -36,6 +36,12 @@ class PerceptField:
                           None if self.when_band is None else self.when_band[b, e],
                           None if self.boundaries is None else self.boundaries[:, :, b, e])
 
+    def select_streams(self, batch):
+        """The values of stream ``batch`` alone, for a read of its values;
+        the occurrences and coordinates are left as they are."""
+        from dataclasses import replace
+        return replace(self, values=self.values[:, batch:batch + 1])
+
     def selected(self, keys):
         lookup = {key: i for i, key in enumerate(self.keys)}
         return torch.tensor([lookup[key] for key in keys],

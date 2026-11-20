@@ -57,22 +57,44 @@ def test_02_admitted_word_and_basic_percept_are_positive_before_teaching(eager_r
 
 
 def paired_layer(layout,weights,*,anchor=False):
+    # Row 2 reads, on both lanes, a symbol that holds row 0's concept; the
+    # anchor reads one that holds row 1's.
+    from symbol_fixtures import store_columns
     layer=ConceptualAttentionLayer.square(3)
-    for c,w in zip((0,4),weights):layer.add_edge(2,c,weight=w)
-    if anchor:layer.add_edge(2,1,weight=1.)
+    columns=store_columns(layer,0)+store_columns(layer,0,lane=1)
+    for c,w in zip(columns,weights):layer.add_edge(2,c,weight=w)
+    if anchor:layer.add_edge(2,store_columns(layer,1)[0],weight=1.)
     return layer
 
 
+def by_column(layer,rows):
+    """The things' lanes by column, from the lanes of each row's symbol
+    (``rows``: row -> (for, against)) and the bias, (1, 0)."""
+    from symbol_fixtures import store_columns
+    u=torch.zeros(layer.nInput,1)
+    u[layer.bias_column()]=1.
+    for row,(positive,negative) in rows.items():
+        u[store_columns(layer,row)[0]]=positive
+        u[store_columns(layer,row,lane=1)[0]]=negative
+    return u
+
+
 def fold(layer,layout,*,conjunctive=False,values=None):
+    # Row 0 at (values[0], values[1]); row 1, the anchor, at values[2] and
+    # 1 - values[2]; the bias reads (1, 0). The control, a plain layer,
+    # reads the same values at columns 0, 4, 1, 5 and 3.
     values=(.25,.8,1. if conjunctive else 0.) if values is None else values
-    u=torch.tensor([[values[0]],[values[2]],[0.],[1.],[values[1]],[1-values[2]],[0.],[0.]])
+    if isinstance(layer,ConceptualAttentionLayer):
+        u=by_column(layer,{0:(values[0],values[1]),1:(values[2],1-values[2])})
+    else:
+        u=torch.tensor([[values[0]],[values[2]],[0.],[1.],[values[1]],[1-values[2]],[0.],[0.]])
     return layer.fold_presence(u,start=2,end=3,conjunctive=conjunctive)
 
 
 @pytest.mark.parametrize('weights,expected',[( (1.,1e-7),[1.,0.]),((.2,.7),[0.,1.]),((.5,.5),[0.,0.])])
 def test_06_higher_order_pair_values(weights,expected):
     layer=paired_layer('concept',weights)
-    u=torch.zeros(8,1);u[0]=1.;u[3]=1.
+    u=by_column(layer,{0:(1.,0.)})
     pair=torch.stack([layer.fold_presence(u,dual=bool(p))[2,0] for p in (0,1)])
     torch.testing.assert_close(pair,torch.tensor(expected),rtol=0,atol=0)
 
@@ -107,10 +129,11 @@ def test_06_definition_closure_reads_the_same_signed_pair(weights,expected):
 @pytest.mark.parametrize('weights',[(.8,.2),(.2,.8),(.5,.5)])
 @pytest.mark.parametrize('conjunctive',[False,True])
 def test_06_reverse_attributes_only_the_signed_definition(weights,conjunctive):
+    from symbol_fixtures import store_columns
     layer=paired_layer('concept',weights)
     control=SparseLayer(8,3)
-    control.add_edge(2,0,weight=max(weights[0]-weights[1],0.))
-    control.add_edge(2,4,weight=max(weights[1]-weights[0],0.))
+    control.add_edge(2,store_columns(layer,0)[0],weight=max(weights[0]-weights[1],0.))
+    control.add_edge(2,store_columns(layer,0,lane=1)[0],weight=max(weights[1]-weights[0],0.))
     query=torch.tensor([[0.],[0.],[.4]])
     observed=torch.ones(8,1)
     for field in (None,observed):
@@ -124,10 +147,11 @@ def test_06_reverse_attributes_only_the_signed_definition(weights,conjunctive):
 def test_06_cancelled_definition_does_not_create_a_dependency_cycle():
     from types import SimpleNamespace
     from FieldProjection import close
+    from symbol_fixtures import store_columns
     layer=ConceptualAttentionLayer.square(3)
     for target,source in ((0,2),(2,0)):
-        layer.add_edge(target,source,weight=.5)
-        layer.add_edge(target,source+4,weight=.5)
+        for lane in (0,1):
+            layer.add_edge(target,store_columns(layer,source,lane=lane)[0],weight=.5)
     owner=SimpleNamespace(_concept_allocator=SimpleNamespace(layer=lambda order:layer))
     evidence=torch.tensor([[.25,0.],[0.,.75]])
     torch.testing.assert_close(close(owner,[0,2],evidence),evidence,rtol=0,atol=0)
@@ -151,10 +175,14 @@ def test_05_percept_attribution_reads_the_same_signed_feature(weights,expected):
 
 def test_pairing_survives_binding_and_range_cache_growth():
     layer=paired_layer('concept',(1.,.1))
+    from symbol_fixtures import store_columns
     view=layer.bind([2,0])
-    u=torch.tensor([[0.],[1.],[1.],[0.],[0.],[0.]])
+    # The view's input: the one thing read (row 0's symbol), the bias, and
+    # their against lanes.
+    u=torch.tensor([[1.],[1.],[0.],[0.]])
     assert view.fold_presence(u,start=0,end=1).item()==1.
-    layer.add_edge(2,1,weight=.2)
-    # Both missing sources remap to the bias slot; they must not become partners.
+    layer.add_edge(2,store_columns(layer,1)[0],weight=.2)
+    # Two things whose concepts are not seated are both missing; they must
+    # not become partners.
     view=layer.bind([2])
-    assert view.fold_presence(torch.zeros(4,1)).item()==0.
+    assert view.fold_presence(torch.zeros(view.nInput,1)).item()==0.

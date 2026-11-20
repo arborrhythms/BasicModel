@@ -166,7 +166,9 @@ def test_singleton_populates_one_untyped_edge():
     S = class_over(cs, [('sym', A)])
     assert cs._concept_source_order(S) == 1
     row = cs._csw_rows[(1, S)]
-    assert cs.concept_weights(row) == [(cs._csw_rows[(0, A)], 1.0)]
+    from symbol_fixtures import weight_key
+    # The class reads the word on the basic percept its nomination brought.
+    assert cs.concept_weights(row) == [(weight_key(cs, cs._csw_rows[(0, A)]), 1.0)]
 
 
 

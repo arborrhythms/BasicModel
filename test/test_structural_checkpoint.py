@@ -71,7 +71,9 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     layer = alloc.layer()
     layer.assign_row(("concept", word), capacity=4, base=0)
     layer.assign_row(("concept", meta), capacity=4, base=4)
-    layer.add_edge(5, 2, weight=0.4)
+    # Row 5 reads a symbol that holds the word.
+    column = layer.column_of_thing(('sym', layer.symbol_table.make(('test', word), word)))
+    layer.add_edge(5, column, weight=0.4)
     with torch.no_grad():
         layer.values[0] = 0.625
 
@@ -123,7 +125,8 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     assert restored_alloc.layer()._tensor_row_keys == layer._tensor_row_keys
     assert restored_alloc.layer()._row_next == layer._row_next
     assert restored_alloc.layer()._rows == [5]
-    assert restored_alloc.layer()._cols == [2]
+    assert restored_alloc.layer()._cols == [column]
+    assert restored_alloc.layer().column_rows(column) == (0,)
     torch.testing.assert_close(
         restored_alloc.layer().values.detach(), torch.tensor([0.625]))
     assert not hasattr(restored_cs, "_joint_concepts")

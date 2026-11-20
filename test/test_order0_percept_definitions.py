@@ -25,7 +25,10 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     basic_feature(cs, 0, 'ws', 3, .5, negated=True, parts=(65,))
     basic_feature(cs, 1, 'ws', 0, .5, negated=True, parts=(65,))
     basic_feature(cs, 1, 'ws', 1, 1., negated=True, parts=(65,))
-    cs.add_concept_edge(0, 1, 1.)
+    # Order zero's alternatives are entries of the order-zero Sigma; the
+    # concept store holds kinds above order zero only.
+    with pytest.raises(ValueError, match='order-zero Sigma'):
+        cs.add_concept_edge(0, 1, 1.)
     raw = torch.tensor([[65]])
     spans = torch.tensor([[[0, 1]]])
     result = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)

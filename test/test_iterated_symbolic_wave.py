@@ -44,6 +44,8 @@ def test_depth_d_sigma_path_completes_in_one_pass():
         force_order(cs, cid, order)
     rows = [cs._csw_concept_row(order, cid)
             for order, cid in ((1, 100), (1, 101), (2, 102), (3, 103))]
+    from symbol_fixtures import readable
+    readable(cs, 0, 1, 2, 3)
     for row, sources in zip(rows, ((0, 1), (2, 3), rows[:2], (rows[2],))):
         for source in sources:
             cs.add_concept_edge(row, source, 1.)

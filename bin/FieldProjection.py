@@ -24,7 +24,11 @@ def close(owner, rows, evidence):
     for row in positions:
         definitions[row] = []
         for matrix, operation in ((store, 'union'),):
-            edges = [(column % (store.nOutput+1), column >= store.nOutput+1, index)
+            # An entry reads a thing: the rows of the concepts it holds (a
+            # basic percept: the concept its nomination brought, since a
+            # concept field holds no basic percepts), or the bias (None).
+            edges = [(None if store.thing_of_column(column) is None else store.column_rows(column),
+                      store.column_lane(column) == 1, index)
                      for (target, column), index in matrix._index.items()
                      if target == row and float(folded_weights[matrix][index].detach()) > 0]
             if edges:
@@ -33,18 +37,22 @@ def close(owner, rows, evidence):
     while pending:
         ready = [row for row in sorted(pending) if all(
             source not in positions or source in done
-            for _, _, edges in definitions[row] for source, _, _ in edges)]
+            for _, _, edges in definitions[row] for sources, _, _ in edges
+            for source in (sources or ()))]
         if not ready:
             raise ValueError('cyclic concept field definitions')
         for row in ready:
             value = evidence[positions[row]]
             for matrix, operation, edges in definitions[row]:
                 operands, weights = [], []
-                for source, negative, edge in edges:
-                    item = done.get(source, torch.zeros_like(value))
-                    if source == store.nOutput:
+                for sources, negative, edge in edges:
+                    if sources is None:
                         item = torch.zeros_like(value)
                         item[..., 0] = 1.
+                    else:
+                        # A thing is the product of the concepts it holds.
+                        held = [done.get(source, torch.zeros_like(value)) for source in sources]
+                        item = torch.stack(held).prod(0) if held else torch.zeros_like(value)
                     operands.append(item.flip(-1) if negative else item)
                     weights.append(folded_weights[matrix][edge])
                 combined = reduce(torch.stack(operands, -2), operation=operation,

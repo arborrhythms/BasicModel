@@ -98,7 +98,7 @@ def test_symbolic_order_does_not_admit_a_same_order_edge():
     for cid in (100, 101): force_order(cs, cid, 1)
     target = cs._csw_concept_row(1, 100)
     source = cs._csw_concept_row(1, 101)
-    with pytest.raises(ValueError, match='preceding order'):
+    with pytest.raises(ValueError, match='lower orders only'):
         cs.add_concept_edge(target, source, 1.)
     assert cs.concept_weights(target) == []
 
@@ -254,6 +254,8 @@ def test_csw_weights_update_under_optimizer_step():
     for cid in (101, 102): force_order(cs, cid, 1)
     r1 = cs._csw_concept_row(1, 101)                   # allocated -> selected
     r2 = cs._csw_concept_row(1, 102)
+    from symbol_fixtures import readable
+    readable(cs, 0, 2)
     cs.add_concept_edge(r1, 0, weight=0.5)
     cs.add_concept_edge(r2, 2, weight=1.0)
     what = torch.randn(16, _D)

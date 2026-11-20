@@ -142,6 +142,8 @@ def _minted_cs():
     cs = _cs(nS=16, order=1)
     rA = _mint_row(cs, 1, 301)
     rB = _mint_row(cs, 1, 302)
+    from symbol_fixtures import readable
+    readable(cs, 3, 5)
     cs.add_concept_edge(rA, 3, weight=2.0)     # A: strong evidence
     cs.add_concept_edge(rB, 5, weight=0.5)     # B: weak evidence
     return cs, rA, rB

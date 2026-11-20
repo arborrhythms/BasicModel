@@ -139,17 +139,22 @@ def test_self_edge_allowed_by_default():
 
 
 def test_conceptual_attention_layer_is_square_and_forbids_self_edges():
-    ly = ConceptualAttentionLayer.square(8)   # N=8 concepts -> [9 x 8], no roles
+    from symbol_fixtures import store_columns
+    ly = ConceptualAttentionLayer.square(8)   # 8 rows read 8 symbols and the bias, two lanes
     assert (ly.nInput, ly.nOutput) == (18, 8)
-    with pytest.raises(ValueError, match="self-edge"):
-        ly.add_edge(3, 3)
+    # A row may not read a thing that holds its own concept, on either lane.
+    for lane in (0, 1):
+        with pytest.raises(ValueError, match="self-edge"):
+            ly.add_edge(3, store_columns(ly, 3, lane=lane)[0])
 
 
 def test_conceptual_attention_union_uses_presence_chart():
+    from symbol_fixtures import store_columns
     ly = ConceptualAttentionLayer.square(4)
-    ly.add_edge(2, 0, weight=.5)
+    column, = store_columns(ly, 0)
+    ly.add_edge(2, column, weight=.5)
     u = torch.zeros(10, 1)
-    u[0] = .75
+    u[column] = .75
     out = ly.fold_presence(u)
     torch.testing.assert_close(out[2], torch.tensor([.5]))
     assert not out[:2].any()
@@ -183,6 +188,8 @@ def test_concept_store_assign_row_and_hebbian():
     assert ly.assign_row(10) == r0                  # stable per key
     assert ly.assign_row(11) == r0 + 1              # next free row
     assert ly.row_of(10) == r0 and ly.row_of(99) is None
-    ly.add_edge(2, 0, weight=0.5)
+    from symbol_fixtures import store_columns
+    column, = store_columns(ly, 0)
+    ly.add_edge(2, column, weight=0.5)
     ly.hebbian_strengthen_row(2, eta=0.25, cap=4.0)
-    assert abs(float(ly.values[ly._index[(2, 0)]]) - 0.75) < 1e-6
+    assert abs(float(ly.values[ly._index[(2, column)]]) - 0.75) < 1e-6

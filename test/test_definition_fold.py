@@ -26,7 +26,7 @@ def test_witnessed_lanes_merge_by_max_without_absence_as_a_label():
     staged=prepare(cs,field)
     matrix=alloc.layer(0)
     with torch.no_grad():
-        matrix.values[matrix._index[row,a]]=.2
+        matrix.values[cs.concept_entries(row,a)[0]]=.2
     records=examples(cs,field)
     assert [(e.concept,e.witness,e.source) for e in records]==[(cid,witness,a)]
     assert records[0].names==() and not records[0].activation.requires_grad
@@ -41,7 +41,7 @@ def test_witnessed_lanes_merge_by_max_without_absence_as_a_label():
         loss(cs,staged)
         q = cs._last_definition_fold['readings'][0]['readings']
         return torch.where(mask, (q-target).square(), 0.).sum()/mask.sum().clamp_min(1)
-    index = matrix._index[row,a]
+    index = cs.concept_entries(row,a)[0]
     with torch.no_grad():
         matrix.values[index] += 1e-3
         above = held_cost()
@@ -51,7 +51,7 @@ def test_witnessed_lanes_merge_by_max_without_absence_as_a_label():
     torch.testing.assert_close(matrix.values.grad[index], (above-below)/.002, atol=2e-4, rtol=.01)
     # §57.6: the opposite parameter receives the negative of the signed
     # coefficient's gradient, even while its own forward magnitude is zero.
-    torch.testing.assert_close(matrix.values.grad[matrix._index[row,a+matrix.nOutput+1]],
+    torch.testing.assert_close(matrix.values.grad[cs.concept_entries(row,a,lane=1)[0]],
                                -matrix.values.grad[index], atol=0, rtol=0)
     assert field.grad is None and cb.W.grad is None
     assert alloc.parts.truth_plus.grad is None and alloc.parts.truth_minus.grad is None

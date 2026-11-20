@@ -7,6 +7,7 @@ from ConceptEvidence import corners, symbols, union
 from basic_fixtures import order_zero_expected, published_presence
 from test_concept_memberships import binary_features
 from test_cs_sparse_weights import _cs, _mint_row, _mint_field
+from symbol_fixtures import readable
 
 
 def field(cs, batch=1, occurrences=1):
@@ -17,8 +18,11 @@ def field(cs, batch=1, occurrences=1):
 def test_production_snap_background_is_neither(parts):
     cs = _cs()
     row = _mint_field(cs, 101)
+    # An order-zero concept reads basic percepts in the order-zero Sigma;
+    # the concept store holds kinds above order zero only.
     for part in range(parts):
-        cs.add_concept_edge(row, part, 1.)
+        with pytest.raises(ValueError, match='order-zero Sigma'):
+            cs.add_concept_edge(row, part, 1.)
     native, extents = binary_features(cs, torch.zeros(2, 8, dtype=torch.long))
     snap = cs.cs_read_memberships(native, extents)
     _, result = cs.cs_forward_content(snap, cs.similarity_codebook.getW())
@@ -53,6 +57,7 @@ def test_membership_read_keeps_both_until_symbol_readout():
 def test_kind_both_member_and_absent_member_is_both():
     cs = _cs()
     row = _mint_row(cs, 1, 101)
+    readable(cs, 0, 1)
     for col in (0, 1):
         cs.add_concept_edge(row, col, 1.)
     a = field(cs)
@@ -132,6 +137,7 @@ def test_discovered_and_end_definitions_keep_learned_exponent_scale():
     cs = _cs()
     discovered = _mint_row(cs, 1, 101)
     ended = _mint_row(cs, 1, 102)
+    readable(cs, 0, 1)
     cs.add_concept_edge(discovered, 0, .4)
     cs.add_concept_edge(discovered, 1, 1.2)
     cs.add_concept_edge(ended, 0, .3)

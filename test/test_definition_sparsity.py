@@ -19,12 +19,13 @@ def _row_layer(weights, pole_weight=None, n=6):
     """A square concept store with one concept (row 0) whose in-edges over the
     concept columns carry ``weights`` (col 0 is the forbidden self-edge, so we
     start at col 1); optionally a big edge to the EVERYTHING pole."""
+    from symbol_fixtures import store_columns
     ly = ConceptualAttentionLayer.square(n)
     for k, w in enumerate(weights):
-        ly.add_edge(0, 1 + k + (n + 1 if w < 0 else 0), weight=abs(w))
+        ly.add_edge(0, store_columns(ly, 1 + k, lane=int(w < 0))[0], weight=abs(w))
     if pole_weight is not None:
-        ly.add_edge(0, n, weight=pole_weight)
-        ly.add_edge(0, 2 * n + 1, weight=pole_weight)
+        ly.add_edge(0, ly.bias_column(0), weight=pole_weight)
+        ly.add_edge(0, ly.bias_column(1), weight=pole_weight)
     return ly
 
 
@@ -54,11 +55,13 @@ def test_penalty_counts_negated_parts_by_their_nonnegative_exponent():
 def test_gradient_lands_only_on_marginal_ranks():
     ly = _row_layer([1.0, 0.9, 0.3, 0.1], pole_weight=5.0)
     ly.definition_sparsity_penalty(free_size=2).backward()
+    from symbol_fixtures import store_columns
     grad = {c: float(ly.values.grad[i]) for (r, c), i in ly._index.items()}
-    assert grad[1] == 0.0 and grad[2] == 0.0, "top-2 (core) are unpenalized"
-    assert grad[3] == 1.0 and grad[4] == 1.0, "marginal ranks are pulled down"
-    assert grad[6] == 0.0, "the EVERYTHING pole is never penalized"
-    assert grad[13] == 0.0, "its negative pole is never penalized"
+    first, second, third, fourth = (store_columns(ly, k)[0] for k in (1, 2, 3, 4))
+    assert grad[first] == 0.0 and grad[second] == 0.0, "top-2 (core) are unpenalized"
+    assert grad[third] == 1.0 and grad[fourth] == 1.0, "marginal ranks are pulled down"
+    assert grad[ly.bias_column(0)] == 0.0, "the EVERYTHING pole is never penalized"
+    assert grad[ly.bias_column(1)] == 0.0, "its negative pole is never penalized"
 
 
 def test_penalty_none_when_empty():
@@ -67,11 +70,12 @@ def test_penalty_none_when_empty():
 
 
 def test_multi_row_sums_each_concept_independently():
+    from symbol_fixtures import store_columns
     ly = ConceptualAttentionLayer.square(6)
     for c, w in [(1, 1.0), (2, 0.8), (3, 0.5)]:      # concept 0: marginal 0.5
-        ly.add_edge(0, c, weight=w)
+        ly.add_edge(0, store_columns(ly, c)[0], weight=w)
     for c, w in [(2, 1.0), (3, 0.9), (4, 0.2), (5, 0.2)]:  # concept 1: 0.2+0.2
-        ly.add_edge(1, c, weight=w)
+        ly.add_edge(1, store_columns(ly, c)[0], weight=w)
     assert abs(float(ly.definition_sparsity_penalty(2)) - (0.5 + 0.4)) < 1e-6
 
 

@@ -33,6 +33,8 @@ def _fixture():
     cs = _cs(nS=16, order=1)
     rA = _mint_row(cs, 1, 301)
     rB = _mint_row(cs, 1, 302)
+    from symbol_fixtures import readable
+    readable(cs, 3, 5, 6)
     cs.add_concept_edge(rA, 3, weight=2.0)
     cs.add_concept_edge(rB, 5, weight=0.5)
     return cs, rA, rB
@@ -53,6 +55,8 @@ def test_others_can_reference_frozen():
     from test_cs_sparse_weights import _cs, _mint_row
     cs = _cs(nS=64, order=2)
     rA, rB = _mint_row(cs, 1, 301), _mint_row(cs, 2, 302)
+    from symbol_fixtures import readable
+    readable(cs, 3)
     cs.add_concept_edge(rA, 3, 1.)
     cs.freeze_concept(301)
     assert cs.add_concept_edge(rB, rA) is not None

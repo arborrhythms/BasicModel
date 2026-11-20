@@ -181,11 +181,18 @@ def prepare(model, state, structural, vocab, training=None):
             layer['tensor_rows']['concept', concept] = row
             layer['constituents'][concept] = []
         def columns(values):
+            if layer.get('columns') == 'things':
+                # A column is a thing, which the concept rows do not move.
+                return list(values)
+            # An older checkpoint's columns are concept rows, which move
+            # with the rows; they are read as things when it is restored.
             return [(new_size if col % (old_size+1) == old_size else inverse[col % (old_size+1)])
                     + (col // (old_size+1)) * (new_size+1) for col in values]
         layer['rows'] = [inverse[row] for row in layer['rows']]
         layer['cols'] = columns(layer['cols'])
-        layer['nOutput'], layer['nInput'] = new_size, 2*(new_size+1)
+        layer['nOutput'] = new_size
+        if layer.get('columns') != 'things':
+            layer['nInput'] = 2*(new_size+1)
         parts = layer['parts']
         for matrix in parts.get('matrices', {}).values():
             matrix['rows'] = [inverse[row] for row in matrix['rows']]

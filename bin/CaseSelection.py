@@ -170,9 +170,10 @@ def stage_case_bank(space, required_ids, *, limit):
             rows.append(row)
     rows = rows[:int(limit)]
     written = [] if store.values is None else (store.values.detach() > 0).cpu().tolist()
-    edges = [(target, source % (store.nOutput + 1))
-             for (target, source), present in zip(zip(store._rows, store._cols), written)
-             if present and source % (store.nOutput + 1) < store.nOutput]
+    # Each written entry reads the concepts its thing holds.
+    edges = [(target, source)
+             for (target, column), present in zip(zip(store._rows, store._cols), written)
+             if present for source in store.column_rows(column)]
     for _ in range(int(limit)):
         additions = sorted({source for target, source in edges if target in rows and source not in rows})
         if not additions or len(rows) == int(limit):
@@ -192,8 +193,9 @@ def stage_case_bank(space, required_ids, *, limit):
     matrix = store.bind(rows)
     # Supplying an observed field makes attribution retain every written
     # case. No unconditioned strongest-case choice runs during staging.
-    source = matrix.attribute_presence(identity, observed=basis.new_ones(2 * (count + 1), count))
-    cases = torch.stack((source[:count].t(), source[count + 1:2 * count + 1].t()), -1)
+    source = matrix.attribute_presence(identity, observed=basis.new_ones(matrix.nInput, count))
+    from Layers import seat_lanes
+    cases = seat_lanes(matrix, source, count).transpose(0, 1)
     request = torch.stack((identity, torch.zeros_like(identity)), -1).unsqueeze(2)
     observed = space.cs_reverse_presence(request, observed=torch.ones_like(request), inventory_rows=addresses)
     required = required_ids.reshape(1, -1) if required_ids.ndim < 2 else required_ids.reshape(required_ids.shape[0], -1)

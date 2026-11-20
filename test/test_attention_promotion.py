@@ -206,7 +206,9 @@ def test_cover_merges_by_maximum_and_does_not_reinitialize_learned_edges():
     cid = cs.mtm.promote_candidates(cs)[0]
     row = cs._concept_row_of(cid)
     store = cs._concept_allocator.layer()
+    from symbol_fixtures import weight_key
     with torch.no_grad():
-        store.values[store._index[row, rows[0][1]]] = 4.
+        store.values[cs.concept_entries(row, rows[0][1])[0]] = 4.
     cs.cover_members(cid, {rows[0][1]: .5, rows[1][1]: .1})
-    assert dict(cs.concept_weights(row)) == pytest.approx({rows[0][1]:4., rows[1][1]:.6})
+    assert dict(cs.concept_weights(row)) == pytest.approx(
+        {weight_key(cs, rows[0][1]): 4., weight_key(cs, rows[1][1]): .6})

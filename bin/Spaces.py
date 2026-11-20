@@ -12691,6 +12691,12 @@ def _concept_alloc_of(host):
             member_capacity=int(TheXMLConfig.space('SymbolSpace','equalityWitnessCapacity',8192)),
             relation_capacity=int(TheXMLConfig.space('SymbolSpace','relationCapacity',8192)))
         alloc.reference_order = getattr(host, '_concept_source_order', None)
+
+        def _percept_room(_h=host):
+            # The store's basic-percept columns: the first Pi's capacity.
+            basic = getattr(_h, 'basic_percepts', None)
+            return 0 if basic is None else int(getattr(basic, 'capacity', 0))
+        alloc.percept_room = _percept_room
         alloc.order_from_row = getattr(host, '_seated_concept_order', None)
         object.__setattr__(host, "_concept_allocator", alloc)
         object.__setattr__(host, "_concept_parts",
@@ -14770,48 +14776,105 @@ class ConceptualSpace(Space):
             fams[o] = got
         return got
 
-    def add_concept_edge(self, row, col, weight=0.0, *, negated=False):
-        """Add a nonnegative exponent; a negated part addresses its c-minus.
-
-        Order-0 W_sigma unions alternatives in that field; higher W_sigma
-        reads the preceding order's symbols. The trailing column is the
-        standing EVERYTHING.
+    def add_concept_edge(self, row, col, weight=0.0, *, negated=False, make=True):
+        """A kind's entry on the things that hold concept ``col`` (a row;
+        ``nVectors`` is the standing EVERYTHING), in the lane block of
+        ``negated``: :meth:`things_reading` finds them, and makes a symbol
+        where the kind needs one and ``make``. Returns the position of the
+        last entry written.
         """
         r = int(row)
-        order0 = self._order0_inventory_row(r)
-        source0 = self._order0_inventory_row(int(col))
-        if order0 and not source0:
-            raise ValueError('order-0 alternatives require order-0 field concepts')
-        if not order0 and int(col) != int(self.nVectors):
-            target_order = self._row_order(r)
-            cid = self.concept_id_at_row(r)
-            alloc = _concept_alloc_of(self)
-            testimony = (alloc.seated_order(cid) is not None and source0
-                         and ('sym', self.concept_id_at_row(int(col))) in self.concept_parts(cid))
-            if self._row_order(col) != target_order - 1 and not testimony:
-                raise ValueError('sigma edges require symbols of the preceding order')
+        if self._order0_inventory_row(r):
+            raise ValueError('an order-zero concept reads basic percepts in the order-zero Sigma, '
+                             'not the concept store')
+        if float(weight) < 0:
+            raise ValueError('concept exponents are nonnegative; use negated=True')
+        if int(col) == r:
+            raise ValueError('self-edge: a concept cannot be its own part')
+        things = ((None,) if int(col) == int(self.nVectors)
+                  else self.things_reading(r, int(col), make=make))
+        out = None
+        for thing in things:
+            out = self.add_thing_edge(r, thing, weight, negated=negated)
+        return out
+
+    def add_thing_edge(self, row, thing, weight=0.0, *, negated=False):
+        """The entry of the kind on store row ``row`` on ``thing`` (a basic
+        percept ``('bp', p)``, a symbol ``('sym', s)``, or ``None``, the
+        bias), in lane block ``negated``. A kind of order ``k`` reads things
+        of every lower order and of none at or above its own: an entry on a
+        thing that holds a concept of order ``k`` or more is refused."""
+        r = int(row)
+        if thing is not None:
+            self._check_thing_order(r, thing)
         # Frozen definition: no FORMING of new connections on its row.
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
             return None
-        # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
-        ly = self._sparse_families(0)
-        # Global bias convention col == nVectors; translate to the store's
-        # own bias column (nOutput -- the taper span).
-        _c = int(col)
-        if _c == int(self.nVectors):
-            _c = self._bias_col()
-        if _c == r:
-            raise ValueError('self-edge: a concept cannot be its own part')
         if float(weight) < 0:
             raise ValueError('concept exponents are nonnegative; use negated=True')
-        if negated:
-            _c += ly.nOutput + 1
+        # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
+        ly = self._sparse_families(0)
         self._maybe_rebuild_optimizer_for_csw()
-        out = ly.add_edge(r, _c, weight=weight)
+        out = ly.add_edge(r, ly.column_of_thing(thing, int(bool(negated))), weight=weight)
         # Values may have regrown: re-arm the frozen-weights grad hook.
         if getattr(self, "_frozen_concepts", None):
             self._refresh_frozen_values_hook()
         return out
+
+    def _check_thing_order(self, row, thing):
+        order = self._row_order(int(row))
+        if order < 1:
+            raise ValueError('a kind of order zero is read in the order-zero Sigma')
+        if thing[0] == 'bp':
+            return
+        store = _concept_alloc_of(self).layer(0)
+        for member in store.symbol_table.members(int(thing[1])):
+            seat = self._concept_row_of(member)
+            member_order = (self._row_order(seat) if seat is not None
+                            else _concept_alloc_of(self).order_of(member))
+            if member_order is not None and member_order >= order:
+                raise ValueError(
+                    f'a kind of order {order} collects things of lower orders only: symbol '
+                    f'{thing[1]} holds concept {member} of order {member_order}')
+
+    def things_reading(self, reader, source, *, make=True):
+        """The things by which the kind on row ``reader`` reads the concept
+        on row ``source``.
+
+        An order-zero concept that a basic percept's nomination brought is
+        read on that basic percept's row (the record, ``brought``), with no
+        symbol between. Any other concept is read through a symbol that
+        holds it, found first ("check for an existing fit first": of the
+        symbols whose rows read it, the one with the fewest constituents);
+        where none does and ``make``, the kind's need makes one, by
+        :meth:`nominate_symbol`, named by the making
+        ``('kind', reader's concept, source's concept)``. Without ``make``
+        a concept with no thing gives nothing.
+        """
+        reader, source = int(reader), int(source)
+        alloc = _concept_alloc_of(self)
+        if self._order0_inventory_row(source):
+            percepts = alloc.percepts_bringing(source)
+            if percepts:
+                return tuple(('bp', p) for p in percepts)
+        concept = self.concept_id_at_row(source)
+        if concept is None:
+            raise ValueError(f'store row {source} holds no concept: no thing reads it')
+        table = alloc.symbol_table()
+        symbol = table.fit(int(concept))
+        if symbol is None:
+            if not make:
+                return ()
+            order, member_order = self._row_order(reader), self._row_order(source)
+            if member_order >= order:
+                # Refused before anything is made for it.
+                raise ValueError(
+                    f'a kind of order {order} collects things of lower orders only: concept '
+                    f'{concept} is of order {member_order}')
+            reader_id = self.concept_id_at_row(reader)
+            symbol = self.nominate_symbol(('kind', None if reader_id is None else int(reader_id),
+                                           int(concept)), int(concept))
+        return (('sym', int(symbol)),)
 
     @property
     def basic_percepts(self):
@@ -14942,10 +15005,11 @@ class ConceptualSpace(Space):
         return self.add_concept_feature(row, 'bp', percept, 1.)
 
     def nominate_symbol(self, handle, concept):
-        """MTM's nomination of ``handle`` makes its symbol above order zero,
-        which brings ``concept``: one row of the symbols' Pi over the
-        concept's two lanes. Returns the symbol's index; a handle nominated
-        before keeps its symbol."""
+        """The one maker of a symbol above order zero: MTM's nomination of
+        ``handle``, or a kind's need of a member that no symbol holds
+        (:meth:`things_reading`). The symbol brings ``concept``: one row of
+        the symbols' Pi over the concept's two lanes. Returns the symbol's
+        index; a handle nominated before keeps its symbol."""
         return _concept_alloc_of(self).symbol_table().make(handle, int(concept))
 
     def concept_percepts(self, row):
@@ -14998,20 +15062,22 @@ class ConceptualSpace(Space):
         codes = dictionary[rows.clamp_min(0)].clone() * (rows >= 0)[..., None]
         return codes.permute(1, 0, 2) if rows.ndim == 2 else codes
 
-    def _concept_field_store(self, inventory_rows=None):
+    def _concept_field_store(self, inventory_rows=None, *, percepts=None):
         """Bind sparse definitions for this read; the view owns no parameters."""
         store = _concept_alloc_of(self).layer(0)
         rows = self._field_inventory_rows() if inventory_rows is None else inventory_rows
-        return store.bind(rows)
+        return store.bind(rows, percepts=percepts)
 
     @torch.no_grad()
-    def _bind_attended_concepts(self, required, rows_t):
+    def _bind_attended_concepts(self, required, rows_t, percepts=None):
         """Gather every definition reachable from active native percept poles.
 
         ``required[k]`` is the reading of the order-zero member whose concept
-        is ``rows_t[k]`` (:class:`ConceptMembers`). The closure over the
-        definition edges runs on the device (item 1.5); only the reached rows
-        come back to the host, to be grouped by order.
+        is ``rows_t[k]`` (:class:`ConceptMembers`). ``percepts`` maps each
+        basic percept the reading holds to whether it is active in each
+        stream (``[B]``): a kind with an entry on an active basic percept is
+        reached. A symbol is reached through the concepts it holds. Only the
+        reached rows come back to the host, to be grouped by order.
         """
         store = _concept_alloc_of(self).layer()
         device = required.device
@@ -15022,19 +15088,36 @@ class ConceptualSpace(Space):
         rows_t = rows_t.to(device)
         targets, sources = [], []
         standing = torch.zeros(S, dtype=torch.bool, device=device)
-        for parent in (store,):
-            if not parent.nnz:
-                continue
-            pr, pc = parent._indices(device)
-            source = pc % (S + 1)
-            dependent = source < S
-            targets.append(pr[dependent])
-            sources.append(source[dependent])
-            standing[pr[pc == S]] = True
         reached = torch.zeros(S, B, dtype=torch.long, device=device)
         if len(rows_t):
             reached = reached.index_add(0, rows_t, active.to(torch.long))
-        reached = (reached > 0) | standing[:, None]
+        reached = reached > 0
+        for parent in (store,):
+            if not parent.nnz:
+                continue
+            dep_t, dep_s, direct_t, direct_p = [], [], [], []
+            bias = (parent.bias_column(0), parent.bias_column(1))
+            for row, column in zip(parent._rows, parent._cols):
+                if column in bias:
+                    standing[row] = True
+                    continue
+                thing = parent.thing_of_column(column)
+                if thing[0] == 'bp':
+                    if percepts is not None and int(thing[1]) in percepts:
+                        direct_t.append(row)
+                        direct_p.append(percepts[int(thing[1])])
+                    continue
+                for source in parent.thing_rows(thing):
+                    dep_t.append(row)
+                    dep_s.append(source)
+            if direct_t:
+                hit = torch.stack(direct_p).to(device=device, dtype=torch.long)
+                reached = reached | (torch.zeros(S, B, dtype=torch.long, device=device).index_add(
+                    0, torch.tensor(direct_t, dtype=torch.long, device=device), hit) > 0)
+            if dep_t:
+                targets.append(torch.tensor(dep_t, dtype=torch.long, device=device))
+                sources.append(torch.tensor(dep_s, dtype=torch.long, device=device))
+        reached = reached | standing[:, None]
         if targets:
             dep_t, dep_s = torch.cat(targets), torch.cat(sources)
             while True:
@@ -15109,8 +15192,11 @@ class ConceptualSpace(Space):
                 membership[held] = perception.values.index_select(0, perception.selected(keys))
             negated = torch.tensor([n for _, _, n in members], device=membership.device, dtype=torch.bool)
             required = torch.where(negated[:, None, None, None], membership.flip(-1), membership)
+            lit = (perception.values.amax((2, 3)) > 0 if perception.values.shape[2] else
+                   perception.values.new_zeros(perception.values.shape[:2], dtype=torch.bool))
+            percepts = {int(key[1]): lit[i] for i, key in enumerate(perception.keys) if key[0] == 'bp'}
             self._bind_attended_concepts(required, torch.tensor(
-                [row for row, _, _ in members], dtype=torch.long))
+                [row for row, _, _ in members], dtype=torch.long), percepts)
         values = perception.values
         inputs = [key[1] for key in perception.keys]
         B = values.shape[1]
@@ -15124,6 +15210,9 @@ class ConceptualSpace(Space):
         field = torch.cat(fields, 1)
         if publish:
             object.__setattr__(self, '_cs_order0_raw', field.detach())
+            # The reading's basic percepts go with the field it gave: the
+            # store reads a basic percept's row there (cs_forward_content).
+            object.__setattr__(self, '_cs_read_pair', (field, perception))
         return field
 
     def order_zero_both(self, perception, rows, *, batch=None):
@@ -15183,34 +15272,60 @@ class ConceptualSpace(Space):
         concepts' field. The selections of the concepts' own field are left
         as they were.
         """
+        from dataclasses import replace
         both = self.order_zero_both_field(perception)
         a_0 = torch.stack((both, both), -1).to(self.similarity_codebook.W.dtype)
+        # A basic percept read both is the least of its two lanes, on each.
+        least = perception.values.detach().amin(-1, keepdim=True)
+        percepts = replace(perception, values=least.expand_as(perception.values).to(a_0))
         kept = {name: self.__dict__.get(name) for name in
-                ('_cs_level_acts', '_cs_level_rows', '_cs_wave_qe')}
+                ('_cs_level_acts', '_cs_level_rows', '_cs_wave_qe', '_cs_thing_percepts')}
         try:
-            _, field = self.cs_forward_content(a_0, None)
+            _, field = self.cs_forward_content(a_0, None, percepts=percepts)
         finally:
             for name, value in kept.items():
                 object.__setattr__(self, name, value)
         return field.detach()
 
     def concept_weights(self, row, *, negated=False):
-        """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
-        shared untyped store (cols are global rows; ``nVectors`` is the
-        bias column), sorted by col. Empty when none."""
+        """What concept ``row`` reads in the store's lane block ``negated``,
+        as ``(source, weight)`` sorted by source: a symbol gives the rows of
+        the concepts it holds (one pair for each); a basic percept gives
+        ``('bp', p)``; the bias gives ``nVectors``. Empty when none."""
         alloc = getattr(self, "_concept_allocator", None)
         ly = None if alloc is None else alloc._layers.get(0)
         if ly is None or ly.values is None:
             return []
-        r = int(row)
-        # Read-side bias back-translation: callers see the GLOBAL bias
-        # convention (col == nVectors); storage uses the store's nOutput.
-        _bias = int(ly.nOutput)
-        _nv = int(self.nVectors)
-        return sorted(((_nv if int(c) % (_bias + 1) == _bias else int(c) % (_bias + 1)),
-                       float(ly.values[i]))
-                      for (rr, c), i in ly._index.items()
-                      if rr == r and (int(c) > _bias) == bool(negated))
+        r, lane = int(row), int(bool(negated))
+        result = []
+        for (rr, c), i in ly._index.items():
+            if rr != r or ly.column_lane(c) != lane:
+                continue
+            thing = ly.thing_of_column(c)
+            weight = float(ly.values[i].detach())
+            if thing is None:
+                result.append((int(self.nVectors), weight))
+            elif thing[0] == 'bp':
+                result.append((('bp', int(thing[1])), weight))
+            else:
+                result.extend((source, weight) for source in ly.thing_rows(thing))
+        return sorted(result, key=lambda pair: (isinstance(pair[0], tuple), pair[0]))
+
+    def concept_entries(self, row, source, lane=0):
+        """The positions of the store's entries by which concept ``row``
+        reads concept ``source`` (a row) in lane block ``lane``: one for each
+        of the things that :meth:`things_reading` finds without making."""
+        alloc = getattr(self, "_concept_allocator", None)
+        ly = None if alloc is None else alloc._layers.get(0)
+        if ly is None or self.concept_id_at_row(int(source)) is None:
+            return ()
+        found = (ly._index.get((int(row), ly.column_of_thing(thing, lane)))
+                 for thing in self.things_reading(int(row), int(source), make=False))
+        return tuple(position for position in found if position is not None)
+
+    def reads_concept(self, row, source, lane=0):
+        """Whether concept ``row`` has an entry on a thing of ``source``."""
+        return bool(self.concept_entries(row, source, lane))
 
     def _sparse_family_nnz(self):
         """Total edge count over the DISTINCT family layers (v3: every order
@@ -15262,15 +15377,18 @@ class ConceptualSpace(Space):
         store = _concept_alloc_of(self).layer(0)
         # A witnessed pole can teach an unwritten sigma edge. Preserve the
         # established sparse replacement and optimizer-state migration.
-        offset = store.nOutput + 1
         for row, source, evidence in witnesses:
             if row in frozen:
                 continue
             for pole in range(2):
-                column = source + pole * offset
-                if bool(evidence[pole] > 0) and (row, column) not in store._index:
-                    store.add_edge(row, column, weight=0.)
-                    changed = True
+                if not bool(evidence[pole] > 0):
+                    continue
+                for thing in self.things_reading(row, source):
+                    column = store.column_of_thing(thing, pole)
+                    if (row, column) not in store._index:
+                        self._check_thing_order(row, thing)
+                        store.add_edge(row, column, weight=0.)
+                        changed = True
         observed = getattr(self, '_cs_last_a0', None)
         active = []
         if torch.is_tensor(observed):
@@ -15284,25 +15402,29 @@ class ConceptualSpace(Space):
                 if id(matrix) in seen or matrix.values is None:
                     continue
                 seen.add(id(matrix))
-                offset = matrix.nOutput + 1
                 defined = [(row, col) for (row, col), pos in list(matrix._index.items())
                            if row not in frozen and float(matrix.values[pos]) > 0]
-                candidates = [(row, (col + offset) % (2 * offset))
-                              for row, col in defined if col % offset != matrix.nOutput]
+                # The other lane of each thing a definition reads.
+                candidates = [(row, matrix.column_of_thing(matrix.thing_of_column(col),
+                                                           1 - matrix.column_lane(col)))
+                              for row, col in defined if matrix.thing_of_column(col) is not None]
                 for row, col in candidates:
                     if (row, col) not in matrix._index:
                         matrix.add_edge(row, col, weight=0.)
-                        opposite = (col + offset) % (2 * offset)
                         changed = True
                 for row in sorted({row for row, _ in defined}):
                     order = self._row_order(row)
                     for source in active:
                         if ((order == 1 and self._order0_inventory_row(source))
                                 or (order > 1 and self._row_order(source) == order - 1)):
-                            for col in (source, source + offset):
-                                if (row, col) not in matrix._index:
-                                    matrix.add_edge(row, col, weight=0.)
-                                    changed = True
+                            # The context offers the things that exist: a
+                            # concept with none is not offered a symbol here.
+                            for thing in self.things_reading(row, source, make=False):
+                                for lane in (0, 1):
+                                    col = matrix.column_of_thing(thing, lane)
+                                    if (row, col) not in matrix._index:
+                                        matrix.add_edge(row, col, weight=0.)
+                                        changed = True
         if changed and frozen:
             self._refresh_frozen_values_hook()
 
@@ -15377,30 +15499,60 @@ class ConceptualSpace(Space):
             return None
         return lam * total
 
-    def _concept_rung_presence(self, field, start, end, *, inventory_rows=None):
-        """Sigma over preceding-order symbols; each subject keeps its scope."""
+    @staticmethod
+    def _percept_index(perception):
+        """Basic percept -> its index in ``perception``'s values."""
+        if perception is None:
+            return None
+        return {int(key[1]): i for i, key in enumerate(perception.keys) if key[0] == 'bp'}
+
+    def _concept_rung_presence(self, field, start, end, *, inventory_rows=None, percepts=None):
+        """The store's kinds of rows ``start:end`` over the things they read.
+
+        A symbol's lanes come from the concepts it holds in ``field``; a
+        basic percept's are its row's two values in the reading
+        ``percepts`` (a :class:`PerceptField` of the same streams and
+        readings), and without one, the lanes of the concept its nomination
+        brought.
+        """
+        from Layers import thing_input
         addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
         if addresses.ndim == 2:
             return torch.cat([self._concept_rung_presence(field[:, b:b+1], start, end,
-                inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
-        ly = self._concept_field_store(addresses)
+                inventory_rows=addresses[:, b],
+                percepts=None if percepts is None else percepts.select_streams(b))
+                for b in range(field.shape[1])], 1)
         S, B, L, _ = field.shape
-        positive = field[..., 0].reshape(S, B * L)
-        negative = field[..., 1].reshape(S, B * L)
-        x = torch.cat((positive, positive.new_ones(1, B * L),
-                       negative, negative.new_zeros(1, B * L)))
+        values = None
+        if percepts is not None and tuple(percepts.values.shape[1:3]) == (B, L):
+            # A kind's error does not teach a basic percept's row: the row is
+            # perception's, and its values are read here, not taught.
+            values = percepts.values.detach().reshape(len(percepts.keys), B * L, 2)
+        else:
+            percepts = None
+        ly = self._concept_field_store(addresses, percepts=self._percept_index(percepts))
+        x = thing_input(ly, field.reshape(S, B * L, 2), values)
         result = torch.stack((
             ly.fold_presence(x, start=start, end=end),
             ly.fold_presence(x, start=start, end=end, dual=True)), -1)
         return result.reshape(end - start, B, L, 2)
 
-    def cs_forward_content(self, a_0, dictionary):
+    def cs_forward_content(self, a_0, dictionary, *, percepts=None):
         """Compose paired evidence within occurrences, then read two symbols.
 
         The taper ranks either pole and admits both together. Only the bounded
         store span is materialized, independently of dictionary capacity.
+        ``percepts`` is the reading whose basic percepts the store's kinds
+        read; by default, the reading that gave ``a_0``
+        (:meth:`cs_read_percept_field`), if it did.
         """
         from ConceptEvidence import symbols, decode
+        from Layers import thing_priorities
+        if percepts is None:
+            pair = getattr(self, '_cs_read_pair', None)
+            if pair is not None and pair[0] is a_0:
+                percepts = pair[1]
+        object.__setattr__(self, '_cs_thing_percepts', percepts)
         if a_0.ndim != 4 or a_0.shape[-1] != 2:
             raise ValueError('snap requires [concept, batch, occurrence, 2]')
         caps = self._field_caps()
@@ -15432,7 +15584,7 @@ class ConceptualSpace(Space):
                 continue
             end = start + count
             rows = torch.arange(start, end, device=field.device)
-            raw = self._concept_rung_presence(field, start, end)
+            raw = self._concept_rung_presence(field, start, end, percepts=percepts)
             addresses = self._field_inventory_rows(field.device)[start:end]
             if addresses.ndim == 1:
                 addresses = addresses[:, None].expand(-1, B)
@@ -15444,13 +15596,14 @@ class ConceptualSpace(Space):
             score = None
             if p_rel is not None:
                 with torch.no_grad():
-                    pole = torch.cat((p_rel, p_rel.new_zeros(1, B)))
-                    x = torch.cat((pole, pole))
                     addresses = self._field_inventory_rows()
                     hops = []
                     for b in range(B):
                         bound = self._concept_field_store(addresses[:, b] if addresses.ndim == 2 else addresses)
-                        hop = bound.forward_linear_abs(x[:, b:b+1])
+                        # Each thing's priority is its concepts' greatest.
+                        pole = thing_priorities(bound, p_rel[:, b:b+1])
+                        pole = torch.cat((pole, pole.new_zeros(1, 1)))
+                        hop = bound.forward_linear_abs(torch.cat((pole, pole)))
                         hops.append(hop)
                     hop = torch.cat(hops, 1)
                     score = p_rel[start:end] + hop[start:end]
@@ -15482,22 +15635,24 @@ class ConceptualSpace(Space):
             return torch.cat([self.cs_reverse_presence(field[:, b:b+1],
                 observed=None if observed is None else observed[:, b:b+1],
                 inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
+        from Layers import thing_input, seat_lanes
         store = self._concept_field_store(addresses)
         S, B, E = store.nOutput, field.shape[1], field.shape[2]
         result = field[:S].clone()
         source = None
         if observed is not None:
-            positive, negative = observed[:S].reshape(S, B * E, 2).unbind(-1)
-            source = torch.cat((positive, field.new_ones(1, B * E),
-                                negative, field.new_zeros(1, B * E)))
+            source = thing_input(store, observed[:S].reshape(S, B * E, 2))
 
         def descend(matrix, value, start, end, conjunctive=False):
+            # The request reaches the things a kind reads, and from each the
+            # seats of the concepts it holds (a basic percept: the concept
+            # its nomination brought).
             poles = value.reshape(S, B * E, 2)
             contributions = [matrix.attribute_presence(poles[..., channel],
                 observed=source, conjunctive=conjunctive, start=start, end=end,
                 dual=bool(channel)) for channel in (0, 1)]
             combined = torch.maximum(*contributions)
-            inferred = torch.stack((combined[:S], combined[S + 1:2 * S + 1]), -1)
+            inferred = seat_lanes(matrix, combined, S)
             return torch.maximum(value, inferred.reshape(S, B, E, 2))
 
         higher = torch.tensor([int(row) >= 0 and self._row_order(int(row)) > 0
@@ -15711,14 +15866,23 @@ class ConceptualSpace(Space):
             if row is None:
                 raise RuntimeError('class definition exceeds construction capacity')
             matrix = _concept_alloc_of(self).layer()
+            if self._order0_inventory_row(row):
+                # A concept of order zero reads basic percepts in the
+                # order-zero Sigma; the store holds kinds above it, and a
+                # cover over members of its own order writes nothing here.
+                return
             for member, weight in witness[0].items():
                 if member == row:
                     raise ValueError('a class cannot cover itself')
-                previous = matrix._index.get((row, int(member)))
-                if previous is None:
-                    matrix.add_edge(row, int(member), weight=float(weight))
-                else:
-                    matrix.values.data[previous].clamp_min_(float(weight))
+                # The class reads its member's things; the recognition of
+                # the class makes a symbol where the member has none.
+                for thing in self.things_reading(row, int(member)):
+                    previous = matrix._index.get((row, matrix.column_of_thing(thing)))
+                    if previous is None:
+                        self._check_thing_order(row, thing)
+                        matrix.add_edge(row, matrix.column_of_thing(thing), weight=float(weight))
+                    else:
+                        matrix.values.data[previous].clamp_min_(float(weight))
             self._sparse_families(0)
             self._maybe_rebuild_optimizer_for_csw()
             return
@@ -15772,7 +15936,8 @@ class ConceptualSpace(Space):
                     self.bring_concept(percept, c_row)
                 words = alloc.declared_classes.get('words')
                 words_row = None if words is None else self._concept_row_of(words)
-                if words_row is not None and (words_row, c_row) not in alloc.layer()._index:
+                if words_row is not None and not self.reads_concept(words_row, c_row):
+                    # The kind of words reads the word's basic percept.
                     self.add_concept_edge(words_row, c_row, 1.)
             else:
                 groups = (part_ids,) if coactive and part_ids else tuple((part,) for part in part_ids)
@@ -15787,11 +15952,12 @@ class ConceptualSpace(Space):
             if s_row is None:
                 continue
             matrix = alloc.layer()
-            previous = matrix._index.get((c_row, s_row))
-            if previous is None:
+            previous = self.concept_entries(c_row, s_row)
+            if not previous:
                 self.add_concept_edge(c_row, s_row, weight=1.)
             else:
-                matrix.values.data[previous].clamp_min_(1.)
+                for position in previous:
+                    matrix.values.data[position].clamp_min_(1.)
         if _EVERYTHING in wholes:
             self.add_concept_edge(c_row, int(self.nVectors), weight=1.)  # standing pole
         # Make the freshly-grown sparse weights trainable (rebuilds the model
@@ -16173,8 +16339,8 @@ class ConceptualSpace(Space):
         return _concept_alloc_of(self).layer(0).row_of(('concept', int(concept_id)))
 
     def _bias_col(self):
-        """The EVERYTHING bias column in STORE coordinates (store nOutput)."""
-        return int(_concept_alloc_of(self).layer(0).nOutput)
+        """The EVERYTHING bias column of the store (lane block 0)."""
+        return int(_concept_alloc_of(self).layer(0).bias_column())
 
     def _row_to_concept(self):
         """Invert the shared store's row allocation: GLOBAL tensor row ->
@@ -16390,11 +16556,12 @@ class ConceptualSpace(Space):
             return
         ly = _concept_alloc_of(self).layer(0)
         c_row, s_row = self._concept_row_of(cid), self._concept_row_of(code)
-        pos = (None if c_row is None or s_row is None
-               else ly._index.get((int(c_row), int(s_row))))
-        if pos is not None and ly.values is not None:
+        positions = (() if c_row is None or s_row is None
+                     else self.concept_entries(c_row, s_row))
+        if positions and ly.values is not None:
             with torch.no_grad():
-                ly.values[pos] = float(value)
+                for pos in positions:
+                    ly.values[pos] = float(value)
 
 
     def _hebbian_strengthen(self, cid, eta=0.1, cap=4.0):

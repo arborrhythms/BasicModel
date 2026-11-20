@@ -358,7 +358,7 @@ def _checkpoint_host_copy(value):
 _SYMBOLS_MADE_FOR_A_CONCEPT = ('declared', 'percept', 'object', 'part-kind')
 
 
-def _symbols_nominated_by_mtm(state):
+def _symbols_nominated_by_mtm(state, *, columns_are_things=False):
     """The symbol table's record without the symbols made for a concept.
 
     A symbol is a row whose constituents occur together, made when MTM
@@ -371,12 +371,49 @@ def _symbols_nominated_by_mtm(state):
     kept = [s for s in symbols
             if not (isinstance(s[0], (tuple, list)) and s[0]
                     and s[0][0] in _SYMBOLS_MADE_FOR_A_CONCEPT)]
+    if len(kept) != len(symbols) and columns_are_things:
+        raise ValueError('a checkpoint whose store reads symbols by index holds symbols made '
+                         'for a concept: dropping them would move every symbol column')
     if len(kept) != len(symbols):
         warnings.warn(
             f'checkpoint: {len(symbols) - len(kept)} symbols made for a concept '
             f'(handles {_SYMBOLS_MADE_FOR_A_CONCEPT}) are dropped on reading; '
             'a symbol is made only when MTM nominates it', stacklevel=2)
     return dict(state, symbols=kept)
+
+
+def _read_rows_as_things(cs, layer, read_as_rows):
+    """The entries of a store whose columns were concept rows, read once as
+    things. ``read_as_rows[i]`` is entry ``i``'s ``(source row, lane)``
+    (``None``: the bias). Each source is read as
+    :meth:`ConceptualSpace.things_reading` reads it: a concept that a basic
+    percept's nomination brought, on that basic percept's row; any other
+    through a symbol that holds it, found or made for the kind that read it.
+    A source held by several things gives an entry on each, at its value."""
+    rows, columns, positions = [], [], []
+    for i, (row, (source, lane)) in enumerate(zip(layer._rows, read_as_rows)):
+        found = (None,) if source is None else cs.things_reading(row, source)
+        for thing in found:
+            rows.append(row)
+            columns.append(layer.column_of_thing(thing, lane))
+            positions.append(i)
+    if len(set(zip(rows, columns))) != len(columns):
+        raise ValueError('two checkpoint columns read one thing on one row')
+    layer._rows, layer._cols = rows, columns
+    layer._init_vals = [layer._init_vals[i] for i in positions]
+    layer._index = {pair: i for i, pair in enumerate(zip(rows, columns))}
+    layer._edge_ids = list(range(len(rows)))
+    layer._next_edge_id = len(rows)
+    layer._parameter_edge_ids = tuple(layer._edge_ids)
+    if layer.values is not None and len(positions) != len(read_as_rows):
+        index = torch.tensor(positions, dtype=torch.long, device=layer.values.device)
+        layer.values = nn.Parameter(layer.values.detach().index_select(0, index).clone(),
+                                    requires_grad=layer.values.requires_grad)
+    signs = getattr(layer, '_checkpoint_exponent_signs', None)
+    if signs is not None and len(positions) != len(read_as_rows):
+        layer._checkpoint_exponent_signs = signs[torch.tensor(positions, dtype=torch.long)]
+    layer._dev_cache = None
+    layer.__dict__.pop('_fold_partners', None)
 
 
 def _mps_rng_state_or_none():
@@ -2280,6 +2317,12 @@ class BaseModel(Mereology, nn.Module):
             # per-order sparse weight Parameters grow (mirrors codebook growth).
             object.__setattr__(_cs, '_model', self)
             object.__setattr__(_cs, '_basic_percepts', self.perceptualSpace.basic_percepts)
+            # The store's columns hold a row of the first Pi for each basic
+            # percept it has room for.
+            from Spaces import _concept_alloc_of
+            _store = _concept_alloc_of(_cs).layer(0)
+            if _store._paired_sources:
+                _store.set_room(percepts=_cs.basic_percepts.capacity)
             _cs.basic_percepts.bind(self.wholeSpace.subspace.what)
             _cs.install_order_zero()
             _cs.declare_word_classes()
@@ -4013,6 +4056,10 @@ class BaseModel(Mereology, nn.Module):
                             getattr(layer, "_row_next", {})),
                         "rows": [int(v) for v in getattr(layer, "_rows", ())],
                         "cols": [int(v) for v in getattr(layer, "_cols", ())],
+                        # Each column of a lane block is a thing: a basic
+                        # percept, a symbol of the table, or the bias.
+                        "columns": "things",
+                        "things": list(getattr(layer, "_room", None) or ()),
                         "init_vals": [
                             float(v) for v in getattr(layer, "_init_vals", ())
                         ],
@@ -4184,6 +4231,7 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError('invalid reclaimed concept capacity in checkpoint')
 
         layer_blobs = saved.get("layers") or {}
+        rows_as_columns = []
         if len(layer_blobs) > 1:
             raise ValueError(
                 "checkpoint has multiple ConceptAllocator layers; the live "
@@ -4198,16 +4246,17 @@ class BaseModel(Mereology, nn.Module):
                 layer.grow_inventory(saved_n_output)
             live_n_input = int(layer.nInput)
             live_n_output = int(layer.nOutput)
-            old_columns = saved_n_input == saved_n_output + 1
-            paired_columns = saved_n_input == 2 * (saved_n_output + 1)
+            things = blob.get('columns') == 'things'
+            old_columns = not things and saved_n_input == saved_n_output + 1
+            paired_columns = not things and saved_n_input == 2 * (saved_n_output + 1)
             shape_mismatch = saved_n_output != live_n_output
             square_expansion = bool(
                 shape_mismatch and self._aligned_inventory_capacity() is not None
-                and (old_columns or paired_columns)
-                and live_n_input == 2 * (live_n_output + 1)
+                and (old_columns or paired_columns or things)
+                and layer._paired_sources
                 and saved_n_output < live_n_output)
             if (shape_mismatch and not square_expansion) or (
-                    not old_columns and saved_n_input != live_n_input and not square_expansion):
+                    not (things or old_columns or paired_columns) and saved_n_input != live_n_input):
                 raise ValueError('ConceptAllocator store shape mismatch')
             rows = [int(v) for v in blob.get('rows', ())]
             cols = [int(v) for v in blob.get('cols', ())]
@@ -4218,14 +4267,25 @@ class BaseModel(Mereology, nn.Module):
             values = blob.get('values')
             if values is not None and int(values.numel()) != len(rows):
                 raise ValueError('ConceptAllocator sparse values/indices length mismatch')
-            if old_columns or square_expansion:
-                remapped = []
+            if things and layer._paired_sources and tuple(blob.get('things') or ()) != tuple(layer._room):
+                # Another room: each column keeps its thing and its lane.
+                from Layers import ConceptualAttentionLayer
+                saved = ConceptualAttentionLayer.square(1, percepts=blob['things'][0],
+                                                        symbols=blob['things'][1])
+                cols = [layer.column_of_thing(saved.thing_of_column(col), saved.column_lane(col))
+                        for col in cols]
+            elif old_columns or paired_columns:
+                # A checkpoint whose columns were concept rows: each column's
+                # row and lane, read as things once the table and the record
+                # of nominations are restored (below).
+                read_as_rows = []
                 for i, col in enumerate(cols):
                     source = col if old_columns else col % (saved_n_output + 1)
                     negative = (values is not None and float(values[i]) < 0) if old_columns else col > saved_n_output
-                    source = live_n_output if source == saved_n_output else source
-                    remapped.append(source + (live_n_output + 1 if negative else 0))
-                cols = remapped
+                    read_as_rows.append((None if source == saved_n_output else source, int(negative)))
+                rows_as_columns.append((layer, read_as_rows))
+                # Placeholders until then, one for each entry.
+                cols = list(range(len(cols)))
                 if old_columns and values is not None:
                     layer._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
                     values = values.abs()
@@ -4290,7 +4350,8 @@ class BaseModel(Mereology, nn.Module):
         # A checkpoint from before the symbol table made no symbol at a
         # nomination: its table is empty.
         alloc.symbol_table().restore(_symbols_nominated_by_mtm(_checkpoint_host_copy(
-            saved.get("symbol_table") or dict(version=1, symbols=()))))
+            saved.get("symbol_table") or dict(version=1, symbols=())),
+            columns_are_things=any(blob.get('columns') == 'things' for blob in layer_blobs.values())))
         if "brought" not in saved:
             # A checkpoint from before the record of nominations: a row's
             # own concept was allocated with it, before any concept made
@@ -4299,6 +4360,12 @@ class BaseModel(Mereology, nn.Module):
             for row, percept, negated in sorted(alloc.order_zero_members):
                 if not negated:
                     alloc.brought.setdefault(percept, row)
+        # A checkpoint whose columns were concept rows is read once: each
+        # column of a concept that a basic percept's nomination brought
+        # becomes that basic percept's row; each other becomes a symbol
+        # that holds the concept, found or made for the kind that read it.
+        for layer, read_as_rows in rows_as_columns:
+            _read_rows_as_things(cs, layer, read_as_rows)
 
         # Migration is deferred until the common store's semantic rows load.
         if saved.get('word_obj_meta') or saved.get('interpretations'):

@@ -2,6 +2,7 @@
 import pytest
 import torch
 import Spaces
+from symbol_fixtures import readable
 from test_cs_sparse_weights import _cs, _mint_row, _evidence, _mint_field, _field_forward
 
 
@@ -13,8 +14,9 @@ def test_union_holds_one_present_part_across_orders():
     rows = []
     for order in range(1, 5):
         row = _mint_row(cs, order, 100 + order)
-        cs.add_concept_edge(row, source, weight=1.)
         start, end = cs.order_slice(order - 1)
+        readable(cs, *range(start, end))
+        cs.add_concept_edge(row, source, weight=1.)
         for missing in range(start, end):
             if missing != source:
                 cs.add_concept_edge(row, missing, weight=1.)
@@ -29,6 +31,7 @@ def test_union_holds_one_present_part_across_orders():
 def test_unwritten_alternative_receives_credit_from_present_witness():
     cs = _cs()
     r = _mint_row(cs, 1, 101)
+    readable(cs, 0)
     cs.add_concept_edge(r, 0)
     ly = Spaces._concept_alloc_of(cs).layer()
     assert ly.values.item() == 0.
@@ -45,6 +48,7 @@ def test_unwritten_alternative_receives_credit_from_present_witness():
 def test_weak_disjuncts_do_not_accumulate():
     cs = _cs(nS=128, order=2)
     r = _mint_row(cs, 1, 101)
+    readable(cs, *range(32))
     for part in range(32):
         cs.add_concept_edge(r, part, weight=1.)
     a0 = _evidence(torch.full((cs._order_caps()[0], 1), .001))

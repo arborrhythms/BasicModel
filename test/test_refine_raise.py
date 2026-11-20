@@ -166,7 +166,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     # Both primitive poles are now directly observed. Learn the particular's
     # link to that predicate instead of relearning its already-known absence.
     with torch.no_grad():
-        store.values[store._index[(felix, 0)]] = 0.
+        store.values[cs.concept_entries(felix, 0)[0]] = 0.
     optimizer = torch.optim.Adam([store.values], lr=.03)
     native, extents = binary_features(cs, torch.tensor([[49], [48], [65]]))
     dictionary = torch.rand(cs.nVectors, cs.nDim)  # no selected initialization

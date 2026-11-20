@@ -99,8 +99,11 @@ def test_literal_reuse_adds_coverage_by_maximum():
     cs.mtm.restore(None)
     observe_candidate(cs, 0, {**support, rows[2][1]: 2.}, literal=('ps',(4,7)), literal_key=b'case')
     after = dict(cs.concept_weights(row))
-    assert all(after[member] == weight for member,weight in before.items())
-    assert after[rows[2][1]] == 2.
+    # A candidate of order zero reads basic percepts in the order-zero
+    # Sigma: a cover over members of its own order writes no entry of the
+    # concept store (the merge by maximum is test_attention_promotion's,
+    # at order one).
+    assert cs._row_order(row) == 0 and before == after == {}
 
 
 def test_lexical_letters_open_nothing_but_nonlexical_located_case_does():

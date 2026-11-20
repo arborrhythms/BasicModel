@@ -21,6 +21,7 @@ from definition_fixtures import with_definitions
 import pytest
 
 import Spaces
+from symbol_fixtures import readable
 from test_basicmodel import _populate_test_config
 
 _D = 8
@@ -89,14 +90,15 @@ def test_order_slice_taper_contract():
 # -- the shared untyped square store (v3) --------------------------------------
 
 def test_add_concept_edge_dedup_and_query():
-    cs = _cs()                                       # n_snap = 32
-    r1 = cs.add_concept_edge(33, 5, weight=1.5)
-    r2 = cs.add_concept_edge(33, 5, weight=9.0)      # repeat -> no-op
+    cs = _cs()                                       # order 0 is rows 0 to 34
+    readable(cs, 5, 6)
+    r1 = cs.add_concept_edge(35, 5, weight=1.5)
+    r2 = cs.add_concept_edge(35, 5, weight=9.0)      # repeat -> no-op
     assert r1 == r2
-    cs.add_concept_edge(33, 6, weight=0.5)
-    got = cs.concept_weights(33)
+    cs.add_concept_edge(35, 6, weight=0.5)
+    got = cs.concept_weights(35)
     assert (5, 1.5) in got and (6, 0.5) in got
-    assert cs.concept_weights(34) == []              # different row
+    assert cs.concept_weights(36) == []              # different row
 
 
 
@@ -114,13 +116,14 @@ def test_any_edge_on_snap_row_fails_loud():
 
 
 def test_family_values_grow_tail_preserving():
-    cs = _cs()                                       # n_snap = 32
-    cs.add_concept_edge(32, 0)
-    cs.add_concept_edge(32, 1)
+    cs = _cs()                                       # order 0 is rows 0 to 34
+    readable(cs, 0, 1, 2)
+    cs.add_concept_edge(35, 0)
+    cs.add_concept_edge(35, 1)
     s = cs._sparse_families(0)
     with torch.no_grad():
         s.values.copy_(torch.tensor([3.0, 4.0]))
-    cs.add_concept_edge(33, 2, weight=9.0)           # grow
+    cs.add_concept_edge(36, 2, weight=9.0)           # grow
     assert torch.allclose(s.values.detach(), torch.tensor([3.0, 4.0, 9.0]))
 
 
@@ -214,6 +217,7 @@ def test_forward_content_shape_and_stacking():
     capacity = cs._order_caps()[0]
     a0 = _evidence(torch.rand(capacity, 2))
     row = _mint_row(cs, 1, 101)
+    readable(cs, 0)
     cs.add_concept_edge(row, 0, 2.)
     content, a = cs.cs_forward_content(a0, torch.randn(16, _D))
     assert content.shape == (2, 2*cs.nVectors, _D)
@@ -229,6 +233,7 @@ def test_forward_content_literal_poles_and_standing_bias():
     a0[3, 0, 0, 0] = .5
     a0[5, 0, 0, 1] = .25
     row = _mint_row(cs, 1, 201)
+    readable(cs, 3, 5)
     cs.add_concept_edge(row, 3, 3.)
     cs.add_concept_edge(row, 5, .5, negated=True)
     _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
@@ -241,6 +246,7 @@ def test_forward_content_literal_poles_and_standing_bias():
 def test_forward_content_activation_is_bounded():
     cs = _cs(nS=16, order=2)
     r1, r2 = _mint_row(cs, 1, 101), _mint_row(cs, 2, 102)
+    readable(cs, 0)
     cs.add_concept_edge(r1, 0, 3.)
     cs.add_concept_edge(r2, r1, 4.)
     _, a = cs.cs_forward_content(_evidence(torch.full((8, 2), .99)), torch.randn(16, _D))
@@ -259,6 +265,7 @@ def test_forward_content_empty_store_passes_a0():
 def test_level_stats_are_report_only():
     cs = _cs(nS=16, order=2)
     row = _mint_row(cs, 1, 101)
+    readable(cs, 0)
     cs.add_concept_edge(row, 0, 1.)
     cs.cs_forward_content(_evidence(torch.rand(8, 2, requires_grad=True)), torch.randn(16, _D))
     assert cs._cs_wave_qe is None
@@ -275,6 +282,7 @@ def test_level_stats_are_report_only():
 def test_forward_content_kernels_agree():
     cs = _cs(nS=16, order=1)
     row = _mint_row(cs, 1, 101)
+    readable(cs, 0, 1)
     cs.add_concept_edge(row, 0, .4, negated=True)
     cs.add_concept_edge(row, 1, .7)
     a0 = _evidence(torch.rand(8, 2), torch.rand(8, 2))
@@ -291,6 +299,7 @@ def test_forward_content_keeps_two_symbol_rows_per_code():
     a0 = _evidence(torch.rand(8, 1), torch.rand(8, 1))
     what = torch.nn.functional.normalize(torch.randn(16, _D), dim=-1)
     row = _mint_row(cs, 1, 101)
+    readable(cs, 0)
     cs.add_concept_edge(row, 0, 1., negated=True)
     content, a = cs.cs_forward_content(a0, what)
     torch.testing.assert_close(a[row, 0, 0], a0[0, 0, 0].flip(0))
@@ -301,6 +310,7 @@ def test_forward_content_keeps_two_symbol_rows_per_code():
 def test_forward_content_differentiable():
     cs = _cs(nS=16, order=2)
     r1, r2 = _mint_row(cs, 1, 101), _mint_row(cs, 2, 102)
+    readable(cs, 0)
     cs.add_concept_edge(r1, 0, .5)
     cs.add_concept_edge(r2, r1, .5)
     positive = torch.rand(8, 2, requires_grad=True)

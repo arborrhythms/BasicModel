@@ -1,12 +1,16 @@
 """Symbols above order zero: no vector, no place; two unsigned rows of a Pi.
 
-A symbol is made when MTM nominates it, and it brings one concept: its Pi
+A symbol is made when MTM nominates it, or where a kind needs a member that
+no symbol holds, and it brings one concept: its Pi
 row starts with one member, that concept, at one. That is how it starts and
 not a limit: a row may read any number of concepts, and any number of
 concepts may read one symbol. A symbol has its own index; it shares none
 with a concept. Its value in a reading is the Pi's product of its members'
 lanes, one value on each lane (for, against); it holds no code, place or
-time.
+time. A symbol's index is a column of the concept store
+(``ConceptualAttentionLayer``), beside the basic percepts' rows: a kind
+above order zero reads things, and a symbol is read by its row's fold, the
+product, as a basic percept is over its parts.
 """
 from OrderZero import SparsePiLayer3
 
@@ -29,6 +33,7 @@ class SymbolTable:
             raise ValueError('the symbol table needs room for a symbol')
         self.capacity = capacity
         self.index, self.handles, self.brought = {}, [], []
+        self.revision = 0
         self.pi = SparsePiLayer3(capacity, capacity * self.ENTRIES_PER_ROW)
 
     def __len__(self):
@@ -51,7 +56,17 @@ class SymbolTable:
         self.index[handle] = symbol
         self.handles.append(handle)
         self.brought.append(int(concept))
+        self.revision += 1
         return symbol
+
+    def fit(self, concept):
+        """A symbol that holds ``concept``: of those whose rows read it, the
+        one with the fewest constituents (the first made among equals), or
+        ``None``."""
+        found = self.reading(concept)
+        if not found:
+            return None
+        return min(found, key=lambda symbol: (len(self.members(symbol)), symbol))
 
     def of(self, handle):
         """The index of ``handle``'s symbol, or ``None``."""
@@ -94,3 +109,4 @@ class SymbolTable:
             self.index[handle] = symbol
             self.handles.append(handle)
             self.brought.append(int(brought))
+        self.revision += 1
