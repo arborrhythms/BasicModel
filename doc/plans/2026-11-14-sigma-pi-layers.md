@@ -12324,11 +12324,12 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    orders as now. Its Sigma follows rule 63 (the Not between its Pi
    and its Sigma, weights at zero or above). Say what becomes of
    the key expectationMap and of the ActivationPredictor kept
-   beside it. The map keeps the teacher it has until Alec says what
-   teaches it; return what it learns with exact concepts, and if a
-   row started on every concept does not learn, start each row on a
-   few and say so. IntuitionLayer's weights of stored rules are not
-   this round's.
+   beside it. Its teacher is the field that thought leaves, with
+   the output's cost (rule 68; Alec, §19.106); the lesson by
+   omission is expectation's and leaves this map. Return what it
+   learns with exact concepts, and if a row started on every concept
+   does not learn, start each row on a few and say so.
+   IntuitionLayer's weights of stored rules are not this round's.
 2. Not strictly ramified (rule 26): a symbol reads the concepts of
    every lower order, where a membership is admitted only between
    adjacent orders today (class_member; the row of §19.21's table).
@@ -12350,10 +12351,49 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
 7. Withdrawn (Alec, §19.93): rule 57's trial of a Sigma driving
    the wholes half. The analysis from above is round 6's salience
    map over both towers (step 3 there, certificate 56).
+8. Carried from §23.4.13: Language.budget_code makes a module
+   global inside the compiled loop, and a test that runs first in
+   its process fails. The code is made where the model is built.
 
-Run: the new test file and the testpoints; every test file that
-names what you changed; both stopping gates; the lesson's sixteen
-sentences before and after. Return as §23.5.
+The second pass (added 2026-11-20; Alec, §19.112: "Let's build in
+1.7, it is closely related, but sporadic testing is OK"). Each of
+the two is tried in tests first and what holds is built in the same
+pass.
+
+9. The cone (rule 72; §19.105, §19.106, §19.108, §19.109). A
+   symbol's row is a cone over coordinates of the conceptual space
+   of the order beneath its own: weight on what the concepts that
+   are the same thing share, none on a coordinate on which they
+   vary, and an against side, what its nearest neighbours hold that
+   it does not (rule 53's form for a basic percept). One fold, the
+   plain product, for every row of every Pi. It reads the meaning
+   at one place and never a join of the field's meanings, and no
+   concept's place is moved by a value read from a symbol. Say what
+   in the source compares codes of two orders, and remove it.
+   SymbolTable.fit and same_thing read the cone.
+10. The candidate matrices (rule 73; §19.107, §19.108). Beside each
+   Pi and each Sigma, at every level, a small sparse matrix of
+   candidate entries, kept with MTM and sized by a key. A candidate
+   starts at nothing, is read in the forward pass, takes the
+   proximal step of §23.4.7, and is promoted into the matrix proper
+   when it has held above the penalty, or forgotten when the
+   penalty returns it to nothing or room is needed, the weakest
+   first. What offers one: for a Pi, co-occurrence at a place (the
+   match of §19.107, by IdentityRows.meet_ratios: within a row's
+   width the row widens; no row, a candidate row; a row that was
+   wrong, an against entry); for a Sigma, substitution at a place
+   (a kind expected there by step 1's spread and not read, with a
+   thing present), and never a thing at another place. The
+   penalty's one strength is set by measurement and returned.
+11. Certificate 60's four trials in a new
+   test/test_item17_growth.py, and a certificate of the cone with
+   them (two concepts used alike in one cone after the lesson's
+   placement, a third used otherwise out; a member's variation
+   takes a coordinate's weight to nothing).
+
+Run, each pass: the tests it adds; the test files that name what it
+changed; both stopping gates. The lesson over twelve runs once, at
+the round's end. Return as §23.5.
 ~~~
 
 ### 22.6 Round 6: the looks, in the model
