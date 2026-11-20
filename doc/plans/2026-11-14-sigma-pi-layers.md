@@ -9676,7 +9676,9 @@ chooses from. The old classes are not edited.
     a concept may read any number of rows or symbols; a row of the
     Pi above may read any number of concepts. Nothing in the source
     shares an index between a symbol and a concept or takes "the"
-    concept of a row where there may be several. Concepts have no
+    concept of a row where there may be several. Which concept a
+    row brought is a record made at its nomination
+    (`ConceptAllocator.brought`), and nothing infers it. Concepts have no
     nomination or promotion of their own: MTM's promotions of
     classes, identities and percept collections become nominations of
     rows. The one writer of a concept's further inputs stays: a kept
@@ -10524,9 +10526,14 @@ certificate is recorded and not repaired (1.8 §43); those are marked
    §18.6, certificate 10): both stopping gates pass, XOR among them;
    the lesson's readings before and after, each order's occupancy,
    the Pi's kept edges for each row, the Not entries at each order,
-   and one default sweep.
+   and one default sweep. The lesson is read over 12 runs with no
+   seed chosen (`lesson --runs 12`; §23.4.2, §23.4.3): the words
+   found in the first walks, their mean, least and greatest, the
+   first walks at the cap, and the walks that repeat a state. One
+   run against one run shows nothing.
 10. *Speed* (*mine*): the seconds of the lesson's sixteen sentences
-    before and after, as §51 of the 1.8 specification reported them.
+    before and after, as §51 of the 1.8 specification reported them,
+    as a mean over the same 12 runs.
 11. *No row on a first reading.* A new word read once has no basic
     percept and no concept, and `interpret` does not find it; after
     `concept_mint_count` readings MTM nominates its basic percept,
@@ -11569,9 +11576,11 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
 1. Before any edit, take list 3 and the rest of list 4 of §19.4,
    and the rows of §19.21's table on symbols, again on your starting
    source, as in round 3.
-2. (In two passes, §23.4.2: the key symbolTower and the symbol
-   codebook went in the third pass; the row shared by a concept and
-   its symbol goes in the fourth.) Symbols are split from concepts
+2. (In three passes: the key symbolTower and the symbol codebook
+   went in the third pass (§23.4.2); the where registry's slice for
+   symbols and the shared key of a row in the fourth (§23.4.3);
+   the store's columns and ConceptEvidence.decode go with step 3
+   and steps 4 and 11, as one change, in the fifth.) Symbols are split from concepts
    and have no dimensions (rule 9): separate tensors. The key symbolTower goes, with its
    configurations ported (data/MM_20M_xor.xml, XOR_exact.xml,
    XOR_symbols.xml, MM_add_verb.xml,
@@ -16731,3 +16740,219 @@ Cause A is what separates a run of ten words from one of forty-five; cause B als
 - *Cause A is a defect of the walk as built and is older than this item's passes* (the same spread at `8e0a86ab59`). A choice that undoes the step before it, taken greedily on a difference of a thousandth, is not a choice. Round 6 replaces this table with the looks of rules 32 to 42; until then every round's lesson is at its mercy. *Claude's first choice, built provisionally in the next pass and marked so:* the general form, a walk does not take the unfocus that would undo the focus it has just made, in place of a mask for the one case; measured over 12 runs before and after.
 - *Cause B is the question already put to Alec in §23.4.2* (may a concept's error teach which bytes belong to a declared property). The diagnosis adds that it is half of what stops the lesson. *Claude's first choice stands:* cut the gradient there. A tolerance on the read is not taken: it is a threshold on a graded value, and round 6 removes the table that needs it.
 - *The lesson's seed stays unchosen;* with the two causes gone its spread should be small enough to compare rounds, and part B of the fourth pass reports it over runs.
+
+### 23.4.3 Round 4, fourth pass: the read through present rows, the record of what a row brought, the lesson over runs, no immediate unfocus, two old failures, and the first part of the split (2026-11-20)
+
+*The return of the implementer (Claude on Opus), as written, then the review. "The review" and "the coordinator" in it are Claude.*
+
+Checkout `/Users/arogers/github/WikiOracle/basicmodel`, branch `main`, started at `eca7b42b28` (with `de559778e9`, the diagnosis of §23.L, committed to the spec before part A). All commits are local and unpushed; each ends with the Co-Authored-By line. No seed is pinned, no skip or xfail is added, no bar or iteration count is changed, and nothing under `doc/` is edited.
+
+| Commit | Part |
+| --- | --- |
+| `98e4a6678f` | A: the sparse Sigma reads through the rows present; the concept a row brought is recorded at nomination |
+| `cd00ab56aa` | B: the lesson's report over runs (`--runs N`) |
+| `feac190d5a` | E (provisional): no unfocus right after the focus it would undo |
+| `df50c54c91` | C: the testpoint of a form read inside a form it is not inside, ported to rule 61 |
+| `9588611dfb` | D, first slice: a symbol has no address in the where registry |
+| `ff34cf68c8` | D, second slice: a concept's row is the concept's alone (`('concept', cid)`, `_concept_row_of`); `_csw_row_of` and `_csw_rows_of` go |
+
+**What fails or is unfinished, first.**
+
+- `test_item18_expect.py::test_81` fails, as before (round 5's).
+- `test/test_basicmodel.py` still fails 20 of 185 on this machine: an older item's defect, left as briefed (part C).
+- **Part D is not finished.** The where registry's slice for symbols is gone and the row is the concept's alone by its key and its lookup; but there is still no symbol tensor, the concept store's columns are still the two lanes of each concept row read as that concept's symbol, and `ConceptEvidence.decode` still gives each concept slot two symbol rows carrying the concept's code. Certificate 6's first clause is therefore **not met**. Steps 3, 4, 5 and 11 and certificates 4 and 23 (d) are not started. What is left is listed step by step at the end of part D.
+- Certificate (b) of part E: 54 of the 192 first walks of the 12 runs after part E (48 after the whole pass) still come back to a state of their table, all of them walks at the cap. They are not removed by part E (part E removes the two-step loop only); by the diagnosis of §23.L they are cause B (not classified walk by walk here).
+
+#### Part A
+
+**(1) The read costs the entries on the rows present.** `bin/Layers.py`, `SparseSigmaLayer3.forward`:
+
+- Each present row is taken once, at its first place in `inputs` (a stable sort of `inputs`; rows outside `[0, nInput)` dropped).
+- The entries on those rows are gathered through the index of columns (`self._columns.gather`), at the cost of those entries.
+- Each entry's concept is found among the concepts asked by `searchsorted` over the sorted concepts asked; an entry whose concept was not asked is dropped. The terms go through `_EntryRead` and `index_add` as before.
+- The class docstring says "a read costs the entries on the rows present". The compressed rows (`_rows`) stay, read by `entries(row)`.
+
+Values and gradients: `test_item17_symbols.py::test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced[0, 0.4]` (500 additions, 10% at zero, 0% or 40% Not entries; 5 reads with `-1` and absent rows) compares the output and the gradients in `value` and the lanes against `_present_forward`, the read of `1f58fe1511`: both pass at atol 1e-6.
+
+The table (`sigma_field_read2.py` in the scratch directory: the review's `sigma_field_read.py` with one thread and 200 repeats; CPU; the machine was running a lesson and a test list at the same time, so the fixed cost is higher than the review's 0.28 ms, and the two columns of each side were measured within one second of each other):
+
+| Entries | Asking 12 concepts, ms, before (`eca7b42b28`) | After | Asking every concept, ms, before | After |
+| ---: | ---: | ---: | ---: | ---: |
+| 4,096 | 1.57 to 1.72 | 2.01 to 2.02 | 1.74 to 1.78 | 2.01 to 2.03 |
+| 32,000 | 2.17 | 2.45 to 2.47 | 5.99 to 6.00 | 2.25 to 2.30 |
+| 128,000 | 3.08 to 3.12 | 3.39 to 3.44 | 18.28 to 18.32 | 2.20 to 2.23 |
+
+Asking every concept no longer grows with what is stored (18.3 ms to 2.2 ms at 128,000). The read of a few concepts costs about 0.3 ms more than before at every size: the sort of the inputs and the search of the concepts asked.
+
+**(2) The concept a row brought, recorded at nomination.**
+
+- `bin/Layers.py`, `ConceptAllocator.brought`: a plain record, basic percept to the order-zero concept its nomination brought.
+- `bin/Spaces.py`, `ConceptualSpace.bring_concept(percept, row)`: records it (the first recorded stays) and starts the concept on the row at one (`add_concept_feature`). Called at every place a nomination brings a concept with its row: the word's basic percept in `_populate_concept_weights` (a Not member there is not a bringing and is added as before); the conjunction and the native-run literal in `FamiliarTier.promote_candidates`.
+- `concept_of_basic_percept` reads the record (`brought.get(percept)`), no longer the lowest-numbered member.
+- Saved with the allocator's record (`"brought"` in both field lists of `bin/Models.py`); remapped in `GrammarConceptCheckpoint` with the rows; a checkpoint without it derives it once at load, by the old rule (the lowest-numbered concept recorded with the row, not negated).
+- What is no longer "brought": a basic percept nominated as a member of a percept collection (`member_kind == 'percept'` in `promote_candidates`) brings no concept; the collection's concept takes it as a member later (`Memory.promote`). Before, the lowest-numbered rule named the collection's concept as the one that row brought; now `concept_of_basic_percept` gives `None` for it. *Provisional*: I take a collection's member as read by the collection, not brought by the row.
+- Test: `test_item17_symbols.py::test_the_concept_a_row_brought_is_recorded_at_its_nomination` (on the lesson's sixteen sentences: every recorded row's concept is read back and has the row among the percepts it was started from). Passes.
+
+Tests run for A: the 44 files naming `concept_of_basic_percept`, `numeric_xor`, `order_zero_members`, the checkpoint, `bring_concept`, `promote_candidates`, `SparseSigmaLayer3`, `order_zero_field` or `cs_read_percept_field`, with both gates: **550 passed, 34 skipped**, 757 s, six processes.
+
+#### Part B
+
+`test/attention_thinking_certificate.py lesson --runs N --output DIR` (`over_runs`): N fresh processes, each `lesson --output DIR/run-NN` with no seed chosen; then `DIR/runs.json` and a printed report over the runs. Default 1: the old path, unchanged for every caller. `--runs` with `gates`, `--replay`, `--compare` or `--certify` is refused.
+
+Reported, over the runs:
+- words found in the first walks summed over the sixteen sentences: each run, mean, least, greatest;
+- first walks at the cap of 32 steps: each run, mean, total;
+- first walks that come back to a state of their table (added for part E's certificate (b): the observer hashes the table, less `spent`, with `accepted`, `descended`, the reductions and `field_valid`, before each step of `SentenceLooks.Looks.run`, and each first walk records how many of its states were seen before in it): each run, total;
+- seconds, mean.
+
+The lesson over 12 runs (CPU, one run at a time; other work was running on the machine, so the seconds are not comparable between rows):
+
+| Source | Words, each run | Mean | Least | Greatest | First walks at the cap, each | Mean | Total | Repeating | Seconds, mean |
+| --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| before: `eca7b42b28` | 53 52 21 41 47 29 4 35 37 4 0 32 | 29.6 | 0 | 53 | 3 3 13 5 5 9 16 8 9 15 16 8 | 9.17 | 110 | (not counted) | 22.3 |
+| after A and B: `cd00ab56aa` | 44 52 47 2 4 17 48 49 45 43 42 32 | 35.4 | 2 | 52 | 4 2 3 16 16 12 3 4 6 8 6 9 | 7.42 | 89 | 89 | 23.6 |
+| after E: `feac190d5a` | 53 56 50 56 54 47 55 53 56 52 54 51 | 53.1 | 47 | 56 | 5 2 3 2 5 6 7 4 2 7 2 9 | 4.50 | 54 | 54 | 29.4 |
+| after the pass: `ff34cf68c8` | 54 49 56 51 54 54 55 47 56 52 56 52 | 53.0 | 47 | 56 | 6 4 2 7 4 5 5 4 5 2 0 4 | 4.00 | 48 | 48 | 20.5 |
+
+- The first two rows differ within their spread: their `bin/` gives the same values (part A changes the cost of a read and the record of a nomination, not a value), and the runs of each reach from a few words to 52 or 53.
+- The third row is outside the spread of the first two: its least (47) is above all but four of the 24 runs before it, its spread is 9 words where theirs is 50 to 53, and its mean is 18 to 24 words higher. Part E did that.
+- The fourth row (after part D, which moved an identified occurrence's where) is within the third row's spread: 53.0 against 53.1 words, 48 against 54 walks at the cap. Part D is not shown to change the lesson.
+- In every row with the count, every walk at the cap repeats a state and no walk short of the cap does.
+
+#### Part E (provisional; attention's table is replaced in round 6)
+
+**Where.** `bin/Attention.py`, `narrowing_view`, at the unfocus:
+
+```
+at, frame, can_undo = last_focus(state)
+can_undo = can_undo & (at != state.steps_taken - 1)
+```
+
+**What state it reads.** `state.focus_frames`, whose frame is pushed at the index of the step that made it (`focus_history`: `push = slots == steps_taken`), through `last_focus`, which gives the index of the last frame; and `state.steps_taken`. The unfocus of the last frame is the only unfocus legal at a step; it is not legal when that frame was pushed by the step just before, since `focus_history` would then restore the table exactly as it was before that focus or descend, and the pair would change nothing but the budget. This is the general form (any focus or descend that pushes a frame, a split or a descend onto an unknown word), not the narrow one. `SentenceLooks.Looks.run` reads its legal actions from `narrowing_view`, so it holds there and in `narrow_words`; the captured path (`_captured_narrowing`) sets `steps_taken` to the turn, so it holds there too.
+
+**Certificate.** `test/test_item17_unfocus.py::test_no_unfocus_right_after_a_descend_onto_an_unknown_word` (a): three unknown words; a descend on the sentence splits off the first; at the next step descend is legal on the child, and no unfocus is legal anywhere. It fails on the source before part E and passes after. (b) is measured, not asserted: the "Repeating" column of part B's table. Over the 12 runs after E, 54 first walks of 192 repeat a state, all at the cap; before it 89 of 192 (all at the cap). The two-step loop of cause A is gone; what remains are loops of three steps or more, which by §23.L are cause B's (`V & U`, a known word read as both). I did not classify them walk by walk.
+
+**Tests that record a walk's actions.** The 182 files of `r7_files.txt` and every test file naming `narrow_words`, `narrowing_view`, `narrow_step`, `open_narrowing`, `SentenceLooks`, `read_in_source_order`, `focus_history` or `last_focus`: 2 failed, 2,004 passed, 126 skipped, 2 xpassed, 1,132 s. The two: `test_81` (carried) and one that asserted the loop pair itself:
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_loop_of_looks.py::test_9_unfocus_restores_unread_parent_and_costs_one_act` | after a descend, unfocus is legal at the next step (`legal[0,0,2]`), and taking it restores the parent's intervals, level, space, valid and done with `spent == 2` | after a descend, no unfocus is legal at the next step; after a look in place at the word the parent now holds, the unfocus is legal, and taking it restores the parent's intervals, level, space, valid and done with `spent == 3` (descend, look, unfocus) |
+
+#### Part C
+
+**`test/test_basicmodel.py`: an older item's defect, on this machine; left.**
+
+- 20 of its 185 cases fail (21 in the third pass's run), every one with `RuntimeError: Expected a 'mps' device type for generator but found 'cpu'`.
+- The producer is `bin/ConceptPlacement.py`, `seed(identity, like)`: `torch.randn(like.shape, generator=torch.Generator(device='cpu'))` with no `device=`. The file's tests prefer the GPU (`_prefer_gpu_device` calls `init_device('gpu')`, which sets the default device to MPS here), so `randn` is made on MPS with a CPU generator. The path is `_prebuild_declared` → `new_concept` → `_declare_concept_row` → `ConceptPlacement.initialize` → `seed`, at the model's construction.
+- Since: `dd26587e07` ("Complete item 1.8 round C with seed correction of §50.2", 2026-11-16), which added `ConceptPlacement.py`. `ac8fbb0114`, the commit before it, passes; `dd26587e07` and every commit after it that I ran (`5721692530`, `b4030b7637` at the end of item 1.8, `e414b3c8ee` at item 1.7's round 1, `8b8a2fcf48`, `eca7b42b28`) fail. Run in exports, without `BASICMODEL_DEVICE`.
+- So it is item 1.8's, and it shows only on a machine with a GPU device. The repair would be one argument (`device='cpu'` to `randn`, then `.to(like)`); not made, as briefed.
+
+**`test/test_testpoint.py::TestStructureValid::test_forms_that_read_inside_a_form_they_are_not_inside`: item 1.7's; repaired (test side).**
+
+- Since `df7e9fc6fc` ("Item 1.7 round 3d, steps 2 and 3: no code inside another by accident", rule 61). Bisected over item 1.7's commits in exports: `3eb75bf6a0` passes, `df7e9fc6fc` fails.
+- The cause: the testpoint, written in round 1 (`b995eb2b7f`), asserted that `cat` reads wholly inside `caat` (an accidental containment of codes, certificate 27 (c)'s named case). Rule 61 removes every such accident; round 3d ported certificate 48's reading but not this testpoint.
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_testpoint.py::TestStructureValid::test_forms_that_read_inside_a_form_they_are_not_inside` | `('cat', 'caat')` among the forms read wholly inside a form they are not inside | that list is empty (rule 61, certificate 53) and `cat` reads below one in `caat` (printed: .909) |
+
+The file's three cases pass.
+
+#### Part D
+
+**Lists retaken at `eca7b42b28`** (only what differs from §23.4.2's, which was at `e63351b274`): `_csw_row_of` at 127 places in bin, and in 120 test files; `_csw_rows_of` at 2 calls (`_set_concept_edge_value`); `('sym', ...)` at 100 places in bin; the symbol codebook and `symbolTower` gone (third pass). The rest of list 3, list 4 and §19.21's rows on symbols stand as §23.4.2 gave them.
+
+**First slice (`9588611dfb`): a symbol has no address in the where registry.**
+
+| What went | Its readers, and what each became |
+| --- | --- |
+| `WhereRegistry`'s `symbols` slice (`install_where_registry`, sized `2*max(capacity, nVectors)`) and `symbols.where_offset` | `SentenceField.arrive` asked `intervals('symbols', identity)` for an identified occurrence's where; it now places the occurrence where it stands in the text: the word step's own text address (`word_view(inputSpace, 'symbol_where')`, decoded by the registry's encoding), `-1` where the occurrence has no identity or no address. An occurrence with no identity keeps its native extent, as before. *Provisional*: rule 13 says a symbol's where is written when STM reads it; I took that to be the occurrence's place in the text. |
+| | `AttentionContext.install` and `context` sized the concepts' priming heat by the slice (and gathered the salience of STM's concept rows within it); it is now sized by the concept inventory (`_priming_dim()` of the concept owner), which is what that heat is over. The context's projection is zero at construction, so its width changing moves no value. |
+| | `install_where_registry` re-encoded a `_symbol_where` on the whole space; nothing sets one there, and it is gone. |
+| `forward_concept_to_symbol`'s `_symbol_indices` (`2*ids+{0,1}`), `_symbol_where` (`encode('symbols', 2*rows+{0,1})`) and `_symbol_when` | no reader in `bin/`; one test read `_symbol_indices` (ported below) |
+
+**Second slice (`ff34cf68c8`): the row is the concept's alone.**
+
+- `_declare_concept_row` assigns `('concept', cid)` where it assigned `('shared', cid)`.
+- `_csw_row_of` is renamed `_concept_row_of` at all its places (127 in `bin/`, the rest in tests): every one of them reads a concept's row, and none a symbol's, since there is no symbol table yet. `_csw_rows_of` goes; its one caller, `_set_concept_edge_value`, reads the two rows directly.
+- `ConceptAllocator.order_of` reads `('concept', cid)`; `_row_to_concept`, `Queries._existing_row` and `GrammarConceptCheckpoint` (both writes) read or write the `'concept'` key.
+- A checkpoint with `('shared', cid)` keys is read with them renamed (`_restore_allocator_extras`), so its rows keep their concepts.
+
+Ported tests (D):
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots` | the `symbols` slice has `2 * rows` addresses | renamed `test_a_symbol_has_no_address_in_the_where_registry`: no `symbols` slice |
+| `test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model` | the slices run text, numeric, scalar, parts, wholes, symbols; the SS basis's offset is the symbols' start | they run text, numeric, scalar, parts, wholes, conceptual; no `symbols` slice |
+| `test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges` | a hand-built registry with a `symbols` range | renamed `..._and_conceptual_slots_use_their_own_ranges`; the same assertions on a `conceptual` range |
+| `test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field` (two places) | the leg's `_symbol_indices` at the word's slot are `[2*cid, 2*cid+1]` | the leg's `_concept_ids` at that slot is `cid`, and the leg has no `_symbol_indices` |
+| `test_structural_checkpoint.py`, `test_item18_round_a.py::test_75_...` | rows assigned under `('shared', ...)` | under `('concept', ...)`; assertions unchanged |
+| `test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias` | a checkpoint with `("shared", 7): 2` loads with `_tensor_rows[("shared", 7)] == 2` | the same checkpoint loads with `_tensor_rows[("concept", 7)] == 2` |
+| 120 test files calling `owner._csw_row_of(...)` | | `owner._concept_row_of(...)`, the same assertions |
+
+New: `test_item17_symbols.py::test_a_concept_row_is_the_concepts_alone_and_a_symbol_has_no_address` (every key of the concept inventory is `('concept', ...)`; no `_csw_row_of` or `_csw_rows_of`; no `symbols` slice). It is not certificate 6's first clause, which is not met.
+
+**What is left of step 2, and then steps 3, 4, 5 and 11, step by step.**
+
+1. *The store's columns are still the concepts' lanes read as their symbols.* `ConceptualAttentionLayer` is square: `nInput = 2*(nOutput+1)` (`_paired_sources`), each concept row's two lanes and the bias column. A concept above order zero has its entries on the columns of the concepts it reads (`_populate_concept_weights` resolves each `('sym', x)` member to `x`'s concept row; `add_concept_edge` requires "symbols of the preceding order", meaning concept rows; `fold_presence`'s dual exchanges the two column blocks; `GrammarConceptCheckpoint` remaps columns by `% (old_size+1)`). That column space is "one symbol for each concept, at the concept's row". It goes with steps 3 and 4 together, not before: the columns become a symbol table's indices only when something gives each symbol its two lanes, which is step 3's Pi row over the concept it brings.
+2. *`ConceptEvidence.decode`* gives each concept slot two symbol rows (`rows // 2`, signs by `rows % 2`) holding the concept's code times its lanes: a symbol with a vector. Its readers are the SS leg's content: `_publish_symbol_snapshot`, `commit_symbolic_peer_results` (`_peer_stage_b`), `symbol_states` and `_current_discourse_s` (`SymbolExpectation`), and `LTM0(content_width=symbol_dim)`. These are list 3's SS-leg rows; with rule 9 the leg carries each symbol's two lanes and no code. Not started.
+3. *Step 3:* a `PiLayer3` of symbols above order zero, two unsigned rows for each symbol, each a row over one concept to start with; a symbol table with its own index (handle to index, the concept it brings), made at MTM's nomination (`FamiliarTier.promote_candidates`, `promote_identity`) or by `interpret` for a meta concept (`InterpretLayer.define`), and not in `new_concept`. Certificate 4.
+4. *Steps 4 and 11:* the store's input becomes the symbols' options through `NotLayer3`, and its entries a `SparseSigmaLayer3` over symbol indices; `fold_presence`'s least and greatest and `_fold_weights` go above order zero, with `DefinitionFold.loss` and `prepare`, `CaseSelection.stage_case_bank`, `cs_reverse_presence.descend`, `_concept_rung_presence`, and the six callers of `FieldProjection.close` (`close_bracket`, `stimulate`, `IntuitionField.read`, `LookForecast.forecast`, `NumericPercepts.read`, `placement_context`). Certificate 23 (d) (a Not entry above order zero is a symbol's pair read exchanged).
+5. *Step 5:* the word step's payload (`activation.abs()` in `Models.py`) and the walk's pair as two lanes up and back; the readers of a word stored against traced first.
+6. *Certificate 6's first clause* is met when 1 and 2 are done: no tensor holds both a concept and a symbol.
+
+**Choices, all provisional**
+
+1. A1: a present row read twice in `inputs` is read at its first place.
+2. A2: a percept collection's member brings no concept.
+3. E: the general form, at `narrowing_view`, reading the last frame's step.
+4. D: an identified occurrence's where is its place in the text.
+5. D: `_csw_row_of` is renamed and not split, since every caller reads a concept's row; the symbol's own lookup comes with the symbol table of step 3.
+6. D: the split stops before the store's columns, which cannot become symbol indices before step 3 gives symbols lanes. I judged that steps 1 and 2 of the list above, with steps 3 and 4, are one change that I could not leave whole in this pass.
+
+#### Final counts
+
+On `ff34cf68c8`, six processes, `--dist loadfile`: **238 files**, the 168 of `r7_files.txt` and every other test file that names what this pass changed (the walk's functions, the where registry, the attention context, the sentence field, `forward_concept_to_symbol`, `concept_of_basic_percept`, the sparse Sigma's read, the checkpoint, and every file that called `_csw_row_of`), less `test_basicmodel.py` (part C).
+
+- **1 failed (`test_item18_expect.py::test_81`), 2,628 passed, 137 skipped, 2 xpassed; 1,155 s.** Both stopping gates are in the list and pass.
+- In that run `test_item18_tree_first.py::test_2_first_document_matches_recorded_object_readings` also failed: its recorded fixture (sha-pinned) names the calls of `owner._csw_row_of`. `comprehension_replay.Reads` now reads a renamed method's calls under its recorded name (`RECORDED_AS`); the file then passes whole (17 passed), and that change is in `ff34cf68c8`.
+- Earlier runs of this pass: part A's 44 files, 550 passed, 34 skipped; part E's 182 files, 2 failed (`test_81`, and test 9 of `test_loop_of_looks` before its port), 2,004 passed; part D's first slice, 57 files and both gates, 675 passed, 37 skipped.
+
+#### What I would change in §21 and in §22.4
+
+- §22.4 step 2's second half and steps 3 and 4 are one change at the store: its columns are the symbols, and they cannot be split from the concepts' rows before symbols have lanes of their own. I would write step 2's rest as "the where slice, the shared key, the symbol vectors of the SS leg" and move "the store's columns become symbol indices" into step 3, with step 4 following in the same pass.
+- Rule 13 should say what a symbol's where is when STM reads it: I took the occurrence's place in the text.
+- Rule 21's "a start and not a limit" should name `ConceptAllocator.brought` as the record of the start, so that nothing infers it.
+- Certificate 9 (the lesson) should be read over runs: `lesson --runs 12`, with the mean and the least and greatest of the words found, the walks at the cap, and the repeating walks.
+
+#### Review (Claude, 2026-11-20)
+
+**Run by Claude on the committed source** (`ff34cf68c8`): 215 files (the 168 of the third pass's review and the test files this pass touched), six processes: **1 failed, 2,467 passed, 125 skipped, 2 xpassed**, 1,183 s. Both stopping gates are in the list and pass. The one failure is `test_item18_expect.py::test_81`, carried to round 5. The return's run was of 238 files (2,628 passed).
+
+**The lesson over 12 runs, by Claude** (`lesson --runs 12` on `ff34cf68c8`, no seed chosen):
+
+| | The return | Claude |
+| --- | ---: | ---: |
+| Words found in the first walks, mean | 53.0 | 52.6 |
+| Least and greatest | 47 and 56 | 42 and 57 |
+| First walks at the cap, of 192 | 48 | 54 |
+| First walks that repeat a state of their table | 48 | 54 |
+
+They agree. Against the 27.9 and 29.6 words of the two measures before the pass, on 12 runs each, the change is outside the spread, and it came with part E: the walk no longer takes the unfocus that undoes the focus it has just made. The lesson is now a measure that 12 runs give to within a few words. Every walk still at the cap repeats a state, and none short of the cap does; by §23.L these are the second cause, a known word read as both, which is the question open with Alec.
+
+**Read against the source.** `bin/Attention.py` (`last_focus`, `narrowing_view`: the unfocus of the last frame is not legal when that frame was pushed by the step before); `bin/Layers.py` (`SparseSigmaLayer3.forward`, through the index of columns); `test/comprehension_replay.py`.
+
+- *Part E is the general form* and is two lines at the one place the table is made. It is provisional, as the table is.
+- *Part A's read no longer grows with what is stored* (2.2 ms at 128,000 entries with every concept asked, where it was 18 ms). It still makes a result as long as the concepts asked, which is the field's own size and not this layer's.
+- *The concept a row brought is a record* (`ConceptAllocator.brought`) and nothing infers it. That a member of a percept collection brings no concept is accepted as provisional.
+- *Part D's two slices are what they say:* the where registry has no slice for symbols, and a concept's row is keyed and looked up as the concept's. The rename of `_csw_row_of` at every place is right, since no caller reads a symbol.
+
+**Three things found in review.**
+
+1. *Certificate 6's first clause is not met, and the return says so.* The concept store's columns are still each concept's two lanes read as its symbol, and `ConceptEvidence.decode` still gives a symbol a vector. The return's judgment is taken: these cannot be split before symbols have lanes of their own, so the store's columns, `decode`, step 3 and steps 4 and 11 are one change, and it is the next pass.
+2. *A name is kept alive in a test helper.* `comprehension_replay.Reads` reads the calls of `_concept_row_of` under the recorded name `_csw_row_of`, because a recorded fixture is pinned by its hash. It is the one place the old name lives. *To the next pass:* record the fixture again under the new name if it can be recorded, and drop the mapping; if it cannot, say why.
+3. *`test/test_basicmodel.py` is item 1.8's defect and is one argument* (`ConceptPlacement.seed` draws with a generator of the processor while the default device is the machine's GPU). It has failed since `dd26587e07` on any machine with such a device. *To the next pass:* repaired there, since the sweep of this item runs it.
+
+**On the second cause of §23.L.** It is all that is left between the lesson and every word found, and Alec has not yet said whether a concept's error may teach which bytes belong to a declared property. *Built provisionally in the next pass on Claude's first choice, and marked so:* the gradient is cut where the order-zero read meets the memberships, and nothing else that teaches them is touched; measured over 12 runs before and after, and returned with what else teaches the memberships.
+
+**Taken into §21 and §22.4 from the return's last section.** Step 2's remaining part goes into step 3, with steps 4 and 11 in the same pass (§22.4 amended). Rule 21 names `ConceptAllocator.brought` as the record of the start. Certificate 9 is read over 12 runs. Rule 13's "a symbol's where is written when STM reads it" is taken as the place of the occurrence in the text, provisional.
