@@ -9517,6 +9517,17 @@ On the name of round 5's task, "expectation as the reconstruction in stages": "i
 
 **The test list and compiling.** Asked whether the test list should read without compiling by default: "no, in general we want to run compiled model for tests where it will help them to run faster." *Decided.* Compiling stays the default of the tests. A test reads without compiling only where compiling costs it more than it saves, which is the fifteen of §23.4.13, and each such case is a measured one.
 
+### 19.114 Alec: an existing object is looked for before one is made, built in item 1.7 (2026-11-20)
+
+Round 5's first pass built the look-first of rule 31 (§19.27) and took it out: it tied "this", "is" and "water", read with one percept, to one object, and the trust that told them apart was the object's (§23.5). Asked whether to leave it unbuilt in this item or build it now: "Build look-first now".
+
+*Decided.* It is built in round 5. *Mine, the form it is built in, from his words of §19.27 ("a better method for managing certainty ... a small MTM with forgetting, so that promoted concepts are not forgotten, just more or less certain depending on their truth or falsity when active"):*
+
+- A new object is not made where an object already reads the percept wholly; the word is tied to that object.
+- The certainty that was the object's is kept on each tie of a word to an object, in MTM. A tie gains certainty when its word and its object are active together and the tie holds, and loses it when it does not; the weakest tie is forgotten when room is needed. An object that has been promoted is not forgotten, only more or less certain.
+- What told "is" from "water" by an object's trust reads the tie's.
+- Certificates 25 and 26 are written in this item as certificates of learning, recorded and not repaired, since the look-first they waited for is built.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -12431,6 +12442,11 @@ pass.
    them (two concepts used alike in one cone after the lesson's
    placement, a third used otherwise out; a member's variation
    takes a coordinate's weight to nothing).
+
+12. Step 4 again (Alec, §19.114: "Build look-first now"): an
+   existing object is looked for before one is made, with the
+   certainty kept on each tie of a word to an object, in MTM, with
+   forgetting. Certificates 25 and 26 with it.
 
 Run, each pass: the tests it adds; the test files that name what it
 changed; both stopping gates. The lesson over twelve runs once, at
