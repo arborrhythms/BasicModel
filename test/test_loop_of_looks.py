@@ -4,6 +4,17 @@ import torch
 import pytest
 
 
+def explore_configuration(tmp_path):
+    """The whole-paths benchmark's configuration (a receipt under doc/), less
+    the key conceptualPi that sigma-pi §21, rule 6 removed: a basic percept
+    is a row of the first Pi in every model."""
+    from pathlib import Path
+    source = Path('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml').read_text()
+    path = tmp_path / 'explore-1.xml'
+    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', ''))
+    return str(path)
+
+
 def test_7_incremental_word_forecast_follows_arrival_order(monkeypatch):
     from WordExpectation import WordArrivals, word_distribution
     from Layers import SymbolExpectation
@@ -32,7 +43,7 @@ def test_7_incremental_word_forecast_follows_arrival_order(monkeypatch):
 
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('leave_first', [False, True])
-def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch):
+def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch, tmp_path):
     import Attention
     import ModelAttention
     import SentenceLooks
@@ -44,7 +55,7 @@ def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch):
     TheData.processLM({split: dict(text=[text] if split=='train' else [], label=[])
                       for split in ('train','validation','test')})
     model = BaseModel.from_config(
-        'doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml',data=TheData)[0]
+        explore_configuration(tmp_path),data=TheData)[0]
     admit_training_forms(model,[text])
     model.eval()
     chooser = model._stm_reducer()

@@ -3,7 +3,18 @@ import pytest
 import torch
 
 
-def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading):
+def explore_configuration(tmp_path):
+    """The whole-paths benchmark's configuration (a receipt under doc/), less
+    the key conceptualPi that sigma-pi §21, rule 6 removed: a basic percept
+    is a row of the first Pi in every model."""
+    from pathlib import Path
+    source = Path('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml').read_text()
+    path = tmp_path / 'explore-1.xml'
+    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', ''))
+    return str(path)
+
+
+def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading, tmp_path):
     from Corpus import admit_training_forms
     import ModelAttention
     from Models import BaseModel
@@ -14,7 +25,7 @@ def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading):
     TheData.processLM({s: dict(text=[text] if s == 'train' else [], label=[])
                        for s in ('train', 'validation', 'test')})
     model = BaseModel.from_config(
-        'doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml', data=TheData)[0]
+        explore_configuration(tmp_path), data=TheData)[0]
     admit_training_forms(model, [text])
     model.eval()
     bricks, words, offers, calls = [], [], [], []
