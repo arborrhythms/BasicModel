@@ -78,9 +78,11 @@ passes: a pull within one order does not pass through a symbol.
 rule. Interconnection should be: order zero is n:n on basic percepts, order
 1 is n/2 (with taper) connected to 3n/2, since it connects to both lower
 rows." Order zero has as many concepts as there are basic percepts, each
-order above has half the units of the one below, and the concepts of an
-order connect to the two rows beneath them: at order one the basic percepts
-and its own symbols. This is storage allocated beforehand, not a
+order above has half the units of the one below, and order one has room to
+connect to three halves of order zero's count. What a concept above order
+zero reads is symbols, from every epistemic level below its own (Alec,
+2026-11-20); a basic percept is an occurrence and is read by its concept of
+order zero. This is storage allocated beforehand, not a
 number of entries expected. Within that room each order's Sigma is square:
 as many concepts as nominated rows, each concept starting from its own row
 alone.

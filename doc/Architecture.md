@@ -468,8 +468,9 @@ decoded by the declared shape (`WhereEncoding.decode_index`): in a 28 by 28
 image, row 2 and column 3 is address 59. A word's percept and symbol
 occurrences use its input byte start in the text range. Repeated words thus
 have different occurrence locations even when they refer to the same stored
-row. A stored percept's location is its row address; a symbol produced by
-thought uses its symbol-row address, with one address per pole. There are no
+row. A stored percept's location is its row address; a symbol has no address
+(it lives in no space), and what thought produces is placed where it stands.
+There are no
 extra address slots per occurrence. Each address travels in the event's
 `.where` band: two sine/cosine pairs with different periods.
 The long period covers the entire registry; the short period resolves one
@@ -1946,8 +1947,10 @@ promotions of classes, identities and percept collections are nominations of
 rows. The storage is allocated beforehand by a geometric taper (Alec,
 2026-11-19: "Geometric taper is not a bad rule"): order zero has as many
 concepts as basic percepts, and each order above has half the units of the
-one below; a concept of order one reads the two kinds of row beneath it, the
-basic percepts and the symbols. The Pi and the Sigma above
+one below; a concept above order zero reads symbols, from every epistemic
+level below its own, and order one has room to connect to three halves of
+order zero's count (Alec, 2026-11-19: "order 1 is n/2 (with taper) connected
+to 3n/2, since it connects to both lower rows"). The Pi and the Sigma above
 order zero are stored as compressed rows on the device, with an index of
 columns beside them, and grow into that capacity.
 
