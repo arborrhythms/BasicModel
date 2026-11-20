@@ -1783,7 +1783,8 @@ concept, which starts reading only its own row, at one. A concept reads no
 percept's code, no place and no time, so the concept of a word reads one
 where its row is present and nothing where it is not, whatever letters the
 reading shares with it; where a form's holder stands in its place (`archer`
-in `archery`) its row reads against and the concept reads nothing. A concept
+in `archery`) its row reads for and against alike, the Not gives nothing, and
+the concept reads nothing. A concept
 answers only to the rows it is given. A member that joins later writes an
 entry at one on its row, a Not member a Not entry. The Sigma of order zero
 is not penalized. The 12 frozen thought predicates are concepts with no

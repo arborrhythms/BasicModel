@@ -15935,3 +15935,23 @@ Until round 5 the test fails and is recorded, as a learning case is (1.8 §43).
 **What the pass did for the lesson.** The sixteen sentences run in 15.7 s where they ran in 20.4 s, and six of the eight sentences that used to walk the cap of 32 steps and find no word now find their three words in 8 steps. The order-zero Sigma with its optimizer takes 0.59 MB where it took 17.9 MB, and at the default capacity about 30 MB where the dense one took 1.09 GB.
 
 **Taken into §21 and §22.4 from the return's last section.** Rules 3, 4, 29, 59, 62 and 63 and certificate 51 were restated while the pass ran (§19.90, §19.91). Still to restate, with the next pass's return: rule 7 as the place of a reading for the Pi alone, rules 8, 8b and 54 as withdrawn, certificate 5's clauses on the combined vector, and certificate 23 (b) and (c) on how a Not entry is made and how its absence is held.
+
+### 23.D.1 The docs brought to rules 62 to 65, 36 and §19.93 (2026-11-19)
+
+A writer on Opus, while round 4's third pass ran; it edited `doc/*.md` alone (not the glossary, the development history or the plans) and started no other agent. Commits `353522e618`, `8c4e624d23`, `4b020c69f5`, `f3a1396303`, `58ea31162f`: 18 files, 538 lines in and 478 out, most of it in `Architecture.md` (412), `Spaces.md` (155), `STM.md` and `FutureWork.md`.
+
+**What it rewrote.** Order zero as the first Pi, the Not and a sparse Sigma over the rows' signed values, with the formula $y_c = \tanh(\sum_i w_{ci} s_i)$; no combined vector, no dense Sigma, no column from a code; the Sigma monotone and a Not entry an entry of the Not; the time by rule 64; an "episodic entry" as the row's slots; the salience map as conceptual attention over both towers by the transposes; intersection and union against conjunction and disjunction; rule 57's passage in `Mereology.md` replaced.
+
+**Review (Claude).**
+
+- The words the pass was sent to remove are gone from the standing docs: `OrderZeroSigma`, "combined vector", "dense Sigma", `member_column`, "combined code", "episodic entry" and the two channels of rule 59 are found in none of them (the development history keeps its record).
+- Read against §21: the passages on the place of a reading, the Not of order zero, the concepts of order zero, the cycle above order zero and "When" in `Architecture.md`. They state the rules. One sentence corrected by Claude: where a form's holder stands in its place the row reads for and against alike and the Not gives nothing (it said "reads against").
+- `test/test_doc_links.py` and `test/test_document_covers.py`: 75 passed.
+
+**Left by the writer, and why it stands.**
+
+- The formula of the fused pair and stack (`SigmaPiLayer`, `SigmaPiStack`) and the Sigma of `expect` in `ExpectationRetention.md`: the expectation map is the question put to Alec in §23.4.1.
+- "explicitly by omission" beside "by a declared Not member": it follows rule 63 as written, and whether anything but the gradient teaches an omission is put to Alec (§23.4.1, finding 4).
+- "entry" where it means a record of a store (an entry of the STM stack, an `LTM0` entry): only the episodic sense was renamed. *To do with the item's documentation follow-up:* "entry" for a matrix alone, everywhere.
+- The predictor of `ExpectationRetention.md` that reads stamps as ages: rule 64 names the chooser and the operators; round 6 says what the predictor reads.
+- How location is learned with no weight of a concept on a where wire: round 6's to show (rule 49's quotation is kept).
