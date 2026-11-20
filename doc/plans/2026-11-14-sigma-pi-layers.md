@@ -8975,6 +8975,36 @@ It can, and measured it is the faster way. A stored code holds the new code exac
 - The test for accidents is not costly for the new form. It is costly because a repair changes codes and each changed form is tested again against the whole store: 29,293 tests of 452,169 forms, 23 forms for each admission. *Not measured:* kept by part, as he puts it, one list of forms for each coordinate, the test of a form given one coordinate need only look at the forms that have that coordinate, and an intersection can begin from its rarest part, so neither search grows with the store.
 - It is an equal-results change and is item 1.5's, where the numbers are recorded.
 
+### 19.91 Alec: the present given to the operators, with a comparator; the lookup thinned; the gradient makes a Not entry; a concept is opaque (2026-11-19)
+
+His answers to the three questions of §19.90 and to §23.T's census of time.
+
+**On the two orders of the Pi and the Sigma** (the same hour, before these): "Sorry for having you code something I did not wish to finalize; running pi and sigma in parallel would not build concepts of percepts/symbols, which is the basic model of human cognition." *Claude's reading:* as built until rule 62 the Pi and the Sigma of order zero each read the perceptual code, side by side, so a concept was a sum over the code's coordinates and not a concept of any percept. The series Pi, Not, Sigma is the model: the Pi makes percepts and symbols, and the Sigma makes concepts of them. Rule 57's trial, a Sigma driving the wholes half of a code from above, is the one place left where a Sigma would stand beside the Pi; it is a trial in tests and stays one unless he withdraws it.
+
+**The time.** Quoting §23.T's "No operator is given the present": "We need one integer clock and one sinusoidal encoding of it. They should be given the present, as sinusoidally encoded. They will see concepts that may have used that value, so they will need a comparator to know how far back in history the concept they have recalled is." *Decided* (rule 64, restated; certificate 55). One whole-number clock, so the second clock of LTM and STM0 goes. One encoder, so the encoders made on the spot go. The chooser and the operators are given the present in the code, and a comparator that takes the present and a stamp and gives how far back the stamp is. A stamp is no longer rewritten as an age before they see it. *Mine:* the comparator gives the distance in ticks, exactly within the code's range. Round 6 builds it.
+
+**Q3, the stamp of a concept.** ""its rows stamp". If you mean the .where or .when of the percepts that get muxed to form the concept, we should treat the concept as opaque always, so of course keep its parts together." *Decided* (rule 64): a concept keeps its `.where` and its `.when`. What the source does now, setting the time of a row to zero when it is promoted to a concept (`MemoryConsolidation`), goes.
+
+**Q1, what makes a Not entry.** "the gradient should be able to make a not entry, that is the implicit definition." *Decided* (rule 63, restated; certificate 51 (d)). Claude's reading in §19.90, that the gradient never makes one, is withdrawn. Implicitly, the gradient makes a Not entry where teaching takes a for entry down to zero and further; explicitly, omission makes one at the basic level. The Sigma's weight is still never below zero: the size of an entry is the Sigma's and its sign is the Not's. This is the pair of §19.88 again, implicit before explicit, as for symbols and for concepts. The pass building rule 62 was sent it while it ran.
+
+**The lookup, thinned.** "Part code lookup can be made even more sparse by thinning the powerset under the assumption that the existing corpus is correct (so try removing the strict parts of the powerset)."
+
+Tried, and it holds. With the stored forms kept by part, one list of forms for each part, a form's holders are the meeting of the lists of its parts; and since a stored form that holds a part holds every part of that part, only the form's maximal parts need be met, those that are a strict part of no other part of it. Measured on the full store of 19,821 words for 3,000 forms drawn from it (`lookup_thin.py` in the scratch directory; no source changed):
+
+| Way of finding a form's holders | Parts met | Milliseconds a form | Holders missed | Candidates that are no holder |
+| --- | ---: | ---: | ---: | ---: |
+| Every stored form looked through for the run, as built | | 2.25 | 0 | 0 |
+| One test of the whole code against the stored codes (§19.90) | | 0.23 | 0 | 0 |
+| Lists by part, every part of the form | 13.6 | about 0.005 | 0 | 0 |
+| Lists by part, the maximal parts only | 3.3 | about 0.002 | 0 | 0 |
+
+- All four give exactly the same 17,163 holders. In a store with no accident the whole-code test gives no candidate that is not a holder, which is rule 61 seen from this side.
+- The lists are about 450 times faster than the look through the store and about 45 times faster than the whole-code test, and they do not grow with the store: the shortest list of a form has 83 forms on average.
+- Thinning takes the parts met from 13.6 to 3.3. In this scratch form, finding which parts are maximal costs about as much as it saves (0.006 ms against 0.003); kept as rows of a matrix on the device it is a product a quarter the size. The last two rows are at the edge of what the clock resolves.
+- *Not measured:* the same lists kept by coordinate for the test of accidents after a repair, which is where the remaining cost of an admission is (§19.90).
+
+It is item 1.5's, recorded there.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10148,13 +10178,19 @@ chooses from. The old classes are not edited.
     - A concept's own value stays one signed number, and both is two
       concepts (rule 59's last sentence): one that reads a row as it
       is and one that reads it through a Not entry.
-    - *Mine, built provisionally and put to him:* a Not entry is
-      made by teaching that is the Not's own, and never by the
-      Sigma's gradient carrying a weight through zero: by omission at
-      the basic level (rule 29), by a Not member declared in the
-      record of a concept's members, and above the basic level by a
-      symbol's pair read exchanged. Once made, its weight is taught
-      as any other, at zero or above.
+    - *A Not entry is made in two ways* (Alec, §19.91: "the gradient
+      should be able to make a not entry, that is the implicit
+      definition"). Implicitly, by the gradient: where teaching
+      takes a concept's for entry on a row down to zero and further,
+      the entry becomes a Not entry on that row, and its weight in
+      the Sigma grows from zero. Explicitly, by the Not's own
+      teaching: by omission at the basic level (rule 29), by a Not
+      member declared in the record of a concept's members, and
+      above the basic level by a symbol's pair read exchanged. An
+      entry is for or Not, never both: the size is the Sigma's
+      weight and the sign is the Not's entry, which is rule 3's one
+      signed weight said in two places. *Withdrawn:* Claude's
+      reading that the gradient never makes one.
     This withdraws rule 59 and certificate 51 as they stood, and
     restates rules 3, 4, 29 and 62.
 
@@ -10162,13 +10198,28 @@ chooses from. The old classes are not edited.
     "There is one model time, we can sinusoidally encode that in one
     place for all readers, and let operators see it so that their
     logic can compare the time to that which is stamped into each
-    concept as the .when"). The model has one clock. Its sinusoidal
-    code is made in one place and is the same for every reader. A
-    concept's `.when` is the stamp of that clock at the concept's
-    moment. The chooser and the operators can read the present time
-    and compare it with a stamp. Nothing has a time of its own
-    beside its stamp. *Mine:* what the source has now is counted
-    first (§23.T), and the change is round 6's.
+    concept as the .when"; §19.91: "We need one integer clock and one
+    sinusoidal encoding of it. They should be given the present, as
+    sinusoidally encoded. They will see concepts that may have used
+    that value, so they will need a comparator to know how far back
+    in history the concept they have recalled is").
+    - *One integer clock.* The model has one whole-number clock, and
+      no second one kept in step with it.
+    - *One code.* Its sinusoidal code is made in one place, by one
+      encoder, and is the same for every reader.
+    - *The present is given.* The chooser and the operators are
+      given the present time in that code.
+    - *A comparator.* They have a comparator that takes the present
+      and a concept's stamp and gives how far back the concept is.
+      A stamp is not rewritten as an age before they see it.
+    - *A concept is opaque* (Alec, §19.91: "we should treat the
+      concept as opaque always, so of course keep its parts
+      together"). Its `.where` and its `.when` stay with it; a row
+      promoted to a concept keeps its stamp.
+    *Mine:* the comparator is one function over two codes that
+    gives the distance in ticks, exact within the code's range,
+    offered to the operators as a value they can weigh; what the
+    source has now is in §23.T, and the change is round 6's.
 
 65. *A slot of episodic memory* (Alec, §19.90: "Entry should be slot
     in episodic memory ( the idea is semantic memory). Most active
@@ -10439,8 +10490,11 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     value never lowers any concept. (c) The Not gives for less
     against: the three numbers for a row read for, read against and
     read both are stated. (d) A concept with a Not entry on a row
-    reads that row's pair exchanged; the entry was made by the Not's
-    teaching and not by the gradient.
+    reads that row's pair exchanged. *Learning:* a concept taught to
+    be present where a row is read against, and absent where it is
+    read for, comes by the gradient alone to read that row through
+    a Not entry; the entry and the Sigma's weight are printed before
+    and after. An omission makes one as before.
 52. *The query from STM* (rule 60). (a) With a question on top of the
     stack, the row of LTM that answers it is pushed onto the stack,
     and one row only. (b) With an idea that is no question on top,
@@ -10464,10 +10518,17 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     zero where it is not, whatever letters the reading shares with
     it: the concept of `alpha` reads zero on "beta delta". (c) Where
     a form's holder stands in its place the concept reads zero
-    (`archer` on `archery`), from the row's two values. (d) The
+    (`archer` on `archery`), from the row's signed value. (d) The
     expectation's teacher tells the words of one sentence from the
     words of another, and `test_item18_expect`'s test of an omitted
     word passes.
+55. *One time* (rule 64). (a) One clock: no second counter is read
+    as the model's time, by a test of the source's names. (b) Every
+    code of a time comes from the one encoder. (c) The chooser and
+    an operator receive the present in that code. (d) The comparator
+    gives the number of ticks between the present and a stamp,
+    exactly, over stamps one tick back, a thousand back and a
+    million back. (e) A row promoted to a concept keeps its stamp.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the

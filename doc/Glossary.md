@@ -102,8 +102,12 @@ them into one signed value; a Sigma reads no pair.
 - *Evidence against* is a value on the against lane. It is something
   perceived: the `y` of `archery` is evidence against `archer`.
 - *A Not entry* is an entry of the Not: one concept reads one row's pair
-  exchanged. At the basic level it is learned from omission, a thing expected
-  that did not come. The Pi has none, and no weight of a Sigma is below zero.
+  exchanged. It is made implicitly, by the gradient, where teaching takes a
+  concept's weight on a row down to zero and further (Alec, 2026-11-19: "the
+  gradient should be able to make a not entry, that is the implicit
+  definition"); and explicitly, at the basic level, from omission, a thing
+  expected that did not come. The Pi has none, and no weight of a Sigma is
+  below zero: the size of an entry is the Sigma's and its sign is the Not's.
 - *The operator `not`* of a sentence or of a thought exchanges the two lanes
   of what it is put on (`FieldLogic.reduce`).
 
@@ -197,10 +201,12 @@ words of an output comes from it.
 
 ## Memory
 
-**Time.** The model has one time. It is encoded as a sinusoid in one place,
-the same for every reader. A concept's `.when` is the stamp of that time at
-the concept's moment, and the operators can compare the present time with a
-stamp (Alec, 2026-11-19).
+**Time.** The model has one time: "one integer clock and one sinusoidal
+encoding of it" (Alec, 2026-11-19). The code is made in one place and is the
+same for every reader. A concept's `.when` is the stamp of that clock at the
+concept's moment, and it stays with the concept, which is opaque. The chooser
+and the operators are given the present in the same code, with a *comparator*
+that tells "how far back in history the concept they have recalled is".
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most
