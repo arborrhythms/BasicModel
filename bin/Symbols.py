@@ -10,7 +10,10 @@ lanes, one value on each lane (for, against); it holds no code, place or
 time. A symbol's index is a column of the concept store
 (``ConceptualAttentionLayer``): a kind above order zero reads symbols, and a
 symbol is read by its row's fold, the product, as a basic percept is over
-its parts. A symbol's constituents are concepts of one order.
+its parts. A symbol's constituents are concepts of one order, and its row
+is a cone over coordinates of that order's conceptual space
+(:mod:`SymbolCone`): a concept falls in it where its code holds what the
+constituents share and not what their nearest neighbours add.
 """
 from OrderZero import SparsePiLayer3
 
@@ -42,7 +45,10 @@ class SymbolTable:
     def __contains__(self, handle):
         return handle in self.index
 
-    def make(self, handle, concept, *others):
+    #: The nearest neighbours whose added coordinates are a cone's against side.
+    NEIGHBOURS = 3
+
+    def make(self, handle, concept, *others, owner=None):
         """The symbol of ``handle``: one that already fits (:meth:`fit`:
         every one of ``concept`` and ``others`` is among its constituents),
         or else one made: a Pi row over them at one, which brings
@@ -50,7 +56,7 @@ class SymbolTable:
         concepts a symbol already holds names that symbol."""
         found = self.index.get(handle)
         if found is None:
-            found = self.fit(concept, *others)
+            found = self.fit(concept, *others, owner=owner)
         if found is not None:
             self.index.setdefault(handle, found)
             return found
@@ -66,16 +72,44 @@ class SymbolTable:
         self.revision += 1
         return symbol
 
-    def fit(self, concept, *others):
-        """The fit of a symbol: one among whose constituents ``concept`` (and
-        each of ``others``) is. Of those, the one with the fewest
-        constituents (the first made among equals), or ``None``."""
-        found = set(self.reading(concept))
-        for other in others:
+    def fit(self, concept, *others, owner=None):
+        """The fit of a symbol: one whose cone holds ``concept`` (and each of
+        ``others``): a constituent is held; with ``owner``, so is a concept
+        of the constituents' order whose code falls in the cone (read one
+        code at a time). Of those, the one with the fewest constituents (the
+        first made among equals), or ``None``."""
+        concepts = (int(concept), *map(int, others))
+        found = set(self.reading(concepts[0]))
+        for other in concepts[1:]:
             found &= set(self.reading(other))
+        if owner is not None:
+            for symbol in range(len(self.handles)):
+                if symbol not in found and all(self.holds(owner, symbol, c) for c in concepts):
+                    found.add(symbol)
         if not found:
             return None
         return min(found, key=lambda symbol: (len(self.members(symbol)), symbol))
+
+    def cone(self, owner, symbol):
+        """The cone of ``symbol``, ``(for, against)`` over coordinates of its
+        constituents' order (:mod:`SymbolCone`)."""
+        from SymbolCone import for_side, against_side, codes_of, neighbours
+        members = self.members(symbol)
+        codes = codes_of(owner, members)
+        weights = for_side(codes)
+        return weights, against_side(weights, neighbours(owner, members, weights, self.NEIGHBOURS))
+
+    def holds(self, owner, symbol, concept):
+        """Whether ``concept`` falls in ``symbol``'s cone: a constituent, or
+        a concept of the constituents' order whose code it holds."""
+        members = self.members(symbol)
+        if int(concept) in members:
+            return True
+        from SymbolCone import holds, codes_of, same_order
+        if not members or not same_order(owner, members[0], concept):
+            return False
+        weights, against = self.cone(owner, symbol)
+        return bool(holds(weights, against, codes_of(owner, [concept]))[0])
 
     def of(self, handle):
         """The index of ``handle``'s symbol, or ``None``."""

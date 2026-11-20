@@ -15047,7 +15047,7 @@ class ConceptualSpace(Space):
         if alloc.order_of(left) != alloc.order_of(right) or alloc.order_of(left) < 0:
             return None
         pair = tuple(sorted((left, right)))
-        return alloc.symbol_table().make(('same',) + pair, *pair)
+        return alloc.symbol_table().make(('same',) + pair, *pair, owner=self)
 
     def kind_entry(self, kind, member):
         """MTM's making from a statement of kind ("Felix is a cat"): the
