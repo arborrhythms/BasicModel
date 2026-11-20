@@ -1,5 +1,5 @@
 """The percept's code: two halves of 64, each on two lanes (sigma-pi §21,
-rules 50 to 55; certificates 46 to 49).
+rules 50 to 55 and 61; certificates 46 to 49 and 53).
 
 A form's code is its parts half and its wholes half on a for lane and an
 against lane, every value within 0 to 1. The parts half's for lane is the
@@ -11,6 +11,8 @@ upper bound cuts away, one less its for lane. The first Pi reads a row's
 against entries by union; a concept reads for less against, the wholes half
 on its complement.
 """
+import functools
+import time
 from types import SimpleNamespace as NS
 
 import numpy as np
@@ -45,17 +47,24 @@ def table(spare=2):
     return book
 
 
-def coded(words=WORDS):
+def coded(words=WORDS, measure=None):
     """Each form admitted, reserved as a basic percept with the classes it
-    lies in, and coded; returns the identity, the percepts and their rows."""
+    lies in, and coded; returns the identity, the percepts and their rows.
+    The table of wholes is bound before the forms are admitted. With ``measure``, each admission's seconds, the earlier codes it changed
+    and the earlier forms it gave a coordinate are recorded there."""
     store = RadixLayer(128, initial_cap=4 * len(words) + 256)
     identity = WordIdentity(store, property_width=64, basic_capacity=len(words) + 16)
     store.identity = identity
-    for word in words:
-        identity.admit(word)
     book = table()
     basic = identity.basic
     basic.bind(book)
+    for word in words:
+        start = time.perf_counter()
+        identity.admit(word)
+        if measure is not None:
+            measure.setdefault('seconds', []).append(time.perf_counter() - start)
+            measure.setdefault('changed', []).append(len(identity.last_changed))
+            measure.setdefault('touched', []).append(len(identity.last_touched))
     members = book.primitive_properties.members.detach() > 0
     rows = {}
     for word in words:
@@ -63,6 +72,20 @@ def coded(words=WORDS):
         rows[word] = basic.reserve(identity.parts(word), wholes, word=identity.word_rows[word])
         basic.promote(rows[word])
     return identity, basic, book, rows
+
+
+@functools.lru_cache(maxsize=None)
+def dictionary_coded():
+    """The first 20,000 words of /usr/share/dict/words as the trial takes
+    them (19,821), admitted in order, coded and measured; shared by the
+    tests of this file that read them."""
+    import code_trial as ct
+    try:
+        words = [w.encode() for w in ct.dictionary()]
+    except OSError:
+        pytest.skip('no /usr/share/dict/words on this host')
+    measure = {}
+    return (*coded(words, measure), measure)
 
 
 def test_46_the_code_is_two_halves_of_64_on_two_lanes():
@@ -170,12 +193,8 @@ def test_46_printed_on_the_dictionary():
     them: the words that share a code on the for lanes and on both, and the
     codes at or below another's by accident on the for lane (a sample of
     every 40th against all)."""
-    import code_trial as ct
-    try:
-        words = [w.encode() for w in ct.dictionary()]
-    except OSError:
-        pytest.skip('no /usr/share/dict/words on this host')
-    identity, basic, _book, rows = coded(words)
+    identity, basic, _book, rows, _measure = dictionary_coded()
+    words = list(rows)
     F = torch.stack([basic.codes[rows[w]] for w in words]).cpu().numpy() > .5
     A = torch.stack([basic.against_codes[rows[w]] for w in words]).cpu().numpy() > .5
     def sharing(M):
@@ -346,12 +365,8 @@ def test_48_on_the_dictionary_and_the_lesson():
     unrelated form (one that holds neither the part's code nor its parts)
     is denied because what tells against the part is covered by accident;
     and the first Pi's entries a row."""
-    import code_trial as ct
-    try:
-        words = [w.encode() for w in ct.dictionary()]
-    except OSError:
-        pytest.skip('no /usr/share/dict/words on this host')
-    identity, basic, _book, rows = coded(words)
+    identity, basic, _book, rows, _measure = dictionary_coded()
+    words = list(rows)
     index = [rows[w] for w in words]
     pairs = basic.read_codes(index).double()
     X = (pairs[:, 0] - pairs[:, 1])
@@ -395,11 +410,11 @@ def test_48_on_the_dictionary_and_the_lesson():
                entries_a_row=(min(entries), round(float(np.mean(entries)), 2), max(entries)),
                rows_over_16=sum(e > 16 for e in entries), pi_entries=basic.pi.nnz,
                allocated=basic.capacity * basic.ENTRIES_PER_ROW))
-    # As built, a form that holds the part as a run reads below one that
-    # holds its parts without the run: the run's holder adds what tells
-    # against it.
+    # No form's code holds another's parts without the run: such a code
+    # lay inside by accident, and rule 61 has given the part a coordinate
+    # of its own. A form that holds the part as a run reads it below one.
     built = sums['built']
-    assert built['run'] and np.mean(built['run']) < np.mean(built['parts'])
+    assert built['run'] and not built['parts'] and np.mean(built['run']) < 1.
 
 
 def test_48_the_lessons_concepts_told_apart():
@@ -510,3 +525,107 @@ def test_49_the_numeric_certificate_keeps_its_bar():
     features = [field.evidence[field.concept_ids == cid][0].amax(1).tolist() for cid in axes]
     print(dict(fx=features[0], fy=features[1], mse=error))
     assert features[0] != features[1]
+
+
+# Certificate 53: no code inside another by accident (rule 61).
+
+def test_53_no_accident_on_the_dictionary():
+    """(a) After the 19,821 words are admitted, no code lies inside
+    another's, both halves, unless the one form is linked as a part of the
+    other, over all ordered pairs; no two forms share a code; every linked
+    part lies inside its whole; and the packed codes are the codes.
+    Printed: the forms given a coordinate, the earlier codes an admission
+    changed (and the earlier forms it touched), and the milliseconds of an
+    admission near 1,000, 5,000 and 19,000 stored forms. The admission is
+    shared with certificates 46 and 48 (about 90 s at 64 and 64 on a quiet
+    machine)."""
+    from WordIdentity import bytes_of
+    identity, basic, _book, rows, measure = dictionary_coded()
+    words = list(rows)
+    found, outside = identity.accidents()
+    keys = {identity.key(identity.code(w)) for w in words}
+    seconds, changed, touched = (np.array(measure[k]) for k in ('seconds', 'changed', 'touched'))
+    def near(count, window=100):
+        part = seconds[max(0, count - window):count] * 1000
+        return round(float(part.mean()), 2), round(float(part.max()), 1)
+    print(dict(width=(identity.width, identity.property_width), words=len(words),
+               forms_given_a_coordinate=sum(bytes_of(atom[1]) in identity.words for atom in identity.given),
+               parts_given_a_coordinate=len(identity.given), added_parts=len(identity.added),
+               changed_mean=round(float(changed.mean()), 2), changed_greatest=int(changed.max()),
+               touched_mean=round(float(touched.mean()), 2), touched_greatest=int(touched.max()),
+               admissions_changing_any=int((changed > 0).sum()),
+               ms_near={count: near(count) for count in (1000, 5000, 19000)},
+               seconds_in_all=round(float(seconds.sum()), 1), accidents=len(found),
+               parts_outside=len(outside), failures=len(identity.failures)))
+    assert not found and not outside and not identity.failures
+    assert len(keys) == len(words)
+    assert all(torch.equal(identity.packed_code(w), identity.code(w)) for w in words[::7])
+
+
+def test_53_a_forms_links_are_its_runs():
+    """(b) archer is a part of archery and not of reach, in whatever order
+    the three are admitted: the links are the runs, archer's code lies
+    inside archery's and not inside reach's, nor reach's inside archer's.
+    The links and the coordinates given are saved with the forms."""
+    from itertools import permutations
+    for words in permutations((b'archer', b'archery', b'reach')):
+        identity, _basic, _book, _rows = coded(words)
+        assert identity.inside[b'archery'] == {b'archer'} and identity.holders[b'archer'] == {b'archery'}
+        assert not identity.inside[b'reach'] and not identity.holders[b'reach']
+        code = identity.code
+        assert bool((code(b'archer') <= code(b'archery')).all())
+        assert not bool((code(b'archer') <= code(b'reach')).all())
+        assert not bool((code(b'reach') <= code(b'archer')).all())
+        assert identity.accidents() == ([], [])
+        restored = WordIdentity(RadixLayer(128, initial_cap=256), property_width=64)
+        restored.load_vocab_extras(identity.vocab_extras())
+        assert (restored.inside, restored.holders) == (identity.inside, identity.holders)
+        assert all(torch.equal(restored.code(w), identity.code(w)) for w in words)
+
+
+def test_53_a_later_form_moves_an_earlier_forms_row_lane_and_column():
+    """(c) In the lesson's model, after its first four sentences (``is`` is
+    nominated: a basic percept row with a concept), a form admitted later
+    that changes the code of ``is`` (``si``: one code until a part tells
+    them apart) changes the store row of ``is``, its basic percept's stored
+    code and against lane, its row of the first Pi, and the column started
+    from it, by the member's new share less its old."""
+    from OrderZero import OrderZeroSigma
+    from test_item17_order_zero import _read_lesson
+    model, patch = _read_lesson(4)
+    try:
+        owner = model._concept_owner()
+        basic = owner.basic_percepts
+        identity = model.perceptualSpace.percept_store.identity
+        row = next(r for r, raw in basic.forms.items() if raw == b'is' and bool(basic.promoted[r])
+                   and owner.concept_of_basic_percept(r) is not None)
+        concept = owner.concept_of_basic_percept(row)
+        sigma = owner.install_order_zero()
+        store_row = identity.word_rows[b'is']
+        fixed = identity.store._basis.fixed_row_codes[store_row].clone()
+        code, against = basic.codes[row].clone(), basic.against_codes[row].clone()
+        members = basic.pi.row_members(row)
+        pair = basic.read_codes([row])[0].clone()
+        column = torch.stack((sigma.weight[:basic.width, concept], sigma.against[:basic.width, concept])).detach().clone()
+        identity.admit(b'si')
+        assert b'is' in identity.last_changed
+        now = identity.store._basis.fixed_row_codes[store_row]
+        assert not torch.equal(now, fixed) and torch.equal(now[:identity.width], identity.form(b'is'))
+        assert not torch.equal(basic.codes[row], code)
+        torch.testing.assert_close(basic.codes[row], basic.code(row).detach(), rtol=0, atol=0)
+        torch.testing.assert_close(basic.against_codes[row], basic.against(row).detach(), rtol=0, atol=0)
+        assert not torch.equal(basic.against_codes[row], against) or not torch.equal(basic.codes[row], code)
+        assert basic.pi.row_members(row) == basic.member_keys(row) != members
+        assert sorted(basic.pi.row_against(row)) == sorted(basic.against_keys(row))
+        owner.install_order_zero()
+        moved = basic.read_codes([row])[0]
+        share = OrderZeroSigma.member_column(*moved) - OrderZeroSigma.member_column(*pair)
+        now = torch.stack((sigma.weight[:basic.width, concept], sigma.against[:basic.width, concept])).detach()
+        torch.testing.assert_close(now - column, torch.stack((share, -share)), rtol=0, atol=1e-6)
+        assert bool(share.abs().sum() > 0)
+        print(dict(changed=sorted(w.decode() for w in identity.last_changed),
+                   parts_gained=[k for k in basic.member_keys(row) if k not in members],
+                   column_moved=round(float(share.abs().sum()), 4)))
+    finally:
+        model.End()
+        patch.undo()
