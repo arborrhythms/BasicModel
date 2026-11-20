@@ -75,7 +75,7 @@ def test_29_shared_whole_does_not_evidence_an_absent_word():
     obj = cs.interpret.forward(word)
     # Re-read with the object now occupying the word's inventory seat.
     field = cs.cs_read_memberships((ids, spans, primitive, raw, spans), spans)
-    row = cs._csw_row_of(obj)
+    row = cs._concept_row_of(obj)
     addresses = cs._field_inventory_rows()
     slot = int((addresses == row).nonzero()[0])
     assert field[slot, 0, 0, 0] > 0
@@ -133,7 +133,7 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
         reading = bytes(inp[b].reshape(-1).long().tolist()).split(b'\0', 1)[0]
         for word in words:
             for cid in cs.word_concepts(word):
-                address = cs._csw_row_of(cid)
+                address = cs._concept_row_of(cid)
                 if address is None:
                     continue
                 indices = (rows[:, b] if rows.ndim == 2 else rows) == address

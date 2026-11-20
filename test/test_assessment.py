@@ -80,7 +80,7 @@ def test_native_lane_attribution_keeps_extent_identity_and_all_tied_sources():
         cs_read_memberships=read, _cs_field_concept_ids=torch.tensor([101, 103, 102, 999]),
         interpret=SimpleNamespace(word_for_form=lambda form: 101),
         definitions=SimpleNamespace(objects=lambda word: (102, 103)),
-        _csw_row_of=lambda concept: concept-100)
+        _concept_row_of=lambda concept: concept-100)
     spans = torch.tensor([[[0, 1], [2, 3]]])
     model = SimpleNamespace(_concept_owner=lambda: owner, _staged_concepts_in=torch.zeros(1, 3),
         perceptualSpace=SimpleNamespace(_forward_input=dict(native_indices=torch.tensor([[0, 1]]),

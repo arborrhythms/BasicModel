@@ -45,7 +45,7 @@ def declared_object(tmp_path, monkeypatch):
         chart.mereology.placement[row,0] = 1.
     field = stimulate(owner, point[None,None], order=owner._concept_source_order(obj))
     assert field.concept_ids[field.evidence[:,0,0,0] == 1.].tolist() == [obj]
-    chart.trust.lengths[owner._csw_row_of(word),0] = 1.
+    chart.trust.lengths[owner._concept_row_of(word),0] = 1.
     owner.interpret.define(word, obj, evidence=(1.,0.))
     try:
         yield model, word, obj, point
@@ -60,7 +60,7 @@ def test_generated_known_object_uses_its_declared_word(declared_object, read):
     model, word, obj, point = declared_object
     owner = model._concept_owner()
     chart = owner.similarity_codebook
-    wrow = owner._csw_row_of(word)
+    wrow = owner._concept_row_of(word)
     bank = SimpleNamespace(codes=chart.lookup_rows([wrow])[None], weights=torch.ones(1,1),
         rows=torch.tensor([[wrow]]), terminal_valid=torch.ones(1,1,dtype=torch.bool),
         percept_width=chart.mereology.percept_event_width, meaning_start=chart.mereology.percept_event_width)
@@ -81,7 +81,7 @@ def test_forced_interpretation_reads_the_explicit_operators_extension(declared_o
     from Language import InterpretLayer
     model, word, obj, point = declared_object
     owner = model._concept_owner()
-    owner.similarity_codebook.trust.lengths[owner._csw_row_of(word),0] = 1.
+    owner.similarity_codebook.trust.lengths[owner._concept_row_of(word),0] = 1.
     owner.interpret.define(word, obj, evidence=(1.,0.))
     assert owner.interpret.denotations(word) == (obj,)
     source = ConceptSet(torch.tensor([word]),torch.tensor([[.6,.2]]))

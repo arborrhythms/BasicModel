@@ -76,7 +76,7 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     assert target.load_weights(checkpoint, strict=True, require_match=True)
     assert target.word_brackets is (not source_serial)
     assert restored._serial is (not source_serial)
-    assert restored._csw_row_of(cid) == row
+    assert restored._concept_row_of(cid) == row
     assert (dict(Spaces._concept_alloc_of(restored).order_zero_members)
             == dict(Spaces._concept_alloc_of(source).order_zero_members))
     torch.testing.assert_close(restored.similarity_codebook.getW(), source.similarity_codebook.getW())
@@ -103,7 +103,7 @@ def test_one_active_percept_reaches_every_referencing_concept():
     for cid in identities:
         slots = (cs._cs_field_concept_ids == cid).nonzero().flatten()
         assert slots.numel() == 1, f"referenced concept {cid} was truncated from the field"
-        y, lanes = order_zero_expected(cs, cs._csw_row_of(cid), presence)
+        y, lanes = order_zero_expected(cs, cs._concept_row_of(cid), presence)
         # Its own row present at one reads tanh(1).
         assert y > .76
         torch.testing.assert_close(field[slots[0], 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)
@@ -188,7 +188,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     before = cs.cs_read_memberships(native, spans).detach()
     cs._serial = not source_serial
     after = cs.cs_read_memberships(native, spans)
-    assert cs._csw_row_of(cid) == row and cs.order_zero.value is parameter
+    assert cs._concept_row_of(cid) == row and cs.order_zero.value is parameter
     torch.testing.assert_close(after, before)
 
 

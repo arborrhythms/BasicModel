@@ -63,7 +63,7 @@ def test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting(
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     word, obj = admit(m, 'hello')
     other, _ = admit(m, 'there')
-    row = cs._csw_row_of(obj)
+    row = cs._concept_row_of(obj)
     assert cs.word_surface_for_row(row) == b'hello'
     definition = cs.definitions.row(word, obj)
     store.parts.retain([r for r in store.parts.indices().tolist() if r != definition])
@@ -120,7 +120,7 @@ def test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache(
     _, obj = admit(m, 'hello')
     cs.__dict__.pop('_row_surfaces', None)
     cs.__dict__.pop('_surface_object_rows', None)
-    point = cs.similarity_codebook.getW()[cs._csw_row_of(obj)].detach()
+    point = cs.similarity_codebook.getW()[cs._concept_row_of(obj)].detach()
     assert m._generated_word_text(point[None, None], torch.tensor([1])) == ('hello',)
 
 
@@ -128,7 +128,7 @@ def test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_de
     m = model()
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     word = recurrent_word(cs.interpret, [7], [], form='m')
-    row = cs._csw_row_of(word)
+    row = cs._concept_row_of(word)
     before = len(store), cs._concept_allocator.next_id
     assert cs.interpret.no_object(word)
     assert cs.word_surface_for_row(row) == b'm'

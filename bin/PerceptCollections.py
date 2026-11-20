@@ -5,7 +5,7 @@ import torch
 
 def definitions(owner):
     alloc = owner._concept_allocator
-    rows = {owner._csw_row_of(cid): cid for cid, kinds in alloc.symbol_types.items()
+    rows = {owner._concept_row_of(cid): cid for cid, kinds in alloc.symbol_types.items()
             if 'percept_collection' in kinds and cid not in alloc.retired}
     result = {row: [] for row in rows if row is not None}
     for (row, percept, negated), weight in alloc.order_zero_members.items():
@@ -58,7 +58,7 @@ def observe(owner, word, percept, occurrence, *, stream):
     point[:basic.width] = basic.code(percept)
     if existing:
         cid, = existing
-        row = owner._csw_row_of(cid)
+        row = owner._concept_row_of(cid)
         agreement = float(read(owner, point[None, None])[row][0, 0, 0] >= 1.)
         previous = None
     else:

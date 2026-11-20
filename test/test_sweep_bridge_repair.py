@@ -20,7 +20,7 @@ def test_bridge_projection_reads_only_its_counted_prefix(monkeypatch):
         32: dict(parts=((7,),), wholes=(5,)),
     })
     monkeypatch.setattr(cs, '_word_definition_ids', lambda: tuple(words))
-    monkeypatch.setattr(cs, '_csw_row_of', rows.get)
+    monkeypatch.setattr(cs, '_concept_row_of', rows.get)
     monkeypatch.setattr(cs.definitions, 'objects', lambda word: (101 if word == 31 else 102,))
     monkeypatch.setattr(cs.interpret, 'no_object', lambda word: False)
     cs._expected_knowing.zero_()
@@ -80,7 +80,7 @@ def test_bridge_masks_cover_bit_31_and_adjacent_blocks(monkeypatch):
     alloc = _concept_alloc_of(cs)
     alloc.word_descriptions[31] = dict(parts=(tuple(range(64)),), wholes=())
     monkeypatch.setattr(cs, '_word_definition_ids', lambda: (31,))
-    monkeypatch.setattr(cs, '_csw_row_of', lambda identity: 63)
+    monkeypatch.setattr(cs, '_concept_row_of', lambda identity: 63)
     monkeypatch.setattr(cs.definitions, 'objects', lambda word: (101,))
     monkeypatch.setattr(cs.interpret, 'no_object', lambda word: False)
     cs._expected_knowing.zero_()

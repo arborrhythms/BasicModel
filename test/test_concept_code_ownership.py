@@ -32,7 +32,7 @@ def test_promoting_a_candidate_initializes_only_its_new_row():
     expected = centroid(cs, support)
     discovered = cs.mtm.promote_candidates(cs)
     assert len(discovered) == 1
-    row = cs._csw_row_of(discovered[0])
+    row = cs._concept_row_of(discovered[0])
     keep = torch.arange(len(W)) != row
     torch.testing.assert_close(W[keep], before[keep], rtol=0, atol=0)
     from ConceptPlacement import seed

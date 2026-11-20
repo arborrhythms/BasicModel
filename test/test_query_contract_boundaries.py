@@ -54,7 +54,7 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
     cs = _cs()
     concept = cs.mint_frozen_concept('invalid-payload-native-read')
     with torch.no_grad():
-        cs.similarity_codebook.getW()[cs._csw_row_of(concept)].fill_(float('nan'))
+        cs.similarity_codebook.getW()[cs._concept_row_of(concept)].fill_(float('nan'))
     context = _context(cs)
     with pytest.raises(FloatingPointError, match='finite'):
         _signature('equal', 'argin1', 'argin2').invoke(

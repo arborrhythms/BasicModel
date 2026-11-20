@@ -94,7 +94,7 @@ def test_literal_reuse_adds_coverage_by_maximum():
         observe_candidate(cs, 0, support, literal=('ps',(4,7)), literal_key=b'case')
         _close(cs)
     cid, = cs.mtm.promote_candidates(cs)
-    row = cs._csw_row_of(cid)
+    row = cs._concept_row_of(cid)
     before = dict(cs.concept_weights(row))
     cs.mtm.restore(None)
     observe_candidate(cs, 0, {**support, rows[2][1]: 2.}, literal=('ps',(4,7)), literal_key=b'case')
@@ -166,7 +166,7 @@ def test_reading_pending_name_survives_documents_then_defines_on_recurrence():
     assert len(set(ids)) == 1
     obj, = cs.definitions.objects(word)
     assert alloc.order_of(obj) == 1
-    assert cs.interpret.reading(word) == (obj, cs._csw_row_of(obj), 1)
+    assert cs.interpret.reading(word) == (obj, cs._concept_row_of(obj), 1)
     from BindingAnswers import matches
     from dataclasses import replace
     answer = replace(ConceptualMeaning.from_description(value),
@@ -207,7 +207,7 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
     cs.mtm.bind(key, occurrence, kind=None, when=0, value=value, reading=word)
     obj = promote_identity(cs, key, word=word)
     before = cs.interpret.reading(word)
-    assert before == (obj, cs._csw_row_of(obj), 1)
+    assert before == (obj, cs._concept_row_of(obj), 1)
     for _ in range(2):
         store.reset()
         store.parts.retain(())
@@ -349,7 +349,7 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
     assert f.store.location(occurrence) == occurrence
     f.cs.mtm.event(token, occurrence, verb=verb, role=0, when=2,
                    before=event.before)
-    code = f.cs.similarity_codebook.W[f.cs._csw_row_of(verb)].clone()
+    code = f.cs.similarity_codebook.W[f.cs._concept_row_of(verb)].clone()
     bank = CaseBank(torch.tensor([verb]), code[None, None], code.new_zeros(1, 1, 2),
         code.new_zeros(1, 1, 2), torch.ones(1, 1, dtype=torch.bool))
     before = copy.deepcopy(f.cs.mtm.state())
@@ -378,7 +378,7 @@ def test_named_alias_follows_merge_restore_and_horizon_expiry():
     object.__setattr__(owner, '_clause_store_ref', weakref.ref(store))
     word = recurrent_word(owner.interpret, [3], (), form='alias')
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].fill_(1)
+        owner.similarity_codebook.W[owner._concept_row_of(word)].fill_(1)
     occurrences = [store.occurrence_of(store.write_clause(
         Clause(ConceptualMeaning.from_description(torch.ones(4)), point=torch.ones(4), order=1),
         )) for i in range(2)]
@@ -407,7 +407,7 @@ def test_forward_name_is_not_filled_by_its_own_defined_word():
     cs, rows = _fixture()
     word = recurrent_word(cs.interpret, (4,7), (), form='label')
     witness_object(cs, word)
-    value = cs.similarity_codebook.lookup_rows(cs._csw_row_of(word))
+    value = cs.similarity_codebook.lookup_rows(cs._concept_row_of(word))
     meaning = replace(ConceptualMeaning.from_description(value),
         role_refs=(('sym',word),None,None), bindings={
             '_forward_references': ((0,word),), '_open_references': (('referent',0),)})

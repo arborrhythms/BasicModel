@@ -63,7 +63,7 @@ def test_grammar_deposits_each_word_with_its_own_code(tmp_path, monkeypatch, con
             model(inputs)
         assert len(seen) == 8, f'every real word must be deposited once; observed {len(seen)} word leaves'
         owner = model._concept_owner()
-        expected_rows = {owner._csw_row_of(owner.interpret.word_for_form(word))
+        expected_rows = {owner._concept_row_of(owner.interpret.word_for_form(word))
                          for word in ('hello', 'loving', 'world', 'there')}
         assert len(expected_rows) == 4
         assert set(seen) == expected_rows

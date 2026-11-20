@@ -11,10 +11,10 @@ def place_types(owner, identities=None):
         return
     if identities is None:
         identities = [cid for cid in owner._concept_allocator.symbols
-                      if owner._csw_row_of(cid) is not None
+                      if owner._concept_row_of(cid) is not None
                       and owner._concept_allocator.order_of(cid) == 0]
     owner._observed_knowing.zero_()
-    rows = [owner._csw_row_of(cid) for cid in identities]
+    rows = [owner._concept_row_of(cid) for cid in identities]
     owner._observed_knowing[0, rows, 0] = 1.
     context = owner.placement_context(0)
     active = torch.tensor([row for row in (context > 0).nonzero().flatten().tolist()
@@ -27,7 +27,7 @@ def place_types(owner, identities=None):
 def place_at(owner, identity, coordinates):
     """Declare a geometry fixture; membership no longer implies a centroid."""
     bank = owner.similarity_codebook
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     value = bank.W.new_tensor(coordinates)
     bank.mereology.placement[row] = torch.nn.functional.normalize(value, dim=0)
     bank.mereology.placement_witnesses[row] = 1

@@ -125,7 +125,7 @@ def test_training_answer_form_admission_is_semantically_empty_and_chunked_retrie
         assert word is not None and not owner.interpret.denotations(word)
         assert not owner.mtm.entries
         assert torch.equal(before,owner._priming_seen)
-        row=owner._csw_row_of(word)
+        row=owner._concept_row_of(word)
         root=owner.similarity_codebook.lookup_rows(torch.tensor([[row]]),streams=True)[:,0]
         bank,report=lexical_candidates(owner,root,limit=2,chunk_size=1)
         assert row in bank.rows[0].tolist() and report['chunks']==report['vocabulary']
@@ -167,7 +167,7 @@ def test_single_root_lexical_scan_is_reused_across_walk_steps(monkeypatch, tmp_p
             admit_training_forms(model,['alpha beta.'],['omega'])
             from nomination_fixtures import nominated_forms
             nominated_forms(model,['omega'])
-            word=owner.interpret.word_for_form('omega');row=owner._csw_row_of(word)
+            word=owner.interpret.word_for_form('omega');row=owner._concept_row_of(word)
             root=owner.similarity_codebook.lookup_rows(torch.tensor([[row]]),streams=True)
             calls=[];native=Generative.lexical_candidates
             def counted(*args,**kwargs):
@@ -240,7 +240,7 @@ def test_training_output_keeps_lexical_text_and_output_gradients(monkeypatch):
         from nomination_fixtures import nominated_forms
         nominated_forms(model,['alpha'])
         owner=model._concept_owner()
-        row=owner._csw_row_of(owner.interpret.word_for_form('alpha'))
+        row=owner._concept_row_of(owner.interpret.word_for_form('alpha'))
         word=owner.similarity_codebook.lookup_rows(torch.tensor([[row]]),streams=True)[:,0]
         leaf = word[0].detach().requires_grad_()
         meaning=ConceptualMeaning.from_description(leaf)

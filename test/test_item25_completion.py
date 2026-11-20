@@ -223,7 +223,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
         # This ambiguity fixture supplies three separate order-one positions;
         # promotion no longer copies the observed order-zero points.
         with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(symbol)].copy_(points[i])
+            owner.similarity_codebook.W[owner._concept_row_of(symbol)].copy_(points[i])
         relata.append((label, symbol))
     vectors = torch.stack([store._concept_point(cid) for _, cid in relata])
     support = vectors.ne(0)
@@ -232,7 +232,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
 
     word = recurrent_word(owner.interpret, [4], (), form='this')
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(points[3])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(points[3])
     assert not owner.definitions.objects(word)
     facts = []
     identity = None
@@ -370,7 +370,7 @@ def _sign_equation(f, form, label, position):
         if word is None:
             word = recurrent_word(owner.interpret, [len(owner._concept_allocator.word_forms)+1], (), form=spelling)
             with torch.no_grad():
-                owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(torch.eye(store.nDim)[len(words)])
+                owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(torch.eye(store.nDim)[len(words)])
         identity, row, order = owner.interpret.reading(word)
         ids.append(identity); words.append(word); rows.append(row); orders.append(order)
         values.append(owner.similarity_codebook.lookup_rows(row).detach())
@@ -500,7 +500,7 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
     observe(occurrence, 1)
     target, = f.cs.interpret.remembered_objects(label)
     with torch.no_grad():
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(target)].copy_(observed)
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(target)].copy_(observed)
     assert f.cs.definitions.objects(label) == (target,)
     model=SimpleNamespace(_concept_owner=lambda: f.cs, symbolSpace=SimpleNamespace(ltm_store=f.store))
     # §50 item 101 / §52 item 111: the retained nonempty occurrence is a
@@ -728,14 +728,14 @@ def _optional_reading(f, tree):
             if word is None:
                 word = recurrent_word(owner.interpret, [len(owner._concept_allocator.word_forms)+1], (), form=node)
                 with torch.no_grad():
-                    owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(torch.eye(f.store.nDim)[len(words)])
+                    owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(torch.eye(f.store.nDim)[len(words)])
             identity, row, order = owner.interpret.reading(word)
             value = owner.similarity_codebook.lookup_rows(row).detach()
             actions.append((0, -1, len(words)))
             frames.append(torch.zeros(3, f.store.nDim))
             references.append((-1, -1))
             words.append(word); ids.append(identity); rows.append(row); values.append(value); orders.append(order)
-            word_rows.append(owner._csw_row_of(word))
+            word_rows.append(owner._concept_row_of(word))
             return value, identity, word
         name, *children = node
         operands = [visit(child) for child in children]
@@ -746,7 +746,7 @@ def _optional_reading(f, tree):
         if name == 'interpret':
             value, source, word = operands[0]
             objects = owner.interpret.denotations(word)
-            points = [owner.similarity_codebook.lookup_rows(owner._csw_row_of(obj)).detach() for obj in objects]
+            points = [owner.similarity_codebook.lookup_rows(owner._concept_row_of(obj)).detach() for obj in objects]
             bank = ReferenceBank(torch.tensor([objects], dtype=torch.long),
                 torch.stack(points)[None] if points else value.new_zeros(1, 0, len(value)),
                 torch.ones(1, len(objects), dtype=torch.bool), torch.zeros(1, len(objects), dtype=torch.bool),
@@ -803,7 +803,7 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
     decisions = leaf_readings(f.language, reading.actions, len(reading.leaves), forced=False)
     assert decisions == ('symbol', 'symbol', 'symbol', 'no_op')
     word = owner.interpret.word_for_form('woof')
-    form = owner.similarity_codebook.lookup_rows(owner._csw_row_of(word)).detach().clone()
+    form = owner.similarity_codebook.lookup_rows(owner._concept_row_of(word)).detach().clone()
     assert form.any() and torch.equal(reading.leaves[-1], form)
     assert owner.mtm.token_of(('name', word)) is None
     clause = finish_clause(f.language, reading, registry=f.registry)

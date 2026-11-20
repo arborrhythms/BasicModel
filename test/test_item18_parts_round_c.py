@@ -29,7 +29,7 @@ def test_fit_reads_the_extension_and_not_the_class_position():
     place_at(owner, speech.concepts[argument], [1., 0., 0., 0.])
     before = speech.similarities(words[0]).clone()
     rotation = positive_rotation()
-    row = owner._csw_row_of(speech.concepts[argument])
+    row = owner._concept_row_of(speech.concepts[argument])
     owner.similarity_codebook.mereology.placement[row] = torch.tensor([1.,0.,0.,0.]) @ rotation
     after = speech.similarities(words[0])
     torch.testing.assert_close(before, after, atol=1e-6, rtol=0)
@@ -82,7 +82,7 @@ def test_generate_fit_is_invariant_to_argument_rotation():
     value = point(owner, words[0])[None]
     before = speech.value_scores(value)
     rotation = positive_rotation()
-    row = owner._csw_row_of(speech.concepts['modifier_argin1'])
+    row = owner._concept_row_of(speech.concepts['modifier_argin1'])
     owner.similarity_codebook.mereology.placement[row] = torch.tensor([1.,0.,0.,0.]) @ rotation
     speech.prepare_values()
     torch.testing.assert_close(speech.value_scores(value), before, atol=1e-6, rtol=0)
@@ -101,8 +101,8 @@ def test_grouping_moves_each_order_only_by_its_own_members_and_keeps_frozen_rows
         place_at(owner, speech.concepts[name], torch.eye(4)[i].tolist())
     bank = owner.similarity_codebook
     before = deepcopy(bank.state_dict())
-    word_rows = [owner._csw_row_of(word) for word in words]
-    argument_rows = [owner._csw_row_of(speech.concepts[name]) for name in speech.arguments]
+    word_rows = [owner._concept_row_of(word) for word in words]
+    argument_rows = [owner._concept_row_of(speech.concepts[name]) for name in speech.arguments]
     speech.observe_kept(program, binary, ())
     moved = bank.mereology.placement.clone()
     assert not torch.equal(moved[word_rows[:2]], before['mereology.placement'][word_rows[:2]])
@@ -117,7 +117,7 @@ def test_grouping_moves_each_order_only_by_its_own_members_and_keeps_frozen_rows
         torch.testing.assert_close(bank.mereology.placement[held], moved[held], atol=1e-6, rtol=0)
     bank.load_state_dict(before)
     owner._frozen_concepts = {words[0], speech.concepts['modifier_argin1']}
-    frozen = [owner._csw_row_of(cid) for cid in owner._frozen_concepts]
+    frozen = [owner._concept_row_of(cid) for cid in owner._frozen_concepts]
     values = bank.mereology.placement[frozen].clone()
     speech.observe_kept(program, binary, ())
     torch.testing.assert_close(bank.mereology.placement[frozen], values, atol=0, rtol=0)
@@ -130,11 +130,11 @@ def test_centroid_refreshes_when_its_members_move_without_moving_the_class():
     speech.add(words[0], 'modifier_argin1')
     speech.add(words[1], 'modifier_argin1')
     place_at(owner, cid, [0.,0.,0.,1.])
-    own = owner.similarity_codebook.mereology.placement[owner._csw_row_of(cid)].clone()
+    own = owner.similarity_codebook.mereology.placement[owner._concept_row_of(cid)].clone()
     torch.testing.assert_close(extension(owner,cid), torch.tensor([.5,.5,0.,0.]))
     place_at(owner, words[1], [0.,0.,1.,0.])
     torch.testing.assert_close(extension(owner,cid), torch.tensor([.5,0.,.5,0.]))
-    torch.testing.assert_close(owner.similarity_codebook.mereology.placement[owner._csw_row_of(cid)], own)
+    torch.testing.assert_close(owner.similarity_codebook.mereology.placement[owner._concept_row_of(cid)], own)
 
 
 def test_omitted_word_has_no_position_or_placement_seed():
@@ -153,7 +153,7 @@ def test_expected_argument_presence_is_added_to_both_occupation_reads(chooser):
     owner, speech, words = argument_inventory(formal_arguments((rule('modifier'),)))
     speech.add(words[0], 'modifier_argin1')
     speech.prepare_values()
-    rows = torch.tensor([owner._csw_row_of(speech.concepts[name]) for name in speech.arguments])
+    rows = torch.tensor([owner._concept_row_of(speech.concepts[name]) for name in speech.arguments])
     read = SymbolRead(torch.zeros(1,len(rows),4), torch.zeros(1,len(rows),2), 1.,1e-6,'clip',rows)
     read.expected[0,speech.index['modifier_argin1'],0] = .7
     like = owner.similarity_codebook.W
@@ -162,13 +162,13 @@ def test_expected_argument_presence_is_added_to_both_occupation_reads(chooser):
     base = speech.argument_scores(torch.tensor([words[0]]), like)
     torch.testing.assert_close((base+priming)-base, priming)
     language = NS(parts_of_speech=speech, _generate_binary_rules=(rule('modifier'),), _generate_unary_rules=())
-    value = owner.similarity_codebook.lookup_rows(owner._csw_row_of(words[0]))[None]
+    value = owner.similarity_codebook.lookup_rows(owner._concept_row_of(words[0]))[None]
     left = right = value[:,None].expand(-1,2,-1)
     without = features(language,value,left,right)
     with_prime = features(language,value,left,right,expected=priming)
     torch.testing.assert_close(with_prime-without, torch.tensor([[[0.,.7,0.],[0.,0.,0.]]]))
     layer, native = chooser
-    addresses = torch.tensor([native.owner._csw_row_of(native.concepts[name]) for name in native.arguments])
+    addresses = torch.tensor([native.owner._concept_row_of(native.concepts[name]) for name in native.arguments])
     prediction = SymbolRead(torch.zeros(1,len(addresses),4), torch.zeros(1,len(addresses),2),
                             1.,1e-6,'clip',addresses)
     prediction.expected[0,native.index['lower_argin1'],0] = .7
@@ -197,7 +197,7 @@ def test_argument_field_entry_and_placements_round_trip_without_a_word_argument_
                        ('where',result.where),('when',result.when)):
         object.__setattr__(owner.subspace,'_concept_'+name,value)
     store = LTM0(owner.nWhat+4,capacity=4,episodic_concepts=16)
-    row = store.append_idea(torch.nn.functional.pad(owner.similarity_codebook.lookup_rows(owner._csw_row_of(words[0])),(0,4)))
+    row = store.append_idea(torch.nn.functional.pad(owner.similarity_codebook.lookup_rows(owner._concept_row_of(words[0])),(0,4)))
     entry = select(result,store.episodic_capacity,torch.tensor([True]),unkept=())
     write(store,row,tuple(value[0] for value in entry))
     checkpoint = tmp_path/'parts.pt'

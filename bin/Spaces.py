@@ -14444,7 +14444,7 @@ class ConceptualSpace(Space):
         capacity = None if capacity_raw is None else int(capacity_raw)
         # Unseated relation handles live in LTM1's own allocation. Their
         # monotonic numbers are not reserved concept-bank coordinates.
-        unseated = sum(self._csw_row_of(symbol) is None
+        unseated = sum(self._concept_row_of(symbol) is None
                        for symbol in alloc.parts.indices().tolist())
         return nxt, nxt + n - int(alloc.reclaimed_seats) - unseated, capacity
 
@@ -14584,7 +14584,7 @@ class ConceptualSpace(Space):
 
     def concept_over_collected(self, sym):
         """Whether the current field gives this concept both poles of evidence."""
-        row = ConceptualSpace._csw_row_of(self, sym)
+        row = ConceptualSpace._concept_row_of(self, sym)
         both = getattr(self, '_refinement_both', None)
         return row is not None and both is not None and bool(both[row].any())
 
@@ -14961,7 +14961,7 @@ class ConceptualSpace(Space):
         raise RuntimeError('concept blocks do not cover their inventory')
 
     def _seated_concept_order(self, concept):
-        row = self._csw_row_of(concept)
+        row = self._concept_row_of(concept)
         return None if row is None else self._row_order(row)
 
     def _order0_inventory_row(self, row):
@@ -15646,11 +15646,11 @@ class ConceptualSpace(Space):
             raise ValueError('an unwitnessed concept has no storage order')
         base, end = self.order_slice(order)
         ly = alloc.layer(0)
-        row = self._csw_row_of(concept_id)
+        row = self._concept_row_of(concept_id)
         if row is None:
             self._preflight_concept_row(order, context='concept seating')
             alloc.touch(concept_id)
-            row = ly.assign_row(('shared', int(concept_id)), capacity=end-base, base=base)
+            row = ly.assign_row(('concept', int(concept_id)), capacity=end-base, base=base)
         if row is None:
             raise ConceptRowCapacityError(f'concept order {order} capacity exhausted')
         if not base <= row < end:
@@ -15741,7 +15741,7 @@ class ConceptualSpace(Space):
         # sym edge IS its weighted reading (Alec 2026-07-02).
         if (n_raw + len(sym_refs) + n_poles < 2
                 and int(concept_id) not in alloc.singletons
-                and not (witness is not None and self._csw_row_of(concept_id) is not None)):
+                and not (witness is not None and self._concept_row_of(concept_id) is not None)):
             return
         order = self._concept_source_order(concept_id)   # bookkeeping only
         c_row = self._csw_concept_row(order, concept_id)
@@ -15761,7 +15761,7 @@ class ConceptualSpace(Space):
                 else:
                     self.bring_concept(percept, c_row)
                 words = alloc.declared_classes.get('words')
-                words_row = None if words is None else self._csw_row_of(words)
+                words_row = None if words is None else self._concept_row_of(words)
                 if words_row is not None and (words_row, c_row) not in alloc.layer()._index:
                     self.add_concept_edge(words_row, c_row, 1.)
             else:
@@ -15824,7 +15824,7 @@ class ConceptualSpace(Space):
                     if bool((present & (evidence[slot, b, :, pole] > 0)).any()):
                         pending.add((cid, pole, col, group))
         for cid, pole, col, group in sorted(pending):
-            self.add_concept_feature(self._csw_row_of(cid), 'bp', col // 2, 1., negated=bool(pole))
+            self.add_concept_feature(self._concept_row_of(cid), 'bp', col // 2, 1., negated=bool(pole))
 
     def cs_symbolic_phase(self, settled, *, extents=None, percepts=None, a_0=None):
         """Read native memberships once after the pump, then compose symbols.
@@ -15989,7 +15989,7 @@ class ConceptualSpace(Space):
             frz = set()
             object.__setattr__(self, "_frozen_concepts", frz)
         frz.add(int(concept_id))
-        row = self._csw_row_of(concept_id)
+        row = self._concept_row_of(concept_id)
         if row is not None:
             self.similarity_codebook.trust.capture(row)
         self._refresh_frozen_values_hook()
@@ -16003,7 +16003,7 @@ class ConceptualSpace(Space):
         """GLOBAL store rows of the frozen concepts (allocated only)."""
         rows = set()
         for cid in getattr(self, "_frozen_concepts", ()):
-            r = self._csw_row_of(cid)
+            r = self._concept_row_of(cid)
             if r is not None:
                 rows.add(int(r))
         return rows
@@ -16108,7 +16108,7 @@ class ConceptualSpace(Space):
                 registry[name] = identity
         for name in arguments:
             identity = registry[name]
-            if alloc.order_of(identity) != order or self._csw_row_of(identity) is None:
+            if alloc.order_of(identity) != order or self._concept_row_of(identity) is None:
                 raise ValueError('formal argument concept has no native order-one seat')
         return {name: registry[name] for name in arguments}
 
@@ -16157,14 +16157,10 @@ class ConceptualSpace(Space):
                 p[int(row)] += h
         return p
 
-    def _csw_rows_of(self, concept_id):
-        """The concept's one physical row, as the existing list read expects."""
-        row = self._csw_row_of(concept_id)
-        return [] if row is None else [row]
-
-    def _csw_row_of(self, concept_id):
-        """The concept's one row in the shared fixed inventory, or None."""
-        return _concept_alloc_of(self).layer(0).row_of(('shared', int(concept_id)))
+    def _concept_row_of(self, concept_id):
+        """The concept's row in the concept inventory, or None. The row is the
+        concept's alone: a symbol has no row here and no dimensions."""
+        return _concept_alloc_of(self).layer(0).row_of(('concept', int(concept_id)))
 
     def _bias_col(self):
         """The EVERYTHING bias column in STORE coordinates (store nOutput)."""
@@ -16180,7 +16176,7 @@ class ConceptualSpace(Space):
         for key, row in getattr(ly, "_tensor_rows", {}).items():
             ns = key[0] if isinstance(key, tuple) and len(key) == 2 else None
             # snap/pool plus the rev-2 per-order block namespaces ("o<k>").
-            if ns in ("shared", "snap", "pool") or (isinstance(ns, str)
+            if ns in ("concept", "snap", "pool") or (isinstance(ns, str)
                                           and ns.startswith("o")
                                           and ns[1:].isdigit()):
                 out[int(row)] = int(key[1])
@@ -16352,7 +16348,7 @@ class ConceptualSpace(Space):
         if not _concept_rows_exist(self):
             return                                 # never populated (inactive)
         ly = _concept_alloc_of(self).layer(0)
-        c_row = self._csw_row_of(concept_id)
+        c_row = self._concept_row_of(concept_id)
         if c_row is None:
             return                                 # unallocated: no edges
         self._maybe_rebuild_optimizer_for_csw()
@@ -16383,14 +16379,9 @@ class ConceptualSpace(Space):
         if not _concept_rows_exist(self):
             return
         ly = _concept_alloc_of(self).layer(0)
-        pos = None
-        for c_row in self._csw_rows_of(cid):
-            for s_row in self._csw_rows_of(code):
-                pos = ly._index.get((int(c_row), int(s_row)))
-                if pos is not None:
-                    break
-            if pos is not None:
-                break
+        c_row, s_row = self._concept_row_of(cid), self._concept_row_of(code)
+        pos = (None if c_row is None or s_row is None
+               else ly._index.get((int(c_row), int(s_row))))
         if pos is not None and ly.values is not None:
             with torch.no_grad():
                 ly.values[pos] = float(value)
@@ -16407,7 +16398,7 @@ class ConceptualSpace(Space):
         if int(cid) in getattr(self, "_frozen_concepts", ()):
             return                                 # frozen weights: no drift
         ly = _concept_alloc_of(self).layer(0)
-        c_row = self._csw_row_of(cid)              # any block namespace
+        c_row = self._concept_row_of(cid)              # any block namespace
         if c_row is None:
             return                                 # unallocated: no edges
         for matrix in ly.part_matrices():
@@ -16432,7 +16423,7 @@ class ConceptualSpace(Space):
         if int(cid) in getattr(self, "_frozen_concepts", ()):
             return None                            # frozen weights: no drift
         ly = _concept_alloc_of(self).layer(0)
-        c_row = self._csw_row_of(cid)
+        c_row = self._concept_row_of(cid)
         if c_row is None:
             return None                            # unallocated: no edges
         return max(float(matrix.decay_row(c_row, factor=factor)) for matrix in ly.part_matrices())
@@ -16733,7 +16724,7 @@ class ConceptualSpace(Space):
                     bridge[obj] = (parts, description['wholes'])
             pairs = [set(), set()]
             for identity, targets in bridge.items():
-                row = self._csw_row_of(identity)
+                row = self._concept_row_of(identity)
                 if row is None or row >= surface.shape[1]:
                     continue
                 for index, values in enumerate(targets):
@@ -20647,7 +20638,7 @@ class OutputSpace(Space):
         evidence, ids = field.evidence.amax(2), field.concept_ids
         if ids.ndim == 1:
             ids = ids[:,None].expand(-1, evidence.shape[1])
-        rows = torch.tensor([[owner._csw_row_of(int(cid)) if int(cid) > 0 and owner._csw_row_of(int(cid)) is not None else -1 for cid in stream]
+        rows = torch.tensor([[owner._concept_row_of(int(cid)) if int(cid) > 0 and owner._concept_row_of(int(cid)) is not None else -1 for cid in stream]
                              for stream in ids.T.tolist()], device=evidence.device)
         capacity = self.field_readout.in_features//2
         valid = (rows >= 0) & (rows < capacity)

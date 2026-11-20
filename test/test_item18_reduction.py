@@ -142,10 +142,10 @@ def test_23_13_promotion_without_actual_events_keeps_the_current_mtm_value(menti
     current = owner.mtm.value_of(key).clone()
     torch.testing.assert_close(current[:2], current.new_tensor([1., 1.]))
     symbol = promote_identity(owner, key)
-    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(symbol)],
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._concept_row_of(symbol)],
                                current, rtol=0, atol=0)
     from ConceptPlacement import seed
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)],
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._concept_row_of(symbol)],
                                seed(symbol, current), rtol=0, atol=0)
 
 
@@ -380,7 +380,7 @@ def test_37_41_a_kept_unrecorded_thought_writes_its_generated_extension(named_sc
     model, objects = named_scalar_model
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     obj = objects['alpha']
-    point = owner.similarity_codebook.lookup_rows(owner._csw_row_of(obj)).detach()
+    point = owner.similarity_codebook.lookup_rows(owner._concept_row_of(obj)).detach()
     value = replace(ConceptualMeaning.from_description(point), role_refs=(('sym',obj),None,None))
     value = with_slots(value, (), pair=(.6,0.))
     with torch.no_grad():
@@ -488,7 +488,7 @@ def test_63_equal_member_extensions_keep_distinct_referents_and_native_orders():
     op = LowerLayer()
     entries = []
     for cid in (member, kind):
-        point = owner.similarity_codebook.lookup_rows(owner._csw_row_of(cid)).detach()
+        point = owner.similarity_codebook.lookup_rows(owner._concept_row_of(cid)).detach()
         field = ConceptSet(torch.tensor([cid]), torch.tensor([[1., 0.]]))
         context = Context(owner=owner, name='universal')
         extension = Node(op.compose_extend(field, context=context))

@@ -156,8 +156,8 @@ def higher_word(f, word):
     parent = f.cs.new_concept(order=f.cs._concept_source_order(member)+1)
     f.cs.add_part(parent, member)
     with torch.no_grad():
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(parent)].copy_(
-            f.cs.similarity_codebook.W[f.cs._csw_row_of(member)])
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(parent)].copy_(
+            f.cs.similarity_codebook.W[f.cs._concept_row_of(member)])
     f.cs.interpret.define(wid, parent)
     f.words[word] = wid, parent
     return parent

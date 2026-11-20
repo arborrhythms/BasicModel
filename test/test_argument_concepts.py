@@ -23,7 +23,7 @@ def test_formal_arguments_are_prebuilt_zero_radius_concepts_above_words():
     assert len(set(concepts.values())) == len(names)
     for cid in concepts.values():
         assert alloc.order_of(cid) == 1  # The native word order is zero.
-        row = cs._csw_row_of(cid)
+        row = cs._concept_row_of(cid)
         assert row is not None
         assert 'formal-argument' in alloc.symbol_types[cid]
         assert not bank.lookup_rows(row).any()
@@ -74,7 +74,7 @@ def test_argument_declarations_survive_native_structural_checkpoint():
     assert restored_alloc.next_id == next_id == alloc.next_id
     for cid in concepts.values():
         assert restored_alloc.order_of(cid) == alloc.order_of(cid)
-        assert restored._csw_row_of(cid) == cs._csw_row_of(cid)
+        assert restored._concept_row_of(cid) == cs._concept_row_of(cid)
 
 
 def argument_fixture(*names):
@@ -85,7 +85,7 @@ def argument_fixture(*names):
     words = tuple(recurrent_word(cs.interpret, [part], (), form=form)
                   for part, form in ((4, 'dax'), (7, 'wug')))
     for i, word in enumerate(words):
-        row = cs._csw_row_of(word)
+        row = cs._concept_row_of(word)
         bank.mereology.placement[row].copy_(torch.eye(4)[i])
         bank.mereology.placement_witnesses[row] = 1
     agreeing_views(cs, *words)
@@ -98,7 +98,7 @@ def test_argument_views_learn_radius_and_shared_words_do_not_divide_membership()
     for _ in range(3):
         speech.observe_use('change', ((word,), (word,)))
     for identity in speech.concepts.values():
-        row = cs._csw_row_of(identity)
+        row = cs._concept_row_of(identity)
         bank.mereology.placement[row] = torch.eye(4)[0]
         bank.mereology.placement_witnesses[row] = 1
     radius = -math.expm1(-3 / bank.trust.trust_views)
@@ -111,7 +111,7 @@ def test_argument_views_learn_radius_and_shared_words_do_not_divide_membership()
     for argument in speech.arguments:
         cid = speech.concepts[argument]
         assert alloc.order_of(cid) == alloc.order_of(word) + 1
-        row = cs._csw_row_of(cid)
+        row = cs._concept_row_of(cid)
         assert int(bank.trust.views[row]) == 3
         torch.testing.assert_close(bank.lookup_rows(row)[3:7], torch.eye(4)[0]*radius)
     # Scores are geometry with confidence, not probabilities that must sum to one.
@@ -125,13 +125,13 @@ def test_higher_order_context_cannot_move_word_meanings_forms_or_radii():
     for word in words:
         speech.add(word, 'group_argin1')
     place_types(cs)
-    rows = [cs._csw_row_of(word) for word in words]
+    rows = [cs._concept_row_of(word) for word in words]
     forms = bank.lookup_rows(torch.tensor(rows))[:, :3].clone()
     radii = bank.trust.lengths.clone()
     before = bank.mereology.placement[rows].clone()
     parent = speech._direction(speech.concepts['group_argin1']).clone()
     context = torch.zeros(cs.nVectors)
-    context[cs._csw_row_of(speech.concepts['group_argin1'])] = 1.
+    context[cs._concept_row_of(speech.concepts['group_argin1'])] = 1.
     bank.mereology.negative_count = 0
     bank.mereology.place_rows(rows, context, b'other-order')
     after = bank.mereology.placement[rows]
@@ -169,7 +169,7 @@ def test_form_only_charts_record_members_without_learning_from_form_geometry(for
         observe_member(cs, parent, word)
     assert positive_length(cs, word) == 1.
     from ConceptHierarchy import members, direction
-    row = cs._csw_row_of(parent)
+    row = cs._concept_row_of(parent)
     assert int(bank.trust.views[row]) == 0
     assert float(bank.trust.lengths[row, 0]) == 0.
     assert members(cs, parent) == (word,)
@@ -185,7 +185,7 @@ def test_ordinary_nested_classes_place_within_each_order_without_a_grammar_catal
     cs, bank, _, alloc = fixture(meaning_pairs=4)
     words = [recurrent_word(cs.interpret, [part], (), form=form)
              for part, form in ((4, 'dax'), (7, 'wug'), (8, 'zup'))]
-    rows = [cs._csw_row_of(word) for word in words]
+    rows = [cs._concept_row_of(word) for word in words]
     for i, row in enumerate(rows):
         bank.mereology.placement[row] = torch.eye(4)[i]
         bank.mereology.placement_witnesses[row] = 1
@@ -213,8 +213,8 @@ def test_ordinary_nested_classes_place_within_each_order_without_a_grammar_catal
     bank.mereology.negative_count = 0  # No same-order negative update in this check.
     first_before = direction(cs, first).clone()
     context = torch.zeros(cs.nVectors)
-    context[cs._csw_row_of(upper)] = 1.
-    bank.mereology.place_rows(rows + [cs._csw_row_of(first)], context, b'higher-order-context')
+    context[cs._concept_row_of(upper)] = 1.
+    bank.mereology.place_rows(rows + [cs._concept_row_of(first)], context, b'higher-order-context')
     torch.testing.assert_close(bank.mereology.placement[rows], before, rtol=0, atol=0)
     torch.testing.assert_close(bank.trust.lengths, radii, rtol=0, atol=0)
     torch.testing.assert_close(bank.lookup_rows(torch.tensor(rows))[:, :3], forms, rtol=0, atol=0)
@@ -268,7 +268,7 @@ def test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_ru
     assert positive_length(cs, word) == 1.
     assert positive_length(cs, parent) == pytest.approx(-math.expm1(-1.))
     bank.trust.project()
-    assert not bank.W[cs._csw_row_of(parent)].any()  # Extension is not the class's position.
+    assert not bank.W[cs._concept_row_of(parent)].any()  # Extension is not the class's position.
 
 
 def test_revised_separability_evidence_and_contiguous_classes():
@@ -278,7 +278,7 @@ def test_revised_separability_evidence_and_contiguous_classes():
     for view in range(1,6):
         speech.observe_use('change', ((a,), (b,)))
         for name, point in zip(('change_argin1','change_argin2'), torch.eye(4)[:2]):
-            row = cs._csw_row_of(speech.concepts[name])
+            row = cs._concept_row_of(speech.concepts[name])
             bank.mereology.placement[row] = point
             bank.mereology.placement_witnesses[row] = 1
         result=speech.operation('change')
@@ -288,13 +288,13 @@ def test_revised_separability_evidence_and_contiguous_classes():
         assert operation_measurement(speech) == pytest.approx(expected)
         assert (expected >= .75) == (view == 5)
     speech.add(a,'verb_argin1')
-    row = cs._csw_row_of(speech.concepts['verb_argin1'])
+    row = cs._concept_row_of(speech.concepts['verb_argin1'])
     bank.mereology.placement[row] = torch.eye(4)[0]
     bank.mereology.placement_witnesses[row] = 1
     assert speech.operation('change')['argument_measurements']['change_argin1']['d_j']==1.
     # Overlap competes only outside the contiguity angle: a shared member
     # at the competing centroid is no longer won strictly by the mixed class.
-    row=cs._csw_row_of(speech.concepts['change_argin1'])
+    row=cs._concept_row_of(speech.concepts['change_argin1'])
     bank.mereology.placement[row]=torch.tensor([1.,1.,0.,0.])/(2**.5)
     speech.add(b,'change_argin1')
     result=speech.operation('change')
@@ -308,10 +308,10 @@ def test_revised_fit_is_coverage_and_radius_is_commitment():
     from ConceptHierarchy import extension
     cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
     speech.add(a,'group_argin1');speech.add(b,'group_argin1');place_types(cs)
-    row=cs._csw_row_of(speech.concepts['group_argin1'])
+    row=cs._concept_row_of(speech.concepts['group_argin1'])
     bank.mereology.placement[row] = torch.tensor([1., 1., 0., 0.]) / 2**.5
     outsider=recurrent_word(cs.interpret, [9],(),form='outsider')
-    outside_row=cs._csw_row_of(outsider)
+    outside_row=cs._concept_row_of(outsider)
     bank.mereology.placement[outside_row]=torch.nn.functional.normalize(torch.tensor([.2,.98,0.,0.]),dim=0)
     bank.mereology.placement_witnesses[outside_row]=1
     assert outsider not in speech.members('group_argin1')
@@ -336,14 +336,14 @@ def test_revised_boundary_scope_preserves_absent_members_and_objects(monkeypatch
     place_types(cs)
     before=bank.mereology.placement.clone()
     context = torch.zeros(cs.nVectors)
-    context[cs._csw_row_of(b)] = 1.
+    context[cs._concept_row_of(b)] = 1.
     bank.mereology.negative_count = 0
-    bank.mereology.placement[cs._csw_row_of(a)] = torch.tensor([1.,0.,0.,0.])
-    bank.mereology.placement[cs._csw_row_of(b)] = torch.tensor([0.,1.,0.,0.])
+    bank.mereology.placement[cs._concept_row_of(a)] = torch.tensor([1.,0.,0.,0.])
+    bank.mereology.placement[cs._concept_row_of(b)] = torch.tensor([0.,1.,0.,0.])
     before=bank.mereology.placement.clone()
-    bank.mereology.place_rows([cs._csw_row_of(a)], context, b'scoped-row')
-    assert not torch.equal(before[cs._csw_row_of(a)],bank.mereology.placement[cs._csw_row_of(a)])
-    for identity in (b,obj):torch.testing.assert_close(before[cs._csw_row_of(identity)],bank.mereology.placement[cs._csw_row_of(identity)],rtol=0,atol=0)
+    bank.mereology.place_rows([cs._concept_row_of(a)], context, b'scoped-row')
+    assert not torch.equal(before[cs._concept_row_of(a)],bank.mereology.placement[cs._concept_row_of(a)])
+    for identity in (b,obj):torch.testing.assert_close(before[cs._concept_row_of(identity)],bank.mereology.placement[cs._concept_row_of(identity)],rtol=0,atol=0)
     assert cs.definitions.objects(a)==binding
 
 

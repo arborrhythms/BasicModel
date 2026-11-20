@@ -46,7 +46,7 @@ def scalar_answer(model, point, reference):
 def test_equal_codes_are_said_by_their_given_object_references(named_scalar_model):
     model, objects = named_scalar_model
     owner = model._concept_owner()
-    values = [owner.similarity_codebook.W[owner._csw_row_of(objects[name])].detach()
+    values = [owner.similarity_codebook.W[owner._concept_row_of(objects[name])].detach()
               for name in ('alpha', 'beta')]
     torch.testing.assert_close(values[0], values[1], rtol=0, atol=0)
     assert objects['alpha'] != objects['beta']
@@ -58,7 +58,7 @@ def test_equal_codes_are_said_by_their_given_object_references(named_scalar_mode
 def test_reference_names_the_terminal_even_without_semantic_support(named_scalar_model):
     model, objects = named_scalar_model
     owner = model._concept_owner()
-    point = torch.zeros_like(owner.similarity_codebook.W[owner._csw_row_of(objects['alpha'])])
+    point = torch.zeros_like(owner.similarity_codebook.W[owner._concept_row_of(objects['alpha'])])
     answer = scalar_answer(model, point, ('sym', objects['alpha']))
     assert answer.texts == ('alpha',)
     assert not answer.concepts.any()
@@ -77,7 +77,7 @@ def memory_brick():
     from types import SimpleNamespace
     from Memory import LTM0, MediumTermMemory
     store = LTM0(12, capacity=8, percept_width=12, episodic_concepts=4, read_capacity=8)
-    owner = SimpleNamespace(_model=None, _csw_row_of=lambda cid: cid, _order_caps=lambda: (10,10,10),
+    owner = SimpleNamespace(_model=None, _concept_row_of=lambda cid: cid, _order_caps=lambda: (10,10,10),
                             _row_order=lambda cid: {10: 0, 20: 1, 30: 2}[cid],
                             components=SimpleNamespace(reference_close=None), mtm=MediumTermMemory())
     store._concept_owner = lambda: owner
@@ -426,7 +426,7 @@ def test_scalar_views_do_not_rewrite_a_words_existing_member_collection(tmp_path
             identity = observe(owner, word, 2., store.occurrence_of(row), stream=0)
         assert owner.mtm.entries[token].refinement['member_order'] == 1
         assert owner.mtm.entries[token].occurrences == before.occurrences
-        torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(identity)],
+        torch.testing.assert_close(owner.similarity_codebook.W[owner._concept_row_of(identity)],
                                    code(owner, 2.), rtol=0, atol=0)
         assert owner.interpret.lexical_form(identity) == 'alpha'
     finally:

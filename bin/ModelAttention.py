@@ -391,7 +391,7 @@ def forecast_percept(model, active):
     """Eager serial boundary, before the current word's percept is computed."""
     owner, expectation = model._concept_owner(), model.percept_expectation
     rows = sorted({row for cid in owner.interpret.lexical_identities()
-                   if (row := owner._csw_row_of(cid)) is not None})
+                   if (row := owner._concept_row_of(cid)) is not None})
     def bank():
         reference = owner.similarity_codebook.W
         for lo in range(0,len(rows),256):

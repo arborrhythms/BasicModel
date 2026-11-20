@@ -37,12 +37,12 @@ def operation_fixture(monkeypatch):
     words = [recurrent_word(owner.interpret, [part], (), form=form)
              for part, form in ((4, 'dax'), (7, 'wug'))]
     for i, word in enumerate(words):
-        row=owner._csw_row_of(word)
+        row=owner._concept_row_of(word)
         bank.mereology.placement[row]=torch.eye(bank.mereology.meaning_pairs)[i]
         bank.mereology.placement_witnesses[row]=1
     agreeing_views(owner, *words, count=10)
     speech = f.language.parts_of_speech
-    leaves = tuple(Composition(bank.lookup_rows(owner._csw_row_of(word)),
+    leaves = tuple(Composition(bank.lookup_rows(owner._concept_row_of(word)),
         reference=word, word_id=word, order=0) for word in words)
     composition = Composition(leaves[0].point, leaves, operation='change', formal_name='change')
     clause = Clause(ConceptualMeaning.from_description(composition.point),

@@ -66,7 +66,7 @@ def test_idea_read_observer_compares_both_readers_on_the_same_joined_field():
     codes = torch.tensor([[1., 0., .2, .4], [0., 1., .8, .6]])
     owner = SimpleNamespace(_order_caps=lambda: (2,),
         _expected_knowing=torch.zeros(1, 2, 2),
-        concept_id_at_row=lambda row: row+1, _csw_row_of=lambda cid: cid-1,
+        concept_id_at_row=lambda row: row+1, _concept_row_of=lambda cid: cid-1,
         _row_order=lambda row: 0,
         idea_stack=lambda value: value,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda rows: codes[rows],

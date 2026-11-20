@@ -196,7 +196,7 @@ def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(
     cs.mtm.record_link(key,key,0,kind='reference',order=1)
     state = stage(model,chunks.empty(1,8,store.nDim),torch.tensor([True]))
     identity = cs.mtm.entries[key].transient
-    assert cs._csw_row_of(identity) is None
+    assert cs._concept_row_of(identity) is None
     assert entries.concept_ids[0,0] == identity and entries.concept_rows[0,0] == -1
     witnesses = derived.placement_witnesses.clone()
     isp._ar_concept_lookup_rows = entries.read('lookup_rows')

@@ -141,7 +141,7 @@ def test_admitted_word_identity_survives_an_empty_feature_gate(monkeypatch):
     try:
         raw, word = nominated_forms(model, ('shape',))[0]
         owner = model._concept_owner()
-        row = owner._csw_row_of(word)
+        row = owner._concept_row_of(word)
         codebook = owner.similarity_codebook
         identity = model.perceptualSpace.percept_store.identity
         with torch.no_grad():

@@ -111,7 +111,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
     owner, word = resolver.components.owner, words['x']
     # An objectless word keeps its native order-zero percept collection.
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(a[0])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(a[0])
     order = owner._concept_source_order(word)
 
     def site(leaf):

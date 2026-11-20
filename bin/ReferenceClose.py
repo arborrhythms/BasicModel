@@ -704,7 +704,7 @@ class ReferenceClose(nn.Module):
             references = (owner.interpret.preferred(forward, batch=stream,
                 order=order if order is not None and order >= 0 else None)
                 if forward in owner.definitions.word_ids else (forward,))
-            rows = [owner._csw_row_of(reference) for reference in references
+            rows = [owner._concept_row_of(reference) for reference in references
                 if 'percept_collection' in owner._concept_allocator.symbol_types.get(reference, ())]
             rows = [row for row in rows if row is not None and
                 (site.get('member_order') is None or owner._row_order(row) == site['member_order'])]
@@ -768,7 +768,7 @@ class ReferenceClose(nn.Module):
                 continue
             # Membership admits the class. Its own content is what the
             # binding returns; the separate occurrence carries the reading.
-            point = owner.similarity_codebook.W[owner._csw_row_of(cid)].detach()
+            point = owner.similarity_codebook.W[owner._concept_row_of(cid)].detach()
             result[cid] = ('sym',cid),dict(identity=cid,role=0,position=(len(fields),len(result)),
                 mention_value=point,perception=True)
         if scalar is not None:
@@ -834,7 +834,7 @@ class ReferenceClose(nn.Module):
             concept = chosen[0]
             evidence['reference'] = ('sym', concept)
             evidence['binding_value'] = owner.similarity_codebook.lookup_rows(
-                owner._csw_row_of(concept)).detach().to(point)
+                owner._concept_row_of(concept)).detach().to(point)
         result = fill(meaning, evidence, witnesses=witnesses,
                       operation='bind', slots=(('referent', role),))
         result = with_slots(result, open_slots(result), pair=(probability, 1-probability))

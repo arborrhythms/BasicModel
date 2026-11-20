@@ -22,7 +22,7 @@ def owner(points):
     native._priming_edge_weight = torch.ones(512)
     native._priming_edge_count = native._priming_edge_rebuilds = 0
     native._priming_edge_revision = None
-    native._csw_row_of = lambda symbol: symbol - 1 if 0 < symbol <= len(points) else None
+    native._concept_row_of = lambda symbol: symbol - 1 if 0 < symbol <= len(points) else None
     native.concept_id_at_row = lambda row: row + 1
     return native
 
@@ -66,7 +66,7 @@ def class_fixture():
     a, b, base = [word(cs, [(4, 1.)]) for _ in range(3)]
     symbol = index_part_row(cs, cs.concept_id_at_row(a), cs.concept_id_at_row(base))
     assert index_part_row(cs, cs.concept_id_at_row(b), symbol) == symbol
-    row = cs._csw_row_of(symbol)
+    row = cs._concept_row_of(symbol)
     derived = cb.mereology
     derived.placement[[a,b]] = directions([0, 10], dtype=torch.float32)
     derived.placement_witnesses[[a,b]] = 1

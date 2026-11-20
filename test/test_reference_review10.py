@@ -25,7 +25,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
     # Its dictionary agrees, and the original prime still distinguishes the whole.
     pending_content = a[0] * .5
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(pending_content)
+        owner.similarity_codebook.W[owner._concept_row_of(words['x'])].copy_(pending_content)
     for unit, (word, point) in enumerate((('y', a[5]), ('box', a[0]), ('ball', a[1]),
                                          ('red', a[2]), ('blue', a[3]), ('two', a[4])), 200):
         words[word] = recurrent_word(owner.interpret, [unit], (), form=word)

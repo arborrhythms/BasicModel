@@ -153,7 +153,7 @@ class InterpretLayer(GrammarLayer):
             return ()
         expected = getattr(cs, '_expected_knowing', None)
         def key(cid):
-            row = cs._csw_row_of(cid)
+            row = cs._concept_row_of(cid)
             value = (float(expected[int(batch), row, 0].detach()) if row is not None
                      and batch is not None and torch.is_tensor(expected) and 0 <= int(batch) < len(expected)
                      and row < expected.shape[1] else 0.)
@@ -213,7 +213,7 @@ class InterpretLayer(GrammarLayer):
                 candidates = (self.owner.definitions.words(identity) if words is None and identity is not None
                               else () if words is None else (words[index],))
                 if len(candidates) == 1 and candidates[0] > 0:
-                    word_row = owner._csw_row_of(candidates[0])
+                    word_row = owner._concept_row_of(candidates[0])
             mapped.append(-1 if word_row is None else word_row)
         mapped = rows.new_tensor(mapped).reshape(rows.shape)
         if not bool((mapped >= 0).any()):
@@ -357,7 +357,7 @@ class InterpretLayer(GrammarLayer):
             cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
             cs._csw_concept_row(0, word)
             self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
-            cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._csw_row_of(word)))
+            cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
             self._description_revision += 1
             if form is not None:
                 cs.bind_word_concept(form, word)
@@ -387,7 +387,7 @@ class InterpretLayer(GrammarLayer):
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
         self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
-        cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._csw_row_of(word)))
+        cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
         self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
@@ -616,31 +616,31 @@ class InterpretLayer(GrammarLayer):
         """
         word = int(word)
         if not self.mandatory:
-            row = self.owner._csw_row_of(word)
+            row = self.owner._concept_row_of(word)
             if row is None:
                 raise RuntimeError('an identified word has no conceptual row')
             return word, row, self.owner._concept_source_order(word)
         obj = self.referent(word, batch=batch)
         if self.denotations(word):
-            return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
-        row = self.owner._csw_row_of(word)
+            return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
+        row = self.owner._concept_row_of(word)
         if row is None:
             raise RuntimeError('an identified word has no conceptual row')
         if getattr(self.owner, '_online_learning_frozen', False):
-            return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
+            return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
         pool = self.owner.mtm
         key = pool.named(word, value=self.owner.similarity_codebook.lookup_rows([row])[0],
                          when=max(pool.closes.values(), default=0))
         entry = pool.entries[key]
         if entry.symbol is not None:
             self.define(word, entry.symbol)
-            return entry.symbol, self.owner._csw_row_of(entry.symbol), self.owner._concept_source_order(entry.symbol)
+            return entry.symbol, self.owner._concept_row_of(entry.symbol), self.owner._concept_source_order(entry.symbol)
         # The pending site's code and order are its observed word's witness.
         # Its transient identity is not a new row or an assigned object order.
         if obj != word:
             # The read can use the retained denotation immediately. The pending
             # token acquires its new occurrence and DEF only at a kept close.
-            return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
+            return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
         return entry.transient, row, self.owner._concept_source_order(word)
 
     def admit_discovered(self, word=None):

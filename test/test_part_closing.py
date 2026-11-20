@@ -141,7 +141,7 @@ def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(mo
     alloc = f.cs._concept_allocator
     word = alloc.new_concept()
     alloc.symbol_types[word] = {'word'}
-    assert f.cs._csw_row_of(word) is None
+    assert f.cs._concept_row_of(word) is None
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
     right = Composition(torch.eye(8)[3], reference=word)
     point = torch.maximum(left.point, right.point)
@@ -149,7 +149,7 @@ def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(mo
     clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
     f.store.write_clause(clause)
     assert f.store.parts.find(participant, word) is not None
-    assert f.cs._csw_row_of(word) is None
+    assert f.cs._concept_row_of(word) is None
     assert alloc.symbol_types[word] == {'word'}
 
 
@@ -350,7 +350,7 @@ def test_relation_argument_does_not_use_the_concept_tail(monkeypatch):
     from Memory import OCCURRENCE
     tag, address = f.store.parts.references(row[1])[1]
     assert tag == OCCURRENCE and f.store.index_of_row(address) is not None
-    assert f.cs._csw_row_of(address) is None
+    assert f.cs._concept_row_of(address) is None
     assert f.cs.nVectors == capacity
     assert f.cs.similarity_codebook.W.shape == shape
 

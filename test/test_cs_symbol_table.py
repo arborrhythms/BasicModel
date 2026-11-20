@@ -149,8 +149,8 @@ def test_interpret_word_structure():
     assert cs.concept_wholes(A) == [WORD]
     assert set(cs.concept_parts(B)) == {65, 66, 67}
     assert cs.concept_wholes(B) == [WORD]
-    assert cs._csw_row_of(A) is not None
-    assert cs._csw_row_of(B) is not None
+    assert cs._concept_row_of(A) is not None
+    assert cs._concept_row_of(B) is not None
     assert cs.definitions.deref(A) == B
 
 
@@ -389,4 +389,4 @@ def test_word_object_testimony_retains_distinct_reoccurrences():
     # A known word is found on one reading.
     assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
     assert cs._concept_allocator.testimony_seen[B] == {(0, 0), (1, 0)}
-    assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B
+    assert cs._concept_row_of(A) is not None and cs.definitions.deref(A) == B

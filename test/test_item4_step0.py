@@ -93,7 +93,7 @@ def test_binding_judge_scores_referent_while_surface_readers_keep_their_training
     correct = replace(base, role_refs=(('sym', 5), None, None),
                       bindings={'_bound_roles': (('referent', 0),)})
     wrong = replace(correct, role_refs=(('sym', 7), None, None))
-    owner = SimpleNamespace(_concept_source_order=lambda _: 0, _row_order=lambda _: 0, word_concepts=lambda _: (5,), _csw_row_of=lambda _: 0,
+    owner = SimpleNamespace(_concept_source_order=lambda _: 0, _row_order=lambda _: 0, word_concepts=lambda _: (5,), _concept_row_of=lambda _: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda *args, **kwargs: torch.ones(1, 4)))
     questions = tuple(What.supervised(i) for i in range(4))
     answers = tuple(WhatAnswer(q, ReferentTarget('target') if i < 3 else 'target')

@@ -111,7 +111,7 @@ def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypat
         assert dict(bindings(child)['_formation_records'][0]) == dict(role=2,choice='open',probability=.25)
         assert bindings(result.meaning)['_bound_roles'] == (('referent',2),)
         from BindingAnswers import cost
-        owner = SimpleNamespace(_concept_source_order=lambda _: 0, _row_order=lambda _: 0, word_concepts=lambda _: (9,), _csw_row_of=lambda _:0,
+        owner = SimpleNamespace(_concept_source_order=lambda _: 0, _row_order=lambda _: 0, word_concepts=lambda _: (9,), _concept_row_of=lambda _:0,
             similarity_codebook=SimpleNamespace(lookup_rows=lambda _,**kw:torch.ones(1,root.roles.shape[-1])))
         scored = SimpleNamespace(_concept_owner=lambda:owner,symbolSpace=SimpleNamespace(ltm_store=store))
         # The minted empty region has no content meeting the target.

@@ -34,7 +34,7 @@ def examples(owner, field):
         if whole[0] != SYMBOL or not alloc.class_member(member, whole):
             continue
         cid = whole[1]
-        row = owner._csw_row_of(cid)
+        row = owner._concept_row_of(cid)
         # A DEF destination is a word, not a class. A raised membership row
         # owns the same witness flag whether it has a name or not.
         if row is None or cid in alloc.retired or not bool(sigma.witnessed[row]):

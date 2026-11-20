@@ -427,7 +427,7 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     definitions._tensor_row_keys = {0: 0, 1: 1}
     owner = SimpleNamespace(subspace=carrier, similarity_codebook=codebook,
         definitions=SimpleNamespace(word_ids={0, 1}),
-        _csw_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
+        _concept_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
         _field_codes=lambda codes, rows: codes[rows], cs_reverse_presence=lambda query, **kwargs: query,
         _concept_allocator=SimpleNamespace(layer=lambda order: definitions, refs=lambda *args: ()),
         _compose_order0=lambda evidence, **kw: evidence,

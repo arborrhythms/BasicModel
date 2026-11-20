@@ -36,7 +36,7 @@ def test_85_infer_keeps_the_old_three_rule_supports():
     # This fixed input was also evaluated by the pre-move intuit face.
     with torch.no_grad():
         for ref, first in zip(refs, (.8, .3, .4)):
-            value = owner.similarity_codebook.W[owner._csw_row_of(ref[1])]
+            value = owner.similarity_codebook.W[owner._concept_row_of(ref[1])]
             value.zero_()
             value[:2] = value.new_tensor((first, 1-first))
     for a, b, pair in ((refs[0], refs[1], (.8, .2)), (refs[0], refs[2], (.6, .3)),

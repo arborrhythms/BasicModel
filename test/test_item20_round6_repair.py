@@ -16,7 +16,7 @@ def test_kept_event_link_precedes_its_words_new_trust_views(repetitions):
     owner, bank, _, _ = fixture(meaning_pairs=4)
     owner._model.wholeSpace = NS(subspace=NS(what=None))
     word = recurrent_word(owner.interpret, [4], [], form='word')
-    row = owner._csw_row_of(word)
+    row = owner._concept_row_of(word)
     bank.mereology.place_rows([row], torch.zeros(len(bank.W)), b'event-word')
     observe(owner, word, bank.lookup_rows(row))
     member = bank.lookup_rows(row).clone()
@@ -247,7 +247,7 @@ def test_arrival_eligibility_reads_the_identity_after_shared_site_preparation(or
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept)
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(atoms[0])
     native = known_concept(owner, atoms[0], order=order)
     meaning = replace(ConceptualMeaning.from_description(atoms[0]),
         role_refs=(('sym', native), None, None),
@@ -294,7 +294,7 @@ def test_event_staging_keeps_the_accessible_collections_selected_token(monkeypat
         actions=(action, modifier), evidence=(.8, .2))
     token, entry = next(iter(f.cs.mtm.entries.items()))
     verb = f.words['move'][1]
-    code = f.cs.similarity_codebook.W[f.cs._csw_row_of(verb)].clone()
+    code = f.cs.similarity_codebook.W[f.cs._concept_row_of(verb)].clone()
     bank = CaseBank(torch.tensor([verb]), code[None, None], code.new_zeros(1, 1, 2),
         code.new_zeros(1, 1, 2), torch.ones(1, 1, dtype=torch.bool))
     resolver = f.cs.components.reference_close
@@ -332,8 +332,8 @@ def test_arrival_menu_keeps_the_planned_member_instead_of_a_duplicate_occurrence
     concept=known_concept(owner,a[0],order=1)
     owner.interpret.define(word,concept)
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(a[0])
-        owner.similarity_codebook.W[owner._csw_row_of(subject)].copy_(a[0])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(a[0])
+        owner.similarity_codebook.W[owner._concept_row_of(subject)].copy_(a[0])
     native=known_concept(owner,a[0],order=order)
     meaning=replace(ConceptualMeaning.from_description(a[0]),role_refs=(('sym',native),None,None),
         bindings={'_forward_references':((0,subject),)})

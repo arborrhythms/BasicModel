@@ -82,7 +82,7 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     first = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((8,), .3))
     second = cs.new_concept(order=1)
     with torch.no_grad():
-        cs.similarity_codebook.W[cs._csw_row_of(second)].fill_(.7)
+        cs.similarity_codebook.W[cs._concept_row_of(second)].fill_(.7)
     interpret.define(recurrent_word(interpret, [8], [1], form='animal'), second)
     predicate = interpret.forward(recurrent_word(interpret, [9], [1], form='part'))
     store = LTM0(8, capacity=16)

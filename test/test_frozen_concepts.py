@@ -88,7 +88,7 @@ def test_mint_frozen_idempotent():
     c1 = cs.mint_frozen_concept("reading")
     c2 = cs.mint_frozen_concept("reading")
     assert c1 == c2 and cs.is_frozen(c1)
-    assert cs._csw_row_of(c1) is not None, "snap row reserved"
+    assert cs._concept_row_of(c1) is not None, "snap row reserved"
 
 
 @pytest.mark.slow
@@ -100,7 +100,7 @@ def test_set_reading_primes_the_concept():
     try:
         cid = m.set_reading(True)
         assert cid is not None and cs0.is_frozen(cid)
-        row = cs0._csw_row_of(cid)
+        row = cs0._concept_row_of(cid)
         b = cs0.priming_weights()
         assert b is not None and float(b[0, row]) > 1.0, "reading row desired"
         assert getattr(m, "_reading_desire", None) == 1.0

@@ -56,11 +56,11 @@ def witnessed_support(owner, cid):
     saved = [ref for role, ref in records if role == 'candidate_support']
     if saved:
         return {row: weight for symbol, weight in saved
-                if (row := owner._csw_row_of(symbol)) is not None}
+                if (row := owner._concept_row_of(symbol)) is not None}
     members = class_members(owner, cid)
     for role, ref in records:
         if role == 'part' and isinstance(ref, tuple) and ref[:1] == ('field',):
-            row = owner._csw_row_of(ref[1])
+            row = owner._concept_row_of(ref[1])
             if row is not None:
                 members[row] = max(members.get(row, 0.), ref[2])
     return members
@@ -133,12 +133,12 @@ def use_witnessed(owner, cid, support, batch):
     store.set_role_constituents(cid, 'familiar_access', [accesses + 1])
     previous = witnessed_support(owner, cid)
     if (cid in owner._concept_allocator.raised and owner._concept_source_order(cid) > 0
-            and owner._csw_row_of(cid) not in support
+            and owner._concept_row_of(cid) not in support
             and any(role == 'candidate_support' for role, _ in store.constituents(cid))):
         _ground_candidate_members(owner, cid, support)
     merged = {row: max(weight, previous.get(row, 0.)) for row, weight in support.items()}
     merged.update({row: weight for row, weight in previous.items() if row not in merged})
-    if merged != previous and owner._csw_row_of(cid) not in merged:
+    if merged != previous and owner._concept_row_of(cid) not in merged:
         cover_members(owner, cid, merged)
         remember_candidate(owner, cid, merged)
     owner.__dict__.setdefault('_field_activated_references', {}).setdefault(batch, set()).add(cid)
@@ -232,7 +232,7 @@ def observe_field(owner, field=None, *, active_streams=None):
         cid = owner.concept_id_at_row(focal)
         saved = owner._concept_allocator.store_of(cid).constituents(cid)
         context = {row: weight for role, value in saved if role == 'familiar_context'
-                   for symbol, weight in (value,) if (row := owner._csw_row_of(symbol)) is not None}
+                   for symbol, weight in (value,) if (row := owner._concept_row_of(symbol)) is not None}
         if context:
             contexts.append((focal, context))
     for batch in range(B):
@@ -379,7 +379,7 @@ def open_sentence(model, sid, present):
 def member_row(owner, kind, identity):
     from Memory import SYMBOL, OCCURRENCE
     if kind == SYMBOL:
-        return owner._csw_row_of(identity)
+        return owner._concept_row_of(identity)
     if kind != OCCURRENCE:
         return None
     model = getattr(owner, '_model', None)
@@ -391,12 +391,12 @@ def member_row(owner, kind, identity):
     key = owner.mtm.token_of(('ltm', store.address_domain, int(identity)))
     if key is not None:
         symbol = owner.mtm.entries[key].symbol
-        return None if symbol is None else owner._csw_row_of(symbol)
+        return None if symbol is None else owner._concept_row_of(symbol)
     row = store.index_of_row(identity)
     if row is None:
         return None
     reference = store.referent_of(row)
-    return owner._csw_row_of(reference[1]) if reference is not None and reference[0] == 'sym' else None
+    return owner._concept_row_of(reference[1]) if reference is not None and reference[0] == 'sym' else None
 
 
 def class_members(owner, cid):

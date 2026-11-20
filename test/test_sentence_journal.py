@@ -235,7 +235,7 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve,
             _compose_binary_rules=(SimpleNamespace(method_name='sum'),)),
         _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512),
-            _csw_row_of=lambda cid: {101: 10, 102: 11}.get(cid)),
+            _concept_row_of=lambda cid: {101: 10, 102: 11}.get(cid)),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
     program=(torch.tensor([[0,1]]),torch.tensor([[[0,-1,0],[0,-1,1],[1,0,-1]]]),

@@ -52,7 +52,7 @@ def words(fixture, count):
     ids = [recurrent_word(fixture.cs.interpret, [4+i], (), form=f'token{i}') for i in range(count)]
     bank=fixture.cs.similarity_codebook
     for i, word in enumerate(ids):
-        row=fixture.cs._csw_row_of(word)
+        row=fixture.cs._concept_row_of(word)
         bank.mereology.placement[row]=torch.eye(bank.mereology.meaning_pairs)[i % bank.mereology.meaning_pairs]
         bank.mereology.placement_witnesses[row]=1
     return ids
@@ -60,7 +60,7 @@ def words(fixture, count):
 
 def composition(fixture, left, right, operation):
     owner = fixture.cs
-    leaves = tuple(Composition(owner.similarity_codebook.lookup_rows(owner._csw_row_of(word)),
+    leaves = tuple(Composition(owner.similarity_codebook.lookup_rows(owner._concept_row_of(word)),
         reference=word,word_id=word,order=0) for word in (left,right))
     node = Composition(leaves[0].point,leaves,operation=operation,formal_name=operation)
     return Clause(ConceptualMeaning.from_description(node.point),composition=node,point=node.point)

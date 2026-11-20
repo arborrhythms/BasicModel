@@ -136,7 +136,7 @@ def test_count_mints_once_with_weighted_definition_form_and_released_transient()
     assert len(minted) == 1 and pool.entries[key].symbol == minted[0]
     assert pool.entries[key].transient is None
     assert not pool.transient_used[transient-int(pool.transient_ids[0])]
-    row = cs._csw_row_of(minted[0])
+    row = cs._concept_row_of(minted[0])
     assert dict(cs.concept_weights(row)) == {r: w*3 for r, w in support.items()}
     torch.testing.assert_close(cs.similarity_codebook.trust.content[row], expected)
     from ConceptPlacement import seed
@@ -204,7 +204,7 @@ def test_cover_merges_by_maximum_and_does_not_reinitialize_learned_edges():
         key = observe_candidate(cs, 1, {rows[0][1]: .3, rows[1][1]: .2})
         _close(cs)
     cid = cs.mtm.promote_candidates(cs)[0]
-    row = cs._csw_row_of(cid)
+    row = cs._concept_row_of(cid)
     store = cs._concept_allocator.layer()
     with torch.no_grad():
         store.values[store._index[row, rows[0][1]]] = 4.

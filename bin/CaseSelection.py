@@ -165,7 +165,7 @@ def stage_case_bank(space, required_ids, *, limit):
     roots = sorted(set(int(v) for v in required_ids.detach().reshape(-1).cpu().tolist() if int(v) > 0))
     rows = []
     for identity in roots:
-        row = space._csw_row_of(identity)
+        row = space._concept_row_of(identity)
         if row is not None and row not in rows:
             rows.append(row)
     rows = rows[:int(limit)]

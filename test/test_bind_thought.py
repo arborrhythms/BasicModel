@@ -152,7 +152,7 @@ def test_g1_runtime_bind_generator_referent_with_distractor(monkeypatch, kind, o
     for word, point, order in ((KINDS[kind], f.atoms[kind], 1), (VERBS[0], f.atoms[4], 0)):
         obj = f.noun(word, order=order)
         with torch.no_grad():
-            f.cs.similarity_codebook.W[f.cs._csw_row_of(obj)].copy_(point)
+            f.cs.similarity_codebook.W[f.cs._concept_row_of(obj)].copy_(point)
     program, _, _ = record(f, ('change', ('bind', KINDS[kind]), VERBS[0]),
                            dummy_binds=(0,), leaf_orders=(1, 0))
     clause = finish_clause(f.language, program, registry=f.registry)
@@ -193,7 +193,7 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     assert word in _concept_alloc_of(f.cs).word_forms[marker]
     assert word in f.cs.word_concepts(marker)
     with torch.no_grad():
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(word)].sigmoid_()
     f.words[marker] = word, word
     program = f.program(('change', marker, VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[7], f.atoms[4])),
@@ -379,7 +379,7 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     word = recurrent_word(f.cs.interpret, [101], (), form='m')
     from Spaces import _concept_alloc_of
     with torch.no_grad():
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(word)].sigmoid_()
     f.words['m'] = word, word
     program = f.program(('change', 'm', VERBS[0]))
     program = replace(program, binding_choices=True,
@@ -402,7 +402,7 @@ def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
     f = native(monkeypatch)
     word = recurrent_word(f.cs.interpret, [101], (), form='m')
     with torch.no_grad():
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(word)].sigmoid_()
     f.words['m'] = word, word
     program = f.program(('change', 'm', ('verb', VERBS[0], KINDS[0])))
     program = replace(program, binding_choices=True,

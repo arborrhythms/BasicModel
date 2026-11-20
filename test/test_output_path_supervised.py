@@ -207,7 +207,7 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
             from Meaning import ConceptualMeaning
             owner = m._concept_owner()
             native_rows = torch.tensor([next(row for identity in owner.word_concepts(word)
-                if (row := owner._csw_row_of(identity)) is not None) for word in ('1', '3')],
+                if (row := owner._concept_row_of(identity)) is not None) for word in ('1', '3')],
                 device=owner.similarity_codebook.getW().device)
             ideas = owner.similarity_codebook.lookup_rows(native_rows)
             fields = tuple(replace(field, meaning=ConceptualMeaning.from_description(idea),
@@ -552,7 +552,7 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
             assert word_id is not None
             witness_object(owner, word_id)
             concept_id, = owner.definitions.objects(word_id)
-            expected = owner.similarity_codebook.getW()[owner._csw_row_of(concept_id)]
+            expected = owner.similarity_codebook.getW()[owner._concept_row_of(concept_id)]
             query = m._referent_representation(
                 u, 0, ('1', 'plus', '2'), 'plus', base[:1], detach=False)
             torch.testing.assert_close(query[0, 0], expected)

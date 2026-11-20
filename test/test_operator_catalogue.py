@@ -260,7 +260,7 @@ def test_definition_question_uses_a_declared_formula_identity_without_an_invento
     assert descriptor.predicate_name == 'operation:define'
     assert descriptor.relation_directions == ((0,2),(2,0))
     assert question.role_refs[1] == ('sym',predicate_identity(descriptor.predicate_name))
-    assert cs._csw_row_of(question.role_refs[1][1]) is None
+    assert cs._concept_row_of(question.role_refs[1][1]) is None
     torch.testing.assert_close(question.roles[1],predicate_point(descriptor.predicate_name,question.roles))
     assert registry.clause_reference('define') == registry.clause_reference('part')
     assert registry.signature_for(question).operation.semantic_id == 'define'

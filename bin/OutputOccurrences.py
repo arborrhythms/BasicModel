@@ -97,7 +97,7 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
                 identity = eligible[0] if eligible else None
             ordinary = reference is None and not bool(scalar[b, w])
             row = (int(selected[b, w]) if ordinary and bool(active[b, w]) else
-                   None if identity is None else owner._csw_row_of(identity))
+                   None if identity is None else owner._concept_row_of(identity))
             if ordinary and row is not None:
                 identity = owner.concept_id_at_row(row)
                 # Identification presence belongs to form. The claim's two

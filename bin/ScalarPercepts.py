@@ -96,19 +96,19 @@ def reconstruct(owner, *, word=None, value=None):
     from PerceptCollections import objects, definitions
     if value is None:
         collections = concepts(owner)
-        known = tuple(cid for cid in objects(owner, word) if owner._csw_row_of(cid) in collections)
+        known = tuple(cid for cid in objects(owner, word) if owner._concept_row_of(cid) in collections)
         if len(known) != 1:
             return None
         # The way back: a collection's number is its lower bound, the least
         # of its members' values, read from the table of values.
-        members = [percept for percept, _ in definitions(owner)[owner._csw_row_of(known[0])]]
+        members = [percept for percept, _ in definitions(owner)[owner._concept_row_of(known[0])]]
         return float(number(owner.basic_percepts.felt(members).amin()))
     if value <= 0:
         return ()
     field = reading(owner, code(owner, value)[None, None])
     collections = concepts(owner)
     return tuple(form for cid, evidence in zip(field.concept_ids.tolist(), field.evidence[:, 0, 0])
-                 if owner._csw_row_of(cid) in collections and bool(holds(evidence.detach()))
+                 if owner._concept_row_of(cid) in collections and bool(holds(evidence.detach()))
                  and (form := owner.interpret.lexical_form(cid)) is not None)
 
 
@@ -128,7 +128,7 @@ def decode(owner, field, percepts=()):
         scalar = _scalar_readings(owner, field, batch).to(lanes.device)
         held = (holds(lanes) & scalar).any(-1)
         objects = [cid for cid, value in zip(ids.tolist(), held)
-                   if owner._csw_row_of(cid) in collections and bool(value)]
+                   if owner._concept_row_of(cid) in collections and bool(value)]
         words = tuple(form for cid in objects if (form := owner.interpret.lexical_form(cid)) is not None)
         percept = percepts[batch] if batch < len(percepts) else None
         if percept is not None:

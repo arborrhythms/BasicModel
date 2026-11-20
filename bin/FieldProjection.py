@@ -73,7 +73,7 @@ def close_bracket(owner, field, bracket):
               (field.where[..., 1] <= bracket[:, None, 1]) &
               (field.where[..., 1] > field.where[..., 0]))
     joined = reduce(field.evidence, operation='union', dim=2, mask=inside[None])
-    rows = [owner._csw_row_of(int(cid)) for cid in field.concept_ids]
+    rows = [owner._concept_row_of(int(cid)) for cid in field.concept_ids]
     folded = close(owner, rows, joined[:, :, None])
     start = torch.where(inside, field.when[..., 0], torch.iinfo(field.when.dtype).max).amin(1)
     end = torch.where(inside, field.when[..., 1], torch.iinfo(field.when.dtype).min).amax(1)
@@ -126,7 +126,7 @@ def orders(owner, field, *, stream=None):
         ids, active = ((ids.flatten(), evidence.flatten()) if stream is None else
                        (ids[:, stream], evidence[:, stream]))
     return tuple(sorted({owner._row_order(row) for cid, live in zip(ids, active)
-        if bool(live) and int(cid) >= 0 and (row := owner._csw_row_of(int(cid))) is not None}))
+        if bool(live) and int(cid) >= 0 and (row := owner._concept_row_of(int(cid))) is not None}))
 
 
 def key(owner, field, *, order):
@@ -134,7 +134,7 @@ def key(owner, field, *, order):
     ids = field.concept_ids
     if ids.ndim != 1:
         raise ValueError('field key requires shared concept identities')
-    rows = [owner._csw_row_of(int(cid)) if int(cid) >= 0 else None for cid in ids]
+    rows = [owner._concept_row_of(int(cid)) if int(cid) >= 0 else None for cid in ids]
     valid = torch.tensor([row is not None and owner._row_order(row) == order for row in rows], device=ids.device)
     codes = owner.similarity_codebook.lookup_rows([0 if row is None else row for row in rows]).to(field.evidence)
     weights = field.evidence.amax(-1) * valid[:, None, None]

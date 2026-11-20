@@ -155,7 +155,7 @@ def prepare(model, state, structural, vocab, training=None):
         allocator.setdefault('construction', {})['order_caps'] = list(space._order_caps())
         if old_symbols is not None or old_orders is not None:
             warnings.warn('checkpoint: concept orders now read from their fixed row blocks')
-        layer['tensor_rows'] = {('shared', int(key[1] if isinstance(key, tuple) else key)): row
+        layer['tensor_rows'] = {('concept', int(key[1] if isinstance(key, tuple) else key)): row
                                 for key, row in seats.items()}
         if not additions and indices == list(range(old_size)):
             continue
@@ -174,7 +174,7 @@ def prepare(model, state, structural, vocab, training=None):
             allocator['symbols'][concept] = None
             allocator['symbol_types'][concept] = {'concept', 'class', kind}
             row = added_rows[offset]
-            layer['tensor_rows']['shared', concept] = row
+            layer['tensor_rows']['concept', concept] = row
             layer['constituents'][concept] = []
         def columns(values):
             return [(new_size if col % (old_size+1) == old_size else inverse[col % (old_size+1)])

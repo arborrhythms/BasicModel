@@ -43,7 +43,7 @@ class ConceptTrust(nn.Module):
     def tracks(self, identity):
         if self.tracked:
             return True
-        row = self.owner._csw_row_of(int(identity))
+        row = self.owner._concept_row_of(int(identity))
         return row is not None and bool(self.allocated[row])
 
     @property
@@ -65,7 +65,7 @@ class ConceptTrust(nn.Module):
     @torch.no_grad()
     def remember(self, identity, content, *, region=None):
         from IdentityRows import carrier
-        row = self.owner._csw_row_of(identity)
+        row = self.owner._concept_row_of(identity)
         if row is None:
             raise ValueError('trust requires an allocated concept row')
         if not bool(self.known[row]):
@@ -77,7 +77,7 @@ class ConceptTrust(nn.Module):
     @torch.no_grad()
     def read_object(self, identity):
         """An implicit read-word definition grants its object unit trust."""
-        row = self.owner._csw_row_of(identity)
+        row = self.owner._concept_row_of(identity)
         if row is None:
             raise ValueError('a read-word object requires its allocated concept row')
         self.read_objects[row] = True
@@ -94,7 +94,7 @@ class ConceptTrust(nn.Module):
         from Memory import NULL_CONCEPT
         if not self.tracks(identity) or identity == NULL_CONCEPT or self.owner.is_frozen(identity):
             return
-        row = self.owner._csw_row_of(identity)
+        row = self.owner._concept_row_of(identity)
         if row is None:
             return
         views = int(torch.where(self.known[row], self.views[row], -1))
@@ -166,7 +166,7 @@ def positive_length(owner, identity=None, *, value=None):
     radii = owner.similarity_codebook.trust
     if identity is None or not radii.tracks(identity):
         return 1.
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     if row is None or not bool(radii.allocated[row]):
         return 1.
     return float(radii.lengths[row, 0])
@@ -204,7 +204,7 @@ def observe(owner, identity, content=None, *, region=None):
     if not trust.tracks(identity) or identity == NULL_CONCEPT or owner.is_frozen(identity):
         return
     if content is None:
-        row = owner._csw_row_of(identity)
+        row = owner._concept_row_of(identity)
         trust.known[row] = True
         trust.views[row] += 1
         trust.agreement[row] += 1
@@ -212,7 +212,7 @@ def observe(owner, identity, content=None, *, region=None):
         return
     region = trust.tracked if region is None else region
     trust.remember(identity, content, region=region)
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     value = carrier(owner, content, region=region)
     if not bool(trust.content[row].any()):
         coverage = 1.
@@ -241,7 +241,7 @@ def measurements(owner):
     occupations = None if reference is None else reference()
     radii = owner.similarity_codebook.trust
     # Read the measured radius, not the neutral operand factor of D4/D8.
-    rows = (owner._csw_row_of(word) for word in words)
+    rows = (owner._concept_row_of(word) for word in words)
     stable = sum(row is not None and bool(radii.allocated[row])
                  and float(radii.lengths[row, 0]) >= threshold for row in rows) if radii.tracked else 0
     denoted = sum(bool(owner.definitions.objects(word)) for word in named)

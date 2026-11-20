@@ -26,7 +26,7 @@ def vocabulary():
         cs.interpret.define(word, cid)
         cs.bind_word_concept('cat', cid)
         ids.append(cid)
-    row = cs._csw_row_of(ids[0])
+    row = cs._concept_row_of(ids[0])
     return cs, ids, row
 
 
@@ -106,7 +106,7 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     actions = torch.tensor([[0, -1, 0], [2, 0, -1]])
     stamps = torch.tensor([cs._concept_source_order(relation)])
     refs, orders = Language.LanguageSpace.resolve_lexical_references(language, cs,
-        torch.tensor([cs._csw_row_of(raw)]), torch.tensor([relation]), actions, leaf_orders=stamps)
+        torch.tensor([cs._concept_row_of(raw)]), torch.tensor([relation]), actions, leaf_orders=stamps)
     assert refs.tolist() == [relation] and orders.tolist() == [3]
     assert reference_requests(language, actions, leaf_orders=stamps) == {0: (3, 'generic')}
     assert denoted_order(rule, (3,), (), None) == 3
@@ -199,7 +199,7 @@ def test_order_zero_reference_agrees_before_and_after_admission(ambiguous):
     language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
     bank, next_id = cs.similarity_codebook.W.clone(), _concept_alloc_of(cs).next_id
     results = [Language.LanguageSpace.resolve_lexical_references(language, cs,
-        torch.tensor([cs._csw_row_of(word)]), torch.tensor([word]),
+        torch.tensor([cs._concept_row_of(word)]), torch.tensor([word]),
         torch.tensor([[0, -1, 0], [2, 0, -1]]), leaf_orders=torch.tensor([0]), admit=admit)
         for admit in (False, True)]
     for refs, orders in results:

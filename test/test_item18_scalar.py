@@ -28,7 +28,7 @@ def test_scalar_boxes_are_counted_native_definitions(tmp_path,monkeypatch):
     for item in lesson['lessons'][:3]:
         from PerceptCollections import objects as known
         identity, = known(owner, words[item['text']])
-        row = owner._csw_row_of(identity)
+        row = owner._concept_row_of(identity)
         assert int(owner.similarity_codebook.trust.views[row]) == 6
         objects.append(identity)
         assert owner._concept_allocator.order_of(identity) == 0

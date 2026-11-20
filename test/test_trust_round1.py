@@ -139,7 +139,7 @@ def test_optimizer_step_preserves_for_lengths_and_leaves_against_update():
     optimizer = SGD([bank.W], lr=.1)
     (-bank.W * torch.arange(1, 12, device=bank.W.device)).sum().backward()
     optimizer.step()
-    rows = [owner._csw_row_of(x) for x in (identity, frozen)]
+    rows = [owner._concept_row_of(x) for x in (identity, frozen)]
     torch.testing.assert_close(bank.W[rows,3:7].norm(dim=-1), before[rows,3:7].norm(dim=-1))
     against = bank.W[rows,7:].detach().clone()
     torch.testing.assert_close(against, before[rows,7:] + .1*torch.arange(8,12))
@@ -188,7 +188,7 @@ def test_three_operands_do_not_multiply_trust():
 def test_definition_threshold_follows_effective_positive_evidence():
     owner, store, _, atoms = learned(0)
     word = recurrent_word(owner.interpret, [4], [], form='x')
-    content = owner.similarity_codebook.trust.content[owner._csw_row_of(word)].clone()
+    content = owner.similarity_codebook.trust.content[owner._concept_row_of(word)].clone()
     original, genuine = built(owner, atoms[2]), built(owner, atoms[3])
     view(owner, store, word, content, 0)
     chain = relation(owner, store, original, word)
@@ -215,7 +215,7 @@ def test_checkpoint_preserves_preallocated_lengths_and_view_counters():
     storage = {name:value.data_ptr() for name,value in bank.trust.named_buffers()}
     part_storage = {name:value.data_ptr() for name,value in store.parts.named_buffers()}
     assert bank.trust.views.dtype == torch.long
-    assert bank.trust.views[owner._csw_row_of(identity)] == 3
+    assert bank.trust.views[owner._concept_row_of(identity)] == 3
     assert not hasattr(store.parts, 'witness_content') and not hasattr(store.parts, 'witness_valid')
     bank.load_state_dict(state)
     store.parts.load_state_dict(parts)
@@ -232,8 +232,8 @@ def test_mint_has_one_view_and_for_radius_with_zero_against():
     identity = mint(owner, content)
     from IdentityRows import witnesses
     assert len(witnesses(owner, identity)) == 0
-    assert bank.trust.views[owner._csw_row_of(identity)] == 1
-    row = owner._csw_row_of(identity)
+    assert bank.trust.views[owner._concept_row_of(identity)] == 1
+    row = owner._concept_row_of(identity)
     value = bank.lookup_rows(row)
     assert not value[:3].any()  # §30.7: the minted order-one symbol has no form.
     assert value[3:7].norm().item() == pytest.approx(-math.expm1(-1/3))
@@ -250,7 +250,7 @@ def test_kept_word_views_use_written_content_and_for_radius_only():
     owner, bank, _, _ = paired_fixture(meaning_pairs=4)
     owner._model.wholeSpace = SimpleNamespace(subspace=SimpleNamespace(what=None))
     word = recurrent_word(owner.interpret, [4], [], form='word')
-    row = owner._csw_row_of(word)
+    row = owner._concept_row_of(word)
     content = bank.lookup_rows(row).clone()
     reading = SimpleNamespace(word_ids=torch.tensor([word]), leaves=content[None], symbol_where=None)
     bank.mereology.place_rows([row], torch.zeros(len(bank.W)), b'word-views')
@@ -316,7 +316,7 @@ def test_aligned_serial_sentence_has_no_space_or_punctuation_identity(monkeypatc
 def test_views_cost_no_rows_and_relations_do_not_count_as_views():
     owner, store, identity, atoms = learned(3)
     bank = owner.similarity_codebook
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     assert len(store) == len(store.parts) == 0
     assert bank.trust.views[row] == 3
     before = bank.trust.lengths.clone(), bank.trust.agreement.clone()
@@ -335,12 +335,12 @@ def test_untracked_chart_keeps_signed_content_and_whole_norm(paired, monkeypatch
     owner = paired_fixture(meaning_pairs=0)[0] if paired else _cs(nS=32)
     word = recurrent_word(owner.interpret, [4], [], form='word')
     bank = owner.similarity_codebook
-    value = bank.lookup_rows(owner._csw_row_of(word)).clone()
+    value = bank.lookup_rows(owner._concept_row_of(word)).clone()
     before = bank.W.clone()
     negative = -torch.ones(bank.W.shape[-1])
     observe(owner, word, negative)
     bank.trust.remember(word, negative)
-    bank.trust.capture(owner._csw_row_of(word))
+    bank.trust.capture(owner._concept_row_of(word))
     bank.trust.project()
     torch.testing.assert_close(bank.W, before)
     assert not bank.trust.views.any()
@@ -361,7 +361,7 @@ def test_untracked_chart_keeps_signed_content_and_whole_norm(paired, monkeypatch
 def test_unplaced_word_has_radius_along_its_id_seed():
     owner, store, _ = fixture()
     word = recurrent_word(owner.interpret, [4], [], form='word')
-    row = owner._csw_row_of(word)
+    row = owner._concept_row_of(word)
     content = owner.similarity_codebook.trust.content[row].clone()
     for n in range(3):
         view(owner, store, word, content, n)
@@ -378,7 +378,7 @@ def test_mint_without_occurrence_store_keeps_the_landed_contract(monkeypatch):
     owner, _, atoms = fixture()
     monkeypatch.setattr(owner, '_closed_clause_store', lambda: None)
     identity = mint(owner, atoms[0])
-    assert owner.similarity_codebook.trust.views[owner._csw_row_of(identity)] == 1
+    assert owner.similarity_codebook.trust.views[owner._concept_row_of(identity)] == 1
     monkeypatch.setattr(owner, '_preflight_concept_row', lambda *a, **k: (_ for _ in ()).throw(RuntimeError('full')))
     assert mint(owner, atoms[0]) is None
 
@@ -483,7 +483,7 @@ def test_item107_generic_sentence_never_names_its_chain(monkeypatch):
     word=recurrent_word(owner.interpret, [4],[],form='wug')
     original,genuine=built(owner,atoms[1]),built(owner,atoms[2])
     left=Composition(point(owner,original),reference=original)
-    right=Composition(owner.similarity_codebook.trust.content[owner._csw_row_of(word)].clone(),reference=word,word_id=word)
+    right=Composition(owner.similarity_codebook.trust.content[owner._concept_row_of(word)].clone(),reference=word,word_id=word)
     value=torch.maximum(left.point,right.point)
     term=Composition(value,(left,right),operation='union',formal_name='union')
     sentence=Clause(ConceptualMeaning.from_description(value),point=value,composition=term)
@@ -537,7 +537,7 @@ def test_stored_concept_extent_is_for_radius_and_negate_exchanges_it(monkeypatch
     monkeypatch.setattr(TheXMLConfig, 'space', lambda name, field, *a, **kw:
         3 if (name,field) == ('PartSpace','nDim') else space(name,field,*a,**kw))
     reader = ThoughtConceptualCapability(owner, lambda a,b: 0.)
-    value = owner.similarity_codebook.lookup_rows(owner._csw_row_of(identity))
+    value = owner.similarity_codebook.lookup_rows(owner._concept_row_of(identity))
     pair = reader.extent(value)
     radius = -math.expm1(-1)
     assert (pair['support_true'], pair['support_false']) == pytest.approx((radius,0.))
@@ -548,7 +548,7 @@ def test_stored_concept_extent_is_for_radius_and_negate_exchanges_it(monkeypatch
 def test_observation_projection_and_lookup_preserve_written_against_evidence():
     owner, _, identity, atoms = learned(1)
     bank = owner.similarity_codebook
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     against = torch.tensor([.2,.4,.1,0.])
     bank.W[row,7:].copy_(against)
     bank.trust.capture(row)
@@ -564,7 +564,7 @@ def test_empty_content_counts_views_then_adopts_first_nonempty_reference():
     owner, _, atoms = fixture()
     bank = owner.similarity_codebook
     identity = mint(owner,torch.zeros(11))
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     assert bank.trust.views[row] == bank.trust.agreement[row] == 1
     observe(owner,identity,torch.zeros(11))
     observe(owner,identity,atoms[0])
@@ -599,7 +599,7 @@ def test_null_kind_named_from_held_signs_reaches_the_definition_threshold(signs)
     assert owner.mtm.entries[key].kind == owner.null_concept_id
     identity=promote_identity(owner,key,word=word,evidence=(1.,0.))
     bank=owner.similarity_codebook
-    seat=owner._csw_row_of(identity)
+    seat=owner._concept_row_of(identity)
     assert bank.trust.views[seat] == bank.trust.agreement[seat] == signs
     assert positive_length(owner,identity) == pytest.approx(-math.expm1(-signs/3))
     assert owner.interpret.remembered_objects(word) == (identity,)
@@ -613,7 +613,7 @@ def test_seatless_word_definition_uses_only_its_objects_radius(views):
     alloc = owner._concept_allocator
     word = alloc.new_concept()
     alloc.symbol_types[word] = {'word'}
-    assert owner._csw_row_of(word) is None
+    assert owner._concept_row_of(word) is None
     assert positive_length(owner, word) == 1.
     row = owner.interpret.define(word, obj, evidence=(1., .2),
         description=dict(forms=('named',), parts=((901,),), wholes=()))
@@ -624,9 +624,9 @@ def test_seatless_word_definition_uses_only_its_objects_radius(views):
     assert owner.definitions.objects(word) == ((obj,) if radius >= .5 else ())
     owner.definitions.rebuild()
     assert owner.definitions.objects(word) == ((obj,) if radius >= .5 else ())
-    assert owner._csw_row_of(word) is None
+    assert owner._concept_row_of(word) is None
     seated = recurrent_word(owner.interpret, [4], [], form='unobserved')
-    assert owner._csw_row_of(seated) is not None
+    assert owner._concept_row_of(seated) is not None
     assert positive_length(owner, seated) == 0.
 
 
@@ -662,7 +662,7 @@ def test_sign_closes_wait_for_one_remembered_kind_then_join(tracked):
     agreeing_views(owner, label)
     first = close_named_sign(owner, store, label, 0)
     target, = owner.interpret.remembered_objects(label)
-    seat = owner._csw_row_of(target)
+    seat = owner._concept_row_of(target)
     named = alloc.parts.find((SYMBOL, target), (SYMBOL, label))
     objects = {i for i, kinds in alloc.symbol_types.items() if 'object' in kinds}
     assert objects == {target}
@@ -697,7 +697,7 @@ def test_sign_closes_wait_for_one_remembered_kind_then_join(tracked):
         assert owner.mtm.entries[key].symbol == target
     assert owner.definitions.objects(label) == (target,)
     assert {i for i, kinds in alloc.symbol_types.items() if 'object' in kinds} == objects
-    assert owner._csw_row_of(target) == seat
+    assert owner._concept_row_of(target) == seat
     torch.testing.assert_close(torch.stack((alloc.parts.truth_plus[named], alloc.parts.truth_minus[named])), stored)
 
 
@@ -750,10 +750,10 @@ def test_sign_sentence_observes_a_remembered_endpoint_before_joining(monkeypatch
     assert right == (alloc.parts.SYMBOL, target)
     source = alloc.parts.find(left, right)
     pair = (float(alloc.parts.truth_plus[source]), float(alloc.parts.truth_minus[source]))
-    assert owner.similarity_codebook.trust.views[owner._csw_row_of(target)] == 2
+    assert owner.similarity_codebook.trust.views[owner._concept_row_of(target)] == 2
     _, third = _sign_equation(f, 'There', 'Felix', 2)
     assert owner.definitions.objects(label) == (target,)
-    assert owner.similarity_codebook.trust.views[owner._csw_row_of(target)] == 3
+    assert owner.similarity_codebook.trust.views[owner._concept_row_of(target)] == 3
     for address in (second, third):
         assert owner.mtm.entries[owner.mtm.token_of(address)].symbol == target
     assert alloc.parts.find(left, right) == source
@@ -763,7 +763,7 @@ def test_sign_sentence_observes_a_remembered_endpoint_before_joining(monkeypatch
 
 def test_trust_keeps_the_native_rounding_of_an_observed_agreement():
     owner, _, identity, _ = learned(1)
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     trust = owner.similarity_codebook.trust
     trust.views[row] = 3
     trust.agreement[row] = 1.974835753440857

@@ -221,7 +221,7 @@ def _native_word_fields(model):
                         selected = native == concept
                         pair = (field[selected, batch, position].amax(0) if bool(selected.any())
                                 else field.new_zeros(2))
-                        concepts.append(dict(concept=concept, row=owner._csw_row_of(concept),
+                        concepts.append(dict(concept=concept, row=owner._concept_row_of(concept),
                             role='word' if concept == word else 'object', evidence=pair.tolist()))
                     lanes = {}
                     for lane, name in enumerate(('for', 'against')):
@@ -380,7 +380,7 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
                 attention = (None if reading is None else 'interpreted' if bool(reading.accepted[0, position])
                              else 'entered' if bool(reading.descended[0, position]) else 'left')
                 words.append(dict(position=position, form=form, known=before.get(form) is not None,
-                    word=word, word_row=None if word is None else owner._csw_row_of(word),
+                    word=word, word_row=None if word is None else owner._concept_row_of(word),
                     objects=list(objects), definition_evidence=[[float(v) for v in pair] for pair in evidence],
                     trusted=bool(evidence) and all(float(pair[0]) >= definition_threshold() for pair in evidence),
                     attention=attention,

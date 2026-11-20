@@ -103,7 +103,7 @@ class PartsOfSpeech(nn.Module):
         # Construction reserves the grammar's seats in their order blocks.
         # Binding fills those fixed slices without moving their boundaries.
         self.concepts = space.prebuild_formal_arguments(self.arguments)
-        self._argument_rows = torch.tensor([space._csw_row_of(self.concepts[name])
+        self._argument_rows = torch.tensor([space._concept_row_of(self.concepts[name])
             for name in self.arguments], device=space.similarity_codebook.W.device, dtype=torch.long)
         self._space = weakref.ref(space)
         from OperationSeats import OperationSeats
@@ -156,11 +156,11 @@ class PartsOfSpeech(nn.Module):
 
     def radii(self):
         bank = self.owner.similarity_codebook
-        rows = [self.owner._csw_row_of(self.concepts[name]) for name in self.arguments]
+        rows = [self.owner._concept_row_of(self.concepts[name]) for name in self.arguments]
         return bank.trust.lengths[rows, 0]
 
     def similarities(self, word):
-        if not self.arguments or int(word) < 0 or self.owner._csw_row_of(int(word)) is None:
+        if not self.arguments or int(word) < 0 or self.owner._concept_row_of(int(word)) is None:
             return self.owner.similarity_codebook.W.new_zeros(len(self.arguments))
         from ConceptHierarchy import fit
         return torch.stack([fit(self.owner, int(word), self.concepts[name]) for name in self.arguments])
@@ -217,7 +217,7 @@ class PartsOfSpeech(nn.Module):
         for argument in arguments:
             members = self.members(argument) if self._space is not None else ()
             views = (int(self.owner.similarity_codebook.trust.views[
-                self.owner._csw_row_of(self.concepts[argument])]) if self._space is not None else 0)
+                self.owner._concept_row_of(self.concepts[argument])]) if self._space is not None else 0)
             separation = 0.
             if measurable and members:
                 direction = self._direction(self.concepts[argument])
@@ -334,17 +334,17 @@ class PartsOfSpeech(nn.Module):
             if word < 0:
                 continue
             all_arguments = [self.concepts[name] for name in self.arguments if word in self.members(name)]
-            groups.append((tuple(owner._csw_row_of(self.concepts[name]) for name in sorted(arguments)),
-                           tuple(owner._csw_row_of(cid) for cid in all_arguments),
-                           ('word',owner._csw_row_of(word))))
+            groups.append((tuple(owner._concept_row_of(self.concepts[name]) for name in sorted(arguments)),
+                           tuple(owner._concept_row_of(cid) for cid in all_arguments),
+                           ('word',owner._concept_row_of(word))))
             for name in arguments:
                 present.setdefault(name, set()).add(word)
         for name, members in present.items():
-            groups.append((tuple(owner._csw_row_of(cid) for cid in sorted(members)),
-                           tuple(owner._csw_row_of(cid) for cid in self.members(name)),
-                           ('class',owner._csw_row_of(self.concepts[name]))))
+            groups.append((tuple(owner._concept_row_of(cid) for cid in sorted(members)),
+                           tuple(owner._concept_row_of(cid) for cid in self.members(name)),
+                           ('class',owner._concept_row_of(self.concepts[name]))))
         from Occurrence import sentence_key
-        rows = [owner._csw_row_of(words[position]) for position in occupied if words[position] >= 0]
+        rows = [owner._concept_row_of(words[position]) for position in occupied if words[position] >= 0]
         key = sentence_key([derived.content_key(row) for row in rows if row is not None])
         derived.place_groups(groups, key)
 
@@ -381,7 +381,7 @@ class PartsOfSpeech(nn.Module):
             for name in arguments:
                 row = lookup[self.concepts[name]]
                 evidence[row, stream, at] = torch.maximum(evidence[row, stream, at], pair)
-                address = self.owner._csw_row_of(self.concepts[name])
+                address = self.owner._concept_row_of(self.concepts[name])
                 observed = self.owner._observed_knowing
                 observed[stream, address] = torch.maximum(observed[stream, address], pair)
         return ConceptualField(field.concept_ids.new_tensor(ids), evidence, places, times, field.percepts)

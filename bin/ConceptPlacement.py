@@ -28,24 +28,24 @@ def initialize(owner, identity, row):
 def identity_start(owner, identity, words):
     """Words select neighbours; only their objects at this order set the place."""
     alloc, table = owner._concept_allocator, positions(owner)
-    row, order = owner._csw_row_of(identity), alloc.order_of(identity)
+    row, order = owner._concept_row_of(identity), alloc.order_of(identity)
     count = owner.object_start_neighbours
     objects = set()
     for word in sorted(words):
-        own = owner._csw_row_of(word)
+        own = owner._concept_row_of(word)
         candidates = sorted(cid for cid, kinds in alloc.symbol_types.items()
-            if 'word' in kinds and cid != word and owner._csw_row_of(cid) is not None
+            if 'word' in kinds and cid != word and owner._concept_row_of(cid) is not None
             and alloc.order_of(cid) == alloc.order_of(word))
         if own is None or not candidates:
             continue
-        rows = [owner._csw_row_of(cid) for cid in candidates]
+        rows = [owner._concept_row_of(cid) for cid in candidates]
         scores = normalize(table[rows], dim=-1) @ normalize(table[own], dim=-1)
         selected = scores.argsort(descending=True, stable=True)[:count].tolist()
         objects.update(cid for index in selected
             for cid in alloc.named_identities.get(candidates[index], ())
-            if alloc.order_of(cid) == order and owner._csw_row_of(cid) is not None)
+            if alloc.order_of(cid) == order and owner._concept_row_of(cid) is not None)
     if objects:
-        value = table[[owner._csw_row_of(cid) for cid in sorted(objects)]].mean(0)
+        value = table[[owner._concept_row_of(cid) for cid in sorted(objects)]].mean(0)
         if bool(value.norm() > 0):
             table[row].copy_(normalize(value, dim=-1))
     derived = getattr(owner.similarity_codebook, 'mereology', None)
@@ -85,7 +85,7 @@ def meta_groups(owner, context):
     def collect(identities, key, *, objects_only=False):
         by_order = {}
         for cid in identities:
-            row = owner._csw_row_of(cid)
+            row = owner._concept_row_of(cid)
             if row is not None:
                 by_order.setdefault(owner._row_order(row), []).append((cid, row))
         for order, entries in by_order.items():

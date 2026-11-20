@@ -36,7 +36,7 @@ def test_referenced_phrase_is_an_occurrence_part_argument(monkeypatch):
     from Memory import OCCURRENCE
     from ChainRead import point
     assert int(f.store.parts.ref_kinds[row[1], 1]) == OCCURRENCE
-    assert f.cs._csw_row_of(reference) is None
+    assert f.cs._concept_row_of(reference) is None
     torch.testing.assert_close(point(f.store, (OCCURRENCE, reference)), clause.children[0].point)
     assert f.store.parts.find(f.noun('chases'), f.noun('mouse')) is None
     assert len(f.store) == 1  # Compressed constituent; the sentence is a chain.

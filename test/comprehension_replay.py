@@ -20,13 +20,18 @@ def key(value):
     return value
 
 
+# A method renamed since the recording reads the calls recorded under its
+# old name; the recorded evidence is not rewritten.
+RECORDED_AS = {'_concept_row_of': '_csw_row_of'}
+
+
 class Reads:
     def __init__(self, calls, prefix):
         self.calls, self.prefix = calls, prefix
 
     def __getattr__(self, name):
         def read(*args, **kwargs):
-            return self.calls[self.prefix + '.' + name][key((args, kwargs))]
+            return self.calls[self.prefix + '.' + RECORDED_AS.get(name, name)][key((args, kwargs))]
         return read
 
 

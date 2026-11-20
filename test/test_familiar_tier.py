@@ -40,7 +40,7 @@ def test_symbol_and_promoted_occurrence_members_have_the_same_definition():
     other_base = word(cs, [(4,1.)])
     second = index_part_row(cs, ids[0], cs.concept_id_at_row(other_base))
     index_part_row(cs, (OCCURRENCE,key[-1]), second)
-    left,right = cs._csw_row_of(first),cs._csw_row_of(second)
+    left,right = cs._concept_row_of(first),cs._concept_row_of(second)
     assert dict(cs.concept_weights(left)) == dict(cs.concept_weights(right)) == {a:1.,b:1.}
     torch.testing.assert_close(cb.lookup_rows(left),cb.lookup_rows(right))
     assert not cb.W[[left,right],:3].any()
@@ -55,7 +55,7 @@ def test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives():
     key = store.occurrence_of(occurrence)
     cs.mtm.open(key, kind=None, when=0, value=cb.lookup_rows(b))
     parent = index_part_row(cs, (OCCURRENCE,key[-1]), cs.concept_id_at_row(base))
-    row = cs._csw_row_of(parent)
+    row = cs._concept_row_of(parent)
     assert not cs.concept_weights(row) and cb.mereology.placement_witnesses[row] == 0
     pointers = cb.W.data_ptr(),cb.mereology.placement.data_ptr()
     cs.mtm.promote(key, cs.concept_id_at_row(b))
@@ -72,7 +72,7 @@ def test_recurrent_named_token_defines_its_name_when_a_bound_mention_has_no_read
     from test_orders_learned import equality_fixture, event
     cs, store, _ = equality_fixture()
     word = recurrent_word(cs.interpret, [1], [], form='name')
-    point = cs.similarity_codebook.lookup_rows(cs._csw_row_of(word))
+    point = cs.similarity_codebook.lookup_rows(cs._concept_row_of(word))
     key = cs.mtm.named(word, value=point)
     for place in range(cs.concept_mint_count):
         address = event(cs, store, place)
@@ -92,7 +92,7 @@ def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice
     cs, store, alloc = equality_fixture()
     subject = recurrent_word(cs.interpret, [1], [], form='new-name')
     label = recurrent_word(cs.interpret, [2], [], form='new-kind')
-    value = cs.similarity_codebook.lookup_rows(cs._csw_row_of(subject))
+    value = cs.similarity_codebook.lookup_rows(cs._concept_row_of(subject))
     # First sentence's noun site retains an unnamed identity, with the native
     # occurrence's ordinary order; neither the token nor the word gets one.
     first = store.append_meaning(ConceptualMeaning.from_description(value),
@@ -119,8 +119,8 @@ def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice
     parents = [parent for parent in alloc.raised if (SYMBOL,symbol) in alloc.parts.parts((SYMBOL,parent))]
     assert len(parents) == 1
     assert {x for _, x in alloc.parts.parts((SYMBOL, parents[0]))} == {symbol, *other_symbols}
-    row = cs._csw_row_of(parents[0])
-    assert dict(cs.concept_weights(row))[cs._csw_row_of(symbol)] > 0
+    row = cs._concept_row_of(parents[0])
+    assert dict(cs.concept_weights(row))[cs._concept_row_of(symbol)] > 0
     assert cs.definitions.objects(label) == tuple(parents)
 
 
@@ -249,7 +249,7 @@ def test_candidate_promotion_keeps_weighted_definition_and_no_inherited_place_or
         _close(cs)
     pointers = cb.W.data_ptr(), cb.mereology.placement.data_ptr()
     symbol, = cs.mtm.promote_candidates(cs)
-    row = cs._csw_row_of(symbol)
+    row = cs._concept_row_of(symbol)
     assert cs.mtm.entries[key].symbol == symbol
     assert dict(cs.concept_weights(row)) == {a:2.,b:1.}
     assert not cb.lookup_rows(row)[:3].any()
@@ -317,7 +317,7 @@ def test_promoting_an_identity_does_not_reinitialize_unrelated_classes():
     from Meaning import ConceptualMeaning
     cs, cb, alloc, store, (a,b,base) = placed_fixture()
     parent = index_part_row(cs,cs.concept_id_at_row(a),cs.concept_id_at_row(base))
-    row = cs._csw_row_of(parent)
+    row = cs._concept_row_of(parent)
     retained = cb.W[row].clone()
     with torch.no_grad():
         cb.W[row,:3].add_(.1)
@@ -339,7 +339,7 @@ def test_candidate_zero_survives_the_kept_bind_journal_without_an_occurrence_ali
     from PrependedSymbols import chunk_token
     f = SentenceFixture(monkeypatch)
     symbol = f.noun('subject')
-    row = f.cs._csw_row_of(symbol)
+    row = f.cs._concept_row_of(symbol)
     pool = f.cs.mtm
     key = pool.open_candidate(order=1, when=0,
         value=f.cs.similarity_codebook.lookup_rows(row), support={row:1.})
@@ -381,7 +381,7 @@ def test_answer_judges_the_carried_candidate_bind_without_an_individual_menu(mon
     from BindingAnswers import matches
     f = SentenceFixture(monkeypatch)
     symbol = f.noun('subject')
-    row = f.cs._csw_row_of(symbol)
+    row = f.cs._concept_row_of(symbol)
     pool = f.cs.mtm
     key = pool.open_candidate(order=1, when=0,
         value=f.cs.similarity_codebook.lookup_rows(row), support={row:1.})
@@ -493,8 +493,8 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
         assert dict(promotions) == {word: 1 for word in words}, promotions
         objects = [owner.interpret.preferred(word) for word in words]
         assert all(len(ids) == 1 for ids in objects), [(word,
-            float(owner.similarity_codebook.trust.lengths[owner._csw_row_of(word),0]),
-            [(obj, float(owner.similarity_codebook.trust.lengths[owner._csw_row_of(obj),0]))
+            float(owner.similarity_codebook.trust.lengths[owner._concept_row_of(word),0]),
+            [(obj, float(owner.similarity_codebook.trust.lengths[owner._concept_row_of(obj),0]))
              for obj in owner.interpret.remembered_objects(word)]) for word in words]
         assert objects[0] != objects[1]
     finally:

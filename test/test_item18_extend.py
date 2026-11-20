@@ -64,7 +64,7 @@ def test_36_determiners_read_the_stored_members_and_mtm(monkeypatch):
     import ConceptHierarchy
     monkeypatch.setattr(ConceptHierarchy,'members',lambda owner,cid: (1,2,3) if cid == 4 else ())
     codes = torch.eye(3)
-    owner = SimpleNamespace(_csw_row_of=lambda cid: cid-1, _row_order=lambda row: 0,
+    owner = SimpleNamespace(_concept_row_of=lambda cid: cid-1, _row_order=lambda row: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda rows: codes[rows]))
     kind, = sets([[0.,0.],[0.,0.],[0.,0.],[1.,0.]])
     op = LowerLayer()
@@ -366,13 +366,13 @@ def test_37_recalled_idea_extends_without_its_stm_sentence(named_scalar_model):
     owner=model._concept_owner()
     word=owner.interpret.word_for_form('alpha')
     obj=owner.interpret.forward(word)
-    point=owner.similarity_codebook.lookup_rows(owner._csw_row_of(obj)).detach()
+    point=owner.similarity_codebook.lookup_rows(owner._concept_row_of(obj)).detach()
     # A controlled, fully identified sentence. Its selected interpretation,
     # numerical leaf and perceptual membership all come from the same word.
     # This certifies recall's mechanism, without requiring an untrained free
     # compose policy to rediscover the known interpretation.
-    program=Reading(rows=torch.tensor([owner._csw_row_of(obj)]),
-        word_rows=torch.tensor([owner._csw_row_of(word)]),word_ids=torch.tensor([word]),
+    program=Reading(rows=torch.tensor([owner._concept_row_of(obj)]),
+        word_rows=torch.tensor([owner._concept_row_of(word)]),word_ids=torch.tensor([word]),
         concept_ids=torch.tensor([obj]),activations=torch.ones(1),leaves=point[None],
         actions=torch.tensor([[0,-1,0]]),targets=torch.tensor([0]),
         end_state=torch.stack((point,point*0,point*0)),
@@ -514,7 +514,7 @@ def test_39_recalled_generation_obeys_the_shared_allowance_before_walking(named_
     model,objects=named_scalar_model
     owner=model._concept_owner()
     ids=tuple(objects[name] for name in ('alpha','beta','gamma'))
-    roles=owner.similarity_codebook.lookup_rows([owner._csw_row_of(cid) for cid in ids]).detach()
+    roles=owner.similarity_codebook.lookup_rows([owner._concept_row_of(cid) for cid in ids]).detach()
     meaning=ConceptualMeaning(roles,torch.ones(3,dtype=torch.bool),
         sentence_kind='idea',role_refs=tuple(('sym',cid) for cid in ids))
     native=model._compiled_output_walk()

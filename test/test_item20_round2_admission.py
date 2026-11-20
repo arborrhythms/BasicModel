@@ -30,7 +30,7 @@ def test_supplied_form_is_reported_without_changing_retrieval(answer, monkeypatc
         nominated_forms(model, ['alpha.', answer])
         word = owner.interpret.word_for_form(answer)
         assert word is not None and not owner.interpret.denotations(word)
-        row = owner._csw_row_of(owner.interpret.word_for_form('alpha'))
+        row = owner._concept_row_of(owner.interpret.word_for_form('alpha'))
         root = owner.similarity_codebook.lookup_rows(torch.tensor([[row]]), streams=True)[:, 0]
         reports = []
         model._lexical_admission_sink = reports.append
@@ -70,7 +70,7 @@ def test_lesson_fixture_supplied_forms_reach_every_applicable_bank_without_train
                     continue
                 raw = text.encode('ascii')
                 words = [raw[a:b] for a, b in percept_spans(raw) if is_lexical_form(raw[a:b])]
-                rows = [owner._csw_row_of(owner.interpret.word_for_form(word)) for word in words]
+                rows = [owner._concept_row_of(owner.interpret.word_for_form(word)) for word in words]
                 root = owner.similarity_codebook.lookup_rows(torch.tensor([rows]), streams=True).mean(1)
                 _, report = lexical_candidates(owner, root, limit=model.reconstruction_basis_limit)
                 supplied = {value['form']: value for value in report['supplied_forms']}

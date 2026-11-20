@@ -31,7 +31,7 @@ def agreeing_views(owner, *identities, count=3):
     from ConceptTrust import observe
     bank = owner.similarity_codebook
     for identity in identities:
-        row = owner._csw_row_of(identity)
+        row = owner._concept_row_of(identity)
         assert row is not None, 'supplied concept needs its own seat'
         content = (bank.trust.content[row] if bool(bank.trust.known[row])
                    else bank.lookup_rows(row)).detach().clone()
@@ -46,7 +46,7 @@ def projected_content(owner, identity, value):
     trust = bank.trust
     expected = value.clone()
     if trust.tracked:
-        row = owner._csw_row_of(identity)
+        row = owner._concept_row_of(identity)
         start = trust.start
         direction = bank.mereology.placement[row]
         expected[start:start+trust.width] = torch.nn.functional.normalize(direction, dim=0) * trust.lengths[row,0]
@@ -77,7 +77,7 @@ def witness_object(cs, word, *, point=None):
     if point is not None:
         import torch
         with torch.no_grad():
-            cs.similarity_codebook.W[cs._csw_row_of(obj)].copy_(point)
+            cs.similarity_codebook.W[cs._concept_row_of(obj)].copy_(point)
     return obj
 
 

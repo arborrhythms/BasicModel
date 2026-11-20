@@ -97,7 +97,7 @@ class SentenceFixture:
                 point = self.registry._payload(('sym', obj))
                 actions.append((0, -1, len(leaves)))
                 leaves.append(point); ids.append(obj); words.append(node)
-                word_rows.append(self.cs._csw_row_of(obj))
+                word_rows.append(self.cs._concept_row_of(obj))
                 word_ids.append(wid)
                 return point
             name, *children = node
@@ -114,7 +114,7 @@ class SentenceFixture:
         stop = len(self.binary) + len(self.unary)
         targets = [stop if kind == 0 else op if kind == 1 else len(self.binary) + op
                    for kind, op, _ in reversed(actions)]
-        return Reading(rows=torch.tensor([self.cs._csw_row_of(cid) for cid in ids]),
+        return Reading(rows=torch.tensor([self.cs._concept_row_of(cid) for cid in ids]),
             word_rows=torch.tensor(word_rows), word_ids=torch.tensor(word_ids), activations=torch.ones(count), leaves=torch.stack(leaves),
             actions=torch.tensor(actions), targets=torch.tensor(targets), concept_ids=torch.tensor(ids),
             leaf_evidence=torch.tensor([[1., 0.]]).expand(count, 2).clone(),

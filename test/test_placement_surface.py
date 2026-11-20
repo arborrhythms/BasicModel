@@ -141,7 +141,7 @@ def test_promotion_keeps_its_id_seed_and_has_no_higher_order_form(monkeypatch):
     actions = cs.mtm.promote_candidates(cs)
     assert actions
     symbol = cs.mtm.entries[addresses[0]].symbol
-    row = cs._csw_row_of(symbol)
+    row = cs._concept_row_of(symbol)
     cb.lookup_rows(row)
     assert not cb.W[row,:3].any()
     from ConceptPlacement import seed

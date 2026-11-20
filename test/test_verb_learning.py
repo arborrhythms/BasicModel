@@ -28,7 +28,7 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
     for word, value in (('subject', .2), ('move', .3), ('property', .4)):
         symbol = f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
-            f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
+            f.cs.similarity_codebook.W[f.cs._concept_row_of(symbol)].fill_(value)
     f.ops['change'] = SimpleNamespace(compose=lambda a, b: action(a, b))
     from chunk_fixtures import higher_word
     higher_word(f, 'subject')
@@ -101,7 +101,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     for word, value in (('subject', .2), ('move', .3), ('property', .4)):
         symbol = f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
-            f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
+            f.cs.similarity_codebook.W[f.cs._concept_row_of(symbol)].fill_(value)
     f.ops['change'] = SimpleNamespace(compose=lambda a, b: action(a, b))
     from chunk_fixtures import higher_word
     higher_word(f, 'subject')

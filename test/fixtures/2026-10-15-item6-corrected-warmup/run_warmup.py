@@ -41,7 +41,7 @@ def singletons(model):
         if len(objects) != 1:
             raise RuntimeError(f'{form}: expected one retained word concept, found {objects}')
         concept = objects[0]
-        row = owner._csw_row_of(concept)
+        row = owner._concept_row_of(concept)
         if row is None:
             raise RuntimeError(f'{form}: word concept {concept} has no retained code')
         atoms[form] = owner.similarity_codebook.lookup_rows(

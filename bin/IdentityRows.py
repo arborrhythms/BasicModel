@@ -20,7 +20,7 @@ def cache_rows(owner):
     alloc = allocator(owner)
     concepts = {cid for cid, types in alloc.symbol_types.items() if 'concept' in types}
     return tuple(row for cid in concepts | alloc.individuals | set(alloc.form_regions.values())
-                 if cid not in alloc.retired and (row := owner._csw_row_of(cid)) is not None)
+                 if cid not in alloc.retired and (row := owner._concept_row_of(cid)) is not None)
 
 
 def carrier(owner, point, *, region=None):
@@ -54,7 +54,7 @@ def coordinates(owner, point, *, region=None):
 
 
 def point(owner, identity):
-    row = owner._csw_row_of(int(identity))
+    row = owner._concept_row_of(int(identity))
     if row is None:
         return None
     return owner.similarity_codebook.lookup_rows(row).detach()
@@ -117,7 +117,7 @@ def form_identity(owner, cue):
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     width = cue.shape[-1] if derived is None else derived.percept_width
     for word in sorted(owner._word_definition_ids()):
-        row = owner._csw_row_of(word)
+        row = owner._concept_row_of(word)
         if row is None:
             continue
         value = owner.similarity_codebook.lookup_rows(row).detach().to(cue)

@@ -156,7 +156,7 @@ def test_accessible_event_stages_before_change_after_with_bilateral_memberships(
     token, entry = next(iter(f.cs.mtm.entries.items()))
     event = entry.events[0]
     verb = f.words['move'][1]
-    code = f.cs.similarity_codebook.W[f.cs._csw_row_of(verb)].clone()
+    code = f.cs.similarity_codebook.W[f.cs._concept_row_of(verb)].clone()
     bank = CaseBank(torch.tensor([verb]), code[None, None], code.new_zeros(1, 1, 2),
         code.new_zeros(1, 1, 2), torch.ones(1, 1, dtype=torch.bool))
     before = f.cs.mtm.state()

@@ -53,7 +53,7 @@ def test_89_expectation_selects_among_orders_and_is_local_to_the_stream():
     for obj in (low, high):
         owner.interpret.define(word, obj)
     model = SimpleNamespace(_concept_owner=lambda: owner)
-    owner._observed_knowing[0, owner._csw_row_of(low), 0] = 1.
+    owner._observed_knowing[0, owner._concept_row_of(low), 0] = 1.
     open_prediction(model, torch.tensor([True]))
     assert owner.interpret.denotations(word) == (low, high)
     assert owner.interpret.referent(word, batch=0) == high
@@ -61,10 +61,10 @@ def test_89_expectation_selects_among_orders_and_is_local_to_the_stream():
     # consumes only what open_prediction writes, including its order limit.
     optimizer = torch.optim.SGD(owner.expect_stack.parameters(), lr=.1)
     optimizer.zero_grad()
-    (model._concept_prediction.value[0, owner._csw_row_of(low), 0] - 1).square().backward()
+    (model._concept_prediction.value[0, owner._concept_row_of(low), 0] - 1).square().backward()
     optimizer.step()
     open_prediction(model, torch.tensor([True]))
-    assert owner._expected_knowing[0, owner._csw_row_of(low), 0] > 0
+    assert owner._expected_knowing[0, owner._concept_row_of(low), 0] > 0
     assert owner.interpret.referent(word, batch=0) == low
     assert owner.interpret.referent(word, batch=1) == high
     assert owner.interpret.referent(word, batch=None) == high
@@ -79,7 +79,7 @@ def test_88_scalar_definition_reads_one_after_the_same_six_views(named_scalar_mo
     for name, obj in objects.items():
         word = owner.interpret.word_for_form(name)
         row = owner.definitions.row(word, obj)
-        assert int(owner.similarity_codebook.trust.views[owner._csw_row_of(obj)]) == 6
+        assert int(owner.similarity_codebook.trust.views[owner._concept_row_of(obj)]) == 6
         assert float(store.parts.truth_plus[row]) == 1.
 
 
@@ -99,7 +99,7 @@ def test_88_derived_code_reads_do_not_rebuild_definition_index(named_scalar_mode
         return rebuild()
     monkeypatch.setattr(index, 'rebuild', record_rebuild)
     for _ in range(3):
-        bank.lookup_rows([owner._csw_row_of(obj)])
+        bank.lookup_rows([owner._concept_row_of(obj)])
         assert index.objects(word) == expected
     assert calls == []
     for name, value in before.items():
@@ -109,7 +109,7 @@ def test_88_derived_code_reads_do_not_rebuild_definition_index(named_scalar_mode
     assert index.objects(word) == expected
     assert calls == [1]
     assert float(parts.evidence(row)[1]) == pytest.approx(.2)
-    bank.lookup_rows([owner._csw_row_of(obj)])
+    bank.lookup_rows([owner._concept_row_of(obj)])
     assert index.objects(word) == expected
     assert calls == [1]
 

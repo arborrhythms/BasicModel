@@ -90,7 +90,7 @@ def test_discovered_symbol_remains_available_after_nonuse():
         key = observe_candidate(cs, 1, {a: 1., b: 1.})
         _close(cs)
     cid = cs.mtm.promote_candidates(cs)[0]
-    row = cs._csw_row_of(cid)
+    row = cs._concept_row_of(cid)
     for _ in range(cs.mtm.horizon+2):
         _close(cs)
     assert key not in cs.mtm.entries and cs.concept_id_at_row(row) == cid

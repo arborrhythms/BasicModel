@@ -18,7 +18,7 @@ def members(owner, identity):
 
 
 def direction(owner, identity):
-    row = owner._csw_row_of(int(identity))
+    row = owner._concept_row_of(int(identity))
     if row is None:
         raise ValueError('a hierarchy member needs a seated concept')
     bank = owner.similarity_codebook
@@ -50,7 +50,7 @@ def group_centroid(owner, identities, *, key=None):
 
 
 def extension(owner, identity):
-    return group_centroid(owner, members(owner, identity), key=('class',owner._csw_row_of(identity)))
+    return group_centroid(owner, members(owner, identity), key=('class',owner._concept_row_of(identity)))
 
 
 @torch.no_grad()
@@ -60,7 +60,7 @@ def observe_member(owner, parent, member):
     alloc, bank = owner._concept_allocator, owner.similarity_codebook
     if alloc.order_of(parent) != alloc.order_of(member) + 1:
         raise ValueError('a class must be one order above its member')
-    row = owner._csw_row_of(parent)
+    row = owner._concept_row_of(parent)
     if row is None:
         raise ValueError('a hierarchy class needs a seated concept')
     if owner.is_frozen(parent):
@@ -68,7 +68,7 @@ def observe_member(owner, parent, member):
     alloc.symbol_types.setdefault(parent, set()).update(('concept', 'class'))
     derived = getattr(bank, 'mereology', None)
     alloc.store_of(parent).add_constituent(parent, 'part', ('sym', int(member)))
-    owner._populate_concept_weights(parent, witness=({owner._csw_row_of(member): 1.}, ()))
+    owner._populate_concept_weights(parent, witness=({owner._concept_row_of(member): 1.}, ()))
     if derived is not None and not derived.meaning_pairs:
         return  # A form-only chart supplies no conceptual observation.
     view = bank.W.new_zeros(bank.W.shape[-1])
@@ -87,6 +87,6 @@ def can_observe(owner):
 def fit(owner, member, parent):
     """Candidate coverage: magnitude is commitment, never a class gain."""
     from IdentityRows import meet_ratios
-    row = owner._csw_row_of(parent)
+    row = owner._concept_row_of(parent)
     value = extension(owner, parent) * owner.similarity_codebook.trust.lengths[row, 0]
     return meet_ratios(direction(owner, member), value)[0]

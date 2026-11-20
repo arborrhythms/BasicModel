@@ -45,7 +45,7 @@ def test_part_graph_uses_the_constructed_relation_capacity(monkeypatch):
     parts.ref_kinds[1:count+1].fill_(parts.SYMBOL)
     parts.count.fill_(count)
     monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(symbol_types={}, raised=set(), parts=parts, relate_idx={('part-base', i): (2, i-1) for i in range(2,count+2)}))
-    monkeypatch.setattr(cs, '_csw_row_of', lambda symbol: symbol - 1)
+    monkeypatch.setattr(cs, '_concept_row_of', lambda symbol: symbol - 1)
     from Priming import part_edges
     src, dst, weight = part_edges(cs)
     assert src.numel() == dst.numel() == weight.numel() == count

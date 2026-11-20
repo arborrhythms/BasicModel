@@ -30,7 +30,7 @@ def test_perceived_class_keeps_its_own_content_beside_the_reading():
         _scalar_present={0: dict(point=reading, occurrence=occurrence, candidate=('candidate', 3))})
     owner = SimpleNamespace(_model=model,
         _concept_allocator=SimpleNamespace(individuals={1}, retired=set()),
-        similarity_codebook=SimpleNamespace(W=concept[None]), _csw_row_of=lambda cid: 0,
+        similarity_codebook=SimpleNamespace(W=concept[None]), _concept_row_of=lambda cid: 0,
         _closed_clause_store=lambda: SimpleNamespace(location=lambda ref: 0))
     records = ReferenceClose(SimpleNamespace(owner=owner)).perceived_records(0)
     torch.testing.assert_close(records[1][1]['mention_value'], concept)
@@ -229,7 +229,7 @@ def test_native_relation_does_not_alias_a_thought_store_local_relation():
     parts = NS(references=lambda relation: ((SYMBOL, 1), (SYMBOL, 2)))
     store = NS(location=lambda address: ('sym', 17), parts=parts)
     codes = torch.eye(2)
-    owner = NS(_csw_row_of=lambda cid: {1:0, 2:1}.get(cid),
+    owner = NS(_concept_row_of=lambda cid: {1:0, 2:1}.get(cid),
         similarity_codebook=NS(lookup_rows=lambda rows: codes[rows]),
         stm=NS(_thought_stores=((local,),)), _closed_clause_store=lambda: store)
     torch.testing.assert_close(read(owner, ('sym', 17)), torch.ones(2))

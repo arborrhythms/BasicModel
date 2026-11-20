@@ -103,7 +103,7 @@ class MereologicalCodes(nn.Module):
         rows = reading.word_rows.detach().reshape(-1).tolist()
         identities = getattr(reading, 'concept_ids', None)
         if identities is not None:
-            rows = [row if row >= 0 else self.owner._csw_row_of(int(cid))
+            rows = [row if row >= 0 else self.owner._concept_row_of(int(cid))
                     for row, cid in zip(rows, identities.reshape(-1).tolist())]
         return sentence_key([self.content_key(int(row)) for row in rows if row is not None and row >= 0])
 
@@ -196,12 +196,12 @@ class MereologicalCodes(nn.Module):
         language = getattr(getattr(self.owner, '_model', None), 'languageSpace', None)
         if language is not None:
             for cid in language.parts_of_speech.concepts.values():
-                row = self.owner._csw_row_of(cid)
+                row = self.owner._concept_row_of(cid)
                 if row is not None:
                     sentence[row] = 0
         for cid, kinds in self.owner._concept_allocator.symbol_types.items():
             if 'object' in kinds:
-                row = self.owner._csw_row_of(cid)
+                row = self.owner._concept_row_of(cid)
                 if row is not None:
                     sentence[row] = 0
         rows = (sentence > 0).nonzero().flatten()

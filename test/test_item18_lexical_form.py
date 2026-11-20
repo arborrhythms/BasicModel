@@ -34,9 +34,9 @@ def test_91_reading_and_free_generation_take_the_mapped_words_form(
     model._tensor_peer_while_eager = True
     owner = model._concept_owner()
     word, kind = named_kind(model, 'hello')
-    row = owner._csw_row_of(kind)
+    row = owner._concept_row_of(kind)
     width = owner.similarity_codebook.mereology.percept_event_width
-    expected = owner.similarity_codebook.lookup_rows(owner._csw_row_of(word))[:width].detach()
+    expected = owner.similarity_codebook.lookup_rows(owner._concept_row_of(word))[:width].detach()
     assert expected.any()
     assert not owner.similarity_codebook.lookup_rows(row)[:width].any()
     try:
@@ -74,10 +74,10 @@ def test_91_spelling_presence_reads_form_and_keeps_its_gradient(
     model._tensor_peer_while_eager = True
     owner = model._concept_owner()
     word, kind = named_kind(model, 'wug')
-    row = owner._csw_row_of(kind)
+    row = owner._concept_row_of(kind)
     width = owner.similarity_codebook.mereology.percept_event_width
     code = owner.similarity_codebook.lookup_rows(row).detach().clone()
-    code[:width] = owner.similarity_codebook.lookup_rows(owner._csw_row_of(word))[:width]
+    code[:width] = owner.similarity_codebook.lookup_rows(owner._concept_row_of(word))[:width]
     # This terminal's word is present, while its claim has neither lane.
     code[width:] = 0.
     leaf = code[None, None].clone().requires_grad_()

@@ -34,7 +34,7 @@ def place_close(parts, program, rules):
     owner = parts.owner
     owner._model = NS(languageSpace=NS(parts_of_speech=parts,
         _compose_binary_rules=rules, _compose_unary_rules=()))
-    rows = [owner._csw_row_of(int(cid)) for cid in program.word_ids if int(cid) >= 0]
+    rows = [owner._concept_row_of(int(cid)) for cid in program.word_ids if int(cid) >= 0]
     owner._observed_knowing.zero_()
     owner._observed_knowing[0, rows, 0] = 1.
     program.word_rows = torch.tensor(rows)
@@ -101,7 +101,7 @@ def measure():
     out['6_new_word'] = dict(before=before,after=novel(),object_members=parts.members('verb_argin2'),
                              novel_was_object=words[1] in parts.members('verb_argin2'),collapse=parts.collapse())
     from Expectation import SymbolRead
-    argument_rows = torch.tensor([owner._csw_row_of(parts.concepts[name]) for name in parts.arguments])
+    argument_rows = torch.tensor([owner._concept_row_of(parts.concepts[name]) for name in parts.arguments])
     expected = torch.zeros(1, len(argument_rows), 2)
     i = parts.index['verb_argin2']
     expected[0, i, 0] = .7

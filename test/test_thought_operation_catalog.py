@@ -234,9 +234,9 @@ def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
                    for name in getattr(space, "_frozen_named", {}))
     point = torch.zeros(space.outputShape[-1])
     question = registry.form("part", point, point)
-    assert space._csw_row_of(question.role_refs[1][1]) is None
+    assert space._concept_row_of(question.role_refs[1][1]) is None
     equality = registry.form("equal", point, point)
-    assert space._csw_row_of(equality.role_refs[1][1]) is None
+    assert space._concept_row_of(equality.role_refs[1][1]) is None
     for name in ("exist", "ask"):
         with pytest.raises(RuntimeError, match="concept inventory exhausted"):
             registry.form(name, point, point)

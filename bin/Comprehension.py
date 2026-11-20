@@ -156,7 +156,7 @@ class Evaluation:
         admitted = program.staged_object_rows is None or int(program.staged_object_rows[word]) >= 0
         if lexical > 0 and program.interpret_forced and admitted:
             identity = owner.interpret.referent(lexical, batch=self.stream)
-            row = owner._csw_row_of(identity)
+            row = owner._concept_row_of(identity)
             if identity == lexical and program.staged_object_ids is not None:
                 pending = int(program.staged_object_ids[word])
                 if pending > 0:
@@ -178,7 +178,7 @@ class Evaluation:
         self.leaves[word] = value
         self.ids[word] = identity
         self.native_ids[word] = (program.concept_ids[word] if identity > 0 and
-            owner._csw_row_of(identity) is None else identity)
+            owner._concept_row_of(identity) is None else identity)
         self.orders[word] = order
         # Occurrence bands belong to the input location, not to the dictionary.
         point = value.clone()

@@ -55,7 +55,7 @@ def test_knowing_deposit_keeps_the_selected_intuition_weights_live():
     from QueryWork import QueryWorkBudget
     model, registry, store, refs = setup()
     owner = model._concept_owner()
-    row = owner._csw_row_of(refs[1][1])
+    row = owner._concept_row_of(refs[1][1])
     with torch.no_grad():
         owner.similarity_codebook.W[row].fill_(1.)
     known = Idea(observed=torch.full((owner.outputShape[-1],), .3))
@@ -133,7 +133,7 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     # made spellable only by a mocked surface method.
     ids = [recurrent_word(cs.interpret, [radix.insert(raw)], (), form=raw.decode())
            for raw in (b'a', b'b')]
-    rows = [cs._csw_row_of(cid) for cid in ids]
+    rows = [cs._concept_row_of(cid) for cid in ids]
     for row, raw in zip(rows, (b'a', b'b')):
         feature(cs, row, 'ps', radix.insert(raw), 1.)
     feature(cs, rows[0], 'ps', radix.get_id(b'b'), .5)

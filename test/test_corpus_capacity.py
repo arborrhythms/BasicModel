@@ -17,7 +17,7 @@ def test_explicit_bridge_capacity_preserves_prefix_and_fails_before_targets(monk
     pointer = cs._priming_bridge_src.data_ptr()
     alloc.word_descriptions[31] = dict(parts=((4, 31),), wholes=())
     monkeypatch.setattr(cs, '_word_definition_ids', lambda: (31,))
-    monkeypatch.setattr(cs, '_csw_row_of', lambda identity: 63)
+    monkeypatch.setattr(cs, '_concept_row_of', lambda identity: 63)
     monkeypatch.setattr(cs.definitions, 'objects', lambda word: (101,))
     monkeypatch.setattr(cs.interpret, 'no_object', lambda word: False)
     cs._expected_knowing.zero_()

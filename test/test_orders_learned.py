@@ -73,7 +73,7 @@ def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monke
     third = event(cs, store, 3)
     equal_close(cs, store, third, word)
     parent = cs.interpret.forward(word)
-    assert parent != word and cs._row_order(cs._csw_row_of(parent)) == alloc.order_of(parent) == 1
+    assert parent != word and cs._row_order(cs._concept_row_of(parent)) == alloc.order_of(parent) == 1
     assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (first, second, third)}
     assert alloc.singleton_values.data_ptr() == pointer
     fourth = event(cs, store, 4)
@@ -107,7 +107,7 @@ def test_only_distinct_published_identities_raise(same_token, same_value, raises
     result = cs.interpret.forward(word)
     assert (result != word) == raises
     if raises:
-        assert cs._row_order(cs._csw_row_of(result)) == 2
+        assert cs._row_order(cs._concept_row_of(result)) == 2
         assert set(alloc.parts.parts((SYMBOL, result))) == {(OCCURRENCE, m) for m in (first, second, third)}
 
 
@@ -181,7 +181,7 @@ def test_row_request_cannot_write_an_order():
     alloc = _concept_alloc_of(cs)
     with pytest.raises(ValueError, match='foreign order'):
         cs._csw_concept_row(0, cid)
-    assert alloc.order_of(cid) == -1 and cs._csw_row_of(cid) is None
+    assert alloc.order_of(cid) == -1 and cs._concept_row_of(cid) is None
     cs.add_part(cid, 1)
     with pytest.raises(ValueError, match='foreign order'):
         cs._csw_concept_row(1, cid)

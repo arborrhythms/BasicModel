@@ -49,7 +49,7 @@ def test_compose_query_and_converse_faces_share_the_same_canonical_vp():
     vp = question.role_refs[1]
     assert vp[0] == 'sym'
     assert vp[1] == predicate_identity('part')
-    assert cs._csw_row_of(vp[1]) is None
+    assert cs._concept_row_of(vp[1]) is None
     torch.testing.assert_close(question.roles[1], symbol_code(vp[1], cs.outputShape[-1], 0, 0))
 
 

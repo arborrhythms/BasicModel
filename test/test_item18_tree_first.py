@@ -464,9 +464,9 @@ def test_5_comprehension_reads_the_final_preferred_object(monkeypatch):
         interpret.define(word, identity)
         objects.append(identity)
     owner._expected_knowing = torch.zeros_like(owner._expected_knowing)
-    owner._expected_knowing[0, owner._csw_row_of(objects[0]), 0] = 1
+    owner._expected_knowing[0, owner._concept_row_of(objects[0]), 0] = 1
     assert interpret.preferred(word) == (objects[0],)
-    row = owner._csw_row_of(word)
+    row = owner._concept_row_of(word)
     point = owner.similarity_codebook.lookup_rows(torch.tensor(row), stream=0)
     program = Reading(rows=torch.tensor([row]), word_rows=torch.tensor([row]),
         activations=torch.ones(1), leaves=point[None], actions=torch.tensor([[0, -1, 0]]),
@@ -475,7 +475,7 @@ def test_5_comprehension_reads_the_final_preferred_object(monkeypatch):
         leaf_evidence=torch.tensor([[1., 0.]]), operation_values=point.new_zeros(1, 3, len(point)))
     # The sentence changes expectation after arrival, before its evaluation.
     owner._expected_knowing.zero_()
-    owner._expected_knowing[0, owner._csw_row_of(objects[1]), 0] = 1
+    owner._expected_knowing[0, owner._concept_row_of(objects[1]), 0] = 1
     language = SimpleNamespace(_tree_layer=lambda _: SimpleNamespace(ops=(), unary_ops=()))
     model = SimpleNamespace(_concept_owner=lambda: owner, languageSpace=language,
         symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))
@@ -484,7 +484,7 @@ def test_5_comprehension_reads_the_final_preferred_object(monkeypatch):
     evaluation = Evaluation(model, program, 0)
     reading(model, program, field, 0, torch.tensor([0]), evaluation=evaluation)
     assert evaluation.result.concept_ids.tolist() == [objects[1]]
-    atoms = owner.similarity_codebook.lookup_rows(torch.tensor(owner._csw_row_of(objects[1])), stream=0)
+    atoms = owner.similarity_codebook.lookup_rows(torch.tensor(owner._concept_row_of(objects[1])), stream=0)
     expected = interpret.forward(point, object_atoms=atoms, presence=torch.tensor(1.), evidence=torch.tensor([1., 0.]))
     torch.testing.assert_close(evaluation.result.end_state[0], expected, rtol=0, atol=0)
     torch.testing.assert_close(program.leaves[0], point, rtol=0, atol=0)
@@ -550,7 +550,7 @@ def test_comprehension_uses_the_observed_words_form_for_a_higher_order_object(tm
         force_order(owner, obj, 1)
         row = owner._csw_concept_row(1, obj)
         owner.interpret.define(word, obj)
-        word_row = owner._csw_row_of(word)
+        word_row = owner._concept_row_of(word)
         bank = owner.similarity_codebook
         point = bank.lookup_rows(torch.tensor(word_row), stream=0)
         raw = bank.lookup_rows(torch.tensor(row), stream=0).clone()
@@ -618,7 +618,7 @@ def test_pending_constituent_with_unknown_order_closes_without_allocating_an_ord
         words = [recurrent_word(owner.interpret, [i], [1], form=form)
                  for i, form in ((7, 'wug'), (8, 'dax'))]
         assert all(owner.interpret.no_object(word) for word in words)
-        rows = torch.tensor([owner._csw_row_of(word) for word in words])
+        rows = torch.tensor([owner._concept_row_of(word) for word in words])
         points = owner.similarity_codebook.lookup_rows(rows, stream=0)
         local = next(i for i, rule in enumerate(language._compose_binary_rules) if rule.method_name == 'part')
         frames = points.new_zeros(3, 3, points.shape[-1])

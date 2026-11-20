@@ -1132,7 +1132,7 @@ class MediumTermMemory(MemoryStore):
             if entry.refinement.get('member_kind') == 'percept':
                 # Basic percepts are members of an order-zero concept through
                 # its feature table. They are not events or relation rows.
-                row = owner._csw_row_of(symbol)
+                row = owner._concept_row_of(symbol)
                 for _, reference in entry.refinement['members']:
                     if reference[:1] != ('bp',):
                         raise ValueError('a percept collection requires basic percept references')

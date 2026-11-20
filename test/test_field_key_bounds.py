@@ -7,7 +7,7 @@ from Understanding import ConceptualField
 
 def test_identical_field_codes_keep_their_exact_boundary_after_accumulation():
     codes = torch.ones(160, 128)
-    owner = SimpleNamespace(_csw_row_of=lambda cid: cid, _row_order=lambda row: 0,
+    owner = SimpleNamespace(_concept_row_of=lambda cid: cid, _row_order=lambda row: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda rows: codes[rows]))
     weights = torch.full((160, 1, 1, 2), .1, requires_grad=True)
     field = ConceptualField(torch.arange(160), weights,

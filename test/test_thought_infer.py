@@ -332,7 +332,7 @@ def test_binding_cost_grades_two_incorrect_text_trials_and_credits_better(monkey
     owner = model._concept_owner()
     target = refs[2]
     owner.word_concepts = lambda word: (target[1],)
-    row = owner._csw_row_of(target[1])
+    row = owner._concept_row_of(target[1])
     with torch.no_grad():
         owner.similarity_codebook.W[row].fill_(1.)
     def answer(value):

@@ -114,7 +114,7 @@ def test_promoted_reference_reenters_as_one_higher_order_member():
     # Supply the higher-order position this reference-menu fixture reads.
     # Promotion keeps its extension separately and leaves this position unset.
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(concept)].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(concept)].copy_(atoms[0])
     from chunk_fixtures import context
     candidates = resolver.individuals(resolver.accessible(context(resolver, ()), stream=0))
     choices, _, _ = resolver.score(atoms[0], atoms[0]*0, atoms[0], 0,
@@ -224,7 +224,7 @@ def test_word_member_order_is_its_read_concept_not_the_clause_order():
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     word = recurrent_word(owner.interpret, [101], (), form='member')
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(atoms[0])
     key = None
     for clock in range(2):
         from test_reference_close import known_concept
@@ -255,7 +255,7 @@ def test_reference_departure_filters_collection_order_before_selection():
     concept = known_concept(owner, atoms[0], order=1)
     owner.interpret.define(word, concept)
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(atoms[0])
     assert owner._concept_source_order(owner.interpret.referent(word)) == 1
     keys = []
     for order in (0, 1):
@@ -546,7 +546,7 @@ def test_unnamed_reference_reenters_a_pending_words_later_definition():
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     word = recurrent_word(owner.interpret, [114], (), form='later-reference')
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(atoms[0])
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
         bindings={'_forward_references': ((0, word),)}))
     address = store.occurrence_of(first)
@@ -1076,7 +1076,7 @@ def test_written_alias_retains_the_selected_pending_name_and_its_order():
     selected_word = recurrent_word(owner.interpret, [112], (), form='pending-choice')
     earlier_word = recurrent_word(owner.interpret, [101], (), form='earlier-choice')
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(selected_word)].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(selected_word)].copy_(atoms[0])
     owner.interpret.define(earlier_word, known_concept(owner, atoms[0], order=1))
     selected = owner.mtm.named(selected_word, value=atoms[0])
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),

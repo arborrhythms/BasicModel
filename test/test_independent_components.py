@@ -323,8 +323,8 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         owner._closed_clause_store().parts.add(identity, event, truth_plus=1.)
         identity, = columns.individual_ids
         assert _concept_alloc_of(owner).order_of(identity) == 1
-        assert owner._csw_row_of(identity) != event_row
-        read = owner.similarity_codebook.lookup_rows(torch.tensor(owner._csw_row_of(identity)))
+        assert owner._concept_row_of(identity) != event_row
+        read = owner.similarity_codebook.lookup_rows(torch.tensor(owner._concept_row_of(identity)))
         torch.testing.assert_close(read[derived.percept_event_width:],
                                    columns.column_point(identity)[derived.percept_event_width:])
         optimizer = model.getOptimizer(lr=.01)
@@ -346,7 +346,7 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
             assert restored_model.load_weights(path, strict=True, require_match=True)
             restored_owner = restored_model._concept_owner()
             assert restored_owner.components.individual_ids == (identity,)
-            assert restored_owner._csw_row_of(identity) == owner._csw_row_of(identity)
+            assert restored_owner._concept_row_of(identity) == owner._concept_row_of(identity)
             torch.testing.assert_close(restored_owner.components.column_point(identity),
                                        columns.column_point(identity))
         finally:

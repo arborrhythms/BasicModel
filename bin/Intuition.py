@@ -103,7 +103,7 @@ def extract(owner, meaning, *, work, seen=()):
         if ref is not None and ref[0] == 'sym':
             if ref in seen:
                 raise ValueError('cyclic intuition definition')
-            row = owner._csw_row_of(ref[1])
+            row = owner._concept_row_of(ref[1])
             if row is None:
                 # MTM identities have reserved transient ids beyond the
                 # inventory. Their held working content is already order zero;
@@ -434,7 +434,7 @@ def pervasion(owner, meaning, *, frames=(), work):
     parts = alloc.parts
     refs = {}
     for kind, cid in parts.parts((SYMBOL, subject[1])):
-        if kind == SYMBOL and owner._csw_row_of(cid) is not None:
+        if kind == SYMBOL and owner._concept_row_of(cid) is not None:
             edge = parts.find((kind, cid), (SYMBOL, subject[1]))
             refs[('sym', cid)] = tuple(float(pole) for pole in parts.evidence(edge))
     for ref in alloc.refs(subject[1], 'part'):
@@ -446,10 +446,10 @@ def pervasion(owner, meaning, *, frames=(), work):
     whole = chart(owner, meaning.roles[0])
     surrounding = []
     for kind, cid in parts.wholes((SYMBOL, subject[1])):
-        if kind != SYMBOL or owner._csw_row_of(cid) is None:
+        if kind != SYMBOL or owner._concept_row_of(cid) is None:
             continue
         work.require('part')
-        value = chart(owner, leaf(owner, owner._csw_row_of(cid)))
+        value = chart(owner, leaf(owner, owner._concept_row_of(cid)))
         if bool(Ops.partOf(whole.amax(-1), value.amax(-1))):
             edge = parts.find((SYMBOL, subject[1]), (kind, cid))
             trust = value.new_tensor(tuple(float(pole) for pole in parts.evidence(edge)))

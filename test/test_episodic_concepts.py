@@ -73,7 +73,7 @@ def test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar(
         row = int(entries.nonzero()[0])
         assert bool(entries.any())
         assert 0 < int((store.episodic_concepts[row] >= 0).sum()) <= 4
-        assert all(owner._row_order(owner._csw_row_of(cid)) >= 0
+        assert all(owner._row_order(owner._concept_row_of(cid)) >= 0
                    for cid in store.episodic_concepts[row].tolist() if cid >= 0)
         def forbidden(*args, **kwargs):
             raise AssertionError('direct episodic reconstruction invoked the grammar')

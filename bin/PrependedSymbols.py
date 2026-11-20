@@ -101,9 +101,9 @@ def refresh_words(model, sentence):
                 identity = token.symbol if token.symbol is not None else token.transient
         if identity is None or identity == int(references[batch, column]):
             continue
-        row = owner._csw_row_of(identity)
+        row = owner._concept_row_of(identity)
         if row is None:
-            row = owner._csw_row_of(word)
+            row = owner._concept_row_of(word)
         order = owner._row_order(row)
         references[batch, column] = identity
         if torch.is_tensor(rows):
@@ -256,7 +256,7 @@ def stage(model, state, present):
             identity = token.symbol if token.symbol is not None else token.transient
             if identity is None:
                 raise RuntimeError('a prepended identity has neither a transient id nor a symbol')
-            row = owner._csw_row_of(identity) if token.symbol is not None else None
+            row = owner._concept_row_of(identity) if token.symbol is not None else None
             order = (token.order if token.order is not None else owner._row_order(row) if row is not None
                      else token.refinement['member_order'] if 'member_order' in token.refinement
                      else owner._concept_source_order(owner.interpret.referent(key[1], batch=b)) if key[0] == 'name'

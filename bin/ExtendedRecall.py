@@ -23,8 +23,8 @@ def matches(store, forest, *, start=None):
         if not len(field.ids) or field.missing:
             return ConceptSet(indices,values.new_zeros(len(indices),2),field.missing)
         orders = field.ids.new_tensor([0 if owner is None else -1 if int(cid) in left
-            or owner._csw_row_of(int(cid)) is None
-            else owner._row_order(owner._csw_row_of(int(cid))) for cid in field.ids])
+            or owner._concept_row_of(int(cid)) is None
+            else owner._row_order(owner._concept_row_of(int(cid))) for cid in field.ids])
         positive,present = product(concepts,values,field.ids,field.values,orders)
         negative,_ = product(concepts,-values,field.ids,field.values,orders)
         poles = reduce(torch.stack((positive,negative),-1),operation='intersection',dim=1,mask=present)

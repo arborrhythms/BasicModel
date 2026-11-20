@@ -27,7 +27,7 @@ def _with_identity_bank(model, understanding, codes):
     forms = ['fixture' + chr(97 + index) for index in range(count)]
     admitted = dict(nominated_forms(model, forms))
     owner = model._concept_owner()
-    rows = codes.new_tensor([owner._csw_row_of(admitted[form.encode()])
+    rows = codes.new_tensor([owner._concept_row_of(admitted[form.encode()])
                             for form in forms], dtype=torch.long)[None].expand(batch, -1)
     # The emitted point now stimulates the complete native inventory (§3.3),
     # rather than copying just the selected bank row. Give these fixture

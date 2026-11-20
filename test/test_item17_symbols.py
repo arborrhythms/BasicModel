@@ -400,3 +400,24 @@ def test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced(nots):
         for a, b in zip(got, want):
             torch.testing.assert_close(a, b, atol=1e-6, rtol=0)
     print(dict(entries=sigma.nnz, not_entries=int(NotLayer3.entries(sigma).sum())))
+
+
+# Rule 9, in part (certificate 6's first clause is not yet met: the store's
+# columns are still the two lanes of each concept row, read as its symbol).
+
+def test_a_concept_row_is_the_concepts_alone_and_a_symbol_has_no_address(lesson_at_start):
+    owner, _ = lesson_at_start
+    model = owner._model
+    keys = list(owner._concept_allocator.layer(0)._tensor_rows)
+    assert keys and all(isinstance(key, tuple) and key[0] == 'concept' for key in keys)
+    assert not hasattr(owner, '_csw_row_of') and not hasattr(owner, '_csw_rows_of')
+    assert 'symbols' not in model.where_registry.slices
+
+
+def test_the_concept_a_row_brought_is_recorded_at_its_nomination(lesson_at_start):
+    owner, _ = lesson_at_start
+    brought = owner._concept_allocator.brought
+    assert brought
+    for percept, row in brought.items():
+        assert owner.concept_of_basic_percept(percept) == row
+        assert percept in owner.concept_percepts(row)

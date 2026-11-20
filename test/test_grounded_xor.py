@@ -167,7 +167,7 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
                 references=cs._field_activated_references.get(batch, ()))
     cs.mtm.promote_candidates(cs)
     assert all(cs.mtm.entries[key].symbol is not None for key in cases)
-    rows = [cs._csw_row_of(cs.mtm.entries[key].symbol) for key in cases]
+    rows = [cs._concept_row_of(cs.mtm.entries[key].symbol) for key in cases]
     record = cs._concept_allocator.order_zero_members
     assert all(any(r == row for r, _, _ in record) for row in rows)
     assert not hasattr(store, 'conjunctive')

@@ -11,13 +11,13 @@ def test_unplaced_concepts_start_at_their_own_seed_and_keep_their_position():
     owner = _cs(nS=64, order=3, dim=8)
     members = [owner.new_concept(order=0) for _ in range(2)]
     concept = owner.new_concept(order=1)
-    row = owner._csw_row_of(concept)
+    row = owner._concept_row_of(concept)
     before = owner.similarity_codebook.W[row].detach().clone()
     torch.testing.assert_close(before.norm(), torch.tensor(1.))
     generator = torch.Generator().manual_seed(concept)
     expected = torch.nn.functional.normalize(torch.randn(8, generator=generator).abs(), dim=0)
     torch.testing.assert_close(before, expected)
-    cover_members(owner, concept, {owner._csw_row_of(cid): 1. for cid in members})
+    cover_members(owner, concept, {owner._concept_row_of(cid): 1. for cid in members})
     torch.testing.assert_close(owner.similarity_codebook.W[row], before)
 
 
@@ -27,7 +27,7 @@ def test_percept_start_and_candidate_centroid_ignore_higher_orders():
     from FormCentroids import convex_mean
     owner = _cs(nS=64, order=3, dim=8)
     concepts = [owner.new_concept(order=order) for order in (0, 0, 1, 0)]
-    a, b, higher, target = [owner._csw_row_of(cid) for cid in concepts]
+    a, b, higher, target = [owner._concept_row_of(cid) for cid in concepts]
     with torch.no_grad():
         owner.similarity_codebook.W[a] = torch.eye(8)[0]
         owner.similarity_codebook.W[b] = torch.eye(8)[1]
@@ -80,7 +80,7 @@ def test_identity_starts_from_its_neighbours_objects_without_moving_them():
     place_at(owner, words[2], [1.,.1,0.,0.])
     before = positions(owner).clone()
     identity_start(owner, objects[2], (words[2],))
-    row = owner._csw_row_of(objects[2])
+    row = owner._concept_row_of(objects[2])
     expected = before.clone()
     expected[row] = torch.tensor([0.,0.,1.,0.])
     torch.testing.assert_close(positions(owner), expected)
@@ -95,7 +95,7 @@ def test_sentence_places_words_in_addition_to_their_argument_pull():
     bank = owner.similarity_codebook.mereology
     obj = owner.new_concept(order=0)
     owner._concept_allocator.symbol_types.setdefault(obj, set()).add('object')
-    rows = [owner._csw_row_of(cid) for cid in (*words[:2], obj, *speech.concepts.values())]
+    rows = [owner._concept_row_of(cid) for cid in (*words[:2], obj, *speech.concepts.values())]
     context = bank.placement.new_zeros(owner.nVectors)
     context[rows] = 1.
     owner.placement_context = lambda batch: context
@@ -122,14 +122,14 @@ def test_definition_meta_concepts_pull_only_present_members_of_one_order():
     owner.interpret.define(words[0],other)
     bank = owner.similarity_codebook.mereology
     context = bank.placement.new_zeros(owner.nVectors)
-    context[[owner._csw_row_of(cid) for cid in (words[0],same,higher)]] = 1.
+    context[[owner._concept_row_of(cid) for cid in (words[0],same,higher)]] = 1.
     before = bank.placement.clone()
     groups = meta_groups(owner,context)
     assert all(len(members)==2 for _,members,_ in groups)
     bank.place_groups(groups,b'definition-test')
-    assert not torch.equal(bank.placement[owner._csw_row_of(same)],before[owner._csw_row_of(same)])
+    assert not torch.equal(bank.placement[owner._concept_row_of(same)],before[owner._concept_row_of(same)])
     for cid in (higher,other):
-        torch.testing.assert_close(bank.placement[owner._csw_row_of(cid)],before[owner._csw_row_of(cid)])
+        torch.testing.assert_close(bank.placement[owner._concept_row_of(cid)],before[owner._concept_row_of(cid)])
 
 
 def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatch):
@@ -142,9 +142,9 @@ def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatc
     model, registry, store, refs = setup()
     owner = model._concept_owner()
     object.__setattr__(model, 'conceptualSpaces', (owner,))
-    a, b = [owner._csw_row_of(ref[1]) for ref in refs[:2]]
+    a, b = [owner._concept_row_of(ref[1]) for ref in refs[:2]]
     parent = owner.new_concept(order=1)
-    row = owner._csw_row_of(parent)
+    row = owner._concept_row_of(parent)
     for member in (a, b): owner.add_concept_edge(row, member, 1.)
     ids = torch.tensor([*map(lambda ref: ref[1], refs), parent])
     initial = ConceptualField(ids, torch.zeros(4, 1, 1, 2),
@@ -187,7 +187,7 @@ def test_a_seed_is_a_native_nonnegative_evidence_code():
     from ConceptPlacement import seed
     owner, bank, _, _, _ = placed_fixture()
     cid = owner.new_concept(order=1)
-    row = owner._csw_row_of(cid)
+    row = owner._concept_row_of(cid)
     before = bank.mereology.placement[row].clone()
     assert not bool((before < 0).any())
     bank.trust.read_object(cid)
@@ -203,7 +203,7 @@ def test_explicit_identity_fold_keeps_its_own_seed_and_the_extension_separate():
     resolver, _, atoms = fixture()
     owner = resolver.components.owner
     identity = mint(owner, atoms[0])
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     torch.testing.assert_close(owner.similarity_codebook.trust.content[row], atoms[0])
     torch.testing.assert_close(torch.nn.functional.normalize(owner.similarity_codebook.W[row],dim=0),
                                seed(identity, atoms[0]))
@@ -217,6 +217,6 @@ def test_declared_arguments_and_operators_keep_their_id_seed_without_invented_vi
     owner, speech, _ = argument_inventory(formal_arguments((rule('modifier'),)))
     identities = (*speech.concepts.values(), speech.seats['modifier'].concept)
     for cid in identities:
-        row = owner._csw_row_of(cid)
+        row = owner._concept_row_of(cid)
         torch.testing.assert_close(positions(owner)[row], seed(cid, positions(owner)[row]))
         assert owner.similarity_codebook.trust.views[row] == 0

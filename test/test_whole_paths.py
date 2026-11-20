@@ -65,7 +65,7 @@ def test_retained_named_transient_captures_its_concept_not_its_mtm_address():
     strata = SentenceStrata(1, 1, 2, 4)
     model = SimpleNamespace(_reconstruction_stack=lambda: SimpleNamespace(),
         _concept_owner=lambda: SimpleNamespace(mtm=pool,
-            _csw_row_of=lambda cid: 0 if cid == 17 else None),
+            _concept_row_of=lambda cid: 0 if cid == 17 else None),
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[17]])),
         symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), languageSpace=SimpleNamespace(),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=strata)))

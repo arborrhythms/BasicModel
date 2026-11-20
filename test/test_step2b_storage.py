@@ -17,15 +17,15 @@ def test_definition_rejects_a_word_object_and_keeps_both_forms():
         identity = model.perceptualSpace.percept_store.identity
         word, obj = admit(model, '12')
         other, _ = admit(model, 'plus')
-        assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'
+        assert owner.word_surface_for_row(owner._concept_row_of(word)) == b'12'
         with pytest.raises(ValueError, match='word as its object'):
             owner.interpret.define(other, word)
         assert owner.definitions.words(word) == ()
-        assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'
-        assert owner.word_surface_for_row(owner._csw_row_of(other)) == b'plus'
-        assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'
+        assert owner.word_surface_for_row(owner._concept_row_of(word)) == b'12'
+        assert owner.word_surface_for_row(owner._concept_row_of(other)) == b'plus'
+        assert owner.word_surface_for_row(owner._concept_row_of(obj)) == b'12'
         for symbol in (word, obj):
-            row = owner._csw_row_of(symbol)
+            row = owner._concept_row_of(symbol)
             assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'
         assert owner.definitions.words(obj) == (word,)
     finally:

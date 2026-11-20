@@ -28,7 +28,7 @@ def test_shared_value_does_not_mix_two_words_definition_views(named_scalar_model
     identities = [objects(owner, word)[0] for word in words]
     assert len(set(identities)) == 2
     for identity in identities:
-        assert int(owner.similarity_codebook.trust.views[owner._csw_row_of(identity)]) == 6
+        assert int(owner.similarity_codebook.trust.views[owner._concept_row_of(identity)]) == 6
 
 
 def test_basic_percept_reference_reads_without_a_concept_annotation(named_scalar_model):
@@ -45,7 +45,7 @@ def test_scalar_object_collects_value_bounded_basic_percepts(named_scalar_model)
     owner = model._concept_owner()
     cid = objects['alpha']
     assert owner._concept_allocator.order_of(cid) == 0
-    row = owner._csw_row_of(cid)
+    row = owner._concept_row_of(cid)
     record = owner._concept_allocator.order_zero_members
     percepts = [percept for target, percept, _ in record if target == row]
     assert percepts
@@ -73,7 +73,7 @@ def test_intervals_generalize_their_percepts_and_have_distinct_codes(named_scala
         word = owner.interpret.word_for_form(form)
         row = store.append_idea(code(owner, value))
         observe(owner, word, value, store.occurrence_of(row), stream=0)
-    a, b = [owner.similarity_codebook.lookup_rows([owner._csw_row_of(objects[name])])[0]
+    a, b = [owner.similarity_codebook.lookup_rows([owner._concept_row_of(objects[name])])[0]
             for name in ('alpha', 'beta')]
     assert not torch.equal(a, b)
     assert set(reconstruct(owner, value=1.5)) == {'alpha', 'beta'}
@@ -111,7 +111,7 @@ def test_point_and_native_read_share_the_collection_boundaries(named_scalar_mode
         # The collection's boundaries are read at its basic percepts: each
         # member's two boundaries at the point, generalized, then required.
         basic = owner.basic_percepts
-        members = owner.concept_percepts(owner._csw_row_of(objects['alpha']))
+        members = owner.concept_percepts(owner._concept_row_of(objects['alpha']))
         bounds = basic.read_points(point, members)
         collection = basic.read_collection(bounds, torch.ones(len(members)).to(bounds))
         torch.testing.assert_close(collection[0, 0].to(torch.float32), torch.tensor(expected))
@@ -174,7 +174,7 @@ def test_percept_reference_promotes_without_an_event_row(named_scalar_model):
         identity = observe(owner, word, 2., reference, stream=0)
     assert identity is not None
     assert owner._concept_allocator.order_of(identity) == 0
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     assert (row, percept, False) in owner._concept_allocator.order_zero_members
     assert owner._closed_clause_store().location(reference) is None
 
@@ -199,7 +199,7 @@ def test_value_collection_restores_through_the_integrated_checkpoint(
         for form, cid in objects.items():
             assert owner.interpret.lexical_form(cid) == form
             assert owner._concept_allocator.order_of(cid) == 0
-            assert int(owner.similarity_codebook.trust.views[owner._csw_row_of(cid)]) == 6
+            assert int(owner.similarity_codebook.trust.views[owner._concept_row_of(cid)]) == 6
     finally:
         restored.End()
         restored.symbolSpace.soft_reset()

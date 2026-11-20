@@ -108,7 +108,7 @@ def test_first_event_keeps_the_computed_forward_operand_only():
 def test_missing_identity_reference_fails_loudly(monkeypatch, missing):
     owner, _, store, _, _, occurrences, key = _references()
     if missing == 'concept':
-        monkeypatch.setattr(owner, '_csw_row_of', lambda identity: None)
+        monkeypatch.setattr(owner, '_concept_row_of', lambda identity: None)
     else:
         from Memory import Name
         owner.mtm.names = {occurrences[0]: Name(key, None)}

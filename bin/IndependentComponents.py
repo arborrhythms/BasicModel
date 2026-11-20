@@ -412,7 +412,7 @@ class IndependentComponents(nn.Module):
         observed = (observation @ axes.T.to(observation)) * (orders[:, None] == native)
         expected = (prediction @ axes.T.to(prediction)) * (prediction_orders[:, None] == native)
         values = observed - expected.to(observed)
-        rows = [self.owner._csw_row_of(cid) for cid in self.individual_ids]
+        rows = [self.owner._concept_row_of(cid) for cid in self.individual_ids]
         if any(row is None for row in rows):
             raise RuntimeError('an identity has lost its native conceptual row')
         indices = torch.tensor(rows, dtype=torch.long, device=values.device).expand(3, -1)

@@ -67,7 +67,7 @@ def test_three_rule_union_not_first_and_one_candidate_per_firing():
     for a, b, pair in ((refs[0], refs[1], (.8, .2)), (refs[0], refs[2], (.6, .3)),
                        (refs[1], refs[2], (.7, .4))):
         store.append_relation(a[1], b[1], truth_plus=pair[0], truth_minus=pair[1])
-    owner._expected_knowing[0, [owner._csw_row_of(ref[1]) for ref in refs], 0] = 1
+    owner._expected_knowing[0, [owner._concept_row_of(ref[1]) for ref in refs], 0] = 1
     result = invoke(model, registry, search(model, registry, idea(registry, refs[0])))
     meaning = result.evidence['meaning']
     from Intuition import held_terms
@@ -224,7 +224,7 @@ def test_prepended_candidate_enters_by_working_value():
     model, registry, store, refs = setup()
     owner = model._concept_owner()
     store.append_relation(refs[0][1], refs[1][1], truth_plus=.8, truth_minus=.3)
-    owner._expected_knowing[0, owner._csw_row_of(refs[0][1]), 0] = .4
+    owner._expected_knowing[0, owner._concept_row_of(refs[0][1]), 0] = .4
     value = torch.linspace(.1, .7, owner.outputShape[-1])
     entries = SimpleNamespace(prepend=2, concept_ids=torch.tensor([[987, -1]]),
         lookup_atoms=torch.stack((value, torch.zeros_like(value)))[None])
@@ -250,11 +250,11 @@ def test_infer_reaches_completed_field_without_serial_grammar_options(monkeypatc
     registry = GrammaticalThoughtRegistry.install(model._concept_owner(), grammar)
     owner = model._concept_owner()
     store.append_relation(refs[0][1], refs[1][1], truth_plus=.8, truth_minus=.2)
-    owner._expected_knowing[0, owner._csw_row_of(refs[0][1]), 0] = 1.
-    owner._observed_knowing[0, owner._csw_row_of(refs[0][1]), 0] = 1.
+    owner._expected_knowing[0, owner._concept_row_of(refs[0][1]), 0] = 1.
+    owner._observed_knowing[0, owner._concept_row_of(refs[0][1]), 0] = 1.
     with torch.no_grad():
         for ref, value in zip(refs, (.7,.5,.3)):
-            owner.similarity_codebook.W[owner._csw_row_of(ref[1])].fill_(value)
+            owner.similarity_codebook.W[owner._concept_row_of(ref[1])].fill_(value)
     assert registry.executable_operation_ids == ('infer',)
     assert not grammar.rules_upward and not grammar.rules_downward
     object.__setattr__(model, 'grammatical_thoughts', registry)
@@ -292,7 +292,7 @@ def test_native_part_narrowing_and_pervasion_replay():
     owner._csw_concept_row(0, prop[1])
     for ref in (*refs, prop):
         with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(ref[1])].fill_(1.)
+            owner.similarity_codebook.W[owner._concept_row_of(ref[1])].fill_(1.)
     store.append_relation(first[1], obj[1], truth_plus=.8, truth_minus=.4)
     store.append_relation(second[1], obj[1], truth_plus=.5, truth_minus=.9)
     question = registry.form('isPart', obj, prop)
@@ -317,7 +317,7 @@ def test_pervasion_requires_a_property_relation_and_its_result_persists(semantic
     for ref in refs:
         force_order(owner, ref[1], 0)
         with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(ref[1])].fill_(1.)
+            owner.similarity_codebook.W[owner._concept_row_of(ref[1])].fill_(1.)
     store.append_relation(part[1], subject[1], truth_plus=.8, truth_minus=.4)
     question = registry.form(semantic_id, subject, prop)
     result = pervasion(owner, question, work=QueryWorkBudget(256))
@@ -383,7 +383,7 @@ def test_output_ownership_excludes_understanding_and_expectation():
 def test_predictor_spread_desire_and_placement_have_separate_surfaces():
     model, registry, store, refs = setup()
     owner = model._concept_owner()
-    row = owner._csw_row_of(refs[0][1])
+    row = owner._concept_row_of(refs[0][1])
     owner.prime_seen(torch.tensor([[row]]))
     seen = owner.placement_context().clone()
     owner._expected_knowing[0, row] = torch.tensor([.3,.7])
@@ -431,7 +431,7 @@ def test_knowing_effect_preserves_field_shape_and_unaddressed_content(monkeypatc
     from Intuition import write_knowing
     model, registry, store, refs = setup()
     owner = model._concept_owner()
-    rows = torch.tensor([owner._csw_row_of(ref[1]) for ref in refs])
+    rows = torch.tensor([owner._concept_row_of(ref[1]) for ref in refs])
     field = torch.zeros(3,1,2,2)
     field[0,0,0] = torch.tensor([.2,.1])
     carrier = owner.subspace
@@ -616,7 +616,7 @@ def test_retained_mtm_transient_operand_uses_its_working_value_and_rejects_unkno
     key = owner.mtm.open(('test-occurrence', 1), kind=None, when=0,
         value=torch.full_like(working, .9))
     transient = owner.mtm.entries[key].transient
-    assert transient >= owner.nVectors and owner._csw_row_of(transient) is None
+    assert transient >= owner.nVectors and owner._concept_row_of(transient) is None
     meaning = replace(ConceptualMeaning.from_description(working),
         role_refs=(('sym', transient), None, None))
     work = QueryWorkBudget(8)

@@ -74,18 +74,18 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third), store.occurrence_of(fourth))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
     expected = atoms[0] + 2*atoms[1]/3
-    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(entry.symbol)], expected)
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._concept_row_of(entry.symbol)], expected)
     from ConceptPlacement import seed
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], seed(entry.symbol, expected))
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._concept_row_of(entry.symbol)], seed(entry.symbol, expected))
     assert resolver._derivation_symbol(token) == entry.symbol
     changed = store.append_idea(atoms[3])
     pool.event(token, store.occurrence_of(changed), verb=verb, role=0, when=50,
         before=pool.value_of(token))
     consolidate(owner, store)
     torch.testing.assert_close(pool.value_of(token), atoms[3])
-    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(entry.symbol)], expected)
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._concept_row_of(entry.symbol)], expected)
     from ConceptPlacement import seed
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], seed(entry.symbol, expected))
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._concept_row_of(entry.symbol)], seed(entry.symbol, expected))
     restored = MediumTermMemory(pool.capacity,pool.horizon,n_vectors=int(pool.transient_ids[0]), field_width=pool.field_width)
     restored.restore(pool.state())
     assert restored.entries[token].symbol == entry.symbol and restored.names == pool.names
@@ -215,7 +215,7 @@ def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch)
     # A captured record can carry the lexical handle when the factored view
     # is absent; the word has no conceptual seat in this fixture.
     from Spaces import _concept_alloc_of
-    assert f.cs._csw_row_of(word) is None
+    assert f.cs._concept_row_of(word) is None
     identity = dict(clause.identity)
     identity['event'] = tuple(word if index == 3 else value for index, value in enumerate(identity['event']))
     clause = replace(clause, factored_refs=None, identity=identity)
@@ -232,7 +232,7 @@ def test_pending_alias_and_later_self_arrival_leave_the_same_token_pending():
     # §50: a lexical site's held meaning is its dictionary's current content.
     owner = resolver.components.owner
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(atoms[0])
+        owner.similarity_codebook.W[owner._concept_row_of(words['x'])].copy_(atoms[0])
     def site(leaf):
         node = named(atoms[0], words['x'])
         return replace(node, point=atoms[0], meaning=ConceptualMeaning.from_description(atoms[0]),

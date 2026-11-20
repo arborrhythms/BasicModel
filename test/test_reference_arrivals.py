@@ -24,11 +24,11 @@ def world(*, pending_atom=None):
              for word, unit in (('x', 120), ('three', 116), ('wrong', 119))}
     with torch.no_grad():
         # §50: this bare request has the native chart's zero meaning.
-        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].zero_()
+        owner.similarity_codebook.W[owner._concept_row_of(words['x'])].zero_()
         if pending_atom is not None:
             # §50: correct content-association fixtures give the pending name
             # the same nonempty meaning as its held description.
-            owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(atoms[pending_atom])
+            owner.similarity_codebook.W[owner._concept_row_of(words['x'])].copy_(atoms[pending_atom])
         for word, atom in (('three', atoms[0]), ('wrong', atoms[1])):
             obj = owner.new_concept()
             force_order(owner, obj, 0)
@@ -355,7 +355,7 @@ def test_cached_word_mention_still_binds_to_its_accessible_token(monkeypatch):
     # participant reading still owns this occurrence's bind to the token.
     with torch.no_grad():
         owner = resolver.components.owner
-        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(a[0]+a[1])
+        owner.similarity_codebook.W[owner._concept_row_of(words['x'])].copy_(a[0]+a[1])
     cached = Clause(ConceptualMeaning.from_description(a[0]+a[1]), point=a[0]+a[1], order=1,
         composition=Composition(a[0]+a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,), order=1))
     row, plan = keep(resolver, cached, (frame,), position=2)

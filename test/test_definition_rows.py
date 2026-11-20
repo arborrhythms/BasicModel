@@ -47,8 +47,8 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     assert word != obj
     assert (alloc.next_id, len(alloc.layer()._tensor_rows), len(store.parts)) == (
         before[0] + 3, before[1] + 2, before[2] + 1)
-    assert cs._csw_row_of(word) is not None
-    assert cs._csw_row_of(obj) is not None
+    assert cs._concept_row_of(word) is not None
+    assert cs._concept_row_of(obj) is not None
     row = cs.definitions.row(word, obj)
     assert 'definition' in store.part_row(row)['readings']
     assert store.parts.refs[row].tolist() == [obj, word]
@@ -172,20 +172,20 @@ def test_31_read_forms_wait_for_object_testimony_without_changing_the_configurat
         if word is not None and cs.definitions.objects(word):
             obj, = cs.definitions.objects(word)
             assert 'definition' in store.part_row(cs.definitions.row(word, obj))['readings']
-            assert cs._csw_row_of(obj) is not None
+            assert cs._concept_row_of(obj) is not None
         elif word is not None:
             from ConceptTrust import definition_threshold
             obj, = cs.interpret.remembered_objects(word)
             row = store.parts.find(obj, word)
             assert 'definition' in store.part_row(row)['readings']
             assert float(store.parts.evidence(row)[0]) < definition_threshold()
-            assert cs._csw_row_of(word) is not None
+            assert cs._concept_row_of(word) is not None
         else:
             word, = (word for word, value in cs.interpret._pending.items()
                      if form in value['forms'])
             assert cs.interpret.no_object(word)
             assert cs.interpret.forward(word) == word
-            assert cs._csw_row_of(word) is not None
+            assert cs._concept_row_of(word) is not None
     assert path.read_bytes() == before
 
 

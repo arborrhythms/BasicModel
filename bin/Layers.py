@@ -6529,7 +6529,7 @@ class ConceptAllocator:
         if getattr(self, '_percept_revision', None) != revision:
             self._percept_rows = set(members.rows())
             self._percept_revision = revision
-        if layer.row_of(('shared', cid)) in self._percept_rows:
+        if layer.row_of(('concept', cid)) in self._percept_rows:
             return 0
         return 0 if cid in self.identity else -1
 

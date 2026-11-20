@@ -30,7 +30,7 @@ def test_part_stores_native_addresses_and_reads_current_concept_content():
     assert len(store) == 0
     owner = store._concept_owner()
     with torch.no_grad():
-        owner.similarity_codebook.W[owner._csw_row_of(1)].fill_(.25)
+        owner.similarity_codebook.W[owner._concept_row_of(1)].fill_(.25)
     torch.testing.assert_close(store.meaning_of(row).roles[0], torch.full((4,), .25))
     torch.testing.assert_close(store.meaning_of(row).roles[1], points[2])
 
@@ -235,7 +235,7 @@ def test_program_meaning_reads_ended_points_from_their_rows(monkeypatch):
     row = f.store.write_clause(f.clause('earlier'), trust=.8)
     from Occurrence import operand_name
     identity = operand_name(f.store.row_name(row))
-    assert f.cs._csw_row_of(identity) is None
+    assert f.cs._concept_row_of(identity) is None
     entry = f.program(('part', 'it', 'animals'))
     refs = entry.concept_ids.clone()
     refs[0] = identity

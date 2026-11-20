@@ -25,7 +25,7 @@ def reference_pool(values, *, readings=None, capacity=64):
     codes = {} if readings is None else readings
     owner._concept_allocator = SimpleNamespace(symbol_types={key: ('word',) for key in codes})
     owner.interpret = SimpleNamespace(referent=lambda word: word)
-    owner._csw_row_of = lambda concept: concept if concept in codes else None
+    owner._concept_row_of = lambda concept: concept if concept in codes else None
     owner.similarity_codebook = SimpleNamespace(lookup_rows=lambda rows: torch.stack([codes[row] for row in rows]))
     store = SimpleNamespace(location=lambda reference: reference[-1] if reference in values else None,
         point_of_row=lambda reference: values.get(reference))
@@ -40,7 +40,7 @@ def supply_meaning(fixture, name, value):
     """Supply a part/whole fixture meaning for §50's exact association rule."""
     concept = fixture.noun(name)
     with torch.no_grad():
-        fixture.cs.similarity_codebook.W[fixture.cs._csw_row_of(concept)].copy_(value)
+        fixture.cs.similarity_codebook.W[fixture.cs._concept_row_of(concept)].copy_(value)
 
 
 def operations():
@@ -510,7 +510,7 @@ def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
     assert store.parts is _concept_alloc_of(owner).parts and store.parts is not f.store.parts
     assert owner._clause_store_ref() is store
     symbol = f.words['held'][1]
-    row = owner._csw_row_of(symbol)
+    row = owner._concept_row_of(symbol)
     original = f.store._concept_point(symbol).clone()
     with torch.no_grad():
         owner.similarity_codebook.W[row].fill_(.25)
@@ -727,7 +727,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
     else:
         word = recurrent_word(owner.interpret, [101], (), form='fixture-cue')
         with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[4])
+            owner.similarity_codebook.W[owner._concept_row_of(word)].copy_(atoms[4])
     monkeypatch.setattr(resolver, 'select', lambda choices, logits, **kwargs: 1)
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[3]), point=atoms[3],

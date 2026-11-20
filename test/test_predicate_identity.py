@@ -41,7 +41,7 @@ def test_registry_allocates_no_inventory_rows_for_part_or_implies(monkeypatch):
     f = SentenceFixture(monkeypatch)
     for relation in ('part', 'implies'):
         reference = f.registry.clause_reference(relation)
-        assert f.cs._csw_row_of(reference[1]) is None
+        assert f.cs._concept_row_of(reference[1]) is None
         assert reference[1] not in f.cs._concept_allocator.symbols
     assert 'grammatical-vp:conceptual-taxonomy:part' not in f.cs._frozen_named
     assert 'clause:implies' not in f.cs._frozen_named
@@ -99,4 +99,4 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     for role, source in zip((0, 2), (left, right)):
         torch.testing.assert_close(f.store.slots[source], leaves[role])
     assert dict(f.cs._csw_rows) == before
-    assert f.cs._csw_row_of(reference[1]) is None
+    assert f.cs._concept_row_of(reference[1]) is None

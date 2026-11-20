@@ -42,9 +42,9 @@ def seats(resolver):
 def unchanged_after_consolidation(resolver, before, seated):
     owner = resolver.components.owner
     new_rows = seats(resolver) - seated
-    promoted = {owner._csw_row_of(entry.symbol) for entry in owner.mtm.entries.values()
+    promoted = {owner._concept_row_of(entry.symbol) for entry in owner.mtm.entries.values()
                 if entry.symbol is not None}
-    promoted.update(owner._csw_row_of(symbol) for symbol in owner.__dict__.get('_recurring_readings', {}).values())
+    promoted.update(owner._concept_row_of(symbol) for symbol in owner.__dict__.get('_recurring_readings', {}).values())
     assert new_rows <= promoted
     unchanged(resolver, before, promoted_rows=new_rows)
 

@@ -79,7 +79,7 @@ def test_added_declaration_preserves_concept_identity_and_checkpoint_rows(tmp_pa
     try:
         owner = model._concept_owner()
         concept = known_concept(owner, torch.eye(owner.nDim)[0], order=0)
-        row = owner._csw_row_of(concept)
+        row = owner._concept_row_of(concept)
         point = owner.similarity_codebook.W[row].detach().clone()
         pool = owner.mtm
         store = model.symbolSpace.ltm_store
@@ -95,7 +95,7 @@ def test_added_declaration_preserves_concept_identity_and_checkpoint_rows(tmp_pa
             word_buckets='8', input_width=32, concept_rows=32)
         assert load(restored, str(checkpoint), require_match=True)
         current = restored._concept_owner()
-        assert current._csw_row_of(concept) == row
+        assert current._concept_row_of(concept) == row
         torch.testing.assert_close(current.similarity_codebook.W[row], point, rtol=0, atol=0)
         assert all(current._concept_allocator.formal_arguments[key] == value
                    for key, value in arguments.items())

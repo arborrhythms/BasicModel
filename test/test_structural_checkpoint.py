@@ -69,8 +69,8 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     alloc.identity[word] = (7, 41)
 
     layer = alloc.layer()
-    layer.assign_row(("shared", word), capacity=4, base=0)
-    layer.assign_row(("shared", meta), capacity=4, base=4)
+    layer.assign_row(("concept", word), capacity=4, base=0)
+    layer.assign_row(("concept", meta), capacity=4, base=4)
     layer.add_edge(5, 2, weight=0.4)
     with torch.no_grad():
         layer.values[0] = 0.625

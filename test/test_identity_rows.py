@@ -91,7 +91,7 @@ def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     assert all(not hasattr(resolver,k) for k in ('seen','cooccurrence','associations','predicates','cue_policy'))
     # Identity reads do not invoke an event chart, including after a row edit.
     resolver.components._ready = lambda: (_ for _ in ()).throw(AssertionError('identity chart'))
-    with torch.no_grad(): owner.similarity_codebook.W[owner._csw_row_of(cid)].copy_(a[1])
+    with torch.no_grad(): owner.similarity_codebook.W[owner._concept_row_of(cid)].copy_(a[1])
     candidates = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     torch.testing.assert_close(point(owner,cid),a[1],rtol=0,atol=0)
     # §50: the held native identity joins its live concept and its mention.
@@ -199,7 +199,7 @@ def test_loader_rejects_nonfinite_identity_without_modifying_the_row(native_bank
     owner = resolver.components.owner
     if native_bank:
         with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(identity),0] = float('inf')
+            owner.similarity_codebook.W[owner._concept_row_of(identity),0] = float('inf')
     else:
         store.slots[row, 0] = float('inf')
     held = store.slots.clone()

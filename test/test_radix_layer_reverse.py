@@ -113,7 +113,7 @@ def test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk():
     cs, interpret = _operator()
     word = recurrent_word(interpret, [1, 2], [], form='beta')
     obj = interpret.forward(word)
-    row = cs._csw_row_of(obj)
+    row = cs._concept_row_of(obj)
     target = cs.similarity_codebook.getW()[row].detach().clone()
     reader = RadixLayer(dim=8, initial_cap=8)
     assert reader.reverse(target, symbolic_space=cs) == b'beta'

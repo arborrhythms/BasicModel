@@ -6,7 +6,7 @@ from Understanding import ConceptualField, InputReconstruction
 
 def inventory(owner, field):
     ids = field.concept_ids
-    return torch.tensor([(-1 if int(cid) < 0 else owner._csw_row_of(int(cid)))
+    return torch.tensor([(-1 if int(cid) < 0 else owner._concept_row_of(int(cid)))
                          for cid in ids.reshape(-1).tolist()],
                         dtype=torch.long, device=ids.device).reshape(ids.shape)
 

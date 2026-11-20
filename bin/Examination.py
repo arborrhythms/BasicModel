@@ -30,8 +30,8 @@ def operated(model, opened, reading, *, proposals=False):
                 for batch in selected.any(-1).nonzero().flatten().tolist():
                     lanes = evidence[:,batch,selected[batch]].amax(1)
                     ids = opened.concept_ids if opened.concept_ids.ndim==1 else opened.concept_ids[:,batch]
-                    support = [(owner._csw_row_of(int(ids[c])),pole) for c,pole in (lanes>0).nonzero().tolist()
-                               if int(ids[c])>=0 and owner._row_order(owner._csw_row_of(int(ids[c])))==0]
+                    support = [(owner._concept_row_of(int(ids[c])),pole) for c,pole in (lanes>0).nonzero().tolist()
+                               if int(ids[c])>=0 and owner._row_order(owner._concept_row_of(int(ids[c])))==0]
                     observe_intersection(owner,support,batch=batch,examined=True)
             evidence = torch.where(selected[None,...,None],changed,evidence)
     return replace(opened,evidence=evidence)

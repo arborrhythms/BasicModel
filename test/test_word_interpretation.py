@@ -135,7 +135,7 @@ def test_interpret_reuses_definition_and_reverses_by_identity():
     assert obj != word
     assert ('sym', word) not in cs.concept_parts(obj)
     assert cs._concept_source_order(obj) == 0
-    row = cs._csw_row_of(obj)
+    row = cs._concept_row_of(obj)
     assert not interpret.no_object(word)
     before = len(cs.definitions._store())
     for sentence in range(1, 20):
@@ -143,7 +143,7 @@ def test_interpret_reuses_definition_and_reverses_by_identity():
         interpret.boundary()
     assert len(cs.definitions._store()) == before
     assert interpret.reverse(obj) == word
-    assert cs._csw_row_of(obj) == row
+    assert cs._concept_row_of(obj) == row
 
 
 def test_grammar_resolution_distinguishes_particular_and_kind():
@@ -292,7 +292,7 @@ def test_selected_relation_grammar_ends_the_interpreted_kinds(monkeypatch):
     selected = int(entry.actions[-1, 1])
     rules[selected] = rules[selected]._replace(reference_roles=('argin1', 'argin2'))
     language._compose_binary_rules = rules
-    word_rows = torch.tensor([cs._csw_row_of(obj) for obj in objects])
+    word_rows = torch.tensor([cs._concept_row_of(obj) for obj in objects])
     refs, orders = language.resolve_lexical_references(cs, word_rows, entry.concept_ids, entry.actions,
                                                      leaf_orders=torch.tensor([2, 2]))
     assert orders.tolist() == [2, 2]
@@ -332,7 +332,7 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     for tick in range(1, 20):
         assert interpret.forward(word, occurrence=(tick, 0)) == obj
         interpret.boundary()
-    row = cs._csw_row_of(obj)
+    row = cs._concept_row_of(obj)
     original = tuple(cs.concept_parts(obj))
     cs._serial = False  # witness the later definition through the parallel field
     witnessed = witness_object(cs, recurrent_word(interpret, [8], [], form='witnessed'))
@@ -349,7 +349,7 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     _, field = cs.cs_forward_content(read, cs.similarity_codebook.getW())
     slot = (cs._cs_field_concept_ids == obj).nonzero().flatten().item()
     assert field[slot, 0, 0, 0] > 0
-    assert cs._csw_row_of(obj) == row and tuple(cs.concept_parts(obj)) == before
+    assert cs._concept_row_of(obj) == row and tuple(cs.concept_parts(obj)) == before
     assert interpret.reverse(obj) == word
 
 

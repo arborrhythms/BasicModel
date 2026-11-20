@@ -110,7 +110,7 @@ def cost(model, meaning, target, *, stream=0):
         return meaning.roles.new_ones(())
     owner = model._concept_owner()
     order = owner._concept_source_order(values[0][0])
-    rows = [owner._csw_row_of(identity) for identity in owner.word_concepts(target)]
+    rows = [owner._concept_row_of(identity) for identity in owner.word_concepts(target)]
     rows = [row for row in rows if row is not None and owner._row_order(row) == order]
     if not rows:
         return meaning.roles.new_ones(())

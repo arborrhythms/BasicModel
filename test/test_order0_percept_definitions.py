@@ -76,7 +76,7 @@ def test_witnesses_write_alternatives_without_conjoining_their_literals():
     cs = _cs()
     word, A = recurrent_interpretation(cs, [7], [1], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
-    row = cs._csw_row_of(A)
+    row = cs._concept_row_of(A)
     recurrent_interpretation(cs, [8], [2], key='word')
     basic = cs.basic_percepts
     first, second = basic.index[((7,), (1,))], basic.index[((8,), (2,))]
@@ -115,7 +115,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     assert set(cs.concept_parts(word)) == set(atom_ids)
     fused = identity.word_rows[b'love']
     store = Spaces._concept_alloc_of(cs).layer()
-    row = cs._csw_row_of(A)
+    row = cs._concept_row_of(A)
     bp = cs.basic_percepts.words[word]
     assert cs.basic_percepts.occurrences[bp][0] == atom_ids
     raw = torch.tensor([[108, 111, 118, 101]])

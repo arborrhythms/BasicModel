@@ -20,8 +20,8 @@ def _chain_cs(*, batch_size=2):
     cs, cb, _, alloc = fixture(meaning_pairs=2, batch_size=batch_size)
     for i in range(8):
         assert word(cs, [(4, 1.)]) == i
-    rA = cs._csw_row_of(index_part_row(cs, cs.concept_id_at_row(3), cs.concept_id_at_row(7)))
-    rB = cs._csw_row_of(index_part_row(cs, cs.concept_id_at_row(5), cs.concept_id_at_row(4)))
+    rA = cs._concept_row_of(index_part_row(cs, cs.concept_id_at_row(3), cs.concept_id_at_row(7)))
+    rB = cs._concept_row_of(index_part_row(cs, cs.concept_id_at_row(5), cs.concept_id_at_row(4)))
     derived = cb.mereology
     selected = [3,rA,5,rB,6]
     derived.placement[selected] = directions([0,10,16,50,60], dtype=torch.float32)

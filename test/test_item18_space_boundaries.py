@@ -104,7 +104,7 @@ def test_relation_vector_read_ignores_endpoints_of_other_orders():
     rotation, _ = torch.linalg.qr(torch.randn(4,4))
     with torch.no_grad():
         for cid in (a,b):
-            row = owner._csw_row_of(cid)
+            row = owner._concept_row_of(cid)
             owner.similarity_codebook.W[row] = owner.similarity_codebook.W[row] @ rotation
     torch.testing.assert_close(store.evaluate(torch.eye(4)[0],torch.eye(4)[1],orders=(0,0)),before)
     assert store.consequents(torch.eye(4)[0], order=0) == []
@@ -167,7 +167,7 @@ def test_answer_cost_compares_only_target_concepts_of_the_answer_order():
     from Meaning import ConceptualMeaning
     from dataclasses import replace
     codes = torch.eye(2)
-    owner = NS(_csw_row_of=lambda identity: identity, _row_order=lambda row: row,
+    owner = NS(_concept_row_of=lambda identity: identity, _row_order=lambda row: row,
         _concept_source_order=lambda ref: ref[1], word_concepts=lambda word: (1,),
         similarity_codebook=NS(lookup_rows=lambda rows,**kw: codes[rows]))
     store = NS(parts=NS(contains=lambda ref: False))
@@ -232,7 +232,7 @@ def test_counted_view_preserves_extension_and_position():
     owner, speech, words = argument_inventory(('modifier_argin1',))
     speech.add(words[0],'modifier_argin1')
     cid = speech.concepts['modifier_argin1']
-    row = owner._csw_row_of(cid)
+    row = owner._concept_row_of(cid)
     bank = owner.similarity_codebook
     content = bank.trust.content[row].clone()
     place = bank.mereology.placement[row].clone()
@@ -315,7 +315,7 @@ def test_innovation_reads_each_role_only_on_axes_of_its_own_order():
     for cid in components.individual_ids:
         if owner._concept_source_order(cid) == 1:
             with torch.no_grad():
-                owner.similarity_codebook.W[owner._csw_row_of(cid)] = torch.eye(4)[0]
+                owner.similarity_codebook.W[owner._concept_row_of(cid)] = torch.eye(4)[0]
     after = components.innovation(points,torch.zeros_like(points),orders=orders,prediction_orders=orders)
     torch.testing.assert_close(after,before,atol=1e-6,rtol=0)
-    assert after.reshape(3,-1)[:,owner._csw_row_of(own)].gt(0).all()
+    assert after.reshape(3,-1)[:,owner._concept_row_of(own)].gt(0).all()

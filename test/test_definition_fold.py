@@ -12,7 +12,7 @@ def fixture():
     cs, cb, alloc, store, (a,b,base) = placed_fixture()
     ids = [cs.concept_id_at_row(row) for row in (a,b,base)]
     cid = index_part_row(cs, ids[0], ids[2])
-    row = cs._csw_row_of(cid)
+    row = cs._concept_row_of(cid)
     witness = alloc.parts.find((SYMBOL,ids[0]),(SYMBOL,cid))
     alloc.parts.add(ids[0],cid,truth_minus=.8)
     field = torch.zeros(sum(cs._order_caps()),1,2,2,requires_grad=True)

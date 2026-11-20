@@ -15,7 +15,7 @@ def argument_inventory(arguments, count=4):
     object.__setattr__(parts, '_fixture_owner', owner)
     words = tuple(recurrent_word(owner.interpret, [4+i], (), form=f'form-{i}') for i in range(count))
     for i, word in enumerate(words):
-        row = owner._csw_row_of(word)
+        row = owner._concept_row_of(word)
         bank.mereology.placement[row] = torch.eye(bank.mereology.meaning_pairs)[i]
         bank.mereology.placement_witnesses[row] = 1
     agreeing_views(owner, *words)
@@ -24,5 +24,5 @@ def argument_inventory(arguments, count=4):
 
 def view_counts(parts):
     bank = parts.owner.similarity_codebook
-    return {name: int(bank.trust.views[parts.owner._csw_row_of(cid)])
+    return {name: int(bank.trust.views[parts.owner._concept_row_of(cid)])
             for name, cid in parts.concepts.items()}

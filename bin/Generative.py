@@ -308,7 +308,7 @@ def lexical_candidates(owner,root,*,limit,chunk_size=256,retain_bytes=True):
         root=root.sum(1)/mask.sum(-1,keepdim=True).clamp_min(1)
     B,D=root.shape
     rows=sorted({row for cid in owner.interpret.lexical_identities()
-                 if (row:=owner._csw_row_of(cid)) is not None
+                 if (row:=owner._concept_row_of(cid)) is not None
                  and owner.word_surface_for_row(row)})
     width=getattr(getattr(owner.similarity_codebook,'mereology',None),'percept_event_width',None)
     heat=owner.relevance_weights(batch=B)

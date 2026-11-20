@@ -51,7 +51,7 @@ def form_exposure(resolver, cue, content):
     from test_reference_close import known_concept as mint
     owner = resolver.components.owner
     word = recurrent_word(owner.interpret, [101], (), form='fixture-cue')
-    row = owner._csw_row_of(word)
+    row = owner._concept_row_of(word)
     owner.similarity_codebook.W[row].copy_(cue)
     mint(owner, content, form=word)
 

@@ -4223,6 +4223,10 @@ class BaseModel(Mereology, nn.Module):
             layer._record_revision = getattr(layer, '_record_revision', 0) + 1
             layer._tensor_rows = _checkpoint_host_copy(
                 blob.get("tensor_rows") or {})
+            # A checkpoint from before concepts and symbols were split keyed a
+            # concept's row as shared with its symbol; the row is the concept's.
+            layer._tensor_rows = {(('concept', key[1]) if isinstance(key, tuple) and key[:1] == ('shared',)
+                                   else key): row for key, row in layer._tensor_rows.items()}
             layer._tensor_row_keys = {row: key for key, row in layer._tensor_rows.items()}
             layer._row_next = _checkpoint_host_copy(blob.get("row_next") or {})
             layer._rows = rows
@@ -4347,7 +4351,7 @@ class BaseModel(Mereology, nn.Module):
                     layer = owner_space._concept_allocator.layer(0)
                     addresses = []
                     for cid in ids.flatten().tolist():
-                        address = owner_space._csw_row_of(cid) if cid >= 0 else None
+                        address = owner_space._concept_row_of(cid) if cid >= 0 else None
                         addresses.append(-1 if address is None else address)
                     rows = torch.tensor(addresses, device=codes.device, dtype=torch.long).reshape(ids.shape)
                 elif rows is None:
@@ -6782,7 +6786,7 @@ class BasicModel(BaseModel):
         if cid is None:
             cid = cs0.mint_frozen_concept("reading")
             object.__setattr__(self, "_reading_cid", cid)
-        row = cs0._csw_row_of(cid)
+        row = cs0._concept_row_of(cid)
         if row is not None:
             cs0.prime_desire(torch.tensor([int(row)]), valence=v)
         return cid
@@ -6913,7 +6917,7 @@ class BasicModel(BaseModel):
                 if symbol is None:
                     continue
                 word = symbol if symbol in word_ids else owner.word_concept_of_object(symbol)
-                word_row = None if word is None else owner._csw_row_of(word)
+                word_row = None if word is None else owner._concept_row_of(word)
                 if word_row is not None:
                     form_rows[b, j] = word_row
         forms = owner.similarity_codebook.lookup_rows(form_rows.clamp_min(0), streams=True)
@@ -9100,7 +9104,7 @@ class BasicModel(BaseModel):
                 cid for cid in definitions.objects(word_id)
                 if cid not in definitions.word_ids))
             cid = candidates[0] if len(candidates) == 1 else None
-            row = None if cid is None else owner._csw_row_of(cid)
+            row = None if cid is None else owner._concept_row_of(cid)
             rep = answer_row[0, 0] if row is None else owner.similarity_codebook.getW()[row]
             root = answer_row.detach() if detach else answer_row
             rep = rep.detach() if detach else rep
@@ -11230,7 +11234,7 @@ class BasicModel(BaseModel):
                 continue  # an unresolved/clipped percept cannot claim a word
             p = columns[0]
             basic_ids[b, p] = owner.basic_percepts.words[int(word_id)]
-            word_row = owner._csw_row_of(int(word_id))
+            word_row = owner._concept_row_of(int(word_id))
             if word_row is not None:
                 word_ids[b, p] = int(word_id)
                 word_rows[b, p] = word_row
@@ -11476,7 +11480,7 @@ class BasicModel(BaseModel):
                 if not current_parts.issubset(set(self.perceptualSpace.fuse_parts(stored_parts))):
                     pending.append((b, p, key))
                     continue
-                row = owner._csw_row_of(A)
+                row = owner._concept_row_of(A)
                 if row is None:
                     pending.append((b, p, key))
                     continue
@@ -13003,7 +13007,7 @@ class BasicModel(BaseModel):
                     # Binding an occurrence ends pending status, but an
                     # unpromoted token still names its observed concept.
                     if (entry.transient is not None
-                            and concept_owner._csw_row_of(entry.transient) is None):
+                            and concept_owner._concept_row_of(entry.transient) is None):
                         name = pool.reading_of(key)
                         if name is not None:
                             replacements[entry.transient] = name
@@ -13018,7 +13022,7 @@ class BasicModel(BaseModel):
                     # Stable handles need not be dense physical row numbers:
                     # an admitted concept can lie inside this numeric range.
                     transient &= torch.tensor([
-                        concept_owner._csw_row_of(cid) is None
+                        concept_owner._concept_row_of(cid) is None
                         for cid in selected_ids.detach().cpu().tolist()
                     ], dtype=torch.bool, device=selected_ids.device)
                     lexical = (torch.full_like(selected_ids, -1) if selected_lexical_ids is None else
@@ -13928,7 +13932,7 @@ class BasicModel(BaseModel):
                 for i in indices[:counts[b]]).decode('utf8') if bool(valid[b].any()) else None
                 for b, indices in enumerate(chosen))
         vocabulary = sorted({row for cid in owner.interpret.lexical_identities()
-                             if (row := owner._csw_row_of(cid)) is not None})
+                             if (row := owner._concept_row_of(cid)) is not None})
         spellings = {row: owner.word_surface_for_row(row) for row in vocabulary}
         vocabulary = [row for row in vocabulary if spellings[row] is not None]
         counts = lengths.detach().cpu().tolist()
@@ -13966,7 +13970,7 @@ class BasicModel(BaseModel):
         identity = word_id if owner.interpret.no_object(word_id) else owner.definitions.deref(word_id)
         if identity is None:
             return None
-        row = owner._csw_row_of(identity)
+        row = owner._concept_row_of(identity)
         if row is None:
             raise ValueError("grammar target word has no live conceptual row")
         reference = owner.similarity_codebook.W
@@ -20712,7 +20716,7 @@ class BasicModel(BaseModel):
                 for index, order in enumerate(orders):
                     identity = owner.resolve_word_concept(
                         surface, order=order, previous=int(sources[b, w]))
-                    row = None if identity is None else owner._csw_row_of(identity)
+                    row = None if identity is None else owner._concept_row_of(identity)
                     if row is not None:
                         identities[b, w, index] = identity
                         values[b, w, index] = owner.similarity_codebook.lookup_rows(
@@ -20783,7 +20787,7 @@ class BasicModel(BaseModel):
                     for identity in frame.symbol_ids:
                         if not cues.intersection(owner.definitions.words(identity)):
                             continue
-                        seat = owner._csw_row_of(identity)
+                        seat = owner._concept_row_of(identity)
                         if seat is not None:
                             entries.append((identity, owner.similarity_codebook.lookup_rows(
                                 torch.tensor(seat, device=like.device), stream=b).detach().to(like),

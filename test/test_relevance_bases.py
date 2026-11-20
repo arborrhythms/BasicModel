@@ -212,7 +212,7 @@ def test_symbol_history_projection():
     cs = _cs_sparse_active()
     _, obj = recurrent_interpretation(cs, [1], 2, key="w1")
     parent = class_over(cs, [('sym', obj)])
-    row_object = cs._csw_row_of(parent)
+    row_object = cs._concept_row_of(parent)
     assert row_object is not None
     p = cs.symbol_history_priority({int(obj): 5.0})
     assert p is not None and float(p[row_object]) >= 5.0

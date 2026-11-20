@@ -198,7 +198,7 @@ def fixture(monkeypatch):
     for word,value in (('subject',.2),('move',.3),('shift',.4)):
         symbol=f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
-            f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
+            f.cs.similarity_codebook.W[f.cs._concept_row_of(symbol)].fill_(value)
     from chunk_fixtures import higher_word
     higher_word(f, 'subject')
     f.ops['change']=SimpleNamespace(compose=lambda a,b:verb(a,b))
@@ -384,7 +384,7 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
         ideas.append(f.store.occurrence_of(row))
     entry=f.cs.mtm.entries[token]
     assert entry.symbol is not None and len(entry.occurrences)==3
-    promoted_row = f.cs._csw_row_of(entry.symbol)
+    promoted_row = f.cs._concept_row_of(entry.symbol)
     from ConceptPlacement import seed
     torch.testing.assert_close(f.cs.similarity_codebook.W[promoted_row],
                                seed(entry.symbol, f.cs.similarity_codebook.W[promoted_row]))

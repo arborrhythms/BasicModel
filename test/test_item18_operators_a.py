@@ -180,8 +180,8 @@ def test_73_lowered_word_keeps_its_selected_concept_through_an_event_close(monke
     low = f.cs.new_concept(order=1)
     f.cs.interpret.define(f.words['kind'][0], low)
     with torch.no_grad():
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(high)].fill_(.4)
-        f.cs.similarity_codebook.W[f.cs._csw_row_of(low)].fill_(.2)
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(high)].fill_(.4)
+        f.cs.similarity_codebook.W[f.cs._concept_row_of(low)].fill_(.2)
     f.ops['lower_unary'] = SimpleNamespace(compose=lambda value: value)
     reading, _, _ = record(f, ('change', ('lower_unary', 'kind'), ('modifier', 'move', 'shift')))
     lowered = next(i for i, (kind, local, _) in enumerate(reading.actions.tolist())

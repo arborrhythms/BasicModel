@@ -163,7 +163,7 @@ def native_provenance(sink):
                     word = owner.interpret.word_for_form(form)
                     concepts=[]
                     for cid in dict.fromkeys((word, *owner.definitions.objects(word))):
-                        physical = owner._csw_row_of(cid)
+                        physical = owner._concept_row_of(cid)
                         indices = (identities == cid).nonzero().flatten()
                         evidence = result[indices,b,p].amax(0) if len(indices) else result.new_zeros(2)
                         order0 = indices[indices < direct.shape[0]]

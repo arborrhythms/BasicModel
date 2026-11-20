@@ -74,7 +74,7 @@ def test_interpreted_object_keeps_the_native_features_in_one_row():
     # A reads native features. B's standing bounds are no perceptual
     # definition: only testimony can give the object its membership.
     assert cs._concept_source_order(A) == 0
-    a_row = cs._csw_row_of(B)
+    a_row = cs._concept_row_of(B)
     assert a_row is not None
     assert cs.concept_weights(a_row) == []          # no edges at order 0
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
@@ -86,7 +86,7 @@ def test_interpreted_object_keeps_the_native_features_in_one_row():
     assert {(p, n) for row, p, n in record if row == a_row} == {(percept, False)}
     assert cs.basic_percepts.occurrences[percept] == ((1, 2), (int(WORD),))
     b_row = cs._csw_concept_row(0, B)
-    assert A == B and b_row == a_row == cs._csw_row_of(A)
+    assert A == B and b_row == a_row == cs._concept_row_of(A)
     assert not cs.definitions.objects(A), "native form features do not invent an object"
 
 
@@ -202,7 +202,7 @@ def test_getparameters_includes_csw_after_population():
     assert not csw
     after_ids = set(id(p) for p in after)
     assert id(cs.order_zero.value) in after_ids
-    assert sum(w for _, w, _ in cs.order_zero.entries(cs._csw_row_of(A))) > 0
+    assert sum(w for _, w, _ in cs.order_zero.entries(cs._concept_row_of(A))) > 0
     assert len(after) >= len(base)
 
 

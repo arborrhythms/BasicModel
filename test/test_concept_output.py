@@ -38,7 +38,7 @@ def test_concept_output_resolves_each_batch_identity_and_preserves_unknown():
     with torch.no_grad():
         reader.weight.copy_(torch.tensor([[1.,0.,0.,0.],[0.,0.,1.,0.]])); reader.bias.zero_()
     head = SimpleNamespace(field_readout=reader,outputShape=(2,1))
-    owner = SimpleNamespace(_csw_row_of=lambda cid: {17:0,23:1}.get(cid))
+    owner = SimpleNamespace(_concept_row_of=lambda cid: {17:0,23:1}.get(cid))
     field = ConceptualField(carrier._concept_ids,carrier._concept_activations,
         torch.zeros(2,2,2,dtype=torch.long),torch.zeros(2,2,2,dtype=torch.long),None)
     result = OutputSpace.read_field(head,field,owner)

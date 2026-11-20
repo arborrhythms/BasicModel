@@ -242,11 +242,11 @@ def test_later_candidate_reads_a_promoted_classes_order_after_epoch_withdrawal()
 
     lower = promote(1,{a:2.,b:1.})
     assert alloc.order_of(lower) == 1
-    lower_row = cs._csw_row_of(lower)
+    lower_row = cs._concept_row_of(lower)
     assert cs._row_order(lower_row) == 1
     begin(model)
     upper = promote(1,{lower_row:2.,c:1.})
-    assert alloc.order_of(lower) == 1 and cs._row_order(cs._csw_row_of(upper)) == 2
+    assert alloc.order_of(lower) == 1 and cs._row_order(cs._concept_row_of(upper)) == 2
     assert store.parts.find((SYMBOL,lower),(SYMBOL,upper)) is not None
     begin(model)
     assert alloc.order_of(lower) == 1 and alloc.order_of(upper) == 2

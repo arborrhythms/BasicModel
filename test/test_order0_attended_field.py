@@ -60,7 +60,7 @@ def test_inventory_outlives_the_eight_attended_rows():
         assert y > .76
         torch.testing.assert_close(read[slot[0], 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
         assert int(read[..., 0].count_nonzero()) == 1
-    assert all(cs._csw_row_of(cid) == row for cid, row in definitions)
+    assert all(cs._concept_row_of(cid) == row for cid, row in definitions)
 
 
 def test_formation_stops_aggregation_until_the_next_turn():
@@ -123,7 +123,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
     _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)
     torch.testing.assert_close(restored.subspace._concept_ids, ids)
     torch.testing.assert_close(restored.subspace._concept_codes, codes)
-    assert restored._csw_row_of(definitions[11][0]) == definitions[11][1]
+    assert restored._concept_row_of(definitions[11][0]) == definitions[11][1]
 
 
 def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
@@ -194,7 +194,7 @@ def test_batch_members_bind_independently_within_eight_rows():
     assert cs._cs_field_concept_ids[0].tolist() == cids
     # Each batch member's concept reads its own row, at tanh(1).
     for b in range(12):
-        y, lanes = order_zero_expected(cs, cs._csw_row_of(cids[b]), published_presence(cs, b))
+        y, lanes = order_zero_expected(cs, cs._concept_row_of(cids[b]), published_presence(cs, b))
         assert y > .76
         torch.testing.assert_close(a0[0, b, 0], lanes.to(a0), atol=1e-5, rtol=1e-5)
     content, field = cs.cs_forward_content(a0, cs.similarity_codebook.getW())

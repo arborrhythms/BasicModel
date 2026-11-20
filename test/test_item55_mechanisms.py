@@ -111,7 +111,7 @@ def _stream_code_banks(tmp_path,monkeypatch):
             # native identity cache deliberately does not vary by stream.
             word=recurrent_word(owner.interpret, (), (), form='cat')
             cid=owner.interpret.forward(word)
-            row=owner._csw_row_of(cid)
+            row=owner._concept_row_of(cid)
             point=book.lookup_rows(torch.tensor(row))
             meaning=ConceptualMeaning(torch.stack((point,point*0,point*0)),
                 torch.tensor([True,False,False]),role_refs=(('sym',cid),None,None))
@@ -127,7 +127,7 @@ def _stream_code_banks(tmp_path,monkeypatch):
             # memberships. One word seat accumulates contexts across streams.
             for form in ('context-a', 'context-b'):
                 other=recurrent_word(owner.interpret, (), (), form=form)
-                other_row=owner._csw_row_of(other)
+                other_row=owner._concept_row_of(other)
                 owner._sentence_seen_rows[0].fill_(-1)
                 owner._sentence_seen_rows[0, :2] = torch.tensor([row,other_row])
                 owner.prime_seen(torch.tensor([[row,other_row]]))

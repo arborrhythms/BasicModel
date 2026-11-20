@@ -798,7 +798,7 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         other_word = int(word_view(isp, 'concept_ids')[0, 1])
         other_row = int(word_view(isp, 'object_rows')[0, 1])
         assert row != other_row
-        assert owner._csw_row_of(word) is not None
+        assert owner._concept_row_of(word) is not None
         reference = isp._ar_word_object_atoms
         target = m._byte_tables(*reference.shape[:2])
         before = _surface_byte_cost(m, reference, target)

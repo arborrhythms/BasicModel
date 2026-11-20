@@ -67,7 +67,7 @@ def test_later_sentence_reads_a_promoted_name_from_its_current_reference():
     model = SimpleNamespace(inputSpace=source, _concept_owner=lambda: owner)
     obj = owner.new_concept(order=0)
     owner.mtm.promote(('name', word), obj)
-    reference = owner._csw_row_of(obj)
+    reference = owner._concept_row_of(obj)
     refresh_words(model, 1)
     assert word_view(source, 'object_ids').tolist() == [[transient, obj]]
     assert word_view(source, 'object_rows').tolist() == [[row, reference]]
@@ -193,8 +193,8 @@ def test_75_checkpoint_reallocation_preserves_every_row_and_identity():
     from GrammarConceptCheckpoint import row_plan
     from test_cs_sparse_weights import _cs
     owner = _cs(nS=16, order=2)
-    layer = dict(nOutput=16, tensor_rows={('shared', 10): 14, ('shared', 11): 15,
-                                       ('shared', 12): 2})
+    layer = dict(nOutput=16, tensor_rows={('concept', 10): 14, ('concept', 11): 15,
+                                       ('concept', 12): 2})
     allocator = dict(reference_orders={10: 0, 11: 1, 12: 2})
     indices, seats, additions = row_plan(owner, allocator, layer, [])
     assert not additions and sorted(indices) == list(range(16))
@@ -263,7 +263,7 @@ def test_derived_concept_projection_and_rebuild_are_identical():
     owner, bank, _, _ = fixture(meaning_pairs=16)
     bank = owner.similarity_codebook
     identity = owner.new_concept(order=0)
-    row = owner._csw_row_of(identity)
+    row = owner._concept_row_of(identity)
     with torch.no_grad():
         # The placement and radius of a changed word in the failed native
         # continuation. They expose repeated normalization's float32 drift.

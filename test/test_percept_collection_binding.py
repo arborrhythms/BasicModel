@@ -20,7 +20,7 @@ def test_bind_percept_collection_reads_membership_not_coordinate_overlap(named_s
     with torch.no_grad():
         understood=model.understand(model.inputSpace.prepInput([dict(text='collection',scalar=value)]))
         present=model._scalar_present[0]
-        description=owner.similarity_codebook.lookup_rows(owner._csw_row_of(collection))
+        description=owner.similarity_codebook.lookup_rows(owner._concept_row_of(collection))
         request=with_slots(ConceptualMeaning.from_description(description),(('referent',0),))
         request=replace(request,bindings=dict(bindings(request),_forward_references=((0,word),),
             _reference_sites=((0,(('member_order',0),)),)))
@@ -61,7 +61,7 @@ def test_binding_a_lowered_collection_keeps_its_order_when_the_word_also_names_a
     assert owner.interpret.preferred(word, batch=None) == (kind,)
     with torch.no_grad():
         model.understand(model.inputSpace.prepInput([dict(text='gamma', scalar=2.)]))
-        point = owner.similarity_codebook.lookup_rows(owner._csw_row_of(collection))
+        point = owner.similarity_codebook.lookup_rows(owner._concept_row_of(collection))
         request = with_slots(ConceptualMeaning.from_description(point), (('referent', 0),))
         request = replace(request, bindings=dict(bindings(request),
             _forward_references=((0, word),), _reference_sites=((0, (('member_order', 0),)),)))

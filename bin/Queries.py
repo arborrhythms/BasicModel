@@ -525,7 +525,7 @@ def _existing_row(space, reference):
     if layer is None:
         raise ValueError('query conceptual reference store is unavailable')
     # Row namespaces are addresses in the existing owner, not new semantics.
-    for namespace in ('shared', 'snap', 'pool'):
+    for namespace in ('concept', 'snap', 'pool'):
         row = layer.row_of((namespace, ref[1]))
         if row is not None:
             return int(row)

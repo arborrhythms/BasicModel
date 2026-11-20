@@ -589,7 +589,7 @@ def test_allocator_square_growth_moves_only_the_everything_bias():
     assert layer._rows == [2]
     assert layer._cols == [new_n]
     assert layer._index == {(2, new_n): 0}
-    assert layer._tensor_rows[("shared", 7)] == 2
+    assert layer._tensor_rows[("concept", 7)] == 2
     torch.testing.assert_close(layer.values.detach(), torch.tensor([0.625]))
 
 

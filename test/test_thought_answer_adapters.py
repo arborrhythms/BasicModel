@@ -16,7 +16,7 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
     model, registry, memory, part, _whole = _catalog_world()
     # A code-answer adapter consumes a placed atom, not an unplaced class.
     with torch.no_grad():
-        model.conceptualSpace.similarity_codebook.W[model.conceptualSpace._csw_row_of(part[1])].fill_(.5)
+        model.conceptualSpace.similarity_codebook.W[model.conceptualSpace._concept_row_of(part[1])].fill_(.5)
     query = registry.form("exist", registry._payload(part))
     with model._query_boundary_scope((0,)):
         selected = model.run_selected_thought(query, work_budget=128)

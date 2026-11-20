@@ -24,7 +24,7 @@ def part_edges(owner, *, authority=True):
                 continue
             from FamiliarTier import member_row
             left = member_row(owner, int(parts.ref_kinds[relation, 0]), member)
-            right = owner._csw_row_of(parent)
+            right = owner._concept_row_of(parent)
             if left is None or right is None or left == right:
                 continue
             if count >= len(src):
@@ -38,7 +38,7 @@ def part_edges(owner, *, authority=True):
         # An order-zero located conjunction records its same-order form
         # members as field constituents, rather than a next-order raise.
         for parent in classes:
-            right = owner._csw_row_of(parent)
+            right = owner._concept_row_of(parent)
             if right is None:
                 continue
             for ref in allocator.refs(parent, 'part') if hasattr(allocator, 'refs') else ():
@@ -48,7 +48,7 @@ def part_edges(owner, *, authority=True):
                     continue
                 if ref[0] == 'sym' and not allocator.class_member(ref[1], parent):
                     continue
-                left = owner._csw_row_of(ref[1])
+                left = owner._concept_row_of(ref[1])
                 if left is None or left == right:
                     continue
                 if count >= len(src):

@@ -81,7 +81,7 @@ def trusted_premises(cs, *references):
     assert trust.tracked
     with torch.no_grad():
         for _, identity in references:
-            row = cs._csw_row_of(identity)
+            row = cs._concept_row_of(identity)
             bank.W[row, trust.start:trust.start+2*trust.width] = 0.
             bank.W[row, trust.start] = 1.
             trust.capture(row)

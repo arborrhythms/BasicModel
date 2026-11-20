@@ -305,7 +305,7 @@ def test_no_row_on_a_first_reading(lesson):
     assert owner.interpret.lookup_word(parts, wholes, form=form, reading=('again', 0)) == word
     row = basic.words[word]
     assert bool(basic.promoted[row]) and row == rows_before
-    c_row = owner._csw_row_of(word)
+    c_row = owner._concept_row_of(word)
     assert owner._row_order(c_row) == 0 and owner.concept_percepts(c_row) == [row]
     lesson['nominated'] = (word, row, c_row)
 

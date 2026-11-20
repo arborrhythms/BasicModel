@@ -24,9 +24,9 @@ def test_91_observed_formal_membership_is_also_a_field_definition():
     cs, speech, words = argument_inventory(('change_argin1',))
     word = words[0]
     speech.add(word, 'change_argin1')
-    cs._observed_knowing[0, cs._csw_row_of(word), 0] = 1.
+    cs._observed_knowing[0, cs._concept_row_of(word), 0] = 1.
     context = cs.placement_context(0)
-    assert context[cs._csw_row_of(speech.concepts['change_argin1'])] == 1.
+    assert context[cs._concept_row_of(speech.concepts['change_argin1'])] == 1.
 
 
 def test_91_one_step_uses_only_context_and_negatives_of_the_rows_order():

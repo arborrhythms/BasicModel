@@ -190,8 +190,8 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     store = LTM0(8, capacity=4)
     attach_clause_index(SimpleNamespace(), store, cs)
     with torch.no_grad():
-        cs.similarity_codebook.W[cs._csw_row_of(left)].fill_(.25)
-        cs.similarity_codebook.W[cs._csw_row_of(right)].fill_(.5)
+        cs.similarity_codebook.W[cs._concept_row_of(left)].fill_(.25)
+        cs.similarity_codebook.W[cs._concept_row_of(right)].fill_(.5)
     store._predicate_kind = lambda ref: 'part'
     clause = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(left, left, right))
@@ -283,7 +283,7 @@ def _model_turnover(tmp_path, monkeypatch, capsys, *, declared):
                 owner = model._concept_owner()
                 for text in sentences:
                     word, obj = words[text]
-                    point = owner.similarity_codebook.lookup_rows(owner._csw_row_of(obj)).detach().clone()
+                    point = owner.similarity_codebook.lookup_rows(owner._concept_row_of(obj)).detach().clone()
                     extension = (Node(ConceptSet(torch.tensor([obj], device=point.device),
                         point.new_tensor([[1., 0.]])), reference=('sym', obj)),)
                     meaning = replace(ConceptualMeaning.from_description(point),

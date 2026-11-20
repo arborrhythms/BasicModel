@@ -48,7 +48,7 @@ class PartClosing:
     def _point(self, symbol):
         if symbol in (None, -1, 0):
             return None
-        row = self.owner._csw_row_of(int(symbol))
+        row = self.owner._concept_row_of(int(symbol))
         return None if row is None else self.owner.similarity_codebook.lookup_rows(row).detach()
 
     def _reference(self, value):
