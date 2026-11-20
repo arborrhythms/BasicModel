@@ -15669,3 +15669,265 @@ Read-only, for rule 64 (Alec, §19.90: "There is one model time, we can sinusoid
 | No weight of the order-zero Sigma on a time | So (§23.R); as the census read the source in mid-pass, the Sigma of order zero reads the signed values that come out of the Not and no place and no time. |
 
 **Review (Claude).** The code is one already, and the comparison is done, but before the operators and for them: they are given ages and never the present beside a stamp. Three things stand between the source and rule 64: the second clock; the encoders made on the spot; and that a concept keeps no `.when`. *Put to Alec:* whether an age given to the chooser and the operators is the comparison he means, or whether they are to be given the present and the stamp and compare them by their own logic; and whether a concept is to keep the stamp of its row when the row is promoted. Round 6 builds what he answers; until then nothing of this is changed.
+
+### 23.4.1 Round 4, second pass: order zero as Pi, Not, Sigma on the basic percepts' rows (2026-11-19)
+
+*The return of the implementer (Claude on Opus), as written, then the review. "The coordinator" in it is Claude.*
+
+Checkout `/Users/arogers/github/WikiOracle/basicmodel`, branch `main`. Started at `8e0a86ab59`. `d156e892cd` (rule 64, the clock's code) landed beside this pass and is not mine. Commits, local, not pushed, each ending with the Co-Authored-By line:
+
+| Commit | What |
+| --- | --- |
+| `effdb78fbe` | `bin/Layers.py`: `NotLayer3`, `SparseSigmaLayer3`, `_EntryRead` (the classes, usable above order zero) |
+| `1f58fe1511` | order zero rebuilt on them; the dense Sigma, the joined vector and the columns removed; certificates and ports |
+
+No seed pinned, no skip or xfail added, no bar or iteration count changed, nothing under `doc/` and not the spec edited.
+
+#### 0. Before anything else: two red cases, and test_81
+
+1. **`test_item18_expect.py::test_81` still fails, and the teacher is not why.** The teacher is now exact (numbers in section 4). What stops it is the expectation map, `owner.expect_stack` (a `SigmaPiStack`, one free `PiLayer3` of 64 rows over the 44 order-zero concepts, then a Sigma). After the 200 presentations its output is the same for both sentences to 0.004: on `alpha gamma` it gives alpha .469, gamma .395, beta .479, delta .401; on `beta delta` .465, .392, .475, .398 (a second run: about .17 on all four). Its Pi rows read nearly the same on both readings (mean .0052 and .0051, greatest .336 and .329). Their weights on rows 12 to 15 are .047 to .055, the same as the mean over all rows, .051: the Pi never learned to select the concept that was read. Each Pi row is a product over all 44 concepts, 42 of them at the floor in any reading, and a membership at the floor passes no derivative. So the Sigma after it learns one constant, near the mean of the targets. Measured: `values[hidden] > values[absent].max()` gives .1499 against .1720 in one run and .2244 against .2967 in another. Not repaired: it is the expectation map's learning, outside this pass.
+2. **`test_one_backward_standing.py::test_native_packing_after_training_with_selected_backward` fails some of the time on my source.** HEAD: 0 failures in 9 runs of its three cases (27 cases). Mine: about 5 failures in 27 cases (`[False-0.0]`, `[False-0.5]` and once `[True-0.0]`). The failing assertion is `test_packed_reconstruction_parity.py:121`: the root of `2 plus 1` carries the place and time stamp of its third word (`1`) and not of its first (`2`). Probed:
+   - `ChunkJournal.publish` is not involved: it never matches an entry (found is False), and the stamp comes from the head.
+   - In the failing runs the model had minted two fewer concepts before the check (identity 8039, against 8041 in the passing runs).
+
+   So which chunk heads the reduction is a draw of the walk, and with the concepts reading exactly, the draw now lands the other way some of the time. **Not traced to its producer; left failing.** It is in the list as a flaky failure.
+3. `test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path` failed in one full run. It fails at HEAD too, in an export of HEAD, and passes alone on my source. It is flaky already, so it is not mine.
+
+#### 1. What was built, by file and function, and which of Pi, Not, Sigma each is
+
+The pass was built three times, in the order the instructions came. Nothing was committed until the last form, so no commit is reverted.
+
+1. Rule 59's two channels, sparse: a for weight and an against weight on each row.
+2. The coordinator's first amendment: a monotone Sigma with Not entries made only by the Not.
+3. Alec's answer: the gradient may make a Not entry.
+
+Only the third is committed.
+
+**`bin/Layers.py`**
+
+- **`NotLayer3`** (Not). It holds the row count and no parameter.
+  - `signed(lanes)` gives each row's for less against, clamped to -1 to 1.
+  - `forward(lanes)` gives the rows' signed values.
+  - `exchange(signed, value)` gives a row as an entry of that sign reads it: as it is, or exchanged.
+  - `entries(sigma)` says which entries of a Sigma are Not entries.
+  - `make(sigma, concept, row, weight)` makes an entry a Not entry: it keeps its size and takes the minus sign, or one is written.
+  - `teach_omission(sigma, concept, lanes, inputs, came, expected)` is the Not's teaching by omission. Where the concept was read above .5 and did not come, each row present there and present in no reading where the concept came has its entry made a Not entry. *Provisional:* the rule and its floor of .5 are mine.
+- **`SparseSigmaLayer3`** (Sigma). One learned signed number for each entry, `value` (`[entries]`, the parameter). Its size is the Sigma's weight, `weight = |value|`, which is never below zero. Its sign is the Not's entry.
+  - Each entry also has `entry_row` (its concept) and `entry_input` (its row), and `count` says how many are written, in capacity allocated beforehand.
+  - The compressed rows (`crow`, `order`) and the index of columns (`ccol`, `corder`) are rebuilt on each addition.
+  - `add` writes or raises an entry at a weight of zero or above, keeping its sign; a negative weight is refused.
+  - Also `find`, `entries(row)` (row read, weight, negated), `rows_reading(row)`, `entry(rows, inputs)` and `forward(signed, inputs, rows)`.
+  - `reverse(y, inputs)` is least squares through the signed entries.
+  - `_load_from_state_dict` refuses a dense checkpoint.
+  - It has no code, no place and no bias.
+- **`_EntryRead`** (Not, then Sigma, for one entry). Forward: `exchange(s, v) * |v|`, which equals `v s`. Backward: `s` with respect to `v` at every `v`, zero included.
+
+  *Why this form:* the size and the sign live in two named places, `SparseSigmaLayer3.weight` and `NotLayer3.exchange` or `entries`, while the gradient passes through zero. Written as the product of `sign(v)` and `|v|`, autograd would give no derivative at exactly zero, and an entry started at zero (a candidate) could never move. The custom backward is the derivative of `v s`.
+- `ConceptMembers`: its docstrings say "entry" in place of "column".
+
+**`bin/OrderZero.py`**
+
+- The module docstring is rewritten. `PerceptPi` (Pi) is unchanged.
+- **`read_word(evidence, mask, value)`**: the Pi of the word's members (unchanged), then `NotLayer3.signed`, then `_EntryRead` with the concept's entry on its row. It reads no code, and the `place` and `content_width` arguments are gone.
+- **`combine` and `OrderZeroSigma` are deleted.**
+
+**`bin/Spaces.py`** (`ConceptualSpace`)
+
+- `install_order_zero`: `order_zero_not = NotLayer3(basic capacity)` (Not) and `order_zero = SparseSigmaLayer3(basic capacity, n0, 2 * (basic capacity + n0))` (Sigma). `value` is added to `params`, with the hook `_zero_frozen_entries`, which zeroes the gradient of a frozen concept's entries.
+- `order_zero_field(lanes, inputs, rows)`: Not, then Sigma, then `signed_lanes`.
+- `order_zero_reading(rows, percepts)`: each word's entry on its row, `[..., 1]`.
+- `cs_read_percept_field` passes `perception.values` and the keys' rows to `order_zero_field`.
+- `_start_order_zero_column` is renamed `_start_order_zero_entry`.
+  - A member writes a for entry at one.
+  - A Not member writes a Not entry through `NotLayer3.make`.
+  - A member at weight zero writes a candidate entry at zero, which the gradient signs (*provisional*; needed by `test_definition_integrity`, below).
+  - An entry is for or Not, never both: a member of the other kind where a weighted entry stands leaves it as it is (*provisional*).
+- `add_concept_feature` calls it for every new member.
+- **Deleted:** `order_zero_input`, `follow_members`, `_follow_moved`, `_zero_frozen_columns`, the read of `place` in `reduce_aligned_word_peers`. Docstrings: columns become entries.
+
+**Elsewhere in `bin/`**
+
+- `bin/NumericPercepts.py` `read`: no `combine`, no place codes; the presence goes to `order_zero_field(presence, nominated, rows)`.
+- `bin/BasicPercepts.py`: **deleted** `read_pair`, `read_codes`, `column` and `moved`. `follow_forms` and `follow` still rewrite the stored code and against lane, and return the rows that changed. The code (`codes`, `against_codes`) is unchanged.
+- `bin/FamiliarTier.py`: a new conjunction calls `basic_percepts.follow(...)` alone.
+- `bin/ConceptLessons.py`: the names' optimizer is on `order_zero.value`.
+
+#### 2. What went, and what each reader became
+
+| What went | Its readers, and what they became |
+| --- | --- |
+| `OrderZeroSigma` (its dense `weight` and `against`) | `install_order_zero` builds `SparseSigmaLayer3`. A checkpoint holding `order_zero.weight` is **refused**, with the reason: what its columns learned has no reading on rows, and the members are in the allocator's record. *Provisional:* refused rather than read, since telling a column at its start from a learned one needs the deleted columns. `ConceptLessons`, `test_grounded_xor` and the probes use `order_zero.value`. |
+| `OrderZero.combine` as the Sigma's input | `cs_read_percept_field`, `NumericPercepts.read`: the rows' values go to the Not. |
+| `member_column`, `follow_members`, `_follow_moved`, `BasicPercepts.column`, `moved` | none left: an entry reads a row, not a code, so nothing follows a code that moves (certificate 53 (c), restated). |
+| `read_pair`, `read_codes` | none left in `bin/`. `basic_fixtures.order_zero_expected` reads the entries. |
+| `read_word`'s read of a code and place | it reads the entry's learned number. |
+| `order_zero_reading`'s staged column and codes | `[..., 1]`, the entry. Models' staging, gathering and the compiled chunk are unchanged in code (shape generic). `test_compiled_word_chunk` gives `[batch, width, 1]`. |
+
+#### 3. Certificate 54 (`test/test_item17_symbols.py`), all pass
+
+- **(a)** `test_54a_no_function_that_computes_a_concept_of_order_zero_takes_a_percepts_code`. An AST check over `NotLayer3`, `SparseSigmaLayer3`, `read_word`, `NumericPercepts.read`, `order_zero_reading`, `install_order_zero`, `order_zero_field`, `_start_order_zero_entry`, `cs_read_percept_field`, `add_concept_feature` and `Omission.concept_teacher`. None names an attribute of the code (`codes`, `against_codes`, `code`, `read_codes`, `read_pair`, `lanes`, `column`, `member_column`, `value_code`, `collection_code`, `part_codes`, `whole_codes`, `content_width`) or a function that joins codes. And `OrderZeroSigma`, `member_column`, `follow_members`, `order_zero_input`, `read_pair`, `read_codes` and `_follow_moved` are named nowhere in `bin/`.
+- **(b) and (d)**, `test_54bd_...` in the model of the expectation's test: each word's concept reads tanh(1) (one before the squash) where its row is present, and **0.0 on every reading of the other sentence**: alpha and gamma on "beta delta", beta and delta on "alpha gamma".
+- **(c)** `test_54c_...`: archer on archer .7616, **archer on archery 0.0** (the row reads for 1 and against 1, and the Not gives 0), archer on reach 0.0, is on is .7616, **is on this 0.0**.
+- **(d) What the expectation's teacher reads now.** With the second word omitted, `concept_teacher` gives `[alpha, gamma, beta, delta] = [.7616, .7616, 0, 0]` on "alpha gamma" and `[0, 0, .7616, .7616]` on "beta delta". It held so through all 200 presentations of test_81 (on the two-channel build: .762, .762, 0, 0 at the start; .90, .75, 0, 0 at presentation 50; .94, .75 at 198), where it had read the other sentence's words at .65 to .75 before. test_81 still fails: see section 0, item 1.
+
+#### 4. Certificates restated or retired (old, then new)
+
+**Certificate 51 (Alec's amendment: two channels withdrawn)**
+
+- **(a)** Old: `A = -U` at start, and two channels read what one input read. New: no weight below zero, in the lesson at its start (5 entries, least 1.0) and after training each learning case of certificate 23 (least weight 0.0).
+- **(b)** Old: the gradient reaches the two channels apart. New: with no Not entry, raising any row never lowers any concept (drawn weights, every row raised).
+- **(c)** Old: a concept of absence learned on the against channel. New: the Not gives for 1.0, against -1.0, both 0.0, and exchanged -1, 1, 0.
+- **(d)** New, `test_51d_a_not_entry_is_made_by_the_gradient_and_by_omission`:
+  - *By the gradient alone.* Before: entry (row 0, weight 1, for), reads .762 and -.762. After 500 Adam steps: entry (row 0, weight .549, **Not**), reads -.50 and .50.
+  - With one signed value for each row, a concept cannot read zero where its row is read for and one where it is read against. The two readings are each other's opposite, so it settles between them. I relaxed the assertion to "a Not entry, reading against > 0 > reading for". That is a consequence of withdrawing the two channels.
+  - *By omission alone, no gradient step:* `teach_omission` makes rows 1 and 2 (X, AX) Not entries, and X alone reads below zero.
+- Old `test_a_sigma_saved_on_one_input...`: retired. Replaced by `test_a_checkpoint_of_the_dense_sigma_is_refused_with_the_reason`.
+
+**Certificate 23 (`test_item17_order_zero.py`), restated on rows**
+
+Each concept has an entry on every row, at zero, Adam at .05 for 2,000 steps, the omission teaching every 50 steps.
+
+- **(a)** No Not entry, every weight at zero or above, nothing against, raising an input never lowers. Readings: () 0, A .989, B .989, X 0, AB .99999. **Holds: nothing teaches against here.**
+- **(b)** Patterning: A .987, B .987, AB .0002. Inhibition: A .991, AX .00001, X -.875, with 2 Not entries.
+  - **The Not entries of (b) are made by the gradient, not by the omission.** On X and AX in inhibition, and on AB in patterning, the gradient crosses zero before the omission teaching first runs at step 49: in a probe, the teaching found them already Not and made none.
+  - This is what Alec now allows. The certificate's wording, "from what was expected and what came", still holds: the error is that.
+- **(c)** XOR with no Not entry: no omission teaching, and every learned number held at zero or above after each step (as the old test projected). Readings .0001, .993, .993, .0001; Not entries 0.
+
+**Certificate 5**
+
+- "the combined vector is one less the product of the gaps": **retired** (no combined vector). Replaced by `test_the_sigma_reads_each_rows_signed_value_and_an_absent_row_changes_nothing` (against a dense reference; a row at zero, a row left out and the order of the inputs change nothing).
+- "a reading's own place is not combined": **retired** (no place enters). Replaced by 54 (a) and the next test's "no input but the rows".
+- §18.24's 15, "a new percept needs no new weight": **given up** by rule 62. Replaced by `test_a_percept_never_given_to_a_concept_reads_zero` (cat .7616, cats 0, dog 0).
+- 17, told apart, **on rows**: 5 nominated, told apart 1.0, own least .7616, largest other 0.0.
+- 19, the way back, **on rows** (with a Not entry): error below 1e-4; refused with fewer concepts.
+- 20, place weights: **retired** (no concept has a weight on a place).
+- "dense and not penalized" becomes `test_the_order_zero_sigma_is_sparse_and_not_penalized`: `NotLayer3` and `SparseSigmaLayer3`, `nInput` equal to the basic capacity, `value` among the parameters, the state saved, no penalty. Plus a new test that the storage is allocated beforehand.
+- "a word reads its column" becomes `test_a_word_reads_its_rows_entry`: equal to the field read, for a for entry and for a Not entry.
+- "a gradient reaches only the columns read" becomes "only the entries read".
+
+**Certificate 12.** Old: the column is the member's share, reading one. New: the new concept's entries are `[(row, 1.0, for)]`; read for gives one before the squash, read both gives 0.
+
+**Certificate 48 (`test_item17_code.py`)**
+
+- `test_48_a_concept_reads_by_difference`: **retired**. Replaced by 54 (c).
+- `test_48_on_the_dictionary_and_the_lesson` becomes `test_48_on_the_dictionary`. Old: columns read over codes; built mean below one, no "parts" kind. New: codes only; holders by kind run 852, parts 0, accident 1,780 (parts half); the Pi's entries a row 3 to 48, mean 3.83; assertion "run and no parts".
+- `test_48_the_lessons_concepts_told_apart`. Old: net model ≥ trial. New: each form read through the Pi, the Not and the Sigma; told apart 5 of 5, rows read both 5, own least .7616; assertion all told apart.
+
+**Certificate 49, the column part.** Old: alpha's reading of 1.5 lies between 1 and 2, by columns. New, on rows: 1.0 gives alpha .762, beta .762, gamma 0, between .762; 2.0 gives gamma and between .762; 4.0 and 1.5 give zero everywhere. The same order assertions hold, and 1.5 reads zero.
+
+**Certificate 53 (c).** Old: the column follows the moved code by the share difference. New: the code, the lane and the Pi's row move; the concept's entries do not (`[(row, 1.00003, for)]`).
+
+#### 5. Other ported tests (old, then new)
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_word_admission` | an absent word's concept reads `tanh((x_for - x_against)·u)` over codes; the place columns are zero | its entries are `[(1.0, for)]`, and it reads `order_zero_field` of the reading, which is exactly zero |
+| `test_item18_producer_repair::test_02` | the column reads the pair at tanh(1) | the entries are `[(bp, 1.0, for)]`; evidence tanh(1) |
+| `test_concept_memberships` | the frozen column's gradient is 0, the live one's above 0 | the same on the entries |
+| `test_order0_percept_definitions` ×2 | columns as sums of codes over squared lengths | `entries(0)` and `entries(1)` are the member rows at one, the Not members as Not entries; the witnessed alternative is two for entries |
+| `test_cs_sparse_weights` | `weight.grad` | `value.grad` |
+| `test_sparse_concept_e2e` | the column is nonzero | the entries' weight is above zero; `value` is among the parameters |
+| `test_live_concepts_from_percepts` | `OrderZeroSigma(4, 16)`; read through code and place; the compile test with `place` | `NotLayer3(4)` and `SparseSigmaLayer3(4, 16, 16)`; expected `tanh(.5 · presence)`; compile `read_word(evidence, mask, value)`; the checkpoint round trip on `value` and the entries |
+| `test_compiled_word_chunk` | `_ar_order_zero_reading` `[b, w, 9]` | `[b, w, 1]` |
+| `test_item17_code_trial::test_3` | printed "model as built" over columns | prints how many concepts read their own row alone |
+| `basic_fixtures.order_zero_expected` | over read pairs and the column | over the entries, with the Not's sign |
+| `postmerge_word_lanes` | the optimizer observer, on the dense matrix | on the entries |
+| `order_zero.weight` becomes `order_zero.value` | | `test_review13_subspaces`, `test_review14_contracts`, `test_primitive_properties`, `test_field_binding`, `test_objective_ownership`, `test_item20_round6_gradients`, `test_grounded_xor`, `operators_run_audit`, `objective_conflicts_probe` |
+
+`test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery` failed until members recorded at weight zero became candidate entries at zero. The name concept's Not member on the `0` percept is recorded at weight zero and had started nothing, so the name could not learn against `0`.
+
+#### 6. Memory of the order-zero Sigma, lesson configuration
+
+The lesson has 4,096 basic percepts and 4,108 concepts of order zero.
+
+| | Before | After |
+| --- | ---: | ---: |
+| Storage | 136 × 4,108 × 2 channels, float32: 4.47 MB | 16,408 entries allocated: `value` 65.6 KB, `entry_row` and `entry_input` 262.5 KB, `crow` and `ccol` 65.7 KB |
+| With gradient and Adam's two moments | 17.9 MB | about 0.59 MB |
+| Entries written after the 16 sentences | (dense) | 5 |
+
+At `data/model.xml`'s 262,144 basic percepts the dense form was 1.09 GB with Adam. This one is about 2 × (262,144 + n0) entries, about 30 MB with Adam. That settles round 4 first pass's open point about the dense Sigma's size.
+
+#### 7. The lesson's sixteen sentences
+
+`test/attention_thinking_certificate.py lesson`, CPU, run one after the other with nothing else running: **20.4 s before (HEAD export), 15.7 s after.** Parameter tensors 142 → 139.
+
+What changed in the walks:
+
+- **Sentences 9 to 16:** before, every one walked the cap of 32 steps and found no word, in both of its records.
+- **Sentences 9 to 13 and 15:** after, each finds 3 words in 8 steps.
+- **Sentences 14 and 16 ("Who is here?", "Who is there?")** still walk 32 steps. One record of 14 finds one word at step 32.
+- **Sentences 1 to 8:** about the same. Several now take one record where they took two (attention calls 2 → 1, departures 1 → 0). Words are found earlier in the walk: for example sentence 1 finds index 0 after attend 2, where before it was after 7.
+
+#### 8. Choices (all provisional unless marked)
+
+1. Built in three forms; only the last is committed (section 1).
+2. One learned signed number for each entry: the size is the Sigma's, the sign is the Not's. `_EntryRead` gives the gradient `s` through zero.
+3. The Sigma's input count is the basic capacity. Entries allocated: 2 × (rows + concepts).
+4. A member at weight zero is a candidate entry at zero.
+5. A member of the other kind where a weighted entry stands leaves it as it is.
+6. `teach_omission`'s rule and floor of .5. It is called only by the certificates. **Nothing in the model calls it:** in the model today a Not entry at order zero comes from a declared Not member (`_witness_concept_poles`, the lessons' `negative` features, a concept formed with a pole) and now from the gradient. Where the model should observe an omission at order zero is a question for Alec.
+7. A checkpoint with the dense Sigma is refused, not read.
+8. A pruned member (`_drop_concept_edge`) leaves its entry as learned, as the column was left.
+9. Certificate 51 (d)'s relaxed reading (section 4), from the withdrawn channels.
+
+#### 9. Final counts
+
+- **The list:** `r5_files.txt` (166) and the 23 more files that name what I changed, 189 files, six processes. Run on the committed source: **4 failed, 2,118 passed, 98 skipped, 2 xpassed, 1,026 s.** The failures:
+  - test_81, a learning case (section 0, item 1);
+  - `test_one_backward_standing` ×2, flaky and not traced (section 0, item 2);
+  - `test_learning_readiness`, which fails at HEAD too.
+
+  Two fixes came after that run, `test_order0_percept_definitions` and `test_cs_sparse_weights` ports and the candidate entries. Re-run after them: those files, `test_definition_integrity` and `test_grounded_xor`, 37 passed.
+- **Both stopping gates pass** (with the three certificate files: 28 passed, 72 s).
+- `test_item17_order_zero.py` with `test_item17_symbols.py`: 28 passed.
+
+#### 10. What I would change in §21 and in §22.4's later steps
+
+- **Rules 3, 4, 59 and 62:** replace "two channels with weights of their own" with Alec's Pi, Not, Sigma. Say that an entry's size is the Sigma's weight and its sign the Not's, made by the gradient or by the Not's teaching. Certificate 51 as restated here.
+- **Certificate 51 (d) and the Not.** A concept "present where read against and absent where read for" cannot be zero and one on one signed row. It comes out as its opposite on the other side. If both are wanted, they are two concepts (Alec, §19.83).
+- **Certificate 23 (b)** should say that the Not entries may be made by the gradient (they are), and **23 (c)** how "no Not entry" is held (here: the learned numbers held at zero or above).
+- **Rules 8, 8b, 54 and 7 (as the Sigma's input)** and **certificate 5's "combined vector"** are gone. Rule 7 should now say only what a reading's place is for the Pi.
+- **§22.4 step 4:** the Sigma above order zero is `NotLayer3` and `SparseSigmaLayer3` over the symbols' rows. `SparseLayer._fold_weights` can go with it.
+- **Step 11** is done differently (the channels are withdrawn).
+- **The expectation map (test_81) needs a round of its own:** its free Pi over all concepts cannot select one at 200 presentations.
+
+#### Review (Claude, 2026-11-19)
+
+**Run by Claude on the committed source** (`1f58fe1511`): the 189 files of the list (`r5_files.txt` and every test file the pass touched), six processes: **1 failed, 1,883 passed, 97 skipped, 2 xpassed**, 1,096 s. Both stopping gates are in the list and pass. The one failure is `test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`. The count of passed differs from the return's 2,118 because the return's list had 23 files more than Claude's 189 lines hold (its 166 and 23; Claude's list is the 160 of §23.R and the 29 test files the two commits touch, some in both).
+
+**Read against the source.** `bin/Layers.py` (`_EntryRead`, `NotLayer3`, `SparseSigmaLayer3`), `bin/OrderZero.py` (`read_word`), `bin/Spaces.py` (`install_order_zero`, `order_zero_field`, `order_zero_reading`, `_start_order_zero_entry`, `add_concept_feature`, `cs_read_percept_field`).
+
+- *The three steps are three named things, in series,* as rule 63 has them: the Pi's rows on two lanes, `NotLayer3.signed` (for less against), `SparseSigmaLayer3` over the signed values. No function of the Sigma takes a code, a place or a time.
+- *The size and the sign.* An entry is one learned number; `weight` is its size and can not be below zero; the sign is read only by `NotLayer3.exchange` and `NotLayer3.entries`. `_EntryRead` gives the derivative of the product at every value, zero included, which is what lets the gradient make a Not entry (Alec, §19.91). Its backward is right in both arguments.
+- *The built-three-times note* is accurate to the order of Alec's messages; only the last form is committed.
+
+**Accepted as built.** The candidate entry at zero for a member recorded at weight zero; the refusal of a checkpoint that holds the dense matrix (it agrees with "old checkpoints are refused", which Alec has not objected to); room for two entries for each row and concept; a pruned member's entry left as learned.
+
+**Four things found in review.**
+
+1. *Additions to the sparse Sigma grow with its size.* `add` calls `_index`, which sorts every entry and rebuilds the table of entries from the start. Measured (`sigma_scale.py` in the scratch directory, while the tests ran, so the absolute times are high and the growth is the finding):
+
+   | Entries | Seconds to add them all | A read of 12 rows, ms |
+   | ---: | ---: | ---: |
+   | 2,000 | 0.24 | 0.09 |
+   | 8,000 | 4.3 | 0.23 |
+   | 32,000 | 82 | 0.44 |
+
+   Four times the entries is nineteen times the time. Every nominated word adds one, so the dictionary's 19,821 words would spend about half a minute here and the default capacity could not be filled. *To the next pass:* an addition that costs the same whatever is stored.
+2. *A read passes over every entry.* `forward` gathers through all the written entries and makes two index vectors as long as the capacity on every call; the compressed rows are kept and only `entries(row)` reads them. Rule 19's compressed rows are there so that a read costs the entries of the rows it reads. *To the next pass,* with 1, before the same class is used above order zero.
+3. *The test that now fails some of the time is a regression of this pass, and is not traced.* `test_one_backward_standing.py::test_native_packing_after_training_with_selected_backward`: nine runs by Claude of its three cases, **7 failures in 27** (the return: about 5 in 27, and none in 27 before the pass). The assertion is `test_packed_reconstruction_parity.py:121`: four of the eight numbers of the root's stamp differ from its head word's, by .025 at the most, the place of another word. The test warms its vocabulary by exactly three readings (`warm_vocabulary`), so a word that one reading's walk does not reach is not nominated, which fits the two concepts fewer that the return saw. That is a guess until the function is named. *To the next pass, first, and not ported until its producer is found.*
+4. *`NotLayer3.teach_omission` is called by nothing in the model.* It is read by the certificates alone. By Alec's answer the gradient is what makes a Not entry implicitly, and in the model the explicit way is a declared Not member. *Put to Alec:* whether anything beside the gradient is to make a Not entry when an expected concept does not come. Claude's first choice is no, and then the function and its half of certificate 51 (d) go. Left as built until he answers.
+
+**Certificate 51 (d), as relaxed.** Agreed, and it is a consequence to state: with one signed value for each row, a concept that reads a row through a Not entry reads the opposite of what it reads through a for entry, so "present where the row is read against and silent where it is read for" is not one concept on that row alone. It settles at .5 and -.5. Rule 59 would have given it; rule 63 does not, and "both is two concepts" is what remains.
+
+**`test_81` is carried, and it is a question of design.** The teacher is exact now: `[.76, .76, 0, 0]` on "alpha gamma" and `[0, 0, .76, .76]` on "beta delta". What does not learn is the expectation map (`expect_stack`, item 1.8's, a free Pi of 64 rows over every concept of order zero, then a Sigma). Each of its rows starts with a small weight on every concept, so it is a product over all of them; with the concepts exact, all but the two of the sentence are at nothing, the product is at nothing, and a product at nothing passes no derivative. Before rule 62 every concept read .65 to .75 on every sentence, which is what let it move. *Claude has checked the arithmetic and not repeated the probe.* Two ways, *put to Alec*:
+
+- *Claude's first choice:* round 5's spread carries it. MTM nominates a row for words that recur together (rule 20), the fan raises that row from the word that came, and the row's share gives the word that was omitted (rules 23 to 27, 30). No free Pi is needed for this case. Round 5 measures `test_81` on the spread first, and says what is left for the expectation map.
+- The expectation map kept, its Pi's rows started on a few members each and not on all.
+
+Until round 5 the test fails and is recorded, as a learning case is (1.8 §43).
+
+**What the pass did for the lesson.** The sixteen sentences run in 15.7 s where they ran in 20.4 s, and six of the eight sentences that used to walk the cap of 32 steps and find no word now find their three words in 8 steps. The order-zero Sigma with its optimizer takes 0.59 MB where it took 17.9 MB, and at the default capacity about 30 MB where the dense one took 1.09 GB.
+
+**Taken into §21 and §22.4 from the return's last section.** Rules 3, 4, 29, 59, 62 and 63 and certificate 51 were restated while the pass ran (§19.90, §19.91). Still to restate, with the next pass's return: rule 7 as the place of a reading for the Pi alone, rules 8, 8b and 54 as withdrawn, certificate 5's clauses on the combined vector, and certificate 23 (b) and (c) on how a Not entry is made and how its absence is held.
