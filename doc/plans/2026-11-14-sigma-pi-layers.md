@@ -8904,6 +8904,36 @@ Before MTM makes either, it looks for one that already fits. This settles §19.8
 
 **Three corrections to the glossary, the same day.** "symbolic space is a set and a space of points; each symbol has no space (i.e. dimensionality)." A look: "one act of attention while a sentence is read. It filters the perceptual field by a saliency map from attended concepts, which will filter on both the what/where of conceptual space, and carries those selected percepts into the activation space on all existing concepts." And on Claude's "layers": "ah thats good, My nomenclature is *epistemic levels* as opposed to orders (which are half as many)." So one Pi or one Sigma is an epistemic level, and an order has two. The glossary has all three in his words. Also added at his word: mereology, taxonomy, and the compose, think and generate grammars.
 
+### 19.89 Alec on the four defects, on the cost of adding a percept, and on what touches the perceptual code (2026-11-19)
+
+His answers to §23.S.1's four defects and to the question of what a concept of order zero reads (put to him with the repair pass: the concept of `alpha` reads .65 to .75 on "beta delta").
+
+**1. The time.** "both .where and .when are encoded in the concepts, and we will abstract over that eventually. We might want to add a time as a sinusoid encoded feeling in order to know what \"yesterday\" was numerically in LTM, that's why we added it. Maybe it can just be a part of STM that the chooser or operators have access to." So the time is kept for what it was added for, to know when a thing was; it need not be weighed by the Sigma of order zero. *As built by the repair pass:* a reading and a chunk of STM carry their `.when` as before, where the chooser and the operators can read it; the Sigma of order zero has no weight on it (rule 7). A time as a feeling coded by a sinusoid, for "yesterday" in LTM, is noted in `doc/FutureWork.md`.
+
+**2. "an entry of four concepts? What is an entry? Can you use the glossary?"** An entry is in the glossary now. Said again in its terms: each row of LTM keeps, beside its idea, the four concepts that were most active at its moment. The concept "words" was active at every moment, since every word lights it, so it took one of the four places in every row, and the object of the sentence's own word was pushed out. The repair keeps "words" and "objects" out of a row's four concepts, and out of what a query asks of them.
+
+**3. "When a nominated word joins words, we just add an edge to the \"words\" concept / sigma...?"** Yes, that is all that happens: one entry of the Sigma of "words". The defect was not the entry. The matrix that holds such entries was made the first time one was added, while the model was running, and making it changed the set of the model's modules, so the captured forward was traced again. It is made at construction now.
+
+**4. "this sounds like an error you can fix. We should be predicting something en aggregate if we are doing gradient descent."** Taken: it is repaired, not left for round 5. Its cause is the next point.
+
+**What touches the perceptual code.** "Question: the perceptual code is used exclusively to distribute codes in the hypercube, and the only thing touching that is the pi . This applies to both .what and .where (although .where is not mereological, it's just a sinusoidal band)."
+
+*As built, that is not so.* The Sigma of order zero reads the code too: rule 7 joins the codes of the percepts present into one vector, and rule 8 has a dense Sigma of the code's width read it (both from §18.24). That is why the concept of `alpha` reads "beta delta": the letters of `beta` and `delta` cover most of `alpha`'s code, though the basic percept of `alpha` is not there at all. It is the cause of defect 4.
+
+*Made so* (rule 62): the Sigma of order zero reads the basic percepts, each row's two values, and never the code. Then the Pi is the only thing that touches the code, for the what and for the where. This is "order zero is n:n on basic percepts" (§19.83) taken as it stands, and rule 21's "a concept starts reading only its own row, at one" taken as it stands. It makes order zero the same structure as every order above it. What is given up is §18.24's "a new percept needs no new weight": a concept no longer answers to a word it has never been given.
+
+**The cost of adding a percept.** "is the problem constructing a mereologically correct code, or the time of making parthood links across the tensor?" Measured (the 19,821 words admitted under a profiler, 82 s):
+
+| What an admission does | Share of the time |
+| --- | ---: |
+| Tests the code against every stored code, for one lying inside another (`_accidents_of_many`) | 41% |
+| Finds the links, the stored forms it holds and that hold it (`_link`) | 27% |
+| Settles two forms with one code (`_settle`) | 9% |
+| Chooses the coordinates (`_separate_inner`) | 5% |
+| Writes the changed codes (`_rewrite`) | 4% |
+
+So it is neither the making of the code nor the writing of it. It is the two searches, each over everything stored: the test for a code inside another, and the finding of the links, which today looks through the stored forms one by one. Both can be made not to grow with the store: the links by an index of runs, and the test by one product on the device. That is item 1.5's.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10025,6 +10055,25 @@ chooses from. The old classes are not edited.
       these numbers before him: at 64 the cost of an admission rises
       from 2 ms to 58 ms by 19,000 forms; at 96 it stays at a few).
 
+62. *The Sigma of order zero reads the basic percepts, not the code*
+    (Alec, §19.89: "the perceptual code is used exclusively to
+    distribute codes in the hypercube, and the only thing touching
+    that is the pi. This applies to both .what and .where"; §19.83:
+    "order zero is n:n on basic percepts"). A concept of order zero
+    reads the two values of each basic percept's row, for and
+    against, on two channels (rule 59), and starts reading only its
+    own row, at one (rule 21). It does not read a percept's code, and
+    no vector of codes is joined for it. It is sparse, stored as the
+    Sigma of every order above is (rules 11 and 19). This takes the
+    place of rule 7's joined vector as the Sigma's input, of rule 8's
+    dense matrix, and of the column of rules 8b and 54; the code
+    stays what rules 50 to 61 make it, and the Pi alone reads it.
+    *Mine:* the where enters at the Pi as well, as a look's match of
+    place (rule 34), and no concept has a weight on a where wire;
+    how reading in order is then learned is round 6's to show. *Given
+    up:* a concept answering to a word it was never given (§18.24,
+    15).
+
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
 *learning*.
@@ -10297,6 +10346,16 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     forms given a coordinate, the codes changed by an admission
     (mean and greatest), and the time of an admission as the store
     grows.
+54. *The Sigma of order zero reads rows* (rule 62). (a) No function
+    that computes a concept of order zero takes a percept's code.
+    (b) The concept of a word reads one where its row is present and
+    zero where it is not, whatever letters the reading shares with
+    it: the concept of `alpha` reads zero on "beta delta". (c) Where
+    a form's holder stands in its place the concept reads zero
+    (`archer` on `archery`), from the row's two values. (d) The
+    expectation's teacher tells the words of one sentence from the
+    words of another, and `test_item18_expect`'s test of an omitted
+    word passes.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the

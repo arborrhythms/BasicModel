@@ -194,6 +194,12 @@ counts what recurs and nominates rows of the Pi; from statements it makes
 symbols and concepts, looking first for one that already fits. What it holds
 is easily promoted and easily forgotten. In the source: `MediumTermMemory`.
 
+**Entry.** What a row of LTM keeps of its moment beside its idea: the few
+concepts that were most active when the row was kept, each with its value
+(`episodic_concepts`, `episodic_values`; four of them, by `episodicConcepts`).
+A query on LTM matches against the rows' entries (Alec, 2026-11-11: an entry
+holds concepts, not percepts).
+
 **LTM.** Long-term memory: what is kept. Its rows hold ideas, each with an
 entry of the concepts of its moment (`LTM0`), and relations between concepts
 (`LTM1`). It is read by content: a query matches the top of the STM stack
