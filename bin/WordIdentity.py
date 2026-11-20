@@ -123,8 +123,13 @@ class WordIdentity(nn.Module):
         self._codes = {}
         self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
         self.word_keys = {}
-        # Each stored form's holders: the stored forms that hold it as a run.
+        # Each stored form's links, written when it is admitted and saved:
+        # the stored forms that hold it as a run (its holders, its wholes
+        # among the forms) and those it holds as a run (its parts among the
+        # forms). A form that holds another's characters and not the run is
+        # neither.
         self.holders = {}
+        self.inside = {}
         self._atom_rows = {}
         self._catalog = {}
         # Each added part, with the two forms it told apart (None if taught).
@@ -193,16 +198,19 @@ class WordIdentity(nn.Module):
         self._catalog[key] = result
         return result
 
-    def _hold(self, raw):
-        """Record a new stored form among the holders: of each stored form
-        it holds as a run, and of itself those stored forms that hold it."""
+    def _link(self, raw):
+        """Link a new stored form to the stored forms it holds as a run (its
+        parts among the forms) and to those that hold it (its holders), on
+        both sides of each link."""
         text = bytes(raw)
         self.holders[text] = {word for word in self.words if word != text and text in word}
-        for size in range(1, len(text)):
-            for start in range(len(text) - size + 1):
-                run = text[start:start + size]
-                if run in self.holders:
-                    self.holders[run].add(text)
+        self.inside[text] = {text[start:start + size] for size in range(1, len(text))
+                             for start in range(len(text) - size + 1)
+                             if text[start:start + size] in self.inside}
+        for run in self.inside[text]:
+            self.holders[run].add(text)
+        for holder in self.holders[text]:
+            self.inside[holder].add(text)
 
     def nearest_holders(self, raw):
         """The nearest of a form's holders: those that add the fewest
@@ -417,7 +425,7 @@ class WordIdentity(nn.Module):
             raise ValueError('a word identity requires nonempty bytes')
         if raw not in self.words:
             self.words[raw] = self.atoms_of(raw)
-            self._hold(raw)
+            self._link(raw)
             for atom in self.words[raw]:
                 self._atom(atom)
             self._settle([raw])
@@ -535,7 +543,16 @@ class WordIdentity(nn.Module):
         return dict(atoms=self.atoms, bits=self.bits, words=self.words,
                     word_rows=self.word_rows, added=self.added,
                     revision=self.revision,
-                    word_witnesses=self.word_witnesses, nested=self.nested)
+                    word_witnesses=self.word_witnesses, nested=self.nested,
+                    holders={word: tuple(sorted(found)) for word, found in self.holders.items()},
+                    inside={word: tuple(sorted(found)) for word, found in self.inside.items()})
+
+    def _relink(self):
+        """The links of every stored form, from the forms alone, for a
+        vocabulary saved without them."""
+        self.holders, self.inside = {}, {}
+        for word in self.words:
+            self._link(word)
 
     def load_vocab_extras(self, value):
         for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'revision'):
@@ -548,13 +565,11 @@ class WordIdentity(nn.Module):
         self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})
         self._property_revision = None
         self._atom_rows, self._catalog = {}, {}
-        self.holders = {word: set() for word in self.words}
-        for word in self.words:
-            for size in range(1, len(word)):
-                for start in range(len(word) - size + 1):
-                    run = word[start:start + size]
-                    if run in self.holders:
-                        self.holders[run].add(word)
+        if 'holders' in value and 'inside' in value:
+            self.holders = {word: set(found) for word, found in value['holders'].items()}
+            self.inside = {word: set(found) for word, found in value['inside'].items()}
+        else:
+            self._relink()
         self._reindex()
 
     def audit(self):
