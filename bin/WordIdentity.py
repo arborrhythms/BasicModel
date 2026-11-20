@@ -143,8 +143,10 @@ class WordIdentity(nn.Module):
         self.usage = torch.zeros(self.total, dtype=torch.long)
         self._given_revision = 0
         self._parts_key = {}
-        # The earlier forms whose code the last admission changed.
-        self.last_changed = frozenset()
+        # The earlier forms whose code the last admission changed, and those
+        # it gave a coordinate, whether or not they had it.
+        self.last_changed = self.last_touched = frozenset()
+        self._altered = set()
         self.failures = []
         self._atom_rows = {}
         self._catalog = {}
@@ -641,7 +643,11 @@ class WordIdentity(nn.Module):
             self._atom(atom)
             for word in touched:
                 self.words[word] = self.words[word] + (atom,)
-        self._packed[torch.tensor([order(word) for word in touched])] |= self._pack(value)[0]
+        index = torch.tensor([order(word) for word in touched])
+        old = self._packed[index]
+        new = old | self._pack(value)[0]
+        self._packed[index] = new
+        self._altered.update(touched[i] for i in (old != new).any(1).nonzero().flatten().tolist())
         self.usage += given.long()
         self._given_revision += 1
         return touched
@@ -649,19 +655,23 @@ class WordIdentity(nn.Module):
     def _keep(self, affected, new=None):
         """After a change (rule 61): repair until no accident is left,
         telling apart by rule 56 any two forms the repair leaves with one
-        code; write the rows and keys of every form whose code changed.
-        Returns those forms; ``last_changed`` holds those admitted before
-        ``new``."""
-        changed, pending = set(affected), set(affected)
+        code; write the rows and keys of every form whose code changed; and
+        the basic percepts follow (``BasicPercepts.follow_forms``). Returns
+        those forms. ``last_changed`` holds those admitted before ``new``;
+        ``last_touched`` also the holders that took a coordinate they had."""
+        changed, pending, touched = set(affected), set(affected), set()
         while pending:
-            repaired = self._repair(pending)
-            changed |= repaired
-            collided = self._rewrite(repaired)
+            self._altered = set()
+            touched |= self._repair(pending)
+            changed |= self._altered
+            collided = self._rewrite(self._altered)
             pending = self._settle({word for pair in collided for word in pair}) if collided else set()
             changed |= pending
+        self.last_touched = frozenset((touched | set(affected)) - {new})
         self.last_changed = frozenset(changed - {new})
         if self.last_changed:
             self.revision += 1
+        self.basic.follow_forms(changed, new)
         return changed
 
     def admit(self, raw):
@@ -831,7 +841,7 @@ class WordIdentity(nn.Module):
         self.usage = torch.tensor(value.get('usage', [0] * self.total), dtype=torch.long)
         self._given_revision += 1
         self.failures = []
-        self.last_changed = frozenset()
+        self.last_changed = self.last_touched = frozenset()
         self._reindex()
 
     def audit(self):

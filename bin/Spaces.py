@@ -14822,6 +14822,7 @@ class ConceptualSpace(Space):
         and its against weights, and what its basic percept's vector tells
         for it and against it (its read pair), ``[..., 2D + 2C]``; zero
         where either is absent."""
+        self._follow_moved()
         sigma, basic = self.order_zero, self.basic_percepts
         rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.weight.device)
         percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.weight.device)
@@ -14839,6 +14840,7 @@ class ConceptualSpace(Space):
         vector, then the reading's place and time) by the order-zero rows,
         on two channels, the for lane and the against lane."""
         if getattr(self, 'order_zero', None) is not None:
+            self._follow_moved()
             return self.order_zero
         from OrderZero import OrderZeroSigma
         content = int(self.basic_percepts.width)
@@ -14860,6 +14862,18 @@ class ConceptualSpace(Space):
             channel.register_hook(self._zero_frozen_columns)
         return sigma
 
+    def _follow_moved(self):
+        """The columns follow the basic percepts whose read pair moved when
+        stored forms' codes changed (``BasicPercepts.moved``), before any
+        column is read or started."""
+        basic = self.basic_percepts
+        moved = getattr(basic, 'moved', None)
+        if not moved:
+            return
+        basic.moved = {}
+        if getattr(self, 'order_zero', None) is not None:
+            self.follow_members(moved)
+
     def _zero_frozen_columns(self, grad):
         frozen = [row for row in self._frozen_rows() if row < grad.shape[1]]
         if not frozen:
@@ -14873,6 +14887,7 @@ class ConceptualSpace(Space):
         the active basic percepts combined on the gaps, then the reading's
         own place and time at the degree that it is present."""
         from OrderZero import combine
+        self._follow_moved()
         basic = self.basic_percepts
         rows = [key[1] for key in perception.keys]
         promoted = basic.promoted[:len(basic.index)]
@@ -14911,6 +14926,7 @@ class ConceptualSpace(Space):
         rows = torch.as_tensor(rows, dtype=torch.long, device=combined.device)
         n0 = self._order_caps()[0]
         columns = torch.where((rows >= 0) & (rows < n0), rows, -1)
+        self._follow_moved()
         y = self.order_zero.concepts(combined, columns)
         return signed_lanes(y, dim=-1).permute(2, 0, 1, 3)
 

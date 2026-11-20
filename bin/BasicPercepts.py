@@ -44,6 +44,12 @@ class BasicPercepts(nn.Module):
         self.pi = PerceptPi(self.capacity, self.capacity * self.ENTRIES_PER_ROW)
         # A conjunction of basic percepts is a row whose members are rows.
         self.conjunctions = {}
+        # The stored form each row of a form spells, and the rows of each
+        # form; each row's key in ``index``.
+        self.forms, self.form_rows, self._keys = {}, {}, {}
+        # The read pairs that moved when the codes of stored forms changed,
+        # ``row -> (before, after)``, for the concepts' columns to follow.
+        self.moved = {}
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)
@@ -211,9 +217,12 @@ class BasicPercepts(nn.Module):
             if row >= self.capacity:
                 raise OverflowError('BasicPercepts capacity exhausted')
             self.index[key] = row
+            self._keys[row] = key
             self.occurrences[row] = parts, wholes
             if members is not None:
                 self.conjunctions[row] = tuple(members)
+            else:
+                self.form_of(row)
             if self.pi.append(self.member_keys(row), against=self.against_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             if place is not None:
@@ -278,6 +287,88 @@ class BasicPercepts(nn.Module):
         except (IndexError, KeyError):
             return None
 
+    def form_of(self, row):
+        """The stored form a row spells, read from its parts when it is
+        reserved and kept, or ``None`` (a conjunction, a value)."""
+        row = int(row)
+        if row in self.forms:
+            return self.forms[row]
+        raw = None if row in self.conjunctions else self._form_of(self.occurrences[row][0])
+        self.forms[row] = raw
+        if raw is not None:
+            self.form_rows.setdefault(raw, []).append(row)
+        return raw
+
+    def _extend(self, row, parts):
+        """A row of a form takes the parts its form has gained, after its
+        own, under a key of its new parts."""
+        old, wholes = self.occurrences[row]
+        extra = tuple(part for part in map(int, parts) if part not in old)
+        if not extra:
+            return False
+        new = old + extra
+        self.occurrences[row] = new, wholes
+        key = self._keys[row]
+        key = (new, *key[1:])
+        # The count of rows is the size of the index: an old key is given up
+        # only for a new key that no other row holds.
+        if key not in self.index:
+            del self.index[self._keys[row]]
+            self.index[key] = row
+            self._keys[row] = key
+        return True
+
+    @torch.no_grad()
+    def follow_forms(self, changed, new=None):
+        """What follows a change of stored forms' codes (rule 61). Each row
+        of a changed form takes the parts its form gained, in its occurrence
+        and in the first Pi. Every promoted row of a changed form, of a form
+        that a changed or ``new`` form holds as a run (its against lane reads
+        its nearest holders), and of a conjunction over one of them, has its
+        stored code and against lane written again, in one write. The read
+        pairs that moved are added to ``moved`` for the concepts' columns to
+        follow (``ConceptualSpace.follow_members``). Returns them."""
+        identity = getattr(self.native, 'identity', None)
+        if identity is None:
+            return {}
+        for row in range(len(self.index)):
+            self.form_of(row)
+        if not self.form_rows:
+            return {}
+        changed = set(changed)
+        touched = changed | ({bytes(new)} if new is not None else set())
+        held = set().union(*(identity.inside.get(form, ()) for form in touched)) if touched else set()
+        rows, extended = set(), False
+        for form in changed | held:
+            for row in self.form_rows.get(form, ()):
+                if form in changed:
+                    extended |= self._extend(row, identity.parts(form))
+                rows.add(row)
+        if not rows:
+            return {}
+        for whole, members in self.conjunctions.items():
+            if rows.intersection(members):
+                rows.add(whole)
+                rows.update(members)
+        rows = [row for row in sorted(rows) if bool(self.promoted[row])]
+        moved = {}
+        if rows:
+            index = torch.tensor(rows, device=self.codes.device)
+            before = self.read_codes(index)
+            self.codes[index] = torch.stack([self.code(row) for row in rows]).detach().to(self.codes)
+            self.against_codes[index] = torch.stack([self.against(row) for row in rows]).detach().to(self.codes)
+            after = self.read_codes(index)
+            for row, b, a in zip(rows, before, after):
+                if not torch.equal(b, a):
+                    moved[row] = b, a
+                    first = self.moved.get(row)
+                    self.moved[row] = (b if first is None else first[0]), a
+        if moved or extended:
+            self.revision += 1
+        if extended:
+            self._refresh_pi()
+        return moved
+
     def against(self, row):
         """A percept's against lane, as wide as its code.
 
@@ -292,7 +383,7 @@ class BasicPercepts(nn.Module):
         parts, _wholes = self.occurrences[int(row)]
         held = code.new_zeros(self.identity_width)
         identity = getattr(self.native, 'identity', None)
-        raw = None if int(row) in self.conjunctions else self._form_of(parts)
+        raw = None if int(row) in self.conjunctions else self.form_of(row)
         if identity is not None and raw is not None:
             atoms = identity.against_atoms(raw)
             if atoms:
@@ -334,7 +425,7 @@ class BasicPercepts(nn.Module):
         identity = getattr(self.native, 'identity', None)
         if identity is None or min(parts) < -self.identity_width:
             return []
-        raw = self._form_of(parts)
+        raw = self.form_of(row)
         if raw is None:
             return []
         return [('ps', (identity.atoms[atom],)) for atom in identity.against_atoms(raw)
@@ -352,7 +443,8 @@ class BasicPercepts(nn.Module):
             return
         self._pi_stamp = stamp
         rows = range(len(self.index))
-        if all(sorted(self.pi.row_against(r)) == sorted(self.against_keys(r)) for r in rows):
+        if all(self.pi.row_members(r) == self.member_keys(r)
+               and sorted(self.pi.row_against(r)) == sorted(self.against_keys(r)) for r in rows):
             return
         self.pi.clear()
         for row in rows:
@@ -696,7 +788,8 @@ class BasicPercepts(nn.Module):
     def get_extra_state(self):
         from IndependentComponents import _pack_state
         return _pack_state(dict(version=2, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), places=self.places[:len(self.index)].tolist(),
-                                conjunctions=tuple(self.conjunctions.items())))
+                                conjunctions=tuple(self.conjunctions.items()),
+                                forms=tuple((row, raw) for row, raw in self.forms.items() if raw is not None)))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
@@ -710,6 +803,10 @@ class BasicPercepts(nn.Module):
         self.pi.clear()
         self._pi_stamp = None
         self.conjunctions = {}
+        self.forms, self.form_rows, self._keys, self.moved = {}, {}, {}, {}
+        for row, raw in state.get('forms', ()):
+            self.forms[int(row)] = bytes(raw)
+            self.form_rows.setdefault(bytes(raw), []).append(int(row))
         conjunctions = dict(state.get('conjunctions', ()))
         places = state.get('places', [-1] * len(state['occurrences']))
         self.places.fill_(-1)
