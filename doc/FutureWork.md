@@ -2544,16 +2544,18 @@ as a sinusoid encoded feeling in order to know what "yesterday" was
 numerically in LTM, that's why we added it. Maybe it can just be a part
 of STM that the chooser or operators have access to."
 
-Today a reading and a chunk of STM carry the model's time, and a row of
-LTM keeps it. No concept weighs it: a concept that learned a weight on
-the clock made a trained answer change with the tick (item 1.7). What is
-wanted is a time that can be compared, so that "yesterday" is a distance
-from now. A felt value is that: its code is its place in a sorted table
-of values (sigma-pi plan, rule 55).
+*Decided since, and built in item 1.7* (sigma-pi plan, rule 64): the
+model has one integer clock, and its sinusoidal code is held on the
+model beside it, where every reader reads it. The chooser and the
+operators read the present there and have a comparator that tells how
+far back a recalled concept's `.when` is; so "yesterday" is a distance
+from now. No concept of order zero weighs the clock: one that learned a
+weight on it made a trained answer change with the tick.
 
-To specify: whether the time is one more felt value with a table of its
-own; who reads it (the chooser, the operators of thought, a query on
-LTM); and what "now" is when a row is recalled.
+What stays future work is the time as a *feeling*: one more felt value,
+whose code is its place in a sorted table of values (rule 55), beside
+the sinusoid. To specify: whether it is wanted once the comparator
+exists.
 
 ## Several readings of one sentence, kept (Alec, 2026-11-19; future work)
 
