@@ -345,9 +345,16 @@ state of STM, so as to find the next word not yet read; reading the words of
 a sentence in order is taught by the reading lesson
 ([Training](Training.md)), and its test gates the grammar's tests. A look
 with the same request gives the same result whatever was looked at before
-it. The operations declared for attention, `focus` and `unfocus`, and the
-field operators `intersection`, `union` and `not`, act on the request's two
-lanes; none of them acts on an interval of the input. Attention has no act that accepts a word.
+it. A walk has one act of attention, `attend` (Alec, 2026-11-20: "you can
+just use attend() , I don't see a need for explicit focus and unfocus
+operators"): moving on to the next word is a request, and so is returning
+to the whole sentence. There is no focus and no unfocus, and no rule forbids
+a walk an act; a focused state is context, from which focus moves on to the
+right, word by word, to the sentence's end. `attend` and the field operators
+`intersection`, `union` and `not` act on the request's two lanes; none of
+them acts on an interval of the input. Attention has no act that accepts a
+word. What the walk has done is kept as concepts in the slots of episodic
+memory, which the chooser reads ([STM](STM.md#1-stm-data-model)).
 
 Every look is perceived and conceptualized, whether or not it returns a
 word: the concepts of every order are given from its activity, and its field
