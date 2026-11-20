@@ -114,11 +114,18 @@ def measure_layout(model, rows, *, packed):
                             else captured_sentence["roots"][b, slot].reshape(3, -1))
                     program = readings[slot][b]
                     from PrependedSymbols import word_view
-                    head = int(mask.nonzero()[0])
-                    stamp = torch.cat((word_view(isp,'symbol_where')[b,head],
-                                       word_view(isp,'symbol_when')[b,head])).detach().clone()
+                    # The root carries the place and time of the word that
+                    # heads its reduction: exactly one of its sentence's words.
+                    words = mask.nonzero().flatten()
+                    stamps = torch.cat((word_view(isp,'symbol_where')[b,words],
+                                        word_view(isp,'symbol_when')[b,words]), -1).detach()
                     start = model.symbolSpace.ltm_store.when_start-4
-                    torch.testing.assert_close(root[0,start:start+8],stamp,rtol=0,atol=0)
+                    carried = (stamps == root[0,start:start+8]).all(-1)
+                    assert bool(carried.any()), (
+                        f'{(b, sentence)}: the root stamp {root[0,start:start+8].tolist()} '
+                        f'is no word of its sentence: {stamps.tolist()}')
+                    head = int(carried.long().argmax())
+                    stamp = stamps[head].clone()
                     content = root.clone()
                     content[:,start:start+8] = 0
                     recovered = model._recon_ideas[b, mask].detach().clone()
@@ -130,6 +137,7 @@ def measure_layout(model, rows, *, packed):
                         "root": root.clone(),
                         "content_root": content,
                         "head_stamp": stamp,
+                        "head": torch.tensor(head),
                         "program_root": program.end_state.detach().clone(),
                         "actions": program.actions.detach().clone(),
                         "reference": model._tensor_pushed_ideas[b, mask].detach().clone(),
@@ -207,7 +215,7 @@ def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, init
         # Input offsets and arrival times belong to each presentation. The
         # raw root's stamp was checked against its own head above; compare
         # the remaining content across the two layouts at the same tolerance.
-        for name in ("reference", "actions", "content_root", "recovered", "byte_cost"):
+        for name in ("head", "reference", "actions", "content_root", "recovered", "byte_cost"):
             torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
                                        msg=lambda msg: f"{key} {name}: {msg}")
         torch.testing.assert_close(actual["program_root"], actual["root"], atol=0, rtol=0)

@@ -419,8 +419,12 @@ def keep_existing_references(monkeypatch):
     monkeypatch.setattr(ReferenceContext, 'prepare_operands', supplied)
 
 
-def read_in_source_order(model, monkeypatch):
-    """Control word arrival for tests of a later grammar or credit decision."""
+def read_in_source_order(model, monkeypatch, *, every_look=False):
+    """Control word arrival for tests of a later grammar or credit decision.
+
+    With ``every_look``, a look at which no focus or descent is legal takes
+    the first legal action (by slot, then by operation) in place of
+    attention's draw, so that two readings of one state walk alike."""
     chooser = model._stm_reducer()
     attend, interpret = chooser.attend, chooser.choose_interpret
 
@@ -428,7 +432,12 @@ def read_in_source_order(model, monkeypatch):
         progress = legal[..., :2].any(-1)
         slot = progress.long().argmax(-1)
         op = legal[torch.arange(len(slot), device=slot.device), slot, :2].long().argmax(-1)
-        options['replay_action'] = torch.where(progress.any(-1), 6 * slot + op, -1)
+        named = torch.where(progress.any(-1), 6 * slot + op, -1)
+        if every_look:
+            flat = legal.reshape(len(legal), -1)
+            named = torch.where(progress.any(-1), named,
+                                torch.where(flat.any(-1), flat.long().argmax(-1), -1))
+        options['replay_action'] = named
         return attend(keys, legal, space, **options)
 
     def read(word, allowed, **options):

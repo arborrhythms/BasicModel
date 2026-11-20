@@ -63,7 +63,7 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
     models=[first]
     try:
         from reading_fixtures import read_in_source_order
-        read_in_source_order(first, monkeypatch)
+        read_in_source_order(first, monkeypatch, every_look=True)
         first._install_unit_span_fn()
         first.answer_synthesis = False  # Warming and training use the same numeric modality.
         warm_vocabulary(first,rows)
@@ -103,7 +103,7 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
             model=build_model(tmp_path,separate_chooser=separate,reconstruction_jitter=jitter)
             model.answer_synthesis = False  # Same numeric modality as the trained source.
             models.append(model)
-            read_in_source_order(model, monkeypatch)
+            read_in_source_order(model, monkeypatch, every_look=True)
             assert model.load_weights(checkpoint,require_match=True)
             model._install_unit_span_fn()
             model.begin_presentation()
@@ -117,7 +117,7 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
         for key,actual in packed.items():
             expected=single[key]
             torch.testing.assert_close(actual['truncated'],expected['truncated'],rtol=0,atol=0)
-            for name in ('reference','actions','content_root','recovered','byte_cost'):
+            for name in ('head','reference','actions','content_root','recovered','byte_cost'):
                 torch.testing.assert_close(actual[name],expected[name],atol=ATOL,rtol=RTOL,
                     msg=lambda message:f'{key} {name}: {message}')
             torch.testing.assert_close(actual['program_root'],actual['root'],rtol=0,atol=0)
