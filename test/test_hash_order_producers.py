@@ -13,7 +13,7 @@ def test_collision_queue_follows_admission_order(monkeypatch):
     bank = identity_bank()
     source, first = inspect.getsourcelines(WordIdentity._settle)
     queue_line = first + next(i for i, line in enumerate(source)
-                              if line.strip() == 'key = self.key(self.code(word))')
+                              if line.strip() == 'code = self.code(word)')
     reads, mints = [], []
     code, separate = bank.code, bank._separate
 
@@ -39,7 +39,9 @@ def test_collision_queue_follows_admission_order(monkeypatch):
     # then process the most recently admitted first.
     assert reads == ['calaba', 'cabala', 'cabala', 'calaba']
     assert mints == [['calaba', 'cabala']]
-    assert bank.added == {'bal': ('calaba', 'cabala')}
+    # Rule 61: once bal tells them apart, calaba lies inside cabala by
+    # accident and becomes a part of the catalog.
+    assert bank.added == {'bal': ('calaba', 'cabala'), 'calaba': ('calaba', 'cabala')}
     assert all(bank.read(bank.form(word)) == word for word in bank.words)
 
 

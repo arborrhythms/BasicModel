@@ -49,9 +49,13 @@ def test_mint_rekeys_existing_word_and_checkpoints_without_global_rng():
     bank.admit(b'cabala')
     assert torch.equal(state, torch.get_rng_state())
     # The two have the same parts and the same runs of two; the first run
-    # of three that one holds and the other does not becomes a part.
-    assert bank.added == {'bal': ('calaba', 'cabala')}
+    # of three that one holds and the other does not becomes a part. Then
+    # calaba lies inside cabala by accident, and becomes a part of the
+    # catalog with a coordinate cabala lacks (rule 61).
+    assert bank.added == {'bal': ('calaba', 'cabala'), 'calaba': ('calaba', 'cabala')}
     assert ('part', 'bal') in bank.words[b'cabala'] and ('part', 'bal') not in bank.words[b'calaba']
+    assert ('part', 'calaba') in bank.words[b'calaba'] and ('part', 'calaba') not in bank.words[b'cabala']
+    assert not bool((bank.form(b'calaba') <= bank.form(b'cabala')).all())
     assert bank.word_rows[b'calaba'] == old_row
     assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
     for word in [b'calaba', b'cabala']:

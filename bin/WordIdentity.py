@@ -106,6 +106,8 @@ def distinguishing_run(left, right, *, one_sided=False):
 
 class WordIdentity(nn.Module):
     PREFIX = b'\x00identity/atom/'
+    #: Forms of the repair's queue tested against every stored code at once.
+    TESTED_AT_ONCE = 128
     WORD_PREFIX = b'\x00identity/form/'
 
     def __init__(self, store, pair_dim=64, ones=3, property_width=0, property_ones=3, basic_capacity=None):
@@ -148,6 +150,7 @@ class WordIdentity(nn.Module):
         self.last_changed = self.last_touched = frozenset()
         self._altered = set()
         self.failures = []
+        self._table_stamp = self._table = None
         self._atom_rows = {}
         self._catalog = {}
         # Each added part, with the two forms it told apart (None if taught).
@@ -535,15 +538,25 @@ class WordIdentity(nn.Module):
         code and that it does not hold as a run, then those whose code its
         code lies inside and that do not hold it as a run; pairs ``(inner,
         outer)``."""
+        return self._accidents_of_many([bytes(raw)])[bytes(raw)]
+
+    def _accidents_of_many(self, forms):
+        """:meth:`accidents_of` for several stored forms, against every
+        stored code in one pass."""
         live = self._packed[:len(self._ordered)]
-        code = live[self.order[raw]]
-        inner = ((live & ~code) == 0).all(1).nonzero().flatten().tolist()
-        outer = ((code & ~live) == 0).all(1).nonzero().flatten().tolist()
-        inside, holders = self.inside[raw], self.holders[raw]
-        found = [(other, raw) for other in map(self._ordered.__getitem__, inner)
-                 if other != raw and other not in inside]
-        found.extend((raw, other) for other in map(self._ordered.__getitem__, outer)
-                     if other != raw and other not in holders)
+        codes = live[torch.tensor([self.order[raw] for raw in forms])]
+        inner = ((live[None] & ~codes[:, None]) == 0).all(-1)
+        outer = ((codes[:, None] & ~live[None]) == 0).all(-1)
+        found = {raw: [] for raw in forms}
+        word = self._ordered.__getitem__
+        for i, j in inner.nonzero().tolist():
+            raw, other = forms[i], word(j)
+            if other != raw and other not in self.inside[raw]:
+                found[raw].append((other, raw))
+        for i, j in outer.nonzero().tolist():
+            raw, other = forms[i], word(j)
+            if other != raw and other not in self.holders[raw]:
+                found[raw].append((raw, other))
         return found
 
     def accidents(self, chunk=64):
@@ -573,16 +586,22 @@ class WordIdentity(nn.Module):
         changed = set()
         queue = sorted(start, key=self.order.__getitem__)
         queued = set(queue)
+        # The next forms of the queue are tested together; a repair, which
+        # changes codes, sets the tests made before it aside.
+        tested = {}
         while queue:
             word = queue.pop()
             queued.discard(word)
+            if word not in tested:
+                tested = self._accidents_of_many(queue[-self.TESTED_AT_ONCE + 1:] + [word])
             by_inner = {}
-            for inner, outer in self.accidents_of(word):
+            for inner, outer in tested.pop(word):
                 by_inner.setdefault(inner, []).append(outer)
             for inner, outers in by_inner.items():
                 touched = self._separate_inner(inner, outers)
                 if touched is None:
                     continue
+                tested = {}
                 changed.update(touched)
                 fresh = [w for w in touched if w not in queued]
                 queue.extend(fresh)
@@ -592,7 +611,8 @@ class WordIdentity(nn.Module):
     def _separate_inner(self, inner, outers):
         """Give ``inner`` coordinates that each of ``outers`` lacks (rule
         61), chosen and not drawn, among the zeros of either half: one at a
-        time, the coordinate that the most outers still lack, then one that
+        time, the coordinate that the most outers still lack (among those its
+        basic percept keeps, :meth:`_kept`, where any will do), then one that
         is not on inner's against lane (what its nearest holders add), then
         the one that adds the fewest ones to inner's holders, then the least
         used, then the first. ``inner`` becomes a part of the catalog (a part
@@ -612,10 +632,14 @@ class WordIdentity(nn.Module):
         against = self.against_atoms(inner)
         if against:
             opposed[:self.width] = torch.stack([self.atom_code(atom) for atom in against]).amax(0).eq(1)
+        kept = self._kept(inner)
         given = torch.zeros(self.total, dtype=torch.bool)
         pending = torch.ones(len(outers), dtype=torch.bool)
         while bool(pending.any()):
-            covers = (lacking[pending] & ~given).sum(0)
+            open_ = lacking[pending] & ~given
+            covers = (open_ & kept).sum(0)
+            if not bool(covers.any()):
+                covers = open_.sum(0)
             if not bool(covers.any()):
                 self.failures.append((inner, tuple(o for o, p in zip(outers, pending.tolist()) if p)))
                 return None
@@ -651,6 +675,30 @@ class WordIdentity(nn.Module):
         self.usage += given.long()
         self._given_revision += 1
         return touched
+
+    def _kept(self, raw):
+        """Where a coordinate given to a form stays in its basic percept's
+        code: all of the parts half, and of the wholes half the AND of the
+        codes of the rows of the table of wholes that hold on every byte of
+        the form, since a percept's wholes half is at or below each of its
+        wholes' (rules 5 and 52). All of the code where no table is bound."""
+        kept = torch.ones(self.total, dtype=torch.bool)
+        properties = getattr(getattr(self.basic, 'whole', None), 'primitive_properties', None)
+        if properties is None or not self.property_width:
+            return kept
+        stamp = (id(properties), properties.revision)
+        if self._table_stamp != stamp:
+            with torch.no_grad():
+                self._table = (properties.coefficients().detach().cpu() > .5,
+                               properties.codes().detach().cpu() >= 1 - 1e-6)
+            self._table_stamp = stamp
+        holds, codes = self._table
+        if codes.shape[-1] != self.property_width:
+            return kept
+        rows = holds[:, sorted(set(bytes(raw)))].all(1)
+        if bool(rows.any()):
+            kept[self.width:] = codes[rows].all(0)
+        return kept
 
     def _keep(self, affected, new=None):
         """After a change (rule 61): repair until no accident is left,
