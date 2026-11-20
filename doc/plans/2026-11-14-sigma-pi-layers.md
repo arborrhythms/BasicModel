@@ -9513,7 +9513,7 @@ On the name of round 5's task, "expectation as the reconstruction in stages": "i
 
 1. *A stage's cost stays in its stage.* The comparison at an order's things teaches the entries between the things of the order beneath and its own (that order's Sigma beneath and its own Pi), with what comes from beneath detached. No cost of expectation has a gradient that crosses a stage or passes through the way back.
 2. *What gives the expectation at a look* is still the spread of rules 23 to 25 on the structure's own matrices, from what the earlier looks left: a fan up and a share down as arithmetic. What is withdrawn is training along that whole path, not the arithmetic.
-3. *Put to him:* whether the concepts of each order and the output are stages too (his words of §19.95 named "percepts, concepts, and output"; these name the perceptual and the symbolic). First choice, as built: the concepts keep the local comparison they have (the cost `expectation.concepts`, confined to its stage), since a configuration with no symbol has no other stage above the percepts; no stage is added for the output.
+3. *The stages* (asked whether the concepts of each order and the output are stages too): "basic percepts, concepts, symbols, but not the output." *Decided.* Three kinds of stage, at every order they occur: the basic percepts, the concepts, the symbols. The output is not a stage of expectation. The concepts' comparison is the cost `expectation.concepts`, confined to its stage.
 
 **The test list and compiling.** Asked whether the test list should read without compiling by default: "no, in general we want to run compiled model for tests where it will help them to run faster." *Decided.* Compiling stays the default of the tests. A test reads without compiling only where compiling costs it more than it saves, which is the fifteen of §23.4.13, and each such case is a measured one.
 
@@ -10825,8 +10825,9 @@ chooses from. The old classes are not edited.
       entries between the things of the order beneath and its own,
       with what comes from beneath detached; no cost of expectation
       has a gradient that crosses a stage or passes through the way
-      back. The concepts keep a local comparison of their own, and
-      no stage is added for the output (put to him, §19.113).
+      back. The stages are the basic percepts, the concepts and
+      the symbols, and not the output (Alec, §19.113: "basic
+      percepts, concepts, symbols, but not the output").
     - The top-down reconstruction is not its teacher. It fills in a
       blind spot, from what the framework of percepts and concepts
       assumes of what is missing (rule 30, certificate 24), and is
@@ -12342,8 +12343,9 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    comes from beneath detached. No cost of expectation is carried
    through the way up and the way down again; the reconstruction
    fills a blind spot and is taught by its own cost. The cost
-   expectation.concepts stays as the concepts' local comparison,
-   and no stage is added for the output (provisional, §19.113).
+   expectation.concepts is the concepts' stage; the stages are the
+   basic percepts, the concepts and the symbols, and not the
+   output (Alec, §19.113).
    What is expected is written apart from what is observed and is
    never evidence; how it joins the signal stays as it is (a gain
    on what arrives, wholly detached, and a detached prime of
