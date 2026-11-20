@@ -2515,12 +2515,21 @@ classes, and being driven by conceptual properties); this has a good
 dual feel, since it is doing synthesis on the way up and analysis on
 the way down. (Although both can be reached by inverses)." Item 1.7
 builds the wholes half as a code of rows of a table of wholes, with
-the character classes as its rows, and tries a conceptual property as
-one more row in tests (sigma-pi plan, rule 57).
+the character classes as its rows.
 
-To specify: what teaches the half (the read back of the concepts, or
-the reconstruction); how a class inside another comes to lie inside it;
-and what a word's wholes are before its concepts are learned.
+*Superseded the same day.* Alec: "The sigma driving wholes (properties)
+was an early version of that, but we need something driving that
+analysis top-down just like synthesis drives bottom-up part
+construction." What drives the analysis from above is conceptual
+attention, carried down over both towers by the transposes of the
+matrices of the way up (sigma-pi plan, §19.93, rule 36). No Sigma is
+put on the wholes half, and the trial of one is withdrawn.
+
+What stays future work: a property that is learned and not declared,
+one more row of the table of wholes that the concepts come to need. To
+specify: what teaches it, how a class inside another comes to lie
+inside it, and what a word's wholes are before its concepts are
+learned.
 
 ## Searching episodic memory, and a semantic prime for attention (Alec, 2026-11-19; future work)
 
