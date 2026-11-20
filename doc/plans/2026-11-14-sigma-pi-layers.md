@@ -9134,6 +9134,31 @@ So the free map of item 1.8 (`expect_stack`, a free Pi of 64 rows and a Sigma) d
 
 *Carried with it:* the start of its free Pi. Each row starts with a small weight on every concept, and with exact concepts such a row is at nothing and learns slowly if at all (§19.94). Round 5 measures it and starts each row on a few concepts if that is what it takes (*mine*).
 
+### 19.98 Alec: what makes what; and no rule on a walk that is there to pass a measure (2026-11-20)
+
+On the report of round 4's fifth pass (§23.4.4), two worries.
+
+**"symbols are not yet split from concepts."** "That worries me. I hope you know that symbols (and percepts) are created from concepts via Pi , and concepts are created from symbols and percepts via Not and Sigma."
+
+*That is the design, and it is what §21 says* (rules 2, 3, 10, 29, 62, 63). A Pi makes what needs all of its members: at order zero the basic percepts, over the parts and the properties of perceptual space, and above it the symbols, over the concepts beneath. The Not and a Sigma make the concepts: at order zero from the basic percepts, above it from the symbols. The sentence he quotes was about how far the source has come, and should have said so:
+
+| | The design | The source at `ff022b3bfe` |
+| --- | --- | --- |
+| Order zero | Pi over perceptual space gives basic percepts; Not; sparse Sigma gives concepts | built so (§23.4.1 to §23.4.4) |
+| Above order zero | Pi over concepts gives symbols; Not; sparse Sigma gives concepts | not yet: the store that computes the higher concepts still reads each concept's own two lanes as if they were that concept's symbol, one for one, and joins them by the least and the greatest. The symbols' own table and Pi exist since the fifth pass and nothing reads them yet. The sixth pass makes the store read them, then replaces the least and the greatest by the Not and the Sigma |
+
+*One word of his sentence Claude reads with care, and puts to him:* "percepts ... created from concepts via Pi". As built and as rule 2 has it, a basic percept is a row of the first Pi over perceptual space, its parts and its properties, and no concept is among its members; it is the symbols that are rows over concepts. If he means that a percept above the basic level is a row over concepts, that is what the source calls a symbol. If he means that basic percepts too are to be made from concepts, that is not built and not in the rules.
+
+**A rule that a walk may not return to a state it has been in.** "And 8m worried about rules like "A walk may not take an unfocus that returns its table to a state it has already been in.", as that seems very unbiological, presumably tweaking the animal behavior just to get it to pass tests. What problem is it designed to solve?"
+
+*The problem.* It is the one he named on 2026-11-18 (`doc/FutureWork.md`, "A record of the places attention has examined"): "Nothing then records that its place was examined, so the same look is legal again, and a fresh model repeats it until the sentence's acts are spent." Measured in §23.L: a walk descends onto a word, then takes the unfocus, which puts the table back exactly as it was; nothing has changed, so the same descend wins again, and the two repeat to the cap of 32 steps. Which of the two wins the first time is a difference of a thousandth between two scores of an untaught chooser. In a run where it falls the wrong way the model reads no word of the later sentences, and that was a run in two or three. So it is not a test that it fails: the lesson is the measure of whether the model reads at all, and with the loop the measure said nothing (0 to 53 words on one source).
+
+*He is right about the rule.* The fourth pass's rule (no unfocus at the step right after the focus it undoes) and the wider one sent to the sixth pass are prohibitions written into the table of legal acts. They remove the loop and do not give the walk what it lacks, which is his own words: "some record of having examined a particular place". The mechanism that the science of attention has for it is graded and is not a prohibition: inhibition of return, a place just attended is less salient for a while, so that looking moves on (Posner and Cohen, 1984; Klein, 2000; cited from memory, to be checked before they enter the docs).
+
+*Done at once.* The wider rule is withdrawn from the sixth pass before it was built. *Kept, marked as a scaffold, and put to him:* the fourth pass's narrower rule. With it the lesson reads 63.6 words of 64 over 12 runs; without it there is no measure to compare the remaining rounds on. It goes when round 6 builds the record (rule 69), and sooner if he says so.
+
+*For round 6* (rule 69, *mine, from his words of 2026-11-18; put to him*): the record of what a walk has examined is a lowering of that place's salience that fades over the walk's steps, read by the chooser as one more reason and never as a mask. It answers the question the future-work note left open, "whether it forbids a second look, or lowers its score", by lowering.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10463,6 +10488,21 @@ chooses from. The old classes are not edited.
     orders. It is item 1.8's free map, renamed for what it is; its
     Sigma follows rule 63. It is not expectation and nothing reads
     it as expected. *Open:* its teacher (§19.97).
+
+69. *A walk keeps a record of where it has looked, as lowered
+    salience* (Alec, 2026-11-18: "we need some record of having
+    examined a particular place"; §19.98: a rule that forbids a walk
+    a state it has been in "seems very unbiological"). A place a
+    walk has just attended is less salient to it for a while: the
+    record lowers that place's share in the salience map (rule 36)
+    and fades over the walk's steps. The chooser reads it as one
+    more reason; it masks no act. *Mine, put to him:* by how much
+    and for how long are keys, set by measuring the lesson over 12
+    runs; the two lanes over a look's symbols, both and neither,
+    reach `attend` as reasons to narrow or to widen in the same way
+    and not as what makes an act legal. The rule of round 4's
+    fourth pass (no unfocus at the step after the focus it undoes)
+    is a scaffold and goes when this is built.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -11891,6 +11931,17 @@ which form of the where match is built.
     reading lesson at 6 of 6, so return that measure again in the
     model. `archer` is not read on `reach`: the first Pi is read
     only on the rows the lookup names (rule 33; §23.3c.3).
+
+17. The record of where a walk has looked (rule 69; Alec, §19.98).
+    A place just attended has its salience lowered for a while,
+    fading over the walk's steps; attend reads it as a reason and
+    it masks nothing. With it the scaffold of round 4's fourth pass
+    goes (the unfocus barred at the step after the focus it undoes,
+    in Attention.narrowing_view or whatever has replaced that table
+    by then). Measured on the lesson over 12 runs, with and without
+    the record and with the scaffold removed: words found, first
+    walks at the cap, walks that repeat a state. A walk that repeats
+    a state is reported, never forbidden.
 
 16. One time (rule 64; Alec, §19.90 and §19.91; the census of
     §23.T, which names each place). In a pass of its own, after the

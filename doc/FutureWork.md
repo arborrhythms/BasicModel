@@ -2401,6 +2401,11 @@ whether it forbids a second look, or lowers its score; how both and neither
 over symbols reach `attend`, and which way each points (in or out); and the
 thought operators this follows.
 
+*Taken into item 1.7* (sigma-pi plan, §19.98 and rule 69): the record is a
+lowering of a place's salience that fades over a walk's steps, read by
+`attend` as a reason and never as a mask. Still to specify here: the thought
+operators this follows.
+
 ## The field use of every operator (Alec, 2026-11-17; future work)
 
 An operator has four uses: compose, think, generate and extend. In the first
