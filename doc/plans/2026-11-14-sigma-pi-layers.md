@@ -9072,6 +9072,28 @@ So he is right that a gradient reaches it: it is not nothing at the start, about
 
 *Three ways, put to Alec:* round 5's spread on nominated rows carries the case of a word expected from the word beside it, and the map is measured again after it (Claude's first choice); the map's rows are started on a few concepts each; or the map is left as it is and given many more presentations, to see.
 
+### 19.95 Alec: the Sigma as the fallback over properties; how a sparse Sigma grows implicitly; expectation taught by the reconstruction, in stages (2026-11-19)
+
+**The way down over wholes.** Quoting §19.94's "What is not yet shown is the way down over wholes, the request reaching each property through the Pi's own entries": "If that doesn't work, we need to revert to the sigma to do discrimination over the set of properties." *Decided.* Round 6 shows the way down over properties by the Pi's own entries (certificate 56 (a), (b) and (e)), and says plainly whether it holds. If it does not, rule 57's Sigma over the set of properties is built in its place. It stays withdrawn until then.
+
+**How a sparse Sigma grows without MTM.** "we have MTM doing promotion for explicit, but implicit has no expose to grow with a sparse interconnection. is there some way to test exposure randomly over the missing entries to see if any develops a strong weight, and prune if not? I think we had a full PI from which we pruned the least significant weights, and we could do a similar thing for Sigma, but Im not sure that is robust (perhaps small weights have a large effect). Thoughts? A full matrix with regularization would be best if there were not millions of percepts and concepts at the basic level."
+
+*Claude's thoughts, as asked; nothing of it is built, and it is tried in tests first (rule 67).*
+
+1. *Random exposure is not needed, because the gradient of a missing entry can be known exactly.* The entry of concept c on row r receives, in one reading, the error that reaches c times the signed value of r. That is nothing unless r is present in the reading and an error reaches c. A sentence has a few rows present, so over all the missing entries the gradient of a reading is nothing but on (the rows present) by (the concepts an error reaches): tens of numbers, not billions. An entry drawn at random on an absent row would learn nothing in that reading either. So the exposure can be exact where it can matter at all.
+2. *That makes the sparse matrix the full matrix with regularization, stored without its zeros.* Under a penalty on the size of each weight, a weight of the full matrix that stands at zero leaves zero only when the gradient that gathers on it is greater than the penalty; and a weight returns to zero when its gradient no longer holds it against the penalty. So: keep, for the pairs of a present row and a taught concept, the gradient the missing entry would have had, gathered over readings; write the entry when what has gathered exceeds the penalty; remove an entry when the penalty brings it to zero. One number, the penalty, governs growing and pruning, and it is the penalty of rules 15 and 22.
+3. *His doubt about pruning by the least weight is right, and this is what answers it.* A small weight with a large effect has a large gradient holding it, and the penalty does not bring it to zero. Pruning by the size of a weight removes it; pruning by the penalty does not. Where a measure of an entry's worth is wanted for a report, it is the weight times its gradient, or the entry's mean contribution over the readings where its concept is used, and not the weight alone.
+4. *What bounds it.* The gathered gradients are kept only for pairs that have occurred together, in a table of fixed size that drops the weakest; a concept's own row and its declared members are never pruned (as the structure of a meta concept is never thinned).
+5. *Where the full matrix can be afforded it is the measure:* at the lesson's size the full matrix under the same penalty is 200 MB, so the trial is the sparse form against the full one, the same entries and the same readings.
+
+**Expectation.** "Regarding expectation, can we let it be taught by the reconstruction? so it is a form of intermediate prediction, or a reconstruction that happens in stages: we are predicting the state of percepts, concepts, and output. using the existing architecture will allow us to to sparse in interconnection, which should help amplify the salience."
+
+*Taken as the direction* (rule 66; round 5, step 1). Expectation is no map of its own. It is the reconstruction, made in stages on the structure's own matrices: what is expected of the percepts, of the concepts at each order, and of the output, each compared with what the whole sentence has at that stage. Its teacher is the reconstruction's error. Where training hides some of a sentence, the error at what was hidden is what teaches it. The free map of item 1.8 (`expect_stack`) goes, and with it the question of §19.94 about its free Pi. Its interconnection is the structure's, which is sparse, and that is his reason: "which should help amplify the salience".
+
+*One thing Claude holds to in building it, put to him:* what is expected stays apart from what is observed. The same matrices are run a second time, the spread of rules 23 to 27 and 30, and what it gives is written as expected and never as evidence. Without that, the error at a hidden word would teach the concept of that word to read the row of the word beside it, and the concept would then be present for a word that is not there, which is what rule 62 removed (`alpha` reading on "beta delta"). So the error at what was hidden teaches the row that holds the two together, the symbol above, which MTM nominates when they recur and which the gradient may also grow (rule 67), and not an entry from one word's row to the other word's concept.
+
+*What it replaces, to be said by round 5:* the cost `expectation.concepts` becomes the second stage of the reconstruction; attention's forecast of a look, the chooser, retrieval and `intuit` read the spread's field where they read `expect`'s; the read of a field to an idea (`idea_stack`) is another thing and stays; `test_81` is the certificate of the second stage.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9519,12 +9541,12 @@ chooses from. The old classes are not edited.
 
 15. *Membership is learned under a penalty* (Alec, §18.24, rule 29;
     rule 22). *Mine:* §18.3's penalty, measured first, on the Pi's
-    entries and on the Sigma's entries above order zero. The Sigma of
-    order zero is dense and is not penalized. Above order zero a
-    promotion writes an edge at one into capacity allocated
-    beforehand; at order zero it writes a column of $U$ (rule 8b).
-    The penalty thins the values of entries that exist; it does not
-    make a matrix sparse (§18.9).
+    entries and on the Sigma's entries above order zero. A
+    promotion writes an entry at one into capacity allocated
+    beforehand, at order zero as above it (rule 62). The penalty
+    thins the values of entries that exist; with rule 67, if its
+    trial holds, the same penalty says when an entry is written and
+    when one is removed, at order zero too.
 16. *Likeness of codes pairs nothing* (*mine*, from §18.24, rule 28).
     A row enters a set, or two rows are taken as neighbours, by the
     mereology or by a promotion, never by the likeness of their
@@ -10110,7 +10132,11 @@ chooses from. The old classes are not edited.
     (properties) was an early version of that, but we need something
     driving that analysis top-down just like synthesis drives
     bottom-up part construction"). What rule 57 was for is done by
-    rule 36 over both towers. As it was written: *Wholes driven by
+    rule 36 over both towers. *The fallback* (Alec, §19.95: "If that
+    doesn't work, we need to revert to the sigma to do
+    discrimination over the set of properties"): if round 6 does not
+    show the way down over properties by the Pi's own entries
+    (certificate 56), this rule's Sigma is built. As it was written: *Wholes driven by
     the concepts* (Alec, §19.70, §19.73: "a
     sigma being driven by the downward conceptual projection ...
     synthesis on the way up and analysis on the way down"). Not
@@ -10341,6 +10367,43 @@ chooses from. The old classes are not edited.
     sentence's dominant constituents; the measure is whether a
     question on top of the STM stack finds the row that answers it
     (rule 60).
+
+66. *Expectation is the reconstruction in stages, on the structure's
+    own matrices* (Alec, §19.95: "can we let it be taught by the
+    reconstruction? so it is a form of intermediate prediction, or a
+    reconstruction that happens in stages: we are predicting the
+    state of percepts, concepts, and output. using the existing
+    architecture will allow us to to sparse in interconnection").
+    - There is no map of expectation beside the structure. What is
+      expected is what the spread of rules 23 to 27 and 30 gives on
+      the Pi, the Not and the Sigma of each order.
+    - It has three stages: the percepts expected at order zero, the
+      concepts expected at each order, and the output. Each is
+      compared with what the whole sentence has at that stage, and
+      the three costs are the reconstruction's.
+    - Its teacher is the reconstruction's error. Where part of a
+      sentence is hidden, the error at what was hidden teaches it.
+    - *Mine, put to him:* what is expected is written apart from
+      what is observed and is never evidence; the error at what was
+      hidden teaches the rows that hold things together, the
+      symbols above, and no entry from one row to another row's
+      concept at the same order.
+    - Item 1.8's free map (`expect_stack`, its keys `expectHidden`
+      and `expectLayers`, and the cost `expectation.concepts` as a
+      cost of that map) goes; its readers read the spread's field.
+
+67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
+    Alec's question of §19.95; tried in tests before anything is
+    built*). An entry that is not stored is an entry at zero of the
+    full matrix. Its gradient in a reading is the error that reaches
+    its concept times the signed value of its row, which is nothing
+    unless the row is present, so it is kept exactly for the pairs
+    of a present row and a taught concept and for no others. An
+    entry is written when what has gathered for it exceeds the
+    penalty of rules 15 and 22, and removed when that penalty brings
+    it to zero. No entry is drawn at random and none is pruned by
+    its size alone. A concept's own row and its declared members
+    are not pruned.
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -10657,6 +10720,25 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     the meeting of the two classes; a whole defined by other wholes
     reads their product; and the map of (a) gives each of them its
     share.
+57. *Expectation in stages* (rule 66). (a) No module of expectation
+    stands beside the structure, by a test of the source's names.
+    (b) With a word of a known pair hidden, the second stage gives
+    its concept from the word that came, and the first stage its
+    percepts at their place; a word of another sentence is not
+    given (`test_item18_expect`'s test of an omitted word, and
+    certificate 24). (c) What is expected changes no evidence: the
+    observed concepts of the lossy sentence are the same with the
+    spread and without it. (d) The cost of each stage reaches the
+    entries of the structure and no parameter beside them.
+58. *The sparse Sigma against the full one* (rule 67; in tests
+    only). On the lesson's readings, with the same penalty and the
+    same steps: the entries the sparse form holds at the end are the
+    entries of the full matrix that are not zero, and their weights
+    agree to a stated tolerance; an entry whose weight is small and
+    whose effect is large is kept by both; the table of gathered
+    gradients stays within its size. Printed: entries written,
+    entries removed, the largest entry of the full matrix that the
+    sparse form lacks.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -11451,7 +11533,13 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    declared concept "objects" (rule 35).
 7. The penalty (rules 15 and 22): §18.3's, measured first, on the
    Pi's entries and on the Sigma's entries above order zero. The
-   structure of a meta concept is never thinned.
+   structure of a meta concept is never thinned. With it, in tests
+   only and nothing in bin/: rule 67's trial (certificate 58), the
+   sparse Sigma that writes an entry when its gathered gradient
+   exceeds the penalty and removes one when the penalty brings it
+   to zero, against the full matrix under the same penalty, on the
+   lesson's readings. Return its numbers and what you would
+   build.
 8. Certificates 4, 6, 13, 18 and 23 (d) in a new
    test/test_item17_symbols.py.
 9. Carried from the review of round 3 (§23.3.1): the feature table
@@ -11531,13 +11619,24 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
 14 to 17, 19, 20, 21, 24, 25 and 26. Read §19.11, §19.12, §19.22,
 §19.23, §19.25 and §19.27.
 
-1. The spread (rules 23 to 27): a fan up and a share down on the
-   structure's own matrices, in one pass, written to
-   _expected_knowing at every order (ConceptSpread.open_prediction
-   writes order zero alone today). intuit runs it after it deposits
-   expect's field, and it runs at the end of the read, before
-   comprehension takes its leaves' objects. It adds no parameter and
-   changes no evidence.
+1. The spread (rules 23 to 27), which is expectation (rule 66;
+   Alec, §19.95): a fan up and a share down on the structure's own
+   matrices, in one pass, written to _expected_knowing at every
+   order (ConceptSpread.open_prediction writes order zero alone
+   today). It adds no parameter and changes no evidence. The free
+   map of item 1.8 goes: expect_stack, expectHidden, expectLayers,
+   and ConceptSpread.expected's read of it; say what becomes of the
+   key expectationMap and of the ActivationPredictor kept beside
+   it. Its readers read the spread's field: the open prediction,
+   LookForecast, the chooser, retrieval, and intuit, which no
+   longer deposits a field of its own before the spread. It is
+   taught by the reconstruction's error in three stages, percepts,
+   concepts and output, each compared with the whole sentence at
+   that stage; the cost expectation.concepts is the second stage.
+   What is expected is written apart from what is observed. Measure
+   test/test_item18_expect.py::test_81 first, on the spread alone,
+   before any other step of this round, and return what it reads.
+   Certificate 57.
 2. Not strictly ramified (rule 26): a symbol reads the concepts of
    every lower order, where a membership is admitted only between
    adjacent orders today (class_member; the row of §19.21's table).
@@ -11605,7 +11704,12 @@ which form of the where match is built.
    and no read on the host. Certificate 56. Say where the first
    Pi's entries over a row's properties are held today
    (BasicPercepts' wholes, PerceptProperties) and whether the map
-   reaches them by the same matrix the way up reads.
+   reaches them by the same matrix the way up reads. Say plainly
+   whether the way down over properties works (certificate 56 (a),
+   (b) and (e)), with its numbers: if it does not, Alec's fallback
+   is rule 57's Sigma over the set of properties (§19.95), and you
+   return what stops it and build nothing of the fallback in this
+   round.
 4. A look (rules 34, 37, 39 and 47), as round 2 tried it
    (look and where_match of test/looks_round2.py). An event's
    activity is its share capped at its own activity. A reading's
