@@ -1779,6 +1779,14 @@ generation is expected at this stage and is recorded, not tuned away.
    error is the only teacher of where a percept is. Item 1.7's round
    6 builds the where so; round 2 of that item measured the
    reconstruction alone at 4 held-out orders of 6.
+   **Added 2026-11-20 (Alec, sigma-pi §19.99):** "Let's add a test for
+   sequence learning in the sense of "singing a song over the output".
+   For 1.6, counting would be a good test of that". A taught sequence
+   is produced over the output from its first item, each item from the
+   ones before it with no input between; here it is counting (the
+   testpoint `TestSingASong`). And this item's lessons are ordered by
+   successive approximation: "we can't teach focus directly, but we
+   can reward behaviors that require a successively narrow focus".
    **At its submission the slow tier (`RUN_SLOW`) is run
    once, overnight,** and not before: the architecture changes no more
    after this item (Alec, 2026-11-18; 1.8 §72). **Begun 2026-11-18**

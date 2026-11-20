@@ -2401,10 +2401,13 @@ whether it forbids a second look, or lowers its score; how both and neither
 over symbols reach `attend`, and which way each points (in or out); and the
 thought operators this follows.
 
-*Taken into item 1.7* (sigma-pi plan, §19.98 and rule 69): the record is a
-lowering of a place's salience that fades over a walk's steps, read by
-`attend` as a reason and never as a mask. Still to specify here: the thought
-operators this follows.
+*Taken into item 1.7* (sigma-pi plan, §19.99 and rule 69): the record is a
+log of what the walk has done and what came of it, held in STM, in the
+chooser's domain; what the chooser does with it is learned, and nothing
+forbids an act or lowers a place's salience by hand. Still to specify here:
+behaviours that last, as chains of acts replayed from STM or LTM and in the
+end held as concepts (Alec, 2026-11-20); and the thought operators this
+follows.
 
 ## The field use of every operator (Alec, 2026-11-17; future work)
 

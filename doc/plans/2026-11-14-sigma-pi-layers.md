@@ -9159,6 +9159,26 @@ On the report of round 4's fifth pass (§23.4.4), two worries.
 
 *For round 6* (rule 69, *mine, from his words of 2026-11-18; put to him*): the record of what a walk has examined is a lowering of that place's salience that fades over the walk's steps, read by the chooser as one more reason and never as a mask. It answers the question the future-work note left open, "whether it forbids a second look, or lowers its score", by lowering.
 
+### 19.99 Alec: no unfocus rule at all; the chooser's own log in STM; teaching by successive approximation; behaviour chains, and a song over the output (2026-11-20)
+
+His answers to §19.98.
+
+**Percepts.** "Your check on percepts: correct, they come from the two mereological towers of percepts." *Settled:* a basic percept is a row of the first Pi over the part tower and the property tower; symbols are the rows over concepts.
+
+**The unfocus rule.** "The unfocus rule is probably unnecessary, and a focused state may be good context to move focus to the right until sentence end. The narrow rule should also be removed." *Decided.* Both go: the wider rule was never built, and the fourth pass's narrower one (§23.4.3, part E) is removed by the sixth pass, with nothing put in its place. The loop of §23.L is then back, and the lesson's wide spread with it; that is accepted, and what answers it is the next three paragraphs and not a mask. *His thought on the walk itself:* once focused on a word, that state is the context from which to move the focus to the right, word by word, to the sentence's end; the way out of a focus is on, not back.
+
+**Teaching it.** "Animals are taught via successive approximation under behavioral conditioning paradigms, I imagine the same might work here; we can't teach focus directly, but we can reward behaviors that require a successively narrow focus." *Taken as the way attention is taught* (rule 70). No rule says where to look. The lessons are ordered so that each can only be done with a narrower focus than the one before, and what is rewarded is the behaviour, by its outcome.
+
+**What the chooser needs to learn from.** "I'm guessing that some log of the animals behavior (from the chooser) or what it experiences in the environment might be useful as episodic state, in STM at least, that the chooser has in its domain so that the gradient can teach actions based on that. I would expect long-term behaviors to be learned as behavior chains that can be replayed in STM or LTM , and eventually in concepts." *Taken* (rule 69, rewritten). The record of where a walk has looked is not a lowering of salience built in by hand, as Claude wrote it in §19.98; it is a log of what the walk has done and what came of it, held in STM, in the chooser's domain, and what the chooser does with it is learned. A behaviour that lasts is a chain of acts, replayed from STM or from LTM, and in the end held as concepts.
+
+**A test of sequence.** "Let's add a test for sequence learning in the sense of "singing a song over the output". For 1.6, counting would be a good test of that that might be simpler than moving focus reliably over words." *Taken* (certificate 59; item 1.6's plan and the todo). A learned sequence is produced over the output, each item from the one before with no input between; in item 1.6 the song is counting.
+
+*Mine, put to him, each built on the first choice until he says otherwise:*
+
+1. *What the log holds:* for each of the walk's last steps, the act taken, the place it was taken at, and what it returned (the words found, the excess and the omission of the look). In STM as chunks of the walk, not in a store of its own.
+2. *Whether a move of the focus to the right is an act of its own.* Today a walk leaves a word by the unfocus and descends again; there is no act that carries the focus from one word to the next. *First choice:* round 6's looks give it (a look is a place, rule 32, and the next look's place is asked by the chooser), so no new act is added to the old table.
+3. *What the lesson measures meanwhile.* With no rule against the loop the lesson's words found run from nothing to most of them by the draw of the initialization. It is still reported over 12 runs, with the walks that repeat a state; rounds are judged by their own certificates until round 6.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10489,20 +10509,35 @@ chooses from. The old classes are not edited.
     Sigma follows rule 63. It is not expectation and nothing reads
     it as expected. *Open:* its teacher (§19.97).
 
-69. *A walk keeps a record of where it has looked, as lowered
-    salience* (Alec, 2026-11-18: "we need some record of having
-    examined a particular place"; §19.98: a rule that forbids a walk
-    a state it has been in "seems very unbiological"). A place a
-    walk has just attended is less salient to it for a while: the
-    record lowers that place's share in the salience map (rule 36)
-    and fades over the walk's steps. The chooser reads it as one
-    more reason; it masks no act. *Mine, put to him:* by how much
-    and for how long are keys, set by measuring the lesson over 12
-    runs; the two lanes over a look's symbols, both and neither,
-    reach `attend` as reasons to narrow or to widen in the same way
-    and not as what makes an act legal. The rule of round 4's
-    fourth pass (no unfocus at the step after the focus it undoes)
-    is a scaffold and goes when this is built.
+69. *The chooser has a log of what the walk has done, in STM* (Alec,
+    2026-11-18: "we need some record of having examined a particular
+    place"; §19.99: "some log of the animals behavior (from the
+    chooser) or what it experiences in the environment might be
+    useful as episodic state, in STM at least, that the chooser has
+    in its domain so that the gradient can teach actions based on
+    that"). What a walk has done and what came of it is held in STM
+    and is among what the chooser reads. What the chooser does with
+    it is learned by the gradient. Nothing forbids an act because of
+    it and nothing lowers a place's salience by a fixed amount
+    (Claude's §19.98 form, withdrawn). No rule bars an unfocus
+    (§19.99: "The unfocus rule is probably unnecessary ... The
+    narrow rule should also be removed"); a focused state is the
+    context from which the focus moves on to the right. A behaviour
+    that lasts is a chain of acts that can be replayed from STM or
+    LTM, and in the end is held as concepts. *Mine:* the log holds,
+    for each of the walk's last steps, the act, its place and what it
+    returned.
+
+70. *Attention is taught by successive approximation* (Alec, §19.99:
+    "we can't teach focus directly, but we can reward behaviors that
+    require a successively narrow focus"). No rule says where to
+    look, and no cost is put on a look as such. The lessons are
+    ordered so that each can be done only with a narrower focus than
+    the one before it, and the reward is the outcome of the
+    behaviour. *Mine:* the order is the sentence, then its words in
+    order (reading without comprehension, item 1.6), then a word's
+    parts; each grade is passed, over 12 runs, before the next is
+    given.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -10860,6 +10895,13 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     gradients stays within its size. Printed: entries written,
     entries removed, the largest entry of the full matrix that the
     sparse form lacks.
+59. *A song over the output* (Alec, §19.99; a testpoint,
+    `TestSingASong`; *learning*). A sequence that has been taught is
+    produced over the output from its first item alone, each item
+    from the ones before it with no input between, in order and to
+    its end; a sequence never taught is not produced; two sequences
+    that share an item are each continued as its own. In item 1.6
+    the song is counting. The values are printed.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -11932,16 +11974,20 @@ which form of the where match is built.
     model. `archer` is not read on `reach`: the first Pi is read
     only on the rows the lookup names (rule 33; §23.3c.3).
 
-17. The record of where a walk has looked (rule 69; Alec, §19.98).
-    A place just attended has its salience lowered for a while,
-    fading over the walk's steps; attend reads it as a reason and
-    it masks nothing. With it the scaffold of round 4's fourth pass
-    goes (the unfocus barred at the step after the focus it undoes,
-    in Attention.narrowing_view or whatever has replaced that table
-    by then). Measured on the lesson over 12 runs, with and without
-    the record and with the scaffold removed: words found, first
-    walks at the cap, walks that repeat a state. A walk that repeats
-    a state is reported, never forbidden.
+17. The chooser's log (rule 69; Alec, §19.99). What a walk has done
+    and what came of it, for its last steps (the act, its place,
+    what it returned), is held in STM and is among what attend
+    reads; say what attend reads of its own past acts today, and
+    what is added. Nothing forbids an act and nothing lowers a
+    place's salience by a fixed amount: what the chooser does with
+    the log is learned. No rule bars an unfocus (the scaffold of
+    round 4's fourth pass was removed in its sixth). Say whether the
+    looks give an act that carries the focus from a word to the
+    next one on its right, and build it if they do not. Taught by
+    successive approximation (rule 70): the grades in order, each
+    measured on the lesson over 12 runs before the next: words
+    found, first walks at the cap, walks that repeat a state. A walk
+    that repeats a state is reported, never forbidden.
 
 16. One time (rule 64; Alec, §19.90 and §19.91; the census of
     §23.T, which names each place). In a pass of its own, after the

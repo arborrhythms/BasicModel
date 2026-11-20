@@ -1408,3 +1408,32 @@ To specify with the rest of this item: the corpus of the task (the same
 sentences as the comprehension lessons, or shorter ones first); when a model
 is said to read (every sentence of a held-out set put back in order); and
 whether the reading lesson of item 1.7 stays as a second teacher or goes.
+
+## Added 2026-11-20: a song over the output, and counting as its test
+
+Alec (sigma-pi plan, §19.99): "Let's add a test for sequence learning in the
+sense of "singing a song over the output". For 1.6, counting would be a good
+test of that that might be simpler than moving focus reliably over words."
+
+A test of a behaviour chain: a sequence that has been taught is produced
+over the output from its first item alone, each item from the ones before
+it, with no input between. Here the sequence is counting: given `one`, the
+model says `two three four` and on to the end of what it was taught.
+
+What it tests that nothing else in this item does: that an order of acts is
+held and replayed (from STM, from LTM, and in the end as concepts), which is
+what a learned way of reading a sentence also is. It asks less than reading
+does, since nothing has to be found in the input.
+
+To specify with the rest of this item: how far the count goes (the cast is
+the single digits, §13.4); what teaches it (the sentences of the corpus that
+count, or a lesson of its own); that a second sequence sharing an item with
+the first, counting down or counting by twos, is continued as its own; and
+what is printed (the testpoint `TestSingASong`, sigma-pi plan, certificate
+59).
+
+Also from §19.99, for the order of this item's lessons: attention is taught
+by successive approximation, "we can't teach focus directly, but we can
+reward behaviors that require a successively narrow focus" (sigma-pi plan,
+rule 70). The grades are the sentence, then its words in order (reading
+without comprehension, above), then a word's parts.
