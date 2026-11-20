@@ -93,9 +93,11 @@ symbol: "we don't want to represent both with one vector, we want a region in
 semantic space. So the region specification for similarity is defined with
 the pi" (Alec, 2026-11-20). It is "a neighborhood of identity", and it is
 what lets a concept be reasoned over with other concepts. Its fold is the fold
-of a basic percept, the plain product over its constituents; concepts that are
-the same thing are what falls in its region, as the occurrences of a word fall
-in its basic percept's. A symbol has no dimensions and "does not live in any space,
+of a basic percept, the plain product over its constituents, and its
+constituents are coordinates of conceptual space, as a basic percept's are
+coordinates of perceptual space. The concepts that are the same thing are what
+falls in its region; a coordinate on which they differ has no weight, so the
+region is a cone in the subspace of what they share (Alec, 2026-11-20). A symbol has no dimensions and "does not live in any space,
 which is what makes its collection by sigma so set-like" (Alec, 2026-11-19).
 It is its constituents occurring together: "a basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their

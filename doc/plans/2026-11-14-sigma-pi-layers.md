@@ -9315,6 +9315,32 @@ In `cats` the row reads 1 for and, since the holder's added `s` is there, 1 agai
 
 *Claude's reading is that he means the second.* Nothing is built on either until he says: the ninth pass makes symbols of one constituent, read by the plain product, which is right under both.
 
+### 19.105 Alec: a row's constituents are coordinates of the space beneath; a similarity class is a cone in a subspace (2026-11-20)
+
+To §19.104's question: "The basic percepts constituents are coordinates of perceptual space or , and the symbols constituents are coordinates of conceptual space. I think. please confirm the reasoning: we are collecting members of a similarity class, and that class is defined as a conic region in similarity space, which may in fact be a subspace of that space (thus irrelevant details of members are removed by their variation in that subspace)."
+
+**The reasoning holds, and here is why in the row's own arithmetic.** A row of a Pi is the product of its constituents' values, each raised to its weight, with weights at zero or above.
+
+- *It is a region.* The row is high exactly where every coordinate it weighs is high. With the weights summing to one it is the weighted geometric mean of those coordinates, which scales with the size of what it reads; so "the row is at least this share of the input's size" depends on the input's direction alone, and the region is a cone.
+- *It is a region of a subspace.* A coordinate with weight zero is raised to the power zero and is one whatever it holds, so the row does not see it. The region is bounded in the coordinates it weighs and runs free in all the others.
+- *That is how irrelevant detail is removed.* A product needs every coordinate it weighs, so a coordinate on which the members differ cannot keep its weight: one member low on it would shut that member out. What can stay weighed is what all the members share. So generalizing over members is dropping the coordinates on which they vary, and the class is the cone over the coordinates they have in common. One precision on his sentence: the members vary in the coordinates the subspace leaves out, and are alike in the ones it keeps.
+- *It is the same statement at both orders.* A basic percept is the cone over the coordinates of perceptual space that its occurrences share; a symbol is the cone over the coordinates of conceptual space that the concepts which are the same thing share. One class, one fold (§19.104).
+
+**What it rests on, checked in the source.**
+
+1. *At order zero it holds by construction.* A percept's code is built so that one code lies inside another only where the one form is a part of the other (rules 50 to 61), so "falls in the cone" is "holds these parts and properties". As built the first Pi's row reads its parts and its properties, each of which is a region of the code; with rule 61 that and "reads the code's coordinates" say the same thing.
+2. *Conceptual space is nearer to this than Claude said in §19.104.* A concept's meaning is already held in coordinates at zero or above, in pairs of poles, and is placed by shared size and not by angle: a concept's place moves toward the coordinates of the contexts it occurs in (`MereologicalCodes.placement_step`, the meet-ratio objective), and two codes are compared by how much of one lies in the other (`IdentityRows.meet_ratios`). So concepts that occur in the same contexts come to share coordinates, which is what a cone over shared coordinates needs.
+
+**Three things it asks for, each known from order zero.**
+
+1. *The against side.* What falls in a cone includes whatever holds its coordinates and more: `cats` holds everything `cat` does. At order zero the row's against entries say so (rule 53). A symbol needs the same: what its nearest neighbours in conceptual space have that it has not.
+2. *One meaning at a time.* If the meanings of all the concepts active in a sentence are joined before the symbols' Pi reads them, the join can cover a cone that none of them is in. That is the fault of §19.89 one order up (the concept of `alpha` lit by the letters of `beta` and `delta` together). The symbols' Pi reads the meaning at a place, as the first Pi reads a form where its run lies.
+3. *No circle between codes and what reads them.* A concept's place is moved by the contexts it occurs in, and a symbol would now be read from places. The guard the model has ("codes never read a value computed from codes", 2026-10-20) has to be said again for this.
+
+**What it changes in the rules** (rule 72, *his direction, "I think"; Claude's form of it, to be tried in tests before anything in the source*). A symbol's row reads coordinates of conceptual space and not the lanes of named concepts (rules 9 and 10 said the second); the likeness of codes now does pair something, but only through a symbol's cone (rule 16 said nothing; his "no geometric influence" of 2026-11-15 was about scores and moves, and is kept for those). Nothing of round 4's ninth pass is undone by it: a symbol of one concept read by the plain product is the cone about that one concept's own coordinates in the limit.
+
+**The trial, in tests only.** On the lesson's model and on a small set of concepts known to be the same thing and known not to be: the row over the coordinates two same concepts share takes both in and keeps the others out; how many coordinates are shared after the lesson's placement; whether an against side is needed to keep out a concept that holds more; and what a join of two unrelated meanings lights.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10730,9 +10756,26 @@ chooses from. The old classes are not edited.
       are not constituents of its row; they are what falls in its
       region, as the occurrences of a word fall in its basic
       percept's. *Withdrawn:* the Pi on the complements of §19.103.
-      *Open with him:* what a symbol's constituents are, the
-      concepts that always occur with the thing or the coordinates
-      of conceptual space (§19.104).
+      A symbol's constituents are coordinates of conceptual space
+      (rule 72; Alec, §19.105).
+
+72. *A row's constituents are coordinates of the space beneath it*
+    (Alec, §19.105: "The basic percepts constituents are coordinates
+    of perceptual space ... and the symbols constituents are
+    coordinates of conceptual space. I think ... we are collecting
+    members of a similarity class, and that class is defined as a
+    conic region in similarity space, which may in fact be a
+    subspace of that space (thus irrelevant details of members are
+    removed by their variation in that subspace)"). A basic percept
+    is the cone over the coordinates of perceptual space that its
+    occurrences share; a symbol is the cone over the coordinates of
+    conceptual space that the concepts which are the same thing
+    share. A coordinate on which the members vary has no weight.
+    *Mine, tried in tests before it is built:* a symbol's row has
+    an against side, what its nearest neighbours hold that it does
+    not (as rule 53 for a basic percept); it reads the meaning at
+    one place and never a join of the field's meanings; and no
+    concept's place is moved by a value read from a symbol.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
