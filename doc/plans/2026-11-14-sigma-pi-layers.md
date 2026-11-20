@@ -18659,3 +18659,114 @@ Both stopping gates pass (`test_mm_xor.py::TestMMXorConvergence::test_convergenc
 **Not verified.** The list has not been run on `7a9d5f6ab2` by anyone: the implementer's two whole runs were on the first commit. Under the standing rule of 2026-11-20 the list is run once at the round's end. Nor has Claude read the changed source against the return beyond its first sections; that reading is owed before the round's last pass is briefed.
 
 **Taken from the return, for the round's last pass.** The store's columns are symbols and no column is a concept's row, so certificate 6's first clause is met for the store. The symbol of an operator class's argument is made where the class first takes it and not at the grammar's declaration (*provisional*, the return's point 5, with its reason). A cover over members of its own order at order zero writes nothing in the store (point 6). One test failed once beside other files and never alone (`test_serial_concepts.py::test_update_has_one_promotion_after_placement_and_no_close_observer`); it joins the list of tests to be measured before the item's sweep.
+
+### 23.4.9 Round 4, tenth pass: the Not and the sparse Sigma above order zero (part 1 built; parts 2 and 3 not started)
+
+Checkout `basicmodel`, `main`, from `a776a9e0f4`. Commits: `f0efee167f` (part 1).
+
+#### What fails or is unfinished, first
+
+- `test_item17_symbols.py::test_the_lessons_training_keeps_every_declared_membership_and_reads_no_known_word_both` fails some of the time after part 1: declared memberships at one in row 0 (`letter`) move (measured 2 of 4 runs, by 1.2e-7 and 3.1e-6; 0 of 5 at `a776a9e0f4`; passed in the later spot run). With the store's input detached 1 of 4 still moved (6e-8): not only through the store's read. Producer not named.
+- **Part 2 (the SS leg) not started.** `ConceptEvidence.decode` still multiplies each concept's two lanes by its code; its readers (`Language` 13700 into `_publish_symbol_snapshot`, `Models` 17916 `_cs_parallel_slab`, `Spaces.cs_decode`, `cs_forward_content`'s content) feed events of width `symbol_dim` into LTM0 (`content_width=symbol_dim`, `Language` 8872), `SymbolExpectation._current_discourse_s`, `symbol_states` and `commit_symbolic_peer_results`. Changing the event's width runs through that pipeline; I could not leave it whole in this pass's budget, so I did not start it.
+- **Part 3 (signed values as two lanes on the way up and back) not started:** `activation.abs()` at `Models.py` 21990 and 22476 (two places now, not four), each with `positive_evidence(activation.abs())`; the readers of a word stored against are not traced.
+- **Part 4:** certificates 4 (whole), 13 and 23 (d) built and passing; 6's first clause holds for the store (cert a) and not yet for the leg (part 2).
+- Run once by the coordinator, not by me: the list. Tests outside the files I ran that may fail by this change: any that builds a store checkpoint blob by hand without the mark `signed symbols` (now refused); any that asserts a store read of exactly 1 or the greatest of several members (now tanh of the sum).
+
+#### Part 1: Pi, Not, Sigma above order zero (`f0efee167f`)
+
+| File, function | Step | What it became |
+| --- | --- | --- |
+| `bin/Layers.py`, `SparseSigmaLayer3.fold` (new, static) | Sigma | the one read of a sparse Sigma: tanh of each concept's sum of `_EntryRead` terms; `SparseSigmaLayer3.forward` uses it |
+| `ConceptualAttentionLayer` | Sigma | one column for each symbol and the bias (`nInput = Ns + 1`, was `2 (Ns + 1)`); each entry one signed number (size = weight, sign = option); `add_edge` takes a signed number and gives a weight to an entry at zero; `negated(pos)`, `raise_entry(pos, w)` (new); `forward(options)` = `sigma_read`, `reverse` = `sigma_transpose`; `COLUMNS = 'signed symbols'`, `REFUSED` (the reason) |
+| `thing_lanes` | Pi | unchanged: a symbol's two lanes, the product of its members' |
+| `thing_options` (new; `thing_input` gone) | Not | `NotLayer3.options` of each symbol's lanes and of the bias (1, 0) |
+| `sigma_read` (new) | Sigma | masked read of a store or a bound view, rows `start:end`, missing sources at nothing (no data-dependent size) |
+| `sigma_transpose` (new; `attribute_presence` gone) | Sigma's transpose | each entry of weight above zero carries its concept's two lanes to its column, exchanged for a Not entry; with an observed field the lesser; with none, a concept's strongest entry alone (first written among equals); the greatest at a column |
+| `seat_lanes` | Pi read back | takes `[T(+1), N, 2]` things' lanes |
+| gone | | `SparseLayer.fold_presence`, `attribute_presence`, `_fold_weights`, `_SelectDefinitionEdges`, the view's `_fold_source_*` and `_paired_sources` (now `_thing_columns`), `column_lane`, `lane_width`, `bias_column(lane)`, `project_parts`, `migrate_part_moments`, `Models._read_rows_as_things`, the non-negative check in `SparseLayer.add_edge` |
+| `bin/Spaces.py`, `_concept_rung_presence` | Pi, Not, Sigma | `signed_lanes(sigma_read(view, thing_options(view, field)))` |
+| `cs_reverse_presence.descend` | transpose, then Pi | `sigma_transpose` then `seat_lanes`; observed = the things' lanes and the bias |
+| `cs_forward_content` (relevance hop) | | `forward_linear_abs` over one column per thing |
+| `add_concept_edge`, `add_thing_edge` | Not | `negated` writes a negative number on the one column |
+| `concept_weights(row, negated)` | | entries by sign, weights by size |
+| `concept_entries`, `reads_concept` | | no `lane` argument: the entry on the symbol, either option |
+| `_prepare_part_learning` | | one zero entry for each thing (a pole witnessed against needs no entry apart); the "other lane" candidates gone |
+| `_populate_concept_weights` | | `raise_entry` in place of `clamp_min_` (keeps a Not entry's option) |
+| `_set_concept_edge_value`, `_hebbian_strengthen`, `_normalize_concept_parts`, `hebbian_strengthen_row`, `definition_sparsity_penalty` | | sizes by `abs`, options kept |
+| `_bind_attended_concepts`, `_bias_col` | | one bias column |
+| `refinement_field` | | order-zero both enters as a value on the for lane and the orders above hold what they read on both lanes (*provisional*: a concept is never both, so both is carried up as a measure) |
+| `bin/FieldProjection.py`, `close` | Not, Sigma | each entry's symbol (product of its constituents, or the bias) through `NotLayer3.options`, summed by `SparseSigmaLayer3.fold`, `signed_lanes`, then the greater of it and the direct evidence (as before). Its six callers unchanged (they take `close`'s result) |
+| `bin/CaseSelection.py`, `stage_case_bank` | transpose, then Pi | written = value not zero; `sigma_transpose(identity on the for lane, observed ones)`, `seat_lanes` |
+| `bin/DefinitionFold.py` | | unchanged: `loss` reads `_concept_rung_presence`, `prepare` the changed `_prepare_part_learning` |
+| `bin/Models.py` | | saves `columns: 'signed symbols'`, init values signed; restore refuses any other mark with `REFUSED` (*decided*); another room moves only the bias; the store projection in `_project_sentence_parameters` and the moment migration gone; a retired META checkpoint (`word_obj_meta`, `interpretations`) is refused at the start of `_restore_allocator_extras` |
+| `bin/GrammarConceptCheckpoint.py`, `prepare` | | refuses an unmarked store; columns do not move with rows |
+| `bin/ConceptLessons.py` | | the store projection after a step gone |
+
+**Is the store nothing but a `SparseSigmaLayer3` with bookkeeping?** Its read is that class's one read (`SparseSigmaLayer3.fold`), its entries that class's signed numbers. *Provisional:* it is not made a subclass, since its storage is not that class's: it grows and removes entries while learning (`remove_edges`, tail-preserving values with the optimizer's moments migrated, `_index` read by 20-odd modules), and `SparseSigmaLayer3` has fixed capacity and no removal. One form of the read; two of the storage.
+
+**The coordinator's two retired-META tests.** The ninth pass deferred the META refusal to the end of `_restore_structural_extras` (`_legacy_definition_bindings`), after the store was read; reading the fixture's old store columns as things (`_read_rows_as_things` → `things_reading`) refused first. Now the META refusal is the first check of `_restore_allocator_extras` and the deferral is gone; both tests pass with their text unchanged.
+
+#### Where values changed (part 1)
+
+The lesson's 16 sentences, one run, a wrapper on `_concept_rung_presence` computing beside each call the old fold (least/greatest with `FieldLogic.power`) on the same lanes and entries (192 unbatched calls, 9,416 reads, 1,267 entries read, 1,184 of them at weight one): greatest difference .2384 (= 1 - tanh 1: a kind with one entry at one on a member at one reads .76 for 1), mean .003 a lane; reads above .5: 439 old, 439 new. Elsewhere: a kind over several present members now sums them (`test_weak_members_are_summed`: 32 at .001 read .032, was .001); a both member and an absent one give one signed value (was both); a Not entry and a for entry on one symbol are one entry.
+
+#### Certificates (`test/test_item17_symbols.py`)
+
+| Test | Numbers | Result |
+| --- | --- | --- |
+| `test_cert_4_the_next_sigma_reads_one_combined_input_for_each_symbol` (new) | member (.7, .2), weight 2: kind (.762, 0) = tanh(2 x .5); view 1 symbol + bias | passes |
+| `test_cert_23d_above_order_zero_a_not_entry_reads_a_symbols_pair_exchanged` (new) | member (.7, .2): absence (0, .462), presence (.462, 0) | passes |
+| `test_cert_13_an_entry_above_order_zero_that_no_cost_supports_goes_to_zero` (new) | .3 and -.3 under the penalty alone, SGD lr .02, 30 steps: -.02 and .02 (within one step of zero; plain SGD crosses zero and back, so the option flips at the floor); order-zero Sigma not in the penalty | passes |
+| `test_cert_a` … `test_cert_f` (ported) | cert a: `nInput == Ns + 1`; b: `words` reads tanh(.76) = .641 (was .76) | pass |
+| `test_cert_8_an_old_store_is_refused_with_the_reason` (replaces `…_is_read_once_as_symbols`) | an unmarked store blob refused, "the least and the greatest" | passes |
+
+#### Ported tests (part 1)
+
+| File::test | Old | New |
+| --- | --- | --- |
+| `performance_leaves` cases `fold_*` (14), `test_sparse_range_cache…` | `fold_presence` min/max cases, fullgraph | `sigma_{False,True,empty,unsorted}` on `sigma_read` over Not options, signed entries; range equality and pullbacks on `sigma_read`; MPS case `sigma_unsorted` |
+| `test_item18_producer_repair` (14 `test_06_*`, `pairing_survives…`) | two poles, one signed coefficient by subtraction; rails [1,0],[0,1],[0,0]; opposite gradients; reverse equals a control | one signed entry: (tanh 1, 0), (0, tanh .5), (0, 0); gradient = s (1 - y²) at .6, -.6 and 0; closure the same; transpose to for lane / against lane / nothing; cycle with entries at zero; view reads tanh(.9) (was 1) |
+| `test_sparse_layer` (4) | `fold_presence` dtype; square (18, 8); union .5; empty | `sigma_read` dtype; (9, 8), self-edge by either option; tanh(.375); empty |
+| `test_definition_sparsity` (4) | lanes by sign, two bias poles | signed entries, one bias column; assertions unchanged |
+| `test_cs_sparse_weights` (3) | union 1-(1-v)², max(1-.5³, 1-.75^.5), [1,0]; flip | tanh(2v); tanh(1.5 + .125); tanh(1.875); signed_lanes(tanh(a - f)) |
+| `test_concept_sigma_pi` (5) | union 1 at four orders; credit on a.sum(); weak disjuncts .001; two Adam tests via `fold_presence` | tanh iterated; credit on the for lane (at zero the two lanes' derivatives cancel); renamed `test_weak_members_are_summed`, tanh(.032); `forward_linear` |
+| `test_concept_evidence` (3) | both member + absent = both (1,1); present = 1; projection keeps values | renamed `…_is_one_signed_value`: (0, tanh 1); tanh(entry weight); no projection, values unchanged |
+| `test_item18_round_c_continuation::test_intuit_deposits…` | (.8, 0) greatest | (tanh .6, 0) sum |
+| `test_item18_fields::test_definition_bracket_and_cue…` (2) | store fold equals the reduce | the reduce as before; the store's read is tanh of the sum of options (0 here) |
+| `test_evidence_folds` | `…_weighted_min_and_max` | `test_sparse_sigma_reads_the_weighted_sum_of_options`: tanh(1.325), finite gradient |
+| `test_definition_fold::test_witnessed_lanes…` | opposite parameter's gradient = - | one entry on the symbol; finite-difference check kept |
+| `test_iterated_symbolic_wave::test_depth_d…` | [.5, 1, 1, 1] | [tanh .75, tanh 1.75, tanh(sum), tanh of that] |
+| `test_refine_raise::test_convergence_state…` | best 1 | tanh 1 |
+| `test_refine_raise` (4 more), `test_field_binding` (2), `test_grounded_xor` (2 places, slow, not run) | `store.project_parts()` after a step | removed (no projection) |
+| `test_sparse_concept_e2e::test_symbolic_order…` | 'lower orders only' (failing at the start) | 'lower epistemic levels only' |
+| `test_aligned_capacity_checkpoint_growth` (2 tests via `_allocator_blob`) | unmarked blob, `('shared', 7)` | marked `signed symbols`, room 4, `('concept', 7)`; `nInput == new_n + 1` |
+| `symbol_fixtures` | `lane` argument | gone |
+
+#### Spot tests run (part 1)
+
+60 files (every test file naming a changed function, plus restore and refinement readers) and the XOR gate: 800 passed, 33 skipped, 2 failed then ported (13 passed), 77 s; `test_item25_completion.py` (gate) among them.
+
+#### Choices
+
+1. The store keeps its own storage; its read is `SparseSigmaLayer3.fold` (*provisional*, reason above).
+2. The transpose without an observed field gives a concept's request to its strongest entry only, as the old one did (*provisional*).
+3. The transpose carries the request's lanes unscaled by the weight (the old undid the exponent; a sum has no per-entry inverse) (*provisional*).
+4. `refinement_field` carries order-zero both upward as a value on the for lane and holds the result on both lanes (*provisional*).
+5. An entry added at zero takes a later nonzero weight; otherwise `add_edge` stays idempotent (*provisional*).
+6. Old store checkpoints refused (*decided*, §19.106).
+
+#### What is left, step by step
+
+1. Part 2: `ConceptEvidence.decode` goes; the leg's event becomes each symbol's two lanes (`thing_lanes` of the seated field); change `_publish_symbol_snapshot`, `commit_symbolic_peer_results`, `symbol_states`, `SymbolExpectation._current_discourse_s`, LTM0's `content_width`, `_cs_parallel_slab` and `cs_decode`; then certificate 6's first clause over the leg.
+2. Part 3: trace the readers of the payload's activation (`Models.py` 21990, 22476) and of a word stored against; carry the signed value as its two lanes (`signed_lanes`) in the payload and the walk's pair.
+3. Measure the declared-membership test over 12 runs on `f0efee167f` against `a776a9e0f4` and name the producer if it holds.
+
+#### Review (Claude, 2026-11-20)
+
+Under the standing rule of 2026-11-20 this pass ran spot tests only (60 files and both gates: 800 passed), and Claude has not run the list on it; the list is run at the round's end.
+
+- *The list on the pass's starting source* (`7a9d5f6ab2`, run by Claude in a scratch copy): 19 failed, 6 errors, 2,786 passed. Three failures were the ninth pass's (two refusals of a retired checkpoint answered by the wrong check, one expected text), handed to this pass and repaired by it; one is `test_81`; the rest are of the scratch copy (tests that read git history or files an export leaves out) and are run again in the checkout at the round's end.
+- *Part 1 is the design:* above order zero the store reads symbols' two options through the Not and sums them with weights at zero or above, by the read of `SparseSigmaLayer3`. The least and the greatest are gone. A kind with one entry at one now reads tanh 1 and not 1, and several weak members are summed.
+- *Left:* parts 2 and 3 (the SS leg, a signed value as two lanes), with certificate 6 over the leg.
+- *The certificate that now fails some of the time* (every membership declared at one stays exactly one) is retired and not chased: Alec has decided that declared classes are not fixed (§19.106), so what it asserts is no longer the design.
+- *One storage, not two, is still owed:* the store keeps storage of its own beside `SparseSigmaLayer3`'s because it removes entries and moves optimizer state. The next pass gives `SparseSigmaLayer3` what it lacks or says why not.
