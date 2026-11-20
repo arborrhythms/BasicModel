@@ -1063,8 +1063,8 @@ class MediumTermMemory(MemoryStore):
         # One reserved id for each possible unpromoted MTM token. These lie
         # beyond nVectors, never in the codebook, and are reused only after
         # their owner expires or acquires a durable symbol.
-        self.transient_ids = torch.arange(int(n_vectors), int(n_vectors)+self.capacity, dtype=torch.long)
-        self.transient_used = torch.zeros(self.capacity, dtype=torch.bool)
+        self.transient_ids = torch.arange(int(n_vectors), int(n_vectors)+self.capacity, dtype=torch.long, device='cpu')
+        self.transient_used = torch.zeros(self.capacity, dtype=torch.bool, device='cpu')
 
     def hold_pending(self,reference,meaning):
         marks=dict(meaning.bindings)
@@ -1870,7 +1870,7 @@ class MediumTermMemory(MemoryStore):
         if (any(type(identity) is not int or identity not in self.transient_ids.tolist() for identity in claimed)
                 or len(claimed) != len(set(claimed))
                 or any(entry.transient is not None for entry in entries.values() if entry.symbol is not None)
-                or not torch.equal(used.cpu(), torch.tensor([int(identity) in claimed for identity in self.transient_ids]))):
+                or not torch.equal(used.cpu(), torch.tensor([int(identity) in claimed for identity in self.transient_ids], device='cpu'))):
             raise ValueError('identity checkpoint transient assignments are inconsistent')
         self.transient_used.copy_(used.cpu())
         self.entries, self.names = entries, names

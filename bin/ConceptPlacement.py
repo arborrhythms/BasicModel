@@ -5,7 +5,8 @@ from torch.nn.functional import normalize
 
 def seed(identity, like):
     generator = torch.Generator(device='cpu').manual_seed(int(identity))
-    return normalize(torch.randn(like.shape, generator=generator).abs().to(like), dim=-1)
+    drawn = torch.randn(like.shape, generator=generator, device='cpu')
+    return normalize(drawn.abs().to(like), dim=-1)
 
 
 def positions(owner):

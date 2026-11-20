@@ -141,8 +141,8 @@ class WordIdentity(nn.Module):
         self.given = {}
         self.order = {}
         self._ordered = []
-        self._packed = torch.zeros(0, self.limbs, dtype=torch.long)
-        self.usage = torch.zeros(self.total, dtype=torch.long)
+        self._packed = torch.zeros(0, self.limbs, dtype=torch.long, device='cpu')
+        self.usage = torch.zeros(self.total, dtype=torch.long, device='cpu')
         self._given_revision = 0
         self._parts_key = {}
         # The earlier forms whose code the last admission changed, and those
@@ -175,7 +175,7 @@ class WordIdentity(nn.Module):
             return self._codes[atom]
         _kind, value = atom
         n = self.bits.get(atom, self.ones) if bits is None else int(bits)
-        result = torch.zeros(self.width)
+        result = torch.zeros(self.width, device='cpu')
         result[list(bit_stream(bytes_of(value), self.pair_dim)[:n])] = 1
         given = self.given.get(atom)
         if given is not None:
@@ -195,7 +195,7 @@ class WordIdentity(nn.Module):
         key = (atom, n)
         if key not in self._catalog:
             from PerceptProperties import catalog_coordinates
-            result = torch.zeros(self.property_width)
+            result = torch.zeros(self.property_width, device='cpu')
             result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, n))] = 1
             self._catalog[key] = result
         given = self.given.get(atom)
@@ -343,7 +343,7 @@ class WordIdentity(nn.Module):
         self._ordered = list(self.words)
         codes = [self.code(raw) for raw in self._ordered]
         self._packed = (self._pack(torch.stack(codes)) if codes
-                        else torch.zeros(0, self.limbs, dtype=torch.long))
+                        else torch.zeros(0, self.limbs, dtype=torch.long, device='cpu'))
         collision = None
         for raw, code in zip(self._ordered, codes):
             key = self.key(code)
@@ -379,7 +379,7 @@ class WordIdentity(nn.Module):
 
     def _unpack(self, packed):
         """Rows of 64-bit words as codes of zeros and ones (``long``)."""
-        bits = (packed[..., None] >> torch.arange(64, dtype=torch.long)) & 1
+        bits = (packed[..., None] >> torch.arange(64, dtype=torch.long, device='cpu')) & 1
         return bits.flatten(-2)[..., :self.total]
 
     def _place(self, raw):
@@ -388,7 +388,7 @@ class WordIdentity(nn.Module):
         self.order[raw] = index
         self._ordered.append(raw)
         if index >= len(self._packed):
-            grown = torch.zeros(max(1024, 2 * len(self._packed)), self.limbs, dtype=torch.long)
+            grown = torch.zeros(max(1024, 2 * len(self._packed)), self.limbs, dtype=torch.long, device='cpu')
             grown[:len(self._packed)] = self._packed
             self._packed = grown
         self._packed[index] = self._pack(self.code(raw))[0]
@@ -405,7 +405,7 @@ class WordIdentity(nn.Module):
         forms = sorted(forms, key=self.order.__getitem__)
         if not forms:
             return []
-        packed = self._packed[torch.tensor([self.order[word] for word in forms])]
+        packed = self._packed[torch.tensor([self.order[word] for word in forms], device='cpu')]
         bits = self._unpack(packed)
         basis = self.store._basis
         rows = torch.tensor([self.word_rows[word] for word in forms], device=basis.W.device)
@@ -525,7 +525,7 @@ class WordIdentity(nn.Module):
                     self.store.radix_trie.insert(word, row)
         if affected:
             ordered = sorted(affected, key=self.order.__getitem__)
-            self._packed[torch.tensor([self.order[word] for word in ordered])] = self._pack(
+            self._packed[torch.tensor([self.order[word] for word in ordered], device='cpu')] = self._pack(
                 torch.stack([self.code(word) for word in ordered]))
             self._rewrite(ordered)
         return affected
@@ -544,7 +544,7 @@ class WordIdentity(nn.Module):
         """:meth:`accidents_of` for several stored forms, against every
         stored code in one pass."""
         live = self._packed[:len(self._ordered)]
-        codes = live[torch.tensor([self.order[raw] for raw in forms])]
+        codes = live[torch.tensor([self.order[raw] for raw in forms], device='cpu')]
         inner = ((live[None] & ~codes[:, None]) == 0).all(-1)
         outer = ((codes[:, None] & ~live[None]) == 0).all(-1)
         found = {raw: [] for raw in forms}
@@ -622,19 +622,19 @@ class WordIdentity(nn.Module):
         nothing changed, where an outer code has no zero to give."""
         order = self.order.__getitem__
         own = self._packed[order(inner)]
-        lacking = self._unpack(~self._packed[torch.tensor([order(o) for o in outers])] & ~own).bool()
+        lacking = self._unpack(~self._packed[torch.tensor([order(o) for o in outers], device='cpu')] & ~own).bool()
         holders = sorted(self.holders[inner], key=order)
-        added = (len(holders) - self._unpack(self._packed[torch.tensor([order(h) for h in holders])]).sum(0)
-                 if holders else torch.zeros(self.total, dtype=torch.long))
+        added = (len(holders) - self._unpack(self._packed[torch.tensor([order(h) for h in holders], device='cpu')]).sum(0)
+                 if holders else torch.zeros(self.total, dtype=torch.long, device='cpu'))
         # What tells against inner, the parts its nearest holders add (rule
         # 51), is kept: a coordinate of it is taken only where no other will do.
-        opposed = torch.zeros(self.total, dtype=torch.bool)
+        opposed = torch.zeros(self.total, dtype=torch.bool, device='cpu')
         against = self.against_atoms(inner)
         if against:
             opposed[:self.width] = torch.stack([self.atom_code(atom) for atom in against]).amax(0).eq(1)
         kept = self._kept(inner)
-        given = torch.zeros(self.total, dtype=torch.bool)
-        pending = torch.ones(len(outers), dtype=torch.bool)
+        given = torch.zeros(self.total, dtype=torch.bool, device='cpu')
+        pending = torch.ones(len(outers), dtype=torch.bool, device='cpu')
         while bool(pending.any()):
             open_ = lacking[pending] & ~given
             covers = (open_ & kept).sum(0)
@@ -667,7 +667,7 @@ class WordIdentity(nn.Module):
             self._atom(atom)
             for word in touched:
                 self.words[word] = self.words[word] + (atom,)
-        index = torch.tensor([order(word) for word in touched])
+        index = torch.tensor([order(word) for word in touched], device='cpu')
         old = self._packed[index]
         new = old | self._pack(value)[0]
         self._packed[index] = new
@@ -682,7 +682,7 @@ class WordIdentity(nn.Module):
         codes of the rows of the table of wholes that hold on every byte of
         the form, since a percept's wholes half is at or below each of its
         wholes' (rules 5 and 52). All of the code where no table is bound."""
-        kept = torch.ones(self.total, dtype=torch.bool)
+        kept = torch.ones(self.total, dtype=torch.bool, device='cpu')
         properties = getattr(getattr(self.basic, 'whole', None), 'primitive_properties', None)
         if properties is None or not self.property_width:
             return kept
@@ -884,9 +884,9 @@ class WordIdentity(nn.Module):
             self._relink()
         self.given = {}
         for atom, coordinates in value.get('given', {}).items():
-            self.given[atom] = torch.zeros(self.total)
+            self.given[atom] = torch.zeros(self.total, device='cpu')
             self.given[atom][list(coordinates)] = 1
-        self.usage = torch.tensor(value.get('usage', [0] * self.total), dtype=torch.long)
+        self.usage = torch.tensor(value.get('usage', [0] * self.total), dtype=torch.long, device='cpu')
         self._given_revision += 1
         self.failures = []
         self.last_changed = self.last_touched = frozenset()

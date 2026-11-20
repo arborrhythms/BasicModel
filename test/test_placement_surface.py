@@ -175,3 +175,24 @@ def test_placement_checkpoint_is_versioned_and_fixed_capacity(monkeypatch):
         derived.load_placement_extras(bad)
     with pytest.raises(RuntimeError, match='resizing is forbidden'):
         cs.prime_seen(torch.zeros(cs.nStreams+1,1,dtype=torch.long))
+
+
+def test_a_seed_is_drawn_on_the_processor_whatever_the_default_device():
+    """The draw is made on the processor and then moved, so its values are
+    those the processor's generator gives, on any default device."""
+    from ConceptPlacement import seed
+    like = torch.zeros(3, 7)
+    generator = torch.Generator(device='cpu').manual_seed(11)
+    before = F.normalize(torch.randn(like.shape, generator=generator).abs(), dim=-1)
+    torch.testing.assert_close(seed(11, like), before, rtol=0, atol=0)
+    if not torch.backends.mps.is_available() and not torch.cuda.is_available():
+        return
+    device = 'mps' if torch.backends.mps.is_available() else 'cuda'
+    previous = torch.get_default_device()
+    torch.set_default_device(device)
+    try:
+        drawn = seed(11, torch.zeros(3, 7))
+    finally:
+        torch.set_default_device(previous)
+    assert drawn.device.type == device
+    torch.testing.assert_close(drawn.cpu(), before, rtol=0, atol=1e-7)
