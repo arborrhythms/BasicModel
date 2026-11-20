@@ -22,7 +22,8 @@ row of the Pi, evidence for and evidence against, and gives one signed value
 from -1 to 1: for less against. An *entry* of the Not, from one row to one
 concept, gives that concept the row's pair exchanged, against less for. The
 Not is the only place where a sign is changed (Alec, 2026-11-19: "that would
-give it the ability to change sign, which should be restricted to not").
+give it the ability to change sign, which should be restricted to not"). In
+the source: `NotLayer3`.
 
 **Sigma.** A matrix whose columns are weighted sums, squashed into the range
 from -1 to 1 (`tanh`). It reads the signed values that the Not gives, any
@@ -30,8 +31,7 @@ number of them for one column. Its weights are zero or above and it has no
 bias, so it is monotone: raising an input never lowers a column. A value below
 zero comes to it from evidence against or from an entry of the Not, and it
 makes none itself. A Sigma makes *concepts*: what any one of its members can
-be enough for. In the source: `SigmaLayer3`, and at order zero
-`OrderZeroSigma`.
+be enough for. In the source: `SparseSigmaLayer3`.
 
 **Epistemic level.** One Pi or one Sigma (Alec, 2026-11-19: "My nomenclature
 is *epistemic levels* as opposed to orders (which are half as many)"). Every
