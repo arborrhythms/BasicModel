@@ -287,7 +287,11 @@ def narrowing_view(state):
     field=field & (table.remaining>minimum)[:,None,None]
     # Address 1 focuses a single word. An unknown word descends;
     # a pure word is looked at in place and grammar can interpret it.
-    _, frame, can_undo = last_focus(state)
+    at, frame, can_undo = last_focus(state)
+    # A frame is pushed at the step that made it. Unfocusing at the next step
+    # would restore the table as it was before that focus or descent, so the
+    # pair would change nothing but the budget: it is not legal then.
+    can_undo = can_undo & (at != state.steps_taken - 1)
     unfocus = (state.slots == frame[:, :1]) & can_undo[:, None]
     attention_progress=torch.stack((progress[...,0],progress[...,1] | progress[...,2], unfocus),-1)
     legal=torch.cat((attention_progress,field),-1)&live[...,None]&declared[None,None]

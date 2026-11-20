@@ -117,6 +117,19 @@ class Observer:
             return expected(owner, knowing)
         patch.setattr(ConceptSpread, 'expected', counted_expect)
         native_run = Looks.run
+        stepping = Attention.narrow_step
+        seen_states = []
+        def table_state(state):
+            table = state.table
+            return hashlib.sha256(b''.join(
+                value.detach().cpu().contiguous().numpy().tobytes() for value in (
+                    table.intervals, table.valid, table.space, table.level, table.done,
+                    state.accepted, state.descended, state.reductions, state.field_valid))).hexdigest()
+        def stepped(state, **kwargs):
+            if seen_states:
+                seen_states[-1].append(table_state(state))
+            return stepping(state, **kwargs)
+        patch.setattr(Attention, 'narrow_step', stepped)
         def measured_path(path, arrive, **kwargs):
             if certify:
                 raise ValueError('the historical acceptance oracle cannot certify the loop of looks')
@@ -127,12 +140,17 @@ class Observer:
             def arrived(index, rows):
                 words.append(dict(index=int(index), rows=rows.tolist(), after_attend=self.attend_count-before))
                 return arrive(index, rows)
-            result = native_run(path, arrived, **kwargs)
+            seen_states.append([])
+            try:
+                result = native_run(path, arrived, **kwargs)
+            finally:
+                states = seen_states.pop()
             steps = self.attend_count-before
             self.walk_steps.append(steps)
             self.calls.append(dict(actions=result.actions.tolist(), spent=result.table.spent.tolist(),
                                    departure=None if path.draw is None else frozen(path.draw)))
             self.word_driven.append(dict(looks=len(path.fields), attend_calls=steps, words=words,
+                repeated_states=len(states) - len(set(states)),
                 look_expect_calls=len(expect_calls) - first_expect,
                 look_expect_forecasts=sum(expect_calls[first_expect:])))
             return result
@@ -266,7 +284,8 @@ def over_runs(output, runs):
     """The lesson run ``runs`` times, each in a fresh process with no seed
     chosen, into ``output/run-NN``, and its report over the runs: the words
     found in the first walk of each of the sixteen sentences, summed; the
-    first walks that ran to the cap of 32 steps; and the seconds."""
+    first walks that ran to the cap of 32 steps; the first walks that came
+    back to a state of their table they had been in; and the seconds."""
     import subprocess
     import sys
     output.mkdir(parents=True, exist_ok=False)
@@ -283,6 +302,7 @@ def over_runs(output, runs):
         each.append(dict(run=k + 1, seconds=result['seconds'],
                          words=sum(len(walk['words']) for walk in first if walk),
                          at_cap=sum(step == 32 for step in steps),
+                         repeating=sum(bool(walk.get('repeated_states')) for walk in first if walk),
                          first_walk_steps=steps))
         print(json.dumps(each[-1]), flush=True)
     words = [run['words'] for run in each]
@@ -290,6 +310,8 @@ def over_runs(output, runs):
     report = dict(runs=runs, seed_selected=False, each=each,
                   words=dict(each=words, mean=sum(words) / runs, least=min(words), greatest=max(words)),
                   at_cap=dict(each=capped, mean=sum(capped) / runs, total=sum(capped)),
+                  repeating=dict(each=[run['repeating'] for run in each],
+                                 total=sum(run['repeating'] for run in each)),
                   seconds=dict(mean=sum(run['seconds'] for run in each) / runs))
     (output/'runs.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({key: value for key, value in report.items() if key != 'each'}, indent=2), flush=True)
