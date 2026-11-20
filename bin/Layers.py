@@ -6314,6 +6314,7 @@ class ConceptAllocator:
         self.declared_classes = {}       # "words", "objects" -> declared class concept
         self.order_zero_members = ConceptMembers()  # the percepts each order-zero concept started from
         self.brought = {}                # basic percept -> the order-zero concept its nomination brought
+        self._symbol_table = None        # the symbols above order zero, made at first use
         self.order_from_row = None       # construction-owned physical block read
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
@@ -6377,6 +6378,14 @@ class ConceptAllocator:
                     device=dev, roles=roles)
             self._layers[0] = got
         return got
+
+    def symbol_table(self):
+        """The symbols above order zero (:class:`Symbols.SymbolTable`), with
+        room for as many symbols as the store has concept rows."""
+        if self._symbol_table is None:
+            from Symbols import SymbolTable
+            self._symbol_table = SymbolTable(self.layer(0).nOutput)
+        return self._symbol_table
 
     def _part_handle_reserved(self, cid):
         """An expired relation handle can still name an independent symbol."""

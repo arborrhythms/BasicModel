@@ -14941,6 +14941,13 @@ class ConceptualSpace(Space):
         _concept_alloc_of(self).brought.setdefault(int(percept), int(row))
         return self.add_concept_feature(row, 'bp', percept, 1.)
 
+    def nominate_symbol(self, handle, concept):
+        """MTM's nomination of ``handle`` makes its symbol above order zero,
+        which brings ``concept``: one row of the symbols' Pi over the
+        concept's two lanes. Returns the symbol's index; a handle nominated
+        before keeps its symbol."""
+        return _concept_alloc_of(self).symbol_table().make(handle, int(concept))
+
     def concept_percepts(self, row):
         """The basic percepts an order-zero concept was started from."""
         return _concept_alloc_of(self).order_zero_members.members(row)

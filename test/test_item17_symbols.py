@@ -515,3 +515,59 @@ def test_the_lessons_training_keeps_every_declared_membership_and_reads_no_known
     assert count == 16 and against
     assert torch.equal(after[ones], start[ones])
     assert max(against) == 0.
+
+
+# Certificate 4, on the making of symbols: a symbol is made at MTM's
+# nomination above order zero and brings one concept; a concept's
+# allocation makes none. Its two lanes are a row of the symbols' Pi.
+
+def test_4_a_concepts_allocation_makes_no_symbol():
+    from test_cs_sparse_weights import _cs
+    cs = _cs(nS=16, order=2)
+    table = cs._concept_allocator.symbol_table()
+    assert len(table) == 0
+    made = [cs.new_concept(), cs.new_concept(order=1), cs.new_concept(order=2)]
+    assert len(set(made)) == 3 and len(table) == 0
+
+
+def test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concept(lesson_at_start):
+    owner, _ = lesson_at_start
+    alloc = owner._concept_allocator
+    table = alloc.symbol_table()
+    print(f'\nsymbols made by nomination in the lesson: {len(table)}; '
+          f'handles and the concepts they brought: {list(zip(table.handles, table.brought))}')
+    assert len(table) > 0
+    for symbol, (handle, concept) in enumerate(zip(table.handles, table.brought)):
+        assert table.of(handle) == symbol
+        assert alloc.order_of(concept) >= 1
+        # It starts with one member, the concept it brought.
+        assert table.members(symbol) == [concept]
+        entry = owner.mtm.entries.get(handle)
+        assert entry is None or entry.symbol == concept
+    # The Pi gives each symbol its concept's two lanes: one member at one.
+    lanes = torch.rand(len(table), 3, 2)
+    torch.testing.assert_close(table.read(lanes, table.brought), lanes, rtol=0, atol=1e-6)
+
+
+def test_6_a_symbol_has_its_own_index_and_no_vector_and_nothing_is_one_to_one():
+    """No tensor of the symbol table holds a concept: its Pi's rows are
+    symbols, addressed by the table's own index, and their members are
+    keys of concepts; a symbol holds two lanes and no code. A symbol may
+    read several concepts and a concept may be read by several symbols."""
+    from Symbols import SymbolTable
+    table = SymbolTable(8)
+    first = table.make(('name', 40), 40)
+    second = table.make(('candidate', 3), 40)
+    assert (first, second) == (0, 1) and table.make(('name', 40), 41) == first
+    assert table.reading(40) == [0, 1] and table.brought == [40, 40]
+    restored = SymbolTable(8)
+    state = table.state()
+    state['symbols'].append((('candidate', 4), 41, (41, 40)))
+    restored.restore(state)
+    assert restored.members(2) == [41, 40] and restored.reading(40) == [0, 1, 2]
+    lanes = torch.tensor([[[.5, 0.]], [[.8, .1]]])
+    read = restored.read(lanes, [40, 41])
+    torch.testing.assert_close(read[2, 0], torch.tensor([.4, 0.]), rtol=0, atol=1e-6)
+    # The Pi's storage is by symbol, and its member keys name concepts.
+    assert len(restored.pi.crow) == 8 + 1
+    assert all(key[0] == 'concept' for key in restored.pi.keys)

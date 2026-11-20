@@ -3971,6 +3971,7 @@ class BaseModel(Mereology, nn.Module):
                 a = {"next_id": int(getattr(alloc, "next_id", 1))}
                 for name in alloc_fields:
                     a[name] = _checkpoint_host_copy(getattr(alloc, name))
+                a["symbol_table"] = alloc.symbol_table().state()
                 layers = {}
                 for order, layer in getattr(alloc, "_layers", {}).items():
                     values = getattr(layer, "values", None)
@@ -4259,6 +4260,10 @@ class BaseModel(Mereology, nn.Module):
                 alloc.order_zero_members.clear()
                 alloc.order_zero_members.update(
                     layer.saved_feature_record(blob.get("parts")))
+        # A checkpoint from before the symbol table made no symbol at a
+        # nomination: its table is empty.
+        alloc.symbol_table().restore(_checkpoint_host_copy(
+            saved.get("symbol_table") or dict(version=1, symbols=())))
         if "brought" not in saved:
             # A checkpoint from before the record of nominations: a row's
             # own concept was allocated with it, before any concept made

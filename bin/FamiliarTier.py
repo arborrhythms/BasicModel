@@ -657,6 +657,9 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None, stream
     if derived is not None:
         derived.remember_content(row, current)
     pool.promote(key, cid)
+    # The nomination makes the symbol above the concept's order, which
+    # brings this concept.
+    owner.nominate_symbol(key, cid)
     for name in words:
         owner.interpret.define(name, cid, trust=trust, evidence=evidence)
     owner._priming_edge_revision = None
@@ -924,6 +927,10 @@ def promote_candidates(owner):
         if row is None:
             raise RuntimeError('candidate promotion exceeds the constructed inventory')
         pool.promote(key, cid)
+        if derived > 0:
+            # Above order zero the nomination makes a symbol, which brings
+            # this concept; at order zero it is the basic percept's row.
+            owner.nominate_symbol(key, cid)
         alloc.raised.add(cid)
         alloc.relate_idx['part-base', cid] = ('candidate', key[1])
         cover_members(owner, cid, entry.support, conjunctive=literal is not None and literal[0] == 'field')
