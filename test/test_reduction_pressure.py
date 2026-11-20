@@ -168,6 +168,12 @@ def test_native_packed_unary_preference_still_records_every_sentence(tmp_path, m
             completed.append(row)
             return row
         monkeypatch.setattr(store, 'write_clause', observed_write)
+        # MTM nominates the words on their concept_mint_count-th reading
+        # (sigma-pi §21, rule 20). Read once, the words are not nominated,
+        # and in about half the walks each sentence's closing thought is
+        # written as a second root beside its clause.
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['1 plus 2', '3 plus 4'])
         inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
         from types import SimpleNamespace
         from reading_fixtures import capture_operation_traces
