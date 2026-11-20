@@ -9115,6 +9115,25 @@ So he is right that a gradient reaches it: it is not nothing at the start, about
 - A module named for intuition does hold weights, and it is another thing: `IntuitionLayer` (`ConceptualSpace.intuition`, room for 4,096), two sparse banks, one weight for each literal of a remembered rule's antecedent and one for each rule, started at one and held at zero or above. They are read where thought applies a stored rule (`Intuition.execute` and `evaluate`, behind `implication` and the selection of a rule), not by `intuit`. Rule 66 does not touch it.
 - *One thing found that is put to him.* `intuit` writes what is expected into knowing: the expected field is joined by the greatest into the stream's evidence, and the result is marked as written knowing of the kind "intuition". That is the one place where what is expected becomes something later operators read as evidence. It is an act thought chooses, it is detached, and it is labelled. *Claude's first choice:* it stays, as the one deliberate taking of a guess, since what it does is exactly "guess at network activation" for the operators that follow; the alternative is that `intuit` writes to the expected field alone and never to knowing.
 
+### 19.97 Alec: intuit has the Pi, Not, Sigma that stands outside the architecture; what it gives is not "the expected field" (2026-11-19)
+
+Told that `intuit` has no map of its own (§19.96): "so if expectation comes from the arch, please let intuit have the pi-not-sigma that exists outside of the architecture. We should not call it "the expected field", since it is called from an operator, whereas expect is built in to a model parameter."
+
+*Decided* (rule 68; rule 66 amended). There are two things again, and they differ by where they stand and by who calls them:
+
+| | Expectation (`expect`) | Intuition (`intuit`) |
+| --- | --- | --- |
+| Where it is computed | in the architecture: the spread on the structure's own Pi, Not and Sigma (rule 66) | outside the architecture: a Pi, Not, Sigma of its own, from concepts to concepts |
+| What turns it on | built in; a parameter of the model | an operator, when thought calls it |
+| What it gives | the expected field, a guess at activation; never evidence | the intuited field, which the operator writes into knowing, marked as intuition |
+| Taught by | the reconstruction, in stages | *open, below* |
+
+So the free map of item 1.8 (`expect_stack`, a free Pi of 64 rows and a Sigma) does not go, as §19.95 had it: it becomes `intuit`'s own, and is no longer read as expectation. This undoes the fold of 2026-11-17 ("expect and intuit are one map", 1.8 §68.53) and returns to his two networks of System 1 of 2026-11-12, with expectation now the architecture's. The question of §19.96, whether `intuit` may write into knowing, is closed by it: what `intuit` writes is intuition's and not expectation's, so "expectation is never evidence" has no exception.
+
+*Open, put to him: what teaches `intuit`'s map.* Today its only teacher is omission, the concepts of the whole sentence where words were hidden, which is expectation's lesson. *Claude's first choice* is his of 2026-11-12, approved then and removed with the fold: `intuit` "learns from conceptualizing or thinking about the input", so its teacher is the field that thought leaves (with the cost of the output), and omission teaches expectation alone. Until he answers, round 5 keeps the map with the teacher it has.
+
+*Carried with it:* the start of its free Pi. Each row starts with a small weight on every concept, and with exact concepts such a row is at nothing and learns slowly if at all (§19.94). Round 5 measures it and starts each row on a few concepts if that is what it takes (*mine*).
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10418,9 +10437,24 @@ chooses from. The old classes are not edited.
       each symbol, with the whole of the gain detached; and a prime
       of selection, read detached by attention, the chooser and
       retrieval. Nothing expected is added to content.
-    - Item 1.8's free map (`expect_stack`, its keys `expectHidden`
-      and `expectLayers`, and the cost `expectation.concepts` as a
-      cost of that map) goes; its readers read the spread's field.
+    - Item 1.8's free map is no longer expectation: its readers
+      (attention's forecast, the chooser, retrieval) read the
+      spread's field. The map itself stays as `intuit`'s own (rule
+      68; Alec, §19.97).
+
+68. *Intuition has a Pi, Not, Sigma of its own, outside the
+    architecture* (Alec, §19.97: "if expectation comes from the
+    arch, please let intuit have the pi-not-sigma that exists
+    outside of the architecture. We should not call it "the expected
+    field", since it is called from an operator, whereas expect is
+    built in to a model parameter"). `intuit` is an operator of
+    thought. When it is called, a map of its own, a free Pi, the Not
+    and a Sigma from the observed concepts of order zero to the same
+    concepts, gives the *intuited field*; the operator joins it into
+    its stream's knowing, marked as intuition, and carries it up the
+    orders. It is item 1.8's free map, renamed for what it is; its
+    Sigma follows rule 63. It is not expectation and nothing reads
+    it as expected. *Open:* its teacher (§19.97).
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -10751,7 +10785,8 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     reads their product; and the map of (a) gives each of them its
     share.
 57. *Expectation in stages* (rule 66). (a) No module of expectation
-    stands beside the structure, by a test of the source's names.
+    stands beside the structure, and nothing reads `intuit`'s map as
+    expectation, by a test of the source's names.
     (b) With a word of a known pair hidden, the second stage gives
     its concept from the word that came, and the first stage its
     percepts at their place; a word of another sentence is not
@@ -11656,27 +11691,34 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    Alec, §19.95): a fan up and a share down on the structure's own
    matrices, in one pass, written to _expected_knowing at every
    order (ConceptSpread.open_prediction writes order zero alone
-   today). It adds no parameter and changes no evidence. The free
-   map of item 1.8 goes: expect_stack, expectHidden, expectLayers,
-   and ConceptSpread.expected's read of it; say what becomes of the
-   key expectationMap and of the ActivationPredictor kept beside
-   it. Its readers read the spread's field: the open prediction,
-   LookForecast, the chooser, retrieval, and intuit, which no
-   longer deposits a field of its own before the spread. It is
+   today). It adds no parameter and changes no evidence. It is
    taught by the reconstruction's error in three stages, percepts,
    concepts and output, each compared with the whole sentence at
    that stage; the cost expectation.concepts is the second stage.
    What is expected is written apart from what is observed and is
    never evidence; how it joins the signal stays as it is (a gain
    on what arrives, wholly detached, and a detached prime of
-   selection: doc/ExpectationRetention.md). Say what intuit
-   (IntuitionField.read) does after this, which today joins the
-   expected field into knowing by the greatest (§19.96, put to
-   Alec); IntuitionLayer's weights of stored rules are not this
-   round's. Measure
+   selection: doc/ExpectationRetention.md). Expectation's readers
+   read the spread's field: the open prediction, LookForecast, the
+   chooser and retrieval. Measure
    test/test_item18_expect.py::test_81 first, on the spread alone,
    before any other step of this round, and return what it reads.
    Certificate 57.
+1b. Intuition's own map (rule 68; Alec, §19.97). The free map of
+   item 1.8 is no longer expectation and becomes intuit's own:
+   expect_stack and its keys (expectHidden, expectLayers) are
+   renamed for intuit; ConceptSpread.expected no longer reads it;
+   IntuitionField.read deposits what that map gives on the observed
+   field, the intuited field, never called the expected field, into
+   its stream's knowing, marked as intuition, and carries it up the
+   orders as now. Its Sigma follows rule 63 (the Not between its Pi
+   and its Sigma, weights at zero or above). Say what becomes of
+   the key expectationMap and of the ActivationPredictor kept
+   beside it. The map keeps the teacher it has until Alec says what
+   teaches it; return what it learns with exact concepts, and if a
+   row started on every concept does not learn, start each row on a
+   few and say so. IntuitionLayer's weights of stored rules are not
+   this round's.
 2. Not strictly ramified (rule 26): a symbol reads the concepts of
    every lower order, where a membership is admitted only between
    adjacent orders today (class_member; the row of §19.21's table).

@@ -262,6 +262,20 @@ percepts into the activation space on all existing concepts" (Alec,
 2026-11-19). In the model the filter is a number from 0 to 1 at each percept
 of the sentence, and the first look of a sentence takes all of it at once.
 
+**Expectation.** A guess at the network's activation, computed in the
+architecture, on the structure's own Pi, Not and Sigma. It is built in, turned
+on by a parameter of the model, and taught by the reconstruction in stages:
+percepts, concepts, output. It "is not counted as evidence, it is just
+removing some of the burden from later layers" (Alec, 2026-11-19). It joins
+the signal as a gain on what arrives, with its gradient stopped, and as a
+prime of selection. What it gives is the *expected field*.
+
+**Intuition.** What the operator `intuit` gives when thought calls it: the
+*intuited field*, from a Pi, Not, Sigma of its own that stands outside the
+architecture (Alec, 2026-11-19: "it is called from an operator, whereas expect
+is built in to a model parameter"). The operator writes it into knowing,
+marked as intuition. It is not the expected field.
+
 **Analysis, synthesis.** Synthesis is the way up: the Pi builds rows from
 parts and properties, and the Sigma builds concepts from rows. Analysis is
 the way down, and what drives it is conceptual attention: a request over
