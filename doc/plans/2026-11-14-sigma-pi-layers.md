@@ -9488,6 +9488,12 @@ Asked whether the pressure of the rounds left should become a cost with a fixed 
 
 *Mine:* the signal is the code of the rounds left of the budget in hand (compose's rounds, a walk's steps, thought's work), one code where there are several budgets only if a measurement shows the others are needed; `OperationSelectionLayer.reduce_pressure`, the learned number, goes. It is built with rule 74's pass, and both stopping gates and the lesson are measured before and after.
 
+### 19.112 Alec: the cone and the candidate matrices are built in item 1.7 (2026-11-20)
+
+Asked whether rule 72 (a symbol as a cone over coordinates of conceptual space) and rule 73 (medium-term matrices of candidate entries) should be trials only in this item, with the builds left to a later one: "Let's build in 1.7, it is closely related, but sporadic testing is OK."
+
+*Decided.* Round 5's second pass tries each in tests and builds what holds, in the same pass, with spot tests. Put to him with it and not objected to, so built on Claude's first choices: the parse's own operators, and no word, are to tell "Felix is my cat" from "Felix is a cat", and until the grammar does, a kind arises by the raise; the raise takes two statements that share a side (`raiseCount` 2, his example); a blank object never fills a slot of episodic memory, its word's concept does.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
