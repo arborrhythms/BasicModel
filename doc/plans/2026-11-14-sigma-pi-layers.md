@@ -9094,6 +9094,27 @@ So he is right that a gradient reaches it: it is not nothing at the start, about
 
 *What it replaces, to be said by round 5:* the cost `expectation.concepts` becomes the second stage of the reconstruction; attention's forecast of a look, the chooser, retrieval and `intuit` read the spread's field where they read `expect`'s; the read of a field to an idea (`idea_stack`) is another thing and stays; `test_81` is the certificate of the second stage.
 
+### 19.96 Alec: expectation is not evidence; how it joins the signal; whether intuit has a map of its own (2026-11-19)
+
+"please verify that intuit still has a map of its own. expectation is not counted as evidence, it is just removing some of the burden from later layers. it should be used only to guess at network activation. I think we had some good justification for how to integrate it with the overall signal previously; it stops a gradient, but passes the entire signal".
+
+**Expectation is not evidence.** *Decided* (rule 66; it was Claude's condition in §19.95, and is now his). What is expected is a guess at the network's activation and is never counted as evidence.
+
+**How it joins the signal: found, and kept.** It is the form decided on 2026-10-19 and 20 (`doc/ExpectationRetention.md`, "Expectation across the architecture"), and rule 66 changes where the expected values come from and nothing of this:
+
+- *A gain on what arrives, never a subtraction from it.* The content a reader receives is the arriving signal times attention's gain times expectation's gain. No image of the prediction is added to the content or taken from it.
+- *The whole signal passes.* The gain is one number for each symbol and not one for each coordinate, so it changes how strong a thing is and not what it is: "a cat whose every feature but its whiskers was predicted would become a whiskers vector" otherwise. At full confidence and no surprise the gain falls to a floor, and the thing is still seen.
+- *The gradient is stopped at the gain.* The whole of the gain is detached, "so the predictor receives gradient only through the residual, never through the gain; otherwise it could mispredict to brighten the signal or over-predict to silence it".
+- *Beside the gain, the expected activation primes selection:* attention, the chooser and retrieval read it detached. "It is never added to comprehension, so top-down expectation reaches perception only through attention ... a hallucination here is a concept conceived without perceptual evidence, not a percept predicted into existence."
+- *What is read beside the content* is the residual on two lanes, the excess and the omission, which salience, retention and attention read.
+- As shipped the two gains are zero (`perceptExpectationGain`, `symbolExpectationGain`) and the prime is on.
+
+**Whether `intuit` has a map of its own: it has not** (read in the source at `ab1588abea`).
+
+- The operator `intuit` of thought (`ThoughtFaces.intuit`, `IntuitionField.read`) has no parameter. It takes the field that `expect` published when the sentence opened (`_expected_knowing`, order zero), detached, joins it by the greatest into its stream's knowing at the observed places, and carries it up the orders by the closure of the definitions (`FieldProjection.close`). This is his decision of 2026-11-17, "expect and intuit are one map" (1.8 §68.53). So when item 1.8's free map goes, `intuit` has nothing of its own left to read: under rule 66 it reads the spread's field, which is already carried over the orders.
+- A module named for intuition does hold weights, and it is another thing: `IntuitionLayer` (`ConceptualSpace.intuition`, room for 4,096), two sparse banks, one weight for each literal of a remembered rule's antecedent and one for each rule, started at one and held at zero or above. They are read where thought applies a stored rule (`Intuition.execute` and `evaluate`, behind `implication` and the selection of a rule), not by `intuit`. Rule 66 does not touch it.
+- *One thing found that is put to him.* `intuit` writes what is expected into knowing: the expected field is joined by the greatest into the stream's evidence, and the result is marked as written knowing of the kind "intuition". That is the one place where what is expected becomes something later operators read as evidence. It is an act thought chooses, it is detached, and it is labelled. *Claude's first choice:* it stays, as the one deliberate taking of a guess, since what it does is exactly "guess at network activation" for the operators that follow; the alternative is that `intuit` writes to the expected field alone and never to knowing.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10383,11 +10404,20 @@ chooses from. The old classes are not edited.
       the three costs are the reconstruction's.
     - Its teacher is the reconstruction's error. Where part of a
       sentence is hidden, the error at what was hidden teaches it.
-    - *Mine, put to him:* what is expected is written apart from
-      what is observed and is never evidence; the error at what was
-      hidden teaches the rows that hold things together, the
-      symbols above, and no entry from one row to another row's
-      concept at the same order.
+    - *It is not evidence* (Alec, §19.96: "expectation is not
+      counted as evidence, it is just removing some of the burden
+      from later layers. it should be used only to guess at network
+      activation"). What is expected is written apart from what is
+      observed. *Mine:* the error at what was hidden teaches the
+      rows that hold things together, the symbols above, and no
+      entry from one row to another row's concept at the same
+      order.
+    - *How it joins the signal is unchanged* (Alec, §19.96: "it
+      stops a gradient, but passes the entire signal"; decided
+      2026-10-19 and 20): a gain on what arrives, one number for
+      each symbol, with the whole of the gain detached; and a prime
+      of selection, read detached by attention, the chooser and
+      retrieval. Nothing expected is added to content.
     - Item 1.8's free map (`expect_stack`, its keys `expectHidden`
       and `expectLayers`, and the cost `expectation.concepts` as a
       cost of that map) goes; its readers read the spread's field.
@@ -10729,7 +10759,10 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     certificate 24). (c) What is expected changes no evidence: the
     observed concepts of the lossy sentence are the same with the
     spread and without it. (d) The cost of each stage reaches the
-    entries of the structure and no parameter beside them.
+    entries of the structure and no parameter beside them. (e) No
+    gradient passes through the gain: with the gain's strength
+    above zero, the gradient of a cost of the main path with
+    respect to an expected value is nothing.
 58. *The sparse Sigma against the full one* (rule 67; in tests
     only). On the lesson's readings, with the same penalty and the
     same steps: the entries the sparse form holds at the end are the
@@ -11633,7 +11666,14 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    taught by the reconstruction's error in three stages, percepts,
    concepts and output, each compared with the whole sentence at
    that stage; the cost expectation.concepts is the second stage.
-   What is expected is written apart from what is observed. Measure
+   What is expected is written apart from what is observed and is
+   never evidence; how it joins the signal stays as it is (a gain
+   on what arrives, wholly detached, and a detached prime of
+   selection: doc/ExpectationRetention.md). Say what intuit
+   (IntuitionField.read) does after this, which today joins the
+   expected field into knowing by the greatest (§19.96, put to
+   Alec); IntuitionLayer's weights of stored rules are not this
+   round's. Measure
    test/test_item18_expect.py::test_81 first, on the spread alone,
    before any other step of this round, and return what it reads.
    Certificate 57.
