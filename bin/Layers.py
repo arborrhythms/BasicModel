@@ -5018,6 +5018,283 @@ class SigmaLayer3(Layer):
         return signed_lanes(a @ torch.linalg.pinv(self.weight), dim=-2)
 
 
+class _EntryRead(torch.autograd.Function):
+    """One entry's read of its row: the Not's exchange of the row's signed
+    value by the entry's sign, then the Sigma's weight, the entry's size:
+    ``exchange(s, v) * |v|``, which is ``v s``. Its gradient in ``v`` is
+    ``s`` at every ``v``, zero included, so teaching carries an entry
+    through zero: a for entry pushed below zero becomes a Not entry."""
+    @staticmethod
+    def forward(ctx, value, signed):
+        ctx.save_for_backward(value, signed)
+        return NotLayer3.exchange(signed, value) * value.abs()
+
+    @staticmethod
+    def backward(ctx, gradient):
+        value, signed = ctx.saved_tensors
+        return gradient * signed, gradient * value
+
+
+class NotLayer3(Layer):
+    r"""The Not: between a Pi and a Sigma, each row's two values, for and
+    against, become one signed value, for less against, in ``[-1, 1]``.
+
+    It also holds the sign of every entry of the Sigma after it: an entry
+    is a for entry or a Not entry, never both. A concept reads a row
+    through a Not entry exchanged, against less for. The sign is the sign
+    of the entry's learned number (``SparseSigmaLayer3.value``), whose size
+    is the Sigma's weight. A Not entry is made implicitly, by the gradient
+    carrying an entry through zero, or explicitly by the Not: a Not member
+    declared in a concept's record (:meth:`make`), or an omission
+    (:meth:`teach_omission`). The sign of anything is changed here and
+    nowhere else.
+    """
+
+    def __init__(self, rows):
+        super().__init__(int(rows), int(rows))
+        self.rows = int(rows)
+
+    @staticmethod
+    def signed(lanes):
+        """Each row's signed value from its two values ``[..., 2]``."""
+        return (lanes[..., 0] - lanes[..., 1]).clamp(-1., 1.)
+
+    def forward(self, lanes):
+        """``lanes`` ``[P, ..., 2]`` to the rows' signed values ``[P, ...]``."""
+        return self.signed(lanes)
+
+    @staticmethod
+    def exchange(signed, value):
+        """A row's signed value as an entry of sign ``value`` reads it: as it
+        is through a for entry, exchanged through a Not entry."""
+        return torch.where(value < 0, -signed, signed)
+
+    @staticmethod
+    def entries(sigma):
+        """Which of ``sigma``'s entries are Not entries."""
+        return sigma.value.detach()[:sigma.nnz] < 0
+
+    @torch.no_grad()
+    def make(self, sigma, concept, row, weight=None):
+        """Make the entry of ``concept`` on ``row`` a Not entry: an entry on
+        the row keeps its weight (or takes ``weight``) and is exchanged; with
+        none, one is written at ``weight`` (one by default)."""
+        entry = sigma.find(concept, row)
+        if entry is None:
+            return sigma.add(concept, row, 1. if weight is None else float(weight), negated=True)
+        size = float(sigma.value[entry].abs()) if weight is None else float(weight)
+        sigma.value[entry] = -size
+        return entry
+
+    @torch.no_grad()
+    def teach_omission(self, sigma, concept, lanes, inputs, came, expected, *, floor=.5):
+        """The Not's own teaching, by omission. ``lanes`` ``[P, C, 2]`` are
+        rows ``inputs``' values in ``C`` readings; ``came`` and ``expected``
+        ``[C]`` say where the concept came and where it was read. Where it
+        was expected (read above ``floor``) and did not come, each row
+        present there (signed value above ``floor``) that is present in no
+        reading where the concept came has its entry made a Not entry.
+        Returns the rows made so."""
+        signed = self.signed(lanes)
+        present = signed > floor
+        came = torch.as_tensor(came, dtype=torch.bool, device=signed.device)
+        expected = torch.as_tensor(expected, device=signed.device)
+        omitted = ~came & (expected > floor)
+        if not bool(omitted.any()):
+            return []
+        witnessed = present[:, came].any(1) if bool(came.any()) else torch.zeros_like(present[:, 0])
+        inputs = torch.as_tensor(inputs).reshape(-1)
+        made = []
+        for k in (present[:, omitted].any(1) & ~witnessed).nonzero().flatten().tolist():
+            row = int(inputs[k])
+            entry = sigma.find(int(concept), row)
+            if entry is None or float(sigma.value[entry]) >= 0:
+                self.make(sigma, concept, row)
+                made.append(row)
+        return made
+
+
+class SparseSigmaLayer3(Layer):
+    r"""A Sigma of signed concepts over the signed values of rows, sparse:
+
+        y_c = tanh( sum_{(c, i)} w_ci exchange(s_i, e_ci) ),   w_ci >= 0
+
+    one weight for each entry, at zero or above, so with no Not entry
+    raising any row never lowers a concept. Each entry is one learned
+    signed number ``value``: its size is the Sigma's weight (:attr:`weight`)
+    and its sign the Not's entry (:meth:`NotLayer3.exchange`), a for entry
+    or a Not entry, never both. The read is computed by :class:`_EntryRead`,
+    whose gradient carries an entry through zero. A concept reads no row it
+    has no entry on. There is no bias.
+
+    The entries are written into capacity allocated beforehand (``entries``)
+    in the order they are added: ``value`` ``[entries]`` is the parameter,
+    ``entry_row`` and ``entry_input`` name each entry's concept and row,
+    ``count`` how many are written. The compressed rows (``crow`` and
+    ``order``, the entries of each concept) and the index of columns
+    (``ccol`` and ``corder``, the entries reading each row) are kept beside
+    them and written again on each addition.
+    """
+
+    def __init__(self, nInput, nOutput, entries):
+        super().__init__(int(nInput), int(nOutput))
+        entries = int(entries)
+        if self.nInput < 1 or self.nOutput < 1 or entries < 1:
+            raise ValueError('a sparse Sigma needs room for inputs, concepts and entries')
+        self.value = nn.Parameter(torch.zeros(entries))
+        self.register_buffer('entry_row', torch.full((entries,), -1, dtype=torch.long))
+        self.register_buffer('entry_input', torch.full((entries,), -1, dtype=torch.long))
+        self.register_buffer('count', torch.zeros((), dtype=torch.long))
+        self.register_buffer('crow', torch.zeros(self.nOutput + 1, dtype=torch.long), persistent=False)
+        self.register_buffer('order', torch.zeros(0, dtype=torch.long), persistent=False)
+        self.register_buffer('ccol', torch.zeros(self.nInput + 1, dtype=torch.long), persistent=False)
+        self.register_buffer('corder', torch.zeros(0, dtype=torch.long), persistent=False)
+        self._entry_of, self._n = {}, 0
+
+    @property
+    def weight(self):
+        """Each entry's weight, its size, at zero or above."""
+        return self.value.abs()
+
+    @property
+    def capacity(self):
+        return int(self.entry_row.shape[0])
+
+    @property
+    def nnz(self):
+        return self._n
+
+    def _index(self):
+        """The compressed rows and the index of columns, from the entries."""
+        n = self._n = int(self.count)
+        rows, inputs = self.entry_row[:n], self.entry_input[:n]
+        self.order = torch.argsort(rows, stable=True)
+        self.crow = torch.cat((rows.new_zeros(1),
+                               torch.bincount(rows, minlength=self.nOutput).cumsum(0)))
+        self.corder = torch.argsort(inputs, stable=True)
+        self.ccol = torch.cat((inputs.new_zeros(1),
+                               torch.bincount(inputs, minlength=self.nInput).cumsum(0)))
+        self._entry_of = {(r, i): e for e, (r, i) in enumerate(zip(rows.tolist(), inputs.tolist()))}
+
+    def find(self, row, input):
+        """The entry of concept ``row`` on ``input``, or ``None``."""
+        return self._entry_of.get((int(row), int(input)))
+
+    @torch.no_grad()
+    def add(self, row, input, weight=1.0, *, negated=False):
+        """Write the entry of concept ``row`` on row ``input`` at ``weight``
+        (zero or above), a Not entry where ``negated`` (the Not's, through
+        :meth:`NotLayer3.make`); on an entry already written, its weight is
+        raised by ``weight`` and its sign kept. Returns the entry's index."""
+        row, input, weight = int(row), int(input), float(weight)
+        if not (0 <= row < self.nOutput and 0 <= input < self.nInput):
+            raise ValueError('a sparse Sigma entry lies outside its concepts or its inputs')
+        if weight < 0:
+            raise ValueError('a Sigma weight is zero or above; the sign is the Not\'s')
+        entry = self._entry_of.get((row, input))
+        if entry is None:
+            entry = self.nnz
+            if entry >= self.capacity:
+                raise OverflowError('the sparse Sigma has no room for another entry')
+            self.entry_row[entry], self.entry_input[entry] = row, input
+            self.value[entry] = -weight if negated else weight
+            self.count.fill_(entry + 1)
+            self._index()
+            return entry
+        sign = -1. if float(self.value[entry]) < 0 else 1.
+        self.value[entry] = sign * (abs(float(self.value[entry])) + weight)
+        return entry
+
+    def entries(self, row):
+        """A concept's entries, ``[(row read, weight, negated)]``, by the
+        compressed rows."""
+        start, end = int(self.crow[int(row)]), int(self.crow[int(row) + 1])
+        value = self.value.detach()
+        return [(int(self.entry_input[e]), float(value[e].abs()), bool(value[e] < 0))
+                for e in self.order[start:end].tolist()]
+
+    def rows_reading(self, input):
+        """The concepts with an entry on row ``input``, by the index of columns."""
+        start, end = int(self.ccol[int(input)]), int(self.ccol[int(input) + 1])
+        return sorted(int(self.entry_row[e]) for e in self.corder[start:end].tolist())
+
+    def entry(self, rows, inputs):
+        """The learned number of the entry of each ``rows[k]`` on
+        ``inputs[k]`` (its size the weight, its sign the Not's); zero where
+        there is none."""
+        rows = torch.as_tensor(rows, dtype=torch.long)
+        inputs = torch.as_tensor(inputs, dtype=torch.long)
+        found = [self._entry_of.get(key, -1) for key in zip(rows.flatten().tolist(), inputs.flatten().tolist())]
+        index = torch.tensor(found, dtype=torch.long, device=self.value.device)
+        value = self.value.index_select(0, index.clamp_min(0)) * (index >= 0).to(self.value)
+        return value.reshape(rows.shape)
+
+    def forward(self, signed, inputs, rows):
+        """Each of ``rows``' value (``-1`` reads zero), ``[R, ...]``, from the
+        signed values ``signed`` ``[P, ...]`` of rows ``inputs`` ``[P]`` (the
+        Not's). A row not among ``inputs`` reads zero."""
+        device = signed.device
+        inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape(-1)
+        rows = torch.as_tensor(rows, dtype=torch.long, device=device).reshape(-1)
+        shape = (len(rows), *signed.shape[1:])
+        n = self.nnz
+        if not n or not len(rows) or not len(inputs):
+            return signed.new_zeros(shape)
+        position = torch.full((self.nInput,), -1, dtype=torch.long, device=device)
+        known = (inputs >= 0) & (inputs < self.nInput)
+        position[inputs.clamp(0, self.nInput - 1)[known]] = torch.arange(len(inputs), device=device)[known]
+        valid = (rows >= 0) & (rows < self.nOutput)
+        wanted = torch.unique(rows[valid])
+        slot = torch.full((self.nOutput,), -1, dtype=torch.long, device=device)
+        slot[wanted] = torch.arange(len(wanted), device=device)
+        at = slot[self.entry_row[:n].to(device)]
+        read = position[self.entry_input[:n].to(device)]
+        keep = ((at >= 0) & (read >= 0)).to(signed.dtype)
+        value = (self.value[:n].to(signed) * keep).reshape(n, *([1] * (signed.ndim - 1)))
+        terms = _EntryRead.apply(value.expand(n, *signed.shape[1:]), signed.index_select(0, read.clamp_min(0)))
+        total = signed.new_zeros(max(len(wanted), 1), *shape[1:]).index_add(0, at.clamp_min(0), terms)
+        y = torch.tanh(total)
+        index = slot[rows.clamp(0, self.nOutput - 1)]
+        held = valid & (index >= 0)
+        y = y.index_select(0, index.clamp_min(0))
+        return y * held.reshape(-1, *([1] * (y.ndim - 1))).to(y)
+
+    def reverse(self, y, inputs):
+        """The signed values of rows ``inputs`` ``[P, ...]`` from the
+        concepts' values ``y`` ``[nOutput, ...]``, by least squares through
+        the entries on those rows, each read with its sign: exact where each
+        is read by enough concepts. Refused where fewer concepts read them
+        than there are."""
+        inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1).tolist()
+        position = {int(i): k for k, i in enumerate(inputs)}
+        n = self.nnz
+        pairs = list(zip(self.entry_row[:n].tolist(), self.entry_input[:n].tolist()))
+        concepts = sorted({r for r, i in pairs if i in position})
+        if len(concepts) < len(inputs):
+            raise ValueError('too few concepts to return the input')
+        slot = {c: k for k, c in enumerate(concepts)}
+        value = self.value.detach()
+        matrix = value.new_zeros(len(inputs), len(concepts))
+        for e, (r, i) in enumerate(pairs):
+            if i in position:
+                matrix[position[i], slot[r]] = value[e]
+        bound = 1.0 - EPS_LOG
+        a = torch.atanh(y[concepts].clamp(-bound, bound))
+        return torch.einsum('c...,ci->i...', a, torch.linalg.pinv(matrix).to(a))
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        if prefix + 'weight' in state_dict:
+            raise ValueError(
+                'the Sigma of this checkpoint reads the percept code (a dense matrix of the code\'s width '
+                'by the concepts): what its columns learned has no reading on the rows of the first Pi, '
+                'which are all a concept reads now; the members each concept was started from are in the '
+                'allocator\'s record, from which a new model starts each concept on its own row')
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
+        self._index()
+
+
 class SigmaPiLayer(Layer):
     r"""A Pi and then a Sigma, fused, with no way back.
 
@@ -5878,7 +6155,7 @@ class ConceptualAttentionLayer(SparseLayer):
 class ConceptMembers(dict):
     """The record of the basic percepts each order-zero concept was started
     from: ``(row, percept, negated) -> weight``, a plain record and not a
-    parameter. A member of positive weight is added to its concept's column
+    parameter. A member of positive weight is written as its concept's entry
     of the order-zero Sigma when it is recorded; one of weight zero is
     recorded and starts nothing. ``negated`` marks a Not member.
     ``revision`` changes with every write, for the readers that cache an
@@ -5940,7 +6217,7 @@ class ConceptMembers(dict):
         return sorted({r for (r, _, _) in self})
 
     def started(self):
-        """The members that entered their columns, of positive weight."""
+        """The members that were written as entries, of positive weight."""
         return {key: weight for key, weight in self.items() if weight > 0}
 
     def net(self, row, percept):
