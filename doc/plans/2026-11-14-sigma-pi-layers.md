@@ -15147,3 +15147,223 @@ How long: the dictionary's admission is shared by certificates 46, 48 and 53 (`d
 - **Rule 52, open:** whether a part of the catalog made by the repair belongs to the classes of its characters (the class code the OR of those parts' codes too). It would keep any coordinate, but the letter class would fill within a few hundred repairs.
 - **Rule 51:** the against lane is still emptied for some forms by chance (29 of 3,777, as many as forms with holders, before the repair; 97 with the trial's choice as written).
 - The copies not followed (`ConceptTrust.content`, LTM's kept rows, MTM's literal candidates) want a rule.
+
+### 23.R The repair pass after the sweep (2026-11-19)
+
+Asked in §23.3d's table. Commits, local on `main`: `4f9391f85b`, `5c250ce1e3`, `e10bd4cc44`, `900edca5d5`, `8ae71efec0`, `7063badb40`, `60c2f5bf8e`, `3ba8b85e94`. The implementer's return is below.
+
+**Review** (Claude). Read: the return. Run here, the same 160 files (six processes, 1,152 s): **1 failed, 1,881 passed, 97 skipped.** Both gates pass. The one failure is the learning test of `expect`.
+
+*Accepted.*
+
+- *The time* is no longer an input of the Sigma of order zero; a checkpoint that holds the wider Sigma is read by dropping those rows (they were its last).
+- *"words" and "objects"* are kept out of a row's entry, and out of what a query asks of an entry. The second was not in the decision: keeping them out of the entry alone broke three cases that passed, since the match still asked "words" of every entry.
+- *The matrix that holds a concept's entries* (`concept_parts_layer`) is made at construction.
+- *The counts of the taper* are ported; step 10 allocates what it should.
+- *Three tests that passed by luck.* `test_output_walk` (two cases), `test_interpret_bias` and `test_reduction_pressure` each read their sentences once, and whether a word was found was a draw: they failed 1 run in 4, 2 in 4 and 3 in 6. Each now reads until MTM nominates its forms, and passes 8 of 8, 8 of 8 and 12 of 12.
+- *The trial's stand-in* is compared with the source that repairs (0 of 3,000 codes differ), and one of its two checks is retired for certificate 53.
+
+*The learning test of `expect`, traced and not repaired.* The teacher of the expectation reads the concepts of order zero over each word's place. Those concepts read the words of the other sentence at .65 to .75 from the first presentation, and training raises them to about one. So `expect` is taught that all four words are there whatever is read. No defect of the code was found: it is what a Sigma that reads the joined code does with words that share letters. Alec (§19.89): "this sounds like an error you can fix." The fix is rule 62, in round 4's next pass.
+
+*From the return, for the item's last sweep.* Tests that read a sentence once, with no helper of `test/nomination_fixtures.py`, pass or fail by a draw. A census of them is made before the last sweep.
+
+#### Return of the repair pass
+
+Checkout `/Users/arogers/github/WikiOracle/basicmodel`, branch `main`, from `828292290d`. One commit for each numbered item, local, not pushed, each ending with the Co-Authored-By line. Nothing under `doc/` and not the spec was edited; no seed pinned, no skip or xfail added, no bound, rate, capacity or count changed.
+
+| Item | Commit | Kind |
+| --- | --- | --- |
+| 1. The Sigma of order zero reads no time | `4f9391f85b` | source, with tests ported |
+| 2. The declared classes are not kept in an entry | `5c250ce1e3` | source, with tests ported |
+| 3. The definition store built with the space | `e10bd4cc44` | source |
+| 4. The taper's counts | `900edca5d5` | tests ported |
+| 5. `test_output_walk`, two cases | `8ae71efec0` | tests ported (rule 20) |
+| 6. `test_interpret_bias` | `7063badb40` | test ported (rule 20) |
+| 7. The learning test of `expect` | none | left failing, measured: a learning result |
+| 8. The trial's two checks of its stand-in | `60c2f5bf8e` | one ported, one retired |
+| 9. `test_reduction_pressure` | `3ba8b85e94` | test ported (rule 20) |
+
+**1. The Sigma of order zero reads the time**
+
+**Cause.** `ConceptualSpace.order_zero_input` (`bin/Spaces.py`, at 828292290d lines 14899 to 14917) encoded `perception.when` with the model's `when_encoding` and passed it to `OrderZero.combine`; `NumericPercepts.read` (`bin/NumericPercepts.py:87-89`) did the same with `model.present()`; `OrderZeroSigma.__init__` split its non-content width into a place half and a time half; `install_order_zero` sized the Sigma with the when encoding's width. `read_word` (the word step) took the first `nInput - content_width` coordinates of the event band, place and time.
+
+**Built.**
+- `OrderZero.combine(presence, codes, *, where=None)`: the keyword `when` is gone; the result is content then place.
+- `OrderZeroSigma`: `where_width = width - content_width`; there is no `when_width`.
+- `ConceptualSpace.install_order_zero`: width = content + the where registry's text width. It no longer reads `when_encoding`.
+- `ConceptualSpace.order_zero_input` and `NumericPercepts.read`: no `.when` read. (`NumericPercepts.read` still stamps the field it returns with `model.present()`, as before; that is the field's time, not the Sigma's input.)
+- `read_word` is unchanged in code: its `place` is now the band's first `where_width` coordinates, the place alone.
+- *A checkpoint that holds the wider Sigma is read by dropping those rows* (`OrderZeroSigma._load_from_state_dict`): the time rows were the last, after content and place, so `weight` and `against` are cut to `nInput` rows. Checked on a 14-row Sigma loaded into an 11-row one: the 11 rows are the saved ones. Nothing else is lost, so I did not refuse.
+- The census fixture `test/fixtures/when-readers-round4a0.json` loses the row the porter added for `install_order_zero` (it reads no when now). The two readers it flagged are gone, so no row is added for them.
+
+**Ported (assertions):**
+- `test_item17_order_zero::test_a_readings_own_place_and_time_follow_its_presence_and_are_not_combined` becomes `test_a_readings_own_place_follows_its_presence_and_is_not_combined`. Old: `x[0, 0, 8:] == [.25, .75, 1., .5]`. New: the width is `8 + 2` and `x[0, 0, 8:] == [.25, .75]`; the against lane's place is zero, as before.
+- `test_item17_order_zero::test_place_and_time_weights_after_teaching` becomes `test_place_weights_after_teaching` (reported): the four coordinates are place.
+- `test_item17_order_zero::test_the_way_back_as_far_as_it_goes`: `where` is 4 wide in place of 2 + 2; the assertion is unchanged.
+- `test_item17_order_zero::test_the_order_zero_sigma_is_dense_and_not_penalized`. Old: `when_width` equals the when encoding's width, and the width is content + where + when. New: the Sigma has no `when_width`, and the width is content + where.
+- `test_item17_symbols::test_51b...`: `where` is the 2 non-content coordinates in place of 1 + 1; the assertions are unchanged.
+
+**Not provisional:** the decision is rule 7 as amended. *Provisional:* dropping the rows rather than refusing.
+
+**2. An entry of four concepts with no room for the word**
+
+**Cause.** `EpisodicMemory.select` kept the four strongest concepts of the field. "words" lights at tanh(1) on every reading, ties with the clause's argument concepts, and pushed the word's object out (the measurement of §23.S.1). *A second cause found when the first was removed:* `ExtendedRecall.matches` still asked "words" of every entry (its question is the clause's field), so the order-one denominator held a concept no entry keeps. With the entry repaired and the question not, `test_51` still read 0, and three cases that had passed (`test_item18_trust::test_52`, `test_episodic_concepts::test_recalled_flat_extension...`, `test_item20_round7_episodes::test_content_query...`) failed.
+
+**Built.**
+- `EpisodicMemory.unkept(owner)`: the identities of the owner's declared classes (`_concept_alloc_of(owner).declared_classes`, "words" and "objects"); none without an owner.
+- `EpisodicMemory.select(field, capacity, present, *, unkept)`: the concepts of `unkept` are taken out before the ranking, so the next strongest takes their place. The keyword is required: every caller names what it does not keep.
+- Its callers: `EpisodicMemory.stage` and `tree_entry`, and `Examination.run`.
+- `ExtendedRecall.matches`: a concept in `unkept` is given no order in the question, as a concept with no row was, so it is neither kept nor asked.
+
+**Ported.** Every direct call of `select` in the tests passes `unkept=()`, assertions unchanged: `test_episodic_concepts`, `test_item20_round7_episodes`, `test_item18_finish`, `test_item18_parts_round_c`. *Added* to `test_episodic_concepts::test_all_orders_keep_largest_signed_values_in_one_flat_entry`: with `unkept=(20,)` the entry is `[40, 40, 30, 10]`, signed `[1, -1, .9, -.8]`.
+
+**Does anything else that every reading lights crowd an entry?** Measured on the lesson's sixteen sentences (`test/attention_thinking_certificate.py lesson`, every entry selected, two runs):
+- *Nothing else is lit by every reading by construction.* The concept most often in an entry is the word "is" (order 0): 8 of 36 entries in one run, 34 of 86 in the other (the walks differ, so the count of entries does too). It is in every sentence of the lesson.
+- *The clause's argument concepts take most of the room.* After it come the formal arguments of the operator the clause used (`divide_argin1`, `divide_argout1`, `marker_argin1`, `divide_argin2`, `marker_argout1`, the modifier's), each lit at tanh(1) by the clause's structure. A clause of a three-argument operator fills three of the four slots with its arguments, and its words tie for the fourth (as in `test_51`: `[16, 17, 18]` and the word). They say which operator the clause has, which is something of the moment, so I left them in. They do crowd the entry the same way when there are four.
+- *One case kept "words":* in one of 36 entries, made by `tree_entry` from a store that has no concept owner (`store.owner()` is None: a private bank before `IdeaStack.prepare`), `unkept` is empty. Provisional.
+- `episodicConcepts` stays at 4.
+
+**Provisional:** the question side (`ExtendedRecall.matches`) was not in the decision; I added it because without it the decision does not repair the case.
+
+**3. The captured forward is traced again mid-run**
+
+**Cause, measured.** I wrapped `ConceptualSpace` to report every module registered after its `__init__`, and ran `data/idempotent.xml` as the test does. Three are registered: `syntacticLayer` and `order_zero` during `create_from_config` (construction), and `concept_parts_layer` during the first training batch:
+
+`Interpret.lookup_word:387` → `cs._populate_concept_weights` → `add_concept_edge` → `_sparse_families(0)` → `add_module("concept_parts_layer", ...)` (`bin/Spaces.py:14765`).
+
+The porting implementer's suspicion was right.
+
+**Built.** `Models.create_from_config` calls `_cs._sparse_families(0)` right after `install_order_zero()` and `declare_word_classes()`, so the store is a module of the space from its construction. `_sparse_families` is unchanged and finds it already registered.
+
+**Run:**
+- `test_ir_fullgraph_compile`: 1 passed, 1 skipped (slow).
+- Every test file that names `_sparse_families`, `concept_parts_layer` or `_modules` (22 files), with `test_structural_checkpoint` and both gates: 265 passed, 35 skipped.
+
+Not provisional.
+
+**4. The counts of round 4's taper**
+
+**Cause.** Step 10 (`50f9f66316`) made the configured `nVectors` the room of order zero, the orders above on top. The two tests counted the rows as the room with the seats inside it.
+
+**Ported**, each stating what it stated (the inventory is the room, plus the grammar's declared seats, now plus the taper):
+- `test_review14_addendum::test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-18, MM_grammar-20]`. Old: `nVectors == capacity + arguments + declared classes + operators`. New:
+  - the seats above order zero are the arguments, the declared classes and the operators;
+  - `_order_caps()[0] == capacity + seats[0]`;
+  - `nVectors == capacity + Σ_{k≥1} max(1, capacity >> k) + Σ seats`.
+- `test_config_scoping::TestCreateFromConfig::test_reads_space_nOutput`. Old: `nSymbols == 3 + arguments + WORD_CLASSES + operators`. New:
+  - the seats sum to the arguments, the classes and the operators;
+  - `_order_caps()[0] == 3`;
+  - `nSymbols == 3 + Σ_{k≥1} max(1, 3 >> k) + Σ seats`.
+
+**Does step 10 allocate what it should not?** No. XOR_grammar: caps 18, 29, 12 (room 18; order one 9 + 20 seats; order two 4 + 8), 59 rows. MM_grammar: caps 32, 52, 20 (room 20 + 12 seats at order zero; 10 + 42; 5 + 15), 104 rows. The rows added are the taper of the orders above zero, as step 10 says. The old 77 for MM_grammar had the 12 seats of order zero inside the room. Not provisional.
+
+**5. `test_output_walk`, two cases**
+
+**Cause.** Not the order of the file. Each case also fails alone:
+- `test_answer_materialises...` alone: 1 failed in 4 runs, and failed after a skipped test.
+- `test_resolved_recall...` alone: 2 failed in 6 runs (`row_sources == ('identity:cold-memory', ...)`).
+
+Both read their sentences once (rule 20). Probed: after the one staging, `interpret._pending` is empty, so no word was nominated, and whether a field completed was a draw of the walk: `sentence_states` was `(None, None)` in 2 of 6 runs. That they passed at `d0a3832629` in a whole-file run was a draw too.
+
+**Ported:**
+- `test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk`. Old: `_stage_fullgraph_tensor_peer` once. New: once in each of `concept_mint_count` readings, as its sibling `test_materialised_idea_follows_the_symbol_rows` was ported. Five words are then pending, and the fields complete in 8 of 8 runs. Assertions unchanged.
+- `test_resolved_recall_keeps_its_program_after_memory_advances`. Old: first sight. New: `nominated_forms` over the five sentences before the first reading. Assertions unchanged.
+- The two together: 8 of 8 runs passed. The whole file: 25 passed, 5 skipped.
+
+Not provisional.
+
+**6. `test_interpret_bias::test_fresh_reader_interprets_each_word_once`**
+
+**Was it ported, and did it break again?** It was among the sweep's 81 and was ported in `7305469e46`, for the removed key `conceptualPi` only. It was never ported for rule 20: it reads `red cat sleeps` once after `admit_training_forms`.
+
+It did not break with a later commit: it has been a draw since. Exported sources (`bin/` and `test/` of the commit, the rest linked):
+
+| Source | Failed |
+| --- | --- |
+| `7305469e46` | 2 of 4 |
+| `133fcae5f3` | 1 of 1 |
+| `c61210ab16` | 0 of 1 |
+| `f12dd5bdf4` | 1 of 4 |
+| this checkout before the port (repairs 1 to 5 in) | 1 of 3 |
+
+When it fails, no word step happens (`words == []`).
+
+**Ported.** Old: `admit_training_forms`, then the observed reading. New: `admit_training_forms`, then `nominated_forms(model, [text])`, then the observed reading. Assertions unchanged. 8 of 8 runs passed. Not provisional.
+
+**7. The learning test of `expect` (`test_item18_expect::test_81`), left failing**
+
+**Measured at HEAD.** `assert values[hidden] > values[absent].max()`: .7687 against .9912. I probed the teacher at presentations 0, 1, 51 and 52 of the 200.
+
+**What `expect` is taught from now.** The teacher is `Omission.concept_teacher`: the maximum of
+- the order-zero concepts read over each word's own bracket of the unomitted sentence (`cs_read_memberships`, that is, the Sigma of order zero on the combined vector of rule 7), and
+- the observed knowing.
+
+The observed knowing is right: only the sentence's own seen word (row 12 or row 14). The field is not:
+
+| Presentation (sentence, the second word omitted) | alpha (12) | gamma (13) | beta (14) | delta (15) |
+| --- | ---: | ---: | ---: | ---: |
+| 0 (alpha gamma) | .762 | .762 | .655 | .684 |
+| 1 (beta delta) | .751 | .662 | .762 | .762 |
+| 51 (beta delta) | .997 | .662 | 1.000 | .762 |
+| 52 (alpha gamma) | .999 | .762 | 1.000 | .684 |
+
+So from the first presentation the teacher puts each word of the other sentence at 65 to 75 per cent of its own value. During training the seen words' columns rise to read the other sentence's words at one. The map is taught that all four words are about equally present whatever is read, and learns that: after 200 presentations, alpha .983, gamma .777, beta .984, delta .784 on reading alpha.
+
+**What changed in rounds 3 to 3d that it reads.**
+- *Round 3* made the teacher's read the Sigma of order zero on the combined vector (rules 6 to 8b). Before it, at `8b8a2fcf48`, it was the conjunctive membership of `store.conjunctive`, exact for each word.
+- *Rounds 3b to 3c* made a column the mean of its sides (rule 54). By rule 8b, a column reads another reading by the share of its member's vector that the reading holds. These four words share most of their letters and runs (a, l, e, t, d, ta), so each reads the others' brackets at .65 to .75.
+- *Round 3d* adds ones to codes (rule 61), which can only raise that share.
+
+**Is it a defect?** No defect of code was found. The cross-read is what rules 8b and 54 say a column does, and the rise to one is learning. It is the discrimination of the order-zero Sigma (certificate 17, "how many concepts are told apart") feeding a teacher that needs it exact. Not bent; left failing for round 5. Not traced: which loss moves the seen words' columns toward the other sentence's words over the 200 presentations.
+
+**8. The trial's two checks of its stand-in**
+
+**Built** in `test/code_trial.py`: `SourceCoder(LinkedCoder)`. It is the linked coder brought to rule 61 as round 3d built it:
+- repair `ch`;
+- its keys kept fresh after a repair;
+- off the inner form's against lane first;
+- in the wholes half, inside the AND of the codes of the declared classes that hold on every byte of the inner form.
+
+It is round 3d's lockstep stand-in (`FreshAB`), folded into one class.
+
+**Ported:** `test_item17_code_trial::test_10_the_linked_coder_codes_as_the_source_does`.
+- Old: `LinkedCoder(64)` without repair against an unbound `WordIdentity(128, 64, 64)`; `differ == 0` and the same added parts.
+- New: `SourceCoder(64)` against the source coded as in the model, `test_item17_code.coded` (the table of wholes bound before the forms are admitted); `differ == 0` and the same added parts.
+- Measured on the first 3,000 words: 0 differ, 1,153 added parts on each side, 1,096 forms given a coordinate. 6.5 s.
+
+**Retired:** `test_the_stand_in_codes_as_word_identity_does`. It compared the older parts-only coder (`Coder('built')`) with a `WordIdentity` that has no wholes half. Bringing that coder to the repair would take a second stand-in for a coding the model does not use. It is replaced by the ported `test_10` (the stand-in codes as the source does, both halves, with the repair) and by certificate 53 of `test/test_item17_code.py` (no accident on the dictionary; a form's links are its runs; a later form moves an earlier form's row, lane and column).
+
+The whole trial file: 26 passed, 197 s (four processes). Not provisional.
+
+**9. `test_reduction_pressure`, some of the time**
+
+**Cause.** `test_native_packed_unary_preference_still_records_every_sentence` failed in 3 of 6 runs at HEAD (`len(completed) == 4`). Probed: every write was logged with its caller.
+- *In the passing runs:* two writes, `_append_observed_meaning` from `Models._commit_sentence` (bin/Models.py:20589), rows 0 and 1.
+- *In the failing runs:* the clause was written as a part row (`('sym', 102)`, `('sym', 106)`), and each sentence's closing thought was written as a second root by `ThoughtStream.commit` from `_commit_sentence` (bin/Models.py:20716; `ThoughtStream.py:606`), because the thought's meaning was not its input unchanged.
+
+The sentences were read once (rule 20), so their words were not nominated. That is consistent with it failing before round 4 (2 of 6 at `87bbbfb664`, after round 3's rule 20).
+
+**Ported.** Old: the packed batch on first sight. New: `nominated_forms(model, ['1 plus 2', '3 plus 4'])` first. Assertions unchanged. 12 of 12 runs passed. The walk still varies (rows `[0, 4]` in some runs, `[('sym', 107), ('sym', 109)]` in others), but each sentence now writes one root. The whole file: 16 passed. Not provisional.
+
+**Final counts**
+
+**The list.** The 160 files of `r5_files.txt` at `60c2f5bf8e`, four processes, `--dist loadfile`, with RUN_SLOW and RUN_TRAINED unset: **1 failed, 1,881 passed, 97 skipped, 2 xpassed, 1,347 s.** At 828292290d the same run gave 14 failed and 1,869 passed.
+- The one failure is item 7, `test_item18_expect::test_81`, a learning result.
+- Both gates are in the list and pass.
+- Certificate 23 passes as it stands: `test_item17_order_zero.py`, which is in the list, passes whole.
+
+**Files outside the list that name what I changed:**
+- `test_item18_extend`, `test_item18_memory_trust`, `test_item18_parts_round_c`, `test_item18_reduction` and `test_item18_finish`, with `test_interpret_bias` and `test_loop_of_looks` again: 117 passed, 10 s.
+- Earlier in the pass:
+  - the 18 files naming the order-zero readers and both gates: 312 passed, 6 skipped, and `test_item17_symbols` ported to 4 passed;
+  - the 22 files naming the definition store: 265 passed, 35 skipped;
+  - the trial file: 26 passed.
+
+**The lesson's sixteen sentences** (`test/attention_thinking_certificate.py lesson`): 16 records, 18.9 s.
+
+**What I would change in §21**
+
+- **Rule 7.** Say that a checkpoint's time rows are dropped on reading (they were last).
+- **Rule 20, for the tests.** Every one of items 5, 6 and 9 was rule 20 in a test that was green by a draw. A test that reads a sentence once now passes or fails with the walk, not with the code. A short check would find the rest: a census of tests that read a sentence without `nomination_fixtures` and assert on words, rows or writes.
+- **Episodic entry (rule 60 / §19.85, open point).** Name what an entry keeps. The declared classes are out now (decided); the question (`ExtendedRecall.matches`) must leave out what the entry leaves out, or a clause cannot match its own meaning. The formal arguments of the clause's operator take three of four slots in a three-argument clause, and the words tie for the fourth. Either the arguments go the way of the declared classes, or `episodicConcepts` counts arguments and words apart.
+- **Rule 8b / certificate 17, for the teacher of expect (round 5).** The order-zero read of a word's own bracket lights other words of shared letters at 65 to 75 per cent, and training raises it to one. `concept_teacher` should not read the full field of order-zero concepts. It could read the concepts of the words staged in the bracket (rows the reading identified), or the Sigma's discrimination must be a certificate that round 5 holds.
