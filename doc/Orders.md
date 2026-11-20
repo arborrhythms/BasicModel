@@ -9,11 +9,13 @@ and [symbolization establishes an order-1 individual](Mereology.md).*
 
 An object at order *n* ≥ 1 is a set of symbols of lower orders, with graded
 (fuzzy) membership, exactly as in set theory. Order increases are always
-over individuals: a set collects symbols, never field regions directly. An
-order rises at a Sigma and nowhere else (Alec, 2026-11-20: "Use the term
-epistemic level, not order (which increases only with sigma)"): a Pi makes
-things within an order, and the next Sigma makes the kinds of the order
-above. One Pi or one Sigma is an epistemic level, and every order has two.
+over individuals: a set collects symbols, never field regions directly. Order
+zero, the basic level or basic order, "covers basic percepts and the first
+concepts. Symbols and concepts beyond that are first-order, and so on"
+(Alec, 2026-11-20). An order is a Pi and then a Sigma, and the count rises
+with each Sigma passed and nowhere else ("Use the term epistemic level, not
+order (which increases only with sigma)"). One Pi or one Sigma is an
+epistemic level, and every order has two.
 The ladder is not strictly ramified (Alec, 2026-11-17) at the kind: a kind
 collects things from every epistemic level below its own, not only from the
 one beneath it, and from none at or above its own. `green things` "must

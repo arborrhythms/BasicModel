@@ -117,10 +117,13 @@ makes a symbol from a statement such as "Felix is my cat", which says that
 two are the same. "Since implicit generally precedes explicit, MTM should
 check for an existing fit first."
 
-**Order.** How far a concept stands above the basic percepts. An order rises
-at a Sigma and nowhere else (Alec, 2026-11-20): a Pi makes things within an
-order, and the next Sigma makes the kinds of the order above. A symbol is a
-cone in the conceptual space of one order and never mixes concepts of two,
+**Order.** How far a concept stands above the basic percepts. The zeroth
+order, the *basic level* or basic order, "covers basic percepts and the first
+concepts. Symbols and concepts beyond that are first-order, and so on" (Alec,
+2026-11-20). So an order is a Pi and then a Sigma, and the count rises with
+each Sigma passed and nowhere else. A symbol is a
+cone in the conceptual space of the order beneath its own and never mixes
+concepts of two orders,
 since "the concepts at every order live in spaces with different
 geometries"; a kind collects from every epistemic level below its own. A concept of
 order zero is read from basic percepts. A concept formed above symbols is one
@@ -273,7 +276,11 @@ recent. In the source: `ShortTermMemory`.
 
 **MTM.** Medium-term memory: where things are tried before they are kept. It
 counts what recurs and nominates rows of the Pi; from statements it makes
-symbols and concepts, looking first for one that already fits. What it holds
+symbols and concepts, looking first for one that already fits. The entries of
+a Pi and of a Sigma are tried in the same way: "small sparse pi and sigma
+matrices that operate on potential inputs. So candidates enter those
+medium-term structures easily, and are either promoted or forgotten according
+to their value as members" (Alec, 2026-11-20). What it holds
 is easily promoted and easily forgotten. In the source: `MediumTermMemory`.
 
 **Slot.** A place of episodic memory: one concept of a moment, with its value.

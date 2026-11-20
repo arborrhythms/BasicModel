@@ -1346,9 +1346,9 @@ first Pi's rows are the basic percepts, each with two values, the Not offers
 each row's value and not-value, and a sparse Sigma over those values gives
 the concepts ("Percept-to-Concept Seam" above). Above it a Pi makes symbols
 over the conceptual space of the concepts below, the Not offers each
-symbol's value and not-value, and a Sigma makes the concepts of the next
-order. A Pi makes things and a Sigma makes kinds; an order rises at a Sigma
-and nowhere else. Symbols and
+symbol's value and not-value, and a Sigma makes the concepts of that order:
+the symbols over order zero's concepts and the concepts over those symbols
+are first order, and so on. A Pi makes things and a Sigma makes kinds. Symbols and
 concepts are held in separate tensors. `CS.forward` itself performs STM
 bookkeeping. The design is in
 [Architecture](Architecture.md#sigma-and-pi-layers).

@@ -9425,6 +9425,29 @@ Making a *new* kind where none was expected is left to MTM, which does it well.
 3. *The Sigma.* A new word met in the place of a noun gains an entry of the kind noun with no statement and no call of MTM; a word met beside a noun and never in its place gains none.
 4. *Against the explicit way.* On the lesson, the rows and entries the implicit way makes, beside those MTM makes: which are the same, which are new, which are wrong.
 
+### 19.108 Alec: the numbering of the orders; medium-term matrices of candidate entries (2026-11-20)
+
+**The orders.** "One clarification: zeroth order (which we are calling basic level or basic order) covers basic percepts and the first concepts. Symbols and concepts beyond that are first-order, and so on."
+
+*Decided.* An order is a Pi and then a Sigma. Order zero is the basic percepts and the first concepts; the symbols over those concepts, and the concepts over those symbols, are first order. So the count rises with each Sigma passed, which is his "order ... increases only with sigma" (§19.106). *What it corrects:* Claude's glossary had "a Pi makes things within an order, and the next Sigma makes the kinds of the order above", which put a symbol in the order of the concepts beneath it; and §19.106's reading of "its order" in "A symbol's cone is tested only against concepts *at* its order" as the order of the concepts beneath. By his numbering a first-order symbol is a cone in the space of the zeroth-order concepts. *Claude's reading of that sentence now, said back to him:* its point is that a cone lies in one order's space and never mixes two, and the order in question is the one beneath the symbol's own.
+
+**How entries come into a Pi and a Sigma, at every level.** "With respect to how edges are introduced into pi and sigma at all levels, I think the best thing to do is create small sparse pi and sigma matrices that operate on potential inputs. So candidates enter those medium-term structures easily, and are either promoted or forgotten according to their value as members."
+
+*Taken as the form of implicit growth* (rule 73). It gives §19.107 its mechanism, the same at every level and for both kinds of matrix, and it is what MTM already is for rows:
+
+- Beside each Pi and each Sigma stands a small sparse matrix of *candidate* entries, a medium-term structure. It reads potential inputs: for a Sigma, the things present where a kind is at work; for a Pi, the coordinates present in what a row is matched against.
+- A candidate enters easily and costs little. It operates: it is read in the forward pass as an entry is, so what it is worth is measured on the model's own values and not guessed.
+- A candidate is promoted into the matrix proper, or forgotten, by its value as a member.
+
+*Mine, to be settled by the trials of certificate 60 and put to him:*
+
+1. *What "value as a member" is.* First choice: what the trial of rule 67 measured, the weight the candidate earns against the penalty. A candidate starts at nothing, so that entering changes no value; its gradient moves it; it is promoted when it has held above the penalty for a time and forgotten when the penalty returns it to nothing or the room is needed, the weakest first. For a Pi's candidate the same, with how consistently its coordinate is present over the row's matches.
+2. *What offers a candidate,* from §19.107: co-occurrence at a place for a Pi, substitution at a place for a Sigma. A Sigma's candidate is never a thing at another place.
+3. *Where they live.* With MTM, as its candidates for rows do, sized by a key; one such matrix for each Pi and each Sigma.
+4. *Their step.* The proximal one (§23.4.7), since under the model's optimizer a weight at nothing moves alike whatever its gradient.
+
+This takes the place of rule 67's table of gathered gradients: the candidate matrix is that table, with the entries read and not only counted.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10865,15 +10888,31 @@ chooses from. The old classes are not edited.
     occurrences share; a symbol is the cone over the coordinates of
     conceptual space that the concepts which are the same thing
     share. A coordinate on which the members vary has no weight.
-    A symbol's cone lies in the conceptual space of one order and is
-    tested against that order's concepts alone (Alec, §19.106: "the
-    concepts at every order live in spaces with different
-    geometries"). *Mine, tried in tests before it is built:* a
+    A symbol's cone lies in the conceptual space of one order, the
+    one beneath its own, and is tested against that order's
+    concepts alone (Alec, §19.106: "the concepts at every order live
+    in spaces with different geometries"; §19.108 for the numbering:
+    order zero is the basic percepts and the first concepts, and the
+    symbols over them are first order). *Mine, tried in tests before it is built:* a
     symbol's row has an against side, what its nearest neighbours
     hold that it does not (as rule 53 for a basic percept); it reads
     the meaning at one place and never a join of the field's
     meanings; and no concept's place is moved by a value read from a
     symbol. How a row and its cone grow implicitly is §19.107.
+
+73. *Entries are tried in medium-term matrices before they are kept*
+    (Alec, §19.108: "create small sparse pi and sigma matrices that
+    operate on potential inputs. So candidates enter those
+    medium-term structures easily, and are either promoted or
+    forgotten according to their value as members"). Beside each Pi
+    and each Sigma, at every level, a small sparse matrix holds
+    candidate entries. A candidate enters easily, is read in the
+    forward pass, and is promoted into the matrix proper or
+    forgotten by its value as a member. *Mine:* a candidate starts
+    at nothing; its value is the weight it earns against the
+    penalty (rule 67's measure); what offers one is co-occurrence at
+    a place for a Pi and substitution at a place for a Sigma
+    (§19.107); the weakest is forgotten when room is needed.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -11238,8 +11277,12 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     its end; a sequence never taught is not produced; two sequences
     that share an item are each continued as its own. In item 1.6
     the song is counting. The values are printed.
-60. *Implicit growth, tried* (§19.107; in tests only). The four
-    trials of §19.107, each with its numbers: what a Pi row does
+60. *Implicit growth, tried* (§19.107, rule 73; in tests only). The
+    four trials of §19.107, each run with candidates held in a small
+    sparse matrix beside the Pi or the Sigma, read in the forward
+    pass, and promoted or forgotten by their value; each with its
+    numbers, and with how many candidates entered, were promoted and
+    were forgotten: what a Pi row does
     with a near variant and with a holder as its width is varied;
     whether two concepts used alike come into one symbol's cone;
     whether a word met in a kind's place gains that kind's entry

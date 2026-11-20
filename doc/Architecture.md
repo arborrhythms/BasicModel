@@ -1926,9 +1926,11 @@ stored as $2n$ unsigned lanes. The rows above that are the symbols, made by
 the Pi or nominated by MTM, read the space of those concepts on its two
 lanes; the Not offers each symbol's value and not-value, and the next Sigma
 reads those. A concept that reads a symbol's not-value has a Not entry on
-it. The Sigma above order zero reads no vector and pools nothing. An order
-rises at a Sigma and nowhere else: a Pi makes things within an order, and the
-next Sigma makes the kinds of the order above. The orders are not strictly
+it. The Sigma above order zero reads no vector and pools nothing. Order zero, the
+basic level, is the basic percepts and the first concepts; the symbols over
+those concepts and the concepts over those symbols are first order, and so
+on (Alec, 2026-11-20). An order is a Pi and then a Sigma, and the count rises
+with each Sigma passed. The orders are not strictly
 ramified at the kind: a kind collects from every epistemic level below its
 own, and a meta concept reaches its word and its object in one step (Alec,
 2026-11-17). Between conceptual orders only activation passes: a pull within
