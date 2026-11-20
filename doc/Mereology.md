@@ -26,6 +26,13 @@ vocabulary, see [Spaces.md](Spaces.md) and [Philosophy.md](Philosophy.md).
 
 ## Asserted and geometric parthood
 
+Mereology is the relation of part and whole among percepts. "Mereology is
+part-whole relation at the perceptual level which, when it occurs over
+symbols, becomes a taxonomy (because the sigma fold makes the concepts
+abstract)" (Alec, 2026-11-20). Among percepts a whole holds its parts; among
+symbols a kind holds its members. Percepts and concepts live in topological
+spaces; symbols do not.
+
 Parthood is held in two ways, and reading one as the other is a category
 error. Geometric relations answer "looks like"; asserted parthood answers
 "is", and is a different call.
@@ -262,15 +269,16 @@ primitive input. The attended field binds their location and level.
 An order is raised in two ways (Alec, 2026-11-19).
 
 *Implicitly:* any concept formed above symbols is one order above the
-concepts those symbols read.
+concepts those symbols read. An order rises at a Sigma and nowhere else.
 
 *Explicitly, by statements that share a side* (Alec, 2026-10-21: "'Is' does
 not cross order by itself, but when used with multiple identical RHS or LHS,
 it creates an equivalence class"). "Felix is a cat" and "Ciao is a cat" are
 two part relations kept in LTM with one whole. They call for a concept that
 ranges over both, so a second concept of cat is formed one order higher. MTM
-is where it is made: it makes a symbol of the higher order over the two
-members if there is none ([Orders](Orders.md), "Orders are learned").
+is where it is made: the kind collects the members' symbols, and where a
+member has no symbol MTM makes one in nominating the kind, after looking for
+one that already holds it ([Orders](Orders.md), "Orders are learned").
 
 A reading that is both, for at one of a concept's percepts and against at
 another, still prompts refinement in the order-0 field
@@ -348,23 +356,28 @@ the other.
 - **Implicit (the layers).** The same content is held in the matrices of
   one structure, a Pi, a Not and a Sigma, at every order
   ([Architecture](Architecture.md#sigma-and-pi-layers)). A row of a Pi is a
-  basic percept at order zero, or a symbol above it, and exists only when
-  MTM nominates it on recurrence; each row brings one concept of the Sigma
-  above it. The Not joins each row's two values into one signed value
-  $s_i$, and a concept is one signed value, $y_c = \tanh(\sum_i w_{ci}
-  s_i)$, whose size is its certainty. Its weights are at zero or above; the
-  Not is the only place a sign is changed, and a Not entry gives one
-  concept a row's pair exchanged. The many-to-one
-  abstraction lives on the Sigma's entries; the Pi's entries are the
-  mereology, a percept over its parts and wholes.
+  basic percept at order zero, or a symbol above it, a thing: it is made
+  implicitly by the Pi or nominated by MTM when its constituents always
+  occur together, and each row brings one concept of the Sigma above it to
+  start with. A basic percept's constituents are coordinates of perceptual
+  space and a symbol's are coordinates of conceptual space; each row is a
+  cone over the coordinates its members share (Alec, 2026-11-20). The Not
+  offers each row's value and not-value, and a concept is one signed value,
+  $y_c = \tanh(\sum_i w_{ci} s_i)$, a kind, whose size is its certainty.
+  Its weights are at zero or above; the Not is the only place a sign is
+  changed, and a Not entry is a concept's entry that reads a row's
+  not-value. The many-to-one abstraction lives on the Sigma's entries; the
+  Pi's entries at order zero are the mereology, a percept over its parts and
+  wholes.
 
 **Coordination.** An asserted relation and the layers are two views of one
 content: a definition between concepts ("balloons are rubber") is an edge of
 the Sigma taught from its `LTM1` part row (`DefinitionFold`), and kept under
-the penalty that thins every entry no cost supports. Above order 0 a symbol
-of order $k$ reads the concepts of every order below $k$, so orders are not
-strictly ramified, and the order rises only by a nomination, never by the
-number of constituents.
+the penalty that thins every entry no cost supports. Above order 0 a kind
+collects from every epistemic level below its own, so orders are not
+strictly ramified, while a symbol's cone lies in the conceptual space of one
+order. The order rises only at a Sigma, made implicitly or nominated by MTM,
+never by the number of constituents.
 
 ---
 
@@ -778,7 +791,13 @@ against; "both" stands across the rows of one reading, one row carrying a
 property for and another against (Alec, 2026-11-19).
 
 A row exists only when MTM nominates it on recurrence, and each nominated
-row brings one concept of order zero. The tower of parts and wholes below
+row brings one concept of order zero to start with. A basic percept is an
+occurrence, an event (Alec, 2026-11-20: "all of their constituent percepts
+occur at the same time, so there is no basis for abstraction into a
+noun"): the word over its occurrences is its concept of order zero, the word
+as a thing is a symbol over that concept, and a kind of words, such as noun,
+collects those symbols. Its constituents are coordinates of perceptual
+space, and its row is the cone over the coordinates its occurrences share. The tower of parts and wholes below
 the basic percepts is perception, made on first sight. Parts and wholes
 unite at the basic percept, and above it only symbols are collected. So a
 concept above order zero carries no perceptual form: neither a centroid of
