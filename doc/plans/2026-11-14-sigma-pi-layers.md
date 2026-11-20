@@ -18891,3 +18891,129 @@ Spot tests only, by the pass (742 passed with both gates on its last part); the 
 - *Not started:* the blank object and the meta concept (§22.4 step 6), MTM's making from a statement with the fit check (step 12), and one storage for the store. They are the round's last pass.
 - *To note:* 2,309 configurations kept under `doc/benchmarks` still hold the key `transformChooser`, which is now refused at load; the two tests that load one of them strip the key first. The benchmarks are a record and are left as they are.
 - *The cost on the lesson was computed from the rule and not measured;* it is measured with the round's end.
+
+### 23.4.11 Round 4, twelfth pass: the blank object and the meta concept, MTM's making from statements with the fit check (parts 1 and 2 built; part 3 not started)
+
+Checkout `basicmodel`, `main`, from `4f12189dbe` (source at `06d00f7572`). Commits: `2bf2e4d1a6` (part 1), `a9fcfd0661` (part 2).
+
+#### What fails or is unfinished, first
+
+- **Part 3 (one storage for the store) not started**, dropped first as the brief allows. Why the store keeps its own: `ConceptualAttentionLayer` (a `SparseLayer`) grows its values past construction (`_grow_values`, which adds a parameter group to a live optimizer and moves the moments), removes entries (`remove_edges`, tail-preserving, moments moved), and its `(row, column) -> position` map `_index` is read by about 20 modules; `SparseSigmaLayer3` has fixed capacity, no removal and no optimizer bookkeeping. Giving it those three is the work left (step list at the end).
+- **`test_episodic_concepts.py::test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar` fails, not ported.** Diagnosis: the episodic entry of "alpha alpha beta" now holds the object alpha's reading gave, its blank (concept 113, order 1); the sentence's open field holds the two words' concepts (111, 112) and "words" (109). The LTM query (`ThoughtLTMCapability.query(opened)`) matches the entry against that field and finds nothing, since the entry's concept is an object and not a word. Before, a word with no object read as itself, so entry and field held the same ids. Which side should change (the entry keeps the words, or the query reads the field's objects) is open; I did not choose.
+- **`test_item18_expect.py::test_81` fails, and fails at the starting source too**: at HEAD with this pass's edits stashed, 0.3441 > 0.4146 is false; with them, 0.0857 > 0.1099 is false. Not mine to change; recorded.
+- Three tests failed once inside a many-file run and pass alone: `test_priming_diffusion.py::test_one_precomposition_prediction_and_one_placement_per_active_stream`, `test_one_attention.py::test_unknown_repeated_word_has_one_byte_descent`, `test_runtime_split_ingestion.py::…::test_store_truths_repeated_lists_append_immutable_claims`. Not chased.
+- **"Felix is my cat" against "Felix is a cat" is not told apart by the source** (*provisional*, part 2): every equality observation between two concepts of one order makes the same-thing symbol, and the statement of kind is the class raise that two or more statements sharing a side make (`raiseCount`, unchanged, default 3 in the configurations; Alec's example says two). Nothing reads the determiner.
+- **The two raises are left as two** (part 2): see "Raising".
+- Tests I expect to fail and did not run: any test elsewhere that reads `InterpretLayer._pending`, `MTMPool.named`, `('name', word)` tokens, a word's object being the word itself, or the grammar's object rows being the words' rows. By search none is left in `test/test_*.py`; behavioural ones (as the episodic test) may be. Slow tests: none run.
+
+#### Part 1: the blank object and the meta concept (rule 20; §22.4 step 6; `2bf2e4d1a6`)
+
+| File, function | What it became |
+| --- | --- |
+| `Interpret.InterpretLayer.reading` | a word with no denotation and no remembered object is given its blank (`blank`); returns the blank's id, row and order. A frozen read and a word with a remembered object are unchanged |
+| `Interpret.InterpretLayer.blank` (new) | a new concept seated one order above the word (`new_concept(order=word order + 1)`), no members, types `concept`, `object`, `blank`, in `individuals`; its place (`ConceptPlacement.positions`) and, with a mereology, its codebook row zeroed; then `define(word, blank)`, the meta concept. `None` where the order has no room (`promotion_seat`): the word reads as itself (*provisional*) |
+| `Interpret.InterpretLayer.blank_of` (new) | the word's blank, by `named_identities` and the type |
+| `Interpret.InterpretLayer.forward` | a word whose definition is below the authority threshold reads its blank (as `referent` does), not `None` (*provisional*: the DEF row's effective truth is scaled by the word's own trust radius, .4866 after one epoch of `XOR_grammar`, under the .5 threshold) |
+| `Interpret.InterpretLayer.define` | ends with `member_of_objects(obj)`: the declared kind "objects" gets its entry on the symbol that holds the object (`kind_entry`, part 2) |
+| `Interpret.InterpretLayer.objectless` (new) | the words with a description in `alloc.word_descriptions` and no definition: replaces `_pending` |
+| `_pending`, `_field_pending`, `admit_discovered` | gone. A description is written to `alloc.word_descriptions` at admission (`lookup_word`, `_sync_identity`); the field's discovering admission defines the word to its case when there is one, otherwise the word's reading gives it its blank (*provisional*: a case admitted later does not replace the blank; §19.27's "train both, remove the blank on overlap" is not built). Readers: `no_object`, `word_for_form`, `lexical_identities`, `lexical_form`, `_preflight` (no reservations), `lookup_word`; `Spaces._word_definition_ids`, `concept_of_percept`, `word_concepts`, the description read at 16867 read `objectless()` or `word_descriptions` |
+| `Spaces.WORD_CLASSES`, `declare_word_classes`; `PartsOfSpeech.order_reservations` | `{'words': 1, 'objects': 2}`: "objects" is declared at order two, one above the objects of words, since a kind collects only from levels below it; reservations seat one at order one and one at order two. An object at or above order two is no member of it (*provisional*) |
+| `Memory.MTMPool.named` | gone, with its tokens and their transient ids. `hold_pending` keeps no `('name', …)` identity; `value_of`'s member list adds no name; LTM0's append takes no name referent; the checkpoint reader accepts no name key or mention (an old pool holding one is refused as invalid) |
+| `FamiliarTier.commit_read_words` | the name block (link the word's pending token, promote on recurrence) gone; returns nothing (its caller read nothing) |
+| `FamiliarTier.define_pending` | no lookup of `('name', word)` |
+| `FamiliarTier.promote_candidates` | recurrence counts mentions with no name filter; no `admit_discovered` at its end |
+| `PrependedSymbols` (`stage_word_references`, `symbolize`, `chunk_token`, the pool prepend) | the word's referent alone; no name form; `IDENTITY_REF` codes are candidates only |
+| `ReferenceClose` (`address`, `origin_reference` tag 6, `_derivation_symbol`, the stable-reference test, the open of a kept mention, the refs written at 1888) | name branches gone; `reading_identity` requests gone (two branches) |
+| `ClauseJournal` | no `named` (origin tag 6) leaf; `reading_identity` no longer written or popped |
+| `ChunkJournal` | origin tag 6 gone |
+| `MemoryLink.retained_reference` | gone (it only resolved a name); `member_order` has no name case; callers `ReferenceClose` (reads `address(reference)`), `ThoughtStream` (block gone) |
+| `Layers.ConceptAllocator._part_handle_reserved`, `Spaces._concept_source_order`, `PartClosing` order read | no `'name'` reference kind |
+| `Models` checkpoint | `pending_definitions` no longer written; a checkpoint holding them is refused with the reason |
+
+Certificate 18 (`test_item17_symbols.py`):
+
+| Test | Numbers | Result |
+| --- | --- | --- |
+| `test_cert_18_a_word_with_no_object_gets_one_blank_object_and_one_meta_concept` | one new seated concept (the DEF relation takes a handle with no row): the blank, order 1 = word order 0 + 1, no parts; `definitions.objects(word) == (blank,)`; its place sums to 0 and `normalize` of it is finite and 0; reading again, `forward` again: no concept, no LTM1 row added | passes |
+| `test_cert_18_every_object_found_or_made_for_a_word_is_a_member_of_objects` | "objects" at order 2; the blank's symbol (one member, the blank) is read by it; an object found by `define` too; no `('name', …)` key, no `named`, no `_pending` | passes |
+
+#### Part 2: how MTM makes a symbol and a concept from a statement (rule 10; §22.4 step 12; `a9fcfd0661`)
+
+**What "fits" is, in the source.**
+- *A symbol* fits concepts when every one of them is among its constituents: `SymbolTable.fit(concept, *others)`, the one with the fewest constituents among those (the first made among equals). `SymbolTable.make` (the one maker, under `nominate_symbol` and `things_reading`) checks it first: a making whose concepts a symbol already holds names that symbol.
+- *A concept* fits members when it is of the wanted order and its entries read the same symbols that a kind of those members would read (each member's symbol by its fit), and no other symbol: `ConceptualSpace.concept_fit(members, order)`. A member with no symbol has no concept that fits.
+
+| Where MTM makes | The check |
+| --- | --- |
+| `FamiliarTier.promote_identity` (a new individual) | `concept_fit((the constituent's concept,), member order + 1)`; a fit is promoted and named instead |
+| `FamiliarTier.promote_candidates` (a class over the candidate's support, above order zero) | `concept_fit(support's concepts, order)` |
+| `Spaces._commit_chunk_admissions` (a chunked phrase) | `concept_fit(members, 1 + highest member order)`; a fit is the admitted concept |
+| `PartClosing._admit_member` (the class raise from statements sharing a side; `cover_members` seats what this makes) | `concept_fit(all the witnessed members, order + 1)`; a fit becomes the shared side's class (`part-kind`, `part-base`) and `index_part_row` uses it |
+| `SymbolTable.make` (MTM's two nominations, a kind's need) | `fit` first |
+
+**The two statements.**
+- *That two are the same* ("Felix is my cat"): `ConceptualSpace.same_thing(a, b)`, called by `PartClosing.observe_members` for every equality observation between two concepts. One symbol holding both, its fit or one made (`('same', a, b)`), only for concepts of one order. Its row is the plain product, so it reads nothing on either lane when only one is evidenced (certificate: (.8, .1) and (.5, .2) read (.4, .02); one alone reads (0, 0)); the symbol that held one alone stays and reads it. The second concept is not added to the first's own symbol: nothing in the source says the two are then always present together (each is read on its own row of the field). *Provisional:* constituents are concepts, as the table has it; whether they are coordinates of conceptual space is open with the designer.
+- *Of kind* ("Felix is a cat"): `ConceptualSpace.kind_entry(kind, member)`, the kind's entry on the member's symbol, by its fit or made (`things_reading`); idempotent; refused below the member's level. `index_part_row` writes it for each member it admits to the raised class; `member_of_objects` is it for "objects".
+
+**Raising.** Two statements sharing a side raise an order through `PartClosing._admit_member` → `ConceptIndex.index_part_row` (the class one order above, `part-kind`), which is doc/Orders.md's "Definitions raise". `ConceptualSpace.refine_over_collected` with `maybe_raise_order` is the other raise: from a stalled both reading over discontiguous support (`mereologyRaise`, on in the lesson), with no statement. They are the implicit and the explicit rows of §19.88's table and make different things; both now go through the same fit and the same symbol maker. I did not fold one into the other (*left*).
+
+Certificates (`test_item17_symbols.py`):
+
+| Test | Numbers | Result |
+| --- | --- | --- |
+| `test_fit_a_symbol_holds_the_concept_and_a_maker_finds_it_first` | a second nomination for Felix returns symbol 0; table holds 1 | passes |
+| `test_same_thing_one_symbol_over_both_read_only_when_both_are_evidenced` | above; again either way: same symbol, table 2; orders 0 and 1: none | passes |
+| `test_kind_entry_and_the_fit_of_a_concept` | two entries, a third call adds none; `concept_fit([felix, ciao], 2)` = the kind, either order; `[felix]` none until a kind reads Felix alone | passes |
+
+#### Ported and retired tests
+
+| File::test (count) | Old | New |
+| --- | --- | --- |
+| `definition_fixtures.witness_object`; `test_word_admission` (2); `test_trust_round1` (1); `test_review10_contracts` (2); `test_dual_towers`, `test_definition_rows`, `test_item17_order_zero`, `test_output_walk` (3), `test_priming_energy`, `test_runtime_split_ingestion`, `test_word_store` (1 each) | `interpret._pending` | `interpret.objectless()` |
+| `test_definition_integrity::test_pending_field_word_reservation_survives_checkpoint` | in `_field_pending`; `_pending`, `_field_pending` equal after restore | renamed `…objectless_field_word_survives_checkpoint`: objectless, `no_object`; `objectless()` equal after restore |
+| `test_mtm_reference_values` fixture (9 tests) | `mtm.named(word)` then `bind` | `mtm.open(first mention)` |
+| `test_trust_round1::test_sign_sentence_observes_a_remembered_endpoint_before_joining` | the second sign is pending on the remembered endpoint; its pending definition; views 2 then 3; one object in all | the word denotes its blank at once; second and third signs join it; the other objects are the pointing words' blanks |
+| `test_derived_concept_codes::…perception_owns_forms`, `test_review13_subspaces::…bipolar_context`, `test_review14_addendum::…letter_rows` (2) | object rows are the words' rows; atoms equal those rows' forms; placement witnesses > 0 | object rows are blanks; atoms equal their words' rows' forms; witnesses on the words' rows; layer rows = objects ∪ words ∪ declared |
+| `test_operators_round3a::…exact_rung0` | the object's row holds the word's form | the object is the blank; the word's row holds the form |
+| `test_order0_attended_field` (2) | the field slot of `forward(word)` | the slot of the word's own concept; `forward` gives its blank |
+| `test_one_attention::test_native_pole_read…` | no definition | every defined object is a blank |
+| `test_word_store::test_surface_bytes…` | the object row's code has exact bytes | the object is the blank; its word's row has exact bytes |
+| `test_item55_mechanisms::test_surface_inverses` | each read word's name token pending, no symbol | each read word has a blank |
+| `test_reading_curriculum::…without_free_decoder[pending-identities]` | the name tokens' values differ from the word values | `[blank-objects]`: the blanks' values differ |
+| `test_reading_round::test_lexical_letters…` | `admit_discovered()` is None | removed clause; no object |
+| `test_item17_symbols::test_6…` | a second making for 40 is a new symbol | it finds the first; the second symbol holds 40 and 41 |
+| `test_item17_symbols::test_71…` | handles are MTM's or `kind` | also `same`, whose members are the pair |
+| `test_item17_symbols::test_cert_f…` | a second nomination of a concept makes a second symbol | it finds the first; the second symbol holds the concept with another |
+| `test_wholespace_property_migration` | order one holds both declared classes | words at one, objects at two |
+| Retired (33), each a test of the pending name, its token, transient id, recurrence promotion or the alias of a name; replaced by certificate 18: `test_reading_round` (11), `test_familiar_tier` (3), `test_mtm_referents` (3), `test_item20_round6_measurements` (3), `test_generate_repair` (2), `test_item18_tree_first` (2), `test_item20_round5_memory` (2), `test_item20_round6_memory` (2), `test_item25_completion` (2: `…ambiguous_pointer_identity…`, `…sign_names_absorbs…`), `test_item18_round_a`, `test_mtm_reference_values` (`…second_sentence_composes_the_name…`), `test_live_references` (`…fuses_the_reference_before_capture_and_write`: an objectless word bound a held individual; a word now has its blank) | | |
+
+#### Choices
+
+1. Blank: place and codebook row zeroed, trust left as `define` sets it (*provisional*; zeroing trust made the meta concept unreadable).
+2. `forward` reads the blank below the authority threshold (*provisional*).
+3. No room at the order: the word reads as itself (*provisional*).
+4. A field case admitted later does not replace the blank (*provisional*).
+5. "objects" at order two; objects at two or above are not members (*provisional*).
+6. Identity = every equality observation of two same-order concepts; kind = the class raise (*provisional*).
+7. A second concept said the same is not added to the first's symbol; the statement's symbol holds both (*provisional*).
+8. The two raises kept (*left*).
+
+#### Spot tests run
+
+Baseline at `4f12189dbe`: 51 files naming the pending name and both gates, 905 passed, 36 skipped (218 s). Part 1: 150 files and both gates, 2,080 passed, 91 skipped, 4 failed (the four above; 415 s). Part 2: 113 files naming the symbol table, its makers, the raise and the store's edges, and both gates, 972 passed, 29 skipped, 2 failed (220 s): `test_cert_f_nothing_is_one_to_one`, ported (a second nomination now finds the first symbol; the concept's second symbol holds another concept with it), and `test_priming_diffusion.py::test_one_precomposition_prediction_and_one_placement_per_active_stream`, which passes alone; then `test_item17_symbols.py` 35 passed (44 s). Both gates pass at the end.
+
+#### What is left, step by step
+
+1. The episodic query against a sentence whose words have blank objects (above).
+2. Part 3: give `SparseSigmaLayer3` growth past construction with the optimizer group added, removal with the moments moved, and the `(row, column)` index its readers use; then make `ConceptualAttentionLayer` that class with its bookkeeping, porting `remove_edges`, `_grow_values`, `add_edge` and the ~20 readers of `_index`.
+3. Telling "my cat" from "a cat" by the determiner, if wanted; `raiseCount` against his "two statements".
+4. Whether to fold the perceptual raise into the statement raise.
+5. The list.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests only, by the pass; the list on its last commit is the round's end (§23.4.12).
+
+- *Built:* the blank object and the meta concept in place of the pending name; every object a member of "objects" through its symbol; what "fits" for a symbol and for a concept, checked before MTM makes either; one symbol for two concepts that a statement says are the same; a kind's entry on its member's symbol.
+- *Dropped, as the brief allowed:* one storage for the store. It is not a small change (the store grows past its construction, removes entries and is read by about twenty modules through its index) and is left to item 1.5 unless a later round needs it.
+- *Open, and put to Alec with round 5's points:* that "Felix is my cat" and "Felix is a cat" are not yet told apart (every statement that two concepts of one order are equal makes the same-thing symbol, and the kind comes from the raise at three statements where his example says two); and what an episodic slot should hold now that a word's object can be a blank (the one test left failing, `test_episodic_concepts`).
