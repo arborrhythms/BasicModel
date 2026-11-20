@@ -2536,3 +2536,21 @@ against episodic memory. The second: attention's request is a set of
 concepts chosen by `attend`; it could also be primed by what semantic
 memory returns for the sentence so far. Neither is designed. Before
 either is, show a reading that fails without it.
+
+## The time as a feeling (Alec, 2026-11-19; future work)
+
+Alec, on why a reading carries its `.when`: "We might want to add a time
+as a sinusoid encoded feeling in order to know what "yesterday" was
+numerically in LTM, that's why we added it. Maybe it can just be a part
+of STM that the chooser or operators have access to."
+
+Today a reading and a chunk of STM carry the model's time, and a row of
+LTM keeps it. No concept weighs it: a concept that learned a weight on
+the clock made a trained answer change with the tick (item 1.7). What is
+wanted is a time that can be compared, so that "yesterday" is a distance
+from now. A felt value is that: its code is its place in a sorted table
+of values (sigma-pi plan, rule 55).
+
+To specify: whether the time is one more felt value with a table of its
+own; who reads it (the chooser, the operators of thought, a query on
+LTM); and what "now" is when a row is recalled.

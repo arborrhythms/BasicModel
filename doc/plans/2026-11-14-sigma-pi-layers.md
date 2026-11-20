@@ -11176,6 +11176,22 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    now and every certificate that passes still passes; say so by a
    test. A concept's own value stays one signed number, and both is
    two concepts (Alec, §19.83). Certificate 51.
+0. Before the steps below, in the pass that builds the Sigma above
+   order zero (rule 62; Alec, §19.89): the Sigma of order zero
+   becomes that same Sigma. It reads the two values of each basic
+   percept's row on two channels, sparse, a concept starting on its
+   own row at one; it reads no percept's code. OrderZeroSigma's
+   dense matrix, the joined vector of OrderZero.combine as its
+   input, the columns of rules 8b and 54 (member_column,
+   follow_members) and OrderZero.read_word's read of a code go. The
+   code and the first Pi stay as rounds 3c and 3d built them. The
+   where enters at the Pi. Certificate 54, with
+   test_item18_expect's test of an omitted word passing; certificate
+   23 restated on rows, each case stating what it stated; and the
+   certificates of test/test_item17_order_zero.py and
+   test/test_item17_code.py that read a column of codes
+   (5, 12, 48, 51) restated on rows or retired with what replaces
+   them.
 12. How MTM makes a symbol and a concept from a statement (rule 10;
    Alec, §19.88). A statement that two are the same ("Felix is my
    cat") gives one symbol for both. A statement of kind or of part
