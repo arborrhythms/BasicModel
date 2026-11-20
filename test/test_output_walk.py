@@ -251,7 +251,10 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     # This boundary contract is for an absolute idea. A fresh grammar can
     # select a three-role relation, whose semantic and STM slot orders differ.
     from reading_fixtures import force_absolute_reading
-    _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20): the staging is read once in each reading.
+    for _ in range(m._concept_owner().concept_mint_count):
+        _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
     from reading_fixtures import supply_object
     for word in sorted(m._concept_owner().interpret._pending):
         supply_object(m._concept_owner(), word)
@@ -913,6 +916,10 @@ def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path, monke
     # This ownership check selects a past field explicitly. An untrained
     # parse of the fixture must not replace it with an unrelated thought.
     monkeypatch.setattr(m, '_run_selected_sentence_thoughts', lambda *a, **kw: ())
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20): the words exist before the first reading.
+    from nomination_fixtures import nominated_forms
+    nominated_forms(m, ["12 plus 1", "3 plus 4", "8 plus 2", "5 plus 9", "4 plus 1"])
     try:
         with torch.no_grad():
             first = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
