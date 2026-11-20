@@ -9272,8 +9272,11 @@ chooses from. The old classes are not edited.
    A reading has one place, its own, and its where wires come from
    the where parameter of rule 47. Combined over the percepts they
    say how many percepts there are and no longer where (round 2,
-   §23.2.1: 0 of 48 places read). *Mine:* the `.when` likewise, and
-   both are read at the degree that the reading is present.
+   §23.2.1: 0 of 48 places read). It is read at the degree that the
+   reading is present. *Mine (§23.S.1):* the Sigma of order zero does
+   not read the `.when`. Claude first had it read like the `.where`;
+   a concept then learned a weight on the clock, and a trained
+   answer changed with the tick.
 8. *The concepts of order zero* (Alec, §18.24, rule 23): the Sigma of
    rule 3 on $x$, with $U$ dense, of the perceptual width by the
    concepts. It replaces the fold of `ConceptualSpace._compose_order0`,
@@ -14726,3 +14729,168 @@ Result: **27 failed, 2,383 passed, 111 skipped, 1 xpassed, 6 errors, 455 s.**
 - **Certificate 12** still says a new column "is its row's vector, normalized". Since §19.82 and §23.3c.4 it is the mean of its sides.
 - **§22.4 step 9:** "the percepts a concept was started from" should say whether members recorded at weight zero are kept.
 - **Step 4's reader list** gains `DefinitionFold`, `CaseSelection.stage_case_bank` and the four callers of `FieldProjection.close` (step 1).
+
+### 23.S.1 The sweep's 81 failures, sorted and ported (2026-11-19)
+
+Asked in §23.S. An implementer on Opus, editing tests only. Commits, local on `main`: `7305469e46`, `e3c7d9dbe9`, `5e3df18776`. Its return is below.
+
+**Review** (Claude). Read: the return. Not run again here yet: round 3d is editing the source, so the 44 files are run with round 3d's review.
+
+*The 81 by cause.*
+
+| Cause | Cases |
+| --- | ---: |
+| Rule 20: a sentence read once finds no word | 54 |
+| Rule 20, with the declared classes "words" and "objects" counted among the seats | 5 |
+| A concept reads `tanh` of its column and not one (rules 3, 8 and 54) | 3 |
+| The removed key `conceptualPi` (rule 6) | 3 |
+| The widths | 0 |
+| The sweep's copy (no history, no `.venv`); they pass in the checkout | 10 |
+| Defects of the source, or a learning test; left failing | 6 |
+
+So 59 of the 81 were rule 20, as expected, and 70 are ported. No test was retired. The implementer reports the 44 files at 11 failed, 348 passed; 5 of the 11 are of round 4's first pass and not of the sweep.
+
+*The defects of the source it found, and what is decided for each* (*mine*).
+
+1. *The Sigma of order zero reads the time.* The band of the model's tick enters the combined vector (`ConceptualSpace.order_zero_input`, `NumericPercepts.read`), the Sigma learns weights on it (.244 at the greatest after the numeric fit), and a trained answer then differs with the clock: by 2.1e-3 between tick 0 and tick 777. Rule 7 had the `.when` of a reading read like its `.where`, and that part was Claude's, not Alec's. *Decided:* the Sigma of order zero does not read the `.when`. A time is not part of what a thing is, and a succession is held by a row that MTM nominates (§21, open point 13), not by a weight on the clock. Rule 7 says so.
+2. *An entry of four concepts has no room for the word.* With "words" a concept that every word's reading lights, an entry kept `[three arguments, "words"]`, all at .7616, and the object of the sentence's word lost the tie. A clause then could not match its own meaning. *Decided:* the declared classes "words" and "objects" are not kept in an entry. They hold of every word, so they say nothing of a moment.
+3. *The captured forward is traced again.* A module is added to the ConceptualSpace while it runs, the first time a nominated word joins "words" (`add_module("concept_parts_layer")`, probably). *Decided:* it is built at construction.
+4. *A learning test of `expect`* (`test_item18_expect::test_81`) fails after its port: after 200 presentations the expectation gives each word about its share whatever is read. Not traced. Round 5 rebuilds the spread that `expect` feeds; it is traced there first.
+
+*Of round 4's first pass, found by these files:* three cases count the rows of the taper that step 10 added (`test_config_scoping`, `test_review14_addendum`), and two of `test_output_walk` fail only when their file is run whole.
+
+All of these go to one repair pass on the source after round 3d returns.
+
+#### Return of the porting of the sweep's failures
+
+Tests only. No file of `bin/`, `doc/` or `data/` was edited. One test
+fixture file was edited: `test/fixtures/when-readers-round4a0.json` (one row
+added). No shared helper (`nomination_fixtures`, `basic_fixtures`,
+`reading_fixtures`) was edited. No seed pinned, no skip or xfail added.
+
+Commits, local on `main`, nothing pushed:
+
+| Commit | What |
+| --- | --- |
+| `7305469e46` | the removed key `conceptualPi` (2 files) |
+| `e3c7d9dbe9` | restated order-zero values, the declared word classes, the when-reader census (8 files, one of them the fixture json) |
+| `5e3df18776` | words read until MTM nominates them, rule 20 (28 files) |
+
+**1. The 81 cases by cause**
+
+First run of the 44 files in the checkout (at `65a8c36f3d` plus the round-4
+implementer's uncommitted `bin/`): **73 failed, 286 passed, 16 skipped,
+1 xfailed, 901 s**. 71 of the 81 failed there, and 2 cases not among the 81
+(`test_output_walk`, below).
+
+| Cause | Cases | Done |
+| --- | ---: | --- |
+| Rule 20: a sentence read once finds no word | 54 | ported |
+| Rule 20 with the declared classes "words" and "objects" counted among the seats | 5 | ported (3 of them now fail on round 4's step 10, see §4) |
+| A restated value: an order-zero concept reads tanh of its column, not 1 (rules 3, 8, 54) | 3 | ported (each also reads until nomination) |
+| A removed mechanism: the key `conceptualPi` (rule 6) | 3 | ported |
+| A width | 0 | |
+| An artifact of the sweep's copy (`git show` of commits the throwaway repository lacks; no `.venv` in the copy) | 10 | none needed: they pass in the checkout |
+| A defect of the source, or a learning statement that the new order zero breaks | 6 | left failing, §3 |
+| **Total** | **81** | |
+
+The 10 copy artifacts: `test_attention_thinking_steps` 8 (`git show 3926005f12:bin/...`, exit 128 in the copy) and `test_explicit_dimensions::TestXorExactCliReconstruction` 2 (no `.venv/bin/python` in the copy). `test_ir_fullgraph_compile` also failed in the copy for the missing `.venv`, but fails for a real cause in the checkout and at `d0a3832629` (§3).
+
+**2. Cases ported (old assertion → new)**
+
+Helpers used: `nominated_forms`, `readings_before_nomination`, `forms_short_of_nomination` (test/nomination_fixtures.py), `order_zero_expected`, `published_presence` (test/basic_fixtures.py). Implementer C's choice is followed: a test about the model's own reading reads its text until nomination; a test of a first encounter reads the forms short of nomination; a test downstream of reading takes the words by `nominated_forms`. Where not said otherwise, the assertions are unchanged.
+
+| File | Test (cases) | Old | New |
+| --- | --- | --- | --- |
+| `test_autobind_from_cs` | `test_autobind_creates_meta_taxonomy_entry` (1) | one autobind call admits the word | the autobind runs once in each of `concept_mint_count` readings (`begin_reading`); the last admits it |
+| `test_episodic_concepts` | `test_recalled_flat_extension…`, `test_path_keep_selects…` (2) | one forward | `readings_before_nomination`, then the forward |
+| `test_final_generation` | the three answer-form / lexical tests (3) | `admit_training_forms` made the word | `admit_training_forms` (still records the supplied form), then `nominated_forms` |
+| `test_operators_final_b` | `forced_prefix_certificate`, used by `test_forced_not_and_or…` (1) and `test_forward_discard::test_forward_discard_is_absent_from_the_loop` (1) | two readings of the frozen fixture; the disjunction residual `== [0.]*4` | `concept_mint_count − 1` readings first, the record cleared, then the two readings; residual `< 1e-12` (measured 1.78e-16: the words' meanings are tanh-read concepts, so the reconstruction closes to float32 rounding; at `8b8a2fcf48` it was exactly 0) |
+| `test_grammar_object_leaves` | `test_grammar_deposits_each_word…` (3) | one forward | `readings_before_nomination` before the push is observed |
+| `test_grammar_reconstruction_gate` | `test_grammar_reconstruction_reads_the_concluded_state…` (1) | one forward | `nominated_forms`, then the forward |
+| `test_grammar_separator` | `test_mixing_separator_is_perceived…` (4) | one forward | `nominated_forms`, then the forward |
+| `test_item18_expect` | `test_82_omission_is_the_only_teacher…[sigmaPi]` (1) | one read of `alpha gamma` | `readings_before_nomination`, then the read |
+| `test_item18_expect` | `test_81_expectation_restores…` | one read of each example | each read until nomination. **Still fails**, §3 |
+| `test_item20_round2_admission` | `test_supplied_form_is_reported…` (2), `test_lesson_fixture_supplied_forms…` (1) | `admit_training_forms` made the words | then `nominated_forms` over the texts and string answers |
+| `test_item20_round7_episodes` | `test_content_query_retains_entries…` (1) | one forward | `nominated_forms`, then the forward |
+| `test_item20_round7_time` | `test_packed_sentences_tick_before_perception…` (1) | one packed batch | `nominated_forms`, then the batch |
+| `test_item4_review` | `test_native_activated_word_is_observed…` (1), `test_native_s_gain_uses_raw_arrival…` (2) | staged once / one staged sentence | staged once in each of `concept_mint_count` readings (`_stage_fullgraph_tensor_peer` begins a reading) |
+| `test_learning_readiness` | `test_native_progress_and_trained_artifact…` (1) | trained on first sight | `nominated_forms` before the training batch (the progress count is unchanged, 3 sentences) |
+| `test_look_forecast` | `test_inside_changes_the_read…` (1) | one read | `readings_before_nomination`, then the read |
+| `test_math_chain` | `test_zero_budget_loads_and_trains…` (1) | first sight | `nominated_forms` before `present` |
+| `test_mixing_reconstruction_bank` | the three staging tests (3) | `_lex_embed_stem` once / one forward | staged once in each of `concept_mint_count` readings / `readings_before_nomination` |
+| `test_native_attention_field` | `test_native_reads_one_supported_word…` (1) | first sight | `nominated_forms` before the batch |
+| `test_output_walk` | `test_materialised_idea_follows_the_symbol_rows` (1) | staged once | staged once in each of `concept_mint_count` readings |
+| `test_property_configuration` | `test_configuration_without_property_element_binds_at_first_sentence` (1) | `cat` a word after one sentence | after `concept_mint_count − 1` sentences `cat` is not a word; after the next it is |
+| `test_reading_curriculum` | the native lesson, the four-word inverse `[pending-identities]`, the curriculum gate (3) | first sight | `nominated_forms` (the pending case: a nominated word with no object stays a pending name) |
+| `test_reconstruction_bank_contract` | `test_first_sight_admits_concepts…` (1), `test_staging_rejects…[second_sentence_empty]` (1) | first sight admits | `forms_short_of_nomination`, so the staged reading is the first sight of the words; asserted that nothing was allocated before it |
+| `test_reconstruction_scope` | `test_packed_reconstruction_report_zeros…` (1) | first sight | `nominated_forms` |
+| `test_reverse_traversal` | `test_reconstruction_uses_held_word_support…`, `test_native_identity_audit…` (2) | first sight | `nominated_forms` |
+| `test_selected_relation_meaning` | `test_forward_anchor_capture_survives…` (2) | first sight of `wholeOf partOf` and later of `other words` | `nominated_forms` for both pairs before each staging |
+| `test_sentence_protocol` | `test_repeated_word_is_not_reminted` (1) | `hello` a word after one read of `hello hello` | after `concept_mint_count − 1` readings it is not a word (a form twice in one sentence is read once); after the next it is, and a further reading keeps the same word |
+| `test_stm_recon_from_cleared_cache` | the five tests through `_run_forward` (5) | one forward | `readings_before_nomination` inside `_run_forward` |
+| `test_supplied_answer_training` | `test_real_supplied_paths_cost…` (1), and `test_operators_round2e::test_sentence_advantage…` (1), which calls it | first sight | `nominated_forms` |
+| `test_sweep_repairs` | `test_noncanonical_forward_preserves…` (1) | first sight | `nominated_forms` |
+| `test_trial_policy_ownership` | `test_trial_and_batch_answer…[False-*]` (2) | first sight of `9` | `nominated_forms` |
+| `test_operators_round4a` | `test_one_presentation_updates_detached_context…` (1) | 4 context rows outside the arguments and operators | `nominated_forms`, then the one presentation; the declared classes (`declared_classes`) are excluded with the arguments, since each nominated word joins "words" |
+| `test_derived_concept_codes` | `test_actual_serial_leaf_pairs…` (1) | allocated rows = word rows ∪ arguments ∪ seats | `nominated_forms`, then the forward; the set adds the declared classes; asserted that the first word has a row |
+| `test_review14_addendum` | `test_small_inventory_pairs_words…` (2) | one forward; `nVectors == capacity + arguments + operators` | `readings_before_nomination`, then the forward; `nVectors` adds `len(declared_classes)` |
+| `test_config_scoping` | `test_reads_space_nOutput` (1) | `nSymbols == 3 + arguments + operators` | adds `len(ConceptualSpace.WORD_CLASSES)` |
+| `test_item18_completion` | `test_percept_definition_uses_the_same_conjunction_lanes…` (1) | concept `[0, 1]` (the Not member present denies) | the concept equals `order_zero_expected` from the published presences, and one of its lanes is 0. Measured: it reads `+.423`, not against: the Not member's share does not cancel the member's in the union (rule 54) |
+| `test_mtm_reference_values` | `test_second_sentence_composes_the_name…` (1) | the second sentence's operands equal the names' rows exactly | `nominated_forms`, then the first sentence; the operands equal the names' rows times tanh(1) (rtol 1e-5): a word's concept reads its own row at tanh(1) (rules 21, 54). Measured ratio .76159 |
+| `test_interpret_bias` | `test_fresh_reader_interprets_each_word_once` (1) | the benchmark configuration `doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml` | a copy in `tmp_path` without `<conceptualPi>true</conceptualPi>` (rule 6 removed the key; the file under `doc/` is a git-ignored receipt and is not edited) |
+| `test_loop_of_looks` | `test_1_2_3_words_join_before_the_walk_finishes` (2) | the same | the same |
+| `test/fixtures/when-readers-round4a0.json` | for `test_operators_round4a0::test_when_reader_inventory…` | — | one row: `ConceptualSpace.install_order_zero`, which reads only the when encoding's width. The test still fails, §3 |
+
+**3. Left failing: defects of the source, and one learning statement**
+
+1. **The order-zero Sigma reads the reading's absolute time.** `test_item20_round7_time::test_trained_numeric_answers_do_not_move_at_nine_clock_offsets` (fails at `d0a3832629` too; passes at `8b8a2fcf48`) and `test_operators_round4a0::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers` (the census finds two readers it does not list).
+   - *Where:* `bin/Spaces.py:14899-14900` (`ConceptualSpace.order_zero_input`: `encoding.encode(perception.when[..., 0])`) and `bin/NumericPercepts.py:87-89` (`NumericPercepts.read`: `when_encoding.encode(... self.model.present() ...)`) put the absolute model tick's band into the combined vector, and `OrderZeroSigma` (`bin/OrderZero.py:262`) has learned weights on those coordinates.
+   - *Measured* on the MM_xor fit of the test (200 epochs): the largest weight on the time rows of `order_zero.weight` is .244 (place rows .426, content .577); the answers at clock 0 and 777 differ by 2.1e-3 (the test sees 1.0e-4 to 1.3e-4 across its nine offsets).
+   - The census's rows would say whether a learned scorer receives the absolute phase; for these two it does, so I added no row for them.
+2. **The episodic entry has no room for the word once the class "words" is active.** `test_item18_trust::test_51_training_and_serving_keep_the_same_open_answer_and_different_authority[False]` and `[True]` (fail at `d0a3832629` too).
+   - *Measured:* the clause `hello hello` (conjunction) is stored with episodic entry `[16, 17, 18, 68]`, all at .7616: the three `conjunction` argument concepts (order 1) and the declared class `words` (68, order 1). The clause's leaves are `[68, 98]`, 98 being the object of `hello` at order 0. With `episodicConcepts` 4 (`data/model.xml:350`), five concepts tie at tanh(1) and the order-zero object is the one left out (`EpisodicMemory.select`, ties broken by slot), so `ExtendedRecall.matches` of the stored clause against its own meaning reads `[0, 0]` (order 0 has a question concept and no entry), and `Queries._region_evidence` finds nothing: `support_true` 0 where `certainty` .7616 is expected; with `[True]` the recall loads no chunk.
+   - Either the entry gets more room or the declared classes do not enter it. That is a decision; the test is not bent.
+3. **The fullgraph forward recompiles.** `test_ir_fullgraph_compile::test_idempotent_forward_compiles_fullgraph_eager` (fails at `d0a3832629` too; passes at `8b8a2fcf48`; in the sweep it failed only for the missing `.venv`).
+   - *Measured:* `RuntimeError: Unexpected model recompilation in BasicModel._forward_body`, guard `len(self.conceptualSpace._modules) == 17`: a module is registered on the ConceptualSpace after the first compiled forward.
+   - *Probable producer, not proven:* the one lazy `add_module` on the ConceptualSpace, `bin/Spaces.py:14765` (`_sparse_families` registers `concept_parts_layer` at the first concept edge), which round 3 now reaches mid-run when a nominated word is made a member of "words".
+4. **A learning statement the new order zero breaks.** `test_item18_expect::test_81_expectation_restores_the_omitted_native_word`, after the port (each example read until its words exist).
+   - *Measured* after the same 200 presentations: reading `alpha` with `gamma` omitted, the expected field is alpha .970, gamma .717, beta .969, delta .639; reading `beta` with `delta` omitted, .964, .640, .963, .682. The map predicts each word at about its share whatever the input, so the hidden word does not exceed the other absent word. Observed is row 12 alone (or 14 alone) at 1.0, so the inputs differ. It passed at `8b8a2fcf48`. Not traced further; I would treat it as a learning certificate to record.
+
+**4. Failing in the checkout, passing at `d0a3832629`: round 4's**
+
+- `test_config_scoping::test_reads_space_nOutput` and `test_review14_addendum::test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-18]`, `[MM_grammar-20]`: after the port they pass on a copy of `d0a3832629` (checked: 4 passed). In the checkout `nSymbols` is 22 (the port expects 20) and `nVectors` 59 and 104 (46 and 77 expected): round 4's step 10 (`50f9f66316`, `Models._concept_inventory_rows`, `ConceptualSpace.inventory_rows`) adds the taper of the orders above zero to the configured room.
+- `test_output_walk::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk` and `::test_resolved_recall_keeps_its_program_after_memory_advances`: not among the 81; they fail in the checkout when the whole file runs (and pass with `-k` alone) and pass on the copy at `d0a3832629` in a whole-file run. Not ported.
+
+**5. Provisional choices**
+
+1. The benchmark configuration under `doc/benchmarks/` (git-ignored, a receipt) is read through a copy without the removed key, rather than edited.
+2. The forced-prefix certificate's residual is held to `< 1e-12`, not exact zero: the operands are tanh-read concepts, so float32 rounding remains.
+3. `test_item18_completion`'s concept is asserted at its computed value; its old claim that a present Not member denies the concept is dropped, since under rule 54 it does not (it reads +.42).
+4. `test_mtm_reference_values`: the operand is asserted at tanh(1) times the name's row, the concept's read of its own row, computed in the test.
+5. The declared classes are excluded wherever a test counts "rows that are not words" or the declared seats (`declared_classes`, `WORD_CLASSES`).
+6. Where a test's model reads a multi-stream batch in which a word recurs across streams, `readings_before_nomination` over-reads (each stream is a reading); kept where the test is about the model's own reading, since it only ensures the words exist before the asserted reading.
+7. The when-reader census gets no row for the two readers that feed absolute time to the Sigma; the test stays failing as their witness.
+
+**6. Final counts of the 44 files**
+
+The 44 files, after `5e3df18776` (with the round-4 implementer's uncommitted `bin/` in the tree), `-n 4 --dist loadfile`, RUN_SLOW and RUN_TRAINED unset: **11 failed, 348 passed, 16 skipped, 1 xpassed, 837 s.** At the start: 73 failed, 286 passed, 16 skipped, 1 xfailed, 901 s.
+
+The 11:
+
+| Case | Why |
+| --- | --- |
+| `test_item20_round7_time::test_trained_numeric_answers…` | source defect 1 |
+| `test_operators_round4a0::test_when_reader_inventory…` | source defect 1 (its witness) |
+| `test_item18_trust::test_51…[False]`, `[True]` | source defect 2 |
+| `test_ir_fullgraph_compile::test_idempotent_forward…` | source defect 3 |
+| `test_item18_expect::test_81…` | learning statement, 4 |
+| `test_config_scoping::test_reads_space_nOutput` | round 4's step 10 (passes at `d0a3832629` after the port) |
+| `test_review14_addendum::test_small_inventory…` ×2 | round 4's step 10 (the same) |
+| `test_output_walk::test_answer_materialises…`, `::test_resolved_recall…` | round 4's (not among the 81; pass at `d0a3832629`) |
+
+The xpass is `test_stm_recon_from_cleared_cache.py:346`, a non-strict xfail whose reason permits XPASS; it now runs on words that exist.
+
+Single files run while porting, each to green except as above (seconds): test_config_scoping + test_autobind_from_cs 6; test_final_generation 5; test_episodic_concepts 6; test_grammar_object_leaves 10; test_mixing_reconstruction_bank 5; test_operators_final_b + test_forward_discard 220; test_stm_recon_from_cleared_cache 18; test_sentence_protocol 4; test_property_configuration 4; test_item20_round2_admission 3; test_item4_review 4; test_item18_completion 5; test_interpret_bias + test_loop_of_looks 10; test_reconstruction_bank_contract 10; test_reverse_traversal 6; test_native_attention_field 6; test_item18_expect 107; test_item20_round7_episodes 3; test_math_chain (one case) 8; test_mtm_reference_values 5; test_operators_round4a (one case) 20; test_supplied_answer_training + test_operators_round2e 5; test_output_walk 70; test_trial_policy_ownership 4; test_grammar_reconstruction_gate 4; test_grammar_separator 6; test_selected_relation_meaning 6; test_learning_readiness 7; test_reading_curriculum 8; test_reconstruction_scope 5; test_review14_addendum (two cases) 94; test_look_forecast 4; test_derived_concept_codes 52; test_sweep_repairs 46. On a copy of `d0a3832629` with the ported files: test_config_scoping and test_review14_addendum's two cases, 4 passed, 94 s.
+
+Also found, not a failing case: in `test_mtm_reference_values`, when the name is nominated inside the model's own reading (three forwards in train mode) rather than by `nominated_forms`, MTM's value of the name differs from the codebook's row in half the coordinates past the event width (largest .347), the test's "no stale value cache" assertion. Not traced; the port does not take that path.
