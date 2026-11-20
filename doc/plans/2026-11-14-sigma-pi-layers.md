@@ -9179,6 +9179,30 @@ His answers to §19.98.
 2. *Whether a move of the focus to the right is an act of its own.* Today a walk leaves a word by the unfocus and descends again; there is no act that carries the focus from one word to the next. *First choice:* round 6's looks give it (a look is a place, rule 32, and the next look's place is asked by the chooser), so no new act is added to the old table.
 3. *What the lesson measures meanwhile.* With no rule against the loop the lesson's words found run from nothing to most of them by the draw of the initialization. It is still reported over 12 runs, with the walks that repeat a state; rounds are judged by their own certificates until round 6.
 
+### 19.100 Alec: the log is conceptual activation in episodic memory; attend() alone; what guides the choosers today (2026-11-20)
+
+His answers to the three readings of §19.99.
+
+**1. The log.** "If the log is holding act, place, etc, then make the log conceptual activation stored in episodic memory, so that you are not just bolting on memory and structures to the algorithm. Feel free to create those concepts or use the grammar ones already there, and increase episodic memory from 4. You may also have to allow it in the operator domain; p,ease confirm the operators have a nonlinear network guiding choice that has such a domain currently."
+
+*Decided* (rule 69). The log is no structure of its own. What a walk did at a step is the activation of concepts, kept in the slots of episodic memory (rule 65) of that step's chunk: the concept of the act, the concepts of its place, and the concepts of what it returned. The grammar's concepts for its operators and arguments are used where they exist, and concepts are declared for what has none. A row has room for more than four slots.
+
+*What guides the choosers today, checked in the source at `2beec0847a`:*
+
+| Chooser | The network | What it reads for each candidate |
+| --- | --- | --- |
+| Compose and `attend` (one object, `OperationSelectionLayer.chooser`) | With the key `transformChooser` set to `mlp`, as it is in the lesson's configuration and in the main ones (`BasicModel.xml`, the corpus and ladder configurations): a contextual network, one hidden layer with a nonlinearity and then a score (`MLPTransformChooser`). Where the key is absent the source's default is a linear score, the inner product with an anchor for each act, and that has no nonlinearity. | The state of the slot, a vector of the code's width (for `attend` the key of the bracket, "the prefix understood at this look", with the attention context added to it); the candidate's output, the same width; a learned vector of 8 for the act; a code of 8 for the position. For thought, 29 numbers more. |
+| Thought (`SelectedThoughtChooser`) | A network of its own, one hidden layer of 16. | The roles of the root, the active chunk and the candidate; bounded numbers on what is held; the level and the pressure. |
+| Generate (`GeneratePolicy`) | Linear over the top chunk, with a small network over five numbers of the menu. | The top chunk and the menu's numbers. |
+
+So there is a nonlinear network guiding the choice for compose, `attend` and thought in the configurations in use. *It does not have such a domain yet:* none of the three reads the slots of episodic memory. They read state vectors, and thought reads four summary numbers of a row of LTM, never the concepts a row's slots hold. The way in exists for `attend`: it takes a context that is added to its keys (`AttentionContext.project`, linear, starting at zero), and that is where the slots of the walk's last chunks enter.
+
+*Mine, put to him:* the slots of a chunk are raised from 4 to 8 by the key `episodicConcepts`, to be measured; which concepts of a moment fill the slots that the log does not take stays the question of rule 65.
+
+**2. The acts.** "you can just use attend() , I don't see a need for explicit focus and unfocus operators". *Decided* (rule 69; round 6). A walk has one act of attention, `attend`, which asks for what it wants to look at (rule 35). The table's focus (descend) and unfocus go with the table in round 6, and nothing takes their place: moving on to the next word is a request, and so is returning to the whole sentence.
+
+**3. The grades.** "good." *Decided* (rule 70): the sentence, then its words in order, then a word's parts.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10509,24 +10533,36 @@ chooses from. The old classes are not edited.
     Sigma follows rule 63. It is not expectation and nothing reads
     it as expected. *Open:* its teacher (§19.97).
 
-69. *The chooser has a log of what the walk has done, in STM* (Alec,
-    2026-11-18: "we need some record of having examined a particular
-    place"; §19.99: "some log of the animals behavior (from the
-    chooser) or what it experiences in the environment might be
-    useful as episodic state, in STM at least, that the chooser has
-    in its domain so that the gradient can teach actions based on
-    that"). What a walk has done and what came of it is held in STM
-    and is among what the chooser reads. What the chooser does with
-    it is learned by the gradient. Nothing forbids an act because of
-    it and nothing lowers a place's salience by a fixed amount
-    (Claude's §19.98 form, withdrawn). No rule bars an unfocus
-    (§19.99: "The unfocus rule is probably unnecessary ... The
-    narrow rule should also be removed"); a focused state is the
-    context from which the focus moves on to the right. A behaviour
-    that lasts is a chain of acts that can be replayed from STM or
-    LTM, and in the end is held as concepts. *Mine:* the log holds,
-    for each of the walk's last steps, the act, its place and what it
-    returned.
+69. *The chooser has a log of what the walk has done, as concepts in
+    episodic memory* (Alec, 2026-11-18: "we need some record of
+    having examined a particular place"; §19.99: "some log of the
+    animals behavior (from the chooser) or what it experiences in
+    the environment might be useful as episodic state, in STM at
+    least, that the chooser has in its domain so that the gradient
+    can teach actions based on that"; §19.100: "make the log
+    conceptual activation stored in episodic memory, so that you are
+    not just bolting on memory and structures to the algorithm").
+    - What a walk did at a step is the activation of concepts, kept
+      in the slots of that step's chunk of STM (rule 65): the concept
+      of the act, the concepts of its place, and the concepts of
+      what it returned. The grammar's own concepts are used where
+      they exist, and concepts are declared for what has none. It is
+      no structure of its own.
+    - The slots of the walk's last chunks are among what the chooser
+      reads. What it does with them is learned by the gradient.
+      Nothing forbids an act because of them, and nothing lowers a
+      place's salience by a fixed amount.
+    - A walk has one act of attention, `attend` (Alec, §19.100: "you
+      can just use attend() , I don't see a need for explicit focus
+      and unfocus operators"). There is no focus and no unfocus, and
+      so no rule about either.
+    - A behaviour that lasts is a chain of acts that can be replayed
+      from STM or LTM, and in the end is held as concepts.
+    *Mine:* a chunk has 8 slots (`episodicConcepts`), to be
+    measured; the slots enter `attend` through its context
+    (`AttentionContext`), and the choosers of compose, thought and
+    generate are given them in the same way where it is shown to
+    help.
 
 70. *Attention is taught by successive approximation* (Alec, §19.99:
     "we can't teach focus directly, but we can reward behaviors that
@@ -11974,20 +12010,35 @@ which form of the where match is built.
     model. `archer` is not read on `reach`: the first Pi is read
     only on the rows the lookup names (rule 33; §23.3c.3).
 
-17. The chooser's log (rule 69; Alec, §19.99). What a walk has done
-    and what came of it, for its last steps (the act, its place,
-    what it returned), is held in STM and is among what attend
-    reads; say what attend reads of its own past acts today, and
-    what is added. Nothing forbids an act and nothing lowers a
-    place's salience by a fixed amount: what the chooser does with
-    the log is learned. No rule bars an unfocus (the scaffold of
-    round 4's fourth pass was removed in its sixth). Say whether the
-    looks give an act that carries the focus from a word to the
-    next one on its right, and build it if they do not. Taught by
-    successive approximation (rule 70): the grades in order, each
-    measured on the lesson over 12 runs before the next: words
-    found, first walks at the cap, walks that repeat a state. A walk
-    that repeats a state is reported, never forbidden.
+17. The chooser's log, and attend alone (rule 69; Alec, §19.99 and
+    §19.100).
+    - One act of attention: attend asks for what it wants to look
+      at (rule 35). The table's descend and unfocus go with the
+      table (Attention.narrowing_view, narrow_step, focus_history,
+      last_focus), and nothing takes their place.
+    - The log is conceptual activation in episodic memory. At each
+      step of a walk the slots of that step's chunk of STM hold the
+      concept of the act, the concepts of its place and the concepts
+      of what it returned (the words found; the look's excess and
+      omission where they are concepts). Use the grammar's concepts
+      for its operators and arguments where they exist; declare
+      concepts for what has none, and list them. episodicConcepts is
+      raised from 4 to 8, as a key; say what a row of LTM kept with
+      four becomes on loading.
+    - The slots of the walk's last chunks enter attend's context
+      (AttentionContext.project, which is added to attend's keys and
+      starts at zero). The choice stays the contextual network of
+      transformChooser mlp; say what a configuration without that
+      key does (its linear score has no nonlinearity), and whether
+      the key's default should change.
+    - Nothing forbids an act and nothing lowers a place's salience
+      by a fixed amount: what the chooser does with the log is
+      learned.
+    - Taught by successive approximation (rule 70): the sentence,
+      then its words in order, then a word's parts; each grade
+      measured on the lesson over 12 runs before the next: words
+      found, first walks at the cap, walks that repeat a state. A
+      walk that repeats a state is reported, never forbidden.
 
 16. One time (rule 64; Alec, §19.90 and §19.91; the census of
     §23.T, which names each place). In a pass of its own, after the
