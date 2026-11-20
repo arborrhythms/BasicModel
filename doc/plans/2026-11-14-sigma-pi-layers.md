@@ -11563,6 +11563,29 @@ review each return against the source before the next round goes."
   `RUN_SLOW` in any round.
 - A round's text is amended in place where an earlier return changes
   it, with the date. Round 6's waits for round 2's return.
+- *Amended 2026-11-20, on Alec's word about the weekly limit* ("I
+  would like to do fewer passes, more coding between tests. Lets aim
+  to finish the coding in one or two passes per round, if we can, and
+  do spot-testing until the end of the round"). From round 4's last
+  pass on:
+  - *One or two passes a round.* A pass carries all of a round's
+    remaining steps, or half of them, and is not split further unless
+    the source cannot be left whole.
+  - *Spot tests inside a round.* A pass runs the certificates it
+    adds, the test files that name what it changed, and both stopping
+    gates. It does not run the list.
+  - *The list once, at the round's end,* by Claude, with the test
+    runner's durations; what it finds goes to the next round's first
+    pass, or to one short repair pass if it cannot wait.
+  - *Design questions before code.* Before a round's pass is started
+    Claude gives Alec that round's open points in one message, so that
+    a pass is not redirected while it runs. A pass that is running is
+    not sent a change of design unless what it is building is
+    withdrawn.
+  - *Fewer agents.* No census, diagnosis or documentation agent is
+    started unless a round cannot go on without it; the documentation
+    follows once, at the item's end. A return is folded into §23 as it
+    is written, with a short review.
 - *Amended 2026-11-19, after §19.65:* rule 46 and certificate 28 (a
   part is admitted, not the string; round 1), the declared concepts
   "words" and "objects" (rounds 3 and 4), step 6b of round 2, and
