@@ -19746,3 +19746,193 @@ Spot tests by the pass (56 files and both gates: 655 passed, 3 failed, two of th
 - *The salience map puts three shares on each byte of a word* (its run and its two properties). Accepted; whether a look's cap makes that harmless is seen when the look is built.
 
 **The passes of round 6, as they now stand.** Second: the look, `attend` alone, the table and its acts removed, the reading lesson by successive approximation (steps 4 to 8, 10, 17's first bullet and its grades, 19), with a known form of several units as an event of its own. Third: the literal and silence, the reconstruction over what and where, certificates 30 to 45, and the one time (steps 9, 11, 12, 16). Rounds 6b and 6c follow, in one pass if they fit. Asked whether round 6b, an option that is off by default, might move to item 1.6 to save a pass, Alec: "Please keep it, it gives an extra round to work on teaching the network to read a sentence of words without composition." *Decided:* round 6b stays in this item, and that is its purpose as he states it: the basic level reading several words at one time into an idea, with no composition.
+
+### 23.6.1 Round 6, second pass: the look, the request, the table removed, the reading lesson and the membership gradient (Claude on Opus, standing in for Codex, 2026-11-20)
+
+Started at `e1c2c16c75`, on `main`, in this checkout. Ends at `69239abe2d`. Nothing is pushed. No doc/*.md and no part of the specification was edited. Parts A to E were all coded; the table is gone whole.
+
+#### What fails or is unfinished, first
+
+- *Reading in order is not learned.* The reading lesson as specified does not teach the request a where. On four two-word sentences of the small lesson, read with no supplied reading, 3 of 4 were in order before the lesson (the draw among equals) and 0 of 4 after it (`test_38b_the_reading_lesson_by_grades`, measured at `dc669ea901`). The cause is the one round 2 found: a look's activity is the share capped at the event's own activity, and "words" asked at one gives every word's events a share of 3.0, so the cap passes the request no gradient (measured: 0.0 exactly, `test_15_...`). And no weight of the way up reads a where wire (rule 62), so the bands take no share and every reading's where match is 1. After the lesson the words' concepts are no longer equally active (training moves them), so the order becomes whichever word is more active, every time. Neither gate depends on reading (both pass at every point), so this is not the stop of the brief; it is the question for Alec below.
+- *After step 19 a known word can read against.* In a probe of 24 training presentations on the small lesson, "delta" went from (for .743, against 0) to (for 0, against .963). A word whose concept reads at or below zero is not returned by a look; with another known word returned, it is never read. Measured, not repaired (below).
+- `test_item18_expect.py::test_81` still fails, a learning certificate: the hidden word is expected at .049 against .612 for another absent concept (at the end). Its first cause is repaired (A).
+- `test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary` fails. `data/MM_text_fixture.xml` declared only `focus`, `unfocus` and the field operations: its per-word pipeline was the examination phase, which went with the table. Giving that fixture an `interpret` rule made five other tests of the fixture fail ("compose has no legal alternative"), so it was reverted. The same holds for `data/MM_ltm_consolidation_fixture.xml`. Not repaired; for Alec (below).
+- *Step 6, the "words" Not entry on the space, is not built.* Where it lives: "words" is a kind of order one, so its entry is a Not entry of the store's Sigma on the symbol over an order-zero concept of the space character (`add_concept_edge(words_row, space_row, negated=True)`). No such concept exists; making one at declaration shifts every concept row of every model. And the bank's readings are the word brackets, which never hold a space, so the entry would change nothing until a known form of several units is an event of its own.
+- *A known form spanning several units is not an event of its own* (carried from the first pass). Adding a reading changes the field's reading axis, which every consumer reads by word slot.
+- *The lesson's script `test/attention_thinking_certificate.py` is not ported*: its observer patches `Attention.narrow_words` and `narrow_step`. It was not run (brief). The 12-run measure of step 17 is the third pass's.
+- *Grade three of rule 70 (a word's parts) is a measure only*: certificate 56 (a) shows a word's request landing on its parts and properties; no lesson of parts in order is built.
+
+#### What was built, by file and function
+
+*A.*
+- `bin/CandidateGrowth.py`: `withheld_words(model, extent)` gives, for each stream, the concepts of the words the omission withheld inside a look's extent, at one (from `_omission_targets`' draw and word bytes). `at_look(model, field, extent=None)` offers and weighs the Pi's pairs from the look's presence joined with those (`pi_step`); the Sigma's step reads the look's presence alone, as before.
+- `bin/SentenceLooks.py`: each look passes its extent.
+
+*B and C: the look, the request, the loop of requests; the table gone.*
+- `bin/Attention.py`, rewritten above `BracketKeys`:
+  - `Reading` (`NamedTuple`): `values`, `accepted`, `descended`, `actions` (the word each look took, -1 none), `alternatives` (the look drew among equals), `probabilities`, `alternative_counts`, `poles`, `looks`.
+  - `SentenceReading` (dataclass): one path's reading; `record(index, interpreted)`; `reading()` pads its histories to the budget so paths select row by row.
+  - `draw_among(activity, replay=, masked=)`: the most active, exactly; equals are drawn uniformly (`torch.rand`), marked as a draw, probability `1/count`; `masked` departs to another of the equals; `replay` takes a given word.
+- `bin/Language.py`: `OperationSelectionLayer.attend(query, codes, base)` is now a static map: the request `[V, B, 2]` is `base` ("words" alone) on the for lane plus `signed_lanes(codes · query)`. The map is `AttentionContext`'s projection, zero at the start, so the request starts at "words" alone. `space_prior` and `attention_operations` go; `FocusLayer`, `UnfocusLayer`, `BracketOperation` and the `field_action` of `not`, `intersection` and `union` go, with `focus` and `unfocus` from `GRAMMAR_LAYER_CLASSES`.
+- `bin/SentenceLooks.py`, rewritten:
+  - `perceive(model, activity)`: the bank read with each event present to the degree of the activity, then `cs_forward_content`.
+  - `where_match(bank, band_share, activity, readings)`: per reading, the band share at its start event times that event's presence, through `exp(s - max s)`.
+  - `look(model, bank, request, own, perception)`: `Salience.salience`, the activity `min(own, share)`, the field, the where match multiplying each reading once.
+  - `extent_of`, `word_activity` (a word's concept value, for less against, at its reading where the look holds it; a word with no word concept read whole at its events' own activity where no word was returned), `lower` (the done mark: the bank's own activity zero over the interpreted word's events), `requested(model, query)`, `word_request(model, concepts, index)`.
+  - `Looks.run`: the open run is look zero; then each look asks (a supplied reading, the lesson's target, or `attend`'s request from `AttentionContext.context` of the latest surprise), looks, forecasts, takes a word by `draw_among` (replaying the exploit before a departure, departing at it), offers it to `interpret_at_look`, records it, lowers it, hands the reading off, and lets the word arrive. It ends when nothing is found, every live word is read, or the looks reach the allowance.
+- `bin/ModelAttention.py`: `stage_input` records each word's concept (`_attention_word_concepts`) and gives `_attention_open(...)` a `SentenceReading`; a read with no sentence takes no look and publishes an empty reading. `handoff` publishes the words and poles; it writes no scope.
+- `bin/LookForecast.py`: a look's extent is a mask over readings; `forecast(extent, looked)`, `read(evidence, extent)`, `observe(..., looked)`, `stage_cost`, `percept_stage_cost` read it. `surprise(actual, forecast, extent, looked)` is one `Expectation.gain_field` with the look as attention and the forecast as expected; its excess and omission summed are the surprise `attend` reads. `difference`, `contained`, `for_brackets` go. A look whose extent holds nothing (a request for a withheld word) is forecast from everything observed.
+- `bin/AttentionContext.py`: no `attentionFloor`; `project` takes one surprise pair per look.
+- `bin/GrammarPhases.py`: the examination phase goes (it was the declaration of `focus`/`unfocus`); `per_word` is the vector phase.
+- `bin/Examination.py` and `data/examination.grammar` deleted (moved to `/tmp/basicmodel-deleted-2026-11-20/`): the glance and examination walk were the table's field acts.
+- `bin/Models.py`: `_passback_scope_ps`, the pass-back call in the stage loop, the scope read in `_read_subsymbolic_field`, the examination branch, the recall bracket table and `space_prior` in the reading policy go; `.space_prior` is a retired checkpoint key; the sentence field no longer needs `attention_floor`.
+- `bin/AttentionObjective.py`: `validate_floor` goes. `data/model.xml`, `data/model.xsd`: `attentionFloor` goes. The grammar files' `focus`/`unfocus` rules go (12 data files and the test fixture grammar).
+
+*D.*
+- `bin/AttentionLesson.py`: `ReadingTargets` teaches the request: `book_look(words, target, unread)` books `-log softmax(10 · returned)` of the next word over the sentence's unread words; the look takes the lesson's word; `book` keeps the grammar's option. `GRADES`, `minimal_first(sentences)`, `in_order(reading, count)`, `supplied_reading(model, parts)`.
+- `bin/Assessment.py`, `bin/AssessmentProbe.py`, `data/assessment/known_probe.json`: a record holds its reading `order`; rungs 4 to 9 check `in_order`, so a grammar rung whose words were not read in order fails and blocks the rungs above it (certificate 38 (c)). The attention trace observes requests and turns.
+
+*E.*
+- `bin/PerceptField.py`, `read_percepts`, and `bin/Spaces.py`, `ConceptualSpace.percept_code_evidence`: the `.detach()` on the byte-property memberships and on the wholes' event go.
+
+#### What each of the table's readers reads now
+
+- `SentenceCredit.departure`: `reading.alternatives` (looks that drew among equals) and `reading.actions` (the word each took) for the sentence's menu.
+- `ModelAttention._word_carrier`: gone; `SentenceReading.reading()` pads.
+- `ModelAttention.handoff`: the reading's accepted words and descended words; no scope.
+- `Assessment`: the looks' requests and turns, `reading.looks`, and the reading's order.
+- `meters_for` in `Models`: one `look` unit for each look of the sentence (`reading.looks`).
+- `AttentionLesson.ReadingTargets`: the look's returned word values and the lesson's next word.
+- The compose loop in `Models`: the reading by the loop of requests; kept readings combined row by row (`select_rows` on `Reading`); departures replay `actions` before `attention_round` and depart at it.
+- `Examination`: gone. `kept_reading_plan`, `WholePaths`: the `Reading` as it is.
+
+#### test_81: the cause and the reading
+
+The guess was right in kind, and stronger: `omit_second` withholds the second word in every presentation, and the Pi's candidates are stepped only in training. A probe of four presentations: every look's presence held "alpha" (.762) or "beta" and never "gamma" or "delta", so the pair of the two words was never offered. Repaired by offering from what the sentence held (`ea36115705`). Read again: after A, with the walk, the hidden word was expected at .265 against .396; after the loop of requests (a look that asks for the hidden word has an empty extent, forecast from everything observed) at .112 against .523; at the end .049 against .612. The first look now asks for the hidden word; the margin is the learning certificate's.
+
+#### The gates
+
+| Point | Commit | Result |
+| --- | --- | --- |
+| start | `e1c2c16c75` | both pass, 3.4 s |
+| before B, after A | `ea36115705` | both pass, 3.4 s |
+| after B and C (the loop of requests, the table gone) | `d699cbeb4f` | both pass, 3.4 s |
+| after the ports | `ef32479042` | both pass, 3.4 s |
+| after D | `dc669ea901` | both pass (11 passed with `test_assessment.py`, 8.5 s) |
+| after E | `69239abe2d` | both pass, 3.4 s, and in the final run |
+
+#### The reading lesson's grades and what each reads
+
+- *The sentence:* a look of "words" returns every word: on "alpha gamma" both readings in the extent and both words returned, where match 1 and 1 (`test_31_33d_...`). A fresh model with interpretBias 1 reads every word once, none twice, none left, on "alpha gamma", "beta delta", "alpha delta beta" and "delta gamma beta alpha"; the order is the draw's (`[0, 1, 2]` on one run of the third) (`test_38a_every_word_is_read_once`).
+- *Its words in order:* minimal sentences first (`minimal_first`: four two-word sentences, then two three-word), eight presentations a grade. In order with no reading supplied: 3 of 4 before, 0 of 4 after (above).
+- *A word's parts:* certificate 56 (a) (first pass): a request for a word's concept lands on its run of parts and its two properties at 1.0 each.
+
+#### Known words before and after the membership gradient
+
+`test/membership_gradient_probe.py`: the small lesson, four sentences nominated, 24 training presentations, each word's concept at its reading in the open run (for, against). Before (`dc669ea901`): alpha (.813, 0), gamma (.816, 0), beta (.877, 0), delta (.743, 0). After (`69239abe2d`): alpha (.768, 0), gamma (.817, 0), beta (.999, 0), delta (0, .963).
+
+#### What the request learns of the what; a word present by degree (step 15)
+
+On "alpha gamma", the request "words" at one: both words come back at .762; the gradient of the words' values on the request is 0.0 (the cap). With the second word's events at .3 of their own activity, it comes back at .0024 (the first stays at .762): a word present by degree is not brought back.
+
+#### Certificates written (`test/test_item17_looks.py`)
+
+| | Test | Result |
+| --- | --- | --- |
+| 37 (rule 37) | `test_37_interpret_takes_the_most_active_and_draws_among_equals` | pass |
+| 34, 39 (rules 34, 39, the done mark) | `test_34_the_where_match_multiplies_a_reading_once_at_its_start` | pass |
+| 31 (b) in part, 33 (d) | `test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word` | pass |
+| 38 (a) | `test_38a_every_word_is_read_once` | pass |
+| 38 (b), learning | `test_38b_the_reading_lesson_by_grades` | recorded: 3 of 4 before, 0 of 4 after |
+| 38 (c) | `in_order` on rungs 4 to 9 of `known_probe.json`; `test_assessment.py` | pass |
+| 39, 37 (`attentionFloor` read by no look) | `test_39_one_gain_field_gives_the_surprise_attend_reads` | pass |
+| step 15 | `test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree` | pass (prints) |
+| 60 (2), the offer from the sentence held | `test_item17_growth.py::test_60_2_a_pair_is_offered_from_what_the_sentence_held` | pass |
+
+#### Choices on my own recommendation (provisional)
+
+- The pair offered from the look's presence joined with the withheld words inside its extent, at one; the Sigma's step unchanged. `ea36115705`.
+- The request's lanes: "words" on the for lane plus `signed_lanes` of each concept's code read by the context's map (a plain clamp at zero passed no gradient from the zero start). `ef32479042`.
+- A word with no word concept is read whole at its events' own activity, and only where the look returned no known word (§19.61 open; certificate 42 is the third pass's). `d699cbeb4f`, `ef32479042`.
+- A look whose grammar declines its word does not lower it; the next request may find it again, bounded by the allowance. `d699cbeb4f`.
+- A look that asks for a withheld word is forecast from everything observed, its stream counted as having looked. `ef32479042`.
+- The examination phase goes with the table, and `Examination.py` with it. `d699cbeb4f`.
+- Reading in order gates the grammar rungs by an `in_order` check on rungs 4 to 9. `dc669ea901`.
+- The salience map is passed no field values of the open run (symbols' Pi passes nothing); the "words" path needs none. `d699cbeb4f`.
+
+#### Tests ported or retired
+
+Ported (old, then new):
+- `test_one_attention.py`: `test_normal_model_opens_narrows_and_scores_word_expectation[field, grammar]` → `test_normal_model_opens_reads_and_scores_word_expectation` (grammar only): `table.intervals.shape[1] == budget`, `spent <= budget` → `actions.shape[1] == budget`, `looks <= budget`. `test_unknown_repeated_word_has_one_byte_descent` (`spent == 3`, accepted and descended) → `test_unknown_repeated_word_is_read_whole_once_at_each_place` (each occurrence taken once, the done mark lowers it). `test_normal_input_stages_greedy_...` → `test_normal_input_stages_and_defers_its_reading_to_the_sentence` (no look, no word). `test_normal_narrowing_omits_padding_...` → `test_a_read_with_no_sentence_holds_every_word_place_and_reads_none`. `test_glance_forecast_...`: `calls == [2, 2]` and per-bracket pairs → `calls == [1, 1]` and equal latest pairs. `test_native_attention_keeps_every_complete_letter_run`: the table removed from its message.
+- `test_loop_of_looks.py`: `test_1_2_3` (attend patched to the first focus; scopes equal intervals) → a supplied reading; words `[0, 2, 4]` in both cases, one look more when the first word is declined. `test_10`: attend patch → supplied reading; fields compared by `extent`. `test_8`: the walk per sentence → `_attention_open` per sentence has the sentence's two words and a limit of 2; the meter charged `look`. `test_5`: `table.done.sum() == 0` → `looks.sum() == 0`.
+- `test_sentence_owned_attention.py`: three tests to the reading (`walk.record`, no look, no vector phase → no opening).
+- `test_reading_attention.py`: `test_normal_configs_share_bracket_...` (`attention_operations ⊇ {0,1,2}`) → `test_normal_configs_share_expectation_owners`; `test_producer_writes_bracket_scope_...` → `test_reading_takes_looks_and_registers_loss`; `test_bracket_surprise_...` loses its walk lines.
+- `test_look_forecast.py`: four tests to extents and `LookForecast.surprise`; the projection test to the request.
+- `test_field_learning.py`: `test_primed_reading_writes_the_shared_field_scope` → `test_supplied_reading_interprets_each_word_of_the_sentence`.
+- `test_operators_round1.py`: `test_attention_uniform_departure_...` → `test_attend_gives_a_request_over_concepts_on_two_lanes`.
+- `test_item18_operators_a.py::test_69_complete_inventory`: compose `common | {'focus', 'unfocus', 'sign'}` → `common | {'sign'}`.
+- `test_item18_fields.py`: phases `(examination, vector, interpret)` → `(vector, interpret)`.
+- `test_item18_expect.py::test_81`, `test_testpoint.py::TestBlindSpot`, `::TestBellSalivate`, `test_item18_intuit.py::test_84`: forecasts of spans → of extents; supplied readings; the look of the hidden word is the one whose extent holds no reading of the first word; the blind spot's read back is taken at the first word's look.
+- `test_operators_final_b.py`, `test_operators_round2c.py` (compose case), `test_whole_paths.py`, `test_native_attention_field.py`, `test_sentence_compose.py` (perceptions `[0,0,0,1,1,1]` → `[0,0,1,1,1]`), `test_compose_records.py`: attend patches → supplied readings. `test_native_attention_field`: `counts['bracket']` → `counts['look']`.
+- `test_retire_mode.py`, `test_interpret_bias.py`: `table.spent` → `looks`; `walk.state.actions` → `walk.taken`. `test_operators_round2.py`, `test_operators_round2d.py`: `round_words` → `actions`.
+- `test_bounded_stm_fold.py`, `test_word_loop_buckets_and_orders.py`, `test_xor_grammar.py`: `5 in attention_operations` → no `attention_operations`.
+- `test_native_candidate_attention.py`: the retired keys made from the operation layer's prefix, `space_prior` among them.
+- `test_percept_field_compaction.py`, `test_live_concepts_from_percepts.py`, `test_item17_symbols.py` (E): no gradient on the memberships → a gradient.
+- `reading_fixtures.read_in_source_order`: attend patched to the first focus → `SourceOrder`, a supplied reading; `field_text_config(examine=)` → `field_text_config()`.
+
+Retired, with what replaces each:
+- `test_one_attention.py`: `test_bracket_table_is_bounded_...`, `test_pooling_keeps_both_poles_...`, `test_pinned_masks_...`, `test_narrowing_uses_the_shared_operation_chooser_...`, `test_empty_word_bracket_...`, `test_optional_field_choices_...`, `test_bracket_candidates_are_grammar_declared_...`, `test_shared_meter_cannot_replenish_...`, `test_field_operation_changes_the_next_mask_...`, `test_divide_isolates_...` (the table and its acts; replaced by `test_37`, `test_34`, `test_38a`); `test_normal_field_answer_reaches_final_field_...` and `test_normal_narrowing_reads_native_poles` (the examination walk; nothing replaces it).
+- `test_loop_of_looks.py`: `test_4_word_level_focus_...`, `test_9_unfocus_...` (nothing replaces focus and unfocus), `test_11_lesson_teaches_shortest_walk_...` (replaced by `test_38b`).
+- `test_reading_attention.py`: `test_shift_bootstrap_...`, `test_scope_is_normalized_...`, `test_coverage_mask_...`, `test_padding_spans_...`, `test_no_spans_is_noop` (replaced by `test_38a`).
+- `test_operators_round2.py`: `test_field_pair_survives_bracket_split`, `test_field_scope_resolves_witnesses_...` (the field acts on brackets; nothing).
+- `test_operators_round2c.py`: the `narrowing` case (a field `not` act; nothing).
+- `test_item18_operators_a.py::test_69_focus_splits_...`, `test_item4_step0.py::test_bounded_bracket_scoring_...`, `test_item18_paths.py::test_examination_has_no_vector_walk_...`, `test_attention_objective.py::test_floor_must_be_...`, `test_definition_attribution.py::test_passback_scales_...`, `test_subsymbolic_loop.py::test_selected_typed_scope_...` (the table, the examination walk, the floor, the pass-back and the spans on the host; nothing).
+- Files moved to `/tmp/basicmodel-deleted-2026-11-20/`: `test/test_attention_thinking_steps.py` (an oracle of the walk), `test/attention_single_walk_certificate.py`, `test/test_attention_thinking_handoff.py` (a walk chooser).
+- The walk tests named in the brief: `test_unknown_repeated_word_has_one_byte_descent` ported (above); `test_normal_field_answer_...` retired (above). `test_priming_diffusion`, `test_runtime_split_ingestion`, `test_serial_concepts::test_update_has_one_promotion...`, `test_percept_expectation_final`, `test_generation_selection_backward`: none names a changed name, so none was in the spot list and none was run; their walk assumptions are not ported.
+
+#### Test files run
+
+- `test_item18_expect.py::test_81`: failed, 168 s (after A), 158 s (after the ports).
+- The 105 files that name what changed: first 155 failed, 1,008 passed, 86 skipped, 7 errors, 160 s; then after the ports 8 failed, 1,137 passed, 93 skipped, 271 s.
+- Final, on `69239abe2d`: the 111 files (the above, the files naming the membership read, both gates): 2 failed, 1,225 passed, 93 skipped, 398 s. The two are `test_81` and the wholespace fixture (above).
+- Smaller runs: `test_item17_looks.py` 12 passed; the two examination fixtures' 17 test files 215 passed, 7 failed (with the fixture given `interpret`, reverted), then 28 passed, 1 failed; three tests of E, 47 passed, 38 s.
+- Two `CppCompileError`s were an inductor precompiled header made stale in the shared temporary directory; moving it aside (`/tmp/basicmodel-deleted-2026-11-20/precompiled_headers`) they pass, and they pass at `e1c2c16c75`.
+
+#### Commits
+
+`ea36115705` (A), `d699cbeb4f` (the loop of requests; the table gone), `ef32479042` (ports; supplied reading; signed lanes; the forecast of a look), `d5eb0ea595` (ports), `dc669ea901` (D), `69239abe2d` (E). Not mine in the range: `cdaf32ecbb`.
+
+#### What is left
+
+- The question for Alec: with the cap of rule 34 and no weight on a where wire (rule 62), the request learns nothing from a look, so reading in order cannot be taught as rules 38 and 70 have it. The ways I see: the request's own words lane below one, so the cap does not bind (a learned scale on "words"); the share not capped (rule 34's multiplication); or round 2's where weights on the concepts (rule 62's exception). I would try the first, as it keeps rules 34 and 62.
+- Step 6's Not entry, the multi-unit event, the examination fixtures, the lesson script's observer, step 17's 12-run measure, grade three's lesson; the third pass's certificates 30 to 45 not written here.
+- After step 19 a known word may come to read against; whether a look should return a word concept read against (for the lesson and the grammar) is open.
+
+#### What surprised me
+
+- The examination phase was the declaration of `focus`: with it gone, every grammar of field operations alone is the same, and two text fixtures lost their word pipeline.
+- A request for a withheld word lights nothing, so its look has an empty extent; the forecast had to follow the stream that looked, not its extent.
+- `clamp_min(0)` gave the zero-started request no gradient at all; `signed_lanes` passes it.
+- After 24 presentations with the membership gradient one of four known words read wholly against.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass (111 files: 1,225 passed, 2 failed); both gates pass at each of six points. The list on `69239abe2d` is run by Claude and recorded below when it returns.
+
+- *The table is gone whole, and one act of attention is left.* `attend` gives a request; a look is the salience map, the cap, the where match and the way up; a word is taken as the most active, with a draw among equals; what was read is lowered in the bank. Every reader of the table's state is named with what it reads now. Thirty tests that stated only the table's acts are retired, each named.
+- *Reading in order is not learned, and the cause is a conflict between two rules, both Alec's.* Rule 47 (2026-11-18, §19.62 to §19.64): "Concepts have the location to abstract over, and a gradient incentivizing them to do so"; round 2 measured it with the concepts' own weights on the where coordinates (the word at a place returned in 16 of 16; reading in order learned from every start). Rule 62 (2026-11-19, §19.89): the perceptual code is touched by the Pi alone, and "This applies to both .what and .where". Claude wrote into rule 62 "no concept has a weight on a where wire; how reading in order is then learned is round 6's to show". Round 6 has shown that it is not: nothing on the way up reads a where wire, so the salience map lands nothing on a band, every reading's where match is one, and the request can ask for a kind of thing and for no place. *This is put to Alec* (below). The pass's own first choice, a words lane asked below one so that the cap passes a gradient, would teach the request what to ask and still give it no place, so it is not the answer to order.
+- *With the membership gradient returned, a known word came to read wholly against* (one of four, after 24 presentations). It is the second cause of §23.L made worse, and it follows from a decision of Alec's (§19.106: declared classes are not fixed). *Not repaired, and nothing is proposed until it is measured over the lesson:* how many known words read against after the lesson, over twelve runs.
+- *`test_81`'s first cause was as guessed and worse:* its lesson withholds the second word in every presentation, so the pair was never offered. The pair is now offered from what the sentence held. It still fails as a certificate of learning (.049 against .612).
+- *Two fixtures lost their reading of words with the examination phase* (`MM_text_fixture.xml`, `MM_ltm_consolidation_fixture.xml`), and one test fails on it. To the next pass: the fixtures are given the grammar's reading of a word, and the five tests that then find no legal alternative are diagnosed, not reverted around.
+- *Not ported:* the lesson's script (its observer reads names that are gone) and five tests that rest on a walk and name nothing that changed. To the next pass, with whatever the list shows.
+- *Left as found:* the "words" Not entry on the space (it would change nothing while a look's readings are word brackets) and a known form of several units as an event of its own (it changes the field's reading axis for every reader). Both wait on the answer about the where, since both are about what a look can tell apart.
+
+#### The question to Alec: what reads the where, so that a request can ask for a place
+
+Two ways, and a third that defers it.
+
+1. *A row of the Pi reads the where.* A row of the first Pi may hold entries on where wires: a thing at a place, which is what he called a basic percept (an occurrence), as a cone over the where coordinates (rule 72), offered through the candidate matrices (rule 73). The concepts that read such rows are the location concepts rule 47 says will be learned. It keeps §19.89 as he said it. It is untried in this form: round 2 found that a row of a Pi on the where wires had no share at its own place, which is the cap again, and the way down would have to pass such a row by its weights as it passes a Sigma.
+2. *The concepts read the where by weights of their own,* as rule 47 had it and round 2 measured. It is known to teach reading in order. It is an exception to §19.89's "the only thing touching that is the pi".
+3. *Neither in this item.* A test supplies its reading, as every ported test now does; an untaught model takes its words by a draw judged by its outcome; reading in order is item 1.6's. The lesson and any grammar read on unsupplied sentences stay weak until then.
+
+*Claude's recommendation:* the first, tried in tests before it is built, with the second as what is built if the trial does not teach order. The next pass does not wait on this: it takes the one time (step 16), the literal and silence (step 9), and the repairs above. The reconstruction over what and where (step 11) and certificates 30 to 45 follow his answer.
