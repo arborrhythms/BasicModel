@@ -19534,3 +19534,215 @@ On round 5's last source (`c39d24b625`, run in a clone at `1253f6f257`, which ad
 #### The lesson at round 5's end (Claude, 2026-11-20)
 
 `lesson --runs 12` on round 5's last source, no seed chosen: words found 43.8 of 64 in the mean (6 to 64; each run 48, 18, 6, 64, 64, 23, 64, 59, 43, 62, 28, 47); 72 first walks at the cap, every one a walk that repeats a state; a known word read both, 12 times in all; 27.9 s a run. After the two rules against the loop were removed it found 14 to 64 words (§23.4.6's review), so this is the same lesson: its walks loop, as §23.L diagnosed, and round 5 neither helped nor hurt it within what twelve runs can show. It is round 6's to change, with the table gone and the membership gradient returned.
+
+### 23.6 Round 6, first pass: the carried items, the where from a parameter, the percept bank, the salience map by the transposes (Claude on Opus, standing in for Codex, 2026-11-20)
+
+Started at `1253f6f257`, on `main`, in this checkout. Nothing is pushed. No doc/*.md and no part of the specification was edited.
+
+#### What fails or is unfinished, first
+
+- *Parts D and E are not started.* I stopped after C, as the brief allows: D (a look as round 2 tried it, `attend` giving the request, the bracket table and its acts removed with `FocusLayer`, `UnfocusLayer`, `attention_operations`, the "words" Not entry, one gain field, the first bullet of step 17) and E (step 10's deletions and step 19's membership gradient) are untouched in `bin/`. The bracket table, `narrow_step`, `narrowing_view`, `focus_history`, `last_focus`, `LookForecast.difference`, `_passback_scope_ps`, `_passback_scope_where` and `attentionFloor` are all still in the source. So the gates and the known words before and after the membership gradient's return are not measured, and no walk test was ported to the request or retired.
+  - *Why I stopped there and did not start D.* The table is not one module. Its state (`NarrowingState`, `NarrowedWords`: actions, alternatives, probabilities, field scopes, round words) is read by the explore-path credit (`SentenceCredit.departure`, `draw['walk']`), by `ModelAttention._word_carrier` and `handoff`, by `Assessment` (line 284), by `meters_for`, by `AttentionLesson.ReadingTargets`, and by `Models` at the compose loop (near line 21156), which takes words by the stem's unit index. 18 test files name the table's acts.
+  - *A behaviour change comes with it.* With `attend` starting at "words" alone and no concept weighing a where wire (rule 62), every word of a sentence is returned equally. Rule 37 then takes one by a draw. Before the reading lesson (step 8, the second pass) teaches the request a where, the greedy walk would read the words of a sentence in an order nothing chose, and every grammar test downstream would see that.
+  - Built halfway, D would have left both the walk and the request half-working. It needs its own pass, with step 8 beside it.
+- *Step 2 is built, with three gaps.*
+  - A known form that spans several units is not yet an event of its own: the bank's readings are the open run's word brackets, as before.
+  - The order-zero Sigma still reads its structure on the host at every look (below).
+  - The bank's readings are the tokens, so a look now returns one reading per token where it returned one per bracket.
+- *test_81 still fails,* now with no look of the hidden word at all (below).
+- `test_one_attention.py::test_normal_field_answer_reaches_final_field_and_keeps_first_word` fails some runs and passes others. It failed 2 of 4 on `dafa2f4deb`, failed 1 of 3 on `5e2f7fa376` with the bank's fields stashed, and failed once in the first run of the 50 files. It was not run alone on `1253f6f257`. Its assertion is a gradient on `outputSpace.field_readout`, which depends on the walk. Listed, not forced.
+
+#### What was built, by file and function
+
+*A, step 18.*
+- `bin/CandidateMatrix.py`: `CandidateMatrix.meet(key, left, right)` tallies a pair candidate's reads and gives its worth.
+  - Over the reads it computes what the two met (the sum of the least of the two) referred to each constituent's own presence. These are the two ratios of `IdentityRows.meet_ratios` over the reads; the least of them is taken.
+  - The worth is `2 * least - 1`, so a constituent present without the other counts against the pair as their meeting counts for it.
+  - `tallies`: what each pair was read at, kept past the pair's forgetting so that an offer made again resumes it. It is bounded at sixteen times the room, the oldest first, and cleared on promotion.
+  - `pair_gradient(value, worth)` is `value - max(worth, 0)`: a row of a Pi is never negative.
+- `bin/CandidateGrowth.py`, `pi_step`: reads `meet`.
+- `bin/ConceptSpread.py`:
+  - `_flow(..., elsewhere=)` and `_down_elsewhere`. When the observed concepts were observed at another place, a concept's own value does not come down to its own rows. What a row gives each input leaves out what that input gave it on the way up: the product on complements over the row's other inputs, counted exactly where one of them is one.
+  - `spread(..., elsewhere=)`; `blind_spot` passes `elsewhere=True`.
+- `bin/FieldReverse.py`, `reverse` and `_blind_spot_support`. Where the omission withheld bytes, `ConceptSpread.read_back` is read over the look's perception. What it joins beyond the perceived becomes support of each basic percept's column, at the field's readings that hold each withheld reading, and the way back places those bytes as it places attributed ones. The edges are now merged by column (the greatest) before placing, which is the same as before.
+- `bin/util.py`, `amp_context`: the fallback of fp16 to fp32 on MPS is gone. MPS runs autocast in fp16 and bf16, and the CPU's fallback stays. No configuration is changed.
+
+*B, steps 1 and 2.*
+- `bin/WhereRegistry.py`:
+  - `WhereRegistry.code`: a `torch.nn.Parameter` `[capacity, 4]` on the device, written once from `WhereEncoding.encode(arange(capacity))`. It takes a gradient. It is held on the registry, which is no module, so it is in no optimizer's groups and in no state dict.
+  - `band(addresses)` reads its rows by `index_select`; an address below zero reads nothing.
+  - `encode(name, indices)` reads `band` of the registry interval.
+  - So `PartSpace._radix_code_events` and `_embed_radix` (both call `registry.encode('text', ...)`), `FieldReverse.reverse` and the conceptual slots all flow from it.
+- `bin/PerceptField.py`, `read_percepts`: the members' bands are `registry.band(addresses)`.
+  - *Where a stamp is a write into a buffer that takes no gradient:* `_radix_code_events` writes the band into `event[..., w_idx]` with `.to(event)`, and `InputSpace` and `SubSpace.forward_index` still call `whereEncoding.encode` directly on raw offsets (`Spaces.py` near 7257, 10238 and 10276). Those are not registry addresses and do not read the parameter.
+- `bin/BasicPercepts.py`:
+  - `PerceptBank`: one lookup, held on the device. It holds:
+    - `native`: each member at each event in each reading, `[member, B, reading, event, 2]`.
+    - the rows the lookup names, with their groups and against entries.
+    - for each event: its `place` (start), `token` (the reading that holds it), `band` (`registry.encode('text', place)`), `time` and its own `activity` on two lanes (one on every real event).
+    - `PerceptBank.at(activity)`: the members' reading with each event present to the degree of the activity.
+  - `BasicPercepts.read` is now `read_bank(lookup(...))`. `lookup` is the old first half (ancestry, rows with members, `read_percepts`). `read_bank(bank, activity=None)` is the old second half, on `bank.at(activity)`.
+- `bin/Spaces.py`: `cs_lookup(percepts, extents)` and `cs_read_bank(bank, activity=None)`; `cs_read_memberships` is `cs_read_bank(cs_lookup(...))`.
+- `bin/FamiliarTier.py`, `open_sentence`: the open run makes the sentence's one lookup and keeps it (`model._sentence_banks[sid]`, `model._sentence_bank`), then reads it.
+- `bin/SentenceLooks.py`:
+  - `bracket_activity(bank, interval, active)`: on the device.
+  - `perceive(model, interval, active)` reads `model._sentence_bank` with that activity: no lookup and no read of a span.
+  - `Looks.run` sets the sentence's bank before its looks.
+- `bin/Models.py`: `_sentence_banks` and `_sentence_bank` are reset with the open fields.
+
+*C, steps 3 and 15.*
+- `bin/Salience.py` (new). `salience(owner, bank, request, perception=, field=)` gives `SalienceMap(events [B, P, 2], band [B, P], rows, members)`. Its parts:
+  - `_down`: the request carried down the structure's edges (`ConceptSpread.structure`, the same matrices the spread reads), with a fixed number of steps and no test on the host.
+    - A Sigma is passed by its weights, before its squash.
+    - A Not entry passes the share to the other lane.
+    - A symbol's Pi is passed by its product's derivative at the open run's values.
+  - `first_pi(bank, perception, row_grad)`: the first Pi passed down onto its members and the bank's events, as the way up `_row_values` reads them.
+    - The run takes `d_for * for + d_against * against`.
+    - Each whole takes `d_for * for`.
+    - Each source of the against lane's union (a whole's against lane, an against entry's presence) takes `d_against * presence * a_j * prod_{k != j} (1 - a_k)`.
+    - Each event at the greatest of a member (for a whole or an against entry, at the greatest where the run lies) takes the member's whole share.
+  - Salience is never below zero (the request and each row's gradient are clipped at zero).
+- `test/test_item17_looks.py` (new): certificate 56.
+- `test/look_path_probe.py` (new): a probe that counts what a sentence's looks call on the lesson's sentences. It asserts nothing.
+
+#### What went
+
+- `CandidateMatrix.pair_gradient(value, left, right)` (its old form).
+- The MPS fp16 fallback in `amp_context`.
+- `WhereRegistry.encode`'s computation of the code on the spot.
+- The lookup on a look's path in `SentenceLooks.perceive` (its call of `cs_read_memberships` with a bracket, which ran `read_percepts`, `PartSpace.part_memberships` and the promoted rows on the host at every look).
+
+Nothing of D or E went.
+
+#### test_81, read after the first of the carried items
+
+On `b6e7daeb4c`, 368 s: failed with `no look of the hidden word`.
+- The 200 presentations ran. Then, on reading each sentence again, no look's extent held the second word without the first, so there was nothing to read.
+- The candidates at that point: Pi 34 entered, 34 promoted, 0 forgotten; Sigma 33 entered, 0 promoted, 4 forgotten, 29 held.
+- The 34 pair rows are among the declared kinds and letter properties (rows 14, 15, 22, 40, 41, 68, 71, 83, 86, 93, 104, 109). Those are present together at every look, so by the new worth they always occur together.
+- No pair of the words was made: the pair "alpha gamma" was not promoted. The worth now keeps a kind out of a pair with a word (certificate 60 (2)'s other direction, below), but the kinds' pairs among themselves are what the rule asks for.
+
+Recorded, not forced.
+
+#### Certificate 60 (2), the other direction
+
+`test_item17_growth.py::test_60_2_...` gains a second lesson: the same looks with a kind present at every look. Made: `('alpha', 'gamma')` and `('beta', 'delta')`, and no pair with the kind (20 entered, 2 promoted, 12 forgotten, 6 held). Without the persisting tallies, `('delta', 'kind')` was promoted: a re-offered pair started fresh at a look where both were present and was promoted after three reads. `test_60_penalty_strength_measured`: right at strengths .1, .2 and .3 (as before), so .2 is unchanged.
+
+#### The blind spot's fill
+
+- `test_item17_spread.py::test_24_the_blind_spots_fill_is_specific_to_a_place`: a structure where alpha's and gamma's concepts each read their own basic percept and each has a symbol of its own; alpha observed elsewhere.
+  - Alpha's own row gives it back anywhere at 1.0.
+  - Observed elsewhere, alpha is expected here at 0.0 with or without a kind over both symbols.
+  - Gamma is expected here at 0.0 without the kind and at 0.5 with it.
+- `test_testpoint.py::TestBlindSpot` on the small lesson, at gamma's withheld place:
+  - On `b4c26c9024`, gamma was read back at .372 and alpha at 0.0 (it was .999 before, through its own row). Gamma was .21 to .53 over the runs read while the change was built: the lesson draws its own initialization.
+  - After the bank, the look at gamma's place holds both tokens' readings, and alpha read back .306 there, through the kinds that hold it with other observed concepts. The assertion I had added (alpha 0 at gamma's place) was taken back to a print in `5e2f7fa376`, since the rule allows a row above that holds it with something else. The mechanism is stated by `test_24`.
+
+#### Certificate 56: the way down over properties works
+
+- (a) `test_56a_...`, on the small lesson after nomination, reading "alpha gamma". The request is alpha's concept, for 1.
+  - Alpha's basic percept's row is `('ps', (8, 9, 10, 11))` (its run of parts) with two properties `('ws', 0)` and `('ws', 8)`.
+  - Each of the three members takes a share of 1.0 at alpha's reading.
+  - Each of alpha's five byte events takes 3.0 (the run and the two properties, each event being at the greatest of each). Gamma's five byte events take 0.
+  - The bands take 0.
+- (b) `test_56b_...`, a hand bank: a row whose run is the property `red`, over three events in two readings. The events carrying `red` take 1 and 1, the one carrying only another part takes 0.
+- (c) `test_56c_...`: `Salience.py` names no `Parameter`, `Module`, `Linear`, `optim`, `tolist`, `item`, `cpu` or `numpy`, and calls no `bool`, `int` or `float`.
+  - At run time (in `test_56a`) the first Pi's way down made 0 host reads.
+  - The whole map made 3, all inside `ConceptSpread.structure` (`int(sigma.nInput)` and the like). The spread reads that structure too, at every look.
+- (d) `test_56d_...`: a concept with a Not entry of .7 on a row gives its share to the row's against lane (.7, for lane 0). With a for entry, the for lane takes .7.
+- (e) `test_56e_...`: a row of a run and two properties read at .8 and .5 reads .4, their product. The run and each property take .4. Read where the run lies, the properties' other events take nothing (the event of the run takes 1.2).
+- *Where the first Pi's entries over a row's properties are held:* in `BasicPercepts.pi` (`OrderZero.SparsePiLayer3`). A row's members are `member_keys(row)`: its run `('ps', ...)` and its wholes `('ws', property)`, the wholes coming from `PerceptProperties` through the whole tower. The map reaches them by the same groups the way up reads (the bank's `groups` are `member_keys`), and neither uses a weight of the Pi: the way up is a plain product.
+- *What each lane of a wanted concept receives* (step 15): for a for entry, the row's for lane takes the request's for lane and its against lane takes the request's against lane. For a Not entry the two are exchanged (`test_56d`). Nothing goes below zero.
+- *Not measured in this pass:* a word present by degree (step 15's observation), and the request's gradient on the what through the cap (step 4). Both need the look of D.
+
+#### `materialize()` and host reads on a look's path
+
+All counts are from `test/look_path_probe.py` on the lesson's first sixteen sentences, after the sixteen were read once, eager reading. "A look" is a call of `SentenceLooks.perceive`; the first look of a sentence is the open run and is not counted. The walk differs from run to run, so the number of looks differs.
+
+| | looks | `materialize()` in a look's read | in a word's arrival | host reads in a look's read | of them, a span or the lookup |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| before (`ff054b8d86`: A built, B not) | 112 | 0 | 0 | 83,176 (743 a look) | 2,282: `cs_read_memberships` 1,274 (the promoted rows), `part_memberships` 784, `read_percepts`' `prefix` 224 |
+| after (`5e2f7fa376`) | 160 | 0 | 0 | 108,324 (677 a look) | 0 |
+
+- *The stem's `materialize()` calls are not on a look's path in this configuration.* The 448 calls for the sixteen sentences (28 a sentence) are in `_embed_ladder_word_major` 48, `_per_word_prelude` 16, `__init__` 256, `reconstruct` 32, and 16 each in `_addressable_spaces`, `_pool`, `reverseOutput`, `_forward_per_stage`, `_capture_understanding` and `_run_batch_once`. `stage_cs_sub`, `_per_word_body_step` and `_peer_stage_b` made none here: eager reading on the lesson configuration goes by `_run_sentence_word_bricks`. They were not changed.
+- *What remains on a look's path:* the order-zero Sigma's own host loops: `OrderZero.row_members` 53,600, `OrderZero.forward` 45,780 and `OrderZero.row_against` 7,280 over 160 looks, about 666 a look. Beside them: `_bind_attended_concepts` 608, `cs_forward_content` 448, `Layers.gather` 320, `Layers.bind` 288. These read the matrix's structure, not a span. They are item 1.5's to move.
+
+#### Gates and the known words before and after the membership gradient
+
+Not measured: step 19 is E's.
+
+#### Choices on my own recommendation (provisional)
+
+- The pair's worth as `2 * least ratio - 1`, read as nothing below zero by the gradient. `b6e7daeb4c`.
+- The pair tallies kept past a candidate's forgetting, bounded at sixteen times the room. Without this a re-offered pair forgets its constituents' reads and a kind's pair was promoted. `b6e7daeb4c`.
+- The place-specific fill by leaving out, on the way down, what each input gave its row on the way up (exact, counting ones). `b4c26c9024`.
+- In the reconstruction, `read_back`'s joined values are support of the basic percepts' columns at the field's readings that hold a withheld reading. `b4c26c9024`.
+- fp16 on MPS takes a `GradScaler`, as CUDA does. The brief asked only that the fallback go. `ff054b8d86`.
+- The where parameter held on the registry (no module), so that it is in no optimizer and no checkpoint. It is moved to the device of the addresses read if they differ. `dcafbf1e13`.
+- The bank's readings are the open run's tokens, and a look's bracket is an activity over the events. `5e2f7fa376`.
+- The salience map's Sigma steps are a fixed number, `2 * (orders + 1)`, with no test for an earlier end. Each event at the greatest of a member takes the member's whole share, so five equal byte events each take it. `a1e1339ec6`.
+- The bands take no share: no weight of the way up reads a where wire (rule 62). `a1e1339ec6`.
+
+#### Tests ported or retired
+
+- `test_item17_growth.py::_pair_lesson` (and with it `test_60_2_...` and `test_60_penalty_strength_measured`): old gradient `pair_gradient(value, present[left], present[right])`; new `pair_gradient(value, held.meet(key, present[left], present[right]))`. `test_60_2` gains the assertion that no pair with a kind present at every look is made.
+- `test_testpoint.py::TestBlindSpot::test_blind_spot`: no assertion changed. A print of alpha's read back at gamma's place was added. An assertion of 0 that I added in `b4c26c9024` was taken back to that print in `5e2f7fa376`.
+- `test_serial_concepts.py::test_open_pass_reads_once_before_composition_and_never_mints`: old `cs_read_memberships` patched, `calls == ['read', 'forward']`; new `cs_lookup` patched, `calls == ['lookup', 'forward']`.
+- `test_item20_round6_loop.py::test_emptying_memory_before_the_open_does_not_change_input_reconstruction`: old capture of `cs_read_memberships(percepts, brackets)` at the open; new capture of `cs_lookup(percepts, brackets)`. The re-read uses `cs_read_memberships` as before, and the assertions are unchanged.
+- Retired: none.
+- The tests known to rest on a walk (`test_one_attention::test_unknown_repeated_word_has_one_byte_descent`, `test_priming_diffusion::...one_placement_per_active_stream`, two in `test_runtime_split_ingestion`, `test_serial_concepts::test_update_has_one_promotion...`, `test_percept_expectation_final ... compiled_word_bricks`, `test_generation_selection_backward ... one_live_composition_per_stream`) are neither ported nor retired: the table stays, since D was not started.
+
+#### Test files run
+
+- `test_item17_growth.py`: 7 tests. 1 failed and 6 passed in 143 s on the first form of the worth (the kind's pair, above); then `test_60_2` and the strength test passed, 2 in 3.8 s.
+- `test_item18_expect.py::test_81`: failed, 368 s (above).
+- `test_grammar_separator`, `test_item17_spread`, `test_item17_growth`, `test_item20_round6_reverse`, `test_item20_round6_gradients`, `TestBlindSpot`: 1 failed (the blind spot's knowing of two streams, fixed), 43 passed, 126 s. Then `test_grammar_separator`, `test_item20_round6_reverse` and `TestBlindSpot`: 17 passed, 9.9 s.
+- `test_item17_spread.py` (7 selected with `test_24`): 7 passed, 4.0 s.
+- The 50 files that name `SentenceLooks`, `cs_read_memberships`, `WhereRegistry`, `where_registry`, `read_percepts`, `PerceptField`, `open_sentence` or the loop of looks:
+  - First: 17 failed, 598 passed, 27 skipped, 1 xpassed, 163 s. 13 were `test_loop_of_looks`' patches of `perceive` without the keyword I had first added (taken out), 2 were ports, 1 was `TestBlindSpot`'s patch, 1 was `test_one_attention`'s, which rests on a draw.
+  - After the ports, with `test_look_forecast` and both gates: 621 passed, 27 skipped, 1 xpassed, 146 s.
+- `test_item17_looks.py`: 5 passed, 5.1 s.
+- `test_one_attention.py::test_normal_field_answer_...` alone: 2 of 4 failed on `dafa2f4deb`, 1 of 3 on `5e2f7fa376`.
+- The gates, on `dcafbf1e13` (the where parameter alone): both passed, 4.1 s; and within the 621 above.
+- The final run of every file named above with both gates, on `a1e1339ec6`: 3 failed, 655 passed, 27 skipped, 1 xpassed, 308 s. Of the 3, `test_one_attention::test_normal_field_answer_...` rests on a draw (above). The other two, `test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0, literal1]`, were mine: the bank's token and time took an `argmax` over a lookup with no reading (from `dafa2f4deb`). They were fixed in `a33e3e7dfc`; then `test_concept_memberships`, `test_serial_concepts`, `test_item17_looks` and both gates gave 22 passed, 7.1 s.
+
+#### Commits
+
+`b6e7daeb4c` (the pair's worth), `b4c26c9024` (the blind spot's fill; the reconstruction reads `read_back`), `ff054b8d86` (MODEL_AMP), `dcafbf1e13` (the where from a parameter), `5e2f7fa376` (the percept bank), `dafa2f4deb` (the bank's per-event fields), `a1e1339ec6` (the salience map; certificate 56), `a33e3e7dfc` (the bank with no reading). Not mine in the range: `d2845f1596`, `8d1bdffb38`.
+
+#### What is left of my parts
+
+- *B:* a known form spanning several units as an event of its own; the order-zero Sigma's host loops on a look's path (item 1.5).
+- *C:* the 304 requests and parts present by degree (certificate 31 (b), (c)) are the second pass's. Step 15's "word present by degree" and the request's gradient on the what need D's look.
+- *D, whole:*
+  - `attend` giving the request from `AttentionContext.context`, starting at "words" alone.
+  - The look by `min(own, share)` and the where match applied once to a reading.
+  - `interpret` by the most active word concept, the largest at a place first, a tie drawn and credited.
+  - The done mark as a lowering of the bank's activity.
+  - `Looks.run` as the loop of requests.
+  - The table and its acts deleted with `FocusLayer`, `UnfocusLayer`, `attention_operations` and the grammar files' declarations.
+  - The "words" Not entry on the space.
+  - `Expectation.gain_field` fed by the look, with `LookForecast.difference` deleted.
+  - The first bullet of step 17.
+  - The ports of the walk tests.
+- *E, whole:* step 10's deletions and step 19's membership gradient, with the gates and the known words before and after.
+
+#### What surprised me
+
+- A candidate pair that is forgotten and offered again starts with no memory of its constituents, so a pair of a word with a kind present at every look was promoted in three reads. The worth needs the tallies to outlive the candidate.
+- The leave-one-out of the product on complements is undefined at one, and one is common: concepts read at 1 make rows at exactly 1. The first form (a division by `1 - given`) gave alpha back at 1.0 at gamma's place. Counting the ones exactly gave 0.
+- None of the three named `materialize()` callers is on a look's path in the lesson's configuration. The host reads on a look's path are almost all the order-zero Sigma's own loops: 666 a look against 20 for the lookup and its spans.
+- With the property tower read on the same byte events as the parts, a request for a word puts three shares on each of its bytes: its run and its two properties. The analysis from above by wholes is there, but on this lesson it lands where the synthesis by parts does.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass (56 files and both gates: 655 passed, 3 failed, two of them its own and repaired, one resting on a draw); both gates pass on `a33e3e7dfc`.
+
+- *Three parts of five, each whole, and the stop was right.* The carried items, the where from a parameter, the bank, and the salience map are built. The look, `attend` alone and the table's removal were not started, for a reason that changes the plan of the passes: with the table gone and nothing yet teaching the request a where, a sentence's words come back equally and one is taken by a draw, so the reading lesson (step 8) belongs in the same pass as the table's removal, and not after it.
+- *The way down over properties works* (certificate 56, all five points): a request for a word's concept reaches its run of parts and both of its properties at 1.0 each, and the other word's events at nothing, by the matrices of the way up and no other weight. So rule 36 stands as Alec asked for it (§19.93), and rule 57's Sigma over the properties is not needed. *One thing to say to him plainly:* on this lesson the properties are read on the same bytes as the parts, so the analysis by wholes lands where the synthesis by parts does; it is shown to be wired, and not yet shown to find something the parts do not.
+- *No span and no lookup is read on a look's path* (2,282 host reads of them over sixteen sentences before, none after). What is left on the host at a look is the order-zero Sigma's own loops over its structure, about 666 a look, which are item 1.5's.
+- *`test_81` has a second cause, and it is not yet named.* The pairs of declared kinds among themselves are made, 34 of them, and they are what "always occur together" asks for. The pair of the two words is not made, though the same mechanism makes it in certificate 60 (2). *Claude's guess, to be measured and not assumed:* the lesson hides a word in some presentations, so each word is met without the other, and by the worth that counts against the pair. If so, what offers a pair must read what the sentence held and not what was left after a word was withheld. The next pass says which.
+- *Half precision on MPS takes a scaler,* as on CUDA. Accepted as built, to be measured in round 7 with the three precisions.
+- *The salience map puts three shares on each byte of a word* (its run and its two properties). Accepted; whether a look's cap makes that harmless is seen when the look is built.
+
+**The passes of round 6, as they now stand.** Second: the look, `attend` alone, the table and its acts removed, the reading lesson by successive approximation (steps 4 to 8, 10, 17's first bullet and its grades, 19), with a known form of several units as an event of its own. Third: the literal and silence, the reconstruction over what and where, certificates 30 to 45, and the one time (steps 9, 11, 12, 16). Rounds 6b and 6c follow, in one pass if they fit.
