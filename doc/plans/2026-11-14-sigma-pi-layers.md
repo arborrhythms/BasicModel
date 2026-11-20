@@ -9492,7 +9492,11 @@ Asked whether the pressure of the rounds left should become a cost with a fixed 
 
 Asked whether rule 72 (a symbol as a cone over coordinates of conceptual space) and rule 73 (medium-term matrices of candidate entries) should be trials only in this item, with the builds left to a later one: "Let's build in 1.7, it is closely related, but sporadic testing is OK."
 
-*Decided.* Round 5's second pass tries each in tests and builds what holds, in the same pass, with spot tests. Put to him with it and not objected to, so built on Claude's first choices: the parse's own operators, and no word, are to tell "Felix is my cat" from "Felix is a cat", and until the grammar does, a kind arises by the raise; the raise takes two statements that share a side (`raiseCount` 2, his example); a blank object never fills a slot of episodic memory, its word's concept does.
+*Decided.* Round 5's second pass tries each in tests and builds what holds, in the same pass, with spot tests. The three points put to him with it, and his answers:
+
+1. *The parse's own operators, and no word, are to tell "Felix is my cat" from "Felix is a cat"; until the grammar does, a kind arises by the raise.* "yes".
+2. *How many statements that share a side raise an order.* "3 not 2". `raiseCount` stays 3; Claude's 2 is withdrawn.
+3. *A blank object in a slot of episodic memory.* "Lets say uncertain objects are useless (a slightly more borad test for LTM inclusion)." *Decided, and wider than what was asked:* what is uncertain is not kept in LTM. A blank object is the first case; any object that is uncertain is another. *Mine:* uncertain is read as below the authority the model already asks of a definition before it reads it (one half), on the object's own certainty; an uncertain object fills no slot and its word's concept does.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
