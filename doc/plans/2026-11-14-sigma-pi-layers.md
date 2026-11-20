@@ -19027,3 +19027,19 @@ Spot tests only, by the pass; the list on its last commit is the round's end (§
 - *Built:* the blank object and the meta concept in place of the pending name; every object a member of "objects" through its symbol; what "fits" for a symbol and for a concept, checked before MTM makes either; one symbol for two concepts that a statement says are the same; a kind's entry on its member's symbol.
 - *Dropped, as the brief allowed:* one storage for the store. It is not a small change (the store grows past its construction, removes entries and is read by about twenty modules through its index) and is left to item 1.5 unless a later round needs it.
 - *Open, and put to Alec with round 5's points:* that "Felix is my cat" and "Felix is a cat" are not yet told apart (every statement that two concepts of one order are equal makes the same-thing symbol, and the kind comes from the raise at three statements where his example says two); and what an episodic slot should hold now that a word's object can be a blank (the one test left failing, `test_episodic_concepts`).
+
+### 23.4.12 Round 4's end: the list on its last commit (2026-11-20)
+
+Run by Claude on `a9fcfd0661`, in a clone with the repository's history and the benchmark files linked, six processes: **22 failed, 3,088 passed, 152 skipped**, 1,218 s, on 240 files. Three passes of the round ran spot tests only, and this is what they did not see.
+
+| Failing | Count | From |
+| --- | ---: | --- |
+| `test_basicmodel.py` (a model with no symbol read has no symbols' leg) | 3 | the eleventh pass |
+| `test_whole_paths`, `test_operators_round4a0` (the inventory of readers of time), `test_item18_placement`, `test_item18_paths`, `test_sentence_priming`, `test_item20_round6_output` | 8 | the eleventh and twelfth passes |
+| `test_runtime_split_ingestion`, `test_one_attention` | 3 | the twelfth pass, or a walk (two of them passed alone for the implementer) |
+| `test_one_backward_standing`'s packing test | 3 | to be traced: it was made to name every look in the third pass |
+| `test_episodic_concepts` | 1 | left for Alec's answer, now given (§19.112: an uncertain object fills no slot) |
+| `test_explicit_dimensions` (two), `test_ir_fullgraph_compile` | 3 | to be run in the checkout: they may be of the clone |
+| `test_item18_expect.py::test_81` | 1 | carried to round 5 |
+
+They go to one pass, which repairs them and then takes item 1.75.
