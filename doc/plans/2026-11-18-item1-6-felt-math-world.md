@@ -1385,3 +1385,26 @@ Commit locally as Alec has authorized; never push main, and never
 force-push. Receipts stay local and are not linked.
 ~~~
 
+
+## Added 2026-11-19: reading without comprehension, before reading with it
+
+Alec (sigma-pi plan, §19.88): "We should try to teach with reconstruction
+only, and try just reading without comprehension as a task prior to
+reading with comprehension. Add this detail to 1.6".
+
+A first task, before any sentence is parsed for its meaning or any question
+is answered: the model reads a sentence and puts it back. No reading is kept
+for comprehension. The reconstruction's error is the only teacher, and what
+it has to teach is where each percept is, so that the sentence is put back
+in order (sigma-pi plan, rule 49: the error is over what a percept is and
+where it is).
+
+What is known from item 1.7's trial of the looks (its round 2): taught by
+the reconstruction alone, held-out orders were read at 4 of 6; taught beside
+the reading lesson, at 6 of 6. So the task is tried knowing that the
+reconstruction alone has not yet been enough.
+
+To specify with the rest of this item: the corpus of the task (the same
+sentences as the comprehension lessons, or shorter ones first); when a model
+is said to read (every sentence of a held-out set put back in order); and
+whether the reading lesson of item 1.7 stays as a second teacher or goes.
