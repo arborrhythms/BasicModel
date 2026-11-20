@@ -17,6 +17,11 @@ class PerceptBank:
     groups: tuple
     opposed: tuple
     keys: tuple
+    place: torch.Tensor = None      # [B, events] each event's place, its start
+    token: torch.Tensor = None      # [B, events] the reading that holds it, or -1
+    band: torch.Tensor = None       # [B, events, 4] the where wires at its place
+    time: torch.Tensor = None       # [B, events] the time of the reading that holds it
+    activity: torch.Tensor = None   # [B, events, 2] its own activity, on two lanes
 
     def at(self, activity):
         """The members' reading with each event present to the degree of
@@ -576,7 +581,18 @@ class BasicPercepts(nn.Module):
             keys.extend(opposed[-1])
         native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
             native=self.native, **options)
-        return PerceptBank(native, rows, tuple(map(tuple, groups)), tuple(map(tuple, opposed)), tuple(keys))
+        spans, brackets = native.spans, native.where.to(native.spans.device)
+        real = spans[..., 1] > spans[..., 0]
+        holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
+                 & real[:, None])
+        token = torch.where(holds.any(1), holds.int().argmax(1), -1)
+        place = torch.where(real, spans[..., 0], -1)
+        registry = options.get('registry')
+        band = None if registry is None else registry.encode('text', place)
+        time = torch.where(token >= 0, native.when[..., 0].to(token.device).gather(1, token.clamp_min(0)), -1)
+        activity = real[..., None].expand(-1, -1, 2).to(native.events.dtype)
+        return PerceptBank(native, rows, tuple(map(tuple, groups)), tuple(map(tuple, opposed)), tuple(keys),
+                           place, token, band, time, activity)
 
     def read_bank(self, bank, activity=None):
         """The basic percepts of a bank's readings, with each event present
