@@ -65,6 +65,7 @@ class Observer:
         self.calls, self.actions, self.costs, self.records = [], [], [], []
         self.walk_steps = []
         self.word_driven = []
+        self.read_both = 0
         self.in_attention = 0
         self.reference_seconds = 0.
         base = original_attention() if certify else None
@@ -107,6 +108,15 @@ class Observer:
             return recorded(chooser, keys, spans, known, kwargs, value, initial, final, steps)
         patch.setattr(Attention, 'narrow_words', observed)
         patch.setattr(ModelAttention, 'narrow_words', observed)
+        # A known word read both: its for and its against lane above zero
+        # at the walk's read of the native word poles.
+        poles_of = ModelAttention.native_word_poles
+        def counted_poles(model, spans, forms, known):
+            poles = poles_of(model, spans, forms, known)
+            lanes = poles[known.to(poles.device)]
+            self.read_both += int(((lanes[..., 0] > 0) & (lanes[..., 1] > 0)).sum())
+            return poles
+        patch.setattr(ModelAttention, 'native_word_poles', counted_poles)
         self.attend_count = 0
         from SentenceLooks import Looks
         import ConceptSpread
@@ -193,10 +203,11 @@ class Observer:
         self.records.append(dict(batch=index, label=label, seconds=seconds,
             attention_calls=len(self.calls), departure_calls=sum(c['departure'] is not None for c in self.calls),
             parameter_count=len(record['parameters']), costs=len(self.costs), walk_steps=self.walk_steps,
-            word_driven=self.word_driven))
+            word_driven=self.word_driven, known_read_both=self.read_both))
         self.calls, self.actions, self.costs = [], [], []
         self.walk_steps = []
         self.word_driven = []
+        self.read_both = 0
         print(json.dumps(self.records[-1]), flush=True)
 
 
@@ -285,7 +296,9 @@ def over_runs(output, runs):
     chosen, into ``output/run-NN``, and its report over the runs: the words
     found in the first walk of each of the sixteen sentences, summed; the
     first walks that ran to the cap of 32 steps; the first walks that came
-    back to a state of their table they had been in; and the seconds."""
+    back to a state of their table they had been in; the readings of a
+    known word whose for and against lanes were both above zero; and the
+    seconds."""
     import subprocess
     import sys
     output.mkdir(parents=True, exist_ok=False)
@@ -303,6 +316,7 @@ def over_runs(output, runs):
                          words=sum(len(walk['words']) for walk in first if walk),
                          at_cap=sum(step == 32 for step in steps),
                          repeating=sum(bool(walk.get('repeated_states')) for walk in first if walk),
+                         known_read_both=sum(record.get('known_read_both', 0) for record in result['records']),
                          first_walk_steps=steps))
         print(json.dumps(each[-1]), flush=True)
     words = [run['words'] for run in each]
@@ -312,6 +326,8 @@ def over_runs(output, runs):
                   at_cap=dict(each=capped, mean=sum(capped) / runs, total=sum(capped)),
                   repeating=dict(each=[run['repeating'] for run in each],
                                  total=sum(run['repeating'] for run in each)),
+                  known_read_both=dict(each=[run['known_read_both'] for run in each],
+                                       total=sum(run['known_read_both'] for run in each)),
                   seconds=dict(mean=sum(run['seconds'] for run in each) / runs))
     (output/'runs.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({key: value for key, value in report.items() if key != 'each'}, indent=2), flush=True)
