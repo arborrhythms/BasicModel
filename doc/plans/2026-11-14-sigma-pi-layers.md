@@ -9192,7 +9192,7 @@ His answers to the three readings of §19.99.
 | Chooser | The network | What it reads for each candidate |
 | --- | --- | --- |
 | Compose and `attend` (one object, `OperationSelectionLayer.chooser`) | With the key `transformChooser` set to `mlp`, as it is in the lesson's configuration and in the main ones (`BasicModel.xml`, the corpus and ladder configurations): a contextual network, one hidden layer with a nonlinearity and then a score (`MLPTransformChooser`). Where the key is absent the source's default is a linear score, the inner product with an anchor for each act, and that has no nonlinearity. | The state of the slot, a vector of the code's width (for `attend` the key of the bracket, "the prefix understood at this look", with the attention context added to it); the candidate's output, the same width; a learned vector of 8 for the act; a code of 8 for the position. For thought, 29 numbers more. |
-| Thought (`SelectedThoughtChooser`) | A network of its own, one hidden layer of 16. | The roles of the root, the active chunk and the candidate; bounded numbers on what is held; the level and the pressure. |
+| Thought | *Corrected (§23.T.1):* not a network of its own. The class `SelectedThoughtChooser` is built nowhere; thought's choice is scored by the same chooser as compose and `attend`. | The roles of the root, the active chunk and the candidate; bounded numbers on what is held; the level and the pressure. |
 | Generate (`GeneratePolicy`) | Linear over the top chunk, with a small network over five numbers of the menu. | The top chunk and the menu's numbers. |
 
 So there is a nonlinear network guiding the choice for compose, `attend` and thought in the configurations in use. *It does not have such a domain yet:* none of the three reads the slots of episodic memory. They read state vectors, and thought reads four summary numbers of a row of LTM, never the concepts a row's slots hold. The way in exists for `attend`: it takes a context that is added to its keys (`AttentionContext.project`, linear, starting at zero), and that is where the slots of the walk's last chunks enter.
@@ -12445,7 +12445,13 @@ which form of the where match is built.
     - A comparator: one function over the present and a stamp that
       gives how far back the stamp is, as a sinusoidal code. No
       learned reader takes a count of ticks or a difference of ticks
-      (§19.109); §23.T.1 lists what does today.
+      (§19.109); §23.T.1 lists what does today: the attention
+      context's interval of ages (RowTime.age_interval over
+      when_age_scale) and ReferenceClose's gap since a last mention
+      become sinusoidal codes; the offset between a question and its
+      target likewise unless Alec rules it a position; the depth,
+      the counts of slots and the budget of rounds stay numbers
+      unless he rules them times.
     - A concept keeps its .where and its .when; a row promoted to a
       concept keeps its stamp (MemoryConsolidation).
     Certificate 55. A change of what the chooser reads changes what
@@ -18376,3 +18382,29 @@ Alec (§19.106): "Take an opportunity to doc my clarifications in the MD's, plea
 - *Corrected by Claude, two places.* The writer had a concept of order one read "the basic percepts and the symbols" (`Architecture.md`, "Room"; `Orders.md`), from §19.102's reading, which §19.106 withdrew: a basic percept is an occurrence, and a kind reads symbols. Both now say so, and keep his sentence on the room ("order 1 is n/2 (with taper) connected to 3n/2, since it connects to both lower rows") without a gloss of which rows the two are. *A small point left with Alec:* what the 3n/2 counts, now that a kind above order zero reads symbols alone. And `Architecture.md`'s "a symbol produced by thought uses its symbol-row address" now says that a symbol has no address.
 - *The writer's own readings, checked and kept:* that the orders are not strictly ramified at the kind (rule 26 said it of a symbol; with rule 72 a symbol lies in one order and it is the kind that collects across them); that likeness of codes pairs nothing except through a row's cone; that counting is the first song.
 - *Left by the writer, and why it stands:* `Params.md`'s rows for the keys of the expectation map and the table of who owns each cost in `GradientFlow.md`, which describe the source and follow round 5; entries of `FutureWork.md` dated before 2026-11-18; Alec's sentence of 2026-10-22 on a single conceptual space, kept beside his of 2026-11-20 that each order's concepts have their own geometry (*a second small point for him: whether the second withdraws the first*).
+
+### 23.T.1 Every learned reader's temporal inputs, and their form: a census (2026-11-20)
+
+Read-only, for Alec's "Please verify that any neurally-read temporal value should be sinusoidal (continuous), not incremental (ticks)" (§19.109). The source was read at `93b9688eda`'s `bin/` while round 4's ninth pass was editing it; nothing was run.
+
+**What is sinusoidal already.** Almost every learned reader takes time through the one encoder (`RowTime.encoder()`, four numbers on two rungs). The helpers that turn a stamp into an age decode it, subtract it from the present, and encode the age again with the same encoder (`RowTime.age_band`, `relative_to`, `difference`, and `relative_idea` over them), so an age reaches a reader as a sinusoidal code. Fed so: the chooser of compose (`choose_operation`), thought's choice (`thought_logits`), the attention context's percept keys, STM contents, STM's own time and the opened need, the predictor of words and of the field (`ActivationPredictor`), the bind read, comprehension and the held concepts, and the generate walk's parent. One helper is the exception: `RowTime.age_interval` returns the raw difference of ticks.
+
+**Not sinusoidal: five places.**
+
+| Where | What reaches the learned weights | Its form |
+| --- | --- | --- |
+| `AttentionContext.py`, the context's `stamps` (two of six columns for each slot) | a word's time as an interval of ages | the raw difference of ticks from `age_interval`, divided by a constant (`when_age_scale`) |
+| `What.py` and `Models.py`, the context of a question (29 numbers), columns 5 to 8; read by the chooser's `what_projection` and by `question_conditioner` | the offset between a question's position and its target's, its size, and the two positions over the extent of the data | a difference as a number, and two normalized numbers. The same positions are also there as sinusoidal codes (columns 9 to 16) |
+| the same context, columns 17 to 20 | counts of input and output slots, the open depth, the closure pressure | counts and a ratio (the last is 0 in every caller today) |
+| `ReferenceClose.py`, the policy's features 6 and 10 | how recent a candidate is, as a rank; and the gap since its last mention, counted in MTM's kept closes | a rank over a count, and a count over a horizon |
+| `Language.py`, `OperationSelectionLayer.reduce_pressure` (one learned number) | the rounds of compose that are left | a ratio of counts |
+
+**Borderline, for Alec to rule.** Whether a depth, a count of slots and a budget of rounds are times at all: they are "how much is held" and "how much is left", not "when". Whether a question's place in the data is a time: its docstring says it is a position, and past and future questions read the offset as before and after. A table of learned vectors indexed by a word's slot in its sentence (`LeafDecoderHead.slot_e`) is neither a count nor a sinusoid.
+
+**Sinusoidal, and still not what rule 64 says.** Three readers take a stored stamp as it stands and not as an age (`attend_meanings`' keys, `ltm_attention`, `SentenceRecordReader`). They pass this rule. Rule 64 goes further, the present and the stamp given with a comparator, and round 6 brings every reader to that.
+
+**Found beside it, and a correction of §19.100.** `SelectedThoughtChooser` is defined and is built nowhere: thought's choice is scored by the operation layer's own chooser (`_selected_thought_chooser` returns it). §19.100's table gave thought "a network of its own, one hidden layer of 16"; that was read from the class and not from who builds it, and is wrong. Thought, compose and `attend` share one chooser. The class goes with rule 74's pass.
+
+*Not determined by the census:* whether `reduce_pressure` receives a gradient at all; whether some stamps that learned readers take are live or always nothing; and the call paths of a few learned modules were not followed to their end (the percept towers' layers, the grammar's operator kernels, the output's field readout).
+
+**Review (Claude).** The rule holds for nearly everything, and where it does not the cases are of two kinds. Two are times by anyone's reading and are to be brought to a sinusoidal code in round 6's step 16: the attention context's interval of ages, and the gap since a candidate's last mention. Three are counts or positions that may not be times; they are put to Alec, and Claude's first choice is that a depth, a count of slots and a budget of rounds are not temporal and stay numbers, while the offset between a question and its target is temporal and is given as a code (its two ends already are).
