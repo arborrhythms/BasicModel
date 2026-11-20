@@ -11569,8 +11569,10 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
 1. Before any edit, take list 3 and the rest of list 4 of §19.4,
    and the rows of §19.21's table on symbols, again on your starting
    source, as in round 3.
-2. Symbols are split from concepts and have no dimensions (rule 9):
-   separate tensors. The key symbolTower goes, with its
+2. (In two passes, §23.4.2: the key symbolTower and the symbol
+   codebook went in the third pass; the row shared by a concept and
+   its symbol goes in the fourth.) Symbols are split from concepts
+   and have no dimensions (rule 9): separate tensors. The key symbolTower goes, with its
    configurations ported (data/MM_20M_xor.xml, XOR_exact.xml,
    XOR_symbols.xml, MM_add_verb.xml,
    matrix/MM_20M_xor_noraise.xml). The shared row of a concept and
@@ -16194,7 +16196,7 @@ What changed in the walks:
 
 Until round 5 the test fails and is recorded, as a learning case is (1.8 §43).
 
-**What the pass did for the lesson.** The sixteen sentences run in 15.7 s where they ran in 20.4 s, and six of the eight sentences that used to walk the cap of 32 steps and find no word now find their three words in 8 steps. The order-zero Sigma with its optimizer takes 0.59 MB where it took 17.9 MB, and at the default capacity about 30 MB where the dense one took 1.09 GB.
+**What the pass did for the lesson.** *Withdrawn (§23.4.2, finding 1): the sentence that follows compared one run with one run, and the lesson's runs on one source differ more than that.* The sixteen sentences run in 15.7 s where they ran in 20.4 s, and six of the eight sentences that used to walk the cap of 32 steps and find no word now find their three words in 8 steps. The order-zero Sigma with its optimizer takes 0.59 MB where it took 17.9 MB, and at the default capacity about 30 MB where the dense one took 1.09 GB.
 
 **Taken into §21 and §22.4 from the return's last section.** Rules 3, 4, 29, 59, 62 and 63 and certificate 51 were restated while the pass ran (§19.90, §19.91). Still to restate, with the next pass's return: rule 7 as the place of a reading for the Pi alone, rules 8, 8b and 54 as withdrawn, certificate 5's clauses on the combined vector, and certificate 23 (b) and (c) on how a Not entry is made and how its absence is held.
 
