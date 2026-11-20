@@ -592,7 +592,10 @@ def test_materialised_idea_follows_the_symbol_rows(eager_reading, monkeypatch):
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     from What import What
     m = _model()
-    _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20): the staging is read once in each reading.
+    for _ in range(m._concept_owner().concept_mint_count):
+        _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
     from reading_fixtures import supply_object, force_absolute_reading
     for word in sorted(m._concept_owner().interpret._pending):
         supply_object(m._concept_owner(), word)

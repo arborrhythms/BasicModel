@@ -19,6 +19,12 @@ def test_configuration_without_property_element_binds_at_first_sentence(tmp_path
         model._install_unit_span_fn()
         model.reconstruct_in_loop = False
         model.loss.reconstruction_scale = 0.
+        # The property basis binds at the first sentence; the word exists
+        # from the reading in which MTM nominates it, its
+        # concept_mint_count-th (sigma-pi §21, rule 20).
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: model(model.inputSpace.prepInput(['cat'])))
+        assert not model._concept_owner().word_concepts('cat')
         model(model.inputSpace.prepInput(['cat']))
         assert model._concept_owner().word_concepts('cat')
         assert model._sentence_fields[0][0] is not None

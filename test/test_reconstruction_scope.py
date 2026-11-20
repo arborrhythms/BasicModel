@@ -72,6 +72,9 @@ def test_packed_reconstruction_report_zeros_missing_targets_without_diluting_the
     monkeypatch.setattr(model,'_prime_sentence_symbols',without_prior_candidates)
     try:
         model._install_unit_span_fn()
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['quorp flarn', 'wug blim'])
         raw = model.inputSpace.prepPackedInput([['quorp flarn', 'wug blim']])
         with torch.no_grad():
             model.runBatch(train=False, batchSize=1, split='validation',

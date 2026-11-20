@@ -119,8 +119,12 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         size_before = len(_concept_alloc_of(cs).word_forms)
         extent = len(ps_store.bytes_for(pid))
         cs.wholeSpace_ref._staged_analysis_spans = torch.tensor([[[0, extent]]])
-        cs._maybe_autobind_words(pid_grid, vec_event,
-            tile_spans=[[(0, extent)]], percept_store=ps_store)
+        # MTM nominates the form on its concept_mint_count-th reading
+        # (sigma-pi §21, rule 20): the autobind runs once in each reading.
+        for _ in range(ws.concept_mint_count):
+            m.begin_reading()
+            cs._maybe_autobind_words(pid_grid, vec_event,
+                tile_spans=[[(0, extent)]], percept_store=ps_store)
         size_after = len(_concept_alloc_of(cs).word_forms)
         self.assertGreater(
             size_after, size_before,

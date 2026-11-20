@@ -134,6 +134,9 @@ def test_reconstruction_uses_held_word_support_after_attention_changes(tmp_path,
     from reading_fixtures import read_in_source_order
     read_in_source_order(m, monkeypatch)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(m, ["12 plus 1"])
         # Staged inside the sentence, as runBatch stages it (1.8 §68.89).
         with m._sentence_run():
             _run(m, ["12 plus 1"])
@@ -158,6 +161,9 @@ def test_native_identity_audit_accepts_bank_words_and_rejects_unknown_content(tm
     m = _traversal_model(tmp_path)
     m.eval()
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(m, ["12 plus 1"])
         _run(m, ["12 plus 1"])
         record = next(iter(m._sentence_understandings.values()))
         bank = record.primed

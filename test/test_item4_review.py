@@ -26,7 +26,10 @@ def test_native_activated_word_is_observed_by_handle_with_both_lanes(tmp_path,mo
     from SymbolField import SymbolField
     model=_tiny_canonical_model(tmp_path,monkeypatch,input_width=16,word_buckets='8',stm_capacity=3,chooser_depth=1)
     model.eval()
-    _stage_fullgraph_tensor_peer(model,['cat','dog'])
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20): the staging is read once in each reading.
+    for _ in range(model._concept_owner().concept_mint_count):
+        _stage_fullgraph_tensor_peer(model,['cat','dog'])
     head=model.symbolSpace.expectation
     from ModelAttention import stage_symbol_bank
     stage_symbol_bank(model,head)
@@ -122,11 +125,14 @@ def test_native_s_gain_uses_raw_arrival_and_p_preserves_the_full_payload(tmp_pat
         return result
     monkeypatch.setattr(SymbolField,'read',record_read)
     try:
-        with torch.no_grad():
-            with model._sentence_run():
-                raw=_stage_fullgraph_tensor_peer(model,['cat','dog'])
-                result=model._forward_with_compiled_sentence_state(raw)
-            model._publish_compiled_sentence_state(result);model._end_step()
+        # MTM nominates the words on their concept_mint_count-th reading
+        # (sigma-pi §21, rule 20); the readings before it hold no word.
+        for _ in range(model._concept_owner().concept_mint_count):
+            with torch.no_grad():
+                with model._sentence_run():
+                    raw=_stage_fullgraph_tensor_peer(model,['cat','dog'])
+                    result=model._forward_with_compiled_sentence_state(raw)
+                model._publish_compiled_sentence_state(result);model._end_step()
         assert records
     finally:
         model.End();model.symbolSpace.soft_reset()

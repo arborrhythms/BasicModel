@@ -97,6 +97,9 @@ def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeyp
         words = tuple(dict.fromkeys(word for sentence in sentences for word in sentence))
         assert len(sentences) == len(words) == 4 and all(len(row) == 2 for row in sentences)
         inputs = [' '.join((word, word)) for word in words]
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, inputs)
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.01), batchSize=4,
             batch_override=(model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(batch[1])))
         assert len(measured) == 2 and versions[0] == versions[1]

@@ -29,6 +29,11 @@ def test_grammar_deposits_each_word_with_its_own_code(tmp_path, monkeypatch, con
     from reading_fixtures import read_in_source_order
     read_in_source_order(model, monkeypatch)
     model.eval()
+    texts = ['hello world', 'hello there', 'loving world', 'loving there']
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20); the readings before it deposit no word.
+    from nomination_fixtures import readings_before_nomination
+    readings_before_nomination(model, lambda: model(model.inputSpace.prepInput(texts)))
     seen = []
     push = ShortTermMemory.functional_push_step_masked
     def observed(state, idea, gate, order, grammar_order, row, activation):
@@ -53,7 +58,7 @@ def test_grammar_deposits_each_word_with_its_own_code(tmp_path, monkeypatch, con
         return push(state, idea, gate, order, grammar_order, row, activation)
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed))
     try:
-        inputs = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
+        inputs = model.inputSpace.prepInput(texts)
         with torch.no_grad():
             model(inputs)
         assert len(seen) == 8, f'every real word must be deposited once; observed {len(seen)} word leaves'

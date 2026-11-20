@@ -61,6 +61,11 @@ def test_no_mid_sentence_reopening_even_under_conflict(monkeypatch):
 @pytest.mark.usefixtures('eager_reading')
 def test_repeated_word_is_not_reminted():
     model=_make_model();model.eval()
+    # MTM nominates the form on its concept_mint_count-th reading (sigma-pi
+    # §21, rule 20); a form that stands twice in a sentence is read once.
+    from nomination_fixtures import readings_before_nomination
+    readings_before_nomination(model,lambda:model(model.inputSpace.prepInput(['hello hello'])))
+    assert model._concept_owner().interpret.word_for_form('hello') is None
     with torch.no_grad():
         model(model.inputSpace.prepInput(['hello hello']))
         owner=model._concept_owner();first=owner.interpret.word_for_form('hello')

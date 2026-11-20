@@ -7,6 +7,10 @@ def test_inside_changes_the_read_but_not_the_forecast(tmp_path, monkeypatch):
     from test_item18_expect import lesson, read
     model = lesson(tmp_path, monkeypatch)
     try:
+        # MTM nominates a form on its concept_mint_count-th reading (sigma-pi
+        # §21, rule 20): the look's read is of words that exist.
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: read(model, 'alpha gamma'))
         read(model, 'alpha gamma')
         recorded = model._sentence_look_fields[0][0]
         assert all('surprise' in entry for entry in recorded)

@@ -280,6 +280,9 @@ def test_forward_anchor_capture_survives_text_and_grammar_changes(
     try:
         from reading_fixtures import capture_readings
         model._install_unit_span_fn()
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ["wholeOf", "partOf"])
         with torch.no_grad(), capture_readings(model) as sentences:
             inputs = (model.inputSpace.prepPackedInput([["wholeOf", "partOf"], ["partOf"]])
                       if packed else model.inputSpace.prepInput(["wholeOf", "partOf"]))
@@ -301,6 +304,7 @@ def test_forward_anchor_capture_survives_text_and_grammar_changes(
             assert current[0] is sentences[0][0]
         assert current[1] is sentences[0][1]
         held = sentences[0][0].detached()
+        nominated_forms(model, ["other", "words"])
         with torch.no_grad():
             _stage_fullgraph_tensor_peer(model, ["other", "words"])
         assert all(form is None for row in model._word_lexical_forms(

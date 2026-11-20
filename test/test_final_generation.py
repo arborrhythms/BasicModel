@@ -118,6 +118,9 @@ def test_training_answer_form_admission_is_semantically_empty_and_chunked_retrie
         owner=model._concept_owner()
         before=owner._priming_seen.clone()
         admit_training_forms(model,['alpha.'],['omega'])
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model,['omega'])
         word=owner.interpret.word_for_form('omega')
         assert word is not None and not owner.interpret.denotations(word)
         assert not owner.mtm.entries
@@ -162,6 +165,8 @@ def test_single_root_lexical_scan_is_reused_across_walk_steps(monkeypatch, tmp_p
             owner=model._concept_owner()
             phase='admission'
             admit_training_forms(model,['alpha beta.'],['omega'])
+            from nomination_fixtures import nominated_forms
+            nominated_forms(model,['omega'])
             word=owner.interpret.word_for_form('omega');row=owner._csw_row_of(word)
             root=owner.similarity_codebook.lookup_rows(torch.tensor([[row]]),streams=True)
             calls=[];native=Generative.lexical_candidates
@@ -232,6 +237,8 @@ def test_training_output_keeps_lexical_text_and_output_gradients(monkeypatch):
     model=BaseModel.from_config('data/MM_corpus_orders.xml',data=TheData)[0]
     try:
         admit_training_forms(model,['alpha'],[])
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model,['alpha'])
         owner=model._concept_owner()
         row=owner._csw_row_of(owner.interpret.word_for_form('alpha'))
         word=owner.similarity_codebook.lookup_rows(torch.tensor([[row]]),streams=True)[:,0]

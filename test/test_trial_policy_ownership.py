@@ -20,6 +20,9 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
     if not compiled:
         monkeypatch.setattr(torch, 'while_loop', eager_while)
     model = _model()
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['9'])
     with torch.no_grad():
         understanding = _capture_program_probe(model, ['9'])
     _stop(model)

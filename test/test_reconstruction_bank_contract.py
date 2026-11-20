@@ -79,6 +79,12 @@ def test_first_sight_admits_concepts_before_reconstruction(tmp_path):
         before = _concept_alloc_of(owner).next_id
         active_before = model._active_inventory_rows
         assert not owner.definitions.word_ids
+        # MTM nominates a form on its concept_mint_count-th reading (sigma-pi
+        # §21, rule 20): the forms are read short of it, so the staged reading
+        # is the first sight of the words.
+        from nomination_fixtures import forms_short_of_nomination
+        forms_short_of_nomination(model, ["quorp flarn", "wug blim"])
+        assert _concept_alloc_of(owner).next_id == before
         _stage(model)
         isp = model.inputSpace
         active = isp._ar_grammar_leaf_mask
@@ -124,6 +130,8 @@ def test_staging_rejects_missing_or_unusable_reconstruction_bank(tmp_path, monke
     monkeypatch.setattr(model, "_stage_snapshot_bytes", broken_stage)
     try:
         if fault == 'second_sentence_empty':
+            from nomination_fixtures import forms_short_of_nomination
+            forms_short_of_nomination(model, ["quorp flarn", "wug blim"])
             _stage(model)
             assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
             assert not bool(model.inputSpace._reconstruction_sentence_available[0, 1])

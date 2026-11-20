@@ -65,6 +65,9 @@ def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(
         return commit(state, sid, active, *args)
     monkeypatch.setattr(model, '_commit_sentence', observe)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, list(data.test_input))
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(list(data.test_input)))
         assert len(decoded) == 1

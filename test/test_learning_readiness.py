@@ -146,6 +146,9 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
         dict(split='train', document=0, sentence=i) for i in range(3)]})
     monkeypatch.setattr(data, 'grammar_lessons', {})
     optimizer = model.getOptimizer(lr=.0001)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['a b', 'c d'])
     raw = model.inputSpace.prepPackedInput([['a b', 'c d'], ['a b']])
     model.runBatch(train=True, split='train', batchSize=2, optimizer=optimizer,
         source_rows=[[0, 1], [2]], batch_override=(raw, torch.empty(2, 0)),

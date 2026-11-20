@@ -63,6 +63,9 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
     model = _model(tmp_path,monkeypatch)
     try:
         before = model._stm_reducer().chooser.tool_embedding.detach().clone()
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model,['red blue','blue red'])
         inputs = model.inputSpace.prepInput(['red blue','blue red'])
         optimizer = model.getOptimizer(lr=.01)
         attention = next(o for o in optimizer.optimizers if getattr(o,'objective_owner',None)=='attention')
@@ -141,6 +144,11 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
             from test_definition_rows import admit
             for form in texts[0].split():
                 assert admit(model, form) is not None
+        else:
+            # MTM nominates a form on recurrence (sigma-pi §21, rule 20); a
+            # word with no object's testimony stays a pending name.
+            from nomination_fixtures import nominated_forms
+            nominated_forms(model, texts)
         from reading_fixtures import capture_readings
         with capture_readings(model) as programs, torch.no_grad():
             model.runBatch(train=False,batchSize=2,batch_override=(model.inputSpace.prepInput(texts),torch.empty(2,0)))
@@ -197,6 +205,9 @@ def test_curriculum_gate_counts_one_word_only_for_active_rows(tmp_path,monkeypat
     read_in_source_order(model, monkeypatch)
     _select_completed_binary_path(model)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model,['red','blue green'])
         result = present(model,dict(fields=['red','blue green']))
         assert result['readbacks'] == ['red','blue green']
         assert result['iterations'] == [1,2]

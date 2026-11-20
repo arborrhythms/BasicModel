@@ -15,7 +15,11 @@ def test_mixing_reconstruction_keeps_non_ascii_percepts_in_the_target(tmp_path, 
         # Fits the unchanged six-unit XOR fixture without truncation.
         surface = 'café '
         raw = torch.tensor([list(surface.encode('utf-8'))], dtype=torch.long)
-        model._lex_embed_stem(raw)
+        # MTM nominates the word on its concept_mint_count-th reading
+        # (sigma-pi §21, rule 20): the staging is read once in each reading.
+        for _ in range(model._concept_owner().concept_mint_count):
+            model.begin_reading()
+            model._lex_embed_stem(raw)
         isp = model.inputSpace
         from PrependedSymbols import lookup_view, word_view
         target = [bytes(v[m].tolist()) for v, m in
@@ -66,7 +70,9 @@ def test_mixing_reconstruction_stages_words_surfaces_and_occurrences(tmp_path, m
     model, _, _ = _fresh_model(str(config))
     try:
         raw = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
-        model._lex_embed_stem(raw)
+        for _ in range(model._concept_owner().concept_mint_count):
+            model.begin_reading()
+            model._lex_embed_stem(raw)
         isp = model.inputSpace
         from PrependedSymbols import lookup_view, word_view
         model._validate_reconstruction_bank()
@@ -113,8 +119,11 @@ def test_no_compile_reconstruction_uses_the_eager_loop_body(tmp_path, monkeypatc
     monkeypatch.setattr(torch, 'while_loop', forbidden_capture)
     model, _, _ = _fresh_model(str(config))
     try:
+        texts = ['hello world', 'hello there', 'loving world', 'loving there']
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: model(model.inputSpace.prepInput(texts)))
         with torch.no_grad():
-            model(model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there']))
+            model(model.inputSpace.prepInput(texts))
         assert model._recon_completed
         assert model._recon_cost.shape == (4,)
         assert bool(torch.isfinite(model._recon_cost).all())

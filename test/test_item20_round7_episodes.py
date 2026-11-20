@@ -96,6 +96,9 @@ def test_content_query_retains_entries_in_requesting_stm_and_preserves_perceptio
         return commit(*args, **kwargs)
     monkeypatch.setattr(model, '_commit_sentence', after_thought)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['alpha', 'beta'])
         with torch.no_grad():
             source = model.inputSpace.prepInput(['alpha', 'beta'])
             model.forward(source)

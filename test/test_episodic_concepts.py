@@ -57,6 +57,10 @@ def test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar(
     read_in_source_order(model, monkeypatch)
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     try:
+        # MTM nominates the forms on their concept_mint_count-th reading
+        # (sigma-pi §21, rule 20); the episode is that reading's.
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: model.forward(model.inputSpace.prepInput(['alpha alpha beta'])))
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(['alpha alpha beta']))
         opened = model._sentence_open_fields[0]
@@ -96,6 +100,8 @@ def test_path_keep_selects_concepts_and_readings_together(tmp_path, monkeypatch)
     from WalkTrials import ThoughtTrialState
     model = native(tmp_path, monkeypatch)
     try:
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: model.forward(model.inputSpace.prepInput(['alpha beta', 'beta alpha'])))
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(['alpha beta', 'beta alpha']))
         owner = model._concept_owner()

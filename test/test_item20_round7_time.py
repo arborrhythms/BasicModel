@@ -39,6 +39,9 @@ def test_packed_sentences_tick_before_perception_on_one_ladder(tmp_path, monkeyp
         return begin(owner)
     monkeypatch.setattr(SentenceTraining, 'begin_sentence', capture)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['alpha beta'])
         source = model.inputSpace.prepPackedInput([['alpha beta', 'beta alpha'], ['beta alpha']])
         with torch.no_grad():
             model.runBatch(train=False, batchSize=2,

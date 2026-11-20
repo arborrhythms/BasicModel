@@ -25,6 +25,9 @@ def test_supplied_form_is_reported_without_changing_retrieval(answer, monkeypatc
     try:
         owner = model._concept_owner()
         admit_training_forms(model, ['alpha.'], [answer])
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['alpha.', answer])
         word = owner.interpret.word_for_form(answer)
         assert word is not None and not owner.interpret.denotations(word)
         row = owner._csw_row_of(owner.interpret.word_for_form('alpha'))
@@ -60,6 +63,8 @@ def test_lesson_fixture_supplied_forms_reach_every_applicable_bank_without_train
         for stage in json.loads(Path('data/corpus-lessons.json').read_text())['stages']:
             texts, targets = stage_documents(TheData, stage)
             admit_training_forms(model, texts, targets)
+            from nomination_fixtures import nominated_forms
+            nominated_forms(model, list(texts) + [t for t in targets if isinstance(t, str)])
             for text, target in zip(texts, targets):
                 if not isinstance(target, str):
                     continue

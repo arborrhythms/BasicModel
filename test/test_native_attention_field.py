@@ -26,6 +26,9 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', observed)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['alpha alpha', 'beta beta'])
         inputs = model.inputSpace.prepInput(['alpha alpha', 'beta beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=2,
                        batch_override=(inputs, torch.empty(2, 0)))

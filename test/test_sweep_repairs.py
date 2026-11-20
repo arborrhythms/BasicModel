@@ -95,6 +95,9 @@ def test_noncanonical_forward_preserves_staged_symbol_slab_views(monkeypatch, ea
         return result
     monkeypatch.setattr(model, '_run_tensor_peer_word_pipeline', checked)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, ['wug dax', 'dax wug'])
         with torch.no_grad():
             model(model.inputSpace.prepInput(['wug dax', 'dax wug']))
         assert observed == [True]

@@ -93,6 +93,9 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         texts = ['hello world', 'hello there', 'loving world', 'loving there']
         if trailing:
             texts = [text + ' ' for text in texts]
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, texts)
         with torch.no_grad():
             model(model.inputSpace.prepInput(texts))
         isp = model.inputSpace

@@ -58,7 +58,11 @@ def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
         from PrependedSymbols import word_view
         examples = ('alpha gamma', 'beta delta')
         hidden_rows = []
+        # MTM nominates a form on its concept_mint_count-th reading (sigma-pi
+        # §21, rule 20): each example is read until its words exist.
+        from nomination_fixtures import readings_before_nomination
         for text in examples:
+            readings_before_nomination(model, lambda: read(model, text))
             read(model, text)
             hidden_rows.append(int(word_view(model.inputSpace, 'concept_rows')[0, 1]))
         assert all(row >= 0 for row in hidden_rows)
@@ -94,6 +98,8 @@ def test_82_omission_is_the_only_teacher_and_consumers_detach(tmp_path, monkeypa
     model = lesson(tmp_path, monkeypatch, mapping)
     ordinary = model.omission.draw
     try:
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: read(model, 'alpha gamma'))
         read(model, 'alpha gamma')
         assert loss(model) is None
         assert 'expectation.concepts' not in model.errors._terms

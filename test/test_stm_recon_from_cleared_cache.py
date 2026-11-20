@@ -105,6 +105,10 @@ def _run_forward(model):
     x = _one_input(model)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
+        # MTM nominates the words on their concept_mint_count-th reading
+        # (sigma-pi §21, rule 20): the readings before it admit none.
+        from nomination_fixtures import readings_before_nomination
+        readings_before_nomination(model, lambda: model.forward(x))
         with torch.no_grad():
             result = model.forward(x)
             model._test_understanding = model._capture_understanding(result)

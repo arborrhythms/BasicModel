@@ -123,6 +123,9 @@ def test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention(tmp_path
         assert all(meter.spent == 0 for meter in model._attention_meters)
     try:
         assert model.attention_budget == 0
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, texts)
         report = present(model, split='train', optimizer=model.getOptimizer(lr=.001),
                          after_batch=observe)
         assert report['sentences'] == 3
