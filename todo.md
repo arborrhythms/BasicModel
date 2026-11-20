@@ -1770,7 +1770,16 @@ generation is expected at this stage and is recorded, not tuned away.
    (Alec, 2026-11-18, of item 1.7's architecture). After item 1.7 and
    before item 1.5. The work that
    had this number until then, computation by wiring, is the first part
-   of item 1.5. **At its submission the slow tier (`RUN_SLOW`) is run
+   of item 1.5. **Added 2026-11-19 (Alec, sigma-pi §19.88):** "We should try
+   to teach with reconstruction only, and try just reading without
+   comprehension as a task prior to reading with comprehension. Add
+   this detail to 1.6". So this item has a task before reading with
+   comprehension: the model reads a sentence and puts it back, with
+   no parse kept and no question answered, and the reconstruction's
+   error is the only teacher of where a percept is. Item 1.7's round
+   6 builds the where so; round 2 of that item measured the
+   reconstruction alone at 4 held-out orders of 6.
+   **At its submission the slow tier (`RUN_SLOW`) is run
    once, overnight,** and not before: the architecture changes no more
    after this item (Alec, 2026-11-18; 1.8 §72). **Begun 2026-11-18**
    (Alec: "a detailed spec for how we can teach a synthetic math corpus

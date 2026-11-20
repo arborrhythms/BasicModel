@@ -8871,6 +8871,37 @@ They make different things, a conjunction and a class. The redundancy is in the 
 
 *The example he asks for.* Today the row of the concept `cat` in the concept codebook holds two blocks side by side: a copy of the form's code (the 128 coordinates of the percept `cat`, and 8 of place and time), and then its meaning. The grammar composes on the meaning block. The form block is there so that a word can be put back from its concept, and `MereologicalCodes.derive` writes it from the percept's code. *The question:* does the concept's row keep the copy of the form, or is it the meaning alone, with the form reached through the layers (the concept's column and the first Pi)? *Claude's reading of his answer:* the meaning alone; the form is the percept's. To be confirmed.
 
+### 19.88 Alec's answers to the nine questions; the width; a glossary (2026-11-19)
+
+The questions were put to him after §19.87. His answers, in his words, and what each changes.
+
+**1 and 2. How symbols and concepts are made.** "Q1 is solved by observing the difference between symbol creation and concept creation. Symbols are implicitly created by PI, concepts are implicitly created by sigma. Symbols and concepts are explicitly created by MTM, which is answering two different questions, respectively: if \"Felix\" is \"my cat\" then they are the same. If \"Felix\" is \"a cat\", then they create a mereological or taxonomic link (depending on order). Since implicit generally preceeds explicit, MTM should check for an existing fit first." And: "Q2 this is answered by A1".
+
+*Decided.*
+
+| | Made implicitly by | Made explicitly by MTM from | Which says |
+| --- | --- | --- | --- |
+| A symbol | the Pi | "Felix is my cat" | that the two are the same |
+| A concept | the Sigma | "Felix is a cat" | a link of part to whole, or of member to kind, by their orders |
+
+Before MTM makes either, it looks for one that already fits. This settles §19.87's redundancy: the two routes do not make the same thing, and the explicit route first looks for what the implicit one has made. Rules 10, 20 and 21 say so. *Not answered in so many words:* whether a concept's row is its meaning alone (§19.87's example). Built on that reading.
+
+**3. The most recent STM.** "yes, TOS". The top of the stack (rule 60).
+
+**4. Salience and evidence against.** "salience can only go to zero since it pulls back over PI, but it can reinforce either positive or negative evidence." *Decided:* salience is never below zero, since it comes down through products. A request can make what tells for a wanted concept salient, and it can make what tells against it salient. Claude's provisional form (evidence against lowers a place's salience) is withdrawn. Rule 36.
+
+**5. A weak word.** "A word present at .3 is uncertain, so it should not be salient (If I have understood your statement correctly). Observe first." He has understood it. Nothing is built.
+
+**6. Who teaches the weights that read where.** "We should try to teach with reconstruction only, and try just reading without comprehension as a task prior to reading with comprehension. Add this detail to 1.6". *Decided, as a thing to try:* the reconstruction's error alone teaches them; a look's error does not. Round 2 measured the reconstruction alone at 4 held-out orders of 6, and beside the reading lesson at 6 of 6 (§23.2.1), so this is tried knowing that. Reading without comprehension, as a task before reading with comprehension, is added to item 1.6. Rule 49 and "What is mine", point 8.
+
+**7. A look's forecast.** "the expectation at the locus of attention is attenuated outside of that locus. I think I meant only this. Are you proposing something else? And what is your technical definition of look, you seem fascinated by the term." Nothing else is proposed: that is rule 40's one gain field, with the look's activity as its attention. Claude's "weighting by one less its activity" came from a sentence of the docs and is withdrawn. A look is defined in `doc/Glossary.md`.
+
+**8. A symbol's place.** "A symbol does not live in any space, which is what makes its collection by sigma so set-like." *Decided:* a symbol has no address in the where registry, neither its own nor its concept's. Rule 9.
+
+**9. Graded readings.** "The operators do all kind of conceptual manipulation. By layers do you mean orders? I am not clear what you mean. Please be a bit more formal and precise with the terminology we have developped: lets make a glossary.md and start with: order, concept, percept, pi, sigma, basic, negation, ternary and quaternary logic, perceptual space, conceptual space, symbolic space, perceptual towers, parts, properties, STM, MTM, LTM." By "layers" Claude meant the Pi and the Sigma, not orders. The question is put again in the glossary's terms. `doc/Glossary.md` is written with his list, and with *layer*, *lane*, *symbol*, *code* and *look*, which this plan uses.
+
+**The width.** "64 and 64". *Decided,* with §23.3b.3's numbers before him. Round 3d builds rule 61 at 64 and 64.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9271,13 +9302,26 @@ chooses from. The old classes are not edited.
 9. *Symbols are split from concepts and have no dimensions* (Alec,
    §18.22, rules 14, 15 and 20). Separate tensors; a symbol has no
    vector, place, form or trust content read as a direction; the
-   shared row of a concept and its symbol is given up.
+   shared row of a concept and its symbol is given up. It has no
+   address in the where registry either (Alec, §19.88: "A symbol
+   does not live in any space, which is what makes its collection by
+   sigma so set-like").
 10. *A symbol is two unsigned rows, one for each lane, and brings one
     concept* (Alec, §18.25; rules 2 and 21). It is made when MTM
     nominates it (rule 20), or by `interpret` for a meta concept, and
     not at a concept's allocation. A conjunction is promoted as a new
     symbol, a Pi row over its members, under a new concept, a Sigma
-    over that symbol.
+    over that symbol. *How each is made* (Alec, §19.88: "Symbols are
+    implicitly created by PI, concepts are implicitly created by
+    sigma. Symbols and concepts are explicitly created by MTM"):
+    from a statement that two are the same ("Felix is my cat") MTM
+    makes or finds one symbol for both; from a statement of kind or
+    of part ("Felix is a cat") it makes a link of member to kind or
+    of part to whole, by the orders of the two (rule 21, and
+    `doc/Orders.md` on what raises an order). "Since implicit
+    generally preceeds explicit, MTM should check for an existing
+    fit first": before it makes a symbol or a concept, MTM looks for
+    one that the Pi or the Sigma has already made and that fits.
 11. *The Sigma above order zero* (Alec, §18.24, rule 24, with
     §18.25): it reads each symbol's pair combined into one signed
     input. No vector and no pooling. *Mine:* stored sparse.
@@ -9563,9 +9607,15 @@ chooses from. The old classes are not edited.
     and each copy at the greatest takes the whole derivative. *Found in
     round 2 (§23.2.1):* where parts are present by degree the map
     cuts weak words, since a share goes with the presence of its row:
-    a word present at .3 comes back at nothing. And a request that
-    asks at one or above gets no gradient on what it asks, through the
-    cap of rule 34.
+    a word present at .3 comes back at nothing (Alec, §19.88: "A
+    word present at .3 is uncertain, so it should not be salient";
+    observed first, nothing built). And a request that asks at one or
+    above gets no gradient on what it asks, through the cap of rule
+    34. *The against channel* (Alec, §19.88: "salience can only go to
+    zero since it pulls back over PI, but it can reinforce either
+    positive or negative evidence"): salience is never below zero,
+    and a request may make salient what tells for a wanted concept
+    or what tells against it.
 37. *The returned set* (Alec, §19.45; §19.49, answer 3; §19.53). The
     way up is run again on the bank with the look's activity. What it
     gives, each concept at its token, is the returned set. The
@@ -9930,7 +9980,8 @@ chooses from. The old classes are not edited.
     the key built from the request's operators
     (`ExtendedRecall.forest`) and of loading every row that passes
     off the stack (`EntryRead.recall_chunks`). *Mine:* the most
-    recent chunk is the top of the stack; the measure is today's
+    recent chunk is the top of the stack (Alec, §19.88: "yes, TOS");
+    the measure is today's
     (`EpisodicMemory.matches`); it stays an operation that thought
     chooses; a row already held in STM is left out of the match; an
     answer is read from the top of the stack after the push. *Open:*
@@ -9961,9 +10012,9 @@ chooses from. The old classes are not edited.
       only. A form given a coordinate changes the code of every form
       that holds it (13 earlier codes an admission on average at 64,
       17,459 at the most), and whatever was started from those codes
-      has to follow. *Open, put to Alec:* the width. At 64 the cost
-      of an admission rises from 2 ms to 58 ms by 19,000 forms; at 96
-      it stays at a few.
+      has to follow. The width stays 64 and 64 (Alec, §19.88, with
+      these numbers before him: at 64 the cost of an admission rises
+      from 2 ms to 58 ms by 19,000 forms; at 96 it stays at a few).
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -10307,8 +10358,10 @@ section:
    member of, with its Not entry on the space declared; an object, for
    "objects", is what `interpret` finds or makes for a word;
    `attend`'s map starts at the request "words" (rule 35).
-8. Of a look's error, only the request and the weights that read the
-   where are taught (rule 35).
+8. Of a look's error, only the request is taught (rule 35). The
+   weights that read the where are taught by the reconstruction's
+   error alone, as a thing to try (Alec, §19.88: "We should try to
+   teach with reconstruction only").
 9. The salience map by the transposes, with the kept derivatives
    (rule 36).
 10. Largest is the longer extent; nothing is interpreted from an
@@ -10373,11 +10426,9 @@ section:
     if the two vectors come to overlap). Built: the blank is made as
     rule 20 says; what removing is, beside concepts kept forever, is
     not built.
-14. *The against channel in the salience map* (rules 36 and 59;
-    §19.84). Built in round 6: a percept that tells against a
-    requested concept lowers its salience, never below nothing. The
-    query on LTM is not touched by the percept's code: it matches
-    the idea, a point in conceptual space, against semantic memory.
+14. *The against channel in the salience map* (rules 36 and 59).
+    *Closed by Alec (§19.88):* salience is never below zero, and it
+    can reinforce evidence for or evidence against.
 13. *What holds a succession,* the bell and then the food, across two
     sentences (§19.25). Built: a row that MTM nominates for the two
     when the succession recurs, read by rule 30's spread.
@@ -11057,6 +11108,18 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    now and every certificate that passes still passes; say so by a
    test. A concept's own value stays one signed number, and both is
    two concepts (Alec, §19.83). Certificate 51.
+12. How MTM makes a symbol and a concept from a statement (rule 10;
+   Alec, §19.88). A statement that two are the same ("Felix is my
+   cat") gives one symbol for both. A statement of kind or of part
+   ("Felix is a cat") gives a link of member to kind or of part to
+   whole, by the orders of the two; two such statements that share
+   a side raise an order (doc/Orders.md, "Definitions raise"; the
+   refine and raise of ConceptualSpace.refine_over_collected
+   stands beside it). Before MTM makes a symbol or a concept it
+   looks for one that the Pi or the Sigma has already made and that
+   fits: say what "fits" is in the source (the same members for a
+   symbol; the same read for a concept) and build that check. A
+   symbol has no address in the where registry (rule 9).
 
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences before
@@ -11206,6 +11269,20 @@ which form of the where match is built.
     it to the chooser's draw (1.8 specification, §66.9). The
     prototype's three files go when the model's own tests state what
     they stated; say which.
+
+15. From Alec's §19.88, for this round. Salience is never below
+    zero, since it comes down through products; a request may make
+    salient what tells for a wanted concept or what tells against
+    it (rule 36): build the against channel's weights of rule 59
+    into the map so, and print what each lane of a wanted concept
+    receives. A word present by degree is not brought back (observe,
+    and return what you see). The weights that read the where are
+    taught by the reconstruction's error alone, as a thing to try: a
+    look's error teaches the request only. Round 2 measured the
+    reconstruction alone at 4 held-out orders of 6 and beside the
+    reading lesson at 6 of 6, so return that measure again in the
+    model. `archer` is not read on `reach`: the first Pi is read
+    only on the rows the lookup names (rule 33; §23.3c.3).
 
 Run: the new test file; test/test_loop_of_looks.py and every test
 file that names Attention, ModelAttention, SentenceLooks,
