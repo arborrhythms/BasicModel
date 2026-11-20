@@ -338,26 +338,29 @@ which properties/level).
   bracket supplies the scope handed to mereology.
 
 **Concept spread is an expectation (Alec, 2026-10-28).** When a sentence
-opens, `expect`, the conceptual space's own learned map
-(`ConceptSpread.open_prediction`), reads the observed order-zero field on
-both lanes and gives the whole expected field over the same rows, frozen for
-every path of the sentence ("expect, intuit and marker" below). The relevance read (`relevance_weights`) is
+opens, expectation, the spread on the structure's own Pi, Not and Sigma
+([Sigma and Pi Layers](#sigma-and-pi-layers)), reads the observed field on
+both lanes and gives the expected field at every order, frozen for every
+path of the sentence (`ConceptSpread.open_prediction`). The relevance read (`relevance_weights`) is
 $1 + \max(\text{expected knowing}) + \text{desire}$ for each stream and row,
 clamped at zero ($1 + \text{desire}$ on the serial concept path). Attention,
 the compose chooser, retrieval, rule order (`ConceptSpread.rule_order`) and the sparse
-projection onto the tower rows read it detached. `expect` is taught by
-omission: where units of the sentence were hidden, its cost
-(`expectation.concepts`) is the difference between what it expects from the
-lossy field and the detached field with the hidden units present, and a
-sentence with nothing hidden gives it no cost. The spread biases where attention goes and carries
+projection onto the tower rows read it detached. Expectation is taught by the
+reconstruction in stages: where units of the sentence were hidden, the
+concepts' stage (`expectation.concepts`) is the difference between what is
+expected from the lossy field and the detached field with the hidden units
+present, and a sentence with nothing hidden gives that stage no cost. The spread biases where attention goes and carries
 no truth: nearness in meaning asserts nothing, and truth moves only along
 rules, through `infer`. Location keeps its other readers:
 `bind`'s content term, MTM's candidate matching and the
 reconstruction bank's selection.
 
-**One conceptual space (Alec, 2026-10-22).** Every concept of every order is
-placed in one similarity space, concrete and abstract intermingled; a raised
-class is placed by its context like any other concept. Forms and meanings never
+**One conceptual space (Alec, 2026-10-22).** Every concept is placed in
+conceptual space by its context, concrete and abstract alike; a raised class
+is placed by its context like any other concept. The concepts of each order
+lie in a geometry of their own (Alec, 2026-11-20: "the concepts at every
+order live in spaces with different geometries"), so a symbol's cone is
+tested against the concepts of one order alone. Forms and meanings never
 share a metric: placement never reads the percept cube
 ([SymbolFirewall](SymbolFirewall.md)).
 
@@ -876,6 +879,29 @@ next word not yet read. No order is built in: reading in order is taught
 grammar's tests. A look with the same request gives the same result whatever
 was looked at before it.
 
+**A walk has one act of attention, `attend`** (Alec, 2026-11-20: "you can
+just use attend() , I don't see a need for explicit focus and unfocus
+operators"). There is no focus and no unfocus, and no rule forbids a walk an
+act: a rule that removes a walk's loop to pass a measure "seems very
+unbiological" (Alec, 2026-11-20). Moving on to the next word is a request,
+and so is returning to the whole sentence. A focused state is context: once
+focus is on a word, that state is what focus moves on from, to the right,
+word by word, to the sentence's end. Attention is taught by successive
+approximation: "we can't teach focus directly, but we can reward behaviors
+that require a successively narrow focus" (Alec, 2026-11-20). No rule says
+where to look; the lessons are ordered so that each needs a narrower focus
+than the one before, and the behaviour is rewarded by its outcome.
+
+**The chooser's log** is conceptual activation in episodic memory, "so that
+you are not just bolting on memory and structures to the algorithm" (Alec,
+2026-11-20). What a walk did at a step is the activation of concepts in the
+slots of that step's chunk: the concept of the act, the concepts of its
+place, and the concepts of what it returned, using the grammar's concepts
+where they exist. The slots of the walk's last chunks are among what the
+chooser reads, and what it does with them is learned; nothing forbids an act
+because of them. A behaviour that lasts is a chain of acts, replayed from STM
+or from LTM, and in the end held as concepts.
+
 **The salience map** carries the request down to the percepts. It is the
 analysis from above, conceptual attention, as the Pi's rows are the synthesis
 from below (Alec, 2026-11-19: "We want top-down conceptual attention, I think
@@ -951,7 +977,7 @@ teaches location too: the bytes put back are built through a conjunction of
 the what pathway and the where pathway, so its error reaches both
 ([Training](Training.md)).
 
-**A look's forecast.** Before a look is perceived, `expect` is taken on the
+**A look's forecast.** Before a look is perceived, expectation is taken on the
 observed field formed from the readings outside the look and closed upward
 through the definitions (`LookForecast.forecast`), so it says what should be
 here given what was seen elsewhere. A look's activity is the `attention` of
@@ -1620,6 +1646,22 @@ members, and a concept of a Sigma, which any member may be enough for (Alec,
 level) and conjunction/disjunction at the symbolic level"). There is no third
 pair named `and` and `or`.
 
+**What makes what.** A Pi makes things and a Sigma makes kinds (Alec,
+2026-11-20): "a basic percept or symbol is created implicitly by PI or when
+nominated by MTM when recognizing that their constituents always occur
+together. a concept is created implicitly by Sigma or when nominated by MTM
+when recognizing that the objects form a kind." A row of a Pi, a basic
+percept or a symbol, is a thing: which are the same, by a region. A concept
+is a kind: a list of arbitrary things. The two epistemic levels of an order
+do two things and neither can do the other's. A kind collects any number of
+things, from every epistemic level below its own and from none at or above
+it: `green things` "must collect elements from all orders, because both Felix
+and cats may be green. But it collects only from lower orders, so that it is
+at least well-defined (no sets of all sets). For it to collect just one
+symbol would make pi be the only fold, which is not correct: we must have
+lists of arbitrary things." There is no symbol of a concept: nothing makes a
+symbol for a concept, one for one.
+
 **The Pi** (`PiLayer3`, `bin/Layers.py`). Square and sparse, on unsigned
 values, one lane at a time:
 
@@ -1634,8 +1676,13 @@ lane. The derivative passes wherever a membership lies above the floor
 $\epsilon$ and at most one, one included (`membership_log`); below the floor
 it passes none. Its entries are zero or above, so a Pi keeps an order already
 there: where one input is at or below another, so are its rows, and a row is
-at or below every input it reads. Each percept, and above order zero each
-symbol, is two unsigned rows, one for each lane.
+at or below every input it reads. Its weights are unsigned and it cannot
+change a sign, so it reads each signed concept as two unsigned lanes (Alec,
+2026-11-20: "it must allocate two lanes in order to operate on a given
+concept"), and each basic percept, and above order zero each symbol, is two
+unsigned rows, one for each lane. Every row of a Pi has this one fold, the
+plain product over its constituents, at every order (Alec, 2026-11-20: "I
+think they need to be of the same form (for biological plausibility)").
 
 **The Sigma** (`SparseSigmaLayer3`). For each concept $c$ one signed number,
 
@@ -1651,7 +1698,7 @@ A Not entry is made in two ways. Implicitly, by the gradient, where teaching
 carries a concept's entry on a row through zero (Alec, 2026-11-19: "the
 gradient should be able to make a not entry, that is the implicit
 definition"); explicitly, by a Not member declared in the record of a
-concept's members, and at the basic level by omission. A concept is one
+concept's members. An omission teaches through the gradient. A concept is one
 signed value whose size is its certainty ("Signed
 sigma; good, this is knowing in the signed hyperball", Alec, 2026-11-17). It
 is stored as two unsigned lanes (`signed_lanes`): .5 is .5 for and nothing
@@ -1667,13 +1714,30 @@ is replaced by its two unsigned parts before a percept or a symbol holds it.
 **Pi, Not, Sigma** (Alec, 2026-11-19: "Pi reads perceptual space, its two
 lanes get passed to Not, and those are combined into on signed lane for
 processing by sigma (which may process an arbitrary number of those signed
-values)"). The Not stands between the Pi and the Sigma. It takes each row's
-two values, for and against, and gives one signed value, for less against;
-an entry of the Not gives one concept a row's pair exchanged. The Sigma reads
-those signed values with weights held at zero or above, so it is monotone,
-and the Not is the only place where a sign is changed. A concept for
-presence reads a row as it is; a concept for absence reads it through an
-entry of the Not.
+values)"). The Not stands between the Pi and the Sigma, and it is a layer
+of options (Alec, 2026-11-19: "It should actually be a layer that provides
+options, so that concepts can choose value or not-value (since we want to
+allow concepts of absence as well as concepts of presence)"). From each row's
+two values, for and against, it offers two signed values: the value, for
+less against, and the not-value, the pair exchanged. A concept's entry
+chooses one of the two. The Sigma reads those signed values with weights
+held at zero or above, so it is monotone, and the Not is the only place
+where a sign is changed. A concept of presence reads a row's value; a concept
+of absence reads its not-value. Nothing is one to one: a row may be read by
+any number of concepts, by its value or its not-value, and a concept may read
+any number of rows.
+
+What each of the three steps takes and gives (Alec, 2026-11-20):
+
+| Step | Its input | Its weights | Its output |
+| --- | --- | --- | --- |
+| Pi | signed values of concepts, each given as two unsigned lanes | unsigned | a thing on two unsigned lanes |
+| Not | a thing's two unsigned lanes | none | one signed value, the value or the not-value |
+| Sigma | signed values from the Not, with no doubling | unsigned | a concept's one signed value |
+
+"The NotLayer operates over unsigned two channel symbols (or percepts) and
+yields signed outputs (possibly negated)"; the Sigma "does not need this
+doubling" (Alec, 2026-11-20).
 
 **The fused pair** (`SigmaPiLayer`). A Pi and then a Sigma with no way back,
 fused into one expression so that a row of pairs is captured as one graph:
@@ -1689,9 +1753,7 @@ an untaught stack gives zero ([expect, intuit and marker](#expect-intuit-and-mar
 #### Decided in direction: a concept is sigma over pi (Alec, 2026-09-21)
 
 > The best psychological support is for sigma-over-pi (DNF), not just
-> successive sigma. […] Since we have symbols mapping 1:1 to concepts, then
-> concepts from symbols (and perhaps even from percepts) should be sigma-pi
-> DNF.
+> successive sigma.
 
 The best-supported models of categorisation have this shape:
 similarity to each stored exemplar is a *product* over feature matches, and
@@ -1732,9 +1794,18 @@ on recurrence, after `concept_mint_count` readings (a reading being one
 forward of the model for one stream, so a form that stands twice in a
 sentence is read once); nothing becomes a row on its first reading (Alec,
 2026-11-17). The tower of parts and wholes below the basic percepts is
-perception and is made on first sight. Each nominated row brings one concept.
-A new word is therefore perceived at once, but `interpret` cannot find it
-until its basic percept is nominated, and its concept comes with that row.
+perception and is made on first sight. Each nominated row brings one concept
+to start with. A new word is therefore perceived at once, but `interpret`
+cannot find it until its basic percept is nominated, and its concept comes
+with that row.
+
+A basic percept is an occurrence, an event (Alec, 2026-11-20: "all of their
+constituent percepts occur at the same time, so there is no basis for
+abstraction into a noun"). The word over its occurrences is its concept of
+order zero; the word as a thing is a symbol over that concept; and a kind of
+words, such as noun, collects those symbols. A basic percept's constituents
+are coordinates of perceptual space, and its row is a cone over the
+coordinates its occurrences share ("Above order zero" below).
 
 The first Pi selects for and against (Alec, 2026-11-19: "Pi should select both
 strong for and strong against"). A row's *for entries* are its parts and
@@ -1771,15 +1842,17 @@ both .what and .where"): the where enters at the Pi, as a look's match of
 place, and no concept has a weight on a where wire.
 
 **The Not of order zero** (`NotLayer3`, `ConceptualSpace.order_zero_not`)
-takes each basic percept's row, its two values, and gives one signed value,
-for less against. It has no weights: an entry of the Not is there or it is
-not, and it gives one concept that row's pair exchanged.
+takes each basic percept's row, its two values, and offers two signed
+values, the value, for less against, and the not-value. It has no weights: a
+concept's entry chooses the value or the not-value of that row.
 
 **The concepts of order zero** (`SparseSigmaLayer3`,
 `ConceptualSpace.order_zero`) are the Sigma above on those signed values
 (Alec, 2026-11-19: "The order zero signal should be built as: Pi Not
 Sigma"). Order zero is n:n on basic percepts: each nominated row brings one
-concept, which starts reading only its own row, at one. A concept reads no
+concept, which starts reading only its own row, at one; that is how a row
+starts and not a limit, and a concept may come to read any number of rows.
+A concept reads no
 percept's code, no place and no time, so the concept of a word reads one
 where its row is present and nothing where it is not, whatever letters the
 reading shares with it; where a form's holder stands in its place (`archer`
@@ -1808,29 +1881,61 @@ value arriving at 1.5 lies above the one and below the other.
 **Symbols are split from concepts and have no dimensions** (Alec, 2026-11-14).
 They are separate tensors. A symbol has no vector, place, form or trust read
 as a direction, and it stores no `.where` or `.when`; its `.where` is written
-when STM reads it. A symbol is two unsigned rows of a Pi, one for each lane,
-and it brings one concept. It is made when MTM nominates it on recurrence, or
-by `interpret` for a meta concept; never at a concept's allocation.
+when STM reads it. A symbol is two unsigned rows of a Pi, one for each lane.
+It is made implicitly by the Pi, or when MTM nominates it on recognizing that
+its constituents always occur together, or by `interpret` for a meta concept;
+never at a concept's allocation, and never for a concept as a rule.
+
+**A symbol is a region of sameness.** "My dog" and "Voyager" are two concepts
+and one symbol, and each keeps its own vector: "we don't want to represent
+both with one vector, we want a region in semantic space. So the region
+specification for similarity is defined with the pi" (Alec, 2026-11-20). The
+concepts that are the same thing are not the constituents of the symbol's
+row; they are what falls in its region, as the occurrences of a word fall in
+its basic percept's. The constituents of a basic percept are coordinates of
+perceptual space, and the constituents of a symbol are coordinates of
+conceptual space. The members of a similarity class fall in "a conic region
+in similarity space, which may in fact be a subspace of that space (thus
+irrelevant details of members are removed by their variation in that
+subspace)" (Alec, 2026-11-20): a coordinate with no weight is raised to the
+power zero and the row does not see it, and a product cannot keep its weight
+on a coordinate where the members differ, so the cone is over what the
+members share. A symbol's cone lies in the conceptual space of one order and
+is tested against that order's concepts alone, "because the concepts at
+every order live in spaces with different geometries". A symbol may hold one
+concept or several, and symbols may be made liberally: a symbol of one
+concept "still defines a neighborhood of identity and enables us to reason
+over the concept (i.e. with other concepts)" (Alec, 2026-11-20). None is
+addressed as "the" symbol of a concept.
 
 **The cycle.** At an order with $n$ concepts there are $n$ signed values,
-stored as $2n$ unsigned lanes. The rows above that MTM has nominated, the
-symbols, read those lanes, each row its own lane; the Not joins each symbol's
-pair into one signed value, and the next Sigma reads those. A Not entry above
-order zero is from one symbol to one concept: the concept reads that symbol's
-pair swapped. The Sigma
-above order zero reads no vector and pools nothing. A symbol of order $k$
-reads the concepts of every order below $k$; the orders are not strictly
-ramified (Alec, 2026-11-17). Between conceptual orders only activation
-passes: a pull within one order does not pass through a symbol.
+stored as $2n$ unsigned lanes. The rows above that are the symbols, made by
+the Pi or nominated by MTM, read the space of those concepts on its two
+lanes; the Not offers each symbol's value and not-value, and the next Sigma
+reads those. A concept that reads a symbol's not-value has a Not entry on
+it. The Sigma above order zero reads no vector and pools nothing. An order
+rises at a Sigma and nowhere else: a Pi makes things within an order, and the
+next Sigma makes the kinds of the order above. The orders are not strictly
+ramified at the kind: a kind collects from every epistemic level below its
+own, and a meta concept reaches its word and its object in one step (Alec,
+2026-11-17). Between conceptual orders only activation passes: a pull within
+one order does not pass through a symbol.
 
-**Room.** Each nominated row brings one concept, so at every order the
-concepts equal the rows in number, and a new concept reads only its own row,
-at one. Concepts have no nomination or promotion of their own: MTM's
+**Mereology and taxonomy.** "Mereology is part-whole relation at the
+perceptual level which, when it occurs over symbols, becomes a taxonomy
+(because the sigma fold makes the concepts abstract)" (Alec, 2026-11-20).
+Among percepts a whole holds its parts; among symbols a kind holds its
+members. Percepts and concepts live in topological spaces; symbols do not.
+
+**Room.** Each nominated row brings one concept to start with, so at every
+order the concepts equal the rows in number, and a new concept reads only its
+own row, at one. Concepts have no nomination or promotion of their own: MTM's
 promotions of classes, identities and percept collections are nominations of
 rows. The storage is allocated beforehand by a geometric taper (Alec,
 2026-11-19: "Geometric taper is not a bad rule"): order zero has as many
 concepts as basic percepts, and each order above has half the units of the
-one below and connects to the two rows beneath it. The Pi and the Sigma above
+one below; a concept of order one reads the two kinds of row beneath it, the
+basic percepts and the symbols. The Pi and the Sigma above
 order zero are stored as compressed rows on the device, with an index of
 columns beside them, and grow into that capacity.
 
@@ -1841,7 +1946,13 @@ penalty thins the values of entries that exist; it does not make a matrix
 sparse. A promotion above order zero writes an edge at one into the capacity
 allocated beforehand. The structure of a meta concept is never thinned. A
 row enters a set, or two rows are taken as neighbours, by the mereology or by
-a promotion, never by the likeness of their codes. Thought reads the
+a promotion. The likeness of codes pairs nothing except through a row's cone:
+what falls in a symbol's cone in conceptual space is that thing. Declared
+classes are not fixed: a class such as `letter` starts from what is declared
+and is moved by what is learned, since fixed membership "makes the mind
+brittle; it might not learn greek letters or novel conceptual wholes, or its
+meaningful region might be wrong (if the concept cannot move)" (Alec,
+2026-11-20). Thought reads the
 matrices: `parts(c)` and `wholes(c)` give the entries and weights of a
 concept's Pi row and of the rows above that read it, with the Not entries
 told apart ([Reasoning](Reasoning.md)).
@@ -1851,8 +1962,9 @@ told apart ([Reasoning](Reasoning.md)).
 Animal cognition "sees particular events not happening, but it does not
 negate ideas" (Alec, 2026-11-17). At the basic level a Not entry is from one
 basic percept's row to one concept. It records that something expected is
-absent. It is made implicitly by the gradient, and explicitly by omission,
-the concept expected and not come. With no Not entry, raising an input never
+absent. It is made implicitly by the gradient, which an omission (the
+concept expected and not come) teaches, and explicitly by a declared Not
+member. With no Not entry, raising an input never
 lowers a concept, and a concept is against only by evidence against. What
 tells a human mind from an animal's is the recursion of the structure, which
 symbols enable, and not the Not. The operator `not` of a sentence or a
@@ -1862,8 +1974,8 @@ mind speaks only of what is.
 
 The two-sided code does part of the Not's work with no learned entry: a
 strict whole tells against its part. An exclusion that is not a strict whole
-(X inhibits A where no row AX exists) still needs a Not entry learned from
-omission or by the gradient. On the two-lane code, with a conjunction coded
+(X inhibits A where no row AX exists) still needs a Not entry, learned by
+the gradient from omission. On the two-lane code, with a conjunction coded
 as the mereology codes it and Not entries free, negative patterning ("A or B, not both"),
 conditioned inhibition ("A alone, not A with X") and XOR are all learned.
 The basic level alone learns XOR of two perceived words with no Not entry,
@@ -1880,13 +1992,30 @@ share of all the weights it is read with. Down: a row's value is split among
 its inputs, each by its weight's share of the row. What a row receives is
 summed over its parents and children, at most one, and a Not entry passes to
 the other lane. Siblings get less than the concept that caused them. The
-spread runs once up and once down, from order zero's expectation and the
-observed field, and writes only the expected field at every order
-(`_expected_knowing`); it adds no parameter and no teacher and changes no
-evidence. It is what `intuit` runs after it deposits `expect`'s field, and a
-model with no symbols never runs it over the orders. It also runs at the end
-of the read, before comprehension takes its leaves' objects, so that an
-object a sentence's words primed is preferred.
+spread is expectation: it runs once up and once down from the observed
+field, and writes only the expected field at every order
+(`_expected_knowing`); it adds no parameter and changes no evidence. A model
+with no symbols never runs it over the orders. It also runs at the end of the
+read, before comprehension takes its leaves' objects, so that an object a
+sentence's words primed is preferred.
+
+**Expectation is the reconstruction in stages.** There is no map of
+expectation beside the structure (Alec, 2026-11-19: "a reconstruction that
+happens in stages: we are predicting the state of percepts, concepts, and
+output"). What is expected is what the spread gives on the Pi, the Not and
+the Sigma of each order, in three stages: the percepts expected at order
+zero, the concepts expected at each order, and the output. Each stage is
+compared with what the whole sentence has there, and its teacher is the
+reconstruction's error; where part of a sentence is hidden, the error at what
+was hidden teaches it. Its interconnection is the structure's, which is
+sparse, "which should help amplify the salience". It "is not counted as
+evidence, it is just removing some of the burden from later layers. it
+should be used only to guess at network activation" (Alec, 2026-11-19), and
+it is written apart from what is observed. It joins the signal as a gain on
+what arrives, one number for each symbol, with the whole gain detached ("it
+stops a gradient, but passes the entire signal"), and as a prime of
+selection that attention, the chooser and retrieval read detached
+([Expectation and retention](ExpectationRetention.md)).
 
 **The spread reaches the first layer.** On the Pi of order zero a part that
 is present raises the rows that read it, and a row gives a share to each of
@@ -1955,8 +2084,8 @@ future context. The same head is read at symbol arrival and by the field
 read during the read; no sentence is estimated, at a close or before the
 next row. The original identity and activation gain stay separate.
 The conceptual spread that primes attention, the chooser and retrieval is not
-this head's: it is `expect`, the conceptual space's own learned map ("C. Parse
-time" above).
+this head's: it is expectation, the spread on the structure's own Pi, Not
+and Sigma ("C. Parse time" above).
 
 Document addresses from the corpus cursor reset only the affected row's
 transient prediction context. Soft boundaries retain it; hard resets and
@@ -2360,8 +2489,8 @@ Trailing columns with zero extent in every stream are omitted before crossing
 events with features and attention brackets. Interior gaps remain, preserving
 canonical tile adjacency.
 
-`intuit` deposits `expect`'s field and propagates it up the orders ("expect,
-intuit and marker" below). The firing of a
+`intuit` writes the intuited field of its own map into knowing and carries it
+up the orders ("expect, intuit and marker" below). The firing of a
 stored implication leaves it and is reached through `infer` (Alec,
 2026-11-14: "the existing logic can be introduced as implication"). A firing
 holds one order-zero Sigma-over-Pi result and
@@ -2682,13 +2811,13 @@ Output is a sequence of order-0 points, one decode per item; the word order come
 
 The architecture is a dual-process model, and the distinction is structural, not a label on speeds. The line between the two systems "is equivalently at symbols, or higher-order logic (which is what symbols allow)" (Alec, 2026-11-18). The distinction is the design's account of what separates animal from human cognition.
 
-**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the first block of Pi, Not and Sigma that makes the order-0 concepts, the order-0 decoder, `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking at order zero: MTM's nomination of basic percepts and its behavioral chains, by recurrence. `intuit` deposits `expect`'s field and, in a mind with symbols, runs the vertical spread over the orders ([Sigma and Pi Layers](#sigma-and-pi-layers)); a model with no symbols never runs the spread above order zero. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
+**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the first block of Pi, Not and Sigma that makes the order-0 concepts, the order-0 decoder, expectation (the reconstruction in stages on the structure's own Pi, Not and Sigma, run once at the open pass by `ConceptSpread.open_prediction`; in a mind with symbols it runs over the orders, [Sigma and Pi Layers](#sigma-and-pi-layers)), intuition's own map (a Pi, Not and Sigma outside the architecture, which the operator `intuit` calls), and memory's linking at order zero: MTM's nomination of basic percepts and its behavioral chains, by recurrence. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
 
 **System 2** is the higher-order logic that symbols allow: symbols, which begin at order 1 with what MTM promotes there, its identities among them, and the higher orders, the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
 
 **The two inverses (Alec, 2026-11-10).** "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." In code names: `BasicModel.reverse` is the System 1 inverse and reads no grammar (`reconstruction_reverse`); with symbols on, `SentenceField.sentence_generated` runs the generate walk on the sentence's own end slots, `OutputOccurrences.generated` places the emitted terminals, and the same `reverse` follows (`reconstruction_order_zero`).
 
-**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's places or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 through the read from a field to a point: where sentences are comprehended, a stack of its own (`idea_stack`) reads the order-zero field observed at a sentence's open into one point, and its teacher is the root idea the kept reading leaves (`IdeaRead.complete`, cost `expectation.idea`), so System 1 learns to give at observation the idea System 2 made of the input (`IdeaRead.expected_point` gives it on demand). The same read is an option for part of a sentence (Alec, 2026-11-19): a look over two or more words returns their percepts together, the basic level reads them at one time into one idea, the idea the grammar composes from the same words one by one is its teacher, and the grammar may take the read idea as the meaning of one constituent in place of the operations that compose it. No form, row or symbol is made for such a fragment ("we don't need "the cat" to be a form"); the option is off unless a configuration sets it ([Language](Language.md)). With no System 2 the read is the field's centroid (`FieldProjection.key`). `expect` is taught by omission, and `intuit` has no map or teacher of its own. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains `expect`, which belongs to System 1, and credits no System 2 departure.
+**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's places or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 through the read from a field to a point: where sentences are comprehended, a stack of its own (`idea_stack`) reads the order-zero field observed at a sentence's open into one point, and its teacher is the root idea the kept reading leaves (`IdeaRead.complete`, cost `expectation.idea`), so System 1 learns to give at observation the idea System 2 made of the input (`IdeaRead.expected_point` gives it on demand). The same read is an option for part of a sentence (Alec, 2026-11-19): a look over two or more words returns their percepts together, the basic level reads them at one time into one idea, the idea the grammar composes from the same words one by one is its teacher, and the grammar may take the read idea as the meaning of one constituent in place of the operations that compose it. No form, row or symbol is made for such a fragment ("we don't need "the cat" to be a form"); the option is off unless a configuration sets it ([Language](Language.md)). With no System 2 the read is the field's centroid (`FieldProjection.key`). Expectation is taught by the reconstruction's error, omission among it; `intuit`'s map is taught by the field that thought leaves, with the output's cost (Alec, 2026-11-20: "restore what you approved on 2026-11-12, the field that thought leaves, with the output's cost"), and omission teaches expectation alone. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains expectation, which belongs to System 1, and credits no System 2 departure.
 
 **Gradient.** Under the loop the shared row is perception, the field's parameters (the entries of the Pi and the Sigma, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's, so to first order a step taken for the answer cannot increase reconstruction's loss. Each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning ([GradientFlow](GradientFlow.md#default-projected-gradients)).
 
@@ -2846,8 +2975,8 @@ grammar reading gates all four word multisets; the field count is an audit.
 Byte identity and coverage are value-only audits.
 
 Thought adds no field columns. STM thought ideas carry their model-clock `.when`
-and an empty `.where`; `intuit` deposits `expect`'s field detached, and
-`expect` learns from omission. Numeric heads keep the forward head with `answerSynthesis=false`.
+and an empty `.where`; `intuit` writes the intuited field into knowing,
+marked as intuition, and expectation learns from the reconstruction. Numeric heads keep the forward head with `answerSynthesis=false`.
 
 ### Whole paths and concept episodes (2026-11-11)
 
@@ -2879,8 +3008,8 @@ Before the keep, thought reads the scored reference plan through a temporary com
 ### The operators
 
 A grammar file declares three kinds of operator, and what a file declares
-decides what runs. Examination operators are attention's, `focus` and
-`unfocus`, which act on the request's two lanes, and the grammar decision to
+decides what runs. The examination operators are attention's one act,
+`attend`, which acts on the request's two lanes, and the grammar decision to
 `interpret` ([One attention](#one-attention)); the loop of looks runs in every
 file that declares one. Field operators are `intersection`, `union` and
 `not`, with one definition of their logic on the two lanes: the weighted
@@ -2983,34 +3112,40 @@ the lane against, so a claim can be true, false, both or neither
 
 ### expect, intuit and marker
 
-`expect` is a learned map from one space to another, not an explicit rule,
-and so is each kernel of `marker` and the read from a field to a point
-(`idea_stack`); `intuit` uses `expect`'s map. Each map is a `SigmaPiStack`, a
-row of fused `SigmaPiLayer` pairs of the same structure as the layers: in
-each pair a Pi over the two lanes of what it reads, with entries of zero or
-more, and a Sigma whose entries are for or Not, giving one signed number in
--1 to 1 for each output, with no clip and no way back. The stacks read
-concepts, which are scalars, as their two lanes. `expectLayers` and
-`ideaLayers` are 1 pair and `markerLayers` 2, and a new stack, whose last
-Sigma starts at zero, adds nothing
+Expectation and intuition are two things, and they differ by where they
+stand and by who calls them (Alec, 2026-11-19: "if expectation comes from the
+arch, please let intuit have the pi-not-sigma that exists outside of the
+architecture. We should not call it "the expected field", since it is called
+from an operator, whereas expect is built in to a model parameter").
+
+| | Expectation (`expect`) | Intuition (`intuit`) |
+| --- | --- | --- |
+| Where it is computed | in the architecture: the spread on the structure's own Pi, Not and Sigma | outside the architecture: a Pi, Not and Sigma of its own, from concepts to concepts |
+| What turns it on | built in; a parameter of the model | an operator, when thought calls it |
+| What it gives | the expected field, a guess at activation, never evidence | the intuited field, which the operator writes into knowing, marked as intuition |
+| Taught by | the reconstruction in stages: percepts, concepts, output | the field that thought leaves, with the output's cost |
+
+Intuition's map, each kernel of `marker`, and the read from a field to a
+point (`idea_stack`) are learned maps from one space to another, not explicit
+rules. Each is a `SigmaPiStack`, a row of fused `SigmaPiLayer` pairs of the
+same structure as the layers: in each pair a Pi over the two lanes of what it
+reads, with entries of zero or more, and a Sigma whose entries are for or
+Not, giving one signed number in -1 to 1 for each output, with no clip and no
+way back. The stacks read concepts, which are scalars, as their two lanes,
+and a new stack, whose last Sigma starts at zero, adds nothing
 ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
 
-- `expect` has one moderate hidden layer, from the whole observed order-zero
-  field to the whole expected field over the same rows. Its field is
-  published once, at the open pass, read detached and taught by omission
-  ("C. Parse time" above); it is also evaluated, unpublished and untaught,
-  for each look's forecast ("A look's forecast" under
-  [One attention](#one-attention)). `ActivationPredictor` is built in its place where `expectationMap`
-  is `predictor`.
-- `intuit` is `expect`'s map and the propagation over the orders (Alec,
-  2026-11-17), with no stack or teacher of its own. When thought calls it,
-  it deposits `expect`'s field from the open pass, detached, into the order-zero
-  block of the sentence's knowing at the observed places, and runs the
-  vertical spread, once up and once down, writing the expected field at
-  every order ([Sigma and Pi Layers](#sigma-and-pi-layers)), so thought, the
-  answer and the output read it.
-  In thought it has the evidence kind `intuition`, which can answer; the
-  firing of a stored implication is reached through `infer`
+- `expect` is no map of its own. Its field is the spread from the observed
+  field, published once at the open pass and read detached ("C. Parse time"
+  above); it is also taken, unpublished, for each look's forecast ("A look's
+  forecast" under [One attention](#one-attention)). Omission teaches it alone.
+- `intuit` is an operator of thought. When thought calls it, its own map
+  gives the intuited field from the observed concepts of order zero; the
+  operator joins it into its stream's knowing at the observed places, marked
+  as intuition, and carries it up the orders, so thought, the answer and the
+  output read it. Nothing reads it as expected. In thought it has the
+  evidence kind `intuition`, which can answer; the firing of a stored
+  implication is reached through `infer`
   ([Reasoning](Reasoning.md#intuition-on-the-field-map)).
 - `marker` is a one-operand family of learned kernels, each from the
   operand's form (percept coordinates) to its meaning (concept coordinates).
