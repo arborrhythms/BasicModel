@@ -1140,7 +1140,7 @@ and has the rest commented out.
   kernels: hopefully the architecture will be able to decide which family
   to apply: e.g. tense, aspect, plurality, based on sentence context."
   Each kernel is a stacked sigma-pi
-  ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)) from the
+  ([Reasoning](Reasoning.md#the-stacked-sigma-pi)) from the
   operand's form, its percept coordinates, to its meaning, its concept
   coordinates. The form passes unchanged; the chosen kernel gives, for each
   coordinate of the meaning on each lane, a raise and a lowering, and their

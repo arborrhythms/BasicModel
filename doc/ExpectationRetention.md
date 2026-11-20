@@ -32,36 +32,36 @@ both paths, concept expectation selects active concepts on the parallel pass
 only, and on the serial path expectation selects no concept.
 
 The conceptual spread that primes attention, the chooser and retrieval is
-`expect`, a learned map of the conceptual space from the whole observed
-order-zero field, both lanes, to the whole expected field over the same rows:
-a field to a field, many concepts to as many. It is built only on the
-conceptual space that owns the concepts. It is a stacked sigma-pi map
-(`SigmaPiStack`) with one moderate hidden layer (`expectHidden`, 64 by
-default). A stacked sigma-pi map is a row of fused pairs (`SigmaPiLayer`),
-each the structure of every order: a Pi of unsigned rows (`PiLayer3`), each
-row the product of its inputs' memberships on one lane raised to weights at
-zero or above, then a Sigma (`SigmaLayer3`), $\tanh(x\,U)$ with no bias,
-whose entries are for or Not and which gives one signed number in $[-1, 1]$
-for each output ([Architecture](Architecture.md#sigma-and-pi-layers)). The
-next pair reads that number as its two lanes. `expect` has one pair
-(`expectLayers`). It reads the two evidence lanes as two inputs, and starts by
-adding nothing, since its last Sigma's weights start at zero.
-At the open pass (`ConceptSpread.open_prediction`) `expect` reads the
+`expect`, and it has no map of its own. It is the reconstruction made in
+stages on the structure's own Pi, Not and Sigma (Alec, 2026-11-19: "a
+reconstruction that happens in stages: we are predicting the state of
+percepts, concepts, and output. using the existing architecture will allow us
+to to sparse in interconnection, which should help amplify the salience").
+What is expected is what the vertical spread gives on each order's matrices
+([Architecture](Architecture.md#the-vertical-spread-and-the-way-back)), in
+three stages: the percepts expected at order zero, the concepts expected at
+each order, and the output. It is built in, turned on by a parameter of the
+model. At the open pass (`ConceptSpread.open_prediction`) the spread reads the
 sentence's observed field and publishes what it gives (`_expected_knowing`),
 which attention, the chooser, retrieval and `ConceptSpread.rule_order` read
-detached. It is evaluated again, without publishing, for the forecast of each
-look ([below](#the-forecast-of-a-look)). Its teacher is omission: where
-`Omission.stage` hid part of the sentence, its cost, `expectation.concepts`,
-compares what it expects from the lossy field with the field with the hidden
-units present, which is detached; a sentence with nothing hidden gives it no
-cost. The conceptual space's earlier `ActivationPredictor` is built only
-where `expectationMap` is `predictor` (Alec, 2026-11-14: "Let's keep the old
-form on hand in case we want to revert"). Placement does not read the spread,
-since codes must not read a value computed from codes: `expect` reads
-activations, its output is not written to the seen ledger, and no cost of it
-moves a place. `intuit` has no map of its own: it is this map's field carried
-up the orders ([below](#one-field-map-and-the-read-to-a-point);
-[Reasoning](Reasoning.md#system-1-one-field-map-and-a-read-to-a-point)).
+detached. It is taken again, without publishing, for the forecast of each
+look ([below](#the-forecast-of-a-look)).
+
+Its teacher is the reconstruction's error: each stage is compared with what
+the whole sentence has at that stage. Where `Omission.stage` hid part of the
+sentence, the error at what was hidden teaches it; the concepts' stage,
+`expectation.concepts`, compares what is expected from the lossy field with
+the field with the hidden units present, which is detached, and a sentence
+with nothing hidden gives that stage no cost. Omission teaches expectation
+alone. What is expected is written apart from what is observed: it "is not
+counted as evidence, it is just removing some of the burden from later
+layers. it should be used only to guess at network activation" (Alec,
+2026-11-19). So the error at a hidden word teaches the rows that hold things
+together, the symbols above, and no entry from one word's row to another
+word's concept at the same order, which would make a concept present for a
+word that is not there. Placement does not read the spread, since codes must
+not read a value computed from codes: its output is not written to the seen
+ledger, and no cost of it moves a place.
 
 The content gain is $m\,(1 - g\kappa + g\kappa s)$ for gain strength $g$ and
 confidence $\kappa$, where $s$ is the saturated sum of
@@ -149,15 +149,30 @@ prior and content remain available to awareness even when the content gain is
 zero. An omission can support an explicit checked `not` inference; it is
 never an external observation.
 
-## One field map and the read to a point
+## Intuition's map and the read to a point
 
-`expect` and `intuit` are one map (Alec, 2026-11-17). When thought calls
-`intuit` (`IntuitionField.read`), it takes the order-zero block of the field
-`expect` published at the open pass, detached, joins it by maximum into its
-stream's knowing at the observed places, and propagates it upward by the closure
-of the definitions (`FieldProjection.close`); other orders and other streams
-are kept. `intuit` has no parameters, teacher or cost of its own.
-Propagation downward is not built.
+Intuition is not expectation (Alec, 2026-11-19: "if expectation comes from
+the arch, please let intuit have the pi-not-sigma that exists outside of the
+architecture. We should not call it "the expected field", since it is called
+from an operator, whereas expect is built in to a model parameter").
+`intuit` is an operator of thought, and it has a Pi, Not and Sigma of its own
+that stands outside the architecture: a stacked sigma-pi map (`SigmaPiStack`)
+from the observed concepts of order zero, both lanes, to the same concepts. A
+stacked sigma-pi map is a row of fused pairs (`SigmaPiLayer`), each the
+structure of every order: a Pi of unsigned rows, each row the product of its
+inputs' memberships on one lane raised to weights at zero or above, then a
+Sigma, $\tanh(x\,U)$ with no bias, whose entries are for or Not and which
+gives one signed number in $[-1, 1]$ for each output
+([Architecture](Architecture.md#sigma-and-pi-layers)). It starts by adding
+nothing, since its last Sigma's weights start at zero. When thought calls
+`intuit`, the map gives the *intuited field*; the operator joins it into its
+stream's knowing at the observed places, marked as intuition, and carries it
+up the orders by the closure of the definitions (`FieldProjection.close`);
+other orders and other streams are kept. Nothing reads the intuited field as
+expected, so expectation is never evidence, with no exception. Its teacher is
+the field that thought leaves, with the cost of the output (Alec,
+2026-11-20: "restore what you approved on 2026-11-12, the field that thought
+leaves, with the output's cost").
 
 A field can also be read to one point: many concepts to one value of a code's
 width. With no sentence comprehension the read is the centroid of the field's
@@ -171,23 +186,24 @@ field on both lanes, held detached at the sentence's open
 the kept close, the read of that field is compared with the kept reading's
 root idea (`record.meaning_root`), detached, by squared error over the streams
 present (`expectation.idea`, `IdeaRead.complete`). Its gradient reaches only
-its own stack. The expected point is this read of `expect`'s field
+its own stack. The expected point is this read of the expected field
 (`IdeaRead.expected_point`); nothing reads it yet.
 
-So the two maps have two teachers: the field map learns the whole input from
-what omission hid, and the read to a point learns from the idea that System 2
-concludes. Why a point is kept at all, as a key and not as what is reasoned
-on, is in
+So there are three teachers: expectation learns from the reconstruction in
+stages, omission among it; intuition's map learns from the field that thought
+leaves and from the output; and the read to a point learns from the idea that
+System 2 concludes. Why a point is kept at all, as a key and not as what is
+reasoned on, is in
 [Philosophy](Philosophy.md#expectation-as-a-gain-attention-as-exclusion).
 
 ## The forecast of a look
 
-Before a look is perceived, `expect` forecasts what should be at its place
+Before a look is perceived, expectation forecasts what should be at its place
 from everything seen elsewhere (Alec, 2026-11-16: "span left out").
 `LookForecast` keeps a path's located readings. For a look it pools, on each
 lane of each order-zero row, the greatest reading among those whose extent
 lies outside the look; a reading that overlaps the look, even an earlier
-reading of the same place, gives nothing. It evaluates `expect` on
+reading of the same place, gives nothing. It takes the spread on
 that field without publishing it (`ConceptSpread.expected`) and closes the
 forecast upward with `FieldProjection.close`. Every order-zero address is
 forecast, a silent one too. There is one gain field: the look's activity is
@@ -206,7 +222,7 @@ only when the look returns that one word; a look over several words reads the
 sum of its words' latest pairs. `attend` reads the pairs through two columns
 of its context projection that start at zero (`AttentionContext.project`), so
 an untaught `attend` asks as it would without them. The comparison is reported and is
-not a cost: `expect` is still taught only by omission, at the open pass.
+not a cost: expectation is taught by the reconstruction, at the open pass.
 
 ## The observation and its surprise
 
@@ -248,8 +264,8 @@ its declared weight (`expectation.word` at `wordExpectationLossWeight`,
 judge.
 
 Source encodings, observed targets, thought effects and durable history are
-detached. Only the expectation maps (the shared predictor, `expect`, the read
-to a point and the percept predictor) receive local E gradients; in the one
+detached. Only the expectation maps (the shared predictor, the read to a
+point and the percept predictor) receive local E gradients; in the one
 backward every consumer reads expectation's output detached at the point of
 use, so its parameters receive exactly their own local terms. Both the
 whole-path keep rule and chooser credit use `R + A`; E is independent. This

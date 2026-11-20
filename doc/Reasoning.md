@@ -56,8 +56,8 @@ copula can bind directly to that row's addressed column and fill it.
 
 `bind` (a selected reference site, evidence `reference`), `inferBackward`
 (`infer`'s converse spelling, the subgoal face) and `non` (both lanes
-withheld) complete the catalogue with `intuit`, which deposits the field
-`expect` gave when the sentence was observed and carries it up the orders
+withheld) complete the catalogue with `intuit`, which writes the intuited
+field of its own map into knowing and carries it up the orders
 ([Intuition, understanding and thought](#intuition-understanding-and-thought-alec-2026-10-30)),
 with the evidence kind `intuition`.
 
@@ -200,7 +200,7 @@ address throughout a pass. The pass itself is described in [STM](STM.md).
 
 ## Intuition, understanding and thought (Alec, 2026-10-30)
 
-In the dual-process terms of 2026-11-09, expectation and `intuit` are System 1,
+In the dual-process terms of 2026-11-09, expectation and intuition's map are System 1,
 and `infer`'s selection in the serial workspace, with `query`'s recall, is
 System 2
 ([Architecture](Architecture.md#dual-process-theory-as-a-design-consideration)).
@@ -214,19 +214,21 @@ output, and thoughts are a distillation of intuition."
 
 - *Understanding* is the conceptual definitions, trained by
   reconstruction: they explain the input.
-- *Expectation* is bottom-up. `expect` is a learned map, a stacked
-  sigma-pi from the observed field of order zero to the expected field
-  over the same concepts, run once per sentence at the open pass
-  ([below](#expectation-a-stacked-sigma-pi)). The expected field is the
+- *Expectation* is bottom-up. It is the reconstruction in stages on the
+  structure's own Pi, Not and Sigma, run once per sentence at the open pass
+  ([below](#expectation-in-stages-on-the-structure)). The expected field is the
   spread of activation that primes attention, the chooser and retrieval.
-  It is taught by omission, against the detached field.
-- *Intuition* is top-down. `intuit` has no map of its own: when thought
-  calls it, it deposits `expect`'s field into the sentence's knowing and
-  spreads it over the orders, up and then down
-  ([below](#intuition-on-the-field-map)). What is
-  conditioned by desired output is the choice to call it, which the
-  chooser learns from the outcome. An intuition may answer, under its own
-  evidence kind `intuition`.
+  It is taught by the reconstruction's error, omission among it, and it is
+  never evidence.
+- *Intuition* is top-down. `intuit` is an operator of thought with a Pi,
+  Not and Sigma of its own outside the architecture: when thought calls it,
+  its map gives the intuited field, which the operator writes into the
+  sentence's knowing and carries up the orders
+  ([below](#intuition-on-a-map-of-its-own)). Its map is taught by the field
+  that thought leaves, with the output's cost; what is conditioned by
+  desired output is also the choice to call it, which the chooser learns
+  from the outcome. An intuition may answer, under its own evidence kind
+  `intuition`.
 - *Thought* is the work of the serial workspace (the eight STM chunks):
   `query` recalls, and `infer` applies a held or stored rule, its trust
   pair computed from evidence, never learned.
@@ -298,7 +300,7 @@ take it, and as forgetting removes it when it goes unused.
 
 *Where it fits.*
 
-- *Bottom-up expectation as priming.* `expect`'s expected field is
+- *Bottom-up expectation as priming.* The expected field is
   spreading activation (Collins & Loftus 1975). It is not prediction in the
   sense of predictive processing (Clark 2013; Friston 2010): the model
   learns by reconstructing its input, and expectation fills in what is
@@ -311,9 +313,10 @@ take it, and as forgetting removes it when it goes unused.
   "beyond understanding" part.
 - *Two kinds of fast thinking.* Glöckner & Witteman (2010) distinguish four
   kinds of intuition, among them an associative and a constructive,
-  goal-driven one. Here the associative kind is `expect`'s map, which
-  `intuit` reads, and the goal-driven part is the chooser's choice of when
-  to call `intuit` and what `infer` takes.
+  goal-driven one. Here the associative kind is expectation, and the
+  goal-driven part is intuition's map, taught by what thought leaves and by
+  the output, with the chooser's choice of when to call `intuit` and what
+  `infer` takes.
 - *Thought distilled from intuition.* Poincaré and Hadamard describe
   discovery as unconscious combination offering candidates, a sense of fit
   picking one, and conscious work verifying it; global workspace theory
@@ -342,28 +345,34 @@ take it, and as forgetting removes it when it goes unused.
   supplied-answer lessons are its kind environment, and wrong or noisy
   answers would train a confident bad habit of trusting hunches.
 
-## System 1: one field map and a read to a point
+## System 1: two networks and a read to a point
 
 On 2026-11-12 Alec set out two networks of System 1, "one that learns the
 input based on missing information, and one that learns from conceptualizing
-or thinking about the input". On 2026-11-17 he made them one map and a read:
-"we have expect doing N:N and intuit might as well use that same N:N. we will
-augment those with the N:1 mapping that we just discussed."
+or thinking about the input". They are expectation and intuition's map, with
+expectation now the architecture's (Alec, 2026-11-19: "if expectation comes
+from the arch, please let intuit have the pi-not-sigma that exists outside of
+the architecture"). Beside them is a read from a field to a point.
 
-- *The field map*, `expect`, takes the observed field of order zero to the
-  expected field over the same concepts: many concepts to as many. `intuit`
-  uses it and has no map of its own. It is taught by omission, by
-  expectation over the input itself.
+- *Expectation*, `expect`, is the reconstruction in stages on the
+  structure's own Pi, Not and Sigma: the percepts, the concepts at each
+  order, and the output. It is built in, and taught by the reconstruction's
+  error, which is expectation over the input itself; omission teaches it
+  alone.
+- *Intuition's map* is a Pi, Not and Sigma of its own, from the observed
+  concepts of order zero to the same concepts, which the operator `intuit`
+  calls. It is taught by the field that thought leaves, with the output's
+  cost (Alec, 2026-11-20).
 - *The read to a point* takes a field to one point, many concepts to one:
   "The N:1 read can be taught with System 2's idea as its target". Where
   sentences are comprehended it is a stacked sigma-pi of its own, taught by
   the idea that comprehension leaves; with no System 2, "The N:1 read can be
   centroid if we are doing animal cognition".
 
-Both work without the grammar, and the field map and the taught read are
-both stacks of sigma and pi. They differ in their teacher: the input, for the field map, and the System 2 content, for
-the read to a point. The mechanism is in
-[Expectation](ExpectationRetention.md#one-field-map-and-the-read-to-a-point).
+All three work without the grammar. They differ in their teacher: the
+input, for expectation; thought and the output, for intuition's map; and the
+System 2 content, for the read to a point. The mechanism is in
+[Expectation](ExpectationRetention.md#intuitions-map-and-the-read-to-a-point).
 
 ### Symbols, the field and the one hypersphere
 
@@ -391,7 +400,10 @@ which Alec set out as follows.
   context is the field: "the symbolic activation determines placement
   within conceptual space, but again, only relative to other concepts
   within the same order". A class is placed in this way like any other
-  concept. A type acts on its tokens through the field, up and then down
+  concept. The concepts of each order lie in a geometry of their own (Alec,
+  2026-11-20: "the concepts at every order live in spaces with different
+  geometries"), so a symbol's cone is tested against one order's concepts
+  alone. A type acts on its tokens through the field, up and then down
   to the related tokens, and not by a pull across orders: "this is system2
   influencing system1".
 - *What the context may not include.* The context of placement is the
@@ -430,24 +442,30 @@ SIGMA(basic percepts)."
   those."
 - **System 2.** The concepts of an order become symbols by a Pi, whose
   region is a cone at the origin, and those symbols become the concepts of
-  the next order by a Sigma. "system 2 creates a symbolic vertical structure
+  the next order by a Sigma. A symbol's constituents are coordinates of
+  conceptual space, and its cone lies in "a subspace of that space (thus
+  irrelevant details of members are removed by their variation in that
+  subspace)" (Alec, 2026-11-20). "system 2 creates a symbolic vertical structure
   on top of that, which is used by all higher-order concepts."
 - **One structure at every order** (Alec, 2026-11-17): a Pi, a Not and a
-  Sigma, with the Not as the Sigma's weights below zero
+  Sigma. The Not is a layer of options, the value or the not-value of each
+  row, and the Sigma's weights are at zero or above
   ([Architecture](Architecture.md#sigma-and-pi-layers)). A Sigma at order
   zero reads basic percepts and above it reads symbols.
 - **A cone in place of a nearest neighbour.** "in places where we now ask
   "what is close to this vector", we are effectively asking about the
   hypercone centered on that vector"; a hierarchy of cones lets a read "look
-  for part inclusion instead, which is a much faster operation". Inclusion
-  is read from the rows a symbol and a concept are made of, and no geometry
-  is added for it: "Member rows with no new geometry". That one kind lies
-  within another is the pervasion of
+  for part inclusion instead, which is a much faster operation". What falls
+  in a symbol's cone is that thing; that one kind lies within another is
+  read from the rows a kind is made of, and is the pervasion of
   [Logic](Logic.md#existence-and-pervasion-alec-2026-11-13).
 - **A symbol is a pair of rows.** A symbol is two unsigned rows of the Pi,
-  one for each lane, and brings one concept. The Not joins the pair into one
-  signed value, for less against, and the concept above reads that value
-  with a weight at zero or above (Alec, 2026-11-19: "its two lanes get passed
+  one for each lane, since a Pi has unsigned weights and cannot change a
+  sign. It is a region of sameness and may hold one concept or several:
+  "my dog" and "Voyager" are two concepts and one symbol (Alec, 2026-11-20),
+  and there is no symbol of a concept. The Not offers the pair as one signed
+  value, the value or the not-value, and a concept above reads the one its
+  entry chooses with a weight at zero or above (Alec, 2026-11-19: "its two lanes get passed
   to Not, and those are combined into on signed lane for processing by
   sigma"). A concept stays one signed value; "both" is two concepts, one for
   presence and one for absence, the second reading through an entry of the
@@ -473,7 +491,7 @@ and sigma, respectively."
   w_{ci} s_i)$, over the signed values $s_i$ that the Not gives for its
   rows, with weights at zero or above and no bias, so it is monotone. The
   size of an entry is the Sigma's weight and its sign is the Not's: a Not
-  entry gives the concept that row's pair exchanged, and an entry is never
+  entry reads the row's not-value, the pair exchanged, and an entry is never
   both. The gradient makes a Not entry where it carries an entry through
   zero, and a declared Not member makes one explicitly. Its way back gives the input by least squares where there are
   enough concepts, and a signed value on the way back is split into its two
@@ -483,7 +501,7 @@ and sigma, respectively."
   alternative to an ordinary hidden layer: a free `PiLayer3` (any weights at
   zero or more, no diagonal law, no bias) and a `SigmaLayer3` over its pairs,
   in one expression, so that a stack of them is captured as one graph.
-  `expect`, the read to a point and `marker` are such stacks.
+  Intuition's map, the read to a point and `marker` are such stacks.
 - **A basic percept is a row of the first Pi.** "we have basic percepts,
   formed as a PI, which is a (sparse) hypercone on hypercube parts and wholes
   (thus an approximation of the discrete collection that we were creating
@@ -491,7 +509,8 @@ and sigma, respectively."
   for, its parts and wholes being required, and against, the parts that the
   nearest forms holding it add, any one of which tells against it.
 - **The concepts of order zero are a sparse Sigma** over the signed values
-  that the Not gives for the nominated rows, one concept for each row. "Then
+  that the Not gives for the nominated rows, one concept for each row to
+  start with, and nothing one to one after. "Then
   those percepts are collected via a (sparse) hyperplane , via the SIGMA,
   which become zero-order concepts (or basic concepts)." A concept starts
   reading only its own row, at one, reads no code, and is then learned.
@@ -531,25 +550,24 @@ taught."
   of the second there is no interconnectivity per say: there are two spaces
   and a mapping". System 2 holds the first, as edges; System 1 holds the
   second, as maps.
-- **`expect` and `intuit` are a map.** They follow no edge. `expect` is a
-  stacked sigma-pi (below) from the observed field of order zero to the
-  expected field over the same concepts, and `intuit` reads it. A sigma over
-  single elements cannot give an
-  expectation that depends on a combination (below), so a stack starts with
-  a pi, whose units are conjunctions of their inputs.
+- **Expectation and intuition are maps.** They follow no edge. Expectation
+  is the spread on the structure's own Pi, Not and Sigma, and intuition's
+  map is a stacked sigma-pi of its own (below). A sigma over single elements
+  cannot give an expectation that depends on a combination (below), so each
+  starts with a pi, whose units are conjunctions of their inputs.
 - **One traversal, forwards and back.** "Once basic percepts run as a pi over
   parts and wholes (nicely covering that area in mereological space),
   concepts over those basic percepts will form concepts =
   sigma(pi(percepts)." And "Expect and intuit can make the same traversal
   forwards and backward (they do not have recursion)", by "the inverse path
-  because it is already present in the architecture"; "I think that intuit is
-  the same operation." The maps are not the forward path's: "For expect, both
-  sigma and pi matrices are matrices of their own." What is already there is
-  the kind of operation: "the neural pathways are there, in the sense that we
+  because it is already present in the architecture". Expectation runs on
+  the forward path's own matrices; intuition's map has matrices of its own.
+  What is already there is the kind of operation: "the neural pathways are there, in the sense that we
   already have those operations between those spaces." In a stack the way up
   is the pi stage to the hidden layer and the way down the sigma stage.
-- **What teaches the maps.** The field map by omission, and the read to a
-  point by the idea comprehension leaves, as below. So the explicit side
+- **What teaches the maps.** Expectation by the reconstruction in stages,
+  intuition's map by the field thought leaves and the output's cost, and the
+  read to a point by the idea comprehension leaves, as below. So the explicit side
   teaches the implicit one:
   "explicit membership can be used to teach implicit maps, since we have input
   (token) and output (type) provided as the teaching example for order."
@@ -581,7 +599,7 @@ time"). No form, row or symbol is made for such a fragment. Otherwise a
 conjunction of two words first exists on the conceptual side, in what the
 grammar composes, in a candidate of MTM and in a row of memory.
 
-### Expectation, a stacked sigma-pi
+### Expectation, in stages on the structure
 
 "My feeling is that order-0 expectation is a nonlinear operation over the
 conceptual field, which is not possible using the hypersphere. But a sparse
@@ -590,8 +608,69 @@ computationally, and my general feeling is that type relations are in fact
 strict (felix is a cat) but neighbor relations are not (Felix is like Ciao).
 So perhaps expectation is nonlinear in virtue of vertical propagation."
 
-The maps of System 1 are one class, a stacked sigma-pi (`SigmaPiStack`),
-built for `expect`, for the read to a point and for each kernel of `marker`.
+Expectation has no map beside the structure. It is the reconstruction made
+in stages on the structure's own Pi, Not and Sigma (Alec, 2026-11-19: "we
+are predicting the state of percepts, concepts, and output. using the
+existing architecture will allow us to to sparse in interconnection, which
+should help amplify the salience"). What is expected is what the vertical
+spread gives, once up and then down, on the matrices of every order
+(Alec, 2026-11-17):
+
+- *Up, by fan.* A concept's or a symbol's value is split among the rows that
+  read it, each by its weight's share of all the weights it is read with.
+- *Down, by share.* A row's value is split among its inputs, each by its
+  weight's share of the row. What a row receives is summed over its parents
+  and children, at most one, and a Not entry passes to the other lane.
+- *Siblings get less than the concept that caused them:* a concept present
+  at one gives every other concept the spread reaches less than one.
+- *Across orders in one step.* A kind collects from every epistemic level
+  below its own, so a meta concept primes its word and its object with no
+  symbol between.
+- *Into the first layer.* At order zero the way down goes on through the
+  mereology's own entries of the first Pi, so a part that is missing
+  receives from the rows its neighbours raised; this writes expected
+  percepts, and a row still requires its members.
+
+It has three stages, the percepts expected at order zero, the concepts
+expected at each order, and the output, and each is compared with what the
+whole sentence has at that stage. It publishes its field once per sentence,
+at the open pass (`ConceptSpread.open_prediction`), and is taken again,
+unpublished, to forecast each look from everything outside it
+([Expectation](ExpectationRetention.md#the-forecast-of-a-look)). It also runs
+at the end of the read, before comprehension takes its leaves' objects, so
+that the object a sentence's words primed is preferred. A model with no
+symbols never runs it over the orders.
+
+What reads an expectation, attention's relevance, the compose chooser,
+retrieval and the order of stored rules (`ConceptSpread.rule_order`), reads
+it detached, and the guard of [Architecture](Architecture.md) stands: codes
+never read a value computed from codes. It "is not counted as evidence, it
+is just removing some of the burden from later layers. it should be used
+only to guess at network activation" (Alec, 2026-11-19); it joins the signal
+as a gain with its gradient stopped and as a prime of selection. What
+teaches it is the reconstruction's error, omission among it
+([Training](Training.md), "Adaptive omission"): where units of the sentence
+were hidden, the concepts' stage (`expectation.concepts`) is the difference
+between what is expected from the lossy field and the field with the hidden
+units present, which is a teacher and never a differentiable target. A
+sentence with nothing hidden gives that stage no cost. The error at a hidden
+word teaches the rows that hold things together, the symbols above, and no
+entry from one word's row to another word's concept.
+
+Likeness alone cannot give an expectation that depends on a combination.
+Take four sentences in which the word to expect depends on the pair before
+it: A and B give X, C and D give X, A and D give Y, C and B give Y. With
+likeness pooled by a sum, X must beat Y in the first two and lose in the
+last two, and adding each pair of conditions makes one quantity both
+greater and less than zero. A row of a Pi that holds each pair and a Sigma
+that gives the word expect the right word in all four, with each word on
+coordinates of its own; one linear map does not.
+
+### The stacked sigma-pi
+
+The learned maps of System 1 beside the structure are one class, a stacked
+sigma-pi (`SigmaPiStack`), built for intuition's map, for the read to a
+point and for each kernel of `marker`.
 
 - *A pair.* A stack is a row of fused pairs (`SigmaPiLayer`), each a Pi and
   then a Sigma. The Pi gives, for each symbol, a row for over the input's
@@ -600,10 +679,9 @@ built for `expect`, for the read to a point and for each kernel of `marker`.
   symbol's pair and gives one signed number in $[-1, 1]$ for each output,
   its entries for or Not. A pair has no inverse and costs what an ordinary
   layer of the same weights costs.
-- *Several pairs.* The keys `expectLayers`, `ideaLayers` and
-  `markerLayers` count pairs (1, 1 and 2). Each pair's signed output is read
-  by the next pair as its two lanes, its positive part for and its negative
-  part against, and nothing is clipped between pairs.
+- *Several pairs.* Each pair's signed output is read by the next pair as its
+  two lanes, its positive part for and its negative part against, and
+  nothing is clipped between pairs.
 - *Lanes.* An input enters on its two lanes, for and against, and the
   stack reads concepts, each one signed value held as its two lanes. A
   symbol's two rows are joined by the Not into one signed value, for less
@@ -614,70 +692,24 @@ built for `expect`, for the read to a point and for each kernel of `marker`.
   generator of its own, so building a stack changes no other random number
   of the model.
 
-`expect` is a stack with one moderate hidden layer (Alec, 2026-11-14:
-"stack a sigmaPi with only a moderate hidden layer (full input, full output,
-so it resembles only few percepts)"). Its input is the whole observed field
-over the concepts of order zero, both lanes, and its output the whole
-expected field over the same concepts. It publishes its field once per
-sentence, at the open pass (`ConceptSpread.open_prediction`), and is
-evaluated again, unpublished, to forecast each look from everything outside
-it ([Expectation](ExpectationRetention.md#the-forecast-of-a-look)). The form
-it replaced,
-`ActivationPredictor`, is kept, and is built only where `expectationMap` is
-`predictor` (Alec, 2026-11-14: "Let's keep the old form on hand in case we
-want to revert").
+### Intuition, on a map of its own
 
-What reads an expectation, attention's relevance, the compose chooser,
-retrieval and the order of stored rules (`ConceptSpread.rule_order`), reads
-it detached, and the guard of [Architecture](Architecture.md) stands: codes
-never read a value computed from codes. What teaches it is omission
-([Training](Training.md), "Adaptive omission"): where units of the sentence
-were hidden, the cost (`expectation.concepts`) is the difference between what
-the stack expects from the lossy field and the field with the hidden units
-present, which is a teacher and never a differentiable target. A sentence
-with nothing hidden gives `expect` no cost.
-
-Likeness alone cannot give an expectation that depends on a combination.
-Take four sentences in which the word to expect depends on the pair before
-it: A and B give X, C and D give X, A and D give Y, C and B give Y. With
-likeness pooled by a sum, X must beat Y in the first two and lose in the
-last two, and adding each pair of conditions makes one quantity both
-greater and less than zero. A stack whose pi stage forms each pair and whose
-sigma stage gives the word expects the right word in all four, with each word
-on coordinates of its own; one linear map does not.
-
-### Intuition, on the field map
-
-`intuit` is `expect`'s map and the propagation over the orders (Alec,
-2026-11-17). It has no stack, teacher or cost of its own. When thought calls
-it (`IntuitionField.read`), it takes the order-zero block of the field
-`expect` published at the open pass, detached, and deposits it into the
-stream's knowing at the places the sentence observed. It then runs the
-vertical spread once, up and then down, on the structure's own matrices,
-Pi and Sigma alike (Alec, 2026-11-17):
-
-- *Up, by fan.* A concept's or a symbol's value is split among the rows that
-  read it, each by its weight's share of all the weights it is read with.
-- *Down, by share.* A row's value is split among its inputs, each by its
-  weight's share of the row. What a row receives is summed over its parents
-  and children, at most one, and a Not entry passes to the other lane.
-- *Siblings get less than the concept that caused them:* a concept present
-  at one gives every other concept the spread reaches less than one.
-- *Across orders in one step.* A symbol of order $k$ reads the concepts of
-  every order below $k$, so a meta concept primes its word and its object
-  with no symbol between.
-- *Into the first layer.* At order zero the way down goes on through the
-  mereology's own entries of the first Pi, so a part that is missing
-  receives from the rows its neighbours raised; this writes expected
-  percepts, and a row still requires its members.
-
-The spread writes the expected field at every order, adds no parameter and
-no teacher, and changes no value of the evidence. It also runs at the end of
-the read, before comprehension takes its leaves' objects, so that the object
-a sentence's words primed is preferred. A model with no symbols never runs
-it over the orders. What it deposits joins the sentence's knowing, so that
-thought, the answer and the output read it: "insights that trigger knowing
-as a result of observation directly". The firing of stored rules is not
+`intuit` is an operator of thought, and it has a Pi, Not and Sigma of its
+own that stands outside the architecture (Alec, 2026-11-19: "We should not
+call it "the expected field", since it is called from an operator, whereas
+expect is built in to a model parameter"). Its map is a stack with one
+moderate hidden layer (Alec, 2026-11-14: "stack a sigmaPi with only a
+moderate hidden layer (full input, full output, so it resembles only few
+percepts)"), from the observed concepts of order zero, both lanes, to the
+same concepts. When thought calls `intuit`, the map gives the *intuited
+field*; the operator joins it into the stream's knowing at the places the
+sentence observed, marked as intuition, and carries it up the orders, so
+that thought, the answer and the output read it: "insights that trigger
+knowing as a result of observation directly". Nothing reads it as expected.
+Its teacher is the field that thought leaves, with the cost of the output
+(Alec, 2026-11-20: "I approve your choice: restore what you approved on
+2026-11-12, the field that thought leaves, with the output's cost");
+omission teaches expectation alone. The firing of stored rules is not
 `intuit`'s: it is how `infer` applies a stored implication
 ([above](#intuition-understanding-and-thought-alec-2026-10-30)).
 
@@ -690,8 +722,8 @@ observed order-zero field on both lanes at the sentence's open, and its
 teacher the idea that the kept reading leaves (`record.meaning_root`), both
 detached; its cost is their squared error (`expectation.idea`). A model that
 comprehends no sentence builds none, and reads a field to a point by its
-centroid (`FieldProjection.key`). The expected point is the read of
-`expect`'s field; nothing reads it yet. Why a point is kept, as a key and not
+centroid (`FieldProjection.key`). The expected point is the read of the
+expected field; nothing reads it yet. Why a point is kept, as a key and not
 as what is reasoned on, is in
 [Philosophy](Philosophy.md#expectation-as-a-gain-attention-as-exclusion).
 

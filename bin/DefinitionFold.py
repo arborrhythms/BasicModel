@@ -58,13 +58,7 @@ def prepare(owner, field):
     records = examples(owner, field)
     owner._prepare_part_learning(witnesses=tuple((e.row, e.source, e.evidence) for e in records))
     owner._maybe_rebuild_optimizer_for_csw()
-    # The reading whose basic percepts the classes read, where it is the
-    # reading of this field.
-    percepts = getattr(owner, '_cs_thing_percepts', None)
-    if percepts is not None and tuple(percepts.values.shape[1:3]) != tuple(field.shape[1:3]):
-        percepts = None
-    return (field.detach().clone(), owner._field_inventory_rows(field.device).detach().clone(),
-            records, percepts)
+    return field.detach().clone(), owner._field_inventory_rows(field.device).detach().clone(), records
 
 
 def category(model):
@@ -73,7 +67,7 @@ def category(model):
 
 
 def loss(owner, staged):
-    field, addresses, records, percepts = staged
+    field, addresses, records = staged
     B, L = field.shape[1:3]
     costs, reports = [], []
     for b in range(B):
@@ -92,7 +86,7 @@ def loss(owner, staged):
             if bool(at.any()):
                 compact[i, 0] = field[at, b].amax(0)
         q = owner._concept_rung_presence(compact.detach(), len(source_rows), len(rows),
-            inventory_rows=rows, percepts=None if percepts is None else percepts.select_streams(b))[:, 0]
+                                         inventory_rows=rows)[:, 0]
         teacher, mask = torch.zeros_like(q), torch.zeros_like(q, dtype=torch.bool)
         for e in records:
             if e.row not in classes:

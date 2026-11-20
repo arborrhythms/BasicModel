@@ -3133,7 +3133,7 @@ reads, with entries of zero or more, and a Sigma whose entries are for or
 Not, giving one signed number in -1 to 1 for each output, with no clip and no
 way back. The stacks read concepts, which are scalars, as their two lanes,
 and a new stack, whose last Sigma starts at zero, adds nothing
-([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
+([Reasoning](Reasoning.md#the-stacked-sigma-pi)).
 
 - `expect` is no map of its own. Its field is the spread from the observed
   field, published once at the open pass and read detached ("C. Parse time"
@@ -3146,7 +3146,7 @@ and a new stack, whose last Sigma starts at zero, adds nothing
   output read it. Nothing reads it as expected. In thought it has the
   evidence kind `intuition`, which can answer; the firing of a stored
   implication is reached through `infer`
-  ([Reasoning](Reasoning.md#intuition-on-the-field-map)).
+  ([Reasoning](Reasoning.md#intuition-on-a-map-of-its-own)).
 - `marker` is a one-operand family of learned kernels, each from the
   operand's form (percept coordinates) to its meaning (concept coordinates).
   The form passes unchanged, the chosen kernel shifts the meaning in the

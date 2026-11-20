@@ -52,7 +52,7 @@ from the `GO_*` data block in that script; edit the data, not the SVG.
    read through the symbols below it, which have no dimensions.
 4. *Serial thinking*: the codes that enter already projected and the one
    off-codebook idea that operators make of them, held in STM's chunks.
-5. *Priming*: the expected field that `expect` gives once per sentence,
+5. *Priming*: the expected field that expectation gives once per sentence,
    frozen for the sentence and read by attention, the chooser and retrieval.
 6. *Expectation*: a gain field with its residual in two lanes; at the percept
    level the forward path carries the expected value plus the residual. It
@@ -157,9 +157,10 @@ become chooser features. Open references gate conclusion. One `attentionBudget`
 covers every nested attempt; the grammar scorer receives the expectation image
 as context. A departure is judged by its whole path's reconstruction and
 supplied-answer cost; the walk's metered work bounds it but is not a cost.
-`expect`'s input, the observed field, is always detached, and it learns only
-by omission, against the detached field with the hidden units present
-([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
+Expectation's input, the observed field, is always detached, and it learns
+from the reconstruction in stages, omission among it, against the detached
+field with the hidden units present
+([Reasoning](Reasoning.md#expectation-in-stages-on-the-structure)).
 
 ## Cued LTM reads
 

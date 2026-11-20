@@ -62,7 +62,7 @@ that bifurcation needs to be complete; we don't want leakage."
   crossing. The architecture is Levelt on representation and Dell on
   dynamics, which is where the field settled.
 - **Consequences.** `bind`'s content term, the priming spread
-  (the expected field `expect` gives), placement by the field, and the
+  (the expected field expectation gives), placement by the field, and the
   two identity models (intersection, union) are all **in conceptual
   space**. A row above the basic percept carries no perceptual form of its
   own; a reader that needs one takes its word's, through the meta concept. The perceptual fold enters identity
@@ -129,8 +129,9 @@ structure, plus a small set of identified gaps.
 Rows #4 and #5 are partial: the instance below advances them, and the
 remaining gaps are listed under *Future work*.
 
-The learned maps of System 1, the stacked sigma-pi of `expect`, of `intuit`
-and of each `marker` kernel ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)),
+The learned maps of System 1 beside the structure, the stacked sigma-pi of
+`intuit`, of the read to a point and of each `marker` kernel
+([Reasoning](Reasoning.md#the-stacked-sigma-pi)),
 have hidden units that name no symbol. They hold no state: their activations
 are computed for one sentence and discarded (#6), and what they read and
 write is a field over named concepts, or one operand's own form and meaning.
