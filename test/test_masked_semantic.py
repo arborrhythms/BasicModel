@@ -112,7 +112,7 @@ def test_config_is_masked_parallel_semantic():
     assert m.useGrammar == "none", (
         "an operator grammar would halve the tile taper and clip the "
         "whole-slab masked-LM compare")
-    assert getattr(m, "symbol_tower", False)
+    assert not hasattr(m, "symbol_tower")  # symbols have no codebook (rule 9)
     assert getattr(m, "mereology_raise", False)
     cs0 = m._concept_owner()
     assert cs0._sparse_active()

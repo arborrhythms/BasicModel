@@ -48,21 +48,22 @@ def _build(name):
 
 
 @pytest.mark.slow
-def test_symbol_tower_parallel_forward_smoke():
-    """XOR_symbols.xml is concept_order_limit=0 (word_brackets=False -> PARALLEL) with
-    symbolTower on, so the 3-stream bind runs through the new SS leg. The
-    forward must run without error."""
+def test_xor_symbols_parallel_forward_smoke():
+    """XOR_symbols.xml is concept_order_limit=0 (word_brackets=False -> PARALLEL).
+    Symbols have no codebook (rule 9): the bind is of the two percept streams,
+    and the forward must run without error."""
     import Models
     from util import TheXMLConfig
     m = _build("XOR_symbols.xml")
-    assert m.symbol_tower is True and m.word_brackets is False
+    assert not hasattr(m, 'symbol_tower') and m.word_brackets is False
+    assert int(m.conceptualSpace.combine.n_streams) == 2
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(items)
     m.eval()
     with torch.no_grad():
-        m.forward(x)        # exercises forward_concept_to_symbol in the bind
+        m.forward(x)
 
 
 @pytest.mark.slow

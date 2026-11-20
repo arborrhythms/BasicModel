@@ -5,7 +5,6 @@
     <bindingDepth>2</bindingDepth>
     <conceptLayers>2</conceptLayers>
     <attentionPromotion>true</attentionPromotion>
-    <symbolTower>true</symbolTower>
     <conceptBinding>aligned</conceptBinding>
     <data>
       <dataType>numeric</dataType>

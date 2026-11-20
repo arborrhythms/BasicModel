@@ -710,13 +710,13 @@ class PrimedSymbolReader(nn.Module):
     SPACE_INPUT = 0
     SPACE_STM = 1
     SPACE_LTM = 2
-    # The three tower codebooks, each a distinct address space. SPACE_PART /
-    # SPACE_WHOLE appear whenever their tower exposes a codebook; SPACE_SYMBOL
-    # only under <symbolTower> (the SS ``.what`` is an empty Basis otherwise).
+    # Address spaces. SPACE_PART / SPACE_WHOLE appear whenever their tower
+    # exposes a codebook; SPACE_SYMBOL is keyed by the primed bank's concept
+    # codes (a symbol has no vector of its own).
     # Address-space model: doc/Architecture.md "Addressable attention".
     SPACE_PART = 3      # PartSpace codebook
     SPACE_WHOLE = 4     # WholeSpace codebook
-    SPACE_SYMBOL = 5    # SymbolSpace symbol codebook (SS.subspace.what)
+    SPACE_SYMBOL = 5    # the primed bank, by its concepts' codes
     _N_SPACES = 6
     _N_FEATURES = 4   # cos(concept), cos(symbol), codebook boost, space id
 

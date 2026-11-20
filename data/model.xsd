@@ -181,7 +181,6 @@
            terminal ConceptualCombine is built with n_streams=3 and bind_streams
            routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
            false -> the 2-stream (PS, WS) bind -> byte-identical. -->
-      <xs:element name="symbolTower" type="xs:boolean" minOccurs="0"/>
 
       <!-- Exponential decay of the SEEN priming toward neutral 1.0, applied
            at each seen-write (sec C simplified law). Default 0.9. -->

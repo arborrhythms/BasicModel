@@ -24,7 +24,6 @@
          is MM_sparse_concept.xml. -->
     <conceptLayers>1</conceptLayers>
 
-    <symbolTower>true</symbolTower>
     <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>

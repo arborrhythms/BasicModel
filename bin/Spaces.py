@@ -14925,7 +14925,12 @@ class ConceptualSpace(Space):
             self.order_zero_not.make(sigma, row, percept, weight=1.)
 
     def concept_of_basic_percept(self, percept):
-        """The order-zero concept a nominated row brought, or ``None``."""
+        """The order-zero concept a nominated row brought, or ``None``: the
+        lowest-numbered order-zero concept recorded with the row as a member
+        (the row's own concept is allocated when the row is nominated, before
+        any concept made later takes the row as a member). Other concepts may
+        read the row too (``order_zero.rows_reading``); this names only the
+        one the row started."""
         rows = _concept_alloc_of(self).order_zero_members.rows_of(percept)
         return rows[0] if rows else None
 
@@ -17346,21 +17351,6 @@ class ConceptualSpace(Space):
         idx, a = self.factor_percept(PS_t, rows)
         return a.unsqueeze(-1) * rows[idx]
 
-    # ``_build_symbol_leg`` (the CS-mediated SS bind leg) was RETIRED with the
-    # sparse-coding CS work. It dereferenced a stashed ``_model_symbolSpace``
-    # pointer and sourced the symbol rows from the WholeSpace meta codebook --
-    # exactly the cross-space reach the dataflow rule forbids (a Space may
-    # gather only from the codebook it owns or a subspace passed through
-    # ``forward``). The symbol leg is now produced by
-    # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the concept arrives
-    # through ``forward``, and SymbolSpace builds the row-aligned symbol view
-    # from the concept's own codes (writing only the codebook it owns). The
-    # caller (the parallel body in ``Models._forward_body``) hands the leg to
-    # ``bind_streams`` as ``SS_sub``; ``bind_streams`` no longer builds it.
-    # NOTE: ``_build_symbol_leg``'s ``@torch.compiler.disable`` (host-side dict
-    # iteration eager island) was retired WITH it -- ``bind_streams`` is pure
-    # tensor ops and MUST stay fullgraph-traceable (test_ir_fullgraph_compile).
-
     def decode_sparse_concept_rows(self, rows, source_activations,
                                    source_bands, staged_rows=None,
                                    staged_atoms=None):
@@ -18160,7 +18150,7 @@ class ConceptualSpace(Space):
             preserve_target_event=preserve_target_event,
             source_validity=validity)
 
-    def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None):
+    def bind_streams(self, PS_sub, WS_sub, CS_sub):
         """The stage's conceptual advance: bind, glue, store -- in-Space.
 
         ``CS_t = ILL(stack[PS_t ; WS_t])`` (the 2-stream slot bind, C-10):
@@ -18172,13 +18162,6 @@ class ConceptualSpace(Space):
         (``_bind_carrier``) for :meth:`unbind` / the reconstruction
         reverse. Returns the carrier (``[..., M]``) or None when
         the carrier subspace is degenerate / slot-mismatched.
-
-        Slice B (2026-06-21, gated on ``combine.n_streams == 3``): when the
-        SymbolSpace tower is on, an optional THIRD peer leg ``SS_sub`` (the
-        symbol stream, PS/WS being the percept streams) is demux/regroup/fit
-        like the others and bound as ``combine.forward(PS_t, WS_t, SS_t)``.
-        With the tower OFF (default, ``SS_sub=None``, ``n_streams==2``) the
-        2-stream path below is BYTE-IDENTICAL.
         """
         combine = getattr(self, "combine", None)
         if combine is None:
@@ -18202,35 +18185,9 @@ class ConceptualSpace(Space):
         ws_content, _, _ = self._bind_read(WS_sub, D)
         ws_content = self._bind_regroup(ws_content, nv)
         WS_t = self._bind_fit(ws_content, D, cs_content)
-        # Slice B: the THIRD (symbol) peer leg -- present whenever the combine
-        # is 3-stream. An absent/empty SS_sub yields a ZERO symbol leg (via
-        # _bind_fit's None->zeros), so a 3-stream combine ALWAYS receives three
-        # streams (the dark cutover: symbol stream is zeros until the real
-        # CS-collapse symbol is wired -- higher-order plan). Same demux/regroup/
-        # fit as the percept legs. The 2-stream off-path never enters here, so
-        # it stays byte-identical.
-        SS_t = None
-        if int(getattr(combine, "n_streams", 2)) >= 3:
-            # The SS (symbol) leg is handed in by the caller via
-            # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
-            # ``.forward()``-mediated CS->SS transform (the dataflow rule:
-            # cross-space interaction goes ONLY through ``forward``). The
-            # ConceptualSpace-resident ``_build_symbol_leg`` reach into the
-            # WholeSpace meta codebook + the stashed ``_model_symbolSpace``
-            # pointer is RETIRED. ``SS_sub is None`` -> ``_bind_fit`` zero leg.
-            ss_content = None
-            if SS_sub is not None:
-                ss_content, _, _ = self._bind_read(SS_sub, D)
-                if ss_content is not None:
-                    ss_content = self._bind_regroup(ss_content, nv)
-            SS_t = self._bind_fit(ss_content, D, cs_content)
-        if (PS_t.shape[-2] != nv or WS_t.shape[-2] != nv
-                or (SS_t is not None and SS_t.shape[-2] != nv)):
+        if PS_t.shape[-2] != nv or WS_t.shape[-2] != nv:
             return None
-        if SS_t is not None:
-            full = combine.forward(PS_t, WS_t, SS_t)
-        else:
-            full = combine.forward(PS_t, WS_t)
+        full = combine.forward(PS_t, WS_t)
         from Attention import read_code_field
         glued = read_code_field(combine.glue(full))
         if cs_band is not None and cs_band.shape[-1] > 0:

@@ -29,7 +29,7 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
     values = {
         'architecture/conceptLayers': 2,
         'architecture/bindingDepth': 2,
-        'architecture/symbolTower': True, 'architecture/conceptBinding': 'aligned',
+        'architecture/conceptBinding': 'aligned',
         'architecture/attentionPromotion': True, 'ConceptualSpace/mtmCapacity': 64,
         'architecture/training/autoload': False, 'architecture/training/maskRate': 0.,
         'InputSpace/nVectors': slots, 'InputSpace/nOutput': slots,

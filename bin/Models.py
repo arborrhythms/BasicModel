@@ -2004,13 +2004,6 @@ class BaseModel(Mereology, nn.Module):
         with torch.random.fork_rng(devices=[]):
             self.answer_attention = PrimedSymbolReader()
 
-        # SymbolSpace 3-stream peer bind (2026-06-21 SymbolSpace refactor,
-        # Slice B). When on, the CS bind is 3-STREAM: PS (part-percepts), WS
-        # (whole-percepts), SS (symbols) -- SymbolSpace becomes the symbol tower
-        # with its own codebook + ``forward_symbol`` stream, and WholeSpace goes
-        # tall (whole-percepts, not the compact symbol). Default off -> the
-        # 2-stream (PS, WS) bind -> BYTE-IDENTICAL. (ConceptualCombine is already
-        # n_streams-parametrized, Slice A.)
         # Relevance integration gate (Architecture sec C); default false.
         self.priming_decay = float(TheXMLConfig.get("architecture.primingDecay", default=0.9))
         if not math.isfinite(self.priming_decay) or not 0 <= self.priming_decay <= 1:
@@ -2018,9 +2011,6 @@ class BaseModel(Mereology, nn.Module):
         # Base grammar-confidence threshold for online STM reduction.  The
         # explicit word-axis controller lowers it with occupancy; legacy
         # serial configs retain their fixed reduce-marginal comparison.
-
-        self.symbol_tower = bool(TheXMLConfig.get(
-            "architecture.symbolTower", default=False))
 
         # <answerSynthesis> (What spec Steps 3-4): answer construction runs
         # resolve -> conceptual synthesis -> perceptual synthesis ->
@@ -8063,17 +8053,10 @@ class BasicModel(BaseModel):
         _ws = getattr(self, 'symbolSpace', None)
         _full_router = (_ws is not None and not getattr(
             _ws, '_grammar_is_default_only', True))
-        # Slice B: the symbol tower's ``forward_symbol`` is a
-        # ``@torch.compiler.disable`` eager island (host-side order-raising
-        # readout -- data-dependent dict iteration + SubSpace construction). Like
-        # full-router grammar, its disabled call is itself a graph break, so it
-        # needs fullgraph relaxed too. ``_host_islands`` gates both.
-        _symbol_tower = bool(getattr(self, 'symbol_tower', False))
         # The serial fixed-W recurrence, including its Language plan, has a
         # fullgraph-clean grammar route. Full-router state is represented by
-        # the static grammar tensors used by that route; only the separate
-        # symbol-tower and sparse indexed-codebook modes below are true outer
-        # graph islands.
+        # the static grammar tensors used by that route; only the sparse
+        # indexed-codebook mode below is a true outer graph island.
         _serial_per_word = bool(getattr(
             getattr(self, 'inputSpace', None), '_per_word_enabled', False))
         _sparse_codebook_island = any(
@@ -8094,7 +8077,6 @@ class BasicModel(BaseModel):
         _canonical_word_chunk = bool(
             _aligned_serial_stage_bodies and not _peer_pipeline)
         _host_islands = ((_full_router and not _serial_per_word)
-                         or _symbol_tower
                          or (_sparse_codebook_island
                              and not _staged_sparse_bank))
         # torch 2.12 inductor-MPS cannot codegen the FULL-ROUTER
@@ -8120,9 +8102,8 @@ class BasicModel(BaseModel):
         _fullgraph = ENUM_FULLGRAPH and not _host_islands
         if ENUM_FULLGRAPH and _host_islands:
             TheMessage(
-                "fullgraph relaxed: host-island config (full-router grammar, "
-                "symbolTower forward_symbol, or sparse indexed codebook is "
-                "a tolerated graph break)")
+                "fullgraph relaxed: host-island config (full-router grammar "
+                "or sparse indexed codebook is a tolerated graph break)")
         _word_buckets = tuple(
             int(v) for v in getattr(self, "serial_word_buckets", ()) or ())
         self._compiled_word_chunk_step = None
@@ -8159,8 +8140,7 @@ class BasicModel(BaseModel):
         # per word. BASICMODEL_MPS_WORD_LOOP_FULLGRAPH=0 remains the explicit
         # diagnostic/backend fallback.
         _peer_outer_host_island = bool(
-            _symbol_tower
-            or (_sparse_codebook_island and not _staged_sparse_bank))
+            _sparse_codebook_island and not _staged_sparse_bank)
         if _peer_pipeline and _peer_outer_host_island:
             # Individual fold ladders are still valid fullgraphs, but these
             # genuinely disabled Symbol/sparse islands cannot be swallowed by
@@ -17098,17 +17078,6 @@ class BasicModel(BaseModel):
             if (space is not self.symbolSpace and (not isinstance(space, WholeSpace)) and (getattr(space, 'symbolSpace', None) is None) and hasattr(space, 'attach_symbolSpace')):
                 space.attach_symbolSpace(self.symbolSpace)
 
-        # Slice C: the per-stage ConceptualSpace cells (which run bind_streams)
-        # need the SymbolSpace ref so the CS-mediated symbol leg
-        # (ConceptualSpace._build_symbol_leg) can sync the order-raising codes
-        # onto SS.subspace.what. GATED on symbol_tower so off-path per-stage CS
-        # keep _model_symbolSpace=None -> byte-identical (the autobind's
-        # _model_symbolSpace read at Reset is unaffected for non-tower configs).
-        if bool(TheXMLConfig.get("architecture.symbolTower", default=False)):
-            for _cs in getattr(self, 'conceptualSpaces', ()):
-                if getattr(_cs, '_model_symbolSpace', None) is None:
-                    object.__setattr__(_cs, '_model_symbolSpace', self.symbolSpace)
-
         # Precompute partition boundaries for partitioned symbolSum
         self._partitions = self._order_partitions(concept_dim,
                                                    self.bindingDepth)
@@ -17392,20 +17361,13 @@ class BasicModel(BaseModel):
                 naive=_combine_naive,
                 sigma_pi_mode=self.sigma_pi_mode,
                 ergodic=self.ergodic,
-                # Slice B: 3-stream when symbolTower is on. Read the config
-                # DIRECTLY (not self.symbol_tower) -- the per-stage pipelines are
-                # built by _create_per_stage BEFORE create_from_config sets
-                # self.symbol_tower (line ~794), so the attr isn't live yet here.
-                # combine.n_streams is what the bind keys on; the forward-time
-                # loop gate (self.symbol_tower) is set by the time forward runs.
-                n_streams=(3 if bool(TheXMLConfig.get(
-                    "architecture.symbolTower", default=False)) else 2),
+                n_streams=2,
                 # Concepts live on the unit ball: when ConceptualSpace
                 # <nonlinear> is set, the per-stage combine saturates the bound
                 # concept with tanh (forward) / atanh (reverse) -- the joint
                 # nonlinearity a non-separable readout (XOR) needs. Read the
                 # config directly (cs.nonlinear may not be live at per-stage
-                # build time, matching the symbolTower read above).
+                # build time).
                 nonlinear=bool(TheXMLConfig.space(
                     "ConceptualSpace", "nonlinear")))
             # Held by the ConceptualSpace: register for paramUpdate/set_sigma
@@ -17807,30 +17769,10 @@ class BasicModel(BaseModel):
                     ps_t = self._passback_scope_ps(
                         t, ps_t, prevCS_forSS,
                         prevPS_forPS=_prev_ps_fb)
-                # Slice C: the SS (symbol) bind leg comes from
-                # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
-                # ``.forward()``-mediated CS->SS transform (the dataflow rule:
-                # cross-space interaction goes ONLY through ``forward``; the old
-                # CS-mediated ``_build_symbol_leg`` reach into WholeSpace +
-                # ``_model_symbolSpace`` is retired). Computed only under the
-                # symbol tower in parallel mode -- the leg the 3-stream bind
-                # consumes. Off-path (2-stream / symbol tower off) leaves it
-                # None, so ``bind_streams`` never enters the SS branch ->
-                # byte-identical. P3 two-phase forward: the SPARSE pump is
-                # 2-stream -- NO symbol leg inside the loop (quantization only
-                # at the post-pump cutover below); the concept_order_limit=0
-                # symbolTower scaffold path keeps its in-loop leg untouched.
-                SS_sub = (self.symbolSpace.forward_concept_to_symbol(CS_sub)
-                          if (getattr(self, "symbol_tower", False)
-                              and not self.word_brackets
-                              and self.symbolSpace is not None
-                              and not cs._sparse_active())
-                          else None)
                 if _aligned_binding:
                     full_t = cs.bind_aligned_streams(ps_t, WS_sub, CS_sub)
                 else:
-                    full_t = cs.bind_streams(
-                        ps_t, WS_sub, CS_sub, SS_sub=SS_sub)
+                    full_t = cs.bind_streams(ps_t, WS_sub, CS_sub)
                 if full_t is not None and t == 0:
                     # Snapshot the stage-0 bind so round-trip tests can
                     # compare it against the threaded carrier.
@@ -17877,8 +17819,7 @@ class BasicModel(BaseModel):
         # terminal CS (the SS leg + head-side losses read them); the settled
         # symbolic content feeds the conceptual SBOW (C1, live). The cutover
         # cs is the definition owner used by word admission and the grammar;
-        # concept_order_limit=0 (incl. the symbolTower scaffold) never
-        # enters -- byte-identical.
+        # concept_order_limit=0 never enters.
         _cut_cs = self._concept_owner()
         if (last_cs is not None and _cut_cs is not None
                 and _cut_cs._sparse_active()):
@@ -17920,11 +17861,6 @@ class BasicModel(BaseModel):
                     last_cs._concept_where, last_cs._concept_when, None))
                 object.__setattr__(last_cs, '_concept_activations', _field.evidence)
                 open_prediction(self, torch.ones(_settled.shape[0], dtype=torch.bool, device=_settled.device))
-                # The SS leg, ONCE: syncs the SS codebook to the settled
-                # concept codes; the leg's gradient rides the activations.
-                if (getattr(self, "symbol_tower", False)
-                        and self.symbolSpace is not None):
-                    self.symbolSpace.forward_concept_to_symbol(last_cs)
                 # SBOW C1 on the SETTLED symbolic slab (grad-bearing; the
                 # pool is the SAME dictionary that composed it).
                 if float(getattr(getattr(self, "loss", None),
@@ -23487,25 +23423,6 @@ class BasicModel(BaseModel):
                 ws_boosts = intent_priming_weights(concept_q.detach(), ws_rows)
             spaces.append({"id": GA.SPACE_WHOLE, "keys": ws_rows.detach(),
                            "boosts": ws_boosts})
-        # SYMBOL codebook (SS.subspace.what). Present only under <symbolTower>
-        # (else the SS ``.what`` is an empty Basis with no ``getW``).
-        ss = getattr(self, "symbolSpace", None)
-        ss_sub = getattr(ss, "subspace", None) if ss is not None else None
-        ss_cb = getattr(ss_sub, "what", None) if ss_sub is not None else None
-        ss_getW = getattr(ss_cb, "getW", None) if ss_cb is not None else None
-        if callable(ss_getW):
-            sym_rows = ss_getW()
-            if (sym_rows is not None and torch.is_tensor(sym_rows)
-                    and sym_rows.dim() == 2 and int(sym_rows.shape[0]) > 0):
-                # CLONE (not just detach): _build_symbol_leg writes this
-                # codebook Parameter in-place (no_grad) LATER in the same
-                # forward, which would bump the version of a detached view the
-                # attention scorer saved for backward. A clone decouples the
-                # attention key from the live Parameter. (The other spaces'
-                # codebooks are written only at the Reset boundary, so a plain
-                # detach is safe for them.)
-                spaces.append({"id": GA.SPACE_SYMBOL,
-                               "keys": sym_rows.detach().clone()})
         return spaces, concept_q
 
     @torch.compiler.disable

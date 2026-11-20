@@ -18,7 +18,6 @@
     <sigmaPi>butterfly</sigmaPi>
     <mereologyRaise>true</mereologyRaise>
     <serialObjectMeta>true</serialObjectMeta>
-    <symbolTower>true</symbolTower>
     <answerSynthesis>true</answerSynthesis>
     <!-- The parser must COMPOSE these short sentences: the untrained
          reducer's operator marginals are uniform (~1/15) and never pass

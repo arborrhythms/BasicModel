@@ -162,7 +162,8 @@ def test_symbolic_phase_inactive_is_noop():
 def test_sparse_concept_config_builds_and_stamps():
     m = _build("MM_20M_xor.xml")
     # concept_order_limit=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
-    assert m.word_brackets is False and m.concept_order_limit == 3 and m.symbol_tower is True
+    assert m.word_brackets is False and m.concept_order_limit == 3
+    assert not hasattr(m, 'symbol_tower')  # symbols have no codebook (rule 9)
     css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
     assert css
     cs = css[-1]

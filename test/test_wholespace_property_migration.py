@@ -42,7 +42,7 @@ def _set_text(root: ET.Element, path: str, value: object) -> None:
 
 def _small_property_model(
         tmp_path: Path, *, native_event: int | None = None,
-        concept_event: int | None = None, symbol_tower: bool = False,
+        concept_event: int | None = None,
         symbolic_lift: bool = False):
     """Build aligned live-width-8 towers with CS=16 and WS=8 rows."""
     tree = ET.parse(ROOT / "data" / "MM_text_fixture.xml")
@@ -64,8 +64,6 @@ def _small_property_model(
         _set_text(root, "WholeSpace/nDim", native_event)
         _set_text(root, "WholeSpace/nOutputDim", native_event)
         _set_text(root, "OutputSpace/nInputDim", concept_event)
-    if symbol_tower:
-        _set_text(root, "architecture/symbolTower", True)
     if symbolic_lift:
         grammar = root.find("SymbolSpace/language/grammar")
         assert grammar is not None
@@ -241,7 +239,7 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     """SS state is CS-width even when the upstream property basis is narrow."""
     model = _small_property_model(
         tmp_path, native_event=16, concept_event=24,
-        symbol_tower=True, symbolic_lift=True)
+        symbolic_lift=True)
     cs = model.conceptualSpace
     ws = model.wholeSpace
     ss = model.symbolSpace

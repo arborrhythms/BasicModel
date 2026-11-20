@@ -8688,23 +8688,6 @@ class SymbolSubSpace(SubSpace):
         self.layers = nn.ModuleList()
         self.params = []
 
-        # Slice B / conceptualize (Alec 2026-06-21): the SYMBOL CODEBOOK on this
-        # carrier's ``.what``. When symbol_tower is on, ``SS.subspace.what`` holds
-        # the symbol codebook (symbols 1:1 with concepts); CS reads it as the SS
-        # bind leg (tower-symmetric with PS/WS ``.what``). The other slot Bases
-        # stay empty -- this object is also the grammar/STM stack, which rides on
-        # ``.event``, not ``.what``, so the codebook does not disturb it. Default
-        # off -> ``.what`` stays empty -> byte-identical.
-        if bool(TheXMLConfig.get("architecture.symbolTower", default=False)):
-            from Spaces import Codebook as _Codebook
-            _sym_cb = _Codebook()
-            _sym_cb.use_dot_product = False
-            _sym_cb.create(1, int(nSymbols), int(symbol_dim), customVQ=True)
-            self.what = _sym_cb
-            for _p in _sym_cb.parameters():
-                if all(_p is not _q for _q in self.params):
-                    self.params.append(_p)
-
         # 4. Per-space SyntacticLayer dispatch lives on each space
         # (``space.syntacticLayer``); SymbolSpace itself no longer owns a
         # central SyntacticLayer instance.
@@ -13414,17 +13397,8 @@ class SymbolSpace(Space):
             if (_sp is not None and (not isinstance(_sp, WholeSpace)) and hasattr(_sp, 'attach_symbolSpace')):
                 _sp.attach_symbolSpace(self)
 
-    # The SS (symbol) bind leg is produced by ``forward_concept_to_symbol``
-    # below: the concept arrives THROUGH ``forward`` and the row-aligned symbol
-    # view is built from the concept's OWN codes (writing only the codebook this
-    # Space owns). The earlier reaches are both retired: ``forward_symbol`` (the
-    # SymbolSpace->WholeSpace reach) AND the later CS-mediated
-    # ``ConceptualSpace._build_symbol_leg`` (which dereferenced a stashed
-    # ``_model_symbolSpace`` and copied WholeSpace meta rows). The parallel body
-    # (``Models._forward_body``) computes ``SS_sub =
-    # symbolSpace.forward_concept_to_symbol(CS_sub)`` and hands it to
-    # ``cs.bind_streams(..., SS_sub=SS_sub)``; ``bind_streams`` no longer builds
-    # the leg.
+    # ``forward_concept_to_symbol`` below reads the paired symbols' evidence
+    # from the concepts' activations; a symbol has no codebook row.
 
     # -- attribute forwarding to the held coordinator --------------------
     def __getattr__(self, name):
@@ -13723,18 +13697,6 @@ class SymbolSpace(Space):
             if codes.ndim not in (2, 3) or codes.shape[-2] < len(acts):
                 raise ValueError('paired symbol read requires one code per concept')
             codes = codes[..., :len(acts), :].detach().clone()
-            cb = getattr(getattr(self, 'subspace', None), 'what', None)
-            W = cb.getW() if cb is not None and hasattr(cb, 'getW') else None
-            if W is not None:
-                n, d = min(codes.shape[-2], len(W)), min(codes.shape[-1], W.shape[-1])
-                with torch.no_grad():
-                    addresses = getattr(concept_sub, '_concept_inventory_rows', None)
-                    if addresses is None:
-                        W[:n, :d].copy_(codes[:n, :d].to(W))
-                    else:
-                        valid = (addresses >= 0) & (addresses < len(W))
-                        values = codes.permute(1, 0, 2) if codes.ndim == 3 else codes
-                        W[addresses[valid], :d] = values[valid, :d].to(W)
             symbol_event = decode(acts, codes)
             width = int(getattr(self.subspace, 'nWhat', codes.shape[-1]))
             if row_events and event.shape[-1] > width:
@@ -13773,19 +13735,6 @@ class SymbolSpace(Space):
         sym_event = event.detach()
         if sym_event.dim() == 2:
             sym_event = sym_event.unsqueeze(0)
-        N = int(sym_event.shape[-2])
-        D = int(sym_event.shape[-1])
-        # Sync SS's OWN .what codebook (row-aligned, first-N rows) to the
-        # per-batch-mean concept codes. Self-write only -- no cross-space reach.
-        cb = getattr(getattr(self, "subspace", None), "what", None)
-        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
-        if W is not None and torch.is_tensor(W) and int(W.shape[0]) > 0:
-            rows = min(N, int(W.shape[0]))
-            cw = min(D, int(W.shape[-1]))
-            if rows > 0 and cw > 0:
-                with torch.no_grad():
-                    W[:rows, :cw] = sym_event[:, :rows, :cw].mean(dim=0).to(
-                        W.device, W.dtype)
         return self._publish_symbol_snapshot(
             sym_event, concept_sub, prior_symbolic=prior_symbolic,
             language_plan=language_plan)
