@@ -11561,10 +11561,10 @@ review each return against the source before the next round goes."
   round 5).
 - The item's one default sweep is round 7's. Nothing runs under
   `RUN_SLOW` in any round (Alec, 2026-11-20: "no run_slow tests
-  until 1.7 gets submitted"). *Claude's reading:* the slow tier is
-  run once when this item is submitted, which also checks the
-  eleven slow tests ported unrun in §23.4.7; his earlier word put
-  that one run at item 1.6's submission (1.8 §72).
+  until 1.7 gets submitted"). Nor at this item's submission: the
+  slow tier's one run waits for item 1.6's (Alec, the same day:
+  "Wait for 1.6"; 1.8 §72). The eleven slow tests ported unrun in
+  §23.4.7 stay unchecked until then.
 - A round's text is amended in place where an earlier return changes
   it, with the date. Round 6's waits for round 2's return.
 - *Amended 2026-11-20, on Alec's word about the weekly limit* ("I
