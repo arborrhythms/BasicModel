@@ -857,3 +857,77 @@ def test_9_the_catalog_basis_on_the_lesson(lesson):
     for combo in COMBINATIONS:
         codes, *_ = _catalog(c, combo)
         print(combo, ct.told_apart(ct.readings(codes[index])))
+
+
+# §19.86: no code inside another by accident.
+
+def test_10_the_linked_coder_codes_as_the_source_does():
+    """The stand-in, without the repair, gives the first 3,000 words the
+    source's codes (both halves) and the source's added parts."""
+    from Layers import RadixLayer
+    from WordIdentity import WordIdentity
+    sample = words()[:3000]
+    identity = WordIdentity(RadixLayer(128, initial_cap=8000), pair_dim=64, property_width=64)
+    for w in sample:
+        identity.admit(w.encode())
+    mine = ct.LinkedCoder(64).admit_all(sample)
+    differ = 0
+    for w in sample:
+        m = mine.code(w)
+        differ += int(not np.array_equal(identity.code(w.encode()).cpu().numpy(),
+                                         np.array([(m >> i) & 1 for i in range(128)], dtype=np.float32)))
+    print(dict(words=len(sample), differ=differ, added=(len(identity.added), len(mine.added))))
+    assert differ == 0
+    assert {w.decode() if isinstance(w, bytes) else w for w in identity.added} == set(mine.added)
+
+
+def _linked_report(c, label):
+    accidents, true_out = c.all_accidents()
+    shared = len(c.words) - len({c.code(w) for w in c.words})
+    print(label, dict(words=len(c.words), accidents_all_pairs=accidents, true_parts_not_inside=true_out,
+                      shared=shared, sample=ct.sample_accidents(c), failures=len(c.failures),
+                      forms_given_coordinates=len(c.given_forms), **dict(c.stats)))
+    print('   ones', ct.ones_in_halves(c))
+    print('   ms to admit one form (mean, greatest) near', ct.admission_times(c),
+          'earlier codes changed by an admission: mean', round(float(np.mean(c.changed_by)), 2),
+          'greatest', max(c.changed_by), 'admissions changing any', sum(x > 0 for x in c.changed_by))
+    # By construction: every form's runs among the stored forms lie inside it.
+    assert true_out == 0
+    return accidents
+
+
+@functools.lru_cache(maxsize=None)
+def linked(n, repair, count=None):
+    forms = words() if count is None else words()[:count]
+    return ct.LinkedCoder(n, repair=repair).admit_all(forms, index=ct.run_index(forms))
+
+
+def test_10_the_source_coding_leaves_accidents():
+    for n in WIDTHS:
+        _linked_report(linked(n, None), f'{n}+{n} as the source codes')
+
+
+def _repaired(n, repair, label):
+    """All 19,821 words admitted in the order of the dictionary with the
+    accidents removed as each is admitted; a cap of 3,000 repair steps an
+    admission (counted and printed where it is reached)."""
+    forms = words()
+    c = ct.LinkedCoder(n, repair=repair, cap=3000).admit_all(forms, index=ct.run_index(forms))
+    accidents = _linked_report(c, label)
+    print('   failures', len(c.failures), 'example', c.failures[:2])
+    return c, accidents
+
+
+def test_10_accidents_removed_at_64_in_both_halves():
+    """Way (c): the separating coordinate chosen among the zeros of either
+    half, the one that adds the fewest ones to the form's holders. About
+    150 s on a busy machine, the longest test of the file."""
+    _repaired(64, 'ch', '64+64, (c) chosen in either half')
+
+
+def test_10_accidents_removed_at_96_in_the_parts_half():
+    _repaired(96, 'bh', '96+96, (b) chosen in the parts half')
+
+
+def test_10_accidents_removed_at_128_in_the_parts_half():
+    _repaired(128, 'bh', '128+128, (b) chosen in the parts half')

@@ -21,6 +21,7 @@ Layouts:
 The signed code (P6) and the scalar table are functions over a coder.
 """
 import hashlib
+import time
 import math
 import os
 from collections import Counter
@@ -28,7 +29,7 @@ from collections import Counter
 import numpy as np
 import torch
 
-from WordIdentity import bit_stream, distinguishing_run
+from WordIdentity import bit_stream, distinguishing_run, runs
 from Layers import _CHAR_CLASS_RANGES, LETTER, DIGIT, WHITESPACE, PUNCT, CAPITAL, CONTROL, HIGH_BYTE, PAD
 
 ONES = 3
@@ -881,3 +882,387 @@ def catalog_codes(coder, *, second, tight, extra=None):
         codes[row, :n] = bits(p, n)
         codes[row, n:] = -(1 - bits(b, m))
     return codes, parts, bounds, basis
+
+
+# ---------------------------------------------------------------------------
+# No code inside another by accident (§19.86).
+
+def run_index(words):
+    """For each form, the forms of ``words`` it holds as a run (its form
+    parts) and the forms that hold it (its form wholes), by run alone."""
+    stored = set(words)
+    inside = {w: set() for w in words}
+    holders = {w: set() for w in words}
+    for w in words:
+        for size in range(1, len(w)):
+            for start in range(len(w) - size + 1):
+                run = w[start:start + size]
+                if run in stored:
+                    inside[w].add(run)
+                    holders[run].add(w)
+    return inside, holders
+
+
+class LinkedCoder:
+    """The source's present coding (round 3c), at ``n`` + ``n``: a form's
+    parts half is the OR of its parts' codes; its wholes half its own
+    tightest whole, the OR of its parts' catalog codes (the catalog drawn a
+    second time); two forms with one code are told apart by rule 43's next
+    part, then by more bits on an added part (``WordIdentity._settle``,
+    ``_separate``). A code is one integer of ``2n`` bits, the parts half
+    low.
+
+    With ``repair`` (§19.86), as each form is admitted every stored form
+    whose code lies inside its code, or whose code its code lies inside,
+    with neither a run of the other, is an accident; the form that lies
+    inside gets coordinates that the other lacks, by becoming a part of the
+    catalog itself, carried by every stored form that holds it as a run:
+    ``a`` drawn as a part's are (both halves, more bits until it is out);
+    ``b`` chosen among the parts-half coordinates the other leaves at zero;
+    ``c`` chosen among the zeros of either half."""
+
+    CATALOG = b'\x00whole-basis/'
+
+    def __init__(self, n=64, *, repair=None, ones=ONES, cap=None):
+        self.n, self.ones, self.repair = int(n), int(ones), repair
+        self.width = 2 * self.n
+        self.limbs = (self.width + 63) // 64
+        self.atoms = {}            # atom value -> mask
+        self.bits = {}             # atom value -> ones, where raised
+        self.added = {}            # run -> why (('next', l, r), ('form', inner, outer))
+        self.order, self.words, self.parts = {}, [], {}
+        self.forms, self.keys = {}, {}
+        self.codes = np.zeros((0, self.limbs), dtype=np.uint64)
+        self.inside, self.holders = {}, {}
+        self.stats = Counter()
+        self.failures = []
+        self.changed_by = []       # per admission: earlier codes changed
+        self.timings = []
+        self.cap = cap
+        self.usage = np.zeros(self.width, dtype=np.int64)
+        self.given_forms = set()
+
+    # Codes -------------------------------------------------------------
+
+    def drawn(self, value, k):
+        parts = mask_of(bit_stream(value.encode(), self.n)[:k])
+        wholes = mask_of(bit_stream(self.CATALOG + value.encode(), self.n)[:k])
+        return parts | (wholes << self.n)
+
+    def atom_mask(self, value, k=None):
+        if k is None and value in self.atoms:
+            return self.atoms[value]
+        return self.drawn(value, self.bits.get(value, self.ones) if k is None else k)
+
+    def code(self, form, override=None):
+        m = 0
+        for atom in self.parts[form]:
+            m |= self.atom_mask(atom, override[1] if override and atom == override[0] else None)
+        return m
+
+    def limbs_of(self, mask):
+        return np.array([(mask >> (64 * i)) & 0xFFFFFFFFFFFFFFFF for i in range(self.limbs)], dtype=np.uint64)
+
+    def _write(self, form):
+        row = self.order[form]
+        self.codes[row] = self.limbs_of(self.code(form))
+
+    # The source's admission --------------------------------------------
+
+    def atoms_of(self, form):
+        found = set(dict.fromkeys(form))
+        for size in range(2, len(form) + 1):
+            for start in range(len(form) - size + 1):
+                run = form[start:start + size]
+                if run in self.added:
+                    found.add(run)
+        return frozenset(found)
+
+    def _holders_of_run(self, run):
+        if run in self.holders:
+            return [w for w in self.holders[run] if w in self.order] + ([run] if run in self.order else [])
+        return [w for w in self.words if run in w]
+
+    def _add_part(self, run, why, mask=None):
+        self.added[run] = why
+        if mask is not None:
+            self.atoms[run] = mask
+        else:
+            self.atoms[run] = self.drawn(run, self.bits.get(run, self.ones))
+        holders = self._holders_of_run(run)
+        for w in holders:
+            self.parts[w] = self.parts[w] | {run}
+        return holders
+
+    def _next_part(self, left, right):
+        known = set(self.atoms)
+        for size in range(1, max(len(left), len(right)) + 1):
+            found = (runs(left, size) ^ runs(right, size)) - known
+            if found:
+                return min(found)
+        return None
+
+    def _separate(self, left, right):
+        changed = []
+        alike = lambda: self.code(left) == self.code(right)
+        while alike():
+            run = self._next_part(left, right)
+            if run is None:
+                break
+            changed += self._add_part(run, ('next', left, right))
+            self.stats['next parts'] += 1
+        if not alike():
+            return changed
+        held = Counter(a for w in self.words for a in self.parts[w])
+        candidates = sorted((a for a in self.parts[left] ^ self.parts[right] if a in self.added),
+                            key=lambda a: (held[a], -len(a), a))
+        for atom in candidates:
+            for k in range(self.bits.get(atom, self.ones) + 1, self.n + 1):
+                if self.code(left, (atom, k)) != self.code(right, (atom, k)):
+                    self.bits[atom] = k
+                    self.atoms[atom] = self.drawn(atom, k)
+                    self.stats['bits raised'] += 1
+                    return changed + [w for w in self.words if atom in self.parts[w]]
+        return None
+
+    def _settle(self, pending):
+        affected, pending = set(pending), list(pending)
+        while pending:
+            word = pending.pop()
+            old = self.keys.pop(word, None)
+            if old is not None and self.forms.get(old) == word:
+                del self.forms[old]
+            key = self.code(word)
+            other = self.forms.get(key)
+            if other is not None and other != word:
+                touched = self._separate(other, word)
+                if touched is None:
+                    raise RuntimeError(f'no part tells {other!r} from {word!r}')
+                old = self.keys.pop(other, None)
+                if old is not None and self.forms.get(old) == other:
+                    del self.forms[old]
+                again = sorted(set(touched) | {word, other}, key=self.order.__getitem__)
+                affected.update(again)
+                pending.extend(again)
+            else:
+                self.forms[key] = word
+                self.keys[word] = key
+        return affected
+
+    def admit(self, form, index=None):
+        if form in self.order:
+            return
+        start = time.perf_counter()
+        self.order[form] = len(self.words)
+        self.words.append(form)
+        if len(self.words) > len(self.codes):
+            self.codes = np.concatenate((self.codes, np.zeros((max(1024, len(self.codes)), self.limbs), dtype=np.uint64)))
+        self.parts[form] = self.atoms_of(form)
+        for atom in self.parts[form]:
+            if atom not in self.atoms:
+                self.atoms[atom] = self.drawn(atom, self.ones)
+        affected = self._settle([form])
+        for w in affected | {form}:
+            self._write(w)
+        if self.repair:
+            affected |= self._repair(set(affected) | {form})
+        self.changed_by.append(len(affected - {form}))
+        self.timings.append(time.perf_counter() - start)
+
+    def admit_all(self, forms, *, index=None, progress=None, budget=None):
+        """Admit ``forms`` in order; ``progress`` is called every 1,000
+        forms; with ``budget`` (seconds) admission stops when it is spent and
+        ``self.stopped`` says where."""
+        if index is None:
+            index = run_index(forms)
+        self.inside, self.holders = index
+        self.codes = np.zeros((len(forms), self.limbs), dtype=np.uint64)
+        self.stopped = None
+        start = time.perf_counter()
+        for k, f in enumerate(forms):
+            self.admit(f)
+            if progress is not None and (k + 1) % 1000 == 0:
+                progress(self)
+            if budget is not None and time.perf_counter() - start > budget:
+                self.stopped = k + 1
+                break
+        return self
+
+    # §19.86: the repair ------------------------------------------------
+
+    def is_run(self, inner, outer):
+        return inner in outer and inner != outer
+
+    def contained(self, mask):
+        """Stored rows whose codes lie inside ``mask``, and those ``mask``
+        lies inside."""
+        c = self.limbs_of(mask)
+        inner = ((self.codes & ~c) == 0).all(1)
+        outer = ((c & ~self.codes) == 0).all(1)
+        return inner, outer
+
+    def accidents_of(self, x):
+        """The accidents of ``x`` among the stored forms: pairs (inner,
+        outer)."""
+        c = self.code(x)
+        live = len(self.words)
+        self.codes[self.order[x]] = self.limbs_of(c)
+        inner, outer = self.contained(c)
+        found = []
+        for j in np.flatnonzero(inner[:live]):
+            y = self.words[j]
+            if y != x and not self.is_run(y, x):
+                found.append((y, x))
+        for j in np.flatnonzero(outer[:live]):
+            y = self.words[j]
+            if y != x and not self.is_run(x, y):
+                found.append((x, y))
+        return found
+
+    def _repair(self, start):
+        changed = set()
+        queue = sorted(start, key=self.order.__getitem__)
+        seen_steps = 0
+        while queue:
+            x = queue.pop()
+            for w in [x]:
+                self._write(w)
+            found = self.accidents_of(x)
+            if not found:
+                continue
+            by_inner = {}
+            for inner, outer in found:
+                by_inner.setdefault(inner, []).append(outer)
+            for inner, outers in by_inner.items():
+                touched = self._separate_inner(inner, outers)
+                if touched is None:
+                    continue
+                for w in touched:
+                    self._write(w)
+                changed |= set(touched)
+                queue.extend(sorted(set(touched) - set(queue), key=self.order.__getitem__))
+            seen_steps += 1
+            if self.cap and seen_steps > self.cap:
+                self.stats['repair loops cut'] += 1
+                break
+        return changed
+
+    def _separate_inner(self, inner, outers):
+        """Give ``inner`` coordinates that each of ``outers`` lacks, by
+        making it (or its coordinates, if it is one already) a part of the
+        catalog carried by every stored form that holds it as a run."""
+        full = (1 << self.width) - 1
+        allowed = (1 << self.n) - 1 if self.repair in ('b', 'bh') else full
+        own = self.code(inner)
+        holder_codes = None
+        if self.repair in ('bh', 'ch'):
+            # ``bh``/``ch``: the coordinate that adds the fewest new ones to
+            # the form's holders, which carry it.
+            holder_codes = [self.code(h) for h in self._holders_of_run(inner) if h != inner]
+        if self.repair == 'a':
+            k = self.bits.get(inner, self.ones) if inner in self.added else self.ones - 1
+            while True:
+                k += 1
+                if k > self.n:
+                    self.failures.append((inner, tuple(outers)))
+                    return None
+                mask = self.drawn(inner, k)
+                if all(((own | mask) & ~self.code(o)) for o in outers):
+                    break
+            self.bits[inner] = k
+            given = mask
+        else:
+            given = 0
+            pending = list(outers)
+            while pending:
+                best, cover = None, []
+                zeros = {}
+                for o in pending:
+                    z = ~self.code(o) & allowed & ~own & ~given
+                    zeros[o] = z
+                candidates = 0
+                for z in zeros.values():
+                    candidates |= z
+                if not candidates:
+                    self.failures.append((inner, tuple(pending)))
+                    return None
+                best_score = None
+                for i in range(self.width):
+                    if not (candidates >> i) & 1:
+                        continue
+                    covers = [o for o, z in zeros.items() if (z >> i) & 1]
+                    added = 0 if holder_codes is None else sum(1 for h in holder_codes if not (h >> i) & 1)
+                    score = (len(covers), -added, -int(self.usage[i]))
+                    if best_score is None or score > best_score:
+                        best, best_score, cover = i, score, covers
+                given |= 1 << best
+                pending = [o for o in pending if o not in cover]
+        self.stats['coordinates given'] += popcount(given & ~self.atom_mask(inner) if inner in self.atoms else given)
+        self.stats['repairs'] += 1
+        for i in range(self.width):
+            if (given >> i) & 1:
+                self.usage[i] += 1
+        if inner in self.atoms:
+            self.atoms[inner] |= given
+            holders = self._holders_of_run(inner)
+        else:
+            holders = self._add_part(inner, ('form', inner, tuple(outers)), mask=given)
+        self.given_forms.add(inner)
+        return sorted(set(holders) | {inner}, key=self.order.__getitem__)
+
+    # Reports -----------------------------------------------------------
+
+    def all_accidents(self):
+        """Every ordered pair of stored forms whose codes lie one inside the
+        other with neither a run of the other; and the true containments
+        that fail (a run whose code is not inside its holder's)."""
+        accidents = true_out = 0
+        live = len(self.words)
+        for i, x in enumerate(self.words):
+            c = self.codes[i]
+            inner = ((self.codes[:live] & ~c) == 0).all(1)
+            inner[i] = False
+            for j in np.flatnonzero(inner):
+                if not self.is_run(self.words[j], x):
+                    accidents += 1
+            for part in self.inside.get(x, ()):
+                if part in self.order and np.any(self.codes[self.order[part]] & ~c):
+                    true_out += 1
+        return accidents, true_out
+
+
+def ones_in_halves(coder):
+    p = [popcount(coder.code(w) & ((1 << coder.n) - 1)) for w in coder.words]
+    h = [popcount(coder.code(w) >> coder.n) for w in coder.words]
+    return dict(parts=(min(p), round(float(np.mean(p)), 1), max(p)),
+                wholes=(min(h), round(float(np.mean(h)), 1), max(h)),
+                full_parts_half=sum(x == coder.n for x in p), full_wholes_half=sum(x == coder.n for x in h))
+
+
+def sample_accidents(coder, every=40):
+    """The sample's count (every 40th form against all): codes inside
+    another's with the one not a run of the other, and inside truly."""
+    live = len(coder.words)
+    accident = true = 0
+    for i in range(0, live, every):
+        c = coder.codes[i]
+        outer = ((c & ~coder.codes[:live]) == 0).all(1)
+        outer[i] = False
+        for j in np.flatnonzero(outer):
+            if coder.is_run(coder.words[i], coder.words[j]):
+                true += 1
+            else:
+                accident += 1
+    return dict(true=true, accident=accident)
+
+
+def admission_times(coder, marks=(1000, 5000, 19821), window=100):
+    """Mean seconds to admit one form near each count stored, and the
+    greatest."""
+    t = np.array(coder.timings)
+    result = {}
+    for mark in marks:
+        lo, hi = max(0, min(mark, len(t)) - window), min(mark, len(t))
+        if hi > lo:
+            result[mark] = (round(float(t[lo:hi].mean() * 1000), 2), round(float(t[lo:hi].max() * 1000), 1))
+    return result
