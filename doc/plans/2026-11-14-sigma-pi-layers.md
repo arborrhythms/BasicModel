@@ -12645,6 +12645,36 @@ which form of the where match is built.
     it has learned: return the lesson's sixteen sentences before and
     after, and say what a checkpoint of before becomes.
 
+18. Carried from round 5 (§23.5.1's review), in the first pass:
+    - A candidate pair is worth what both of its constituents say
+      of it: each present only with the other (the two ratios of
+      IdentityRows.meet_ratios, the least of them). A constituent
+      present without the other counts against the pair as its
+      meeting counts for it (Alec, §19.101: "their constituents
+      always occur together"). Certificate 60 (2) gains the other
+      direction; test_item18_expect's test_81 is read again.
+    - The blind spot's fill is specific to a place: what is observed
+      at another place is expected at this one only through a row
+      above that holds it with something else, never through its
+      own row. The reconstruction reads ConceptSpread.read_back
+      where a look's percepts were withheld (rule 30).
+    - Half precision (Alec, 2026-11-20; the item 1.5 plan): the
+      fallback of MODEL_AMP to full precision on MPS goes from
+      bin/util.py (the installed PyTorch runs autocast there in
+      fp16 and bf16); the CPU's stays. No configuration is changed.
+19. The membership gradient (the fifth pass of round 4, §23.4.4: cut
+    in PerceptField.read_percepts and
+    ConceptualSpace.percept_code_evidence because attention's table
+    read exact zeros): restored in the pass that removes the table,
+    since Alec's answer is that declared classes are not fixed
+    (§19.106). Both gates and what the lesson's known words read
+    are returned before and after.
+
+The passes (Alec, 2026-11-20: one or two a round where it can be;
+this round is three): first, steps 1 to 7, 10, 15, the first bullet
+of 17, and 18 and 19; second, steps 8, 9, 11 and 12 with the rest
+of 17's measure; third, step 16 with rounds 6b and 6c.
+
 Run: the new test file; test/test_loop_of_looks.py and every test
 file that names Attention, ModelAttention, SentenceLooks,
 AttentionLesson, AttentionContext, LookForecast or WhereRegistry,
