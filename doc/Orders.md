@@ -23,8 +23,8 @@ catuṣkoṭi's for/against lanes).
 **The basic level.** Parts and wholes bound one basic percept in
 perception: a basic percept is a row of the first Pi over its parts and
 wholes, made when MTM nominates it on recurrence and never on a first
-reading. Each nominated row brings one concept of order zero, a column of a
-dense Sigma over the combined code of what is there
+reading. Each nominated row brings one concept of order zero, which reads,
+through a sparse Sigma, the signed values the Not gives for the rows present
 ([Architecture](Architecture.md#sigma-and-pi-layers)). Above order zero the
 structure repeats: a symbol is a row of a Pi over concepts, nominated by MTM
 in the same way, and it brings one concept, a Sigma over symbols. Pi, Not

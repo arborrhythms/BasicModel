@@ -116,12 +116,14 @@ its internal coordinates; `Data` never writes the model's `.where`/`.when`.
 Positions name locations, never content, so this adds no target to the model
 context.
 
-Inside the model, symbols carry `.where` and `.when`, and a concept keeps the
-extent of its occurrences and never the clock (decided 2026-10-20). A question
-that asks *when* therefore reads the stamp from an occurrence, where a
-particular event, a concept with few occurrences, lands on a definite time.
-`.when` is model time on one clock, sinusoidally encoded, and learned readers
-see it only as ages or differences.
+Inside the model, symbols carry `.where` and `.when`, and a concept is opaque
+and keeps its `.where` and its `.when`, the stamp of the clock at its moment
+(Alec, 2026-11-19). A question that asks *when* reads the stamp, where a
+particular event lands on a definite time. `.when` is model time on one
+integer clock, whose sinusoidal code is made in one place and held on the
+model beside it; the chooser and the operators read the present there and
+compare a stamp with it by a comparator that gives how far back the stamp
+is. A stamp is never rewritten as an age.
 
 The same target-free context vector reaches the answer through the question
 conditioner, `Model._question_conditioner`: one zero-initialized, bias-free

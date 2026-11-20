@@ -362,12 +362,14 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   `attend`'s mask over all concepts on two lanes, is carried down through the
   matrices of the way up as a gradient of the asked concepts by the
   sentence's percepts, taken from the open run. Each Sigma is passed by its
-  weights, before its squash, and each Pi by the derivative of its product at
-  the values of the open run. It is computed by the transposes of the same
-  sparse matrices with the Pi's local derivatives kept from the open run, so
-  no second backward pass is made inside the forward. It lands on each
-  event's activity, the what, and on each event's band of where wires
-  ([Architecture](Architecture.md#one-attention)).
+  weights, before its squash; the Not gives each of a row's two lanes its
+  share; and each Pi is passed by the derivative of its product at the values
+  of the open run, the first Pi onto every member of a row, its parts and its
+  properties. It is computed by the transposes of the same sparse matrices
+  with the Pi's local derivatives kept from the open run, so it has no
+  weights of its own and no second backward pass is made inside the forward.
+  It lands on each event's activity, the what, and on each event's band of
+  where wires ([Architecture](Architecture.md#one-attention)).
 - **What a look teaches (Alec, 2026-11-18).** The gradient of a look's
   selection lands on the request, on which concepts are asked for and on what
   produces that asking, and `attend` exposes to the error the network's
@@ -380,17 +382,17 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   `WhereEncoding.encode`: "The parameter itself must stay fixed if the
   sinusoid coding is to remain meaningful across all .where." It takes a
   gradient, so the salience map lights it, and it is in no optimizer's
-  groups. What is trained is what reads it: the concepts' weights on the
-  where coordinates of the combined vector, which start at zero for a new
-  concept. The reconstruction's error reaches those weights, since what is
-  put back at a place is built through the what and the where together
+  groups. Only the first Pi reads it, as a look's match of place, and no
+  concept has a weight on a where wire; what is put back at a place is built
+  through the what and the where together
   ([Training](Training.md#within-sentence-reconstruction-objective)).
 - **Membership is learned under a penalty, above order zero.** The Pi's
   entries and the Sigma's entries above order zero are both penalized, so
   that what is learned can be read from the rows; the penalty thins the
   values of entries that exist and does not make a matrix sparse. The
   structure of a meta concept is never thinned. The Sigma of order zero,
-  dense over the perceptual width, is not penalized. The order-zero Pi holds
+  sparse over the signed values of the basic percepts' rows, is not
+  penalized. The order-zero Pi holds
   only the mereology's entries, a percept over its parts and wholes, and no
   concept writes into it ([Architecture](Architecture.md#sigma-and-pi-layers)).
 
@@ -472,13 +474,13 @@ native activity holds one selected row, strength and continuous percept vector
 per covered position. The native spelling buffers are allocated at construction;
 vectorized decoding never allocates a batch-by-position-by-inventory slab.
 
-**Episodic entries and time bands (2026-11-11).** An episodic entry is
-selected under `torch.no_grad` and stored detached (`EpisodicMemory.select`,
-`write`), and a field reinstated by a recall books no loss term of its
-own: the percept side of long-term memory is System 1's content and trains
-nothing. Every learned reader takes a `.when` as an age or a difference
-(`RowTime.age_interval`, `age_band`, `relative_idea`, `relative_to`,
-`difference`), so no learned read depends on the clock's phase. See
+**Slots and time.** A row's slots are filled under `torch.no_grad` and
+stored detached (`EpisodicMemory.select`, `write`), and a field reinstated
+by a recall books no loss term of its own: the episodic side of long-term
+memory is System 1's content and trains nothing. A stamp is never rewritten
+as an age: the chooser and the operators read the present on the model and
+compare a concept's `.when` with it by the comparator, which gives how far
+back the concept is. See
 [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 Output is `generate -> occurrence writer -> reverse`. Generate infers binary

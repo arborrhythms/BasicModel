@@ -252,8 +252,9 @@ Gated behind `<mereologyRaise>` (default off).
 
 The two towers stay **in-kind**: `PartSpace` *composes parts $\to$ parts*
 and `WholeSpace` *analyses wholes $\to$ wholes*, and the **concept is the
-cross-tower link**: an order-0 concept reads the codes of basic percepts,
-each a row of the first Pi over its parts and its wholes (see
+cross-tower link**: the first Pi alone reads the codes, and an order-0
+concept reads the basic percepts' rows, each a row of the first Pi over its
+parts and its wholes, through the Not (see
 "Basic-percept premises" below). At init PartSpace
 has primitive parts and WholeSpace has supplied property rows defined over
 primitive input. The attended field binds their location and level.
@@ -348,10 +349,12 @@ the other.
   one structure, a Pi, a Not and a Sigma, at every order
   ([Architecture](Architecture.md#sigma-and-pi-layers)). A row of a Pi is a
   basic percept at order zero, or a symbol above it, and exists only when
-  MTM nominates it on recurrence; each row brings one concept, a column of
-  the Sigma above it. A concept is one signed value, $\tanh(x\,U)$, whose
-  size is its certainty. Its weights start at zero or above, and a weight
-  below zero is a Not entry, the only place a sign lives. The many-to-one
+  MTM nominates it on recurrence; each row brings one concept of the Sigma
+  above it. The Not joins each row's two values into one signed value
+  $s_i$, and a concept is one signed value, $y_c = \tanh(\sum_i w_{ci}
+  s_i)$, whose size is its certainty. Its weights are at zero or above; the
+  Not is the only place a sign is changed, and a Not entry gives one
+  concept a row's pair exchanged. The many-to-one
   abstraction lives on the Sigma's entries; the Pi's entries are the
   mereology, a percept over its parts and wholes.
 
@@ -375,8 +378,8 @@ number of constituents.
   map whose weights are all zero or above keeps the order of its inputs:
   where one vector is at or below another in every coordinate, so are
   their outputs. Checked on 4,000 such pairs, this holds for a Pi with any
-  entries of zero or above, for $\tanh(x\,U)$ with $U$ of zero or above,
-  and for the union $1 - \prod(1 - x)$, and fails as soon as the Sigma has
+  entries of zero or above, for a Sigma $\tanh(\sum_i w_{ci} s_i)$ with
+  every $w_{ci}$ at zero or above, and for the union $1 - \prod(1 - x)$, and fails as soon as the Sigma has
   one Not entry. A Pi's output lies at or below every input it reads and
   the union's at or above, so the Pi makes the order below and the union
   the order above. Monotone weights cannot make evidence against; that
@@ -527,12 +530,11 @@ accident. A class of whole words fills the 64 coordinates quickly (one word
 31 ones, five words 57), so a class of more than a few words bounds almost
 nothing.
 
-**The wholes half is read on its complement.** Being an upper bound, it is
-joined over a reading's percepts by the product, and a concept reads the
-coordinates it cuts away, $1 - w$ (`BasicPercepts.read_pair`). Under the
-class of all characters alone nothing is cut away and the half says nothing.
-A reader that asks whether one form lies inside another reads the for lane
-alone, where the part order holds.
+**The wholes half is an upper bound.** Under the class of all characters
+alone nothing is cut away and the half says nothing. A reader that asks
+whether one form lies inside another reads the for lane alone, where the
+part order holds. The code is read by the first Pi alone; no concept reads
+it.
 
 **A scalar is the same mechanism over the bins of its value** (Alec,
 2026-11-19: "the exact same mechanism, except part growth and whole
@@ -547,12 +549,16 @@ dimensions they differ: of the 2,016 pairs of boxes on an 8 by 8 grid the
 intersection is a box in all, and the union in only the 1,232 where one box
 lies inside the other.
 
-**Wholes driven by the concepts** (Alec, 2026-11-19: "a sigma being driven
-by the downward conceptual projection ... synthesis on the way up and
-analysis on the way down"). A conceptual property is one more row of the
-table of wholes, written by the downward projection. It can tell apart what
-no class of characters can, such as `archer` and `archery`, but says nothing
-at a word's first readings, so the next part above is still needed then.
+**The analysis from above is conceptual attention** (Alec, 2026-11-19: "we
+need something driving that analysis top-down just like synthesis drives
+bottom-up part construction"). No Sigma writes into the wholes half of a
+code. A request over concepts is carried down by the transposes of the
+matrices of the way up, through the Sigma's weights, the Not and the first
+Pi's own entries, onto every member of a row, its parts on the part tower
+and its properties on the property tower, and onto its where
+([Architecture](Architecture.md#one-attention)). Two forms that no class of
+characters tells apart, such as `archer` and `archery`, are told apart by
+the next part above.
 
 **The way back of a form starts from the form alone** (Alec, 2026-11-19: "we
 are not always doing reconstruction: sometimes we do generation"). No place
@@ -684,7 +690,7 @@ legacy front ends dispatched by `bin/Legacy.py`. The two towers mirror each
 other in the code: the parts half grows from all zeros by the OR of its
 parts, and the wholes half shrinks from all ones by the AND of its wholes.
 Evidence against is perceived, on each half's against lane, and no percept
-is negated: a sign lives only in a weight of the Sigma, a Not entry.
+is negated: a sign is changed only by the Not, through a Not entry.
 Rank is mereological level in both towers, and all ranks use the same
 `[0,1]^D` membership cube. Conceptual order counts symbolizations.
 

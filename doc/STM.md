@@ -190,7 +190,7 @@ has its own range in the model's shared `.where` allocation.
 same encoding as the perceptual codebooks. A slot keeps its location when
 ideas are pushed, reduced or cleared. The content's codebook address stays
 separate. The kept close writes the sentence's semantic content to LTM,
-with its episodic entry beside it (Section 10). A read places only what it
+with its slots beside it (Section 10). A read places only what it
 interprets; the earlier placements stay as the occupied slots with their
 `.where`/`.when` stamps.
 
@@ -364,8 +364,8 @@ the degree that both what it is and where it stands are salient
 ([Architecture](Architecture.md#one-attention)). What lies away from where the
 request looks is lowered by degree, by the magnitude of what asks; nothing is
 cut and there is no floor. No window is centred on a word's position: the
-place a look asks for comes from the request, through the concepts' learned
-weights on the where, and the request moves with the state of STM (Section
+place a look asks for comes from the request, carried down through the
+first Pi's entries onto the where, and the request moves with the state of STM (Section
 1). The word that is interpreted enters STM as one idea; the percepts around
 it reach it only through the concepts the look returned.
 
@@ -553,16 +553,18 @@ auxiliary state such as the count, the clock and the forgetting counters
 [Memory.py](../bin/Memory.py)). An `LTM0` entry is one idea, and its
 columns are one paired vector `[form | meaning]` in `slots[capacity, nDim]`,
 whose form block's last four coordinates hold its time (`time`, read through
-`entry_time`); its `trust`; its `referent`; its episodic entry
+`entry_time`); its `trust`; its `referent`; its slots
 (`episodic_concepts`, `episodic_values`); and its `activity`. Each column has
 its reason: the time says when the row was written and names it; the trust is
 how far the idea is held true; the referent is what the idea is of, one
 optional reference to a concept or to another row by its time, written from
 the reference the close selected and by a promotion, and empty for most
-sentences; the episodic entry is what the idea extends to (below); and the
-activity decides whether the row stays (below). An idea is an intension and
-its entry its extension, and two ideas can have one extension: a kind of one
-member and that member leave equal entries, and the referent tells them
+sentences; the slots are what the idea extends to (below); and the
+activity decides whether the row stays (below). The idea is semantic memory
+and the slots episodic memory (Alec, 2026-11-19: "Entry should be slot in
+episodic memory ( the idea is semantic memory)"). An idea is an intension and
+its slots its extension, and two ideas can have one extension: a kind of one
+member and that member leave equal slots, and the referent tells them
 apart. A row's order is the order of what its referent names, and zero
 where it names nothing (`order_of_row`). There is no separate `when` column, no role table, no stored
 order, no stored derivation, no stream, no origin and no kind: which rows are
@@ -625,9 +627,13 @@ lights nothing and cannot certify its own referents. A kept thought is
 written at what its premises give, the least on each lane. A relation takes
 the same number on the lane of its sign.
 
-**Time.** A stamp is the clock of the occurrence it records. A concept
-carries no clock, so a particular event is a concept with few occurrences,
-and a question about *when* reads its occurrences' stamps. A row is named by
+**Time.** The model has one integer clock, and the clock's sinusoidal code
+is made in one place and held on the model beside it, where every reader
+reads it. A stamp is the clock of the moment it records. A concept is opaque
+and keeps its `.where` and its `.when` (Alec, 2026-11-19), so a question
+about *when* reads the stamp. The chooser and the operators are given the
+present in the same code and a comparator that tells how far back a stamp
+is; a stamp is never rewritten as an age. A row is named by
 its time: a row's time is the model's present, or one more than the last
 row's time where the present is not later, so times rise strictly, the
 store's order is time order, and a row is found by its time (`row_name`,
@@ -651,16 +657,16 @@ word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read takes
 the question's field of understanding, the set of active concepts its
 operators leave when applied to its words' sets (for "red ball", what the
 sets of red and of ball share): each operand's set gives one result over the
-newest `ltmWindow` rows, matched against their entries in `LTM0` order by
+newest `ltmWindow` rows, matched against their slots in `LTM0` order by
 order and never reduced across orders or across rows, and the question's
 operators combine the results as they combine sets (`EpisodicMemory.matches`,
 `relevance`, `ExtendedRecall.matches`). Both sides are concepts, never percept
 codes: a question's set holds each active concept with its value, and a
-row's entry holds each kept concept as one signed value whose size is its
+row's slots hold each kept concept as one signed value whose size is its
 certainty, on the lane of its sign. At each order, a row's result is the sum
-over its entries of that order of the entry's strength times the question's
-value for that concept on the entry's lane, divided by the question's squared
-length at that order, and at most one; only an entry's strongest reading of a
+over its slots of that order of the slot's value times the question's
+value for that concept on the slot's lane, divided by the question's squared
+length at that order, and at most one; only a row's largest slot for a
 concept on a lane counts. The results of the orders are joined by the least,
 as `intersection` joins them. Rows are ranked by that result, newer first
 among ties; a row a read returns has its activity raised. Explicitly
@@ -680,18 +686,20 @@ reference.
 [Prediction context](../bin/Layers.py),
 [meaning roles](../bin/Meaning.py).
 
-**Episodic entry.** Every `LTM0` row has an episodic entry, empty where its
-idea has no extension: up to
-`episodicConcepts` concept references, each with one signed value (for minus
-against), in one flat list with no order axis (`episodic_concepts`,
-`episodic_values`). For an input sentence they are the strongest readings of
-its field of understanding, whatever their orders; for a kept thought, the
-strongest of its idea's extension, taken from its kept tree or, where it has
-none, from its generate walk (`EpisodicMemory.select`, `for_meaning`). When more are present the
-largest magnitudes are kept, and zero readings are absent. No place or pole
-pair is stored; the row's time supplies time. A close that writes only an
-`LTM1` relation writes no entry, and is counted. A recall reinstates a
-returned row's entry as the requesting stream's field
+**Slots.** Every `LTM0` row has, beside its idea, a few slots, empty where
+its idea has no extension: up to `episodicConcepts`, each one concept of the
+row's moment with one signed value (for minus against), in one flat list
+with no order axis (`episodic_concepts`, `episodic_values`). For an input
+sentence they are taken from its field of understanding, whatever their
+orders; for a kept thought, from its idea's extension, taken from its kept
+tree or, where it has none, from its generate walk (`EpisodicMemory.select`,
+`for_meaning`). Which concepts of the moment fill the slots is not settled:
+not the most active (Alec, 2026-11-19: "Most active is clearly not useful;
+perhaps least expected, or sentence dominant such as np, vp, ?"). Zero
+readings are absent. No place or pole pair is stored; the row's time
+supplies time. A close that writes only an `LTM1` relation writes no slot,
+and is counted. A recall reinstates a returned row's slots as the requesting
+stream's field
 (`EpisodicMemory.reinstate`): it lays out the readings by their concepts'
 owned surface lengths with one separator between; a missing surface gives an
 empty extent and a stale concept id is skipped, each counted. The field is
@@ -701,8 +709,8 @@ the next open pass; other streams are unchanged.
 each reading's pole pair as $(\max(v, 0), \max(-v, 0))$ from its signed value
 $v$, at the row's time; the signed value belongs to these stored references
 only, and the field stays a pair. Forgetting carries the columns with their
-rows. The entry is
-the reading of its moment, not perceptual memory: a percept that had no concept
+rows. The slots are
+the reading of their moment, not perceptual memory: a percept that had no concept
 when it was seen leaves nothing, where a word stood is not kept, and `reverse`
 returns the percepts that the concepts' definitions give at the recall. See
 [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
@@ -731,7 +739,7 @@ with no cycle and no duplicate pair, a trust or an activity must lie in its
 range, and a column whose shape differs from the construction raises. An
 older layout is converted only where it maps exactly: its evidence pair
 becomes the signed trust, its activity starts at `activityDefault`, its
-episodic entry is flattened to the strongest readings, a retained row's
+episodic record is flattened into the row's slots, a retained row's
 selected reference becomes its referent and what its bindings held pending
 moves to MTM, and every retired field it drops is named in a warning. A row
 holding both trust lanes, or rows without unique times, are rejected before
@@ -748,10 +756,11 @@ activity below one by `activityDecay` (0.9). For example, a row written at
 no read it stands at about 0.51. An activity of one is never lowered and its
 row never dropped. An `LTM0` row not yet promoted whose activity reaches
 `activityPromotion` (0.9) is promoted: its idea becomes a concept
-(`MemoryConsolidation.consolidate`), the new concept is written as the row's
-referent, and the row's activity is set to one. The concept's order is its
+(`MemoryConsolidation.consolidate`), which keeps the row's stamp, the new
+concept is written as the row's referent, and the row's activity is set to
+one. The concept's order is its
 referent's where the row had one, and one above the greatest order among its
-entry's concepts where it had none.
+slots' concepts where it had none.
 
 **Forgetting.** The forgetting pass (`Forgetting.forget`) runs after backward
 at a document boundary, in training or after a stateful inference request,

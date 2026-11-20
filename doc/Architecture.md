@@ -2580,7 +2580,8 @@ The stores subclass the stateless `MemoryStore` to share tensor snapshot
 ownership (clone, optional graph detach and CPU copy).
 
 A deposited thought idea takes a tick of the one model clock (Alec,
-2026-11-10: "One clock"), on `RowTime.encoder()`'s ladder, and has
+2026-11-10: "One clock"), stamped with the clock's code held on the model,
+and has
 `.where = (-1, -1, -1, -1)`. The stamp is a unique, exact address in its
 stream: thought reads, enumeration, release, replay and query operands use
 exact `.when` lookup, and duplicate occupied stamps and absent chunks fail
@@ -2884,10 +2885,11 @@ file that declares one. Field operators are `intersection`, `union` and
 `not`, with one definition of their logic on the two lanes: the weighted
 least and greatest, `intersection` taking the least on the lane for and the
 greatest on the lane against, `union` the reverse, `not` swapping the lanes
-and `non` withholding both. On readings of 0 and 1 these agree with the
-layers' product logic; on graded readings the layers give the product and
-the union and the field operators the least and the greatest, and the two are
-left to differ ([Logic](Logic.md)). Vector operators are all the others. Tier-local `pi` and `sigma` remain
+and `non` withholding both. Intersection and union, the least and the
+greatest, are operations of the basic level; conjunction and disjunction, a
+Pi's product and a Sigma's squashed sum, are the symbolic level's. They agree
+on readings of 0 and 1, and on graded readings they are two things at two
+levels and are not made to agree ([Logic](Logic.md)). Vector operators are all the others. Tier-local `pi` and `sigma` remain
 substrate declarations; the default keeps the parallel body.
 
 The operators `data/complete.grammar` keeps, and the rule of each, are in

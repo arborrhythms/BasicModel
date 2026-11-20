@@ -403,8 +403,8 @@ It is an option of the grammar, off unless a configuration sets it, and no
 form, row or symbol is made for the fragment.
 
 - A look whose extent holds two or more words returns their percepts
-  together, and the basic level reads them at one time: the combined vector
-  over all of them, and the concepts of order zero.
+  together, and the basic level reads them at one time: the first Pi's rows
+  and the Not for all of them, and the concepts of order zero.
 - The read from a field to a point (`IdeaRead`, `ConceptualSpace.idea_stack`)
   gives one idea for the look, as it gives one for a whole sentence.
 - System 2 teaches it: when the grammar composes the same words one by one

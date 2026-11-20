@@ -27,8 +27,8 @@ test or accumulate the resulting propositions.
 > all zeros, *wholes* top-down from all ones); **basic percept** = a row of
 > the first Pi over its parts and wholes, nominated by MTM; **concept** = a
 > ConceptualSpace thing, one signed value whose size is its certainty: an
-> order-zero concept is a Sigma over the combined code of the basic percepts
-> present, and a concept of a higher order a Sigma over symbols;
+> order-zero concept is a Sigma over the signed values the Not gives for the
+> basic percepts present, and a concept of a higher order a Sigma over symbols;
 > **symbol** = a row of a Pi over concepts (no dimensions, INTENSIONAL,
 > bringing one concept). WholeSpace itself holds whole-percepts.
 
@@ -116,21 +116,31 @@ sure that what we are doing is interpretable in those terms").
 
 - **And** is a row of a Pi: the product of the lanes it has weight on, so it
   requires every member. On percepts it is Boole's $xy$.
-- **Or** is a Sigma: a weighted sum of symbols squashed by tanh, any one
-  term being enough. Where percepts of one reading are joined, the or is
-  the Pi taken on the gaps, $1 - (1 - x)(1 - y)$.
-- **Not** is a Sigma weight below zero, a Not entry, which is the only place
-  a sign lives. On percepts the opposite of one is zero, not minus one (Alec,
-  2026-11-17: "Omission teaches not: yes, for percepts, the opposite of 1 is
-  0, not -1, as in Boole"): a Not entry at the basic level records that
-  something expected is absent, and it is taught by omission. Above it, a Not
-  entry reads a symbol's pair of rows swapped.
+- **Or** is a Sigma: a weighted sum of signed values squashed by tanh, its
+  weights at zero or above, any one term being enough.
+- **Not** is the Not between the Pi and the Sigma, the only place a sign is
+  changed (Alec, 2026-11-19: "that would give it the ability to change sign,
+  which should be restricted to not"). It joins each row's two values into
+  one signed value, for less against, and a Not entry gives one concept a
+  row's pair exchanged; the size of an entry is the Sigma's weight and its
+  sign is the Not's. On percepts the opposite of one is zero, not minus one
+  (Alec, 2026-11-17: "Omission teaches not: yes, for percepts, the opposite
+  of 1 is 0, not -1, as in Boole"): a Not entry at the basic level records
+  that something expected is absent. It is made implicitly by the gradient,
+  where teaching carries an entry through zero, and explicitly by omission
+  or by a declared Not member. Above it, a Not entry reads a symbol's pair
+  of rows exchanged.
 
-And and or are monotone: their weights are zero or above, so raising an input
-never lowers the answer, and Not carries all negation (Alec, 2026-11-17: "the
-removal of the NOT is exactly what is necessary to speak only of the good in
-Augustine's sense"). With every weight held at zero or above, so that no Not
-entry is read, a mind speaks only of what is ([Philosophy](Philosophy.md)).
+These are conjunction and disjunction, the symbolic level's two; the least
+and the greatest of graded values, intersection and union, are the basic
+level's, and there is no third pair (Alec, 2026-11-19: "I like the
+intersection/union operations as subsymbolic (basic level) and
+conjunction/disjunction at the symbolic level"). And and or are monotone:
+their weights are zero or above, so raising an input never lowers the
+answer, and Not carries all negation (Alec, 2026-11-17: "the removal of the
+NOT is exactly what is necessary to speak only of the good in Augustine's
+sense"). With no Not entry read, a mind speaks only of what is
+([Philosophy](Philosophy.md)).
 The operator `not` of a sentence or a thought is separate: it swaps the lanes
 of what it is put on (`FieldLogic.reduce`), can be put on any symbol, and
 needs no omission to teach it.
@@ -144,11 +154,11 @@ for absence, or, at the percepts, a basic percept whose two lanes are both
 above zero.
 
 On true, neither and false the layers and the grammar's field operators
-agree. On graded readings they differ and are left to differ: the layers
-give the product logic, an and of two halves being a quarter and an or of
-two halves three quarters, where `intersection` and `union` give the least
-and the greatest, a half each. Checked as a toy over 20,000 random pairs,
-the two differ by .042 on average and by at most .25. Both are monotone.
+agree. On graded readings they are two things at two levels and are not
+made to agree: the layers' conjunction is a product, an and of two halves
+being a quarter, and their disjunction a squashed sum, where `intersection`
+and `union` give the least and the greatest, a half each. Both are
+monotone.
 Learned from random starts, a stack of these layers solves and, or and not
 over true, neither and false in 10 of 10 starts, and with the penalty on
 the entries of both the Pi and the Sigma what it learns can be read back as

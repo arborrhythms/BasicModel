@@ -376,9 +376,10 @@ PartSpace has no `<codebook>` element: the percept prototypes live on the
 
 ### `<ConceptualSpace>`
 
-Order-zero concepts are a dense Sigma over the combined code of a reading's
-basic percepts, one concept for each basic percept; above order zero a Pi
-makes symbols over concepts and a Sigma makes the concepts, each order with
+Order-zero concepts are a sparse Sigma over the signed values the Not gives
+for a reading's basic percept rows, one concept for each basic percept; above
+order zero a Pi makes symbols over concepts, the Not joins their lanes, and a
+Sigma makes the concepts, each order with
 half the units of the one below ([Architecture](Architecture.md#sigma-and-pi-layers)).
 `conceptUseFloor` is the separate discovery gate over measured use.
 

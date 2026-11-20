@@ -469,11 +469,13 @@ and sigma, respectively."
   less, so a row requires the members it has weight on and never exceeds its
   own reading, and its exact way back is the triangular solve of its
   `L D U` matrix.
-- **`SigmaLayer3` is a weighted sum with one exit**, $\tanh(x\,U)$, with
-  signed weights and no bias. A weight's positive part is its input's for
-  entry and its negative part its Not entry, so an entry is never both.
-  Weights start at zero or above, so there is no Not entry until teaching
-  makes one. Its way back gives the input by least squares where there are
+- **The Sigma is a weighted sum with one exit**, $y_c = \tanh(\sum_i
+  w_{ci} s_i)$, over the signed values $s_i$ that the Not gives for its
+  rows, with weights at zero or above and no bias, so it is monotone. The
+  size of an entry is the Sigma's weight and its sign is the Not's: a Not
+  entry gives the concept that row's pair exchanged, and an entry is never
+  both. The gradient makes a Not entry where it carries an entry through
+  zero, and a declared Not member makes one explicitly. Its way back gives the input by least squares where there are
   enough concepts, and a signed value on the way back is split into its two
   unsigned parts before a percept or a symbol holds it: -.5 is .5 on the lane
   against and nothing on the lane for.
@@ -488,11 +490,11 @@ and sigma, respectively."
   with the mereology)." A row exists only when MTM nominates it; it selects
   for, its parts and wholes being required, and against, the parts that the
   nearest forms holding it add, any one of which tells against it.
-- **The concepts of order zero are a dense Sigma** over the combined vector
-  of what is there, one column for each nominated row. "Then those percepts
-  are collected via a (sparse) hyperplane , via the SIGMA, which become
-  zero-order concepts (or basic concepts)." A column starts from its
-  member's code and is then learned.
+- **The concepts of order zero are a sparse Sigma** over the signed values
+  that the Not gives for the nominated rows, one concept for each row. "Then
+  those percepts are collected via a (sparse) hyperplane , via the SIGMA,
+  which become zero-order concepts (or basic concepts)." A concept starts
+  reading only its own row, at one, reads no code, and is then learned.
 - **Both and neither.** A ball of black and white patches is, for the
   concept white, both: "We must, for those concepts, say "yes and no" (at
   different places). but concepts don't work like that; there is no

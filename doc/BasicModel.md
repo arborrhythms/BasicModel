@@ -355,10 +355,12 @@ dense-perceptual / sparse-symbolic split is in
 The seam between perceptual and relational definition is operational in the
 forward, which has one terminal cutover
 ([Architecture](Architecture.md#a-symbolic-weights-the-two-phase-forward)).
-At it each order-0 concept reads the combined code of the basic percepts
-present through the dense Sigma of order zero, and above it the one structure
-repeats: a Pi makes symbols over the concepts of every lower order, and a
-Sigma makes the concepts of the next order from those symbols
+At it the first Pi reads the basic percepts present, the Not joins each
+row's two values into one signed value, and each order-0 concept reads those
+values through the sparse Sigma of order zero; above it the one structure
+repeats: a Pi makes symbols over the concepts of every lower order, the Not
+joins their lanes, and a Sigma makes the concepts of the next order from
+those symbols
 ([Architecture](Architecture.md#sigma-and-pi-layers)).
 An order-0 concept is thus
 defined by its perceptual features, and a concept of order $\ge 1$ by its
@@ -490,8 +492,10 @@ the earlier SVD-rotation sketch. `InvertibleLinearLayer` parameterizes the map
 with triangular factors and a diagonal scale so forward and reverse share the
 same learned transform without forming a dense inverse on every call. Each lane
 of a square `PiLayer3` is such a map in the log domain, so the Pi inverts
-exactly; `SigmaLayer3` is $\tanh(x\,U)$ with signed weights and no bias, and
-returns its input by least squares where there are enough concepts. See
+exactly; the Sigma (`SparseSigmaLayer3`) is $y_c = \tanh(\sum_i w_{ci} s_i)$
+over the signed values the Not gives, with weights at zero or above and no
+bias, and returns its input by least squares where there are enough
+concepts. See
 [Architecture.md](Architecture.md#sigma-and-pi-layers) for the contract.
 
 [^1]: Perceptual space is known as "embedding space" in transformer literature.

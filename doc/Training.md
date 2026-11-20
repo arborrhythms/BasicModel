@@ -770,17 +770,14 @@ stages: input, thinking, output", gives the loop.
 **The reconstruction teaches location (Alec, 2026-11-19).** "Reading in order
 will create location concepts as long as we are teaching location." The bytes
 put back are built through a conjunction of the what pathway and the where
-pathway: on the way back a concept gives each percept it recreates a band of
-where wires, through the same weights by which it reads the where; the band is
+pathway: on the way back each percept recreated is given a band of where
+wires through the entries of the first Pi that read its where; the band is
 matched against the code of every place of the out buffer by a softmax over
 the places, and the match is the percept's weight at that place. What is put
 back at a place is the sum over the recreated percepts of what each is, times
-its weight there. The error against the sentence's bytes at their places then
-reaches both the weights that read the what and the weights that read the
-where, and no location concept is declared: concepts learn location through
-their weights on the where coordinates. Taught beside the reading lesson this
-read held-out word orders 6 of 6 in the prototype of the looks, and 4 of 6
-alone.
+its weight there. No location concept is declared, and no concept has a
+weight on a where wire: the where enters at the first Pi, as a look's match
+of place.
 
 The owned `InputReconstruction` retains the recovered ideas, the realized
 input event, the costs per sentence and truncation. Ownership is established
@@ -1028,15 +1025,16 @@ greedy path.
 
 ### Training Loop
 
-The concepts of order zero are the dense Sigma of the first layer
-(`OrderZeroSigma`): $y = \tanh(x\,U)$ over the reading's combined vector,
-with no bias and one column for each basic percept
-([Architecture](Architecture.md#sigma-and-pi-layers)). A column is written
-when its concept is made, from what tells for its member less what tells
-against it, each side divided by its own squared length and the two taken at
-their mean, so that a member read alone reads one; the network then learns
-it; nothing is normalized afterwards. The Sigma of order zero is dense
-and takes no sparsity penalty. Membership above it is learned under a penalty
+The concepts of order zero are the sparse Sigma of the first layer
+(`SparseSigmaLayer3`): for a concept $c$, $y_c = \tanh(\sum_i w_{ci} s_i)$,
+the sum over its entries, $w_{ci}$ at zero or above and $s_i$ the signed
+value the Not gives for basic percept row $i$, exchanged through a Not entry;
+there is no bias, and one concept for each basic percept
+([Architecture](Architecture.md#sigma-and-pi-layers)). A concept starts
+reading only its own row, at one, and the network then learns its entries; a
+member that joins later writes an entry at one on its row. The gradient makes
+a Not entry where it carries an entry through zero. The Sigma of order zero
+takes no sparsity penalty. Membership above it is learned under a penalty
 on the entries of the Pi and of the Sigma alike, which thins the values of
 entries that exist and does not make a matrix sparse; the structure of a meta
 concept is never thinned. A promotion above order zero writes an entry at one
