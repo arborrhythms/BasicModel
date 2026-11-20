@@ -146,6 +146,13 @@ def forced_prefix_certificate():
             raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
             batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
             inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]
+            # MTM nominates the words on their concept_mint_count-th reading
+            # (sigma-pi §21, rule 20). The readings before it find no word;
+            # the certificate's two readings are that one and the next.
+            for _ in range(model._concept_owner().concept_mint_count-1):
+                with torch.no_grad():
+                    model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+            reads.clear(); snapshots.clear()
             for _ in range(2):
                 with torch.no_grad():
                     model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
@@ -163,7 +170,10 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
     assert len(report['reads']) == 2
     assert report['reads'][1]['meaning_norm'] > 0
     for read in report['reads']:
-        assert read['multisets'] == 4 and read['residual'] == [0.]*4
+        # The words' meanings are order-zero concepts, read at tanh of their
+        # columns (sigma-pi §21, rules 3, 8 and 54), not at exact ones: the
+        # reconstruction closes to float32 rounding, not to an exact zero.
+        assert read['multisets'] == 4 and max(read['residual']) < 1e-12
         # Distinct negative meanings can be erased by disjunction's meet.
         # Exact report spelling cannot waive either native field loss.
         # Both fields, plus the forecast residual, make the reading cost.

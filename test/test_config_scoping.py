@@ -137,7 +137,11 @@ class TestCreateFromConfig(unittest.TestCase):
             self.assertEqual(m.nConcepts, 3)
             from PartsOfSpeech import formal_arguments, operation_names
             from Language import TheGrammar
+            from Spaces import ConceptualSpace
+            # The declared classes of words and objects are seated with the
+            # grammar's declarations (sigma-pi §21, rule 20).
             self.assertEqual(m.nSymbols, 3 + len(formal_arguments(TheGrammar.rules_upward))
+                             + len(ConceptualSpace.WORD_CLASSES)
                              + len(operation_names(TheGrammar.rules_upward)))
             self.assertEqual(m.nOutput, 1)
         finally:

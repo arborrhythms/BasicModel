@@ -246,7 +246,13 @@ def test_percept_definition_uses_the_same_conjunction_lanes_as_the_field():
     spans = torch.stack((starts, starts+1), -1)[None]
     extents = torch.tensor([[[0, 3]]])
     field = cs.cs_read_memberships((ids, spans, None, ids, spans), extents)
-    torch.testing.assert_close(field[0, 0, 0], torch.tensor([0., 1.]))
+    # A concept of order zero is one signed value, tanh of its column's read
+    # of the combined vector, for less against (sigma-pi §21, rules 3, 7, 8
+    # and 54), computed here from the codes and the column; never both.
+    from basic_fixtures import order_zero_expected, published_presence
+    y, lanes = order_zero_expected(cs, 0, published_presence(cs))
+    assert float(lanes.amin()) == 0.
+    torch.testing.assert_close(field[0, 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)
 
 
 

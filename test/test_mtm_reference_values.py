@@ -179,6 +179,9 @@ def test_second_sentence_composes_the_name_after_kept_close_moves_placement(monk
         raw, targets = next(iter(data.data_loader(split='train', num_streams=4)))
         batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(targets)
         model.train()
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, [model._bytes_to_text(x).rstrip(chr(0)) for x in raw])
         with torch.no_grad():
             model.forward(batch[0])
         owner = model._concept_owner()
@@ -207,7 +210,11 @@ def test_second_sentence_composes_the_name_after_kept_close_moves_placement(monk
                 seen[stream] = True
                 actual = operands[stream, :, start:]
                 wanted = expected[stream, :, start:]
-                matches = (actual[:, None] == wanted[None]).all(-1)
+                # A word's concept reads its own row at tanh(1) (sigma-pi
+                # §21, rules 21 and 54), so its operand is the name's value
+                # at that read, not at one.
+                own = torch.tanh(torch.ones((), dtype=wanted.dtype))
+                matches = torch.isclose(actual[:, None], own * wanted[None], rtol=1e-5, atol=1e-7).all(-1)
                 assert matches.any(0).all() and matches.any(1).all()
         assert seen.all()
     finally:

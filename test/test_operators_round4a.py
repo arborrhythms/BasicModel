@@ -34,12 +34,19 @@ def test_one_presentation_updates_detached_context_at_the_close():
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
+        texts = ['hello world','hello there','loving world','loving there']
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_forms
+        nominated_forms(model, texts)
         with torch.no_grad():
-            model.forward(model.inputSpace.prepInput(['hello world','hello there','loving world','loving there']))
+            model.forward(model.inputSpace.prepInput(texts))
         derived = model._concept_owner().similarity_codebook.mereology
         assert derived.context_width == 128 and derived.meaning_pairs == 64 and derived.meaning_ones == 3
         context = derived.context_audit()
         argument_rows = {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.formal_arguments.values()} | {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.operator_concepts.values()}
+        # The declared class "words", which each nominated word joins, is a
+        # declared seat like the arguments (sigma-pi §21, rule 20).
+        argument_rows |= {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.declared_classes.values()}
         assert len([item for item in context if item["row"] not in argument_rows]) == 4
         for record in context:
             assert record['direction_norm'] == pytest.approx(1.)

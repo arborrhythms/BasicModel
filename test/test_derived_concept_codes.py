@@ -54,6 +54,9 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     model.train()
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['hello world', 'hello there'])
     model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
     owner = model._concept_owner()
     cb = owner.similarity_codebook
@@ -62,7 +65,11 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
     atoms = model.inputSpace._ar_grammar_object_atoms
     store = owner._closed_clause_store()
     seats = {owner._csw_row_of(seat.concept) for seat in model.languageSpace.parts_of_speech.seats.by_name.values()}
-    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | {owner._csw_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()} | seats
+    # The declared classes of words and objects are seated with the
+    # grammar's declarations (sigma-pi §21, rule 20).
+    declared = {owner._csw_row_of(cid) for cid in owner._concept_allocator.declared_classes.values()}
+    assert bool((rows[:, :1] >= 0).all())
+    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | {owner._csw_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()} | seats | declared
     width = cb.mereology.percept_width
     torch.testing.assert_close(atoms[rows>=0][..., :width], cb.lookup_rows(rows[rows>=0])[..., :width])
     assert cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all()

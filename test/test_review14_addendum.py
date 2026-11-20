@@ -29,6 +29,11 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model(f'data/{config}.xml')
     constructed = set(model._concept_owner()._concept_allocator.layer()._tensor_row_keys)
+    texts = ['hello world', 'hello there', 'loving world', 'loving there']
+    # MTM nominates the words on their concept_mint_count-th reading
+    # (sigma-pi §21, rule 20): the readings before it admit no word.
+    from nomination_fixtures import readings_before_nomination
+    readings_before_nomination(model, lambda: model.forward(model.inputSpace.prepInput(texts)))
     admitted = []
     stage = model._stage_reading_word_concepts
     def observe_admission():
@@ -42,13 +47,15 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
     model._stage_reading_word_concepts = observe_admission
     try:
         with torch.no_grad():
-            model.forward(model.inputSpace.prepInput(
-                ['hello world', 'hello there', 'loving world', 'loving there']))
+            model.forward(model.inputSpace.prepInput(texts))
         owner = model._concept_owner()
         cb = owner.similarity_codebook
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
-        assert owner.nVectors == capacity + len(owner._concept_allocator.formal_arguments) + len(owner._concept_allocator.operator_concepts)
+        # The declared classes of words and objects are seated with the
+        # grammar's declarations (sigma-pi §21, rule 20).
+        assert owner.nVectors == (capacity + len(owner._concept_allocator.formal_arguments)
+            + len(owner._concept_allocator.declared_classes) + len(owner._concept_allocator.operator_concepts))
         assert cb.W.shape[0] == owner.nVectors
         assert len(word_rows) == 4
         assert admitted and admitted[-1] == word_rows
