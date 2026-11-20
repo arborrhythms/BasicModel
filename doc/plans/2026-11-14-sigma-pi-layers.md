@@ -9341,6 +9341,90 @@ To §19.104's question: "The basic percepts constituents are coordinates of perc
 
 **The trial, in tests only.** On the lesson's model and on a small set of concepts known to be the same thing and known not to be: the row over the coordinates two same concepts share takes both in and keeps the others out; how many coordinates are shared after the lesson's placement; whether an against side is needed to keep out a concept that holds more; and what a join of two unrelated meanings lights.
 
+### 19.106 Alec's answers to the questions left for item 1.7 (2026-11-20)
+
+Asked "are there any remaining spec questions for 1.7?", Claude gave four that needed his decision and a list of its own readings. His answers, each under the question as it was put.
+
+**1. May anything teach which bytes belong to a declared class such as `letter`?** "We can fix their membership, which makes their explicit representation dominate their implicit. But that makes the mind brittle; it might not learn greek letters or novel conceptual wholes, or its meaningful region might be wrong (if the concept cannot move)." *Taken:* they are not fixed. A declared class starts from what is declared and can be moved by what is learned, or the mind cannot learn a letter it was not told of. *What follows for what is built* (*mine*): the fifth pass's cut, which stops a concept's error at order zero from teaching the memberships (§23.4.4), was made because attention's table read a membership of .9999992 as "both" by an exact test of nothing. It stays only until round 6 removes that table; then the gradient is put back and the lesson measured over 12 runs with it. The reconstruction teaches the memberships meanwhile.
+
+**2. The teacher of `intuit`'s map.** "I approve your choice: restore what you approved on 2026-11-12, the field that thought leaves, with the output's cost." *Decided* (rule 68): `intuit`'s map is taught by the field that thought leaves and by the cost of the output; omission teaches expectation alone.
+
+**3. Growing the sparse Sigma by the penalty.** "Help me design implicit sigma and pi growth. MTM for explicit works well, our implicit methods are not working." *The design is §19.107.*
+
+**4. Orders under the cone.** "A symbol's cone is tested only against concepts *at* its order, because the concepts at every order live in spaces with different geometries." *Decided* (rule 72). A symbol is a cone in the conceptual space of one order, and its constituents are coordinates of that one space; it never mixes concepts of two orders. A kind then collects symbols from every epistemic level below it (§19.102), which is how `green things` holds Felix and cats. *Claude's reading of "its order":* the order of the concepts the symbol is a cone over, since an order rises only at a Sigma (his word under the third reading below).
+
+**On Claude's readings.**
+
+- *"`words` and the grammar's arguments put their entries directly on the words' basic percepts."* "Technically this is wrong: basic percepts are events, or occurrences of words, because all of their constituent percepts occur at the same time, so there is no basis for abstraction into a noun. Can we make it one order higher without performance penalty?" *Withdrawn, and corrected* (rule 71). A basic percept is an occurrence. The word, over its occurrences, is its concept of order zero; the word as a thing is a symbol over that concept; and a kind of words, such as noun, collects those symbols. *On the cost, yes:* a symbol of one constituent has its concept's two values, so reading it is a lookup and not a product; the ninth pass was told while it ran, and returns the cost measured.
+- *"Where a kind's member has no symbol, MTM makes one when it nominates the kind, after looking for one that already holds the member."* "Good." *Decided.*
+- *"A kind of order k reads only things below order k."* "Use the term epistemic level, not order (which increases only with sigma). But OK." *Decided, in his terms:* a kind collects only from epistemic levels below its own. An order rises at a Sigma and nowhere else.
+- *The cone's against side, one located meaning, no circle.* "Just to be clear, we are using an unsigned-weight PI on signed conceptual inputs. That means that the PI cannot change the sign, so it must allocate two lanes in order to operate on a given concept. Similarly, we are using an unsigned-weight Sigma on signed conceptual inputs from the NotLayer, so it does not need this doubling. The NotLayer operates over unsigned two channel symbols (or percepts) and yields signed outputs (possibly negated)." *Recorded as the types of the three steps* (rule 63):
+
+  | Step | Its input | Its weights | Its output |
+  | --- | --- | --- | --- |
+  | Pi | signed values of concepts, each given as two unsigned lanes, since a Pi cannot change a sign | unsigned | a thing on two unsigned lanes |
+  | Not | a thing's two unsigned lanes | none | one signed value, the value or the not-value |
+  | Sigma | signed values from the Not; no doubling | unsigned | a concept's one signed value |
+
+- *The chooser's log (act, place, what it returned, in 8 slots).* "Please just document this, and track (for review in 1.6) which gradients are actually being used to help the chooser." *Decided:* rule 69 is documented and not built in item 1.7. Item 1.7 returns, with its last round's measurements, which costs' gradients reach each of the chooser's parameters over the lesson and how large each is; item 1.6 reviews it.
+- *"A mereological or taxonomic link (depending on order)."* "No, I was thinking mereology is part-whole relation at the perceptual level which, when it occurs over symbols, becomes a taxonomy (because the sigma fold makes the concepts abstract). But you are right to point out that concepts (and percepts) live in a topological space, while symbols do not." *Corrected in the glossary:* mereology is part and whole among percepts; the same relation among symbols is taxonomy, because the Sigma's fold has made what they stand for abstract. Percepts and concepts live in spaces; symbols do not.
+- *"The comparator gives distance in ticks."* "which somparator?" The one of his §19.91: "they will need a comparator to know how far back in history the concept they have recalled is". Rule 64 has it as a function of the present time and a concept's `.when`; "in ticks" was Claude's addition to say what it returns.
+- *"Old checkpoints are refused, with no migration."* "OK". *Decided.*
+- *"`transformChooser` should probably default to the network."* "more explanation necessary." The network that scores a walk's or a parse's next act has two forms, chosen by the key `transformChooser`. Set to `mlp` it is a small network with one hidden layer. Left out, it is a linear score: for each act, the inner product of the candidate with one learned vector for that act. A linear score weighs each thing it reads by itself; it cannot learn "after this act, when it returned nothing, do that", which is a conjunction of two things read, and so it could make no use of a log of the walk. Of the 44 configurations in `data/`, 10 set the key to `mlp` (the lesson's and the main ones among them) and 34 leave it out and get the linear score (the XOR, addition, grammar, image and memory fixtures). *Put to him again with that said:* whether the linear form is kept as the default, the network becomes the default, or the linear form goes so that there is one. Not changed.
+
+*He also asked:* "Take an opportunity to doc my clarifications in the MD's, please." A writer brings the standing docs to §19.98 to §19.107 (§23.D.2).
+
+### 19.107 A design for implicit growth of the Pi and of the Sigma (Claude, at Alec's request, 2026-11-20; nothing of it is built)
+
+Alec: "Help me design implicit sigma and pi growth. MTM for explicit works well, our implicit methods are not working."
+
+**Why the implicit methods do not work today** (each found in this item's returns).
+
+1. *There is no implicit learning of a Pi at all.* The first Pi's entries are written at one when MTM nominates a row and are never taught (§23.4.7).
+2. *A Sigma's gradient can move only entries that exist,* and a sparse Sigma has few (§19.94).
+3. *No penalty acts.* The one in the source has strength zero in every configuration, and the optimizer in use moves an entry at zero by the same amount whatever its gradient, which hides any threshold (§23.4.7).
+4. *What teaches is far away and of the wrong kind.* The only signal is a sentence's cost, carried back through every level. Where it does reach a concept it teaches co-occurrence as if it were membership: with a word hidden, the error at its concept would have that concept read the row of the word beside it, and the concept is then present for a word that is not there (§19.95).
+
+**The principle, from his own two sentences** (§19.101). A thing is constituents that *always occur together*. A kind is objects that *form a kind*, which is to say that one can stand where another stood. So the two levels grow from two different observations, and the mistake in 4 is feeding the first observation to the second level:
+
+| | What is observed | Grows | At |
+| --- | --- | --- | --- |
+| Co-occurrence | these are found together, at one place and time | a thing: a row, or a row's cone | the Pi |
+| Substitution | this was found where one of those was expected | a kind: an entry of a list | the Sigma |
+
+Both are read at one place, from quantities the model already computes there, and neither needs a sentence's cost.
+
+**The Pi: growth by match.** For what is met at a place, on its two lanes, each row gives two numbers the model already has (`IdentityRows.meet_ratios`): how much of the row the input holds, and how much of the input the row accounts for.
+
+- *It matches a row within that row's width.* It is that thing. The row then generalizes a little: its weight falls on the coordinates this member lacks. This is §19.105's "irrelevant details of members are removed by their variation", done one member at a time.
+- *It matches no row.* It is unexplained, and that is the observation that makes a new thing: a candidate row starts with the input's own coordinates, is easily forgotten, and becomes a row if it is matched again. This is "created implicitly by Pi": what begins it is that nothing accounts for what was met, and not a statement and not a count of a form's readings.
+- *It matches a row and the row was wrong for it* (a kind that read the row was corrected, or the way back through the row restores what was not there). The row specializes: it gains an against entry on a coordinate this input has and its members lack. This is how the against side of rule 72 is learned.
+- *A row's width* is itself learned from its hits and misses, which is rule 32's cone.
+
+This is, nearly term for term, the adaptive resonance of Carpenter and Grossberg in its fuzzy form (the least of input and weight as the match; inputs coded on two complementary lanes; a new category where no match passes the vigilance; weights that only shrink, so that a category widens over what its members share), with its supervised form's "match tracking" as the third case. *Cited from memory, to be checked before it enters the docs.* It is offered as the form to try because it was designed as a model of how a brain makes categories without being told, which is his requirement of plausibility, and because the model already has its measure and its two lanes.
+
+**The Sigma: growth by what was expected and what came.** At a place, the model has what the context led it to expect and what arrived, and their difference on two lanes, the omission and the excess (§19.96).
+
+- *A kind was expected at a place and not read there, and a thing is present there.* That thing stood where one of the kind was expected: it gathers toward an entry of that kind. Written when what has gathered exceeds the penalty; its option, value or not-value, by the sign of what gathered.
+- *A kind was read at a place where it was not expected.* The entry that read it loses weight, and is removed when the penalty brings it to zero.
+- *The step.* For these entries a step of the proximal kind with the gathering averaged across steps (§23.4.7), and not the optimizer's. The trial showed that this holds exactly the entries a full matrix would under the same penalty.
+- *What it does not do.* It does not make an entry from a concept to a thing at another place, which is the co-occurrence of 4. That observation goes to the Pi, one epistemic level up, as a thing whose constituents occur together; and what is expected of one from the other is then the spread (rule 66), never evidence.
+
+Making a *new* kind where none was expected is left to MTM, which does it well.
+
+**What it asks of the rest.**
+
+- An expectation at each place, at the level of kinds. Rule 66 gives it (round 5).
+- The penalty's one strength, shared by both levels, set by measurement.
+- Candidates that are cheap to make and to forget. MTM's store of candidates is that; whether the Pi's candidates live there or in room of the Pi's own is to be settled by the trial.
+
+**Trials, in tests only, before anything is built** (certificate 60).
+
+1. *The Pi at order zero.* `caat` after `cat`: it matches within the width and the row widens, or it starts a candidate; which, as the width is varied. `cats` against `cat`: the against entry is learned from one correction.
+2. *The Pi above.* Two concepts used alike, a name and a description of one thing, come to lie in one symbol's cone after the lesson's placement; a third used otherwise stays out.
+3. *The Sigma.* A new word met in the place of a noun gains an entry of the kind noun with no statement and no call of MTM; a word met beside a noun and never in its place gains none.
+4. *Against the explicit way.* On the lesson, the rows and entries the implicit way makes, beside those MTM makes: which are the same, which are new, which are wrong.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10668,10 +10752,15 @@ chooses from. The old classes are not edited.
     its stream's knowing, marked as intuition, and carries it up the
     orders. It is item 1.8's free map, renamed for what it is; its
     Sigma follows rule 63. It is not expectation and nothing reads
-    it as expected. *Open:* its teacher (§19.97).
+    it as expected. Its teacher is the field that thought leaves,
+    with the cost of the output (Alec, §19.106, restoring his
+    approval of 2026-11-12); omission teaches expectation alone.
 
-69. *The chooser has a log of what the walk has done, as concepts in
-    episodic memory* (Alec, 2026-11-18: "we need some record of
+69. *(Documented, not built in item 1.7: Alec, §19.106, "Please just
+    document this, and track (for review in 1.6) which gradients are
+    actually being used to help the chooser".)* *The chooser has a
+    log of what the walk has done, as concepts in episodic memory*
+    (Alec, 2026-11-18: "we need some record of
     having examined a particular place"; §19.99: "some log of the
     animals behavior (from the chooser) or what it experiences in
     the environment might be useful as episodic state, in STM at
@@ -10739,11 +10828,16 @@ chooses from. The old classes are not edited.
       collect just one symbol would make pi be the only fold").
     - No symbol is made for a concept as a rule, and none is
       addressed as "the" symbol of a concept.
-    - *Mine:* the rows a Sigma above order zero reads are the basic
-      percepts and the symbols of its own order and below; a kind
-      of words has its entries on the words' basic percepts; where
-      a kind's member has no row, MTM makes its symbol in nominating
-      the kind, after looking for one that holds it.
+    - *What a kind above order zero reads is symbols* (Alec,
+      §19.106). A basic percept is an occurrence ("basic percepts
+      are events, or occurrences of words ... so there is no basis
+      for abstraction into a noun"): the word over its occurrences
+      is its concept of order zero, the word as a thing is a symbol
+      over that concept, and a kind of words collects those symbols.
+      A kind collects only from epistemic levels below its own.
+      Where a kind's member has no symbol, MTM makes it in
+      nominating the kind, after looking for one that holds it
+      ("Good").
     - *A symbol is a neighbourhood of identity, and may be made
       liberally* (Alec, §19.103: "we can be liberal when creating
       symbols in that way, it still still defines a neighborhood of
@@ -10771,11 +10865,15 @@ chooses from. The old classes are not edited.
     occurrences share; a symbol is the cone over the coordinates of
     conceptual space that the concepts which are the same thing
     share. A coordinate on which the members vary has no weight.
-    *Mine, tried in tests before it is built:* a symbol's row has
-    an against side, what its nearest neighbours hold that it does
-    not (as rule 53 for a basic percept); it reads the meaning at
-    one place and never a join of the field's meanings; and no
-    concept's place is moved by a value read from a symbol.
+    A symbol's cone lies in the conceptual space of one order and is
+    tested against that order's concepts alone (Alec, §19.106: "the
+    concepts at every order live in spaces with different
+    geometries"). *Mine, tried in tests before it is built:* a
+    symbol's row has an against side, what its nearest neighbours
+    hold that it does not (as rule 53 for a basic percept); it reads
+    the meaning at one place and never a join of the field's
+    meanings; and no concept's place is moved by a value read from a
+    symbol. How a row and its cone grow implicitly is §19.107.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -11140,6 +11238,14 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     its end; a sequence never taught is not produced; two sequences
     that share an item are each continued as its own. In item 1.6
     the song is counting. The values are printed.
+60. *Implicit growth, tried* (§19.107; in tests only). The four
+    trials of §19.107, each with its numbers: what a Pi row does
+    with a near variant and with a holder as its width is varied;
+    whether two concepts used alike come into one symbol's cone;
+    whether a word met in a kind's place gains that kind's entry
+    with no statement, and a word met beside it gains none; and the
+    rows and entries made implicitly on the lesson beside those MTM
+    makes.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -12218,8 +12324,12 @@ which form of the where match is built.
     model. `archer` is not read on `reach`: the first Pi is read
     only on the rows the lookup names (rule 33; §23.3c.3).
 
-17. The chooser's log, and attend alone (rule 69; Alec, §19.99 and
-    §19.100).
+17. Attend alone (rule 69; Alec, §19.99 and §19.100). *The log
+    below is documented and not built in this item* (Alec,
+    §19.106); of this step only its first bullet is built, with the
+    measure in its place: for each of the chooser's parameters, the
+    costs whose gradients reach it over the lesson and the size of
+    each, returned for item 1.6's review.
     - One act of attention: attend asks for what it wants to look
       at (rule 35). The table's descend and unfocus go with the
       table (Attention.narrowing_view, narrow_step, focus_history,
