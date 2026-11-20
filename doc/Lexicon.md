@@ -124,7 +124,7 @@ its end-state values and references, not the operations or lexical leaves.
 The temporary reading record keeps the original reconstruction provenance
 and the selected operand values until the sentence ends, then is discarded.
 Reading a row into words uses the shared generation policy. Recall finds a
-row by its entry, the strongest concepts of every order in the field of
+row by its slots, a few concepts of every order in the field of
 understanding its sentence left, with their values (`episodic_concepts`,
 `episodic_values`), matched against a question order by order
 (`EpisodicMemory.matches`); no sentence word list is stored.

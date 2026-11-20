@@ -75,9 +75,9 @@ is kept as two references in `LTM1` (`write_clause`).
 `LTM0`, the table of ideas, owns each row's idea vector (`slots`, with the
 row's time written into four of its coordinates), one signed `trust` from -1
 to 1, an optional
-`referent` (the concept, or the earlier row, that the idea is of), an entry
-(`episodic_concepts`, `episodic_values`: the strongest concepts of the field
-the sentence left, of every order) and an `activity`. `LTM1`, the table of
+`referent` (the concept, or the earlier row, that the idea is of), its slots
+(`episodic_concepts`, `episodic_values`: a few concepts of the field the
+sentence left, of every order, each with its value) and an `activity`. `LTM1`, the table of
 relations, owns two tagged references, a pair of trust lanes (`truth_plus`,
 `truth_minus`) and an `activity`. A row has no origin and no kind. A row is a
 truth when its trust is not zero; every reader treats a row of zero trust as
@@ -112,7 +112,7 @@ entry. [Save](../bin/Models.py), [columns](../bin/Memory.py).
 A checkpoint in the preceding layout, where each idea held two evidence lanes
 and a separate sidecar held its bindings and source, is imported once: the
 pair becomes the signed trust, each row's activity starts at its default, its
-entry keeps its strongest concepts, and selected referents and pending
+episodic record is kept as its slots, and selected referents and pending
 bindings move to the `referent` column and to MTM; the rest of the old
 provenance and every retired field are dropped with a warning. An idea that
 held both lanes cannot be kept in one signed row, and that checkpoint is

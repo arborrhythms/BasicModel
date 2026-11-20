@@ -326,9 +326,12 @@ is this.
   gradient of the asked concepts by the percepts of the sentence, taken from
   the open run. Each Sigma is passed by its weights, before its squash, so
   that a concept already lit still returns its percepts (Alec, 2026-11-19:
-  "You said weights were better, lets do that"). It lands on what each event
-  is and on its band of where wires, and the look is the intersection of the
-  two.
+  "You said weights were better, lets do that"). It is conceptual attention,
+  the analysis from above: carried by the transposes of the matrices of the
+  way up, through the Sigma, the Not and the first Pi's own entries, it
+  reaches a row's parts and its properties, and it has no weights of its
+  own. It lands on what each event is and on its band of where wires, and
+  the look is the intersection of the two.
 - **The returned set.** The way up is run again on the bank with the look's
   activity, and what it gives, each concept at its token, is the returned
   set. The salience map selects the level and the where selects the word.

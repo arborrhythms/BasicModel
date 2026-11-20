@@ -1355,10 +1355,10 @@ covers memory, the two truths, expectation, testimony and feeling.
   (Collins & Quillian 1969), which is what the part rows between concept
   rows and the taxonomy index derived from them provide. LTM makes the
   split explicit: ideas in `LTM0`, relations in `LTM1`.
-  The episodic side has an entry of its own: a sentence keeps up to
-  `episodicConcepts` of the strongest concepts of the field it leaves, of
-  every order, beside its idea row, and a recall by content reinstates them
-  as the attended field. An entry belongs to an idea: a sentence that only
+  The episodic side has slots of its own: a sentence keeps up to
+  `episodicConcepts` concepts of the field it leaves, of every order, in
+  slots beside its idea, and a recall by content reinstates them as the
+  attended field. The slots belong to an idea: a sentence that only
   states a relation leaves the relation, the fact without the dated occasion
   of learning it, which is the difference Tulving (1972) draws. See
   [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).

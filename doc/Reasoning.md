@@ -417,8 +417,8 @@ applying to concepts (since they live in a signed hypersphere). That means
 symbols are PI(concepts), and concepts are SIGMA(symbols). concepts are also
 SIGMA(basic percepts)."
 
-- **A Sigma gives one signed value for each concept**, $\tanh(x\,U)$ in
-  $[-1, 1]$, whose size is its certainty, stored as two unsigned lanes: its
+- **A Sigma gives one signed value for each concept**, $\tanh(\sum_i
+  w_{ci} s_i)$ in $[-1, 1]$, over the signed values $s_i$ the Not gives, whose size is its certainty, stored as two unsigned lanes: its
   positive part on the lane for and its negative part on the lane against
   (Alec, 2026-11-17: "Signed sigma; good, this is knowing in the signed
   hyperball"). A **Pi gives unsigned rows**, each a product of its members'

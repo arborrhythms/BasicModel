@@ -531,7 +531,7 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
 | `truthMaxEntries` | int | `1024` | Capacity of the truth view: `TruthLayer.sync_from_ltm` takes the latest `truthMaxEntries` LTM0 rows whose trust is not zero, each represented at its trust. A row is a truth by its nonzero trust alone. |
 | `ltmCapacity` | int | `1024` | Capacity of the shared LTM occurrence store and bounded inter-sentence history. The `.when` ladder uses `RowTime.HORIZON`, independently of this reservation. An explicit value takes precedence over `truthMaxEntries` for LTM; `truthMaxEntries` sizes the truth activation view. The store raises when full. MM_math_chain reserves 131,072 rows for its seventeen graded presentations; exhaustion still raises. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
-| `episodicConcepts` | nonnegative int | `4` | Size of an LTM0 row's entry beside its idea: the strongest readings of the sentence's field of understanding, over all orders, in one flat list with no order axis (`episodic_concepts`, `episodic_values`). A value's sign is its lane, and contradictory lanes occupy separate slots. `0` stores none. Recall matches a question against the entries order by order, never reducing across orders, ranks positive relevance with newer rows first among equals, and reinstates each selected concept at its own order. Missing surfaces and stale IDs are counted. |
+| `episodicConcepts` | nonnegative int | `4` | Number of an LTM0 row's slots beside its idea: concepts of the sentence's field of understanding, over all orders, each with its value, in one flat list with no order axis (`episodic_concepts`, `episodic_values`). A value's sign is its lane, and contradictory lanes occupy separate slots. `0` stores none. Recall matches a question against the slots order by order, never reducing across orders, ranks positive relevance with newer rows first among equals, and reinstates each selected concept at its own order. Missing surfaces and stale IDs are counted. |
 | `relationCapacity` | positive int | `8192` | Fixed `SymbolSpace` shared-ID `LTM1` reservation, wired through both `ConceptAllocator` and `LTM0`. It must cover the highest handle, not only occupied membership records. Construction and strict checkpoint restore check this shape; exhaustion raises before allocation. |
 | `equalityWitnessCapacity` | positive int | `8192` | Fixed `SymbolSpace` first-equality-witness row reservation in `ConceptAllocator.singleton_values`; independent of relation storage. Snapshots use the actual conceptual width. No live resizing. |
 | `chartCollapse`, `iterationsPerWord` | -- | -- | Unread; declared in `data/model.xml`. |
@@ -908,7 +908,7 @@ holds what the wholes half cuts away, so a value lies between its parts and
 its wholes as a form does ([Mereology](Mereology.md)). There is one basic
 percept for each place and value met; each place has a table of its own, on
 coordinates of its own, and a collection of values is read by its bounds, 0
-or 1, not through a column of the Sigma. Zero is no presence. Reverse
+or 1, not through the Sigma. Zero is no presence. Reverse
 returns each dimension's number from the level its concept holds. The output
 reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
 `attentionPromotion` govern recurrent intersections, and `trustViews` governs

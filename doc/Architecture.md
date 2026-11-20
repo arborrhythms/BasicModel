@@ -2907,7 +2907,7 @@ concepts: coverage by the one match (`ConceptualMatch.match`), then the fold thr
 key of a field is its evidence-weighted centroid (`FieldProjection.key`). A
 file with examination and field operators but no vector operators has its own
 field-only R + A close (`Examination.run`): the kept field writes one `LTM0`
-row, its key, with the field's strongest readings as the row's entry.
+row, its key, with concepts of the field in the row's slots.
 
 ### Extend and the field of understanding
 
@@ -2924,8 +2924,8 @@ It is called once for each operator of the kept compose tree, in compose's
 order, starting from the sentence's existing activations of every order
 (`_sentence_open_fields`); no vector is matched against the codes to make a
 set. The field of understanding is the set the last call leaves;
-`OutputOccurrences.generated` publishes it, and a row's entry keeps its
-strongest readings. `generate_extend` is the inverse, for an idea with no
+`OutputOccurrences.generated` publishes it, and a row's slots are filled
+from it. `generate_extend` is the inverse, for an idea with no
 sentence in STM, recalled or concluded: the idea's generate walk gives the
 tree, and each operand gets its part of its parent's set. What each
 operator's extend does is in [Extend](Extend.md).

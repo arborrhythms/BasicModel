@@ -294,10 +294,9 @@ What stands:
   and evidence cross it, and a position never does.
 
 **Forms (Alec, 2026-11-12 and 2026-11-19).** A concept has no form of its
-own. A concept of order zero reads its basic percept's code: its column
-starts from what tells for its member less what tells against it, each side
-divided by the number of its own contributions and the two taken at their
-mean, so that the member read alone reads one
+own. A concept of order zero reads no code: it reads its basic percept's
+row, through the Not, as one signed value, for less against, and starts
+reading only that row, at one
 ([Architecture](Architecture.md#sigma-and-pi-layers)). A higher-order
 concept has no parts and wholes, and it carries no perceptual form: a symbol
 above order 0 does not take the centroid of what it collects (above). A reader that needs its form takes the form of its
