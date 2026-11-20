@@ -174,7 +174,7 @@ def test_trust_to_pair_and_negation(trust, polarity, expected):
     assert float(store.trust[row]) == pytest.approx(expected[0]-expected[1])
 
 
-def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monkeypatch):
+def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monkeypatch, eager_reading):
     from test_mm_xor import _fresh_model
     from Language import ConjunctionLayer, DisjunctionLayer
     model, _, data = _fresh_model('data/XOR_grammar.xml')

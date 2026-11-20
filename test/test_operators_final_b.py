@@ -164,7 +164,7 @@ def forced_prefix_certificate():
             model.End();model.symbolSpace.soft_reset()
 
 
-def test_forced_not_and_or_descend_and_snapshot_certificate():
+def test_forced_not_and_or_descend_and_snapshot_certificate(eager_reading):
     report = forced_prefix_certificate()
     assert report['snapshot_counts'] == [2, 2]
     assert len(report['reads']) == 2
@@ -183,7 +183,7 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
     assert report['reads'][1]['content_cost'][2] > 0
 
 
-def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
+def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path, eager_reading):
     from test_mm_xor import _fresh_model
     from reading_fixtures import read_in_source_order
     model, _, data = _fresh_model('data/XOR_grammar.xml')

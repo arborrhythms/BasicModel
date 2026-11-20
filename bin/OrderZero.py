@@ -83,7 +83,8 @@ class SparsePiLayer3(nn.Module):
             self.against[start + len(ids):end] = True
         self.crow[row + 1] = end
         self.n_rows = row + 1
-        self._index_columns()
+        # The column index is made again when it is next read.
+        self._columns_stale = True
         return row
 
     def row_members(self, row):
@@ -103,10 +104,13 @@ class SparsePiLayer3(nn.Module):
         member = self.members.get(key)
         if member is None:
             return []
+        if self.__dict__.get('_columns_stale'):
+            self._index_columns()
         start, end = int(self.ccol[member]), int(self.ccol[member + 1])
         return self.crow_of[start:end].tolist()
 
     def _index_columns(self):
+        self._columns_stale = False
         nnz, count = self.nnz, len(self.keys)
         cols = self.col[:nnz]
         order = torch.argsort(cols, stable=True)

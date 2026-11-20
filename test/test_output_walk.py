@@ -156,7 +156,7 @@ def test_walk_compiles_fullgraph_and_matches_eager():
         torch._dynamo.reset()
 
 
-def test_walk_handles_mixed_output_lengths_per_row():
+def test_walk_handles_mixed_output_lengths_per_row(eager_reading):
     m=_model()
     e0,gl,cw,live=_stamped_event(m,'change')
     e0,bank=_independent_split(m,'change',e0)

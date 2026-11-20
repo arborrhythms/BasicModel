@@ -92,7 +92,7 @@ def test_byte_scorer_bank_is_constant_leaf_is_live():
     assert a.norm()>0 and b is None
 
 
-def test_sentence_reverse_reaches_native_prototypes_and_evidence(monkeypatch):
+def test_sentence_reverse_reaches_native_prototypes_and_evidence(monkeypatch, eager_reading):
     import Models
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')

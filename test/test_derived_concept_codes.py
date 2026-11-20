@@ -50,7 +50,7 @@ def test_frozen_lookup_does_not_admit_symbol_concept_pairs():
     assert (alloc.next_id, tuple(alloc.layer()._tensor_row_keys)) == before
 
 
-def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms():
+def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms(eager_reading):
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     model.train()

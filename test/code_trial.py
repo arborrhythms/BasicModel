@@ -1093,12 +1093,13 @@ class LinkedCoder:
     def is_run(self, inner, outer):
         return inner in outer and inner != outer
 
-    def contained(self, mask):
+    def contained(self, mask, live=None):
         """Stored rows whose codes lie inside ``mask``, and those ``mask``
-        lies inside."""
+        lies inside; over the first ``live`` rows (all rows by default)."""
         c = self.limbs_of(mask)
-        inner = ((self.codes & ~c) == 0).all(1)
-        outer = ((c & ~self.codes) == 0).all(1)
+        codes = self.codes if live is None else self.codes[:live]
+        inner = ((codes & ~c) == 0).all(1)
+        outer = ((c & ~codes) == 0).all(1)
         return inner, outer
 
     def accidents_of(self, x):
@@ -1107,7 +1108,7 @@ class LinkedCoder:
         c = self.code(x)
         live = len(self.words)
         self.codes[self.order[x]] = self.limbs_of(c)
-        inner, outer = self.contained(c)
+        inner, outer = self.contained(c, live)
         found = []
         for j in np.flatnonzero(inner[:live]):
             y = self.words[j]

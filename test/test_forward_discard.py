@@ -80,7 +80,7 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
         model.End()
 
 
-def test_forward_discard_is_absent_from_the_loop(monkeypatch):
+def test_forward_discard_is_absent_from_the_loop(monkeypatch, eager_reading):
     from Models import BasicModel
     from test_operators_final_b import forced_prefix_certificate
     score = BasicModel._sentence_path_cost

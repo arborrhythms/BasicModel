@@ -106,7 +106,7 @@ def test_noncanonical_forward_preserves_staged_symbol_slab_views(monkeypatch, ea
         model.symbolSpace.soft_reset()
 
 
-def test_reconstruction_benchmark_respects_stream_capacity_and_keeps_batch_budget(tmp_path, monkeypatch):
+def test_reconstruction_benchmark_respects_stream_capacity_and_keeps_batch_budget(tmp_path, monkeypatch, eager_reading):
     import recon_bench
     from configuration_fixtures import small_retained
     from Models import BasicModel

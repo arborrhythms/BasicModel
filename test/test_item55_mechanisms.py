@@ -161,7 +161,7 @@ def _stream_code_banks(tmp_path,monkeypatch):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_clock_independence(tmp_path):
+def test_clock_independence(tmp_path, eager_reading):
     from RowTime import encoder
     baseline = None
     measurements = []

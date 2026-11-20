@@ -30,7 +30,7 @@ def test_sentence_identity_is_recomputable_and_does_not_consume_global_rng():
 
 
 
-def test_one_presentation_updates_detached_context_at_the_close():
+def test_one_presentation_updates_detached_context_at_the_close(eager_reading):
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
@@ -153,7 +153,7 @@ def test_static_certificate_on_each_configured_gate_vocabulary(configuration):
 
 
 
-def test_live_path_predictor_has_one_step_over_both_targets(monkeypatch):
+def test_live_path_predictor_has_one_step_over_both_targets(monkeypatch, eager_reading):
     from test_mm_xor import _fresh_model
     model,_,_=_fresh_model('data/XOR_grammar.xml')
     parameter=torch.nn.Parameter(torch.tensor(1.))

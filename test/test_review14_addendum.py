@@ -23,7 +23,7 @@ def test_identical_empty_meanings_do_not_require_identical_forms():
 
 
 @pytest.mark.parametrize('config,capacity', [('XOR_grammar', 18), ('MM_grammar', 20)])
-def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity, monkeypatch):
+def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity, monkeypatch, eager_reading):
     from reading_fixtures import keep_existing_references
     keep_existing_references(monkeypatch)
     from test_mm_xor import _fresh_model

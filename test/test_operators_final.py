@@ -34,7 +34,7 @@ def test_bilattice_rule_survives_operator_rename():
     torch.testing.assert_close(op(op(a)), a)
 
 
-def test_meaning_width_zero_disables_bootstrap_without_changing_form(monkeypatch):
+def test_meaning_width_zero_disables_bootstrap_without_changing_form(monkeypatch, eager_reading):
     from test_mm_xor import _fresh_model
     from util import TheXMLConfig
     from nomination_fixtures import readings_before_nomination

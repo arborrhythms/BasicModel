@@ -131,7 +131,7 @@ def test_support_reports_exact_zeros_and_minimum_absolute_coordinate():
     assert report['minimum_nonzero_absolute_value'] == float(ps.W[4,1])
 
 
-def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_context():
+def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_context(eager_reading):
     from test_mm_xor import _fresh_model
     from nomination_fixtures import readings_before_nomination
     model, _, _ = _fresh_model('data/XOR_grammar.xml')

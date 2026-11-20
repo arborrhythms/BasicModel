@@ -232,14 +232,39 @@ class WordIdentity(nn.Module):
         parts among the forms) and to those that hold it (its holders), on
         both sides of each link."""
         text = bytes(raw)
-        self.holders[text] = {word for word in self.words if word != text and text in word}
         self.inside[text] = {text[start:start + size] for size in range(1, len(text))
                              for start in range(len(text) - size + 1)
                              if text[start:start + size] in self.inside}
+        # A stored form that holds this one holds each of its parts and each
+        # of its characters, so its holders are among the holders of any of
+        # them: the shortest such list is read, and each candidate is
+        # checked for the run.
+        by_byte = self._forms_by_byte(text)
+        lists = [self.holders[run] for run in self.inside[text]]
+        lists.extend(by_byte[byte] for byte in set(text))
+        shortest = min(lists, key=len)
+        self.holders[text] = {word for word in shortest if word != text and text in word}
         for run in self.inside[text]:
             self.holders[run].add(text)
         for holder in self.holders[text]:
             self.inside[holder].add(text)
+
+    def _forms_by_byte(self, new):
+        """The stored forms by each character they hold, with ``new`` (a
+        form just stored) among them; rebuilt when it does not follow the
+        stored forms (after a load)."""
+        index = self.__dict__.get('_by_byte')
+        if index is None or self.__dict__.get('_by_byte_count') != len(self.words) - 1:
+            index = {}
+            for word in self.words:
+                if word != new:
+                    for byte in set(word):
+                        index.setdefault(byte, set()).add(word)
+        for byte in set(new):
+            index.setdefault(byte, set()).add(new)
+        self.__dict__['_by_byte'] = index
+        self.__dict__['_by_byte_count'] = len(self.words)
+        return index
 
     def nearest_holders(self, raw):
         """The nearest of a form's holders: those that add the fewest
@@ -869,6 +894,7 @@ class WordIdentity(nn.Module):
     def load_vocab_extras(self, value):
         for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'revision'):
             setattr(self, name, value[name])
+        self.__dict__.pop('_by_byte', None)
         self._codes = {}
         self.word_witnesses = value.get('word_witnesses', {})
         self.nested = value.get('nested', {})

@@ -62,7 +62,7 @@ def test_model_calls_the_symbolic_loop_as_forward():
     assert "languageSpace.forward(" in src
 
 
-def test_forward_equals_compose_on_a_live_snapshot():
+def test_forward_equals_compose_on_a_live_snapshot(eager_reading):
     """The rename is byte-identical: the plan returned by ``forward`` equals
     the plan returned by the legacy ``compose`` on the same snapshot."""
     import Language

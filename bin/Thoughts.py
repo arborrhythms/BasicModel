@@ -149,11 +149,27 @@ class ThoughtState:
         return self.cutoff_depth is not None
 
 
+#: Replays already made: ``(records, state, previous, implicit)``. A history
+#: that extends one of them (the same record objects, in order) is replayed
+#: from where it ended; records are frozen, so the result is the same.
+_REPLAYED = collections.deque(maxlen=16)
+
+
 def replay_thoughts(records, *, chunks_state=None, row=0):
     """Validate chronological execution and derive the most recent episode."""
+    records = [record for record in records if isinstance(record, ThoughtRecord)]
     state = None
     previous = -1
     implicit = {}
+    done = 0
+    if chunks_state is None:
+        for kept, kept_state, kept_previous, kept_implicit in _REPLAYED:
+            if done < len(kept) <= len(records) and all(
+                    a is b for a, b in zip(kept, records)):
+                done, state, previous, implicit = (
+                    len(kept), kept_state, kept_previous, dict(kept_implicit))
+        if done == len(records) and done:
+            return state
     def judged(pair, record):
         from ThoughtReferences import bindings
         if record.kind == 'finish' and bindings(record.meaning).get('_implicit_judgements'):
@@ -161,9 +177,7 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
                 raise ValueError('implicit judgement has no replayed pervasion')
             return tuple(max(a, b) for a, b in zip(pair, implicit[record.meaning.role_refs]))
         return pair
-    for record in records:
-        if not isinstance(record, ThoughtRecord):
-            continue  # explicitly retained legacy prefix, not execution evidence
+    for record in records[done:]:
         if record.id <= previous:
             raise ValueError("thought occurrences must be strictly chronological")
         previous = record.id
@@ -305,6 +319,8 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
         and not state.forced
     ):
         raise ValueError("exhausted thought history is missing its cutoff event")
+    if chunks_state is None and len(records) > done:
+        _REPLAYED.append((tuple(records), state, previous, dict(implicit)))
     return state
 
 
