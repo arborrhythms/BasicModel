@@ -25,12 +25,16 @@ not be combined"). A Sigma makes *concepts*: what any one of its members can
 be enough for. In the source: `SigmaLayer3`, and at order zero
 `OrderZeroSigma`.
 
-**Layer.** One Pi or one Sigma. A layer is not an *order*: every order has a
-Pi and a Sigma.
+**Epistemic level.** One Pi or one Sigma (Alec, 2026-11-19: "My nomenclature
+is *epistemic levels* as opposed to orders (which are half as many)"). Every
+*order* has two epistemic levels, its Pi and its Sigma, so there are half as
+many orders as epistemic levels. The source calls the matrix of a level a
+layer (`PiLayer3`, `SigmaLayer3`); a layer is never an order.
 
 **Pi, Not, Sigma.** The one structure that is repeated at every order (Alec,
 2026-11-17): a Pi, then the entries of the Sigma that read the opposite
-channel (see *negation*), then the Sigma.
+channel (see *negation*), then the Sigma. The Pi and the Sigma are its two
+*epistemic levels*.
 
 ## What the layers make
 
@@ -112,10 +116,10 @@ is stored in it. In the source it is held by `PartSpace` and `WholeSpace`.
 of it, and so is an idea, the meaning of a whole sentence. Its values are
 signed. In the source: `ConceptualSpace`.
 
-**Symbolic space.** The symbols of an order, taken together. It is a set and
-not a space of points: a symbol has no coordinates and no address. What is
-known of a symbol is which concepts its row reads, and which concepts read
-it.
+**Symbolic space.** The symbols, taken together. It "is a set and a space of
+points; each symbol has no space (i.e. dimensionality)" (Alec, 2026-11-19): a
+symbol is a point with no coordinates and no address. What is known of a
+symbol is which concepts its row reads, and which concepts read it.
 
 **Perceptual towers.** The two orders in which percepts are built. The *part
 tower* builds upward: characters at the bottom, then runs of characters, then
@@ -198,8 +202,9 @@ against the rows, and the best row is pushed onto the stack (Alec,
 
 ## Attention
 
-**Look.** One act of attention while a sentence is read. A look is a number
-from 0 to 1 at each percept of the sentence, its activity there. It is found
-from the concepts that attention wants and from a place, and what it returns
-is the concepts read with that activity. The first look of a sentence takes
-all of it at once.
+**Look.** "One act of attention while a sentence is read. It filters the
+perceptual field by a saliency map from attended concepts, which will filter
+on both the what/where of conceptual space, and carries those selected
+percepts into the activation space on all existing concepts" (Alec,
+2026-11-19). In the model the filter is a number from 0 to 1 at each percept
+of the sentence, and the first look of a sentence takes all of it at once.

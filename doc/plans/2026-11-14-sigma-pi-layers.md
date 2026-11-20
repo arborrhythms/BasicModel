@@ -8902,6 +8902,8 @@ Before MTM makes either, it looks for one that already fits. This settles §19.8
 
 **The width.** "64 and 64". *Decided,* with §23.3b.3's numbers before him. Round 3d builds rule 61 at 64 and 64.
 
+**Three corrections to the glossary, the same day.** "symbolic space is a set and a space of points; each symbol has no space (i.e. dimensionality)." A look: "one act of attention while a sentence is read. It filters the perceptual field by a saliency map from attended concepts, which will filter on both the what/where of conceptual space, and carries those selected percepts into the activation space on all existing concepts." And on Claude's "layers": "ah thats good, My nomenclature is *epistemic levels* as opposed to orders (which are half as many)." So one Pi or one Sigma is an epistemic level, and an order has two. The glossary has all three in his words. Also added at his word: mereology, taxonomy, and the compose, think and generate grammars.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
