@@ -122,6 +122,6 @@ def read_percepts(percepts, brackets, keys, *, part_reader, native=None,
         width = max((len(group) for group in groups), default=1)
         addresses = torch.tensor([group + [-1] * (width - len(group)) for group in groups],
                                  dtype=torch.long, device=raw.device).reshape(len(keys), width)
-        bands = torch.where((addresses >= 0)[..., None], registry.encoding.encode(addresses), 0.)
+        bands = registry.band(addresses)
     when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
     return PerceptField(keys, values, events, spans, brackets.clone(), when.clone(), bands, when_band)

@@ -21,12 +21,28 @@ class WhereRegistry:
         self.capacity = end
         from Spaces import WhereEncoding
         self.encoding = WhereEncoding(nWhere=4, nWhen=4).set_capacity(end)
+        # The where wires: one row for each address, the encoding's code of
+        # that address. It takes a gradient, so a salience carried down onto a
+        # percept's band reaches its row, and it belongs to no module and so
+        # to no optimizer: nothing of it is learned or written as a state.
+        from util import TheDevice
+        with torch.no_grad():
+            code = self.encoding.encode(torch.arange(max(1, end), dtype=torch.long)).float()
+        self.code = torch.nn.Parameter(code.to(TheDevice.get()), requires_grad=True)
+
+    def band(self, addresses):
+        """The rows of the where wires at registry ``addresses`` (any shape);
+        an address below zero makes no location claim and reads nothing."""
+        if self.code.device != addresses.device:
+            self.code.data = self.code.data.to(addresses.device)
+        rows = self.code.index_select(0, addresses.clamp_min(0).reshape(-1).to(torch.long))
+        rows = rows.reshape(*addresses.shape, self.code.shape[-1])
+        return torch.where((addresses >= 0)[..., None], rows, rows.new_zeros(()))
 
     def encode(self, name, indices):
-        """Located percepts carry these bands; integers are decoded on demand."""
-        intervals = self.intervals(name, indices)
-        bands = self.encoding.encode(intervals[..., 0])
-        return torch.where((indices >= 0)[..., None], bands, 0.)
+        """Located percepts carry these bands, read from the where wires;
+        integers are decoded on demand by the encoding."""
+        return self.band(self.intervals(name, indices)[..., 0])
 
     def __deepcopy__(self, memo):
         from copy import deepcopy
