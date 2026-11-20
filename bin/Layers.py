@@ -6536,7 +6536,8 @@ class ConceptAllocator:
         return self.layer()
 
     def class_member(self, member, whole):
-        """Read a class membership from tagged referents and their recorded orders."""
+        """Read a class membership from tagged referents and their recorded
+        orders: a class reads members of every order below its own."""
         from Memory import NULL_CONCEPT
         member, whole = self.parts.reference(member), self.parts.reference(whole)
         if (self.parts.SYMBOL, NULL_CONCEPT) in (member, whole):
@@ -6544,7 +6545,7 @@ class ConceptAllocator:
         if member[0] != self.parts.SYMBOL or whole[0] != self.parts.SYMBOL:
             return True
         lower, upper = (self.seated_order(ref[1]) for ref in (member, whole))
-        return lower is None or upper is None or lower + 1 == upper
+        return lower is None or upper is None or lower < upper
 
     def seated_order(self, cid):
         """The physical block's order, or None before a concept has a row."""
