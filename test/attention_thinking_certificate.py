@@ -262,6 +262,39 @@ def gates(observer, patch):
         model.End()
 
 
+def over_runs(output, runs):
+    """The lesson run ``runs`` times, each in a fresh process with no seed
+    chosen, into ``output/run-NN``, and its report over the runs: the words
+    found in the first walk of each of the sixteen sentences, summed; the
+    first walks that ran to the cap of 32 steps; and the seconds."""
+    import subprocess
+    import sys
+    output.mkdir(parents=True, exist_ok=False)
+    each = []
+    for k in range(runs):
+        where = output/f'run-{k + 1:02}'
+        subprocess.run([sys.executable, __file__, 'lesson', '--output', str(where)],
+                       check=True, stdout=subprocess.DEVNULL)
+        result = json.loads((where/'result.json').read_text())
+        first = [record['word_driven'][0] if record['word_driven'] else None
+                 for record in result['records']]
+        steps = [record['walk_steps'][0] if record['walk_steps'] else None
+                 for record in result['records']]
+        each.append(dict(run=k + 1, seconds=result['seconds'],
+                         words=sum(len(walk['words']) for walk in first if walk),
+                         at_cap=sum(step == 32 for step in steps),
+                         first_walk_steps=steps))
+        print(json.dumps(each[-1]), flush=True)
+    words = [run['words'] for run in each]
+    capped = [run['at_cap'] for run in each]
+    report = dict(runs=runs, seed_selected=False, each=each,
+                  words=dict(each=words, mean=sum(words) / runs, least=min(words), greatest=max(words)),
+                  at_cap=dict(each=capped, mean=sum(capped) / runs, total=sum(capped)),
+                  seconds=dict(mean=sum(run['seconds'] for run in each) / runs))
+    (output/'runs.json').write_text(json.dumps(report, indent=2) + '\n')
+    print(json.dumps({key: value for key, value in report.items() if key != 'each'}, indent=2), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('kind', choices=('lesson', 'gates'))
@@ -270,7 +303,14 @@ def main():
     parser.add_argument('--compare', type=Path)
     parser.add_argument('--certify', action='store_true')
     parser.add_argument('--require-word-driven', action='store_true')
+    parser.add_argument('--runs', type=int, default=1,
+                        help='run the lesson this many times, each in a fresh process, and report over the runs')
     args = parser.parse_args()
+    if args.runs > 1:
+        if args.kind != 'lesson' or args.replay or args.compare or args.certify:
+            parser.error('--runs reports over fresh lessons alone')
+        over_runs(args.output, args.runs)
+        return
     args.output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
     from pytest import MonkeyPatch
