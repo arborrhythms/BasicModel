@@ -1,30 +1,14 @@
-"""Eager staging for the tensor bracket body; no dictionaries inside the loop."""
+"""Eager staging of a sentence's reading; no dictionaries inside the loop."""
 import torch
 import math
 from torch.nn import functional as F
-from Attention import narrow_words, open_narrowing, read_code_field
+from Attention import SentenceReading, read_code_field
 
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
                   'commit_word_reference_slab:per_word',
                   'commit_word_reference_slab:whole_slab', 'SymbolField.read',
                   'WordExpectation.word_distribution')
-
-
-def _word_carrier(reading, width):
-    pad=width-reading.values.shape[1]
-    return reading._replace(values=F.pad(reading.values,(0,0,0,pad)),
-        accepted=F.pad(reading.accepted,(0,pad)),descended=F.pad(reading.descended,(0,pad)),
-        poles=F.pad(reading.poles,(0,0,0,pad)),pole_changes=F.pad(reading.pole_changes,(0,pad)),
-        field_scopes=F.pad(reading.field_scopes,(0,pad)))
-
-
-class SentenceNarrowing:
-    """A sentence's open walk, advanced by its word owner."""
-    def __init__(self, state, width):
-        self.state, self.width = state, width
-        self.reading = None
-
 
 
 def read_poles(model, consumer):
@@ -158,7 +142,8 @@ def stage_input(model):
     model._attention_words=None
     model._attention_poles=None
     model._attention_grammar_mask=None
-    model._attention_read=None
+    model._attention_whole=None
+    model._attention_word_concepts=None
     model._attention_open=None
     model._attention_greedy=None
     model._attention_pole_representation=False
@@ -212,9 +197,9 @@ def stage_input(model):
             return None
         return owner.interpret.lookup_word(parts,sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form))),
             form=form,word_reading=True,reading=owner.reading(b))
-    extents=[];known=[];identities=[];forms=[];vocabulary={}
+    extents=[];known=[];identities=[];forms=[];concepts=[];vocabulary={}
     for b in range(B):
-        row=[];seen=[];ids=[];names=[]
+        row=[];seen=[];ids=[];names=[];words=[]
         for w in range(W):
             text=str(texts[b][w]) if b<len(texts) and w<len(texts[b]) else ''
             raw=text.encode('latin1','replace')
@@ -227,10 +212,11 @@ def stage_input(model):
                 lo=hi=0
             form=surface.decode('latin1')
             row.append((lo,hi) if surface else (0,0))
-            seen.append(bool(surface) and found(b,form,lo,hi) is not None)
+            word=found(b,form,lo,hi) if surface else None
+            seen.append(word is not None);words.append(-1 if word is None else int(word))
             if form and form not in vocabulary:vocabulary[form]=len(vocabulary)
             ids.append(vocabulary.get(form,-1));names.append(form)
-        extents.append(row);known.append(seen);identities.append(ids);forms.append(names)
+        extents.append(row);known.append(seen);identities.append(ids);forms.append(names);concepts.append(words)
     spans=torch.tensor(extents,device=slab.device,dtype=torch.long)
     live=active & (spans[...,1]>spans[...,0])
     spans=torch.where(live[...,None],spans,0)
@@ -252,72 +238,54 @@ def stage_input(model):
         model._attention_native_poles=poles
     live_width = max(1, int(torch.where(live,
         torch.arange(W, device=live.device)[None] + 1, 0).max()))
-    spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
-    def arguments(*, sentence=None, spent_override=None, **trial):
+    concepts=torch.tensor(concepts,device=slab.device,dtype=torch.long)
+    model._attention_word_concepts=torch.where(known,concepts,-1)
+    def opening(*, sentence=None, spent_override=None, exploit=None, departure=None, replay_until=None):
         reading_spans=spans[:, :live_width]
         if sentence is not None:
             here=model.inputSpace._packed_sentence_ids[:, :live_width] == sentence
             reading_spans=torch.where(here[...,None],reading_spans,0)
-        return dict(chooser=chooser,keys=keys[:, :live_width],spans=reading_spans,
-            known=known[:, :live_width],budget=model.attention_budget,
-            identities=ids[:, :live_width],poles=poles[:, :live_width],
-            spent=spent if spent_override is None else spent_override,
-            limit=spent.new_tensor([meter.spent + meter.remaining for meter in model._attention_meters]),**trial)
-    def read(*, glance_keys=None, **trial):
-        options = arguments(**trial)
-        if glance_keys is not None:
-            options['glance_keys'] = glance_keys[:, :live_width]
-        return _word_carrier(narrow_words(**options),W)
-    def opening(**trial):
-        return SentenceNarrowing(open_narrowing(**arguments(**trial)),W)
-    model._attention_read=read
+        spent=spans.new_tensor([meter.spent for meter in model._attention_meters]
+                               if spent_override is None else spent_override.tolist())
+        limit=spans.new_tensor([meter.spent + meter.remaining for meter in model._attention_meters])-spent
+        return SentenceReading(chooser, keys[:, :live_width], reading_spans, known[:, :live_width],
+            poles[:, :live_width], limit.clamp(0, model.attention_budget), W, model.attention_budget,
+            exploit=exploit, departure=departure, replay_until=replay_until)
+    def whole(*, sentence=None):
+        """The sentence read at once, with no look: every live word, a word
+        with no word concept read whole."""
+        state=opening(sentence=sentence)
+        here=state.spans[...,1]>state.spans[...,0]
+        state.accepted=here.clone()
+        state.values=torch.where(here[...,None],state.keys,0.)
+        state.descended=here&~state.known
+        return state.reading()
     model._attention_spans=spans
     model._attention_forms=(forms,ids,keys,live)
+    model._attention_whole=whole
     phases = getattr(model, 'grammar_phases', None)
-    if phases is not None and (not phases.examination or not phases.vector):
+    if phases is not None and not phases.vector:
         return
     model._attention_open=opening
     if getattr(model, '_sentence_ends', False):
-        # The sentence owns admission. Preparation exposes an opening,
-        # without spending a second row-wide walk before composition.
+        # The sentence owns its reading: its looks are run with its
+        # composition, one word arriving at each.
         return
-    reading=read()
+    reading=whole()
     model._attention_greedy=reading
-    model._attention_words=reading
-    model._attention_spans=spans
-    model._attention_forms=(forms,ids,keys,live)
-    model._attention_spent=reading.table.spent.detach().clone()
-    if not getattr(model,'_sentence_ends',False):
-        for b, meter in enumerate(model._attention_meters):
-            meter.require('bracket',int(reading.table.spent[b])-meter.spent)
     handoff(model,reading)
 
 
 def handoff(model, reading):
-    """Publish the trial's scope and detached word evidence, never its values."""
+    """Publish the reading's words and their detached evidence, never its values."""
     model._attention_words=reading
     base=getattr(model,"_attention_grammar_mask",None)
     model.inputSpace._ar_grammar_leaf_mask=(reading.accepted if base is None else base & reading.accepted)
     native=model._attention_native_poles
-    # A successful native descent supplies a positive identification witness.
+    # A word read whole with no word concept is a positive witness of itself.
     native=torch.where(reading.descended[...,None],
         torch.stack((torch.ones_like(reading.accepted),torch.zeros_like(reading.accepted)),-1).to(native),native)
-    model._attention_poles=torch.where(reading.pole_changes[...,None],reading.poles,native).detach()
-    slab=model.inputSpace._ar_embedded_N
-    spans=model._attention_spans
-    B=slab.shape[0]
-    # The top-down handoff reads exactly the selected typed table.
-    table=reading.table
-    last=(table.done.long()*torch.arange(1,table.done.shape[1]+1,device=slab.device)).argmax(-1)
-    selected=table.intervals[torch.arange(B,device=slab.device),last]
-    raw=getattr(model,'_staged_concepts_in',None)
-    width=max(1,int(raw.shape[-1])) if torch.is_tensor(raw) else max(1,int(spans[...,1].max()))
-    scope=selected.to(slab)/width
-    # A primitive field with no interpreted symbol stays open. Padding and an
-    # empty candidate catalogue must not turn its scope into [0,0].
-    model.conceptualSpace._passback_scope_where=torch.where(table.done.any(-1)[:,None],
-        scope,torch.tensor([0.,1.],device=slab.device,dtype=slab.dtype))
-    model.conceptualSpace._passback_scope_space=table.space.gather(1,last[:,None])[:,0]
+    model._attention_poles=native.detach()
 
 
 def stage_expectation(model, *, prefix=None):

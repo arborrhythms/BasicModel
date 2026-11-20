@@ -1,4 +1,4 @@
-"""The current sentence context read by the bracket chooser at each look."""
+"""The current sentence context that `attend` reads at each look."""
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -6,10 +6,8 @@ from torch.nn import functional as F
 
 def install(model):
     from util import TheXMLConfig
-    from AttentionObjective import validate_floor, tolerate_heterogeneity
-    model.attention_floor = float(TheXMLConfig.get('architecture.attentionFloor', default=.1))
+    from AttentionObjective import tolerate_heterogeneity
     model.het_tolerance = float(TheXMLConfig.get('architecture.hetTolerance', default=1.))
-    validate_floor(model.attention_floor)
     tolerate_heterogeneity(torch.zeros(1, 2), model.het_tolerance)
     model.attention_context = None
     if not model.attention_budget:
@@ -130,11 +128,11 @@ def context(model, stm, field, surprise=None):
 
 
 def project(mapping, inputs, surprise=None):
-    """Apply one map to shared sentence features and independent bracket pairs."""
+    """Apply one map to shared sentence features and each look's surprise pair."""
     weights = mapping.weight
     prefix = F.linear(inputs.detach(), weights[:, :-2])
     if surprise is None:
         return prefix
     if surprise.ndim != 3 or surprise.shape[0] != inputs.shape[0] or surprise.shape[-1] != 2:
-        raise ValueError('surprise requires one pair per stream and bracket')
+        raise ValueError('surprise requires one pair per stream and look')
     return prefix[:, None] + F.linear(surprise.detach().to(inputs), weights[:, -2:])

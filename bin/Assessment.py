@@ -243,72 +243,45 @@ def _native_word_fields(model):
 
 @contextmanager
 def _attention_trace(model):
-    """Observe native masks and choices, without choosing or replaying an act."""
-    import Attention
+    """Observe each look's request and what it returned, without choosing
+    or replaying an act."""
+    import SentenceLooks
     from SentenceLooks import Looks
     walks, current = [], []
-    run, step, mask = Looks.run, Attention.narrow_step, Attention.narrowing_mask
-    chooser = model._stm_reducer()
-    attend = chooser.attend
-    override = vars(chooser).get('attend')
-    had_override = 'attend' in vars(chooser)
-    deciding = []
+    run, requested = Looks.run, SentenceLooks.requested
 
-    def observed_mask(pure, both, neither, **kwargs):
-        result = mask(pure, both, neither, **kwargs)
-        if deciding:
-            deciding[-1]['masks'].append(dict(pure=pure.tolist(), both=both.tolist(),
-                neither=neither.tolist(), **{k:v.tolist() for k,v in kwargs.items()},
-                progress=result.tolist()))
+    def observed_request(model_, query):
+        result = requested(model_, query)
+        if current and model_ is model:
+            asked = (result[..., 0] > 0).nonzero().tolist()
+            current[-1]['requests'].append([[row, stream] for row, stream in asked])
         return result
-
-    def observed_attend(keys, legal, space, **kwargs):
-        result = attend(keys, legal, space, **kwargs)
-        if deciding:
-            deciding[-1]['choices'].append(dict(legal=legal.tolist(), action=result[0].tolist(),
-                logits=result[3]['logits'].detach().tolist()))
-        return result
-
-    def observed_step(state, **kwargs):
-        if not current or state.chooser is not chooser:
-            return step(state, **kwargs)
-        deciding.append(current[-1])
-        try:
-            return step(state, **kwargs)
-        finally:
-            deciding.pop()
 
     def observed_run(path, arrive, **kwargs):
         if path.model is not model:
             return run(path, arrive, **kwargs)
-        state = path.walk.state
-        item = dict(masks=[], choices=[], budget=state.budget, spans=state.spans.tolist())
+        state = path.walk
+        item = dict(requests=[], limit=state.limit.tolist(), spans=state.spans.tolist())
         current.append(item)
         try:
             result = run(path, arrive, **kwargs)
             item.update(actions=result.actions.tolist(), accepted=result.accepted.tolist(),
-                        descended=result.descended.tolist(), spent=result.table.spent.tolist(),
-                        remaining=result.table.remaining.tolist(), looks=[
-                            dict(where=field['where'].tolist(), active=field['active'].tolist(),
-                                 surprise=field['surprise'].tolist(),
+                        descended=result.descended.tolist(), looks=result.looks.tolist(), turns=[
+                            dict(extent=field['extent'].tolist(), active=field['active'].tolist(),
+                                 surprise=None if field['surprise'] is None else field['surprise'].tolist(),
                                  word=decision['index'].tolist(), offered=decision['logits'][:,1].isfinite().tolist(),
                                  interpreted=decision['interpreted'].tolist())
-                            for field,decision in zip(path.fields,path.decisions,strict=True)])
+                            for field,decision in zip(path.fields[1:],path.decisions)])
             walks.append(item)
             return result
         finally:
             current.pop()
 
-    Looks.run, Attention.narrow_step, Attention.narrowing_mask = observed_run, observed_step, observed_mask
-    chooser.attend = observed_attend
+    Looks.run, SentenceLooks.requested = observed_run, observed_request
     try:
         yield walks
     finally:
-        Looks.run, Attention.narrow_step, Attention.narrowing_mask = run, step, mask
-        if had_override:
-            chooser.attend = override
-        else:
-            del chooser.attend
+        Looks.run, SentenceLooks.requested = run, requested
 
 
 def _references(meaning):
@@ -399,8 +372,7 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
                 selected = [walk for walk in walks if walk['actions'] == reading.actions.tolist()]
                 result['attention'] = dict(accepted=reading.accepted[0].tolist(),
                     descended=reading.descended[0].tolist(), actions=reading.actions[0].tolist(),
-                    round_words=reading.round_words[0].tolist(), spent=int(reading.table.spent[0]),
-                    remaining=int(reading.table.remaining[0]),
+                    looks=int(reading.looks[0]),
                     trace=selected[-1] if selected else None)
             if answer:
                 from What import What

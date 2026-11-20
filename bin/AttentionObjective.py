@@ -2,11 +2,6 @@
 import math
 
 
-def validate_floor(floor):
-    if not math.isfinite(floor) or not 0. < floor < 1.:
-        raise ValueError('attentionFloor must be finite and strictly between zero and one')
-
-
 def tolerate_heterogeneity(lanes, tolerance):
     """Remove the configured overlap, preserving the two meaning lanes."""
     if not math.isfinite(tolerance) or not 0. <= tolerance <= 1.:

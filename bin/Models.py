@@ -2595,7 +2595,7 @@ class BaseModel(Mereology, nn.Module):
                 (('reconstruction', reconstruction), ('expectation', expectation), ('output', output),
                  ('attention', attention),
                  ('compose_lesson', compose), ('generate_lesson', generate), ('chooser', reconstruction),
-                 ('reading_policy', compose_policy | {id(getattr(operation, 'space_prior', None))}),
+                 ('reading_policy', compose_policy),
                  ('compose_policy', compose_policy), ('generate_policy', generate))}
 
     def _adopt_fresh_parameters(self, optimizer):
@@ -4571,10 +4571,11 @@ class BaseModel(Mereology, nn.Module):
             state.pop(key)
             attention_transforms[key] = None
             warnings.warn(f'Dropped retired candidate chooser checkpoint key {key}')
-        # The linear chooser's anchors are retired: the chooser of acts is
-        # the network alone, which reads none of them.
+        # The linear chooser's anchors and the brackets' space prior are
+        # retired: the chooser of acts is the network alone, which reads
+        # none of them, and attention asks for concepts, not brackets.
         for key in [key for key in state if key.endswith(
-                ('.stop_anchor', '.reduce_anchor', '.apply_anchor', '.bracket_anchor'))]:
+                ('.stop_anchor', '.reduce_anchor', '.apply_anchor', '.bracket_anchor', '.space_prior'))]:
             state.pop(key)
             attention_transforms[key] = None
             warnings.warn(f'Dropped retired chooser anchor checkpoint key {key}')
@@ -8534,8 +8535,7 @@ class BasicModel(BaseModel):
             carriers = {'field': replace(field, evidence=field.evidence.clone())}
         elif self.concept_binding == 'aligned' and not self.grammar_phases.vector:
             carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
-                (self._last_sentence_field if self.grammar_phases.examination else
-                 self._concept_owner()._cs_open_field)}
+                self._concept_owner()._cs_open_field}
         # The answer path's seed (spec 5.3) is the terminal idea: the
         # symbols' lanes carry no code, so no answer is read from them.
         answer_seed = (conceptual if torch.is_tensor(conceptual)
@@ -17483,21 +17483,6 @@ class BasicModel(BaseModel):
         if part_spans is None:
             part_spans = uniform_spans(raw.shape[0], raw.shape[-1],
                                        part_ids.shape[1], device=raw.device)
-        if pass_idx == 0:
-            object.__setattr__(self, '_subsymbolic_scope', None)
-        elif pass_idx > 0:
-            scope = getattr(self.conceptualSpace, '_passback_scope_where', None)
-            if torch.is_tensor(scope):
-                object.__setattr__(self, '_subsymbolic_scope', scope.detach())
-        scope = getattr(self, '_subsymbolic_scope', None)
-        if torch.is_tensor(scope):
-            scope = scope.to(extents.device).reshape(-1, 2).expand(raw.shape[0], -1).clamp(0, 1)
-            lo = (scope[:, 0] * raw.shape[-1]).floor().long()[:, None]
-            hi = (scope[:, 1] * raw.shape[-1]).ceil().long()[:, None]
-            start = torch.maximum(extents[..., 0], lo)
-            end = torch.minimum(extents[..., 1], hi)
-            extents = torch.stack((start, end), -1)
-            extents = torch.where((end > start)[..., None], extents, 0)
         primitive = getattr(ws.subspace.what, 'primitive_properties', None)
         percepts = (part_ids, part_spans, primitive, raw, positions)
         field = owner.cs_read_memberships(percepts, extents)
@@ -17762,19 +17747,6 @@ class BasicModel(BaseModel):
                 # reverse, with ``carriers`` kept as a test/verification
                 # handle.
                 ps_t = PS_sub_stage0 if t == 0 else contribution
-                if t > 0 and not prevCS_forSS.is_empty():
-                    # Top-down attention handoff (doc/specs/mereological-order-
-                    # raising.md "the top-down attention handoff"): the stage-0
-                    # WholeSpace passes back a scoped chunk/.where that scopes
-                    # PartSpace's analysis on this t>0 pass (t==0 stays
-                    # wide-open -- the first-pass-wide gate IS this t>0 guard).
-                    # Dark unless a scope or words-category attention is engaged
-                    # -> the pass-back action is "noop" -> byte-identical.
-                    _prev_ps_fb = (getattr(prev_cs_stage, "_subspaceForPS", None)
-                                   if prev_cs_stage is not None else None)
-                    ps_t = self._passback_scope_ps(
-                        t, ps_t, prevCS_forSS,
-                        prevPS_forPS=_prev_ps_fb)
                 if _aligned_binding:
                     full_t = cs.bind_aligned_streams(ps_t, WS_sub, CS_sub)
                 else:
@@ -20911,20 +20883,6 @@ class BasicModel(BaseModel):
                     payload = observe_percept(self,forecast,payload,sub,index,gate)
                     cache[w] = (index, payload, sub[3:9] if native_support else (), gate)
             self._open_sentence_slot = sid
-            if not self.grammar_phases.vector:
-                from Examination import run as examine
-                point = examine(self,sid,present,trust=trust)
-                current = list(lang)
-                for position in (6,10,11):
-                    current[position] = current[position].clone()
-                current[6][:,sid] = point
-                current[10][:,sid] = torch.cat((point,torch.zeros_like(point),torch.zeros_like(point)),-1)
-                current[11][:,sid] = present.long()
-                lang = tuple(current)
-                from SentenceTraining import finish_sentence
-                finish_sentence(self)
-                self._open_sentence_slot = None
-                continue
             from PrependedSymbols import stage as prepend_symbols
             resolver = self._concept_owner().components.reference_close
             stm = prepend_symbols(self,stm,present)
@@ -20955,8 +20913,7 @@ class BasicModel(BaseModel):
             attention_work_trials = []
             field_trials, look_trials = [], []
             compound_trials = []
-            field_enabled = (getattr(self, 'attention_budget', 0) > 0
-                and hasattr(self, 'attention_floor') and native_support)
+            field_enabled = getattr(self, 'attention_budget', 0) > 0 and native_support
             pending_steps = []
             reader_registries = []
             reader_observations = []
@@ -20972,7 +20929,7 @@ class BasicModel(BaseModel):
                 for b, meter in enumerate(meters):
                     meter._counts = meter._counts.copy()
                     if bool(present[b]):
-                        meter.require('bracket', int(reading.table.spent[b] - attention_spent[b]))
+                        meter.require('look', int(reading.looks[b]))
                 return meters
             self._sentence_departure = None
             from SentenceFork import SentenceFork, detached
@@ -21349,14 +21306,14 @@ class BasicModel(BaseModel):
                 return value
             if greedy_attention is not None:
                 combined = choose_tensors(attention_trials)
-                kept = type(greedy_attention)(type(greedy_attention.table)(*combined[0]), *combined[1:])
+                kept = type(greedy_attention)(*combined)
                 from ModelAttention import handoff
                 here = sentence_ids == sid
                 if attention_base is not None:
                     kept = kept._replace(**{name: torch.where(
                         here[..., None] if getattr(kept, name).ndim == 3 else here,
                         getattr(kept, name), getattr(attention_base, name))
-                        for name in ('values', 'accepted', 'descended', 'poles', 'pole_changes')})
+                        for name in ('values', 'accepted', 'descended', 'poles')})
                 if field_trials[0] is not None:
                     admitted = choose_tensors([field.full_admission() for field in field_trials]).detach() > 0
                     kept = kept._replace(accepted=kept.accepted & (~here | admitted))
@@ -21365,7 +21322,6 @@ class BasicModel(BaseModel):
                     if bool(present[b]):
                         for kind, units in attention_work_trials[int(selected[b])][b].items():
                             meter.require(kind, units)
-                self._attention_spent = kept.table.spent.detach().clone()
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
                 reports = [field.report() for field in field_trials]
@@ -23471,22 +23427,6 @@ class BasicModel(BaseModel):
         obs=ga(concept_q=concept_q,symbol_q=symbol_q,spaces=spaces,
                chooser=self._stm_reducer(),work=work)
         object.__setattr__(self,'_answer_attention_obs',obs)
-        if charge and obs is not None and getattr(self,'_attention_words',None) is not None:
-            from Attention import LEVEL_ROW
-            table=self._attention_words.table
-            slot=(~table.valid).long().argmax(-1)
-            rows=torch.arange(len(slot),device=slot.device)
-            active=(obs['space_id']>=0)&(~table.valid).any(-1)
-            selected=(torch.arange(table.valid.shape[1],device=slot.device)[None]==slot[:,None])&active[:,None]
-            # Typed recall intervals use normalized coordinates, retained in
-            # their own table because input intervals are byte offsets.
-            from Attention import BracketTable
-            intervals=table.intervals.to(obs['where'])
-            self._recall_brackets=BracketTable(
-                torch.where(selected[...,None],obs['where'][:,None],torch.zeros_like(intervals)),
-                selected,torch.where(selected,obs['space_id'][:,None],-1),
-                torch.full_like(table.level,LEVEL_ROW),selected,
-                torch.tensor([meter.spent for meter in work],device=slot.device) if work is not None else table.spent)
 
     def _generation_read(self, idea, *, record=None, charge=True, identity=True):
         """Retrieve into an owned generation operand, preserving its source."""
@@ -23631,52 +23571,6 @@ class BasicModel(BaseModel):
                             else result.result.result_kind),
             "incomplete": list(result.evidence.get("incomplete", ())),
         }
-
-    def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS,
-                           prevPS_forPS=None):
-        """Retarget native perception through conceptual membership attribution.
-
-        The request addresses native percept identities, which choose the
-        mereological units, and field brackets, which choose the region.
-        The source carrier is read-only.
-        """
-        if pass_idx <= 0:
-            return ps_default
-        owner = self._concept_owner()
-        field = getattr(self, '_subsymbolic_field', None)
-        event = ps_default.materialize() if ps_default is not None else None
-        if not torch.is_tensor(field) or not torch.is_tensor(event):
-            return ps_default
-        size = sum(owner._field_caps())
-        query = torch.cat((field, field.new_zeros(size - len(field), *field.shape[1:])))
-        columns, attributed, spans = owner.cs_percept_attribution(query, observed=query,
-            perception=getattr(owner, '_percept_field', None))
-        active = attributed.amax(dim=(1, 2, 3)) > 0
-        if not bool(active.any()) or spans is None:
-            return ps_default
-        evidence = attributed.amax(dim=(0, 2))
-        parts = (getattr(self.perceptualSpace, '_forward_input', None) or {}).get('part_spans')
-        if not torch.is_tensor(parts) or parts.shape[:2] != event.shape[:2]:
-            return ps_default
-        overlap = ((spans[:, None, :, 0] < parts[:, :, None, 1])
-                   & (spans[:, None, :, 1] > parts[:, :, None, 0]))
-        strength = (evidence[:, None] * overlap).amax(-1)
-        scope = getattr(self.conceptualSpace, '_passback_scope_where', None)
-        if torch.is_tensor(scope):
-            bounds = scope.to(parts.device).reshape(-1, 2).expand(parts.shape[0], -1).clamp(0, 1)
-            width = max(1, int(self._staged_concepts_in.shape[-1]))
-            inside = ((parts[..., 0] >= (bounds[:, :1] * width).floor())
-                      & (parts[..., 1] <= (bounds[:, 1:] * width).ceil()))
-            strength = strength * inside
-        focused = SubSpace(inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1)
-        focused.copy_context(ps_default)
-        # Attention changes salience, never visibility. A half-strength floor
-        # preserves novel percepts; attributed units approach full strength.
-        scale = .5 + .5 * strength.clamp(0, 1).to(event)
-        width = int(self.perceptualSpace.nWhat)
-        focused.set_event(torch.cat((event[..., :width] * scale[..., None],
-                                      event[..., width:]), -1))
-        return focused
 
     def _reverse_field(self, sub, field):
         """Decode only the supplied order-zero field through basic percepts."""

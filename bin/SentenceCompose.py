@@ -140,8 +140,7 @@ def kept_reading_plan(wins, paths, attention, fields, width):
     actions = torch.where(wins[:, None], paths[-1], paths[0])
     reading = attention[0]
     if reading is not None:
-        parts = select_rows(reading, attention[-1], wins)
-        reading = type(reading)(type(reading.table)(*parts[0]), *parts[1:])
+        reading = type(reading)(*select_rows(reading, attention[-1], wins))
     reads = []
     if fields[0] is not None:
         left, right = fields[0].reads, fields[-1].reads

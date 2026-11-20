@@ -1,4 +1,4 @@
-"""Named input parts teach reconstruction and, explicitly, reading order."""
+"""Named input parts teach reconstruction and, by the looks, reading order."""
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -81,7 +81,13 @@ class ReadingLesson:
 
 
 class ReadingTargets:
-    """Supervision at the two decisions actually made during a look."""
+    """The reading lesson at each look: the request is taught by what its
+    look returned, against the next word the lesson names; the grammar's
+    option at the look by its own choice. The word taken at a look is the
+    one the lesson names."""
+    #: The sharpness of the look's choice among a sentence's unread words.
+    SHARPNESS = 10.
+
     def __init__(self, lesson, forms, state):
         self.order = lesson.positions(forms, state.spans)
         self.skipped = [[] for _ in self.order]
@@ -98,48 +104,19 @@ class ReadingTargets:
             target.append(next((i for i in order if bool(pending[b,i])), -1))
         return state.spans.new_tensor(target)
 
-    def focus(self, state, view, targets):
-        """Shortest legal sequence to the named occurrence. Only the lesson plans."""
-        from functools import lru_cache
-        from Attention import focus_cuts
-        table, covered, _, evidence = view[:4]
-        legal = view[8]
-        actions = []
-        for b, target in enumerate(targets.tolist()):
-            candidates = (covered[b,:,target] & legal[b,:,:2].any(-1)).nonzero() if target >= 0 else ()
-            if not len(candidates):
-                actions.append(-1)
-                continue
-            slot = int(candidates[0,0])
-            ordinals = tuple(covered[b,slot].nonzero().flatten().tolist())
-            @lru_cache(None)
-            def shortest(words, room, allowed):
-                if len(words) == 1:
-                    return (1, 1) if allowed[1] else (float('inf'), -1)
-                if room == 0:
-                    return float('inf'), -1
-                indices = state.spans.new_tensor(words)
-                spans = state.spans[b,indices][None]
-                lanes = evidence[b,indices][None]
-                cuts = focus_cuts(torch.ones_like(spans[...,0],dtype=torch.bool), spans, lanes)
-                best = (float('inf'), -1)
-                for op, cut in enumerate(cuts):
-                    if not allowed[op]:
-                        continue
-                    on_left = spans[0,:,1] <= cut
-                    left = bool(on_left[words.index(target)])
-                    child = tuple(i for i, keep in zip(words, on_left.tolist()) if keep == left)
-                    if left and len(child) == 1 and bool((evidence[b,target]>0).sum()==1):
-                        rest = 0   # grammar sees the left child on this very look
-                    else:
-                        both = bool((evidence[b,list(child)]>0).any(0).all())
-                        rest, _ = shortest(child, room-1, (both and 0 in state.chooser.attention_operations,
-                                                           1 in state.chooser.attention_operations))
-                    best = min(best, (1+rest, op))
-                return best
-            distance, op = shortest(ordinals, int((~table.valid[b]).sum()), tuple(legal[b,slot,:2].tolist()))
-            actions.append(slot*legal.shape[-1]+op if distance < float('inf') else -1)
-        return state.spans.new_tensor(actions)
+    def book_look(self, words, target, unread):
+        """The look's cost: the next word against the sentence's other unread
+        words (``unread`` ``[B, W]``), by what the look returned of each
+        (``words`` ``[B, W]``; ``-inf``, nothing returned, is zero)."""
+        live = unread.any(-1) & (target >= 0)
+        if not bool(live.any()):
+            return
+        returned = torch.where(torch.isfinite(words), words, 0.).clamp_min(0.)
+        score = torch.where(unread, self.SHARPNESS * returned, -torch.inf)
+        logp = score.log_softmax(-1).gather(1, target.clamp_min(0)[:, None])[:, 0]
+        live = live & torch.isfinite(logp)
+        self.loss = self.loss - torch.where(live, logp, 0.)
+        self.count = self.count + live.long()
 
     def book(self, log_probability, active):
         self.loss = self.loss - torch.where(active, log_probability, 0.)

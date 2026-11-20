@@ -1350,9 +1350,7 @@ class Grammar:
                     raise ValueError('order-dependent implementations cannot take a field operand')
                 contract = GRAMMAR_LAYER_CLASSES.get(rule.method_name)
                 if getattr(contract, 'field_only', False) and 'symbol' in operands:
-                    raise ValueError('Boolean and bracket operations require field operands')
-                if getattr(contract, 'bracket_action', None) is not None and (face == 'generate' or '.reverse(' in body):
-                    raise ValueError('bracket operations have no generate face')
+                    raise ValueError('Boolean operations require field operands')
                 if 'writes' in attributes:
                     from AccessibleMind import OperatorEffects
                     writes = tuple(part.strip() for part in str(attributes['writes']).split(',') if part.strip())
@@ -2208,7 +2206,6 @@ TheGrammar = Grammar()
 class NotLayer(GrammarLayer):
     footprint_reads = footprint_writes = ('meaning', 'poles')
     field_only = True
-    field_action = 5
     """Exchange evidence poles, including every pair on the meaning face."""
     inverse_kind = 'unary'
     scope_transparent = True
@@ -2285,7 +2282,6 @@ class NonLayer(GrammarLayer):
 
 class IntersectionLayer(GrammarLayer):
     field_only = True
-    field_action = 3
     """Lossy ``intersection(C, C)`` over bivectors via ``Ops.intersection``."""
     inverse_kind = 'search'
     field_eligible = True
@@ -2462,7 +2458,6 @@ class IntersectionLayer(GrammarLayer):
 class UnionLayer(GrammarLayer):
     field_only = True
     field_eligible = True
-    field_action = 4
     """Lossy lattice UNION ``union(C, C)`` (RadMax radial / lattice max) via
     ``Ops.union`` — the saturating OR-fold, DUAL to ``intersection`` (RadMin /
     lattice min). RENAMED from ``join`` (2026-07-05, Alec): the additive
@@ -4594,39 +4589,8 @@ def isa_part_op(child, parent, sigma=None):
 # per the 2026-05-29 grammar refactor (§5); most concrete subclasses
 # now live above in this module, the remaining ones (Equal/True/False/
 # Swap/Copy/Area/Luminosity/IsaPart) are imported at the top from Layers.
-class BracketOperation(GrammarLayer):
-    """A declared effect on a typed field; executed by the shared chooser."""
-    field_eligible = field_only = True
-    arity = 1
-    space_role = 'CS'
-    effect_reads = ('percept',)
-    effect_writes = ()
-    footprint_reads = ('form', 'poles')
-    footprint_writes = ()
-    reverse_dispatchable = False
-    bracket_action = None
-
-    def __init__(self):
-        super().__init__(0, 0)
-
-    def forward(self, field):
-        raise RuntimeError('bracket operations require the typed bracket table')
-
-    def reverse(self, field):
-        raise RuntimeError('bracket operations have no generate face')
-
-
-class FocusLayer(BracketOperation):
-    bracket_action = (0, 1)
-
-
-class UnfocusLayer(BracketOperation):
-    bracket_action = 2
-
-
 
 GRAMMAR_LAYER_CLASSES = {
-    'focus': FocusLayer, 'unfocus': UnfocusLayer,
     'add': AddLayer, 'subtract': SubtractLayer, 'multiply': MultiplyLayer, 'divide': DivideLayer,
     'interpret':    InterpretLayer,
     'sign':         SignLayer,
@@ -6454,8 +6418,6 @@ class OperationSelectionLayer(nn.Module):
             d_model=self.d_model, n_copy=1,
             n_op=self.r_reduce + self.r_apply + 6,
             ordered_binary=True)
-        self.attention_operations = (0, 1, 2)
-        self.space_prior = nn.Parameter(torch.zeros(6))
         self.op_names = list(op_names) if op_names is not None else None
         self.unary_names = list(unary_names) if unary_names is not None else None
         self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
@@ -6664,33 +6626,20 @@ class OperationSelectionLayer(nn.Module):
             representatives.append(allowed[:, first:first + 16] & ~duplicates)
         return torch.cat(representatives, -1)
 
-    def attend(self, keys, legal, space, *, masked_action=None, replay_action=None,
-               return_details=False, slot_limit=None, context=None):
-        """Score bracket locations with the prefix understood at this look."""
-        keys = keys.detach() if context is None else keys.detach() + (context[:, None] if context.ndim == 2 else context)
-        B,K,D=keys.shape
-        width = K if slot_limit is None else min(K, slot_limit)
-        # The word field can occupy at most one slot per word, while the
-        # work budget may reserve hundreds of slots. Score that prefix and
-        # restore the full masked menu before selection: action addresses,
-        # probabilities, random draws and work charges retain their contract.
-        torch._assert_async(~legal[:, width:].any(), 'attention slot bound excludes a legal action')
-        candidates=keys[:,:width,None].expand(B,width,legal.shape[-1],D)
-        _,scores=self.chooser.score_unary(keys[:,:width],candidates,
-                                          op_offset=self.r_reduce+self.r_apply)
-        scores=F.pad(scores,(0,0,0,K-width),value=-torch.inf)
-        scores=scores+self.space_prior[space][...,None]
-        scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
-        stop=torch.where(legal.reshape(B,-1).any(-1),-torch.inf,0.)
-        logits=torch.cat((scores,stop[:,None]),-1)
-        action,probability,valid,proposal_inverse=self.select_logits(logits,structural=(True,)*logits.shape[-1],
-                  masked_action=masked_action,replay_action=replay_action,
-                  departure_eligible=torch.isfinite(logits),return_proposal=True)
-        weight=probability.gather(1,action[:,None])[:,0]
-        counts = (torch.isfinite(logits).sum(-1)-1).clamp_min(0)
-        result = (action, torch.ones_like(weight), counts > 0)
-        return (*result, dict(probability=weight, alternative_count=torch.where(proposal_inverse>0,proposal_inverse,counts.to(logits)),
-                              logits=logits)) if return_details else result
+    @staticmethod
+    def attend(query, codes, base):
+        """The request: a mask over concepts on two lanes, ``[V, B, 2]``.
+
+        ``base`` ``[V]`` is what is asked with nothing yet learned (the
+        concept "words" alone); ``codes`` ``[V, D]`` are the concepts' codes
+        and ``query`` ``[B, D]`` the context's map (``AttentionContext``).
+        A concept is asked for where its code reads the query above zero and
+        asked against where below; the map starts at zero, so the request
+        starts at ``base`` alone."""
+        width = min(int(codes.shape[-1]), int(query.shape[-1]))
+        score = codes[:, :width].detach().to(query) @ query[:, :width].T
+        asked = base.to(score)[:, None] + score.clamp_min(0.)
+        return torch.stack((asked, (-score).clamp_min(0.)), -1)
 
     def choose_interpret(self, word, allowed, *, masked_action=None, replay_action=None):
         """Grammar's existing unary scorer chooses interpretation or abstention."""
@@ -10185,12 +10134,6 @@ class SymbolSubSpace(SubSpace):
 
         if router.operation_layer is None:
             router.attach_unary_ops(ops=(), rule_ids=(), space_role='CS')
-        declarations = tuple(getattr(GRAMMAR_LAYER_CLASSES.get(rule.method_name),
-                                     'field_action', getattr(GRAMMAR_LAYER_CLASSES.get(rule.method_name), 'bracket_action', None))
-                             for rule in TheGrammar.rules_upward)
-        router.operation_layer.attention_operations = tuple(dict.fromkeys(
-            value for declaration in declarations if declaration is not None
-            for value in (declaration if isinstance(declaration, tuple) else (declaration,))))
 
         # plan \xa76: plumb the conceptual-reduction round floor onto the
         # router. bindingDepth lives on the model (Models.py), not on

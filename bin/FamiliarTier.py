@@ -279,11 +279,8 @@ def observe_field(owner, field=None, *, active_streams=None):
 
 
 @torch.no_grad()
-def observe_intersection(owner, lanes, *, batch=0, examined=False):
-    """Recurrent concept lanes, proposed by the glance or an intersection act."""
-    phases = getattr(owner._model, 'grammar_phases', None)
-    if phases is not None and phases.examination and not examined:
-        return None
+def observe_intersection(owner, lanes, *, batch=0):
+    """Recurrent concept lanes, proposed together at one reading."""
     lanes = tuple(sorted(set((int(row), int(pole)) for row, pole in lanes)))
     if len(lanes) < 2:
         return None

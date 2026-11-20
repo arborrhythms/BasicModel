@@ -1,35 +1,136 @@
-"""Perceive each selected extent before grammar considers its word."""
+"""A sentence's looks: each a request carried down onto the sentence's
+percept bank, read up again, and what it returns handed to the grammar.
+
+A look (§21, rules 34, 37 and 39): an event's activity is its share of the
+request capped at its own activity; a reading's where match is
+``exp(s - max s)`` of the share on its start's band, applied once to the
+reading's values; the way up again on the bank with that activity gives
+the returned set. ``interpret`` takes the most active word, and a word
+interpreted is lowered in the bank's own activity over its extent.
+"""
 from dataclasses import fields
 import torch
 from torch.nn import functional as F
 
 
-def bracket_activity(bank, interval, active):
-    """Each event of the bank present on both lanes where it lies inside the
-    stream's bracket ``interval`` ``[B, 2]`` and the stream is ``active``;
-    on the device."""
-    spans = bank.native.spans.to(interval.device)
-    inside = ((spans[..., 0] >= interval[:, None, 0]) & (spans[..., 1] <= interval[:, None, 1])
-              & (spans[..., 1] > spans[..., 0]) & active[:, None])
-    return inside[..., None].expand(-1, -1, 2).to(bank.native.events.dtype)
-
-
-def perceive(model, interval, active):
-    """A look's read of the sentence's bank (the one its looks are of), the
-    events inside one selected bracket per stream present: no lookup and no
-    read on the host."""
-    owner, raw = model._concept_owner(), model._staged_concepts_in
+def perceive(model, activity):
+    """A look's read of the sentence's bank with each event present to the
+    degree of ``activity`` ``[B, events, 2]``: no lookup and no read on the
+    host."""
+    owner = model._concept_owner()
     bank = model._sentence_bank
-    owner._passback_scope_where = interval.to(raw) / max(1, raw.shape[-1])
-    owner._passback_scope_space = interval.new_zeros(len(interval))
-    evidence = owner.cs_read_bank(bank, bracket_activity(bank, interval, active))
+    evidence = owner.cs_read_bank(bank, activity)
     owner._cs_last_a0 = evidence.detach()
     knowing = owner.cs_forward_content(evidence)
     from Understanding import ConceptualField
-    field = ConceptualField(owner._cs_field_concept_ids,
+    return ConceptualField(owner._cs_field_concept_ids,
         F.pad(knowing, (0, 0, 0, 0, 0, 0, 0, sum(owner._field_caps())-len(knowing))),
         owner._cs_field_where, owner._cs_field_when, None)
-    return field
+
+
+def where_match(bank, band_share, activity, readings):
+    """Each reading's where match ``[B, readings]``: the share on the band
+    of the event at its start, weighted by that event's presence in the
+    look, referred to the most salient reading through the exponential."""
+    token = bank.token
+    place = torch.where(token >= 0, bank.place, torch.iinfo(bank.place.dtype).max)
+    slots = torch.arange(readings, device=token.device)
+    held = token[:, None, :] == slots[None, :, None]                      # [B, readings, events]
+    first = torch.where(held, place[:, None, :], torch.iinfo(place.dtype).max).amin(-1, keepdim=True)
+    start = held & (place[:, None, :] == first)
+    presence = activity[..., 0].amax(-1) if activity.ndim == 3 else activity
+    share = torch.where(start, (band_share * presence)[:, None, :], 0.).sum(-1)
+    live = held.any(-1)
+    best = torch.where(live, share, -torch.inf).amax(-1, keepdim=True)
+    return torch.where(live, (share - torch.where(torch.isfinite(best), best, 0.)).exp(), 0.)
+
+
+def look(model, bank, request, own, perception):
+    """One look of ``request`` ``[V, B, 2]`` over ``bank`` with the events'
+    own activity ``own`` ``[B, events, 2]``: the returned field, the look's
+    activity over the events, and each reading's where match."""
+    from Salience import salience
+    owner = model._concept_owner()
+    salient = salience(owner, bank, request, perception=perception)
+    activity = torch.minimum(own, salient.events.clamp_min(0.))
+    field = perceive(model, activity)
+    readings = field.evidence.shape[2]
+    match = where_match(bank, salient.band, activity, readings)
+    from dataclasses import replace
+    field = replace(field, evidence=field.evidence * match[None, :, :, None].to(field.evidence))
+    return field, activity, match
+
+
+def extent_of(bank, activity, readings):
+    """The readings a look holds, ``[B, readings]``: those with an event
+    active in it."""
+    token = bank.token
+    lit = (activity.amax(-1) > 0) & (token >= 0)
+    slots = torch.arange(readings, device=token.device)
+    return ((token[:, None, :] == slots[None, :, None]) & lit[:, None, :]).any(-1)
+
+
+def word_activity(field, concepts, known, extent, activity, bank):
+    """Each word's activity in a look's returned set, ``[B, W]``: a word
+    with a word concept, that concept's value at its reading (for less
+    against); a word with none, its reading's presence in the look. ``-inf``
+    where a word was not returned."""
+    B, W = concepts.shape
+    ids = field.concept_ids
+    ids = ids[:, None].expand(-1, B) if ids.ndim == 1 else ids
+    evidence = field.evidence[:, :, :W]                                   # [S, B, W, 2]
+    value = (evidence[..., 0] - evidence[..., 1])                         # [S, B, W]
+    match = (ids[:, :, None] == concepts[None]) & (concepts[None] >= 0)    # [S, B, W]
+    concept = torch.where(match, value.to(torch.float32), -torch.inf).amax(0)
+    token = bank.token
+    slots = torch.arange(W, device=token.device)
+    presence = torch.where(token[:, None, :] == slots[None, :, None],
+                           activity[..., 0][:, None, :], 0.).amax(-1)
+    width = min(W, extent.shape[1])
+    inside = F.pad(extent[:, :width], (0, W - width))
+    word = torch.where(known & inside & (concept > 0), concept, -torch.inf)
+    unknown = torch.where(~known & inside & (presence > 0), presence.to(torch.float32), -torch.inf)
+    # A word not yet known is read whole where the look returned no word.
+    found = torch.isfinite(word).any(-1, keepdim=True)
+    return torch.where(found, word, unknown)
+
+
+def lower(own, bank, index, rows):
+    """The done mark: a word interpreted is lowered in the bank's own
+    activity over its extent (the events of its reading)."""
+    gone = (bank.token == index[:, None]) & rows[:, None] & (index[:, None] >= 0)
+    return torch.where(gone[..., None], 0., own)
+
+
+def requested(model, query):
+    """``attend``'s request ``[V, B, 2]`` from the context's ``query``
+    ``[B, D]``: "words" alone, and each concept as its code reads the query."""
+    owner = model._concept_owner()
+    V = int(owner.nVectors)
+    base = torch.zeros(V, device=query.device, dtype=query.dtype)
+    from Spaces import _concept_alloc_of
+    words = _concept_alloc_of(owner).declared_classes.get('words')
+    row = None if words is None else owner._concept_row_of(words)
+    if row is not None:
+        base[row] = 1.
+    codes = owner.similarity_codebook.W.detach()[:V].to(query)
+    codes = F.pad(codes, (0, 0, 0, V - len(codes)))
+    return model._stm_reducer().attend(query, codes, base)
+
+
+def word_request(model, concepts, index):
+    """The request for each stream's word ``index`` ``[B]`` by its word
+    concept, for one: a reading supplied as a sequence of requests."""
+    owner = model._concept_owner()
+    V = int(owner.nVectors)
+    B = len(index)
+    request = torch.zeros(V, B, 2, device=concepts.device)
+    for b, word in enumerate(index.tolist()):
+        cid = int(concepts[b, word]) if word >= 0 else -1
+        row = owner._concept_row_of(cid) if cid >= 0 else None
+        if row is not None:
+            request[row, b, 0] = 1.
+    return request
 
 
 class WordForecast:
@@ -95,7 +196,7 @@ class WordForecast:
 
 
 class Looks:
-    """One path's ordered looks and grammar decisions; words arrive on demand."""
+    """One path's looks and grammar decisions; words arrive on demand."""
     def __init__(self, model, walk, sid, present, *, prior=None, draw=None, kept=None):
         self.model, self.walk, self.sid, self.present = model, walk, sid, present
         self.prior, self.draw, self.kept = prior, draw, kept
@@ -104,7 +205,8 @@ class Looks:
         lesson = getattr(model, '_attention_reading_lesson', None)
         if lesson is not None and model.training and model._sentence_training:
             from AttentionLesson import ReadingTargets
-            self.teacher = ReadingTargets(lesson, model._attention_forms[0], walk.state)
+            self.teacher = ReadingTargets(lesson, model._attention_forms[0], walk)
+        self.supplied = getattr(model, '_attention_supplied_reading', None)
 
     def source_orders(self):
         """Original word positions in each row's interpretation order."""
@@ -116,110 +218,133 @@ class Looks:
         return None if self.teacher is None else self.teacher.cost()
 
     def reading(self):
-        from Attention import close_narrowing
-        from ModelAttention import _word_carrier
-        return _word_carrier(close_narrowing(self.walk.state),self.walk.width)
+        return self.walk.reading()
+
+    def _supplied(self, state):
+        """The next word of a supplied reading, ``[B]`` (-1 where none)."""
+        order = self.supplied.positions(self.model._attention_forms[0], state.spans)
+        return state.spans.new_tensor([next((w for w in row if not bool(state.accepted[b, w])), -1)
+                                       for b, row in enumerate(order)])
 
     def run(self, arrive, *, context=None):
-        from Attention import narrowing_view, narrow_step, interpretation_at, record_interpretation
-        from ModelAttention import handoff
-        state = self.walk.state
-        slot = torch.zeros_like(self.present,dtype=torch.long)
-        rows = self.present
-        first = True
-        opened = self.model._sentence_open_fields[self.sid]
-        self.model._sentence_bank = self.model.__dict__.get('_sentence_banks', {}).get(self.sid)
+        model, state = self.model, self.walk
+        owner = model._concept_owner()
+        opened = model._sentence_open_fields[self.sid]
+        bank = model._sentence_bank = model.__dict__.get('_sentence_banks', {}).get(self.sid)
+        concepts = model._attention_word_concepts[:, :state.known.shape[1]]
+        W = state.known.shape[1]
+        live = (state.spans[..., 1] > state.spans[..., 0]) & self.present[:, None]
         from LookForecast import LookForecast
-        forecasts = LookForecast(self.model._concept_owner(), opened, state.spans) if opened is not None else None
-        while True:
-            view = narrowing_view(state)
-            interval = view[0].intervals[state.rows,slot]
-            span = torch.where(rows[:, None, None], interval[:, None], 0)
-            if first:
-                field = opened
-                surprise = forecasts.latest if forecasts is not None else None
-            else:
-                prediction = forecasts.forecast(span) if forecasts is not None else None
-                if forecasts is not None:
-                    # What is expected is written anew at each look, before
-                    # what the look brings is read.
-                    from ConceptSpread import write_look
-                    write_look(forecasts.owner, forecasts.inventory_rows(), prediction[:, 0])
-                field = perceive(self.model, interval, rows)
-                surprise = forecasts.observe(field, span, prediction) if forecasts is not None else None
-                if forecasts is not None and self.model.training:
-                    looks = self.model.__dict__.setdefault('_expectation_looks', [])
-                    looks.append((forecasts.stage_cost(field, span), rows.clone()))
-                    percepts = self.model.__dict__.setdefault('_expectation_percept_looks', [])
-                    perception = getattr(self.model._concept_owner(), '_percept_field', None)
-                    percepts.append((forecasts.percept_stage_cost(perception, span), rows.clone()))
-            # Candidate entries of the Pi above order zero and of the Sigma
-            # take their step from what the look holds together.
-            from CandidateGrowth import at_look
-            words = self.model._attention_spans[:, :state.spans.shape[1]].to(interval.device)
-            extent = ((words[..., 0] >= interval[:, None, 0]) & (words[..., 1] <= interval[:, None, 1])
-                      & (words[..., 1] > words[..., 0]) & rows[:, None])
-            at_look(self.model, field, extent)
-            self.fields.append(dict(field=field, where=interval.detach().clone(), active=rows.clone(),
-                                    surprise=surprise))
-            index, allowed = interpretation_at(state,slot)
-            allowed &= rows
-            options = {}
-            turn = len(self.decisions)
-            if self.prior is not None and turn < len(self.prior.decisions):
-                old = self.prior.decisions[turn]
-                if self.kept is not None:
-                    replay = self.present
-                else:
-                    # Walk departures replay the prefix's grammar decisions;
-                    # a compose departure keeps the walk's interpretations.
-                    at = self.draw.get('interpret_round',torch.full_like(index,-1))
-                    replay = ((self.draw['attention_round']<0) | (len(state.actions)<=self.draw['attention_round'])) & ((at<0)|(turn<at))
-                    options['masked_action']=torch.where(at==turn,old['action'],-1)
-                options['replay_action']=torch.where(replay,old['action'],-1)
-                # A departure in the grammar was already assigned to the learned share.
-                replay_branch = replay | (options.get('masked_action', -1) != -1)
-                options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
+        forecasts = LookForecast(owner, opened, state.spans) if opened is not None else None
+        perception = owner.basic_percepts.read_bank(bank) if bank is not None else None
+        own = bank.activity.clone() if bank is not None else None
+        field, rows = opened, self.present
+        extent = live
+        surprise = forecasts.latest if forecasts is not None else None
+        from CandidateGrowth import at_look
+        at_look(model, field, extent)
+        self.fields.append(dict(field=field, extent=extent.clone(), active=rows.clone(), surprise=surprise))
+        while bank is not None:
+            turn = state.taken
+            rows = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
+            if not bool(rows.any()):
+                break
+            target = None
             if self.teacher is not None:
                 target = self.teacher.next(state)
-                options['replay_action'] = ((target == index) & allowed).long()
-                options.pop('masked_action', None)
-            choice = state.chooser.interpret_at_look(state.keys[state.rows,index],allowed,**options)
+            elif self.supplied is not None:
+                target = self._supplied(state)
+            if self.supplied is not None and self.teacher is None:
+                request = word_request(model, concepts, target)
+            else:
+                query = (context(surprise[:, None])[:, 0] if context is not None and surprise is not None
+                         else owner.similarity_codebook.getW().new_zeros(len(rows), int(model._stm_reducer().d_model)))
+                request = requested(model, query)
+            prediction = None
+            look_field, activity, match = look(model, bank, request, own, perception)
+            extent = extent_of(bank, activity, W) & rows[:, None]
+            if forecasts is not None:
+                prediction = forecasts.forecast(extent)
+                # What is expected is written anew at each look, before
+                # what the look brings is read.
+                from ConceptSpread import write_look
+                write_look(forecasts.owner, forecasts.inventory_rows(), prediction)
+                surprise = forecasts.observe(look_field, extent, prediction)
+                if model.training:
+                    looks = model.__dict__.setdefault('_expectation_looks', [])
+                    looks.append((forecasts.stage_cost(look_field, extent), rows.clone()))
+                    percepts = model.__dict__.setdefault('_expectation_percept_looks', [])
+                    perceived = getattr(owner, '_percept_field', None)
+                    percepts.append((forecasts.percept_stage_cost(perceived, extent), rows.clone()))
+            at_look(model, look_field, extent)
+            self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
+                                    surprise=surprise, match=match.detach()))
+            words = word_activity(look_field, concepts, state.known, extent, activity, bank)
+            unread = live & ~state.accepted & rows[:, None]
+            words = torch.where(unread, words, -torch.inf)
             if self.teacher is not None:
-                logp = choice['logits'].log_softmax(-1).gather(1,choice['action'][:,None])[:,0]
+                self.teacher.book_look(words, target, unread)
+            replay = masked = None
+            exploit = state.exploit
+            if exploit is not None and turn < exploit.actions.shape[1]:
+                replay = torch.where(turn < state.replay_until, exploit.actions[:, turn], -1)
+                masked = torch.where(state.departure == turn, exploit.actions[:, turn], -1)
+            if target is not None:
+                replay = torch.where(target >= 0, target, -1 if replay is None else replay)
+            from Attention import draw_among
+            index, drawn, probability, others = draw_among(words, replay=replay, masked=masked)
+            index = torch.where(rows, index, -1)
+            state.actions.append(index)
+            state.alternatives.append(drawn & rows & (index >= 0))
+            state.probabilities.append(probability)
+            state.counts.append(torch.where(rows, others, 0))
+            found = index >= 0
+            if not bool(found.any()):
+                break
+            word = index.clamp_min(0)
+            allowed = found & (state.known.gather(1, word[:, None])[:, 0]
+                               | torch.isfinite(words.gather(1, word[:, None])[:, 0]))
+            state.descended = state.descended | ((torch.arange(W, device=word.device)[None] == word[:, None])
+                                                 & (found & ~state.known.gather(1, word[:, None])[:, 0])[:, None])
+            options = {}
+            decision = len(self.decisions)
+            if self.prior is not None and decision < len(self.prior.decisions):
+                old = self.prior.decisions[decision]
+                if self.kept is not None:
+                    replay_grammar = self.present
+                else:
+                    # A departure in the reading replays the prefix's grammar
+                    # decisions; a compose departure keeps the reading's.
+                    at = self.draw.get('interpret_round', torch.full_like(index, -1))
+                    replay_grammar = (((self.draw['attention_round'] < 0) | (turn < self.draw['attention_round']))
+                                      & ((at < 0) | (decision < at)))
+                    options['masked_action'] = torch.where(at == decision, old['action'], -1)
+                options['replay_action'] = torch.where(replay_grammar, old['action'], -1)
+                replay_branch = replay_grammar | (options.get('masked_action', -1) != -1)
+                options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
+            if self.teacher is not None:
+                options['replay_action'] = allowed.long()
+                options.pop('masked_action', None)
+            choice = state.chooser.interpret_at_look(state.keys[torch.arange(len(word), device=word.device), word],
+                                                     allowed, **options)
+            if self.teacher is not None:
+                logp = choice['logits'].log_softmax(-1).gather(1, choice['action'][:, None])[:, 0]
                 self.teacher.book(logp, choice['eligible'] & rows)
                 choice['eligible'] = torch.zeros_like(allowed)
-            choice.update(index=index,slot=slot.clone())
+            choice.update(index=index, slot=index.clamp_min(0))
             self.decisions.append(choice)
-            record_interpretation(state,slot,choice['interpreted'])
-            handoff(self.model,self.reading())
-            self.model._sentence_look_fields = dict(getattr(self.model,'_sentence_look_fields',{}))
-            self.model._sentence_look_fields[self.sid] = tuple(self.fields)
+            interpreted = choice['interpreted'] & found
+            state.record(word, interpreted)
+            own = lower(own, bank, index, interpreted)
+            handoff_reading(model, state)
+            model._sentence_look_fields = dict(getattr(model, '_sentence_look_fields', {}))
+            model._sentence_look_fields[self.sid] = tuple(self.fields)
             # Batch rows can interpret different words at the same look.
-            for word in index[choice['interpreted']].unique().tolist():
-                active = choice['interpreted'] & (index==word)
-                arrive(torch.tensor(word,device=index.device),active)
-            first = False
-            view = narrowing_view(state)
-            if len(state.actions)>=int(state.budget) or not bool(view[8].any()):
-                break
-            lesson_action = (None if self.teacher is None else
-                             self.teacher.focus(state, view, self.teacher.next(state)))
-            prefix = None
-            if context is not None:
-                prefix = context(forecasts.for_brackets(view[0].intervals))
-            narrow_step(state, context=prefix, lesson_action=lesson_action)
-            if lesson_action is not None:
-                self.teacher.book(state.lesson_log_probability, lesson_action >= 0)
-            slot,rows=state.look_slot,state.look_active & self.present
-        result = self.reading()
-        # Different paths may finish after different numbers of looks. Keep
-        # their actions at stable addresses for replay and per-stream selection.
-        missing = state.budget - len(state.actions)
-        return result._replace(
-            actions=F.pad(result.actions, (0, missing), value=-1),
-            alternatives=F.pad(result.alternatives, (0, missing)),
-            probabilities=F.pad(result.probabilities, (0, missing)),
-            alternative_counts=F.pad(result.alternative_counts, (0, missing)),
-            round_words=F.pad(result.round_words, (0, missing), value=-1),
-            field_scopes=F.pad(result.field_scopes, (0, 0, 0, missing)))
+            for value in index[interpreted].unique().tolist():
+                arrive(torch.tensor(value, device=index.device), interpreted & (index == value))
+        return state.reading()
+
+
+def handoff_reading(model, state):
+    from ModelAttention import handoff
+    handoff(model, state.reading())

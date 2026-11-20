@@ -61,8 +61,8 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
     empty = compose.new_zeros(compose.shape[0], 0)
     attention = empty if narrowing is None else narrowing.alternatives.clone()
     if narrowing is not None and sentence_ids is not None:
-        owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
-        attention &= (owners == sentence) & (narrowing.round_words >= 0)
+        owners = sentence_ids.gather(1, narrowing.actions.clamp_min(0))
+        attention &= (owners == sentence) & (narrowing.actions >= 0)
     interpretation = empty if interpretations is None else interpretations.clone().bool()
     for prior in used:
         if interpretation.shape[1]:

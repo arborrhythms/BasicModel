@@ -83,8 +83,6 @@
       <grammar>
         <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = focus.forward(F)</rule>
-      <rule operands="field">F = unfocus.forward(F)</rule>
       <rule operands="field">F = intersection.forward(F)</rule>
       <rule operands="field">F = union.forward(F)</rule>
 
