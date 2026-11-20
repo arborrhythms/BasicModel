@@ -14102,3 +14102,19 @@ Traced on the dictionary sample, pair by pair, at `af7d26bb5c` and at the step-7
 - **Rule 54:** the mean of the sides reads a form beside a word that covers what tells against it at a half less what that word's own against lane takes away (.419 for `archer` beside `y`), not at a half or more.
 - **Rule 53:** a conjunction's members read both where its other members are found (`held`); without it the conjunction's concept is read as an OR and the numeric certificate stands on float32's last bits.
 - **Certificate 46's printed split** of containments into "true" and "by accident" depends on which runs are parts. A pair test by runs (a form held as a run) would not move when the parts do.
+
+### 23.S The default sweep on round 3c's source (2026-11-19)
+
+Run on Alec's word (§19.85), on the source round 3c left (`d0a3832629`), in a copy outside the checkout made into a throwaway git repository, with the ignored data linked in: `env -u RUN_TRAINED -u RUN_SLOW BASICMODEL_DEVICE=cpu PYTHONPATH=bin python test/test_report.py`. 7,381 cases completed in 2,223 s (37 minutes).
+
+| | Cases | Files |
+| --- | ---: | ---: |
+| Failed, real | 81 | 44 |
+| Failed or errored because of the copy | 52 | 3 |
+| Passed or skipped | 7,248 | |
+
+*Because of the copy, not of the source:* 44 cases of `test_attention_host_work.py` and 6 of `test_item17_layers.py` read an older file out of the repository's history (`git show <commit>:bin/...`), which the copy does not have; 2 of `test_doc_links.py` follow a link that leaves the copy. In the checkout `test_item17_layers.py` passes.
+
+*Real:* 81 cases in 44 files, every one in a file that no round's list had held. They are being sorted by cause and ported by an implementer on Opus who edits tests only; a defect of the source is reported and left failing. By their names and the earlier passes, most are rule 20 again (a test that reads its sentences once), and some are the widths. Not yet confirmed.
+
+*What this says of the lists.* A round's list held the files the round touched and the files that named what it changed. Rule 20 changes what any test that reads a sentence finds, whether or not it names anything. A later sweep of this item is run in the checkout itself, with no implementer editing it, so that the tests that read the history can run.
