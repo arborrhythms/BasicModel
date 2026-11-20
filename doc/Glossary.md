@@ -42,6 +42,12 @@ be enough for. A column divides the space beneath it by a hyperplane: the
 Sigma is "set creation / bifurcation on a hyperplane" (Alec, 2026-11-19), and
 what lies on one side is the set. In the source: `SparseSigmaLayer3`.
 
+**Thing, kind.** What the two epistemic levels of an order make. A Pi makes a
+*thing*, a basic percept or a symbol: which are the same, by a region. A Sigma
+makes a *kind*, a concept: which belong together, by a list. A kind collects
+any number of things, from every lower order and from none at or above its
+own: `green things` collects Felix and it collects cats (Alec, 2026-11-20).
+
 **Epistemic level.** One Pi or one Sigma (Alec, 2026-11-19: "My nomenclature
 is *epistemic levels* as opposed to orders (which are half as many)"). Every
 *order* has two epistemic levels, its Pi and its Sigma, so there are half as
@@ -81,8 +87,11 @@ rows of a Pi, basic percepts and symbols. From a statement such as "Felix is
 a cat" MTM makes a link of part to whole or of member to kind, depending on
 the orders of the two.
 
-**Symbol.** A row of a Pi above order zero: a conjunction of concepts of
-lower orders. A symbol has no dimensions and "does not live in any space,
+**Symbol.** A row of a Pi above order zero: a thing, as a region of sameness
+over concepts of lower orders. "My dog" and "Voyager" are two concepts and one
+symbol: "we don't want to represent both with one vector, we want a region in
+semantic space. So the region specification for similarity is defined with
+the pi" (Alec, 2026-11-20). A symbol may hold one concept or several. A symbol has no dimensions and "does not live in any space,
 which is what makes its collection by sigma so set-like" (Alec, 2026-11-19).
 It is its constituents occurring together: "a basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their

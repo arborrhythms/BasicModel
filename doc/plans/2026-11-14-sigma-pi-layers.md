@@ -9232,6 +9232,41 @@ So the rubric of "the symbol of a concept" suggests a 1:1 correspondance that is
 
 *§19.83's "it connects to both lower rows"* (order one is n/2 connected to 3n/2) is read again in this light: the two rows beneath a concept of order one are the n basic percepts and the n/2 symbols of its own order. Claude had written "its own order's symbols and the n concepts of order zero".
 
+### 19.102 Alec: a kind collects many symbols from every lower order; a symbol is a region of sameness; what the two epistemic levels of an order are for (2026-11-20)
+
+His answer to §19.101's open case.
+
+"For a kind whose members are themselves concepts (an operator class over arguments, or the higher cat), its Sigma reads symbols from all lower orders. It may be nominated by MTM, or implicitly occurring.
+
+Lets clarify this a bit. Take the concept green things: it must collect elements from all orders, because both Felix and cats may be green. But it collects only from lower orders, so that it is at least well-defined (no sets of all sets). For it to collect just one symbol would make pi be the only fold, which is not correct: we must have lists of arbitrary things.
+
+Consider also the symbol: should it represent just one concept? not necessarily: we might have two closely related concepts like "my dog" and "Voyager". They are actually the same object, so they will occur in the same conceptual space, but for most intents and purposes we should treat them the same. But we don't want to represent both with one vector, we want a region in semantic space. So the region specification for similarity is defined with the pi.
+
+Is this clear? does it show how alternating epistemic levels within an order serve different functions?"
+
+*It is clear, and it is decided* (rule 71, restated). Said back:
+
+| Epistemic level | What it makes | Its fold | What it is for |
+| --- | --- | --- | --- |
+| Pi | a *thing*: a basic percept at order zero, a symbol above | all of its constituents together | sameness. Its row is a region of the space beneath, and what falls in the region is treated as the one thing: "my dog" and "Voyager" are two concepts and one symbol. They keep their two vectors; the symbol is the region, not a vector that stands for both. A symbol may hold one concept or several. |
+| Sigma | a *kind*: a concept | any of its members, a list | a list of arbitrary things. `green things` collects Felix and it collects cats, which are of different orders; it collects from every lower order and from no order at or above its own, so that it is well defined. A kind that could hold one symbol only would make the Pi the only fold. |
+
+So the two levels of an order do two different things and neither can do the other's: the Pi says which are the same, by a region; the Sigma says which belong together, by a list. An order is one of each, and the next order's things are regions over this order's kinds.
+
+*What it settles and what Claude had wrong.*
+
+- *The open case of §19.101.* A kind whose members are concepts reads symbols, from every lower order, any number of them. It is nominated by MTM or occurs implicitly.
+- *Claude's first choice there is withdrawn:* a symbol for each instance of a kind, with the member and the kind as its constituents (Felix and cat). A symbol's constituents are what is the same thing, not a member with its kind.
+- *A symbol of one concept is not wrong in itself.* What was wrong (§19.101) was making one for every concept as a rule and addressing it as "the symbol of" that concept. A thing may be one concept, and may come to be several.
+- *§19.83's "both lower rows"* stands as read in §19.101: a concept of order one reads the basic percepts and the symbols.
+
+*Mine, built on unless he says otherwise:*
+
+1. *What a Sigma above order zero reads* is rows of a Pi from every lower order: the basic percepts, and the symbols of its own order and below. A kind of words (`words`, the grammar's arguments over the lesson's words) has its entries on the words' basic percepts.
+2. *When the thing a kind needs has no row yet.* MTM, nominating the kind, makes the member's symbol if none holds it (his §19.87: "by creating a higher order symbol over those two if not present"), and looks first for one that does ("check for an existing fit first"). It is made because the kind was recognized, by MTM, and not for every concept.
+3. *How two concepts come to be one symbol.* MTM nominates it when it recognizes that they always occur together, or from a statement that two are the same ("Felix is my cat", rule 10); the second concept joins the first one's symbol as a constituent.
+4. *The Pi's fold over a symbol's constituents is the product,* as for a basic percept over its parts: the symbol is present as far as all of them are. Since they are the same thing they are present together. *Put to him:* whether a symbol should also be present when only one of its concepts is evidenced (the region as "either"), which a product does not give.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10603,27 +10638,39 @@ chooses from. The old classes are not edited.
     parts; each grade is passed, over 12 runs, before the next is
     given.
 
-71. *What makes what; there is no symbol of a concept* (Alec,
-    §19.101: "a basic percept or symbol is created implicitly by PI
-    or when nominated by MTM when recognizing that their
-    constituents always occur together. a concept is created
-    implicitly by Sigma or when nominated by MTM when recognizing
-    that the objects form a kind. So the rubric of "the symbol of a
-    concept" suggests a 1:1 correspondance that is no longer
-    valid").
-    - A row of a Pi, a basic percept or a symbol, is its
-      constituents occurring together. It is made implicitly by the
-      Pi, or nominated by MTM on recognizing that they always do.
-    - A concept is a kind of objects. It is made implicitly by the
-      Sigma, or nominated by MTM on recognizing that they form one.
-    - No symbol is made for a concept and none is addressed by one.
-      The source has no function that gives "the" symbol of a
-      concept.
-    - *Mine, put to him:* a Sigma reads rows, and the rows beneath a
-      concept are the basic percepts and the symbols; a kind of
-      words reads the words' basic percepts through the Not; a kind
-      of concepts reads symbols that MTM nominates for the kind's
-      instances.
+71. *What makes what: things by the Pi, kinds by the Sigma; there is
+    no symbol of a concept* (Alec, §19.101: "a basic percept or
+    symbol is created implicitly by PI or when nominated by MTM when
+    recognizing that their constituents always occur together. a
+    concept is created implicitly by Sigma or when nominated by MTM
+    when recognizing that the objects form a kind. So the rubric of
+    "the symbol of a concept" suggests a 1:1 correspondance that is
+    no longer valid"; §19.102).
+    - *A row of a Pi is a thing:* a basic percept, or a symbol. It
+      is its constituents occurring together, made implicitly by
+      the Pi or nominated by MTM on recognizing that they always do.
+      A symbol is a region of sameness over concepts: "my dog" and
+      "Voyager" are two concepts and one symbol, each keeping its
+      own vector ("we don't want to represent both with one vector,
+      we want a region in semantic space. So the region
+      specification for similarity is defined with the pi"). A
+      symbol may hold one concept or several.
+    - *A concept is a kind:* a list of arbitrary things, made
+      implicitly by the Sigma or nominated by MTM on recognizing
+      that they form one. It collects rows from every lower order
+      and from no order at or above its own ("it must collect
+      elements from all orders, because both Felix and cats may be
+      green. But it collects only from lower orders, so that it is
+      at least well-defined"), and any number of them ("For it to
+      collect just one symbol would make pi be the only fold").
+    - No symbol is made for a concept as a rule, and none is
+      addressed as "the" symbol of a concept.
+    - *Mine:* the rows a Sigma above order zero reads are the basic
+      percepts and the symbols of its own order and below; a kind
+      of words has its entries on the words' basic percepts; where
+      a kind's member has no row, MTM makes its symbol in nominating
+      the kind, after looking for one that holds it; a symbol's
+      fold over its constituents is the product.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -11758,9 +11805,12 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    symbol for every concept the store reads, at declaration and by
    interpret (built in the sixth pass, §23.4.5, and WITHDRAWN by
    Alec, §19.101: there is no symbol of a concept; those symbols
-   come out); (b) the store's columns become rows of a Pi, basic
-   percepts and symbols (rule 71), the form of it waiting on his
-   answer to §19.101's open case; (c) the least and the greatest
+   come out; done in the eighth pass, §23.4.7); (b) the store's
+   columns become rows of a Pi from every lower order, the basic
+   percepts and the symbols (rule 71, §19.102): a kind of words has
+   its entries on the words' basic percepts, a kind of concepts on
+   symbols, which MTM makes in nominating the kind where none holds
+   the member; (c) the least and the greatest
    replaced by the Not and the sparse Sigma, with their readers,
    which is steps 4 and 11; (d) the SS leg carries each symbol's
    two lanes and no code, ConceptEvidence.decode's vectors gone.) Symbols are split from concepts
