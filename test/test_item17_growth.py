@@ -116,8 +116,9 @@ def _pair_lesson(strength, looks):
             for right in found[i + 1:]:
                 if (left, right) not in made:
                     held.offer((left, right))
-        gradients = {key: pair_gradient(held.value(key), present.get(key[0], 0.), present.get(key[1], 0.))
-                     for key in held.entries if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
+        gradients = {key: pair_gradient(held.value(key),
+                                        held.meet(key, present.get(key[0], 0.), present.get(key[1], 0.)))
+                     for key in list(held.entries) if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
         promoted, _ = held.step(gradients)
         made += [key for key, _ in promoted]
     return made, held.counts()
@@ -139,6 +140,14 @@ def test_60_2_the_pi_above_a_pair_used_together_becomes_a_symbol():
     print(dict(made=made, counts=counts))
     assert ('alpha', 'gamma') in made and ('beta', 'delta') in made
     assert ('alpha', 'delta') not in made and ('delta', 'gamma') not in made
+    # The other direction: a kind present at every look is present whenever
+    # each word is, but is present far more often without it, so no pair of
+    # a word and the kind is made.
+    with_kind = [dict(look, kind=1.) for look in looks]
+    made, counts = _pair_lesson(penalty(), with_kind)
+    print(dict(made_with_kind=made, counts=counts))
+    assert ('alpha', 'gamma') in made and ('beta', 'delta') in made
+    assert not any('kind' in key for key in made)
 
 
 def _substitution_lesson(strength, places):

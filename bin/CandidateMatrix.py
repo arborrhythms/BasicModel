@@ -39,6 +39,10 @@ class CandidateMatrix:
         self.capacity, self.hold = capacity, int(hold)
         self.strength = penalty() if strength is None else float(strength)
         self.entries = {}
+        # What each pair's constituents were read at, kept past the pair's
+        # forgetting so that an offer made again resumes it; the oldest goes
+        # when more pairs are tallied than sixteen times the room.
+        self.tallies = {}
         self.entered = self.promoted = self.forgotten = 0
 
     def __contains__(self, key):
@@ -63,6 +67,30 @@ class CandidateMatrix:
         found = self.entries.get(key)
         return 0. if found is None else found.value
 
+    def meet(self, key, left, right):
+        """Tally one read of a pair candidate ``key`` whose two constituents
+        are present at ``left`` and ``right``, and give the pair's worth.
+
+        Over its reads, what the two met (the sum of the least of the two)
+        is referred to each constituent's own presence: these are the two
+        ratios of :func:`IdentityRows.meet_ratios` over the reads. The pair
+        is worth the least of them, and a constituent present without the
+        other counts against the pair as their meeting counts for it, so the
+        worth is ``2 * least - 1``: one when the two are always together,
+        below nothing when either is more often alone than with the other."""
+        tally = self.tallies.pop(key, None) or [0., 0., 0.]
+        tally[0] += min(float(left), float(right))
+        tally[1] += float(left)
+        tally[2] += float(right)
+        self.tallies[key] = tally
+        while len(self.tallies) > 16 * self.capacity:
+            del self.tallies[next(iter(self.tallies))]
+        meet, mass_left, mass_right = tally
+        if mass_left <= 0. or mass_right <= 0.:
+            return -1.
+        least = min(meet / mass_left, meet / mass_right)
+        return 2. * least - 1.
+
     def step(self, gradients):
         """One proximal step of every candidate; ``gradients`` maps the key
         of each candidate read at this step to its gradient. A candidate
@@ -85,6 +113,7 @@ class CandidateMatrix:
                 if entry.held >= self.hold:
                     promoted.append((key, entry.value))
                     del self.entries[key]
+                    self.tallies.pop(key, None)
                     self.promoted += 1
             elif entry.held:
                 forgotten.append(key)
@@ -97,12 +126,12 @@ class CandidateMatrix:
                     held=len(self.entries))
 
 
-def pair_gradient(value, left, right):
+def pair_gradient(value, worth):
     """A Pi candidate over two things (the row of a symbol of the pair): its
-    reading ``value * max(left, right)`` against what was found together,
-    ``min(left, right)``; the gradient of half the squared difference."""
-    union, joint = max(left, right), min(left, right)
-    return (value * union - joint) * union
+    value against the pair's worth (:meth:`CandidateMatrix.meet`), the
+    gradient of half the squared difference. A worth below nothing asks for
+    no row, so it is read as nothing: a row of a Pi is never negative."""
+    return float(value) - max(float(worth), 0.)
 
 
 def substitution_gradient(expected, read, present):

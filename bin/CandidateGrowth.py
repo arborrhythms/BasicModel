@@ -54,8 +54,9 @@ def pi_step(owner, present):
         if (order(left) == order(right) >= 0 and (left, right) not in held
                 and (left, right) not in pair_rows(owner) and table.fit(left, right) is None):
             held.offer((left, right))
-    gradients = {key: pair_gradient(held.value(key), present.get(key[0], 0.), present.get(key[1], 0.))
-                 for key in held.entries if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
+    gradients = {key: pair_gradient(held.value(key),
+                                    held.meet(key, present.get(key[0], 0.), present.get(key[1], 0.)))
+                 for key in list(held.entries) if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
     promoted, _ = held.step(gradients)
     rows = pair_rows(owner)
     for key, _ in promoted:
