@@ -4272,6 +4272,11 @@ class BaseModel(Mereology, nn.Module):
             for row, percept, negated in sorted(alloc.order_zero_members):
                 if not negated:
                     alloc.brought.setdefault(percept, row)
+        # A checkpoint from before declared, brought and raised concepts had
+        # their symbols reads them from the records, once.
+        make = getattr(cs, 'symbols_from_records', None)
+        if callable(make):
+            make()
 
         # Migration is deferred until the common store's semantic rows load.
         if saved.get('word_obj_meta') or saved.get('interpretations'):

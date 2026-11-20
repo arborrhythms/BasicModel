@@ -14937,16 +14937,47 @@ class ConceptualSpace(Space):
     def bring_concept(self, percept, row):
         """Record that the nomination of basic percept ``percept`` brought the
         order-zero concept ``row``, and start the concept on the row at one.
-        A row brings one concept, the first recorded."""
+        A row brings one concept, the first recorded. The concept is read
+        above order zero through a symbol, made here when it has none."""
         _concept_alloc_of(self).brought.setdefault(int(percept), int(row))
+        concept = self.concept_id_at_row(row)
+        if concept is not None:
+            self.symbol_for(('percept', int(percept)), concept)
         return self.add_concept_feature(row, 'bp', percept, 1.)
 
     def nominate_symbol(self, handle, concept):
-        """MTM's nomination of ``handle`` makes its symbol above order zero,
-        which brings ``concept``: one row of the symbols' Pi over the
-        concept's two lanes. Returns the symbol's index; a handle nominated
-        before keeps its symbol."""
+        """The one maker of symbols: ``handle`` (MTM's nomination, a
+        declaration, a raise or a definition) makes its symbol, which brings
+        ``concept``: one row of the symbols' Pi over the concept's two
+        lanes. Returns the symbol's index; a handle made before keeps its
+        symbol."""
         return _concept_alloc_of(self).symbol_table().make(handle, int(concept))
+
+    def symbol_for(self, handle, concept):
+        """A symbol that reads ``concept``: the first that does, or one made
+        for ``handle`` by :meth:`nominate_symbol` where none does."""
+        reading = _concept_alloc_of(self).symbol_table().reading(int(concept))
+        return reading[0] if reading else self.nominate_symbol(handle, concept)
+
+    def symbols_from_records(self):
+        """The symbols of every concept that is declared, that a basic
+        percept's nomination brought, or that a class was raised for, made
+        from the allocator's records where they have none. A checkpoint
+        from before these symbols reads them so, once; on any other it
+        makes nothing."""
+        alloc = _concept_alloc_of(self)
+        for kind, registry in (('formal-argument', alloc.formal_arguments),
+                               ('operator', alloc.operator_concepts),
+                               ('declared', alloc.declared_classes)):
+            for name, identity in registry.items():
+                self.symbol_for(('declared', kind, name), identity)
+        for percept, row in alloc.brought.items():
+            concept = self.concept_id_at_row(row)
+            if concept is not None:
+                self.symbol_for(('percept', int(percept)), concept)
+        for key, parent in alloc.relate_idx.items():
+            if isinstance(key, tuple) and key[0] == 'part-kind' and parent not in alloc.retired:
+                self.symbol_for(key, parent)
 
     def concept_percepts(self, row):
         """The basic percepts an order-zero concept was started from."""
@@ -16120,6 +16151,8 @@ class ConceptualSpace(Space):
             identity = registry[name]
             if alloc.order_of(identity) != order or self._concept_row_of(identity) is None:
                 raise ValueError('formal argument concept has no native order-one seat')
+            # Declared and not nominated: its symbol is made at its declaration.
+            self.symbol_for(('declared', kind, name), identity)
         return {name: registry[name] for name in arguments}
 
     def mint_frozen_concept(self, name):

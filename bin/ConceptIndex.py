@@ -75,6 +75,8 @@ def index_part_row(cs, part, whole):
     if whole_ref[0] == SYMBOL:
         _inherit_forms(cs, whole_ref[1], parent)
     destination = cs._csw_concept_row(order, parent)
+    # MTM's raise makes the class and its symbol, by which it is read above.
+    cs.symbol_for(key, parent)
     # The class has its own place. Its word supplies form through the mapping.
     cs._priming_edge_revision = None
     from FamiliarTier import class_members

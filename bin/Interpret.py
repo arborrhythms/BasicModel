@@ -475,6 +475,9 @@ class InterpretLayer(GrammarLayer):
         self._description_revision += 1
         alloc.symbol_types.setdefault(word, set()).add('word')
         alloc.symbol_types.setdefault(obj, set()).add('object')
+        if alloc.order_of(obj) > 0:
+            # The object it defines is read above order zero by a symbol.
+            cs.symbol_for(('object', obj), obj)
         # A definition is an inner semantic relation. Its containing sentence,
         # when present, owns the percept clock stamp.
         alloc.named_identities.setdefault(word, set()).add(obj)

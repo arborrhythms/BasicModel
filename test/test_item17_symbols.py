@@ -525,9 +525,10 @@ def test_4_a_concepts_allocation_makes_no_symbol():
     from test_cs_sparse_weights import _cs
     cs = _cs(nS=16, order=2)
     table = cs._concept_allocator.symbol_table()
-    assert len(table) == 0
+    before = len(table)
     made = [cs.new_concept(), cs.new_concept(order=1), cs.new_concept(order=2)]
-    assert len(set(made)) == 3 and len(table) == 0
+    assert len(set(made)) == 3 and len(table) == before
+    assert all(not table.reading(cid) for cid in made)
 
 
 def test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concept(lesson_at_start):
@@ -537,13 +538,18 @@ def test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concep
     print(f'\nsymbols made by nomination in the lesson: {len(table)}; '
           f'handles and the concepts they brought: {list(zip(table.handles, table.brought))}')
     assert len(table) > 0
+    nominated = 0
     for symbol, (handle, concept) in enumerate(zip(table.handles, table.brought)):
         assert table.of(handle) == symbol
-        assert alloc.order_of(concept) >= 1
+        # MTM's nominations above order zero: a name or a candidate.
+        if handle[0] in ('name', 'candidate'):
+            nominated += 1
+            assert alloc.order_of(concept) >= 1
         # It starts with one member, the concept it brought.
         assert table.members(symbol) == [concept]
         entry = owner.mtm.entries.get(handle)
         assert entry is None or entry.symbol == concept
+    assert nominated > 0
     # The Pi gives each symbol its concept's two lanes: one member at one.
     lanes = torch.rand(len(table), 3, 2)
     torch.testing.assert_close(table.read(lanes, table.brought), lanes, rtol=0, atol=1e-6)
@@ -571,3 +577,59 @@ def test_6_a_symbol_has_its_own_index_and_no_vector_and_nothing_is_one_to_one():
     # The Pi's storage is by symbol, and its member keys name concepts.
     assert len(restored.pi.crow) == 8 + 1
     assert all(key[0] == 'concept' for key in restored.pi.keys)
+
+
+# Every concept the store reads has a symbol (round 4, step (a)): a
+# declared concept at its declaration, an order-zero concept where its basic
+# percept's nomination brings it, a raised class at its raise, an object at
+# its definition; MTM's nominations as before. Nothing reads the table yet.
+
+def _store_sources(owner):
+    alloc = owner._concept_allocator
+    store = alloc.layer()
+    n = store.nOutput
+    sources = {}
+    for row, column in zip(store._rows, store._cols):
+        source = column % (n + 1)
+        if source != n:
+            sources[owner.concept_id_at_row(source)] = (owner._row_order(row), owner._row_order(source))
+    return sources
+
+
+def test_every_concept_the_store_reads_has_a_symbol_whose_row_reads_it(lesson_at_start):
+    owner, _ = lesson_at_start
+    table = owner._concept_allocator.symbol_table()
+    sources = _store_sources(owner)
+    print(f'\nconcepts the store reads: {len(sources)}, by (reader order, source order): '
+          f'{sorted(sources.values())}; symbols: {len(table)}')
+    assert sources and None not in sources
+    for concept in sources:
+        reading = table.reading(concept)
+        assert reading, concept
+        assert all(concept in table.members(symbol) for symbol in reading)
+
+
+def test_a_declared_concept_has_its_symbol_at_its_declaration():
+    from test_cs_sparse_weights import _cs
+    cs = _cs(nS=32, order=2)
+    alloc = cs._concept_allocator
+    table = alloc.symbol_table()
+    declared = cs.prebuild_formal_arguments(('agent', 'patient'))
+    for name, identity in declared.items():
+        assert table.members(table.of(('declared', 'formal-argument', name))) == [identity]
+    # Declared again, nothing new is made.
+    before = len(table)
+    cs.prebuild_formal_arguments(('agent', 'patient'))
+    assert len(table) == before
+
+
+def test_a_checkpoint_without_these_symbols_reads_them_from_its_records():
+    from test_cs_sparse_weights import _cs
+    cs = _cs(nS=32, order=2)
+    alloc = cs._concept_allocator
+    declared = cs.prebuild_formal_arguments(('agent',))
+    table = alloc.symbol_table()
+    table.restore(dict(version=1, symbols=()))
+    assert not table.reading(declared['agent'])
+    cs.symbols_from_records()
+    assert table.reading(declared['agent'])
