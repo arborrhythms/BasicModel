@@ -47,9 +47,6 @@ class BasicPercepts(nn.Module):
         # The stored form each row of a form spells, and the rows of each
         # form; each row's key in ``index``.
         self.forms, self.form_rows, self._keys = {}, {}, {}
-        # The read pairs that moved when the codes of stored forms changed,
-        # ``row -> (before, after)``, for the concepts' columns to follow.
-        self.moved = {}
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)
@@ -325,16 +322,15 @@ class BasicPercepts(nn.Module):
         and in the first Pi. Every promoted row of a changed form, of a form
         that a changed or ``new`` form holds as a run (its against lane reads
         its nearest holders), and of a conjunction over one of them, has its
-        stored code and against lane written again, in one write. The read
-        pairs that moved are added to ``moved`` for the concepts' columns to
-        follow (``ConceptualSpace.follow_members``). Returns them."""
+        stored code and against lane written again, in one write. Returns the
+        rows whose stored code or against lane changed."""
         identity = getattr(self.native, 'identity', None)
         if identity is None:
-            return {}
+            return []
         for row in range(len(self.index)):
             self.form_of(row)
         if not self.form_rows:
-            return {}
+            return []
         changed = set(changed)
         touched = changed | ({bytes(new)} if new is not None else set())
         held = set().union(*(identity.inside.get(form, ()) for form in touched)) if touched else set()
@@ -345,24 +341,20 @@ class BasicPercepts(nn.Module):
                     extended |= self._extend(row, identity.parts(form))
                 rows.add(row)
         if not rows:
-            return {}
+            return []
         for whole, members in self.conjunctions.items():
             if rows.intersection(members):
                 rows.add(whole)
                 rows.update(members)
         rows = [row for row in sorted(rows) if bool(self.promoted[row])]
-        moved = {}
+        moved = []
         if rows:
             index = torch.tensor(rows, device=self.codes.device)
-            before = self.read_codes(index)
+            before = torch.stack((self.codes[index], self.against_codes[index]), 1)
             self.codes[index] = torch.stack([self.code(row) for row in rows]).detach().to(self.codes)
             self.against_codes[index] = torch.stack([self.against(row) for row in rows]).detach().to(self.codes)
-            after = self.read_codes(index)
-            for row, b, a in zip(rows, before, after):
-                if not torch.equal(b, a):
-                    moved[row] = b, a
-                    first = self.moved.get(row)
-                    self.moved[row] = (b if first is None else first[0]), a
+            after = torch.stack((self.codes[index], self.against_codes[index]), 1)
+            moved = [row for row, b, a in zip(rows, before, after) if not torch.equal(b, a)]
         if moved or extended:
             self.revision += 1
         if extended:
@@ -403,17 +395,15 @@ class BasicPercepts(nn.Module):
     @torch.no_grad()
     def follow(self, rows):
         """Write again the stored against lane of ``rows``, whose holders may
-        have changed, and return each changed row's read pair before and
-        after, for the concepts' columns to follow (rule 55)."""
-        changed = {}
+        have changed, and return the rows whose against lane changed."""
+        changed = []
         for row in map(int, rows):
             if not bool(self.promoted[row]):
                 continue
-            before = self.read_codes([row])[0].clone()
+            before = self.against_codes[row].clone()
             self.against_codes[row].copy_(self.against(row))
-            after = self.read_codes([row])[0]
-            if not torch.equal(before, after):
-                changed[row] = before, after.clone()
+            if not torch.equal(before, self.against_codes[row]):
+                changed.append(row)
         return changed
 
     def against_keys(self, row):
@@ -453,34 +443,6 @@ class BasicPercepts(nn.Module):
     def lanes(self, row):
         """A percept's two lanes, ``[2, width]``: for, then against."""
         return torch.stack((self.code(row), self.against(row)))
-
-    def read_pair(self, lanes):
-        """What a concept reads of a percept, ``[..., 2, width]`` from its
-        lanes ``[..., 2, width]``: first what tells for it, then what tells
-        against it. In the parts half these are its two lanes. The wholes
-        half is read on its complement (rule 54): what the upper bound cuts
-        away tells for the percept, and nothing is read against it there.
-        A value percept is read the same way (rule 55)."""
-        cut = lanes[..., 1, self.identity_width:]
-        positive = torch.cat((lanes[..., 0, :self.identity_width], cut), -1)
-        negative = torch.cat((lanes[..., 1, :self.identity_width], torch.zeros_like(cut)), -1)
-        return torch.stack((positive, negative), -2)
-
-    def read_codes(self, rows):
-        """The stored read pair of each promoted row, ``[..., 2, width]``."""
-        rows = torch.as_tensor(rows, dtype=torch.long, device=self.codes.device)
-        flat = rows.flatten()
-        lanes = torch.stack((self.codes.index_select(0, flat), self.against_codes.index_select(0, flat)), -2)
-        return self.read_pair(lanes).reshape(*rows.shape, 2, self.width)
-
-    def column(self, row):
-        """A member's share of a concept's starting column (rule 54; Alec,
-        §19.82, §23.3c.3), from its live lanes: the mean of its sides,
-        ``(P / |P|^2 - N / |N|^2) / 2``, or ``P / |P|^2`` with nothing against
-        (``OrderZeroSigma.member_column``)."""
-        from OrderZero import OrderZeroSigma
-        positive, negative = self.read_pair(self.lanes(row))
-        return OrderZeroSigma.member_column(positive, negative)
 
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
@@ -803,7 +765,7 @@ class BasicPercepts(nn.Module):
         self.pi.clear()
         self._pi_stamp = None
         self.conjunctions = {}
-        self.forms, self.form_rows, self._keys, self.moved = {}, {}, {}, {}
+        self.forms, self.form_rows, self._keys = {}, {}, {}
         for row, raw in state.get('forms', ()):
             self.forms[int(row)] = bytes(raw)
             self.form_rows.setdefault(bytes(raw), []).append(int(row))

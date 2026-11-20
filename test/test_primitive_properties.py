@@ -190,7 +190,7 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path
     optimizer = model.getOptimizer(lr=.001)
     # The order-zero member is recorded with the allocator and saved in its
     # sidecar; what learns is the concept's column of the order-zero Sigma.
-    parameter = cs.order_zero.weight
+    parameter = cs.order_zero.value
     assert sum(p is parameter for g in optimizer.param_groups for p in g['params']) == 1
     record = Spaces._concept_alloc_of(cs).order_zero_members
     members = dict(record)

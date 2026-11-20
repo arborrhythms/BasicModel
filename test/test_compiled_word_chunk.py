@@ -107,7 +107,7 @@ def _harness(words, gates, *, chunk):
         _ar_percept_reference_roles=torch.zeros(batch, width, 8, dtype=torch.long),
         _ar_part_reference_vectors=torch.zeros(batch, width, 8, dim),
         _ar_whole_reference_vectors=torch.zeros(batch, width, 8, dim),
-        _ar_order_zero_reading=torch.ones(batch, width, 9),
+        _ar_order_zero_reading=torch.ones(batch, width, 1),
         _ar_basic_percept_ids=part_ids[..., 0].clone(),
         _ar_whole_reference_presence=torch.ones(batch, width, 3, 8),
         # These sentence-wide surfaces must not be sliced by the adapter.

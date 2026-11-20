@@ -27,28 +27,18 @@ def published_presence(owner, batch=0, reading=0):
 
 def order_zero_expected(owner, row, presence):
     """The order-zero concept ``row`` read from ``presence``, computed here
-    from the basic percepts' read pairs (what tells for each and what
-    against it) and the concept's column of the Sigma:
-    ``tanh((x_for - x_against) . u)``. Each percept enters at its net
-    ``n = for - against``: at ``n > 0`` the for lane is
-    ``1 - prod_p (1 - P_p)^n`` and the against lane ``1 - prod_p (1 - N_p)^n``,
-    the reverse at ``n < 0``. The place and time weights of a column start at
-    zero, so only the content is read. Returns the signed value and its two
-    lanes."""
-    basic = owner.basic_percepts
-    sigma = owner.order_zero
-    u = sigma.weight[:sigma.content_width, int(row)].detach().cpu().double()
-    gaps = [torch.ones(sigma.content_width, dtype=torch.float64) for _ in range(2)]
-    for percept, values in presence.items():
-        pair = (basic.read_codes([percept])[0] if bool(basic.promoted[percept])
-                else basic.read_pair(basic.lanes(percept))).detach().cpu().double()
-        net = float(values[0]) - float(values[1])
-        toward, away = (pair[0], pair[1]) if net >= 0 else (pair[1], pair[0])
-        gaps[0] = gaps[0] * (1. - toward).clamp_min(1e-6) ** abs(net)
-        gaps[1] = gaps[1] * (1. - away).clamp_min(1e-6) ** abs(net)
-    lanes = [1. - gap for gap in gaps]
-    y = torch.tanh(((lanes[0] - lanes[1]) * u.cpu()).sum())
-    return float(y), torch.tensor([max(float(y), 0.), max(-float(y), 0.)])
+    from the concept's entries: the Not makes each basic percept one signed
+    value, ``s = for - against``; the Sigma reads ``tanh(sum w s)`` over its
+    entries, a Not entry reading the row exchanged, ``-s``. A percept it has
+    no entry on is not read. Returns the signed value and its two lanes."""
+    total = 0.
+    for percept, weight, negated in owner.order_zero.entries(int(row)):
+        sign = -1. if negated else 1.
+        values = presence.get(percept)
+        if values is not None:
+            total += weight * sign * max(-1., min(1., float(values[0]) - float(values[1])))
+    y = float(torch.tanh(torch.tensor(total, dtype=torch.float64)))
+    return y, torch.tensor([max(y, 0.), max(-y, 0.)])
 
 
 def with_property_half(cs, width=8):

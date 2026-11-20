@@ -79,7 +79,7 @@ def test_linear_field_reader_and_definitions_have_their_declared_writers(tmp_pat
         cs=model.conceptualSpaces[0]
         # The taught names are columns of the order-zero Sigma; the orders
         # above keep their coefficients in the store.
-        for coefficients in (cs.order_zero.weight, cs._concept_allocator.layer(0).values):
+        for coefficients in (cs.order_zero.value, cs._concept_allocator.layer(0).values):
             assert any(p is coefficients for p in groups['reconstruction'])
             assert not any(p is coefficients for p in groups['output'])
         assert all(any(p is q for q in groups['output'])

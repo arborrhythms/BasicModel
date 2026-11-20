@@ -8,8 +8,7 @@ wholes half's for lane is the AND of the codes of the wholes it lies in: the
 class of all characters (all ones), the classes of characters it lies in,
 and the form itself, its tightest whole. Its against lane is what that
 upper bound cuts away, one less its for lane. The first Pi reads a row's
-against entries by union; a concept reads for less against, the wholes half
-on its complement.
+against entries by union; a concept reads the rows, never the code.
 """
 import functools
 import time
@@ -288,137 +287,41 @@ def test_47_the_first_pi_is_written_again_when_a_nearer_holder_comes():
     assert basic.pi.row_members(rows[b'is']) == basic.member_keys(rows[b'is'])
 
 
-# Certificate 48: scored by difference (rule 54; Alec, §19.82).
+# Certificate 48, on rows (rule 62): a concept reads its own row, never a
+# code. Its first test, a concept reading by difference over codes, is
+# retired: certificate 54 (c) in test_item17_symbols.py states it on rows
+# (archer reads its own row at tanh(1), archery and reach at zero).
 
-def _difference(positive, negative):
-    """The column as it was before §19.82: for less against, over the
-    squared length of that difference."""
-    vector = positive - negative
-    return vector / vector.square().sum()
-
-
-def _unhalved(positive, negative):
-    """The column as §19.82 first had it: ``P / |P|^2 - N / |N|^2``."""
-    from OrderZero import OrderZeroSigma
-    if not bool(negative.square().sum() > 0):
-        return OrderZeroSigma.member_column(positive)
-    return 2 * OrderZeroSigma.member_column(positive, negative)
-
-
-def test_48_a_concept_reads_by_difference():
-    """A column starts as the mean of its member's sides (rule 54, §19.82 as
-    amended in §23.3c.3): what tells for it over its squared length and what
-    tells against it over its own, ``(P / |P|^2 - N / |N|^2) / 2``; a member
-    with nothing against it gives its for side alone. So a form read alone
-    reads one (rule 21); a form read among words that cover what tells
-    against it reads less than one; a form whose holder stands in its
-    place (`archery` for `archer`, `this` for `is`) reads at or near zero;
-    a form read beside a word that covers what tells against it reads
-    between, a half where that word carries nothing against it.
-    `reach` holds archer's letters and not the run: see below."""
-    from OrderZero import combine
-    words = (b'archer', b'archery', b'reach', b'is', b'this', b'cat', b'y')
-    identity, basic, book, rows = coded(words)
-    column = {w: basic.column(rows[w]) for w in words}
-    before = {w: _difference(*basic.read_pair(basic.lanes(rows[w]))) for w in words}
-    unhalved = {w: _unhalved(*basic.read_pair(basic.lanes(rows[w]))) for w in words}
-    def reads(concept, form, columns=column):
-        lanes = _read_form(basic, book, form, [rows[w] for w in words])
-        x = combine(lanes[:, None], basic.read_codes([rows[w] for w in words]))[0]
-        return float(((x[0] - x[1]) @ columns[concept]))
-    def among(concept, others, columns=column):
-        # The concept's row present with other words' rows, each at [1, 0].
-        present = [rows[concept]] + [rows[w] for w in others]
-        x = combine(torch.tensor([[[1., 0.]]] * len(present)), basic.read_codes(present))[0]
-        return float(((x[0] - x[1]) @ columns[concept]))
-    pairs = ((b'archer', b'archer'), (b'archer', b'archery'), (b'archer', b'reach'), (b'is', b'is'), (b'is', b'this'), (b'cat', b'cat'))
-    table = {f'{c.decode()} on {f.decode()}': (round(reads(c, f, before), 3),
-                                              round(reads(c, f, unhalved), 3), round(reads(c, f), 3))
-             for c, f in pairs}
-    table['archer among y'] = tuple(round(among(b'archer', [b'y'], c), 3) for c in (before, unhalved, column))
-    print('before the squash (before 19.82, 19.82 unhalved, built)', table)
-    # Each form read alone reads one, with a holder or without.
-    for word in (b'archer', b'is', b'cat'):
-        assert reads(word, word) == pytest.approx(1., abs=1e-4)
-    # A holder standing in its place takes the reading to zero or below.
-    assert reads(b'archer', b'archery') <= 1e-4 and reads(b'is', b'this') <= 1e-4
-    # Among words that cover what tells against it (archer's row present
-    # with the row of y, the part archery adds), above its holder's reading
-    # and below its own. It reads a half less what the other word's own
-    # against lane takes away: y's holder archery adds archer's letters,
-    # which the reading then carries against.
-    assert reads(b'archer', b'archery') < among(b'archer', [b'y']) < 1.
-    # reach holds every letter of archer, not the run. Its code no longer
-    # holds archer's by accident (rule 61): archer is a part of the catalog
-    # that reach does not hold, so the first Pi does not find archer's row
-    # on it, and the concept reads reach below its own.
-    assert _read_form(basic, book, b'reach', [rows[b'archer']])[0].tolist() == [0., 0.]
-    assert reads(b'archer', b'reach') < reads(b'archer', b'archer') - .1
-
-
-def test_48_on_the_dictionary_and_the_lesson():
-    """Printed, before §19.82, as §19.82 first had it and as built (the mean
-    of the sides, §23.3c.3): what a part's concept reads
-    (before the squash) of a form that holds it as a run, of one whose parts
-    it holds without the run, and of one that holds it by accident (a
-    sample of every 40th word against all, read alone); how often an
-    unrelated form (one that holds neither the part's code nor its parts)
-    is denied because what tells against the part is covered by accident;
-    and the first Pi's entries a row."""
+def test_48_on_the_dictionary():
+    """Printed: the first Pi's entries a row, on the dictionary; and, for a
+    sample of every 40th word, the forms whose code holds its code, by kind:
+    as a run, by its parts without the run, or by accident. No form's code
+    holds another's parts without the run (rule 61)."""
     identity, basic, _book, rows, _measure = dictionary_coded()
     words = list(rows)
     index = [rows[w] for w in words]
-    pairs = basic.read_codes(index).double()
-    X = (pairs[:, 0] - pairs[:, 1])
     F = basic.codes[index].cpu().numpy() > .5
     parts = [set(identity.words[w]) for w in words]
-    sums = {form: {'run': [], 'parts': [], 'accident': []} for form in ('before', 'unhalved', 'built')}
-    unrelated = {'before': [0, 0], 'unhalved': [0, 0], 'built': [0, 0]}
-    from OrderZero import OrderZeroSigma
+    kinds = {'run': 0, 'parts': 0, 'accident': 0}
     for i in range(0, len(words), 40):
-        P, N = pairs[i]
-        columns = dict(before=_difference(P, N), unhalved=_unhalved(P, N),
-                       built=OrderZeroSigma.member_column(P, N))
         le = (~F[i, :64] | F[:, :64]).all(1)
         le[i] = False
-        kinds = {}
         for j in np.flatnonzero(le):
-            kinds[j] = 'run' if words[i] in words[j] else 'parts' if parts[i] <= parts[j] else 'accident'
-        others = np.ones(len(words), dtype=bool)
-        others[list(kinds)] = False
-        others[i] = False
-        has_against = bool(N.any())
-        for form, u in columns.items():
-            y = (X @ u).numpy()
-            for j, kind in kinds.items():
-                sums[form][kind].append(float(y[j]))
-            if has_against:
-                # Unrelated forms the for part alone reads above zero, and
-                # of them, those that what tells against takes to zero.
-                alone = (X @ (P / P.square().sum())).numpy()
-                live = others & (alone > 0)
-                unrelated[form][0] += int(live.sum())
-                unrelated[form][1] += int((live & (y <= 0)).sum())
-    table = {form: {k: (len(v), round(float(np.mean(v)), 3) if v else None) for k, v in kinds_.items()}
-             for form, kinds_ in sums.items()}
-    print('a part read by its concept (count, mean before the squash)', table)
-    print('unrelated forms read above zero by the for part / denied',
-          {form: (n, d, round(d / max(n, 1), 4)) for form, (n, d) in unrelated.items()})
+            kinds['run' if words[i] in words[j] else 'parts' if parts[i] <= parts[j] else 'accident'] += 1
     entries = [len(basic.pi.row_against(rows[w])) + len(basic.pi.row_members(rows[w])) for w in words]
     against = [len(basic.pi.row_against(rows[w])) for w in words]
-    print(dict(against_entries=(min(against), round(float(np.mean(against)), 2), max(against)),
+    print(dict(holders_by_kind=kinds, against_entries=(min(against), round(float(np.mean(against)), 2), max(against)),
                entries_a_row=(min(entries), round(float(np.mean(entries)), 2), max(entries)),
                rows_over_16=sum(e > 16 for e in entries), pi_entries=basic.pi.nnz,
                allocated=basic.capacity * basic.ENTRIES_PER_ROW))
-    # No form's code holds another's parts without the run: such a code
-    # lay inside by accident, and rule 61 has given the part a coordinate
-    # of its own. A form that holds the part as a run reads it below one.
-    built = sums['built']
-    assert built['run'] and not built['parts'] and np.mean(built['run']) < 1.
+    assert kinds['run'] and not kinds['parts']
 
 
 def test_48_the_lessons_concepts_told_apart():
-    from OrderZero import EPS_LOG, OrderZeroSigma
+    """On the lesson, each nominated form read through the first Pi with
+    every nominated row, then the Not and the Sigma of order zero: how many
+    concepts read their own form above every other concept (printed), and
+    every concept reads its own form at tanh(1)."""
     from test_item17_order_zero import _read_lesson
     model, patch = _read_lesson(16)
     try:
@@ -430,32 +333,20 @@ def test_48_the_lessons_concepts_told_apart():
         word_of = {row: word for word, row in basic.words.items()}
         forms = [owner.interpret.lexical_form(word_of[r]) for r in nominated]
         concepts = [owner.concept_of_basic_percept(r) for r in nominated]
-        pairs = basic.read_codes(nominated)
-        U = owner.order_zero.weight[:basic.width, concepts].detach()
-        before = torch.stack([_difference(*pair) for pair in pairs], 1).to(U)
-        built = torch.stack([OrderZeroSigma.member_column(*pair) for pair in pairs], 1).to(U)
-        def trial(lanes):
-            gaps = torch.log((1 - pairs).clamp_min(EPS_LOG))
-            f, a = lanes[:, 0, None], lanes[:, 1, None]
-            toward = 1 - torch.exp((f * gaps[:, 0] + a * gaps[:, 1]).sum(0))
-            away = 1 - torch.exp((f * gaps[:, 1] + a * gaps[:, 0]).sum(0))
-            return toward - away
-        from OrderZero import combine
-        told = {'net, model': 0, 'trial, model': 0, 'net, before': 0, 'net, built': 0}
-        both = 0
+        told = both = 0
+        own = []
         for index, form in enumerate(forms):
             raw = form if isinstance(form, bytes) else str(form).encode()
             lanes = _read_form(basic, book, raw, nominated)
             both += int(((lanes[:, 0] > 0) & (lanes[:, 1] > 0)).sum())
-            net = (lambda c: c[0] - c[1])(combine(lanes[:, None], pairs)[0])
-            for name, x, columns in (('net, model', net, U), ('trial, model', trial(lanes), U),
-                                     ('net, before', net, before), ('net, built', net, built)):
-                y = torch.tanh(x @ columns)
-                others = torch.cat((y[:index], y[index + 1:]))
-                told[name] += int(len(others) == 0 or bool(y[index] > others.max()))
+            y = owner.order_zero_field(lanes[:, None, None], nominated, concepts)[:, 0, 0].detach()
+            y = y[:, 0] - y[:, 1]
+            others = torch.cat((y[:index], y[index + 1:]))
+            told += int(len(others) == 0 or bool(y[index] > others.max()))
+            own.append(float(y[index]))
         print(dict(nominated=[f.decode() if isinstance(f, bytes) else f for f in forms],
-                   told_apart=told, rows_read_both=both))
-        assert told['net, model'] >= told['trial, model']
+                   told_apart=(told, len(forms)), rows_read_both=both, own_least=min(own)))
+        assert told == len(forms)
     finally:
         model.End()
         patch.undo()
@@ -501,16 +392,23 @@ def test_49_collections_of_values_are_told_apart():
     # The way back: the table of values holds each exactly.
     for v, r in percept.items():
         assert float(number(basic.felt([r])[0])) == pytest.approx(v, rel=1e-5)
-    # What a concept reads of the values by its column (rule 8b): alpha's
+    # What a concept reads of the values on rows (rule 62): each collection
+    # has an entry on each member's row, and a value is read by its own row
+    # alone, so a collection reads its members and nothing else; alpha's
     # reading of 1.5 lies between its readings of 1 and of 2.
-    from OrderZero import OrderZeroSigma
-    pairs = {v: basic.read_pair(basic.lanes(r)) for v, r in percept.items()}
-    column = {name: sum(basic.column(r) for r in rows) for name, rows in collections.items()}
-    sigma = {v: {name: round(float(torch.tanh((pairs[v][0] - pairs[v][1]) @ u)), 3)
-                 for name, u in column.items()} for v in pairs}
-    print('by the column', sigma)
-    assert sigma[2.]['alpha'] <= sigma[1.5]['alpha'] <= sigma[1.]['alpha']
-    assert sigma[1.]['gamma'] <= sigma[1.5]['gamma'] <= sigma[2.]['gamma']
+    from Layers import NotLayer3, SparseSigmaLayer3
+    not_, sigma = NotLayer3(basic.capacity), SparseSigmaLayer3(basic.capacity, len(collections), 16)
+    names = list(collections)
+    for c, name in enumerate(names):
+        for r in collections[name]:
+            sigma.add(c, r)
+    lanes = torch.tensor([[[1., 0.]]])
+    read = {v: {name: round(float(sigma(not_(lanes), [r], [c])[0, 0].detach()), 3)
+                for c, name in enumerate(names)} for v, r in percept.items()}
+    print('on rows', read)
+    assert read[2.]['alpha'] <= read[1.5]['alpha'] <= read[1.]['alpha']
+    assert read[1.]['gamma'] <= read[1.5]['gamma'] <= read[2.]['gamma']
+    assert read[1.5] == {name: 0. for name in names}
 
 
 def test_49_the_numeric_certificate_keeps_its_bar():
@@ -583,14 +481,13 @@ def test_53_a_forms_links_are_its_runs():
         assert all(torch.equal(restored.code(w), identity.code(w)) for w in words)
 
 
-def test_53_a_later_form_moves_an_earlier_forms_row_lane_and_column():
+def test_53_a_later_form_moves_an_earlier_forms_row_and_lane_and_not_its_concept():
     """(c) In the lesson's model, after its first four sentences (``is`` is
     nominated: a basic percept row with a concept), a form admitted later
     that changes the code of ``is`` (``si``: one code until a part tells
     them apart) changes the store row of ``is``, its basic percept's stored
-    code and against lane, its row of the first Pi, and the column started
-    from it, by the member's new share less its old."""
-    from OrderZero import OrderZeroSigma
+    code and against lane, and its row of the first Pi; the concept's
+    entries, which read the row and not its code, do not move (rule 62)."""
     from test_item17_order_zero import _read_lesson
     model, patch = _read_lesson(4)
     try:
@@ -605,8 +502,7 @@ def test_53_a_later_form_moves_an_earlier_forms_row_lane_and_column():
         fixed = identity.store._basis.fixed_row_codes[store_row].clone()
         code, against = basic.codes[row].clone(), basic.against_codes[row].clone()
         members = basic.pi.row_members(row)
-        pair = basic.read_codes([row])[0].clone()
-        column = torch.stack((sigma.weight[:basic.width, concept], sigma.against[:basic.width, concept])).detach().clone()
+        entries = sigma.entries(concept)
         identity.admit(b'si')
         assert b'is' in identity.last_changed
         now = identity.store._basis.fixed_row_codes[store_row]
@@ -617,15 +513,11 @@ def test_53_a_later_form_moves_an_earlier_forms_row_lane_and_column():
         assert not torch.equal(basic.against_codes[row], against) or not torch.equal(basic.codes[row], code)
         assert basic.pi.row_members(row) == basic.member_keys(row) != members
         assert sorted(basic.pi.row_against(row)) == sorted(basic.against_keys(row))
-        owner.install_order_zero()
-        moved = basic.read_codes([row])[0]
-        share = OrderZeroSigma.member_column(*moved) - OrderZeroSigma.member_column(*pair)
-        now = torch.stack((sigma.weight[:basic.width, concept], sigma.against[:basic.width, concept])).detach()
-        torch.testing.assert_close(now - column, torch.stack((share, -share)), rtol=0, atol=1e-6)
-        assert bool(share.abs().sum() > 0)
+        # The concept reads the row, not its code: its entries do not move.
+        assert sigma.entries(concept) == entries and (row, ) == tuple(i for i, _, _ in entries if i == row)
         print(dict(changed=sorted(w.decode() for w in identity.last_changed),
                    parts_gained=[k for k in basic.member_keys(row) if k not in members],
-                   column_moved=round(float(share.abs().sum()), 4)))
+                   entries=entries))
     finally:
         model.End()
         patch.undo()

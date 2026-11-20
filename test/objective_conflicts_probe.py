@@ -103,7 +103,7 @@ class Probe:
             derived = getattr(cs.similarity_codebook, 'mereology', None)
             if derived is not None:
                 if getattr(cs, 'order_zero', None) is not None:
-                    codes.add(id(cs.order_zero.weight))
+                    codes.add(id(cs.order_zero.value))
         members = {id(p) for g in optimizer.param_groups for p in g['params']}
         captured = []
         for name, p in named.items():

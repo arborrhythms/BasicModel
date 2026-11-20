@@ -15,7 +15,7 @@ def test_input_reconstruction_reaches_perception_and_not_the_grammar(tmp_path, m
     def memberships(*args, **kwargs):
         field = read(*args, **kwargs)
         # The order-zero concepts read their columns of the order-zero Sigma.
-        opened.append(owner.order_zero.weight)
+        opened.append(owner.order_zero.value)
         return field
     monkeypatch.setattr(owner, 'cs_read_memberships', memberships)
     original = model._sentence_path_cost

@@ -119,17 +119,15 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     evidence = carrier._concept_activations
     where = carrier._concept_where
     words = ('hello', 'loving', 'world', 'there')
-    # A concept of order zero reads every reading by its column of the
-    # order-zero Sigma (rules 3 and 8). Where its word is absent, what is
-    # published for it is the column's read of the percepts present there,
-    # tanh((x_for - x_against) . u), and no more. A concept above order zero
-    # publishes nothing there.
-    perception, basic, sigma = cs._percept_field, cs.basic_percepts, cs.order_zero
+    # A concept of order zero reads every reading by its entries in the
+    # order-zero Sigma, on the rows' signed values (rule 62). Where its word
+    # is absent, what is published for it is what its entries read of the
+    # rows present there, and no more; untaught, it has one entry, on its
+    # own row, so it reads zero. A concept above order zero publishes
+    # nothing there.
+    perception, sigma = cs._percept_field, cs.order_zero
     n0 = sigma.nOutput
-    width = sigma.content_width
-    # Each percept's read pair, entered at its net (rule 54).
-    from OrderZero import combine
-    pairs = basic.read_codes([key[1] for key in perception.keys]).to(evidence)
+    inputs = [key[1] for key in perception.keys]
     checked = 0
     for b, text in enumerate(texts):
         reading = bytes(inp[b].reshape(-1).long().tolist()).split(b'\0', 1)[0]
@@ -145,14 +143,12 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
                             assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)
                             checked += 1
                     continue
-                column = sigma.weight[:, address].detach().to(evidence)
-                assert not column[width:].any(), 'an untaught column reads no place or time'
+                assert [(w, n) for _, w, n in sigma.entries(address)] == [(1., False)], 'an untaught concept reads its own row'
                 for e, (lo, hi) in enumerate(where[b].tolist()):
                     if word.encode() not in reading[lo:hi]:
-                        presence = perception.values[:, b, e].to(evidence)
-                        x = combine(presence, pairs)
-                        y = torch.tanh((x[0] - x[1]) @ column[:width])
-                        expected = torch.stack((y.clamp_min(0), (-y).clamp_min(0)))
+                        presence = perception.values[:, b:b + 1, e:e + 1].to(evidence)
+                        expected = cs.order_zero_field(presence, inputs, [address])[0, 0, 0].detach()
+                        assert float(expected.abs().sum()) == 0.
                         torch.testing.assert_close(evidence[indices, b, e].reshape(-1, 2),
                             expected.expand(int(indices.sum()), 2), msg=str((configuration, text, word, lo, hi)))
                         checked += 1

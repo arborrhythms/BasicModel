@@ -173,7 +173,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     native = (torch.tensor([[7]]), spans, primitive, torch.tensor([[65]]), spans)
     store = Spaces._concept_alloc_of(cs).layer()
     # The concept reads its column of the order-zero Sigma.
-    parameter = cs.order_zero.weight
+    parameter = cs.order_zero.value
     initial = parameter.detach().clone()
     optimizer = torch.optim.SGD([parameter], lr=.1)
     losses = []
@@ -188,7 +188,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     before = cs.cs_read_memberships(native, spans).detach()
     cs._serial = not source_serial
     after = cs.cs_read_memberships(native, spans)
-    assert cs._csw_row_of(cid) == row and cs.order_zero.weight is parameter
+    assert cs._csw_row_of(cid) == row and cs.order_zero.value is parameter
     torch.testing.assert_close(after, before)
 
 

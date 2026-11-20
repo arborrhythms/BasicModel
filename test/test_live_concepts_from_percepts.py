@@ -6,7 +6,8 @@ import torch
 from torch import nn
 
 from Layers import SigmaConceptsFromPercepts
-from OrderZero import OrderZeroSigma, read_word
+from Layers import NotLayer3, SparseSigmaLayer3
+from OrderZero import read_word
 from Spaces import ConceptualSpace
 
 
@@ -17,8 +18,9 @@ def _space():
     cs.concept_dim = 4
     cs.expect_stack = cs.idea_stack = None
     cs.inputShape = cs.outputShape = [2, 4]
-    # A basic percept's vector is two wide; a location's place is two wide.
-    cs.order_zero = OrderZeroSigma(4, 16, content_width=2)
+    # Four basic percepts, sixteen concepts of order zero.
+    cs.order_zero_not = NotLayer3(4)
+    cs.order_zero = SparseSigmaLayer3(4, 16, 16)
     return cs
 
 
@@ -57,12 +59,9 @@ def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
     rows = torch.tensor([[3]])
     atoms = torch.tensor([[[1., -1., 999., 999.]]])
     prior = torch.full((1, 2, 4), 99.)
-    column = torch.tensor([.5, .25, .1, -.1], requires_grad=True)
-    code = torch.tensor([.6, 0.])
-    # The two columns, the for weights and the against weights begun as the
-    # for weights negated; the read pair: what tells for the percept, and
-    # nothing against it.
-    reading = torch.cat((column, -column, code, torch.zeros(2)))[None]
+    # The concept's entry on its row: a for entry of weight .5.
+    weights = torch.tensor([.5], requires_grad=True)
+    reading = weights[None]
     event, orders, row, activation, returned_prior, validity, locations = (
         cs.reduce_aligned_word_peers(
             parts, wholes, prior, torch.tensor([[True, False]]),
@@ -70,12 +69,10 @@ def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
             staged_rows=rows, staged_atoms=atoms, part_n_what=2, whole_n_what=2,
             percept_evidence=evidence[..., :2], evidence_mask=mask[..., :2],
             order_zero_reading=reading, return_location_activations=True))
-    # The basic percept's Pi over its two members on the for lane, then its
-    # vector on the gaps and the location's own place, read by the column.
+    # The basic percept's Pi over its two members on the for lane, the Not
+    # (for less against), then the entry's weight; no place is read.
     presence = torch.tensor([.8 * .7, .6])
-    place = torch.tensor([[3., 4.], [7., 8.]])
-    combined = torch.cat((1 - (1 - code) ** presence[:, None], presence[:, None] * place), -1)
-    expected = (combined @ column.detach()).tanh()[None]
+    expected = (presence * .5).tanh()[None]
     torch.testing.assert_close(locations, expected)
     torch.testing.assert_close(activation, expected[:, 0])
     torch.testing.assert_close(event[..., :2], expected.unsqueeze(-1) * atoms[:, :, :2])
@@ -84,7 +81,7 @@ def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
     assert torch.count_nonzero(returned_prior[:, 1]) == 0
     event[..., :1].sum().backward()
     assert torch.count_nonzero(evidence.grad[~mask]) == 0
-    assert column.grad is not None and torch.count_nonzero(column.grad) > 0
+    assert weights.grad is not None and weights.grad[0] != 0
 
 
 def test_native_field_survives_symbolic_selection_and_unbind_returns_terminal_folds():
@@ -109,14 +106,13 @@ def test_native_field_survives_symbolic_selection_and_unbind_returns_terminal_fo
         assert torch.equal(field[1][:, depth], wholes[depth])
 
 
-def test_dense_staged_readout_compiles_fullgraph_with_live_gradients():
+def test_staged_readout_compiles_fullgraph_with_live_gradients():
     evidence = torch.randn(2, 3, 2, requires_grad=True) * .1
-    reading = torch.rand(2, 1, 2 * 6 + 2 * 2, requires_grad=True)  # two columns of 6, a read pair of 2 and 2
-    place = torch.rand(2, 3, 4)
+    reading = (torch.rand(2, 1, 1) - .5).requires_grad_()  # each word's entry, for or Not
     mask = torch.rand(2, 3, 2) > .3
     compiled = torch.compile(read_word, backend="eager", fullgraph=True)
-    result = compiled(evidence, mask, reading, place, content_width=2)
-    torch.testing.assert_close(result, read_word(evidence, mask, reading, place, content_width=2))
+    result = compiled(evidence, mask, reading)
+    torch.testing.assert_close(result, read_word(evidence, mask, reading))
     result.sum().backward()
     assert reading.grad is not None and torch.isfinite(reading.grad).all()
 
@@ -191,7 +187,7 @@ def _checkpoint_space():
     cs.mtm = MediumTermMemory()
     from Spaces import Codebook
     from types import MethodType
-    book = SimpleNamespace(W=cs.order_zero.weight)
+    book = SimpleNamespace(W=cs.order_zero.value)
     book.placement_extras = MethodType(Codebook.placement_extras, book)
     book.load_placement_extras = MethodType(Codebook.load_placement_extras, book)
     cs.similarity_codebook = book
@@ -217,10 +213,10 @@ def test_pre_readout_checkpoint_initializes_only_new_modules_with_strict_loading
 
 def test_conceptual_checkpoint_metadata_and_tensor_state_roundtrip_together():
     source, target = _checkpoint_space(), _checkpoint_space()
-    with torch.no_grad():
-        source.order_zero.weight[0, 3] = -.8
+    source.order_zero.add(3, 0, .8)
     assert all(torch.is_tensor(value) for value in source.state_dict().values())
     target.load_state_dict(source.state_dict(), strict=True)
     target.load_vocab_extras(source.vocab_extras())
-    torch.testing.assert_close(target.order_zero.weight, source.order_zero.weight)
+    torch.testing.assert_close(target.order_zero.value, source.order_zero.value)
+    assert target.order_zero.entries(3) == source.order_zero.entries(3) != []
     assert not getattr(target, "_legacy_whole_structure", None)

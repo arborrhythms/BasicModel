@@ -255,15 +255,15 @@ def main():
         optimizer=get_optimizer(model,*a,**kw)
         step=optimizer.step
         def observed_step(*a,**kw):
-            owner=model._concept_owner(); weight=owner.order_zero.weight
+            owner=model._concept_owner(); sigma=owner.order_zero; weight=sigma.value
             before=weight.detach().clone()
             gradient=None if weight.grad is None else weight.grad.detach().clone()
             result=step(*a,**kw)
             changes=[]
-            for row,column in (weight.detach()!=before).nonzero().tolist():
-                changes.append(dict(row=row,column=column,before=float(before[row,column]),
-                    after=float(weight[row,column].detach()),
-                    gradient=None if gradient is None else float(gradient[row,column])))
+            for entry in (weight.detach()!=before).nonzero().flatten().tolist():
+                changes.append(dict(row=int(sigma.entry_input[entry]),column=int(sigma.entry_row[entry]),
+                    before=float(before[entry]),after=float(weight[entry].detach()),
+                    gradient=None if gradient is None else float(gradient[entry])))
             with (args.output/'writes.jsonl').open('a') as f:
                 f.write(json.dumps(dict(presentation=count,writer=type(optimizer).__name__+'.step',changes=changes))+'\n')
             return result

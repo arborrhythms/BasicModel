@@ -36,17 +36,13 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     # the row is its part's presence (1) times its property on each lane.
     slots = [field.keys.index(('bp', r)) for r in rows]
     torch.testing.assert_close(field.values[slots, 0, 0], torch.stack((members, 1 - members), -1))
-    # Each concept's column is the sum of its members' vectors over their
-    # squared lengths; a negated literal is subtracted (a Not entry).
-    def column(signs):
-        total = torch.zeros(basic.width)
-        for r, sign in zip(rows, signs):
-            code = basic.codes[r].detach()
-            total += sign * code / code.square().sum()
-        return total
+    # Each concept has an entry on each member's row at one; a negated
+    # literal is a Not entry (rule 62).
+    def entries(signs):
+        return sorted((r, 1., sign < 0) for r, sign in zip(rows, signs))
     sigma = cs.order_zero
-    torch.testing.assert_close(sigma.weight[:sigma.content_width, 0].detach(), column((1, 1, -1, -1)))
-    torch.testing.assert_close(sigma.weight[:sigma.content_width, 1].detach(), column((-1, -1, 1, 1)))
+    assert sorted(sigma.entries(0)) == entries((1, 1, -1, -1))
+    assert sorted(sigma.entries(1)) == entries((-1, -1, 1, 1))
     # Each concept, the alternative an ordinary one on the same inventory,
     # is one signed number read by its own column, for less against.
     presence = published_presence(cs)
@@ -84,20 +80,20 @@ def test_witnesses_write_alternatives_without_conjoining_their_literals():
     recurrent_interpretation(cs, [8], [2], key='word')
     basic = cs.basic_percepts
     first, second = basic.index[((7,), (1,))], basic.index[((8,), (2,))]
-    # The second witness joins the concept's column as an alternative: no
+    # The second witness joins the concept as an alternative, an entry on
+    # its row: no
     # concept is made for it, no edge, and no conjunction of the two.
     assert cs.concept_weights(row) == []
     record = Spaces._concept_alloc_of(cs).order_zero_members
     assert {(p, n) for r, p, n in record if r == row} == {(first, False), (second, False)}
     assert not basic.conjunctions
     sigma = cs.order_zero
-    expected = sum(basic.codes[r] / basic.codes[r].square().sum() for r in (first, second))
-    torch.testing.assert_close(sigma.weight[:sigma.content_width, row].detach(), expected)
+    assert sorted(sigma.entries(row)) == [(first, 1., False), (second, 1., False)]
     before = (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
-    weights = sigma.weight.detach().clone()
+    weights = sigma.value.detach().clone()
     recurrent_interpretation(cs, [8], [2], key='word')
     assert before == (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
-    assert torch.equal(sigma.weight.detach(), weights)
+    assert torch.equal(sigma.value.detach(), weights)
     from test_structural_checkpoint import _model_with
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
     restored = _cs()

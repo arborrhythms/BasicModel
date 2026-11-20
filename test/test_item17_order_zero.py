@@ -1,5 +1,7 @@
 """Item 1.7, order zero: basic percepts as rows of a Pi, nominated by MTM,
-each with one concept read by a dense Sigma over the combined vector.
+each with one concept: the Pi, the Not (each row's two values as one signed
+value, and the sign of each entry) and a sparse Sigma over the signed values,
+its weights at zero or above.
 
 Certificates 5, 11, 12 and 23 (a) to (c) of the sigma-pi specification, §21.
 A learning result draws its starts from the system and prints them.
@@ -11,25 +13,12 @@ from pathlib import Path
 import pytest
 import torch
 
-from Layers import EPS_LOG, PiLayer3
-from OrderZero import PerceptPi, OrderZeroSigma, combine, read_word
+from Layers import EPS_LOG, PiLayer3, NotLayer3, SparseSigmaLayer3
+from OrderZero import PerceptPi, read_word
 
 
 def _drawn(count):
     return [int.from_bytes(os.urandom(4), 'little') for _ in range(count)]
-
-
-def _codes(*supports, width=32):
-    codes = torch.zeros(len(supports), width)
-    for row, support in enumerate(supports):
-        codes[row, list(support)] = 1.
-    return codes
-
-
-def _pairs(codes, against=None):
-    """Read pairs, ``[P, 2, W]``: what tells for each percept (``codes``)
-    and what tells against it (none, unless given)."""
-    return torch.stack((codes, torch.zeros_like(codes) if against is None else against), -2)
 
 
 # The first Pi.
@@ -76,57 +65,68 @@ def test_a_row_with_no_member_present_or_none_at_all_reads_nothing():
     assert torch.equal(got, torch.zeros(2, 2))
 
 
-# Certificate 5: order zero.
+# Certificate 5: order zero, on rows (rule 62).
 
-def test_the_combined_vector_is_one_less_the_product_of_the_gaps():
-    """Each percept enters once at its net, for less against: what tells
-    for it joins the for lane and what tells against it the against lane at
-    a net above zero, the reverse below; one read equally both adds
-    nothing."""
-    pairs = torch.rand(5, 2, 12)
-    presence = torch.rand(5, 3, 2)
-    presence[2] = 0.
-    x = combine(presence, pairs)
-    net = presence[..., 0] - presence[..., 1]
-    up, down = net.clamp_min(0)[..., None], (-net).clamp_min(0)[..., None]
-    gaps = (1 - pairs)[:, None]
-    toward = 1 - torch.prod(gaps[:, :, 0] ** up * gaps[:, :, 1] ** down, 0)
-    away = 1 - torch.prod(gaps[:, :, 1] ** up * gaps[:, :, 0] ** down, 0)
-    torch.testing.assert_close(x, torch.stack((toward, away), -2), atol=1e-5, rtol=1e-5)
-    assert bool((x >= 0).all() and (x <= 1).all())
-    # A percept at zero changes nothing, and nor does one read both equally.
-    torch.testing.assert_close(combine(presence[[0, 1, 3, 4]], pairs[[0, 1, 3, 4]]), x)
-    both = presence.clone()
-    both[2] = .7
-    torch.testing.assert_close(combine(both, pairs), x)
+class Order0:
+    """The Not and the Sigma over ``rows`` rows and ``concepts`` concepts,
+    with ``entries`` ``[(concept, row, sign)]`` written: sign 1 a for entry,
+    sign -1 a Not entry made by the Not."""
+
+    def __init__(self, rows, concepts, entries=(), room=None):
+        self.not_ = NotLayer3(rows)
+        self.sigma = SparseSigmaLayer3(rows, concepts, room or 2 * (rows + concepts))
+        for concept, row, sign in entries:
+            if sign > 0:
+                self.sigma.add(concept, row)
+            else:
+                self.not_.make(self.sigma, concept, row)
+
+    def __call__(self, lanes, inputs, rows):
+        return self.sigma(self.not_(lanes), inputs, rows)
 
 
-def test_a_readings_own_place_follows_its_presence_and_is_not_combined():
-    """Rule 7: a reading's own place is read at its presence; its time is
-    not read, so the combined vector ends with the place."""
-    codes = _codes((0, 1), (2, 3), width=8)
-    presence = torch.tensor([[[.5, 0.]], [[1., 0.]]])  # two percepts, one reading
-    where = torch.tensor([[.25, .75]])
-    x = combine(presence, _pairs(codes), where=where)
-    assert x.shape[-1] == 8 + 2
-    torch.testing.assert_close(x[0, 0, 8:], torch.tensor([.25, .75]))
-    torch.testing.assert_close(x[0, 1, 8:], torch.zeros(2))
+def test_the_sigma_reads_each_rows_signed_value_and_an_absent_row_changes_nothing():
+    """The Not gives each row for less against; a concept reads each row it
+    has an entry on by its weight, through a Not entry the row exchanged,
+    ``tanh(sum w s - sum w_not s)``; a row at zero, a row not among the
+    inputs and a row it has no entry on change nothing; a concept with no
+    entry reads zero."""
+    order = Order0(6, 4, [(0, 0, 1), (0, 2, 1), (1, 1, 1), (1, 2, -1), (2, 5, 1)])
+    sigma = order.sigma
+    with torch.no_grad():
+        sigma.value.mul_(1 + torch.rand_like(sigma.value))
+    lanes = torch.rand(4, 3, 2)
+    inputs = [2, 0, 1, 4]
+    y = order(lanes, inputs, [0, 1, 2, 3, -1])
+    dense = torch.zeros(6, 4)
+    for e in range(sigma.nnz):
+        dense[int(sigma.entry_input[e]), int(sigma.entry_row[e])] = sigma.value[e].detach()
+    signed = torch.zeros(6, 3)
+    signed[inputs] = lanes[..., 0] - lanes[..., 1]
+    expected = torch.tanh(signed.t() @ dense).t()
+    # Each weight is the entry's size, at zero or above; the sign is the Not's.
+    assert bool((sigma.weight >= 0).all()) and NotLayer3.entries(sigma).tolist() == [False, False, False, True, False]
+    torch.testing.assert_close(y[:4], expected, atol=1e-6, rtol=0)
+    assert torch.equal(y[3], torch.zeros(3)) and torch.equal(y[4], torch.zeros(3))
+    # An input row at zero, or one left out, changes nothing.
+    torch.testing.assert_close(order(torch.cat((lanes, torch.zeros(1, 3, 2))), inputs + [5], [0, 1, 3]),
+                               y[[0, 1, 3]])
+    torch.testing.assert_close(order(lanes[:3], inputs[:3], [0, 1]), y[:2])
+    # The order of the inputs is not read.
+    torch.testing.assert_close(order(lanes.flip(0), inputs[::-1], [0, 1, 2]), y[:3])
 
 
-def test_a_new_percept_needs_no_new_weight():
-    """§18.24, certificate 15: a percept never presented with a concept reads
-    it from its vector alone; a percept with an unlike vector does not."""
-    sigma = OrderZeroSigma(36, 1, content_width=32)
-    cat, cats, dog = _codes((0, 1, 2, 3, 4), (0, 1, 2, 3, 4, 5), (10, 11, 12, 13, 14))
-    sigma.start_column(0, cat)
-    place = torch.zeros(1, 4)
-    read = {name: float(sigma.concepts(combine(torch.tensor([[[1., 0.]]]), _pairs(code[None]), where=place), [0]))
-            for name, code in (('cat', cat), ('cats', cats), ('dog', dog))}
+def test_a_percept_never_given_to_a_concept_reads_zero():
+    """Given up with rule 62 (§18.24, certificate 15): a concept answers
+    only to the rows it has entries on. The concept of ``cat`` reads its
+    own row at tanh(1) and the row of ``cats``, whose code holds all of
+    cat's, at zero."""
+    order = Order0(3, 1, [(0, 0, 1)])
+    read = {name: float(order(torch.tensor([[[1., 0.]]]), [row], [0]).detach())
+            for name, row in (('cat', 0), ('cats', 1), ('dog', 2))}
     print(read)
-    # A concept reads its own row at tanh(1); a form holding all its parts
-    # reads as much; an unlike vector reads nothing.
-    assert read['cat'] == pytest.approx(torch.tanh(torch.tensor(1.)).item(), abs=1e-5)
-    assert read['cats'] == pytest.approx(read['cat'], abs=1e-5) and read['dog'] == 0.
+    assert read['cat'] == pytest.approx(torch.tanh(torch.tensor(1.)).item(), abs=1e-6)
+    assert read['cats'] == 0. and read['dog'] == 0.
 
 
 def test_the_mereological_order_of_the_lesson_percepts(lesson):
@@ -157,9 +157,10 @@ def test_the_mereological_order_of_the_lesson_percepts(lesson):
 
 
 def test_how_many_concepts_are_told_apart(lesson):
-    """§18.24, certificate 17, reported: each nominated row read alone; the
-    share of its concepts that read it above every other concept, and the
-    largest reading a concept takes from a row that is not its own."""
+    """§18.24, certificate 17, reported, on rows: each nominated row read
+    alone, at for 1 and against 0; the share of its concepts that read it
+    above every other concept, and the largest reading a concept takes from
+    a row that is not its own."""
     owner, basic = lesson['owner'], lesson['basic']
     pairs = [(row, owner.concept_of_basic_percept(row)) for row in range(len(basic.index))
              if bool(basic.promoted[row])]
@@ -171,10 +172,8 @@ def test_how_many_concepts_are_told_apart(lesson):
     concepts = [concept for _, concept in pairs]
     presence = torch.eye(len(rows))[..., None].expand(-1, -1, 2).clone()
     presence[..., 1] = 0.
-    codes = basic.read_codes(rows)
-    x = combine(presence, codes)
-    zeros = x.new_zeros(*x.shape[:-1], owner.order_zero.nInput - x.shape[-1])
-    y = owner.order_zero.concepts(torch.cat((x, zeros), -1), concepts).detach()
+    y = owner.order_zero_field(presence[:, :, None], rows, concepts)[:, :, 0].detach()
+    y = y[..., 0] - y[..., 1]  # [concept, reading]
     own = y.diagonal()
     other = y - torch.diag(own) - torch.eye(len(rows)) * 2
     apart = float(((own[:, None] > other.max(1, keepdim=True).values) | (len(rows) == 1)).float().mean())
@@ -183,99 +182,99 @@ def test_how_many_concepts_are_told_apart(lesson):
 
 
 def test_the_way_back_as_far_as_it_goes():
-    """§18.24, certificate 19: with as many concepts as the width the Sigma
-    returns the combined vector; with fewer it refuses."""
+    """§18.24, certificate 19, on rows: with a concept for each row (and
+    entries besides), the Sigma returns each row's signed value, for less
+    against; with fewer concepts than rows it refuses."""
     torch.manual_seed(int.from_bytes(os.urandom(4), 'little'))
-    width = 12
-    sigma = OrderZeroSigma(width, width, content_width=width - 4)
+    rows = 6
+    entries = [(r, r, 1) for r in range(rows)] + [(0, 3, 1), (5, 2, -1)]
+    order = Order0(rows, rows, entries)
     with torch.no_grad():
-        sigma.weight.copy_(torch.eye(width) + .1 * torch.rand(width, width))
-    codes = torch.rand(3, width - 4)
-    presence = torch.rand(3, 2, 2) * .5
-    x = combine(presence, _pairs(codes), where=torch.rand(2, 4))
-    signed = x[..., 0, :] - x[..., 1, :]
-    y = torch.tanh(signed @ sigma.weight)
-    back = sigma.reverse(y)
-    error = float((back[..., 0, :] - back[..., 1, :] - signed).abs().max())
-    print(dict(width=width, error=error))
+        order.sigma.value.mul_(1 + torch.rand(order.sigma.capacity))
+    lanes = torch.rand(rows, 2, 2) * .5
+    y = order(lanes, list(range(rows)), list(range(rows)))
+    back = order.sigma.reverse(y, list(range(rows)))
+    error = float((back - (lanes[..., 0] - lanes[..., 1])).abs().max())
+    print(dict(rows=rows, error=error))
     assert error < 1e-4
-    narrow = OrderZeroSigma(width, width - 1, content_width=width - 4)
+    narrow = Order0(rows, rows - 1, [(r, r, 1) for r in range(rows - 1)] + [(0, rows - 1, 1)])
     with pytest.raises(ValueError):
-        narrow.reverse(torch.zeros(1, width - 1))
+        narrow.sigma.reverse(torch.zeros(rows - 1, 1), list(range(rows)))
 
 
-def test_place_weights_after_teaching():
-    """§18.24, certificate 20, reported: a concept taught at several places
-    keeps what it learns on the place coordinates (rule 7: no time is read)."""
-    seed = int.from_bytes(os.urandom(4), 'little')
-    torch.manual_seed(seed)
-    sigma = OrderZeroSigma(12, 1, content_width=8)
-    code = _codes((0, 1, 2), width=8)
-    sigma.start_column(0, code)
-    places = torch.rand(6, 4)
-    x = combine(torch.ones(1, 6, 2) * torch.tensor([1., 0.]), _pairs(code), where=places)
-    optimizer = torch.optim.Adam(sigma.parameters(), lr=.05)
-    for _ in range(300):
-        optimizer.zero_grad()
-        ((sigma.concepts(x, [0]) - .9) ** 2).mean().backward()
-        optimizer.step()
-    print(dict(seed=seed, content=sigma.weight[:8, 0].tolist(), place=sigma.weight[8:, 0].tolist()))
-
-
-def test_the_order_zero_sigma_is_dense_and_not_penalized(lesson):
-    """The Sigma of order zero is the perceptual width by the order-zero
-    rows, a parameter of the model, saved with it, with no penalty."""
-    owner = lesson['owner']
-    sigma = owner.order_zero
-    model = lesson['model']
-    origin = torch.zeros(1, dtype=torch.long)
-    assert sigma.where_width == model.where_registry.encode('text', origin).shape[-1]
-    # Rule 7: the reading's time is not read; the width holds no when.
-    assert not hasattr(sigma, 'when_width')
-    width = owner.basic_percepts.width + sigma.where_width
-    assert tuple(sigma.weight.shape) == (width, owner._order_caps()[0])
-    assert any(p is sigma.weight for p in owner.getParameters())
-    assert any(key.endswith('order_zero.weight') for key in owner.state_dict())
+def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
+    """After the first Pi, the Not and the Sigma of order zero: the Sigma is
+    the rows by the order-zero concepts, stored as
+    compressed rows in capacity allocated beforehand, a parameter of the
+    model, saved with it, with no penalty. It has no input but the rows' signed
+    values: no code and no place (rule 62)."""
+    owner, basic = lesson['owner'], lesson['basic']
+    sigma, not_ = owner.order_zero, owner.order_zero_not
+    assert isinstance(sigma, SparseSigmaLayer3) and isinstance(not_, NotLayer3)
+    assert (not_.rows, sigma.nInput, sigma.nOutput) == (basic.capacity, basic.capacity, owner._order_caps()[0])
+    assert any(p is sigma.value for p in owner.getParameters())
+    keys = {key[key.index('order_zero.'):] for key in owner.state_dict() if 'order_zero.' in key}
+    assert {'order_zero.value', 'order_zero.entry_row', 'order_zero.entry_input', 'order_zero.count'} <= keys
     assert not hasattr(sigma, 'l1_lambda')
+    n = sigma.nnz
+    assert n > 0 and int(sigma.crow[-1]) == n
+    assert bool((sigma.weight >= 0).all())
+    for concept in sorted(set(sigma.entry_row[:n].tolist()))[:20]:
+        assert all(concept in sigma.rows_reading(i) for i, _, _ in sigma.entries(concept))
+    print(dict(entries=n, capacity=sigma.capacity, concepts=sigma.nOutput, rows=not_.rows,
+               not_entries=int(NotLayer3.entries(sigma).sum())))
 
 
-def test_a_word_reads_its_column_of_the_order_zero_sigma():
-    """The word step reads its basic percept by the Pi of its two members
-    and its concept by the column: the same value the field read gives."""
+def test_the_sparse_sigma_is_stored_in_capacity_allocated_beforehand():
+    sigma, not_ = SparseSigmaLayer3(4, 3, 3), NotLayer3(4)
+    before = (sigma.value.data_ptr(), sigma.entry_row.data_ptr(), sigma.entry_input.data_ptr())
+    sigma.add(0, 2)
+    not_.make(sigma, 2, 1, .5)
+    sigma.add(0, 2)  # an entry already written is added to
+    assert (sigma.value.data_ptr(), sigma.entry_row.data_ptr(), sigma.entry_input.data_ptr()) == before
+    assert sigma.entries(0) == [(2, 2., False)] and sigma.entries(2) == [(1, .5, True)]
+    assert sigma.crow.tolist() == [0, 1, 1, 2] and sigma.rows_reading(2) == [0]
+    with pytest.raises(ValueError):
+        sigma.add(1, 3, -1.)
+    sigma.add(1, 3)
+    with pytest.raises(OverflowError):
+        sigma.add(1, 0)
+    restored = SparseSigmaLayer3(4, 3, 3)
+    restored.load_state_dict(sigma.state_dict())
+    assert restored.entries(2) == sigma.entries(2) and restored.rows_reading(1) == [2]
+
+
+def test_a_word_reads_its_rows_entry():
+    """The word step reads its basic percept by the Pi of its two members,
+    the Not, and its concept by its entry on the row: the same value the
+    field read gives, for an entry and for a Not entry."""
     evidence = torch.tensor([[[.9, .8], [.5, -1.]]])
     mask = torch.ones(1, 2, 2, dtype=torch.bool)
-    code = torch.tensor([.6, .3, 0., 1.])
-    column = torch.tensor([.3, .2, .1, .5, .25, -.25])
-    place = torch.tensor([[[.1, .9], [.4, .6]]])
-    # The two columns: the for weights, and the against weights begun as
-    # the for weights negated (rule 59).
-    columns = torch.cat((column, -column))
-    y = read_word(evidence, mask, torch.cat((columns, code, torch.zeros(4)))[None, None], place, content_width=4)
     # The run of parts is the presence on both lanes, the whole on its own:
     # [.9 * .8, .9 * 0] and [.5 * 0, .5 * 1].
-    presence = torch.tensor([[[.72, 0.]], [[0., .5]]])  # [P=1 per location, lanes]
-    for location in range(2):
-        x = combine(presence[location][:, None], _pairs(code[None]), where=place[:, location])
-        expected = torch.tanh((x[0, 0] - x[0, 1]) @ column)
-        torch.testing.assert_close(y[0, location], expected)
+    presence = torch.tensor([[.72, 0.], [0., .5]])
+    for sign in (1, -1):
+        order = Order0(1, 1, [(0, 0, sign)])
+        with torch.no_grad():
+            order.sigma.value[0] *= .7
+        y = read_word(evidence, mask, order.sigma.entry([0], [0])[None, :, None])
+        for location in range(2):
+            expected = order(presence[location][None, None], [0], [0])[0, 0]
+            torch.testing.assert_close(y[0, location], expected)
     # The against lane: a present run whose whole is witnessed not to hold
     # reads the percept against; an absent run reads nothing.
-    against = read_word(torch.tensor([[[.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
-                        torch.cat((columns, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
-    assert float(against) < 0
-    absent = read_word(torch.tensor([[[-.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
-                       torch.cat((columns, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
-    assert float(absent) == 0
+    start = torch.tensor([[[1.]]])
+    assert float(read_word(torch.tensor([[[.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool), start)) < 0
+    assert float(read_word(torch.tensor([[[-.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool), start)) == 0
 
 
-def test_a_gradient_reaches_only_the_columns_read():
-    sigma = OrderZeroSigma(10, 6, content_width=8)
-    with torch.no_grad():
-        sigma.weight.uniform_(0, .1)
-    x = combine(torch.rand(2, 3, 2), torch.rand(2, 2, 8), where=torch.rand(3, 2))
-    sigma.concepts(x, [1, 4, -1]).sum().backward()
-    touched = sigma.weight.grad.abs().sum(0).nonzero().flatten().tolist()
-    assert touched == [1, 4]
+def test_a_gradient_reaches_only_the_entries_read():
+    order = Order0(5, 6, [(1, 0, 1), (4, 2, 1), (2, 3, 1), (1, 4, 1)])
+    order(torch.rand(3, 2, 2), [0, 2, 4], [1, 4, -1]).sum().backward()
+    sigma = order.sigma
+    touched = sorted(int(sigma.entry_row[e]) * 10 + int(sigma.entry_input[e])
+                     for e in sigma.value.grad.abs().nonzero().flatten().tolist())
+    assert touched == [10, 14, 42]
 
 
 # Certificates 11 and 12: rows by nomination, one concept for each row.
@@ -312,20 +311,18 @@ def test_no_row_on_a_first_reading(lesson):
 
 def test_square_a_new_concept_reads_only_its_own_row(lesson):
     """Certificate 12: at order zero the concepts equal the nominated rows in
-    number; a new concept's column is its row's vector, normalized, with no
-    weight on place and time: the row's vector over its squared length, so
-    that its own row reads one before the squash (rule 8b)."""
+    number; a new concept has one entry, on its own row, at one, so that
+    its own row read for reads one before the squash and read both reads
+    zero; it has no weight on anything else (rule 62)."""
     owner, basic = lesson['owner'], lesson['basic']
     if 'nominated' not in lesson:
         test_no_row_on_a_first_reading(lesson)
     word, row, c_row = lesson['nominated']
-    column = owner.order_zero.weight[:, c_row].detach()
-    # Rule 54: the member's share, from what tells for and against it.
-    torch.testing.assert_close(column[:basic.width], basic.column(row))
-    # Its own row reads one before the squash.
-    x = combine(torch.tensor([[[1., 0.]]]), basic.read_codes([row]))
-    torch.testing.assert_close(float(x[0, 0] @ column[:basic.width]), 1., rtol=0, atol=1e-5)
-    assert torch.count_nonzero(column[basic.width:]) == 0
+    assert owner.order_zero.entries(c_row) == [(row, 1., False)]
+    bound = 1 - 1e-7
+    read = lambda lanes: float(torch.atanh(owner.order_zero_field(torch.tensor([[[lanes]]]), [row], [c_row])
+                                           .detach()[0, 0, 0, 0].clamp(-bound, bound)))
+    assert read([1., 0.]) == pytest.approx(1., abs=1e-5) and read([1., 1.]) == 0.
     nominated = [r for r in range(len(basic.index)) if bool(basic.promoted[r])]
     concepts = {r: owner.concept_of_basic_percept(r) for r in nominated}
     frozen = set(owner._frozen_rows())
@@ -343,10 +340,18 @@ def test_square_a_new_concept_reads_only_its_own_row(lesson):
 
 # Certificate 23 (a) to (c): Pi, Not, Sigma at the basic level.
 
-def _taught(cases, *, rows, codes, steps=2000, project=False, seed):
+def _taught(cases, *, rows, steps=2000, project=False, seed):
     """One concept taught on readings of nominated rows. ``cases`` maps the
     present base percepts to the target; a conjunction row is present when
-    all its members are."""
+    all its members are. The concept has an entry on every row, each at
+    zero, so what is learned does not depend on a draw. Every weight is at
+    zero or above; the gradient may carry an entry through zero, which makes
+    it a Not entry, and every 50 steps the Not teaches by omission
+    (``NotLayer3.teach_omission``): where the concept was read and did not
+    come, a row present there and in no reading where it came has its entry
+    made a Not entry. With ``project`` there is no omission teaching and
+    every entry is held a for entry (its learned number at zero or above),
+    so there is no Not entry."""
     torch.manual_seed(seed)
     pi = PerceptPi(len(rows), 4 * len(rows))
     keys = [('bp', r) for r in range(len(rows))]
@@ -364,39 +369,48 @@ def _taught(cases, *, rows, codes, steps=2000, project=False, seed):
                 values[r] = pi(torch.stack(values), (r,), keys)[0]
         return torch.stack(values)
 
-    sigma = OrderZeroSigma(codes.shape[1], 1, content_width=codes.shape[1])
-    inputs = torch.stack([combine(presence(present)[:, None], _pairs(codes))[0] for present in cases])
+    order = Order0(len(rows), 1, [(0, r, 1) for r in range(len(rows))])
+    sigma, not_ = order.sigma, order.not_
+    with torch.no_grad():
+        sigma.value.zero_()
+    inputs = torch.stack([presence(present) for present in cases], 1)  # [rows, case, 2]
     target = torch.tensor(list(cases.values()))
     optimizer = torch.optim.Adam(sigma.parameters(), lr=.05)
-    for _ in range(steps):
+    every = list(range(len(rows)))
+    for step in range(steps):
         optimizer.zero_grad()
-        ((sigma.concepts(inputs, [0])[:, 0] - target) ** 2).mean().backward()
+        y = order(inputs, every, [0])[0]
+        ((y - target) ** 2).mean().backward()
         optimizer.step()
         if project:
             with torch.no_grad():
-                sigma.weight.clamp_(min=0)
+                sigma.value.clamp_(min=0)
+        elif step % 50 == 49:
+            not_.teach_omission(sigma, 0, inputs, every, came=target > .5, expected=y.detach())
 
     def read(present):
-        return float(sigma.concepts(combine(presence(present)[:, None], _pairs(codes)), [0]))
-    return sigma, read, base
+        return float(order(presence(present)[:, None], every, [0]).detach())
+    return order, read, base
 
 
-def _with_rows(supports, conjunctions, width=24):
-    from BasicPercepts import BasicPercepts
-    codes = _codes(*supports, width=width)
-    rows = [()] * len(supports) + [tuple(c) for c in conjunctions]
-    joined = [codes[list(c)].amax(0) + BasicPercepts.INCREMENT * torch.rand(
-        width, generator=torch.Generator().manual_seed(len(supports) + i)) for i, c in enumerate(conjunctions)]
-    return rows, torch.cat((codes, torch.stack(joined).clamp(max=1.))) if joined else codes
+def _not_entries(order, floor=0.):
+    """Entries that are Not entries, of weight above ``floor``."""
+    sigma = order.sigma
+    return int((NotLayer3.entries(sigma) & (sigma.weight.detach()[:sigma.nnz] > floor)).sum())
+
+
+def _with_rows(supports, conjunctions):
+    """Base rows, one for each support, and conjunction rows over them."""
+    return [()] * len(supports) + [tuple(c) for c in conjunctions]
 
 
 def test_with_no_omission_there_is_no_not_entry_and_nothing_is_against():
     """Certificate 23 (a)."""
-    rows, codes = _with_rows(((0, 1, 2), (3, 4, 5), (6, 7, 8)), ((0, 1),))
+    rows = _with_rows(((0, 1, 2), (3, 4, 5), (6, 7, 8)), ((0, 1),))
     seed = _drawn(1)[0]
     # What came is one; nothing expected failed to come.
-    sigma, read, _ = _taught({(0,): 1., (1,): 1., (0, 1, 3): 1.}, rows=rows, codes=codes, seed=seed)
-    assert int((sigma.weight < 0).sum()) == 0
+    order, read, _ = _taught({(0,): 1., (1,): 1., (0, 1, 3): 1.}, rows=rows, seed=seed)
+    assert _not_entries(order) == 0 and bool((order.sigma.weight >= 0).all())
     readings = {present: read(present) for present in [(), (0,), (1,), (2,), (0, 1, 3), (0, 2), (1, 2)]}
     print(dict(seed=seed, readings=readings))
     assert all(value >= 0 for value in readings.values())
@@ -409,16 +423,16 @@ def test_the_basic_level_learns_negative_patterning_and_conditioned_inhibition()
     absent. Rows for the compounds are nominated (AB, AX). The Sigma starts
     at zero, so what is learned does not depend on a draw: one run."""
     seeds = _drawn(1)
-    rows, codes = _with_rows(((0, 1, 2), (3, 4, 5), (6, 7, 8)), ((0, 1), (0, 2)))
+    rows = _with_rows(((0, 1, 2), (3, 4, 5), (6, 7, 8)), ((0, 1), (0, 2)))
     A, B, X, AB, AX = range(5)
     patterning = inhibition = 0
     report = []
     for seed in seeds:
-        _, read, _ = _taught({(A,): 1., (B,): 1., (A, B, AB): 0.}, rows=rows, codes=codes, seed=seed)
+        _, read, _ = _taught({(A,): 1., (B,): 1., (A, B, AB): 0.}, rows=rows, seed=seed)
         one = dict(A=read((A,)), B=read((B,)), AB=read((A, B, AB)), nothing=read(()))
         patterning += one['A'] > .5 and one['B'] > .5 and one['AB'] < .5
-        sigma, read, _ = _taught({(A,): 1., (A, X, AX): 0., (B,): 1.}, rows=rows, codes=codes, seed=seed)
-        two = dict(A=read((A,)), AX=read((A, X, AX)), X=read((X,)), not_entries=int((sigma.weight < -.01).sum()))
+        order, read, _ = _taught({(A,): 1., (A, X, AX): 0., (B,): 1.}, rows=rows, seed=seed)
+        two = dict(A=read((A,)), AX=read((A, X, AX)), X=read((X,)), not_entries=_not_entries(order, .01))
         inhibition += two['A'] > .5 and two['AX'] < .5 and two['X'] < 0
         report.append(dict(seed=seed, patterning=one, inhibition=two))
     print(report)
@@ -427,24 +441,24 @@ def test_the_basic_level_learns_negative_patterning_and_conditioned_inhibition()
 
 def test_the_basic_level_learns_xor_of_two_perceived_words_with_no_not_entry():
     """Certificate 23 (c): true and false each perceived at two places, a
-    row for each pair; the weights held at zero or above. The Sigma starts at
+    row for each pair; no omission teaching, so no Not entry. The Sigma starts at
     zero, so what is learned does not depend on a draw: one run."""
     seeds = _drawn(1)
     words = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11))  # true1, false1, true2, false2
     pairs = ((0, 2), (0, 3), (1, 2), (1, 3))
-    rows, codes = _with_rows(words, pairs)
+    rows = _with_rows(words, pairs)
     cases = {(0, 2, 4): 0., (0, 3, 5): 1., (1, 2, 6): 1., (1, 3, 7): 0.}
     solved, report = 0, []
     for seed in seeds:
-        sigma, read, _ = _taught(cases, rows=rows, codes=codes, project=True, seed=seed)
+        order, read, _ = _taught(cases, rows=rows, project=True, seed=seed)
         readings = {present: read(present) for present in cases}
         ok = all((value > .5) == (target > .5) for value, target in
                  zip(readings.values(), cases.values()))
         solved += ok
         report.append(dict(seed=seed, readings=list(readings.values()),
-                           not_entries=int((sigma.weight < 0).sum())))
+                           not_entries=_not_entries(order)))
     print(report)
-    assert solved == len(seeds)
+    assert solved == len(seeds) and all(r['not_entries'] == 0 for r in report)
 
 
 # The lesson's sixteen sentences, read once for the tests that read a model.

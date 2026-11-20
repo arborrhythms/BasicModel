@@ -38,11 +38,10 @@ class NumericPercepts:
         """Each axis place and the input's bracket are readings. A reading's
         active basic percepts are the level percepts it holds and the
         nominated conjunctions over them; the order-zero Sigma reads their
-        combination, and the definitions above order zero are closed."""
+        rows, and the definitions above order zero are closed."""
         from FieldProjection import inventory, close
         from PerceptCollections import collect
         from FamiliarTier import observe_intersection, promote_candidates
-        from OrderZero import combine
         owner = self.model._concept_owner()
         raw = inputs.reshape(len(inputs), -1)
         values = feeling(raw if raw.is_floating_point() else raw.float())
@@ -82,11 +81,8 @@ class NumericPercepts:
             if row in basic.conjunctions:
                 lanes[index] = basic.pi(torch.stack(lanes), (row,), members)[0]
         presence = basic.held(torch.stack(lanes), nominated) if lanes else presence
-        codes = (basic.read_codes(nominated) if nominated else basic.codes.new_zeros(0, 2, basic.width)).to(values)
-        where = self.model.where_registry.encode('numeric', torch.cat((axes, axes[:1])).expand(B, -1)).to(values)
-        combined = combine(presence, codes, where=where)
         rows = inventory(owner)
-        evidence = owner.order_zero_field(combined, rows)
+        evidence = owner.order_zero_field(presence, nominated, rows)
         evidence = close(owner, rows, evidence)
         ids = torch.tensor([owner.concept_id_at_row(row) for row in rows], device=values.device)
         bracket = torch.stack((places[:, 0, 0], places[:, -1, 1]), -1)

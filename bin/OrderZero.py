@@ -1,23 +1,21 @@
-"""The first layer: basic percepts as rows of a Pi, concepts as a dense Sigma.
+"""The first layer: basic percepts as rows of a Pi, concepts as a sparse Sigma.
 
 A basic percept is one row of the first Pi over its parts and wholes, on two
 lanes. Its value for a reading is the product of its members' memberships,
 each to the power of its weight, on that lane alone. A row is admitted only
-when MTM nominates it, and each row brings one concept (one column of the
-Sigma's dense matrix).
+when MTM nominates it, and each row brings one concept. The Pi alone reads
+the percepts' codes.
 
-For a reading the active percepts' vectors are combined on the gaps: for each
-coordinate and lane, ``x = 1 - prod_p (1 - v_p)^{b_p}``, with ``b_p`` the Pi's
-value for percept ``p`` on that lane. The reading's own place and time follow
-the content coordinates, at the degree that the reading is present. The
-concepts read the for vector and the against vector as two inputs, each with
-weights of its own, ``y = tanh(x_for U + x_against A)``; ``A`` starts as
-``-U``, where a concept reads the for vector less the against vector.
+After the Pi, the Not (``NotLayer3``) gives each row one signed value, for
+less against, and the concepts of order zero are a ``SparseSigmaLayer3``
+over those values: a concept reads each row it has an entry on by a weight
+at zero or above, the row as it is or, through a Not entry, exchanged, and
+starts with one entry, on its own row, at one.
 """
 import torch
 from torch import nn
 
-from Layers import EPS_LOG, membership_log, signed_lanes, SigmaLayer3
+from Layers import EPS_LOG, membership_log
 
 
 class PerceptPi(nn.Module):
@@ -187,25 +185,22 @@ class PerceptPi(nn.Module):
         self._index_columns()
 
 
-def read_word(evidence, mask, reading, place, *, content_width):
-    """The order-zero concept of a word at each of its locations.
+def read_word(evidence, mask, value):
+    """The order-zero concept of a word at each of its locations: the Pi of
+    its row, the Not, the Sigma.
 
     ``evidence`` ``[B, N, K]`` holds the signed match of each of the word's
     basic percept's members (its run of parts and its wholes) at each
-    location, and ``mask`` which are its members there. The basic percept's
-    value on each lane is the Pi of its members: the product of their
-    memberships on that lane, zero where one is at or below the floor; the
-    run of parts stands at its presence on both lanes.
-    ``reading`` ``[B, 1, 2D + 2C]`` is the concept's two columns of the
-    order-zero Sigma, its for weights and its against weights (``D`` wide
-    each), and the basic percept's read pair, what tells for it and what
-    against it (``C`` wide each); ``place`` ``[B, N, D - C]`` is each
-    location's own place. The percept enters at its net, as
-    :func:`combine` has it, and each lane is read by its own column.
+    location, and ``mask`` which are its members there. The Pi: the basic
+    percept's value on each lane is the product of its members' memberships
+    on that lane, zero where one is at or below the floor; the run of parts
+    stands at its presence on both lanes. The Not: the row's signed value,
+    for less against, read exchanged where the concept's entry is a Not
+    entry. The Sigma: ``value`` ``[B, 1, 1]`` is the concept's entry on the
+    row, whose size is the Sigma's weight; the concept reads that row and
+    nothing else.
     """
-    width = (reading.shape[-1] - 2 * content_width) // 2
-    column = reading[..., :2 * width].unflatten(-1, (2, width))
-    pair = reading[..., 2 * width:].unflatten(-1, (2, content_width))
+    from Layers import NotLayer3, _EntryRead
     lanes = torch.stack((evidence.clamp(0, 1), (-evidence).clamp(0, 1)), -1)
     # The first slot is the run of parts: the percept's presence, the same
     # on both lanes. The wholes keep their own lanes; with none held, the
@@ -218,161 +213,5 @@ def read_word(evidence, mask, reading, place, *, content_width):
     presence = torch.where(absent, 0., torch.exp(logs))
     whole = mask[..., 1:].any(-1)
     presence = torch.stack((presence[..., 0], torch.where(whole, presence[..., 1], 0.)), -1)
-    gaps = torch.log((1.0 - pair).clamp_min(EPS_LOG))
-    net = presence[..., 0] - presence[..., 1]
-    up, down = net.clamp_min(0)[..., None, None], (-net).clamp_min(0)[..., None, None]
-    content = 1.0 - torch.exp(up * gaps + down * gaps.flip(-2))
-    coordinates = presence[..., :, None] * place[..., None, :]
-    combined = torch.cat((content, coordinates), -1)
-    # x_for U + x_against A, as OrderZeroSigma reads it: the one input of
-    # for less against, then what the against channel adds where A is not -U.
-    net = ((combined[..., 0, :] - combined[..., 1, :]) * column[..., 0, :]).sum(-1)
-    return torch.tanh(net + (combined[..., 1, :] * (column[..., 1, :] + column[..., 0, :])).sum(-1))
-
-
-def combine(presence, codes, *, where=None):
-    """The combined vector of each reading, on two lanes.
-
-    ``presence`` is ``[P, ..., 2]``, each percept's Pi value on the two
-    lanes; ``codes`` is ``[P, 2, W]``, what each percept's vector tells for
-    it and what tells against it (``BasicPercepts.read_pair``), in
-    ``[0, 1]``. A percept enters once, at its net, for less against: at a
-    net above zero what tells for it joins the for lane and what tells
-    against it the against lane; below zero the reverse; a percept read
-    both for and against equally adds nothing. Each lane's content is
-    ``1 - prod_p (1 - v_p)^{n_p}``. ``where``, ``[..., D]`` in ``[0, 1]``,
-    is the reading's own place, taken at the reading's presence, the
-    greatest of its percepts' values on the lane. A reading's time is not
-    read. The result is ``[..., 2, W + D]``.
-    """
-    gaps = torch.log((1.0 - codes).clamp_min(EPS_LOG)).to(presence)
-    net = presence[..., 0] - presence[..., 1]
-    up, down = net.clamp_min(0), (-net).clamp_min(0)
-    toward = torch.einsum('p...,pw->...w', up, gaps[:, 0]) + torch.einsum('p...,pw->...w', down, gaps[:, 1])
-    away = torch.einsum('p...,pw->...w', up, gaps[:, 1]) + torch.einsum('p...,pw->...w', down, gaps[:, 0])
-    content = 1.0 - torch.exp(torch.stack((toward, away), -2))
-    parts = [content]
-    present = presence.amax(0) if len(presence) else presence.new_zeros(presence.shape[1:])
-    if where is not None:
-        parts.append(present[..., :, None] * where.to(presence)[..., None, :])
-    return torch.cat(parts, -1)
-
-
-class OrderZeroSigma(SigmaLayer3):
-    """The Sigma of order zero, dense, the perceptual width by the concepts
-    of order zero, on two channels (rule 59): ``weight`` reads the for lane
-    of the combined vector and ``against`` its against lane, each with
-    weights of its own, ``y = tanh(x_for U + x_against A)``. A concept's
-    value stays one signed number. Where ``A = -U`` a concept reads the for
-    lane less the against lane, one input with one signed weight (rule 3),
-    and every column is written so: a column starts at zero and is written
-    when its concept is made, from its members' vectors, the same share
-    added to ``U`` and taken from ``A``. What a concept then does with the
-    two channels is learned."""
-
-    def __init__(self, width, concepts, *, content_width):
-        super().__init__(int(width), int(concepts), scale=0.0)
-        self.against = nn.Parameter(-self.weight.detach().clone())
-        self.content_width = int(content_width)
-        # The rest is the reading's own place; its time is not read.
-        self.where_width = int(width) - self.content_width
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        # A Sigma saved on one input of for less against has no against
-        # weights: they are its for weights negated.
-        if prefix + 'weight' in state_dict and prefix + 'against' not in state_dict:
-            state_dict[prefix + 'against'] = -state_dict[prefix + 'weight']
-        # A Sigma saved when it read the reading's time has those rows last,
-        # after the content and the place: they are dropped.
-        for name in ('weight', 'against'):
-            saved = state_dict.get(prefix + name)
-            if saved is not None and saved.ndim == 2 and saved.shape[0] > self.nInput:
-                state_dict[prefix + name] = saved[:self.nInput]
-        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
-                                      missing_keys, unexpected_keys, error_msgs)
-
-    def channels(self):
-        """The for weights and the against weights, ``[2, width, concepts]``."""
-        return torch.stack((self.weight, self.against))
-
-    @torch.no_grad()
-    def start_column(self, column, vectors, signs=None, against=None):
-        """A column from its members: place weights at zero, then
-        each member added (:meth:`add_member`). A member with sign -1 is a
-        Not entry; ``against`` holds what tells against each member."""
-        vectors = torch.as_tensor(vectors).to(self.weight).reshape(-1, self.content_width)
-        signs = [1.] * len(vectors) if signs is None else [float(x) for x in signs]
-        against = ([None] * len(vectors) if against is None else
-                   torch.as_tensor(against).to(self.weight).reshape(-1, self.content_width))
-        self.weight[:, column] = 0.
-        self.against[:, column] = 0.
-        for vector, sign, opposed in zip(vectors, signs, against):
-            self.add_member(column, vector, sign, against=opposed)
-
-    @staticmethod
-    def member_column(positive, negative=None):
-        """A member's share of a column (rule 54; Alec, §19.82, as amended in
-        §23.3c.3): the mean of its sides, what tells for it over its own
-        squared length and what tells against it over its own,
-        ``(P / |P|^2 - N / |N|^2) / 2``. Each side is divided by its own
-        count of contributions, so all that tells against takes the reading
-        to zero however few its coordinates, and the member's own row, read
-        with its own against lane, reads one (rule 21). A member with nothing
-        against it gives its for side alone, ``P / |P|^2``."""
-        def share(vector):
-            size = vector.square().sum()
-            return vector / size if size > 0 else torch.zeros_like(vector)
-        if negative is None or not bool(negative.square().sum() > 0):
-            return share(positive)
-        return (share(positive) - share(negative)) / 2
-
-    @torch.no_grad()
-    def add_share(self, column, share):
-        """Add ``share`` to a column's for weights and take it from its
-        against weights, as one input of for less against reads it."""
-        share = torch.as_tensor(share).to(self.weight)
-        self.weight[:self.content_width, column] += share
-        self.against[:self.content_width, column] -= share
-
-    @torch.no_grad()
-    def add_member(self, column, vector, sign=1., *, against=None):
-        """Add ``sign`` times the member's share (:meth:`member_column`) to
-        the column's content (:meth:`add_share`), so that the member's own
-        row reads one before the squash; nothing is normalized afterwards.
-        ``vector`` is what tells for the member, ``against`` what tells
-        against it."""
-        vector = torch.as_tensor(vector).to(self.weight).reshape(self.content_width)
-        if against is not None:
-            against = torch.as_tensor(against).to(self.weight).reshape(self.content_width)
-        if vector.square().sum() > 0:
-            self.add_share(column, float(sign) * self.member_column(vector, against))
-
-    @staticmethod
-    def _read(combined, weight, against):
-        """``x_for U + x_against A``, written as rule 3's one input of for
-        less against, ``(x_for - x_against) U``, and what the against
-        channel adds where it has left ``-U``, ``x_against (A + U)``: the
-        same sum, and at a column's start exactly the one-input read."""
-        return ((combined[..., 0, :] - combined[..., 1, :]) @ weight
-                + combined[..., 1, :] @ (against + weight))
-
-    def forward(self, x):
-        """The concepts of a combined vector ``[..., 2, width]``."""
-        return torch.tanh(self._read(x, self.weight, self.against))
-
-    def concepts(self, combined, columns):
-        """Each column's signed value for each reading of ``combined``,
-        ``[..., 2, width]``; a column of -1 reads zero."""
-        columns = torch.as_tensor(columns, dtype=torch.long, device=self.weight.device)
-        valid = columns >= 0
-        index = columns.clamp_min(0)
-        weight = self.weight.index_select(1, index) * valid
-        against = self.against.index_select(1, index) * valid
-        return torch.tanh(self._read(combined, weight, against))
-
-    def reverse(self, y):
-        """The input's two lanes by least squares through the for weights
-        (:meth:`SigmaLayer3.reverse`), exact where the against weights are
-        the for weights negated."""
-        return super().reverse(y)
+    signed = NotLayer3.signed(presence)
+    return torch.tanh(_EntryRead.apply(value[..., 0].to(signed).expand_as(signed), signed))

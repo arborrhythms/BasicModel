@@ -14818,110 +14818,56 @@ class ConceptualSpace(Space):
     REFERENCE_SLOTS = 2
 
     def order_zero_reading(self, rows, percepts):
-        """Each word's two columns of the order-zero Sigma, its for weights
-        and its against weights, and what its basic percept's vector tells
-        for it and against it (its read pair), ``[..., 2D + 2C]``; zero
-        where either is absent."""
-        self._follow_moved()
-        sigma, basic = self.order_zero, self.basic_percepts
-        rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.weight.device)
-        percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.weight.device)
-        held = (rows >= 0) & (rows < sigma.nOutput) & (percepts >= 0)
-        index = torch.where(held, rows, 0).flatten()
-        column = torch.cat((sigma.weight.t().index_select(0, index),
-                            sigma.against.t().index_select(0, index)), -1)
-        column = column.reshape(*rows.shape, -1) * held[..., None]
-        pair = basic.read_codes(torch.where(held, percepts, 0))
-        pair = pair.reshape(*rows.shape, -1).to(column) * held[..., None]
-        return torch.cat((column, pair), -1)
+        """Each word's entry of the order-zero Sigma on its basic percept's
+        row, ``[..., 1]``: its learned number, whose size is the Sigma's
+        weight and whose sign is the Not's; zero where either is absent or
+        there is no such entry."""
+        sigma = self.order_zero
+        rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.value.device)
+        percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.value.device)
+        held = (rows >= 0) & (rows < sigma.nOutput) & (percepts >= 0) & (percepts < sigma.nInput)
+        value = sigma.entry(torch.where(held, rows, 0).cpu(), torch.where(held, percepts, 0).cpu())
+        return (value.to(sigma.value.device) * held)[..., None]
+
+    #: Entries of the order-zero Sigma allocated beforehand, for each
+    #: concept and each basic percept: a concept's own row, and the rows that
+    #: join it later.
+    ORDER_ZERO_ENTRIES = 2
 
     def install_order_zero(self):
-        """The Sigma of order zero: the perceptual width (a basic percept's
-        vector, then the reading's place) by the order-zero rows, on two
-        channels, the for lane and the against lane. A reading's time is
-        not read."""
+        """Order zero after its Pi: the Not (``order_zero_not``), each basic
+        percept's two values as one signed value, and the Sigma
+        (``order_zero``), sparse, over those signed values by the order-zero
+        concepts. It reads no code and no place."""
         if getattr(self, 'order_zero', None) is not None:
-            self._follow_moved()
             return self.order_zero
-        from OrderZero import OrderZeroSigma
-        content = int(self.basic_percepts.width)
-        # The width of a reading's own place is the model's where
-        # registry's; a model with none reads none.
-        model = getattr(self, '_model', None)
-        registry = getattr(model, 'where_registry', None)
-        origin = torch.zeros(1, dtype=torch.long)
-        where = 0 if registry is None else int(registry.encode('text', origin).shape[-1])
-        sigma = OrderZeroSigma(content + where, self._order_caps()[0], content_width=content)
+        from Layers import NotLayer3, SparseSigmaLayer3
+        rows, concepts = int(self.basic_percepts.capacity), int(self._order_caps()[0])
+        self.order_zero_not = NotLayer3(rows)
+        sigma = SparseSigmaLayer3(rows, concepts, self.ORDER_ZERO_ENTRIES * (rows + concepts))
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
         # A frozen concept is read as a reference and never by perception.
-        for channel in (sigma.weight, sigma.against):
-            self.params.append(channel)
-            channel.register_hook(self._zero_frozen_columns)
+        self.params.append(sigma.value)
+        sigma.value.register_hook(self._zero_frozen_entries)
         return sigma
 
-    def _follow_moved(self):
-        """The columns follow the basic percepts whose read pair moved when
-        stored forms' codes changed (``BasicPercepts.moved``), before any
-        column is read or started."""
-        basic = self.basic_percepts
-        moved = getattr(basic, 'moved', None)
-        if not moved:
-            return
-        basic.moved = {}
-        if getattr(self, 'order_zero', None) is not None:
-            self.follow_members(moved)
-
-    def _zero_frozen_columns(self, grad):
-        frozen = [row for row in self._frozen_rows() if row < grad.shape[1]]
+    def _zero_frozen_entries(self, grad):
+        frozen = [row for row in self._frozen_rows() if row < self.order_zero.nOutput]
         if not frozen:
             return grad
-        grad = grad.clone()
-        grad[:, frozen] = 0
-        return grad
-
-    def order_zero_input(self, perception):
-        """Each reading's combined vector on two lanes, ``[B, E, 2, D]``:
-        the active basic percepts combined on the gaps, then the reading's
-        own place at the degree that it is present. Its time is not read."""
-        from OrderZero import combine
-        self._follow_moved()
-        basic = self.basic_percepts
-        rows = [key[1] for key in perception.keys]
-        promoted = basic.promoted[:len(basic.index)]
-        codes = (torch.stack([basic.read_codes(row) if bool(promoted[row]) else
-                              basic.read_pair(basic.lanes(row))
-                              for row in rows]) if rows else basic.codes.new_zeros(0, 2, basic.width))
-        model = getattr(self, '_model', None)
-        registry = getattr(model, 'where_registry', None)
-        brackets = perception.where
         sigma = self.order_zero
-        where = None
-        if brackets is not None and sigma.where_width:
-            starts = brackets[..., 0].long()
-            valid = (brackets[..., 1] > brackets[..., 0])[..., None]
-            if registry is not None:
-                # A bracket beyond the text's addresses has no place to read.
-                start, end = registry.slices['text']
-                inside = (starts >= 0) & (starts < end - start)
-                valid = valid & inside[..., None]
-                where = torch.where(valid, registry.encode('text', torch.where(inside, starts, -1)), 0.)
-            else:
-                where = brackets.new_zeros(*starts.shape, sigma.where_width, dtype=codes.dtype)
-        combined = combine(perception.values, codes.to(perception.values), where=where)
-        # A reading with no bracket has no place to read.
-        return torch.nn.functional.pad(combined, (0, sigma.nInput - combined.shape[-1]))
+        held = torch.isin(sigma.entry_row, torch.tensor(frozen, device=sigma.entry_row.device))
+        return torch.where(held.to(grad.device), torch.zeros_like(grad), grad)
 
-    def order_zero_field(self, combined, rows):
-        """The order-zero concepts of ``rows`` (``-1`` reads nothing) for
-        each reading of ``combined``, ``[len(rows), B, E, 2]``."""
+    def order_zero_field(self, lanes, inputs, rows):
+        """The order-zero concepts of ``rows`` (``-1`` reads nothing) from
+        the values ``lanes`` ``[P, B, E, 2]`` of the basic percepts
+        ``inputs`` (``[P]``), each on its two lanes: the Not, then the Sigma.
+        ``[len(rows), B, E, 2]``, each concept's signed value on two lanes."""
         from Layers import signed_lanes
-        rows = torch.as_tensor(rows, dtype=torch.long, device=combined.device)
-        n0 = self._order_caps()[0]
-        columns = torch.where((rows >= 0) & (rows < n0), rows, -1)
-        self._follow_moved()
-        y = self.order_zero.concepts(combined, columns)
-        return signed_lanes(y, dim=-1).permute(2, 0, 1, 3)
+        sigma = self.install_order_zero()
+        return signed_lanes(sigma(self.order_zero_not(lanes), inputs, rows), dim=-1)
 
     def add_concept_feature(self, row, tower, feature, weight=0.0, *, negated=False):
         """Concept literals address basic percepts; native selectors collect them."""
@@ -14945,42 +14891,38 @@ class ConceptualSpace(Space):
         if getattr(self, '_frozen_concepts', None) and row in self._frozen_rows():
             return False
         # The allocator records which percepts a concept was started from;
-        # the concept reads its column of the order-zero Sigma.
+        # the concept reads each one's row in the order-zero Sigma.
         negated = bool(negated or weight < 0)
         added = _concept_alloc_of(self).order_zero_members.add(
             row, int(feature), negated, abs(float(weight)))
-        if added and weight:
-            self._start_order_zero_column(row, int(feature), -1. if negated else 1.)
+        if added:
+            # A member recorded at weight zero is a candidate: an entry at
+            # zero, whose sign the gradient gives it.
+            self._start_order_zero_entry(row, int(feature), (-1. if negated else 1.) * (1. if weight else 0.))
         return added
 
     @torch.no_grad()
-    def _start_order_zero_column(self, row, percept, sign):
-        """A member joins the concept's column (rule 8b, rule 54):
-        ``sign * (P / |P|^2 - N / |N|^2)`` from what tells for it and what
-        tells against it is added, the Not of a member subtracted."""
+    def _start_order_zero_entry(self, row, percept, sign):
+        """A member joins the concept: its entry on the member's row is
+        written at one (at zero for a candidate, ``sign`` zero), or added
+        to; a Not member is made a Not entry by the Not (the concept reads
+        the row exchanged). An entry is for or Not, never both: where the
+        concept already has a weighted entry on the row, of either kind, a
+        member of the other kind leaves it as it is."""
         sigma = self.install_order_zero()
         if row >= sigma.nOutput:
             raise ValueError('an order-zero concept lies outside the order-zero Sigma')
-        positive, negative = self.basic_percepts.read_pair(self.basic_percepts.lanes(int(percept)))
-        sigma.add_member(row, positive, sign, against=negative)
-
-    @torch.no_grad()
-    def follow_members(self, changed):
-        """A concept's column follows its members' codes (rule 55): where a
-        member's read pair changed (``BasicPercepts.follow``), its share is
-        taken out of every column started from it and its new share put in,
-        so that what was learned of the rest of the column stays."""
-        from OrderZero import OrderZeroSigma
-        if not changed:
-            return
-        sigma = self.install_order_zero()
-        for row, member, negated in tuple(_concept_alloc_of(self).order_zero_members.started()):
-            if member not in changed or row >= sigma.nOutput:
-                continue
-            (p0, n0), (p1, n1) = changed[member]
-            sign = -1. if negated else 1.
-            delta = OrderZeroSigma.member_column(p1, n1) - OrderZeroSigma.member_column(p0, n0)
-            sigma.add_share(row, sign * delta)
+        percept = int(percept)
+        entry = sigma.find(row, percept)
+        if entry is None:
+            if sign < 0:
+                self.order_zero_not.make(sigma, row, percept, weight=1.)
+            else:
+                sigma.add(row, percept, abs(float(sign)))
+        elif sign > 0 and float(sigma.value[entry]) >= 0:
+            sigma.add(row, percept, 1.)
+        elif sign < 0 and float(sigma.value[entry]) == 0:
+            self.order_zero_not.make(sigma, row, percept, weight=1.)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``."""
@@ -15110,7 +15052,7 @@ class ConceptualSpace(Space):
 
     def cs_read_memberships(self, percepts, extents, *, publish=True):
         """Read the nominated basic percepts inside each bracket, then the
-        order-zero concepts from their combined vectors.
+        order-zero concepts from their rows.
 
         The reading axis batches independent attention brackets. No concept
         owns a position; the retained native events own attribution locations.
@@ -15131,8 +15073,8 @@ class ConceptualSpace(Space):
     def cs_read_percept_field(self, perception, *, publish=True):
         """The order-zero concepts of the current open-attention percept field.
 
-        Each reading's active basic percepts are combined, and the Sigma of
-        order zero reads the combination (``OrderZero``).
+        In each reading the Not makes each basic percept's row one signed
+        value, for less against, and the Sigma of order zero reads those.
         """
         members = tuple(_concept_alloc_of(self).order_zero_members)
         if publish:
@@ -15150,15 +15092,16 @@ class ConceptualSpace(Space):
             required = torch.where(negated[:, None, None, None], membership.flip(-1), membership)
             self._bind_attended_concepts(required, torch.tensor(
                 [row for row, _, _ in members], dtype=torch.long))
-        combined = self.order_zero_input(perception)
-        B = combined.shape[0]
+        values = perception.values
+        inputs = [key[1] for key in perception.keys]
+        B = values.shape[1]
         n0 = self._field_caps()[0] if publish else self._order_caps()[0]
         addresses = (self._field_inventory_rows() if publish else
-                     torch.arange(self.nVectors, device=combined.device))
+                     torch.arange(self.nVectors, device=values.device))
         fields = []
         for b in range(B):
             rows = addresses[:, b] if addresses.ndim == 2 else addresses
-            fields.append(self.order_zero_field(combined[b:b+1], rows[:n0]))
+            fields.append(self.order_zero_field(values[:, b:b+1], inputs, rows[:n0]))
         field = torch.cat(fields, 1)
         if publish:
             object.__setattr__(self, '_cs_order0_raw', field.detach())
@@ -15170,7 +15113,7 @@ class ConceptualSpace(Space):
         with ``batch``, of that stream alone (``B`` is one).
 
         A concept's single signed value is never both; it is read both
-        across its members' rows, the basic percepts its column was started
+        across its members' rows, the basic percepts it was started
         from (the allocator's record of its members): the least of what they give for
         and what they give against, each joined by the union. A member gives
         its for lane as for and its against lane as against; a Not member
@@ -17741,13 +17684,7 @@ class ConceptualSpace(Space):
         band = torch.where(has_part, part_band, whole_band)
         band = torch.where(active.reshape(B, 1, 1), band, torch.zeros_like(band))
         from OrderZero import read_word
-        sigma = self.order_zero
-        place = band[..., :sigma.nInput - sigma.content_width]
-        if place.shape[-1] != sigma.nInput - sigma.content_width:
-            place = torch.zeros(*band.shape[:-1], sigma.nInput - sigma.content_width,
-                                dtype=band.dtype, device=band.device)
-        location_activations = read_word(percept_evidence, admitted, order_zero_reading.unsqueeze(1),
-                                         place, content_width=sigma.content_width)
+        location_activations = read_word(percept_evidence, admitted, order_zero_reading.unsqueeze(1))
         decoded = self.decode_sparse_concept_rows(
             rows, location_activations.unsqueeze(1), band.unsqueeze(1),
             staged_rows=staged_rows, staged_atoms=staged_atoms)

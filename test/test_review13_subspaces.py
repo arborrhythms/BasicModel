@@ -62,7 +62,7 @@ def test_native_percept_rows_and_net_evidence_are_detached_code_sources():
     assert not isinstance(cb.W, nn.Parameter) and not cb.W.requires_grad
     assert list(cb.parameters()) == []
     assert not result.requires_grad
-    assert ps.W.grad is None and cs.order_zero.weight.grad is None
+    assert ps.W.grad is None and cs.order_zero.value.grad is None
     with torch.no_grad():
         ps.W[4, 1] += .1
         cb.W.fill_(99.)

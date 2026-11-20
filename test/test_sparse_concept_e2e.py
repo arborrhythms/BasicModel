@@ -195,13 +195,13 @@ def test_getparameters_includes_csw_after_population():
     A, _ = recurrent_interpretation(cs, [1, 2], WORD, key="cat")
     after = cs.getParameters()
     # An order-zero concept writes no edge of the definition store; what
-    # learns is its column of the order-zero Sigma, a parameter.
+    # learns is its entry in the order-zero Sigma, a parameter.
     csw = [matrix.values for matrix in Spaces._concept_alloc_of(cs).layer().definition_matrices()
            if matrix.values is not None]
     assert not csw
     after_ids = set(id(p) for p in after)
-    assert id(cs.order_zero.weight) in after_ids
-    assert float(cs.order_zero.weight[:, cs._csw_row_of(A)].abs().sum()) > 0
+    assert id(cs.order_zero.value) in after_ids
+    assert sum(w for _, w, _ in cs.order_zero.entries(cs._csw_row_of(A))) > 0
     assert len(after) >= len(base)
 
 

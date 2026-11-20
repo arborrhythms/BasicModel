@@ -158,8 +158,10 @@ def test_3_the_lessons_concepts_under_each_layout(lesson):
     print(dict(nominated=forms, vocabulary=vocabulary))
     codes = basic.codes[rows].double().numpy()
     concepts = [owner.concept_of_basic_percept(r) for r in rows]
-    model_cols = owner.order_zero.weight[:basic.width, concepts].detach().double().numpy().T
-    print('model as built', ct.told_apart(ct.readings(codes, model_cols)))
+    # The model's concepts read rows, not codes (rule 62): the trial's
+    # columns below are the trial's own.
+    print('model as built: concepts reading their own row alone',
+          sum(all(i == r for i, _, _ in owner.order_zero.entries(c)) for c, r in zip(concepts, rows)), 'of', len(rows))
     print('model codes, 8b columns', ct.told_apart(ct.readings(codes)))
     built = ct.Coder('built').admit_all(vocabulary)
     stand_in = np.stack([built.parts_vector(f)[:64] for f in forms])

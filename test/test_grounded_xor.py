@@ -99,7 +99,7 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     native[:, 0, 0] = torch.tensor([48, 49, 65])
     store = Spaces._concept_alloc_of(cs).layer()
     # The name reads its column of the order-zero Sigma.
-    optimizer = torch.optim.Adam([cs.order_zero.weight], lr=.03)
+    optimizer = torch.optim.Adam([cs.order_zero.value], lr=.03)
     # Name single primitive occurrences. The two-position truth table must
     # subsequently arise from extent readout, never from these targets.
     named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])

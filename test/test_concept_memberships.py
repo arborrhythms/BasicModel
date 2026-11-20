@@ -200,14 +200,16 @@ def test_member_record_keeps_frozen_rows_out_of_the_learned_columns(tmp_path):
     model.getOptimizer(lr=.001)
     record = Spaces._concept_alloc_of(cs).order_zero_members
     assert {row for row, _, _ in record} == {frozen, live}
-    # The record is no parameter; the columns it started are the order-zero
-    # Sigma's, and a frozen concept's column receives no gradient.
+    # The record is no parameter; the entries it started are the order-zero
+    # Sigma's, and a frozen concept's entries receive no gradient.
     assert not any(isinstance(value, torch.Tensor) for value in record.values())
     cs._prepare_part_learning()
     assert {row for row, _, _ in record} == {frozen, live}
-    cs.order_zero.weight.sum().backward()
-    assert float(cs.order_zero.weight.grad[:, frozen].abs().sum()) == 0
-    assert float(cs.order_zero.weight.grad[:, live].abs().sum()) > 0
+    sigma = cs.order_zero
+    sigma.weight.sum().backward()
+    rows = sigma.entry_row[:sigma.nnz]
+    assert float(sigma.value.grad[:sigma.nnz][rows == frozen].abs().sum()) == 0
+    assert float(sigma.value.grad[:sigma.nnz][rows == live].abs().sum()) > 0
 
 
 def test_definition_boundary_preserves_gradient_owned_codes(tmp_path):

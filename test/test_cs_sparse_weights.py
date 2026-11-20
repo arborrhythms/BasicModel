@@ -170,10 +170,10 @@ def test_membership_read_is_input_dependent_and_differentiable():
     # The basic percepts read the property memberships differentiably.
     field.values[..., 0].sum().backward(retain_graph=True)
     assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
-    # The concept reads its column of the order-zero Sigma.
+    # The concept reads its entries in the order-zero Sigma.
     read.sum().backward()
     sigma = cs.order_zero
-    assert sigma.weight.grad is not None and sigma.weight.grad.abs().sum() > 0
+    assert sigma.value.grad is not None and sigma.value.grad.abs().sum() > 0
     # The read depends on its input, at the basic percepts and at the concept.
     values = field.values.detach().clone()
     with torch.no_grad():

@@ -34,7 +34,7 @@ def test_net_evidence_subspaces_and_detached_native_sources():
     assert not result.requires_grad
     assert not result[67:].any()
     assert not isinstance(ws.W, nn.Parameter)
-    assert ps.W.requires_grad and cs.order_zero.weight.requires_grad
+    assert ps.W.requires_grad and cs.order_zero.value.requires_grad
     ws.getW().sum().backward()
     assert ws.primitive_properties.members.grad.abs().sum() > 0
 
@@ -103,7 +103,7 @@ def test_sentence_reverse_reaches_native_prototypes_and_evidence(monkeypatch):
             # The native prototypes, and the order-zero Sigma that reads the
             # basic percepts (rule 8b; the feature table is no longer read).
             parameters = [self.perceptualSpace.subspace.what.W]
-            parameters += [self._concept_owner().order_zero.weight]
+            parameters += [self._concept_owner().order_zero.value]
             parameters = list({id(p):p for p in parameters if torch.is_tensor(p) and p.requires_grad}.values())
             pullback = getattr(self, '_sentence_pullback', None)
             grads = (pullback.gradients(total,parameters) if pullback is not None else
