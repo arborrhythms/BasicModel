@@ -170,7 +170,7 @@ def stage_case_bank(space, required_ids, *, limit):
             rows.append(row)
     rows = rows[:int(limit)]
     written = [] if store.values is None else (store.values.detach() > 0).cpu().tolist()
-    # Each written entry reads the concepts its thing holds.
+    # Each written entry reads the concepts its symbol holds.
     edges = [(target, source)
              for (target, column), present in zip(zip(store._rows, store._cols), written)
              if present for source in store.column_rows(column)]

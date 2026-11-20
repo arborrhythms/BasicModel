@@ -5925,7 +5925,6 @@ class ConceptualAttentionLayer(SparseLayer):
         # A square store's columns are things: see :meth:`square`.
         self._paired_sources = False
         self._room = None
-        self.brought = {}
         for name, value in (
                 ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
@@ -5980,89 +5979,58 @@ class ConceptualAttentionLayer(SparseLayer):
                 setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
 
     @classmethod
-    def square(cls, n_concepts, device=None, *, percepts=0, symbols=None):
+    def square(cls, n_concepts, device=None, *, symbols=None):
         """``n_concepts`` concept rows read things, in two lane blocks (for,
-        against): the rows of the first Pi (``percepts`` basic percepts),
-        the rows of the symbols' Pi (room for ``symbols``, by default one for
-        each concept row), and the bias (EVERYTHING, read at (1, 0)). No
-        column is a concept's row. A concept may not read a thing that holds
-        it.
+        against): the rows of the symbols' Pi (room for ``symbols``, by
+        default one for each concept row) and the bias (EVERYTHING, read at
+        (1, 0)). No column is a concept's row. A concept may not read a
+        symbol that holds it.
         """
         n = int(n_concepts)
-        percepts = int(percepts)
         symbols = n if symbols is None else int(symbols)
-        if percepts < 0 or symbols < 1:
-            raise ValueError('the concept store needs room for its things')
-        layer = cls(2 * (percepts + symbols + 1), n, device=device, forbid_self_edges=True)
+        if symbols < 1:
+            raise ValueError('the concept store needs room for its symbols')
+        layer = cls(2 * (symbols + 1), n, device=device, forbid_self_edges=True)
         layer._paired_sources = True
-        layer._room = (percepts, symbols)
+        layer._room = symbols
         return layer
 
-    # -- the columns are things. Each lane block holds one column for each
-    # row of the first Pi (a basic percept), one for each row of the symbols'
-    # Pi (a symbol, :class:`Symbols.SymbolTable`) and the bias. A thing is
-    # ``('bp', p)`` or ``('sym', s)``; the bias is ``None``. Every reader and
-    # writer of a column goes through the functions below. ------------------
+    # -- the columns are things: each lane block holds one column for each
+    # row of the symbols' Pi (a symbol, :class:`Symbols.SymbolTable`) and
+    # the bias. A thing is ``('sym', s)``; the bias is ``None``. Every
+    # reader and writer of a column goes through the functions below. -----
 
     @property
     def symbol_table(self):
-        """The symbols above order zero, whose rows are this store's symbol
-        columns, with room for :attr:`_room`'s symbols."""
+        """The symbols above order zero, whose rows are this store's
+        columns, with room for :attr:`_room` symbols."""
         table = self.__dict__.get('_symbol_table')
         if table is None:
             from Symbols import SymbolTable
-            room = self._room[1] if self._room is not None else self.nOutput
+            room = self._room if self._room is not None else self.nOutput
             table = self.__dict__['_symbol_table'] = SymbolTable(room)
         return table
 
-    def set_room(self, percepts=None, symbols=None):
-        """Give the store room for ``percepts`` basic percepts (and
-        ``symbols`` symbols); each entry keeps its thing and its lane."""
-        old = self._room
-        new = (old[0] if percepts is None else int(percepts),
-               old[1] if symbols is None else int(symbols))
-        if new == old:
-            return
-        if new[1] != old[1] and len(self.symbol_table):
-            raise ValueError('the symbol room is fixed once a symbol is made')
-        things = [(self.thing_of_column(c), self.column_lane(c)) for c in self._cols]
-        self._room = new
-        self._cols = [self.column_of_thing(thing, lane) for thing, lane in things]
-        self._index = {pair: i for i, pair in enumerate(zip(self._rows, self._cols))}
-        self.nInput = 2 * (new[0] + new[1] + 1)
-        self._dev_cache = None
-        for name in ('_fold_partners', '_thing_specs', '_presence_ranges'):
-            self.__dict__.pop(name, None)
-
     @property
     def lane_width(self):
-        """Columns in one lane block: the basic percepts, the symbols, the bias."""
-        percepts, symbols = self._room
-        return percepts + symbols + 1
+        """Columns in one lane block: the symbols and the bias."""
+        return self._room + 1
 
     def column_of_thing(self, thing, lane=0):
         """The column of ``thing`` (``None``: the bias) in lane block ``lane``."""
-        percepts, symbols = self._room
         if thing is None:
-            position = percepts + symbols
+            position = self._room
+        elif thing[0] == 'sym' and 0 <= int(thing[1]) < self._room:
+            position = int(thing[1])
         else:
-            kind, index = thing[0], int(thing[1])
-            if kind == 'bp' and 0 <= index < percepts:
-                position = index
-            elif kind == 'sym' and 0 <= index < symbols:
-                position = percepts + index
-            else:
-                raise ValueError(f'{thing!r} is no thing of this store')
+            raise ValueError(f'{thing!r} is no thing of this store')
         return position + int(lane) * self.lane_width
 
     def thing_of_column(self, column):
         """The thing that ``column`` of either lane block reads, ``None`` for
         the bias."""
-        percepts, symbols = self._room
         position = int(column) % self.lane_width
-        if position == percepts + symbols:
-            return None
-        return ('bp', position) if position < percepts else ('sym', position - percepts)
+        return None if position == self._room else ('sym', position)
 
     def column_lane(self, column):
         """The lane block of ``column``: 0 for, 1 against."""
@@ -6072,17 +6040,13 @@ class ConceptualAttentionLayer(SparseLayer):
         return self.column_of_thing(None, lane)
 
     def thing_rows(self, thing):
-        """The store rows of the concepts ``thing`` holds: a symbol's
-        members; for a basic percept, the concept its nomination brought
-        (the record, :attr:`brought`). A member with no row is left out."""
+        """The store rows of the concepts a symbol holds; a member with no
+        row is left out."""
         if thing is None:
             return ()
-        if thing[0] == 'sym':
-            rows = (self._tensor_rows.get(('concept', int(member)))
-                    for member in self.symbol_table.members(int(thing[1])))
-            return tuple(int(row) for row in rows if row is not None)
-        row = self.brought.get(int(thing[1]))
-        return () if row is None else (int(row),)
+        rows = (self._tensor_rows.get(('concept', int(member)))
+                for member in self.symbol_table.members(int(thing[1])))
+        return tuple(int(row) for row in rows if row is not None)
 
     def column_rows(self, column):
         """:meth:`thing_rows` of the thing ``column`` reads."""
@@ -6091,7 +6055,7 @@ class ConceptualAttentionLayer(SparseLayer):
     def _thing_spec(self, position):
         """``(thing, member rows, complete)`` of a lane-block position:
         ``complete`` is false where a member of a symbol has no row."""
-        key = (self.symbol_table.revision, len(self._tensor_rows), len(self.brought), self._room)
+        key = (self.symbol_table.revision, len(self._tensor_rows), self._room)
         cache = self.__dict__.get('_thing_specs')
         if cache is None or cache[0] != key:
             cache = self.__dict__['_thing_specs'] = (key, {})
@@ -6099,12 +6063,7 @@ class ConceptualAttentionLayer(SparseLayer):
         if found is None:
             thing = self.thing_of_column(position)
             rows = self.thing_rows(thing)
-            if thing is None:
-                complete = True
-            elif thing[0] == 'sym':
-                complete = len(rows) == len(self.symbol_table.members(int(thing[1]))) > 0
-            else:
-                complete = bool(rows)
+            complete = thing is None or len(rows) == len(self.symbol_table.members(int(thing[1]))) > 0
             found = cache[1][position] = (thing, rows, complete)
         return found
 
@@ -6114,29 +6073,24 @@ class ConceptualAttentionLayer(SparseLayer):
         return self.column_rows(column)
 
     def add_edge(self, row, col, weight=0.0, role=None):
-        """An entry of ``row`` on column ``col``: a thing that exists (a
-        basic percept within the room, a symbol the table has made) or the
-        bias."""
+        """An entry of ``row`` on column ``col``: a symbol the table has made,
+        or the bias."""
         if self._paired_sources and role is None and 0 <= int(col) < self.nInput:
             thing = self.thing_of_column(col)
-            if thing is not None and thing[0] == 'sym' and int(thing[1]) >= len(self.symbol_table):
+            if thing is not None and int(thing[1]) >= len(self.symbol_table):
                 raise ValueError(f'column {int(col)} reads symbol {thing[1]}, which the table has not made')
         return super().add_edge(row, col, weight=weight, role=role)
 
-    def bind(self, inventory_rows, *, percepts=None):
+    def bind(self, inventory_rows):
         """A differentiable view of the entries whose rows are seated in
-        ``inventory_rows``, over the things they read.
+        ``inventory_rows``, over the symbols they read.
 
         The view's rows are the seats; its columns are two lane blocks of
-        the things read (``view._things``) and the bias. ``view._thing_seats``
-        (``[T, K]``, ``-1`` for none) gives the seats of each thing's member
-        concepts; a basic percept's is the concept its nomination brought,
-        read only where the reading carries no basic percepts. With
-        ``percepts`` (basic percept -> its index in the reading's values),
-        ``view._thing_percepts`` gives each basic percept's index (``-1``
-        where the reading does not hold it; ``-2`` for a symbol, or with no
-        ``percepts``). An entry whose thing cannot be read is missing: it
-        contributes no evidence, as a source outside the field.
+        the symbols read (``view._things``) and the bias.
+        ``view._thing_seats`` (``[T, K]``, ``-1`` for none) gives the seats
+        of each symbol's member concepts. An entry whose symbol has a member
+        that is not seated is missing: it contributes no evidence, as a
+        source outside the field.
         """
         if not self._paired_sources:
             return super().bind(inventory_rows)
@@ -6153,25 +6107,19 @@ class ConceptualAttentionLayer(SparseLayer):
         slots, specs = {}, []
         for i in selected:
             position = self._cols[i] % width
-            if position not in slots and self.thing_of_column(position) is not None:
+            if position not in slots and position != self._room:
                 slots[position] = len(specs)
                 specs.append(self._thing_spec(position))
         T = len(specs)
         view = SparseLayer(2 * (T + 1), size, nonlinear=False, device=device)
         members = max([1] + [len(rows) for _, rows, _ in specs])
         seats = torch.full((T, members), -1, dtype=torch.long)
-        found = torch.full((T,), -2, dtype=torch.long)
         complete = []
         for slot, (thing, rows, whole) in enumerate(specs):
             seated = [lookup.get(row, -1) for row in rows]
             if seated:
                 seats[slot, :len(seated)] = torch.tensor(seated, dtype=torch.long)
-            ok = whole and all(seat >= 0 for seat in seated)
-            if thing[0] == 'bp' and percepts is not None:
-                index = percepts.get(int(thing[1]))
-                found[slot] = -1 if index is None else int(index)
-                ok = index is not None
-            complete.append(ok)
+            complete.append(whole and all(seat >= 0 for seat in seated))
         host_rows, host_cols, missing = [], [], []
         for i in selected:
             column = self._cols[i]
@@ -6195,7 +6143,6 @@ class ConceptualAttentionLayer(SparseLayer):
         view._fold_source_offset = self.nInput // 2
         view._things = [thing for thing, _, _ in specs]
         view._thing_seats = seats.to(device)
-        view._thing_percepts = found.to(device)
         view._thing_complete = torch.tensor(complete, dtype=torch.bool, device=device)
         return view
 
@@ -6417,38 +6364,31 @@ class ConceptualAttentionLayer(SparseLayer):
         return weights[(positions - base) >= free].sum()
 
 
-def thing_lanes(view, seat_values, percept_values=None):
-    """The two lanes of each thing of a bound ``view``, ``[T, N, 2]``.
-
-    ``seat_values`` (``[S, N, 2]``) are the seats' lanes. A symbol's lanes
-    are the product of its members' lanes on each lane (the symbols' Pi, the
-    same fold as a basic percept's over its parts). A basic
-    percept's are its row's two values in the reading, ``percept_values``
-    (``[P, N, 2]``, by ``view._thing_percepts``); with none, the lanes of
-    the concept its nomination brought. A thing that cannot be read is
-    nothing.
+def thing_lanes(view, seat_values):
+    """The two lanes of each symbol of a bound ``view``, ``[T, N, 2]``, from
+    the seats' lanes ``seat_values`` (``[S, N, 2]``): the product of its
+    members' lanes on each lane (the symbols' Pi, the same fold as a basic
+    percept's over its parts). A symbol of one member is a gather of that
+    member's lanes. A symbol that cannot be read is nothing.
     """
     seats = view._thing_seats
     T, K = seats.shape
     S, N = seat_values.shape[:2]
     if not T:
         return seat_values.new_zeros(0, N, 2)
-    padded = torch.cat((seat_values, seat_values.new_ones(1, N, 2)))
-    index = torch.where(seats >= 0, seats, S).reshape(-1)
-    lanes = padded.index_select(0, index).reshape(T, K, N, 2).prod(1)
-    lanes = lanes * view._thing_complete[:, None, None].to(lanes)
-    found = view._thing_percepts
-    if percept_values is not None and bool((found >= -1).any()):
-        held = percept_values.index_select(0, found.clamp_min(0)).to(lanes)
-        held = held * (found >= 0)[:, None, None].to(held)
-        lanes = torch.where((found >= -1)[:, None, None], held, lanes)
-    return lanes
+    if K == 1:
+        lanes = seat_values.index_select(0, seats[:, 0].clamp_min(0))
+    else:
+        padded = torch.cat((seat_values, seat_values.new_ones(1, N, 2)))
+        index = torch.where(seats >= 0, seats, S).reshape(-1)
+        lanes = padded.index_select(0, index).reshape(T, K, N, 2).prod(1)
+    return lanes * view._thing_complete[:, None, None].to(lanes)
 
 
-def thing_input(view, seat_values, percept_values=None):
-    """The view's input, ``[2 (T + 1), N]``: each thing's for lane, the
-    bias at one, each thing's against lane, the bias's against at zero."""
-    lanes = thing_lanes(view, seat_values, percept_values)
+def thing_input(view, seat_values):
+    """The view's input, ``[2 (T + 1), N]``: each symbol's for lane, the
+    bias at one, each symbol's against lane, the bias's against at zero."""
+    lanes = thing_lanes(view, seat_values)
     N = seat_values.shape[1]
     return torch.cat((lanes[..., 0], lanes.new_ones(1, N), lanes[..., 1], lanes.new_zeros(1, N)))
 
@@ -6456,8 +6396,8 @@ def thing_input(view, seat_values, percept_values=None):
 def seat_lanes(view, combined, size):
     """A result over the view's columns (``[2 (T + 1), N]``) carried to the
     seats, ``[size, N, 2]``: each thing's two lanes reach the seats of the
-    concepts it holds (a symbol's members; a basic percept's brought
-    concept), the greatest where several reach one seat."""
+    concepts it holds (a symbol's members), the greatest where several
+    reach one seat."""
     T = view.nInput // 2 - 1
     N = combined.shape[-1]
     result = combined.new_zeros(size, N, 2)
@@ -6594,7 +6534,6 @@ class ConceptAllocator:
         self.declared_classes = {}       # "words", "objects" -> declared class concept
         self.order_zero_members = ConceptMembers()  # the percepts each order-zero concept started from
         self.brought = {}                # basic percept -> the order-zero concept its nomination brought
-        self.percept_room = None         # () -> the basic percepts' capacity, the store's columns
         self.order_from_row = None       # construction-owned physical block read
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
@@ -6651,9 +6590,7 @@ class ConceptAllocator:
                                        if self._layer_sizer
                                        else (1, 1, None, None))
             if roles is None and int(n_in) == int(n_out) + 1:
-                percepts = 0 if self.percept_room is None else int(self.percept_room())
-                got = ConceptualAttentionLayer.square(int(n_out), device=dev, percepts=percepts)
-                got.brought = self.brought
+                got = ConceptualAttentionLayer.square(int(n_out), device=dev)
             else:
                 got = ConceptualAttentionLayer(
                     max(1, int(n_in)), max(1, int(n_out)),
@@ -6665,18 +6602,6 @@ class ConceptAllocator:
         """The symbols above order zero (:class:`Symbols.SymbolTable`): the
         store's own, whose rows are its symbol columns."""
         return self.layer(0).symbol_table
-
-    def percepts_bringing(self, row):
-        """The basic percepts whose nomination brought the concept on store
-        row ``row`` (the record, :attr:`brought`)."""
-        key = (id(self.brought), len(self.brought), next(reversed(self.brought.items()), None))
-        cache = self.__dict__.get('_bringing')
-        if cache is None or cache[0] != key:
-            inverse = {}
-            for percept, brought in self.brought.items():
-                inverse.setdefault(int(brought), []).append(int(percept))
-            cache = self.__dict__['_bringing'] = (key, inverse)
-        return tuple(cache[1].get(int(row), ()))
 
     def _part_handle_reserved(self, cid):
         """An expired relation handle can still name an independent symbol."""

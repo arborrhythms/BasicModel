@@ -8,9 +8,9 @@ concepts may read one symbol. A symbol has its own index; it shares none
 with a concept. Its value in a reading is the Pi's product of its members'
 lanes, one value on each lane (for, against); it holds no code, place or
 time. A symbol's index is a column of the concept store
-(``ConceptualAttentionLayer``), beside the basic percepts' rows: a kind
-above order zero reads things, and a symbol is read by its row's fold, the
-product, as a basic percept is over its parts.
+(``ConceptualAttentionLayer``): a kind above order zero reads symbols, and a
+symbol is read by its row's fold, the product, as a basic percept is over
+its parts. A symbol's constituents are concepts of one order.
 """
 from OrderZero import SparsePiLayer3
 

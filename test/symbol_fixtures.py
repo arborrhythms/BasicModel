@@ -1,7 +1,6 @@
 """Concepts on store rows, for tests that write the concept store by hand.
 
-A kind reads things: a basic percept's row, or a symbol that holds a
-concept. A test that writes an entry onto a bare store row first records a
+A kind reads symbols, each holding a concept. A test that writes an entry onto a bare store row first records a
 concept on that row, so that the entry's symbol has a constituent.
 """
 
@@ -29,14 +28,6 @@ def symbol_columns(cs, reader, *rows, lane=0):
     readable(cs, *rows)
     return [store.column_of_thing(thing, lane) for row in rows
             for thing in cs.things_reading(reader, row)]
-
-
-def weight_key(cs, row):
-    """How :meth:`ConceptualSpace.concept_weights` names a kind's read of
-    the concept on ``row``: its basic percept ``('bp', p)`` where a basic
-    percept's nomination brought it, else the row (through a symbol)."""
-    percepts = cs._concept_allocator.percepts_bringing(int(row))
-    return ('bp', percepts[0]) if percepts else int(row)
 
 
 def store_columns(store, *rows, lane=0):

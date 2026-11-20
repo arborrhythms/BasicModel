@@ -24,9 +24,8 @@ def close(owner, rows, evidence):
     for row in positions:
         definitions[row] = []
         for matrix, operation in ((store, 'union'),):
-            # An entry reads a thing: the rows of the concepts it holds (a
-            # basic percept: the concept its nomination brought, since a
-            # concept field holds no basic percepts), or the bias (None).
+            # An entry reads a symbol, the rows of the concepts it holds, or
+            # the bias (None).
             edges = [(None if store.thing_of_column(column) is None else store.column_rows(column),
                       store.column_lane(column) == 1, index)
                      for (target, column), index in matrix._index.items()
@@ -50,7 +49,7 @@ def close(owner, rows, evidence):
                         item = torch.zeros_like(value)
                         item[..., 0] = 1.
                     else:
-                        # A thing is the product of the concepts it holds.
+                        # A symbol is the product of the concepts it holds.
                         held = [done.get(source, torch.zeros_like(value)) for source in sources]
                         item = torch.stack(held).prod(0) if held else torch.zeros_like(value)
                     operands.append(item.flip(-1) if negative else item)

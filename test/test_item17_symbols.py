@@ -670,8 +670,9 @@ def test_71_a_checkpoint_drops_the_symbols_made_for_a_concept():
         assert _symbols_nominated_by_mtm(table.state()) == table.state()
 
 
-# Rule 71: what a kind reads is a row of a Pi, a thing. The store's columns
-# are the basic percepts' rows and the symbols' rows, with the bias.
+
+# Rule 71: what a kind reads is a row of a Pi, a thing: above order zero, a
+# symbol. The store's columns are the symbols' rows, with the bias.
 
 def _store_things(owner):
     """Every entry of the store as (reader row, thing, lane)."""
@@ -683,58 +684,48 @@ def _store_things(owner):
 def test_cert_a_no_column_of_the_store_is_addressed_by_a_concepts_row(lesson_at_start):
     """(a) No reader in bin/ decodes a column as a concept's row (no column
     arithmetic over the store's row count), and after the lesson every
-    entry of the store reads a thing: a nominated basic percept or a symbol
-    of the table, or the bias."""
+    entry of the store reads a symbol of the table, or the bias; none a
+    basic percept."""
     import re
     pattern = re.compile(r'nOutput\s*\+\s*1|\(\s*n\s*\+\s*1\s*\)|_bias\s*\+\s*1')
     readers = ('Layers.py', 'Spaces.py', 'FieldProjection.py', 'CaseSelection.py', 'DefinitionFold.py')
     found = [(name, number, line.strip()) for name in readers
              for number, line in enumerate(Path('bin', name).read_text().splitlines(), 1)
-             if pattern.search(line) and 'old_size' not in line]
+             if pattern.search(line)]
     assert not found, found
     owner, _ = lesson_at_start
     store = owner._concept_allocator.layer(0)
-    basic, table = owner.basic_percepts, store.symbol_table
+    table = store.symbol_table
     entries = _store_things(owner)
-    kinds = {'bp': 0, 'sym': 0, 'bias': 0}
-    for row, thing, lane in entries:
-        assert lane in (0, 1)
-        if thing is None:
-            kinds['bias'] += 1
-        elif thing[0] == 'bp':
-            kinds['bp'] += 1
-            assert bool(basic.promoted[thing[1]]), thing
-        else:
-            kinds['sym'] += 1
-            assert thing[1] < len(table), thing
-    print(f'\nthe lesson store: {len(entries)} entries; on basic percepts {kinds["bp"]}, '
-          f'on symbols {kinds["sym"]}, on the bias {kinds["bias"]}; symbols in the table {len(table)}')
-    assert kinds['bp'] and len(entries) == sum(kinds.values())
+    on_symbols = [thing for _, thing, _ in entries if thing is not None]
+    assert all(thing[0] == 'sym' and thing[1] < len(table) for thing in on_symbols)
+    assert store.nInput == 2 * (table.capacity + 1)
+    print(f'\nthe lesson store: {len(entries)} entries, {len(on_symbols)} on symbols, '
+          f'{len(entries) - len(on_symbols)} on the bias; symbols in the table {len(table)}')
+    assert on_symbols
 
 
-def test_cert_b_words_reads_a_word_on_its_basic_percept(lesson_at_start):
-    """(b) The kind `words` reads a word on the word's basic percept: where
-    the basic percept is present it reads it, where it is not it does not,
-    with no symbol and no order-zero concept between (none is seated)."""
-    from dataclasses import replace
-    owner, fields = lesson_at_start
+def test_cert_b_words_reads_a_word_through_a_symbol_over_its_concept(lesson_at_start):
+    """(b) The kind `words` reads a word through a symbol over the word's
+    order-zero concept: where the concept is present it reads it, where it
+    is not it does not. No column is a basic percept."""
+    owner, _ = lesson_at_start
     alloc = owner._concept_allocator
+    table = alloc.symbol_table()
     words_row = owner._concept_row_of(alloc.declared_classes['words'])
     reads = [thing for row, thing, lane in _store_things(owner) if row == words_row and lane == 0]
-    assert reads and all(thing[0] == 'bp' for thing in reads), reads
-    percept = reads[0][1]
-    perception = next(f for f in fields if ('bp', percept) in f.keys)
-    index = perception.keys.index(('bp', percept))
-    present = torch.zeros_like(perception.values)
-    present[index, ..., 0] = 1.
-    rows = torch.tensor([words_row])
-    seats = torch.zeros(1, *perception.values.shape[1:3], 2)
-    read = lambda values: owner._concept_rung_presence(
-        seats, 0, 1, inventory_rows=rows, percepts=replace(perception, values=values))
-    lit, unlit = read(present), read(torch.zeros_like(present))
-    print(f'\nwords on basic percept {percept}: present {lit[0, 0, 0].tolist()}, absent {unlit[0, 0, 0].tolist()}')
-    assert bool((lit[..., 0] > .5).all()) and bool((unlit[..., 0] == 0).all())
-    assert not any(owner.concept_id_at_row(r) is not None and owner._row_order(r) == 0 for r in rows.tolist())
+    assert reads and all(thing[0] == 'sym' for thing in reads), reads
+    member, = table.members(reads[0][1])
+    word_row = owner._concept_row_of(member)
+    assert owner._row_order(word_row) == 0
+    rows = torch.tensor([word_row, words_row])
+    def read(value):
+        seats = torch.tensor([[[[value, 0.]]], [[[0., 0.]]]])
+        return owner._concept_rung_presence(seats, 1, 2, inventory_rows=rows)[0, 0, 0]
+    lit, unlit = read(.76), read(0.)
+    print(f'\nwords through symbol {reads[0][1]} over word concept {member}: '
+          f'present {lit.tolist()}, absent {unlit.tolist()}')
+    assert float(lit[0]) == pytest.approx(.76) and bool((unlit == 0).all())
 
 
 def test_cert_c_an_operator_class_reads_its_arguments_through_symbols(lesson_at_start):
@@ -747,11 +738,10 @@ def test_cert_c_an_operator_class_reads_its_arguments_through_symbols(lesson_at_
     arguments = set(alloc.formal_arguments.values())
     classes = {owner._concept_row_of(c) for c in alloc.operator_concepts.values()}
     entries = _store_things(owner)
-    read_symbols = {thing[1] for _, thing, _ in entries if thing is not None and thing[0] == 'sym'}
+    read_symbols = {thing[1] for _, thing, _ in entries if thing is not None}
     by_class = [(row, thing) for row, thing, lane in entries if row in classes and thing is not None]
     assert by_class
     for row, thing in by_class:
-        assert thing[0] == 'sym'
         members = table.members(thing[1])
         assert set(members) <= arguments, members
         handle = table.handles[thing[1]]
@@ -759,53 +749,47 @@ def test_cert_c_an_operator_class_reads_its_arguments_through_symbols(lesson_at_
     for symbol, handle in enumerate(table.handles):
         entry = owner.mtm.entries.get(handle)
         assert symbol in read_symbols or (entry is not None and entry.symbol == table.brought[symbol]), handle
-    print(f'\noperator classes read {len(by_class)} symbols over arguments; table {len(table)}, '
-          f'read by a kind {len(read_symbols)}')
+    print(f'\noperator classes read {len(by_class)} entries on symbols over arguments; '
+          f'table {len(table)}, read by a kind {len(read_symbols)}')
 
 
 def _small_space():
-    """A space whose store has room for 8 basic percepts; concepts at
-    orders zero, one and two."""
+    """A space with concepts at orders zero, one, one, two and two."""
     from test_cs_sparse_weights import _cs, _mint_row
     cs = _cs(nS=16, order=3)
     store = cs._concept_allocator.layer(0)
-    store.set_room(percepts=8)
     ids = [cs.new_concept() for _ in range(5)]
     rows = [_mint_row(cs, order, cid) for order, cid in zip((0, 1, 1, 2, 2), ids)]
     return cs, store, ids, rows
 
 
-def test_cert_d_green_things_collect_from_every_lower_order():
-    """(d) One kind of order two reads a basic percept (Felix's word) and a
-    symbol over a concept of order one (cats); either evidenced is enough.
-    An entry on a thing of its own order is refused, with the reason."""
-    from dataclasses import dataclass
+def test_cert_d_green_things_collect_from_every_lower_epistemic_level():
+    """(d) One kind of order two reads a symbol over an order-zero concept
+    (Felix) and a symbol over an order-one concept (cats); either evidenced
+    is enough. A symbol with constituents of two orders is refused, and so
+    is an entry on a symbol at or above the kind's own epistemic level."""
     cs, store, ids, rows = _small_space()
-    word, cats, _, green, other = rows
-    cs._concept_allocator.brought[3] = word
-    cs.add_concept_edge(green, word, 1.)
+    felix, cats, _, green, other = rows
+    cs.add_concept_edge(green, felix, 1.)
     cs.add_concept_edge(green, cats, 1.)
+    table = store.symbol_table
     things = {thing for row, thing, _ in _store_things(cs) if row == green}
-    symbol = store.symbol_table.fit(ids[1])
-    assert things == {('bp', 3), ('sym', symbol)}
-    assert store.symbol_table.handles[symbol] == ('kind', ids[3], ids[1])
+    assert things == {('sym', table.fit(ids[0])), ('sym', table.fit(ids[1]))}
+    assert table.handles[table.fit(ids[1])] == ('kind', ids[3], ids[1])
+    inventory = torch.tensor([felix, cats, green])
 
-    @dataclass
-    class Reading:
-        keys: tuple
-        values: torch.Tensor
-    inventory = torch.tensor([cats, green])
-
-    def read(felix, cat):
-        seats = torch.tensor([[[[cat, 0.]]], [[[0., 0.]]]])
-        values = torch.tensor([[[[felix, 0.]]]])
-        return cs._concept_rung_presence(seats, 1, 2, inventory_rows=inventory,
-            percepts=Reading((('bp', 3),), values))[0, 0, 0, 0]
-    assert float(read(1., 0.)) > .5 and float(read(0., .8)) > .5 and float(read(0., 0.)) == 0.
-    with pytest.raises(ValueError, match='lower orders only'):
+    def read(f, c):
+        seats = torch.tensor([[[[f, 0.]]], [[[c, 0.]]], [[[0., 0.]]]])
+        return float(cs._concept_rung_presence(seats, 2, 3, inventory_rows=inventory)[0, 0, 0, 0])
+    assert read(.8, 0.) > .5 and read(0., .8) > .5 and read(0., 0.) == 0.
+    with pytest.raises(ValueError, match='lower epistemic levels only'):
         cs.add_concept_edge(green, other, 1.)
-    with pytest.raises(ValueError, match='lower orders only'):
-        cs.add_thing_edge(green, ('sym', cs.nominate_symbol(('test', ids[4]), ids[4])), 1.)
+    state = table.state()
+    state['symbols'].append((('test', 'mixed'), ids[0], (ids[0], ids[1])))
+    table.restore(state)
+    with pytest.raises(ValueError, match='concepts of one order'):
+        cs.add_thing_edge(green, ('sym', table.of(('test', 'mixed'))), 1.)
+    assert len(table) == 3
 
 
 def test_cert_e_a_symbol_of_two_constituents_reads_their_product_once():
@@ -813,6 +797,7 @@ def test_cert_e_a_symbol_of_two_constituents_reads_their_product_once():
     by the same class and fold as a basic percept (SparsePiLayer3); a kind
     that reads the symbol reads it once."""
     from OrderZero import SparsePiLayer3
+    from Layers import thing_lanes
     cs, store, ids, rows = _small_space()
     table = store.symbol_table
     assert isinstance(table.pi, SparsePiLayer3)
@@ -826,44 +811,38 @@ def test_cert_e_a_symbol_of_two_constituents_reads_their_product_once():
     lanes = torch.tensor([[[.5, .2]], [[.8, .5]]])
     torch.testing.assert_close(table.read(lanes, ids[1:3], [symbol])[0, 0], torch.tensor([.4, .1]))
     view = store.bind(torch.tensor(rows[1:4]))
-    from Layers import thing_lanes
     seats = torch.tensor([[[.5, .2]], [[.8, .5]], [[0., 0.]]])
     torch.testing.assert_close(thing_lanes(view, seats)[0, 0], torch.tensor([.4, .1]))
     assert len(view._things) == 1
 
 
 def test_cert_f_nothing_is_one_to_one():
-    """(f) A thing read by two kinds, a kind reading many things, a concept
-    in two symbols."""
+    """(f) A symbol read by two kinds, a kind reading many symbols, a
+    concept in two symbols."""
     cs, store, ids, rows = _small_space()
     word, cats, dogs, green, small = rows
-    cs._concept_allocator.brought[3] = word
-    cs._concept_allocator.brought[4] = word
     for kind in (green, small):
         cs.add_concept_edge(kind, cats, 1.)
     cs.add_concept_edge(green, dogs, 1.)
-    cs.add_thing_edge(green, ('bp', 5), 1.)
+    cs.add_concept_edge(green, word, 1.)
     entries = _store_things(cs)
     symbol = store.symbol_table.fit(ids[1])
     assert {row for row, thing, _ in entries if thing == ('sym', symbol)} == {green, small}
     assert len({thing for row, thing, _ in entries if row == green}) == 3
     second = cs.nominate_symbol(('test', 'second'), ids[1])
     assert second != symbol and set(store.symbol_table.reading(ids[1])) == {symbol, second}
-    # A concept two basic percepts brought is read on both.
-    assert set(cs.things_reading(green, word)) == {('bp', 3), ('bp', 4)}
 
 
-def test_cert_8_an_old_store_whose_columns_were_concept_rows_is_read_once_as_things():
+def test_cert_8_an_old_store_whose_columns_were_concept_rows_is_read_once_as_symbols():
     """An old checkpoint's store wrote each column as a concept's row. Read
-    once: a column of a concept that a basic percept's nomination brought
-    becomes that basic percept's row; any other becomes a symbol found or
-    made for the kind that read it; the bias stays the bias; values kept."""
+    once: each column becomes a symbol that holds that row's concept, found
+    or made for the kind that read it; the bias stays the bias; values
+    kept."""
     import torch.nn as nn
     from Models import _read_rows_as_things
     cs, store, ids, rows = _small_space()
     word, cats, _, green, _ = rows
-    cs._concept_allocator.brought[6] = word
-    # Three entries of `green`, written the old way: (source row, lane).
+    found = cs.nominate_symbol(('name', 'felix'), ids[0])
     read_as_rows = [(word, 0), (cats, 1), (None, 0)]
     store._rows, store._cols = [green] * 3, [0, 1, 2]
     store._init_vals = [.5, .25, 1.]
@@ -871,7 +850,7 @@ def test_cert_8_an_old_store_whose_columns_were_concept_rows_is_read_once_as_thi
     store.values = nn.Parameter(torch.tensor([.5, .25, 1.]))
     _read_rows_as_things(cs, store, read_as_rows)
     things = [(store.thing_of_column(c), store.column_lane(c)) for c in store._cols]
-    symbol = store.symbol_table.fit(ids[1])
-    assert things == [(('bp', 6), 0), (('sym', symbol), 1), (None, 0)]
-    assert store.symbol_table.handles[symbol] == ('kind', ids[3], ids[1])
+    made = store.symbol_table.fit(ids[1])
+    assert things == [(('sym', found), 0), (('sym', made), 1), (None, 0)]
+    assert store.symbol_table.handles[made] == ('kind', ids[3], ids[1])
     torch.testing.assert_close(store.values.detach(), torch.tensor([.5, .25, 1.]))
