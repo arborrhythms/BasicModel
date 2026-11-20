@@ -319,3 +319,47 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
         assert through_cap == 0.
     finally:
         model.End()
+
+
+def test_38b_the_reading_lesson_by_grades(tmp_path, monkeypatch):
+    """Certificate 38 (b), a learning certificate: the reading lesson teaches
+    the request, minimal sentences first; printed, before and after, are the
+    sentences read in order with no reading supplied. The grades of rule 70:
+    the sentence (a look of "words" returns every word), its words in order,
+    a word's parts (certificate 56 (a)). Recorded, not repaired."""
+    from SentenceLooks import Looks
+    from AttentionLesson import reading_lesson, minimal_first, in_order
+    from test_item18_expect import read
+    texts = ('alpha gamma', 'beta delta', 'alpha delta', 'beta gamma')
+    model = nominated_lesson(tmp_path, monkeypatch, texts)
+    run, seen = Looks.run, []
+    def observed(self, arrive, **kwargs):
+        result = run(self, arrive, **kwargs)
+        seen.append(result)
+        return result
+    monkeypatch.setattr(Looks, 'run', observed)
+    def count():
+        found = 0
+        for text in texts:
+            seen.clear()
+            read(model, text)
+            found += in_order(seen[0], len(text.split()))
+        return found
+    try:
+        before = count()
+        optimizer = model.getOptimizer(lr=.01)
+        grades = minimal_first(texts + ('alpha delta beta', 'beta gamma delta'))
+        costs = []
+        for grade in grades:
+            for presentation in range(8):
+                text = grade[presentation % len(grade)]
+                with reading_lesson(model, [text.split()]):
+                    seen.clear()
+                    read(model, text, training=True, optimizer=optimizer)
+                    costs.append(float(seen[0].looks.sum()))
+        after = count()
+        print(dict(grades=grades, in_order_before=before, in_order_after=after, of=len(texts),
+                   looks_taught=sum(costs)))
+        assert [len(grade) for grade in grades] == [4, 2] and grades[0] == list(texts)
+    finally:
+        model.End()

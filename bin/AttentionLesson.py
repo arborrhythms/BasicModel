@@ -137,6 +137,29 @@ def _reading(parts):
     return ReadingLesson(tuple(tuple(encode(part) for part in row) for row in parts))
 
 
+#: The grades of the reading lesson, each given only when the one before
+#: it is passed (successive approximation): the sentence read whole, its
+#: words in order, a word's parts.
+GRADES = ('sentence', 'words', 'parts')
+
+
+def minimal_first(sentences):
+    """The lesson's sentences by grade of length: the one-word sentences,
+    then the two-word, and so on, each a list; a parse that fails differs
+    from a shorter one that succeeds by one word."""
+    lengths = {}
+    for sentence in sentences:
+        lengths.setdefault(len(sentence.split()), []).append(sentence)
+    return [lengths[n] for n in sorted(lengths)]
+
+
+def in_order(reading, count):
+    """Whether a reading took the first ``count`` words, each once, in their
+    order (``reading.actions`` of one stream)."""
+    taken = [a for a in reading.actions[0].tolist() if a >= 0 and bool(reading.accepted[0, a])]
+    return taken == list(range(count))
+
+
 @contextmanager
 def reading_lesson(model, parts):
     """Teach the supplied part sequence during this training invocation only."""

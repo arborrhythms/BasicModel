@@ -30,6 +30,9 @@ def _checks(record, rung):
     if not all(word['known'] for word in record['words']):
         failures.append('unknown word')
     checks, words = rung['checks'], record['words']
+    order = record.get('order')
+    if 'in_order' in checks and (order is None or order != sorted(order) or len(order) != len(words)):
+        failures.append('words not read in order')
     if 'interpreted' in checks and not all(word['attention'] == 'interpreted' for word in words):
         failures.append('word not interpreted')
     if 'trusted_definition' in checks and not all(word['trusted'] for word in words):

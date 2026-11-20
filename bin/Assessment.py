@@ -369,6 +369,8 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
                 meaning=meaning, context_meanings=context_meanings, context_subjects=context_subjects,
                 answer=None, evidence_kind=None)
             if reading is not None:
+                taken = [a for a in reading.actions[0].tolist() if a >= 0 and bool(reading.accepted[0, a])]
+                result['order'] = list(dict.fromkeys(taken))
                 selected = [walk for walk in walks if walk['actions'] == reading.actions.tolist()]
                 result['attention'] = dict(accepted=reading.accepted[0].tolist(),
                     descended=reading.descended[0].tolist(), actions=reading.actions[0].tolist(),

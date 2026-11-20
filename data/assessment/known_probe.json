@@ -6,11 +6,11 @@
     {"rung": 1, "frame": "{word.form}", "kinds": ["word"], "tree": 0, "checks": ["interpreted", "same_object", "trusted_definition"]},
     {"rung": 2, "frame": "{word.form}", "kinds": ["words"], "tree": 0, "checks": ["twenty_words", "interpreted", "same_object", "trusted_definition", "distinct_objects", "said_back"]},
     {"rung": 3, "frame": "{name.form}", "kinds": ["name"], "tree": 0, "checks": ["one_object"]},
-    {"rung": 4, "frame": "{name.form} {verb.form}", "kinds": ["name", "verb"], "tree": ["verb", 0, 1], "checks": []},
-    {"rung": 5, "frame": "{determiner.form} {noun.form} {verb.form}", "kinds": ["determiner", "noun", "verb"], "tree": ["verb", ["modifier", 1, 0], 2], "checks": []},
-    {"rung": 6, "frame": "{determiner.form} {noun_modifier.form} {noun.form} {verb.form}", "kinds": ["determiner", "noun_modifier", "noun", "verb"], "tree": ["verb", ["modifier", ["modifier", 2, 1], 0], 3], "checks": []},
-    {"rung": 7, "frame": "{pronoun.form} {verb.form}", "context": ["{name.form} {verb.form}"], "kinds": ["pronoun", "name", "verb"], "tree": ["verb", ["bind", 0], 1], "checks": ["earlier_referent"]},
-    {"rung": 8, "frame": "{name.form} {verb.form} {verb_modifier.form}", "kinds": ["name", "verb", "verb_modifier"], "tree": ["verb", 0, ["modifier", 1, 2]], "checks": []},
-    {"rung": 9, "frame": "{determiner.form} {noun_modifier.form} {noun.form} {verb.form} {verb_modifier.form}", "kinds": ["determiner", "noun_modifier", "noun", "verb", "verb_modifier"], "tree": ["verb", ["modifier", ["modifier", 2, 1], 0], ["modifier", 3, 4]], "checks": []}
+    {"rung": 4, "frame": "{name.form} {verb.form}", "kinds": ["name", "verb"], "tree": ["verb", 0, 1], "checks": ["in_order"]},
+    {"rung": 5, "frame": "{determiner.form} {noun.form} {verb.form}", "kinds": ["determiner", "noun", "verb"], "tree": ["verb", ["modifier", 1, 0], 2], "checks": ["in_order"]},
+    {"rung": 6, "frame": "{determiner.form} {noun_modifier.form} {noun.form} {verb.form}", "kinds": ["determiner", "noun_modifier", "noun", "verb"], "tree": ["verb", ["modifier", ["modifier", 2, 1], 0], 3], "checks": ["in_order"]},
+    {"rung": 7, "frame": "{pronoun.form} {verb.form}", "context": ["{name.form} {verb.form}"], "kinds": ["pronoun", "name", "verb"], "tree": ["verb", ["bind", 0], 1], "checks": ["in_order", "earlier_referent"]},
+    {"rung": 8, "frame": "{name.form} {verb.form} {verb_modifier.form}", "kinds": ["name", "verb", "verb_modifier"], "tree": ["verb", 0, ["modifier", 1, 2]], "checks": ["in_order"]},
+    {"rung": 9, "frame": "{determiner.form} {noun_modifier.form} {noun.form} {verb.form} {verb_modifier.form}", "kinds": ["determiner", "noun_modifier", "noun", "verb", "verb_modifier"], "tree": ["verb", ["modifier", ["modifier", 2, 1], 0], ["modifier", 3, 4]], "checks": ["in_order"]}
   ]
 }
