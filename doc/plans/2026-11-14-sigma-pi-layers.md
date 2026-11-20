@@ -11547,6 +11547,30 @@ which form of the where match is built.
     model. `archer` is not read on `reach`: the first Pi is read
     only on the rows the lookup names (rule 33; §23.3c.3).
 
+16. One time (rule 64; Alec, §19.90 and §19.91; the census of
+    §23.T, which names each place). In a pass of its own, after the
+    looks:
+    - One integer clock. BasicModel.when_time is the clock; the
+      model_clock of LTM and of STM0 is no second clock kept in
+      step with it (say what names a row then). MTM's count of
+      closes, the tick of an STM read and the count that schedules
+      forgetting are counts and are named so, not times.
+    - One encoder: every code of a time comes from the one shared
+      instance; the encoders made on the spot go, and
+      SymbolExpectation's own present with them.
+    - The present is given to the chooser of each grammar and to the
+      operators, in the code. A stamp is no longer rewritten as an
+      age before they see it (RowTime.relative_idea, age_band and
+      their readers: say what each becomes).
+    - A comparator: one function over the present and a stamp that
+      gives how far back the stamp is, in ticks, offered to the
+      operators as a value.
+    - A concept keeps its .where and its .when; a row promoted to a
+      concept keeps its stamp (MemoryConsolidation).
+    Certificate 55. A change of what the chooser reads changes what
+    it has learned: return the lesson's sixteen sentences before and
+    after, and say what a checkpoint of before becomes.
+
 Run: the new test file; test/test_loop_of_looks.py and every test
 file that names Attention, ModelAttention, SentenceLooks,
 AttentionLesson, AttentionContext, LookForecast or WhereRegistry,
