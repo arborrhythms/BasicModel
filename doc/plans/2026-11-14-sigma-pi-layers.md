@@ -19526,3 +19526,7 @@ Spot tests by the pass; both gates pass on `c39d24b625`. The list and the lesson
 - *Certificate 25's fourth point reads nothing both ways,* since a word's tie to an object is not an entry of a Pi or a Sigma. It is a tie in MTM by §19.114; whether it becomes an entry when it is certain is rule 73's promotion, and is left to be seen in item 1.6 with a second modality. Certificate 26 had no look to read; it is round 6's looks that give one.
 - *The fits for kinds do not read the cone,* for its cost. Left, with the cost to be measured in round 7.
 - *The first Pi has no learned weight,* so the widening of a row and its against entries at order zero are trials only. Stated, not built: rule 72's cone at order zero waits on what round 6's looks make of the first Pi.
+
+#### The list at round 5's end (Claude, 2026-11-20)
+
+On round 5's last source (`c39d24b625`, run in a clone at `1253f6f257`, which adds only text), 278 files, six processes: 2 failed, 3,135 passed, 152 skipped, in 1,256 s. The two: `test_item18_expect.py::test_81` (recorded above; the pair candidates, to round 6's first pass) and `test_runtime_split_ingestion.py::test_store_truths_records_truths`, which rests on a walk. Round 4 ended at 22 failed and the repair at 7. The lesson over twelve runs is recorded with round 6's first return.
