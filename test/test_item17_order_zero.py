@@ -243,7 +243,10 @@ def test_a_word_reads_its_column_of_the_order_zero_sigma():
     code = torch.tensor([.6, .3, 0., 1.])
     column = torch.tensor([.3, .2, .1, .5, .25, -.25])
     place = torch.tensor([[[.1, .9], [.4, .6]]])
-    y = read_word(evidence, mask, torch.cat((column, code, torch.zeros(4)))[None, None], place, content_width=4)
+    # The two columns: the for weights, and the against weights begun as
+    # the for weights negated (rule 59).
+    columns = torch.cat((column, -column))
+    y = read_word(evidence, mask, torch.cat((columns, code, torch.zeros(4)))[None, None], place, content_width=4)
     # The run of parts is the presence on both lanes, the whole on its own:
     # [.9 * .8, .9 * 0] and [.5 * 0, .5 * 1].
     presence = torch.tensor([[[.72, 0.]], [[0., .5]]])  # [P=1 per location, lanes]
@@ -254,10 +257,10 @@ def test_a_word_reads_its_column_of_the_order_zero_sigma():
     # The against lane: a present run whose whole is witnessed not to hold
     # reads the percept against; an absent run reads nothing.
     against = read_word(torch.tensor([[[.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
-                        torch.cat((column, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
+                        torch.cat((columns, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
     assert float(against) < 0
     absent = read_word(torch.tensor([[[-.5, -1.]]]), torch.ones(1, 1, 2, dtype=torch.bool),
-                       torch.cat((column, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
+                       torch.cat((columns, code, torch.zeros(4)))[None, None], place[:, :1], content_width=4)
     assert float(absent) == 0
 
 

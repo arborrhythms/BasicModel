@@ -14818,14 +14818,17 @@ class ConceptualSpace(Space):
     REFERENCE_SLOTS = 2
 
     def order_zero_reading(self, rows, percepts):
-        """Each word's column of the order-zero Sigma and what its basic
-        percept's vector tells for it and against it (its read pair),
-        ``[..., D + 2C]``; zero where either is absent."""
+        """Each word's two columns of the order-zero Sigma, its for weights
+        and its against weights, and what its basic percept's vector tells
+        for it and against it (its read pair), ``[..., 2D + 2C]``; zero
+        where either is absent."""
         sigma, basic = self.order_zero, self.basic_percepts
         rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.weight.device)
         percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.weight.device)
         held = (rows >= 0) & (rows < sigma.nOutput) & (percepts >= 0)
-        column = sigma.weight.t().index_select(0, torch.where(held, rows, 0).flatten())
+        index = torch.where(held, rows, 0).flatten()
+        column = torch.cat((sigma.weight.t().index_select(0, index),
+                            sigma.against.t().index_select(0, index)), -1)
         column = column.reshape(*rows.shape, -1) * held[..., None]
         pair = basic.read_codes(torch.where(held, percepts, 0))
         pair = pair.reshape(*rows.shape, -1).to(column) * held[..., None]
@@ -14833,7 +14836,8 @@ class ConceptualSpace(Space):
 
     def install_order_zero(self):
         """The Sigma of order zero: the perceptual width (a basic percept's
-        vector, then the reading's place and time) by the order-zero rows."""
+        vector, then the reading's place and time) by the order-zero rows,
+        on two channels, the for lane and the against lane."""
         if getattr(self, 'order_zero', None) is not None:
             return self.order_zero
         from OrderZero import OrderZeroSigma
@@ -14850,9 +14854,10 @@ class ConceptualSpace(Space):
         sigma.where_width, sigma.when_width = where, when
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
-        self.params.append(sigma.weight)
         # A frozen concept is read as a reference and never by perception.
-        sigma.weight.register_hook(self._zero_frozen_columns)
+        for channel in (sigma.weight, sigma.against):
+            self.params.append(channel)
+            channel.register_hook(self._zero_frozen_columns)
         return sigma
 
     def _zero_frozen_columns(self, grad):
@@ -14966,7 +14971,7 @@ class ConceptualSpace(Space):
             (p0, n0), (p1, n1) = changed[member]
             sign = -1. if negated else 1.
             delta = OrderZeroSigma.member_column(p1, n1) - OrderZeroSigma.member_column(p0, n0)
-            sigma.weight[:sigma.content_width, row] += sign * delta.to(sigma.weight)
+            sigma.add_share(row, sign * delta)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``."""

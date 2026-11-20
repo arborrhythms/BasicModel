@@ -91,8 +91,8 @@ def teach_concept_lessons(model):
 
     model.set_sigma(0.)
     # Name targets never enter forward; optimize the names' columns of the
-    # order-zero Sigma.
-    optimizer = torch.optim.Adam([cs.order_zero.weight], lr=float(lesson['learning_rate']))
+    # order-zero Sigma, on both channels.
+    optimizer = torch.optim.Adam([cs.order_zero.weight, cs.order_zero.against], lr=float(lesson['learning_rate']))
     history = []
     for item in lesson['names']:
         examples = item['examples']

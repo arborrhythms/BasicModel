@@ -10,7 +10,9 @@ For a reading the active percepts' vectors are combined on the gaps: for each
 coordinate and lane, ``x = 1 - prod_p (1 - v_p)^{b_p}``, with ``b_p`` the Pi's
 value for percept ``p`` on that lane. The reading's own place and time follow
 the content coordinates, at the degree that the reading is present. The
-concepts read the for vector less the against vector, ``y = tanh(x U)``.
+concepts read the for vector and the against vector as two inputs, each with
+weights of its own, ``y = tanh(x_for U + x_against A)``; ``A`` starts as
+``-U``, where a concept reads the for vector less the against vector.
 """
 import torch
 from torch import nn
@@ -194,15 +196,16 @@ def read_word(evidence, mask, reading, place, *, content_width):
     value on each lane is the Pi of its members: the product of their
     memberships on that lane, zero where one is at or below the floor; the
     run of parts stands at its presence on both lanes.
-    ``reading`` ``[B, 1, D + 2C]`` is the concept's column of the order-zero
-    Sigma (``D`` wide) and the basic percept's read pair, what tells for it
-    and what against it (``C`` wide each); ``place`` ``[B, N, D - C]`` is
-    each location's own place and time. The percept enters at its net, as
-    :func:`combine` has it.
+    ``reading`` ``[B, 1, 2D + 2C]`` is the concept's two columns of the
+    order-zero Sigma, its for weights and its against weights (``D`` wide
+    each), and the basic percept's read pair, what tells for it and what
+    against it (``C`` wide each); ``place`` ``[B, N, D - C]`` is each
+    location's own place and time. The percept enters at its net, as
+    :func:`combine` has it, and each lane is read by its own column.
     """
-    width = reading.shape[-1] - 2 * content_width
-    column = reading[..., :width]
-    pair = reading[..., width:].unflatten(-1, (2, content_width))
+    width = (reading.shape[-1] - 2 * content_width) // 2
+    column = reading[..., :2 * width].unflatten(-1, (2, width))
+    pair = reading[..., 2 * width:].unflatten(-1, (2, content_width))
     lanes = torch.stack((evidence.clamp(0, 1), (-evidence).clamp(0, 1)), -1)
     # The first slot is the run of parts: the percept's presence, the same
     # on both lanes. The wholes keep their own lanes; with none held, the
@@ -221,7 +224,7 @@ def read_word(evidence, mask, reading, place, *, content_width):
     content = 1.0 - torch.exp(up * gaps + down * gaps.flip(-2))
     coordinates = presence[..., :, None] * place[..., None, :]
     combined = torch.cat((content, coordinates), -1)
-    return torch.tanh(((combined[..., 0, :] - combined[..., 1, :]) * column).sum(-1))
+    return torch.tanh((combined * column).sum((-2, -1)))
 
 
 def combine(presence, codes, *, where=None, when=None):
@@ -254,15 +257,36 @@ def combine(presence, codes, *, where=None, when=None):
 
 
 class OrderZeroSigma(SigmaLayer3):
-    """The Sigma of order zero: ``U`` dense, the perceptual width by the
-    concepts of order zero. A column starts at zero and is written when its
-    concept is made, from its members' vectors."""
+    """The Sigma of order zero, dense, the perceptual width by the concepts
+    of order zero, on two channels (rule 59): ``weight`` reads the for lane
+    of the combined vector and ``against`` its against lane, each with
+    weights of its own, ``y = tanh(x_for U + x_against A)``. A concept's
+    value stays one signed number. Where ``A = -U`` a concept reads the for
+    lane less the against lane, one input with one signed weight (rule 3),
+    and every column is written so: a column starts at zero and is written
+    when its concept is made, from its members' vectors, the same share
+    added to ``U`` and taken from ``A``. What a concept then does with the
+    two channels is learned."""
 
     def __init__(self, width, concepts, *, content_width):
         super().__init__(int(width), int(concepts), scale=0.0)
+        self.against = nn.Parameter(-self.weight.detach().clone())
         self.content_width = int(content_width)
         # Of the rest: the reading's own place, then its own time.
         self.where_width = self.when_width = (int(width) - self.content_width) // 2
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        # A Sigma saved on one input of for less against has no against
+        # weights: they are its for weights negated.
+        if prefix + 'weight' in state_dict and prefix + 'against' not in state_dict:
+            state_dict[prefix + 'against'] = -state_dict[prefix + 'weight']
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
+
+    def channels(self):
+        """The for weights and the against weights, ``[2, width, concepts]``."""
+        return torch.stack((self.weight, self.against))
 
     @torch.no_grad()
     def start_column(self, column, vectors, signs=None, against=None):
@@ -274,6 +298,7 @@ class OrderZeroSigma(SigmaLayer3):
         against = ([None] * len(vectors) if against is None else
                    torch.as_tensor(against).to(self.weight).reshape(-1, self.content_width))
         self.weight[:, column] = 0.
+        self.against[:, column] = 0.
         for vector, sign, opposed in zip(vectors, signs, against):
             self.add_member(column, vector, sign, against=opposed)
 
@@ -295,21 +320,42 @@ class OrderZeroSigma(SigmaLayer3):
         return (share(positive) - share(negative)) / 2
 
     @torch.no_grad()
+    def add_share(self, column, share):
+        """Add ``share`` to a column's for weights and take it from its
+        against weights, as one input of for less against reads it."""
+        share = torch.as_tensor(share).to(self.weight)
+        self.weight[:self.content_width, column] += share
+        self.against[:self.content_width, column] -= share
+
+    @torch.no_grad()
     def add_member(self, column, vector, sign=1., *, against=None):
         """Add ``sign`` times the member's share (:meth:`member_column`) to
-        the column's content, so that the member's own row reads one before
-        the squash; nothing is normalized afterwards. ``vector`` is what
-        tells for the member, ``against`` what tells against it."""
+        the column's content (:meth:`add_share`), so that the member's own
+        row reads one before the squash; nothing is normalized afterwards.
+        ``vector`` is what tells for the member, ``against`` what tells
+        against it."""
         vector = torch.as_tensor(vector).to(self.weight).reshape(self.content_width)
         if against is not None:
             against = torch.as_tensor(against).to(self.weight).reshape(self.content_width)
         if vector.square().sum() > 0:
-            self.weight[:self.content_width, column] += float(sign) * self.member_column(vector, against)
+            self.add_share(column, float(sign) * self.member_column(vector, against))
+
+    def forward(self, x):
+        """The concepts of a combined vector ``[..., 2, width]``."""
+        return torch.tanh(x[..., 0, :] @ self.weight + x[..., 1, :] @ self.against)
 
     def concepts(self, combined, columns):
         """Each column's signed value for each reading of ``combined``,
         ``[..., 2, width]``; a column of -1 reads zero."""
         columns = torch.as_tensor(columns, dtype=torch.long, device=self.weight.device)
         valid = columns >= 0
-        weight = self.weight.index_select(1, columns.clamp_min(0)) * valid
-        return torch.tanh((combined[..., 0, :] - combined[..., 1, :]) @ weight)
+        index = columns.clamp_min(0)
+        weight = self.weight.index_select(1, index) * valid
+        against = self.against.index_select(1, index) * valid
+        return torch.tanh(combined[..., 0, :] @ weight + combined[..., 1, :] @ against)
+
+    def reverse(self, y):
+        """The input's two lanes by least squares through the for weights
+        (:meth:`SigmaLayer3.reverse`), exact where the against weights are
+        the for weights negated."""
+        return super().reverse(y)
