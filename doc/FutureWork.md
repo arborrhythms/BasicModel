@@ -2554,3 +2554,22 @@ of values (sigma-pi plan, rule 55).
 To specify: whether the time is one more felt value with a table of its
 own; who reads it (the chooser, the operators of thought, a query on
 LTM); and what "now" is when a row is recalled.
+
+## Several readings of one sentence, kept (Alec, 2026-11-19; future work)
+
+On the explore paths run as rows of the batch (item 1.5): "this would
+also be a path toward metaphorical understanding of a single sentence,
+or at least multiple meanings."
+
+Rows of one sentence that depart differently are several readings of
+it, held side by side. As built, a sentence keeps its strictly cheapest
+path and the others are dropped after the comparison. Two things would
+be new:
+
+- *More than one row kept,* where two readings are near in cost: the
+  sentence's ideas, each with its tree. The classical name for a
+  sentence with two parses is amphiboly; ambiguity is the general word.
+- *Metaphor:* the literal idea and the figurative idea both kept, with
+  a relation between them.
+
+It changes what is kept and not how the paths run. Not designed.
