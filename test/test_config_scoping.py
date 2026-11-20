@@ -138,11 +138,20 @@ class TestCreateFromConfig(unittest.TestCase):
             from PartsOfSpeech import formal_arguments, operation_names
             from Language import TheGrammar
             from Spaces import ConceptualSpace
-            # The declared classes of words and objects are seated with the
-            # grammar's declarations (sigma-pi §21, rule 20).
-            self.assertEqual(m.nSymbols, 3 + len(formal_arguments(TheGrammar.rules_upward))
+            # The ConceptualSpace's nOutput is the room of order zero; each
+            # order above has half the one below, one row at least; the
+            # declared classes of words and objects are seated with the
+            # grammar's declarations, on top (sigma-pi §21, rules 20 and 21;
+            # §23.4, step 10).
+            owner = m._concept_owner()
+            seats = tuple(owner._order_reservations)
+            limit = max(owner._order_limit, len(seats) - 1)
+            taper = sum(max(1, 3 >> order) for order in range(1, limit + 1))
+            self.assertEqual(sum(seats), len(formal_arguments(TheGrammar.rules_upward))
                              + len(ConceptualSpace.WORD_CLASSES)
                              + len(operation_names(TheGrammar.rules_upward)))
+            self.assertEqual(owner._order_caps()[0], 3)
+            self.assertEqual(m.nSymbols, 3 + taper + sum(seats))
             self.assertEqual(m.nOutput, 1)
         finally:
             os.unlink(xml)

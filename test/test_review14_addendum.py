@@ -52,10 +52,19 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         cb = owner.similarity_codebook
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
-        # The declared classes of words and objects are seated with the
-        # grammar's declarations (sigma-pi §21, rule 20).
-        assert owner.nVectors == (capacity + len(owner._concept_allocator.formal_arguments)
-            + len(owner._concept_allocator.declared_classes) + len(owner._concept_allocator.operator_concepts))
+        # The configured capacity is the room of order zero; each order
+        # above has half the one below, one row at least; the declared
+        # seats come on top: the grammar's arguments and operators and the
+        # classes of words and objects above order zero (sigma-pi §21,
+        # rules 20 and 21; §23.4, step 10), the frozen thought predicates
+        # at order zero.
+        alloc = owner._concept_allocator
+        seats = tuple(owner._order_reservations)
+        assert sum(seats[1:]) == (len(alloc.formal_arguments) + len(alloc.declared_classes)
+                                  + len(alloc.operator_concepts))
+        assert owner._order_caps()[0] == capacity + seats[0]
+        taper = sum(max(1, capacity >> order) for order in range(1, max(owner._order_limit, len(seats) - 1) + 1))
+        assert owner.nVectors == capacity + taper + sum(seats)
         assert cb.W.shape[0] == owner.nVectors
         assert len(word_rows) == 4
         assert admitted and admitted[-1] == word_rows
