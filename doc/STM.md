@@ -213,6 +213,20 @@ Interpretation supplies one word to the grammar. Whole-path comparison
 credits departures in these choices. During the reading lesson each taught
 request and grammar decision contributes its cross entropy.
 
+**The walk's log in episodic memory** (Alec, 2026-11-20: "make the log
+conceptual activation stored in episodic memory, so that you are not just
+bolting on memory and structures to the algorithm"). What a walk did at a
+step is held as the activation of concepts in the episodic slots of that
+step's chunk: the concept of the act, the concepts of its place, and the
+concepts of what it returned. The grammar's own concepts are used where they
+exist, and concepts are declared for what has none; the log is no structure
+of its own. The slots of the walk's last chunks are among what the chooser
+reads, and what it does with them is learned by the gradient; nothing
+forbids an act because of them. A behaviour that lasts is a chain of acts,
+replayed from STM or LTM, and in the end held as concepts (Alec, 2026-11-20:
+"I would expect long-term behaviors to be learned as behavior chains that
+can be replayed in STM or LTM , and eventually in concepts").
+
 No region boundary is learned. A look's extent is the activity the salience
 map gives: an event is in the look to the degree that both what it is and
 where it stands are salient, and what is not active is absent on both lanes,
