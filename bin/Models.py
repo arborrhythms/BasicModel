@@ -352,6 +352,33 @@ def _checkpoint_host_copy(value):
     return copy.deepcopy(value)
 
 
+# Handles under which symbols were once made for concepts (at a declaration,
+# at a basic percept's nomination, at a definition, at a class's raise). A
+# symbol is made only when MTM nominates it, so these are not read back.
+_SYMBOLS_MADE_FOR_A_CONCEPT = ('declared', 'percept', 'object', 'part-kind')
+
+
+def _symbols_nominated_by_mtm(state):
+    """The symbol table's record without the symbols made for a concept.
+
+    A symbol is a row whose constituents occur together, made when MTM
+    nominates it; none is made for a concept. A checkpoint that holds
+    symbols under the handles of :data:`_SYMBOLS_MADE_FOR_A_CONCEPT` has
+    them dropped here, by handle, and a warning names how many. The
+    remaining symbols keep their order and are indexed again from zero.
+    """
+    symbols = list(state.get('symbols', ()))
+    kept = [s for s in symbols
+            if not (isinstance(s[0], (tuple, list)) and s[0]
+                    and s[0][0] in _SYMBOLS_MADE_FOR_A_CONCEPT)]
+    if len(kept) != len(symbols):
+        warnings.warn(
+            f'checkpoint: {len(symbols) - len(kept)} symbols made for a concept '
+            f'(handles {_SYMBOLS_MADE_FOR_A_CONCEPT}) are dropped on reading; '
+            'a symbol is made only when MTM nominates it', stacklevel=2)
+    return dict(state, symbols=kept)
+
+
 def _mps_rng_state_or_none():
     """Return the Metal RNG state when this PyTorch build exposes it."""
     get_state = getattr(getattr(torch, "mps", None), "get_rng_state", None)
@@ -4262,8 +4289,8 @@ class BaseModel(Mereology, nn.Module):
                     layer.saved_feature_record(blob.get("parts")))
         # A checkpoint from before the symbol table made no symbol at a
         # nomination: its table is empty.
-        alloc.symbol_table().restore(_checkpoint_host_copy(
-            saved.get("symbol_table") or dict(version=1, symbols=())))
+        alloc.symbol_table().restore(_symbols_nominated_by_mtm(_checkpoint_host_copy(
+            saved.get("symbol_table") or dict(version=1, symbols=()))))
         if "brought" not in saved:
             # A checkpoint from before the record of nominations: a row's
             # own concept was allocated with it, before any concept made
@@ -4272,11 +4299,6 @@ class BaseModel(Mereology, nn.Module):
             for row, percept, negated in sorted(alloc.order_zero_members):
                 if not negated:
                     alloc.brought.setdefault(percept, row)
-        # A checkpoint from before declared, brought and raised concepts had
-        # their symbols reads them from the records, once.
-        make = getattr(cs, 'symbols_from_records', None)
-        if callable(make):
-            make()
 
         # Migration is deferred until the common store's semantic rows load.
         if saved.get('word_obj_meta') or saved.get('interpretations'):

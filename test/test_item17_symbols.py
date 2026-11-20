@@ -525,10 +525,9 @@ def test_4_a_concepts_allocation_makes_no_symbol():
     from test_cs_sparse_weights import _cs
     cs = _cs(nS=16, order=2)
     table = cs._concept_allocator.symbol_table()
-    before = len(table)
+    assert len(table) == 0
     made = [cs.new_concept(), cs.new_concept(order=1), cs.new_concept(order=2)]
-    assert len(set(made)) == 3 and len(table) == before
-    assert all(not table.reading(cid) for cid in made)
+    assert len(set(made)) == 3 and len(table) == 0
 
 
 def test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concept(lesson_at_start):
@@ -538,18 +537,13 @@ def test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concep
     print(f'\nsymbols made by nomination in the lesson: {len(table)}; '
           f'handles and the concepts they brought: {list(zip(table.handles, table.brought))}')
     assert len(table) > 0
-    nominated = 0
     for symbol, (handle, concept) in enumerate(zip(table.handles, table.brought)):
         assert table.of(handle) == symbol
-        # MTM's nominations above order zero: a name or a candidate.
-        if handle[0] in ('name', 'candidate'):
-            nominated += 1
-            assert alloc.order_of(concept) >= 1
+        assert alloc.order_of(concept) >= 1
         # It starts with one member, the concept it brought.
         assert table.members(symbol) == [concept]
         entry = owner.mtm.entries.get(handle)
         assert entry is None or entry.symbol == concept
-    assert nominated > 0
     # The Pi gives each symbol its concept's two lanes: one member at one.
     lanes = torch.rand(len(table), 3, 2)
     torch.testing.assert_close(table.read(lanes, table.brought), lanes, rtol=0, atol=1e-6)
@@ -579,57 +573,85 @@ def test_6_a_symbol_has_its_own_index_and_no_vector_and_nothing_is_one_to_one():
     assert all(key[0] == 'concept' for key in restored.pi.keys)
 
 
-# Every concept the store reads has a symbol (round 4, step (a)): a
-# declared concept at its declaration, an order-zero concept where its basic
-# percept's nomination brings it, a raised class at its raise, an object at
-# its definition; MTM's nominations as before. Nothing reads the table yet.
+# Rule 71: no symbol is made for a concept. A symbol is a row whose
+# constituents occur together, made when MTM nominates it.
 
-def _store_sources(owner):
-    alloc = owner._concept_allocator
-    store = alloc.layer()
-    n = store.nOutput
-    sources = {}
-    for row, column in zip(store._rows, store._cols):
-        source = column % (n + 1)
-        if source != n:
-            sources[owner.concept_id_at_row(source)] = (owner._row_order(row), owner._row_order(source))
-    return sources
+def _calls_in_bin(name):
+    """Every call of ``name`` (as a function or a method) in bin/, as
+    (file, enclosing function)."""
+    import ast
+    found = []
+    for path in sorted(Path('bin').glob('*.py')):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for scope in ast.walk(tree):
+            if not isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Module)):
+                continue
+            for node in ast.walk(scope):
+                if isinstance(node, ast.Call):
+                    func = node.func
+                    called = func.attr if isinstance(func, ast.Attribute) else getattr(func, 'id', None)
+                    if called == name and scope is not tree:
+                        found.append((path.name, scope.name))
+    return sorted(set(found))
 
 
-def test_every_concept_the_store_reads_has_a_symbol_whose_row_reads_it(lesson_at_start):
+def test_71_no_symbol_is_made_for_a_concept_and_every_symbol_is_mtms(lesson_at_start):
+    import ast
+    defined = set()
+    handles = []
+    for path in sorted(Path('bin').glob('*.py')):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                defined.add(node.name)
+            # A handle written as a tuple whose first item names a making
+            # for a concept, passed to a maker of symbols.
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ('nominate_symbol', 'make') and node.args
+                    and isinstance(node.args[0], ast.Tuple) and node.args[0].elts
+                    and isinstance(node.args[0].elts[0], ast.Constant)
+                    and node.args[0].elts[0].value in ('declared', 'percept', 'object', 'part-kind')):
+                handles.append((path.name, node.lineno))
+    # No function gives "the" symbol of a concept or makes one for it.
+    assert not defined & {'symbol_for', 'symbols_from_records'}
+    assert not handles
+    # The one maker is called by MTM's two nominations and by nothing else.
+    assert _calls_in_bin('nominate_symbol') == [
+        ('FamiliarTier.py', 'promote_candidates'), ('FamiliarTier.py', 'promote_identity')]
+    # After the lesson's sixteen sentences, every symbol in the table was
+    # nominated by MTM: its handle is an entry of MTM whose symbol is the
+    # concept the nomination brought.
     owner, _ = lesson_at_start
     table = owner._concept_allocator.symbol_table()
-    sources = _store_sources(owner)
-    print(f'\nconcepts the store reads: {len(sources)}, by (reader order, source order): '
-          f'{sorted(sources.values())}; symbols: {len(table)}')
-    assert sources and None not in sources
-    for concept in sources:
-        reading = table.reading(concept)
-        assert reading, concept
-        assert all(concept in table.members(symbol) for symbol in reading)
+    print(f'\nsymbols after the lesson: {len(table)}, handles {list(table.handles)}')
+    assert len(table) > 0
+    for handle, concept in zip(table.handles, table.brought):
+        entry = owner.mtm.entries.get(handle)
+        assert entry is not None and entry.symbol == concept, handle
 
 
-def test_a_declared_concept_has_its_symbol_at_its_declaration():
-    from test_cs_sparse_weights import _cs
-    cs = _cs(nS=32, order=2)
-    alloc = cs._concept_allocator
-    table = alloc.symbol_table()
-    declared = cs.prebuild_formal_arguments(('agent', 'patient'))
-    for name, identity in declared.items():
-        assert table.members(table.of(('declared', 'formal-argument', name))) == [identity]
-    # Declared again, nothing new is made.
-    before = len(table)
-    cs.prebuild_formal_arguments(('agent', 'patient'))
-    assert len(table) == before
-
-
-def test_a_checkpoint_without_these_symbols_reads_them_from_its_records():
-    from test_cs_sparse_weights import _cs
-    cs = _cs(nS=32, order=2)
-    alloc = cs._concept_allocator
-    declared = cs.prebuild_formal_arguments(('agent',))
-    table = alloc.symbol_table()
-    table.restore(dict(version=1, symbols=()))
-    assert not table.reading(declared['agent'])
-    cs.symbols_from_records()
-    assert table.reading(declared['agent'])
+def test_71_a_checkpoint_drops_the_symbols_made_for_a_concept():
+    """A checkpoint saved while symbols were made for concepts holds them
+    under the handles of those makings; reading it drops them, by handle,
+    with a warning, and keeps MTM's nominations."""
+    from Models import _symbols_nominated_by_mtm
+    from Symbols import SymbolTable
+    saved = SymbolTable(8)
+    saved.make(('declared', 'formal-argument', 'agent'), 3)
+    saved.make(('name', 40), 40)
+    saved.make(('percept', 7), 5)
+    saved.make(('object', 9), 9)
+    saved.make(('part-kind', (1, 4), 2), 12)
+    saved.make(('candidate', 3), 41)
+    with pytest.warns(UserWarning, match='4 symbols made for a concept'):
+        state = _symbols_nominated_by_mtm(saved.state())
+    table = SymbolTable(8)
+    table.restore(state)
+    assert table.handles == [('name', 40), ('candidate', 3)]
+    assert table.brought == [40, 41] and table.of(('candidate', 3)) == 1
+    assert table.members(1) == [41]
+    # A checkpoint of MTM's nominations alone is read as it is.
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        assert _symbols_nominated_by_mtm(table.state()) == table.state()
