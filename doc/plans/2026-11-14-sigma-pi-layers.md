@@ -19043,3 +19043,117 @@ Run by Claude on `a9fcfd0661`, in a clone with the repository's history and the 
 | `test_item18_expect.py::test_81` | 1 | carried to round 5 |
 
 They go to one pass, which repairs them and then takes item 1.75.
+
+### 23.4.13 The repair after round 4, and item 1.75
+
+#### What fails or is unfinished, first
+
+- **The second case of §19.112 point 3 is not built** (an object whose own certainty is below one half). I read "own certainty" first as the magnitude of the object's place ("Magnitude is certainty in that space", `Interpret.blank`); that made every object a fixture seats with `new_concept` uncertain (its place is zero until placed: `test_forgetting`'s known words), so no measure of an object's own certainty is kept to read. Only blank objects are uncertain (*provisional*). Not kept in LTM is built for the episodic slot and its query only; the LTM's other writes (ideas, relation pairs) are not changed.
+- Three tests rest on a walk (rates below), and `test_81` (round 5) is not touched.
+- `test_medium_term_memory::test_complete_forward_body_does_not_access_the_pool` (both) fails when it is the first of its process, on `a9fcfd0661` too: `Language.budget_code` makes its module global inside the compiled `while_loop`. Not repaired (outside the list).
+- Item 1.75: not taken are `_accidents_of_many` (40 s of the dictionary's 94 s; the design's "stored codes kept by coordinate"), the XOR gate's compile (eager 452 s against 666 s; a learning gate), and a default of `eager_reading` for the whole list (likely the largest saving left: compiling is most of every compiled test that is not about compiling).
+- Commits: `84974e2bca` (job 1), `0950855d87` (job 2). Both gates pass after each.
+
+#### Job 1: the repair
+
+| Test | Cause | What I did |
+| --- | --- | --- |
+| `test_basicmodel.py` (3: `TestSimpleModel::test_simple_model_ergodic_shapes`, `TestModelEndToEnd::test_simple_model_{ergodic,traditional}_shapes`) | a reading that holds no symbol gives no leg (eleventh pass), and the forward's second output became `None` | source: `Models._forward_per_stage` publishes the empty leg `[B, 0, 2]` (the two lanes over no symbol) when no symbol is read (*provisional*); `forward_concept_to_symbol` still gives none, and `symbol_states` stays empty. Test unchanged (`end_state.shape[0] == 2`) |
+| `test_whole_paths.py::test_output_departure_runs_only_the_last_stage` | the load cost (eleventh pass, part 4) reads `model.conceptualSpace.stm.capacity`; the test's stand-in model has none | test ported: `WholePaths.load_cost` replaced by the zero load (no program composed); assertions unchanged |
+| `test_operators_round4a0.py::test_when_reader_inventory_…` | `SymbolSpace._publish_symbol_snapshot` no longer reads `whenEncoding` (the leg has no time) | fixture `when-readers-round4a0.json`: its row removed |
+| `test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition`, `test_sentence_priming.py` (2) | a definition is read through the store's Sigma since the tenth pass (`FieldProjection.close`, `SparseSigmaLayer3.fold`, `tanh`): one entry of weight one over an observed member gives tanh(1) = .7616 | tests ported: old `== 1` on the defined row, new `== tanh(1)`; the observed row itself still `== 1` |
+| `test_item20_round6_output.py::test_output_calls_the_common_decoder_…` | `OutputOccurrences.realize` reverses the walk's field (the surface) and then, when the walk gives a reconstruction field, reverses that too (the scored percepts); the test took the last reverse as the surface | test ported: old: surface and percepts both `== calls[-1]`; new: surface `==` the reverse of the walk's field, percepts `==` the reverse of the reconstruction field where there is one (the realize call is observed to find them). It failed alone too on this checkout (3 of 3) |
+| `test_episodic_concepts.py::test_recalled_flat_extension_…` | the entry held the blank object of "alpha", the query field the word | source (§19.112, point 3): `EpisodicMemory.uncertain(owner)` gives `{object: word}` for every blank object (`-1`, no slot, where not one word names it); `select` keeps such a reading as its word's concept (the stronger reading of one concept on one lane fills one slot), in `stage`, `tree_entry` and `Examination`; `ExtendedRecall.matches` asks an uncertain object as its word. Test unchanged |
+| `test_item18_trust.py` (3), `test_item20_round7_episodes.py` (1) | not in the list; failed after the slot change until the query side was changed too (the meaning's extension holds the blank, the entry now its word) | the `ExtendedRecall.matches` change above; they pass |
+| `test_one_backward_standing.py::test_native_packing_after_training_with_selected_backward` (3) | **producer:** the compose candidates are the grammar's rules, several to an operator (`binary_ops` = `(0, 1, 2, 3, 3, 3, 3, 4, …)`: four sum rules); the test forced the first `sum` index, which the pair's types do not admit (`binary_valid` 0 there, 1 at the third sum rule), so `select_logits` met an illegal forced action ("compose has no legal alternative"). Not a walk: it failed 3 of 3 before | test ported: the forced sum is the first sum rule the first pair admits (from `reference_data['binary_valid']`); old: `binary.index(op_names.index('sum'))`. The assertions are unchanged; 9 of 9 runs pass |
+| `test_explicit_dimensions.py::TestXorExactCliReconstruction` (2), `test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager` | of the clone (its `.venv` path) | pass in the checkout, unchanged |
+| `test_item18_paths.py::test_examination_has_no_vector_walk_and_owns_its_reverse` (2) | passes alone 9 of 9 and with its file; failed once in a mixed six-process run | left |
+| `test_item18_expect.py::test_81` | round 5 | not touched |
+
+Rest on a walk (measured alone, 9 runs each; left, not forced):
+
+| Test | Passed | Failure |
+| --- | ---: | --- |
+| `test_one_attention.py::test_unknown_repeated_word_has_one_byte_descent` | 4 of 9 | `assert [8] == [3]` (the descents the walk took) |
+| `test_runtime_split_ingestion.py::…::test_store_truths_records_truths` | 5 of 9 | "TruthSet input did not produce a selected grammatical closing" |
+| `test_runtime_split_ingestion.py::…::test_store_truths_repeated_lists_append_immutable_claims` | 7 of 9 | the same |
+
+#### Job 2: item 1.75
+
+**Where the time goes** (cProfile on the main thread, and for the compiled tests the same test run with the `eager_reading` fixture of `test/conftest.py`, the difference being compiling, which runs outside the profiled thread):
+
+| Test (before, s) | Split |
+| --- | --- |
+| `test_explicit_dimensions` XOR grammar fixture (713) | a learning run of `data/XOR_grammar.xml`: training steps; with the reading loop eager it took 452 s alone against 666 s compiled (not taken: a learning gate; Alec may choose it) |
+| `test_item18_expect::test_81` (299) | reading sentences: of 184 s profiled, 36 s replaying the thought history from its first record at every `thought_state` and store (`Thoughts.replay_thoughts`, quadratic), 30 s `dataclasses.replace`, 13 s `index_add`; backward 7 s; compiling little |
+| `test_operators_final_b::…bootstrap_snapshot` (176), `test_review14_contracts::…` (163), `test_operators_round3a::…` (161), `test_review14_addendum::…[MM_grammar]` (95) and `[XOR_grammar]` (24), `test_review13_subspaces::…` (78), `test_derived_concept_codes::…` (57), `test_operators_round4a` (51, 22), `test_operators_final_b::…descend…` (50), `test_sweep_repairs` (49), `test_forward_discard` (48), `test_operators_final` (24), `test_output_walk` (15), `test_meronomy_ladder` (14) | compiling the reading loop (`torch.while_loop` graphs): 95 to 99 % (eager: 1 to 9 s each) |
+| `test_item17_code_trial::test_10_…` (154, 60, 56) | the test's own stand-in coder (`test/code_trial.py`): 142 of 164 s in `LinkedCoder.contained`, which compared each code with every row of the store's allocated capacity (19,821) rather than the stored rows |
+| `test_item17_code::test_46_printed_on_the_dictionary` (108) | admitting 19,821 forms: `_accidents_of_many` 40 s, `BasicPercepts.reserve` 26 s (of it `OrderZero.append` 25 s: the column index sorted again after every row), `_link` 1 s after the change (about 20 s before, §"Adding a percept") |
+| `test_medium_term_memory::…pool` (58, 37) | compiling; its subject is the compiled body, left |
+
+**What I changed** (equal results):
+
+1. `WordIdentity._link`: a new form's holders are read from the shortest of its stored parts' holder lists and its characters' lists (`_forms_by_byte`, kept with the stored forms, rebuilt after a load), each candidate checked for the run; was a look through every stored form. Test `test_word_identity_links.py`: links equal those found by looking through every form, after admissions and after a load.
+2. `Thoughts.replay_thoughts`: a history that extends a history already replayed (the same frozen records, in order) is replayed from where that ended (16 kept). Test `test_thought_replay_increment.py`: at each step of a nested episode the state equals the replay from the first record; a bad record after a replayed prefix is still refused.
+3. `OrderZero.SparsePiLayer3`: the column index is made when it is next read (`rows_reading`), not after every appended row. Test `test_order_zero_column_index.py`: the rows reading each key after every append equal those the rows name; it passes on the old source too.
+4. `test/code_trial.py`, `LinkedCoder.contained`: over the stored rows only (the caller read only those). Checked once on 1,500 words: codes, given forms, failures, stats and accidents equal.
+5. The `eager_reading` fixture (conftest: "These cases exercise reading, gradients or ownership; compilation has separate explicit tests") added to the 15 tests of the table whose subject is not compilation. Their assertions are unchanged and pass. Not given it: `test_medium_term_memory` (compiled body), `test_attention_thinking_steps` (compiles explicitly), the XOR gate, `test_81`.
+
+No iteration count, no gate, no assertion changed.
+
+**Times of the 40 slowest** (before: the list on `a9fcfd0661`, six processes, the whole list; after: on `0950855d87`, the 37 of them that exist, alone, six processes `--dist loadfile`; the two loads differ, so a few untouched tests read slower after):
+
+| Before (s) | After (s) | Test |
+| ---: | ---: | --- |
+| 713.4 | 665.8 | `test_explicit_dimensions` XOR grammar fixture (unchanged; alone, compiled) |
+| 299.2 | 162.5 | `test_item18_expect::test_81` (fails, round 5) |
+| 176.3 | 3.4 | `test_operators_final_b::test_both_training_trials_share_bootstrap_snapshot` |
+| 163.0 | 3.9 | `test_review14_contracts::test_sentence_reverse_reaches_native_prototypes_and_evidence` |
+| 160.6 | 1.9 | `test_operators_round3a::test_live_grammar_uses_sparse_index_…` |
+| 153.8 | 123.4 | `test_item17_code_trial::test_10_accidents_removed_at_64_in_both_halves` |
+| 107.6 | 66.2 | `test_item17_code::test_46_printed_on_the_dictionary` |
+| 95.1 | 2.8 | `test_review14_addendum::test_small_inventory_…[MM_grammar-20]` |
+| 78.3 | 1.5 | `test_review13_subspaces::test_actual_serial_code_…` |
+| 59.6 | 35.0 | `test_item17_code_trial::test_10_…_at_96_in_the_parts_half` |
+| 58.0 | (3.3, fails) | `test_medium_term_memory::…pool[True]` |
+| 56.8 | 0.6 | `test_derived_concept_codes::test_actual_serial_leaf_…` |
+| 55.8 | 30.5 | `test_item17_code_trial::test_10_…_at_128_in_the_parts_half` |
+| 51.0 | 1.5 | `test_operators_round4a::test_live_path_predictor_…` |
+| 49.5 | 2.6 | `test_operators_final_b::test_forced_not_and_or_descend_…` |
+| 49.2 | 1.9 | `test_sweep_repairs::test_reconstruction_benchmark_…` |
+| 48.1 | 2.8 | `test_forward_discard::test_forward_discard_is_absent_from_the_loop` |
+| 43.0 | gone | `test_item17_symbols::test_the_lessons_training_…` (no longer in the file) |
+| 37.1 | (2.3, fails) | `test_medium_term_memory::…pool[False]` |
+| 32.4 | 29.3 | `test_math_chain::test_native_worked_document_…` |
+| 29.9 | 21.2 | `test_item17_code_trial::test_3_…` (setup) |
+| 28.9 | 55.2 | `test_item17_sparse_growth::test_58_…` |
+| 28.2 | 34.2 | `test_item17_symbols::test_51a_…` (setup) |
+| 27.8 | 28.2 | `test_attention_thinking_steps::test_captured_stop_…` |
+| 27.5 | 29.5 | `test_item17_stacks::test_seconds_against_an_mlp_layer[cpu]` (setup) |
+| 24.4 | 1.6 | `test_review14_addendum::…[XOR_grammar-18]` |
+| 24.0 | 1.2 | `test_operators_final::test_meaning_width_zero_…` |
+| 23.0 | 31.1 | `test_item17_order_zero::test_the_mereological_order_…` (setup) |
+| 22.8 | 21.2 | `test_item17_code_trial::test_1_the_dictionary_under_each_layout` |
+| 22.7 | 23.7 | `test_item17_code::test_48_…` |
+| 22.4 | 0.8 | `test_operators_round4a::test_one_presentation_…` |
+| 20.1 | 22.6 | `test_basicmodel::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch` |
+| 18.9 | gone | `test_familiar_tier::test_mixing_…` (no longer in the file) |
+| 15.8 | 18.3 | `test_math_chain_section14::…[False]` |
+| 15.4 | 0.3 | `test_output_walk::test_walk_handles_mixed_output_lengths_per_row` |
+| 14.9 | 18.3 | `test_math_chain_section14::…[True]` |
+| 14.1 | 0.4 | `test_meronomy_ladder::test_forward_equals_compose_on_a_live_snapshot` |
+| 13.4 | 12.5 | `test_epoch_history::test_native_train_…` |
+| 13.4 | 13.1 | `test_item17_code_trial::test_1_the_wholes_half_…` |
+| 12.0 | 11.7 | `test_item55_mechanisms::test_clock_independence` |
+| **2,907.3** | **1,486.1** | sum (the two gone tests, 61.9 s, are in the before sum only; the two failing `test_medium_term_memory` cases count their 5.6 s) |
+
+Also found, not mine: `test_medium_term_memory::test_complete_forward_body_does_not_access_the_pool` (both) fails alone on `a9fcfd0661` too: `Language.budget_code` makes its module global `_BUDGET_CODE` on first use, inside the compiled `while_loop` ("Mutating a variable from outside the scope of this HOP"); in the whole list an earlier test of the same process has made it. Left.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass; the list on its last commit is run by Claude and recorded with round 5's first return.
+
+- *The repair:* every failure of §23.4.12 is accounted for. One was a fault of the source (a reading with no symbol gave nothing where an empty leg is due); the packing test's cause was named before it was touched (an operator now has several grammar rules, and the test forced one that the pair's types do not allow); three tests rest on a walk and are listed with their rates.
+- *An uncertain object, as built, is a blank one only.* Reading "uncertain" as a small place made every new object uncertain. What else counts as uncertain is left with Alec's sentence (§19.112) until a measure of an object's certainty is named.
+- *Item 1.75's finding:* compiling the reading loop is 95 to 99 per cent of the time of fifteen of the slowest tests, which run in 1 to 9 seconds without it. Those fifteen now read without compiling, and none of them is about compiling. The forty slowest take 1,486 s where they took 2,907 s. *Put to Alec:* whether reading without compiling becomes the default of the test list, with the tests of compilation keeping it; the return judges that the largest saving left.
+- *Found beside it:* a test fails when it runs first in its process, because `Language.budget_code` makes a module global inside the compiled loop (the eleventh pass). To round 5's first pass.
