@@ -430,7 +430,7 @@ class PartClosing:
                 if identity[0] == 'ltm':
                     index = self.store.location(identity)
                     return 0 if index is None else self.store.order_of_row(index)
-                return self.owner._concept_source_order(identity[-1]) if identity[0] in ('sym', 'name') else 0
+                return self.owner._concept_source_order(identity[-1]) if identity[0] == 'sym' else 0
             names = tuple(marks.get('_forward_references', ()))
             if len(names) == 1 and names[0][0] == 0:
                 return self.owner._concept_source_order(names[0][1])

@@ -72,19 +72,19 @@ def test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting(
     assert cs.word_surface_for_row(row) == b'there'
 
 
-def test_pending_field_word_reservation_survives_checkpoint(tmp_path):
+def test_objectless_field_word_survives_checkpoint(tmp_path):
     from test_grounded_xor import grounded_model
     m, _ = grounded_model(tmp_path)
     cs = m._concept_owner()
     word = recurrent_word(cs.interpret, [48, 48], [1], form='00', word_reading=True)
-    assert word in cs.interpret._field_pending
+    # A field word with no case yet has no object until it is read.
+    assert word in cs.interpret.objectless() and cs.interpret.no_object(word)
     saved = m._collect_structural_extras()
     fresh, _ = grounded_model(tmp_path)
     fresh.symbolSpace.ltm_store.load_state_dict(m.symbolSpace.ltm_store.state_dict())
     fresh._restore_structural_extras(saved)
     target = fresh._concept_owner()
-    assert target.interpret._pending == cs.interpret._pending
-    assert target.interpret._field_pending == cs.interpret._field_pending
+    assert target.interpret.objectless() == cs.interpret.objectless()
     assert word in target.word_concepts('00')
 
 

@@ -145,7 +145,10 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
         model.forward(raw)
         word_id = cs.interpret.word_for_form(word)
-        cid = cs.interpret.forward(word_id)
+        # The order-zero field holds the word's own concept; its object is
+        # its blank, one order above (rule 20).
+        assert 'blank' in cs._concept_allocator.symbol_types[cs.interpret.forward(word_id)]
+        cid = word_id
         carrier = model._combine_last_cs_sub
         slot = (carrier._concept_ids == cid).nonzero().flatten()
         assert len(slot) == 1, word
@@ -166,7 +169,9 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
     leg = model.symbolSpace.forward_concept_to_symbol(carrier)
     for b, word in enumerate(words):
         word_id = cs.interpret.word_for_form(word)
-        cid = cs.interpret.forward(word_id)
+        # The field holds the word's own concept; its object is its blank.
+        assert 'blank' in cs._concept_allocator.symbol_types[cs.interpret.forward(word_id)]
+        cid = word_id
         ids = carrier._concept_ids
         ids = ids[:, b] if ids.ndim == 2 else ids
         slot = (ids == cid).nonzero().flatten()

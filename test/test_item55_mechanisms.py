@@ -442,11 +442,10 @@ def _native_step_comparison(tmp_path, monkeypatch):
             def capture(*a,**k):
                 result = observe(*a,**k)
                 pool = model._concept_owner().mtm
-                result['reading_tokens'] = {word: (token.pending, token.symbol, pool.value_of(key).clone())
+                owner = model._concept_owner()
+                result['reading_blanks'] = {word: owner.interpret.blank_of(word)
                     for program in result['entries'] if program is not None
-                    for word in program.word_ids.tolist()
-                    if word > 0 and (key := pool.token_of(('name',word))) is not None
-                    for token in (pool.entries[key],)}
+                    for word in program.word_ids.tolist() if word > 0}
                 # A test observation is taken before the kept close expires
                 # STM's tree. It is never fed back into the production model.
                 from dataclasses import replace
@@ -483,16 +482,15 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     recovered,unavailable,defined=reconstruct(language,record,programs,
                         lambda b:model._sentence_leaf_positions(record,b))
                     assert not unavailable.any()
-                    # Surface inverses recover the word tree. Pending object
-                    # values belong to the separate comprehension walk.
+                    # Surface inverses recover the word tree. The words'
+                    # objects (their blanks) belong to the comprehension walk.
                     expected = record.word_values.clone()
                     for b, program in enumerate(programs):
                         positions = model._sentence_leaf_positions(record,b)
                         for position, word in zip(positions,program.word_ids.tolist()):
                             if word <= 0:
                                 continue
-                            pending, symbol, point = observed[0]['reading_tokens'][word]
-                            assert pending and symbol is None
+                            assert observed[0]['reading_blanks'][word] is not None
                     torch.testing.assert_close(recovered[record.word_valid],expected[record.word_valid])
                     continue
                 audit = model._last_sentence_credit

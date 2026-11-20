@@ -256,7 +256,7 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     for _ in range(m._concept_owner().concept_mint_count):
         _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
     from reading_fixtures import supply_object
-    for word in sorted(m._concept_owner().interpret._pending):
+    for word in sorted(m._concept_owner().interpret.objectless()):
         supply_object(m._concept_owner(), word)
     m._staged_in_sub = None  # Subsequent raw forwards own fresh lexical staging.
     force_absolute_reading(m)
@@ -600,7 +600,7 @@ def test_materialised_idea_follows_the_symbol_rows(eager_reading, monkeypatch):
     for _ in range(m._concept_owner().concept_mint_count):
         _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
     from reading_fixtures import supply_object, force_absolute_reading
-    for word in sorted(m._concept_owner().interpret._pending):
+    for word in sorted(m._concept_owner().interpret.objectless()):
         supply_object(m._concept_owner(), word)
     m._staged_in_sub = None  # Subsequent raw forwards own fresh lexical staging.
     force_absolute_reading(m)
@@ -658,7 +658,7 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monke
         # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
         from nomination_fixtures import nominated_sentences; nominated_sentences(m, ["12 plus 1", "3 plus 4"])
         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
-        for word in sorted(m._concept_owner().interpret._pending):
+        for word in sorted(m._concept_owner().interpret.objectless()):
             supply_object(m._concept_owner(), word)
         m._staged_in_sub = None
         force_absolute_reading(m)

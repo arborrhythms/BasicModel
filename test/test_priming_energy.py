@@ -104,7 +104,7 @@ def _projected_model(epochs=3):
 
 def _surface_descriptions(cs):
     from Spaces import _concept_alloc_of
-    return [_concept_alloc_of(cs).word_descriptions.get(word) or cs.interpret._pending[word]
+    return [_concept_alloc_of(cs).word_descriptions.get(word) or cs.interpret.objectless()[word]
             for word in cs._word_definition_ids()]
 
 

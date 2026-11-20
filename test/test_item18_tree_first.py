@@ -496,34 +496,6 @@ def test_5_comprehension_reads_the_final_preferred_object(monkeypatch):
     torch.testing.assert_close(program.leaves[0], point, rtol=0, atol=0)
 
 
-def test_comprehension_takes_staged_pending_name_without_writing_mtm(monkeypatch):
-    from test_word_interpretation import _operator
-    from Understanding import Reading
-    from Comprehension import Evaluation
-    owner, interpret = _operator()
-    word = recurrent_word(interpret, [7], [1], form='wug')
-    identity, row, order = interpret.reading(word, batch=0)
-    assert identity != word and interpret.referent(word, batch=0) == word
-    point = owner.similarity_codebook.lookup_rows(torch.tensor(row), stream=0)
-    program = Reading(rows=torch.tensor([row]), word_rows=torch.tensor([row]),
-        activations=torch.tensor([.75]), leaves=point[None], actions=torch.tensor([[0, -1, 0]]),
-        targets=torch.tensor([0]), end_state=torch.stack((point, point*0, point*0)),
-        concept_ids=torch.tensor([word]), word_ids=torch.tensor([word]), leaf_orders=torch.tensor([order]),
-        leaf_evidence=torch.tensor([[.6, .2]]), operation_values=point.new_zeros(1, 3, len(point)),
-        staged_object_ids=torch.tensor([identity]), staged_object_rows=torch.tensor([row]))
-    def no_write(*args, **kwargs):
-        raise AssertionError('comprehension wrote a pending name')
-    monkeypatch.setattr(owner.mtm, 'named', no_write)
-    model = SimpleNamespace(_concept_owner=lambda: owner, languageSpace=SimpleNamespace(),
-        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))
-    evaluation = Evaluation(model, program, 0)
-    assert evaluation.leaf(0) == identity
-    expected = interpret.forward(point, object_atoms=point,
-        presence=program.activations[0], evidence=program.leaf_evidence[0])
-    torch.testing.assert_close(evaluation.stack[0].point, expected, rtol=0, atol=0)
-    assert evaluation.stack[0].order == order
-
-
 def test_reference_witness_records_a_same_address_bank_read():
     from Interpret import InterpretLayer
     from ReferenceContext import ReferenceBank, prepare_operands
@@ -575,40 +547,6 @@ def test_comprehension_uses_the_observed_words_form_for_a_higher_order_object(tm
             presence=program.activations[0], evidence=program.leaf_evidence[0])
         torch.testing.assert_close(evaluation.leaves[0], expected, rtol=0, atol=0)
         torch.testing.assert_close(bank.lookup_rows(torch.tensor(row), stream=0), raw, rtol=0, atol=0)
-    finally:
-        model.End()
-
-
-def test_comprehension_keeps_the_selected_operands_recorded_order(tmp_path, monkeypatch):
-    from test_compiled_word_chunk import _tiny_canonical_model
-    from Understanding import Reading
-    from Comprehension import Evaluation
-    model = _tiny_canonical_model(tmp_path, monkeypatch)
-    try:
-        owner, language = model._concept_owner(), model.languageSpace
-        word = recurrent_word(owner.interpret, [7], [1], form='wug')
-        pending, row, order = owner.interpret.reading(word, batch=0)
-        assert owner._concept_source_order(pending) == -1
-        local, rule = next((index, rule) for index, rule in enumerate(language._compose_binary_rules)
-                           if rule.method_name == 'surface')
-        operator = language._tree_layer(2).ops[local]
-        operator = getattr(operator, 'gl', operator)
-        point = owner.similarity_codebook.lookup_rows(torch.tensor(row), stream=0)
-        frames = point.new_zeros(3, 3, len(point))
-        frames[2, :2] = point
-        program = Reading(rows=torch.tensor([row, row]), word_rows=torch.tensor([row, row]),
-            activations=torch.ones(2), leaves=point.expand(2, -1),
-            actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, local, -1]]),
-            targets=torch.tensor([0, 1]), end_state=point.new_zeros(3, len(point)),
-            concept_ids=torch.tensor([word, word]), word_ids=torch.tensor([word, word]),
-            leaf_orders=torch.tensor([order, order]), interpret_forced=False,
-            operation_values=frames, operation_refs=torch.tensor([[-1, -1], [-1, -1], [word, pending]]),
-            operation_resolved=torch.tensor([[False, False], [False, False], [False, True]]),
-            operation_orders=torch.full((3, 2), order, dtype=torch.long))
-        evaluation = Evaluation(model, program, 0)
-        evaluation.leaf(0); evaluation.leaf(1)
-        evaluation.operation(2, 1, local, -1, rule, operator)
-        assert evaluation.stack[-1].order == order
     finally:
         model.End()
 

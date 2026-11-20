@@ -95,10 +95,6 @@ def refresh_words(model, sentence):
     for batch, column in positions:
         word = int(words[batch, column])
         identity = owner.interpret.referent(word, batch=batch)
-        if identity == word:
-            token = owner.mtm.entries.get(('name', word))
-            if token is not None:
-                identity = token.symbol if token.symbol is not None else token.transient
         if identity is None or identity == int(references[batch, column]):
             continue
         row = owner._concept_row_of(identity)
@@ -152,10 +148,6 @@ def symbolize(owner, store, key, token, timeline=0):
     width = derived.percept_event_width if paired else 0
     form_width = derived.percept_width if paired else 0
     form = None
-    if key[:1] == ('name',):
-        name = point(owner, key[1])
-        if name is not None:
-            form = name[:form_width]
     for occurrence in reversed(token.occurrences):
         reading = owner.mtm.reading_of(occurrence)
         if reading is not None:
@@ -184,8 +176,7 @@ def chunk_token(pool, store, state, batch, index):
     from Memory import STMChunks as chunks
     refs = state[chunks.REFS][batch,index]
     if int(refs[1,0]) == chunks.IDENTITY_REF:
-        code = int(refs[1,1])
-        key = ('candidate', code) if code >= 0 else ('name', -code-1)
+        key = ('candidate', int(refs[1,1]))
         return key if key in pool.entries else None
     for position in (1,0):
         if int(refs[position,0]) == chunks.OCCURRENCE:
@@ -241,7 +232,7 @@ def stage(model, state, present):
             continue
         records = resolver.accessible(tuple(value[b:b+1] for value in state), stream=b, include_pool=True)
         keys = {record.get('token') for _, record in records.values()} - {None}
-        keys.update(key for key, token in pool.entries.items() if (token.order is not None or key[0] == 'name')
+        keys.update(key for key, token in pool.entries.items() if token.order is not None
                     and (not pool.accesses.get(key) or b in pool.accesses[key]))
         # Equal-time arrivals retain admission order. Sorting the set itself
         # would make bind-menu positions and training depend on Python's hash.
@@ -259,7 +250,6 @@ def stage(model, state, present):
             row = owner._concept_row_of(identity) if token.symbol is not None else None
             order = (token.order if token.order is not None else owner._row_order(row) if row is not None
                      else token.refinement['member_order'] if 'member_order' in token.refinement
-                     else owner._concept_source_order(owner.interpret.referent(key[1], batch=b)) if key[0] == 'name'
                      else owner._concept_source_order(token.occurrences[0]))
             value = symbolize(owner, store, key, token, timeline).to(state[0])
             where = token.where.to(value)
@@ -278,8 +268,8 @@ def stage(model, state, present):
             refs = state[chunks.REFS].new_zeros(len(present),2,2)
             refs[:,0,0] = chunks.SYMBOL if token.symbol is not None else chunks.IDENTITY_REF
             refs[:,0,1] = identity
-            refs[:,1,0] = chunks.IDENTITY_REF if token.order is not None or key[0] == 'name' else chunks.OCCURRENCE
-            refs[:,1,1] = -key[1]-1 if key[0] == 'name' else key[-1]
+            refs[:,1,0] = chunks.IDENTITY_REF if token.order is not None else chunks.OCCURRENCE
+            refs[:,1,1] = key[-1]
             # Copying the working value from MTM is an arrival/read. Merely
             # enumerating the subsequent bind menu does not read this seat.
             match = ((state[chunks.IDENTITY][b] == identity) & (state[chunks.TIMELINE][b] == timeline)

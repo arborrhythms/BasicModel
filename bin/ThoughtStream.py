@@ -519,14 +519,6 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         active.remove(id(original))
     else:
         active.remove(id(meaning))
-    if point is not None and identity is not None:
-        # Resolve only references that survive the checked projection. Its
-        # other working roles were the request, not concluded constituents.
-        from MemoryLink import retained_reference
-        data = bindings(meaning)
-        identity = data['_identity']
-        data['_identity'] = retained_reference(owner, identity, stream=row)
-        meaning = replace(meaning, bindings=data)
     from EpisodicMemory import for_meaning
     result = store.append_meaning(meaning, evidence=evidence_pair(meaning),
                                   entry=for_meaning(store,meaning))

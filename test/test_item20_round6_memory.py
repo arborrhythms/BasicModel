@@ -5,59 +5,6 @@ import torch
 from nomination_fixtures import recurrent_word
 
 
-def test_expired_pending_path_reenters_a_later_native_definition():
-    from test_reference_close import fixture, known_concept
-    from FamiliarTier import commit_read_words
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    pool = owner.mtm
-    word = recurrent_word(owner.interpret, [115], (), form='later-empty')
-    key = pool.named(word, value=atoms[0], when=0)
-    reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    def close(position):
-        root = store.append_idea(atoms[0])
-        return commit_read_words(owner, reading, batch=0, document='later-empty',
-            position=position, written={'root_occurrence': store.occurrence_of(root)})[0]
-    close(0)
-    pool.entries[key] = replace(pool.entries[key], occurrences=())
-    concept = known_concept(owner, atoms[0], order=1)
-    owner.interpret.define(word, concept, trust=.1)
-    second = close(1)
-    assert not pool.entries[key].occurrences
-    assert pool.entries[key].refinement['member_order'] == 0
-    new = pool.token_of(second)
-    assert new != key and pool.entries[new].native == concept
-    assert pool.entries[new].refinement['member_order'] == 1
-    assert store.order_of_row(store.location(second)) == 1
-
-
-
-
-def test_rereading_the_same_position_at_a_new_order_preserves_the_original_member():
-    from test_reference_close import fixture, known_concept
-    from FamiliarTier import commit_read_words
-    resolver, store, atoms = fixture()
-    owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = recurrent_word(owner.interpret, [116], (), form='later-order')
-    key = pool.named(word, value=atoms[0], when=0)
-    reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    root = store.append_idea(atoms[0], name=601)
-    def close():
-        return commit_read_words(owner, reading, batch=0, document='same-position',
-            position=0, written={'root_occurrence': store.occurrence_of(root)})[0]
-    first = close()
-    first_bindings = store.raw_meaning_of(store.location(first)).bindings
-    concept = known_concept(owner, atoms[0], order=1)
-    owner.interpret.define(word, concept, trust=.1)
-    second = close()
-    assert first != second
-    assert store.raw_meaning_of(store.location(first)).bindings == first_bindings
-    assert pool.entries[key].refinement['member_order'] == 0
-    assert store.order_of_row(store.location(second)) == 1
-    assert pool.entries[key].occurrences == (first,)
-    assert pool.entries[pool.token_of(second)].native == concept
-
-
 def test_recorded_compose_bind_uses_its_selected_introductions_order():
     from test_reference_close import fixture, known_concept
     from test_medium_term_memory import mention

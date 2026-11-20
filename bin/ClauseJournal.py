@@ -153,14 +153,13 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                               children=(), leaves=(word,), has_point=has_point,
                               interpretation='no_op' if interpretations[word] == 'no_op' else 'symbol'))
             handle = 0 if program.identity_leaves is None else int(program.identity_leaves[word])
-            named = handle > 0 and int(program.identity_origins[handle-1, 0]) == 6
             addressed = handle in local_uses and int(program.identity_origins[handle - 1, 0]) == 4
             owner = getattr(registry, 'space', None)
             # An objectless lexical reference remains a binding request at
             # order zero. Its physical word row does not stand in for the
             # order of an object which has not been resolved yet.
             unbound = owner is not None and owner.interpret.no_object(int(refs[word]))
-            if stack[-1]['order'] == 1 or named or addressed or unbound:
+            if stack[-1]['order'] == 1 or addressed or unbound:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],
                     **forward_fields(word), leaf=True)
@@ -169,9 +168,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 if addressed:
                     stack[-1]['close_request']['addressed_introduction'] = True
             if program.identity_leaves is not None:
-                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or named or addressed or unbound else 0
-                if named:
-                    stack[-1]['close_request']['reading_identity'] = handle
+                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or addressed or unbound else 0
                 if stack[-1]['identity_handle']:
                     introductions.setdefault(stack[-1]['identity_handle'], stack[-1])
             if interpretations[word] == 'no_op':
@@ -351,9 +348,6 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             request = dict(source.get('close_request', {}))
             request.pop('introduction', None)
             request.pop('addressed_introduction', None)
-            # An explicit bind supersedes the reading site's initial token.
-            # Keep the chosen handle; the close must not select the old name.
-            request.pop('reading_identity', None)
             request.update(mode='bind', leaves=source['leaves'],
                 content=request.get('content', frames[action, 0]),
                 cue=request.get('cue', frames[action, 0]),
@@ -659,7 +653,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 current = current['children'][role - 1]
                 request = current.get('close_request')
             if request is None or (item['order'] != 1
-                    and 'compose_bind' not in request and 'reading_identity' not in request and not request.get('sign_leaf')
+                    and 'compose_bind' not in request and not request.get('sign_leaf')
                     and not request.get('no_op_leaf') and not request.get('interpret_leaf')
                     and not request.get('addressed_introduction')):
                 return None

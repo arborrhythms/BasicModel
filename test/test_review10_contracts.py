@@ -54,7 +54,7 @@ def test_frozen_interpretation_reads_known_without_learning_or_reserving():
     before = deepcopy(cs.definitions.description(word))
     identities = dict(_concept_alloc_of(cs).concepts)
     definitions = len(cs.definitions._store())
-    reservations = deepcopy(interpret._pending)
+    reservations = deepcopy(interpret.objectless())
     model = SimpleNamespace(conceptualSpaces=[cs])
     with frozen_online_learning(model):
         assert recurrent_word(interpret, [9], [], form='novel') is None
@@ -65,7 +65,7 @@ def test_frozen_interpretation_reads_known_without_learning_or_reserving():
         assert interpret.define(pending, obj) is None
         assert len(cs.definitions._store()) == definitions
         assert dict(_concept_alloc_of(cs).concepts) == identities
-        assert interpret._pending == reservations
+        assert interpret.objectless() == reservations
         assert cs.definitions.description(word) == before
     assert not cs._online_learning_frozen
 
@@ -110,7 +110,7 @@ def test_small_frozen_evaluator_keeps_definition_rows_and_reservations():
     def inventory():
         return [dict(words=tuple(cs.definitions.word_ids), objects=tuple(cs.definitions.object_ids),
             rows=deepcopy(cs.definitions._rows),
-            pending=deepcopy(cs.interpret._pending),
+            pending=deepcopy(cs.interpret.objectless()),
             placement=dict(_concept_alloc_of(cs).concepts), capacity=cs.definitions._store().capacity)
             for cs in model.conceptualSpaces]
     before = inventory()

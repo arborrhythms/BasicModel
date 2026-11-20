@@ -17,7 +17,7 @@ def test_named_word_identity_survives_below_binding_threshold_and_rebuild():
     owner, store, obj, atoms = learned(1)
     word = recurrent_word(owner.interpret, [4], [], form='wug')
     agreeing_views(owner, word)
-    description = dict(owner.interpret._pending[word], identity_key='round1e-form')
+    description = dict(owner.interpret.objectless()[word], identity_key='round1e-form')
     row = owner.interpret.define(word, obj, description=description, trust=1.)
     index, alloc = owner.definitions, owner._concept_allocator
     count, next_id = len(store.parts), alloc.next_id
@@ -741,24 +741,20 @@ def test_sign_sentence_observes_a_remembered_endpoint_before_joining(monkeypatch
     agreeing_views(owner, label)
     _sign_equation(f, 'This', 'Felix', 0)
     target, = owner.interpret.remembered_objects(label)
+    # The word read has its blank object, which it denotes at once: the
+    # second sign joins it without waiting (it was a pending sign while the
+    # word had no object).
+    assert owner.definitions.objects(label) == (target,) and 'blank' in alloc.symbol_types[target]
     _, second = _sign_equation(f, 'That', 'Felix', 1)
-    key = owner.mtm.token_of(second)
-    entry = owner.mtm.entries[key]
-    assert entry.pending and entry.symbol is None and entry.kind == owner.null_concept_id
-    left, right, _ = entry.refinement['pending_sign_definition']
-    # The source sentence already wrote this edge to the remembered endpoint.
-    assert right == (alloc.parts.SYMBOL, target)
-    source = alloc.parts.find(left, right)
-    pair = (float(alloc.parts.truth_plus[source]), float(alloc.parts.truth_minus[source]))
-    assert owner.similarity_codebook.trust.views[owner._concept_row_of(target)] == 2
     _, third = _sign_equation(f, 'There', 'Felix', 2)
     assert owner.definitions.objects(label) == (target,)
-    assert owner.similarity_codebook.trust.views[owner._concept_row_of(target)] == 3
     for address in (second, third):
         assert owner.mtm.entries[owner.mtm.token_of(address)].symbol == target
-    assert alloc.parts.find(left, right) == source
-    assert (float(alloc.parts.truth_plus[source]), float(alloc.parts.truth_minus[source])) == pair
-    assert {i for i, kinds in alloc.symbol_types.items() if 'object' in kinds} == {target}
+    # No other object was made for Felix; the others are the blanks of the
+    # pointing words, each the one object of its own word.
+    others = {i for i, kinds in alloc.symbol_types.items() if 'object' in kinds} - {target}
+    named = {obj: word for word, objs in alloc.named_identities.items() for obj in objs}
+    assert all('blank' in alloc.symbol_types[i] and named.get(i) not in (None, label) for i in others)
 
 
 def test_trust_keeps_the_native_rounding_of_an_observed_agreement():

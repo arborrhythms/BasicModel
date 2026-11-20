@@ -69,10 +69,20 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
     # grammar's declarations (sigma-pi §21, rule 20).
     declared = {owner._concept_row_of(cid) for cid in owner._concept_allocator.declared_classes.values()}
     assert bool((rows[:, :1] >= 0).all())
-    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | {owner._concept_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()} | seats | declared
+    # Each word read has its blank object one order above it (rule 20): the
+    # grammar's object rows are the blanks, each read through its word's
+    # form, and the words' own rows are seated beside them.
+    words = rows.clone()
+    for index, row in enumerate(rows.reshape(-1).tolist()):
+        if row >= 0:
+            obj = owner.concept_id_at_row(row)
+            assert 'blank' in owner._concept_allocator.symbol_types[obj]
+            word, = (w for w, objs in owner._concept_allocator.named_identities.items() if obj in objs)
+            words.view(-1)[index] = owner._concept_row_of(word)
+    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | set(words[words>=0].tolist()) | {owner._concept_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()} | seats | declared
     width = cb.mereology.percept_width
-    torch.testing.assert_close(atoms[rows>=0][..., :width], cb.lookup_rows(rows[rows>=0])[..., :width])
-    assert cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all()
+    torch.testing.assert_close(atoms[rows>=0][..., :width], cb.lookup_rows(words[rows>=0])[..., :width])
+    assert cb.mereology.placement_witnesses[words[rows>=0]].gt(0).all()
     assert not atoms[rows>=0][..., cb.mereology.percept_event_width:].any()
     opt = model.getOptimizer(lr=.01)
     groups = model.objective_parameter_groups(opt)

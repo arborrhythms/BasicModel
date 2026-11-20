@@ -65,7 +65,7 @@ def _model():
         from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
         from reading_fixtures import supply_object
         _stage_fullgraph_tensor_peer(m, ["hello world loving there"])
-        for word in sorted(m._concept_owner().interpret._pending):
+        for word in sorted(m._concept_owner().interpret.objectless()):
             supply_object(m._concept_owner(), word)
         m._staged_in_sub = None  # Ingestion owns its subsequent lexical staging.
         # This tests ingestion and external provenance. Its untrained chooser

@@ -20,7 +20,7 @@ def constituents(clause):
         if id(node) in seen:
             return
         seen.add(id(node))
-        if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request or node.reference_request.get('interpret_leaf') or (node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf'))):
+        if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or node.reference_request.get('interpret_leaf') or (node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf'))):
             result.append(node)
         for child in (*node.children, *node.companions):
             visit(child)
@@ -45,7 +45,7 @@ class ReferenceClose(nn.Module):
 
     def address(self, reference):
         if isinstance(reference, tuple):
-            if reference[:1] in (('candidate',), ('name',)):
+            if reference[:1] == ('candidate',):
                 pool = self.components.owner.mtm
                 entry = pool.entries.get(pool.token_of(reference))
                 return None if entry is None else entry.symbol
@@ -65,8 +65,6 @@ class ReferenceClose(nn.Module):
             return ('ltm', self.store.address_domain, int(address))
         if tag == 5:
             return ('candidate', int(address))
-        if tag == 6:
-            return ('name', int(address))
         return None
 
     def coordinates(self, point):
@@ -106,7 +104,7 @@ class ReferenceClose(nn.Module):
         """Read a token's retained kind/fold without making it an individual."""
         if reference is None:
             return None
-        if isinstance(reference, tuple) and reference[:1] in (('candidate',), ('name',)):
+        if isinstance(reference, tuple) and reference[:1] == ('candidate',):
             return self.address(reference)
         if isinstance(reference, int) and reference > 0:
             return None if self.components.owner.interpret.no_object(reference) else reference
@@ -918,7 +916,7 @@ class ReferenceClose(nn.Module):
                 return
             seen.add(id(node))
             nodes.append(node)
-            if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request or node.reference_request.get('interpret_leaf') or (node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf'))):
+            if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or node.reference_request.get('interpret_leaf') or (node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf'))):
                 if (node.reference_request.get('addressed_introduction')
                         or node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf')
                         or not self.has_word(node) or id(node) in participants):
@@ -1119,13 +1117,6 @@ class ReferenceClose(nn.Module):
                 # a determiner word to either operation.
                 if choices:
                     cost = cost + phi[:, 1].amax().clamp(0, 1)
-            elif 'reading_identity' in request:
-                handle = request['reading_identity']
-                tag, address = node.identity['origins'][handle-1, :2].tolist()
-                selected = self.origin_reference(tag, address)
-                if self.components.owner.mtm.token_of(selected) is None:
-                    raise RuntimeError('a read word lost its pending identity')
-                choices, phi = (), None
             elif 'compose_bind' in request:
                 handle = request['compose_bind']
                 if handle <= 0 and node.identity is not None:
@@ -1136,7 +1127,7 @@ class ReferenceClose(nn.Module):
                     if node.identity is None:
                         raise RuntimeError('a recorded bind lost its identity transaction')
                     tag, address = node.identity['origins'][handle - 1, :2].tolist()
-                    selected = self.origin_reference(tag, address) if tag in (1, 2, 5, 6) else handles.get(handle)
+                    selected = self.origin_reference(tag, address) if tag in (1, 2, 5) else handles.get(handle)
                     if selected is None:
                         raise RuntimeError('a compose bind names an unwritten introduction')
                 # The global operation chooser already owns this decision and
@@ -1199,9 +1190,6 @@ class ReferenceClose(nn.Module):
                 compose_dummy='compose_bind' in request and request['compose_bind'] <= 0))
             if 'record' in request and selected is not None and not own_object:
                 items[-1]['record'] = dict(value=request['record'])
-            elif 'reading_identity' in request:
-                token = self.components.owner.mtm.token_of(selected)
-                items[-1]['record'] = dict(value=self.components.owner.mtm.value_of(token).detach().clone())
         plan['cost'] = cost
         plan['individuals'] = individuals
         self._arrival_plan(clause, plan, individuals, stream=stream)
@@ -1436,9 +1424,8 @@ class ReferenceClose(nn.Module):
                     meaning = replace(meaning, bindings=dict(bindings(meaning),
                         _forward_references=((0, request['forward_identity']),)))
             stable = isinstance(reference, int) or (isinstance(reference, tuple)
-                and reference[:1] in (('ltm',), ('sym',), ('name',)))
-            selected_name = isinstance(reference, tuple) and reference[:1] == ('name',)
-            if stable and (not named or selected_name):
+                and reference[:1] in (('ltm',), ('sym',)))
+            if stable and not named:
                 # The writer gets the selected native reference from the
                 # composition. Remove earlier identity metadata without making
                 # the chosen LTM address part of this occurrence's content key.
@@ -1453,12 +1440,7 @@ class ReferenceClose(nn.Module):
                 alias = term.binding
             # Keep the selected occurrence identity even when it has a kind;
             # the kind's symbol is not the identity that composition used.
-            from MemoryLink import retained_reference
-            # A lexical name reads its admitted symbol (or its word while
-            # pending). Only a compose bind selected a particular retained
-            # member whose occurrence must survive later denotation changes.
-            native = self.address(retained_reference(self.components.owner, reference, stream=plan.get('stream'))
-                                  if request.get('compose_bind') else reference)
+            native = self.address(reference)
             source = (term.reference if item.get('own_object') and not item.get('anonymous')
                       else -1)
             updated = replace_term(term, reference=source if native is None else native,
@@ -1697,13 +1679,11 @@ class ReferenceClose(nn.Module):
                 # mention or another field observation. Its centroid/count
                 # are owned by the open pass and its mint by the update.
                 closed_mentions.add(reference)
-            elif isinstance(reference, tuple) and reference[:1] in (('ltm',), ('name',)):
+            elif isinstance(reference, tuple) and reference[:1] == ('ltm',):
                 from RowTime import encoder, next_time
                 kind = self._derivation_symbol(occurrence)
                 token = mtm.token_of(reference)
-                if reference[:1] == ('name',) and (token is None or mtm.entries[token].pending):
-                    kind = None
-                elif kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
+                if kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
                     kind = self._derivation_symbol(reference)
                 if item['mode'] == 'mint' or item.get('own_object'):
                     open_reference(occurrence, kind=None if item.get('anonymous') else kind,
@@ -1885,8 +1865,8 @@ class ReferenceClose(nn.Module):
             refs = result[chunks.REFS][stream,index]
             if int(refs[0,0]) == chunks.IDENTITY_REF and int(refs[0,1]) == identity:
                 refs[0] = refs.new_tensor((chunks.SYMBOL if entry.symbol is not None else chunks.IDENTITY_REF, assigned))
-            refs[1] = refs.new_tensor((chunks.IDENTITY_REF if entry.order is not None or token[0] == 'name' else chunks.OCCURRENCE,
-                                      -token[1]-1 if token[0] == 'name' else token[-1]))
+            refs[1] = refs.new_tensor((chunks.IDENTITY_REF if entry.order is not None else chunks.OCCURRENCE,
+                                      token[-1]))
             timeline = int(state[chunks.TIMELINE][stream,index])
             if timeline >= len(entry.timelines):
                 # Conceiving a branch does not publish it. A recent top can

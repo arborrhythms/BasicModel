@@ -748,7 +748,7 @@ def _surface_snapshot_model():
     # These inverse-surface certificates exercise supplied object definitions.
     # Bare admission now retains a form until such an object is witnessed.
     from reading_fixtures import supply_object
-    for word in sorted(m._concept_owner().interpret._pending):
+    for word in sorted(m._concept_owner().interpret.objectless()):
         supply_object(m._concept_owner(), word)
     _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
     # The helper pads P after lexical staging; compare snapshots at that
@@ -814,7 +814,10 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         # An identified row's bytes are exact. Reassociation changes the
         # inverse surface, not a learned byte likelihood.
         fresh_reference = reference.clone()
-        fresh_reference[0, 0] = owner.similarity_codebook.lookup_rows(row)
+        # The object is the word's blank (rule 20), whose vector is zero; its
+        # form is read through its word's row.
+        assert 'blank' in owner._concept_allocator.symbol_types[obj]
+        fresh_reference[0, 0] = owner.similarity_codebook.lookup_rows(owner._concept_row_of(word))
         assert _surface_byte_cost(m, fresh_reference, target)[0] == 0
         assert before[0] == 0
         store.retain([])

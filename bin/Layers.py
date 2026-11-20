@@ -6493,7 +6493,7 @@ class ConceptAllocator:
             if any(key == cid or isinstance(key, tuple) and key[-1] == cid for key in layer._tensor_rows):
                 return True
         def names(ref):
-            return ref == cid or ref in (('sym', cid), ('name', cid), (self.parts.SYMBOL, cid))
+            return ref == cid or ref in (('sym', cid), (self.parts.SYMBOL, cid))
         for key, value in self.relate_idx.items():
             if names(value):
                 return True

@@ -483,7 +483,10 @@ def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
         reference = native_word_poles(model, spans[:, :width],
                                      [row[:width] for row in forms], known[:, :width])
         assert reference[known[:, :width]].any(), 'admitted forms retain native identification evidence'
-        assert not model._concept_owner().definitions.word_ids
+        # A word read has only its blank object (rule 20), no learned one.
+        owner = model._concept_owner()
+        assert all('blank' in owner._concept_allocator.symbol_types[obj]
+                   for obj in owner.definitions.object_ids)
         fi = model.perceptualSpace._forward_input
         native_width = fi['native_indices'].shape[1]
         fi['native_indices'] = torch.nn.functional.pad(fi['native_indices'], (0, 19), value=-1)

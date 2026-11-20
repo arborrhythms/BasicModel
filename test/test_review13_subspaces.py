@@ -151,13 +151,21 @@ def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_conte
     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
-    torch.testing.assert_close(atoms[rows>=0][..., :128], cb.lookup_rows(rows[rows>=0])[..., :128])
+    # Each word read has its blank object (rule 20): the object rows are the
+    # blanks, whose form is their word's and whose vector is zero.
+    owner = model._concept_owner()
+    alloc = owner._concept_allocator
+    named = {obj: word for word, objs in alloc.named_identities.items() for obj in objs}
+    words = torch.tensor([owner._concept_row_of(named[owner.concept_id_at_row(row)])
+                          for row in rows[rows>=0].tolist()])
+    assert all('blank' in alloc.symbol_types[owner.concept_id_at_row(row)] for row in rows[rows>=0].tolist())
+    torch.testing.assert_close(atoms[rows>=0][..., :128], cb.lookup_rows(words)[..., :128])
     # An object's atom is its form, with its row's own context as it stood
     # when the sentence was staged: none for a row made in this reading.
     for row, atom in zip(rows[rows>=0].tolist(), atoms[rows>=0]):
         assert bool(atom[136:].any()) == (row in context_before), row
-    assert cb.lookup_rows(rows[rows>=0])[...,136:].any()
-    assert bool(cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all())
+    assert cb.lookup_rows(words)[...,136:].any()
+    assert bool(cb.mereology.placement_witnesses[words].gt(0).all())
     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
     parameter = model.perceptualSpace.subspace.what.W
     assert any(p is parameter for p in groups['reconstruction'])

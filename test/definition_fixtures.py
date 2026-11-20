@@ -61,7 +61,7 @@ def witness_object(cs, word, *, point=None):
     Reading an unfamiliar form does not itself testify that it has an object.
     Definition tests supply that testimony explicitly.
     """
-    value = cs.interpret._pending[word]
+    value = cs.interpret.objectless()[word]
     obj = cs.new_concept()
     for parts in value['parts']:
         for part in parts:

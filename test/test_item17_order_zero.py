@@ -296,7 +296,7 @@ def test_no_row_on_a_first_reading(lesson):
         result = owner.interpret_word(parts, wholes, key=form, occurrence=(10_000 + reading, 0, 0))
         found.append(None if result is None else int(result[0]))
         if reading < owner.concept_mint_count - 1:
-            assert result is None and form not in {f for v in owner.interpret._pending.values()
+            assert result is None and form not in {f for v in owner.interpret.objectless().values()
                                                    for f in v['forms']}
             assert len(basic.index) == rows_before and basic.words == words_before
     word = found[-1]

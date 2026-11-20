@@ -193,7 +193,10 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monk
             native = owner.interpret.word_for_form(word)
             assert native is not None
             obj = owner.interpret.forward(native)
-            row = owner._concept_row_of(obj)
+            # The word's object is its blank (rule 20), whose form is read
+            # through its word: the form is the word's row's.
+            assert 'blank' in owner._concept_allocator.symbol_types[obj]
+            row = owner._concept_row_of(native)
             sparse = owner.similarity_codebook.lookup_rows(row)
             torch.testing.assert_close(sparse[:identity.width],identity.form(word),rtol=0,atol=0)
             dense.append(sparse)

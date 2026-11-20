@@ -106,9 +106,7 @@ class InterpretLayer(GrammarLayer):
     def __init__(self, nInput=0, nOutput=0, conceptualSpace=None):
         super().__init__(nInput=nInput, nOutput=nOutput)
         object.__setattr__(self, '_conceptual_space', conceptualSpace)
-        self._pending = {}
         self._description_revision = 0
-        self._field_pending = set()
 
     @property
     def owner(self):
@@ -116,25 +114,34 @@ class InterpretLayer(GrammarLayer):
             raise RuntimeError('interpret requires its shared ConceptualSpace')
         return self._conceptual_space
 
+    def objectless(self):
+        """Each admitted word that names no object yet, with its description
+        (its forms, parts and wholes): a word not yet read, since a reading
+        gives a word with no object its blank object (:meth:`blank`)."""
+        from Spaces import _concept_alloc_of
+        alloc, index = _concept_alloc_of(self.owner), self.owner.definitions
+        named = index.word_ids
+        return {word: value for word, value in alloc.word_descriptions.items()
+                if word not in named and not alloc.named_identities.get(word)
+                and word in alloc.concepts and word not in alloc.retired}
+
     def no_object(self, word):
         """An admitted form can request a referent without inventing an object."""
         word = int(word)
-        return (word in self._pending and word not in self._field_pending
-                and not self.owner.definitions.objects(word))
+        return word in self.objectless() and not self.owner.definitions.objects(word)
 
     def word_for_form(self, form):
-        """Read an admitted form, including one still waiting for an object."""
+        """Read an admitted form, including one with no object yet."""
         form = form_key(form)
         word = self.owner.definitions.word(form=form)
         if word is not None:
             return word
-        return next((word for word, value in self._pending.items()
+        return next((word for word, value in self.objectless().items()
                      if form in value['forms']), None)
 
     def lexical_identities(self):
         """The current object meanings and objectless forms that can emit."""
-        return tuple(dict.fromkeys((*self.owner.definitions.object_ids,
-            *(word for word in self._pending if self.no_object(word)))))
+        return tuple(dict.fromkeys((*self.owner.definitions.object_ids, *self.objectless())))
 
     def denotations(self, word):
         """All admitted objects of the word, without discarding lower orders."""
@@ -168,7 +175,7 @@ class InterpretLayer(GrammarLayer):
 
     def lexical_form(self, identity):
         if self.no_object(identity):
-            value = self._pending[int(identity)]
+            value = self.objectless()[int(identity)]
         elif int(identity) in self.owner.definitions.word_ids:
             value = self.owner.definitions.description(int(identity))
         else:
@@ -228,11 +235,10 @@ class InterpretLayer(GrammarLayer):
     def _preflight(self, *, inventory=True, word=None):
         from Spaces import _concept_alloc_of
         store = self.owner.definitions._store()
-        reserved = sum(cid != word for cid in self._pending)
         alloc = _concept_alloc_of(self.owner)
         needed = 3 if inventory else 1  # word, object and its Part edge
-        if (len(store) + reserved >= store.capacity
-                or alloc.next_id + needed + reserved > store.capacity):
+        if (len(store) >= store.capacity
+                or alloc.next_id + needed > store.capacity):
             raise RuntimeError('definition store capacity exhausted; no word was admitted')
         if inventory:
             self.owner._preflight_concept_row(0)
@@ -252,7 +258,7 @@ class InterpretLayer(GrammarLayer):
             # Held-out reads may resolve existing definitions, but cannot
             # reserve identities, add decompositions or finish pending words.
             known = index.word(unit=parts, form=form)
-            return known if known is not None else next((cid for cid, value in self._pending.items()
+            return known if known is not None else next((cid for cid, value in self.objectless().items()
                 if parts in value['parts'] or (form is not None and form_key(form) in value['forms'])), None)
         model = getattr(cs, '_model', None)
         ps = getattr(model, 'perceptualSpace', None)
@@ -275,14 +281,15 @@ class InterpretLayer(GrammarLayer):
             parts = tuple(ps.fuse_parts(parts))
         form = form_key(form)
         word = index.word(unit=parts, form=form, identity=identity_key)
-        for cid, value in self._pending.items():
+        objectless = self.objectless()
+        for cid, value in objectless.items():
             if parts in value['parts'] or (form is not None and form in value['forms']):
                 word = cid
                 break
         if word is not None:
             if form is not None:
                 cs.bind_word_concept(form, word)
-            definition = index.description(word) or self._pending[word]
+            definition = index.description(word) or objectless[word]
             previous = definition['parts']
             if any(tuple(ps.fuse_parts(p) if native is not None else p) == parts for p in previous):
                 return word
@@ -291,28 +298,27 @@ class InterpretLayer(GrammarLayer):
             obj = index.deref(word)
             if not cs.nominates(('alternative', word, parts), reading):
                 return word
-            if word not in self._field_pending:
-                try:
-                    cs._preflight_concept_row(0)
-                except RuntimeError:
-                    if not word_reading:
-                        raise
-                    # An optional new decomposition cannot evict a known
-                    # word or partially amend its admitted definition.
-                    drops = cs.__dict__.setdefault('_concept_admission_drops', {})
-                    reason = 'word alternative'
-                    drops[reason] = drops.get(reason, 0) + 1
-                    return word
-                cs._populate_concept_weights(obj if obj is not None else word,
-                    witness=(parts, wholes), word_reading=True)
+            try:
+                cs._preflight_concept_row(0)
+            except RuntimeError:
+                if not word_reading:
+                    raise
+                # An optional new decomposition cannot evict a known
+                # word or partially amend its admitted definition.
+                drops = cs.__dict__.setdefault('_concept_admission_drops', {})
+                reason = 'word alternative'
+                drops[reason] = drops.get(reason, 0) + 1
+                return word
+            cs._populate_concept_weights(obj if obj is not None else word,
+                witness=(parts, wholes), word_reading=True)
             for part in parts:
                 cs.add_part(word, part)
             for whole in wholes:
                 cs.add_whole(word, whole)
             value = dict(definition, parts=tuple(previous) + (parts,),
                          wholes=tuple(dict.fromkeys((*definition['wholes'], *wholes))))
-            if word in self._pending:
-                self._pending[word] = value
+            if word in objectless:
+                alloc.word_descriptions[word] = value
                 self._description_revision += 1
             for candidate in index.objects(word):
                 row = index.row(word, candidate)
@@ -334,7 +340,7 @@ class InterpretLayer(GrammarLayer):
             # native discovery: identify them through the definition table.
             # A field with witnessed objects still owns its case rows, so a
             # word cannot occupy a competing row before its unit recurs.
-            lexical = set(index.word_ids) | set(index.object_ids) | set(self._pending)
+            lexical = set(index.word_ids) | set(index.object_ids) | set(self.objectless())
             discovering = any(cs.concept_id_at_row(row) not in lexical
                               for row in cs._witnessed_rows())
         if discovering:
@@ -356,17 +362,14 @@ class InterpretLayer(GrammarLayer):
             alloc.singletons.add(word)
             cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
             cs._csw_concept_row(0, word)
-            self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+            alloc.word_descriptions[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
             cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
             self._description_revision += 1
             if form is not None:
                 cs.bind_word_concept(form, word)
-            if obj is None:
-                # The field has not admitted this object's case yet. The word
-                # is a native concept; its reserved interpretation completes
-                # on that admission, without occupying a competing row.
-                self._field_pending.add(word)
-            else:
+            if obj is not None:
+                # The field's case is the word's object. Without one, the
+                # word's reading gives it its blank object.
                 self.define(word, obj)
             return word
         try:
@@ -386,13 +389,13 @@ class InterpretLayer(GrammarLayer):
         alloc.singletons.add(word)
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
-        self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+        alloc.word_descriptions[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
         cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
         self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
         if identity_key is not None:
-            self._pending[word]['identity_key'] = identity_key
+            alloc.word_descriptions[word]['identity_key'] = identity_key
             self._description_revision += 1
         return word
 
@@ -403,7 +406,8 @@ class InterpretLayer(GrammarLayer):
             return
         from WordIdentity import bytes_of
         cs, index = self.owner, self.owner.definitions
-        for word, old in tuple(self._pending.items()):
+        alloc = _concept_alloc_of(cs)
+        for word, old in tuple(self.objectless().items()):
             if not old['forms']:
                 continue
             raw = old['forms'][0]
@@ -411,12 +415,11 @@ class InterpretLayer(GrammarLayer):
             if raw not in identity.words:
                 continue
             parts = identity.parts(raw)
-            self._pending[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
+            alloc.word_descriptions[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
             self._description_revision += 1
             for part in parts:
                 cs.add_part(word, part)
-            if word not in self._field_pending:
-                cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True, coactive=True)
+            cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True, coactive=True)
         for word in tuple(index.word_ids):
             old = index.description(word)
             if not old or not old['forms']:
@@ -467,7 +470,7 @@ class InterpretLayer(GrammarLayer):
             index.add(row)
             return row
         self._preflight(inventory=False, word=word)
-        description = description or self._pending.get(word) or index.description(word)
+        description = description or alloc.word_descriptions.get(word) or index.description(word)
         if description is None:
             description = dict(forms=(), parts=(tuple(cs.concept_parts(word)),),
                                wholes=tuple(cs.concept_wholes(word)))
@@ -480,10 +483,26 @@ class InterpretLayer(GrammarLayer):
         alloc.named_identities.setdefault(word, set()).add(obj)
         row = store.add(obj, word, truth_plus=pair[0], truth_minus=pair[1])
         index.add(row)
-        self._pending.pop(word, None)
         self._description_revision += 1
-        self._field_pending.discard(word)
+        self.member_of_objects(obj)
         return row
+
+    def member_of_objects(self, obj):
+        """An object that interpret finds or makes for a word is a member of
+        the declared kind "objects", through the symbol that holds it (found
+        first, made where none does: :meth:`ConceptualSpace.things_reading`).
+        The kind stands one order above the objects of words; an object at
+        or above its order is not one of its members."""
+        from Spaces import _concept_alloc_of
+        cs = self.owner
+        kind = _concept_alloc_of(cs).declared_classes.get('objects')
+        kind_row = None if kind is None else cs._concept_row_of(kind)
+        row = cs._concept_row_of(obj)
+        if kind_row is None or row is None or cs._row_order(row) >= cs._row_order(kind_row):
+            return None
+        if not cs.reads_concept(kind_row, row):
+            cs.add_concept_edge(kind_row, row, 1.)
+        return kind_row
 
     def compose(self, value, **interpretation):
         """The field chooser supplies its resolved row. A direct read uses the word API."""
@@ -558,8 +577,6 @@ class InterpretLayer(GrammarLayer):
             return word
         if frozen and not candidates:
             return None
-        if word in self._field_pending:
-            return self.admit_discovered(word)
         if selected is not None:
             obj = index.deref(word, selected=selected)
         elif candidates:
@@ -571,8 +588,11 @@ class InterpretLayer(GrammarLayer):
             obj = choices[0]
         elif word in index.word_ids:
             # The lexical identity survives while its definition is below
-            # the authority threshold. It has no usable denotation yet.
-            return None
+            # the authority threshold. Its blank object is read meanwhile,
+            # as its reading reads it (``referent``); another object has no
+            # usable denotation yet.
+            blank = self.blank_of(word)
+            return blank if blank is not None and not frozen else None
         else:
             raise ValueError('interpret requires an admitted word')
         # Selecting the association is a relation read, not new testimony.
@@ -609,7 +629,9 @@ class InterpretLayer(GrammarLayer):
         return remembered[0] if remembered else word
 
     def reading(self, word, *, batch=0):
-        """Identify a read site's object, retaining an objectless name in MTM.
+        """Identify a read site's object; a word with no object is given its
+        blank object (:meth:`blank`), and the word that names it is the meta
+        concept.
 
         The grammar's forward operation remains a choice in thought. This
         eager word boundary supplies no grammatical order or operation.
@@ -621,55 +643,50 @@ class InterpretLayer(GrammarLayer):
                 raise RuntimeError('an identified word has no conceptual row')
             return word, row, self.owner._concept_source_order(word)
         obj = self.referent(word, batch=batch)
-        if self.denotations(word):
+        if (self.denotations(word) or obj != word
+                or getattr(self.owner, '_online_learning_frozen', False)):
             return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
-        row = self.owner._concept_row_of(word)
-        if row is None:
+        if self.owner._concept_row_of(word) is None:
             raise RuntimeError('an identified word has no conceptual row')
-        if getattr(self.owner, '_online_learning_frozen', False):
-            return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
-        pool = self.owner.mtm
-        key = pool.named(word, value=self.owner.similarity_codebook.lookup_rows([row])[0],
-                         when=max(pool.closes.values(), default=0))
-        entry = pool.entries[key]
-        if entry.symbol is not None:
-            self.define(word, entry.symbol)
-            return entry.symbol, self.owner._concept_row_of(entry.symbol), self.owner._concept_source_order(entry.symbol)
-        # The pending site's code and order are its observed word's witness.
-        # Its transient identity is not a new row or an assigned object order.
-        if obj != word:
-            # The read can use the retained denotation immediately. The pending
-            # token acquires its new occurrence and DEF only at a kept close.
-            return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
-        return entry.transient, row, self.owner._concept_source_order(word)
+        blank = self.blank(word)
+        obj = word if blank is None else blank
+        return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
 
-    def admit_discovered(self, word=None):
-        """Finish reserved definitions when the field's cases receive IDs."""
+    def blank_of(self, word):
+        """The word's blank object, where it has one, or ``None``."""
         from Spaces import _concept_alloc_of
-        cs = self.owner
-        if getattr(cs, '_online_learning_frozen', False):
+        alloc = _concept_alloc_of(self.owner)
+        return next((cid for cid in sorted(alloc.named_identities.get(int(word), ()))
+                     if 'blank' in alloc.symbol_types.get(cid, ()) and cid not in alloc.retired), None)
+
+    @torch.no_grad()
+    def blank(self, word):
+        """The blank object of a word that names no object: a new concept one
+        order above the word, with no members, whose vector is zero, and the
+        word's definition of it, the meta concept (``define``). A word that
+        names an object is given none. Returns the blank, or ``None`` where
+        its order has no room left (the word then reads as itself)."""
+        from Spaces import _concept_alloc_of
+        from ConceptPlacement import promotion_seat, positions
+        cs, word = self.owner, int(word)
+        alloc = _concept_alloc_of(cs)
+        if self.denotations(word) or alloc.named_identities.get(word):
             return None
-        model = getattr(cs, '_model', None)
-        ps = getattr(model, 'perceptualSpace', None)
-        layer = _concept_alloc_of(cs).layer()
-        result = None
-        for pending in tuple(self._field_pending) if word is None else (word,):
-            value = self._pending[pending]
-            # A lexical form's letters identify the word, never its object.
-            if any(self.word_for_form(form) is not None for form in value['forms']):
-                continue
-            for parts in value['parts']:
-                fused = tuple(ps.fuse_parts(parts)) if ps is not None else parts
-                if len(fused) != 1:
-                    continue
-                obj = next((entry.symbol for entry in cs.mtm.entries.values()
-                    if entry.symbol is not None and entry.order is not None
-                    and entry.refinement.get('literal') == ('ps', fused)), None)
-                if obj is not None:
-                    self.define(pending, obj)
-                    result = obj
-                    break
-        return result
+        order = cs._concept_source_order(word) + 1
+        if not promotion_seat(cs, order, context='blank object'):
+            return None
+        cs._preflight_concept_allocation(1, context='blank object')
+        cid = cs.new_concept(order=order)
+        alloc.symbol_types.setdefault(cid, set()).update(('concept', 'object', 'blank'))
+        alloc.individuals.add(cid)
+        row = cs._concept_row_of(cid)
+        # Magnitude is certainty in that space: the blank starts at nothing.
+        positions(cs)[row].zero_()
+        bank = cs.similarity_codebook
+        if getattr(bank, 'mereology', None) is not None:
+            bank.W[row].zero_()
+        self.define(word, cid)
+        return cid
 
     def reverse(self, obj, *, word_atoms=None, presence=None, evidence=None):
         if torch.is_tensor(obj):

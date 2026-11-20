@@ -10,7 +10,7 @@ def snapshot(cs):
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
     store = alloc.layer()
-    return (alloc.next_id, dict(alloc.concepts), dict(cs.interpret._pending),
+    return (alloc.next_id, dict(alloc.concepts), dict(cs.interpret.objectless()),
             {key: tuple(value) for key, value in store._constituents.items()},
             dict(alloc.order_zero_members),
             dict(store._tensor_rows), dict(store._index))
@@ -28,7 +28,7 @@ def test_23_fuse_parts_before_word_admission(tmp_path):
     assert set(cs.concept_parts(word)) == set(ps.percept_store.identity.admit(b'love'))
     cs.interpret.forward(word)
     assert cs.interpret.word_for_form('love') == word
-    assert cs.interpret._pending[word]['identity_key'] == ps.percept_store.identity.key(
+    assert cs.interpret.objectless()[word]['identity_key'] == ps.percept_store.identity.key(
         ps.percept_store.identity.form(b'love')).hex()
     assert not cs.definitions.objects(word)
 

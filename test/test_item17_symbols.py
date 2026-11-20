@@ -879,3 +879,68 @@ def test_cert_6_the_symbols_leg_carries_each_symbols_two_lanes_and_no_code():
     # No symbol read: no leg.
     carrier = SimpleNamespace(_concept_activations=field.detach(), _concept_inventory_rows=torch.tensor([dogs, green]))
     assert Language.SymbolSpace.forward_concept_to_symbol(ss, carrier) is None
+
+
+# Certificate 18: the blank object and the meta concept (rule 20).
+
+def _word_space():
+    from test_cs_sparse_weights import _cs
+    from nomination_fixtures import recurrent_word
+    cs = _cs(nS=64, order=3, order_reservations=(0, 1, 1))
+    cs.declare_word_classes()
+    word = recurrent_word(cs.interpret, [7], [1], form='felix')
+    return cs, word
+
+
+def test_cert_18_a_word_with_no_object_gets_one_blank_object_and_one_meta_concept():
+    from ConceptPlacement import positions
+    cs, word = _word_space()
+    alloc = cs._concept_allocator
+    assert cs.interpret.no_object(word) and not cs.definitions.objects(word)
+    before = set(alloc.concepts)
+    obj, row, order = cs.interpret.reading(word)
+    # One new concept with a row (the definition's relation takes a handle
+    # of its own, with no row): the blank object, one order above its word,
+    # with no members.
+    made = {cid for cid in set(alloc.concepts) - before if cs._concept_row_of(cid) is not None}
+    assert made == {obj} and 'blank' in alloc.symbol_types[obj]
+    assert order == cs._concept_source_order(word) + 1 == 1
+    assert row == cs._concept_row_of(obj) and cs._row_order(row) == 1
+    assert not alloc.refs(obj, 'part') and not cs.concept_parts(obj)
+    # The meta concept: the word's definition of the blank.
+    assert cs.definitions.objects(word) == (obj,) and cs.definitions.row(word, obj) is not None
+    assert not cs.interpret.no_object(word)
+    # Its vector is zero, and a read that normalizes it gives zero, not NaN.
+    vector = positions(cs)[row]
+    assert float(vector.abs().sum()) == 0.
+    assert float(cs.similarity_codebook.trust.content[row].abs().sum()) == 0.
+    normalized = torch.nn.functional.normalize(vector, dim=-1)
+    assert bool(torch.isfinite(normalized).all()) and float(normalized.abs().sum()) == 0.
+    # Interpreting it again makes nothing new.
+    concepts, definitions = set(alloc.concepts), len(alloc.parts)
+    assert cs.interpret.reading(word) == (obj, row, order)
+    assert cs.interpret.forward(word) == obj
+    assert set(alloc.concepts) == concepts and len(alloc.parts) == definitions
+
+
+def test_cert_18_every_object_found_or_made_for_a_word_is_a_member_of_objects():
+    cs, word = _word_space()
+    alloc = cs._concept_allocator
+    objects = alloc.declared_classes['objects']
+    kind_row = cs._concept_row_of(objects)
+    assert cs._row_order(kind_row) == 2
+    obj, row, _ = cs.interpret.reading(word)
+    # Through the symbol that holds the object, as any kind's member.
+    table = alloc.symbol_table()
+    symbol = table.fit(obj)
+    assert symbol is not None and table.members(symbol) == [obj]
+    assert cs.reads_concept(kind_row, row)
+    # An object found for a word (a definition to an existing object) too.
+    from nomination_fixtures import recurrent_word
+    other = recurrent_word(cs.interpret, [9], [1], form='ciao')
+    found = cs.new_concept(order=1)
+    cs.interpret.define(other, found)
+    assert cs.reads_concept(kind_row, cs._concept_row_of(found))
+    # No pending name is left in MTM.
+    assert not any(isinstance(key, tuple) and key[:1] == ('name',) for key in cs.mtm.entries)
+    assert not hasattr(cs.mtm, 'named') and not hasattr(cs.interpret, '_pending')

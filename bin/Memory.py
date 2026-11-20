@@ -1068,16 +1068,12 @@ class MediumTermMemory(MemoryStore):
 
     def hold_pending(self,reference,meaning):
         marks=dict(meaning.bindings)
-        identity = marks.get('_identity')
-        named = isinstance(identity, tuple) and identity[:1] == ('name',)
         if not (marks.get('_open_references') or marks.get('_forward_references')
-                or marks.get('_unresolved_operands') or named):
+                or marks.get('_unresolved_operands')):
             return
         # Pending grammar is working memory; completed provenance is not.
         names=('_open_references','_forward_references','_reference_sites',
                '_bound_roles','_bound_references','_unresolved_operands')
-        if named:
-            names = (*names, '_identity')
         marks={name:marks[name] for name in names if name in marks}
         if reference not in self.pending and len(self.pending)>=self.capacity:
             del self.pending[min(self.pending,key=lambda key:self.pending[key][0])]
@@ -1317,8 +1313,6 @@ class MediumTermMemory(MemoryStore):
         covered = {address for address, concept in members}
         members.extend((address, concepts.get(address, self.reading_of(address)))
                        for address in entry.occurrences if address not in covered)
-        if not members and key is not None and key[:1] == ('name',):
-            members.append((key, key[1]))
         members.extend((event.occurrence, None) for event in entry.timelines[timeline].events
                        if event.role == 0 and event.before is not None)
         # A modal mention can alias this identity without stating its actual
@@ -1460,25 +1454,6 @@ class MediumTermMemory(MemoryStore):
         self.entries[key] = replace(entry, occurrences=members, count=entry.count+1,
             when=when, where=self._where(where, entry.where))
         return self.record_link(key, occurrence, stream, kind=kind, order=order)
-
-    def named(self, word, *, value, when=0):
-        """Read a name's pending identity; first sight has no kept occurrence."""
-        word = int(word)
-        named = self.names.get(('name', word))
-        if named is not None and named.token in self.entries:
-            return named.token
-        key = next((name.token for name in reversed(tuple(self.names.values()))
-                    if name.reading == word and name.token in self.entries), None)
-        if key is not None:
-            self.names['name', word] = Name(key, word)
-            return key
-        key = ('name', word)
-        self._room()
-        self.entries[key] = Token((), None, 0, int(when),
-            (Timeline(()),), pending=True,
-            transient=self._allocate_id(), where=self._where(None))
-        self.names[key] = Name(key, word)
-        return key
 
     def bind(self, antecedent, occurrence, *, kind, when, value=None, reading=None, where=None):
         token = self.token_of(antecedent)
@@ -1740,9 +1715,6 @@ class MediumTermMemory(MemoryStore):
                     and value[0] == 'bp' and type(value[1]) is int and value[1] >= 0)
         def occurrence(value):
             return address(value) or percept(value)
-        def named(value):
-            return (state['version'] >= 10 and isinstance(value, tuple) and len(value) == 2
-                    and value[0] == 'name' and type(value[1]) is int and value[1] > 0)
         def symbol(value):
             return value is None or type(value) is int and value > 0
         def sentence(value):
@@ -1762,9 +1734,9 @@ class MediumTermMemory(MemoryStore):
             candidate = (isinstance(key, tuple) and len(key) == 2 and key[0] == 'candidate'
                          and type(key[1]) is int and 0 <= key[1] < counter)
             if (key in entries or (candidate and uses) or (not candidate and
-                    (not (occurrence(key) or named(key) or collection)
+                    (not (occurrence(key) or collection)
                      or not all((sentence(use) or percept(use)) if collection else occurrence(use) for use in uses)
-                     or (not named(key) and not collection and key not in uses)
+                     or (not collection and key not in uses)
                      or len(set(uses)) != len(uses)))):
                 raise ValueError('invalid identity checkpoint membership')
             order, support = record.get('order'), self._support(record.get('support', {}))
@@ -1843,13 +1815,13 @@ class MediumTermMemory(MemoryStore):
             if not symbol(record.get('symbol')):
                 raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:
-            if (not (occurrence(mention) or named(mention)) or not (occurrence(token) or named(token))
+            if (not occurrence(mention) or not occurrence(token)
                     or not symbol(reading) or mention in names or token not in entries
-                    or (mention not in entries[token].occurrences and not (named(mention) and reading == mention[1]))):
+                    or mention not in entries[token].occurrences):
                 raise ValueError('invalid identity checkpoint name')
             names[mention] = Name(token, reading)
         if (len(entries) > self.capacity or len(names) != sum(len(entry.occurrences)
-                for key, entry in entries.items() if key[:1] != ('collection',)) + sum(named(mention) for mention in names)):
+                for key, entry in entries.items() if key[:1] != ('collection',))):
             raise ValueError('identity checkpoint exceeds capacity or omits a name')
         clocks, accesses = {}, {}
         if state['version'] >= 3:
@@ -2126,12 +2098,6 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
             raise OverflowError('LTM0 construction capacity exhausted; forgetting is required')
         if referent is None:
             referent=meaning.role_refs[int(occupied[0])] or dict(meaning.bindings).get('_identity')
-        if isinstance(referent, tuple) and referent[:1] == ('name',):
-            owner = self.owner()
-            if owner is None or owner.mtm.token_of(referent) is None:
-                raise ValueError('pending referent names an unavailable MTM identity')
-            meaning = replace(meaning, bindings={**dict(meaning.bindings), '_identity': referent})
-            referent = None
         reference=self._reference_value(referent)
         if entry is None and isinstance(self,LTM0) and meaning.extension:
             from EpisodicMemory import for_meaning

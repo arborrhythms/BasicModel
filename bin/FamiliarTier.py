@@ -461,20 +461,14 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
     still belongs to the common update after every active stream closes.
     """
     if reading is None or reading.word_ids is None:
-        return {}
-    from Meaning import ConceptualMeaning
+        return
     pool, store = owner.mtm, owner._closed_clause_store()
-    occurrences = {}
     retained, pending = {}, [clause]
-    percept_leaves = set()
     while pending:
         node = pending.pop()
         if node is None:
             continue
         pending.extend((*node.children, *node.companions))
-        request = node.reference_request or {}
-        if request.get('sign_leaf') or request.get('no_op_leaf'):
-            percept_leaves.update(request['leaves'])
         term = node.composition
         location = (written or {}).get(id(node))
         if term is not None and len(term.leaves) == 1 and isinstance(location, int):
@@ -505,36 +499,6 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
             owner.link(Occurrence(address, concept=('bp', percept), kind='percept', order=-1, selected=selected), {},
                 value=point, when=pool.closes.get(batch, 0)+1, stream=batch,
                 where=None if reading.symbol_where is None else reading.symbol_where[index])
-        if word <= 0 or owner.definitions.objects(word) or index in percept_leaves:
-            continue
-        name = pool.names.get(('name', word))
-        key = name.token if name is not None else next((name.token for name in pool.names.values()
-            if name.reading == word and name.token in pool.entries), None)
-        if key is None or not pool.entries[key].pending or pool.entries[key].order is not None:
-            continue
-        from MemoryLink import Occurrence, member_order
-        order = member_order(owner, Occurrence((), concept=word), stream=batch)
-        value = reading.leaves[index]
-        referent = owner.interpret.referent(word, batch=batch)
-        meaning = replace(ConceptualMeaning.from_description(value), bindings={
-            '_identity': None if referent == word else ('sym', referent), '_forward_references': ((0,word),),
-            '_open_references': (('referent',0),)})
-        row = retained.get(index)
-        if (row is None or store.order_of_row(row) != order
-                or not torch.equal(store.slots[row], value.to(store.slots))):
-            # This is a retained unknown referent, not an asserted answer.
-            # Use the existing open-question storage contract and evidence.
-            row = store.append_meaning(meaning, evidence=(0., 0.))
-        occurrence = store.occurrence_of(row)
-        occurrences[index] = occurrence
-        from MemoryLink import Occurrence
-        key = owner.link(Occurrence(occurrence, concept=word, pending=True, selected=key, order=order), {},
-            value=value, when=pool.closes.get(batch, 0)+1, stream=batch,
-            where=None if reading.symbol_where is None else reading.symbol_where[index])
-        owner.__dict__.setdefault('_field_activated_references', {}).setdefault(batch, set()).add(occurrence)
-        if word in owner._concept_allocator.named_identities and pool.reading_of(key) == word:
-            promote_identity(owner, key, word=word, stream=batch)
-    return occurrences
 
 
 def resolve_known_reference(owner, key, order, *, stream=None):
@@ -683,8 +647,6 @@ def define_pending(owner, left, right, *, word=None, other_word=None, null_refer
         if word is not None or key is None or owner.mtm.entries[key].kind != NULL_CONCEPT:
             raise ValueError(f'null-kind definition has no open token at {left!r}')
         return _resolve_null_token(owner, key, left, right, other_word)
-    if key is None and word is not None:
-        key = owner.mtm.token_of(('name', int(word)))
     if key is not None and owner.mtm.entries[key].kind == NULL_CONCEPT:
         return _resolve_null_token(owner, key, left, right, other_word)
     if key is None or not owner.mtm.entries[key].pending or owner.mtm.entries[key].order is not None:
@@ -843,11 +805,8 @@ def promote_candidates(owner):
             mentions = entry.refinement.get('mentions', {})
             # Several closing adapters can reference the same read site.
             # Recurrence counts distinct kept readings, not those aliases.
-            # A mention of another word can bind this named token without
-            # witnessing recurrence of its introducing word.
-            named = key[1] if isinstance(key, tuple) and key[:1] == ('name',) else None
             count = (len({(stream, clock) for address, (stream, clock) in mentions.items()
-                          if ((address in entry.occurrences and (named is None or pool.reading_of(address) == named))
+                          if (address in entry.occurrences
                               or address in entry.refinement.get('chain_mentions', ()))
                           and pool.closes.get(stream, 0)-clock <= pool.horizon})
                      if pool.closes else len(entry.occurrences))
@@ -962,5 +921,4 @@ def promote_candidates(owner):
             else:
                 owner.add_concept_feature(row, literal[0], literal[1], 1.)
         result.append(cid)
-    owner.interpret.admit_discovered()
     return result

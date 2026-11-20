@@ -427,7 +427,7 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
             entry = pool.entries[token]
             # Candidate counters are pool keys, never LTM occurrence addresses
             # (in particular, candidate zero is a valid retained candidate).
-            origins[index] = row.new_tensor((5 if entry.order is not None else 6 if token[0] == 'name' else 2,
+            origins[index] = row.new_tensor((5 if entry.order is not None else 2,
                 token[-1], not entry.pending))
             if entry.pending and entry.order is None:
                 for shifted in members[members[:,SOURCE-2] < 0]:

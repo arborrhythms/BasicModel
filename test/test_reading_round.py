@@ -126,7 +126,8 @@ def test_lexical_letters_open_nothing_but_nonlexical_located_case_does():
     cs._model = model
     observe_native_cases(cs, 0, support)
     assert not cs.mtm.entries
-    assert cs.interpret.admit_discovered() is None and not cs.definitions.objects(word)
+    # The located case is no object of the lexical word.
+    assert not cs.definitions.objects(word)
 
 
 def test_documents_and_epochs_retain_history_and_live_mtm():
@@ -146,41 +147,6 @@ def test_documents_and_epochs_retain_history_and_live_mtm():
     assert len(store) == 2 and all(owner.mtm.token_of(ref) is not None for ref in (first, second))
 
 
-def test_reading_pending_name_survives_documents_then_defines_on_recurrence():
-    from test_orders_learned import equality_fixture
-    from test_presentation_memory import model_for
-    from Meaning import ConceptualMeaning
-    cs, store, alloc = equality_fixture()
-    word = recurrent_word(cs.interpret, (4,7), (), form='label')
-    ids = []
-    for document in range(cs.concept_mint_count):
-        identity, row, order = cs.interpret.reading(word)
-        key = cs.mtm.token_of(identity)
-        assert cs.mtm.entries[key].pending and not cs.definitions.objects(word)
-        assert order == alloc.order_of(word) == 0
-        ids.append(identity)
-        value = cs.similarity_codebook.lookup_rows(row)
-        index = store.append_meaning(ConceptualMeaning.from_description(value),
-            )
-        occurrence = store.occurrence_of(index)
-        cs.mtm.bind(key, occurrence, kind=None, when=document, value=value, reading=word)
-        cs.mtm.close(store, stream=0, references=(occurrence,))
-        cs.mtm.promote_candidates(cs)
-    assert len(set(ids)) == 1
-    obj, = cs.definitions.objects(word)
-    assert alloc.order_of(obj) == 1
-    assert cs.interpret.reading(word) == (obj, cs._concept_row_of(obj), 1)
-    from BindingAnswers import matches
-    from dataclasses import replace
-    answer = replace(ConceptualMeaning.from_description(value),
-        role_refs=(('name', word), None, None), bindings={'_bound_roles': (('referent',0),)})
-    model = SimpleNamespace(_concept_owner=lambda: cs, symbolSpace=SimpleNamespace(ltm_store=store))
-    assert matches(model, answer, 'label')
-    saved = copy.deepcopy(cs.mtm.state())
-    cs.mtm.restore(saved)
-    assert cs.mtm.state()['names'] == saved['names']
-
-
 def test_pending_reading_checkpoint_before_first_kept_mention():
     cs, rows = _fixture()
     word = recurrent_word(cs.interpret, (4,7), (), form='label')
@@ -189,49 +155,6 @@ def test_pending_reading_checkpoint_before_first_kept_mention():
     cs.mtm.restore(None)
     cs.mtm.restore(saved)
     assert cs.interpret.reading(word) == before
-
-
-def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurrence():
-    from FamiliarTier import promote_identity
-    from Forgetting import model_boundary
-    from Meaning import ConceptualMeaning
-    from test_orders_learned import equality_fixture
-    from test_presentation_memory import model_for
-    cs, store, alloc = equality_fixture()
-    model = model_for(cs, store)
-    model_boundary(model, epoch_boundary=True)
-    word = recurrent_word(cs.interpret, (4, 7), (), form='label')
-    identity, row, order = cs.interpret.reading(word)
-    value = cs.similarity_codebook.lookup_rows(row)
-    index = store.append_meaning(ConceptualMeaning.from_description(value),
-         )
-    occurrence = store.occurrence_of(index)
-    key = cs.mtm.token_of(identity)
-    cs.mtm.bind(key, occurrence, kind=None, when=0, value=value, reading=word)
-    obj = promote_identity(cs, key, word=word)
-    before = cs.interpret.reading(word)
-    assert before == (obj, cs._concept_row_of(obj), 1)
-    for _ in range(2):
-        store.reset()
-        store.parts.retain(())
-        cs.mtm.restore(None)
-        model_boundary(model, epoch_boundary=True)
-        assert store.location(occurrence) is None and not cs.mtm.entries
-        assert not cs.definitions.objects(word) and alloc.named_identities[word] == {obj}
-        assert alloc.settle(obj) == 1
-        assert ('part', ('occ', occurrence[-1])) not in alloc.store_of(obj).constituents(obj)
-        assert cs.interpret.reading(word) == before
-        assert not cs.definitions.objects(word)  # a read alone creates no DEF
-        index = store.append_meaning(ConceptualMeaning.from_description(value),
-             )
-        occurrence = store.occurrence_of(index)
-        token = cs.mtm.token_of(('name',word))
-        cs.mtm.bind(token, occurrence, kind=None, when=0, value=value, reading=word)
-        assert promote_identity(cs, token, word=word) == obj
-        assert cs.interpret.reading(word) == before
-        from Memory import OCCURRENCE, SYMBOL
-        assert store.parts.find((OCCURRENCE, occurrence[-1]), (SYMBOL, obj)) is not None
-
 
 
 def pending_reading_journal(monkeypatch):
@@ -252,16 +175,6 @@ def pending_reading_journal(monkeypatch):
         identity_origins=torch.stack((torch.full_like(ids, 6), torch.tensor(words), torch.zeros_like(ids)), 1),
         identity_actions=torch.zeros(len(program.actions), 6, dtype=torch.long)))
     return f, words, finish_clause(f.language, program, registry=f.registry)
-
-
-def test_pending_reading_journal_keeps_order_zero_participants(monkeypatch):
-    from ReferenceClose import constituents
-    f, words, clause = pending_reading_journal(monkeypatch)
-    sites = constituents(clause)
-    assert len(sites) == 2
-    assert all(site.order == 0 for site in sites)
-    assert [site.reference_request['reading_identity'] for site in sites] == [1, 2]
-    assert [site.reference_request['forward_identity'] for site in sites] == words
 
 
 @pytest.mark.parametrize('durable_mention', [False, True])
@@ -302,40 +215,6 @@ def test_order_zero_bind_keeps_its_introduction_and_event(monkeypatch, durable_m
     assert token is not None and len(f.cs.mtm.entries[token].events) == 1
 
 
-def test_reading_close_follows_a_named_alias_after_merge(monkeypatch):
-    from chunk_fixtures import context
-    f, words, clause = pending_reading_journal(monkeypatch)
-    pool, resolver = f.cs.mtm, f.cs.components.reference_close
-    alias, target = [('name', word) for word in words]
-    pool.merge(alias, target, when=0)
-    assert alias not in pool.entries and pool.token_of(alias) == target
-    plan = resolver.preview(clause, context(resolver, ()))
-    prepared = resolver.prepare(clause, plan)
-    written = {}
-    row = f.store.write_clause(prepared,
-         written_rows=written)
-    resolver.commit(plan, row, written, document='merged-name', position=0, training=False)
-    assert pool.token_of(alias) == target
-    assert pool.entries[target].pending and pool.entries[target].kind is None
-    assert len(pool.entries[target].occurrences) == 2
-
-
-@pytest.mark.parametrize('merged', [False, True])
-def test_pending_reading_name_is_not_a_supplied_answer(merged, monkeypatch):
-    from chunk_fixtures import context
-    from ThoughtReferences import with_slots
-    from test_modal_timelines import same
-    f, words, clause = pending_reading_journal(monkeypatch)
-    pool, resolver = f.cs.mtm, f.cs.components.reference_close
-    if merged:
-        pool.merge(('name', words[0]), ('name', words[1]), when=0)
-    plan = resolver.preview(clause, context(resolver, ()))
-    meaning = with_slots(clause.meaning, (('referent', 0), ('referent', 2)), pair=(0., 0.))
-    before = copy.deepcopy(pool.state())
-    assert resolver.answer_meaning(plan, meaning) is meaning
-    same(pool.state(), before)
-
-
 @pytest.mark.parametrize('pending', [False, True])
 def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(monkeypatch, pending):
     from test_modal_timelines import fixture, recording, close, same
@@ -366,42 +245,6 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
     same(f.cs.mtm.state(), before)
 
 
-def test_named_alias_follows_merge_restore_and_horizon_expiry():
-    from Memory import MediumTermMemory
-    from ClauseRow import Clause, attach_clause_index
-    from Memory import LTM0
-    from Meaning import ConceptualMeaning
-    from test_cs_sparse_weights import _cs
-    import weakref
-    # §50 item 100g / §52 item 111: lexical names and occurrences need
-    # their real dictionary/LTM owner, even in a lifecycle-only fixture.
-    owner = _cs(nS=16, dim=4)
-    store = STM0(4, capacity=4, relation_capacity=8192)
-    attach_clause_index(SimpleNamespace(), store, owner)
-    object.__setattr__(owner, '_clause_store_ref', weakref.ref(store))
-    word = recurrent_word(owner.interpret, [3], (), form='alias')
-    with torch.no_grad():
-        owner.similarity_codebook.W[owner._concept_row_of(word)].fill_(1)
-    occurrences = [store.occurrence_of(store.write_clause(
-        Clause(ConceptualMeaning.from_description(torch.ones(4)), point=torch.ones(4), order=1),
-        )) for i in range(2)]
-    pool = MediumTermMemory(capacity=4, horizon=2, n_vectors=16)
-    pool._owner = weakref.ref(owner)
-    source = pool.named(word, value=torch.ones(4))
-    target = pool.open(occurrences[0], kind=None, when=0, value=torch.ones(4))
-    pool.bind(source, occurrences[1], kind=None, when=0, reading=word)
-    pool.merge(source, target, when=0)
-    assert pool.token_of(('name', word)) == target
-    assert pool.named(word, value=torch.zeros(4)) == target
-    saved = copy.deepcopy(pool.state())
-    pool.restore(saved)
-    assert pool.token_of(('name', word)) == target
-    pool.close(None, stream=0, references=(target,))
-    for _ in range(pool.horizon + 1):
-        pool.close(None, stream=0)
-    assert not pool.entries and not pool.names and not pool.transient_used.any()
-
-
 def test_forward_name_is_not_filled_by_its_own_defined_word():
     from dataclasses import replace
     from definition_fixtures import witness_object
@@ -419,76 +262,6 @@ def test_forward_name_is_not_filled_by_its_own_defined_word():
     result = store.read_reference_bindings(index, meaning)
     assert open_slots(result) == (('referent',0),)
     assert dict(result.bindings)['_forward_references'] == ((0,word),)
-
-
-def test_kept_word_mention_retains_its_pending_referent():
-    from FamiliarTier import commit_read_words
-    from ThoughtReferences import open_slots
-    cs, rows = _fixture()
-    word = recurrent_word(cs.interpret, (4,7), (), form='label')
-    identity, row, order = cs.interpret.reading(word)
-    reading = SimpleNamespace(word_ids=torch.tensor([word]),
-        leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
-    store = cs._closed_clause_store()
-    root = store.append_idea(reading.leaves[0], )
-    occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0,
-        written={'root_occurrence': store.occurrence_of(root)})[0]
-    index = store.location(occurrence)
-    assert cs.mtm.entries[cs.mtm.token_of(occurrence)].pending
-    assert store.row(index)['evidence'] == (0.,0.)
-    assert float(store.trust[index]) == 0.
-    for meaning in (store.raw_meaning_of(index), store.meaning_of(index)):
-        assert open_slots(meaning) == (('referent',0),)
-        assert dict(meaning.bindings)['_forward_references'] == ((0,word),)
-
-
-@pytest.mark.parametrize('promoted', [False, True])
-def test_thought_part_persists_a_named_token_through_its_native_reference(monkeypatch, promoted):
-    from dataclasses import replace
-    from FamiliarTier import commit_read_words
-    from ThoughtStream import write
-    from ThoughtReferences import with_slots, open_slots
-    from test_item6_2_thinking import world
-    import Occurrence
-    model, registry, store, (a, b, _) = world()
-    cs = model.conceptualSpace
-    word = recurrent_word(cs.interpret, (81,), (), form='pending-label')
-    _, row, _ = cs.interpret.reading(word)
-    reading = SimpleNamespace(word_ids=torch.tensor([word]),
-        leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
-    root = store.append_idea(reading.leaves[0], )
-    occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0,
-        written={'root_occurrence': store.occurrence_of(root)})[0]
-    key = cs.mtm.token_of(('name', word))
-    if promoted:
-        cs.mtm.promote(key, a[1])
-    value = registry.form('isEqual', a, b)
-    value = with_slots(replace(value, role_refs=(('name', word), value.role_refs[1], b)), (), pair=(0., 0.))
-    monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('thought-document', 0))
-    before = copy.deepcopy(cs.mtm.state())
-    index = write(model, value, row=0)
-    saved = store.raw_meaning_of(index)
-    assert saved.role_refs[0] == (a if promoted else occurrence)
-    assert bool(open_slots(saved)) is not promoted
-    from test_modal_timelines import same
-    same(cs.mtm.state(), before)
-
-
-def test_thought_selection_of_pending_token_keeps_its_open_referent(monkeypatch):
-    from dataclasses import replace
-    from test_bind_thought import native, site
-    from ThoughtReferences import open_slots
-    f = native(monkeypatch)
-    key = f.cs.mtm.named(7, value=f.atoms[0])
-    meaning = replace(site(f, f.atoms[0]), bindings={
-        '_forward_references': ((0,7),), '_open_references': (('referent',0),)})
-    plan = dict(meaning=meaning, role=0, candidates=(key,), features=torch.zeros(1,8),
-        cue=f.atoms[0], individuals={key:dict(value=f.atoms[0])}, records={}, base={}, forward_identity=7)
-    monkeypatch.setattr(f.resolver, 'select', lambda *args, **kwargs: 0)
-    result = f.resolver.finish_thought_bind(plan, logits=torch.ones(1))
-    assert plan['candidates'] == (key,)
-    assert result['incomplete'] == ('pending_antecedent',)
-    assert open_slots(result['meaning']) == (('referent',0),)
 
 
 def test_lesson13_has_two_phases_distinct_documents_and_supplied_math_records():
@@ -519,73 +292,6 @@ def symbol_interpretation(monkeypatch):
     def configured(layer, *args, **kwargs):
         configure(layer, *args, **kwargs)
     monkeypatch.setattr(OperationSelectionLayer, 'configure_arguments', configured)
-
-
-@pytest.mark.usefixtures('symbol_interpretation')
-def test_native_read_sites_carry_one_token_across_three_documents(eager_reading, monkeypatch):
-    from data import TheData
-    from Models import BaseModel
-    from MathChainTraining import present
-    from corpus_lessons import stage_documents
-    root = Path(__file__).resolve().parents[1]
-    from util import init_config
-    init_config(path=str(root/'data/MM_corpus_orders.xml'), defaults_path=str(root/'data/model.xml'))
-    import Language
-    Language.TheGrammar._configured = False
-    TheData.processLM({split:dict(text=['.'] if split == 'train' else [],label=[])
-                      for split in ('train','validation','test')})
-    model = BaseModel.from_config(str(root/'data/MM_corpus_orders.xml'), data=TheData)[0]
-    from reading_fixtures import read_in_source_order
-    read_in_source_order(model, monkeypatch)
-    stage_documents(TheData, dict(documents=[dict(document=i,key=str(i),records=[
-        dict(key=str(i),sentences=['label.'])]) for i in range(3)]))
-    # The form is a word, nominated by MTM before the three documents.
-    from nomination_fixtures import nominated_forms
-    nominated_forms(model, ['label.'])
-    identities = []
-    def observed(model, split, rows, result):
-        cs = model._concept_owner()
-        word = cs.interpret.word_for_form('label')
-        assert word is not None
-        key = cs.mtm.token_of(('name', word))
-        assert key is not None
-        entry = cs.mtm.entries[key]
-        identities.append(key)
-        assert entry.occurrences, 'the read word did not retain a kept mention'
-        if len(identities) < cs.concept_mint_count:
-            assert entry.pending and not cs.definitions.objects(word)
-        else:
-            assert entry.symbol in cs.definitions.objects(word)
-            assert cs._concept_allocator.order_of(entry.symbol) == 1
-    try:
-        present(model, split='train', optimizer=model.getOptimizer(lr=.001), batch_size=1,after_batch=observed)
-        assert len(identities) == 3 and len(set(identities)) == 1
-        pool = model._concept_owner().mtm
-        pool.restore(copy.deepcopy(pool.state()))
-    finally:
-        model.End()
-        model.symbolSpace.soft_reset()
-
-
-def test_defining_clause_promotes_a_named_reading_before_recurrence():
-    from test_orders_learned import equality_fixture, equal_close
-    from Meaning import ConceptualMeaning
-    cs, store, alloc = equality_fixture()
-    word = recurrent_word(cs.interpret, (4,), (), form='subject')
-    kind = recurrent_word(cs.interpret, (7,), (), form='kind')
-    identity, row, order = cs.interpret.reading(word)
-    token = cs.mtm.token_of(identity)
-    value = cs.similarity_codebook.lookup_rows(row)
-    index = store.append_meaning(ConceptualMeaning.from_description(value),
-                                )
-    occurrence = store.occurrence_of(index)
-    cs.mtm.bind(token, occurrence, kind=None, when=0, value=value, reading=word)
-    cs.mtm.close(store, stream=0, references=(occurrence,))
-    assert cs.mtm.promote_candidates(cs) == []
-    equal_close(cs, store, occurrence[-1], kind, word=kind)
-    obj, = cs.definitions.objects(word)
-    assert cs.mtm.entries[token].symbol == obj and alloc.order_of(obj) == 1
-    assert cs.interpret.reading(word)[0] == obj
 
 
 def test_final_curriculum_has_four_ordered_phases_and_untrained_recombinations():

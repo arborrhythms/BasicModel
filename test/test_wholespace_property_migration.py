@@ -110,11 +110,12 @@ def test_aligned_model_accepts_unequal_inventory_capacities(tmp_path):
     from PartsOfSpeech import order_reservations
     # The configured 16 is the room of order zero; each order above has half
     # the one below; every order's declared seats come on top: the thought
-    # operations at zero, the formal arguments and the classes of words and
-    # objects at one, the operators at two.
+    # operations at zero, the formal arguments and the class of words at
+    # one, the operators and the class of objects at two.
     seats = order_reservations(TheGrammar)
-    assert seats[1] == len(model._concept_owner()._concept_allocator.formal_arguments) + len(ConceptualSpace.WORD_CLASSES)
-    assert seats[2] == len(operation_names(TheGrammar.rules_upward))
+    assert seats[1] == len(model._concept_owner()._concept_allocator.formal_arguments) + 1
+    assert seats[2] == len(operation_names(TheGrammar.rules_upward)) + 1
+    assert ConceptualSpace.WORD_CLASSES == {'words': 1, 'objects': 2}
     caps = model._concept_owner()._order_caps()
     assert [cap - seat for cap, seat in zip(caps, seats)] == [max(1, 16 >> k) for k in range(len(caps))]
     assert model.nConceptCodes == sum(caps)

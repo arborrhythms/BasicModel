@@ -4028,12 +4028,6 @@ class BaseModel(Mereology, nn.Module):
             }
             if attrs:
                 entry["attributes"] = attrs
-            interpretation = cs.__dict__.get('_interpret_operator')
-            if interpretation is not None and interpretation._pending:
-                entry['pending_definitions'] = {
-                    'words': _checkpoint_host_copy(interpretation._pending),
-                    'field': sorted(interpretation._field_pending),
-                }
             carrier = getattr(cs, 'subspace', None)
             evidence = getattr(carrier, '_concept_activations', None)
             if torch.is_tensor(evidence):
@@ -4327,10 +4321,9 @@ class BaseModel(Mereology, nn.Module):
                 cs.mtm.restore(entry['last_epoch_mtm'], device=cs.similarity_codebook.W.device)
             if 'epoch_mtm' in entry:
                 warnings.warn('checkpoint: discarded retired initial MTM history')
-            pending = entry.get('pending_definitions') or {}
-            if pending or hasattr(cs, 'interpret'):
-                cs.interpret._pending = _checkpoint_host_copy(pending.get('words', {}))
-                cs.interpret._field_pending = set(pending.get('field', ()))
+            if entry.get('pending_definitions'):
+                raise ValueError('checkpoint REFUSED: it holds words waiting for an object; '
+                                 'a word with no object now has its blank object')
             for name, value in (entry.get("attributes") or {}).items():
                 if name in ('_percept_word_concept', '_object_word_concept', '_word_obj_meta'):
                     continue  # replaced by the index over migrated DEF rows

@@ -42,7 +42,12 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
         assert len(word_rows) == 4
-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | constructed
+        # Each word's object is its blank, one order above it (rule 20);
+        # the words' own rows are seated beside them.
+        lexical = {owner._concept_row_of(w) for w, objs in owner._concept_allocator.named_identities.items()
+                   if any(owner._concept_row_of(o) in word_rows for o in objs)}
+        assert len(lexical) == 4
+        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | lexical | constructed
         admitted.append(word_rows)
     model._stage_reading_word_concepts = observe_admission
     try:
@@ -72,6 +77,8 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         # zero. Covers and these arguments are concepts, never letter words.
         for row in set(owner._concept_allocator.layer()._tensor_row_keys) - word_rows:
             cid = owner.concept_id_at_row(row)
+            if 'word' in owner._concept_allocator.symbol_types.get(cid, ()):
+                continue  # the words whose blanks are the object rows
             if owner.is_frozen(cid):
                 # §27.2 seats the grammar's fixed thought identities during
                 # construction; none is a letter admitted by this reading.

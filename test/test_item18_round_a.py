@@ -46,38 +46,6 @@ def test_argument_metadata_round_trip_has_identical_bytes():
     assert torch.equal(saved, restored.get_extra_state())
 
 
-def test_later_sentence_reads_a_promoted_name_from_its_current_reference():
-    from types import SimpleNamespace
-    from PrependedSymbols import SymbolEntries, refresh_words, word_view, lookup_view
-    from test_cs_sparse_weights import _cs
-    owner = _cs(nS=128, order=2, dim=16)
-    word = recurrent_word(owner.interpret, [1], [2], form='label')
-    transient, row, order = owner.interpret.reading(word)
-    entries = SymbolEntries(1, 2, 2, 16)
-    for field, values in (
-            ('concept_ids', [word, word]), ('concept_rows', [row, row]),
-            ('object_ids', [transient, transient]), ('object_rows', [row, row]),
-            ('object_orders', [order, order]), ('lookup_rows', [row]*4),
-            ('lookup_sentence_ids', [0, 1, 0, 1])):
-        entries.stage_words(field, torch.tensor([values]))
-    atoms = owner.similarity_codebook.lookup_rows(torch.tensor([[row, row]]))
-    entries.stage_words('lookup_atoms', torch.cat((atoms, atoms), 1))
-    source = SimpleNamespace(symbol_entries=entries, _ar_word_object_atoms=atoms,
-                             _packed_sentence_ids=torch.tensor([[0, 1]]))
-    model = SimpleNamespace(inputSpace=source, _concept_owner=lambda: owner)
-    obj = owner.new_concept(order=0)
-    owner.mtm.promote(('name', word), obj)
-    reference = owner._concept_row_of(obj)
-    refresh_words(model, 1)
-    assert word_view(source, 'object_ids').tolist() == [[transient, obj]]
-    assert word_view(source, 'object_rows').tolist() == [[row, reference]]
-    assert word_view(source, 'object_orders')[0, 1] == owner._row_order(reference)
-    assert lookup_view(source, 'lookup_rows').tolist() == [[row, row, row, reference]]
-    expected = owner.similarity_codebook.lookup_rows(torch.tensor(reference))
-    torch.testing.assert_close(source._ar_word_object_atoms[0, 1], expected)
-    torch.testing.assert_close(lookup_view(source, 'lookup_atoms')[0, 3], expected)
-
-
 def test_modifier_preserves_checkpoint_gain_and_pullbacks(monkeypatch):
     """Certificate 69: fixed, nonzero gain from the pushed pre-rename code."""
     import Language

@@ -190,27 +190,3 @@ def identity_fixture():
     owner.mtm.bind(key, occurrence, kind=None, when=0, value=value, reading=word)
     return owner, store, alloc, key, word, occurrence
 
-
-def test_promoted_order_survives_early_occurrence_forgetting_and_two_epochs():
-    from FamiliarTier import promote_identity
-    from Forgetting import model_boundary
-    from test_presentation_memory import model_for
-    owner, store, alloc, key, word, occurrence = identity_fixture()
-    cid = promote_identity(owner, key, word=word)
-    assert alloc.seated_order(cid) == 1
-    store.reset()  # Clear both stores when the fixture removes every occurrence.
-    store.parts.retain(())
-    assert store.location(occurrence) is None and alloc.order_of(cid) == 1
-    for _ in range(2):
-        model_boundary(model_for(owner, store), epoch_boundary=True)
-        assert alloc.order_of(cid) == 1
-
-
-def test_promotion_rejects_missing_witness_at_creation():
-    from FamiliarTier import promote_identity
-    owner, store, alloc, key, word, occurrence = identity_fixture()
-    store.reset()
-    before = alloc.next_id
-    with pytest.raises(RuntimeError, match='identity promotion requires a kept mention'):
-        promote_identity(owner, key, word=word)
-    assert alloc.next_id == before

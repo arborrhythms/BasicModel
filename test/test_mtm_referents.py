@@ -34,41 +34,6 @@ def place(bank, row, pair):
         bank.mereology.placement_dirty[row] = True
 
 
-def test_defined_word_reads_current_denotation_not_its_word_row():
-    owner, bank, _, rows, concepts, _ = world()
-    name, obj = concepts
-    owner.interpret.define(name, obj)
-    key = owner.mtm.named(name, value=bank.lookup_rows([rows[0]])[0])
-    start = bank.mereology.percept_event_width
-    for pair in ((.2, .8), (.9, .1)):
-        place(bank, rows[1], pair)
-        expected = bank.lookup_rows([rows[1]])[0]
-        assert not torch.equal(expected[start:], bank.lookup_rows([rows[0]])[0, start:])
-        torch.testing.assert_close(owner.mtm.value_of(key)[start:], expected[start:], rtol=0, atol=0)
-
-
-@torch.no_grad()
-def test_word_reads_its_single_remembered_object_after_definition_forgetting():
-    from test_presentation_memory import begin, fixture, model_for
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    model = model_for(owner, store)
-    begin(model)
-    name = recurrent_word(owner.interpret, [109], [], form='remembered')
-    obj = owner.new_concept()
-    from order_fixtures import force_order
-    force_order(owner, obj, 1)
-    row = owner._csw_concept_row(1, obj)
-    owner.similarity_codebook.W[row].copy_(atoms[0])
-    owner.interpret.define(name, obj)
-    owner._concept_allocator.parts.retain(())
-    assert not owner.definitions.objects(name)
-    assert owner.interpret.remembered_objects(name) == (obj,)
-    key = owner.mtm.named(name, value=atoms[1])
-    owner.similarity_codebook.W[row].copy_(atoms[2])
-    torch.testing.assert_close(owner.mtm.value_of(key), atoms[2], rtol=0, atol=0)
-
-
 def test_referent_is_frozen_and_ambiguity_is_shared_with_reading():
     owner, _, _, _, concepts, _ = world()
     name, obj = concepts
@@ -209,39 +174,6 @@ def test_tiny_positive_containment_is_exact_and_empty_content_is_not_evidence():
     assert all(ratio == 0 for ratio in meet_ratios(torch.zeros(2), query))
 
 
-
-
-def test_ingestion_pool_has_its_owner_and_reads_current_meanings():
-    from contextlib import nullcontext
-    from Models import BasicModel
-    from Meaning import ConceptualMeaning
-    owner, bank, store, rows, concepts, _ = world()
-    caller = owner.mtm
-    captured = []
-    def batch(**kwargs):
-        pool = owner.mtm
-        assert pool is not caller
-        assert pool._owner() is owner
-        assert pool.field_width == caller.field_width
-        assert int(pool.transient_ids[0]) == owner.nVectors
-        key = pool.named(concepts[0], value=bank.lookup_rows([rows[0]])[0])
-        place(bank, rows[0], (.6, .4))
-        start = bank.mereology.percept_event_width
-        current = bank.lookup_rows([rows[0]])[0]
-        torch.testing.assert_close(pool.value_of(key)[start:], current[start:], rtol=0, atol=0)
-        captured.append(pool)
-        store.append_meaning(ConceptualMeaning.from_description(current),
-            )
-    model = SimpleNamespace(eval=lambda: None, set_sigma=lambda _: None,
-        _what_memory=lambda: None, _concept_owner=lambda: owner,
-        _runtime_batch=lambda *args, **kwargs: nullcontext(),
-        inputSpace=SimpleNamespace(prepInput=lambda _: torch.ones(1, 1)),
-        data=SimpleNamespace(train_input=('supplied',)), runBatch=batch,
-        _clear_recall_history=lambda: None)
-    # Exercise the native ingestion constructor and its try/finally owner swap.
-    with pytest.raises(ValueError, match='did not produce a selected grammatical closing'):
-        BasicModel._ltm_ingest_truth_texts(model, store, ['supplied'])
-    assert len(captured) == 1 and owner.mtm is caller
 
 
 def test_accessible_reads_each_identity_once(monkeypatch):

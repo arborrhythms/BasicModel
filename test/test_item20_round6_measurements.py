@@ -6,36 +6,6 @@ import torch
 from nomination_fixtures import recurrent_word
 
 
-def test_empty_named_bind_keeps_its_reading_order_through_retention():
-    from test_reference_close import fixture, known_concept
-    from test_medium_term_memory import mention
-    from chunk_fixtures import context
-    from FamiliarTier import commit_read_words
-    resolver, store, atoms = fixture()
-    owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = recurrent_word(owner.interpret, [117], (), form='pending-name')
-    concept = known_concept(owner, atoms[0], order=1)
-    owner.interpret.define(word, concept, trust=.1)
-    key = pool.named(word, value=atoms[0], when=0)
-    assert not pool.entries[key].occurrences
-    identity = dict(handle=1, origins=torch.tensor([[6, word, 0]]))
-    clause = mention(atoms[0], mode='bind')
-    clause = replace(clause, subject_word_id=word, identity=identity,
-        reference_request=dict(clause.reference_request, compose_bind=1, record=atoms[0]))
-    plan = resolver.preview(clause, context(resolver, ()), stream=0)
-    assert plan['items'][0]['selected'] == key
-    assert plan['items'][0]['member_order'] == 1
-    kept = resolver.prepare(clause, plan)
-    written = {}
-    row = store.write_clause(kept, written_rows=written)
-    reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    commit_read_words(owner, reading, batch=0, document='pending-name', position=0,
-                      written={'root_occurrence': store.occurrence_of(row)})
-    resolver.commit(plan, row, written, document='pending-name', position=0, training=False)
-    assert pool.entries[pool.token_of(store.occurrence_of(row))].refinement['member_order'] == 1
-    assert store.order_of_row(row) == 1
-
-
 @pytest.mark.parametrize('source', ['members', 'occurrences', 'candidate'])
 def test_memory_centroids_preserve_common_rails_with_fractional_evidence(source):
     from MemoryConsolidation import _fold
@@ -54,81 +24,6 @@ def test_memory_centroids_preserve_common_rails_with_fractional_evidence(source)
         result = _fold(owner, store, list(members), members=members if source == 'members' else None)
     assert torch.equal(result, codes[0])
     assert ((result >= 0) & (result <= 1)).all()
-
-
-def test_promoted_name_keeps_its_order_when_an_old_mention_reads_the_definition():
-    from test_reference_close import fixture, known_concept
-    from FamiliarTier import commit_read_words, promote_identity
-    from Memory import OCCURRENCE, SYMBOL
-    resolver, store, atoms = fixture()
-    owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    alloc = owner._concept_allocator
-    word = recurrent_word(owner.interpret, [118], (), form='retained-definition')
-    key = pool.named(word, value=atoms[0], when=0)
-    row = store.append_idea(atoms[0])
-    reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    occurrence = commit_read_words(owner, reading, batch=0, document='retained-definition',
-        position=0, written={'root_occurrence':store.occurrence_of(row)})[0]
-    assert store.order_of_row(store.location(occurrence)) == 0
-    concept = promote_identity(owner, key, word=word, trust=1.)
-    assert pool.entries[key].refinement['member_order'] == 0
-    assert store.order_of_row(store.location(occurrence)) == 0
-    edge = alloc.parts.find((OCCURRENCE, occurrence[-1]), (SYMBOL, concept))
-    assert edge is not None
-    # Learning the name supplies a denotation without changing its earlier
-    # occurrence or deleting that occurrence's membership witness.
-    assert alloc.settle(concept) == 1
-    assert ('occ', occurrence[-1]) in alloc.refs(concept, 'part')
-    assert alloc.parts.find((OCCURRENCE, occurrence[-1]), (SYMBOL, concept)) == edge
-    assert ('part', ('sym', word)) in alloc.records(concept)
-    # An inconsistent explicit definition still fails at the original guard.
-    higher = known_concept(owner, atoms[1], order=1)
-    alloc.store_of(concept).add_constituent(concept, 'part', ('sym', higher))
-    with pytest.raises(ValueError, match='recorded concept order disagrees'):
-        alloc.settle(concept)
-
-
-@pytest.mark.parametrize('named', [False, True])
-def test_eventful_identity_keeps_the_checked_thought_as_a_member(named):
-    from test_reference_close import fixture, known_concept
-    from MemoryLink import Occurrence
-    from Meaning import ConceptualMeaning
-    from ThoughtReferences import with_slots
-    from ThoughtStream import write
-    resolver, store, atoms = fixture()
-    owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    concept = known_concept(owner, atoms[0], order=1)
-    initial = replace(ConceptualMeaning.from_description(atoms[0]),
-                      role_refs=(('sym', concept), None, None))
-    first = store.occurrence_of(store.append_meaning(initial))
-    if named:
-        word = recurrent_word(owner.interpret, [119], (), form='thought-member')
-        owner.interpret.define(word, concept, trust=.1)
-        key = pool.named(word, value=atoms[0])
-    else:
-        word, key = None, None
-    key = owner.link(Occurrence(first, concept=word, referent=concept, order=1, selected=key), {},
-        value=atoms[0], where=None, when=1, stream=0)
-    event_value = atoms[1]
-    event = store.occurrence_of(store.append_idea(event_value))
-    pool.event(key, event, verb=concept, role=0, when=1, before=atoms[0])
-    pool.close(store, stream=0, references=(first, event))
-    history = pool.entries[key].events
-    answer = store.occurrence_of(store.append_idea(atoms[2]))
-    identity = ('name', word) if named else key
-    meaning = ConceptualMeaning(torch.stack((event_value, torch.zeros_like(event_value), atoms[2])),
-        torch.ones(3,dtype=torch.bool),role_refs=(identity,('sym',concept),answer),
-        bindings={'_equality':True,'_producing_operation':'query','_bound_roles':(('referent',2),)},
-        sentence_kind='relation')
-    row = write(NS(symbolSpace=NS(ltm_store=store)), with_slots(meaning, (), pair=(1.,0.)), row=0)
-    written = store.occurrence_of(row)
-    assert not hasattr(pool, 'update')
-    assert pool.token_of(written) == key
-    assert written in pool.entries[key].occurrences
-    assert pool.entries[key].refinement['mentions'][written] == (0,2)
-    assert store.order_of_row(row) == pool.entries[key].refinement['member_order'] == 1
-    assert pool.entries[key].events == history
-    torch.testing.assert_close(pool.value_of(key), torch.maximum(event_value, atoms[2]), rtol=0, atol=0)
 
 
 @pytest.mark.parametrize('flag', ['sign_leaf', 'no_op_leaf'])

@@ -129,7 +129,7 @@ def test_partial_product_inverse_keeps_defined_coordinates_and_root_gradient():
     torch.testing.assert_close(root.grad,torch.tensor([[[1/3,0.]]]))
 
 
-@pytest.mark.parametrize('known', [False, True], ids=['pending-identities', 'admitted-objects'])
+@pytest.mark.parametrize('known', [False, True], ids=['blank-objects', 'admitted-objects'])
 def test_native_four_word_inverse_follows_composed_children_without_free_decoder(tmp_path,monkeypatch,known):
     from test_native_attention_field import _model
     from test_reverse_traversal import _select_completed_binary_path
@@ -146,7 +146,7 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
                 assert admit(model, form) is not None
         else:
             # MTM nominates a form on recurrence (sigma-pi §21, rule 20); a
-            # word with no object's testimony stays a pending name.
+            # word with no object is given its blank object when read.
             from nomination_fixtures import nominated_forms
             nominated_forms(model, texts)
         from reading_fixtures import capture_readings
@@ -163,14 +163,16 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
         ops = model.languageSpace._tree_layer(2).ops
         kernel = next(getattr(op, 'gl', op) for op in ops
                       if getattr(getattr(op, 'gl', op), 'percept_band', None) is not None)
-        # Both admitted and pending meanings are evaluated after the word
+        # Both admitted and blank objects are evaluated after the word
         # tree. Its inverse retains the word's form presence in either case.
         target = record.word_values[:, :4]
         if not known:
             ids = [[model._concept_owner().interpret.word_for_form(w) for w in text.split()] for text in texts]
-            pool = model._concept_owner().mtm
-            pending = torch.stack([torch.stack([pool.value_of(('name', word)) for word in row]) for row in ids])
-            assert not torch.equal(kernel.content_operand(target), kernel.content_operand(pending))
+            owner = model._concept_owner()
+            bank = owner.similarity_codebook
+            blanks = torch.stack([bank.lookup_rows([owner._concept_row_of(owner.interpret.blank_of(word))
+                                                    for word in row]) for row in ids])
+            assert not torch.equal(kernel.content_operand(target), kernel.content_operand(blanks))
         torch.testing.assert_close(kernel.content_operand(recovered),
             kernel.content_operand(target), atol=1e-5, rtol=1e-5)
     finally:model.End()

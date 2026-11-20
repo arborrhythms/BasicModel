@@ -298,7 +298,7 @@ def test_pyramid_grads_reach_every_rung():
     from reading_fixtures import supply_object
     # The gradient mechanism supplies testimony; one smoke epoch is not a
     # promise that an untrained reading has defined an object for every word.
-    for word in tuple(cs0.interpret._pending):
+    for word in tuple(cs0.interpret.objectless()):
         if cs0.interpret.no_object(word):
             supply_object(cs0, word)
     for obj in cs0.definitions.object_ids:

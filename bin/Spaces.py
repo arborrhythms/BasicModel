@@ -14596,7 +14596,7 @@ class ConceptualSpace(Space):
         words = set(() if index is None else index.word_ids)
         operator = self.__dict__.get('_interpret_operator')
         if operator is not None:
-            words.update(operator._pending)
+            words.update(operator.objectless())
         return words
 
     def resolve_identities(self):
@@ -15691,7 +15691,7 @@ class ConceptualSpace(Space):
                              if store is not None and concept_id[0] == OCCURRENCE else concept_id)
                 index = None if store is None else store.location(reference)
                 return -1 if index is None else store.order_of_row(index, _seen)
-            if concept_id[0] in ('sym', 'name', SYMBOL, RELATION):
+            if concept_id[0] in ('sym', SYMBOL, RELATION):
                 concept_id = concept_id[1]
             else:
                 return -1
@@ -16177,13 +16177,20 @@ class ConceptualSpace(Space):
     def prebuild_formal_arguments(self, arguments):
         return self._prebuild_declared(arguments, _concept_alloc_of(self).formal_arguments, 'formal-argument')
 
-    #: The classes declared with their rows at construction: every word's
-    #: concept is a member of "words", every object's of "objects".
-    WORD_CLASSES = ('words', 'objects')
+    #: The classes declared with their rows at construction, by their
+    #: orders: every word's concept is a member of "words" (order one, over
+    #: the words' order-zero concepts), and every object that interpret finds
+    #: or makes for a word of "objects" (order two, over the objects of
+    #: words, which stand one order above their words).
+    WORD_CLASSES = {'words': 1, 'objects': 2}
 
     def declare_word_classes(self):
-        return self._prebuild_declared(self.WORD_CLASSES, _concept_alloc_of(self).declared_classes,
-                                       'declared')
+        registry = _concept_alloc_of(self).declared_classes
+        declared = {}
+        for order in sorted(set(self.WORD_CLASSES.values())):
+            names = tuple(name for name, at in self.WORD_CLASSES.items() if at == order)
+            declared.update(self._prebuild_declared(names, registry, 'declared', order=order))
+        return declared
 
     def reading(self, stream):
         """A reading, for MTM's count of a form: one forward of the model's
@@ -16718,7 +16725,7 @@ class ConceptualSpace(Space):
             if identity.word_rows.get(raw) == int(pid):
                 return self.interpret.word_for_form(raw)
         word = self.definitions.word(unit=int(pid))
-        return word if word is not None else next((cid for cid, value in self.interpret._pending.items()
+        return word if word is not None else next((cid for cid, value in self.interpret.objectless().items()
             if (int(pid),) in value['parts']), None)
 
     def object_concept_of_percept(self, pid):
@@ -16752,7 +16759,7 @@ class ConceptualSpace(Space):
         values = set(alloc.word_forms.get(str(form), ()))
         operator = self.__dict__.get('_interpret_operator')
         if operator is not None:
-            values.update(word for word, value in operator._pending.items() if str(form) in value['forms'])
+            values.update(word for word, value in operator.objectless().items() if str(form) in value['forms'])
         index = self._definition_index()
         word = None if index is None else index.word(form=form)
         if word is not None:
@@ -16857,7 +16864,7 @@ class ConceptualSpace(Space):
         if revision != self._priming_bridge_revision:
             bridge = {}
             for word in self._word_definition_ids():
-                description = allocator.word_descriptions.get(word) or self.interpret._pending.get(word)
+                description = allocator.word_descriptions.get(word)
                 if description is None:
                     continue
                 parts = tuple(dict.fromkeys(p for group in description['parts'] for p in group))

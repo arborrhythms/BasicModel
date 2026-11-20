@@ -508,35 +508,6 @@ def test_shared_definition_witness_resolves_a_null_token_only_once(monkeypatch):
         definition_calls_before=2, definition_calls_after=1, promoted_tokens=1))
 
 
-def test_kept_word_read_reenters_a_definition_learned_after_its_pending_path():
-    from test_reference_close import fixture, known_concept
-    from FamiliarTier import commit_read_words
-    resolver, store, atoms = fixture()
-    owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    word = recurrent_word(owner.interpret, [105], (), form='later-definition')
-    key = pool.named(word, value=atoms[0], when=0)
-    reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    def close(position):
-        root = store.append_idea(atoms[0])
-        return commit_read_words(owner, reading, batch=0, document='later-definition',
-            position=position, written={'root_occurrence': store.occurrence_of(root)})[0]
-    first = close(0)
-    assert pool.entries[key].refinement['member_order'] == 0
-    concept = known_concept(owner, atoms[0], order=1)
-    owner.interpret.define(word, concept, trust=.1)
-    assert not owner.definitions.objects(word) and owner.interpret.referent(word) == concept
-    second = close(1)
-    assert pool.entries[key].symbol == concept
-    assert pool.entries[key].occurrences == (first,)
-    new = pool.token_of(second)
-    assert new != key and pool.entries[new].native == concept
-    assert pool.entries[new].refinement['member_order'] == 1
-    assert store.order_of_row(store.location(second)) == 1
-    receipt('kept-word-order-transition', dict(pending_member_order=0, learned_referent_order=1,
-        old_path_members_before=1, old_path_members_after=1, new_native_members=1,
-        new_collection_order=1, mixed_order_links=0))
-
-
 def test_unnamed_reference_reenters_a_pending_words_later_definition():
     from dataclasses import replace
     from test_reference_close import fixture, known_concept
@@ -1062,50 +1033,6 @@ def test_written_alias_uses_the_kept_binding_instead_of_earlier_identity_metadat
     torch.testing.assert_close(owner.mtm.read_member(address), own)
     receipt('written-alias-binding', dict(pre_bind_order=0, selected_order=1,
         written_order=1, members=2, alias_reads_own_idea=True))
-
-
-def test_written_alias_retains_the_selected_pending_name_and_its_order():
-    from dataclasses import replace
-    from test_reference_close import fixture, known_concept
-    from ClauseRow import Clause, Composition
-    from Meaning import ConceptualMeaning
-    from MemoryLink import Occurrence
-    from chunk_fixtures import context
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    selected_word = recurrent_word(owner.interpret, [112], (), form='pending-choice')
-    earlier_word = recurrent_word(owner.interpret, [101], (), form='earlier-choice')
-    with torch.no_grad():
-        owner.similarity_codebook.W[owner._concept_row_of(selected_word)].copy_(atoms[0])
-    owner.interpret.define(earlier_word, known_concept(owner, atoms[0], order=1))
-    selected = owner.mtm.named(selected_word, value=atoms[0])
-    first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_identity': selected}))
-    owner.link(Occurrence(store.occurrence_of(first), concept=selected_word, selected=selected),
-        {}, value=atoms[0], where=None, when=0, stream=0)
-    own = atoms[0] + atoms[1]
-    meaning = replace(ConceptualMeaning.from_description(own),
-        bindings={'_forward_references': ((0, earlier_word),)})
-    node = Clause(meaning, point=own, order=1, composition=Composition(own, order=-1),
-        reference_request=dict(mode='bind', compose_bind=1, leaves=(0,),
-            cue=own, content=own, predicate=own, role=0),
-        identity=dict(handle=1, origins=torch.tensor([[6, selected_word]])))
-    plan = resolver.preview(node, context(resolver, ()), stream=0)
-    assert plan['items'][0]['selected'] == selected and resolver.address(selected) is None
-    kept = resolver.prepare(node, plan)
-    written = {}
-    row = store.write_clause(kept,  written_rows=written)
-    resolver.commit(plan, row, written, document='pending-alias', position=1, training=False)
-    retained = store.referent_of(row)
-    assert retained == store.occurrence_of(first)
-    assert owner.mtm.token_of(retained) == selected
-    assert store.order_of_row(row) == owner.mtm.entries[selected].refinement['member_order'] == 0
-    assert owner.mtm.token_of(store.occurrence_of(row)) == selected
-    torch.testing.assert_close(owner.mtm.read_member(store.occurrence_of(row)), own)
-    assert owner.mtm.entries[selected].pending
-    receipt('written-pending-name', dict(earlier_forward_order=1, selected_order=0,
-        written_order=0, members=len(owner.mtm.entries[selected].occurrences),
-        pending_after=True, alias_reads_own_idea=True))
 
 
 def test_written_ltm_selection_replaces_earlier_identity_without_a_binding_child():

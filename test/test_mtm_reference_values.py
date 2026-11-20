@@ -25,9 +25,10 @@ def _references():
     values = bank.lookup_rows(rows).detach()
     occurrences = [store.occurrence_of(store.append_meaning(
         ConceptualMeaning.from_description(value))) for index, value in enumerate(values)]
-    key = owner.mtm.named(concepts[0], value=values[0])
-    owner.mtm.bind(key, occurrences[0], kind=None, when=0,
-                   value=values[0], reading=concepts[0])
+    # The word's first kept mention opens its token (a word read has its
+    # blank object; MTM keeps no pending name).
+    key = owner.mtm.open(occurrences[0], kind=None, when=0,
+                         value=values[0], reading=concepts[0])
     return owner, bank, store, rows, concepts, occurrences, key
 
 
@@ -151,71 +152,3 @@ def test_consolidation_candidate_keeps_its_live_support():
     assert not pool.value_of(key).requires_grad and not hasattr(pool, 'update')
     torch.testing.assert_close(symbolize(owner, store, key, pool.entries[key]), expected, rtol=0, atol=0)
 
-
-def test_second_sentence_composes_the_name_after_kept_close_moves_placement(monkeypatch):
-    from pathlib import Path
-    import Models
-    import util
-    from Language import LanguageSpace
-    from test_mm_xor import _fresh_model
-    from test_reverse_traversal import _select_completed_binary_path
-    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
-    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
-    _select_completed_binary_path(model)
-    from reading_fixtures import read_in_source_order
-    read_in_source_order(model, monkeypatch)
-    observed = []
-    native_choose = LanguageSpace.choose_operation
-
-    def choose(language, *args, **kwargs):
-        result = native_choose(language, *args, **kwargs)
-        selection = result[0]
-        if bool((selection.applied & (selection.kind == 1)).any()):
-            observed.append((selection.applied.detach().clone(), result[3].detach().clone()))
-        return result
-
-    monkeypatch.setattr(LanguageSpace, 'choose_operation', choose)
-    try:
-        raw, targets = next(iter(data.data_loader(split='train', num_streams=4)))
-        batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(targets)
-        model.train()
-        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
-        from nomination_fixtures import nominated_forms
-        nominated_forms(model, [model._bytes_to_text(x).rstrip(chr(0)) for x in raw])
-        with torch.no_grad():
-            model.forward(batch[0])
-        owner = model._concept_owner()
-        bank, pool = owner.similarity_codebook, owner.mtm
-        start = bank.mereology.percept_event_width
-        record = model._last_sentence_understanding
-        word_rows = torch.stack([record.word_rows[b, record.word_valid[b]]
-                                 for b in range(len(record.root))])
-        assert word_rows.shape == (4, 2)
-        expected = bank.lookup_rows(word_rows).detach().clone()
-        keys = [[pool.token_of(('name', owner.concept_id_at_row(int(row)))) for row in pair]
-                for pair in word_rows]
-        assert all(key is not None for pair in keys for key in pair), (keys, pool.names, word_rows)
-        assert all(not any(branch.events for branch in pool.entries[key].timelines)
-                   for pair in keys for key in pair)
-        old = torch.stack([torch.stack([pool.value_of(key) for key in pair]) for pair in keys])
-        torch.testing.assert_close(old[..., start:], expected[..., start:], rtol=0, atol=0)  # Reads have no stale value cache.
-        assert bank.mereology.placement_witnesses[word_rows].gt(0).all()
-        observed.clear()
-        with torch.no_grad():
-            model.forward(batch[0])
-        assert observed
-        seen = torch.zeros(4, dtype=torch.bool)
-        for active, operands in observed:
-            for stream in active.nonzero().flatten().tolist():
-                seen[stream] = True
-                actual = operands[stream, :, start:]
-                wanted = expected[stream, :, start:]
-                # A word's concept reads its own row at tanh(1) (sigma-pi
-                # §21, rules 21 and 54), so its operand is the name's value
-                # at that read, not at one.
-                own = torch.tanh(torch.ones((), dtype=wanted.dtype))
-                matches = torch.isclose(actual[:, None], own * wanted[None], rtol=1e-5, atol=1e-7).all(-1)
-                assert matches.any(0).all() and matches.any(1).all()
-        assert seen.all()
-    finally:
-        model.End()

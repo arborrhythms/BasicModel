@@ -19,18 +19,6 @@ class Occurrence:
     retain: tuple = ()
 
 
-def retained_reference(owner, reference, *, stream=None):
-    """Keep a name's selected member rather than its mutable denotation."""
-    if not (isinstance(reference, tuple) and reference[:1] == ('name',)):
-        return reference
-    pool = owner.mtm
-    entry = pool.entries.get(pool.token_of(reference))
-    if entry is None:
-        raise RuntimeError('a selected name lost its pending identity')
-    return (entry.occurrences[0] if entry.occurrences
-            else ('sym', owner.interpret.referent(reference[1], batch=stream)))
-
-
 def member_order(owner, site, *, stream=None):
     """Use the concept being read, not its containing clause's grammar order."""
     if site.order is not None:
@@ -38,11 +26,6 @@ def member_order(owner, site, *, stream=None):
     concept = site.concept
     if concept is None and site.address[:1] == ('bp',):
         return -1
-    if concept is None and isinstance(site.address, tuple) and site.address[:1] == ('name',):
-        # An empty pending path has no retained member yet. Its first kept
-        # mention uses the named word's current referent, as commit_read_words
-        # does; the raw lexical symbol alone would claim order zero.
-        concept = site.address[1]
     if isinstance(concept, tuple) and concept[:1] == ('bp',):
         return -1
     if concept is not None:

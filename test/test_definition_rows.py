@@ -181,7 +181,7 @@ def test_31_read_forms_wait_for_object_testimony_without_changing_the_configurat
             assert float(store.parts.evidence(row)[0]) < definition_threshold()
             assert cs._concept_row_of(word) is not None
         else:
-            word, = (word for word, value in cs.interpret._pending.items()
+            word, = (word for word, value in cs.interpret.objectless().items()
                      if form in value['forms'])
             assert cs.interpret.no_object(word)
             assert cs.interpret.forward(word) == word
