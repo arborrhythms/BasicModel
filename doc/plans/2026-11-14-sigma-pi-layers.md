@@ -11706,8 +11706,12 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    (§23.4.3); the symbol table, made at nomination, in the fifth
    (§23.4.4). What is left, in order (§23.4.4's review): (a) a
    symbol for every concept the store reads, at declaration and by
-   interpret; (b) the store's columns become the table's indices,
-   the least and the greatest kept; (c) the least and the greatest
+   interpret (done in the sixth pass, §23.4.5, with the symbols of
+   the words' order-zero concepts and of the classes MTM raises);
+   (b) the store's columns become the table's indices, the least
+   and the greatest kept, in two: (b1) with every symbol at one
+   member, the store's values unchanged; (b2) a symbol of several
+   members read by their product; (c) the least and the greatest
    replaced by the Not and the sparse Sigma, with their readers,
    which is steps 4 and 11; (d) the SS leg carries each symbol's
    two lanes and no code, ConceptEvidence.decode's vectors gone.) Symbols are split from concepts
@@ -17400,3 +17404,209 @@ They agree. Over the last two passes the lesson has gone from 28 words of 64 on 
 5. *A declared concept above order zero needs its symbol at its declaration.* Rule 20 has symbols made at MTM's nomination or by `interpret`, and lists what is not nominated; the return measured that MTM makes 3 or 4 symbols in the lesson against the dozens of concepts the store reads above order zero. Without a symbol at declaration for the grammar's arguments and classes, `words` and `objects`, step 4 would make them unreadable. *Taken:* rule 20's list of what is declared is given its symbols at declaration (rule 10 amended).
 
 **The order of what is left of round 4,** from the return's proposal, taken: (a) symbols for every concept the store reads, at declaration and by `interpret`, with nothing read yet and a measure of which concepts the store reads above order zero; (b) the store's columns become the table's indices, the least and the greatest kept; (c) the least and the greatest replaced by the Not and the sparse Sigma, with their readers; (d) the SS leg carries each symbol's two lanes and no code; then step 5, and steps 6, 7, 8 and 12. Each is left whole.
+
+### 23.4.5 Round 4, sixth pass: the names, the count of known words read both, a symbol for every concept the store reads, and the unfocus rule removed (2026-11-20)
+
+*The return of the implementer (Claude on Opus), as written.*
+
+Checkout `/Users/arogers/github/WikiOracle/basicmodel`, branch `main`, started at `ff022b3bfe`. All commits are local and unpushed, and each ends with the Co-Authored-By line. No seed is pinned, no skip or xfail is added, no bar or iteration count is changed, and nothing under `doc/` is edited.
+
+| Commit | Part |
+| --- | --- |
+| `7b0cd13387` | A (1), the wider unfocus rule: built, then **withdrawn by the coordinator and reverted** by `8d4da6b87d` |
+| `4a6a710e80` | A (3): the lesson's report counts the known words read both |
+| `2429fd76b3` | A (2): `SparsePiLayer3`; `ConceptAllocator.concepts` |
+| `7354044dd5` | B, step (a): a symbol for every concept the store reads |
+| `8d4da6b87d` | the revert of `7b0cd13387` (a new commit; history is not rewritten) |
+| `bbc26502f6` | E-out: the fourth pass's unfocus rule removed (Alec) |
+
+**What fails or is unfinished, first.**
+
+- **Part C (step (b)) is not started.** I judged it could not be left whole in what remained of this pass (the reasons and the count of what it touches are under part C below, with the design I would build). So the store still reads each concept row's two lanes as that concept's symbol; the symbol table is now complete for what the store reads but is still read by nothing but its tests. Certificate 6's first clause is still **not met** for the store. Steps (c) and (d) are not started.
+- **Part A (1) is withdrawn.** It was built and committed before the coordinator's message arrived; it is reverted by a new commit, and kept as a patch: `s6_partA1_withdrawn.patch` in the scratch directory. After the revert the diff of `bin/Attention.py`, `test/test_item17_unfocus.py` and `test/test_loop_of_looks.py` against `ff022b3bfe` was empty; then part E-out removed the fourth pass's rule as Alec decided.
+- **The lesson after E-out** has the wide spread back, as expected (below). It is not repaired, and part B's values are judged by its own tests and the list, not by the lesson.
+- **The final list** has one failure, `test_item18_expect.py::test_81`, carried to round 5, once four files whose run was broken by a full disk were run again; one of them (`test_percept_expectation_final.py`) failed on a number in the broken run and passed in the second, its rate not measured. Both stopping gates pass.
+
+#### Part A (1): built, measured, withdrawn
+
+What was built, for the record (all reverted): `Attention.undo_focus`, `restore_slots`, `state_print`, `snap`, `unfocus_returns`; the walk kept the print of its state at each step (`NarrowingState.visited`, carried through the captured walk), and the unfocus was legal only where its undo led to a state not met before. It replaced the fourth pass's narrower rule. One test was ported for it (`test_loop_of_looks.py::test_9`) and two added to `test_item17_unfocus.py`; the revert restores both files as they were.
+
+Measured before it was withdrawn, over 12 runs each (both from scratch exports, so no run read a half-edited source):
+
+| Source | Words, each run | Mean (least to greatest) | First walks at the cap, each | Total | Repeating | Known words read both |
+| --- | --- | ---: | --- | ---: | ---: | ---: |
+| before: `ff022b3bfe` with the report of A (3) | 61 64 63 64 62 63 60 63 62 64 64 64 | 62.8 (60 to 64) | 2 0 0 0 6 5 4 1 1 0 0 0 | 19 | 19 | 1 (one run) |
+| with the wider rule (`2429fd76b3`) | 64 in each run | 64.0 (64 to 64) | 0 in each | 0 | 0 | 0 |
+
+That was outside the spread. It is no longer in the source. The "before" row is the source with the fourth pass's rule, as it stood until E-out (parts A (2), A (3) and B change no value of it).
+
+**Four walks at the cap under the fourth pass's rule, for round 6** (the first walk of a batch, from the "before" runs; slot then act: D divide, V descend, U unfocus, & | ~ the field reductions):
+
+| Run, batch | Sentence | The first walk, 32 steps |
+| --- | --- | --- |
+| 1, 1 | "What is this?" | 0& 0\| 0~ 0V 1& 0U, then (0V 1& 0U) seven times more, then 0V 1V 1V 0V 2V |
+| 5, 3 | "What is that?" | 0~ 0\| 0V 1~ 1\| 0U, then (0V 1~ 1\| 0U) five times more, then 0V 1V 0V 2V 3V 2V |
+| 6, 1 | "What is this?" | 0\| 0& 0V 1\| 1& 0U, then (0V 1\| 1& 0U) five times more, then 0V 1V 1V 2V 2V 3V |
+| 7, 0 | "This is Felix." | 0\| 0~ 0& 0V 1\| 0U, then (0V 1\| 0U) seven times more, then 0V 1V 1V 2V 3V |
+
+In each, the walk descends on slot 0 (splitting off the first word), makes one or two field reductions on slot 1 (the rest of the sentence), and takes the unfocus of slot 0 that undoes the descend; the fourth pass's rule does not see it, since a reduction stands between. The loop ends only when the budget's minimum leaves no room for the reductions, and the walk then descends to the words.
+
+#### Part A (2): the names (`2429fd76b3`)
+
+| Old | New | Where |
+| --- | --- | --- |
+| `OrderZero.PerceptPi` | `OrderZero.SparsePiLayer3`: "the sparse Pi of basic percepts and of symbols alike"; its docstring says a row is a basic percept at order zero (members: keys of the percept tower) and a symbol above it (members: `('concept', cid)`); its error reads "the sparse Pi needs room" | `bin/OrderZero.py`, `bin/BasicPercepts.py`, `bin/Symbols.py`, `test/test_item17_order_zero.py` |
+| `ConceptAllocator.symbols` | `ConceptAllocator.concepts` (the live concept ids) | 22 lines in `bin/` (`Layers.py` 4, `Spaces.py` 11, `ConceptIndex.py` 2, `Interpret.py`, `Memory.py`, `Taxonomy.py`, `Queries.py`, `ChunkJournal.py`), the checkpoint's field lists in `Models._collect_structural_extras` and `_restore_allocator_extras`, `GrammarConceptCheckpoint.prepare` (3 places), and 24 test files |
+
+- **An old checkpoint's field** `symbols` is read once as `concepts` in `GrammarConceptCheckpoint.prepare`, at the top of its loop over the saved conceptual spaces, before any other migration there; `prepare` runs in `load_weights` before `_restore_structural_extras`.
+- One test fixture built the allocator as a `SimpleNamespace(symbols=...)` (`test/test_priming_diffusion.py::owner`), which `test/test_thought_infer.py::test_membership_match_uses_the_existing_part_cache` reads: renamed with the rest (it failed once, before the rename).
+- No assertion changed; these are renames.
+
+#### Part A (3): known words read both (`4a6a710e80`)
+
+`test/attention_thinking_certificate.py`: the observer wraps `ModelAttention.native_word_poles` and counts, in each batch, the readings of a known word whose for and against lanes are both above zero (`known_read_both` in each batch's record); `over_runs` sums it for each run and reports it beside the repeating walks. No value of the model is read differently.
+
+#### Part B: a symbol for every concept the store reads (`7354044dd5`)
+
+**The measure first** (`measure_reads.py` in the scratch directory: every entry of the store, its source column's concept, the source's order and the reader's order, the concept's kind, and whether a symbol reads it), on `ff022b3bfe` with part A's names:
+
+| Run | Store entries | Sources (concepts read) | By kind | Source order, read by | With a symbol |
+| --- | ---: | ---: | --- | --- | ---: |
+| the lesson's 16 sentences, lr .001 | 64 (no bias entry); readers: `words` 10, arguments 30, operator classes 6, MTM's candidates 18 (each written for and against) | 8 | words (order-zero concepts of the lesson's words) 5; the grammar's arguments 3 | words: order 0, read by order 1 (`words`, the arguments, a candidate); arguments: order 1, read by order 2 (operator classes) | **0 of 8** |
+| XOR gate | 0 (all three spaces) | 0 | | | |
+| the named shared class gate | 3 | 3 | classes raised by `ConceptIndex` (in `alloc.raised`, kind `object`) | order 1, read by an order-2 raised class | **0 of 3** |
+
+- Not read by the store in any of the three: operator classes as sources, `words` or `objects` as sources, promoted identities, MTM's candidates as sources, objects defined by `interpret`. MTM's nominations made 3 or 4 symbols in the lesson, none over a concept the store reads.
+- So the declared concepts and `define` alone (as the brief names them) would cover the 3 arguments and none of the rest: the store's most read sources are **order-zero word concepts**, which are brought by a basic percept's nomination and have no symbol, and the gate's are classes made by `ConceptIndex`'s raise.
+
+**Built** (all through the one maker, `ConceptualSpace.nominate_symbol(handle, concept)`; none is a second entry of the table):
+
+| File, function | Layer | What |
+| --- | --- | --- |
+| `bin/Spaces.py`, `nominate_symbol` | Pi (of symbols) | unchanged; its docstring now names its four callers |
+| `bin/Spaces.py`, `symbol_for(handle, concept)` (new) | Pi | the first symbol that reads the concept, or one made by `nominate_symbol` where none does |
+| `bin/Spaces.py`, `_prebuild_declared` | Pi | each declared concept (the grammar's arguments, operator classes, `words`, `objects`) has its symbol at its declaration, handle `('declared', kind, name)` |
+| `bin/Spaces.py`, `bring_concept` | Pi | where a basic percept's nomination brings an order-zero concept, the concept's symbol for the order above is made, handle `('percept', p)`, unless a symbol already reads it. *Provisional* (below) |
+| `bin/ConceptIndex.py`, the class raise (`relate_idx['part-kind', ...]`) | Pi | the raised class's symbol, handle the raise's key |
+| `bin/Interpret.py`, `InterpretLayer.define` | Pi | the object it defines, where its order is above zero, handle `('object', obj)` |
+| `bin/Spaces.py`, `symbols_from_records` (new); `bin/Models.py`, `_restore_allocator_extras` | Pi | after the table and `brought` are restored, the symbols of the declared, brought and raised concepts are made from the allocator's records where none reads them: a checkpoint from before this part reads them so, once; on any later checkpoint it makes nothing |
+
+*Provisional choices:*
+
+1. **An order-zero concept's symbol is made where its basic percept's nomination brings it** (`bring_concept`). The rules make a symbol at MTM's nomination (rule 20), by `interpret`, or at a declaration (rule 10, amended); the store's most read sources are order-zero word concepts, which none of those reaches. The alternatives: (a) as built, at the order-zero nomination, one symbol per concept brought; (b) at the first Sigma entry above order zero that reads the concept (`add_concept_edge`), which makes only the symbols that are read but ties a symbol's making to a reader, not to a nomination; (c) a separate MTM nomination of the order-zero concept's symbol on recurrence, which leaves the words unread above order zero until it recurs. I recommend (a) until Alec says otherwise.
+2. `symbol_for` makes a symbol only where no symbol reads the concept, so a concept brought by a second percept, or declared again, or defined twice, gets no second symbol. MTM's own nominations (`promote_identity`, `promote_candidates`) still make by handle as before. Nothing limits members or symbols: a concept may still come to have several.
+3. `define` makes the object's symbol, not a meta concept: the meta concept and the blank object are step 6, not built.
+
+**After** (the same measure on `7354044dd5`): the lesson's 8 sources and the gate's 3 each have a symbol whose row reads exactly that concept (8 of 8, 3 of 3). The lesson's table holds 110 symbols: the 101 declared (72 arguments, 27 operator classes, `words`, `objects`), the order-zero concepts brought, and MTM's nominations.
+
+**Nothing reads the table yet and no value changes.** Shown by the list (final counts below: the same one failure, `test_81`, as at `ff022b3bfe`) and by the lesson (below), and by these certificates in `test/test_item17_symbols.py`:
+
+| Test | What it asserts | Result |
+| --- | --- | --- |
+| `test_every_concept_the_store_reads_has_a_symbol_whose_row_reads_it` (new) | on the lesson's 16 sentences read at lr 0: every concept a store entry reads (bias aside) has at least one symbol, and every such symbol's Pi row reads it | passes |
+| `test_a_declared_concept_has_its_symbol_at_its_declaration` (new) | `prebuild_formal_arguments` gives each argument a symbol with its handle, reading that concept alone; declaring again makes none | passes |
+| `test_a_checkpoint_without_these_symbols_reads_them_from_its_records` (new) | with the table emptied as an old checkpoint's would be, `symbols_from_records` makes the declared concept's symbol | passes |
+
+**Ported tests (part B).**
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_item17_symbols.py::test_4_a_concepts_allocation_makes_no_symbol` | the table is empty on a fresh space, and stays empty after three `new_concept` | the table's size is unchanged by three `new_concept`, and no symbol reads any of the three (a fresh space now holds its declared concepts' symbols) |
+| `test_item17_symbols.py::test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concept` | every symbol in the table brought a concept of order one or more | every symbol nominated by MTM (handle `name` or `candidate`) brought a concept of order one or more, and there is at least one; the rest unchanged (each symbol reads exactly the concept it brought, and the Pi gives its lanes) |
+
+#### Part C (step (b)): not started, and why
+
+The store's columns are the symbols today: `2*(n+1)` columns, each concept row's two lanes and a bias. Making them the table's indices changes the meaning of a column for every writer and reader of the store at once, and there is no half-way that runs whole: a column written as a symbol and read as a concept row (or the reverse) is a wrong value, not an error. I counted what it touches on this source:
+
+- **bin, 22 files** name the store's columns or their readers: `Layers.py` (`add_edge`'s self test, `bind`, `grow_inventory`, `_fold_weights`, `fold_presence`, `attribute_presence`, the penalty's `concept_col` at line 6198), `Spaces.py` (`add_concept_edge`, `_populate_concept_weights` twice, `_prepare_part_learning` twice, the words edge in the word reading, `_concept_rung_presence`, `cs_reverse_presence`, and four more readers of `store._index` at 15212, 15887, 16394, 16416), `CaseSelection.py`, `FieldProjection.py`, `DefinitionFold.py`, `ConceptHierarchy.py`, `GrammarConceptCheckpoint.py`, `Models.py` (the layer restore), `FamiliarTier.py`, `Interpret.py`, `NumericPercepts.py`, `ScalarPercepts.py`, `SentenceField.py`, `Examination.py`, `EntryRead.py`, `ClauseRow.py`, `ReferenceClose.py`, `IntuitionField.py`, `LookForecast.py`, `MemoryLink.py`, `OutputOccurrences.py`, `PartsOfSpeech.py`, `exact.py`.
+- **tests, 28 files and 458 lines** write or read store columns as concept rows directly (`add_edge(row, col)`, `add_concept_edge`, `_cols`, `% (nOutput+1)`): `test_cs_sparse_weights.py`, `test_definition_fold.py`, `test_refine_raise.py`, `test_item25_completion.py` (a gate), `test_structural_checkpoint.py`, `test_aligned_capacity_checkpoint_growth.py`, `test_frozen_concepts.py`, `test_concept_sigma_pi.py`, `test_definition_sparsity.py`, `test_evidence_folds.py` and 18 more. Some of these (`test_sparse_layer.py`) test the plain `SparseLayer` and are not affected; most are.
+
+That is more than I could port and run whole in what remained of this pass, so I stopped where the source runs whole. **The design I would build**, so that the values are unchanged wherever each symbol has the one member part B gave it:
+
+1. The store is given the symbol table (`ConceptAllocator.layer()` hands it over) and a helper `symbol_rows(s)`: the store rows of the concepts symbol `s` reads, through its own `_tensor_rows` (`('concept', cid) → row`).
+2. *Writers* resolve a concept to its symbols: `add_concept_edge(row, col)` takes a concept row as now and writes one entry on each symbol whose row reads that concept (`table.reading`); `_populate_concept_weights` resolves `('sym', x)` the same way (any number); `_prepare_part_learning`'s witnesses and the raised class's witness edges likewise. A concept with no symbol is an error there (part B leaves none in the lesson or the gates; a test that writes a column for a bare concept is ported to make its symbol first).
+3. *The self test* in `add_edge`: refused where a member of the symbol (not the symbol's index) is the reading row.
+4. *`bind`* maps each edge's symbol column to its members' seats. With one member it is the seat today's lookup gives, so the bound view is identical. With several, the view records each edge's member seats (padded) and `fold_presence` reads `edge_memberships` as their product, the symbols' Pi, an argument it already takes; `attribute_presence` gives the request to every member's seat (the Pi's transpose). Missing members mark the edge as `_missing_sources` as now.
+5. *Unbound readers* (`FieldProjection.close`, `CaseSelection.stage_case_bank`'s edge walk, the `_index` readers in `Spaces.py`) read `symbol_rows(column % (n+1))` where they read `column % (n+1)`.
+6. `grow_inventory` and the checkpoint's column remap change only the bias column: a symbol's index does not move when concept rows do. `_fold_weights`' partners and `fold_presence`'s dual by `nInput // 2` are unchanged arithmetic in symbol space.
+7. *An old checkpoint* (no `columns: 'symbols'` mark in its layer blob): read once by making, through `symbol_for`, one symbol for each concept row its columns read and rewriting each column to that symbol's index, since that is what its columns meant.
+8. *The certificate:* the store's read (`_concept_rung_presence` and `cs_reverse_presence`) on the lesson's readings, before and after, equal to 0; and the list.
+
+The order of steps (c) and (d) after it stands as §22.4 gives it.
+
+#### Part E-out: the fourth pass's unfocus rule removed (`bbc26502f6`)
+
+- `bin/Attention.py`, `narrowing_view`: the line `can_undo = can_undo & (at != state.steps_taken - 1)` and its comment go; `last_focus`'s first value is again unused there (`_, frame, can_undo`). Nothing is put in its place. That line was all the rule needed: frames were already pushed at the index of the step that made them before `feac190d5a`.
+- `test/test_item17_unfocus.py` goes: it certified that rule and nothing else.
+- `test/test_loop_of_looks.py::test_9_unfocus_restores_unread_parent_and_costs_one_act` states again what it stated before `feac190d5a` (its body is that commit's parent's, byte for byte; no name in it had changed): after the descend the unfocus is legal at the next step, and taking it restores the parent with `spent == 2`.
+- The lesson's report keeps its count of walks that repeat a state, and of known words read both: reports, forbidding nothing.
+- Run at once: `test_loop_of_looks.py`, `test_one_backward_standing.py` (its packing test names every look), `test_one_attention.py`, `test_operators_round2.py`: 111 passed, 1 skipped, 46 s. Every other file in the final list below ran on this commit.
+
+#### The lesson over 12 runs
+
+Each from a scratch export of the commit named, `lesson --runs 12`, no seed chosen. Seconds are inflated where six test processes ran beside the lesson (the "before" run and A (1)'s).
+
+| Source | Words, each run | Mean (least to greatest) | First walks at the cap, each | Total | Repeating | Known words read both | Seconds, mean |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: |
+| before B: `ff022b3bfe` with A (3)'s report (the same values as `2429fd76b3` without A (1)) | 61 64 63 64 62 63 60 63 62 64 64 64 | 62.8 (60 to 64) | 2 0 0 0 6 5 4 1 1 0 0 0 | 19 | 19 | 1 | 25.7 |
+| A (1), withdrawn (`2429fd76b3`) | 64 in each | 64.0 | 0 in each | 0 | 0 | 0 | 23.3 |
+| after B, with A (1) reverted (`8d4da6b87d`) | 64 in each | 64.0 (64 to 64) | 0 0 3 0 0 0 0 0 0 0 0 0 | 3 | 3 | 0 | 20.4 |
+| for comparison, the fifth pass on `1056e716ac` (§23.4.4) | | 63.6 (60 or 62 to 64) | | 7 and 8 | 7 and 8 | | |
+| after E-out, the rule removed (`bbc26502f6`) | 45 14 64 25 57 64 64 53 57 61 63 26 | 49.4 (14 to 64) | 5 16 0 10 3 0 0 4 2 1 0 13 | 54 | 54 | 1 | 32.3 |
+
+- **Part B against before is within the spread.** Part B adds symbols that nothing reads and draws no random number, so it cannot change a value; the lesson's own spread on this source is 3 to 19 walks at the cap over 12 runs (four measures now: 7, 8, 19, 3), and the words 62.8 to 64.0 on the mean. I make nothing of 19 against 3.
+- **E-out brings the wide spread back,** as expected: 14 to 64 words, 54 walks at the cap (every capped walk also repeats a state of its table). It is accepted and not repaired. The "before E-out" row is the one after B (`8d4da6b87d`). From here on the lesson compares nothing of parts B and C: a difference within 14 to 64 words shows nothing.
+- **Three walks at the cap after E-out** (first walks, `bbc26502f6`): run 1, batch 0, "This is Felix.": 0& 0~, then (0V 0U) fifteen times; run 2, batch 0, "This is Felix.": 0& 0~ 0| 0V, then (0U 0V) fourteen times; run 4, batch 0, "This is Felix.": 0& 0~, then (0V 0U) fifteen times. This is §23.L's cause A: descend on the sentence, unfocus at once, the same descend again, from the first sentence on; it is the loop round 6's record of where a walk has looked (rule 69) is to answer.
+- A (1) was outside the spread (0 walks at the cap in 12 runs, against 19 on its "before"), but it is withdrawn.
+- The capped walk after B, run 3, batch 5, "Who is here?": 0~ 0| 0V 1~ 1| 0U, then (0V 1~ 1| 0U) five times more, then 0V 1V 2V 3V 2V 0V: the same loop as the four above.
+
+#### Final counts
+
+**On `bbc26502f6`** (the final source), in the checkout, six processes, `--dist loadfile`: **271 files**, the 217 of `r9_files.txt` with every file that names what this pass changed (part A's 121, part B's makers and the files naming the symbol table, the declarations, `define`, `ConceptIndex` and the allocator's restore), less `test_item17_unfocus.py`, which E-out removed.
+
+- **3 failed, 3,142 passed, 149 skipped, 2 xpassed, 12 errors; 1,120 s.**
+- The 12 errors (`test_explicit_dimensions.py` 1, `test_item18_scalar.py` 5, each at setup and teardown) and the failure of `test_corpus_checkpoint.py::test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear` were the disk filling during the run ("No space left on device", and a checkpoint write cut short): the machine's volume had 0 bytes free at that point, and my four scratch exports (430 MB) were part of it. I removed them.
+- `test_percept_expectation_final.py::test_native_sentence_local_boundary_ownership_loss_identity_and_compiled_word_bricks` failed once on a number (`assert 0.3946 > 0.4608`) in that run.
+- **The four files run again on the same source:** 21 passed, 3 skipped, 628 s. The percept-expectation test passed there. I did not measure its rate over 27 cases, so I cannot say whether it fails some of the time since E-out (its walk is no longer barred from the immediate unfocus) or failed because of the disk; *to be measured before anything is made of it.*
+- So, on the final source: **1 failed, `test_item18_expect.py::test_81`, carried to round 5**; every other test of the list passed in one of the two runs. Both stopping gates are in the list and pass.
+- On `7354044dd5` (part B, before the revert of A (1)), the 272 files gave **1 failed (`test_81`), 3,153 passed, 149 skipped, 2 xpassed, 1,253 s**: part B changed no test's result.
+- No test in the list failed because its walk loops after E-out, as far as these runs show.
+
+#### What is left, step by step
+
+1. Step (b), as designed under part C above: the store's columns become the table's indices (eight sub-steps, then the certificate).
+2. Step (c): the least and the greatest above order zero replaced by `NotLayer3` and `SparseSigmaLayer3` over the symbols' options, with their readers (`_concept_rung_presence`, `DefinitionFold.loss` and `prepare`, `CaseSelection.stage_case_bank`, `cs_reverse_presence.descend`, `FieldProjection.close` and its six callers); certificates 4's first clause and 23 (d).
+3. Step (d): the SS leg carries each symbol's two lanes and no code (`ConceptEvidence.decode`, `_publish_symbol_snapshot`, `commit_symbolic_peer_results`, `symbol_states`, `_current_discourse_s`, `LTM0`'s content width).
+4. Then step 5, and steps 6, 7, 8 and 12 of §22.4.
+
+#### What I would change in §21 and §22.4
+
+- **Rule 10 (as amended) and rule 20** should say how an order-zero concept gets the symbol by which the order above reads it. The store's most read sources are order-zero word concepts (5 of 8 in the lesson), and none of "MTM's nomination above order zero", "`interpret`" or "a declaration" reaches them. Built provisionally at the basic percept's nomination (choice 1 of part B).
+- **Rule 10** should also name the class that MTM raises from two statements that share a side (`ConceptIndex`, "Definitions raise"): it is explicitly made by MTM and is read above (the named shared class gate reads three of them), so it has its symbol at its raise.
+- **§22.4, step (b)** should be split in two, each whole: (b1) the writers, `bind` and the unbound readers with every symbol at one member (the values provably unchanged, the 28 test files ported to write columns through symbols); (b2) a symbol of several members read by its product, with its own certificate. It is too much for one pass with (c) behind it.
+
+#### Review (Claude, 2026-11-20)
+
+**Run by Claude on the committed source** (`bbc26502f6`): 222 files (the 217 of the fifth pass's review and the test files this pass touched, less the one it deleted), six processes, with room on the disk: **1 failed, 2,702 passed, 128 skipped, 2 xpassed**, 1,164 s. Both stopping gates are in the list and pass. The one failure is `test_item18_expect.py::test_81`, carried to round 5.
+
+**The disk.** The machine's volume filled during the implementer's run (432 GB used of 460). Claude removed about 3.5 GB of scratch copies of old source versions and of run outputs from this session's scratch directory (every return they belonged to is in this spec); 5 GB were free at the end of the review. The volume is nearly full apart from this work, which is for Alec to know.
+
+**The test the return could not explain, measured.** `test_percept_expectation_final.py::test_native_sentence_local_boundary_ownership_loss_identity_and_compiled_word_bricks`, eighteen runs on each source:
+
+| Source | The unfocus rule | Failed of 18 |
+| --- | --- | ---: |
+| `eca7b42b28`, before the fourth pass | not yet made | 5 |
+| `8d4da6b87d` | present | 0 |
+| `bbc26502f6`, now | removed | 5 |
+
+So it was not the disk, and it is not new: the test fails about one run in four wherever a walk may fall into the loop of §23.L, and it did so before the fourth pass, unseen, since three runs in four pass. It rests on what a walk happens to read. *Not ported and not forced:* Alec has decided that nothing bars the loop (§19.99), so until round 6 this test, and any other whose result rests on a walk, fails some of the time. *To do before the item's sweep, after round 6:* the tests whose result rests on a walk are found by running the list several times, and each is made to state what it states without resting on the draw.
+
+**Read against the return.** Part B's measure is the useful finding of the pass: what the store reads above order zero in the lesson is 8 concepts, 5 of them the order-zero concepts of the lesson's words and 3 the grammar's arguments, and in the gate 3 classes that MTM raises; none had a symbol, and MTM's own nominations made 3 or 4 symbols that the store does not read. So "symbols for declared concepts" would have covered 3 of 11.
+
+**Accepted.** The names (`SparsePiLayer3`, `ConceptAllocator.concepts`); the count of known words read both in the lesson's report; the revert of part A (1) by a new commit; E-out as Alec decided, with test 9 of `test_loop_of_looks` as it was.
+
+**Three things found in review.**
+
+1. *Part C was not started, for the second pass running, and the reason given is sound.* A column of the store means "this concept row's lanes" at about 458 places, and one that is written as a symbol and read as a concept row gives a wrong value and no error. The return's design keeps every value where each symbol has the one member part B gave it, which is what lets the change be checked: the store's read before and after, equal. *Taken as the next pass's whole task,* split as the return proposes: (b1) with every symbol at one member, the values unchanged; (b2) a symbol of several members read by their product. Nothing else is given to that pass.
+2. *How an order-zero concept gets its symbol is not in the rules, and is put to Alec.* The words' concepts are what the store reads most, and neither MTM's nomination above order zero, nor `interpret`, nor a declaration makes their symbols. Built provisionally: the symbol is made where the basic percept's nomination brings the concept, one symbol for one concept to start with. The other ways are at the first entry above order zero that reads the concept, or at a second nomination by MTM when the concept recurs, which would leave a word unread above order zero until then. *Claude's first choice is as built.* It does make a symbol for every word whether or not anything above reads it.
+3. *The lesson measures nothing again, as accepted.* After E-out it finds 14 to 64 words over 12 runs. Part B and what follows it in round 4 are judged by their own tests of equal values and by the list.
