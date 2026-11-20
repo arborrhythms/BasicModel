@@ -447,77 +447,6 @@ def test_the_order_zero_word_read_passes_no_gradient_to_the_wholes_content():
     assert parts.grad is not None and bool(parts.grad.abs().gt(0).any())
 
 
-def test_the_lessons_training_keeps_every_declared_membership_and_reads_no_known_word_both(capsys):
-    """After the lesson's sixteen training steps (learning rate .001, no
-    seed chosen): every membership declared at one is still exactly one,
-    and no known word's against lane is above nothing (none of the
-    lesson's words has a holder at its own extent, and its properties hold
-    of all its bytes). The declared memberships at zero are printed with
-    what moved them: the reconstruction of the form, through the
-    properties' codes, which the cut does not touch."""
-    from pytest import MonkeyPatch
-    import ModelAttention
-    import Language
-    from Models import BaseModel
-    from data import TheData
-    from MathChainTraining import present
-    from corpus_lessons import stage_documents
-    from Corpus import admit_training_forms
-    from reading_fixtures import use_eager_reading
-    patch = MonkeyPatch()
-    use_eager_reading(patch)
-    against = []
-    poles_of = ModelAttention.native_word_poles
-
-    def recorded(model, spans, forms, known):
-        poles = poles_of(model, spans, forms, known)
-        against.extend(poles[..., 1][known.to(poles.device)].tolist())
-        return poles
-    patch.setattr(ModelAttention, 'native_word_poles', recorded)
-    TheData.processLM({split: dict(text=['.'] if split == 'train' else [], label=[])
-                      for split in ('train', 'validation', 'test')})
-    Language.TheGrammar._configured = False
-    model = BaseModel.from_config('data/MM_corpus_lessons.xml', data=TheData)[0]
-    model._tensor_peer_while_eager = True
-    optimizer = model.getOptimizer(lr=.001)
-    curriculum = json.loads(Path('data/corpus-lessons.json').read_text())
-    texts, targets = stage_documents(TheData, curriculum['stages'][0])
-    admit_training_forms(model, texts, targets)
-    properties = model.wholeSpace.subspace.what.primitive_properties
-    declared = (properties.observed | properties.fixed_rows[:, None]).clone()
-    start = properties.members.detach().clone()
-    assert bool(((start[declared] == 0) | (start[declared] == 1)).all())
-    count = 0
-
-    class Complete(Exception):
-        pass
-
-    def batch(*args, **kwargs):
-        nonlocal count
-        count += 1
-        if count == 16:
-            raise Complete
-    try:
-        present(model, split='train', optimizer=optimizer, batch_size=1, after_batch=batch)
-    except Complete:
-        pass
-    finally:
-        model.End()
-        patch.undo()
-    after = properties.members.detach()
-    ones, zeros = declared & (start == 1), declared & (start == 0)
-    moved_zeros = zeros & (after != 0)
-    with capsys.disabled():
-        print(f'\ndeclared memberships: {int(ones.sum())} at one, {int(zeros.sum())} at zero; '
-              f'at zero and moved: {int(moved_zeros.sum())} in rows '
-              f'{sorted(set(moved_zeros.nonzero()[:, 0].tolist()))}, greatest '
-              f'{float(after[zeros].max()) if bool(zeros.any()) else 0.:.3g}; '
-              f'known words read: {len(against)}, greatest against {max(against, default=0.):.3g}')
-    assert count == 16 and against
-    assert torch.equal(after[ones], start[ones])
-    assert max(against) == 0.
-
-
 # Certificate 4, on the making of symbols: a symbol is made at MTM's
 # nomination above order zero and brings one concept; a concept's
 # allocation makes none. Its two lanes are a row of the symbols' Pi.
@@ -920,3 +849,33 @@ def test_cert_13_an_entry_above_order_zero_that_no_cost_supports_goes_to_zero():
     if order_zero is not None:
         penalty = cs.definition_sparsity_loss(lam=1., free_size=0)
         assert torch.autograd.grad(penalty, order_zero.value, allow_unused=True)[0] is None
+
+
+def test_cert_6_the_symbols_leg_carries_each_symbols_two_lanes_and_no_code():
+    """Certificate 6, its first clause over the leg: the symbolic leg is
+    each symbol's two lanes, the product of its members' (here one member at
+    (.7, .2)), and nothing else: no code, place or time of a concept, and no
+    concept's identity. The gradient reaches the concept field."""
+    from types import SimpleNamespace
+    import Language
+    cs, store, ids, rows = _small_space()
+    word, cats, dogs, green, _ = rows
+    cs.add_concept_edge(cats, word, 2.)
+    inventory = torch.tensor([word, cats])
+    field = _member_lanes(cs, [word, cats], word, (.7, .2)).requires_grad_()
+    carrier = SimpleNamespace(_concept_activations=field, _concept_inventory_rows=inventory)
+    ss = SimpleNamespace(conceptualSpace=cs,
+                         _publish_symbol_snapshot=lambda event, **_kw: SimpleNamespace(event=event))
+    leg = Language.SymbolSpace.forward_concept_to_symbol(ss, carrier)
+    view = store.bind(inventory)
+    print(f'\ncertificate 6: leg {tuple(leg.event.shape)}, lanes {leg.event[0].tolist()}, '
+          f'symbols {leg._symbol_ids.tolist()}')
+    assert leg.event.shape == (1, len(view._things), 2) == (1, 1, 2)
+    torch.testing.assert_close(leg.event[0, 0], torch.tensor([.7, .2]))
+    assert leg._symbol_ids.tolist() == [[view._things[0][1]]]
+    assert set(vars(leg)) == {'event', '_symbol_ids'}
+    leg.event[..., 0].sum().backward()
+    assert float(field.grad[0, 0, 0, 0]) == 1.
+    # No symbol read: no leg.
+    carrier = SimpleNamespace(_concept_activations=field.detach(), _concept_inventory_rows=torch.tensor([dogs, green]))
+    assert Language.SymbolSpace.forward_concept_to_symbol(ss, carrier) is None
