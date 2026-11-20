@@ -2396,18 +2396,25 @@ over word concepts and their objects (`ModelAttention.native_word_poles`), not
 over symbols. The bracket table marks a bracket done only when its word is
 interpreted, and keeps the last focuses so that `unfocus` can restore them.
 
-To specify: what the record of an examined place is and how long it lasts;
-whether it forbids a second look, or lowers its score; how both and neither
-over symbols reach `attend`, and which way each points (in or out); and the
-thought operators this follows.
+*Decided* (Alec, 2026-11-20; sigma-pi plan, rule 69). The record forbids
+nothing and lowers no score by hand: no rule forbids a walk an act, since
+such a rule "seems very unbiological". The record is a log of what the walk
+has done and what came of it, kept as conceptual activation in the slots of
+episodic memory, "so that you are not just bolting on memory and structures
+to the algorithm": the concept of the act, the concepts of its place and the
+concepts of what it returned. The chooser reads it, and what it does with it
+is learned. A walk has one act of attention, `attend`, with no focus and no
+unfocus; a focused state is context from which focus moves on to the right.
+Attention is taught by successive approximation, with lessons that each need
+a narrower focus than the one before.
 
-*Taken into item 1.7* (sigma-pi plan, §19.99 and rule 69): the record is a
-log of what the walk has done and what came of it, held in STM, in the
-chooser's domain; what the chooser does with it is learned, and nothing
-forbids an act or lowers a place's salience by hand. Still to specify here:
-behaviours that last, as chains of acts replayed from STM or LTM and in the
-end held as concepts (Alec, 2026-11-20); and the thought operators this
-follows.
+To specify: how both and neither over symbols reach `attend`, and which way
+each points (in or out); behaviours that last, as chains of acts replayed
+from STM or LTM and in the end held as concepts (Alec, 2026-11-20: "I would
+expect long-term behaviors to be learned as behavior chains that can be
+replayed in STM or LTM , and eventually in concepts"); which costs'
+gradients reach the chooser's parameters, and how large each is; and the
+thought operators this follows.
 
 ## The field use of every operator (Alec, 2026-11-17; future work)
 
@@ -2447,8 +2454,7 @@ What is open.
 - **`conjunction`** narrows, which suits two evidence pairs that meet; where
   it joins two kinds ("cats and dogs") it should perhaps join.
 - **`preposition`** passes its object's set through, unsettled.
-- **Attention's acts** on its places have no field use decided: `focus`
-  passes its set through, and `unfocus` has no contract.
+- **Attention's act**, `attend`, has no field use decided.
 - Several of the pass-throughs (`surface`, `sign`, `bind`, `lift`, `swap`,
   `generic`) are proposals that have not been confirmed.
 
@@ -2467,9 +2473,9 @@ share of Felix's field inside running's, the measure of
 edge that makes the comparison true. Until the side is settled, a WFF's field
 may be computed by way of its idea (Alec, 2026-11-17).
 
-What it would give back. The field the operators leave could teach the
-field map, as the field of a kept sentence does not today, since `intuit`
-uses expect's map and has no teacher of its own; and `compose_extend` over
+What it would give back. The field the operators leave is what thought
+leaves, and it teaches intuition's map, with the output's cost (Alec,
+2026-11-20); and `compose_extend` over
 what perception alone activated would let the model describe what it sees
 with no words present, so that recognition ("what is this?") needs no rule
 of its own.
@@ -2600,3 +2606,45 @@ be new:
   a relation between them.
 
 It changes what is kept and not how the paths run. Not designed.
+
+## Implicit growth of the Pi and of the Sigma (Alec, 2026-11-20; future work)
+
+Alec: "Help me design implicit sigma and pi growth. MTM for explicit works
+well, our implicit methods are not working." MTM makes things and kinds
+explicitly, by nomination; this entry is about how the Pi and the Sigma make
+them implicitly.
+
+The principle is read from his two sentences on what makes what: a thing is
+constituents that always occur together, and a kind is objects that form a
+kind, which is to say that one can stand where another stood. So the two
+epistemic levels grow from two different observations:
+
+| | What is observed | Grows | At |
+| --- | --- | --- | --- |
+| Co-occurrence | these are found together, at one place and time | a thing: a row, or a row's cone | the Pi |
+| Substitution | this was found where one of those was expected | a kind: an entry of a list | the Sigma |
+
+Co-occurrence is never fed to the Sigma: a concept that came to read the row
+of the word beside it would be present for a word that is not there. What
+one thing leads the model to expect of another is the spread, never
+evidence.
+
+What is to be tried, in tests before anything is built (sigma-pi plan,
+§19.107):
+
+- *The Pi, by match.* What is met at a place and matches a row within that
+  row's width is that thing, and the row generalizes a little over what its
+  members share; what matches no row starts a candidate row that becomes a
+  row if it is matched again; what matches a row that proves wrong for it
+  gives the row an against entry. A row's width is learned from its hits and
+  misses.
+- *The Sigma, by what was expected and what came.* A thing present where a
+  kind was expected and not read gathers toward an entry of that kind,
+  written when what has gathered exceeds the penalty; an entry that read a
+  kind where none was expected loses weight and is removed when the penalty
+  brings it to zero. One penalty governs growing and pruning.
+- *The trials.* `caat` after `cat`, and `cats` against `cat`, at order zero;
+  a name and a description of one thing coming to lie in one symbol's cone;
+  a new word met in the place of a noun gaining an entry of the kind noun
+  with no statement; and the rows and entries the implicit way makes laid
+  beside those MTM makes.
