@@ -630,6 +630,18 @@ dense dictionary — the dictionary/atom side here — as distinct from the spar
   activation and not by a buffer that is read and written; with the extension
   (a field of active concepts) in place of the intension, the mind works by
   activating structures rather than by reading and writing contents.
+- *One fold for every row.* A basic percept and a symbol are rows of a Pi
+  with one form, the plain product over their constituents: "I think they
+  need to be of the same form (for biological plausibility)" (Alec,
+  2026-11-20).
+- *Memory as activation.* What a walk has done is kept as the activation of
+  concepts in the slots of episodic memory, "so that you are not just bolting
+  on memory and structures to the algorithm" (Alec, 2026-11-20).
+- *Behaviour shaped, not prohibited.* No rule forbids a walk an act to make
+  it pass a measure, which "seems very unbiological" (Alec, 2026-11-20).
+  Attention is taught as animals are, by successive approximation under
+  conditioning: lessons that need a narrower focus each time, with the
+  behaviour rewarded by its outcome.
 
 **What is not.** Inverses and backpropagation. Brains approximate and
 predict; they do not compute exact inverses, and the exact way back of the Pi

@@ -655,7 +655,9 @@ reconstructing its input, not by forecasting what comes next, and its
 expectation works on percepts and on the conceptual field, where it fills in
 what was not seen; nothing estimates the next sentence, and nothing is given a
 whole sentence or an idea to expect from. Where one point is wanted, as an
-expected idea, it is read from the expected field.
+expected idea, it is read from the expected field. Nor is it evidence: it "is not counted
+as evidence, it is just removing some of the burden from later layers"
+(Alec, 2026-11-19).
 
 **The point is a key** (Alec's question, 2026-11-17: does a mind hold an idea,
 "a dynamic point in conceptual space", beside the formula and the field?).
@@ -751,9 +753,8 @@ is the object.
   scene. What attention excludes is *not taken up*: not conceived, no trace,
   no absence. Where there is a prediction it only biases where attention
   opens: what primes attention, the chooser and retrieval is the field
-  `expect` gives, a learned map from the whole observed order-zero field to
-  the whole field expected, read detached, and it selects without adding
-  anything.
+  expectation gives, the reconstruction in stages on the structure's own Pi,
+  Not and Sigma, read detached, and it selects without adding anything.
 - **Where there is also a prediction, it is applied to everything but the
   object.** The context is dimmed to the extent that it was expected, and
   the object of observation is conceived in full, expected or not. This is
@@ -778,10 +779,12 @@ is the object.
   remembered frame, the bound roles are what was expected, and what stands
   out is the answer.
 
-Intuition, `intuit`, has no map of its own: when thought calls it, it
-deposits the field `expect` gave and carries it up the orders. Applying a
-stored implication is a step of thought, `infer`, not of intuition
-([Reasoning](Reasoning.md#system-1-one-field-map-and-a-read-to-a-point)).
+Intuition, `intuit`, has a Pi, Not and Sigma of its own outside the
+architecture: when thought calls it, its map gives the intuited field, which
+the operator writes into knowing, marked as intuition, and carries up the
+orders. It is not the expected field. Applying a stored implication is a
+step of thought, `infer`, not of intuition
+([Reasoning](Reasoning.md#system-1-two-networks-and-a-read-to-a-point)).
 
 ### Absence is inferred, never perceived
 
@@ -1129,7 +1132,14 @@ whole it forms; what substitutes is a sufficient part of the kind it
 forms.** Necessary parts make a meronomy, sufficient parts a taxonomy, and
 the hierarchy of concepts is a taxonomy of kinds, not a meronomy: wholes
 are left to the grammar, whose ideas are conjunctions of co-present parts
-with roles. So the mind perceives particulars and constructs universals,
+with roles. A Pi makes things, by sameness, and a Sigma makes kinds, by
+a list (Alec, 2026-11-20: "a basic percept or symbol is created implicitly by
+PI or when nominated by MTM when recognizing that their constituents always
+occur together. a concept is created implicitly by Sigma or when nominated by
+MTM when recognizing that the objects form a kind"). "Mereology is part-whole
+relation at the perceptual level which, when it occurs over symbols, becomes
+a taxonomy (because the sigma fold makes the concepts abstract)" (Alec,
+2026-11-20). So the mind perceives particulars and constructs universals,
 and the construction is recollection: a category is what the mind has *witnessed*
 in a place. That is Dharmakīrti's claim that universals are mental
 constructions with no causal efficacy of their own, made by "excluding the
@@ -1414,9 +1424,9 @@ covers memory, the two truths, expectation, testimony and feeling.
 - **Priming is expectation.** Semantic priming (Meyer & Schvaneveldt 1971)
   and its spreading-activation account (Collins & Loftus 1975) describe
   activation flowing along associative edges and decaying with distance. In
-  the model the bias on a read is the field `expect` gives: a learned map
-  from the whole observed order-zero field to the whole field expected,
-  taught by omission, so that it restores what a sentence left out. It
+  the model the bias on a read is the field expectation gives: the spread
+  on the structure's own Pi, Not and Sigma from the observed field, taught by
+  the reconstruction, so that it restores what a sentence left out. It
   follows no stored edge: the correspondence is with the priming effect,
   not with its spreading-activation mechanism. The route with the best
   support, from a category to its members (Rosch 1975; Neely 1977), is in the
@@ -2292,10 +2302,11 @@ The object file remains MTM's origin at every level, including basic percepts: r
 In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison.
 
 System 1 holds no explicit rule. What it expects and what it intuits are two
-learned maps: `expect`, from the whole observed order-zero field to the whole
-field expected, taught by omission, so that it restores what a sentence left
-out; and `intuit`, from concepts to concepts, read once when a sentence is
-observed and taught by the field thought leaves and by the output cost.
+things: expectation, the reconstruction in stages on the structure's own Pi,
+Not and Sigma, taught by the reconstruction's error, so that it restores what
+a sentence left out; and intuition's map, a Pi, Not and Sigma of its own from
+concepts to concepts, called by the operator `intuit` and taught by the field
+thought leaves and by the output cost.
 System 2 holds the explicit structure: the grammar, and the relations of
 long-term memory it writes and reads, where a stored implication is applied
 by `infer` ([Reasoning](Reasoning.md)).
@@ -2389,7 +2400,7 @@ beings. Mechanically:
   by an identity: not its persistence, not its protection, not its share
   of attention. Today this holds: forgetting values rows by their
   activity, set by surprise and raised by recall; MTM expiry refreshes by
-  reference, not by worth; priming is the field `expect` gives; the link
+  reference, not by worth; priming is the field expectation gives; the link
   coverage term credits correct
   reading, not anyone's good; and there is no benefit objective at all.
   Should one be built (Ethics, the Constitution), the rule is that it
