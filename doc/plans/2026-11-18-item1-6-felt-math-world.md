@@ -1437,3 +1437,33 @@ by successive approximation, "we can't teach focus directly, but we can
 reward behaviors that require a successively narrow focus" (sigma-pi plan,
 rule 70). The grades are the sentence, then its words in order (reading
 without comprehension, above), then a word's parts.
+
+## Added 2026-11-20: the item's weight, and scene description in place of anthropomorphic verbs
+
+Alec, 2026-11-20: "1.6 is mostly about multi-modal and good testing. As an
+aside, it should not use anthropomorhic language like "one runs to two from
+the left", but scene description language of the 3D space in which 1 → 2
+over some background of 0's. That would look more like "one is moving toward
+two from the left"."
+
+**What the item is for.** A second modality beside text, and tests good
+enough to trust what the two together show. The architecture is item 1.7's
+and is not changed here.
+
+**The corpus describes a scene.** A sentence says what is in the space and
+how it changes: a digit at a place over a background of zeros, moving toward
+or away from another, from a side, slowly or quickly. It does not say what a
+digit *does* as an animal would. So:
+
+| Frame of §14.4 | As written | Restated |
+| --- | --- | --- |
+| 16 | `{a} walked toward {b}.` `{a} ran toward {b}.` `{a} walked away from {b}.` `{a} ran away from {b}.` | `{a} is moving toward {b}.` `{a} moved toward {b} slowly.` `{a} moved toward {b} quickly.` `{a} moved away from {b}.`, and with the side: `{a} is moving toward {b} from the left.` |
+| 16, questions | `what did {a} walk toward ?` `what ran toward {b} ?` | `what did {a} move toward ?` `what moved toward {b} quickly ?` |
+| 20 | `{a} walked toward {b}.` then `it ran toward {c}.`; `which was faster, the walk or the run ?` | `{a} moved toward {b} slowly.` then `it moved toward {c} quickly.`; `which move was faster, the first or the second ?` |
+
+and §12.5's "walked toward 2" and "ran toward 3" likewise. `touches`,
+`reached` and `left` (frames 8 and 9) are kept: they say where two things
+are and were. The cast, the images and the events are unchanged; only the
+words of the frames are. *To settle when the generator is next run:* whether
+its frozen examples hold frames 16 and 20 as first written, and if so they
+are generated again.

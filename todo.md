@@ -1503,6 +1503,16 @@ generation is expected at this stage and is recorded, not tuned away.
    test later." `requirements.txt` has `pypandoc_binary` and `typst`;
    nothing is installed or tried, and the `doc` target is changed
    when the route is tried.
+- **1.75. The part of item 1.5 that makes the tests faster, taken now**
+   (Alec, 2026-11-20: "Since 1.5 is likely to speed up testing
+   considerably, I think that some portion of that should be done as
+   1.75, after this round, and can be revisited if multi-modal code
+   changes things or needs new GPU acceleration. That will allow 1.7 to
+   proceed with tests much more quickly."). Done after round 4 of item
+   1.7 and before its round 5; item 1.5 keeps what is left and looks at
+   this part again once item 1.6's second modality is in. What it holds
+   is chosen by a measurement of where the tests' time goes, in
+   [the item 1.5 plan](doc/plans/2026-11-14-item1-5.md) ("Item 1.75").
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then
@@ -1787,6 +1797,11 @@ generation is expected at this stage and is recorded, not tuned away.
    testpoint `TestSingASong`). And this item's lessons are ordered by
    successive approximation: "we can't teach focus directly, but we
    can reward behaviors that require a successively narrow focus".
+   **Added 2026-11-20 (Alec):** "1.6 is mostly about multi-modal and
+   good testing." Its corpus describes a scene and uses no
+   anthropomorphic verb: not "one runs to two from the left" but "one
+   is moving toward two from the left", a 1 moving toward a 2 over a
+   background of 0s. Frames 16 and 20 of the design are restated so.
    **At its submission the slow tier (`RUN_SLOW`) is run
    once, overnight,** and not before: the architecture changes no more
    after this item (Alec, 2026-11-18; 1.8 §72). **Begun 2026-11-18**
