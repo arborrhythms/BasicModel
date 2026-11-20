@@ -174,18 +174,6 @@
     },
     {
       "file": "bin/Language.py",
-      "function": "SymbolSpace._publish_symbol_snapshot",
-      "attributes": [
-        "whenEncoding"
-      ],
-      "role": "unlocated dictionary writer",
-      "previous_absolute_time": true,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 14699,
-      "reads": "absolute"
-    },
-    {
-      "file": "bin/Language.py",
       "function": "SymbolSubSpace.forwardSymbols",
       "attributes": [
         "nWhen"

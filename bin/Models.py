@@ -24251,7 +24251,12 @@ class BasicModel(BaseModel):
                 import sys
                 print(f"[writeSyntax] error: {e}", file=sys.stderr)
 
-        public = (input_state, sym_vectors, pred, None)
+        # A reading that holds no symbol publishes the empty leg, the
+        # symbols' two lanes over no symbol ([B, 0, 2]), so the public tuple
+        # keeps its rows.
+        leg = sym_vectors if sym_vectors is not None else torch.zeros(
+            B, 0, 2, device=device)
+        public = (input_state, leg, pred, None)
         if return_sentence_state:
             return (*public, *sentence_state)
         return public

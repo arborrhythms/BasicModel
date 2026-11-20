@@ -16,9 +16,32 @@ def unkept(owner):
 
 
 @torch.no_grad()
-def select(field,capacity,present,*,unkept):
+def uncertain(owner):
+    """``{object: word}`` for each uncertain object of ``owner``: a blank
+    object (§19.112, point 3). An uncertain object is not kept in LTM; the
+    concept of the one word that names it is kept instead (``-1`` where no
+    single word names it). *Provisional:* an object whose own certainty is
+    below one half is the second case, not read here: no measure of an
+    object's own certainty is yet kept (its place is zero until placed)."""
+    if owner is None:
+        return {}
+    from Spaces import _concept_alloc_of
+    alloc=_concept_alloc_of(owner)
+    result={}
+    for cid,types in alloc.symbol_types.items():
+        if 'blank' not in types or cid in alloc.retired or owner._concept_row_of(int(cid)) is None:
+            continue
+        words=owner.definitions.words(int(cid))
+        result[int(cid)]=int(words[0]) if len(words)==1 else -1
+    return result
+
+
+@torch.no_grad()
+def select(field,capacity,present,*,unkept,uncertain=None):
     """The strongest field readings, over all orders, in one fixed list;
-    the concepts of ``unkept`` are not kept."""
+    the concepts of ``unkept`` are not kept, and an ``uncertain`` object's
+    reading is kept as its word's (the stronger reading of a concept on a
+    lane is the one kept)."""
     B=field.evidence.shape[1]
     ids=torch.full((B,capacity),-1,device=field.evidence.device,dtype=torch.long)
     values=field.evidence.new_zeros(B,capacity)
@@ -27,6 +50,22 @@ def select(field,capacity,present,*,unkept):
     concepts=field.concept_ids[:,None].expand(-1,B) if field.concept_ids.ndim==1 else field.concept_ids
     strongest=field.evidence.amax(2).permute(1,0,2).reshape(B,-1)
     source=concepts.T[:,:,None].expand(-1,-1,2).reshape(B,-1)
+    if uncertain:
+        objects=torch.as_tensor(list(uncertain),dtype=source.dtype,device=source.device)
+        words=torch.as_tensor(list(uncertain.values()),dtype=source.dtype,device=source.device)
+        hit=source[...,None].eq(objects)
+        source=torch.where(hit.any(-1),(hit.to(source.dtype)*words).sum(-1),source)
+        strongest=strongest.masked_fill(source<0,0.)
+        # One concept on one lane fills one slot, with its stronger reading.
+        lane=torch.arange(source.shape[1],device=source.device).remainder(2)
+        key=torch.where(source<0,-1-torch.arange(source.shape[1],device=source.device),source*2+lane)
+        same=key[:,:,None].eq(key[:,None,:])
+        order=torch.arange(source.shape[1],device=source.device)
+        before=(strongest[:,None,:]>strongest[:,:,None])|(
+            (strongest[:,None,:]==strongest[:,:,None])&(order[None,:]<order[:,None])[None])
+        dropped=(same&before).any(-1)
+        source=source.masked_fill(dropped,-1)
+        strongest=strongest.masked_fill(dropped,0.)
     if unkept:
         left=torch.isin(source,torch.as_tensor(unkept,dtype=source.dtype,device=source.device))
         source=source.masked_fill(left,-1)
@@ -44,7 +83,9 @@ def stage(model,sid,present,field):
     store=model.symbolSpace.ltm_store
     if store is None:
         return
-    model._sentence_episodes[int(sid)]=select(field,store.episodic_capacity,present,unkept=unkept(model._concept_owner()))
+    owner=model._concept_owner()
+    model._sentence_episodes[int(sid)]=select(field,store.episodic_capacity,present,
+        unkept=unkept(owner),uncertain=uncertain(owner))
 
 
 @torch.no_grad()
@@ -140,8 +181,9 @@ def tree_entry(store, roots):
     from Extension import joined, ConceptSet, as_field
     empty=ConceptSet(store.episodic_concepts.new_empty(0),store.slots.new_empty(0,2))
     field=as_field((joined(roots,empty),),where=store.slots.new_zeros(1,1,2),when=store.slots.new_zeros(1,1,2))
+    owner=store.owner()
     ids,values=select(field,store.episodic_capacity,store.slots.new_ones(1,dtype=torch.bool),
-                      unkept=unkept(store.owner()))
+                      unkept=unkept(owner),uncertain=uncertain(owner))
     return ids[0],values[0]
 
 

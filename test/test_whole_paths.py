@@ -419,6 +419,9 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
         calls.append(True)
         return torch.tensor([1.]), None, None
     monkeypatch.setattr(WholePaths, 'output', output)
+    # No program was composed, so the working-memory load is nothing.
+    monkeypatch.setattr(WholePaths, 'load_cost',
+        lambda model, observation, like: like.new_zeros(len(like)))
     draw = dict(walk=torch.tensor([6]), reconstruction_round=torch.tensor([-1]),
                 thought_round=torch.tensor([-1]), output_round=torch.tensor([0]))
     path = finish(model, (), 0, active, base=base, draw=draw, trust=1.)

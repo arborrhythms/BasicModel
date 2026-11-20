@@ -41,7 +41,7 @@ def run(model, sid, present, *, trust):
     from FamiliarTier import open_sentence,promote_candidates
     from SentenceField import native_target,publish,select_fields
     from ModelAttention import handoff
-    from EpisodicMemory import select,unkept
+    from EpisodicMemory import select,unkept,uncertain
     from Meaning import ConceptualMeaning
     from FieldProjection import key
     owner = model._concept_owner()
@@ -113,7 +113,8 @@ def run(model, sid, present, *, trust):
     if model.training:
         operated(model,opened,reading,proposals=True)
     store = model.symbolSpace.ltm_store
-    entry_ids,entry_values = select(field,store.episodic_capacity,present,unkept=unkept(owner))
+    entry_ids,entry_values = select(field,store.episodic_capacity,present,unkept=unkept(owner),
+        uncertain=uncertain(owner))
     for batch in present.nonzero().flatten().tolist():
         # A glance keeps its examined idea and the selected field together.
         certainty = float(field.evidence[:,batch,:,0].amax()) if field.evidence[:,batch].numel() else 0.

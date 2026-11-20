@@ -10,7 +10,7 @@ def matches(store, forest, *, start=None):
     A stored against reading opposes the positive question, and vice versa.
     No row is decoded or visited in the sparse tensor product.
     """
-    from EpisodicMemory import matches as product, unkept
+    from EpisodicMemory import matches as product, unkept, uncertain
     from FieldLogic import reduce
     start = max(0,len(store)-store.ltm_window) if start is None else start
     concepts, values = store.episodic_concepts[start:len(store)],store.episodic_values[start:len(store)]
@@ -19,14 +19,17 @@ def matches(store, forest, *, start=None):
     owner = None if owner_ref is None else owner_ref()
     # What an entry does not keep is not asked of it either.
     left = set(unkept(owner))
+    # An uncertain object is kept as its word, and so it is asked as its word.
+    words = uncertain(owner)
     def operand(field):
         if not len(field.ids) or field.missing:
             return ConceptSet(indices,values.new_zeros(len(indices),2),field.missing)
-        orders = field.ids.new_tensor([0 if owner is None else -1 if int(cid) in left
-            or owner._concept_row_of(int(cid)) is None
-            else owner._row_order(owner._concept_row_of(int(cid))) for cid in field.ids])
-        positive,present = product(concepts,values,field.ids,field.values,orders)
-        negative,_ = product(concepts,-values,field.ids,field.values,orders)
+        ids = field.ids.new_tensor([words.get(int(cid), int(cid)) for cid in field.ids])
+        orders = ids.new_tensor([0 if owner is None else -1 if cid < 0 or cid in left
+            or owner._concept_row_of(cid) is None
+            else owner._row_order(owner._concept_row_of(cid)) for cid in ids.tolist()])
+        positive,present = product(concepts,values,ids,field.values,orders)
+        negative,_ = product(concepts,-values,ids,field.values,orders)
         poles = reduce(torch.stack((positive,negative),-1),operation='intersection',dim=1,mask=present)
         return ConceptSet(indices,poles)
     def visit(node):

@@ -55,7 +55,15 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
         unary=tuple(range(layer.r_apply)) if refs is None else refs['unary_ops']
         stop=(value.shape[1]-1)*len(binary)+value.shape[1]*len(unary)
         depth=kwargs.get('depth',torch.full((len(value),),value.shape[1]))
-        action=torch.where(depth>1,binary.index(layer.op_names.index('sum')),stop)
+        # The candidates are the grammar's rules, several to an operator: the
+        # forced sum is the first sum rule that the first pair can take.
+        sums=torch.tensor([i for i,op in enumerate(binary) if layer.op_names[op]=='sum'],device=value.device)
+        if refs is None:
+            chosen=sums[0].expand(len(value))
+        else:
+            fits=refs['binary_valid'][:,0].index_select(-1,sums)
+            chosen=sums[fits.to(torch.long).argmax(-1)]
+        action=torch.where(depth>1,chosen,stop)
         with selected_action(layer,action):return forward(layer,value,**kwargs)
     monkeypatch.setattr(OperationSelectionLayer,'forward',compose)
     rows=[['9 plus 1','14 plus 1'],['2 plus 1']]

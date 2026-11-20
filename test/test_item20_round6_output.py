@@ -19,10 +19,23 @@ def test_output_calls_the_common_decoder_and_reports_retired_checkpoint_keys(loo
         calls.append((field, result))
         return result
     monkeypatch.setattr(model, 'reverse', reverse)
+    import OutputOccurrences
+    realize, generations = OutputOccurrences.realize, []
+    def observed(model, generation):
+        generations.append((len(calls), generation))
+        return realize(model, generation)
+    monkeypatch.setattr(OutputOccurrences, 'realize', observed)
     answer = _loop_answer(model, understanding)
-    assert calls and calls[-1][0].percepts is None
-    torch.testing.assert_close(answer.surface, calls[-1][1].materialize(), rtol=0, atol=0)
-    torch.testing.assert_close(answer.percepts, calls[-1][1]._reconstruction_percepts, rtol=0, atol=0)
+    # The surface is the common decoder's reverse of the walk's field; where
+    # the walk also gives a reconstruction field, its own reverse (the next
+    # call) gives the percepts that are scored.
+    start, generation = generations[-1]
+    spoken = calls[start]
+    scored = calls[start + 1] if generation.reconstruction_field is not None else spoken
+    assert calls[start:] == [spoken] + ([scored] if scored is not spoken else [])
+    assert all(field.percepts is None for field, _ in calls[start:])
+    torch.testing.assert_close(answer.surface, spoken[1].materialize(), rtol=0, atol=0)
+    torch.testing.assert_close(answer.percepts, scored[1]._reconstruction_percepts, rtol=0, atol=0)
     assert [entry['operation'] for entry in answer.trace[-3:]] == [
         'generate:grammar', 'generate:occurrences', 'reverse:order_zero']
     assert not hasattr(model, '_answer_surface_from_percepts')

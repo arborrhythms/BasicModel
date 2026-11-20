@@ -14,7 +14,10 @@ def test_serial_reading_keeps_prediction_separate_from_placed_rows(monkeypatch):
     torch.testing.assert_close(surface[0,first],torch.tensor(1.7))
     assert not cs.placement_context(0).any()
     cs._observed_knowing[0,3,0] = 1.
-    assert cs.placement_context(0)[3] == cs.placement_context(0)[first] == 1.
+    # The observed row holds; its whole reads it through the store's
+    # Sigma, tanh of one entry of weight one.
+    assert cs.placement_context(0)[3] == 1.
+    assert cs.placement_context(0)[first] == torch.tanh(torch.tensor(1.))
 
 
 def test_batch_rows_never_prime_each_other():
@@ -32,7 +35,7 @@ def test_batch_rows_never_prime_each_other():
     cs._observed_knowing[1,6,0] = 1.
     assert cs.placement_context(0)[3]==1 and cs.placement_context(0)[6]==0
     assert cs.placement_context(1)[6]==1 and cs.placement_context(1)[3]==0
-    assert cs.placement_context(0)[first]==1
+    assert cs.placement_context(0)[first]==torch.tanh(torch.tensor(1.))
 
 
 def test_part_graph_uses_the_constructed_relation_capacity(monkeypatch):
