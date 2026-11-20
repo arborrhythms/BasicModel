@@ -15205,6 +15205,11 @@ class ConceptualSpace(Space):
         The reading axis batches independent attention brackets. No concept
         owns a position; the retained native events own attribution locations.
         """
+        return self.cs_read_bank(self.cs_lookup(percepts, extents), publish=publish)
+
+    def cs_lookup(self, percepts, extents):
+        """The one lookup of a sentence's percepts in the brackets
+        ``extents``, held on the device (:class:`BasicPercepts.PerceptBank`)."""
         self._refresh_basic_selectors()
         basic = self.basic_percepts
         rows = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
@@ -15212,11 +15217,16 @@ class ConceptualSpace(Space):
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
         when = torch.stack((positions, positions + 1), -1)
-        perception = basic.read(percepts, extents, rows,
+        return basic.lookup(percepts, extents, rows,
             dtype=self.similarity_codebook.W.dtype, when=when,
             registry=getattr(model, 'where_registry', None),
             when_encoding=getattr(model, 'when_encoding', None))
-        return self.cs_read_percept_field(perception, publish=publish)
+
+    def cs_read_bank(self, bank, activity=None, *, publish=True):
+        """The order-zero concepts of a bank's readings, each event present
+        to the degree of ``activity`` ``[B, events, 2]`` (all of them where
+        it is not given)."""
+        return self.cs_read_percept_field(self.basic_percepts.read_bank(bank, activity), publish=publish)
 
     def cs_read_percept_field(self, perception, *, publish=True):
         """The order-zero concepts of the current open-attention percept field.

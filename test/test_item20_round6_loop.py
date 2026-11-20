@@ -77,11 +77,12 @@ def test_emptying_memory_before_the_open_does_not_change_input_reconstruction(tm
     model = _model(tmp_path, monkeypatch)
     owner = model._concept_owner()
     calls = []
-    original = owner.cs_read_memberships
+    original, lookup = owner.cs_read_memberships, owner.cs_lookup
     def capture(percepts, brackets):
         calls.append((percepts, brackets))
-        return original(percepts, brackets)
-    monkeypatch.setattr(owner, 'cs_read_memberships', capture)
+        return lookup(percepts, brackets)
+    # The open run's one lookup of the sentence.
+    monkeypatch.setattr(owner, 'cs_lookup', capture)
     try:
         with torch.no_grad():
             source = model.inputSpace.prepInput(['alpha beta'])

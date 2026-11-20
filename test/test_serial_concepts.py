@@ -34,12 +34,13 @@ def fixture():
 def test_open_pass_reads_once_before_composition_and_never_mints(monkeypatch):
     cs, rows, model = fixture()
     calls = []
-    read, forward = cs.cs_read_memberships, cs.cs_forward_content
-    monkeypatch.setattr(cs, 'cs_read_memberships', lambda *a, **k: (calls.append('read'), read(*a, **k))[1])
+    lookup, forward = cs.cs_lookup, cs.cs_forward_content
+    monkeypatch.setattr(cs, 'cs_lookup', lambda *a, **k: (calls.append('lookup'), lookup(*a, **k))[1])
     monkeypatch.setattr(cs, 'cs_forward_content', lambda *a, **k: (calls.append('forward'), forward(*a, **k))[1])
     before = cs._concept_allocator.next_id
     first = observe(model, 0, torch.tensor([True]))
-    assert calls == ['read', 'forward']
+    # The sentence's one lookup, then the way up.
+    assert calls == ['lookup', 'forward']
     assert set(first[0]) == {rows[0][1], rows[2][1]}
     assert len(_candidates(cs)) == 0
     assert cs._concept_allocator.next_id == before

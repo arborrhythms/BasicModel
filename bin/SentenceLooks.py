@@ -4,19 +4,25 @@ import torch
 from torch.nn import functional as F
 
 
+def bracket_activity(bank, interval, active):
+    """Each event of the bank present on both lanes where it lies inside the
+    stream's bracket ``interval`` ``[B, 2]`` and the stream is ``active``;
+    on the device."""
+    spans = bank.native.spans.to(interval.device)
+    inside = ((spans[..., 0] >= interval[:, None, 0]) & (spans[..., 1] <= interval[:, None, 1])
+              & (spans[..., 1] > spans[..., 0]) & active[:, None])
+    return inside[..., None].expand(-1, -1, 2).to(bank.native.events.dtype)
+
+
 def perceive(model, interval, active):
-    """The open field's native read, now at one selected bracket per stream."""
-    owner, ps, ws = model._concept_owner(), model.perceptualSpace, model.wholeSpace
-    raw, native = model._staged_concepts_in, ps._forward_input
-    bracket = torch.where(active[:, None, None], interval[:, None], 0)
+    """A look's read of the sentence's bank (the one its looks are of), the
+    events inside one selected bracket per stream present: no lookup and no
+    read on the host."""
+    owner, raw = model._concept_owner(), model._staged_concepts_in
+    bank = model._sentence_bank
     owner._passback_scope_where = interval.to(raw) / max(1, raw.shape[-1])
     owner._passback_scope_space = interval.new_zeros(len(interval))
-    whole_spans = getattr(ws, '_staged_word_property_spans', None)
-    whole_spans = (ws.concept_evidence_layout(raw, ws.inputShape[0])[0] if whole_spans is None
-                   else whole_spans.reshape(raw.shape[0], -1, 2))
-    evidence = owner.cs_read_memberships((native.get('native_indices', native['indices']),
-        native.get('native_part_spans', native['part_spans']),
-        ws.subspace.what.primitive_properties, raw, whole_spans), bracket)
+    evidence = owner.cs_read_bank(bank, bracket_activity(bank, interval, active))
     owner._cs_last_a0 = evidence.detach()
     knowing = owner.cs_forward_content(evidence)
     from Understanding import ConceptualField
@@ -122,6 +128,7 @@ class Looks:
         rows = self.present
         first = True
         opened = self.model._sentence_open_fields[self.sid]
+        self.model._sentence_bank = self.model.__dict__.get('_sentence_banks', {}).get(self.sid)
         from LookForecast import LookForecast
         forecasts = LookForecast(self.model._concept_owner(), opened, state.spans) if opened is not None else None
         while True:

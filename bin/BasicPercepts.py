@@ -1,6 +1,33 @@
 """Basic-level occurrences and their promoted, fixed-capacity percept table."""
+from dataclasses import dataclass
+
 import torch
 from torch import nn
+
+
+@dataclass(frozen=True)
+class PerceptBank:
+    """The percepts of a sentence, read once by one lookup and held on the
+    device: each member read at each event (``native.events``, ``[member,
+    B, reading, event, 2]``), the events' spans, the rows of the first Pi
+    the lookup names with their members and against entries. A look is an
+    activity over the events; nothing of the lookup is read again."""
+    native: object
+    rows: tuple
+    groups: tuple
+    opposed: tuple
+    keys: tuple
+
+    def at(self, activity):
+        """The members' reading with each event present to the degree of
+        ``activity`` ``[B, events, 2]``, each lane by its own."""
+        from dataclasses import replace
+        events = self.native.events
+        width = events.shape[-2]
+        activity = activity[:, :width].to(events)
+        events = events * activity[None, :, None]
+        values = events.amax(-2) if width else events.sum(-2)
+        return replace(self.native, values=values, events=events)
 
 
 class BasicPercepts(nn.Module):
@@ -490,7 +517,14 @@ class BasicPercepts(nn.Module):
 
     def read(self, percepts, brackets, rows, **options):
         """Tie both towers live, with the complementary pole from properties."""
-        from PerceptField import read_percepts, PerceptField
+        return self.read_bank(self.lookup(percepts, brackets, rows, **options))
+
+    def lookup(self, percepts, brackets, rows, **options):
+        """The one lookup of a sentence: every native event of the percepts,
+        each member of ``rows`` read at each event inside each bracket, held
+        as a :class:`PerceptBank`. What a look reads of it is
+        :meth:`read_bank` with the look's activity over the events."""
+        from PerceptField import read_percepts
         from Spaces import PartSpace
         rows = tuple(dict.fromkeys(map(int, rows)))
         # A nested native row retains its recorded part witnesses. Descend
@@ -542,6 +576,16 @@ class BasicPercepts(nn.Module):
             keys.extend(opposed[-1])
         native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
             native=self.native, **options)
+        return PerceptBank(native, rows, tuple(map(tuple, groups)), tuple(map(tuple, opposed)), tuple(keys))
+
+    def read_bank(self, bank, activity=None):
+        """The basic percepts of a bank's readings, with each event present
+        to the degree of ``activity`` ``[B, events, 2]`` (one where it is not
+        given): what the open run read, or what a look reads."""
+        from PerceptField import PerceptField
+        native = bank.native if activity is None else bank.at(activity)
+        rows, keys = bank.rows, bank.keys
+        groups, opposed = [list(group) for group in bank.groups], [list(group) for group in bank.opposed]
         values, events, boundaries = [], [], []
         if rows:
             order = list(dict.fromkeys(keys))

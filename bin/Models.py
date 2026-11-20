@@ -14147,6 +14147,8 @@ class BasicModel(BaseModel):
         self._kept_path_output = None
         self._sentence_understandings = {}
         self._sentence_open_fields = {}
+        self._sentence_banks = {}
+        self._sentence_bank = None
         self._sentence_episodes = {}
         self._input_reconstructions = {}
         self._last_sentence_understanding = None

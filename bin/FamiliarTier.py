@@ -352,9 +352,13 @@ def open_sentence(model, sid, present):
     whole_spans = getattr(ws, '_staged_word_property_spans', None)
     whole_spans = (ws.concept_evidence_layout(raw, ws.inputShape[0])[0] if whole_spans is None
                    else whole_spans.reshape(raw.shape[0], -1, 2))
-    field = owner.cs_read_memberships((native.get('native_indices', native['indices']),
+    bank = owner.cs_lookup((native.get('native_indices', native['indices']),
         native.get('native_part_spans', native['part_spans']),
         ws.subspace.what.primitive_properties, raw, whole_spans), brackets)
+    # The sentence's one lookup, held for its looks.
+    model.__dict__.setdefault('_sentence_banks', {})[int(sid)] = bank
+    model._sentence_bank = bank
+    field = owner.cs_read_bank(bank)
     from SentenceField import open_field
     owner._cs_last_a0 = field.detach()
     acts = owner.cs_forward_content(field)
