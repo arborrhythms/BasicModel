@@ -202,10 +202,11 @@ CS = ConceptualSpace, SS = SymbolSpace).
 
 The concept store's weights are the Pi and the Sigma of each order
 ([Sigma and Pi Layers](#sigma-and-pi-layers)): at order zero the first Pi over
-the basic percepts' parts and wholes and a dense Sigma over the combined
-vector; above it a Pi of symbols over concepts and a Sigma of concepts over
-symbols, both stored as compressed rows on the device with an index of
-columns, grown into room allocated beforehand by the geometric taper
+the basic percepts' parts and wholes, the Not, and a sparse Sigma over the
+signed values of the basic percepts' rows; above it a Pi of symbols over
+concepts, the Not, and a Sigma of concepts over symbols. Every Sigma is
+stored as compressed rows on the device with an index of columns, and every
+matrix is grown into room allocated beforehand by the geometric taper
 (`_order_caps`). A promotion writes an edge at one; the penalty thins the
 values of the entries that exist.
 
@@ -227,7 +228,8 @@ reconstruction; they do not determine conceptual presence.
 #### Relation-table entry contract
 
 At the sparse-entry level, one entry binds one concept row index to one symbol
-column index, plus its signed membership weight. A concept definition is
+column index, plus its membership weight, at zero or above, whose sign is
+read from the Not: a for entry or a Not entry. A concept definition is
 therefore not limited to one symbol: the same concept index may occur in
 multiple entries, each paired with a different symbol index. Those repeated
 entries collectively form the concept's sparse, set-like definition; different
@@ -475,9 +477,11 @@ address can be decoded when needed.
 Codebook identity remains the row index within its owning codebook. The
 registry adds a distinct location range for each owner; it does not replace
 that identity. An `LTM0` row is named by its time ("Occurrence addresses"
-below). `.when` carries the model-time
-unit bracket `[t, t+1]`; `.where` retains the input/percept location. No
-recall selects rows by their stored band; learned readers use its age or a difference.
+below). `.when` carries the stamp of the model's one clock; `.where` retains
+the input/percept location. No recall selects rows by their stored band; the
+chooser and the operators compare a stamp with the present by the comparator
+([Sigma and Pi Layers](#sigma-and-pi-layers)), and a stamp is never rewritten
+as an age.
 A sentence read again is a new row at a later time. A full
 store raises.
 
@@ -487,11 +491,12 @@ alone; this remains a limitation even though perception retains span metadata.
 
 ## Cognitive grounding: dense-perceptual vs sparse-symbolic (2026-07-02)
 
-The design splits representation into a **dense, subsymbolic** integrator
-(the Sigma of order zero, dense over the combined vector of the percepts'
-part and whole *content*) and a **sparse, symbolic** composer (the Pi and
-the Sigma above order zero, stored as compressed rows, which compose the
-*scalar values* of concepts through symbols). This is not an
+The design splits representation into a **dense, subsymbolic** code (the
+percepts' codes in perceptual space, overlapping vectors of parts and
+wholes, read by the first Pi alone) and a **sparse** composer (the Not and
+the Sigma at every order, and the Pi above order zero, stored as compressed
+rows, which compose the *scalar values* of concepts from rows and symbols).
+This is not an
 arbitrary engineering choice; the split, and specifically *why sparsity belongs
 only on the symbolic side*, tracks several convergent findings on human
 cognition.
@@ -513,9 +518,9 @@ cognition.
   the ramsified *orders* (abstraction is a separate, graded
   anterior-temporal / prefrontal axis).
   The individuated episodes of this account have
-  their own place in the store: a row keeps a few of the strongest concepts
-  of its field of understanding, and a recall by content reinstates them as
-  the stream's knowing
+  their own place in the store: a row keeps, beside its idea, a few slots,
+  each one concept of its moment with its value, and a recall by content
+  reinstates them as the stream's knowing
   ([Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
 - **Dual-process cognition** (Sloman 1996; Kahneman). A fast, parallel,
@@ -534,21 +539,22 @@ cognition.
   architecture is a concrete stance on the oldest fight in cognitive science:
   **content stays connectionist** (dense, continuous, invertible mixing),
   **structure becomes symbolic** (discrete, reusable, composable edges), and the
-  **interface is the first block** — the basic percepts' Pi and the dense
-  Sigma that reads their combined content into concepts of order zero. The discrete edges buy the
+  **interface is the first block**: the basic percepts' Pi, the only reader
+  of the codes, then the Not and the sparse Sigma that make concepts of order
+  zero from the rows. The discrete edges buy the
   compositionality/systematicity that pure distributed codes are accused of
-  lacking, while the dense mixing keeps perception continuous and
+  lacking, while the dense codes keep perception continuous and
   gradient-trainable.
 
 - **Grounded cognition** (Barsalou 1999; contra amodal symbol systems). Because
-  a concept is a Sigma over perceived codes and its value carries the
+  a concept is a Sigma over perceived rows and its value carries the
   observed evidence, the symbols are not amodal Fodorian tokens — they are
   grounded pointers-with-magnitude, closer to perceptual-symbol "simulators."
   Retaining graded memberships is cognitively load-bearing: graded activation *is* typicality / salience
   (Rosch's graded membership), which a cosine would discard.
 
 - **Basic-level categories are perceptual, not content-free** (Rosch et al.
-  1976). "Subsymbolic" $\ne$ "category-free": the mixing output at order 0 is
+  1976). "Subsymbolic" $\ne$ "category-free": the concepts of order 0 are
   already carved toward basic-level regions, because that is what perceptual
   integration *for a categorizing organism* produces. This suggests the
   feature-defined conceptual regions are the **pre-linguistic Gärdenfors regions**
@@ -684,7 +690,7 @@ is released with the attended field; only scalar refinement history persists.
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up ordered part synthesis | Radix parts, native codes and `<synthesis>` policy | A form's code is the set of its parts, the greatest of their codes in a parts half of 64 coordinates on two lanes. Recurrence forms parts; one lookup a sentence reads the percept bank. |
-| **ConceptualSpace** | STM container + main grammatical CPU + the layers of every order | STM (`ShortTermMemory`, depth ~8); the first Pi of basic percepts (`PerceptPi`) and the dense Sigma of order zero (`OrderZeroSigma`); above them the Pi of symbols and the Sigma of concepts, as compressed rows; the relation store (`ConceptAllocator` + ordered records) | `forward(subspace, word_subspace=None)`: STM bookkeeping only. The layers read each reading once; grammar ops are dispatched via the signal router. |
+| **ConceptualSpace** | STM container + main grammatical CPU + the layers of every order | STM (`ShortTermMemory`, depth ~8); the first Pi of basic percepts (`PerceptPi`), the Not of order zero (`order_zero_not`) and its sparse Sigma (`order_zero`); above them the Pi of symbols, the Not and the Sigma of concepts, as compressed rows; the relation store (`ConceptAllocator` + ordered records) | `forward(subspace, word_subspace=None)`: STM bookkeeping only. The layers read each reading once; grammar ops are dispatched via the signal router. |
 | **WholeSpace** | Top-down division by properties | The table of wholes (`PrimitiveProperties`) and `<analysis>` policy | A whole's code is the OR of the catalog parts that belong to it, or the AND of other wholes; a percept's wholes half is the least of its wholes' codes, from all ones. A whole is read where a run lies. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -695,8 +701,8 @@ PS.forward(x):  return native_part_read(x)
 CS.forward(subspace, word_subspace):
     STM[1..7] = STM[0..6];  STM[0] = folded          # newest at slot 0, shift toward higher indices, oldest (slot 7) drops off; mode-dispatched, the pump stays subsymbolic
 # POST-PUMP cutover (sparse-active, once per forward, in _forward_body):
-#   the bank's basic percepts -> first Pi (for and against) -> combined vector
-#   -> dense Sigma of order zero -> at each order above: Pi of symbols, Sigma of concepts
+#   the bank's basic percepts -> first Pi (for and against) -> Not (one signed value a row)
+#   -> sparse Sigma of order zero -> at each order above: Pi of symbols, Not, Sigma of concepts
 SS:  no atomic forward operator; hosts write-required grammar ops
      (the CS->SS symbol bind leg is SymbolSpace.forward_concept_to_symbol, .forward()-mediated)
 ```
@@ -836,7 +842,7 @@ in [Language](Language.md#the-looks); this section gives the mechanism.
 into one bank, on the device. For each event the bank holds its row of the
 first Pi, which is what the event is (a form's row where the store knows the
 form, and the rows of the form's parts); its place, which is its start; its
-band of where wires; its time; the token it belongs to; and its activity on
+band of where wires; the clock's stamp; the token it belongs to; and its activity on
 two lanes. The events are the lookup's rows, not bytes. A known form that
 spans several tokens (`ice cream`) is an event of its own at its start. The
 first Pi is read only on the rows the lookup names, and nothing on a look's
@@ -871,14 +877,24 @@ grammar's tests. A look with the same request gives the same result whatever
 was looked at before it.
 
 **The salience map** carries the request down to the percepts. It is the
-gradient of the asked concepts by the percepts of the sentence, taken from the
-open run, the first look, in which the whole sentence is read at once. Each
-Sigma is passed by its weights, which is before its squash, so that a concept
-already lit still returns its percepts (Alec, 2026-11-19: "You said weights
-were better, lets do that"); each Pi is passed by the derivative of its
-product at the values of the open run. It is computed by the transposes of
-the same sparse matrices, with the Pi's derivatives kept from the open run,
-and no second backward pass is made inside the forward. Where a token holds
+analysis from above, conceptual attention, as the Pi's rows are the synthesis
+from below (Alec, 2026-11-19: "We want top-down conceptual attention, I think
+that can drive the what/where pathways over both particles and
+properties"). It is the gradient of the asked concepts by the percepts of the
+sentence, taken from the open run, the first look, in which the whole
+sentence is read at once, and it is carried down by the transposes of the
+matrices of the way up: through the Sigma's weights, which is before its
+squash, so that a concept already lit still returns its percepts (Alec,
+2026-11-19: "You said weights were better, lets do that"); through the Not,
+which gives each of a row's two lanes its share, so that a requested concept
+with a Not entry on a row gives its share to that row's against lane; and
+through the first Pi's own entries, passed by the derivative of the product at
+the values of the open run, onto every member of a row, its parts on the part
+tower and its properties on the property tower, each on its lane, and onto
+its where. It has no weights of its own, makes no lookup on the host, and no
+second backward pass is made inside the forward. Salience is never below
+zero; a request may make salient what tells for a wanted concept or what
+tells against it. Where a token holds
 several copies of one row, its membership is the greatest of them, and each
 copy at the greatest takes the whole derivative. The map lands on two
 domains: on each event's activity, the what, and on each event's band of
@@ -901,13 +917,9 @@ nothing of where was asked, so that a request with no where part selects the
 level and leaves every place in. The match is read at a form's place, its
 start, and applied once to the form's reading on both lanes, never inside the
 product of a row's parts. There is one where: none for how a thing's parts
-stand to one another. No location concept is made: concepts read the where
-through the weights they have on the where coordinates of the combined
-vector, which start at zero for a new concept and are learned, so concepts
-of location form where location is taught ("Concepts have the location to
-abstract over, and a gradient incentivizing them to do so"). With those
-weights the word at a place was returned in 16 of 16 sentences, and reading
-in order was learned from every start.
+stand to one another. No location concept is made, and no concept has a
+weight on a where wire: the where enters at the first Pi, as the look's where
+match.
 
 **The returned set.** The way up is run again on the bank with the look's
 activity, and what it gives, each concept at its token, is the returned set.
@@ -1274,7 +1286,8 @@ and nothing shares a row between them. The form is a percept: its code is the
 set of its parts and the wholes it lies in, on two lanes, within 0 to 1
 ([Mereology](Mereology.md#percept-code)). Its basic percept is a row of the
 first Pi, and the concept that row brings is one signed value, a Sigma over
-the combined vector of what is there ([Sigma and Pi Layers](#sigma-and-pi-layers)).
+the signed values the Not gives for the rows ([Sigma and Pi Layers](#sigma-and-pi-layers)).
+It reads no code.
 Above order zero a symbol is a row of a Pi over concepts, split from its
 concept and with no dimensions: it has no vector, place, form or trust read
 as a direction. Letters that are only parts of a form require no conceptual
@@ -1292,34 +1305,34 @@ from their consistent association; nothing joins independent tokens
 
 At every order, identity comes from below, through the Pi rows of a
 concept's members, and meaning from above, through the contexts that teach
-its Sigma. A concept read in a look has the look's where and when; a concept
-row has neither, since a generalization holds no place or time. Same-context
+its Sigma. A concept is opaque: it keeps its `.where` and its `.when`, the
+stamp of the clock at its moment, and a row promoted to a concept keeps its
+stamp. Same-context
 concepts coinciding in conceptual space is correct and is not counted or
 repaired.
 
 ### One where, one when, many whats: the field, attention and the two modes
 
-A percept event has its own place; a reading has its own place and time; a
-concept row has neither.
+A percept event has its own place; a reading has its own place; each is
+stamped by the model's one clock.
 
-**Three kinds of thing, and only one chooses its coordinates.**
+**Three kinds of thing.**
 
 | Thing | `.where` | `.when` | `.what` |
 |---|---|---|---|
-| a percept event | its band of where wires, from its place (its start) | its sentence's model-time bracket $[t, t+1]$ | one code, on two lanes |
-| a **reading**, a look's field; an LTM row is a closed one | its own place, from the fixed where parameter | its own time | **many** codes, combined on the gaps into one vector for each lane |
-| a **concept row** in the store | none | none | its column of the Sigma, over the combined vector or over the symbols below |
+| a percept event | its band of where wires, from its place (its start) | the clock's stamp at its sentence | one code, on two lanes |
+| a **reading**, a look's field; an LTM row is a closed one | its own place, from the fixed where parameter | the clock's stamp at its moment | **many** codes, each read by the first Pi into its row's two values |
+| a **concept** | the `.where` it was given, kept | the stamp of its moment, kept | its entries in the Sigma, over the rows' signed values or over the symbols below |
 
-A concept *in a reading* therefore has the reading's where and when and the
-combined code of the percepts present. A concept *row* has neither
-coordinate, since a generalization holds no place or time; its weights on the
-where coordinates of the combined vector are what it learns of location. A
-stored row keeps its `.when` once per row, never per concept, and input
-location stays with the percepts: no row `where` column exists.
+A concept is opaque and keeps the `.where` and `.when` it was given. No
+concept has a weight on a where wire: the where enters at the first Pi, as a
+look's match of place, and the Sigma reads no code, no place and no time. A
+stored row keeps its `.when` once per row, and input location stays with the
+percepts: no row `where` column exists.
 
-**The conceptual field is the concepts of a reading.** Each concept reads the
-reading's combined vector, the two lanes of what is present joined by the Pi
-on the gaps, through its column of the Sigma, and above order zero the
+**The conceptual field is the concepts of a reading.** Each concept reads,
+through its entries in the Sigma, the signed values that the Not gives for
+the rows of the first Pi present in the reading, and above order zero the
 symbols nominated over the order below. The where stays with the percept
 events and the reading ([Sigma and Pi Layers](#sigma-and-pi-layers)).
 
@@ -1338,7 +1351,7 @@ concept has a `.where` of its own.
 **Both stands across percepts, and two concepts name it.** A single row of
 the first Pi is for or against. If a property holds on one occurrence in a
 reading and fails on another, one row carries it for and another against,
-and the reading's combined vector holds it on both lanes; that is the *both*
+and the reading holds it in two rows, one read for and one against; that is the *both*
 corner of the tetralemma, reported by the field, not an error. Above the
 percepts *both* is two concepts, one for presence and one for absence, each
 one signed value. The remedies are a narrower look, or a concept of higher
@@ -1355,8 +1368,14 @@ inside its run; a whole read where the run lies. XOR of two perceived words is
 learned at the basic level given a row for the pair: `10` and `01` are two
 forms, two distinct percepts, and the Sigma reads them.
 
-**When (Alec, 2026-11-10).** Every store uses `RowTime.encoder()` and its fixed horizon;
-`BasicModel.when_time` is the saved clock. The model advances one tick
+**When (Alec, 2026-11-10 and 2026-11-19).** The model has one integer clock
+and one sinusoidal code of it (Alec, 2026-11-19: "We need one integer clock
+and one sinusoidal encoding of it"). The code is made in one place, by one
+encoder, when the clock advances, and is held on the model beside the
+integer; every reader reads it there and none encodes the clock for itself
+(Alec, 2026-11-19: "the arch can read the sinusoid encoding of it as exposed
+adjacently ( on the model )"). A concept's `.when` is the stamp of the clock
+at its moment. The model advances one tick
 before perceiving each present sentence slot; all streams in that slot share
 the tick. A new thought idea and a produced sentence each take another tick.
 A configuration without sentence composition advances once per input batch.
@@ -1364,28 +1383,35 @@ Words retain their order as subdivisions of the sentence's `[t, t+1]` bracket.
 Order-zero reconstruction carries the input sentence's tick, while output
 carries its own. A row keeps no document identity or sentence ordinal.
 
-Learned chooser, attention and composition readers receive ages or differences,
-never the phase of the absolute stamp, so no choice, composition or answer depends on when it is made: a reader of the absolute stamp lets the clock's phase pick the derivation, and a trained model's answers then move with the clock. Attention uses the reversed age bracket
-and its existing history scale; an observation at age zero remains observed.
-A checkpoint saves both `when_time` and `LTM0.model_clock`. No boundary puts
-the clocks back, so a presentation repeated in a later epoch receives later
-stamps.
+The chooser and the operators are given the present, the code on the model,
+and a comparator that takes the present and a concept's stamp and gives how
+far back the concept is (Alec, 2026-11-19: "they will need a comparator to
+know how far back in history the concept they have recalled is"). A stamp is
+never rewritten as an age before they see it. A concept is opaque and keeps
+its `.where` and its `.when` (Alec, 2026-11-19: "we should treat the concept
+as opaque always, so of course keep its parts together"); a row promoted to a
+concept keeps its stamp. No boundary puts the clock back, so a presentation
+repeated in a later epoch receives later stamps.
 
-Each `LTM0` row keeps an entry: up to `episodicConcepts` (default four) of
-the strongest readings of its field of understanding, of any order, in one
+Each `LTM0` row keeps, beside its idea, which is semantic memory, a few
+*slots*, which are episodic memory: up to `episodicConcepts` (default four),
+each one concept of the row's moment with its value, of any order, in one
 flat list with no order axis (`EpisodicMemory.select`; columns
-`episodic_concepts` and `episodic_values`). Each reading is one concept on one
-lane, its strength signed by the lane, above zero for the lane for and below
-zero for the lane against, so no entry nets the two lanes. A zero reading
-leaves no entry. No place is stored, and entries are detached from training.
-The kept close hands a sentence's entry, taken from the kept path's field of
-understanding, to the row it writes; a kept thought's row takes the strongest
-of its own extension (`EpisodicMemory.for_meaning`). A close that writes only
-an `LTM1` relation keeps no entry. The columns follow compaction, forgetting
-and checkpoints with their rows.
+`episodic_concepts` and `episodic_values`). Each slot holds one concept on
+one lane, its value signed by the lane, above zero for the lane for and below
+zero for the lane against, so no slot nets the two lanes. Which concepts of
+the moment fill the slots is not settled; they are not the most active (Alec,
+2026-11-19: "Most active is clearly not useful; perhaps least expected, or
+sentence dominant such as np, vp, ?"). No place is stored, and slots are
+detached from training. The kept close hands a sentence's slots, taken from
+the kept path's field of understanding, to the row it writes; a kept
+thought's row fills its slots from its own extension
+(`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation
+keeps no slot. The columns follow compaction, forgetting and checkpoints with
+their rows.
 
 A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks
-the rows of the window by their entries ("Recall and answers" below) and
+the rows of the window by their slots ("Recall and answers" below) and
 publishes the recalled rows' concepts as the querying stream's knowing
 (`EpisodicMemory.reinstate`): the two poles are
 rebuilt from the sign, the readings are laid out by their concepts' surface
@@ -1394,14 +1420,9 @@ stream's present percept readings are cleared and other streams are untouched;
 `reverse` alone reconstructs this field, without compose or generate. A
 concept that has expired since is skipped and counted, and a concept with no
 surface keeps an empty extent and is counted.
-Rows without entries leave attention unchanged. `End` releases the present
+Rows without slots leave attention unchanged. `End` releases the present
 percept field and its coordinates; `_episode_review_field` retains a review until
 the next open attention pass.
-
-The conceptual mixer's temporal input is the elapsed-time ladder minus its
-zero-age band. This is a read of a time difference; the absolute stored stamp is
-unchanged and a current observation adds no constant temporal content to the
-mixer.
 
 **Two kinds of time.** Occurrence time is where and when the
 utterance or percept occurred: a row's `.where` and `.when`, written by the
@@ -1583,15 +1604,21 @@ See [Thought-operator contracts](QueryContracts.md).
 ## Sigma and Pi Layers
 
 The model has one structure at every order: a Pi, then a Not, then a Sigma
-(Alec, 2026-11-17). A Pi makes rows that need all their members; a Sigma
-weighs rows into concepts; a Not entry is a Sigma weight below zero. Values
-are kept on two lanes, each within 0 to 1: evidence for and evidence against.
+(Alec, 2026-11-17), order zero among them. A Pi makes rows that need all
+their members, each row with two values, for and against; the Not joins each
+row's two values into one signed value; a Sigma weighs those signed values
+into concepts. Values in perception are kept on two lanes, each within 0 to 1: evidence for and evidence against.
 A "negative number" in perception is evidence against, held as a positive
 value on the against lane (Alec, 2026-11-19: "we are on a positive unit
 hypercube with two lanes; evidence for and evidence against"); zero on both
 lanes is no evidence. On percepts the opposite of 1 is 0, not -1, as in
-Boole: a row of the Pi is the and, $xy$; a gap is the not, $1 - x$; and the
-Pi on the gaps is the or, $1 - (1 - x)(1 - y)$.
+Boole. Intersection and union, the least and the greatest of graded values,
+are operations of the basic level, below symbols; conjunction and
+disjunction are the symbolic level's, a row of a Pi, which needs all of its
+members, and a concept of a Sigma, which any member may be enough for (Alec,
+2026-11-19: "I like the intersection/union operations as subsymbolic (basic
+level) and conjunction/disjunction at the symbolic level"). There is no third
+pair named `and` and `or`.
 
 **The Pi** (`PiLayer3`, `bin/Layers.py`). Square and sparse, on unsigned
 values, one lane at a time:
@@ -1610,15 +1637,22 @@ there: where one input is at or below another, so are its rows, and a row is
 at or below every input it reads. Each percept, and above order zero each
 symbol, is two unsigned rows, one for each lane.
 
-**The Sigma** (`SigmaLayer3`). For each concept one signed number,
+**The Sigma** (`SparseSigmaLayer3`). For each concept $c$ one signed number,
 
-$$y = \tanh(x\,U) \in [-1, 1],$$
+$$y_c = \tanh\Big(\sum_i w_{ci}\, s_i\Big) \in [-1, 1],$$
 
-with no bias. Each input has one signed weight: its positive part is the
-input's *for entry* and its negative part its *Not entry*, so an entry is
-never both. A weight starts at zero or above, so there is no Not entry until
-teaching makes one, and a Not entry is the only place a sign lives in the
-model. A concept is one signed value whose size is its certainty ("Signed
+the sum over the concept's entries, with $w_{ci}$ at zero or above and $s_i$
+the signed value the Not gives for row $i$, exchanged where the entry is a
+Not entry. It has no bias and is sparse, stored as compressed rows at every
+order. It is monotone: with no Not entry, raising an input never lowers a
+concept, and the Sigma changes no sign. An entry is a for entry or a Not
+entry, never both: its size is the Sigma's weight and its sign is the Not's.
+A Not entry is made in two ways. Implicitly, by the gradient, where teaching
+carries a concept's entry on a row through zero (Alec, 2026-11-19: "the
+gradient should be able to make a not entry, that is the implicit
+definition"); explicitly, by a Not member declared in the record of a
+concept's members, and at the basic level by omission. A concept is one
+signed value whose size is its certainty ("Signed
 sigma; good, this is knowing in the signed hyperball", Alec, 2026-11-17). It
 is stored as two unsigned lanes (`signed_lanes`): .5 is .5 for and nothing
 against, and -.5 is nothing for and .5 against, so a single reading of one
@@ -1727,50 +1761,33 @@ its parts, and a whole's code is the OR of the catalog parts that belong to it
 or the AND of other wholes. The code and its measurements are in
 [Mereology](Mereology.md#percept-code).
 
-**The combined vector.** For each lane, the vectors of the percepts of one
-reading are combined into one vector as wide as the perceptual space, by a Pi
-on the gaps:
+**The place of a reading.** A reading's `.where` is its own (Alec,
+2026-11-19: "It's own, flowing from the fixed .where parameter we
+mentioned"), and its `.when` is the stamp of the model's clock. Only the
+first Pi touches the perceptual code, for the what and for the where (Alec,
+2026-11-19: "the perceptual code is used exclusively to distribute codes in
+the hypercube, and the only thing touching that is the pi. This applies to
+both .what and .where"): the where enters at the Pi, as a look's match of
+place, and no concept has a weight on a where wire.
 
-$$x_i = 1 - \prod_p (1 - v_{p,i})^{b_p},$$
+**The Not of order zero** (`NotLayer3`, `ConceptualSpace.order_zero_not`)
+takes each basic percept's row, its two values, and gives one signed value,
+for less against. It has no weights: an entry of the Not is there or it is
+not, and it gives one concept that row's pair exchanged.
 
-with $b_p$ the Pi's value for percept $p$ and $v_p$ its vector (Alec,
-2026-11-17: ""Pi on the gaps". You mean pi over the individual percept dims
-instead of pooling? Good."). A percept enters once, at its net, for less
-against: at a net above zero what tells for it joins the for lane and what
-tells against it the against lane, below zero the reverse, and a percept read
-equally both ways adds nothing (`OrderZero.combine`). The parts half, a lower
-bound, is joined by this union. The wholes half, an upper bound, is read on
-its complement, the coordinates its wholes cut away, $1 - w$; the union of
-the complements is the complement of the product of the wholes, so over a
-reading the wholes are joined by the product, the dual of the parts. On
-values of 0 and 1 the union and the product agree with the greatest and the
-least by which a code is built. A reading's `.where` and `.when` are its own
-and are not combined over its percepts (Alec, 2026-11-19: "It's own, flowing
-from the fixed .where parameter we mentioned"); combined, they say how many
-percepts a reading has and no longer where it is. They are read unsigned, at
-the degree that the reading is present; a reader of an angle takes $2x - 1$.
-
-**The concepts of order zero** (`OrderZeroSigma`) are the Sigma above on $x$,
-with $U$ dense, the perceptual width by the concepts, reading the two
-channels of $x$. The Sigma of order zero is not penalized. A concept's column
-starts from its member: what tells for the member over the number of its
-contributions, less what tells against it over the number of its own,
-
-$$u = \tfrac{1}{2}\Big(\frac{P}{|P|^2} - \frac{N}{|N|^2}\Big)$$
-
-(Alec, 2026-11-19: "we can divide all contributions by the number of
-contributions, respectively"). The column is the mean of its two sides where
-the member has something against it, and $P/|P|^2$ alone where it has not, so
-that a member read alone reads one: its own against side, witnessed absent,
-supports it as much as its for side. All that tells against, present, takes
-the reading to zero however few its coordinates: `archer` reads `archery` at
--.032 before the squash and `is` reads `this` at -.095. What tells for a form is its parts and what its upper bound cuts
-away; what tells against it is what its holders add. A member that joins
-later is added to the column the same way, a Not member subtracted, and
-nothing is normalized afterwards. The weights on the where and when
-coordinates start at zero, since a generalization holds no place, and are
-learned. The 12 frozen thought predicates stay columns at zero, read by
-thought as references and never by perception.
+**The concepts of order zero** (`SparseSigmaLayer3`,
+`ConceptualSpace.order_zero`) are the Sigma above on those signed values
+(Alec, 2026-11-19: "The order zero signal should be built as: Pi Not
+Sigma"). Order zero is n:n on basic percepts: each nominated row brings one
+concept, which starts reading only its own row, at one. A concept reads no
+percept's code, no place and no time, so the concept of a word reads one
+where its row is present and nothing where it is not, whatever letters the
+reading shares with it; where a form's holder stands in its place (`archer`
+in `archery`) its row reads against and the concept reads nothing. A concept
+answers only to the rows it is given. A member that joins later writes an
+entry at one on its row, a Not member a Not entry. The Sigma of order zero
+is not penalized. The 12 frozen thought predicates are concepts with no
+entry, read by thought as references and never by perception.
 
 **A scalar** is the same mechanism over the bins of its value (Alec,
 2026-11-19: "the exact same mechanism, except part growth and whole
@@ -1781,7 +1798,7 @@ none. The parts half is the bins at or below the value, the wholes half is
 all ones with the bins above it cut away, the two are one code, and its
 against lane is what the wholes half cuts away (`BasicPercepts.value_code`).
 The way back reads the exact value from the table of values. A collection of
-values is read by its bounds, 0 or 1, and not through a column of the Sigma:
+values is read by its bounds, 0 or 1, and not through the Sigma:
 collections at 1, 1 and 2 read for, for and against at an input of 1, and a
 value arriving at 1.5 lies above the one and below the other.
 
@@ -1832,21 +1849,21 @@ told apart ([Reasoning](Reasoning.md)).
 
 Animal cognition "sees particular events not happening, but it does not
 negate ideas" (Alec, 2026-11-17). At the basic level a Not entry is from one
-element of the combined vector to one concept. It records that something
-expected is absent, and what teaches it is an omission, the concept expected
-and not come. With no omission taught the basic level has no Not entry,
-raising an input never lowers a concept, and no concept is against. What
+basic percept's row to one concept. It records that something expected is
+absent. It is made implicitly by the gradient, and explicitly by omission,
+the concept expected and not come. With no Not entry, raising an input never
+lowers a concept, and a concept is against only by evidence against. What
 tells a human mind from an animal's is the recursion of the structure, which
 symbols enable, and not the Not. The operator `not` of a sentence or a
 thought swaps the lanes of what it is put on (`FieldLogic.reduce`) and can be
-put on any symbol, with no omission to teach it. With every weight held at
-zero or above, so that no Not entry is read, a mind speaks only of what is.
+put on any symbol, with no omission to teach it. With no Not entry read, a
+mind speaks only of what is.
 
 The two-sided code does part of the Not's work with no learned entry: a
 strict whole tells against its part. An exclusion that is not a strict whole
 (X inhibits A where no row AX exists) still needs a Not entry learned from
-omission. On the two-lane code, with a conjunction coded as the mereology
-codes it and Not entries free, negative patterning ("A or B, not both"),
+omission or by the gradient. On the two-lane code, with a conjunction coded
+as the mereology codes it and Not entries free, negative patterning ("A or B, not both"),
 conditioned inhibition ("A alone, not A with X") and XOR are all learned.
 The basic level alone learns XOR of two perceived words with no Not entry,
 given a row for the pair. XOR is one of the standing stopping gates, trained
@@ -1878,11 +1895,12 @@ At the reconstruction, where a look's percepts were withheld, the way back
 reads the expected ones in their place: this is imagination, the inverse of
 perception, from a concept down to basic percepts.
 
-**The way back.** The Pi inverts exactly; the Sigma returns the combined
-vector by least squares where there are enough concepts, and not otherwise.
-Teaching does not assume an exact inverse. On the way back a concept gives
-each percept it recreates a band of where wires, through the same weights by
-which it reads the where; the band is matched against every place of the out
+**The way back.** The Pi inverts exactly; the Sigma returns the rows' signed
+values by least squares where there are enough concepts, and not otherwise,
+and the Not returns each signed value to its two lanes. Teaching does not
+assume an exact inverse. On the way back each percept recreated is given a
+band of where wires through the entries of the first Pi that read its where;
+the band is matched against every place of the out
 buffer by a softmax over the places, and what is put back at a place is the
 sum over the recreated percepts of what each is, times its weight there
 ([One attention](#one-attention)).
@@ -2161,7 +2179,8 @@ presence and one for absence ([Sigma and Pi Layers](#sigma-and-pi-layers)).
 The grammar's leaves and ideas keep the pair, operators act lane by lane,
 and an idea with evidence on both lanes is stored as two rows, one for each
 lane. The order alternation is: percepts (perceptual), then the concepts of
-order zero, a Sigma over their combined code (conceptual), then the symbols,
+order zero, a Sigma over the signed values the Not gives for their rows
+(conceptual), then the symbols,
 Pi rows over those concepts with no dimensions, then the concepts of order
 one, a Sigma over symbols, and so on.
 
@@ -2422,7 +2441,7 @@ is the sentence; at the kept close `ClauseRows.write_clause` writes an `LTM1`
 row only for a relation the sentence asserts or a composition that an
 unresolved reference leaves open. The stores' layout is in [STM](STM.md).
 
-An `LTM0` row is a kept sentence's or a kept thought's idea, in six columns: `slots`, the idea, whose `.when` band holds the row's `time`; `trust`, one signed number ("Trust of a row" above); `referent`, one optional reference to what the idea is of, a concept or another row by its time, written from the reference the close selected and by promotion; the entry, `episodic_concepts` and `episodic_values` (see "When" above); and `activity` ("Activity, forgetting and promotion" below). A row has no origin, kind, stream, document, source text or stored order. Its order is the order of the concept its referent names, and an idea with no referent is concrete. Two ideas can have one extension, as a kind of one member and that member leave equal entries; the referent tells them apart. The working clause keeps the order produced by its grammar. What is pending, an open question's slots, a forward reference, a name awaiting its referent, is held in MTM while it is pending, never in a row. A row is named by its time ("Occurrence addresses" above), so asserting the same content again writes a new row.
+An `LTM0` row is a kept sentence's or a kept thought's idea, in six columns: `slots`, the idea, whose `.when` band holds the row's `time`; `trust`, one signed number ("Trust of a row" above); `referent`, one optional reference to what the idea is of, a concept or another row by its time, written from the reference the close selected and by promotion; the slots, `episodic_concepts` and `episodic_values` (see "When" above); and `activity` ("Activity, forgetting and promotion" below). A row has no origin, kind, stream, document, source text or stored order. Its order is the order of the concept its referent names, and an idea with no referent is concrete. Two ideas can have one extension, as a kind of one member and that member leave equal slots; the referent tells them apart. The working clause keeps the order produced by its grammar. What is pending, an open question's slots, a forward reference, a name awaiting its referent, is held in MTM while it is pending, never in a row. A row is named by its time ("Occurrence addresses" above), so asserting the same content again writes a new row.
 
 **LTM1 relation rows.** An `LTM1` row is one relation, $Part(x, y)$, in five columns: two tagged references (`refs`, `ref_kinds`; each a row by its time, a symbol or another relation), the two trust lanes (`truth_plus`, `truth_minus`) and `activity`. Writing a pair again merges its lanes by per-lane maximum and counts as an access. No kind is stored, and no relation carries an operator. Its readings follow from the types of its two arguments (`LTM1.readings`): two situations give a conditional, a situation and a speech individual an attribution, an object and a word a definition, two kinds a subsumption, a singleton on the right an equality, and two spatial arguments parthood; retrieval context chooses among the readings the arguments permit. A relation over a relation is permitted, and every endpoint is written before the row that uses it (`relation_order`, a cache rebuilt from the rows). Part rows between symbols are the class-membership evidence of the taxonomy (`Priming.part_edges`).
 
@@ -2689,29 +2708,29 @@ The architecture is a dual-process model, and the distinction is structural, not
 
 The mechanism is described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes); this subsection places it in the two systems.
 
-**Two sides of every store.** Every entry has two parts (Alec, 2026-10-23): the part located by its `.where` and `.when` is episodic in Tulving's sense, and the concept part is semantic; the concept index with `LTM1`'s edges is the semantic store proper, and promotion, by recurrence in MTM and by activity in `LTM0`, is consolidation. Every memory structure (LTM, MTM, STM) therefore holds both, and the LTM entry holds concepts of its moment rather than its percepts (Alec, 2026-11-11): the strongest readings of its field of understanding, of any order (below).
+**Two sides of every store.** Everything a store holds has two parts (Alec, 2026-10-23): the part located by its `.where` and `.when` is episodic in Tulving's sense, and the concept part is semantic; the concept index with `LTM1`'s edges is the semantic store proper, and promotion, by recurrence in MTM and by activity in `LTM0`, is consolidation. Every memory structure (LTM, MTM, STM) therefore holds both, and an LTM row's slots hold concepts of its moment rather than its percepts (Alec, 2026-11-11), of any order (below).
 
 | store | concept side | episodic side |
 |---|---|---|
 | STM | the ideas and relations of `STMChunks` | the attended `PerceptField` (`ConceptualSpace._percept_field`) |
 | MTM | identity collections and their timelines | collections of basic percepts (`member_kind` `'percept'`, order $-1$) |
-| LTM | `LTM0` ideas, `LTM1` relations and the minted concepts | the entry beside each `LTM0` row: up to `episodicConcepts` readings of the row's field of understanding, each one concept with its strength signed by its lane (`episodic_concepts`, `episodic_values`), at the row's `.when` |
+| LTM | `LTM0` ideas, `LTM1` relations and the minted concepts | the slots beside each `LTM0` row's idea: up to `episodicConcepts`, each one concept of the row's moment with its value signed by its lane (`episodic_concepts`, `episodic_values`), at the row's `.when` |
 
-**Why concepts, not percepts.** An episode keeps concepts, and its percepts are reached through them. The evidence favours this: the hippocampal store is an index over high-level, object-level codes (Teyler and DiScenna 1986; Teyler and Rudy 2007; Murray and Bussey 1999); animals keep a few items bound to place and time (Clayton and Dickinson 1998; Luck and Vogel 1997; Cowan 2001); remembering reinstates sensory detail through the concept, and surface form fades before meaning (Wheeler, Petersen and Buckner 2000; Sachs 1967). An entry is the reading of its moment, not perceptual memory: a percept that had no concept when it was seen leaves no memory, a recall reverses the concepts' definitions as they stand at the recall, and the exact witness is not kept. Each reading keeps one lane, its strength signed by the lane, so no entry nets the lane for against the lane against, and a concept read as neither leaves no reference. Fields and semantic truth rows keep both poles. Storing concepts also lets System 1 reconstruct a recalled moment with `reverse` alone, without compose or generate.
+**Why concepts, not percepts.** An episode keeps concepts, and its percepts are reached through them. The evidence favours this: the hippocampal store is an index over high-level, object-level codes (Teyler and DiScenna 1986; Teyler and Rudy 2007; Murray and Bussey 1999); animals keep a few items bound to place and time (Clayton and Dickinson 1998; Luck and Vogel 1997; Cowan 2001); remembering reinstates sensory detail through the concept, and surface form fades before meaning (Wheeler, Petersen and Buckner 2000; Sachs 1967). A row's slots are the reading of its moment, not perceptual memory: a percept that had no concept when it was seen leaves no memory, a recall reverses the concepts' definitions as they stand at the recall, and the exact witness is not kept. Each slot keeps one lane, its value signed by the lane, so no slot nets the lane for against the lane against, and a concept read as neither leaves no reference. Fields and semantic truth rows keep both poles. Storing concepts also lets System 1 reconstruct a recalled moment with `reverse` alone, without compose or generate.
 
 **Which system writes and which reads.**
 
-- *System 1 supplies it and System 2 narrows it.* `EpisodicMemory.stage` selects the entry from the kept path's field of understanding: the set the kept compose tree's `compose_extend` calls leave over the sentence's activations, which the open attention pass (`FamiliarTier.open_sentence`) and the input's knowing supply ("Extend and the field of understanding" below). So an entry is a few concepts of knowing, as the sentence's operators left them, kept.
-- *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the entry to `ClauseRows.write_clause` with the row its kept close writes; a kept thought's row takes the strongest of its own extension (`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation keeps no entry.
-- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks the window's rows by their entries and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
-- *Memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only an entry comes back as a field.
-- *No learning rides on an entry.* It is stored detached, and a review books no loss of its own.
+- *System 1 supplies it and System 2 narrows it.* `EpisodicMemory.stage` fills the slots from the kept path's field of understanding: the set the kept compose tree's `compose_extend` calls leave over the sentence's activations, which the open attention pass (`FamiliarTier.open_sentence`) and the input's knowing supply ("Extend and the field of understanding" below). So a row's slots are a few concepts of knowing, as the sentence's operators left them, kept; which of them fill the slots is not settled, and they are not the most active.
+- *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the slots to `ClauseRows.write_clause` with the row its kept close writes; a kept thought's row fills its slots from its own extension (`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation keeps no slot.
+- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks the window's rows by their slots and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
+- *Memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only a row's slots come back as a field.
+- *No learning rides on a slot.* It is stored detached, and a review books no loss of its own.
 
 **Limits.**
 
-1. An entry is written only with an `LTM0` row, and review needs the thought loop: the loop with no thinking step has no episodic memory.
+1. Slots are written only with an `LTM0` row, and review needs the thought loop: the loop with no thinking step has no episodic memory.
 2. An episode is reached by its content; a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
-3. Promotion reads an entry only for the order of a row with no referent, one above the greatest order among its concepts; MTM's promotion by recurrence works over its own collections.
+3. Promotion reads a row's slots only for the order of a row with no referent, one above the greatest order among its concepts; MTM's promotion by recurrence works over its own collections.
 
 ### References and shared strata (2026-11-09)
 
@@ -2746,8 +2765,8 @@ codes in the wholes half, each on the two lanes (`BasicPercepts.subspace_bounds`
 its parts and wholes and whose against entries are what its nearest holders
 add ([Sigma and Pi Layers](#sigma-and-pi-layers)). The gradient of a read
 reaches `PrimitiveProperties.members`. A concept of order zero reads the
-combined vector through its column of the dense Sigma; it does not collect
-basic percepts as entries. Symbols have no direct two-tower mereological
+signed values the Not gives for the basic percepts' rows, through its entries
+in the sparse Sigma; it reads no code. Symbols have no direct two-tower mereological
 read.
 
 A row exists only when MTM nominates it on recurrence. A form read once is
@@ -2796,13 +2815,14 @@ independent. `BasicModel.reverse(*, field)` then follows basic percepts
 to native parts, the vectorized radix decode and InputSpace. It produces detached
 bytes and a continuous percept face for training. No saved input spans or
 compose forest enter that decode, and aligned calls without a field raise.
-On the way to the basic percepts, the Sigma of order zero returns the
-combined vector by least squares where there are as many concepts as inputs
-or more, and the first Pi inverts exactly; where a look's percepts were
+On the way to the basic percepts, the Sigma of order zero returns the rows'
+signed values by least squares where there are as many concepts as inputs
+or more, the Not returns each to its two lanes, and the first Pi inverts
+exactly; where a look's percepts were
 withheld, the way back reads the expected percepts the vertical spread wrote
 in their place ([Sigma and Pi Layers](#sigma-and-pi-layers)). Each recreated
-percept is placed in the out buffer by the band of where wires its concept
-gives it, matched against every place ([One attention](#one-attention)). A word's form is the
+percept is placed in the out buffer by the band of where wires the first
+Pi gives it, matched against every place ([One attention](#one-attention)). A word's form is the
 weighted centroid of the percepts of its positive written definitions, and the
 code of its own admitted basic percept only when every definition weight is
 zero (`MereologicalCodes.derive`). Both rules are Alec's (2026-11-10).
@@ -2847,7 +2867,7 @@ Before the keep, thought reads the scored reference plan through a temporary com
 
 **Omission.** Training hides content and never corrupts it: a dropped word, or a dropped percept slot of a retained word, has zero content at a kept place and time, so the omission is signalled out of band, because a good model reproduces corruption when it sees corruption. All paths of a sentence share the omitted input. Only detached loss-side targets retain the original: System 2 reconstruction restores it, while System 1 reconstruction scores observed places. The two rates, for words and for percept slots, adapt to the kept path's reconstruction accuracy toward `omissionTarget`, and omission never runs in evaluation ([Training](Training.md)).
 
-**Concept episodes.** A row's episodic entry keeps concepts instead of percepts (Alec, 2026-11-11): up to `episodicConcepts` of the strongest readings of its field of understanding, of any order, each signed by its lane. The entry and its recall are described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes), and its place in the two systems in [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+**Concept episodes.** A row's slots keep concepts instead of percepts (Alec, 2026-11-11): up to `episodicConcepts` concepts of its moment, of any order, each signed by its lane. The slots and their recall are described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes), and its place in the two systems in [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 **Thought content.** `stmCapacity` fixes the number of simultaneous focus chunks, not the number of constituents inside one thought: a native thought store may rebuild its transient buffers to the exact size a meaning needs, under a construction-time ceiling of four rows per possible input meaning, and a larger meaning raises ([STM](STM.md), "Thought content growth within the sentence bound").
 
@@ -2916,27 +2936,27 @@ position. Attention and the query on LTM are two readers with two keys:
 | | Its key | What it searches | By |
 | --- | --- | --- | --- |
 | Attention | the concepts it wants, the request | the percepts of the sentence, their what and their where | the weights of the way up, carried downward ([One attention](#one-attention)) |
-| The query on LTM | the question's field of concepts | the rows of LTM, by `LTM0`'s entries | a match of concepts, order by order |
+| The query on LTM | the question's field of concepts | the rows of LTM, by `LTM0`'s slots | a match of concepts, order by order |
 
 A question is extended like any sentence, and its field of understanding,
 the concepts the question's operators leave with their values on the two
 lanes, is the side it is matched on (`EpisodicMemory.query`). What it is
-matched against is each row's entry, the few concepts of its moment, each one
-concept with its strength signed by its lane (`episodic_concepts`,
+matched against is each row's slots, the few concepts of its moment, each one
+concept with its value signed by its lane (`episodic_concepts`,
 `episodic_values`; "When" under
 [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes)).
 Each operand's set gives one result over the window of the newest
-`ltmWindow` rows, each row's entry matched order by order and never reduced
+`ltmWindow` rows, each row's slots matched order by order and never reduced
 across orders or across rows (`EpisodicMemory.matches`, `relevance`): at each
-order, the strengths of the row's entries that name a concept of the
-question, each times the question's value for that concept on the entry's
+order, the values of the row's slots that name a concept of the
+question, each times the question's value for that concept on the slot's
 lane, are summed and divided by the squared length of the question's values
 at that order, capped at one, and the orders' results are joined by the
 least. A stored against reading opposes the positive question. The
 question's operators combine the operands' results as their `compose_extend`
 combines sets (`ExtendedRecall.matches`). The rows are ranked by the result,
 the newest first among equals; reading a row is charged to the work meter,
-and the recalled rows' entries are published as the querying stream's knowing
+and the recalled rows' slots are published as the querying stream's knowing
 (`EpisodicMemory.reinstate`). Neither side holds a percept's code: both are
 concepts, matched by their references.
 
