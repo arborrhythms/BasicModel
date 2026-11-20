@@ -9280,6 +9280,41 @@ To the fourth point of §19.102, "Should a symbol also be present when only one 
 
 *A consequence Claude notes, for round 5 or later:* a symbol and a kind over the same concepts now differ by what they are for and how they are folded and taught, and not by "all" against "any". A symbol's constituents are joined without weights, as the same thing; a kind's members are a weighted list through the Not, any of which may count for or against.
 
+### 19.104 Alec: the fold of a symbol and the fold of a basic percept are to be one form (2026-11-20)
+
+On §19.103's "a symbol's fold over its constituents is not their product. I have built it as the Pi on the complements": "But you say that the basic percept unites under a plain product. Please give a few examples of each, I think they need to be of the same form (for biological plausibility)."
+
+**The examples he asked for.**
+
+*A basic percept, the plain product over what it is made of.* The row of `cat` reads its parts c, a and t, each where it lies, and its properties:
+
+| What is read | c | a | t | The row |
+| --- | ---: | ---: | ---: | ---: |
+| `cat` | 1 | 1 | 1 | 1 |
+| `ca` and a mark read as a `t` at one half | 1 | 1 | .5 | .5 |
+| `cab` | 1 | 1 | 0 | 0 |
+
+In `cats` the row reads 1 for and, since the holder's added `s` is there, 1 against, and the Not gives nothing.
+
+*A symbol as §19.103 had it, the Pi on the complements over its concepts.* The symbol of "my dog" and "Voyager":
+
+| "my dog" | "Voyager" | One less the product of what each lacks |
+| ---: | ---: | ---: |
+| .8 | 0 | .8 |
+| .8 | .5 | .9 |
+| 0 | 0 | 0 |
+
+**Why they came out as two forms, which was Claude's error.** In the first table the constituents are what the thing is made of, and all are needed. In the second Claude took the two *concepts that are the same thing* as the symbol's constituents. Those are alternatives, met one at a time, so a product over them could never be present, and Claude reached for the other fold. But what stands to a symbol as "my dog" and "Voyager" do is not c, a and t. It is two occurrences of `cat`, here and there, in this hand and that: they are not constituents of the row at all; they are what falls inside its region. So the difference was in what was counted as a constituent, and the fold should not have carried it.
+
+**One form** (rule 71, restated; the complement fold of §19.103 is withdrawn, and the ninth pass was told so while it ran). A row of a Pi, at every order, is the plain product over its constituents, and its constituents are what always occurs together when the thing is there. What is the same thing is whatever falls in the row's region. A basic percept and a symbol are one class with one fold.
+
+**What that leaves open, put to him.** If "my dog" and "Voyager" are not the symbol's constituents, what are? Two candidates, and they are different builds:
+
+1. *Concepts that always occur with the thing,* read as activations, as a symbol's row reads concepts now (rule 10). The thing Voyager would have, say, the kinds dog and mine as constituents. "My dog" evidenced brings both, and the product is one. "Voyager" alone, heard as a name, brings them only as what is known of Voyager, which is expected and not evidenced.
+2. *Coordinates of conceptual space,* so that the Pi above order zero reads the space of meanings as the first Pi reads the perceptual code: the row is a cone in semantic space and any concept whose meaning lies in it is the thing. This is the exact mirror of order zero, and it is what his words describe ("we want a region in semantic space. So the region specification for similarity is defined with the pi"; "identity/generalization on a hypercone"). It reverses two things the rules have: that a symbol's row reads concepts' lanes and no code (rules 9 and 10), and that likeness of codes pairs nothing (rule 16; his "no geometric influence" of 2026-11-15); and it would ask of the concepts' codes what rules 50 to 61 ask of the percepts', that one lie inside another only where it is meant.
+
+*Claude's reading is that he means the second.* Nothing is built on either until he says: the ninth pass makes symbols of one constituent, read by the plain product, which is right under both.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10687,11 +10722,17 @@ chooses from. The old classes are not edited.
       liberally* (Alec, §19.103: "we can be liberal when creating
       symbols in that way, it still still defines a neighborhood of
       identity and enables us to reason over the concept (i.e. with
-      other concepts)"). It is present when any one of its concepts
-      is evidenced. *Mine:* its fold over its constituents is the Pi
-      on the complements, one less the product of what each lacks,
-      on each lane; a basic percept's fold over its parts and
-      properties stays the product.
+      other concepts)").
+    - *One fold for every row of a Pi* (Alec, §19.104: "I think they
+      need to be of the same form (for biological plausibility)"):
+      the plain product over its constituents, for a symbol as for a
+      basic percept, by one class. Concepts that are the same thing
+      are not constituents of its row; they are what falls in its
+      region, as the occurrences of a word fall in its basic
+      percept's. *Withdrawn:* the Pi on the complements of §19.103.
+      *Open with him:* what a symbol's constituents are, the
+      concepts that always occur with the thing or the coordinates
+      of conceptual space (§19.104).
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
