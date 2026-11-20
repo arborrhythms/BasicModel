@@ -9,9 +9,20 @@ and [symbolization establishes an order-1 individual](Mereology.md).*
 
 An object at order *n* ≥ 1 is a set of symbols of lower orders, with graded
 (fuzzy) membership, exactly as in set theory. Order increases are always
-over individuals: a set collects symbols, never field regions directly. The
-ladder is not strictly ramified (Alec, 2026-11-17): a symbol of order *k*
-reads the concepts of every order below *k*, not only those of order *k*−1.
+over individuals: a set collects symbols, never field regions directly. An
+order rises at a Sigma and nowhere else (Alec, 2026-11-20: "Use the term
+epistemic level, not order (which increases only with sigma)"): a Pi makes
+things within an order, and the next Sigma makes the kinds of the order
+above. One Pi or one Sigma is an epistemic level, and every order has two.
+The ladder is not strictly ramified (Alec, 2026-11-17) at the kind: a kind
+collects things from every epistemic level below its own, not only from the
+one beneath it, and from none at or above its own. `green things` "must
+collect elements from all orders, because both Felix and cats may be green.
+But it collects only from lower orders, so that it is at least well-defined
+(no sets of all sets)" (Alec, 2026-11-20). A symbol, by contrast, is a cone
+in the conceptual space of one order and never mixes concepts of two,
+"because the concepts at every order live in spaces with different
+geometries" (Alec, 2026-11-20).
 
 Order 0 is the field: percepts, located in `.where`/`.when`, and the
 Boolean and mereological operations among them — union, intersection,
@@ -23,20 +34,43 @@ catuṣkoṭi's for/against lanes).
 **The basic level.** Parts and wholes bound one basic percept in
 perception: a basic percept is a row of the first Pi over its parts and
 wholes, made when MTM nominates it on recurrence and never on a first
-reading. Each nominated row brings one concept of order zero, which reads,
-through a sparse Sigma, the signed values the Not gives for the rows present
-([Architecture](Architecture.md#sigma-and-pi-layers)). Above order zero the
-structure repeats: a symbol is a row of a Pi over concepts, nominated by MTM
-in the same way, and it brings one concept, a Sigma over symbols. Pi, Not
-and Sigma at every order are the common basis of the order alternation
-(Alec, 2026-11-17).
+reading. Each nominated row brings one concept of order zero to start with,
+which reads, through a sparse Sigma, the signed values the Not gives for the
+rows present ([Architecture](Architecture.md#sigma-and-pi-layers)). A basic
+percept is an occurrence, an event: "all of their constituent percepts occur
+at the same time, so there is no basis for abstraction into a noun" (Alec,
+2026-11-20). The word over its occurrences is its concept of order zero; the
+word as a thing is a symbol over that concept; and a kind of words, such as
+noun, collects those symbols. Above order zero the structure repeats: a
+symbol is a row of a Pi over the conceptual space beneath it, and a concept
+is a Sigma over symbols. Pi, Not and Sigma at every order are the common
+basis of the order alternation (Alec, 2026-11-17).
+
+**What makes what** (Alec, 2026-11-20). "A basic percept or symbol is
+created implicitly by PI or when nominated by MTM when recognizing that their
+constituents always occur together. a concept is created implicitly by Sigma
+or when nominated by MTM when recognizing that the objects form a kind." The
+Pi makes things, which are the same by a region; the Sigma makes kinds,
+lists of arbitrary things: "For it to collect just one symbol would make pi
+be the only fold, which is not correct: we must have lists of arbitrary
+things." Nothing is one to one: a row may be read by any number of concepts
+and a concept may read any number of rows, and there is no symbol of a
+concept.
 
 **Symbols are held apart from concepts** (Alec, 2026-11-14). Symbols and
 concepts are in separate tensors, and a symbol has no dimensions: no vector,
 place, form or trust content is read at it as a direction. A symbol is two
-unsigned rows, one for each lane, and brings one concept. It is made when
-MTM nominates it, or by `interpret` for a meta concept, and never when a
-concept is allocated. A symbol stores no `.where` or `.when`; its `.where`
+unsigned rows, one for each lane. It is made implicitly by the Pi, or when
+MTM nominates it on recognizing that its constituents always occur together,
+or by `interpret` for a meta concept, and never when a concept is allocated
+or for a concept as a rule. It is a region of sameness: "my dog" and
+"Voyager" are two concepts and one symbol, "a region in semantic space"
+(Alec, 2026-11-20), and the concepts that are the same thing fall in its
+cone. Symbols may be made liberally, since a symbol of one concept "still
+defines a neighborhood of identity and enables us to reason over the concept
+(i.e. with other concepts)" (Alec, 2026-11-20). Where a kind's member has no
+symbol, MTM makes one in nominating the kind, after looking for one that
+already holds it. A symbol stores no `.where` or `.when`; its `.where`
 is written when STM reads it. Between conceptual orders only activation
 passes: a pull within one order does not pass through a symbol.
 
@@ -45,8 +79,8 @@ rule. Interconnection should be: order zero is n:n on basic percepts, order
 1 is n/2 (with taper) connected to 3n/2, since it connects to both lower
 rows." Order zero has as many concepts as there are basic percepts, each
 order above has half the units of the one below, and the concepts of an
-order connect to the two rows beneath them: at order one its own symbols
-and the concepts of order zero. This is storage allocated beforehand, not a
+order connect to the two rows beneath them: at order one the basic percepts
+and its own symbols. This is storage allocated beforehand, not a
 number of entries expected. Within that room each order's Sigma is square:
 as many concepts as nominated rows, each concept starting from its own row
 alone.
@@ -412,7 +446,10 @@ intermingled)." Strata remain the structure of LTM: LTM0 occurrences, LTM1
 relations, the derived LTM2. In conceptual space one `similarity_codebook`
 holds every order's rows. The context that places a row holds every order,
 but a step moves a row only relative to rows of its own order (Placement,
-below). Crowding is answered by the placement objective's
+below). The concepts of each order so lie in a geometry of their
+own: "the concepts at every order live in spaces with different geometries"
+(Alec, 2026-11-20), and a symbol's cone is tested against one order's
+concepts alone. Crowding is answered by the placement objective's
 negatives. What §9 keeps: all symbols in the one mereological tree, the Part
 edges as the record of membership, and membership read by edge, not by
 distance.
@@ -462,7 +499,10 @@ and derives no order. Order zero holds no symbol: symbols exist only from
 order 1, where MTM promotes them (Alec, 2026-11-18). What the level decides is the kind of relation. Alec:
 "it's a part/whole relation if it's below symbols, and a set/superset if
 it's above symbols." Below symbols is the mereology of the field; above
-them, the sets of §1.
+them, the sets of §1. "Mereology is part-whole relation at the perceptual
+level which, when it occurs over symbols, becomes a taxonomy (because the
+sigma fold makes the concepts abstract)" (Alec, 2026-11-20). Percepts and
+concepts live in topological spaces; symbols do not.
 
 **Relations are immediate; order is evidence over trials.** Alec: "building
 relations can happen immediately, but that will not immediately raise the
