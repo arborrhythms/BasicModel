@@ -201,6 +201,8 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
     monkeypatch.setattr(model,'_publish_sentence_scratch',scratch)
     from What import What
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['1 plus 2'])
         inputs = model.inputSpace.prepPackedInput([['1 plus 2']])
         model.runBatch(train=False, batchSize=1, split='runtime',
                        batch_override=(inputs, torch.zeros(1, 1, 0)),

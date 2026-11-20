@@ -114,6 +114,8 @@ def test_serial_answer_path_varies_with_the_input(serial_synth_config, eager_rea
     m = _build(serial_synth_config, "phrases")
     m.eval()
     data = m.inputSpace.data
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(m, list(data.train_input))
     with torch.no_grad():
         x = m.inputSpace.prepInput(list(data.train_input))
         u = m.understand(x)
@@ -521,6 +523,8 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
     object.__setattr__(m.symbolSpace, "what_memory", memory)
     questions = (What.supervised(0), What.supervised(1))
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(m, ["1 plus 2", "3 plus 4"])
         with torch.no_grad():
             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
             base = torch.stack([field.end_state for field in u.sentence_states])

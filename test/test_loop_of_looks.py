@@ -57,6 +57,8 @@ def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch, tmp
     model = BaseModel.from_config(
         explore_configuration(tmp_path),data=TheData)[0]
     admit_training_forms(model,[text])
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, [text])
     model.eval()
     chooser = model._stm_reducer()
     chooser.interpret_bias = 0.  # Exercise the learned choice, including abstention.
@@ -183,6 +185,8 @@ def test_10_interpret_departure_keeps_the_focus_that_reached_its_word(tmp_path, 
     model._tensor_peer_while_eager = True
     text = 'red cat sleeps'
     admit_training_forms(model, [text])
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, [text])
     model.inputSpace.data.has_supervised_outputs = True
     monkeypatch.setattr(model.inputSpace.data, 'what', WhatAnswer.silence)
     chooser = model._stm_reducer()

@@ -38,6 +38,8 @@ def test_native_kept_sentence_books_the_observed_field_and_semantic_root(tmp_pat
     from test_item18_expect import lesson, read
     import IdeaRead
     model = lesson(tmp_path, monkeypatch)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['alpha gamma'])
     calls = []
     complete = IdeaRead.complete
     def capture(host, record, present, registry):

@@ -204,6 +204,8 @@ def test_native_mixed_sentence_keeps_one_live_composition_per_stream(tmp_path, m
             observed.append(kept.root.detach().clone())
             return kept
         monkeypatch.setattr(SentenceUnderstanding, 'select', classmethod(checked))
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['a b', 'c d'])
         raw = model.inputSpace.prepInput(['a b', 'c d'])
         model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
                        batch_override=(raw, torch.empty(2, 0)))

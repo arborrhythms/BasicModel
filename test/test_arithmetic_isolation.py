@@ -102,6 +102,8 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
                                   ('cedar joins birch', 'maple joins oak')])
 def test_numeric_and_renamed_sentence_paths_keep_oracles_out(tmp_path, monkeypatch, texts):
     model = _native_answer_model(tmp_path, True)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, list(texts))
     _poison_oracles(monkeypatch)
     model.eval()
     _stop(model)

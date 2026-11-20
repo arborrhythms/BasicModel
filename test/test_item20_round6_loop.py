@@ -32,6 +32,8 @@ def test_sentence_trials_share_the_open_field_and_common_reverse(tmp_path, monke
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', capture)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['alpha beta'])
         source = model.inputSpace.prepInput(['alpha beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=1,
                        batch_override=(source, torch.empty(1, 0)))

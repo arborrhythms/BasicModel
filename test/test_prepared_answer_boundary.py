@@ -328,6 +328,8 @@ def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch):
     monkeypatch.setattr(model, "_resolve_answer", checked_private)
     monkeypatch.setattr(model, "reverseOutput", generate)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ["1 plus 2", "3 plus 4"])
         with torch.no_grad():
             questions = (What.supervised(0), What.supervised(1))
             model.ask(questions, model.inputSpace.prepInput(["1 plus 2", "3 plus 4"]))

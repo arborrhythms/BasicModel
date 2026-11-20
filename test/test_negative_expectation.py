@@ -215,6 +215,8 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
             # A nonzero readout makes the snapshot sensitive to content;
             # the zero-init cursor bootstrap alone could hide leaked inputs.
             model.answer_attention.scorer[-1].weight.fill_(.25)
+            # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+            from nomination_fixtures import nominated_sentences; nominated_sentences(model, ["a bicycle has a wheel"])
             _stage_fullgraph_tensor_peer(model, ["a bicycle has a wheel"])
             if staged:
                 discourse = model.symbolSpace.expectation

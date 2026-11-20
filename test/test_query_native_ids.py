@@ -14,6 +14,8 @@ def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_p
     try:
         from reading_fixtures import capture_readings
         model._concept_owner().new_concept()  # leave an allocator ID with no dictionary row
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['1 plus 2', '3 plus 4'])
         with capture_readings(model) as readings, torch.no_grad():
             held = _capture_program_probe(model, ['1 plus 2', '3 plus 4'])
             source = model.inputSpace

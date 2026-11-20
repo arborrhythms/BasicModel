@@ -655,6 +655,8 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monke
     m.loss.reconstruction_scale = 0.
     try:
         from reading_fixtures import supply_object, force_absolute_reading
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(m, ["12 plus 1", "3 plus 4"])
         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
         for word in sorted(m._concept_owner().interpret._pending):
             supply_object(m._concept_owner(), word)
@@ -956,6 +958,8 @@ def test_compiled_understanding_captures_explicit_sentence_products():
     compiled = torch.compile(m._forward_with_compiled_sentence_state,
                              backend="eager", fullgraph=True)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(m, ["12 plus 1", "3 plus 4"])
         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
         with torch.no_grad():
             explicit = compiled(None)
@@ -998,6 +1002,8 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path, eager_readi
     m._chart_compose_per_word = lambda: None
     m._install_unit_span_fn()
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(m, [["12 plus 1", "3 plus 4"], ["8 plus 2"]])
         with torch.no_grad():
             inputs = m.inputSpace.prepPackedInput([["12 plus 1", "3 plus 4"], ["8 plus 2"]])
             out = m(inputs)

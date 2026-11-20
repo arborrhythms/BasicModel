@@ -66,6 +66,8 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
                 fn, initial_phase=initial_phase, backend='eager', fullgraph=True))
     # Sentence ends land at different word columns in the two rows; the
     # first row's one-word sentence also exercises its dedicated closing trace.
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, [['a', 'c d'], ['e f', 'g']])
     raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
     events = []
     candidates, prior_context = {}, []

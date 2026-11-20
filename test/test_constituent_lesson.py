@@ -195,6 +195,8 @@ def test_native_constituent_lesson_captures_student_states_without_cases(tmp_pat
                         if split == 'train' and label['family'] == family)
                    for family in ('np', 'intransitive', 'transitive', 'preposition')]
         monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': lessons}, raising=False)
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, [lesson['text'] for lesson in lessons])
         inputs = model.inputSpace.prepPackedInput([[lesson['text']] for lesson in lessons])
         from constituent_budget import paired_updates_only
         optimizer = model.getOptimizer(lr=.003)

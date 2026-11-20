@@ -15,6 +15,8 @@ def test_examination_has_no_vector_walk_and_owns_its_reverse(tmp_path, monkeypat
     monkeypatch.setattr(model, 'generate', forbidden)
     monkeypatch.setattr(model.languageSpace.language_layer.operation_layer, 'forward', forbidden)
     monkeypatch.setattr(model.inputSpace.data, 'has_supervised_outputs', False)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['one two'])
     source = model.inputSpace.prepInput(['one two'])
     try:
         model.runBatch(train=train, optimizer=model.getOptimizer(lr=.003) if train else None,

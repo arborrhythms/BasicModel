@@ -38,6 +38,8 @@ def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monke
         return result
     monkeypatch.setattr(Models, '_append_observed_meaning', write)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['1 plus 2', '3 plus 4'])
         inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
         model.train(entry == 'forward_train_mode')
         before = {name: value.detach().clone() for name, value in model.languageSpace._tree_layer(2).chooser.named_parameters()}

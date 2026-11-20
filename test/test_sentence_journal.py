@@ -281,6 +281,8 @@ def test_identity_admission_uses_the_deposited_word_order(tmp_path, monkeypatch,
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(deposited))
     monkeypatch.setattr(ChunkJournal, 'push', opening)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['a b'])
         raw = model.inputSpace.prepInput(['a b'])
         model.runBatch(train=False, batchSize=1, split='validation',
             batch_override=(raw, torch.empty(1, 0)), questions=(What.present(0, split='validation'),))

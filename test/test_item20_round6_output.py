@@ -9,6 +9,8 @@ from test_output_synthesis import loop_model, _loop_understanding, _loop_answer
 
 def test_output_calls_the_common_decoder_and_reports_retired_checkpoint_keys(loop_model, monkeypatch):
     model = loop_model
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['alpha beta', 'beta alpha'])
     understanding = _loop_understanding(model)
     calls = []
     native = model.reverse

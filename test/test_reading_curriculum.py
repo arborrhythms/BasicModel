@@ -226,6 +226,8 @@ def test_order_lesson_gate_reports_list_inverse_separately(tmp_path,monkeypatch)
     monkeypatch.setattr(curriculum,'words_from_field',
         lambda surface,where,orders:[['<unrecovered>']*len(order) for order in orders])
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['red blue','blue red'])
         result=curriculum.present(model,dict(fields=['red blue','blue red'],lesson=True))
         assert result['orders']==[[0,1],[0,1]]
         assert result['passed'] and result['read_gate_passed']

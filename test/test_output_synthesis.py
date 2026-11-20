@@ -123,6 +123,8 @@ def test_gate_off_keeps_the_projected_head_and_state_dict(model_off=None):
 
 def test_output_traverses_symbol_concepts_percepts_output(loop_model):
     m = loop_model
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(m, ['alpha beta', 'beta alpha'])
     u = _loop_understanding(m)
     with torch.no_grad():
         construction = _loop_answer(m, u)
@@ -137,6 +139,8 @@ def test_output_traverses_symbol_concepts_percepts_output(loop_model):
 
 def test_what_reaches_output_not_the_legacy_head(loop_model):
     m = loop_model
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(m, ['alpha beta', 'beta alpha'])
     with torch.no_grad():
         answer = m.ask(What.supervised(0), input_data=_loop_batch(m)[0])
     assert answer.what is m._last_answer_construction.actual
@@ -180,6 +184,8 @@ def test_training_step_scores_the_constructed_answer(loop_model):
 
 def test_think_constructs_the_root_answer_through_output(loop_model):
     m = loop_model
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(m, ['alpha beta', 'beta alpha'])
     with torch.no_grad():
         result = m.think(What.supervised(0), _loop_batch(m)[0], max_iterations=3)
     assert result.answer.available

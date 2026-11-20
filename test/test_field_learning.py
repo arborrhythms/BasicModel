@@ -69,6 +69,8 @@ def test_primed_reading_writes_the_shared_field_scope(tmp_path, eager_reading, m
     # attention-only read therefore marks nothing done. Read the sentence,
     # with its word decisions supplied, and check the scope it leaves.
     read_in_source_order(model, monkeypatch)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['first last'])
     raw=model.inputSpace.prepInput(['first last'])
     with torch.no_grad():model.understand(raw)
     table=model._attention_words.table

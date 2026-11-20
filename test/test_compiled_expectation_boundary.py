@@ -33,6 +33,8 @@ def test_unpacked_forward_observes_each_published_sentence_once(
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', score)
     discourse = model.symbolSpace.expectation
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['alpha beta', 'gamma delta'])
     try:
         for index, samples in enumerate((["alpha beta", "gamma delta"],
                                          ["alpha gamma", "beta delta"])):

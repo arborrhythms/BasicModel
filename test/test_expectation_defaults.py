@@ -65,6 +65,8 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
     read_in_source_order(model, monkeypatch)
     model.train()  # the runtime call must apply its own declared training gate
     discourse = model.symbolSpace.expectation
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ["1 plus 2", "3 plus 4"])
     before = [p.detach().clone() for p in discourse.parameters()]
     try:
         inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
@@ -169,6 +171,8 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
 
     monkeypatch.setattr(Models, '_append_observed_meaning', capture)
     try:
+        # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+        from nomination_fixtures import nominated_sentences; nominated_sentences(model, ["1 plus 2", "3 plus 4"])
         before = len(store)
         inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
         model.runBatch(train=False, batchSize=1, split="runtime",

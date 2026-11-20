@@ -51,6 +51,16 @@ def nominated_forms(model, texts):
     return tuple(result)
 
 
+def nominated_sentences(model, texts):
+    """:func:`nominated_forms` for sentences given as a test reads them: a
+    list of sentences, or of streams packed with several sentences each."""
+    flat = [text for item in texts for text in ((item,) if isinstance(item, str) else item)]
+    words = nominated_forms(model, flat)
+    unknown = [raw for raw, word in words if word is None]
+    assert words and not unknown, f'forms read until nomination and not words: {unknown}'
+    return words
+
+
 def forms_short_of_nomination(model, texts):
     """Read each lexical form of ``texts`` ``concept_mint_count - 1`` times,
     so that the next reading that holds it is the one in which MTM nominates

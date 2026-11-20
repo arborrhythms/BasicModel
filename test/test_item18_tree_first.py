@@ -123,6 +123,8 @@ def test_1_word_deposit_keeps_its_value_row_and_order(tmp_path, monkeypatch, eag
     model._tensor_peer_while_eager = True
     from reading_fixtures import read_in_source_order
     read_in_source_order(model, monkeypatch)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['hi no', 'we go'])
     incoming, observed = [], []
     push = ShortTermMemory.functional_push_step_masked
     journal = ChunkJournal.push
@@ -180,6 +182,8 @@ def test_negated_sigma_reads_keep_unsigned_word_deposits_and_ideas(tmp_path, mon
     model._tensor_peer_while_eager = True
     from reading_fixtures import read_in_source_order
     read_in_source_order(model, monkeypatch)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['hi no', 'we go'])
     pushed, ideas, trees = [], [], []
     push = ShortTermMemory.functional_push_step_masked
     finish = Evaluation.finish
@@ -238,6 +242,8 @@ def test_comprehension_stages_native_values_without_mutating_words_or_mtm(tmp_pa
     model._tensor_peer_while_eager = True
     from reading_fixtures import read_in_source_order
     read_in_source_order(model, monkeypatch)
+    # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
+    from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['hi no', 'we go'])
     ideas = []
     from Comprehension import Evaluation
     begin, finish = Evaluation.__init__, Evaluation.finish
