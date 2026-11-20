@@ -9477,6 +9477,17 @@ On §23.T.1's five places: "My concern about integral values is that weights do 
 
 So nothing is left that reaches a learned weight as a number of ticks or a count. The change is round 6's (step 16) for the first two and the question's context, and goes with rule 74's pass for the pressure.
 
+### 19.111 Alec: the pressure is a cost, and the network is shown the time it is a cost of (2026-11-20)
+
+Asked whether the pressure of the rounds left should become a cost with a fixed scale and not a learned weight: "it should be a cost, as long as the network is exposed to a temporal signal that will allow it to learn that cost (i.e. "id better reply soon")."
+
+*Decided* (rule 75). Two things, and each needs the other:
+
+- *The cost.* What a walk or a parse spends is charged in the loss, linear in what is spent or left, under a scale set by a key. No learned number multiplies a count.
+- *The signal.* The chooser's network is given, among what it reads, how much is left, as a sinusoidal code in the measure of `.where`. Without it the cost could be paid and never foreseen; with it the network can learn to act before the cost falls, which is his "I'd better reply soon".
+
+*Mine:* the signal is the code of the rounds left of the budget in hand (compose's rounds, a walk's steps, thought's work), one code where there are several budgets only if a measurement shows the others are needed; `OperationSelectionLayer.reduce_pressure`, the learned number, goes. It is built with rule 74's pass, and both stopping gates and the lesson are measured before and after.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10959,7 +10970,14 @@ chooses from. The old classes are not edited.
     a count or a position that a concept or a network reading
     concepts takes is given in the sinusoidal measure of `.where`.
     A linear difference of times or counts is used only as a metric
-    inside a cost, under a fixed scale.
+    inside a cost, under a fixed scale. Where such a cost is charged
+    the network is shown the quantity it is a cost of, as a
+    sinusoidal code, so that it can learn the cost (Alec, §19.111:
+    "it should be a cost, as long as the network is exposed to a
+    temporal signal that will allow it to learn that cost (i.e. "id
+    better reply soon")"): the pressure of the rounds left is a cost
+    with a key for its scale, and the chooser reads the code of
+    what is left.
 
 74. *The chooser of acts is the network, and there is no other*
     (Alec, §19.109: "The Transform chooser should be MLP-only"). The
