@@ -95,8 +95,8 @@ def test_the_chooser_reads_the_rounds_left_as_a_sinusoid_and_can_learn_the_cost(
     """Rule 75: the chooser is shown how much is left of the budget in hand,
     in the measure of .where; its reader starts at zero and the gradient of
     a score reaches it."""
-    from Language import budget_code, OperationSelectionLayer
-    code = budget_code(torch.tensor([3, 2, 1, 0]), 4, device='cpu', dtype=torch.float32)
+    from Language import budget_code, budget_encoding, OperationSelectionLayer
+    code = budget_code(budget_encoding(), torch.tensor([3, 2, 1, 0]), 4, device='cpu', dtype=torch.float32)
     assert code.shape == (4, 4) and bool((code >= 0).all() and (code <= 1).all())
     assert len({tuple(row) for row in code.tolist()}) == 4
     step = OperationSelectionLayer(d_model=2, ops=[Add()])

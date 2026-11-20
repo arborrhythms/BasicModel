@@ -96,7 +96,7 @@ def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
 
     x = torch.randn(2, 4, 4, requires_grad=True)
     context = torch.randn(2, 29, requires_grad=True)
-    budget = Language.budget_code(torch.tensor([3, 1]), 2, device='cpu', dtype=torch.float32)
+    budget = Language.budget_code(Language.budget_encoding(), torch.tensor([3, 1]), 2, device='cpu', dtype=torch.float32)
     unary = chooser.score_unary(
         x, torch.randn(2, 4, 2, 4), what_ctx=context, budget=budget)
     binary = chooser.score_binary(

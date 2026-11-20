@@ -6368,20 +6368,21 @@ def configured_reduction_cost():
     return cost
 
 
-_BUDGET_CODE = None
+def budget_encoding():
+    """The code of how much is left of a budget: the two-rung sinusoid of
+    ``.where`` (``WhereEncoding``) over the budget's capacity. Made where
+    the model is built."""
+    from Spaces import WhereEncoding
+    return WhereEncoding(nWhere=4).set_capacity(BUDGET_CAPACITY)
 
 
-def budget_code(rounds_left, batch, *, device, dtype):
-    """How much is left of the budget in hand, ``[B, 4]``: the count of
-    rounds as the two-rung sinusoid of ``.where`` (``WhereEncoding``), so
-    that the chooser reads it as positions are read, never as a count."""
-    global _BUDGET_CODE
-    if _BUDGET_CODE is None:
-        from Spaces import WhereEncoding
-        _BUDGET_CODE = WhereEncoding(nWhere=4).set_capacity(BUDGET_CAPACITY)
+def budget_code(encoding, rounds_left, batch, *, device, dtype):
+    """How much is left of the budget in hand, ``[B, 4]``, by ``encoding``
+    (:func:`budget_encoding`): the count of rounds as positions are read,
+    never as a count."""
     left = torch.as_tensor(rounds_left, device=device).to(torch.long).reshape(-1)
     left = left.expand(batch) if left.numel() == 1 else left
-    return _BUDGET_CODE.encode(left.clamp_min(0)).to(dtype)
+    return encoding.encode(left.clamp_min(0)).to(dtype)
 
 
 # The ladder's capacity for a budget's rounds: above any compose, closing
@@ -6417,6 +6418,8 @@ class OperationSelectionLayer(nn.Module):
                  op_names=None, unary_names=None, op_space_roles=None):
         super().__init__()
         self.operator_cost = configured_operator_cost()
+        # The budget's code holds no learned state; kept out of the modules.
+        object.__setattr__(self, '_budget_encoding', budget_encoding())
         self.separate_chooser = bool(TheXMLConfig.get("architecture.separateChooser", default=False))
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(ops)
@@ -6841,7 +6844,7 @@ class OperationSelectionLayer(nn.Module):
             # The chooser reads how much is left of the budget in hand as a
             # sinusoidal code; the load left is a path cost it can learn.
             budget = (None if rounds_left is None else
-                      budget_code(rounds_left, x.shape[0], device=x.device, dtype=x.dtype))
+                      budget_code(self._budget_encoding, rounds_left, x.shape[0], device=x.device, dtype=x.dtype))
             stop_scores, binary_scores = self.chooser.score_binary(
                 feature(content), feature(binary[..., :self.d_model]), what_ctx=score_context,
                 op_indices=bi, budget=budget, **reference_contexts[0])
