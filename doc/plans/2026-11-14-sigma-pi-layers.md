@@ -9498,6 +9498,25 @@ Asked whether rule 72 (a symbol as a cone over coordinates of conceptual space) 
 2. *How many statements that share a side raise an order.* "3 not 2". `raiseCount` stays 3; Claude's 2 is withdrawn.
 3. *A blank object in a slot of episodic memory.* "Lets say uncertain objects are useless (a slightly more borad test for LTM inclusion)." *Decided, and wider than what was asked:* what is uncertain is not kept in LTM. A blank object is the first case; any object that is uncertain is another. *Mine:* uncertain is read as below the authority the model already asks of a definition before it reads it (one half), on the object's own certainty; an uncertain object fills no slot and its word's concept does.
 
+### 19.113 Alec: expectation is made at each attend() and learned stage by stage; no training through the way up and down again (2026-11-20)
+
+On the name of round 5's task, "expectation as the reconstruction in stages": "if those are my words it is imprecise. at each attend(), we want to expect perceptual and symbolic activation and then learn that stage by stage as we move over the orders. the top-down reconstruction should fill in a blind spot, since the perceptual/conceptual framework will make assumptions about what is missing. But I dont think we want to train expectation all the way though on layers going both up and down again..."
+
+*Decided* (rule 66, restated; it corrects Claude's reading of §19.95, which made the reconstruction's error expectation's teacher).
+
+- *When.* At each `attend()`, before what the look brings is read, and not once for a sentence.
+- *What.* The perceptual activation and the symbolic activation: the basic percepts, and the symbols of each order.
+- *How it is learned.* Stage by stage, as what the look brought moves up the orders: at each order, what was expected there is compared with what arrives there, and that comparison teaches that stage.
+- *What it is not.* It is not trained through the whole way up and the way down again. The top-down reconstruction is a different thing with a different use: it fills in a blind spot, because the framework of percepts and concepts makes assumptions about what is missing (rule 30, certificate 24).
+
+*Mine, built provisionally and said back to him:*
+
+1. *A stage's cost stays in its stage.* The comparison at an order's things teaches the entries between the things of the order beneath and its own (that order's Sigma beneath and its own Pi), with what comes from beneath detached. No cost of expectation has a gradient that crosses a stage or passes through the way back.
+2. *What gives the expectation at a look* is still the spread of rules 23 to 25 on the structure's own matrices, from what the earlier looks left: a fan up and a share down as arithmetic. What is withdrawn is training along that whole path, not the arithmetic.
+3. *Put to him:* whether the concepts of each order and the output are stages too (his words of §19.95 named "percepts, concepts, and output"; these name the perceptual and the symbolic). First choice, as built: the concepts keep the local comparison they have (the cost `expectation.concepts`, confined to its stage), since a configuration with no symbol has no other stage above the percepts; no stage is added for the output.
+
+**The test list and compiling.** Asked whether the test list should read without compiling by default: "no, in general we want to run compiled model for tests where it will help them to run faster." *Decided.* Compiling stays the default of the tests. A test reads without compiling only where compiling costs it more than it saves, which is the fifteen of §23.4.13, and each such case is a measured one.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10785,29 +10804,40 @@ chooses from. The old classes are not edited.
     question on top of the STM stack finds the row that answers it
     (rule 60).
 
-66. *Expectation is the reconstruction in stages, on the structure's
-    own matrices* (Alec, §19.95: "can we let it be taught by the
-    reconstruction? so it is a form of intermediate prediction, or a
-    reconstruction that happens in stages: we are predicting the
-    state of percepts, concepts, and output. using the existing
-    architecture will allow us to to sparse in interconnection").
+66. *Expectation is made at each look, on the structure's own
+    matrices, and learned stage by stage* (Alec, §19.113: "at each
+    attend(), we want to expect perceptual and symbolic activation
+    and then learn that stage by stage as we move over the orders
+    ... I dont think we want to train expectation all the way though
+    on layers going both up and down again"; §19.95: "using the
+    existing architecture will allow us to to sparse in
+    interconnection").
     - There is no map of expectation beside the structure. What is
       expected is what the spread of rules 23 to 27 and 30 gives on
       the Pi, the Not and the Sigma of each order.
-    - It has three stages: the percepts expected at order zero, the
-      concepts expected at each order, and the output. Each is
-      compared with what the whole sentence has at that stage, and
-      the three costs are the reconstruction's.
-    - Its teacher is the reconstruction's error. Where part of a
-      sentence is hidden, the error at what was hidden teaches it.
+    - It is made at each `attend()`, before what the look brings is
+      read: the perceptual activation, which is the basic percepts,
+      and the symbolic activation, which is the symbols of each
+      order.
+    - It is learned stage by stage as what the look brought moves up
+      the orders: at each order what was expected there is compared
+      with what arrives there. *Mine:* a stage's cost teaches the
+      entries between the things of the order beneath and its own,
+      with what comes from beneath detached; no cost of expectation
+      has a gradient that crosses a stage or passes through the way
+      back. The concepts keep a local comparison of their own, and
+      no stage is added for the output (put to him, §19.113).
+    - The top-down reconstruction is not its teacher. It fills in a
+      blind spot, from what the framework of percepts and concepts
+      assumes of what is missing (rule 30, certificate 24), and is
+      taught by its own cost.
     - *It is not evidence* (Alec, §19.96: "expectation is not
       counted as evidence, it is just removing some of the burden
       from later layers. it should be used only to guess at network
       activation"). What is expected is written apart from what is
-      observed. *Mine:* the error at what was hidden teaches the
-      rows that hold things together, the symbols above, and no
-      entry from one row to another row's concept at the same
-      order.
+      observed. *Mine:* a stage's error teaches the rows that hold
+      things together, the symbols above, and no entry from one
+      row to another row's concept at the same order.
     - *How it joins the signal is unchanged* (Alec, §19.96: "it
       stops a gradient, but passes the entire signal"; decided
       2026-10-19 and 20): a gain on what arrives, one number for
@@ -11332,7 +11362,7 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     the meeting of the two classes; a whole defined by other wholes
     reads their product; and the map of (a) gives each of them its
     share.
-57. *Expectation in stages* (rule 66). (a) No module of expectation
+57. *Expectation at each look, learned by stage* (rule 66). (a) No module of expectation
     stands beside the structure, and nothing reads `intuit`'s map as
     expectation, by a test of the source's names.
     (b) With a word of a known pair hidden, the second stage gives
@@ -11342,7 +11372,9 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     certificate 24). (c) What is expected changes no evidence: the
     observed concepts of the lossy sentence are the same with the
     spread and without it. (d) The cost of each stage reaches the
-    entries of the structure and no parameter beside them. (e) No
+    entries of its own stage, and no parameter beside the structure,
+    no entry of another stage and nothing through the way back; and
+    what is expected is written anew at each `attend()`. (e) No
     gradient passes through the gain: with the gain's strength
     above zero, the gradient of a cost of the main path with
     respect to an expected value is nothing.
@@ -12302,9 +12334,16 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    matrices, in one pass, written to _expected_knowing at every
    order (ConceptSpread.open_prediction writes order zero alone
    today). It adds no parameter and changes no evidence. It is
-   taught by the reconstruction's error in three stages, percepts,
-   concepts and output, each compared with the whole sentence at
-   that stage; the cost expectation.concepts is the second stage.
+   made at each attend(), before what the look brings is read: the
+   basic percepts and the symbols of each order (Alec, §19.113). It
+   is learned stage by stage as what the look brought moves up the
+   orders: at each order what was expected is compared with what
+   arrives, and that cost teaches its own stage alone, with what
+   comes from beneath detached. No cost of expectation is carried
+   through the way up and the way down again; the reconstruction
+   fills a blind spot and is taught by its own cost. The cost
+   expectation.concepts stays as the concepts' local comparison,
+   and no stage is added for the output (provisional, §19.113).
    What is expected is written apart from what is observed and is
    never evidence; how it joins the signal stays as it is (a gain
    on what arrives, wholly detached, and a detached prime of
