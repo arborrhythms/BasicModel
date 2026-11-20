@@ -15894,7 +15894,7 @@ What changed in the walks:
 
 #### Review (Claude, 2026-11-19)
 
-**Run by Claude on the committed source** (`1f58fe1511`): the 189 files of the list (`r5_files.txt` and every test file the pass touched), six processes: **1 failed, 1,883 passed, 97 skipped, 2 xpassed**, 1,096 s. Both stopping gates are in the list and pass. The one failure is `test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`. The count of passed differs from the return's 2,118 because the return's list had 23 files more than Claude's 189 lines hold (its 166 and 23; Claude's list is the 160 of §23.R and the 29 test files the two commits touch, some in both).
+**Run by Claude on the committed source** (`1f58fe1511`): 166 files (the 160 of §23.R's list and the test files the two commits touch), six processes: **1 failed, 1,883 passed, 97 skipped, 2 xpassed**, 1,096 s. Both stopping gates are in the list and pass. The one failure is `test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`. The return's run was of 189 files (2,118 passed): its list adds 23 files that name what the pass changed; Claude did not run those 23.
 
 **Read against the source.** `bin/Layers.py` (`_EntryRead`, `NotLayer3`, `SparseSigmaLayer3`), `bin/OrderZero.py` (`read_word`), `bin/Spaces.py` (`install_order_zero`, `order_zero_field`, `order_zero_reading`, `_start_order_zero_entry`, `add_concept_feature`, `cs_read_percept_field`).
 
