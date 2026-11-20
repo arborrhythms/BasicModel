@@ -329,11 +329,12 @@ def test_48_a_concept_reads_by_difference():
     # against lane takes away: y's holder archery adds archer's letters,
     # which the reading then carries against.
     assert reads(b'archer', b'archery') < among(b'archer', [b'y']) < 1.
-    # reach holds every letter of archer, not the run, and nothing that
-    # tells against archer. The first Pi reads archer's row present on it
-    # (its set of parts is found there, rule 53), so the reading carries
-    # archer's own read pair and the concept reads reach as it reads its own.
-    assert reads(b'archer', b'reach') == pytest.approx(reads(b'archer', b'archer'), abs=1e-4)
+    # reach holds every letter of archer, not the run. Its code no longer
+    # holds archer's by accident (rule 61): archer is a part of the catalog
+    # that reach does not hold, so the first Pi does not find archer's row
+    # on it, and the concept reads reach below its own.
+    assert _read_form(basic, book, b'reach', [rows[b'archer']])[0].tolist() == [0., 0.]
+    assert reads(b'archer', b'reach') < reads(b'archer', b'archer') - .1
 
 
 def test_48_on_the_dictionary_and_the_lesson():

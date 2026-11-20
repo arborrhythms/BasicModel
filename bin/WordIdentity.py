@@ -130,6 +130,22 @@ class WordIdentity(nn.Module):
         # neither.
         self.holders = {}
         self.inside = {}
+        # No code lies inside another's by accident (rule 61). A part may be
+        # given coordinates of its own over both halves; each stored form's
+        # code is kept packed, one row per form in the order of admission,
+        # so that a new code is tested against every stored code at once.
+        self.total = self.width + self.property_width
+        self.limbs = (self.total + 63) // 64
+        self.given = {}
+        self.order = {}
+        self._ordered = []
+        self._packed = torch.zeros(0, self.limbs, dtype=torch.long)
+        self.usage = torch.zeros(self.total, dtype=torch.long)
+        self._given_revision = 0
+        self._parts_key = {}
+        # The earlier forms whose code the last admission changed.
+        self.last_changed = frozenset()
+        self.failures = []
         self._atom_rows = {}
         self._catalog = {}
         # Each added part, with the two forms it told apart (None if taught).
@@ -156,6 +172,9 @@ class WordIdentity(nn.Module):
         n = self.bits.get(atom, self.ones) if bits is None else int(bits)
         result = torch.zeros(self.width)
         result[list(bit_stream(bytes_of(value), self.pair_dim)[:n])] = 1
+        given = self.given.get(atom)
+        if given is not None:
+            result = torch.maximum(result, given[:self.width])
         if bits is None:
             self._codes[atom] = result
         return result
@@ -164,7 +183,8 @@ class WordIdentity(nn.Module):
         """A part's code in the wholes half: the catalog drawn a second time
         in that half's own coordinates. A character's is its byte's in the
         table of wholes; a part given more bits in the parts half is given
-        as many more here (``bits``: read at those bits)."""
+        as many more here (``bits``: read at those bits). The coordinates
+        given to a part (rule 61) are joined in either half."""
         bits = self.bits.get(atom, self.ones) if bits is None else int(bits)
         n = self.property_ones + bits - self.ones
         key = (atom, n)
@@ -173,7 +193,10 @@ class WordIdentity(nn.Module):
             result = torch.zeros(self.property_width)
             result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, n))] = 1
             self._catalog[key] = result
-        return self._catalog[key]
+        given = self.given.get(atom)
+        if given is None:
+            return self._catalog[key]
+        return torch.maximum(self._catalog[key], given[self.width:])
 
     def tightest(self, rows):
         """The tightest whole of the form whose parts are these store rows:
@@ -181,7 +204,8 @@ class WordIdentity(nn.Module):
         row is no part or form of this catalog."""
         if not self.property_width:
             return None
-        key = (tuple(map(int, rows)), self.revision, len(self.added), len(self.atoms), len(self.word_rows))
+        key = (tuple(map(int, rows)), self.revision, self._given_revision, len(self.added),
+               len(self.atoms), len(self.word_rows))
         if key in self._catalog:
             return self._catalog[key]
         if len(self._atom_rows) != len(self.atoms) + len(self.word_rows):
@@ -299,18 +323,30 @@ class WordIdentity(nn.Module):
     def key(form):
         return np.packbits(form.detach().eq(1).cpu().numpy(), bitorder='little').tobytes()
 
+    def _keyed(self, word, key, parts_key):
+        """Record a form's key and its parts half's key."""
+        self.forms[key] = word
+        self.word_keys[word] = key
+        self.by_parts.setdefault(parts_key, set()).add(word)
+        self._parts_key[word] = parts_key
+
     def _reindex(self):
-        self.forms = {}
-        self.word_keys = {}
-        self.by_parts = {}
-        for raw in self.words:
-            key = self.key(self.code(raw))
-            self.word_keys[raw] = key
-            self.by_parts.setdefault(self.key(self.form(raw)), set()).add(raw)
+        """Key every stored form and pack its code, in the order of
+        admission. Returns the first two forms found with one code, if any."""
+        self.forms, self.word_keys, self.by_parts, self._parts_key = {}, {}, {}, {}
+        self.order = {word: index for index, word in enumerate(self.words)}
+        self._ordered = list(self.words)
+        codes = [self.code(raw) for raw in self._ordered]
+        self._packed = (self._pack(torch.stack(codes)) if codes
+                        else torch.zeros(0, self.limbs, dtype=torch.long))
+        collision = None
+        for raw, code in zip(self._ordered, codes):
+            key = self.key(code)
             if key in self.forms and self.forms[key] != raw:
-                return self.forms[key], raw
-            self.forms[key] = raw
-        return None
+                collision = collision or (self.forms[key], raw)
+                continue
+            self._keyed(raw, key, self.key(code[:self.width]))
+        return collision
 
     def _unkey(self, word):
         old = self.word_keys.pop(word, None)
@@ -318,8 +354,77 @@ class WordIdentity(nn.Module):
             del self.forms[old]
             self.store.hash_map.pop(self.WORD_PREFIX+old, None)
             self.store.radix_trie.remove(self.WORD_PREFIX+old)
-        for words in self.by_parts.values():
-            words.discard(word)
+        parts_key = self._parts_key.pop(word, None)
+        held = self.by_parts.get(parts_key)
+        if held is not None:
+            held.discard(word)
+            if not held:
+                del self.by_parts[parts_key]
+
+    # Packed codes ---------------------------------------------------------
+
+    def _pack(self, codes):
+        """Codes of zeros and ones, ``[n, width + property_width]``, as rows
+        of 64-bit words, ``[n, limbs]``: coordinate ``i`` is bit ``i % 64``
+        of word ``i // 64``."""
+        bits = codes.detach().cpu().reshape(-1, self.total).eq(1).numpy()
+        packed = np.packbits(bits, axis=-1, bitorder='little')
+        packed = np.pad(packed, ((0, 0), (0, 8 * self.limbs - packed.shape[-1])))
+        return torch.from_numpy(np.ascontiguousarray(packed).view('<i8').copy())
+
+    def _unpack(self, packed):
+        """Rows of 64-bit words as codes of zeros and ones (``long``)."""
+        bits = (packed[..., None] >> torch.arange(64, dtype=torch.long)) & 1
+        return bits.flatten(-2)[..., :self.total]
+
+    def _place(self, raw):
+        """A new stored form's row of the packed codes."""
+        index = len(self._ordered)
+        self.order[raw] = index
+        self._ordered.append(raw)
+        if index >= len(self._packed):
+            grown = torch.zeros(max(1024, 2 * len(self._packed)), self.limbs, dtype=torch.long)
+            grown[:len(self._packed)] = self._packed
+            self._packed = grown
+        self._packed[index] = self._pack(self.code(raw))[0]
+
+    def packed_code(self, raw):
+        """A stored form's code as the packed rows hold it."""
+        return self._unpack(self._packed[self.order[bytes(raw)]]).to(torch.float32)
+
+    @torch.no_grad()
+    def _rewrite(self, forms):
+        """Write the store rows and the keys of ``forms`` from their packed
+        codes, the rows in one indexed write. Returns the pairs of forms
+        that now have one code."""
+        forms = sorted(forms, key=self.order.__getitem__)
+        if not forms:
+            return []
+        packed = self._packed[torch.tensor([self.order[word] for word in forms])]
+        bits = self._unpack(packed)
+        basis = self.store._basis
+        rows = torch.tensor([self.word_rows[word] for word in forms], device=basis.W.device)
+        value = torch.nn.functional.pad(bits[:, :self.width].to(basis.W), (0, self.property_width))
+        basis.fixed_row_mask[rows] = True
+        basis.fixed_row_codes[rows] = value
+        basis.W[rows] = value
+        keys = packed.numpy().view(np.uint8)[:, :(self.total + 7) // 8]
+        parts = np.packbits(bits[:, :self.width].numpy().astype(bool), axis=-1, bitorder='little')
+        collided = []
+        for word, key, parts_key in zip(forms, keys, parts):
+            key = key.tobytes()
+            if self.word_keys.get(word) != key:
+                self._unkey(word)
+                other = self.forms.get(key)
+                if other is not None and other != word:
+                    collided.append((other, word))
+                self._keyed(word, key, parts_key.tobytes())
+            row = self.word_rows[word]
+            self.store.hash_map[self.WORD_PREFIX + key] = row
+            self.store.radix_trie.insert(self.WORD_PREFIX + key, row)
+        return collided
+
+    # Rule 56: two forms with one code ------------------------------------
 
     def _next_part(self, left, right):
         """Rule 43's next part for two forms with one code (rule 56): the
@@ -379,14 +484,15 @@ class WordIdentity(nn.Module):
         return None
 
     def _settle(self, pending):
-        """Key each pending form, telling apart any two with one row, and
-        write the row of every form whose code changed. No stale key or trie
-        entry is left."""
+        """Key each pending form, telling apart any two with one code (rule
+        56), and write the row of every form whose code changed. Returns
+        those forms. No stale key or trie entry is left."""
         affected, pending = set(pending), list(pending)
         while pending:
             word = pending.pop()
             self._unkey(word)
-            key = self.key(self.code(word))
+            code = self.code(word)
+            key = self.key(code)
             other = self.forms.get(key)
             if other is not None and other != word:
                 touched = self._separate(other, word)
@@ -395,29 +501,168 @@ class WordIdentity(nn.Module):
                 self._unkey(other)
                 # The work stack keeps admission order, so hash order never
                 # decides which of two forms a later collision changes.
-                again = [w for w in self.words if w in set(touched) | {word, other}]
+                touched = set(touched) | {word, other}
+                again = [w for w in self.words if w in touched]
                 affected.update(again)
                 pending.extend(again)
             else:
-                self.forms[key] = word
-                self.word_keys[word] = key
-                self.by_parts.setdefault(self.key(self.form(word)), set()).add(word)
+                self._keyed(word, key, self.key(code[:self.width]))
         for word in sorted(affected):
-            value = self.form(word)
-            code = self.key(self.code(word))
-            key = self.WORD_PREFIX + code
-            row = self.word_rows.get(word)
-            if row is None:
-                row = self.store.insert(key, init_vector=self._storage_code(value))
+            if word not in self.word_rows:
+                row = self.store.insert(self.WORD_PREFIX + self.word_keys[word],
+                                        init_vector=self._storage_code(self.form(word)))
                 self.word_rows[word] = row
                 self.store.inverse_table[row] = word
+                self._fixed_bytes[row] = word
                 # Keep byte rows distinct for one-letter words/descent.
                 if len(word) > 1:
                     self.store.hash_map[word] = row
                     self.store.radix_trie.insert(word, row)
-            self._fixed(row, value, word)
-            self.store.hash_map[key] = row
-            self.store.radix_trie.insert(key, row)
+        if affected:
+            ordered = sorted(affected, key=self.order.__getitem__)
+            self._packed[torch.tensor([self.order[word] for word in ordered])] = self._pack(
+                torch.stack([self.code(word) for word in ordered]))
+            self._rewrite(ordered)
+        return affected
+
+    # Rule 61: no code inside another by accident -------------------------
+
+    def accidents_of(self, raw):
+        """The accidents of a stored form (rule 61), in one pass over every
+        stored code, both halves: the stored forms whose code lies inside its
+        code and that it does not hold as a run, then those whose code its
+        code lies inside and that do not hold it as a run; pairs ``(inner,
+        outer)``."""
+        live = self._packed[:len(self._ordered)]
+        code = live[self.order[raw]]
+        inner = ((live & ~code) == 0).all(1).nonzero().flatten().tolist()
+        outer = ((code & ~live) == 0).all(1).nonzero().flatten().tolist()
+        inside, holders = self.inside[raw], self.holders[raw]
+        found = [(other, raw) for other in map(self._ordered.__getitem__, inner)
+                 if other != raw and other not in inside]
+        found.extend((raw, other) for other in map(self._ordered.__getitem__, outer)
+                     if other != raw and other not in holders)
+        return found
+
+    def accidents(self, chunk=64):
+        """Over all ordered pairs of stored forms: the accidents, pairs
+        ``(inner, outer)`` whose codes lie one inside the other with no
+        link; and the linked parts whose code does not lie inside their
+        holder's, pairs ``(part, holder)``."""
+        live = self._packed[:len(self._ordered)]
+        found, outside = [], []
+        for start in range(0, len(live), chunk):
+            block = live[start:start + chunk]
+            inner = ((live[None] & ~block[:, None]) == 0).all(-1)
+            for i, j in inner.nonzero().tolist():
+                outer, other = self._ordered[start + i], self._ordered[j]
+                if other != outer and other not in self.inside[outer]:
+                    found.append((other, outer))
+            for i in range(len(block)):
+                outer = self._ordered[start + i]
+                outside.extend((part, outer) for part in self.inside[outer]
+                               if not bool(inner[i, self.order[part]]))
+        return found, outside
+
+    def _repair(self, start):
+        """Remove every accident from the forms of ``start`` on (rule 61): a
+        form whose code changes is tested again, the latest admitted first,
+        until none is left. Returns the forms whose code changed."""
+        changed = set()
+        queue = sorted(start, key=self.order.__getitem__)
+        queued = set(queue)
+        while queue:
+            word = queue.pop()
+            queued.discard(word)
+            by_inner = {}
+            for inner, outer in self.accidents_of(word):
+                by_inner.setdefault(inner, []).append(outer)
+            for inner, outers in by_inner.items():
+                touched = self._separate_inner(inner, outers)
+                if touched is None:
+                    continue
+                changed.update(touched)
+                fresh = [w for w in touched if w not in queued]
+                queue.extend(fresh)
+                queued.update(fresh)
+        return changed
+
+    def _separate_inner(self, inner, outers):
+        """Give ``inner`` coordinates that each of ``outers`` lacks (rule
+        61), chosen and not drawn, among the zeros of either half: one at a
+        time, the coordinate that the most outers still lack, then one that
+        is not on inner's against lane (what its nearest holders add), then
+        the one that adds the fewest ones to inner's holders, then the least
+        used, then the first. ``inner`` becomes a part of the catalog (a part
+        already, it takes the coordinates), and every stored form that holds
+        it as a run carries them, so a part stays inside its wholes. Returns
+        the forms whose code changed, in order of admission; ``None``, and
+        nothing changed, where an outer code has no zero to give."""
+        order = self.order.__getitem__
+        own = self._packed[order(inner)]
+        lacking = self._unpack(~self._packed[torch.tensor([order(o) for o in outers])] & ~own).bool()
+        holders = sorted(self.holders[inner], key=order)
+        added = (len(holders) - self._unpack(self._packed[torch.tensor([order(h) for h in holders])]).sum(0)
+                 if holders else torch.zeros(self.total, dtype=torch.long))
+        # What tells against inner, the parts its nearest holders add (rule
+        # 51), is kept: a coordinate of it is taken only where no other will do.
+        opposed = torch.zeros(self.total, dtype=torch.bool)
+        against = self.against_atoms(inner)
+        if against:
+            opposed[:self.width] = torch.stack([self.atom_code(atom) for atom in against]).amax(0).eq(1)
+        given = torch.zeros(self.total, dtype=torch.bool)
+        pending = torch.ones(len(outers), dtype=torch.bool)
+        while bool(pending.any()):
+            covers = (lacking[pending] & ~given).sum(0)
+            if not bool(covers.any()):
+                self.failures.append((inner, tuple(o for o, p in zip(outers, pending.tolist()) if p)))
+                return None
+            choice = covers == covers.max()
+            if bool((choice & ~opposed).any()):
+                choice &= ~opposed
+            choice &= added == added[choice].min()
+            choice &= self.usage == self.usage[choice].min()
+            best = int(choice.nonzero()[0])
+            given[best] = True
+            pending &= ~lacking[:, best]
+        text = text_of(inner)
+        atom = ('part', text)
+        touched = sorted(self.holders[inner] | {inner}, key=order)
+        value = given.to(torch.float32)
+        if atom in self.atoms:
+            old = self.given.get(atom)
+            self.given[atom] = value if old is None else torch.maximum(old, value)
+            self._codes.pop(atom, None)
+            self._atom(atom)
+        else:
+            self.added[text] = (text, text_of(outers[0]))
+            self.bits[atom] = 0
+            self.given[atom] = value
+            self._atom(atom)
+            for word in touched:
+                self.words[word] = self.words[word] + (atom,)
+        self._packed[torch.tensor([order(word) for word in touched])] |= self._pack(value)[0]
+        self.usage += given.long()
+        self._given_revision += 1
+        return touched
+
+    def _keep(self, affected, new=None):
+        """After a change (rule 61): repair until no accident is left,
+        telling apart by rule 56 any two forms the repair leaves with one
+        code; write the rows and keys of every form whose code changed.
+        Returns those forms; ``last_changed`` holds those admitted before
+        ``new``."""
+        changed, pending = set(affected), set(affected)
+        while pending:
+            repaired = self._repair(pending)
+            changed |= repaired
+            collided = self._rewrite(repaired)
+            pending = self._settle({word for pair in collided for word in pair}) if collided else set()
+            changed |= pending
+        self.last_changed = frozenset(changed - {new})
+        if self.last_changed:
+            self.revision += 1
+        return changed
 
     def admit(self, raw):
         raw = bytes(raw)
@@ -428,7 +673,8 @@ class WordIdentity(nn.Module):
             self._link(raw)
             for atom in self.words[raw]:
                 self._atom(atom)
-            self._settle([raw])
+            self._place(raw)
+            self._keep(self._settle([raw]), new=raw)
         return self.parts(raw)
 
     def admit_part(self, run):
@@ -440,7 +686,7 @@ class WordIdentity(nn.Module):
             return ()
         atom = self._add_part(run, None)
         holders = self._holders([atom])
-        self._settle(holders)
+        self._keep(self._settle(holders))
         self.revision += 1
         return tuple(holders)
 
@@ -545,14 +791,22 @@ class WordIdentity(nn.Module):
                     revision=self.revision,
                     word_witnesses=self.word_witnesses, nested=self.nested,
                     holders={word: tuple(sorted(found)) for word, found in self.holders.items()},
-                    inside={word: tuple(sorted(found)) for word, found in self.inside.items()})
+                    inside={word: tuple(sorted(found)) for word, found in self.inside.items()},
+                    given={atom: tuple(value.nonzero().flatten().tolist()) for atom, value in self.given.items()},
+                    usage=self.usage.tolist())
 
     def _relink(self):
         """The links of every stored form, from the forms alone, for a
         vocabulary saved without them."""
-        self.holders, self.inside = {}, {}
+        self.holders = {word: set() for word in self.words}
+        self.inside = {word: set() for word in self.words}
         for word in self.words:
-            self._link(word)
+            for size in range(1, len(word)):
+                for start in range(len(word) - size + 1):
+                    run = word[start:start + size]
+                    if run in self.holders:
+                        self.inside[word].add(run)
+                        self.holders[run].add(word)
 
     def load_vocab_extras(self, value):
         for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'revision'):
@@ -570,6 +824,14 @@ class WordIdentity(nn.Module):
             self.inside = {word: set(found) for word, found in value['inside'].items()}
         else:
             self._relink()
+        self.given = {}
+        for atom, coordinates in value.get('given', {}).items():
+            self.given[atom] = torch.zeros(self.total)
+            self.given[atom][list(coordinates)] = 1
+        self.usage = torch.tensor(value.get('usage', [0] * self.total), dtype=torch.long)
+        self._given_revision += 1
+        self.failures = []
+        self.last_changed = frozenset()
         self._reindex()
 
     def audit(self):
