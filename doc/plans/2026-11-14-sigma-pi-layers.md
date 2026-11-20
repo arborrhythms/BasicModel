@@ -19238,3 +19238,127 @@ Spot tests by the pass; the list on its last commit is run by Claude and recorde
 - *An uncertain object, as built, is a blank one only.* Reading "uncertain" as a small place made every new object uncertain. What else counts as uncertain is left with Alec's sentence (§19.112) until a measure of an object's certainty is named.
 - *Item 1.75's finding:* compiling the reading loop is 95 to 99 per cent of the time of fifteen of the slowest tests, which run in 1 to 9 seconds without it. Those fifteen now read without compiling, and none of them is about compiling. The forty slowest take 1,486 s where they took 2,907 s. *Put to Alec:* whether reading without compiling becomes the default of the test list, with the tests of compilation keeping it; the return judges that the largest saving left.
 - *Found beside it:* a test fails when it runs first in its process, because `Language.budget_code` makes a module global inside the compiled loop (the eleventh pass). To round 5's first pass.
+
+### 23.5 Round 5, first pass: the spread as expectation at each look, learned by stage; intuit's own map; the reads of the structure (Claude on Opus, standing in for Codex, 2026-11-20)
+
+#### What fails or is unfinished, first
+
+- `test_item18_expect.py::test_81` fails on every source it was read on, three readings below. No structure holds "alpha" and "gamma" together in the lesson (no symbol of the pair is nominated), so the spread has nothing to carry from the one to the other; the pair's symbol is the second pass's (step 10, candidate matrices).
+- Step 3 is half built. The first Pi's for entries are in the structure the spread reads (a basic percept reads its parts), and `ConceptSpread.expected` takes the present parts (`percepts=`) and writes the expected basic percepts and parts (`_expected_percepts`, `_expected_parts`). Nothing in the model passes the present parts yet, and the way back does not read the expected percepts where a look's were withheld. Certificate 24 is therefore not written.
+- Step 4 was built, run and taken out (not committed). Looking for an existing object before one is made, in `PerceptCollections.observe` (a new collection is not made where a collection already reads the percept wholly; the word is defined as that object), ties every word of a sentence read with one percept to the first word's object ("this", "is", "water" one object), and the trust that told "is" from "water" was per object, so it no longer tells them apart. Seven tests of four files failed on it (`test_item18_perceptual_scalar.py` 4, `test_percept_collection_binding.py` 2, `test_item18_word_trust.py::test_88`). *Put to Alec:* the look-first needs the certainty of a word's tie kept per tie, not per object (his "small MTM with forgetting", §19.27 point 2), before it can be built without losing that distinction.
+- Certificates 16, 24, 25 and 26 are not written (16 needs the preferred object read at comprehension through the spread in a model; 24 needs step 3's way back; 25 and 26 need step 4 and a sequence across sentences).
+- Step 5 is partly built: `parts` and `wholes` of `bin/Queries.py` (the builtin queries, `_neighbors`) read the matrices; thought's face of an open part role (`ThoughtTaxonomyCapability.neighbors`, read by `ThoughtFaces.is_part`) and `ConceptualSpace.concept_parts` / `concept_wholes` still read the records, since their callers (`Interpret.define`'s description, `Models`' check at line 11471, the witness `best['source'].owner`) take references and edges of LTM1.
+
+#### test_81, three readings
+
+1. *Before any edit* (`9fbd0a096b`, the free map of item 1.8): fails at the second sentence. "alpha gamma": the hidden "gamma" expected .000136 against .000069 for the greatest other absent concept (passes); "beta delta": the hidden "delta" .000057 against .0001 (fails). 136 s.
+2. *On the spread alone* (`212c8373e2`: the spread replaces the map at the sentence's open; omission still the teacher): fails at "alpha gamma": the hidden word and another absent concept both at 1.0 (`assert tensor(1.) > tensor(1.)`), 213 s. A probe of the same lesson printed why: the store's kinds that the lesson declares ("words" and the letter properties, rows 47 to 157) read the symbols of all four words, and they are themselves observed (.64 to .91) when one word is read, so their share down reaches every word. Read on "alpha gamma": gamma .463, delta .470, beta 1.0; on "beta delta": delta .477, gamma .470, alpha 1.0. The spread expects the words of the other sentence as much as the hidden one: nothing in the structure tells the pairs apart.
+3. *On the pass's end* (`d9351996d8`: expectation written anew at each look, the concepts' stage taught per look): fails with the hidden word and every other absent concept at 0 (`assert tensor(0.) > tensor(0.)`); `_expected_knowing` read after the sentence holds the last look's forecast, which is zero on order zero. 78 s. Not diagnosed further.
+
+#### What was built, by file and function
+
+- `bin/ConceptSpread.py` (rewritten). `structure(owner)`: the structure as edges "a row reads its input" over one node space, with the matrices' own weights: a concept of order zero reads basic percepts (`order_zero`, each entry by its size, a Not entry marked); a basic percept reads its parts (the first Pi's for entries); a symbol reads the concepts it holds (the symbols' Pi, at one); a kind reads symbols (the store's Sigma over the Not's options). `spread`: up once by the fan (each node's value split among the rows that read it by weight share), then down once by the share (a row's value split among its inputs), summed at each node at most one, a Not entry passing to the other lane; detached, it teaches nothing. `staged`: the concepts with the gradient of their own stage only: each concept's reading of what lies beneath it, by its entries' share of the fan, from what the spread left there detached; what comes from above detached; the cap of one keeps the gradient (a saturated concept is still taught). `look_cost`: at one look, what each concept expected from the earlier looks against what the look brought, `[B]`, and the symbols' stage measured beside it (`_expectation_stages`; the symbols' Pi has no learned weight, so that stage teaches nothing). `expected`: the detached spread for the readers, with the expected basic percepts, parts and symbols kept beside it. `open_prediction`: writes the spread of what the sentence has observed at its open (the readers: `rule_order`, `InterpretLayer.preferred_objects`, intuit's open flag) and starts the looks' list. `write_look`: writes what is expected at a look anew. `complete`: registers `expectation.concepts` as the sum of the looks' costs. The `Prediction` keeps no target.
+- `bin/LookForecast.py`: `forecast` reads the spread at every allocated row (it read order zero through the free map and closed the definitions); `_outside`, `_compact`, `inventory_rows`; `stage_cost(field, spans)`: the concepts' stage at a look.
+- `bin/SentenceLooks.py`, `Looks.run`: at each look after the first, before `perceive`, the forecast is written to `_expected_knowing` (`write_look`); after it, in training, the look's stage cost is kept on the model (`_expectation_looks`).
+- `bin/Omission.py`: `concept_teacher` (the omission teacher of expectation) and `full_percepts` (its only input) deleted, with their call.
+- `bin/Spaces.py`, `ConceptualSpace.__init__`: `intuit_map`, a `SigmaPiStack` from order zero's concepts to themselves, keys `intuitHidden` (64) and `intuitLayers` (1), each row started on `INTUIT_ROW_START` (2) concepts; `expect_stack`, `concept_predictor`, `expectation_map` and the keys `expectationMap`, `expectHidden`, `expectLayers` gone (`data/model.xsd` likewise). `getParameters` holds `intuit_map`. `_load_from_state_dict` no longer discards `expect_stack.` or `concept_predictor.` keys: an old checkpoint holding them is refused.
+- `bin/SigmaPiStack.py`: `few=`: each row of the first Pi starts with weight on `few` inputs drawn at random on each lane, inside the stack's own random stream.
+- `bin/IntuitionField.py`: `intuited(owner, observed)`: intuit's own map on the observed concepts of order zero, one signed number held as two lanes. `read` deposits the intuited field (it deposited `_expected_knowing`), not detached, so the output's cost reaches the map through what it deposited, and keeps it (`model._intuited`). `complete`: the cost `intuition.field` (category output): what it intuited against the concepts of order zero that thought left, detached. Called beside `ConceptSpread.complete` in `Models` (both places).
+- `bin/Models.py`, `objective_parameter_groups`: `intuit_map` in the output group; nothing of expectation's map left in the expectation group. `bin/SentenceTraining.py`: the groups list.
+- `bin/Layers.py`, `ConceptAllocator.class_member`: a class reads members of every order below its own (`lower < upper`; was `lower + 1 == upper`).
+- `bin/StructureRead.py` (new): `parts(owner, cid)`, `wholes(owner, cid)`, `readers(owner, percept)`: references with their weights, whether the entry is a Not entry, and their words (`definitions.words`); a symbol entry given as the concepts it holds, a basic percept as itself; the threshold a key (`architecture.structureReadThreshold`, 1e-3); each entry charged to the work budget (`expansion`); nothing moved.
+- `bin/Queries.py`: `_neighbors` (the builtin `parts`, `wholes`) reads `StructureRead`; `_structure_owner`.
+- `bin/Language.py`: `budget_encoding()` makes the budget's code; `OperationSelectionLayer.__init__` holds it (outside its modules); `budget_code(encoding, rounds_left, ...)`. The module global `_BUDGET_CODE` is gone.
+
+#### What becomes of `expectationMap` and the `ActivationPredictor` beside it
+
+The key is gone: intuit has one map, the Pi, Not, Sigma stack. The `concept_predictor` (the `predictor` choice of the key) is gone with it. The class `ActivationPredictor` stays: `SymbolField`, `GenerateOccupation`, `ModelAttention` and the discourse expectation's `_inter_predictor` read it, none as the expectation of concepts.
+
+#### intuit's map: rule 63, its start, what it learns
+
+Its Sigma follows rule 63 as built: the Pi's two rows for each symbol, for less against, is the Not's value, and each Sigma entry's sign is its option (`SigmaPiLayer.forward`, the same arithmetic as `_EntryRead`), weights from zero up at the start. Measured on exact concepts (16 concepts, 8 inputs each with one concept present, each to give another concept, 300 steps of Adam at .05, 64 hidden rows): rows started on every concept learned 0 of 8; rows started on two concepts learned 8 of 8 (`test_item17_spread.py::test_68_...`). So the map starts each row on two (*provisional*, `03609019a0`). Its teacher in a model (the field thought leaves; the output's cost) was not measured over a lesson.
+
+#### Certificates
+
+All in `test/test_item17_spread.py` (11 passed, 3.5 s):
+- 14 *Up* (`test_14_...`): a word's symbol read by two kinds at .8 gives each .5. Passed.
+- 15 *Down* (`test_15_...`, `test_15b_...`): the meta concept primed at 1.0 gives the absent object .5; the exact way back of the Sigma (`SigmaLayer3.reverse`) gives the object nothing; a Not entry passes to the other lane. Passed.
+- 17 *Evidence unchanged* (`test_17_...`): the observed values and the weights are equal before and after; no gradient; no module or parameter in `ConceptSpread`. Passed.
+- 19 *Siblings* (`test_19_...`): two children sharing five parents of equal weight give each other .5; on 300 random graphs (up to 7 parents, 9 children) every sibling below one, the greatest .647. Passed.
+- 20 *One step across orders* (`test_20_...`): `class_member` admits orders 0 and 1 under order 2, not a peer of order 2; the meta concept primes the object in one pass. Passed.
+- 21 *Readable* (`test_21_...`): `parts(kind)` gives `('sym', member)` at weight 1, not Not; `wholes(member)` gives `('sym', kind)`; the store's values and `_expected_knowing` unchanged. The words are empty in the fixture. Passed.
+- 57 (a) (`test_57a_...`): no `expect_stack`, `concept_predictor` or `expectationMap` in `bin/`; `ConceptSpread` and `LookForecast` do not name `intuit_map`. Passed. (b) is `test_81`: failed. (c) (`test_57c_...`): passed. (d) (`test_57d_...`): a look's cost reaches the store's Sigma entries alone among the owner's parameters (one reached); what is expected is written anew at a look. Passed. (e) not added: the gain is unchanged by this pass (`test_expectation_gain.py` holds it; not run).
+- 16, 24, 25, 26: not written (above).
+
+#### Choices on my own recommendation (provisional)
+
+- The spread's depth: four steps an order, enough for a layered structure; it stops early when nothing changes. `212c8373e2`.
+- Down does not then go up: concepts that share a basic percept are not siblings (a sibling shares a parent). So an observed concept gets nothing back through its own row. `212c8373e2`.
+- The concepts' stage: gradient only through the edges whose reader is the concept (its own Sigma entries), the fan detached, the cap of one kept with its gradient. `03609019a0`, `d9351996d8`.
+- The expected field at the sentence's open is still written (from what the open observed) for its readers, and each look writes it anew. `03609019a0`.
+- intuit's deposit is not detached, so the output's cost reaches the map; `intuition.field` is in the output category. `03609019a0`.
+- intuit's rows start on two concepts. `03609019a0`.
+- `parts`/`wholes`: a symbol entry is given as the concepts the symbol holds, with the entry's weight; the threshold 1e-3 is a key, not measured with rule 15's penalty. `bdc3a9b83a`.
+- The budget's code is held outside the chooser's modules (no learned state, nothing in the checkpoint). `5e51c05c6a`.
+
+#### Tests ported or removed
+
+- `test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket`: removed with `full_percepts`; replaced by the port of `test_54bd` below.
+- `test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi, predictor]`: removed; replaced by `test_item17_spread.py::test_57a` and `test_57d`.
+- `test_item18_expect.py::test_81`: old `prediction.target[0, hidden_row, 0] > 0` (the omission teacher holds the hidden word) removed with the teacher; the rest kept.
+- `test_item17_symbols.py::test_54bd_...` (d): old: `Omission.concept_teacher`'s reading, `min(mine) > .5 and max(other) == 0`; new: what arrives at the looks (`ConceptSpread.look_cost`'s `arrived`), greatest over the looks, `max(mine) > .5 and max(other) == 0` (the hidden word does not arrive).
+- `test_item18_shared_expectation.py`: `test_intuit_deposits_the_expected_basic_block_then_closes` became `..._its_intuited_basic_block_...`: old deposit `== _expected_knowing[0, address]`; new `== signed_lanes(map output)[0, address]`, the map `intuit_map`. `test_expectation_cost_and_gradients_keep_the_omission_teacher` removed (replaced by `test_57d`). `test_only_the_concept_owner_builds_the_expected_map_...` renamed `..._intuit_map_...`: `expect_stack` to `intuit_map`.
+- `test_item18_intuit.py::test_84_...`: old: the free map's forward called `1 + looks` times and not again by intuit; new: the spread called `1 + looks` times and not by intuit, and intuit's map called once by the read and once by the face.
+- `test_item18_word_trust.py::test_89_expectation_selects_among_orders...` and `test_89_written_prediction_is_local...`: old: one SGD step on the free map makes the observed concept expected; new: a controlled spread (the observed field returned as expected) through `open_prediction`; the readers' assertions unchanged.
+- `test_thought_intuition.py::test_predictor_target_and_consumers_detach_and_predictor_trains`: removed with the predictor (replaced by `test_57d`). `test_output_ownership_...`: old `expect_stack ⊆ expectation`; new `intuit_map ⊆ output`.
+- `test_one_backward.py::test_bands_and_intuition_...`: the expectation band's cost given as one look's cost through `ConceptSpread.loss` (was a `Prediction` with a target); the storage audit's `expect_stack` became `intuit_map`.
+- `test_item18_round_c_continuation.py`: the patched `expect_stack.forward` became `intuit_map.forward`; assertions unchanged.
+- `test_review13_subspaces.py`: the fixture's `concept_predictor` removed. `test_live_concepts_from_percepts.py`, `test_sparse_concept_e2e.py`, `test_item18_stack.py` (`expectHidden` to `intuitHidden`), `test_item17_stacks.py`, `test/image_experiment.py`: renamed to `intuit_map`.
+- `test_reduction_pressure.py`, `test_chooser_architecture.py`: `budget_code(budget_encoding(), ...)`.
+- `test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol` (on the coordinator's word): old `if symbols is not None:` then the bounds; new: the leg is `[B, *, 2]` always, the empty leg `[B, 0, 2]` valid, the bounds asserted only when it holds symbols. 14 passed, 10.5 s.
+
+#### Test files run
+
+- `test_item18_expect.py::test_81`: three readings, 136 s, 213 s, 78 s (failed each).
+- `test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool` (first of its process), `test_reduction_pressure.py`, `test_chooser_architecture.py`: 41 passed, 94 s.
+- `test_item18_shared_expectation`, `test_item18_intuit`, `test_item18_word_trust`, `test_thought_intuition`, `test_one_backward`, `test_item18_round_c_continuation`, `test_review13_subspaces`, `test_live_concepts_from_percepts`, `test_sparse_concept_e2e`, `test_item18_stack`, `test_look_forecast`, `test_priming_diffusion`, `test_serial_concepts`, `test_whole_paths`: 133 passed, 6 skipped, 21 s.
+- The same and `test_item17_spread`, `test_query_work_boundaries`, `test_thought_operation_catalog`, `test_part_store`, `test_item6_2_thinking`, `test_unified_thought_controller`, `test_item17_symbols`, `test_item25_completion`, `test_word_interpretation`, `test_item17_stacks` (24 files) on `d9351996d8`: 319 passed, 7 skipped, 89 s.
+- Step 4's trial (not kept): `test_item18_perceptual_scalar`, `test_item18_scalar`, `test_item1_5_derive`, `test_percept_collection_binding`, `test_item18_word_trust`, `test_item18_recognition`: 7 failed, 23 passed, 2 skipped, 7 s.
+- The gates on `d9351996d8`: `test_mm_xor.py::TestMMXorConvergence::test_convergence` passed; `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class` passed.
+
+#### Commits
+
+`212c8373e2` (the spread), `5e51c05c6a` (the budget's code), `03609019a0` (expectation at each look, by stage; intuit's own map; the ports), `387bc97c02` (the empty leg's port), `36e3fb9f33` (rule 26), `bdc3a9b83a` (parts and wholes), `d9351996d8` (certificates; the cap's gradient; old checkpoints refused).
+
+#### What is left of steps 1 to 8
+
+- Step 1: the percepts' stage of expectation (expected basic percepts against those a look brings) is not compared: the looks' forecast does not have the basic percepts a look brings. The symbols' stage is measured and teaches nothing (no learned weight in the symbols' Pi).
+- Step 1b: intuit's teacher not measured over a lesson.
+- Step 3: the present parts are not passed to the spread, and the way back does not read the expected percepts (certificate 24).
+- Step 4: not built (above).
+- Step 5: thought's face, `concept_parts`, `concept_wholes` (above).
+- Step 6: certificates 16, 24, 25, 26.
+- Steps 2 and 8: done.
+
+#### What surprised me
+
+- The declared kinds of the lesson ("words" and the letter properties) are observed whenever any word is, and read every word's symbol, so the spread at the open expects every word of the lesson as much as the hidden one: on this lesson, expectation by the structure says only "a word". What tells "gamma" after "alpha" is a symbol of the pair, which nothing makes yet.
+- `torch.clamp` gives no gradient at the bound itself, and the spread saturates at exactly one, so a stage cost that read the capped value taught nothing; the cap now keeps its gradient.
+- A free Pi row started on every concept is at nothing on exact concepts (every absent concept is a factor at the floor) and learned none of 8; two concepts a row learned all 8.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass (24 files, 319 passed); both gates pass on `d9351996d8`. Before it, the list on `58b148c3dd`: 7 failed, 3,108 passed, 152 skipped in 1,135 s; three are the clone's (its `.venv`), `test_81` is this round's, one rests on a walk, one was a test the repair left wrong (ported here, `387bc97c02`), and `test_priming_diffusion`'s one failure passes 4 of 4 alone.
+
+- *Built as asked:* the spread on the structure's matrices with no parameter of its own; expectation written anew at each look and the concepts' stage taught at each look within its stage (rule 66 as restated, §19.113); `intuit`'s own map with its teacher; rule 26; the builtin `parts` and `wholes`; the budget's code made where the chooser is built.
+- *`test_81` is two things.* (i) The test reads the expected field after the sentence, and the field is now written anew at each look, so it reads the last look's. It is to read what was expected at the look of the hidden word, before that look's result. (ii) Nothing in the lesson's structure holds "alpha" and "gamma" together, and the kinds the lesson declares read every word. The first is a port. The second is what rule 73 is for: two concepts that are present together at a look offer a candidate row of the Pi above them, and the pair's symbol is what the share comes down from.
+- *The share saturates.* With a hundred declared kinds over four words, the shares that come down to a word are summed and capped at one, so an absent word of another sentence reads 1.0 and nothing above it can be told apart. *Mine, to the second pass:* what reaches a node from several rows joins as the product on complements (one less the product of one less each share; Alec's rule for pooling of 2026-11-17), which never reaches one and stays in order: more rows that give, a higher value. Certificate 19's bound (a sibling below what caused it) is kept and measured again.
+- *The order of learning (step 4) is not built, and I would leave it so in this item.* Looking for an existing object before making one tied "this", "is" and "water", read with one percept, to one object, and the trust that told them apart was the object's. Alec's own words on it were tentative (§19.27: "Please explain the concept here though, maybe this is necessary (but I think the generality of pronoun lookup will eventually correct this)"). *Put to him:* an object for each word stays, as he supposed it might; the look-first waits for a certainty kept on each tie of a word to an object, which is his "small MTM with forgetting", in the item that has a second modality.
+- *Certificates 25 and 26* (a word tied to an object of another modality; a sequence learned) need a second modality and a sequence across sentences. *Put to him:* they go to item 1.6 with certificate 59.
+- *The symbols' stage teaches nothing today,* since a symbol's row has no learned weight. Rule 72's cone gives it one.
+- *`intuit`'s rows start on two concepts* (0 of 8 learned from every concept, 8 of 8 from two). Accepted as built; its teacher over the lesson is read at the round's end.
+- *Left to the second pass:* the percepts' stage; step 3 and certificate 24; the rest of step 5; certificate 16.
+
+#### A measure asked for by Alec, and what it found (2026-11-20)
+
+Asked for sentences a second after item 1.75. `bin/bench_training_step.py` on `data/BasicModel.xml`, batches of 8 over 400 documents, on `58b148c3dd`: on MPS it ran out of memory in the first batch (15.84 GiB held, 2.50 GiB more asked, limit 16.85 GiB); on the CPU the system killed it in the first epoch. The allocation is `PerceptField.read_percepts`'s tensor of events, of size keys by sentences by words by spans by 2. The line is of 2026-09-26; whether the number of keys read in a batch grew in this item is not measured. To round 7's measurements and to item 1.5's first part.
