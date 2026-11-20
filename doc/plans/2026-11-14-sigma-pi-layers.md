@@ -14344,3 +14344,306 @@ I would build **(ch): the separating coordinate chosen, not drawn, among the zer
   - at 64+64 the cost is close to running away at 19,821.
 - *At 96+96 (ch or bh)* the same work is done with fewer coordinates given, about a third as many earlier codes changed at most, and a flat cost per admission.
 - *If the vocabulary is to grow* towards Alec's million codes, these numbers argue for 96 at the least. That is a judgement from the trend, not measured beyond 19,821.
+
+### 23.4 Round 4, first pass: the feature table's record, the room, the two channels at order zero (2026-11-19)
+
+The text is §22.4, steps 1, 9, 10 and, for order zero, 11. Commits, local on `main`: `ad74dc4d8a`, `50f9f66316`, `65a8c36f3d`, `3fd1f790e9`. The implementer's return is below.
+
+**Review** (Claude). Read: the return. Run here, the round's list of 120 files with `test_item17_symbols.py` and both gates (four processes, 505 s): **1,505 passed, 81 skipped, none failed.** Certificate 23 passes as it stands.
+
+*Accepted.*
+
+- *Step 9.* The feature table of order zero is gone. What it recorded is a plain record with the allocator (`ConceptMembers`, `alloc.order_zero_members`), saved with it, and every reader reads the record. A checkpoint that holds the old table is read once into the record.
+- *Step 10, provisional as built.* A ConceptualSpace's `nVectors` is now the room of order zero; each order above has half the one below, and the declared seats come on top. In the lesson that is 4,108, 2,122 and 1,051 concepts where it was 2,346, 1,241 and 610. `basicPerceptCapacity` is left untied to it, since tying them would resize most fixtures (Alec, 2026-10-24: a fixture is never resized).
+- *Step 11 at order zero.* The Sigma has for weights and against weights, the second begun as the first negated. Over the lesson's 616 readings the largest difference from one input of for less against is 6.6e-7. A concept taught to be present where a percept is witnessed against, and silent where it is witnessed for, ends with its weight on the against channel alone: 2e-12 on the for channel and 1.43 on the against channel, from .577 and -.577.
+
+*Found by step 1, for the next pass of round 4.* The lists of §19.4 are short: `_csw_row_of` has 126 call sites in 32 files; five more places combine a pair as for less against; some thirty more readers take `('sym', cid)`, six of them a symbol as a vector; six more read the pending name. Step 4's text takes these.
+
+*Two things the pass could not build as the text has them.*
+
+- *A dense Sigma of order zero does not reach the default capacity.* At 262,144 basic percepts and the lesson's width, its two channels with their optimizer state are 1.09 GB, and one step of the optimizer takes 87 ms. `data/model.xml` does not ask for it today (its `nVectors` resolves to `nOutput`). Recommended by the implementer and not built: columns allocated beforehand, and only the written ones given to the optimizer. Carried to round 4's next pass.
+- *The way back through two channels* is exact only while the against weights are the for weights negated; it is still least squares through the for weights (rule 17). Carried to round 7.
+
+*Not of this pass.* In the implementer's wider run of 196 files, 25 of the 27 failures are the ones §23.S found and are being ported apart. `test_reduction_pressure` fails some of the time and did so before this pass (2 runs of 6); it is given to the porting of the sweep's failures.
+
+#### Return of round 4's first pass
+
+Started at `87bbbfb664`. Commits, local on `main`, none pushed, each ending with "Co-Authored-By: Claude Opus 5.5":
+
+| Commit | Step |
+| --- | --- |
+| `ad74dc4d8a` | 9: the feature table goes; `ConceptMembers`, the allocator's record of order-zero members |
+| `50f9f66316` | 10: order zero has room for as many concepts as basic percepts (provisional) |
+| `65a8c36f3d` | 11 at order zero: two channels at the order-zero Sigma; certificate 51 in `test/test_item17_symbols.py` |
+| `3fd1f790e9` | 11, repair found by the run: the two-channel sum written as the one-input read plus the against channel's departure; the inventory test ported |
+
+No seed is pinned, no skip or xfail is added, no bar or iteration count is changed, and the spec and `doc/` are not edited. `test/code_trial.py` and `test/test_item17_code_trial.py` were changed in the tree by someone else during this pass (a §19.86 trial). They are not mine and are not committed.
+
+**Step 1: list 3, the rest of list 4, and §19.21's rows on symbols, retaken at `d0a3832629`**
+
+Read with `git show`/`git grep` at the starting commit, before any edit.
+
+**List 3.**
+
+| Row | Status | What differs |
+| --- | --- | --- |
+| `symbolTower` / `SymbolSubSpace` (`Language.py:8698`, `symbol_dim = nWhat`) | present | The same five configurations. The key is also read at `Models.py:2009` (`symbol_tower`), `:17085` and `:17379` (`n_streams`). |
+| `SymbolSpace.forward_concept_to_symbol` (`Language.py:13684`) | present | Addresses `2*ids+{0,1}` (`:13753`), where-band `2*rows+{0,1}` (`:13758`). There are now **7 callers** in `Models.py`: `_publish_reading_symbols` ×2, `_forward_body` ×2, `_peer_stage_b` ×2, `_forward_per_stage`. |
+| `ConceptEvidence.decode`, `cs_forward_content`'s decode, the SBOW slab (`Models.py:17911`) | present | **New:** `ConceptualSpace.cs_decode` (`Spaces.py:15397`) does the same one-code-for-both-poles decode. |
+| `ConceptualCombine` with three streams; `_reverse_body` | **different** | The docstring says "2-STREAM", but `n_streams=3` is still passed under the tower (`Models.py:17379`). `_reverse_body` unpacks two values from `cs.unbind`, so with three streams it would fail. It runs only on the `concept_binding=='mixing'` path. |
+| `SPACE_SYMBOL` keys (`_addressable_spaces`, `_answer_attention_step`, `PrimedSymbolReader`) | present | `_answer_attention_step` can replace the codebook keys with the primed bank's codes. `_addressable_spaces` is also called at `Models.py:23564`. |
+| `LTM0(content_width=symbol_dim)` (`Language.py:8889`) | present | unchanged |
+| `WhereRegistry`'s `symbols` slice (`WhereRegistry.py:79`, `2*max(capacity, nVectors)`) | present | **New readers:** `SentenceAttention.arrive`, `AttentionContext.install`, and `WhereRegistry` re-encoding `_symbol_where` (`:51`, `:140`). |
+| `_csw_row_of` | **different** | **126 call sites in 32 files of `bin/`** (listed as about 110), plus 343 in `test/`. |
+| readers of `('sym', cid)` | present | Present as listed. `Memory.promote` now goes through `_csw_row_of`, `add_concept_feature` and `class_members`. `add_concept_edge` is called only from `_populate_concept_weights`. **Not in the row:** AccessibleMind:219, Assessment:342, BindingAnswers:77/82, ClauseJournal:1093, ConceptHierarchy:70, EntryRead:25, GrammarLessons:387, Language (`program_meaning` :12068, :12133, :12287, :12401), Layers (`names` :6018, `structural` :6103, `_part_order` :6123), Memory (`member_references`, `referent_of`, `occurrence_of`, `_reference_value`, `read_structure`), MemoryLink:31/101, OutputOccurrences:119, Spaces (`_commit_chunk_admissions`, `_concept_source_order`, `_register_recognized_word`), Taxonomy:15/175/196, ThoughtFeatures:44, ThoughtStream:393, TimelineRead:128/146, WholePaths:77/85. **Symbol read as a vector through `_concept_point`:** ChainRead:7/16, ClauseRow:660, ReferenceClose:174/430/1249. |
+
+**List 4, the rest.**
+
+| Row | Status | What differs |
+| --- | --- | --- |
+| `_concept_rung_presence` | **different** | Two callers: `cs_forward_content` and **`DefinitionFold.loss`** (`DefinitionFold.py:88`). It is also reached through `refinement_field`, which runs `cs_forward_content` on the both-field. |
+| `FieldProjection.close` | **different** | It is a module function now. Callers: `IntuitionField.read`, `LookForecast.forecast`, `NumericPercepts.read`, `Spaces.placement_context`. |
+| `SparseLayer._fold_weights` | present | Callers: `fold_presence`, `attribute_presence`, `FieldProjection.close`, and `cs_percept_attribution` (the feature table's, **gone in step 9**). |
+| `fold_presence` / `attribute_presence` | present | `fold_presence`: `_concept_rung_presence` ×2 and `ConceptualAttentionLayer.forward`. `attribute_presence`: `cs_reverse_presence.descend`, **`CaseSelection.stage_case_bank`** and `ConceptualAttentionLayer.reverse`. |
+| `_prepare_part_learning`'s opposite columns | present | Two writers: witness poles, and the feature table's `col ^ 1` (**gone in step 9**). **New caller:** `DefinitionFold.prepare`. |
+| the order-zero rows of round 3 | not back | `_compose_order0`, `IndexedSigmaConceptsFromPercepts` and `conceptualPi` have no hits. |
+
+**§19.21's rows on symbols.**
+
+| Row | Status | What differs |
+| --- | --- | --- |
+| `ConceptAllocator.class_member` (adjacent orders only) | present | Callers: `DefinitionFold.examples`, `FamiliarTier.class_members`, Priming:49, Layers:6091. |
+| `InterpretLayer.reading`'s pending name (`pool.named`); `PrependedSymbols.stage` | present | **More readers of the pending name `('name', word)`:** `FamiliarTier.commit_read_words` (`pool.names`) and `define_pending`, `PrependedSymbols.refresh_words` and `chunk_token`, `ReferenceClose.origin_reference`, `Memory.named` (the close's admission test), and `ConceptAllocator.names`. |
+| the word step's payload (`activation.abs()` ×2, in `stage_cs_sym` and `stage_cs_sub`); `positive_evidence`; `reference_evidence`; the walk's pair | present / **different** | `positive_evidence` is also called by `Language.commit_word_reference_slab`. **`native_word_poles` now takes `max(field, both)`**, where `both` is `order_zero_both_field`: the members' lanes joined by noisy-or, then `amin` over the lanes. That gives one scalar, broadcast into both poles, which goes out through `read_poles` (6 `POLE_CONSUMERS`). |
+| `promote_symbol_reference` / `compute_symbolic_reference` (`stage_cs_sym`) | present | unchanged |
+| `ConceptHierarchy.observe_member` | present | It raises unless the parent's order is the member's plus one (the same adjacency as `class_member`; rule 26). Callers: `PartsOfSpeech.add` and `observe_seat`. |
+| `DefinitionFold` (`q.amin(-1)`) | present | It reads `_concept_rung_presence`, so it belongs to step 4 as well. |
+
+**For the round's text.** Step 4 should name `DefinitionFold.loss`/`prepare`, `CaseSelection.stage_case_bank`, the four callers of `FieldProjection.close`, and the "for less against" readers that list 3 does not hold:
+
+- `Attention.read_code_field`
+- `CaseSelection.fold_cases`
+- `Models.stage_cs_sub`
+- `ClauseRow`'s trust
+- `Priming.part_edges`
+
+Step 5 should name the six `POLE_CONSUMERS` of `read_poles`, since `order_zero_both` feeds them.
+
+**What was built, by file and function**
+
+**Step 9 (`ad74dc4d8a`).**
+
+- `bin/Layers.py`
+  - `ConceptMembers(dict)` (new): `(row, percept, negated) -> weight`, a plain record with a `revision` counter. It has `add`, `discard`, `members`, `rows_of`, `rows`, `started` (the members of positive weight, which entered a column), and `net`.
+  - `ConceptAllocator.order_zero_members` is the record. `ConceptAllocator.order_of` reads it.
+  - `ConceptualAttentionLayer`:
+    - `features` and `feature_groups` are gone, along with the `_feature_sources` branches of `bind`, `_fold_weights` and `definition_sparsity_penalty`.
+    - `definition_matrices()` is now `(self,)`; `project_parts` and `grow_inventory` no longer touch the table.
+    - `parts_extras` is version 7 and holds no matrices.
+    - `saved_feature_record(saved)` (new) reads an old table into record entries.
+    - `load_parts_extras` accepts versions 1 to 7.
+- `bin/Models.py`
+  - `order_zero_members` is among the allocator fields saved and restored.
+  - A checkpoint without the field has its record read once from its parts' feature table (`saved_feature_record`).
+- `bin/GrammarConceptCheckpoint.py`: the record's rows are remapped with the others, and the `feature_groups` remap is gone.
+- `bin/Spaces.py`
+  - These read and write the record: `add_concept_feature`, `follow_members` (members that started a column), `concept_of_basic_percept`, `concept_percepts`, `cs_read_percept_field` with `_bind_attended_concepts(required, rows_t)`, `order_zero_both`, `cs_percept_attribution`, `_witness_concept_poles` and `_drop_concept_edge`.
+  - `cs_percept_attribution`'s weight is the member's net, for less Not, at zero or more.
+  - The table's part of `_prepare_part_learning`, the view's `feature_defined` and `_concept_part_rows` are deleted.
+  - `getParameters` and `_sparse_family_nnz` read the store alone.
+- `bin/PerceptCollections.definitions`, `bin/FeatureTable.refresh`/`forms`, `bin/MereologicalCodes._form_sources`/`_definitions`/`derive`, `bin/Interpret.py` (case discovery) and `bin/ConceptLessons.py` (the cases) read the record.
+
+**Step 10 (`50f9f66316`).**
+
+- `ConceptualSpace.inventory_rows(room, limit, reservations)` (new) gives `Σ_k max(1, room >> k)` over the orders, plus every order's declared seats.
+- `Models._concept_inventory_rows` (new) applies it to the configured `nVectors` at the two places that sized the concept inventory (`nConceptCodes` and the stage's concept shape).
+- `_order_caps` is unchanged. Given that total, its binary search returns `room` at order zero exactly.
+- `data/model.xsd`: comments on `nVectors`, `orderAllocation` and `basicPerceptCapacity`.
+
+**Step 11 at order zero (`65a8c36f3d`).**
+
+- `bin/OrderZero.py`, `OrderZeroSigma`:
+  - `against` (new parameter) starts as `-weight`.
+  - `forward` and `concepts` read `tanh(x_for U + x_against A)`.
+  - `add_share` (new) adds a share to `U` and takes it from `A`. `add_member`, `start_column` and `follow_members` go through it.
+  - `_load_from_state_dict` fills a missing `against` with `-weight`.
+  - `channels()` is new.
+  - `reverse` is the for weights' least squares, as before.
+- `read_word` takes a reading `[2D + 2C]` and reads each lane by its own column.
+- `bin/Spaces.py`:
+  - `order_zero_reading` returns both columns.
+  - `install_order_zero` registers both channels in `params`, each with the frozen-column hook.
+- `bin/ConceptLessons.py`: the names' optimizer takes both channels.
+
+**Step 9: the old table in a checkpoint**
+
+**Read once, not refused.** A checkpoint saved after round 3 holds `U` and the table. Its table records exactly what the new record records, so reading it once loses nothing and keeps such checkpoints loadable. An edge at weight zero (a learning candidate of `_prepare_part_learning`) is recorded at zero and starts nothing, as before. The Sigma's state likewise loads its against weights as the for weights negated.
+
+*Provisional:* the record keeps members recorded at weight zero, which the test fixture `basic_fixtures.feature` writes by default. They were in the table too: `concept_of_basic_percept`, `concept_percepts` and the binding read them, and the column, `order_zero_both`, collections and forms skip them. That keeps every reader's behaviour as it was. §22.4 says the record holds "the percepts a concept was started from". Strictly, that is the positive ones.
+
+**Step 10: sizes and memory**
+
+What becomes of the keys:
+
+- **`nVectors` of the ConceptualSpace** is now the room of order zero, n (*provisional*). The constructed inventory is `n + n/2 + n/4 + …` (one row an order at least) plus every order's declared seats. Before, the seats of order zero were taken from the configured rows.
+- **`basicPerceptCapacity`** is unchanged. It is the room of the first Pi.
+- **`orderAllocation`** keeps its meaning: declared shares, summing to `nVectors` less the seats of order zero. No configuration in `data/` uses it, only three tests. I recommend it go, since the taper stays (Alec, §19.83), and I did not remove it.
+- The schema states all three.
+
+| Lesson (`MM_corpus_lessons.xml`, n = 4,096, three orders, seats 12/74/27) | Before | After |
+| --- | ---: | ---: |
+| order caps | 2,346 / 1,241 / 610 | **4,108 / 2,122 / 1,051** |
+| concept rows | 4,197 | 7,281 |
+| order-zero Sigma | 136 × 2,346, one channel, 1.3 MB | 136 × 4,108 × 2 channels, 4.5 MB (17.9 MB with gradients and Adam's two moments) |
+| concept codebook (`similarity_codebook.W`, width 168) | 2.8 MB | 4.9 MB |
+
+**`data/model.xml`'s defaults.** Its ConceptualSpace `nVectors` is 0, so the room resolves to `nOutput`, which is data-derived. A 262,144-column Sigma is therefore **not allocated** by the defaults. If the room is set equal to `basicPerceptCapacity` (n:n), I measured one Adam step on CPU over the two dense channels:
+
+| Width | Two channels | With gradients and Adam | One step | Peak RSS |
+| --- | ---: | ---: | ---: | ---: |
+| 136 (the lesson's text width) | 272 MB | 1,088 MB | 87 ms | 1.8 GB |
+| 9 (model.xml's literal `nDim`) | 18 MB | 72 MB | 6 ms | — |
+
+At width 136 the inventory would also be about 393,000 rows (two orders), about 264 MB of codebook.
+
+That can be allocated, but every step's Adam then updates 71 M weights where a few columns change. **Recommended, provisional and not built:** at that size, the order-zero Sigma's columns should be a slab allocated beforehand and handed to the optimizer as written, not one dense parameter.
+
+**Configurations whose two keys differ.** Neither key is tied to the other (*provisional*). Tying them would resize most fixtures (for example `MM_20M_xor`: `basicPerceptCapacity` 65,536, room 8). These configurations differ:
+
+- `BasicModel` 32,768 vs 65,536
+- `BasicModel_corpus` 262,144 vs 1,048,576
+- `MM_20M_xor`, `MM_global`, `MM_qa`, `MM_reading` 65,536 vs 8
+- `MM_add` 4,096 vs 512
+- `MM_add_verb` 4,096 vs 8
+- `MM_grammar` 256 vs 20
+- `MM_image` 4,096 vs 2,048
+- most of the small XOR and grammar fixtures (256 vs 6 to 128)
+
+The lesson, `MM_corpus_orders`, `MM_ladder`, `MM_ladder_idiom` and `MM_math_chain` are 4,096 vs 4,096. A nominated row past the room raises `ConceptRowCapacityError`, as it did before.
+
+**What the orders above will need (later pass, not built).** Order k ≥ 1 has n/2^k concepts. Its Sigma reads its own order's n/2^k symbols, each two unsigned rows (or, under rule 59, two channels), and the order below's concepts: n/2 × 3n/2 at order one.
+
+- Dense, that is 0.75 n² a channel: 50 MB at n = 4,096, and 5×10¹⁰ at 262,144, which is impossible.
+- So it must be rule 19's compressed rows, with entries allocated beforehand for each row on each channel.
+- `SparseLayer`'s paired columns (`2*(S+1)`) and `_fold_weights` go with step 4.
+
+**Certificate 51 (`test/test_item17_symbols.py`, 4 tests, all pass)**
+
+- **(a)** `test_51a_at_its_start_every_concept_reads_what_one_input_of_for_less_against_read`. The lesson's sixteen sentences are read with a learning rate of zero, so every column is as its writers made it.
+  - `A = -U` exactly.
+  - On every reading of the 170 percept fields (616 readings, 49 with an against lane in the content), the five concepts read on two channels what one input of for less against read. The largest difference is 6.6e-7.
+  - At the word step, the five nominated words (one with an against side in its read pair) read through `read_word` what one input read of their read pair, within 1e-6.
+- **(b)** `test_51b_the_gradient_reaches_the_for_and_the_against_weights_apart`. `∂/∂U = x_forᵀ g` and `∂/∂A = x_againstᵀ g` exactly, and they are not each other's negation.
+- **(c), learning, printed:** `test_51c_a_concept_of_absence_is_learned_on_the_against_channel_alone`. The concept is started from a percept's own column and taught 0 where the percept is witnessed for and 1 where it is witnessed against (500 Adam steps, lr .05).
+
+| | Read where witnessed for | Read where witnessed against | For weight on the percept's direction | Against weight on it |
+| --- | ---: | ---: | ---: | ---: |
+| Start | .762 | -.762 | .577 | -.577 |
+| Learned | 3e-12 | .986 | 1.9e-12 | **1.428** |
+
+- **Also:** `test_a_sigma_saved_on_one_input_loads_its_against_weights_as_its_for_weights_negated`.
+- **Certificate 23 passes as it stands,** with the same readings as round 3. In 23 (a) to (c) no input has an against lane (`_pairs` gives none), so the against weights never move: in a run of 23 (b) and (c), 0 against weights above zero. Certificate 23 counts and projects only `sigma.weight`, the for weights (below).
+
+**Ported tests (old → new)**
+
+Step 9:
+
+1. `test_concept_memberships::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar` → `test_the_member_record_has_no_penalty_and_an_old_feature_table_is_read_once`.
+   - Old: the table's penalty is .4 and its gradient `[0, 0, 1]`; `parts_extras` round-trips the table; no `features.values` in the state.
+   - New: `definition_sparsity_loss` is `None`; `definition_matrices() == (store,)`; no `features` key in the state; the record holds the three members at .8, .6 (Not) and .4; an old version-6 table is read into the same record, its zero edge at zero; `parts_extras` holds no matrices.
+2. `…::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address`.
+   - Old: the table index is `{(row, 2bp), (row, 2bp+1)}`, then `nnz 0` and values `None`.
+   - New: the record is `{(row, bp, True)}`, then empty. `_prepare_part_learning` writes no opposite candidate.
+3. `…::test_feature_growth_preserves_frozen_rows_and_optimizer_moments` → `test_member_record_keeps_frozen_rows_out_of_the_learned_columns`.
+   - Old: the table's values regrow with momentum migrated, the frozen row's gradient 0 and the live one 1.
+   - New: the record holds both rows and no tensor, and is unchanged by `_prepare_part_learning`. The order-zero Sigma's frozen column takes no gradient and the live one does.
+4. `test_sparse_concept_e2e`, four spots:
+   - the word's columns `{2·percept}` → record `{(percept, False)}`;
+   - `features.nnz > 0` → `len(record) > 0`;
+   - `features.values.zero_()` → every record weight zero;
+   - `test_getparameters_includes_csw_after_population`: old, the definition values exist and are in `getParameters`; new, no definition values at order zero, `order_zero.weight` is in `getParameters`, and the concept's column is nonzero.
+5. `test_item20_round5_percepts` (basic admission layout): the column set `{2bp}` and `nInput == 2·capacity` → the record `{(bp, False)}`. The width assertion is dropped, since the record has no width.
+6. `test_word_admission.snapshot`: the table's index and values → `dict(record)`.
+7. `test_item18_producer_repair::test_05_feature_pair_gradients_and_zero_floor` (6 cases): **retired**. The table's paired fold weights are gone. Replaced by item 1 above and certificate 51 (b). `paired_layer`/`fold` lose their `'feature'` layout.
+8. `test_item18_perceptual_scalar` ×2, `test_grounded_xor` ×4: table reads → record reads (`record[0, bp, False] > 0` for `values[…] > 0`).
+9. `test_order0_attended_field`: `not store.feature_groups` → no order-zero member recorded before recurrence.
+10. `test_review13_subspaces`: `features.values.grad is None` → `order_zero.weight.grad is None`.
+11. `test_review14_contracts`: `features.values.requires_grad` → `order_zero.weight.requires_grad`.
+12. `test_dual_towers`: `features.nnz > 0` → `len(record) > 0`.
+13. `test_item20_round6_gradients::test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition`.
+    - Old: the gradient reaches the inverse and the table's values.
+    - New: it reaches the inverse; the definition is the record, of plain floats, and takes no gradient.
+14. `test_concept_output`, `test_item20_round6_reverse`, `test_item20_round6_repair`: table values set to zero → record weights set to zero.
+15. `test_item1_5_derive`: the reference reads the record; `values.mul_(.75)` → record weights ×.75.
+16. `test_field_learning`: written columns of the table → of the record.
+17. `test_primitive_properties`.
+    - Old: the table's values are in the optimizer once and not in the state.
+    - New: `order_zero.weight` is in the optimizer once; the record, cleared, is restored by `_restore_structural_extras`, equal and the same object.
+18. `test_order0_percept_definitions` ×3: the table's index and `nnz` → the record's entries and `len`; the restored table → the restored record.
+19. `test_field_binding` ×2.
+    - `feature_defined` none → the bound view has no edges (`nnz 0`, `nOutput 4`).
+    - The restored table → the restored record.
+20. Helpers: `postmerge_word_lanes` (provenance edges from the record; the optimizer observer records changes of the order-zero Sigma); `operators_run_audit` and `objective_conflicts_probe` (`order_zero.weight` in place of the table's values).
+
+Step 11:
+
+21. `test_item17_order_zero::test_a_word_reads_its_column_of_the_order_zero_sigma`: the reading `cat(column, code, 0)` → `cat(column, -column, code, 0)`. The assertions are unchanged.
+22. `test_live_concepts_from_percepts`: the reading carries `-column`. The compile test's reading is `2·6 + 2·2` wide. The assertions are unchanged.
+
+**Choices (provisional unless marked)**
+
+1. Step 9: the old table is read once, not refused (above).
+2. Step 9: members of weight zero stay in the record, and only positive ones start or follow columns.
+3. Step 9: `_drop_concept_edge` removes the members from the record and leaves the column as learned, as the table's removal did. Taking the member's share out of the column would be the counterpart of `follow_members`; it is not built.
+4. Step 10: `nVectors` is the room of order zero; seats are added on top; the two keys are not tied.
+5. Step 11: the order-zero `reverse` is the least squares through the for weights. It is exact while `A = -U` and not after the channels part. A two-channel way back (solving for both lanes, at zero or above) is round 5's or round 7's.
+6. Step 11: a Not entry on two channels is `U < 0` or `A > 0`. Certificate 23 counts and projects only `U`.
+7. Step 11: the read is computed as `(x_for - x_against) U + x_against (A + U)`. It is the same sum. At a column's start it is bitwise the one-input read, which keeps the numeric certificate inside its 1e-6 (`3fd1f790e9`). It costs one more product.
+
+**Final counts**
+
+**The full run.** At `3fd1f790e9`, in an export of that commit, with `BASICMODEL_DEVICE=cpu`, `-n 6 --dist loadfile`. The files: the 120 of `r4_files.txt`, `test/test_item17_symbols.py`, and every test file that names what I changed (grep on the names of steps 9 to 11), 196 files in all.
+
+Result: **27 failed, 2,383 passed, 111 skipped, 1 xpassed, 6 errors, 455 s.**
+
+- **None of the 27 is in `r4_files.txt`** except `test_item55_mechanisms::test_absences`. That test and the 6 errors (`test_item17_layers`) call `git`, which the export lacks. In the checkout both files pass: 28 passed, 1 skipped.
+- **25 of the 27 fail at the starting commit too**, in an export of `87bbbfb664` run the same way. They are files no earlier list held, and none is in `r4_files.txt`:
+  - `test_item18_completion` 1, `test_reconstruction_bank_contract` 2, `test_reverse_traversal` 2, `test_final_generation` 3, `test_mtm_reference_values` 1, `test_operators_final_b` 1, `test_episodic_concepts` 2, `test_mixing_reconstruction_bank` 3, `test_item18_expect` 2, `test_native_attention_field` 1, `test_review14_addendum` 2, `test_derived_concept_codes` 1, `test_item20_round2_admission` 3, `test_property_configuration` 1.
+  - The sweep at `1ecc6d594f` (§23.S) reports these as real failures that no list held.
+- **`test_reduction_pressure::test_native_packed_unary_preference_still_records_every_sentence` is flaky at the start as well:**
+  - fails 2 of 6 runs at `87bbbfb664`;
+  - fails 2 of 6 after step 9;
+  - fails 2 of 3 at `HEAD`;
+  - passed 6 of 6 with step 10 reverted (likely a draw).
+
+  The failure: four root writes where two are expected. The walk's starts are drawn from the system.
+- **Run before `3fd1f790e9`.** At `65a8c36f3d` the run also failed:
+  - the numeric certificate in three files (`test_item17_code::test_49`, `test_item18_stack::test_80`, `test_item18_places::test_66`): one case at 1.013e-6 against the bar of 1e-6, the plain two-channel sum rounding differently;
+  - `test_wholespace_property_migration::test_aligned_model_accepts_unequal_inventory_capacities`, which stated the old inventory: 47 against 35.
+
+  `3fd1f790e9` repairs the first by writing the sum as the one-input read plus `x_against (A + U)` (zero at the start). It ports the second: the caps less the seats are 16, 8, 4, and `nConceptCodes` is their sum with the seats.
+- **Both stopping gates pass:** `test_mm_xor::TestMMXorConvergence::test_convergence` and `test_item25_completion::test_a_previously_named_shared_concept_denotes_its_raised_class`, about 4 s.
+- **Certificate 23 passes as it stands,** in `test_item17_order_zero.py`: 19 passed. Its readings are as in round 3: patterning .989/.989/.0002, inhibition .996/-.00003/-.986, XOR .28/.95/.75/.21.
+- **Certificate 51:** 4 passed, about 25 s with the lesson.
+- **The lesson's sixteen sentences** (`test/attention_thinking_certificate.py lesson`, 16 records each), seconds of the record, two runs each, run one after another:
+
+| | First run | Second run |
+| --- | ---: | ---: |
+| Before, `87bbbfb664` | 33.6 | 28.7 |
+| After, `3fd1f790e9` | 18.9 | 32.2 |
+
+  The walks are drawn and vary as much as the difference between the two.
+
+**Files added to the list (76),** beyond `r4_files.txt`: `test_active_codebook_reads.py`, `test_aligned_capacity_checkpoint_growth.py`, `test_basicmodel.py`, `test_compose_operations.py`, `test_compose_review.py`, `test_compound_cases.py`, `test_contextual_concept_codebook.py`, `test_corpus_capacity.py`, `test_definition_attribution.py`, `test_definition_fold.py`, `test_derived_concept_codes.py`, `test_direct_operand_occupations.py`, `test_episodic_concepts.py`, `test_field_key_bounds.py`, `test_final_generation.py`, `test_free_reconstruction.py`, `test_independent_components.py`, `test_inverse_unary_exclusion.py`, `test_item17_symbols.py`, `test_item18_completion.py`, `test_item18_expect.py`, `test_item18_extend.py`, `test_item18_idea_read.py`, `test_item18_marker.py`, `test_item18_operators_a.py`, `test_item18_parts_round_c.py`, `test_item18_placement.py`, `test_item18_reduction.py`, `test_item18_round_c_continuation.py`, `test_item18_shared_expectation.py`, `test_item18_space_boundaries.py`, `test_item1_5_derive.py`, `test_item20_round2_admission.py`, `test_item20_round34_projection.py`, `test_item4_parity.py`, `test_item4_step0.py`, `test_layout_removal.py`, `test_ltm_consolidation.py`, `test_masked_semantic.py`, `test_math_chain_section14.py`, `test_meronomy_utf8.py`, `test_mixing_reconstruction_bank.py`, `test_mtm_reference_values.py`, `test_native_attention_field.py`, `test_operators_final_b.py`, `test_operators_round2b.py`, `test_placement_surface.py`, `test_predicate_identity.py`, `test_presentation_memory.py`, `test_priming_diffusion.py`, `test_priming_energy.py`, `test_prior_stm_symbol_peer.py`, `test_property_configuration.py`, `test_reconstruction_bank_contract.py`, `test_reduction_pressure.py`, `test_reverse_traversal.py`, `test_review14_addendum.py`, `test_row_local_concept_optimizer.py`, `test_sentence_identity.py`, `test_serial_concepts.py`, `test_sparse_compile_boundary.py`, `test_sparse_concept_activation_boundary.py`, `test_sparse_pipeline.py`, `test_step2b_storage.py`, `test_stm_chunk_gates.py`, `test_stm_substrate.py`, `test_stored_idea_generation.py`, `test_stream_state_shapes.py`, `test_structural_checkpoint.py`, `test_syntactic_order.py`, `test_thought_intuition.py`, `test_tied_operator_reconstruction.py`, `test_what_training.py`, `test_whole_property_codebook.py`, `test_wholespace_fixed_capacity.py`, `test_word_surface_capacity.py`.
+
+**Not mine, in the tree, uncommitted.** `test/code_trial.py` and `test/test_item17_code_trial.py` (a §19.86 trial, since committed by its author as `0cdc1c5c05`), and `test/test_autobind_from_cs.py`, `test_config_scoping.py`, `test_episodic_concepts.py`, `test_final_generation.py`, `test_grammar_object_leaves.py`. Another writer is in the checkout. I staged only my own paths.
+
+**What I would change in §21 and §22.4**
+
+- **Rule 3** says "each input has one signed weight". At order zero it now has two, one a channel. "An entry is never both" holds for each channel. A Not entry is a for weight below zero or an against weight above zero. Certificate 23 (a)/(c) count and project only the for weights. Say whether the against channel too is held at zero or below there.
+- **Rule 4 and §22.4 step 4** ("each symbol's pair combined, for less against, into one signed input") contradict rule 59 for the orders above. Step 4 should read the pair as two channels from the start.
+- **Rule 17 / certificate 5 (19):** the way back through two channels is exact only while `A = -U`.
+- **Rule 21 / §22.4 step 10:** say that the configured `nVectors` is the room of order zero, and whether `basicPerceptCapacity` must equal it. Many fixtures differ by orders of magnitude. If the room is 262,144, the dense order-zero Sigma needs a column slab (above).
+- **Certificate 12** still says a new column "is its row's vector, normalized". Since §19.82 and §23.3c.4 it is the mean of its sides.
+- **§22.4 step 9:** "the percepts a concept was started from" should say whether members recorded at weight zero are kept.
+- **Step 4's reader list** gains `DefinitionFold`, `CaseSelection.stage_case_bank` and the four callers of `FieldProjection.close` (step 1).
