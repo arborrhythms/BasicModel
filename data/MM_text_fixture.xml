@@ -88,6 +88,7 @@
         <rule>S = not(S)</rule>
         <rule>S = intersection(S, S)</rule>
         <rule>S = union(S, S)</rule>
+        <rule>S = interpret.forward(S)</rule>
       </compose>
     </grammar>
     </language>

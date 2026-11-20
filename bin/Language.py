@@ -6954,8 +6954,12 @@ class OperationSelectionLayer(nn.Module):
         action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,
             masked_action=masked_action,replay_action=replay_action,sample=sample, departure_eligible=departure_eligible,
             alternative_logits=alternative_logits, return_proposal=True)
-        torch._assert_async((~active | has_choice).all(),
-                            "compose has no legal alternative at the selected exploration round")
+        # At the closing a stream may hold trees that no declared rule joins;
+        # it ends there unreduced, and the sentence's closing writes it as
+        # silence. Before the closing every round has a legal act.
+        if not closing:
+            torch._assert_async((~active | has_choice).all(),
+                                "compose has no legal alternative at the selected exploration round")
         active = active & has_choice
         is_binary = active & (action < nb)
         is_unary = active & (action >= nb) & (action < nb + nu)

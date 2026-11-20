@@ -19959,7 +19959,9 @@ class BasicModel(BaseModel):
         payloads = [slots[b, :int(depths[b])] if bool(mask[b]) else None for b in range(B)]
         depth_list = [int(d) if bool(m) else 0 for d, m in zip(depths, mask)]
         _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)
-        entries = programs.get(sid, (None,) * B)
+        # A row whose trees did not reduce to one has no program to read.
+        entries = tuple(entry if bool(mask[b]) else None
+                        for b, entry in enumerate(programs.get(sid, (None,) * B)))
         disc = getattr(self.symbolSpace, 'expectation', None)
         clauses = []
         meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
