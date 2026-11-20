@@ -13219,7 +13219,7 @@ class ConceptualSpace(Space):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
-        retired = (prefix + 'intuit_stack.', prefix + 'expect_stack.', prefix + 'concept_predictor.')
+        retired = (prefix + 'intuit_stack.',)
         if self.intuit_map is None:
             retired += (prefix + 'intuit_map.',)
         old = [key for key in state_dict if key.startswith(retired)]

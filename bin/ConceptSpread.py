@@ -206,7 +206,10 @@ def staged(owner, observed, *, percepts=None):
     child, parent = graph.child[own], graph.parent[own]
     share = weight / fan.index_select(0, child)
     reading = _carry(source + up, child, parent, share, graph.negated[own], graph.size)
-    return (reading[:V].clamp(max=1.) + down[:V]).clamp(max=1.)
+    total = reading[:V] + down[:V]
+    # At most one, with the gradient kept at the cap: a concept the spread
+    # saturates is still taught by what arrives.
+    return total - (total - 1.).clamp(min=0.).detach()
 
 
 def stage_values(owner, observed, *, percepts=None):
