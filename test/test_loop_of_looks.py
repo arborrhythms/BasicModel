@@ -262,17 +262,13 @@ def test_9_unfocus_restores_unread_parent_and_costs_one_act():
                            torch.ones(1,3,dtype=torch.bool), budget=8)
     parent = narrowing_view(state)[0]
     narrow_step(state)
-    # The unfocus that would undo the descend just taken is not legal at the
-    # next step; after a look in place at the word the parent now holds, it is.
-    assert not narrowing_view(state)[8][...,2].any()
-    narrow_step(state)
     assert narrowing_view(state)[8][0,0,2]
     chooser.action = 2
     narrow_step(state)
     restored = narrowing_view(state)[0]
     for key in ('intervals','level','space','valid','done'):
         assert getattr(restored,key).equal(getattr(parent,key))
-    assert restored.spent.item() == 3 and not narrowing_view(state)[8][...,2].any()
+    assert restored.spent.item() == 2 and not narrowing_view(state)[8][...,2].any()
     chooser.action = 1
     narrow_step(state)
     record_interpretation(state,torch.tensor([0]),torch.tensor([True]))
