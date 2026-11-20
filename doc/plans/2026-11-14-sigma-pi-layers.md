@@ -9456,6 +9456,27 @@ This takes the place of rule 67's table of gathered gradients: the candidate mat
 
 **The chooser.** "The Transform chooser should be MLP-only." *Decided* (rule 74). The linear score goes: `AnchorDotTransformChooser`, the key `transformChooser` and its default, and whatever only the linear form read (the anchors of each act). Every configuration gets the network. The 34 configurations that left the key out change what chooses in them, the XOR configurations of a stopping gate among them, so the pass that makes the change measures both gates and the lesson before and after and changes no bar.
 
+### 19.110 Alec: integers do not go to weights; a linear difference belongs in a cost; what reads concepts reads time as a sinusoid (2026-11-20)
+
+On §23.T.1's five places: "My concern about integral values is that weights do not do well with them, which is why Im hoping they don't reach the gradient. The uses that you cited where they do (the last three of the five) seem to be cases in which an integer should be used in loss functions, where linear temporal difference seems like a good metric. But in concepts, or networks that read concepts, it would probably be better to give the sinusoid measures of time that we developed for .where, so that their covariance would be easy to detect and weight."
+
+*Decided* (rule 75; rule 64 as amended in §19.109). Two uses, kept apart:
+
+- *What a learned weight reads is never an integer or a difference of counts.* Concepts, and the networks that read concepts, take a time, an age, a count or a position in the sinusoidal measure made for `.where`, so that what varies together can be found and weighed.
+- *A linear difference is right as a metric inside a cost,* where nothing multiplies it but a fixed scale.
+
+*A fact to set beside his reading of the three.* He takes the last three places of §23.T.1 to be uses in costs. One of them is nearly that, and two are not:
+
+| Place (§23.T.1) | What reads it today | Under rule 75 |
+| --- | --- | --- |
+| The attention context's interval of ages | a learned projection | a sinusoidal code of each end of the interval |
+| The reference policy's recency rank and gap since a last mention | twelve learned weights | the age of the last mention as a sinusoidal code; the rank goes |
+| A question's offset from its target, its size, and the two positions normalized | a learned projection of the chooser, and the question's conditioner | the offset as a sinusoidal code; the normalized numbers go, since both positions are already there as codes. *It is read by weights, so it is not a cost.* |
+| The counts of slots, the open depth and the closure pressure | the same two learned readers | each as a sinusoidal code. *Read by weights too.* |
+| The rounds of compose that are left | one learned number that multiplies a ratio of counts and is added to the chooser's scores | the nearest of the five to a cost: a pressure, linear in what is left. *Mine, put to him:* it becomes a cost in earnest, its scale a key and not a learned weight, as the cost of an operator's use already is. |
+
+So nothing is left that reaches a learned weight as a number of ticks or a count. The change is round 6's (step 16) for the first two and the question's context, and goes with rule 74's pass for the pressure.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10927,6 +10948,18 @@ chooses from. The old classes are not edited.
     penalty (rule 67's measure); what offers one is co-occurrence at
     a place for a Pi and substitution at a place for a Sigma
     (§19.107); the weakest is forgotten when room is needed.
+
+75. *No learned weight reads an integer; a linear difference belongs
+    in a cost* (Alec, §19.110: "My concern about integral values is
+    that weights do not do well with them, which is why Im hoping
+    they don't reach the gradient ... in concepts, or networks that
+    read concepts, it would probably be better to give the sinusoid
+    measures of time that we developed for .where, so that their
+    covariance would be easy to detect and weight"). A time, an age,
+    a count or a position that a concept or a network reading
+    concepts takes is given in the sinusoidal measure of `.where`.
+    A linear difference of times or counts is used only as a metric
+    inside a cost, under a fixed scale.
 
 74. *The chooser of acts is the network, and there is no other*
     (Alec, §19.109: "The Transform chooser should be MLP-only"). The
@@ -12448,10 +12481,12 @@ which form of the where match is built.
       (§19.109); §23.T.1 lists what does today: the attention
       context's interval of ages (RowTime.age_interval over
       when_age_scale) and ReferenceClose's gap since a last mention
-      become sinusoidal codes; the offset between a question and its
-      target likewise unless Alec rules it a position; the depth,
-      the counts of slots and the budget of rounds stay numbers
-      unless he rules them times.
+      become sinusoidal codes, and so do the offset between a
+      question and its target (the normalized positions go) and the
+      counts of slots, the open depth and the closure pressure of a
+      question's context, since learned weights read them (rule 75;
+      Alec, §19.110). The pressure of the rounds left becomes a cost
+      with a key for its scale.
     - A concept keeps its .where and its .when; a row promoted to a
       concept keeps its stamp (MemoryConsolidation).
     Certificate 55. A change of what the chooser reads changes what

@@ -274,7 +274,9 @@ concept's moment, and it stays with the concept, which is opaque. The chooser
 and the operators are given the present in the same code, with a *comparator*
 that tells "how far back in history the concept they have recalled is". Any
 temporal value a network reads is "sinusoidal (continuous), not incremental
-(ticks)" (Alec, 2026-11-20); the integer is for what is not learned.
+(ticks)" (Alec, 2026-11-20); the integer is for what is not learned. The
+same holds of any count or position: no learned weight reads an integer, and
+a linear difference is used only as a metric inside a cost.
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most
