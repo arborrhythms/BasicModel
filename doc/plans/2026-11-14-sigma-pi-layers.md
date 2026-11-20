@@ -16543,3 +16543,191 @@ The list run on `6dea4bf900`, six processes, `--dist loadfile`: **213 files**.
 **The list of places that assume one to one** is taken as returned. `concept_of_basic_percept` gives the lowest-numbered concept recorded on a row and calls it the one the row brought; the return's own recommendation, to record at nomination which concept a row brought, goes to the next pass.
 
 **Taken into §21 from the return's last section:** rule 63 says the two options, rules 10 and 21 say a start and not a limit, and the omission is out of rule 63 (§19.94). Rule 29's clause on omission is restated with the next pass's return, and §22.4's step 2 is split in two.
+
+### 23.L Why the lesson reads in some runs and not in others: a diagnosis (2026-11-19)
+
+*Asked for by §23.4.2, finding 1. The return of the engineer (Claude on Opus), as written, then the review.*
+
+All runs below are of the scratch export, CPU. The 12 baseline runs are the 12 runs you
+already measured (`lr_6dea4bf900_1..12`), replayed from their own saved `initial-rng.pt`
+(`--replay`; used only as an instrument so that each intervention is compared on the
+same 12 initializations). Replay is exact: the first-walk actions of all 16 batches are
+identical to the original runs for the three runs checked (1, 8, 10), and the 12 replays
+give the same words/capped numbers you reported. About 76 lesson runs in total.
+
+#### Findings
+
+**Two causes, and nothing else, over 12 runs. Every capped walk is a cycle that ends with
+the unfocus action (op 2, "U") undoing a focus on one word that cannot be interpreted.**
+
+| cause | what the focused word is | capped first walks (of 124) | share |
+|---|---|---|---|
+| A. unfocus beats descend on an unknown word | one word, poles (0, 0): "neither", not yet nominated | 71 | 57 % |
+| B. a known word read as "both" | one word, poles (0.7616, ε), ε = 6e-8 to 2.0e-4 | 53 | 43 % |
+
+No capped walk falls outside these two (the classifier found no capped walk without an
+unfocus, and none whose undone bracket was a multi-word or pure bracket).
+
+| 12 runs (same 12 initializations) | words in first walks | mean | capped walks | capped sum |
+|---|---|---|---|---|
+| baseline | 36 14 37 44 30 13 16 10 19 49 43 24 | 27.9 | 10 14 8 4 9 13 15 14 16 4 6 11 | 124 (A 71, B 53) |
+| remove A only (`noloop1`) | 45 52 49 43 40 46 50 51 54 54 43 44 | 47.6 | 5 4 6 5 8 4 4 3 1 1 6 4 | 51 (A 0, B 51) |
+| remove B only, at the read (`poletol`, ε < 1e-4 → 0) | 57 25 60 64 46 21 20 20 33 64 61 39 | 42.5 | 3 13 2 0 5 13 15 13 13 0 1 9 | 87 (A 85, B 2) |
+| remove B only, at the source (`members`) | 60 25 60 64 46 21 20 21 33 64 64 39 | 43.1 | 2 13 2 0 5 13 15 13 13 0 0 9 | 85 (A 85, B 0) |
+| remove A and B (`poletol,noloop1`) | 64 64 64 63 64 64 64 60 64 64 61 63 | 63.6 | 0 0 0 0 0 0 0 2 0 0 1 0 | 3 (B, ε = 1.1e-4 and 1.3e-4, just above the 1e-4 tolerance) |
+| remove A and B (`members,noloop1`) | 64 × 12 | 64.0 | 0 × 12 | 0 |
+| same, 3 fresh runs (no replay) | 64 64 64 | 64.0 | 0 0 0 | 0 |
+
+When B is removed, the A walks rise from 71 to 85. When A is removed, the B walks stay
+at 51 of 53. My inference is that the shift happens because walks then reach later
+words. Each intervention removes its own class and leaves the other.
+
+**Cause A (measured): a near-tie between unfocus and descend, decided by the initialization**
+
+- Where: `OperationSelectionLayer.attend` (bin/Language.py:6825) scores every legal
+  (slot, op) with the MLP chooser (`MLPTransformChooser.score_unary`: one
+  `tool_embedding` row per op, the bracket's key and a slot position embedding; the
+  config uses `<transformChooser>mlp</transformChooser>`), and `select_logits` takes
+  `structural_argmax`: in the first walk (no departure) the choice is greedy, there is no
+  draw.
+- After a descend on the sentence (`narrow_step`, op 1, cut at the end of the first word),
+  the left child is one word. If the word is unknown its poles are (0, 0), so
+  `narrowing_view` makes "descend" (V: `has_parts & (~word | neither)`) and "unfocus" (U:
+  `last_focus` legal, nothing accepted inside) legal on that slot; interpret is not legal
+  (`pure` is false). The scores of U and V on that slot differ only by the op embeddings:
+  the margin U − V is 1e-4 to 1.5e-3 on logits of about 0.03 to 1.
+- If U wins, `focus_history` restores exactly the table before the descend (only `spent`
+  grows), so the same descend is again the argmax: a period-2 cycle "V U V U ..." to the
+  cap. The walk is **stuck** (an action pair that changes nothing but the budget).
+- The sign of the margin is a property of the initialization, fixed before any training
+  step and kept through the 16 batches (lr .001 does not move it). At unknown single-word
+  slots where both U and V were legal, counted in the first walks:
+
+| run | words | capped | batch 0: slots with U > V | all batches: U > V | median U − V |
+|---|---|---|---|---|---|
+| 4 | 44 | 4 | 0 / 3 | 0 / 22 | −0.00035 |
+| 10 | 49 | 4 | 0 / 3 | 0 / 28 | −0.00125 |
+| 11 | 43 | 6 | 0 / 3 | 0 / 28 | −0.00046 |
+| 3 | 37 | 8 | 0 / 5 | 35 / 58 | +0.00093 |
+| 1 | 36 | 10 | 10 / 12 | 21 / 41 | +0.00009 |
+| 5 | 30 | 9 | 30 / 30 | 107 / 107 | +0.00066 |
+| 12 | 24 | 11 | 14 / 14 | 167 / 167 | +0.00040 |
+| 9 | 19 | 16 | 30 / 30 | 170 / 170 | +0.00153 |
+| 7 | 16 | 15 | 21 / 21 | 200 / 201 | +0.00026 |
+| 2 | 14 | 14 | 15 / 15 | 188 / 188 | +0.00058 |
+| 6 | 13 | 13 | 29 / 29 | 158 / 158 | +0.00070 |
+| 8 | 10 | 14 | 24 / 28 | 169 / 174 | +0.00018 |
+
+  The four runs with V > U at the first sentence are the four best; every run with U > V
+  everywhere is at 30 words or below. This is the earliest difference: batch 0, the first
+  sentence, before any training step.
+- Nomination is not the difference: in good and bad runs alike, the words of the first
+  sentence are all unknown (`known` all False, poles all 0) because a form becomes known
+  only on its third reading. A good run reads them by descending into each unknown word
+  (descent marks it `descended`, its evidence becomes (1, 0), pure, and interpret is taken
+  with interpretBias 1). A bad run never takes that descent.
+
+**Cause B (measured at the read, source by intervention): a known word with a tiny against lane**
+
+- In all 53 B walks the focused word is known (nominated, its row present: `known` True)
+  and its poles from `ModelAttention.native_word_poles` are (0.7616, ε) with ε between
+  6e-8 and 2.0e-4 (e.g. run 1, batch 8, "Felix": (0.761589, 1.14e-5); run 2, batch 11,
+  "What": (0.761632, 1.43e-6)). Words are letters here, not digits: the same mechanism as
+  the digit one already traced, on letter properties.
+- `narrowing_view` tests `pooled_poles > 0`, so the word is "both": interpret is not legal
+  (not pure), descend is not legal (a known word that is not neither), so on its slot only
+  U and the field reductions (`&`, `|`, `~`, legal on a "both" bracket) remain. A both word
+  can never be read in that walk; when U is the argmax the walk cycles "V & U" or "V U"
+  (period 2 or 3, bounded by the budget's `minimum`), also stuck. Example run 1, batch 8,
+  "That is Felix.": steps 9-31 are "2V 2& 2U" repeated; the "." at slot 3 (V, 0.803) loses
+  to U (0.933).
+- Source: patching `PrimitiveProperties._coefficients` to return the clamped members
+  detached (`members`) removes all 53 B walks (0 remain); zeroing word pole lanes below
+  1e-4 in `native_word_poles` (`poletol`) removes 51 of 53 (the 2 left have ε = 1.1e-4 and
+  1.3e-4). Inferred path (from the code, consistent with both interventions, membership
+  values not printed): a training step moves a letter's membership in a byte property
+  below 1; `PrimitiveProperties.complement` gives 1 − membership on the against lane;
+  `ConceptualSpace.order_zero_both` takes min(for, against) of the members' union;
+  `native_word_poles` takes `max(field, both)` on both lanes.
+- B also appears in good runs (run 10: 4 capped walks, all B), so B alone costs about 15
+  words per run at most here; A is what separates 10-word runs from 40-word runs.
+
+**Question 3: stuck, not exploring, not waiting**
+
+Every capped walk is stuck: a short cycle (period 2 or 3) whose last act, unfocus,
+restores the table exactly. None is exploring other legal actions; none waits on a word
+that never comes (in A the word needs only one descend; in B it is present and known).
+
+Run 8 (bad) and run 10 (good), batch 0, "This is Felix." (op letters: D divide, V descend,
+U unfocus, & | ~ field reductions; I = word interpreted at that look):
+
+| step | run 8 (U > V) | run 10 (V > U) |
+|---|---|---|
+| 0 | 0& | 0~ |
+| 1 | 0\| | 0V (splits off "This") |
+| 2 | 0~ | 1V (splits off "is") |
+| 3 | 0V (splits off "This"; 0V 0.02104 vs 0U 0.02097 lose to the rest) | 1V descend "is": 1V −0.02300 vs 1U −0.02425 |
+| 4 | 1& | 2V (I: "is") |
+| 5 | 1\| | 2V descend "Felix": 2V −0.01732 vs 2U −0.01881 |
+| 6 | 1~ | 3V (I: "Felix") |
+| 7 | 1V (splits off "is") | 0V (I: ".") ... "This" read; walk ends at 8 steps, 4 words |
+| 8-11 | 2& 2\| 2~ 2V (splits off "Felix") | |
+| 12 | 2U: 0.08141 vs 2V 0.08134 (+7e-5) | |
+| 13-31 | 2V 2U 2V 2U ... to the cap, 0 words | |
+
+#### What I would change (smallest first; none made in the project checkout)
+
+1. **Read a word pole lane as present only above a tolerance** (in `native_word_poles`, or
+   `> tol` in `narrowing_view`/`pooled_read`). Removes B at the read (51 of 53 at 1e-4;
+   1e-3 would cover the 2.0e-4 maximum seen). Cost: one constant, and a hard threshold on a
+   graded quantity, which the design avoids; a genuine small both is then lost too.
+2. **Keep fixed byte-property memberships at their rails** (the `members` patch: read but
+   not taught, or project them back to 1 after the step). Removes B at its source (53 of 53).
+   Cost: memberships stop learning (if they are meant to learn, use instead a complement
+   that is zero for a membership at the rail within float error, which is change 1 again).
+3. **No unfocus of a bracket holding one unknown word** (`noloop1`: in `narrowing_view`,
+   U & ~(count == 1 & neither)). Removes A (71 of 71). Cost: one mask term; it forbids
+   abandoning an unknown word once focused, so such a word is always descended.
+   A more general form of the same change: **no unfocus as the act right after the focus it
+   undoes** (an immediate reversal is a no-op pair), or stop a walk when its table repeats.
+   These also cover B's period-2 cycles but not its period-3 ones ("V & U"), so B still
+   needs 1 or 2. Not measured.
+4. Not recommended: a different init or seed for the chooser, or a bias favouring V — the
+   margin is 1e-4 to 1e-3, any choice of init reproduces the coin flip.
+
+With 2 + 3 the 12 replays and 3 fresh runs all read 64 words with no capped walk.
+
+#### Scripts and outputs (all under the scratchpad's diag/)
+
+- `probe.py`: runs the certificate's lesson with a probe of the first walk of each batch
+  (word forms, known, poles, identities; per step the live slots, their pooled poles, legal
+  ops, the chooser's logits and the chosen action; per look whether interpret was allowed
+  and taken) into `probe-XXX.json`; `DIAG_FIX=` comma list of run-time interventions:
+  `members`, `poletol` (`DIAG_TOL`, default 1e-4), `noloop1`, `noundoloop`, `nounfocus`
+  (the last two not run).
+- `batch.sh TAG FIX REPLAYPREFIX runs...`: three at a time.
+- `classify.py [-v] DIRS`: classifies each capped first walk by the bracket it undoes last.
+- `margin.py DIRS`: the U − V margins at unknown single-word slots.
+- `show.py probe-XXX.json [N]`: one walk step by step. `summ.py`, `same.py`: summaries and
+  the replay identity check.
+- Outputs: `rp_1..12` (baseline replays), `nl_*`, `pt_*`, `mb_*`, `ptnl_*`, `mbnl_*`,
+  `fresh_mbnl_1..3`.
+
+#### Review (Claude, 2026-11-19)
+
+*Not repeated by Claude.* The diagnosis ran about 76 lessons in a scratch export of `6dea4bf900` and changed nothing in the checkout. It replayed Claude's twelve runs of §23.4.2 from their own saved starting state (an instrument for comparing like with like; no seed is chosen for the lesson) and reproduced each run's words and capped walks before intervening. Claude has read its return and not run its scripts.
+
+**What it shows.** Every first walk that runs to the cap is stuck in a loop of two or three steps; none is exploring and none waits on a word. Two causes account for all 124 of them over the twelve runs, and with both removed at run time every run reads all 64 words with no walk at the cap (the twelve replays and three fresh runs).
+
+| Cause | Share of the capped walks | What it is | The intervention that removes it |
+| --- | ---: | --- | --- |
+| A | 71 of 124 | After a descend splits off a word that is not yet known, both descend and unfocus are legal on its slot. The first walk takes the greater score with no draw, and the two scores differ by 1e-4 to 1.5e-3, through the chooser's embeddings as they were initialized. Where unfocus is the greater it undoes the descend, the same descend wins again, and the two repeat to the cap. The sign is fixed before any training and holds through the lesson. | unfocus made illegal on a bracket that holds one unknown word |
+| B | 53 of 124 | A word that is known is read as "both", because its against lane holds 6e-8 to 2e-4 where it should hold nothing (§23.4.2's part A, here on letters) and the table tests it against exactly nothing. It can then be neither interpreted nor descended. | the byte-property memberships read and not taught; or lanes below 1e-4 read as nothing |
+
+Cause A is what separates a run of ten words from one of forty-five; cause B also costs walks in the good runs.
+
+**What Claude makes of it.**
+
+- *Cause A is a defect of the walk as built and is older than this item's passes* (the same spread at `8e0a86ab59`). A choice that undoes the step before it, taken greedily on a difference of a thousandth, is not a choice. Round 6 replaces this table with the looks of rules 32 to 42; until then every round's lesson is at its mercy. *Claude's first choice, built provisionally in the next pass and marked so:* the general form, a walk does not take the unfocus that would undo the focus it has just made, in place of a mask for the one case; measured over 12 runs before and after.
+- *Cause B is the question already put to Alec in §23.4.2* (may a concept's error teach which bytes belong to a declared property). The diagnosis adds that it is half of what stops the lesson. *Claude's first choice stands:* cut the gradient there. A tolerance on the read is not taken: it is a threshold on a graded value, and round 6 removes the table that needs it.
+- *The lesson's seed stays unchosen;* with the two causes gone its spread should be small enough to compare rounds, and part B of the fourth pass reports it over runs.
