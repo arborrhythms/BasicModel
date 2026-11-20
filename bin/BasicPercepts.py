@@ -585,11 +585,13 @@ class BasicPercepts(nn.Module):
         real = spans[..., 1] > spans[..., 0]
         holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
                  & real[:, None])
-        token = torch.where(holds.any(1), holds.int().argmax(1), -1)
+        token = (torch.where(holds.any(1), holds.int().argmax(1), -1) if holds.shape[1]
+                 else torch.full_like(spans[..., 0], -1))
         place = torch.where(real, spans[..., 0], -1)
         registry = options.get('registry')
         band = None if registry is None else registry.encode('text', place)
-        time = torch.where(token >= 0, native.when[..., 0].to(token.device).gather(1, token.clamp_min(0)), -1)
+        time = (torch.where(token >= 0, native.when[..., 0].to(token.device).gather(1, token.clamp_min(0)), -1)
+                if holds.shape[1] else token.clone())
         activity = real[..., None].expand(-1, -1, 2).to(native.events.dtype)
         return PerceptBank(native, rows, tuple(map(tuple, groups)), tuple(map(tuple, opposed)), tuple(keys),
                            place, token, band, time, activity)
