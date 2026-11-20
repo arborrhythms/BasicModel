@@ -601,10 +601,11 @@ unsigned carrier does support is withdrawal, the non-affirming `non`, and
 that is how attention works here: the reading scope and the priority surface
 exclude the non-object without predicting it. No percept or symbol is
 negated. A percept's against lane is perceived evidence, not a negation; the
-one place a sign is changed is the Not, and a Not entry, from one row to one
-concept, at the basic level records that something expected is absent; it is
-made by the gradient or taught by omission (Alec, 2026-11-17 and
-2026-11-19). The operator `not` swaps the two lanes of what
+one place a sign is changed is the Not, a layer that offers each row's value
+and its not-value; a Not entry, a concept's entry that reads a row's
+not-value, at the basic level records that something expected is absent. It
+is made by the gradient, which an omission teaches, or by a declared Not
+member (Alec, 2026-11-17 and 2026-11-19). The operator `not` swaps the two lanes of what
 it is put on, which is its own inverse, and `non` removes both, keeping the
 operand as a marked witness, which cannot be undone (Alec, 2026-11-12:
 "non- removes both positive and negative evidence, while not swaps the two
@@ -680,14 +681,16 @@ where enters at the first Pi, as a look's match of place.
 $$y_c = \tanh\Big(\sum_i w_{ci}\, s_i\Big),$$
 
 the sum over the concept's entries, $w_{ci}$ at zero or above and $s_i$ the
-signed value of row $i$, exchanged through a Not entry. It has no bias, and
+signed value of row $i$, the value or the not-value as the entry chooses. It has no bias, and
 its rows are compressed, as at every order above. It is monotone: with no
 Not entry, raising a row's value never lowers a concept. The size of an
 entry is the Sigma's weight and its sign is the Not's; the gradient makes a
 Not entry where it carries an entry through zero, and a declared Not member
 makes one explicitly. Order zero is n:n on basic percepts: each nominated
 row brings one concept, which starts reading only its own row, at one, and a
-member that joins later writes an entry at one on its row. A concept reads no
+member that joins later writes an entry at one on its row. That is how a row
+starts and not a limit: a row may be read by any number of concepts, and a
+concept may read any number of rows. A concept reads no
 percept's code, no place and no time, so it answers only to the rows it is
 given: the concept of `alpha` reads nothing on "beta delta", and where a
 form's holder stands in its place (`archer` in `archery`) the row reads
@@ -762,8 +765,12 @@ likeness of places, so no place is moved by a value computed from places, and
 a step moves a row only relative to rows of its own order.
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
-signed value a Sigma gives; a symbol is a row of a Pi, which brings one
-concept when MTM nominates it.
+kind, a signed value a Sigma gives; a symbol is a thing, a row of a Pi over
+the conceptual space of one order, made implicitly by the Pi or nominated by
+MTM when its constituents always occur together. There is no symbol of a
+concept: a symbol is a region of sameness that may hold one concept or
+several ("my dog" and "Voyager" are two concepts and one symbol), and none is
+made for a concept as a rule (Alec, 2026-11-20).
 
 ### SBOW Situates Concepts, Not Percepts {#percept-sbow}
 
@@ -1335,11 +1342,13 @@ reads a key, and no walk runs on this stem in the tests.
 
 **Role.** Forms concepts from perceptual and symbolic sources, by one
 structure at every order: a Pi, then a Not, then a Sigma. At order zero the
-first Pi's rows are the basic percepts, each with two values, the Not joins
-each row's two values into one signed value, and a sparse Sigma over those
-values gives the concepts ("Percept-to-Concept Seam" above). Above it a
-Pi makes symbols over the concepts below, a Not entry is from one symbol to
-one concept, and a Sigma makes the concepts of the next order. Symbols and
+first Pi's rows are the basic percepts, each with two values, the Not offers
+each row's value and not-value, and a sparse Sigma over those values gives
+the concepts ("Percept-to-Concept Seam" above). Above it a Pi makes symbols
+over the conceptual space of the concepts below, the Not offers each
+symbol's value and not-value, and a Sigma makes the concepts of the next
+order. A Pi makes things and a Sigma makes kinds; an order rises at a Sigma
+and nowhere else. Symbols and
 concepts are held in separate tensors. `CS.forward` itself performs STM
 bookkeeping. The design is in
 [Architecture](Architecture.md#sigma-and-pi-layers).
@@ -1376,8 +1385,9 @@ of columns beside them), the Not and the sparse Sigma of order zero
 (`order_zero_not`, `order_zero`), and above order zero a Pi, the Not and a
 Sigma for each order, the Pi and the Sigma stored as compressed rows
 that grow into capacity allocated beforehand. A row of any Pi exists only
-when MTM nominates it on recurrence, and each row brings one concept, so
-every order's Sigma is square in its rows: as many concepts as rows. The
+when the Pi makes it or MTM nominates it on recurrence, and each row brings
+one concept to start with, so every order's Sigma is square in its rows: as
+many concepts as rows. The
 clean-stack STM retains the incoming event and its short-lived tree. Input
 reconstruction starts from the live order-zero field, independently of
 that tree. On the way back the Pi inverts exactly, and the Sigma returns
@@ -1391,11 +1401,11 @@ lane). No input perception spans enter the native decoder.
 ```text
 y_c    = tanh(sum_i w_ci s_i)           # n signed values (SparseSigmaLayer3)
 lanes  = signed_lanes(y)                 # stored as 2n unsigned lanes
-rows   = Pi(lanes)                       # the symbols MTM nominated, each a
-                                         # row on its own lane (PiLayer3)
-signed = Not(rows)                       # for less against, one value a
-                                         # symbol; an entry of the Not
-                                         # exchanges a pair for one concept
+rows   = Pi(lanes)                       # the symbols, each a row on its own
+                                         # lane (PiLayer3)
+signed = Not(rows)                       # each symbol's value (for less
+                                         # against) and not-value; an entry
+                                         # chooses one
 y_next = tanh(sum_i w_ci signed_i)      # the next Sigma, w at zero or above
 ```
 
@@ -1405,9 +1415,14 @@ less, so a row requires the members it has weight on and never exceeds its
 own reading. A Sigma's weights are at zero or above and it has no bias, so
 it is monotone; the size of an entry is the Sigma's and its sign is the
 Not's. A Not entry is made implicitly, where the gradient carries an entry
-through zero, and explicitly, by a declared Not member. A symbol of order $k$
-reads the concepts of every order below $k$, and between orders only
-activation passes. The entries of every Pi and of every Sigma above order
+through zero, and explicitly, by a declared Not member. The types of the
+three steps (Alec, 2026-11-20): the Pi has unsigned weights on signed
+concepts, "so it must allocate two lanes in order to operate on a given
+concept"; the Not takes a thing's two unsigned lanes and gives one signed
+value, possibly negated; the Sigma has unsigned weights on those signed
+values and "does not need this doubling". A symbol's cone lies in the
+conceptual space of one order; a kind collects from every epistemic level
+below its own, and between orders only activation passes. The entries of every Pi and of every Sigma above order
 zero are learned under a penalty that thins the values of the entries that
 exist; the Sigma of order zero is sparse and is not penalized.
 
@@ -1665,7 +1680,10 @@ nominates it on recurrence (`concept_mint_count` readings, a reading being
 one sentence of one stream, so a form that stands twice in a sentence is
 read once); nothing becomes a row on its first reading, and a new word is
 perceived at once but `interpret` cannot find it until its row is
-nominated. Each nominated row brings one concept of order zero, whose column
+nominated. A basic percept is an occurrence: the word over its occurrences
+is its concept of order zero, and the word as a thing is a symbol over that
+concept (Alec, 2026-11-20). Each nominated row brings one concept of order
+zero to start with, whose column
 of the Sigma starts from the row's own read pair
 (`BasicPercepts.column`). The first Pi holds only the mereology's entries;
 no concept writes into it. Compose whole reads and typed word slots use
