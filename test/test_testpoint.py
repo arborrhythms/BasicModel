@@ -585,5 +585,131 @@ class TestBlindSpot:
             model.End(); model.symbolSpace.soft_reset()
 
 
+# ---------------------------------------------------------------------------
+# A word and an object of another modality (certificate 25), and a sequence
+# (certificate 26). Certificates of learning: the values are printed and
+# recorded; only what the look-first mechanism gives is required.
+# ---------------------------------------------------------------------------
+
+class TestCrossModalTie:
+    """Words read with values of the scalar modality (sigma-pi section 19.25,
+    certificate 25)."""
+
+    def test_cross_modal_tie(self, tmp_path, monkeypatch):
+        import torch
+        import ConceptSpread
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from nomination_fixtures import recurrent_interpretation
+        from ScalarPercepts import code, observe
+        from PerceptCollections import objects, definitions
+        from WordTies import ties
+        model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1)
+        try:
+            owner, store = model._concept_owner(), model.symbolSpace.ltm_store
+            def word(form):
+                return recurrent_interpretation(owner, model.perceptualSpace.percept_store.spell_out(form.encode()),
+                    model.wholeSpace.property_rows_for_bytes(form), key=form)[0]
+            def show(value, form=None):
+                row = store.append_idea(code(owner, value), trust=1.)
+                return observe(owner, word(form), value, store.occurrence_of(row), stream=0)
+            def expected_from(cid):
+                V = int(owner.nVectors)
+                observed = torch.zeros(V, 1, 2)
+                observed[owner._concept_row_of(cid), 0, 0] = 1.
+                value, _ = ConceptSpread.spread(owner, observed)
+                return value[:V, 0, 0]
+            n = owner.concept_mint_count
+            stages = {}
+            water = word('water')
+            collections_before = len(definitions(owner))
+            stages['word_alone'] = dict(objects=objects(owner, water), collections=collections_before)
+            # The two together, n times and more.
+            for _ in range(n + 3):
+                obj = show(5., 'water')
+            stages['together'] = dict(objects=objects(owner, water), tie=vars(ties(owner).get(water, obj)))
+            spread_word = expected_from(water)
+            spread_object = expected_from(obj)
+            stages['each_raises_the_other'] = dict(
+                object_from_word=float(spread_word[owner._concept_row_of(obj)]),
+                word_from_object=float(spread_object[owner._concept_row_of(water)]))
+            # A word met with a different value each time.
+            for value in (6., 7., 8., 9., 10., 11.):
+                varied = show(value, 'kappa')
+            kappa = word('kappa')
+            stages['varied'] = dict(objects=objects(owner, kappa),
+                                    ties={k: vars(t) for k, t in ties(owner).ties.items() if k[0] == kappa})
+            # A second word met with the same value.
+            for _ in range(n + 3):
+                second = show(5., 'aqua')
+            aqua = word('aqua')
+            stages['two_words_one_object'] = dict(objects=objects(owner, aqua), same=second == obj,
+                collections=len(definitions(owner)), tie=vars(ties(owner).get(aqua, obj)))
+            print(stages)
+            # Look-first: the second word is tied to the object the first
+            # made, and no second object is made for it.
+            assert second == obj and objects(owner, aqua) == (obj,)
+        finally:
+            model.End(); model.symbolSpace.soft_reset()
+
+
+class TestBellSalivate:
+    """A sequence: two words of one sentence, the second withheld (sigma-pi
+    section 19.25, certificate 26; the first form, item 1.8's certificate
+    81 on these words). What the first leaves expected for the second, at
+    the look of the second, before and after the pairing; and for a word
+    never followed by it."""
+
+    def test_bell_salivate(self, tmp_path, monkeypatch):
+        import ConceptSpread
+        from LookForecast import LookForecast, contained
+        from PrependedSymbols import word_view
+        from nomination_fixtures import readings_before_nomination
+        from test_item18_expect import lesson, read, omit_second
+        model = lesson(tmp_path, monkeypatch)
+        ordinary = model.omission.draw
+        try:
+            pairs = ('bell food', 'horn rest')
+            rows = {}
+            for text in pairs:
+                readings_before_nomination(model, lambda: read(model, text))
+                read(model, text)
+                rows[text] = [int(r) for r in word_view(model.inputSpace, 'concept_rows')[0, :2]]
+            owner = model._concept_owner()
+            looks = []
+            forecast, write = LookForecast.forecast, ConceptSpread.write_look
+            def forecast_extent(self, spans):
+                looks.append([self.spans.detach().clone(), spans.detach().clone(), None])
+                return forecast(self, spans)
+            def write_kept(owner_, at, value):
+                write(owner_, at, value)
+                looks[-1][2] = owner_._expected_knowing[0].detach().clone()
+            monkeypatch.setattr(LookForecast, 'forecast', forecast_extent)
+            monkeypatch.setattr(ConceptSpread, 'write_look', write_kept)
+            omit_second(monkeypatch, model)
+            def at_second(text):
+                looks.clear()
+                read(model, text)
+                held = [knowing for words, span, knowing in looks if knowing is not None
+                        and bool(contained(span[0], words[0, 1:2])[0, 0])
+                        and not bool(contained(span[0], words[0, :1])[0, 0])]
+                return None if not held else held[0][:, 0]
+            readings = {}
+            for stage in ('before', 'after'):
+                if stage == 'after':
+                    optimizer = model.getOptimizer(lr=.01)
+                    for presentation in range(200):
+                        read(model, pairs[presentation % 2], training=True, optimizer=optimizer)
+                for text in pairs:
+                    value = at_second(text)
+                    first, second = rows[text]
+                    other = rows[pairs[1 - pairs.index(text)]][1]
+                    readings[(stage, text)] = None if value is None else dict(
+                        second=float(value[second]), other_sentence_second=float(value[other]))
+            print(dict(rows=rows, readings=readings))
+        finally:
+            model.omission.draw = ordinary
+            model.End(); model.symbolSpace.soft_reset()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
