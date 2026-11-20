@@ -168,7 +168,6 @@ class NarrowingState:
     slots: object
     focus_frames: object
     focus_fields: object
-    visited: object = None
     can_advance: object = None
     replay_until: object = None
     steps_taken: int = 0
@@ -202,7 +201,6 @@ def open_narrowing(chooser,keys,spans,known,*,budget,exploit=None,departure=None
         lengths, table, accepted, descended, values, actions, alternatives, probabilities, counts, reductions,
         field_values, field_poles, field_valid, handed_poles, pole_changes, round_words, field_scopes, field_operations, declared, rows, slots,
         spans.new_full((B,K,9), -1), keys.new_zeros(B,K,D+2),
-        spans.new_full((B,K,10*K+2*W), -1),
         replay_until=departure if replay_until is None else replay_until)
 
 
@@ -217,12 +215,10 @@ def last_focus(state):
     return at, frame, legal
 
 
-def undo_focus(state, table, undo):
-    """The table and descents with the last focus undone where ``undo``.
-
-    Pure: the state is read and not written."""
+def focus_history(state, original, table, slot, split, entered, undo):
+    """Undo the last focus locally so an independent sibling keeps its work."""
     at, frame, _ = last_focus(state)
-    slots = state.slots
+    rows, slots = state.rows, state.slots
     parent = (slots == frame[:, 0:1]) & undo[:, None]
     child = (slots == frame[:, 1:2]) & undo[:, None]
     interval = torch.where(parent[..., None], frame[:, None, 2:4], table.intervals)
@@ -231,6 +227,7 @@ def undo_focus(state, table, undo):
         level=torch.where(parent, frame[:, 4:5], torch.where(child, LEVEL_SENTENCE, table.level)),
         space=torch.where(parent, frame[:, 5:6], torch.where(child, SPACE_INPUT, table.space)),
         spent=table.spent + undo.long())
+    restored_field = state.focus_fields[rows, at.clamp_min(0)]
     # The entered extent identifies the witness. Repeated identities share
     # the native descent, exactly as on entry. A split records no descent.
     prior_witness = ((state.spans == frame[:, None, 2:4]).all(-1)
@@ -240,58 +237,7 @@ def undo_focus(state, table, undo):
         prior_witness = prior_witness.any(-1, keepdim=True) & (identity >= 0) & (state.identities == identity)
     # A separate occurrence can already have joined grammar on the same
     # identity. Its recorded interpretation keeps its own evidence.
-    descended = state.descended & ~(prior_witness & undo[:, None] & ~state.accepted)
-    return table, parent, child, frame, at, descended
-
-
-def restore_slots(frame, parent, child, reductions, field_valid):
-    """The parent's field record as the frame saved it; the child's cleared."""
-    bits = (frame[:, 7:8] & frame.new_tensor([1, 2, 4])) != 0
-    return (torch.where(parent[..., None], bits[:, None], reductions & ~child[..., None]),
-            torch.where(parent, frame[:, 6:7].bool(), field_valid & ~child))
-
-
-def state_print(table, accepted, descended, reductions, field_valid):
-    """The walk's state, less what it has spent, as one row of integers.
-
-    It is the table's brackets (intervals, valid, space, level, done), the
-    words accepted and descended, and each bracket's field record."""
-    return torch.cat((table.intervals.flatten(1), table.valid.long(), table.space.long(),
-                      table.level.long(), table.done.long(), accepted.long(), descended.long(),
-                      reductions.flatten(1).long(), field_valid.long()), -1)
-
-
-def snap(table, spans, lengths):
-    """Each bracket held to the words it covers, and a word's level."""
-    lo,hi=table.intervals.unbind(-1)
-    covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
-    count=covered.sum(-1)
-    left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
-    right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
-    table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
-                         level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
-    return table, covered, count
-
-
-def unfocus_returns(state, table):
-    """Whether the unfocus would bring the walk to a state it has been in.
-
-    ``table`` is the current table as ``snap`` holds it. The states the walk
-    has been in are those recorded at each of its steps, and the present."""
-    undo = torch.ones_like(state.rows, dtype=torch.bool)
-    undone, parent, child, frame, _, descended = undo_focus(state, table, undo)
-    undone = snap(undone, state.spans, state.lengths)[0]
-    reductions, field_valid = restore_slots(frame, parent, child, state.reductions, state.field_valid)
-    after = state_print(undone, state.accepted, descended, reductions, field_valid)
-    now = state_print(table, state.accepted, state.descended, state.reductions, state.field_valid)
-    return (state.visited == after[:, None]).all(-1).any(-1) | (now == after).all(-1)
-
-
-def focus_history(state, original, table, slot, split, entered, undo):
-    """Undo the last focus locally so an independent sibling keeps its work."""
-    rows = state.rows
-    table, parent, child, frame, at, state.descended = undo_focus(state, table, undo)
-    restored_field = state.focus_fields[rows, at.clamp_min(0)]
+    state.descended = state.descended & ~(prior_witness & undo[:, None] & ~state.accepted)
     saved = torch.cat((state.field_values[rows,slot], state.field_poles[rows,slot]),-1)
     reductions = state.reductions[rows,slot].long()
     bits = reductions[:,0] + 2*reductions[:,1] + 4*reductions[:,2]
@@ -308,12 +254,18 @@ def focus_history(state, original, table, slot, split, entered, undo):
 
 def narrowing_view(state):
     """Read the current brackets; grammar's option is separate from attention."""
-    keys, spans, known = state.keys, state.spans, state.known
+    table, keys, spans, known = state.table, state.keys, state.spans, state.known
     B,W,D=keys.shape; K=int(state.budget)
     lengths, poles, descended = state.lengths, state.poles, state.descended
     accepted, reductions, declared = state.accepted, state.reductions, state.declared
     field_valid, field_poles, field_values = state.field_valid, state.field_poles, state.field_values
-    table, covered, count = snap(state.table, spans, lengths)
+    lo,hi=table.intervals.unbind(-1)
+    covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
+    count=covered.sum(-1)
+    left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
+    right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
+    table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
+                         level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
     word=count==1
     evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
     evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
@@ -336,10 +288,10 @@ def narrowing_view(state):
     # Address 1 focuses a single word. An unknown word descends;
     # a pure word is looked at in place and grammar can interpret it.
     at, frame, can_undo = last_focus(state)
-    # An unfocus that would bring the walk back to a state it has been in
-    # (its brackets, the words accepted and descended, and the field
-    # records, whatever it has spent) is a loop and is not legal.
-    can_undo = can_undo & ~unfocus_returns(state, table)
+    # A frame is pushed at the step that made it. Unfocusing at the next step
+    # would restore the table as it was before that focus or descent, so the
+    # pair would change nothing but the budget: it is not legal then.
+    can_undo = can_undo & (at != state.steps_taken - 1)
     unfocus = (state.slots == frame[:, :1]) & can_undo[:, None]
     attention_progress=torch.stack((progress[...,0],progress[...,1] | progress[...,2], unfocus),-1)
     legal=torch.cat((attention_progress,field),-1)&live[...,None]&declared[None,None]
@@ -425,8 +377,6 @@ def narrow_step(state, *, context=None, lesson_action=None):
         return state
     step=state.steps_taken
     table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled=narrowing_view(state)
-    state.visited=torch.where((slots==step)[...,None],
-        state_print(table,accepted,descended,reductions,field_valid)[:,None],state.visited)
     lo,hi=table.intervals.unbind(-1)
     word=count==1
     state.can_advance=legal.any()
@@ -502,9 +452,11 @@ def narrow_step(state, *, context=None, lesson_action=None):
     state.accepted=accepted
     state.descended=descended
     state.values=values
-    state.reductions, state.field_valid = restore_slots(frame, parent, child, reductions, field_valid)
+    restored_bits = (frame[:, 7:8] & frame.new_tensor([1, 2, 4])) != 0
+    state.reductions=torch.where(parent[...,None], restored_bits[:,None], reductions & ~child[...,None])
     state.field_values=torch.where(parent[...,None], restored[:,None,:D], field_values)
     state.field_poles=torch.where(parent[...,None], restored[:,None,D:], field_poles)
+    state.field_valid=torch.where(parent, frame[:,6:7].bool(), field_valid & ~child)
     state.pole_changes=pole_changes
     state.steps_taken += 1
     state.look_slot, state.look_active = slot, chosen
@@ -512,7 +464,7 @@ def narrow_step(state, *, context=None, lesson_action=None):
 
 
 _NARROW_CARRY = ('accepted','descended','values','reductions','field_values',
-                 'field_poles','field_valid','pole_changes','focus_frames','focus_fields','visited')
+                 'field_poles','field_valid','pole_changes','focus_frames','focus_fields')
 _NARROW_HISTORY = ('actions','alternatives','probabilities','counts','round_words',
                    'field_scopes','field_operations')
 
