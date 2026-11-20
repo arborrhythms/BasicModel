@@ -19378,3 +19378,121 @@ Spot tests by the pass (24 files, 319 passed); both gates pass on `d9351996d8`. 
 #### A measure asked for by Alec, and what it found (2026-11-20)
 
 Asked for sentences a second after item 1.75. `bin/bench_training_step.py` on `data/BasicModel.xml`, batches of 8 over 400 documents, on `58b148c3dd`: on MPS it ran out of memory in the first batch (15.84 GiB held, 2.50 GiB more asked, limit 16.85 GiB); on the CPU the system killed it in the first epoch. The allocation is `PerceptField.read_percepts`'s tensor of events, of size keys by sentences by words by spans by 2. The line is of 2026-09-26; whether the number of keys read in a batch grew in this item is not measured. To round 7's measurements and to item 1.5's first part. A run at a batch of 2 on MPS was still compiling the word loop for 256 words after 25 minutes and was stopped. Alec: "If the sentences-per-second test will take substantially more time to get those numbers, please defer it until just before the 1.7 push." *Deferred* to round 7, just before the item's push: sentences a second on `data/BasicModel.xml`, with the batch at which it fits. Alec, of the failures: "batch of 8 may have failed because of the concurrent tests." *As measured:* the kill on the CPU may well have been that, since the tests of round 5's pass were running. The failure on MPS reports that process's own holding (15.84 GiB of 16.85 GiB allowed, 1.70 MiB of other allocations), so it is less likely to be; it is not settled until the measure is run alone, which is how round 7 runs it. Half precision, which he asked for with it, is the whole-model switch `MODEL_AMP` ("Let's just do the whole-model switch for FP16"; item 1.5 plan): its fallback on MPS is removed in round 6's first pass, and round 7's measure is run with it and without.
+
+### 23.5.1 Round 5, second pass: the spread's join, the percepts' stage and the blind spot; look-first with ties in MTM; the cone; the candidate matrices (Claude on Opus, standing in for Codex, 2026-11-20)
+
+#### What fails or is unfinished, first
+
+- `test_item18_expect.py::test_81` still fails on every reading, now read at the look of the hidden word (three readings below). After part C it reads .196 for the hidden word against .430 for another absent concept. The candidates made 81 pair rows on the lesson: every pair of concepts present together at the whole sentence's first look, among them the declared kinds and letter properties, so the pair "alpha gamma" is one of many and the share it gives is not the greatest.
+- The way back does not yet read the expected percepts inside the model. `ConceptSpread.read_back` gives the basic percepts the way back should read (the expected ones joined in where a reading was withheld), and certificate 24 reads it, but no reconstruction in `Models` calls it. The bytes are not given back.
+- Step 5 is not changed, by the brief's own exception. Every caller of `ConceptualSpace.concept_parts` and `concept_wholes` takes LTM1 part codes that no matrix entry can give: `Interpret.define`'s description (part codes), `Models` at the row check near line 11471 (`_raw_int_refs`), `Spaces` near 15927 (the collapse witness), near 16544 (non-tuple part codes) and `ps_children_of_whole` (integer part codes). `ThoughtTaxonomyCapability.neighbors` is read by `ThoughtFaces.is_part`, which keeps `best['source'].owner`, an LTM1 edge's owner, as the witness; no matrix entry gives one. All left on the records.
+- Part E changes what five tests stated: two words with one value are now one object. Each is ported below; the statement "two words, two objects" cannot be kept under look-first.
+- Certificate 26 after the pairing reads nothing: after the 200 presentations no look's extent held the second word alone, so there was no look to read (before the pairing: .247 for the second word and .247 for the other sentence's second word). Recorded, not forced.
+- Certificate 25, point 4 (each raises the other) reads 0 both ways: a definition of a word to an object is not an entry of the Pi or the Sigma, so the spread has no edge between them.
+- `test_one_attention.py::test_unknown_repeated_word_has_one_byte_descent` failed once in two runs of 25 files in parallel and once on `cc7f297f00` alone; on the final source it passed 2 of 2 alone. It rests on a walk of attention.
+- The fit of a single concept for a kind does not read the cone (`things_reading`, `kind_entry` still pass no owner); only `same_thing` and `SymbolTable.make` from it do (provisional, below).
+
+#### test_81, the readings
+
+The port (A1): the test patches `LookForecast.forecast` and `ConceptSpread.write_look` to keep what was written at each look before that look's read, and reads it at the look whose extent holds the second word and not the first. Absent: neither the hidden word nor any concept the earlier looks read.
+
+1. *On `edf85b14f4`, read after the sentence* (the first pass's form): every value 0, because each look writes the expected field anew and the last look's extent was the whole sentence, so nothing lay outside it and the spread had no source.
+2. *After A* (the product join, read at the look): hidden .097 (row 13), another absent concept .571; failed. The looks were [0,11] three times, [0,5], [6,11]; what came before the hidden word's look was row 12 alone. 149 s.
+3. *After C* (pair rows read by the spread): hidden .196, another absent concept .430; failed. Candidates: Pi 81 entered, 81 promoted, 0 forgotten; Sigma 432 entered, 0 promoted, 384 forgotten, 48 held. 121 s.
+
+A reading in between, with the pair rows made as symbols of the table (`cc7f297f00`), gave 0 and 0: the pair symbols became the fit of single concepts for every kind. That form was withdrawn (`3f06b0ff86`).
+
+#### What was built, by file and function
+
+- `bin/ConceptSpread.py`: `union` (one less the product of one less each); `_carry` joins what reaches a node as the product on complements (`scatter_reduce` 'prod'), on the way up and the way down; `spread` and `staged` return the join of up and down, with no cap. `_staged` serves two stages: `staged` (the concepts) and `staged_percepts` (the basic percepts, gradient on the first Pi's entries alone). `percept_cost`: the basic percepts' stage at a look, `[B]`. `present_parts`, `blind_spot(owner, perception, knowing)`: the expected basic percepts at each reading from the parts that reading holds and the concepts observed elsewhere. `read_back(owner, perception, withheld, knowing)`: the perceived basic percepts, with the expected joined in where a reading was withheld; the perception is not changed. `complete` registers `expectation.concepts` and `expectation.percepts`. `_pair_edges`: the promoted pair rows read as symbols.
+- `bin/LookForecast.py`: `percept_stage_cost(perception, spans)`.
+- `bin/SentenceLooks.py`, `Looks.run`: the percepts' stage kept at each look (`_expectation_percept_looks`); `CandidateGrowth.at_look` at each look.
+- `bin/PerceptField.py`: `parts` (the member keys read and their values). `bin/BasicPercepts.py`, `read`: fills it.
+- `bin/WordTies.py` (new): `WordTies` (a tie's views and agreement, its certainty, the word that made each object, the weakest tie forgotten when room is needed, key `architecture.wordTieCapacity`, 256); `ties(owner)` on MTM; saved and restored with MTM's state (`bin/Memory.py`, `state`, `restore`).
+- `bin/PerceptCollections.py`: `observe` looks for an object that already reads every percept gathered for the word (`holder`) before making one; the word's definition is written at the tie's certainty; an object is widened only by the word that made it. `objects` leaves out a tie below the definition threshold. `words`, `said_by`.
+- Readers changed to the tie's certainty: `Interpret.lexical_form`, `Interpret.reverse`, `ConceptualSpace.word_concept_of_object` (by `said_by`); `ScalarPercepts.reconstruct` and `decode` (by `named_forms`).
+- `bin/SymbolCone.py` (new): `for_side` (the least of the members' codes), `against_side` (what the nearest neighbours hold where the cone has no weight), `read` (the weighted product of `min(1, x / w)`, against by the union), `holds`, `codes_of`, `same_order`, `neighbours`.
+- `bin/Symbols.py`, `SymbolTable`: `fit(..., owner=)` reads the cone, `cone`, `holds`; `make(..., owner=)`. `bin/Spaces.py`, `same_thing` passes the owner.
+- `bin/FieldProjection.py`, `stimulate`: a point is matched only with the codes of the orders it is read at. This was the one place found that compared codes of two orders (a point was matched with every inventory row's code and the other orders masked after).
+- `bin/CandidateMatrix.py` (new): `CandidateMatrix` (entered at nothing; a proximal step with the gradients averaged over its reads, `v = -sign(G) max(|G|/n - penalty, 0)`; promoted after 3 reads in a row above nothing; forgotten when returned to nothing after it held, or the weakest when room is needed); `penalty()` (key `architecture.candidatePenalty`, .2); `pair_gradient`, `substitution_gradient`.
+- `bin/CandidateGrowth.py` (new): `matrices(owner)` on MTM (key `architecture.candidateCapacity`, 64); `pi_step` (concepts of one order present together at a look offer a pair; promoted pairs to `pair_rows`); `sigma_step` (a kind expected by the spread at the look and not read, with a thing present at the look; promoted, `kind_entry`); `at_look`, in training.
+
+#### Certificates
+
+- 16 (`test_item17_spread.py::test_16_...`): the word alone raises both meta concepts to .5 and both objects to .167; with the other word, the primed meta concept 1.0, its object .333, the other .167; `preferred_objects` takes the primed one. Passed.
+- 19 (`test_19_...`), again: two children with five parents give each other .4095 (1 - .9^5; was .5 summed); over 300 random graphs every sibling below one, the greatest .543. `test_19b_...`: k present words each with a kind that also reads one other word give it .5, .75, .875, .984 for k = 1, 2, 3, 6 (summed, three would pass one). Passed.
+- 24 (`test_testpoint.py::TestBlindSpot`): with every second form of "gamma" withheld, its place holds 0 parts (each form spans the word, so its bytes are all blanked); its basic percept perceived 0, read back .619 from "alpha" observed elsewhere; "alpha" at its own place read back 1.0 as perceived; nothing read back where nothing was withheld; the untaught word has no basic percept. At gamma's place "alpha"'s basic percept is read back too, .999: the fill is not specific to the place. Passed.
+- 25 (`TestCrossModalTie`, learning): the word alone has no object; with value 5 six times the word has one object, tie 6 views, 6 agreeing; each raises the other 0 and 0; a word with six different values: tie 6 views, 2 agreeing (certainty .33), so it names no object; a second word with value 5 is tied to the same object, no second object (2 collections). Passed (only the last is required).
+- 26 (`TestBellSalivate`, learning): above. Passed (nothing required).
+- 57 (d) for the percepts' stage (`test_57d_the_percepts_stage_is_registered_beside_the_concepts`). Passed.
+- The cone (`test_item17_growth.py::test_the_cone_holds_...`): the members [1,1,1,1,1,0,...] and [1,1,1,1,0,1,...] give weights 1 on the four shared coordinates and 0 on the two they vary on; a third used alike is held; one used otherwise is not; one holding the cone and two coordinates a neighbour adds is against; `fit` finds the symbol for the third and none for the other; a concept of another order is not tested; no code moved. `test_the_cone_reads_one_meaning_never_a_join`: two halves read 0, their join 1. Passed.
+- 60 (1) (`test_60_1_...`): `caat` holds .909 of `cat` (`cat` holds .833 of `caat`): at widths .5, .75, .9 the row widens (11 to 10 of weight), at 1.0 a candidate row; `cats` against `cat` gives 1 against entry. (2): pairs always together become rows ("alpha gamma", "beta delta"); a concept present with them one look in four does not; 8 entered, 2 promoted, 6 forgotten. (3): "wug" in the noun's place gains the entry; "cat" read where expected and "the" at another place gain none; 1 entered, 1 promoted. (4) (`test_60_4_...`, learning, 40 presentations of the small lesson): Pi 245 entered, 4 promoted, 241 forgotten; Sigma 2 entered, none promoted; MTM made no new symbol in those presentations; the 4 pair rows are all new (none is an MTM symbol). Passed.
+
+#### The penalty's strength
+
+`test_60_penalty_strength_measured`: on lessons (2) and a variant of (3) with a weak thing present (.3 and .1), the strengths 0, .01, .02, .05, .1, .2, .3, .5 make exactly the right entries at .1, .2 and .3 only. Set to .2, the middle.
+
+#### Choices on my own recommendation (provisional)
+
+- The join as `scatter_reduce` 'prod' (no clamp at one, which gave no gradient). `52de1618cb`.
+- The blind spot's fill reads the concepts observed elsewhere as well as the present parts, since withholding a form blanks the whole word. `81c9f93f71`.
+- Look-first: an object holds a word when it reads every percept gathered for the word, not only the last; a tie that does not hold does not widen an object another word made; a tie below the definition threshold names no object, and the word gathers again; a shared object is said by its most certain tie, the first among equals. `666f21414c`.
+- The cone's for side is the least of the members' codes; its against side the coordinates its three nearest neighbours of the order hold where it has no weight; a constituent is always held. `68a67d8d11`.
+- Only `same_thing` (and `make` from it) passes the owner to `fit`; the fits for kinds stay on membership, since reading the cone for every symbol at each kind entry scans every concept of the order. `68a67d8d11`.
+- Promoted pairs are rows beside the table, read by the spread, not table symbols. `3f06b0ff86`.
+- Promotion after 3 reads in a row; the dual-averaged step. `cc7f297f00`.
+
+#### Tests ported
+
+- `test_item17_spread.py::test_19_...`: old `value == .5`; new `value == 1 - .9 ** 5`.
+- `test_item18_expect.py::test_81`: old `owner._expected_knowing` after the sentence, absent by `_observed_knowing`, and `hidden_row in rule_order(owner, 0)`; new the knowing written at the hidden word's look, absent by what the earlier looks read; `rule_order`'s line removed (it held for any row).
+- `test_item18_scalar.py::test_scalar_boxes_...`: old `trust.views[row] == 6`; new `ties(owner).get(word, identity).views == 6`.
+- `test_item18_word_trust.py::test_88_scalar_...`: old `trust.views[row] == 6`; new the tie's views 6 and certainty 1.
+- `test_item18_perceptual_scalar.py::test_shared_value_...`: old two objects, each `views == 6`; new one object, each tie 6 views.
+- `::test_intervals_...`: old `alpha`'s and `beta`'s codes differ, 2.5 gives `('alpha',)`; new one object, its code differs from `gamma`'s, 2.5 gives `{'alpha', 'beta'}`.
+- `::test_value_percepts_...`: old retiring `alpha`'s object leaves `('beta',)`; new it leaves `()`, and 2 gives `('gamma',)`.
+- `::test_value_collection_restores_...`: old `lexical_form(cid) == form`, `trust.views == 6`; new `form in named_forms(owner, cid)`, the tie's views 6 after the restore.
+- `test_item18_finish.py::test_equal_codes_...`: old two objects, each said by its own word; new one object, both ties certain, said by "alpha".
+
+#### Test files run
+
+- `test_item17_spread` (15 tests), `test_item17_growth` (7), `TestBlindSpot`, `TestCrossModalTie` (3 to 5 s each), `TestBellSalivate` (260 s).
+- `test_item18_expect::test_81`: 184 s, 149 s, 209 s, 121 s.
+- Part E's seven files with `test_item18_finish`: 53 passed, 2 skipped, 8.7 s.
+- Files naming what E changed (37 files): 638 passed, 14 skipped, 115 s.
+- Files naming the symbol table (58 files): 650 passed, 47 skipped, 218 s.
+- Files naming `stimulate` (14 files): 225 passed, 2 skipped, 56 s.
+- Files naming the looks and the spread (24 files): 350 passed, 9 failed, 71 s (8 from the C wiring, fixed in `3f06b0ff86`; `test_one_attention` above); then 4 of them: 105 passed, 1 failed (`test_one_attention`), 38 s; the 24 files and `test_mm_xor` on `c39d24b625`: 365 passed, 2 failed, 9 skipped, 133 s. The two: `test_one_attention.py::test_unknown_repeated_word_has_one_byte_descent` and `test_priming_diffusion.py::test_one_precomposition_prediction_and_one_placement_per_active_stream`; run together in one process they failed 2, 1 and 0 times in three runs; `test_priming_diffusion` alone passed 2 of 2, `test_one_attention` alone 2 of 2.
+- The gates on `3f06b0ff86`: both passed, 3.9 s; on `c39d24b625`: both passed, 3.5 s.
+
+#### Commits
+
+`52de1618cb`, `118c4a0eaa`, `81c9f93f71` (A); `666f21414c`, `6b41a65f16` (E); `68a67d8d11`, `a6546b8518` (B); `cc7f297f00`, `3f06b0ff86`, `c39d24b625` (C, D). Not mine in the range: `34aa1aa0c3`, `4311d31431`, `0df7c8a375`, `f845a5c38b`, `e9264f9da1`.
+
+#### What is left
+
+- The reconstruction reads `read_back` (the bytes of a withheld word given back at its place), and the fill made specific to a place.
+- test_81: pairs offered among every concept present at a look; the words' pair is one of 81. What offers a pair may need the concepts of words alone, or the pair's own look.
+- The fit for kinds reading the cone; its cost measured.
+- The Pi at order zero widening and its against entries are trials only; the first Pi has no learned weight to receive them.
+- Certificate 25's point 4 needs the tie to be an entry the spread reads.
+- Step 5's callers, if a matrix is to give LTM1's part codes.
+
+#### What surprised me
+
+- Withholding any one form of a word blanks all its bytes, since each form spans the word: "half of the forms" and "the whole word" are the same blind spot here.
+- A pair made as a symbol of the table became the fit of a single concept for every kind, and the whole expected field fell to zero.
+- `torch.clamp` at its bound again: a share of exactly one gave no gradient until the clamp went.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass; both gates pass on `c39d24b625`. The list and the lesson on that commit are run by Claude and recorded below this review when they return.
+
+- *Built as asked, in order:* the join as the product on complements; the percepts' stage; the blind spot's read; look-first with the certainty on each tie (§19.114); the cone; the candidate matrices with their trials; the penalty measured (.2, the middle of the three strengths at which the trials make exactly the right entries).
+- *Look-first changes what five tests stated, and this is what it means.* Two words that are given one value are one object with two ties, where they were two objects. Retiring that object now takes it from both words. The ports are listed; none is a weakening, each states the new fact. *To Alec, as a consequence to know of and not a question.*
+- *`test_81` still fails (.196 against .430), and the cause is named.* A pair is offered for every two concepts present at a look, and the first look is the whole sentence, so 81 pairs enter and all 81 are promoted, the declared kinds among them. That is not his "constituents that always occur together": a kind is present without the word far more often than with it. *Mine, to round 6's first pass:* a candidate pair is worth what both of its constituents say of it, each present only with the other (the two ratios of `IdentityRows.meet_ratios`, the least of them); a constituent present without the other counts against the pair as strongly as their meeting counts for it. The trial of certificate 60 (2) states one direction of this and gains the other.
+- *The blind spot's fill is not specific to a place:* at the place of the withheld word, the word observed elsewhere is read back as well (.999). What is observed at another place is expected at this one only through a row above that holds it with something else, never through its own row. *To round 6's first pass,* with the reconstruction's call of `read_back`.
+- *Step 5's callers stay on LTM1's records.* Accepted: each needs a part code or an edge's owner, and rule 28 keeps LTM1's part table as the evidence for proofs. The builtin `parts` and `wholes` read the matrices, which is what rule 28 asks of thought.
+- *Certificate 25's fourth point reads nothing both ways,* since a word's tie to an object is not an entry of a Pi or a Sigma. It is a tie in MTM by §19.114; whether it becomes an entry when it is certain is rule 73's promotion, and is left to be seen in item 1.6 with a second modality. Certificate 26 had no look to read; it is round 6's looks that give one.
+- *The fits for kinds do not read the cone,* for its cost. Left, with the cost to be measured in round 7.
+- *The first Pi has no learned weight,* so the widening of a row and its against entries at order zero are trials only. Stated, not built: rule 72's cone at order zero waits on what round 6's looks make of the first Pi.
