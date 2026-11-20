@@ -69,6 +69,10 @@ def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
             looks.append((extents[-1], owner_._expected_knowing[0].detach().clone()))
         monkeypatch.setattr(LookForecast, 'forecast', forecast_extent)
         monkeypatch.setattr(ConceptSpread, 'write_look', write_kept)
+        from CandidateGrowth import matrices, pair_rows
+        table = owner._concept_allocator.symbol_table()
+        print(dict(candidates={name: held.counts() for name, held in matrices(owner).items()},
+                   pair_rows=list(pair_rows(owner)), symbols=list(zip(table.handles, map(table.members, range(len(table)))))))
         for text, hidden_row in zip(examples, hidden_rows):
             looks.clear(); extents.clear()
             read(model, text)

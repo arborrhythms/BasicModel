@@ -200,3 +200,31 @@ def test_60_penalty_strength_measured():
     print(dict(right_by_strength=right))
     from CandidateMatrix import penalty
     assert right[penalty()]
+
+
+def test_60_4_on_the_lesson_beside_what_mtm_makes(tmp_path, monkeypatch):
+    """The rows and entries the candidates make on the small lesson, beside
+    the symbols MTM makes: printed, which are the same, which are new. A
+    certificate of learning: recorded."""
+    from test_item18_expect import lesson, read
+    from nomination_fixtures import readings_before_nomination
+    from CandidateGrowth import matrices, pair_rows
+    model = lesson(tmp_path, monkeypatch)
+    try:
+        examples = ('alpha gamma', 'beta delta')
+        for text in examples:
+            readings_before_nomination(model, lambda: read(model, text))
+            read(model, text)
+        owner = model._concept_owner()
+        table = owner._concept_allocator.symbol_table()
+        before = {tuple(sorted(table.members(s))) for s in range(len(table))}
+        optimizer = model.getOptimizer(lr=.01)
+        for presentation in range(40):
+            read(model, examples[presentation % 2], training=True, optimizer=optimizer)
+        after = {tuple(sorted(table.members(s))) for s in range(len(table))}
+        pairs = {tuple(sorted(pair)) for pair in pair_rows(owner)}
+        print(dict(candidates={name: held.counts() for name, held in matrices(owner).items()},
+                   mtm_symbols=sorted(after), made_by_mtm_in_lesson=sorted(after - before),
+                   implicit_pairs=sorted(pairs), same=sorted(pairs & after), new=sorted(pairs - after)))
+    finally:
+        model.End(); model.symbolSpace.soft_reset()
