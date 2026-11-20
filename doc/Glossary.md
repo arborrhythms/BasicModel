@@ -139,6 +139,46 @@ joined by the least.
 **Code.** The vector of a percept in perceptual space. No code lies inside
 another's unless the one form is a part of the other (Alec, 2026-11-19).
 
+## Parts, kinds and the order between them
+
+**Mereology.** The relation of part and whole, and the order it gives: a thing
+is at or above each of its parts and at or below each of its wholes. Parthood
+is shared size, and it is not symmetric: `is` is part of `this`, and `this` is
+not part of `is` (Alec, 2026-11-18). It is held in two ways that are not to be
+read as one another ([Mereology](Mereology.md)). *Geometric* parthood is read
+from codes and answers "looks like": one code lies inside another. *Asserted*
+parthood is a relation kept in LTM and answers "is": "cats are animals" is one
+row of `LTM1`.
+
+**Taxonomy.** The order of kinds: a member and its kind stand one *order*
+apart. "Felix is a cat" and "Ciao is a cat" make cat a kind one order above
+Felix and Ciao. A statement that one thing is another makes "a mereological or
+taxonomic link (depending on order)" (Alec, 2026-11-19): between two concepts
+of one order it is a link of part to whole, and between concepts of two orders
+it is a link of member to kind. The taxonomy and the relations of `LTM1` are
+one structure, read by `Taxonomy.capture_taxonomy`.
+
+## The grammars
+
+**Grammar.** A set of operators, each taking meanings and giving a meaning,
+with a chooser that picks the next operator. The model has three, and all
+three belong to the mind that has symbols: "compose, think, and generate
+grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03).
+
+**Compose grammar.** The grammar of reading. Its operators take the meanings
+of a sentence's words and join them, step by step, into one idea, the meaning
+of the sentence. Its chooser is `OperationSelectionLayer`.
+
+**Think grammar.** The grammar of thought, also called the thought grammar.
+Its operators work on what is already known: the ideas held in STM and what a
+query brings from LTM. They change knowing into knowing between the reading of
+a sentence and any answer. Among them are `query`, `ask` and `isTrue`.
+
+**Generate grammar.** The grammar of speaking, the inverse of compose. Its
+operators take an idea apart, step by step, into words in their order
+(`BasicModel.generate`, with the chooser `GeneratePolicy`). The order of the
+words of an output comes from it.
+
 ## Memory
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
