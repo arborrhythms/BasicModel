@@ -263,9 +263,9 @@ def test_admitted_form_with_weak_definition_remains_known_without_a_denotation()
     owner.interpret.define(word, concept, evidence=(0., 0.))
     assert word in owner.definitions.word_ids and not owner.definitions.objects(word)
     assert recurrent_word(owner.interpret, (97,), (), form='weak-definition') == word
-    before = dict(owner._concept_allocator.symbols)
+    before = dict(owner._concept_allocator.concepts)
     assert owner.interpret.forward(word) is None
-    assert owner._concept_allocator.symbols == before
+    assert owner._concept_allocator.concepts == before
     with pytest.raises(ValueError, match='admitted word'):
         owner.interpret.forward(999999)
     receipt('weak-definition-admission', dict(admitted_forms=1, denotations=0,

@@ -88,10 +88,10 @@ def test_default_interpret_reuses_existing_kind_without_minting():
     cs, interpret = _operator()
     word = recurrent_word(interpret, [7], [], form='cat')
     kind = interpret.forward(word, order=2)
-    before = dict(_concept_alloc_of(cs).symbols)
+    before = dict(_concept_alloc_of(cs).concepts)
     assert interpret.forward(word) == kind
     assert interpret.forward(word, order=1) == kind
-    assert dict(_concept_alloc_of(cs).symbols) == before
+    assert dict(_concept_alloc_of(cs).concepts) == before
 
 
 def test_default_interpret_reuses_a_witnessed_association():
@@ -359,14 +359,14 @@ def test_known_word_survives_full_inventory_without_partial_alternative(monkeypa
     word = recurrent_word(interpret, [7], [1], form='cat')
     obj = interpret.forward(word)
     before = deepcopy(cs.definitions.description(word))
-    ids = dict(_concept_alloc_of(cs).symbols)
+    ids = dict(_concept_alloc_of(cs).concepts)
     def full(*args):
         raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
     monkeypatch.setattr(cs, '_preflight_concept_row', full)
     assert recurrent_word(interpret, [8], [1], form='cat', word_reading=True) == word
     assert interpret.forward(word) == obj
     assert cs.definitions.description(word) == before
-    assert dict(_concept_alloc_of(cs).symbols) == ids
+    assert dict(_concept_alloc_of(cs).concepts) == ids
     assert cs.concept_admission_stats()['dropped']['word alternative'] == 1
     with pytest.raises(RuntimeError, match='capacity exhausted'):
         recurrent_word(interpret, [8], [1], form='cat')

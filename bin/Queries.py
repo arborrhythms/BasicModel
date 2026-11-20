@@ -511,7 +511,7 @@ def _existing_symbol(space, reference):
     """Validate a live handle; a structural reference needs no vector row."""
     ref = concept_reference(reference)
     allocator = getattr(space, '_concept_allocator', None)
-    if (allocator is None or ref[1] not in allocator.symbols
+    if (allocator is None or ref[1] not in allocator.concepts
             or ref[1] in allocator.retired):
         raise ValueError('query concept reference is unavailable')
     return ref

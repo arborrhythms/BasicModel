@@ -79,7 +79,7 @@ def _allocator_snapshot(cs):
     layer = alloc.layer()
     return {
         "next_id": int(alloc.next_id),
-        "placement": dict(alloc.symbols),
+        "placement": dict(alloc.concepts),
         "definitions": dict(cs.definitions._rows),
         "relate_idx": dict(alloc.relate_idx),
         "constituents": {

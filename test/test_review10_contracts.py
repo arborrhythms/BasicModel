@@ -66,7 +66,7 @@ def test_frozen_interpretation_reads_known_without_learning_or_reserving():
     obj = supply_object(cs, word)
     pending = recurrent_word(interpret, [8], [], form='pending')
     before = deepcopy(cs.definitions.description(word))
-    identities = dict(_concept_alloc_of(cs).symbols)
+    identities = dict(_concept_alloc_of(cs).concepts)
     definitions = len(cs.definitions._store())
     reservations = deepcopy(interpret._pending)
     model = SimpleNamespace(conceptualSpaces=[cs])
@@ -78,7 +78,7 @@ def test_frozen_interpretation_reads_known_without_learning_or_reserving():
         assert interpret.forward(pending) == pending  # Its admitted form stays readable.
         assert interpret.define(pending, obj) is None
         assert len(cs.definitions._store()) == definitions
-        assert dict(_concept_alloc_of(cs).symbols) == identities
+        assert dict(_concept_alloc_of(cs).concepts) == identities
         assert interpret._pending == reservations
         assert cs.definitions.description(word) == before
     assert not cs._online_learning_frozen
@@ -125,7 +125,7 @@ def test_small_frozen_evaluator_keeps_definition_rows_and_reservations():
         return [dict(words=tuple(cs.definitions.word_ids), objects=tuple(cs.definitions.object_ids),
             rows=deepcopy(cs.definitions._rows),
             pending=deepcopy(cs.interpret._pending),
-            placement=dict(_concept_alloc_of(cs).symbols), capacity=cs.definitions._store().capacity)
+            placement=dict(_concept_alloc_of(cs).concepts), capacity=cs.definitions._store().capacity)
             for cs in model.conceptualSpaces]
     before = inventory()
     result = gate.score_manifest(model, data, manifest, limit=3)

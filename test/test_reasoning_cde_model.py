@@ -85,13 +85,13 @@ class TestReasoningCDEModel(unittest.TestCase):
         # cannot manufacture taxonomy identities or a native proof path.
         cs = self.m.conceptualSpace
         width = cs.outputShape[-1]
-        before = dict(cs._concept_allocator.symbols)
+        before = dict(cs._concept_allocator.concepts)
         # The symbolic face requires native names; the conceptual face is
         # available as part over codes and cannot manufacture a taxonomy path.
         with self.assertRaisesRegex(TypeError, 'reference'):
             self.m.reason_about(QuerySpec(KIND_IS_PART,
                 left=torch.ones(width), right=torch.ones(width)))
-        self.assertEqual(cs._concept_allocator.symbols, before)
+        self.assertEqual(cs._concept_allocator.concepts, before)
         with self.assertRaises((ValueError, TypeError)):
             self.m.reason_about(QuerySpec(KIND_IS_PART,
                 left=torch.ones(width - 1), right=torch.ones(width - 1)))

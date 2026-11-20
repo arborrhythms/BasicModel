@@ -44,7 +44,7 @@ def _snapshot(cs):
         rows={name: value.clone() for name, value in cs._fixture_occurrences.named_buffers()},
         parts={name: value.clone() for name, value in alloc.parts.named_buffers()},
         bank=cs.similarity_codebook.W.detach().clone(),
-        placement=dict(alloc.symbols), retired=set(alloc.retired),
+        placement=dict(alloc.concepts), retired=set(alloc.retired),
         tensor_rows=deepcopy(alloc._layers[0]._tensor_rows))
 
 

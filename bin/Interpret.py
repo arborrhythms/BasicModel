@@ -451,7 +451,7 @@ class InterpretLayer(GrammarLayer):
             raise ValueError('a definition cannot name a word as its object')
         if getattr(cs, '_online_learning_frozen', False):
             return index.row(word, obj)
-        if word == obj or any(cid not in alloc.symbols or cid in alloc.retired for cid in (word, obj)):
+        if word == obj or any(cid not in alloc.concepts or cid in alloc.retired for cid in (word, obj)):
             raise ValueError('definition requires distinct, live native identities')
         pair = ((1. if trust is None else float(trust), 0.) if evidence is None
                 else tuple(float(pole) for pole in evidence))

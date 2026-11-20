@@ -15,7 +15,7 @@ def owner(points):
     native.similarity_codebook = SimpleNamespace(mereology=SimpleNamespace(
         placement=F.normalize(points.detach(), dim=-1), meaning_pairs=points.shape[1],
         placement_witnesses=torch.ones(len(points), dtype=torch.long, device=points.device)))
-    native._concept_allocator = SimpleNamespace(symbol_types={}, raised=set(), symbols={i+1:None for i in range(len(points))},
+    native._concept_allocator = SimpleNamespace(symbol_types={}, raised=set(), concepts={i+1:None for i in range(len(points))},
         retired=set(), _layers={0:object()}, parts=LTM1(256), relate_idx={('part-base', 2): (2, 1), ('part-base', 3): (2, 2)})
     native._priming_edge_src = torch.full((512,), -1, dtype=torch.long)
     native._priming_edge_dst = torch.full((512,), -1, dtype=torch.long)

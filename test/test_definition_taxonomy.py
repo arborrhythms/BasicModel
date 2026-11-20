@@ -119,10 +119,10 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     # A missing concept can retain its owned point under the layout. Use
     # actual relation exhaustion to test the transaction's no-prefix guard.
     alloc.next_id = store.parts.capacity
-    before = alloc.next_id, dict(alloc.symbols), alloc.records(right)
+    before = alloc.next_id, dict(alloc.concepts), alloc.records(right)
     with pytest.raises(OverflowError, match='LTM1'):
         store.write_clause(bad)
-    assert before == (alloc.next_id, dict(alloc.symbols), alloc.records(right))
+    assert before == (alloc.next_id, dict(alloc.concepts), alloc.records(right))
     assert not len(store)
 
 
@@ -177,7 +177,7 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
         # owner rather than the unrelated narrowed occurrence pool.
         f.cs._concept_allocator.next_id = f.store.parts.capacity
     alloc = _concept_alloc_of(f.cs)
-    before = alloc.next_id, copy.deepcopy(alloc.symbols), copy.deepcopy(alloc.relate_idx)
+    before = alloc.next_id, copy.deepcopy(alloc.concepts), copy.deepcopy(alloc.relate_idx)
     if invalid == 'width':
         # The layout's documented _fit accepts an operand width and keeps
         # exactly the store-width leading coordinates, without a new row shape.
@@ -187,7 +187,7 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     else:
         with pytest.raises(OverflowError, match='LTM1'):
             f.store.write_clause(clause)
-        assert before == (alloc.next_id, alloc.symbols, alloc.relate_idx)
+        assert before == (alloc.next_id, alloc.concepts, alloc.relate_idx)
         assert len(f.store) == 0
 
 

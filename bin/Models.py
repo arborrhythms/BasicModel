@@ -3940,7 +3940,7 @@ class BaseModel(Mereology, nn.Module):
         beside that structure; their vectors remain in registered buffers.
         """
         alloc_fields = (
-            "symbols", "raised", "singletons", "singleton_members", "singleton_rows", "retired", "identity",
+            "concepts", "raised", "singletons", "singleton_members", "singleton_rows", "retired", "identity",
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
@@ -4108,7 +4108,7 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError('checkpoint relation/witness capacities or order blocks differ from construction: '
                              f'{construction!r} != {expected!r}')
         fields = (
-            "symbols", "raised", "singletons", "singleton_members", "singleton_rows", "retired", "identity",
+            "concepts", "raised", "singletons", "singleton_members", "singleton_rows", "retired", "identity",
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
@@ -4145,7 +4145,7 @@ class BaseModel(Mereology, nn.Module):
 
         next_id = int(saved.get("next_id", 1) or 1)
         known_ids = {0}
-        for name in ("symbols", "raised", "singletons", "retired",
+        for name in ("concepts", "raised", "singletons", "retired",
                      "identity"):
             value = getattr(alloc, name, {})
             known_ids.update(int(v) for v in (

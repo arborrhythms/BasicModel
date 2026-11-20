@@ -20,7 +20,7 @@ def _inherit_forms(cs, source, target):
 def _available(cs, values):
     alloc = _concept_alloc_of(cs)
     values = tuple(dict.fromkeys(map(int, values)))
-    if any(cid not in alloc.symbols or cid in alloc.retired for cid in values):
+    if any(cid not in alloc.concepts or cid in alloc.retired for cid in values):
         raise ValueError('taxonomy requires existing native concepts')
     return values
 
@@ -92,7 +92,7 @@ def taxonomy_children(cs, cid):
 
 def taxonomy_parents(cs, cid):
     alloc = _concept_alloc_of(cs)
-    return [parent for parent in alloc.symbols if cid in taxonomy_children(cs, parent)]
+    return [parent for parent in alloc.concepts if cid in taxonomy_children(cs, parent)]
 
 
 @torch.no_grad()

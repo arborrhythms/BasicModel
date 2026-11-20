@@ -91,13 +91,17 @@ def prepare(model, state, structural, vocab, training=None):
         allocator = entry.get('allocator')
         if not allocator:
             continue
+        # The live concept ids were saved as 'symbols' before symbols had a
+        # table of their own; that field is read here once, as 'concepts'.
+        if 'symbols' in allocator and 'concepts' not in allocator:
+            allocator['concepts'] = allocator.pop('symbols')
         space = model.conceptualSpaces[int(index)]
         if not allocator.get('layers'):
             # A shared codebook's other stages can have empty local allocators.
             # They still declare the same newly constructed physical blocks.
             allocator.setdefault('construction', {})['order_caps'] = list(space._order_caps())
             if 'placement' in allocator:
-                allocator['symbols'] = dict.fromkeys(allocator.pop('placement'))
+                allocator['concepts'] = dict.fromkeys(allocator.pop('placement'))
             allocator.pop('reference_orders', None)
             continue
         for registry in ('formal_arguments', 'operator_concepts'):
@@ -151,7 +155,7 @@ def prepare(model, state, structural, vocab, training=None):
         old_symbols = allocator.pop('placement', None)
         old_orders = allocator.pop('reference_orders', None)
         if old_symbols is not None:
-            allocator['symbols'] = dict.fromkeys(old_symbols)
+            allocator['concepts'] = dict.fromkeys(old_symbols)
         allocator.setdefault('construction', {})['order_caps'] = list(space._order_caps())
         if old_symbols is not None or old_orders is not None:
             warnings.warn('checkpoint: concept orders now read from their fixed row blocks')
@@ -171,7 +175,7 @@ def prepare(model, state, structural, vocab, training=None):
         for offset, (registry, name, order, kind) in enumerate(additions):
             concept = allocator['next_id']; allocator['next_id'] += 1
             allocator[registry][name] = concept
-            allocator['symbols'][concept] = None
+            allocator['concepts'][concept] = None
             allocator['symbol_types'][concept] = {'concept', 'class', kind}
             row = added_rows[offset]
             layer['tensor_rows']['concept', concept] = row

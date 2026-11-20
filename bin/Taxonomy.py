@@ -145,7 +145,7 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024,
     layer = None if allocator is None else getattr(allocator, "_layers", {}).get(0)
     if allocator is None or layer is None:
         return ConceptualTaxonomyView(frozenset(), (), incomplete=("unavailable_taxonomy",))
-    placement, retired = allocator.symbols, allocator.retired
+    placement, retired = allocator.concepts, allocator.retired
     concepts, edges, visited = set(), [], set()
     nodes = records = 0
     seen_edges = set()

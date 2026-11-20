@@ -142,11 +142,11 @@ def test_unary_lowering_reads_existing_order_without_minting_a_composing_argumen
         f.cs.similarity_codebook.W[f.cs._concept_row_of(member)].sigmoid_()
     f.cs.interpret.define(word, member)
     program = f.program(('change', ('lower_unary', 'cat'), 'sleeps'))
-    before = len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)
+    before = len(f.cs.definitions._store()), len(f.cs._concept_allocator.concepts)
     refs, orders = LanguageSpace.resolve_lexical_references(f.language, f.cs,
         program.word_rows, program.concept_ids, program.actions,
         leaf_orders=torch.tensor([2, 0]), admit=True)
-    assert (len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)) == before
+    assert (len(f.cs.definitions._store()), len(f.cs._concept_allocator.concepts)) == before
     assert program.concept_ids[0] == source
     assert refs[0] == member and orders[0] == 1
     from chunk_fixtures import record
@@ -164,7 +164,7 @@ def test_unary_lowering_reads_existing_order_without_minting_a_composing_argumen
     assert len(f.store.parts) == before[0]
     assert f.store.raw_meaning_of(child).role_refs[0] == ('sym', member)
     assert f.store.raw_meaning_of(row).role_refs[0] == f.store.occurrence_of(child)
-    assert (len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)) == before
+    assert (len(f.cs.definitions._store()), len(f.cs._concept_allocator.concepts)) == before
     assert not f.cs.components.individual_ids
 
 

@@ -107,14 +107,14 @@ def test_26_full_store_refuses_the_whole_word_transaction():
     alloc = _concept_alloc_of(cs)
     # The next native symbol is outside this deliberately exhausted Part pool.
     store.parts.capacity = alloc.next_id
-    before = alloc.next_id, dict(alloc.symbols), dict(alloc.layer()._tensor_rows), len(store)
+    before = alloc.next_id, dict(alloc.concepts), dict(alloc.layer()._tensor_rows), len(store)
     try:
         result = admit(m, 'hello')
     except RuntimeError as error:
         assert 'capacity' in str(error) or 'full' in str(error)
     else:
         assert result is None
-    assert before == (alloc.next_id, dict(alloc.symbols), dict(alloc.layer()._tensor_rows), len(store))
+    assert before == (alloc.next_id, dict(alloc.concepts), dict(alloc.layer()._tensor_rows), len(store))
 
 
 def test_27_definition_rewitness_keeps_its_when_and_store_position():

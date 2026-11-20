@@ -10,7 +10,7 @@ def place_types(owner, identities=None):
     if codes is None:
         return
     if identities is None:
-        identities = [cid for cid in owner._concept_allocator.symbols
+        identities = [cid for cid in owner._concept_allocator.concepts
                       if owner._concept_row_of(cid) is not None
                       and owner._concept_allocator.order_of(cid) == 0]
     owner._observed_knowing.zero_()

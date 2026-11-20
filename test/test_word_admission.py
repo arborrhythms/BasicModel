@@ -10,7 +10,7 @@ def snapshot(cs):
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
     store = alloc.layer()
-    return (alloc.next_id, dict(alloc.symbols), dict(cs.interpret._pending),
+    return (alloc.next_id, dict(alloc.concepts), dict(cs.interpret._pending),
             {key: tuple(value) for key, value in store._constituents.items()},
             dict(alloc.order_zero_members),
             dict(store._tensor_rows), dict(store._index))

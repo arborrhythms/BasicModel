@@ -137,7 +137,7 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
         if first:
             same_state(history,(store.state_dict(),
                                 store.parts.state_dict(),owner.mtm.state()))
-            baseline.update(alloc.symbols)
+            baseline.update(alloc.concepts)
         same_state(optimizer_state,model._optimizer.state_dict())
         same_state(parameters,dict(model.named_parameters()))
         starts.append((len(store),len(store.parts)))
@@ -175,7 +175,7 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
     def observed_epoch(*args, **kw):
         result = run(*args, **kw)
         if kw.get('optimizer') is not None:
-            symbols = set(alloc.symbols) - baseline - set(alloc.parts.indices().tolist())
+            symbols = set(alloc.concepts) - baseline - set(alloc.parts.indices().tolist())
             records = grounded(store,symbols)
             assert len(store) > 0
             reports.append(dict(epoch=len(reports)+1, minted=sorted(symbols-seen),

@@ -2479,7 +2479,7 @@ class LTM1(MemoryStore, nn.Module):
         def endpoint(kind, value):
             if kind == RELATION:
                 return max(float(self.effective_plus[value]), float(self.effective_minus[value]))
-            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.symbols:
+            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.concepts:
                 return positive_length(owner, value)
             return 1.
         rows = self.relation_order[:len(self)].tolist()

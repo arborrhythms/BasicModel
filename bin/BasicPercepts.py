@@ -11,7 +11,7 @@ class BasicPercepts(nn.Module):
 
     def __init__(self, native, identity_width, property_width, capacity):
         super().__init__()
-        from OrderZero import PerceptPi
+        from OrderZero import SparsePiLayer3
         self.capacity = int(capacity)
         if self.capacity < 1:
             raise ValueError('basicPerceptCapacity must be positive')
@@ -41,7 +41,7 @@ class BasicPercepts(nn.Module):
         self.revision = 0
         # Each basic percept is a row of the first Pi over its parts and
         # wholes; the rows are written in the order the percepts are reserved.
-        self.pi = PerceptPi(self.capacity, self.capacity * self.ENTRIES_PER_ROW)
+        self.pi = SparsePiLayer3(self.capacity, self.capacity * self.ENTRIES_PER_ROW)
         # A conjunction of basic percepts is a row whose members are rows.
         self.conjunctions = {}
         # The stored form each row of a form spells, and the rows of each

@@ -115,9 +115,9 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
     from Models import BaseModel
     cs, grammar, registry, a, b, _ = _world()
     question = registry.form('part', a, b)
-    before = dict(cs._concept_allocator.symbols)
+    before = dict(cs._concept_allocator.concepts)
     GrammaticalThoughtRegistry.install(cs, grammar)
-    assert cs._concept_allocator.symbols == before
+    assert cs._concept_allocator.concepts == before
     def model(space):
         value = BaseModel()
         value.name = 'GrammaticalVPCheckpoint'

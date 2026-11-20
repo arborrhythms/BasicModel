@@ -12595,29 +12595,29 @@ class _ConceptRoleView:
         return _concept_alloc_of(self._host)
 
     def keys(self):
-        return list(self._alloc().symbols)
+        return list(self._alloc().concepts)
 
     def __iter__(self):
         return iter(self.keys())
 
     def __len__(self):
-        return len(self._alloc().symbols)
+        return len(self._alloc().concepts)
 
     def __contains__(self, cid):
-        return int(cid) in self._alloc().symbols
+        return int(cid) in self._alloc().concepts
 
     def __bool__(self):
-        return bool(self._alloc().symbols)
+        return bool(self._alloc().concepts)
 
     def __getitem__(self, cid):
         alloc = self._alloc()
-        if int(cid) not in alloc.symbols:
+        if int(cid) not in alloc.concepts:
             raise KeyError(cid)
         return set(alloc.refs(cid, self._role))
 
     def get(self, cid, default=None):
         alloc = self._alloc()
-        if int(cid) not in alloc.symbols:
+        if int(cid) not in alloc.concepts:
             return default
         return set(alloc.refs(cid, self._role))
 
@@ -14614,7 +14614,7 @@ class ConceptualSpace(Space):
         ident = alloc.identity
         resolved = []
         words = self._word_definition_ids()
-        for sym in list(alloc.symbols):
+        for sym in list(alloc.concepts):
             if sym in words:
                 continue  # a word's native definition survives identity refinement
             store = alloc.store_of(sym)
@@ -14664,7 +14664,7 @@ class ConceptualSpace(Space):
         higher-order symbols are excluded too (their constituents are their
         definition, not a refinement backlog)."""
         alloc = _concept_alloc_of(self)
-        return sorted(s for s in alloc.symbols
+        return sorted(s for s in alloc.concepts
                       if alloc.records(s) and s not in alloc.raised)
 
     def _concept_raise_set(self):
@@ -15598,7 +15598,7 @@ class ConceptualSpace(Space):
             name = ('equal' if right in alloc.singletons and right not in alloc.raised else
                     'part' if all(tag == SYMBOL for tag, _ in refs) else 'change')
             return denoted_order(SimpleNamespace(method_name=name), orders, refs, alloc)
-        if int(concept_id) not in alloc.symbols:
+        if int(concept_id) not in alloc.concepts:
             store = self._closed_clause_store()
             row = None if store is None else store.location(concept_id)
             if row is not None:
@@ -16315,7 +16315,7 @@ class ConceptualSpace(Space):
         raised = alloc.raised
         dropped = []
         words = self._word_definition_ids()
-        for c in list(alloc.symbols):
+        for c in list(alloc.concepts):
             if c in words:
                 continue
             if int(c) in getattr(self, "_frozen_concepts", ()):
@@ -16606,7 +16606,7 @@ class ConceptualSpace(Space):
         """
         alloc = _concept_alloc_of(self)
         cid = int(concept_id)
-        if cid not in alloc.symbols or cid in alloc.retired:
+        if cid not in alloc.concepts or cid in alloc.retired:
             raise ValueError("word form requires an existing concept identity")
         if isinstance(form, bytes):
             form = form.decode('utf-8', errors='surrogateescape')
@@ -16627,7 +16627,7 @@ class ConceptualSpace(Space):
             values.update((word, *index.objects(word)))
         store = self._closed_clause_store()
         return tuple(sorted(cid for cid in values if cid not in alloc.retired and
-                            (cid in alloc.symbols or
+                            (cid in alloc.concepts or
                              (store is not None and store.index_of_row(cid) is not None))))
 
     def resolve_word_concept(self, form, *, order, previous=None):

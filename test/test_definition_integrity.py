@@ -21,10 +21,10 @@ def test_two_pending_words_cannot_overbook_the_last_definition_row():
     store.parts.capacity = cs._concept_allocator.next_id + 3
     first=recurrent_word(cs.interpret, [7],[],form='first')
     alloc=cs._concept_allocator
-    before=alloc.next_id,dict(alloc.symbols),dict(alloc.layer()._tensor_rows)
+    before=alloc.next_id,dict(alloc.concepts),dict(alloc.layer()._tensor_rows)
     with pytest.raises(RuntimeError,match='capacity'):
         recurrent_word(cs.interpret, [8],[],form='second')
-    assert before==(alloc.next_id,dict(alloc.symbols),dict(alloc.layer()._tensor_rows))
+    assert before==(alloc.next_id,dict(alloc.concepts),dict(alloc.layer()._tensor_rows))
     obj=witness_object(cs, first)
     assert cs.interpret.forward(first)==obj
     assert cs.definitions.deref(first)==obj

@@ -75,9 +75,9 @@ def test_native_case_staging_uses_existing_sigma_and_allocates_nothing():
     cs.add_concept_edge(head,first,1.)
     cs.add_concept_edge(head,second,1.)
     cs.add_concept_edge(modifier,second,1.)
-    before=dict(cs._concept_allocator.symbols)
+    before=dict(cs._concept_allocator.concepts)
     bank=stage_case_bank(cs,torch.tensor([103,104]),limit=8)
-    assert cs._concept_allocator.symbols == before
+    assert cs._concept_allocator.concepts == before
     selected=select_cases(bank,torch.tensor([104]),torch.tensor([103]))
     assert selected.available.all()
     expected=cs.similarity_codebook.lookup_rows(torch.tensor([second]))

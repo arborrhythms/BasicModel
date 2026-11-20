@@ -8,7 +8,7 @@ with a concept. Its value in a reading is the Pi's product of its members'
 lanes, one value on each lane (for, against); it holds no code, place or
 time.
 """
-from OrderZero import PerceptPi
+from OrderZero import SparsePiLayer3
 
 
 class SymbolTable:
@@ -17,7 +17,7 @@ class SymbolTable:
     ``index`` maps a symbol's handle (what nominated it) to its index;
     ``handles`` and ``brought`` are by index: the handle, and the concept
     the symbol's making brought, recorded then and never inferred. The Pi
-    is a :class:`PerceptPi` whose rows are the symbols and whose members are
+    is a :class:`SparsePiLayer3` whose rows are the symbols and whose members are
     the keys ``('concept', cid)``. Room is fixed at construction.
     """
 
@@ -29,7 +29,7 @@ class SymbolTable:
             raise ValueError('the symbol table needs room for a symbol')
         self.capacity = capacity
         self.index, self.handles, self.brought = {}, [], []
-        self.pi = PerceptPi(capacity, capacity * self.ENTRIES_PER_ROW)
+        self.pi = SparsePiLayer3(capacity, capacity * self.ENTRIES_PER_ROW)
 
     def __len__(self):
         return len(self.handles)

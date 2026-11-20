@@ -122,7 +122,7 @@ def test_75_concept_orders_are_fixed_contiguous_blocks(truth_model):
     alloc = owner._concept_allocator
     caps = owner._order_caps()
     assert not hasattr(alloc, 'reference_orders')
-    assert all(value is None for value in alloc.symbols.values())
+    assert all(value is None for value in alloc.concepts.values())
     assert sum(caps) == owner.nVectors
     start = 0
     for order, capacity in enumerate(caps):

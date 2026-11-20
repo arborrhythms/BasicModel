@@ -14,7 +14,7 @@ import pytest
 import torch
 
 from Layers import EPS_LOG, PiLayer3, NotLayer3, SparseSigmaLayer3
-from OrderZero import PerceptPi, read_word
+from OrderZero import SparsePiLayer3, read_word
 
 
 def _drawn(count):
@@ -26,7 +26,7 @@ def _drawn(count):
 def test_the_first_pi_is_pi_layer3_on_its_rows():
     """A row over two members gives the product of their memberships on its
     own lane, as a PiLayer3 row with weight one on the two members."""
-    pi = PerceptPi(4, 16)
+    pi = SparsePiLayer3(4, 16)
     pi.append([('ps', (1,)), ('ws', 7)])
     pi.append([('ps', (2,))])
     m = torch.tensor([[.9, .2], [.8, .5], [.3, 0.]])  # three keys, two lanes
@@ -48,7 +48,7 @@ def test_the_first_pi_is_pi_layer3_on_its_rows():
 
 
 def test_the_first_pi_is_stored_as_compressed_rows_in_capacity_allocated_beforehand():
-    pi = PerceptPi(2, 3)
+    pi = SparsePiLayer3(2, 3)
     before = (pi.crow.data_ptr(), pi.col.data_ptr(), pi.value.data_ptr())
     pi.append([('ps', (1,)), ('ws', 3)])
     assert (pi.crow.data_ptr(), pi.col.data_ptr(), pi.value.data_ptr()) == before
@@ -58,7 +58,7 @@ def test_the_first_pi_is_stored_as_compressed_rows_in_capacity_allocated_beforeh
 
 
 def test_a_row_with_no_member_present_or_none_at_all_reads_nothing():
-    pi = PerceptPi(4, 8)
+    pi = SparsePiLayer3(4, 8)
     pi.append([('ps', (1,)), ('ws', 2)])
     pi.append([])
     got = pi(torch.tensor([[1., 0.]]), (0, 1), [('ps', (1,))])
@@ -351,7 +351,7 @@ def _taught(cases, *, rows, steps=2000, project=False, seed):
     of the Not here. With ``project`` every entry is held on the value (its
     learned number at zero or above), so there is no Not entry."""
     torch.manual_seed(seed)
-    pi = PerceptPi(len(rows), 4 * len(rows))
+    pi = SparsePiLayer3(len(rows), 4 * len(rows))
     keys = [('bp', r) for r in range(len(rows))]
     for members in rows:
         pi.append([('bp', m) for m in members] if members else [])

@@ -42,7 +42,7 @@ def test_registry_allocates_no_inventory_rows_for_part_or_implies(monkeypatch):
     for relation in ('part', 'implies'):
         reference = f.registry.clause_reference(relation)
         assert f.cs._concept_row_of(reference[1]) is None
-        assert reference[1] not in f.cs._concept_allocator.symbols
+        assert reference[1] not in f.cs._concept_allocator.concepts
     assert 'grammatical-vp:conceptual-taxonomy:part' not in f.cs._frozen_named
     assert 'clause:implies' not in f.cs._frozen_named
 

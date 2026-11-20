@@ -6296,7 +6296,7 @@ class ConceptAllocator:
     def __init__(self, layer_sizer=None, order_cap=None, *, member_capacity=8192, member_width=0, relation_capacity=8192):
         self.next_id = 1                 # 0 reserved
         self.reclaimed_seats = 0         # capacity credits, never recycled handles
-        self.symbols = {}                # insertion-ordered handles; no stored order
+        self.concepts = {}               # the live concept ids, insertion-ordered; no stored order
         self.raised = set()              # σ-raised: never re-refined
         self.singletons = set()          # unit-set rows (min-support exempt)
         count = TheXMLConfig.space('ConceptualSpace', 'raiseCount', 3)
@@ -6418,7 +6418,7 @@ class ConceptAllocator:
         """Allocate a fresh global concept id (stable handle, no vector)."""
         cid = int(self.next_id)
         self.next_id = cid + 1
-        self.symbols[cid] = None
+        self.concepts[cid] = None
         self.layer(0).ensure_row_key(cid)
         return cid
 
@@ -6428,8 +6428,8 @@ class ConceptAllocator:
         cid = int(cid)
         if cid == NULL_CONCEPT:
             raise ValueError('the null-concept is outside the definition inventory')
-        if cid not in self.symbols:
-            self.symbols[cid] = None
+        if cid not in self.concepts:
+            self.concepts[cid] = None
             self.layer(0).ensure_row_key(cid)
         return cid
 

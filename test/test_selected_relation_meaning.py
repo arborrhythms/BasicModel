@@ -440,4 +440,4 @@ def test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept(monk
         assert meaning.role_refs == registry.form('part',a,b).role_refs
     else:
         assert meaning is None
-    assert transient not in cs._concept_allocator.symbols
+    assert transient not in cs._concept_allocator.concepts

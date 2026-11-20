@@ -19,12 +19,15 @@ from torch import nn
 from Layers import EPS_LOG, membership_log
 
 
-class PerceptPi(nn.Module):
-    """The square, sparse Pi of the first layer, stored as compressed rows.
+class SparsePiLayer3(nn.Module):
+    """The sparse Pi of basic percepts and of symbols alike, stored as
+    compressed rows.
 
-    Row ``r`` is a basic percept. Its entries are its members, addressed by a
-    member id that names one key of the percept tower (a part run or a
-    whole). Its for entries are joined by the product; its against entries
+    At order zero row ``r`` is a basic percept and its members are keys of
+    the percept tower (a part run or a whole); above it, row ``r`` is a
+    symbol and its members are the concepts it reads (``('concept', cid)``).
+    Its entries are its members, addressed by a member id that names one
+    key. Its for entries are joined by the product; its against entries
     (the parts that the stored forms nearest to holding it add) are joined
     by the union, any one present being enough. Every row also has its own reading on the diagonal; a basic
     percept is read only through its members, so its own reading is one and
@@ -37,7 +40,7 @@ class PerceptPi(nn.Module):
         super().__init__()
         rows, entries = int(rows), int(entries)
         if rows < 1 or entries < 1:
-            raise ValueError('the first Pi needs room for rows and entries')
+            raise ValueError('the sparse Pi needs room for rows and entries')
         # The rows are written again from the basic percepts' occurrences
         # when a model is loaded, so the storage is not saved.
         self.register_buffer('crow', torch.zeros(rows + 1, dtype=torch.long), persistent=False)

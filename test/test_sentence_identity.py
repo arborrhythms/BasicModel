@@ -11,7 +11,7 @@ from test_clause_acceptance import SentenceFixture
 
 def inventory(cs):
     alloc = _concept_alloc_of(cs)
-    return dict(next_id=alloc.next_id, placement=copy.deepcopy(alloc.symbols),
+    return dict(next_id=alloc.next_id, placement=copy.deepcopy(alloc.concepts),
                 rows=copy.deepcopy(cs._csw_rows),
                 keys=copy.deepcopy(alloc.relate_idx))
 
@@ -24,7 +24,7 @@ def test_closing_idea_is_narrow_without_a_derivation_part(monkeypatch):
     assert row >= 0
     assert inventory(f.cs) == before
     assert f.store.parts.find(f.noun('cat'), f.noun('runs')) is None
-    assert f.store.row_name(row) not in _concept_alloc_of(f.cs).symbols
+    assert f.store.row_name(row) not in _concept_alloc_of(f.cs).concepts
     torch.testing.assert_close(f.store.point_of_row(f.store.occurrence_of(row)), clause.point)
 
 

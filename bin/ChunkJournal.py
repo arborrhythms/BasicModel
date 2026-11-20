@@ -434,7 +434,7 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
                     source = pos.get(-int(shifted[SOURCE-2])-1)
                     if source is not None:
                         leaves[source] = index+1
-        elif identity in alloc.symbols and identity not in alloc.retired:
+        elif identity in alloc.concepts and identity not in alloc.retired:
             # A durable symbol can be recalled without a current MTM token.
             # Its first bind in this journal is a use, not an introduction;
             # the closing must keep that symbol even if its chunk is evicted.
