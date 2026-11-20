@@ -386,8 +386,11 @@ Symbols are split from concepts and have no dimensions (Alec): a symbol is
 held in a tensor of its own, as two unsigned rows, one for each lane, of the
 Pi above the concepts it reads, and it has no vector, place, form or trust
 content read as a direction. It stores no `.where` or `.when`; its `.where`
-is written when STM reads it, this activation at this place and time. Each
-symbol that MTM nominates brings one concept, a Sigma over it. In humans, perceptual space projects onto a 3D cerebellar
+is written when STM reads it, this activation at this place and time. A
+symbol is a thing, a region of sameness over the conceptual space of one
+order, and a concept is a kind, a Sigma over symbols; each symbol that MTM
+nominates brings one concept to start with, and there is no symbol of a
+concept (Alec, 2026-11-20). In humans, perceptual space projects onto a 3D cerebellar
 subspace before symbolic encoding.
 
 Symbols are independent, permanent, and integral (as references). The

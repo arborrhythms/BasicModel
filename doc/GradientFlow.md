@@ -147,14 +147,16 @@ top-down gradient reaches expectation and expectation's loss reaches nothing
 else. Where an expectation gain is configured, the gain multiplies the signal
 detached (`Expectation.gain_field`), so a predictor cannot learn to mispredict
 in order to brighten a signal or to over-predict in order to silence it. At
-the conceptual layer the expectation is `expect`, a stacked sigma-pi map from
-the observed order-zero field to the expected one
-([Expectation](ExpectationRetention.md)), whose output is also the spread
-that primes attention, the chooser and retrieval, read detached; it is
-trained only by omission, against the detached field with the hidden units
-present (`expectation.concepts`). `intuit` has no map of its own: it
-deposits `expect`'s field, detached, in the open basic field and closes it
-along the definitions (`IntuitionField.read`, `FieldProjection.close`). The
+the conceptual layer the expectation is the reconstruction in stages on the
+structure's own Pi, Not and Sigma ([Expectation](ExpectationRetention.md)),
+whose output is also the spread that primes attention, the chooser and
+retrieval, read detached; it is taught by the reconstruction's error, and
+where units were hidden by the detached field with them present
+(`expectation.concepts`). `intuit` has a Pi, Not and Sigma of its own
+outside the architecture: it writes the intuited field into the open basic
+field, marked as intuition, and closes it along the definitions
+(`FieldProjection.close`); its map is taught by the field that thought
+leaves, with the output's cost. The
 conceptual split and the correction-output form
 are [future work](FutureWork.md#the-residual-split-a-stopped-subtraction-or-the-correction-alec-2026-10-29).
 
@@ -498,8 +500,8 @@ lanes and `reconstruction.walk_credit` belong to reconstruction/R. No
 compose-tree teacher trains the generate policy. Shared numerical inverse operators retain their ownership;
 `separateChooser=true` still restricts parameter writes by owner.
 
-`expect` is taught by omission, and `intuit` deposits its field detached,
-so no thought deposit trains a map of `intuit`'s. Numeric heads retain
+Expectation is taught by the reconstruction, and `intuit`'s map by the
+field that thought leaves, with the output's cost. Numeric heads retain
 their forward readout with `answerSynthesis=false`.
 
 Compose, generate and reverse share each kernel; a free inverse searches

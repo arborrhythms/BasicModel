@@ -1139,8 +1139,9 @@ through compose, the generate walk and the same decoder, scored against the
 input before omission; `reconstruction.free_percept`, the decoded percepts
 against the percept forecast's residual; the walk residuals and departure
 credits of reconstruction and output; the expectation maps' own terms
-(`expectation.*`, source and target detached), among them `expect`'s
-`expectation.concepts`, taught by omission, and the read from a field to
+(`expectation.*`, source and target detached), among them expectation's
+stage of the concepts, `expectation.concepts`, taught where units were
+hidden, and the read from a field to
 one point, `expectation.idea`, taught by the kept sentence's idea; and the explicit
 grammar lessons (`grammarLessonWeight`). `reconstruction.free_bytes`, the decoded
 bytes' identity against the input, and `reconstruction.coverage`, the missing

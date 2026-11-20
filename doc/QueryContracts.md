@@ -54,7 +54,8 @@ Retired operator names raise with their replacements (2026-10-07): thought
 `what` with `ask`; LTM `what` and `lookup` with `query`; grammar `chunk` with
 `synthesize` (inverse `analyze`); `true` with `isTrue`. `quantize`, `arma` and
 `expect` are removed from thought: `<sentenceExpectation>` governs the
-sentence expectation, `expect` is a learned map, and the strength of
+sentence expectation, `expect` is the spread on the structure's own
+matrices, and the strength of
 expectation is a setting of the model, not a thought operation (Alec, 2026-11-13: "drop gain, we can set that
 as expectationGain on the model").
 
