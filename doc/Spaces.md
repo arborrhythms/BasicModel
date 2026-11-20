@@ -733,9 +733,9 @@ occupancy in that allocation; checkpoint capacities must match.
 
 Concept ids persist. Above order zero the structure repeats: a Pi whose rows
 are symbols over the concepts below, each symbol two unsigned rows, one on
-each lane, then a Sigma that reads each symbol's two channels with weights
-of their own, starting as one signed input, for less against
-([Architecture](Architecture.md#sigma-and-pi-layers)).
+each lane, then the Not, which joins each symbol's pair into one signed
+value, for less against, then a Sigma that reads those values with weights
+at zero or above ([Architecture](Architecture.md#sigma-and-pi-layers)).
 
 ### Geometry Split {#percept-geometry-split}
 
@@ -1402,10 +1402,10 @@ y      = tanh(x U)                       # n signed values (SigmaLayer3)
 lanes  = signed_lanes(y)                 # stored as 2n unsigned lanes
 rows   = Pi(lanes)                       # the symbols MTM nominated, each a
                                          # row on its own lane (PiLayer3)
-y_next = tanh(rows_for W_for + rows_against W_against)
-                                         # the next Sigma: two channels, each
-                                         # with its own weights, starting at
-                                         # W_against = -W_for
+signed = Not(rows)                       # for less against, one value a
+                                         # symbol; an entry of the Not
+                                         # exchanges a pair for one concept
+y_next = tanh(signed W)                  # the next Sigma, W at zero or above
 ```
 
 A Pi row is $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$, with its

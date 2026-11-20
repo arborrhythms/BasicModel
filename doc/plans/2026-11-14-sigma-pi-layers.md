@@ -8934,6 +8934,47 @@ His answers to §23.S.1's four defects and to the question of what a concept of 
 
 So it is neither the making of the code nor the writing of it. It is the two searches, each over everything stored: the test for a code inside another, and the finding of the links, which today looks through the stored forms one by one. Both can be made not to grow with the store: the links by an index of runs, and the test by one product on the device. That is item 1.5's.
 
+### 19.90 Alec: Pi, Not, Sigma at order zero, and the Sigma monotone; one time; a slot of episodic memory; the lookup of part codes (2026-11-19)
+
+Received while the pass that builds rule 62 was running, in answer to the report of the repair pass (§23.R).
+
+**The order-zero signal.** "The order zero signal should be built as: Pi Not Sigma. And I made a mistake when I said it could be non-monotone, that would give it the ability to change sign, which should be restricted to not. But the important part is that Pi reads perceptual space, its two lanes get passed to Not, and those are combined into on signed lane for processing by sigma (which may process an arbitrary number of those signed values)."
+
+*Decided* (rule 63). This withdraws rule 59, which Claude had written from his §19.83 ("after the Not layer we still have two channels, those need not be combined", and then "Conceptual weights are signed as a result, otherwise we wouldn't get negative output with no negative input"). Three steps in a fixed order:
+
+| Step | Reads | Gives | Its weights |
+| --- | --- | --- | --- |
+| Pi | perceptual space (above order zero: the lanes of the concepts beneath) | for each row two values from 0 to 1, for and against | zero or above |
+| Not | each row's two values | one signed value from -1 to 1 for each row, for less against; an entry of the Not gives one concept that row's pair exchanged | none of its own: an entry is there or it is not |
+| Sigma | any number of those signed values | one signed value for each concept, the squashed sum | zero or above, always |
+
+The question his earlier sentence answered, where a value below zero comes from when no input is below zero, is answered now by the Not: evidence against reaches the Sigma as a signed value below zero, and a Not entry turns evidence for into one. The Sigma itself is monotone and cannot change a sign. This returns to his §19.15 ("not carries all negation") and makes order zero the structure of rule 29 exactly.
+
+*What it changes in what is built.* Round 4's first pass gave the order-zero Sigma for weights and against weights (§23.4, step 11): the against weights go. Round 3's Sigma had one signed weight for each input, whose part below zero was the Not entry (rule 3): a weight is now held at zero or above, and a Not entry is kept by the Not. The pass building rule 62 was sent this amendment while it ran.
+
+*Mine, built provisionally and put to him:* what may make a Not entry. Claude's reading of "restricted to not" is that the Sigma's gradient never makes one. A Not entry is made by teaching that is the Not's own: by omission at the basic level (rule 29: "Omission teaches not"), by a Not member declared in the record of a concept's members, and above the basic level by a symbol's pair read exchanged. If he means only that the sign is kept in the Not, with the gradient free to make an entry there, the certificates of rule 63 change in one clause and the structure does not.
+
+**1. The time.** ""carry their time" is a worrying phrase. There is one model time, we can sinusoidally encode that in one place for all readers, and let operators see it so that their logic can compare the time to that which is stamped into each concept as the .when". The phrase was Claude's, in §19.89 ("a reading and a chunk of STM carry their `.when` as before"). *Decided* (rule 64): one clock, one code of it made in one place, a stamp on each concept, and the chooser and the operators able to compare the present time with a stamp. What the source has now, how many clocks and how many places that encode a time, is being counted (§23.T); the change is round 6's.
+
+**2. The slots.** "Entry should be slot in episodic memory ( the idea is semantic memory). Most active is clearly not useful; perhaps least expected, or sentence dominant such as np, vp, ?" *Decided as far as it goes* (rule 65). The term is *slot*: a row of LTM keeps an idea, which is semantic memory, and a few slots, which are episodic memory. "Entry" is then left to mean one thing, an entry of a matrix (a for entry, a Not entry). The slots are no longer the most active concepts. *Open, his question mark; Claude's first choice is the least expected:* the concepts whose value is furthest from what the expectation gave. It needs no parse, so it holds for a mind with the basic level alone; the words every sentence has are expected and leave the slots to the words that set this moment apart; and the sentence's constituents are already what the idea is made of. Both are measured in round 6c on the question of rule 60, whether a question on top of the STM stack finds the row that answers it, before either is built. *To rename with it:* the source's column `slots` of a row of LTM holds the ideas, and `episodic_concepts` the slots.
+
+**3 and 4.** "good pre allocation" (the matrix of a concept's members made at construction, §19.89, 3); "ok" (the repair of the fourth defect, which rule 62 is).
+
+**The lookup of part codes.** "Let me think about how to speed up the part code lookup. Since they are all matrices, why can't we just run the comparison algorithm itself on the part powerset of the code being inserted, and take the intersection of those results?"
+
+It can, and measured it is the faster way. A stored code holds the new code exactly when it holds the code of each of the new form's parts, so the intersection of the results for the parts is one test of the whole code against the stored codes; taken the other way, it gives the stored codes that lie inside the new one. Each candidate found is then checked for the run: with the run it is a link, without it an accident. Measured on the 19,821 words, at 64 and 64, on the processor (`lookup_split.py` in the scratch directory; no source changed):
+
+| | Seconds over the 19,821 admissions |
+| --- | ---: |
+| The links as built: every stored form looked through for the run (`WordIdentity._link`) | 20.3 |
+| One test of the new code against the stored codes, both ways | 3.0 |
+| The check of the candidates it gives for the run | 0.04 |
+| The test for accidents as built (`_accidents_of_many`): the comparison 10.8, reading out the pairs 2.3, sorting links from accidents 0.6 | 13.7 |
+
+- The one test finds every link: of 7,863 holders and 51,808 parts, none is missed. It gives 137,803 candidates, of which 78,132 have no run; those are the accidents that the repair then removes, so the same test serves both searches at a form's introduction.
+- The test for accidents is not costly for the new form. It is costly because a repair changes codes and each changed form is tested again against the whole store: 29,293 tests of 452,169 forms, 23 forms for each admission. *Not measured:* kept by part, as he puts it, one list of forms for each coordinate, the test of a form given one coordinate need only look at the forms that have that coordinate, and an intersection can begin from its rarest part, so neither search grows with the store.
+- It is an equal-results change and is item 1.5's, where the numbers are recorded.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9139,21 +9180,26 @@ chooses from. The old classes are not edited.
    as two unsigned lanes, its positive part on the for lane and its
    negative part on the against lane; a single reading is never
    "both". *Mine:* it has no bias; where an answer is read from a
-   Sigma, the signed number is read. *Since rule 59:* an input has
-   two weights, one on its for channel and one on its against
-   channel, the second begun as the first negated. A Not entry is
-   then a for weight below zero or an against weight above zero.
+   Sigma, the signed number is read. *Since rule 63* (which withdraws
+   rule 59): the Sigma is monotone. Each entry has one weight, held
+   at zero or above, on the one signed value the Not gives for its
+   input; the gradient cannot carry a weight through zero. A Not
+   entry is an entry of the Not and not a weight below zero of the
+   Sigma: it exchanges that input's pair for that concept, and the
+   Sigma's weight on it is again at zero or above.
 4. *The cycle* (Alec, §18.25, as amended by rules 20, 21, 26 and
-   59). At an order with $n$ concepts: $n$ signed values, stored as
+   63). At an order with $n$ concepts: $n$ signed values, stored as
    $2n$ unsigned lanes; the rows above that MTM has nominated read
-   those lanes, each row its own lane; the next Sigma reads each
-   symbol's pair as two channels, each with its own weight (rule
-   59), which at its start is the pair combined, for less against.
+   those lanes, each row its own lane; the Not joins each symbol's
+   pair into one signed value, for less against, and the next Sigma
+   reads those signed values (rule 63).
 29. *One structure: Pi, Not, Sigma, at every order* (Alec, §19.20).
-    - *At the basic level* the Pi makes the basic percepts, their
-      vectors are combined (rule 7), and the Sigma is dense over the
-      content's elements (rule 8). A Not entry there is from one
-      element to one concept, a scalar. It records that something
+    - *At the basic level* the Pi reads perceptual space and makes
+      the basic percepts, each row with its two values, for and
+      against; the Not joins each row's two values into one signed
+      value; the Sigma reads those signed values, sparse, with
+      weights at zero or above (rules 62 and 63). A Not entry there
+      is from one row to one concept. It records that something
       expected is absent: "animal cognition sees particular events
       not happening, but it does not negate ideas". What teaches it
       is an omission, the concept expected and not come ("Omission
@@ -9168,8 +9214,8 @@ chooses from. The old classes are not edited.
     - The operator `not` of a sentence or a thought swaps the lanes
       of what it is put on (`FieldLogic.reduce`), as now. It can be
       put on any symbol, and no omission need teach it.
-    - With every weight held at zero or above, so that no Not entry
-      is read, a mind speaks only of what is (§19.15).
+    - The Not alone changes a sign (rule 63; Alec, §19.90). With no
+      Not entry read, a mind speaks only of what is (§19.15).
 
 **B. The perceptual basis: a form, its code and its way back.**
 
@@ -9989,7 +10035,12 @@ chooses from. The old classes are not edited.
       take (its past error against the composition); and whether the
       grammar may compose further over an idea it took.
 
-59. *The two channels are not joined before the Sigma* (Alec, §19.83:
+59. *Withdrawn by rule 63* (Alec, §19.90: "I made a mistake when I
+    said it could be non-monotone, that would give it the ability to
+    change sign, which should be restricted to not"). What stays of
+    it is its last sentence: a concept's own value is one signed
+    number, and both is two concepts. As it was written:
+    *The two channels are not joined before the Sigma* (Alec, §19.83:
     "after the Not layer we still have two channels, those need not
     be combined: we can have a concept for presence and a concept
     for absence, if we so choose. So the summation step is
@@ -10060,9 +10111,9 @@ chooses from. The old classes are not edited.
     distribute codes in the hypercube, and the only thing touching
     that is the pi. This applies to both .what and .where"; §19.83:
     "order zero is n:n on basic percepts"). A concept of order zero
-    reads the two values of each basic percept's row, for and
-    against, on two channels (rule 59), and starts reading only its
-    own row, at one (rule 21). It does not read a percept's code, and
+    reads the one signed value that the Not gives for each basic
+    percept's row, for less against (rule 63), and starts reading
+    only its own row, at one (rule 21). It does not read a percept's code, and
     no vector of codes is joined for it. It is sparse, stored as the
     Sigma of every order above is (rules 11 and 19). This takes the
     place of rule 7's joined vector as the Sigma's input, of rule 8's
@@ -10073,6 +10124,65 @@ chooses from. The old classes are not edited.
     how reading in order is then learned is round 6's to show. *Given
     up:* a concept answering to a word it was never given (§18.24,
     15).
+
+63. *Pi, Not, Sigma: the Not joins the two lanes, and it alone
+    changes a sign* (Alec, §19.90: "The order zero signal should be
+    built as: Pi Not Sigma ... Pi reads perceptual space, its two
+    lanes get passed to Not, and those are combined into on signed
+    lane for processing by sigma (which may process an arbitrary
+    number of those signed values)"). Three steps, at order zero and
+    at every order above it (rule 29):
+    - *The Pi* reads perceptual space (above order zero, the lanes
+      of the concepts beneath) and gives each of its rows two values
+      from 0 to 1, for and against.
+    - *The Not* takes each row's two values and gives one signed
+      value from -1 to 1, for less against. An entry of the Not,
+      from one row to one concept, exchanges that row's pair for
+      that concept, which then reads against less for.
+    - *The Sigma* reads any number of those signed values for a
+      concept, with one weight for each at zero or above, and
+      squashes the sum. It is monotone: with no Not entry, raising
+      an input never lowers a concept. A concept's value below zero
+      comes from evidence against, or from a Not entry, and from
+      nothing else.
+    - A concept's own value stays one signed number, and both is two
+      concepts (rule 59's last sentence): one that reads a row as it
+      is and one that reads it through a Not entry.
+    - *Mine, built provisionally and put to him:* a Not entry is
+      made by teaching that is the Not's own, and never by the
+      Sigma's gradient carrying a weight through zero: by omission at
+      the basic level (rule 29), by a Not member declared in the
+      record of a concept's members, and above the basic level by a
+      symbol's pair read exchanged. Once made, its weight is taught
+      as any other, at zero or above.
+    This withdraws rule 59 and certificate 51 as they stood, and
+    restates rules 3, 4, 29 and 62.
+
+64. *One time of the model, encoded in one place* (Alec, §19.90:
+    "There is one model time, we can sinusoidally encode that in one
+    place for all readers, and let operators see it so that their
+    logic can compare the time to that which is stamped into each
+    concept as the .when"). The model has one clock. Its sinusoidal
+    code is made in one place and is the same for every reader. A
+    concept's `.when` is the stamp of that clock at the concept's
+    moment. The chooser and the operators can read the present time
+    and compare it with a stamp. Nothing has a time of its own
+    beside its stamp. *Mine:* what the source has now is counted
+    first (§23.T), and the change is round 6's.
+
+65. *A slot of episodic memory* (Alec, §19.90: "Entry should be slot
+    in episodic memory ( the idea is semantic memory). Most active
+    is clearly not useful; perhaps least expected, or sentence
+    dominant such as np, vp, ?"). A row of LTM keeps an idea, which
+    is semantic memory, and a few slots, which are episodic memory:
+    each slot one concept of the row's moment with its value. The
+    slots are not filled by the most active concepts. *Mine, to be
+    measured in round 6c before either is built:* the least expected
+    concepts of the moment (the concepts whose value is furthest
+    from what the expectation gave), against the heads of the
+    sentence's dominant constituents; the measure is whether a
+    question on top of the STM stack finds the row that answers it
+    (rule 60).
 
 **Certificates.** A certificate of a mechanism must pass. A learning
 certificate is recorded and not repaired (1.8 §43); those are marked
@@ -10100,7 +10210,7 @@ certificate is recorded and not repaired (1.8 §43); those are marked
    carrying the property for and another against, which is the two
    lanes of the reading's combined vector; a single row is for or
    against (rule 6, §23.3.5). Above the percepts both is two
-   concepts, one for presence and one for absence (rule 59).
+   concepts, one for presence and one for absence (rule 63).
 4. *The cycle:* the next Sigma reads one combined input, for less
    against, for each symbol; no symbol is made at a concept's
    allocation; a promotion is the nomination of a row, which brings
@@ -10322,13 +10432,15 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     read idea lies from the idea composed from the words, before and
     after teaching, and against the idea of another constituent, is
     printed.
-51. *Two channels at the Sigma* (rule 59). (a) At its start every
-    concept reads what it read with one input of for less against,
-    to rounding. (b) The gradient of an error reaches the for
-    weights and the against weights apart. (c) *Learning:* a concept
-    taught to be present where a percept is witnessed against, and
-    to say nothing where it is witnessed for, is learned with
-    weight on the against channel alone; the weights are printed.
+51. *Pi, Not, Sigma* (rule 63; it takes the place of the two
+    channels of rule 59). (a) No weight of the Sigma is below zero,
+    at its start and after training on the three learning cases of
+    certificate 23. (b) With no Not entry, raising a row's signed
+    value never lowers any concept. (c) The Not gives for less
+    against: the three numbers for a row read for, read against and
+    read both are stated. (d) A concept with a Not entry on a row
+    reads that row's pair exchanged; the entry was made by the Not's
+    teaching and not by the gradient.
 52. *The query from STM* (rule 60). (a) With a question on top of the
     stack, the row of LTM that answers it is pushed onto the stack,
     and one row only. (b) With an idea that is no question on top,
@@ -10494,9 +10606,12 @@ section:
     if the two vectors come to overlap). Built: the blank is made as
     rule 20 says; what removing is, beside concepts kept forever, is
     not built.
-14. *The against channel in the salience map* (rules 36 and 59).
+14. *Evidence against in the salience map* (rules 36 and 63).
     *Closed by Alec (§19.88):* salience is never below zero, and it
-    can reinforce evidence for or evidence against.
+    can reinforce evidence for or evidence against. Since rule 63
+    the request comes down through the Sigma's weights and then
+    through the Not, which gives each of a row's two lanes its
+    share.
 13. *What holds a succession,* the bell and then the food, across two
     sentences (§19.25). Built: a row that MTM nominates for the two
     when the succession recurs, read by rule 30's spread.
@@ -11120,10 +11235,13 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
 3. A symbol is two unsigned rows of PiLayer3 and brings one concept
    (rule 10). It is made at MTM's nomination, or by interpret for a
    meta concept, and not at a concept's allocation.
-4. The cycle above order zero (rules 4, 11, 12 and 59):
-   SigmaLayer3, sparse, as compressed rows, reads each symbol's pair
-   as two channels with weights of their own from the start (the
-   against weights begun as the for weights negated).
+4. The cycle above order zero (rules 4, 11, 12 and 63):
+   the Not joins each symbol's pair into one signed value, for less
+   against, and SigmaLayer3, sparse, as compressed rows, reads those
+   signed values with weights held at zero or above. A Not entry is
+   an entry of the Not (the pair read exchanged), never a weight
+   below zero. They are the Not and the Sigma of order zero, the
+   same two classes.
    The least and the greatest of SparseLayer.fold_presence go above
    order zero, and SparseLayer._fold_weights with them
    (_concept_rung_presence in bin/Spaces.py, FieldProjection.close).
@@ -11165,22 +11283,22 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    it, its own order's symbols and the order below's concepts. Say
    what becomes of nVectors, basicPerceptCapacity and
    orderAllocation in the configurations, and what is allocated.
-11. The two channels at the Sigma (rule 59; Alec, §19.83: "after the
-   Not layer we still have two channels, those need not be combined
-   ... the summation step is determined by gradient need at
-   sigma"). The Sigma of every order, the dense one of order zero
-   among them, takes the for channel and the against channel as two
-   inputs with weights of their own, in place of one input of for
-   less against. The against weights start as the for weights
-   negated, so that at its start every concept reads what it reads
-   now and every certificate that passes still passes; say so by a
-   test. A concept's own value stays one signed number, and both is
-   two concepts (Alec, §19.83). Certificate 51.
+11. Pi, Not, Sigma (rule 63; Alec, §19.90; it takes the place of
+   the two channels of rule 59, built at order zero in this round's
+   first pass and withdrawn). At every order: the Pi gives each row
+   its two values; the Not gives one signed value for each row, for
+   less against, and its entries exchange a row's pair for one
+   concept; the Sigma reads the signed values with weights held at
+   zero or above, which the gradient cannot carry through zero. A
+   Not entry is made by the Not's teaching and never by the Sigma's
+   gradient. A concept's own value stays one signed number, and both
+   is two concepts. Certificate 51 as restated.
 0. Before the steps below, in the pass that builds the Sigma above
    order zero (rule 62; Alec, §19.89): the Sigma of order zero
-   becomes that same Sigma. It reads the two values of each basic
-   percept's row on two channels, sparse, a concept starting on its
-   own row at one; it reads no percept's code. OrderZeroSigma's
+   becomes that same Sigma. It reads the one signed value that the
+   Not gives for each basic percept's row (step 11), sparse, a
+   concept starting on its own row at one; it reads no percept's
+   code. OrderZeroSigma's
    dense matrix, the joined vector of OrderZero.combine as its
    input, the columns of rules 8b and 54 (member_column,
    follow_members) and OrderZero.read_word's read of a code go. The
@@ -11357,9 +11475,9 @@ which form of the where match is built.
 15. From Alec's §19.88, for this round. Salience is never below
     zero, since it comes down through products; a request may make
     salient what tells for a wanted concept or what tells against
-    it (rule 36): build the against channel's weights of rule 59
-    into the map so, and print what each lane of a wanted concept
-    receives. A word present by degree is not brought back (observe,
+    it (rule 36): carry the request down through the Sigma's weights
+    and through the Not (rule 63) so, and print what each lane of a
+    wanted concept receives. A word present by degree is not brought back (observe,
     and return what you see). The weights that read the where are
     taught by the reconstruction's error alone, as a thing to try: a
     look's error teaches the request only. Round 2 measured the
@@ -15367,3 +15485,44 @@ The sentences were read once (rule 20), so their words were not nominated. That 
 - **Rule 20, for the tests.** Every one of items 5, 6 and 9 was rule 20 in a test that was green by a draw. A test that reads a sentence once now passes or fails with the walk, not with the code. A short check would find the rest: a census of tests that read a sentence without `nomination_fixtures` and assert on words, rows or writes.
 - **Episodic entry (rule 60 / §19.85, open point).** Name what an entry keeps. The declared classes are out now (decided); the question (`ExtendedRecall.matches`) must leave out what the entry leaves out, or a clause cannot match its own meaning. The formal arguments of the clause's operator take three of four slots in a three-argument clause, and the words tie for the fourth. Either the arguments go the way of the declared classes, or `episodicConcepts` counts arguments and words apart.
 - **Rule 8b / certificate 17, for the teacher of expect (round 5).** The order-zero read of a word's own bracket lights other words of shared letters at 65 to 75 per cent, and training raises it to one. `concept_teacher` should not read the full field of order-zero concepts. It could read the concepts of the words staged in the bracket (rows the reading identified), or the Sigma's discrimination must be a certificate that round 5 holds.
+
+### 23.C The tests that read a sentence once: a census (2026-11-19)
+
+A read-only census of `test/` (no test run, nothing edited), asked for by §23.R: a test that reads its sentence once and then asserts on its words passes or fails by the walk (rule 20).
+
+| | Count |
+| --- | ---: |
+| Test files with test functions | 762 |
+| Test functions | 5,841 |
+| Of those, functions that make the model read text | 907 |
+| Read until nomination, directly or through a helper | 500 |
+| Train for many presentations | 89 |
+| Read in loops | 36 |
+| Read once | 282 |
+| **Read once and assert on what needs a word known** | **30, in 21 files** |
+
+Of the 30, the census is sure of 23, takes 6 as likely and 1 as possible. By file (tests in brackets where a file has more than one):
+
+`test_arithmetic_isolation`, `test_compiled_expectation_boundary`, `test_constituent_lesson`, `test_expectation_defaults` (2), `test_field_learning`, `test_generation_selection_backward`, `test_item18_idea_read`, `test_item18_paths`, `test_item18_tree_first` (3), `test_item20_round6_loop`, `test_item20_round6_output`, `test_loop_of_looks` (2), `test_negative_expectation`, `test_output_path_supervised`, `test_output_synthesis` (3), `test_output_walk` (3), `test_prepared_answer_boundary`, `test_query_native_ids`, `test_sentence_boundary`, `test_sentence_compose`, `test_sentence_end_state`, `test_sentence_journal`.
+
+Six helpers read once and are shared: `test_output_walk._capture_program_probe` (21 tests use it, 5 at risk), `test_compiled_word_chunk._stage_fullgraph_tensor_peer` (21, 3), `test_item18_expect.read` (used from 5 other files, 1), `test_output_synthesis._loop_understanding` (7, 2), `configuration_fixtures.freeze_admission` (7, none today; after it a lookup can nominate nothing, so a word assertion added there would always fail), `attention_curriculum_gates.present` (not decided).
+
+*Not determined by the census:* five tests whose data come from a loader's batch (`test_output_path_supervised::test_serial_answer_path_varies_with_the_input`, the three of `test_reconstruct_from_idea`, `test_what_thinking_episode`); whether two sentences packed into one stream are one reading or two (`test_expectation_review`); about 30 training tests with one batch, judged from their assertions.
+
+*Found beside it:* a reading is one sentence in one stream (`Spaces.nominates`), so a batch with one word in three streams or more nominates it within a single forward. None of the 30 does.
+
+**Review (Claude).** These pass at this source by the walk and not by what they state. They are ported with the pass after rule 62's, each to read until nominated (`test/nomination_fixtures.py`) and stating what it stated, before the item's sweep. The list with each test's read and assertion is in the census's return (scratch directory, `census_read_once.md`).
+
+### 23.T Where the source keeps, encodes and reads time: a census (2026-11-19)
+
+Read-only, for rule 64 (Alec, §19.90: "There is one model time, we can sinusoidally encode that in one place for all readers, and let operators see it so that their logic can compare the time to that which is stamped into each concept as the .when").
+
+| His rule | The source now |
+| --- | --- |
+| One model time | Two clocks kept in step by a greatest: `BasicModel.when_time`, one tick for each sentence or thought, and the `model_clock` of LTM and of STM0, which the first jumps past. Three more counters work as a time and are not the model's: MTM's count of kept closes, the tick of an STM read, and the count of kept sentences that schedules forgetting. |
+| Encoded in one place | One code (`RowTime.encoder()`, a sinusoid of four numbers on two rungs), and one shared instance of it that holds the present (`model.when_encoding`). But about fifteen places encode a time through it, many with an encoder made on the spot, and `SymbolExpectation` builds its own present from `model_clock`. |
+| Stamped into each concept as the `.when` | Stamped as a vector on the events of percepts and parts, on a chunk of STM, and on a row of LTM. *No concept keeps one:* when a row is promoted to a concept its time is set to zero (`MemoryConsolidation`). |
+| Operators see it and compare | Neither the chooser nor any operator is given the present. Before a learned reader sees a stamp it is rewritten as an age, the present less the stamp (`RowTime.relative_idea`, `age_band`): so in the chooser of the compose grammar, the chooser of thought, the bind read, the expectation over symbols and attention. A query compares a stamp with a stamp, the one test of before and after. Forgetting and MTM use their own counters. |
+| No weight of the order-zero Sigma on a time | So (§23.R); as the census read the source in mid-pass, the Sigma of order zero reads the signed values that come out of the Not and no place and no time. |
+
+**Review (Claude).** The code is one already, and the comparison is done, but before the operators and for them: they are given ages and never the present beside a stamp. Three things stand between the source and rule 64: the second clock; the encoders made on the spot; and that a concept keeps no `.when`. *Put to Alec:* whether an age given to the chooser and the operators is the comparison he means, or whether they are to be given the present and the stamp and compare them by their own logic; and whether a concept is to keep the stamp of its row when the row is promoted. Round 6 builds what he answers; until then nothing of this is changed.

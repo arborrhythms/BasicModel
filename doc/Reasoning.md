@@ -445,12 +445,13 @@ SIGMA(basic percepts)."
   within another is the pervasion of
   [Logic](Logic.md#existence-and-pervasion-alec-2026-11-13).
 - **A symbol is a pair of rows.** A symbol is two unsigned rows of the Pi,
-  one for each lane, and brings one concept. The concept above reads the
-  pair as two channels, for and against, each with weights of its own,
-  which start as for less against (Alec, 2026-11-19: "after the Not layer we
-  still have two channels, those need not be combined ... the summation step
-  is determined by gradient need at sigma"). A concept stays one signed
-  value; "both" is two concepts, one for presence and one for absence.
+  one for each lane, and brings one concept. The Not joins the pair into one
+  signed value, for less against, and the concept above reads that value
+  with a weight at zero or above (Alec, 2026-11-19: "its two lanes get passed
+  to Not, and those are combined into on signed lane for processing by
+  sigma"). A concept stays one signed value; "both" is two concepts, one for
+  presence and one for absence, the second reading through an entry of the
+  Not.
 
 ### The layers (Alec, 2026-11-14 to 2026-11-19)
 
@@ -603,8 +604,8 @@ built for `expect`, for the read to a point and for each kernel of `marker`.
   part against, and nothing is clipped between pairs.
 - *Lanes.* An input enters on its two lanes, for and against, and the
   stack reads concepts, each one signed value held as its two lanes. A
-  symbol's two rows enter the Sigma as two channels, each with weights of
-  its own, which start as for less against
+  symbol's two rows are joined by the Not into one signed value, for less
+  against, before the Sigma reads it
   ([above](#the-split-of-sigma-and-pi-alec-2026-11-13)).
 - *Nothing at the start.* The last sigma's weights start at zero, so a new
   stack gives zero and adds nothing. Its first weights come from a

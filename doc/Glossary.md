@@ -2,8 +2,8 @@
 
 *The terms of the model, each with one meaning. Where a term names something
 in the source, the source's name follows in backticks. A term used in another
-entry is in italics the first time it appears there. Where an entry rests on a
-decision, the decision is quoted (Alec, with its date).*
+definition is in italics the first time it appears there. Where a definition
+rests on a decision, the decision is quoted (Alec, with its date).*
 
 ## The layers
 
@@ -17,11 +17,19 @@ second kind is enough. A Pi makes what needs all of its members: the *basic
 percepts* at order zero, and the *symbols* above it. It builds upward, from
 *parts*. In the source: `PiLayer3`, and the first one `PerceptPi`.
 
+**Not.** The step between a Pi and a Sigma. It takes the two values of each
+row of the Pi, evidence for and evidence against, and gives one signed value
+from -1 to 1: for less against. An *entry* of the Not, from one row to one
+concept, gives that concept the row's pair exchanged, against less for. The
+Not is the only place where a sign is changed (Alec, 2026-11-19: "that would
+give it the ability to change sign, which should be restricted to not").
+
 **Sigma.** A matrix whose columns are weighted sums, squashed into the range
-from -1 to 1 (`tanh`). Its weights are signed and it has no bias. It reads two
-channels, evidence for and evidence against, each with weights of its own
-(Alec, 2026-11-19: "after the Not layer we still have two channels, those need
-not be combined"). A Sigma makes *concepts*: what any one of its members can
+from -1 to 1 (`tanh`). It reads the signed values that the Not gives, any
+number of them for one column. Its weights are zero or above and it has no
+bias, so it is monotone: raising an input never lowers a column. A value below
+zero comes to it from evidence against or from an entry of the Not, and it
+makes none itself. A Sigma makes *concepts*: what any one of its members can
 be enough for. In the source: `SigmaLayer3`, and at order zero
 `OrderZeroSigma`.
 
@@ -32,9 +40,13 @@ many orders as epistemic levels. The source calls the matrix of a level a
 layer (`PiLayer3`, `SigmaLayer3`); a layer is never an order.
 
 **Pi, Not, Sigma.** The one structure that is repeated at every order (Alec,
-2026-11-17): a Pi, then the entries of the Sigma that read the opposite
-channel (see *negation*), then the Sigma. The Pi and the Sigma are its two
-*epistemic levels*.
+2026-11-17), order zero among them: "Pi reads perceptual space, its two lanes
+get passed to Not, and those are combined into on signed lane for processing
+by sigma (which may process an arbitrary number of those signed values)"
+(Alec, 2026-11-19). The Pi and the Sigma are its two *epistemic levels*.
+
+**Entry.** One place of a matrix: a member of a row of a Pi, a weight of a
+Sigma on one input, or an entry of the Not.
 
 ## What the layers make
 
@@ -77,21 +89,21 @@ each order above has half the room of the one below.
 
 ## Evidence and logic
 
-**Lane, channel.** Every value in perception is stored as two numbers from 0
+**Lane.** Every value in perception is stored as two numbers from 0
 to 1: evidence for, and evidence against. "We are on a positive unit
 hypercube with two lanes; evidence for and evidence against. When I am
 talking about a negative number in the perceptual context, that is just a
 shorthand for positive evidence against" (Alec, 2026-11-19). Zero on both
-lanes is no evidence. *Channel* is the same pair as a Sigma reads it.
+lanes is no evidence. The two lanes go no further than the Not, which joins
+them into one signed value; a Sigma reads no pair.
 
 **Negation.** Three different things, which the model keeps apart.
 
 - *Evidence against* is a value on the against lane. It is something
   perceived: the `y` of `archery` is evidence against `archer`.
-- *A Not entry* is a weight of a Sigma that reads the opposite channel: a
-  weight below zero on the for channel, or above zero on the against channel.
-  At the basic level it is learned from omission, a thing expected that did
-  not come. The Pi has none.
+- *A Not entry* is an entry of the Not: one concept reads one row's pair
+  exchanged. At the basic level it is learned from omission, a thing expected
+  that did not come. The Pi has none, and no weight of a Sigma is below zero.
 - *The operator `not`* of a sentence or of a thought exchanges the two lanes
   of what it is put on (`FieldLogic.reduce`).
 
@@ -185,6 +197,11 @@ words of an output comes from it.
 
 ## Memory
 
+**Time.** The model has one time. It is encoded as a sinusoid in one place,
+the same for every reader. A concept's `.when` is the stamp of that time at
+the concept's moment, and the operators can compare the present time with a
+stamp (Alec, 2026-11-19).
+
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most
 recent. In the source: `ShortTermMemory`.
@@ -194,15 +211,18 @@ counts what recurs and nominates rows of the Pi; from statements it makes
 symbols and concepts, looking first for one that already fits. What it holds
 is easily promoted and easily forgotten. In the source: `MediumTermMemory`.
 
-**Entry.** What a row of LTM keeps of its moment beside its idea: the few
-concepts that were most active when the row was kept, each with its value
-(`episodic_concepts`, `episodic_values`; four of them, by `episodicConcepts`).
-A query on LTM matches against the rows' entries (Alec, 2026-11-11: an entry
-holds concepts, not percepts).
+**Slot.** A place of episodic memory: one concept of a moment, with its value.
+A row of LTM keeps an idea, which is semantic memory, and a few slots, which
+are episodic memory (Alec, 2026-11-19: "Entry should be slot in episodic
+memory (the idea is semantic memory)"). A slot holds a concept and not a
+percept (Alec, 2026-11-11). Which concepts of the moment fill the slots is not
+settled: not the most active; "perhaps least expected, or sentence dominant
+such as np, vp". A query on LTM matches against the rows' slots. In the
+source: `episodic_concepts`, `episodic_values`; four to a row, by
+`episodicConcepts`.
 
-**LTM.** Long-term memory: what is kept. Its rows hold ideas, each with an
-entry of the concepts of its moment (`LTM0`), and relations between concepts
-(`LTM1`). It is read by content: a query matches the top of the STM stack
+**LTM.** Long-term memory: what is kept. Its rows hold ideas, each with the
+slots of its moment (`LTM0`), and relations between concepts (`LTM1`). It is read by content: a query matches the top of the STM stack
 against the rows, and the best row is pushed onto the stack (Alec,
 2026-11-19).
 

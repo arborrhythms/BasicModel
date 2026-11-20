@@ -1630,14 +1630,16 @@ Its way back returns the input by least squares where there are as many
 concepts as inputs or more, and not otherwise; a signed value on the way back
 is replaced by its two unsigned parts before a percept or a symbol holds it.
 
-**Two channels at the Sigma** (Alec, 2026-11-19: "after the Not layer we still
-have two channels, those need not be combined ... So the summation step is
-determined by gradient need at sigma"). The Sigma takes the for channel and
-the against channel of what it reads as two inputs, each with its own
-weights. Its weights start as one input of for less against, the against
-weights the for weights negated, and the gradient moves them apart where it
-needs to: a concept for presence, a concept for absence and a concept of
-their difference are three settings of one read.
+**Pi, Not, Sigma** (Alec, 2026-11-19: "Pi reads perceptual space, its two
+lanes get passed to Not, and those are combined into on signed lane for
+processing by sigma (which may process an arbitrary number of those signed
+values)"). The Not stands between the Pi and the Sigma. It takes each row's
+two values, for and against, and gives one signed value, for less against;
+an entry of the Not gives one concept a row's pair exchanged. The Sigma reads
+those signed values with weights held at zero or above, so it is monotone,
+and the Not is the only place where a sign is changed. A concept for
+presence reads a row as it is; a concept for absence reads it through an
+entry of the Not.
 
 **The fused pair** (`SigmaPiLayer`). A Pi and then a Sigma with no way back,
 fused into one expression so that a row of pairs is captured as one graph:
@@ -1794,9 +1796,10 @@ by `interpret` for a meta concept; never at a concept's allocation.
 
 **The cycle.** At an order with $n$ concepts there are $n$ signed values,
 stored as $2n$ unsigned lanes. The rows above that MTM has nominated, the
-symbols, read those lanes, each row its own lane, and the next Sigma reads
-each symbol's two channels. A Not entry above order zero is from one symbol
-to one concept: the concept reads that symbol's pair swapped. The Sigma
+symbols, read those lanes, each row its own lane; the Not joins each symbol's
+pair into one signed value, and the next Sigma reads those. A Not entry above
+order zero is from one symbol to one concept: the concept reads that symbol's
+pair swapped. The Sigma
 above order zero reads no vector and pools nothing. A symbol of order $k$
 reads the concepts of every order below $k$; the orders are not strictly
 ramified (Alec, 2026-11-17). Between conceptual orders only activation
