@@ -16,7 +16,7 @@ def _space():
     nn.Module.__init__(cs)
     cs.nWhat, cs.nWhere, cs.nWhen = 2, 1, 1
     cs.concept_dim = 4
-    cs.expect_stack = cs.idea_stack = None
+    cs.intuit_map = cs.idea_stack = None
     cs.inputShape = cs.outputShape = [2, 4]
     # Four basic percepts, sixteen concepts of order zero.
     cs.order_zero_not = NotLayer3(4)

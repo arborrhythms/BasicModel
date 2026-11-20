@@ -133,8 +133,16 @@ class Looks:
                 surprise = forecasts.latest if forecasts is not None else None
             else:
                 prediction = forecasts.forecast(span) if forecasts is not None else None
+                if forecasts is not None:
+                    # What is expected is written anew at each look, before
+                    # what the look brings is read.
+                    from ConceptSpread import write_look
+                    write_look(forecasts.owner, forecasts.inventory_rows(), prediction[:, 0])
                 field = perceive(self.model, interval, rows)
                 surprise = forecasts.observe(field, span, prediction) if forecasts is not None else None
+                if forecasts is not None and self.model.training:
+                    looks = self.model.__dict__.setdefault('_expectation_looks', [])
+                    looks.append((forecasts.stage_cost(field, span), rows.clone()))
             self.fields.append(dict(field=field, where=interval.detach().clone(), active=rows.clone(),
                                     surprise=surprise))
             index, allowed = interpretation_at(state,slot)

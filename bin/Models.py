@@ -2555,12 +2555,11 @@ class BaseModel(Mereology, nn.Module):
             *(getattr(cs, 'components', None) for cs in getattr(self, 'conceptualSpaces', ())),
             getattr(discourse, 'predictor', None), getattr(discourse, '_inter_predictor', None),
             getattr(discourse, 'word_predictor', None), getattr(self, 'percept_expectation', None),
-            *(getattr(cs, 'expect_stack', None) for cs in getattr(self, 'conceptualSpaces', ())),
-            *(getattr(cs, 'idea_stack', None) for cs in getattr(self, 'conceptualSpaces', ())),
-            *(getattr(cs, 'concept_predictor', None) for cs in getattr(self, 'conceptualSpaces', ()))])
+            *(getattr(cs, 'idea_stack', None) for cs in getattr(self, 'conceptualSpaces', ()))])
         output = parameters([getattr(self, 'outputSpace', None),
             getattr(self, 'answer_attention', None),
-            *(getattr(cs, 'intuition', None) for cs in getattr(self, 'conceptualSpaces', ()))])
+            *(getattr(cs, 'intuition', None) for cs in getattr(self, 'conceptualSpaces', ())),
+            *(getattr(cs, 'intuit_map', None) for cs in getattr(self, 'conceptualSpaces', ()))])
         synthesis = getattr(self, 'synthesis_parameters', None)
         if synthesis is not None:
             output.update(id(p) for p in synthesis() if id(p) in available)
@@ -10506,6 +10505,8 @@ class BasicModel(BaseModel):
                 and self.numeric_percepts is None):
             from ConceptSpread import complete
             complete(self, self._concept_prediction.active, self.errors)
+            from IntuitionField import complete as complete_intuition
+            complete_intuition(self, self._concept_prediction.active, self.errors)
         return answers[0] if isinstance(question, WhatQuestion) else tuple(answers)
 
     @staticmethod
@@ -21451,6 +21452,8 @@ class BasicModel(BaseModel):
                 chosen = self._commit_sentence(chosen, sid, present, observations, selected)
                 from ConceptSpread import complete
                 complete(self, present, close_errors)
+                from IntuitionField import complete as complete_intuition
+                complete_intuition(self, present, close_errors)
                 from IdeaRead import complete as complete_idea
                 complete_idea(self, self._last_sentence_understanding, present, close_errors)
                 if single:

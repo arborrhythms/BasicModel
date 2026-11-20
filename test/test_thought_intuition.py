@@ -155,22 +155,6 @@ def test_answer_trains_only_fired_intuition_weights_and_ltm_is_unchanged():
     assert not torch.equal(later.roles, value.roles)
 
 
-def test_predictor_target_and_consumers_detach_and_predictor_trains():
-    predictor = ActivationPredictor(2)
-    keys = torch.tensor([[[.2,.3],[.8,.9],[.1,.1]]], requires_grad=True)
-    knowing = torch.full((1,3,2), .3, requires_grad=True)
-    context = torch.full((1,4), .2, requires_grad=True)
-    prediction = predictor(keys, context, knowing).sigmoid()
-    target = torch.full_like(prediction, .9, requires_grad=True)
-    record = Prediction(prediction, torch.arange(3), torch.tensor([True]), target)
-    model = SimpleNamespace(_concept_prediction=record,
-        _concept_owner=lambda:SimpleNamespace(concept_predictor=predictor))
-    loss(model).sum().backward()
-    assert target.grad is None and knowing.grad is None and keys.grad is None and context.grad is None
-    assert sum(p.grad.abs().sum() for p in predictor.parameters()) > 0
-    assert record.value.requires_grad  # The one open evaluation owns the expectation cost.
-
-
 def test_sparse_capacity_and_storage_are_fixed_and_exhaustion_is_atomic():
     from IntuitionLayer import IntuitionLayer
     layer = IntuitionLayer(2)
@@ -365,12 +349,12 @@ def test_output_ownership_excludes_understanding_and_expectation():
     model, registry, store, refs = setup()
     owner = model._concept_owner()
     model.conceptualSpaces = torch.nn.ModuleList([owner])
-    parameters = (list(owner.expect_stack.parameters())
+    parameters = (list(owner.intuit_map.parameters())
                   + list(owner.intuition.parameters()))
     optimizer = SimpleNamespace(param_groups=[dict(params=parameters)])
     groups = BasicModel.objective_parameter_groups(model, optimizer)
     assert {id(p) for p in owner.intuition.parameters()} <= {id(p) for p in groups['output']}
-    assert {id(p) for p in owner.expect_stack.parameters()} <= {id(p) for p in groups['expectation']}
+    assert {id(p) for p in owner.intuit_map.parameters()} <= {id(p) for p in groups['output']}
     root = Idea(observed=torch.full((owner.outputShape[-1],), .5))
     term = seed(owner, Term(('sym',99),root,root,(.8,.2),idea(registry,refs[1]),(root,),(1.,)*4),QueryWorkBudget(256))
     value = selected(owner,term)[0].roles.sum()

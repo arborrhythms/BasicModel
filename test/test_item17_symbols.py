@@ -195,7 +195,6 @@ ORDER_ZERO_READERS = {
     'NumericPercepts.py': ('read',),
     'Spaces.py': ('order_zero_reading', 'install_order_zero', 'order_zero_field', '_start_order_zero_entry',
                   'cs_read_percept_field', 'add_concept_feature'),
-    'Omission.py': ('concept_teacher',),
 }
 #: What reads or makes a percept's code (attributes of the basic percepts
 #: and their code), or joins codes for a Sigma (functions).
@@ -266,9 +265,10 @@ def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_
     reads one before the squash where its row is present and zero on every
     reading of the other sentence, whose letters it shares (the concept of
     ``alpha`` reads zero on "beta delta"). (d) With the second word omitted,
-    the expectation's teacher (``Omission.concept_teacher``) gives the words
-    of the sentence read and zero to the words of the other."""
-    import Omission
+    what arrives at a look, which the concepts' stage of expectation is
+    compared with (``ConceptSpread.look_cost``), gives the words of the
+    sentence read and zero to the words of the other."""
+    import ConceptSpread
     from Spaces import ConceptualSpace
     from test_item18_expect import lesson, read, omit_second
     from nomination_fixtures import readings_before_nomination
@@ -305,24 +305,24 @@ def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_
             assert all(v == pytest.approx(one, abs=1e-5) for v in y[mine].amax(1).tolist())
             assert float(y[other].abs().max()) == 0.
         monkeypatch.setattr(ConceptualSpace, 'cs_read_percept_field', original)
-        taught = []
-        teacher = Omission.concept_teacher
+        taught = {}
+        cost = ConceptSpread.look_cost
 
-        def kept_teacher(model, **kwargs):
-            reading, hidden = teacher(model, **kwargs)
-            if reading is not None:
-                taught.append(reading[0, concepts, 0].tolist())
-            return reading, hidden
-        monkeypatch.setattr(Omission, 'concept_teacher', kept_teacher)
+        def kept_cost(owner, before, arrived):
+            taught.setdefault(model._reading_text, []).append(arrived[0, concepts, 0].tolist())
+            return cost(owner, before, arrived)
+        monkeypatch.setattr(ConceptSpread, 'look_cost', kept_cost)
         omit_second(monkeypatch, model)
         optimizer = model.getOptimizer(lr=.01)
         for text in examples:
+            model._reading_text = text
             read(model, text, training=True, optimizer=optimizer)
         print(dict(concepts=concepts, readings=table, teacher=taught))
-        assert len(taught) == 2
-        for k, values in enumerate(taught):
+        assert set(taught) == set(examples)
+        for k, text in enumerate(examples):
+            values = torch.tensor(taught[text]).amax(0).tolist()
             mine, other = (values[:2], values[2:]) if k == 0 else (values[2:], values[:2])
-            assert min(mine) > .5 and max(other) == 0.
+            assert max(mine) > .5 and max(other) == 0.
     finally:
         model.End(); model.symbolSpace.soft_reset()
 

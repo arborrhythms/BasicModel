@@ -1183,14 +1183,9 @@
       <xs:element name="verbGroups" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="verbBasisReflections" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="verbGroupFit" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Pair count: Pi/Sigma, repeated; width zero disables the stack. -->
-      <xs:element name="expectationMap" default="sigmaPi" minOccurs="0">
-        <xs:simpleType><xs:restriction base="xs:string">
-          <xs:enumeration value="sigmaPi"/><xs:enumeration value="predictor"/>
-        </xs:restriction></xs:simpleType>
-      </xs:element>
-      <xs:element name="expectHidden" type="xs:nonNegativeInteger" default="64" minOccurs="0"/>
-      <xs:element name="expectLayers" type="xs:positiveInteger" default="1" minOccurs="0"/>
+      <!-- intuit's own map: Pi, Not, Sigma pairs; width zero disables it. -->
+      <xs:element name="intuitHidden" type="xs:nonNegativeInteger" default="64" minOccurs="0"/>
+      <xs:element name="intuitLayers" type="xs:positiveInteger" default="1" minOccurs="0"/>
       <xs:element name="ideaHidden" type="xs:positiveInteger" default="64" minOccurs="0"/>
       <xs:element name="ideaLayers" type="xs:positiveInteger" default="1" minOccurs="0"/>
       <xs:element name="markerKernels" type="xs:positiveInteger" default="8" minOccurs="0"/>

@@ -145,58 +145,133 @@ def _carry(values, source, target, share, negated, size):
     return values.new_zeros(size, *values.shape[1:]).index_add(0, target, lanes)
 
 
-def spread(owner, observed, *, percepts=None, structure_=None):
-    """The expected value of every node, ``[N, B, 2]``, from the observed
-    concepts ``observed`` ``[V, B, 2]`` (and, where given, the present
-    parts of the first Pi ``percepts`` ``[P, B, 2]``): up once by the fan,
-    then down once by the share, at most one. The observed values are the
-    sources and are not returned as expected."""
-    graph = structure(owner, observed.device) if structure_ is None else structure_
+def _flow(graph, observed, percepts, depth):
+    """The sources, and the spread's up and down at every node, detached."""
     N = graph.size
     source = observed.new_zeros(N, *observed.shape[1:])
     source[:min(len(observed), graph.concepts)] = observed[:graph.concepts]
     if percepts is not None and graph.parts:
         source[graph.part_start:graph.part_start + len(percepts)] = percepts[:graph.parts]
+    source = source.detach()
+    up, down = torch.zeros_like(source), torch.zeros_like(source)
     if not len(graph.parent):
-        return torch.zeros_like(source), graph
-    weight = graph.weight.to(observed)
-    fan = weight.new_zeros(N).index_add(0, graph.child, weight)
-    row = weight.new_zeros(N).index_add(0, graph.parent, weight)
-    up_share = weight / fan.index_select(0, graph.child).clamp_min(torch.finfo(weight.dtype).tiny)
-    down_share = weight / row.index_select(0, graph.parent).clamp_min(torch.finfo(weight.dtype).tiny)
-    # The structure is layered and acyclic: four steps an order reach its
-    # top from its bottom (part, percept, concept, symbol).
-    depth = 4 * (len(owner._order_caps()) + 1)
-    up = torch.zeros_like(source)
+        return source, up, down, None, None
+    weight = graph.weight.detach().to(observed)
+    tiny = torch.finfo(weight.dtype).tiny
+    fan = weight.new_zeros(N).index_add(0, graph.child, weight).clamp_min(tiny)
+    row = weight.new_zeros(N).index_add(0, graph.parent, weight).clamp_min(tiny)
+    up_share = weight / fan.index_select(0, graph.child)
+    down_share = weight / row.index_select(0, graph.parent)
     for _ in range(depth):
         nxt = _carry(source + up, graph.child, graph.parent, up_share, graph.negated, N).clamp(max=1.)
         if torch.equal(nxt, up):
             break
         up = nxt
-    down = torch.zeros_like(source)
     for _ in range(depth):
         nxt = _carry(source + up + down, graph.parent, graph.child, down_share, graph.negated, N).clamp(max=1.)
         if torch.equal(nxt, down):
             break
         down = nxt
+    return source, up, down, fan, row
+
+
+def spread(owner, observed, *, percepts=None, structure_=None):
+    """The expected value of every node, ``[N, B, 2]``, from the observed
+    concepts ``observed`` ``[V, B, 2]`` (and, where given, the present
+    parts of the first Pi ``percepts`` ``[P, B, 2]``): up once by the fan,
+    then down once by the share, at most one. The observed values are the
+    sources and are not returned as expected. It is arithmetic: nothing is
+    taught through it."""
+    graph = structure(owner, observed.device) if structure_ is None else structure_
+    depth = 4 * (len(owner._order_caps()) + 1)
+    with torch.no_grad():
+        _, up, down, _, _ = _flow(graph, observed, percepts, depth)
     return (up + down).clamp(max=1.), graph
+
+
+def staged(owner, observed, *, percepts=None):
+    """The expected concepts ``[V, B, 2]`` with the gradient of their own
+    stage alone: each concept's reading of the things beneath it (its
+    Sigma's entries, by their share of the fan), from what the spread left
+    beneath, detached; what reaches it from above is detached too. No
+    gradient crosses into another stage or the way back."""
+    graph = structure(owner, observed.device)
+    depth = 4 * (len(owner._order_caps()) + 1)
+    source, up, down, fan, _ = _flow(graph, observed, percepts, depth)
+    V = graph.concepts
+    if fan is None:
+        return (up + down)[:V].clamp(max=1.)
+    own = graph.parent < V
+    weight = graph.weight.to(observed)[own]
+    child, parent = graph.child[own], graph.parent[own]
+    share = weight / fan.index_select(0, child)
+    reading = _carry(source + up, child, parent, share, graph.negated[own], graph.size)
+    return (reading[:V].clamp(max=1.) + down[:V]).clamp(max=1.)
+
+
+def stage_values(owner, observed, *, percepts=None):
+    """What arrives at each stage from the observed concepts: the concepts
+    themselves, and each symbol's two lanes, the product of its members'
+    (the symbols' Pi). ``dict(concepts=[V, B, 2], symbols=[T, B, 2])``."""
+    graph = structure(owner, observed.device)
+    V, T = graph.concepts, graph.symbols
+    concepts = observed[:V].detach()
+    symbols = concepts.new_ones(T, *concepts.shape[1:])
+    held = (graph.parent >= V) & (graph.parent < V + T)
+    if T and bool(held.any()):
+        logs = torch.log(concepts.index_select(0, graph.child[held]).clamp_min(1e-30))
+        symbols = torch.exp(concepts.new_zeros(T, *concepts.shape[1:]).index_add(0, graph.parent[held] - V, logs))
+    else:
+        symbols = concepts.new_zeros(T, *concepts.shape[1:])
+    return dict(concepts=concepts, symbols=symbols)
 
 
 def expected(owner, knowing, *, percepts=None):
     """The expected concepts ``[B, W, 2]`` of the observed ``knowing``
-    ``[B, W, 2]`` (``W`` the inventory or its first order): the spread's
-    concepts, with the gradient of the structure's weights."""
+    ``[B, W, 2]`` (``W`` the inventory or its first order), detached; the
+    expected basic percepts and parts are kept beside them
+    (``_expected_percepts``, ``_expected_parts``) and the expected symbols
+    (``_expected_symbols``)."""
     B, width = knowing.shape[:2]
     V = int(owner.nVectors)
     observed = knowing.new_zeros(V, B, 2)
-    observed[:width] = knowing.transpose(0, 1)
+    observed[:width] = knowing.transpose(0, 1).detach()
     value, graph = spread(owner, observed, percepts=percepts)
-    owner._expected_percepts = value[graph.percept_start:graph.part_start].detach()
-    owner._expected_parts = (graph.part_keys, value[graph.part_start:].detach())
-    return value[:width].transpose(0, 1)
+    owner._expected_percepts = value[graph.percept_start:graph.part_start]
+    owner._expected_parts = (graph.part_keys, value[graph.part_start:])
+    owner._expected_symbols = value[graph.concepts:graph.percept_start]
+    return value[:V].transpose(0, 1)
+
+
+def look_cost(owner, before, arrived):
+    """The stages of expectation at one look. ``before`` ``[B, V, 2]`` is
+    what the earlier looks left, ``arrived`` ``[B, V, 2]`` what the look
+    brought. The concepts' stage: what each concept expected, with the
+    gradient of its own entries alone, against what arrived, ``[B]``. The
+    symbols' stage is measured (``_expectation_stages``); the symbols' Pi
+    has no learned weight."""
+    V = int(owner.nVectors)
+    B = before.shape[0]
+    observed = before.new_zeros(V, B, 2)
+    observed[:before.shape[1]] = before.transpose(0, 1).detach()
+    target = arrived.new_zeros(V, B, 2)
+    target[:arrived.shape[1]] = arrived.transpose(0, 1).detach()
+    concepts = staged(owner, observed)
+    error = (concepts - target).square().mean((0, 2))
+    with torch.no_grad():
+        value, graph = spread(owner, observed)
+        symbols = stage_values(owner, target)['symbols']
+        expected_symbols = value[graph.concepts:graph.percept_start]
+        owner._expectation_stages = dict(
+            concepts=float(error.detach().mean()),
+            symbols=float((expected_symbols - symbols).square().mean()) if len(symbols) else 0.)
+    return error
 
 
 def open_prediction(model, present, *, sid=None):
+    """What is expected at the sentence's open, from what it has observed so
+    far, written to ``_expected_knowing`` for its readers; each look writes
+    it anew (:class:`LookForecast.LookForecast`)."""
     owner = model._concept_owner()
     owner._serial_concept_path = bool(getattr(getattr(model, 'inputSpace', None), '_serial_word_major', False)
                                       or getattr(model, 'word_brackets', False) and getattr(model, 'serial_object_meta', False))
@@ -209,26 +284,36 @@ def open_prediction(model, present, *, sid=None):
     from IdeaRead import open_read
     open_read(model, knowing)
     prediction = expected(owner, knowing)
-    from Omission import concept_teacher
-    target, hidden = concept_teacher(model, sid=sid, present=present)
-    model._concept_prediction = Prediction(prediction[:, :len(rows)], rows, present & hidden, target)
+    model._concept_prediction = Prediction(prediction[:, :len(rows)], rows, present.clone())
+    model._expectation_looks = []
     with torch.no_grad():
         stored = owner._expected_knowing[:B]
-        stored.copy_(torch.where(present[:, None, None], prediction.detach(), stored))
+        stored.copy_(torch.where(present[:, None, None], prediction, stored))
+
+
+def write_look(owner, rows, value):
+    """Write what is expected at a look, ``value`` ``[B, W, 2]`` at inventory
+    rows ``rows`` ``[W]``, anew: nothing earlier is kept."""
+    with torch.no_grad():
+        B = value.shape[0]
+        owner._expected_knowing[:B].zero_()
+        owner._expected_knowing[:B, rows] = value.detach()
 
 
 def loss(model):
-    prediction = getattr(model, '_concept_prediction', None)
-    if prediction is None or prediction.target is None or not bool(prediction.active.any()):
+    looks = getattr(model, '_expectation_looks', None)
+    if not looks:
         return None
-    width = prediction.target.shape[1]
-    error = (prediction.value[:, :width] - prediction.target.detach()).square().mean((1, 2))
-    return torch.where(prediction.active, error, 0.)
+    return torch.stack([error for error, _ in looks]).sum(0)
 
 
 def complete(model, present, registry):
-    """The second stage of the reconstruction: the expected concepts against
-    the whole sentence's, where some of it was hidden."""
-    value = loss(model)
-    if value is not None:
-        registry.error('expectation.concepts', value, 1., mask=present, category='expectation')
+    """The concepts' stage of expectation, summed over the looks: at each
+    look what was expected against what arrived, each look's cost on its own
+    stage's entries."""
+    looks = getattr(model, '_expectation_looks', None)
+    if not looks:
+        return
+    active = torch.stack([mask for _, mask in looks]).any(0)
+    registry.error('expectation.concepts', loss(model), 1., mask=active & present, category='expectation')
+    model._expectation_looks = []

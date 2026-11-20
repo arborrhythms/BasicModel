@@ -151,12 +151,12 @@ def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatc
     initial = ConceptualField(ids, torch.zeros(4, 1, 1, 2),
         torch.tensor([[[0, 1]]]), torch.tensor([[[0, 1]]]), None)
     def forecast(values):
-        # The stack reads each concept's two lanes and gives one signed number.
+        # intuit's map reads each concept's two lanes and gives one signed number.
         assert values.shape == (1, 2, owner._order_caps()[0])
         result = torch.zeros_like(values[:, 0])
         result[0,a], result[0,b] = .8, -.2
         return result
-    monkeypatch.setattr(owner.expect_stack, 'forward', forecast)
+    monkeypatch.setattr(owner.intuit_map, 'forward', forecast)
     def no_key(*args, **kwargs): raise AssertionError('System 1 made a point')
     monkeypatch.setattr('FieldProjection.key', no_key)
     opened = open_field(model, initial)

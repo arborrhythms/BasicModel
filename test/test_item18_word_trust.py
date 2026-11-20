@@ -57,13 +57,18 @@ def test_89_expectation_selects_among_orders_and_is_local_to_the_stream():
     open_prediction(model, torch.tensor([True]))
     assert owner.interpret.denotations(word) == (low, high)
     assert owner.interpret.referent(word, batch=0) == high
-    # One native learning update supplies positive expectation. The reader
-    # consumes only what open_prediction writes, including its order limit.
-    optimizer = torch.optim.SGD(owner.expect_stack.parameters(), lr=.1)
-    optimizer.zero_grad()
-    (model._concept_prediction.value[0, owner._concept_row_of(low), 0] - 1).square().backward()
-    optimizer.step()
-    open_prediction(model, torch.tensor([True]))
+    # A controlled spread (the transport, apart from the structure) gives
+    # the observed concept positive expectation. The reader consumes only
+    # what open_prediction writes, including its order limit.
+    import ConceptSpread
+    def controlled(owner_, knowing, **kwargs):
+        return knowing.new_zeros(knowing.shape[0], owner_.nVectors, 2).index_copy(
+            1, torch.arange(knowing.shape[1]), knowing.detach())
+    ConceptSpread.expected, kept = controlled, ConceptSpread.expected
+    try:
+        open_prediction(model, torch.tensor([True]))
+    finally:
+        ConceptSpread.expected = kept
     assert owner._expected_knowing[0, owner._concept_row_of(low), 0] > 0
     assert owner.interpret.referent(word, batch=0) == low
     assert owner.interpret.referent(word, batch=1) == high
@@ -133,12 +138,15 @@ def test_89_written_prediction_is_local_across_constructed_streams():
     owner._observed_knowing[0, 3, 0] = 1.
     # Only stream zero presents this reading; stream one keeps its own state.
     present = torch.tensor([True, False])
-    open_prediction(model, present)
-    optimizer = torch.optim.SGD(owner.expect_stack.parameters(), lr=.1)
-    optimizer.zero_grad()
-    (model._concept_prediction.value[0, 3, 0] - 1).square().backward()
-    optimizer.step()
-    open_prediction(model, present)
+    import ConceptSpread
+    def controlled(owner_, knowing, **kwargs):
+        return knowing.new_zeros(knowing.shape[0], owner_.nVectors, 2).index_copy(
+            1, torch.arange(knowing.shape[1]), knowing.detach())
+    ConceptSpread.expected, kept = controlled, ConceptSpread.expected
+    try:
+        open_prediction(model, present)
+    finally:
+        ConceptSpread.expected = kept
     assert owner._expected_knowing[0, 3, 0] > 0
     assert owner._expected_knowing[1, 3, 0] == 0
     assert owner.interpret.referent(word, batch=0) == low

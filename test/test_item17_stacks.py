@@ -128,7 +128,7 @@ _DEVICES = ['cpu'] + (['mps'] if torch.backends.mps.is_available() else [])
 
 @pytest.mark.parametrize('device', _DEVICES)
 def test_seconds_against_an_mlp_layer(device, lesson):
-    stack = lesson['expect_stack']
+    stack = lesson['intuit_map']
     width, hidden = stack.inputs, stack.hidden
     import copy
     pair = copy.deepcopy(stack).to(device)
@@ -190,7 +190,7 @@ def lesson():
             pass
         owner = model._concept_owner()
         result = dict(roots=roots, predictions=predictions, sentences=count,
-                      expect_stack=owner.expect_stack, idea_stack=owner.idea_stack)
+                      intuit_map=owner.intuit_map, idea_stack=owner.idea_stack)
         yield result
         model.End()
 

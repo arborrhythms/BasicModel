@@ -47,13 +47,13 @@ def main():
         arm = args.out/('expect' if enabled else 'zero'); arm.mkdir()
         tree = ET.parse(ROOT/'data/MM_image.xml')
         if not enabled:
-            ET.SubElement(tree.getroot().find('ConceptualSpace'), 'expectHidden').text = '0'
+            ET.SubElement(tree.getroot().find('ConceptualSpace'), 'intuitHidden').text = '0'
         config = arm/'model.xml'; tree.write(config, encoding='utf-8', xml_declaration=True)
         model, device, lr, _ = _build_model(str(config))
         optimizer = model.getOptimizer(lr=lr)
         owner = model._concept_owner()
-        result = dict(expect=enabled, parameters=0 if owner.expect_stack is None else
-            sum(p.numel() for p in owner.expect_stack.parameters()), presentations=0, results={})
+        result = dict(expect=enabled, parameters=0 if owner.intuit_map is None else
+            sum(p.numel() for p in owner.intuit_map.parameters()), presentations=0, results={})
         started = time.monotonic()
         try:
             model.begin_presentation()

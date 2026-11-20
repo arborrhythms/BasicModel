@@ -181,7 +181,6 @@ def stage(model):
         prepared.pop('bytes')
         prepared.pop('units'); prepared.pop('plans')
         return
-    full_percepts(model, prepared)
     values, native_valid = native_values(ps, prepared['units'])
     prepared.update(native_values=values, native_valid=native_valid)
     identity = getattr(ps.percept_store, 'identity', None)
@@ -236,57 +235,3 @@ def observe(model, sid, reverse, *, active=None):
         correct[row, word, part] = hi <= decoded.shape[1] and torch.equal(decoded[row, lo:hi], raw[row, lo:hi])
     draw = targets['draw']
     model.omission.observe(correct, valid, Draw(draw.words, draw.forms, draw.protected[sid]))
-
-
-def full_percepts(model, prepared):
-    """Read target references already in the vocabulary; never admit a target."""
-    store = model.perceptualSpace.percept_store
-    events, brackets = [], []
-    for (raw, spans), plans in zip(prepared['units'], prepared['plans'], strict=True):
-        row, extents = [], []
-        # The preparation pass owns the bounded word bracket. Raw input can
-        # extend beyond it; that suffix is not an omitted observation.
-        for lo, hi in spans[:len(plans)]:
-            extents.append((lo, hi))
-            # The native reader takes a tiling of byte events, then reads its
-            # boundary pairs and nested parts. Identity atoms overlap; they
-            # are definitions of a percept, not a tiling of the input.
-            row.extend((part, i, i+1) for i in range(lo, hi)
-                       if (part := store.get_id(bytes([raw[i]]))) is not None)
-        events.append(row); brackets.append(extents)
-    like = prepared['raw']
-    width = max(map(len, events), default=0)
-    ids = like.new_full((len(events), width), -1, dtype=torch.long)
-    spans = like.new_zeros(len(events), width, 2, dtype=torch.long)
-    words = like.new_zeros(*prepared['sentences'].shape, 2, dtype=torch.long)
-    for b, (row, extents) in enumerate(zip(events, brackets)):
-        if row:
-            values = ids.new_tensor(row)
-            ids[b, :len(row)], spans[b, :len(row)] = values[:, 0], values[:, 1:]
-        if extents:
-            words[b, :len(extents)] = words.new_tensor(extents)
-    prepared['full_percepts'] = ids, spans, words
-
-
-@torch.no_grad()
-def concept_teacher(model, *, sid, present):
-    """The same order-zero membership read, unpublished and detached."""
-    targets = target(model)
-    absent = torch.zeros_like(present)
-    if targets is None or 'full_percepts' not in targets:
-        return None, absent
-    draw, sentences = targets['draw'], targets['sentences']
-    in_sentence = torch.ones_like(sentences, dtype=torch.bool) if sid is None else sentences == sid
-    hidden = ((draw.words | draw.forms.any(-1)) & in_sentence).any(-1) & present
-    if not bool(hidden.any()):
-        return None, hidden
-    ids, spans, words = targets['full_percepts']
-    brackets = torch.where((in_sentence & present[:, None])[..., None], words, 0)
-    ws, owner = model.wholeSpace, model._concept_owner()
-    field = owner.cs_read_memberships((ids, spans, ws.subspace.what.primitive_properties,
-        targets['raw'], words), brackets, publish=False)
-    reading = field.amax(2).transpose(0, 1)
-    # An unomitted modality beside the text keeps its observation. Neither
-    # expectation nor intuition supplies any part of this teacher.
-    reading = torch.maximum(reading, owner._observed_knowing[:len(present), :len(field)])
-    return reading.detach(), hidden

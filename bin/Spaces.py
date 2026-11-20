@@ -12881,21 +12881,17 @@ class ConceptualSpace(Space):
         # reaches them (paramUpdate, ergodic plumbing).
         self.params = []
         self.layers = nn.ModuleList([])
-        from Expectation import ActivationPredictor
         from IntuitionLayer import IntuitionLayer
-        self.expectation_map = TheXMLConfig.space(section, 'expectationMap', 'sigmaPi')
-        if self.expectation_map not in ('sigmaPi', 'predictor'):
-            raise ValueError('expectationMap must be sigmaPi or predictor')
-        with torch.random.fork_rng(devices=[]):
-            self.concept_predictor = (ActivationPredictor(self.outputShape[-1])
-                if self.expectation_map == 'predictor' else None)
         self.intuition = IntuitionLayer(int(TheXMLConfig.get('architecture.intuitionCapacity', default=4096)))
         from SigmaPiStack import SigmaPiStack
-        expect_hidden = int(TheXMLConfig.space(section, 'expectHidden', 64))
-        expect_pairs = int(TheXMLConfig.space(section, 'expectLayers', 1))
-        self.expect_stack = (SigmaPiStack(self._order_caps()[0], self._order_caps()[0],
-            hidden=expect_hidden, pairs=expect_pairs)
-            if owns_concepts and self.expectation_map == 'sigmaPi' and expect_hidden else None)
+        # intuit's own map, outside the architecture: a free Pi, the Not and
+        # a Sigma from the observed concepts of order zero to the same
+        # concepts. Each of its rows starts on a few concepts.
+        intuit_hidden = int(TheXMLConfig.space(section, 'intuitHidden', 64))
+        intuit_pairs = int(TheXMLConfig.space(section, 'intuitLayers', 1))
+        self.intuit_map = (SigmaPiStack(self._order_caps()[0], self._order_caps()[0],
+            hidden=intuit_hidden, pairs=intuit_pairs, few=self.INTUIT_ROW_START)
+            if owns_concepts and intuit_hidden else None)
         self.idea_stack = (SigmaPiStack(self._order_caps()[0], self.outputShape[-1],
             hidden=int(TheXMLConfig.space(section, 'ideaHidden', 64)),
             pairs=int(TheXMLConfig.space(section, 'ideaLayers', 1)))
@@ -13223,9 +13219,9 @@ class ConceptualSpace(Space):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
-        retired = (prefix + 'intuit_stack.',)
-        if self.expect_stack is None:
-            retired += (prefix + 'expect_stack.',)
+        retired = (prefix + 'intuit_stack.', prefix + 'expect_stack.', prefix + 'concept_predictor.')
+        if self.intuit_map is None:
+            retired += (prefix + 'intuit_map.',)
         old = [key for key in state_dict if key.startswith(retired)]
         if old:
             import warnings
@@ -14902,6 +14898,11 @@ class ConceptualSpace(Space):
     #: join it later.
     ORDER_ZERO_ENTRIES = 2
 
+    #: The concepts each row of intuit's free Pi starts on. A row started on
+    #: every concept reads nothing on exact concepts: every absent one is a
+    #: factor at the floor.
+    INTUIT_ROW_START = 2
+
     def install_order_zero(self):
         """Order zero after its Pi: the Not (``order_zero_not``), each basic
         percept's two options (its value and its not-value), and the Sigma
@@ -15381,8 +15382,8 @@ class ConceptualSpace(Space):
         """
         base = list(self.params)
         seen = {id(p) for p in base}
-        for parameter in (*self.components.parameters(), *(() if self.concept_predictor is None else self.concept_predictor.parameters()),
-                          *(() if self.expect_stack is None else self.expect_stack.parameters()),
+        for parameter in (*self.components.parameters(),
+                          *(() if self.intuit_map is None else self.intuit_map.parameters()),
                           *(() if self.idea_stack is None else self.idea_stack.parameters()),
                           *self.intuition.parameters()):
             if id(parameter) not in seen:

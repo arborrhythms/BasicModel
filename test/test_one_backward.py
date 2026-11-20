@@ -85,7 +85,7 @@ def test_compose_credit_reaches_live_semantics_and_its_three_writers_are_attribu
 def test_bands_and_intuition_receive_exactly_their_own_terms_in_one_surrogate(tmp_path):
     from Expectation import ActivationPredictor, recombine_percept
     from Intuition import Idea, Term, seed, selected
-    from ConceptSpread import Prediction, loss as predictor_loss
+    from ConceptSpread import loss as predictor_loss
     from QueryWork import QueryWorkBudget
     from SentenceTraining import surrogate
     from test_thought_infer import setup, idea
@@ -98,9 +98,9 @@ def test_bands_and_intuition_receive_exactly_their_own_terms_in_one_surrogate(tm
     context = semantic.repeat(1,2)
     knowing = semantic[:,None].expand(-1,2,-1)
     predicted = predictor(keys.detach(),context.detach(),knowing.detach()).sigmoid()
-    frozen = Prediction(predicted,torch.arange(2),torch.tensor([True]),target)
-    concept_model = SimpleNamespace(_concept_prediction=frozen,
-        _concept_owner=lambda:SimpleNamespace(concept_predictor=predictor))
+    # One look's cost of the concepts' stage, as the looks keep it.
+    concept_model = SimpleNamespace(_expectation_looks=[
+        ((predicted-target.detach()).square().mean((1,2)), torch.tensor([True]))])
     attention = torch.nn.Linear(2,2,bias=False)
     attended = (keys.detach() * attention(semantic.detach())[:,None]).sum(-1).sigmoid()
     consumed = recombine_percept(semantic, predicted[:,0], attended[:,0,None]).content
@@ -173,7 +173,7 @@ def test_native_sentence_counts_one_backward_and_step_and_preserves_band_gradien
         def storage():
             return {label+'.'+name:dict(pointer=value.data_ptr(),shape=list(value.shape),
                 bytes=value.numel()*value.element_size())
-                for label,module in (('percept',owner),('expect',concept.expect_stack),
+                for label,module in (('percept',owner),('intuit',concept.intuit_map),
                                      ('idea',concept.idea_stack),('infer',concept.intuition))
                 for name,value in (*module.named_parameters(),*module.named_buffers())}
         allocated=storage()

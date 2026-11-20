@@ -79,7 +79,13 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
         return original_look(path, spans)
     monkeypatch.setattr(ConceptSpread, 'open_prediction', opened)
     monkeypatch.setattr(LookForecast, 'forecast', looked)
-    hook = owner.expect_stack.register_forward_hook(lambda *args: calls.append(True))
+    spread = ConceptSpread.spread
+    def counted(*args, **kwargs):
+        calls.append(True)
+        return spread(*args, **kwargs)
+    monkeypatch.setattr(ConceptSpread, 'spread', counted)
+    intuited = []
+    hook = owner.intuit_map.register_forward_hook(lambda *args: intuited.append(True))
     try:
         read(model, 'alpha gamma')
         assert len(open_calls) == 1
@@ -94,6 +100,8 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
             guard.setattr(model.symbolSpace.ltm_store, 'part_row', forbidden)
             value = learned_read(owner, row=0, work=QueryWorkBudget(64))
             assert value is None
+            # intuit reads its own map, and not expectation's spread.
+            assert len(intuited) == 1 and len(calls) == observed_calls
             from ThoughtFaces import intuit
             from types import SimpleNamespace
             # The face receives no LTM capability at all.
@@ -102,7 +110,7 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
             effect = intuit(context, {'argin1': None})
             assert effect['evidence_kind'] == 'intuition' and effect['learned_field']
             assert effect['value'] is None
-            assert len(calls) == observed_calls
+            assert len(calls) == observed_calls and len(intuited) == 2
             assert not effect['witnesses']
     finally:
         hook.remove()
