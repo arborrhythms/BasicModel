@@ -13,14 +13,21 @@ only as far as every member is. Its entries are zero or above; it has no
 negative entry. A Pi *selects for and against* (Alec, 2026-11-19: "Pi should
 select both strong for and strong against"): a row has members whose presence
 tells for it, and members whose presence tells against it, and any one of the
-second kind is enough. A Pi makes what needs all of its members: the *basic
-percepts* at order zero, and the *symbols* above it. It builds upward, from
+second kind is enough. A row is a hypercone of the space beneath it: the Pi is
+"identity/generalization on a hypercone" (Alec, 2026-11-19), and what falls
+inside the cone is the same thing. A Pi makes what needs all of its members: the *basic
+percepts* at order zero, and the *symbols* above it. Nothing is one to one: a
+row may be read by any number of concepts, and a concept may read any number
+of rows. It builds upward, from
 *parts*. In the source: `PiLayer3`, and the first one `PerceptPi`.
 
-**Not.** The step between a Pi and a Sigma. It takes the two values of each
-row of the Pi, evidence for and evidence against, and gives one signed value
-from -1 to 1: for less against. An *entry* of the Not, from one row to one
-concept, gives that concept the row's pair exchanged, against less for. The
+**Not.** The layer between a Pi and a Sigma. It "provides options, so that
+concepts can choose value or not-value" (Alec, 2026-11-19). From the two
+values of each row of the Pi, evidence for and evidence against, it offers two
+signed values from -1 to 1: the *value*, for less against, and the
+*not-value*, the pair exchanged, against less for. A concept's entry chooses
+one of the two; an entry that reads the not-value is a *Not entry*. A concept
+of presence reads a row's value and a concept of absence its not-value. The
 Not is the only place where a sign is changed (Alec, 2026-11-19: "that would
 give it the ability to change sign, which should be restricted to not"). In
 the source: `NotLayer3`.
@@ -31,7 +38,9 @@ number of them for one column. Its weights are zero or above and it has no
 bias, so it is monotone: raising an input never lowers a column. A value below
 zero comes to it from evidence against or from an entry of the Not, and it
 makes none itself. A Sigma makes *concepts*: what any one of its members can
-be enough for. In the source: `SparseSigmaLayer3`.
+be enough for. A column divides the space beneath it by a hyperplane: the
+Sigma is "set creation / bifurcation on a hyperplane" (Alec, 2026-11-19), and
+what lies on one side is the set. In the source: `SparseSigmaLayer3`.
 
 **Epistemic level.** One Pi or one Sigma (Alec, 2026-11-19: "My nomenclature
 is *epistemic levels* as opposed to orders (which are half as many)"). Every
@@ -101,13 +110,14 @@ them into one signed value; a Sigma reads no pair.
 
 - *Evidence against* is a value on the against lane. It is something
   perceived: the `y` of `archery` is evidence against `archer`.
-- *A Not entry* is an entry of the Not: one concept reads one row's pair
-  exchanged. It is made implicitly, by the gradient, where teaching takes a
-  concept's weight on a row down to zero and further (Alec, 2026-11-19: "the
-  gradient should be able to make a not entry, that is the implicit
-  definition"); and explicitly, at the basic level, from omission, a thing
-  expected that did not come. The Pi has none, and no weight of a Sigma is
-  below zero: the size of an entry is the Sigma's and its sign is the Not's.
+- *A Not entry* is an entry that reads a row's not-value. It is made
+  implicitly, by the gradient, where teaching takes a concept's weight on a
+  row down to zero and further (Alec, 2026-11-19: "the gradient should be able
+  to make a not entry, that is the implicit definition"); and explicitly, by a
+  member declared as a Not member. An omission, a thing expected that did not
+  come, teaches through the gradient. The Pi has none, and no weight of a
+  Sigma is below zero: the size of an entry is the Sigma's and the choice of
+  option is the Not's.
 - *The operator `not`* of a sentence or of a thought exchanges the two lanes
   of what it is put on (`FieldLogic.reduce`).
 

@@ -9021,6 +9021,57 @@ His answers to the two points left open with him.
 
 *Claude's reading of "the wired version", to be confirmed:* computed by the structure's own matrices and no others. The way up is the first Pi's entries over a row's parts and its properties, then the Not, then the Sigma. The way down is those same entries read by their transposes: a requested concept gives its share to its rows through the Sigma's weights and the Not, and each row gives its share to every member, the parts on the part tower and the properties on the property tower, and to its where. No second set of weights is learned for the way down, and nothing is looked up on the host. Rule 36 has this for a row's activity and its where; it is now said for both towers (rule 36, certificate 56; round 6, step 3). Round 5's trial of rule 57 goes.
 
+### 19.94 Alec: the Not is a layer of options; nothing is one to one; the Pi analyses wholes; on the sparse Sigma and on expectation (2026-11-19)
+
+His answers to the review of round 4's second pass (§23.4.1), numbered as its four findings.
+
+**1. The regression.** "we will figure it out". It is traced first in round 4's third pass.
+
+**2. Adding entries to the sparse Sigma.** "I don't know what to do about adding entries to the sparse Sigma. It should be sparse at higher orders for sure, but i'm not sure about at the basic level." *Open, his.* Two things are apart here. That an addition grows slower as more is stored is a defect of how the entries are indexed, and round 4's third pass repairs it whatever is decided. Whether the Sigma of order zero is sparse is a question of what can be learned:
+
+| | Dense at order zero | Sparse at order zero |
+| --- | --- | --- |
+| What the gradient can do | connect any row to any concept | move only the entries that are written |
+| Numbers stored, lesson (4,096 rows) | 16.8 million, about 200 MB with the optimizer | two for each row and concept, 0.59 MB |
+| Numbers stored, default capacity (262,144 rows) | 69 billion, which no machine here holds | about 30 MB |
+| What it needs beside the gradient | nothing | something that offers an entry before the gradient can use it |
+
+So at the default capacity it is stored sparse, and the open question is what offers an entry. Today: a concept's own row at one, a declared member, and a member recorded at weight zero, which is written at zero for the gradient to size and to choose its option. *Claude's first choice, not built:* when a concept is taught in a reading, the rows present in that reading are offered to it as entries at zero; that is dense over what occurs together and sparse over everything else. To be tried in round 5 with the order of learning, by observation first.
+
+**3. `teach_omission`.** "removing teach_omission is fine, but do tell me what it does: if its about "not" creation, then we have the two paths." It is about the making of a Not entry and nothing else. Given a set of readings, it finds those where a concept was read above a half and did not come; each row present there, and present in no reading where the concept did come, has the concept's entry on it made a Not entry. It was a rule beside the gradient for conditioned inhibition (A gives the concept, A with X does not, so X becomes a Not entry). Nothing in the model called it, and the gradient makes the same entries by itself in certificate 23's cases (§23.4.1). *Decided:* removed; the two paths are the gradient and a declared Not member (rule 63).
+
+**4. The Not, and one to one.** "the not is a weight that swaps the two channels. It should actually be a layer that provides options, so that concepts can choose value or not-value (since we want to allow concepts of absence as well as concepts of presence). please do not enforce that one percept or symbol goes to one concept, or that the subsequent PI must collect one sigma (as before). We have identity/generalization on a hypercone, and set creation / bifrcation on a hyperplane."
+
+*Decided* (rules 63, 21 and 10; certificate 51 (e) and (f)).
+
+- The Not is a layer. For each row it offers the value and the not-value, and a concept's entry chooses one. This is what the second pass built in effect (an entry's sign), now named as what it is; a concept of absence reads the not-value.
+- Nothing is one to one. "Each row brings one concept" and "a symbol brings one concept" are how a row and a symbol start. A row or a symbol may be read by any number of concepts, a concept may read any number of rows or symbols, and a row of the Pi above may read any number of concepts. The third pass was told to list every place in the source that assumes one.
+- *The two geometries* (his; recorded in the glossary). The Pi is identity and generalization on a hypercone: a row is a region about a direction of the space beneath, and what falls inside it is the same thing. The Sigma is the making of sets and bifurcation on a hyperplane: a weighted sum divides the space beneath in two, and what lies on one side is the set.
+
+**The Pi and wholes.** "The analysis from above is conceptual attention over both towers. We should make sure that PI is capable of analysis for wholes just as aggregation can do synthesis for parts." *Taken* (certificate 56 (e)). As built since round 3c (rule 52), a part's code is built by joining, the greatest, and a whole's by narrowing: a whole defined by other wholes is their least, a basic percept's row is a product over its run of parts and each of its wholes read where the run lies, and a form's wholes half is at or below each of its wholes'. So the Pi's product is the analysis: each property divides, and the row is what is left inside all of them. What is not yet shown is the way down over wholes, the request reaching each property of a row through the Pi's own entries; round 6 shows it.
+
+**On expectation.** "The expectation test: please summarize the current state of expectation, I am forgetting a bit with so many recent iterations. If 1.8's expectation map from basic percepts through not to concepts and then back down through reconstruction was expectation, then a free Pi whose every row starts with a small weight on every order-zero concept would learn to expect missing information evenatually." (Then: "("through Not to concepts", I will try to capitalize operations in the future)".)
+
+*The state of it, from the source and `doc/ExpectationRetention.md`:*
+
+1. *It is a map beside the main path, and not the path itself.* The main path is percepts, the first Pi, the Not, the Sigma, concepts; the way back is the reconstruction. `expect` is a separate learned map that reads the observed concepts of order zero of a sentence, on both lanes, and gives expected values for the same concepts: a field to a field (`expect_stack`, a free Pi of 64 rows and then a Sigma that starts at zero).
+2. *Its teacher is omission.* Where training hides some of a sentence's words, `expect` is given the concepts of what is left and is compared with the concepts of the whole sentence. A sentence with nothing hidden teaches it nothing.
+3. *Who reads it.* Its field is published once when a sentence opens, and attention, the chooser and retrieval read it. `intuit` is the same field carried up the orders. Before each look it forecasts what should be at the look's place from everything seen elsewhere; what the look returns beyond that is the excess and what was forecast beyond it is the omission, which `attend` reads.
+4. *It supplies no missing percept yet.* It expects concepts. Nothing carries an expected concept down to percepts, so where input is withheld the reconstruction is not filled (certificate 24's blind spot: none of five bytes filled). Rule 30 and round 5 build that: a spread on the structure's own rows, up from the part that is present and down to the part that is missing.
+5. *Two more reads exist beside it:* the read of a field to one point, the idea, taught by the idea that comprehension concludes (`idea_stack`); and a predictor over symbols with the times of recent sentences (`SymbolExpectation`).
+
+*On whether the free Pi would learn in the end.* Probed by Claude at the map's start (`expect_probe.py` in the scratch directory), 44 concepts, two present at .76:
+
+| | Concepts exact (the others at nothing) | Every other concept at .70, as before rule 62 |
+| --- | ---: | ---: |
+| A row of the Pi, mean | .0016 | .42 |
+| Greatest gradient at the Pi | .067 | .64 |
+| Greatest gradient at the Sigma | .012 | 2.3 |
+
+So he is right that a gradient reaches it: it is not nothing at the start, about a tenth at the Pi and a two-hundredth at the Sigma. What the second pass measured after 200 presentations is that it had not learned, and that the Pi's weights had grown from .011 to .05 on every concept, where a row is at nothing. *Claude's reading, not measured:* a row is lowered far more cheaply by a weight on a concept that is absent (whose membership is at the floor) than by one that is present, so the first thing the error teaches is weight on the absent concepts, and that closes the rows. A product over every concept says "all of these are here", and with exact concepts they never are. Whether it recovers with more presentations is not known.
+
+*Three ways, put to Alec:* round 5's spread on nominated rows carries the case of a word expected from the word beside it, and the map is measured again after it (Claude's first choice); the map's rows are started on a few concepts each; or the map is left as it is and given many more presentations, to see.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9435,7 +9486,8 @@ chooses from. The old classes are not edited.
    does not live in any space, which is what makes its collection by
    sigma so set-like").
 10. *A symbol is two unsigned rows, one for each lane, and brings one
-    concept* (Alec, §18.25; rules 2 and 21). It is made when MTM
+    concept* (Alec, §18.25; rules 2 and 21), which is how it starts
+    and not a limit (rule 21, §19.94). It is made when MTM
     nominates it (rule 20), or by `interpret` for a meta concept, and
     not at a concept's allocation. A conjunction is promoted as a new
     symbol, a Pi row over its members, under a new concept, a Sigma
@@ -9550,12 +9602,19 @@ chooses from. The old classes are not edited.
       in that space"); a read that normalizes a concept vector must
       not divide by its zero length. *Mine:* it is one order above
       its word.
-21. *One concept for each row* (Alec). Each nominated row brings one
-    concept, so every order's Sigma is square: as many concepts as
-    inputs, with no halving between orders. A concept starts reading
-    only its own row, at one; at order zero that is the column of $U$
-    given by the row's own vector divided by its squared length
-    (*mine*, rule 8b). Concepts have no
+21. *One concept for each row, to start with* (Alec). Each nominated
+    row brings one concept, which starts reading only its own row,
+    at one: at order zero, its entry on that row (rule 62). The room
+    is §19.83's: order zero has as many concepts as basic percepts,
+    and each order above half the one below. *A start and not a
+    limit* (Alec, §19.94: "please do not enforce that one percept or
+    symbol goes to one concept, or that the subsequent PI must
+    collect one sigma (as before)"): a row or a symbol may be read by
+    any number of concepts, by its value or its not-value (rule 63);
+    a concept may read any number of rows or symbols; a row of the
+    Pi above may read any number of concepts. Nothing in the source
+    shares an index between a symbol and a concept or takes "the"
+    concept of a row where there may be several. Concepts have no
     nomination or promotion of their own: MTM's promotions of
     classes, identities and percept collections become nominations of
     rows. The one writer of a concept's further inputs stays: a kept
@@ -10199,10 +10258,17 @@ chooses from. The old classes are not edited.
     - *The Pi* reads perceptual space (above order zero, the lanes
       of the concepts beneath) and gives each of its rows two values
       from 0 to 1, for and against.
-    - *The Not* takes each row's two values and gives one signed
-      value from -1 to 1, for less against. An entry of the Not,
-      from one row to one concept, exchanges that row's pair for
-      that concept, which then reads against less for.
+    - *The Not* is a layer that provides options (Alec, §19.94:
+      "the not is a weight that swaps the two channels. It should
+      actually be a layer that provides options, so that concepts
+      can choose value or not-value (since we want to allow concepts
+      of absence as well as concepts of presence)"). From each row's
+      two values it offers two signed values from -1 to 1: the
+      *value*, for less against, and the *not-value*, the pair
+      exchanged, against less for. A concept's entry chooses which
+      of the two it reads. An entry that reads the not-value is a
+      Not entry. A concept of presence and a concept of absence may
+      both stand over one row.
     - *The Sigma* reads any number of those signed values for a
       concept, with one weight for each at zero or above, and
       squashes the sum. It is monotone: with no Not entry, raising
@@ -10216,14 +10282,16 @@ chooses from. The old classes are not edited.
       should be able to make a not entry, that is the implicit
       definition"). Implicitly, by the gradient: where teaching
       takes a concept's for entry on a row down to zero and further,
-      the entry becomes a Not entry on that row, and its weight in
-      the Sigma grows from zero. Explicitly, by the Not's own
-      teaching: by omission at the basic level (rule 29), by a Not
+      the entry comes to read the not-value of that row, and its
+      weight in the Sigma grows from zero. Explicitly: by a Not
       member declared in the record of a concept's members, and
-      above the basic level by a symbol's pair read exchanged. An
-      entry is for or Not, never both: the size is the Sigma's
-      weight and the sign is the Not's entry, which is rule 3's one
-      signed weight said in two places. *Withdrawn:* Claude's
+      above the basic level by a symbol's pair read exchanged.
+      These are the two paths (Alec, §19.94); a rule of its own
+      that made a Not entry from an omission
+      (`NotLayer3.teach_omission`) is removed, since an omission
+      teaches through the gradient. An entry reads the value or the
+      not-value, never both: the size is the Sigma's weight and the
+      choice of option is the Not's. *Withdrawn:* Claude's
       reading that the gradient never makes one.
     This withdraws rule 59 and certificate 51 as they stood, and
     restates rules 3, 4, 29 and 62.
@@ -10529,11 +10597,15 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     value never lowers any concept. (c) The Not gives for less
     against: the three numbers for a row read for, read against and
     read both are stated. (d) A concept with a Not entry on a row
-    reads that row's pair exchanged. *Learning:* a concept taught to
+    reads that row's not-value. *Learning:* a concept taught to
     be present where a row is read against, and absent where it is
-    read for, comes by the gradient alone to read that row through
-    a Not entry; the entry and the Sigma's weight are printed before
-    and after. An omission makes one as before.
+    read for, comes by the gradient alone to read that row's
+    not-value; the entry and the Sigma's weight are printed before
+    and after. (e) A concept of presence and a concept of absence
+    over one row read its value and its not-value, and are each
+    other's opposite. (f) A row is read by several concepts and a
+    concept reads several rows, with no index shared between a row
+    and a concept.
 52. *The query from STM* (rule 60). (a) With a question on top of the
     stack, the row of LTM that answers it is pushed onto the stack,
     and one row only. (b) With an idea that is no question on top,
@@ -10580,7 +10652,11 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     way up, by a test of the source's names, and makes no read of a
     tensor on the host. (d) Evidence against: a requested concept
     with a Not entry on a row gives its share to that row's against
-    lane.
+    lane. (e) The Pi analyses by wholes as it synthesizes by parts
+    (Alec, §19.94): a row with two properties reads their product,
+    the meeting of the two classes; a whole defined by other wholes
+    reads their product; and the map of (a) gives each of them its
+    share.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
