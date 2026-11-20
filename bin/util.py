@@ -1262,8 +1262,9 @@ def compile(model, verbose=True, fullgraph=False):
 #   bf16                         -> torch.autocast(dtype=bfloat16), no scaler
 #   fp16                         -> torch.autocast(dtype=float16); on CUDA
 #                                   a singleton GradScaler is returned
-# MPS has no working autocast path; fp16 on CPU is also unsupported by
-# torch -- both fall back to fp32 with a one-shot warning.
+# fp16 on CPU is unsupported by torch and falls back to fp32 with a
+# one-shot warning; CUDA and MPS run autocast in fp16 and bf16, with a
+# GradScaler for fp16.
 # Env var wins; XML <amp> is a checked-in default applied only when the
 # env var is unset (see ModelFactory.run for the hydration).
 
@@ -1348,7 +1349,7 @@ def amp_context():
     step/update bookkeeping stays consistent across batches.
 
     Prints a one-shot status line on the first call so the operator can
-    confirm at a glance which path engaged (bf16 active / off / MPS
+    confirm at a glance which path engaged (active / off / CPU fp16
     fallback). Re-armed by ``init_model_amp``.
     """
     global TheAmpScaler, _AMP_WARNED, _AMP_FIRST_LOGGED
@@ -1359,26 +1360,6 @@ def amp_context():
             _AMP_FIRST_LOGGED = True
         return nullcontext(), None
     dev = TheDevice.type  # "cpu" | "cuda" | "mps" (ROCm exposes "cuda")
-    if dev == "mps" and mode == "fp16":
-        # fp16 stays blocked on MPS (no GradScaler story there); bf16 is
-        # UN-GATED 2026-07-08 -- the old "MPS has no working autocast path"
-        # premise is stale: torch 2.12's ``torch.autocast(device_type='mps',
-        # dtype=bfloat16)`` works (verified: matmul emits bf16). Apple GPUs
-        # run fp32 matmul at full rate, so the gain is bandwidth-bound
-        # (~1.1-1.4x observed), unlike CUDA's ~2x tensor-core doubling.
-        if not _AMP_WARNED:
-            print(f"MODEL_AMP={mode} unsupported on MPS; running fp32.")
-            _AMP_WARNED = True
-        if not _AMP_FIRST_LOGGED:
-            print(f"[AMP] {mode} requested but disabled on MPS -> fp32")
-            _AMP_FIRST_LOGGED = True
-        return nullcontext(), None
-    if dev == "mps":  # bf16
-        if not _AMP_FIRST_LOGGED:
-            print("[AMP] bf16 active on mps (autocast, no scaler)")
-            _AMP_FIRST_LOGGED = True
-        return torch.autocast(device_type="mps",
-                              dtype=torch.bfloat16), None
     if dev == "cpu" and mode == "fp16":
         if not _AMP_WARNED:
             print("MODEL_AMP=fp16 unsupported on CPU; running fp32.")
@@ -1392,9 +1373,9 @@ def amp_context():
     if not _AMP_FIRST_LOGGED:
         print(f"[AMP] {mode} active on {dev} (autocast dtype={dtype})")
         _AMP_FIRST_LOGGED = True
-    if mode == "fp16" and dev == "cuda":
+    if mode == "fp16" and dev in ("cuda", "mps"):
         if TheAmpScaler is None:
-            TheAmpScaler = torch.amp.GradScaler("cuda")
+            TheAmpScaler = torch.amp.GradScaler(dev)
         return cm, TheAmpScaler
     return cm, None
 
