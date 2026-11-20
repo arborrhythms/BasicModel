@@ -59,6 +59,12 @@ layer (`PiLayer3`, `SigmaLayer3`); a layer is never an order.
 get passed to Not, and those are combined into on signed lane for processing
 by sigma (which may process an arbitrary number of those signed values)"
 (Alec, 2026-11-19). The Pi and the Sigma are its two *epistemic levels*.
+What each takes and gives (Alec, 2026-11-20): the Pi has unsigned weights and
+cannot change a sign, so it reads each signed concept as two unsigned lanes
+and gives a thing on two unsigned lanes; the Not takes a thing's two unsigned
+lanes and gives one signed value, possibly negated; the Sigma has unsigned
+weights on those signed values, needs no doubling, and gives a concept's one
+signed value.
 
 **Entry.** One place of a matrix: a member of a row of a Pi, a weight of a
 Sigma on one input, or an entry of the Not.
@@ -72,7 +78,11 @@ perceived positive and negative aspects" of concepts, "or more precisely,
 hyperconic regions of them" (Alec, 2026-11-19).
 
 **Basic.** Of order zero. A *basic percept* is one row of the first Pi over
-its *parts* and its *properties*. It becomes a row only when MTM nominates it
+its *parts* and its *properties*. It is an occurrence, an event: "all of
+their constituent percepts occur at the same time, so there is no basis for
+abstraction into a noun" (Alec, 2026-11-20). The word over its occurrences is
+its concept of order zero; the word as a thing is a symbol over that concept;
+a kind of words, such as noun, collects those symbols. It becomes a row only when MTM nominates it
 on recurrence, never on a first reading. The *basic level* is the basic
 percepts and the concepts of order zero. A mind with the basic level alone has
 no symbols.
@@ -107,7 +117,12 @@ makes a symbol from a statement such as "Felix is my cat", which says that
 two are the same. "Since implicit generally precedes explicit, MTM should
 check for an existing fit first."
 
-**Order.** How far a concept stands above the basic percepts. A concept of
+**Order.** How far a concept stands above the basic percepts. An order rises
+at a Sigma and nowhere else (Alec, 2026-11-20): a Pi makes things within an
+order, and the next Sigma makes the kinds of the order above. A symbol is a
+cone in the conceptual space of one order and never mixes concepts of two,
+since "the concepts at every order live in spaces with different
+geometries"; a kind collects from every epistemic level below its own. A concept of
 order zero is read from basic percepts. A concept formed above symbols is one
 order above the concepts those symbols read. An order is raised implicitly,
 by any concept formed above symbols, and explicitly, by statements that
@@ -172,7 +187,8 @@ is stored in it. In the source it is held by `PartSpace` and `WholeSpace`.
 of it, and so is an idea, the meaning of a whole sentence. Its values are
 signed. In the source: `ConceptualSpace`.
 
-**Symbolic space.** The symbols, taken together. It "is a set and a space of
+**Symbolic space.** The symbols, taken together. Percepts and concepts live in
+topological spaces; symbols do not (Alec, 2026-11-20). It "is a set and a space of
 points; each symbol has no space (i.e. dimensionality)" (Alec, 2026-11-19): a
 symbol is a point with no coordinates and no address. What is known of a
 symbol is which concepts its row reads, and which concepts read it.
@@ -201,8 +217,9 @@ another's unless the one form is a part of the other (Alec, 2026-11-19).
 
 ## Parts, kinds and the order between them
 
-**Mereology.** The relation of part and whole, and the order it gives: a thing
-is at or above each of its parts and at or below each of its wholes. Parthood
+**Mereology.** The relation of part and whole at the perceptual level, and the
+order it gives: a thing is at or above each of its parts and at or below each
+of its wholes. The same relation over symbols is *taxonomy*. Parthood
 is shared size, and it is not symmetric: `is` is part of `this`, and `this` is
 not part of `is` (Alec, 2026-11-18). It is held in two ways that are not to be
 read as one another ([Mereology](Mereology.md)). *Geometric* parthood is read
@@ -210,12 +227,13 @@ from codes and answers "looks like": one code lies inside another. *Asserted*
 parthood is a relation kept in LTM and answers "is": "cats are animals" is one
 row of `LTM1`.
 
-**Taxonomy.** The order of kinds: a member and its kind stand one *order*
-apart. "Felix is a cat" and "Ciao is a cat" make cat a kind one order above
-Felix and Ciao. A statement that one thing is another makes "a mereological or
-taxonomic link (depending on order)" (Alec, 2026-11-19): between two concepts
-of one order it is a link of part to whole, and between concepts of two orders
-it is a link of member to kind. The taxonomy and the relations of `LTM1` are
+**Taxonomy.** What the relation of part and whole becomes among symbols.
+"Mereology is part-whole relation at the perceptual level which, when it
+occurs over symbols, becomes a taxonomy (because the sigma fold makes the
+concepts abstract)" (Alec, 2026-11-20). Among percepts a whole holds its
+parts; among symbols a kind holds its members, since what a symbol stands for
+has been made abstract by a Sigma. "Felix is a cat" and "Ciao is a cat" make
+cat a kind over Felix and Ciao. The taxonomy and the relations of `LTM1` are
 one structure, read by `Taxonomy.capture_taxonomy`.
 
 ## The grammars
