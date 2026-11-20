@@ -9267,6 +9267,19 @@ So the two levels of an order do two different things and neither can do the oth
 3. *How two concepts come to be one symbol.* MTM nominates it when it recognizes that they always occur together, or from a statement that two are the same ("Felix is my cat", rule 10); the second concept joins the first one's symbol as a constituent.
 4. *The Pi's fold over a symbol's constituents is the product,* as for a basic percept over its parts: the symbol is present as far as all of them are. Since they are the same thing they are present together. *Put to him:* whether a symbol should also be present when only one of its concepts is evidenced (the region as "either"), which a product does not give.
 
+### 19.103 Alec: symbols may be made liberally; a neighbourhood of identity (2026-11-20)
+
+To the fourth point of §19.102, "Should a symbol also be present when only one of its concepts is evidenced?": "I think we can be liberal when creating symbols in that way, it still still defines a neighborhood of identity and enables us to reason over the concept (i.e. with other concepts)."
+
+*Taken so* (rule 71; *Claude's reading of "in that way", said back to him*):
+
+- *A symbol is present when any one of its concepts is evidenced.* The symbol of "my dog" and "Voyager" is there when either is. It is a neighbourhood of identity, and what falls anywhere in the neighbourhood is the thing. So the fold over a symbol's constituents is not their product. *Mine:* it is the Pi taken on the complements, one less the product of what each constituent lacks, the form the model already has for joining (rule 7's "Pi on the gaps"); with one constituent it is that constituent's own lanes. The product stays the fold of a basic percept over its parts and properties, which are all needed.
+- *Symbols may be made liberally.* A symbol of one concept is no fault: it "still defines a neighborhood of identity", and it is what lets a concept be reasoned over with other concepts, since a kind collects things. What rule 71 rules out is not the making of such symbols but treating one as "the" symbol of a concept, one for one, with no room for a second concept to join it or for a concept to lie in two.
+
+*What changes.* The ninth pass was sent the fold while it ran. §19.102's "the Pi's fold over a symbol's constituents is the product" is withdrawn. The removal of the sixth pass's symbols (§23.4.7, part A) stands, since those were made and addressed one for one; a later pass may make symbols more freely than "where a kind needs one", which is all the ninth pass makes.
+
+*A consequence Claude notes, for round 5 or later:* a symbol and a kind over the same concepts now differ by what they are for and how they are folded and taught, and not by "all" against "any". A symbol's constituents are joined without weights, as the same thing; a kind's members are a weighted list through the Not, any of which may count for or against.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10669,8 +10682,16 @@ chooses from. The old classes are not edited.
       percepts and the symbols of its own order and below; a kind
       of words has its entries on the words' basic percepts; where
       a kind's member has no row, MTM makes its symbol in nominating
-      the kind, after looking for one that holds it; a symbol's
-      fold over its constituents is the product.
+      the kind, after looking for one that holds it.
+    - *A symbol is a neighbourhood of identity, and may be made
+      liberally* (Alec, §19.103: "we can be liberal when creating
+      symbols in that way, it still still defines a neighborhood of
+      identity and enables us to reason over the concept (i.e. with
+      other concepts)"). It is present when any one of its concepts
+      is evidenced. *Mine:* its fold over its constituents is the Pi
+      on the complements, one less the product of what each lacks,
+      on each lane; a basic percept's fold over its parts and
+      properties stays the product.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is

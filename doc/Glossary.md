@@ -91,7 +91,9 @@ the orders of the two.
 over concepts of lower orders. "My dog" and "Voyager" are two concepts and one
 symbol: "we don't want to represent both with one vector, we want a region in
 semantic space. So the region specification for similarity is defined with
-the pi" (Alec, 2026-11-20). A symbol may hold one concept or several. A symbol has no dimensions and "does not live in any space,
+the pi" (Alec, 2026-11-20). A symbol may hold one concept or several, and is
+present when any one of them is evidenced: it is "a neighborhood of identity",
+and it is what lets a concept be reasoned over with other concepts. A symbol has no dimensions and "does not live in any space,
 which is what makes its collection by sigma so set-like" (Alec, 2026-11-19).
 It is its constituents occurring together: "a basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their
