@@ -10008,16 +10008,20 @@ chooses from. The old classes are not edited.
       and given a coordinate that the other lacks. Every stored form
       that holds it as a run carries that coordinate, so a part stays
       inside its wholes. This is repeated until no accident is left.
-    - *Mine, measured (§23.3b.3):* the coordinate is chosen, not
-      drawn, among the zeros of either half, the one that adds the
-      fewest ones to the form's holders. Drawn, or in the parts half
-      alone, it does not end at 64. With it no accident is left among
-      the 19,821 words at 64 and 64.
+    - *Mine, measured (§23.3b.3, §23.3d):* the coordinate is chosen,
+      not drawn, among the zeros of either half: off the form's own
+      against lane first, then the one that adds the fewest ones to
+      its holders; in the wholes half, inside the classes the form
+      lies in. Drawn, or in the parts half alone, it does not end at
+      64. Built, no accident and no shared code is left among the
+      19,821 words at 64 and 64; 6,138 forms are given a coordinate.
     - *Not as he expected:* the cost is not at a form's introduction
       only. A form given a coordinate changes the code of every form
-      that holds it (13 earlier codes an admission on average at 64,
-      17,459 at the most), and whatever was started from those codes
-      has to follow. The width stays 64 and 64 (Alec, §19.88, with
+      that holds it (8 earlier codes an admission on average at 64,
+      14,813 at the most, as built), and whatever was started from
+      those codes follows: the store's rows, the basic percepts'
+      codes and against lanes, the first Pi's rows, the columns of
+      the order-zero Sigma. A kept row of LTM keeps what was read. The width stays 64 and 64 (Alec, §19.88, with
       these numbers before him: at 64 the cost of an admission rises
       from 2 ms to 58 ms by 19,000 forms; at 96 it stays at a few).
 
@@ -14894,3 +14898,177 @@ The xpass is `test_stm_recon_from_cleared_cache.py:346`, a non-strict xfail whos
 Single files run while porting, each to green except as above (seconds): test_config_scoping + test_autobind_from_cs 6; test_final_generation 5; test_episodic_concepts 6; test_grammar_object_leaves 10; test_mixing_reconstruction_bank 5; test_operators_final_b + test_forward_discard 220; test_stm_recon_from_cleared_cache 18; test_sentence_protocol 4; test_property_configuration 4; test_item20_round2_admission 3; test_item4_review 4; test_item18_completion 5; test_interpret_bias + test_loop_of_looks 10; test_reconstruction_bank_contract 10; test_reverse_traversal 6; test_native_attention_field 6; test_item18_expect 107; test_item20_round7_episodes 3; test_math_chain (one case) 8; test_mtm_reference_values 5; test_operators_round4a (one case) 20; test_supplied_answer_training + test_operators_round2e 5; test_output_walk 70; test_trial_policy_ownership 4; test_grammar_reconstruction_gate 4; test_grammar_separator 6; test_selected_relation_meaning 6; test_learning_readiness 7; test_reading_curriculum 8; test_reconstruction_scope 5; test_review14_addendum (two cases) 94; test_look_forecast 4; test_derived_concept_codes 52; test_sweep_repairs 46. On a copy of `d0a3832629` with the ported files: test_config_scoping and test_review14_addendum's two cases, 4 passed, 94 s.
 
 Also found, not a failing case: in `test_mtm_reference_values`, when the name is nominated inside the model's own reading (three forwards in train mode) rather than by `nominated_forms`, MTM's value of the name differs from the codebook's row in half the coordinates past the event width (largest .347), the test's "no stale value cache" assertion. Not traced; the port does not take that path.
+
+### 23.3d Round 3d: no code inside another by accident (2026-11-19)
+
+The text is §22.3d. Commits, local on `main`: `c1bea125c9`, `df7e9fc6fc`, `133fcae5f3`, `c61210ab16`, `f12dd5bdf4`. The implementer's return is below.
+
+**Review** (Claude). Read: the return. Run here, 160 files (round 4's list, the sweep's 44 files and four more; four processes, 1,333 s): **14 failed, 1,869 passed, 97 skipped.** Both gates pass, certificate 23 passes as it stands, and certificate 53 passes. None of the fourteen is of this round's making but two, which are the trial's checks of its stand-in against a source that now repairs; the rest are the defects of §23.S.1 and one case not yet traced.
+
+*Accepted.* Rule 61 is built at 64 and 64, the widths read from the configuration.
+
+| On the 19,821 words | 64 and 64 | 96 and 96 |
+| --- | ---: | ---: |
+| Codes inside another's by accident | 0 | 0 |
+| Words that share a code | 0 | 0 |
+| Forms given a coordinate | 6,138 | 4,874 |
+| Earlier codes changed by one admission, mean | 7.89 | 4.10 |
+| The same, greatest | 14,813 | 4,513 |
+| Milliseconds an admission near 1,000, 5,000 and 19,000 stored | .50, 1.17, 3.20 | .61, 1.07, 2.78 |
+| All the words admitted in | 63 s | 40 s |
+| The longest single admission | 8.3 s | .44 s |
+
+The cost of an admission stays at a few milliseconds at 64, where the trial had it rise to 58: the repairs waiting are tested together and not one at a time. One admission still took 8.3 s. On the lesson's fifteen forms one form is given a coordinate (`that`, which lay inside `What`), and no earlier code changes.
+
+*Two choices of the implementer, taken into rule 61.*
+
+1. *The coordinate is chosen off the form's against lane first.* The coordinate that adds the fewest ones to a form's holders is one that its nearest holders already add, which is its against lane; taken there, `archer` read `archery` at .968 and not at -.016.
+2. *In the wholes half the coordinate stays inside the form's classes.* That half is cut down by each class the form lies in, so a coordinate outside them is cut away again, and two words came to one code.
+
+*What holds a copy of a code, and follows a change:* the store's rows and keys, the basic percepts' codes and against lanes, the first Pi's rows, the columns of the order-zero Sigma, and the form block of the concept codebook. *Not followed, provisional:* a concept's trust content, MTM's candidates, and the kept rows of LTM, which keep what was read.
+
+*The fourteen failures.*
+
+| Cause | Cases |
+| --- | ---: |
+| The trial's two checks of its stand-in against the source without repair | 2 |
+| The Sigma of order zero reads the time (§23.S.1, 1) | 2 |
+| An entry with no room for the word (§23.S.1, 2) | 2 |
+| The captured forward traced again (§23.S.1, 3) | 1 |
+| The learning test of `expect` (§23.S.1, 4) | 1 |
+| The counts of round 4's taper | 3 |
+| `test_output_walk`, two cases | 2 |
+| `test_interpret_bias::test_fresh_reader_interprets_each_word_once`, not traced | 1 |
+
+They go to one repair pass now.
+
+#### Return of round 3d
+
+Commits, local on `main`, none pushed, each ending with the Co-Authored-By line:
+
+| Commit | Step | What it holds |
+| --- | --- | --- |
+| `c1bea125c9` | 1 | a form's links at admission (its parts and its holders among the stored forms), saved |
+| `df7e9fc6fc` | 2, 3 | the test for an accident on packed codes; the repair; certificate 48's `reach` case ported |
+| `133fcae5f3` | 4 | what follows a changed code: store rows, basic percept rows, the first Pi, the columns |
+| `c61210ab16` | 3, amended | a wholes-half coordinate the percept keeps; the repair's queue tested together; two tests ported |
+| `f12dd5bdf4` | 6 | certificate 53; the dictionary admission shared by the file's dictionary tests; certificate 48's dictionary case ported |
+
+No seed pinned, no skip or xfail added, no bound, rate, capacity or count changed, the spec and `doc/` not edited, nothing pushed. The two trial files (`test/code_trial.py`, `test/test_item17_code_trial.py`) are untouched. None of the 44 files of the other implementer was edited.
+
+**What was built, by file and function**
+
+**`bin/WordIdentity.py`**
+
+- *Links (step 1).* `holders` (the stored forms that hold a form as a run) and the new `inside` (the stored forms it holds as a run), both written by `_link` when a form is admitted (it replaces `_hold`) and saved in `vocab_extras`; `load_vocab_extras` reads them, or rebuilds them by `_relink` for a vocabulary saved without them. `reach` holds archer's letters, not the run: it is in neither set of `archer`.
+- *Packed codes (step 2).* Every stored form's code, both halves, is kept as rows of 64-bit words in admission order (`_packed`, `order`, `_ordered`; `_pack`, `_unpack`, `_place`, `packed_code`). The widths are read from the construction (`pair_dim`, `property_width`; `limbs = ceil((pair_dim + property_width) / 64)`); nothing assumes 64.
+- *The test (step 2).* `accidents_of(raw)` / `_accidents_of_many(forms)`: the forms' codes against every stored code in one tensor pass, both directions; a pair is an accident where one code lies inside the other and the inner form is not in the outer's `inside`. `accidents()` gives every accident over all ordered pairs, and every linked part not inside its holder, in chunks.
+- *The repair (step 3).* `_repair(start)`: a queue of forms, latest admitted first, each tested; the accidents grouped by the inner form; `_separate_inner(inner, outers)` chooses coordinates one at a time among the zeros of either half that the outers have and inner lacks: the most outers covered (among the coordinates its percept keeps, `_kept`, where any covers), then off inner's against lane where it can, then the fewest ones added to inner's holders, then the least used (`usage`), then the first. The form becomes a part of the catalog (`added[text] = (inner, first outer)`, an atom with no drawn bits, `bits = 0`, and `given[atom]` its chosen coordinates over both halves), or, already a part, takes the coordinates; every stored form that holds it as a run carries it (`words[h] + (atom,)`, one OR on the packed rows). Every form touched is queued again until none is left. No cap: each repair adds a one, so it ends. The next `TESTED_AT_ONCE` (128) forms of the queue are tested in one pass; a repair sets those tests aside, so the order of repairs is the one-at-a-time order (checked below: 0 codes differ from the trial's stand-in).
+- *After a change.* `_keep(affected, new)`: repair, write the rows and keys of the forms whose code changed (`_rewrite`: the store rows and fixed codes in one indexed write, the keys and the store's coded keys per form), give rule 56's next part to any two forms the repair left with one code (never happened), set `last_changed` (earlier forms whose code changed) and `last_touched` (also holders that took a coordinate they had), raise `revision` where earlier codes changed, and call `basic.follow_forms`. `admit` and `admit_part` go through it. `_settle` returns the forms it changed and writes them through `_rewrite`; `_unkey` drops a form's parts key directly (`_parts_key`) in place of scanning every set of `by_parts`.
+- *Codes.* `atom_code` and `catalog_code` join a part's given coordinates in their half; `tightest`'s cache key holds `_given_revision`. `vocab_extras` saves `given` (coordinates) and `usage`.
+
+**`bin/BasicPercepts.py`** (step 4)
+
+- `form_of(row)`: the stored form a row spells, read when the row is reserved and kept (`forms`, `form_rows`; saved in the extra state). `against` and `against_keys` read it, so a row whose form gained parts still finds its form.
+- `_extend(row, parts)`: a row takes the parts its form gained, after its own, under the new key (`_keys`); the old key stays where another row holds the new one, so the count of rows is unchanged.
+- `follow_forms(changed, new)`: rows of changed forms are extended; the promoted rows of changed forms, of forms a changed or new form holds as a run (their against lane reads their nearest holders), and of conjunctions over them, have `codes` and `against_codes` written again in one write; read pairs that moved go to `moved`; the first Pi is written again where a row was extended. `_refresh_pi` now compares a row's for entries as well as its against entries.
+
+**`bin/Spaces.py`** (step 4): `ConceptualSpace._follow_moved()` takes `basic.moved` and calls `follow_members` with it. It runs before any column is read or started: in `install_order_zero` (when the Sigma exists), `order_zero_reading`, `order_zero_input` and `order_zero_field`.
+
+**Tests:** `test/test_item17_code.py` (certificate 53, ports below), `test/test_operators_round3a.py`, `test/test_hash_order_producers.py` (ports).
+
+**Every copy of a form's code, and what follows a change**
+
+| Holder of a copy | What becomes of it |
+| --- | --- |
+| The store's rows (`RadixLayer` basis `W`, `fixed_row_codes`) of each changed form and of each part given coordinates | written again: the forms' rows in one indexed write (`_rewrite`), a part's row by `_atom` |
+| The store's coded keys (`hash_map`, `radix_trie`, `WORD_PREFIX + code`) | the old key removed, the new one written, per changed form |
+| `WordIdentity.forms`, `word_keys`, `by_parts` (code to form: `read`, `row_for_form`, `spelling`) | rekeyed per changed form |
+| `WordIdentity._codes`, `_catalog`, the `tightest` cache | dropped or keyed by `_given_revision` |
+| `BasicPercepts.codes`, `against_codes` | written again for the rows of changed forms, of forms they hold, and of conjunctions over them |
+| `BasicPercepts.occurrences`, `index` (a row's parts) and the first Pi's row (`PerceptPi`) | extended by the parts the form gained; the Pi written again |
+| Columns of the order-zero Sigma started from a moved percept (`for` and `against` weights) | the old share taken out and the new put in (`follow_members`), before the next read or start of a column |
+| The concept codebook's form block (`MereologicalCodes.derive`, `FeatureTable.forms`) | derived lazily from the occurrences and the store rows; invalidated by `BasicPercepts.revision` and `WordIdentity.revision`, both raised, so it is derived again at the next `begin_forward`. Rows kept as retained (concepts typed 'concept', individuals, form regions) keep their cached block: they are not derived from percepts. |
+| `Interpret`'s pending words and definitions: `parts` and `identity_key` (and `Definitions._identities`) | refreshed by `_sync_identity` at the next interpretation, since `WordIdentity.revision` is raised; it re-populates the word's column, which now finds the same (extended) percept row |
+| `ConceptTrust.content` (a concept's codebook row as first remembered, form block included; read for the coverage of later views) | **not rewritten** (provisional). A later view of a changed form covers its old block less than one. Recommended: leave the form block out of the coverage, or rewrite it with the row |
+| A kept row of LTM (`IdeaRows.slots`: the kept reading's point, with its percept-width block) | **not rewritten** (provisional): an episode keeps what was read; its episodic entry names concepts by id, and those follow |
+| MTM's candidate entries whose literal is a run of parts (`FamiliarTier`, `('ps', parts)`) | **not rewritten** (provisional): a later nomination of such a literal reserves with the parts it saw; they no longer spell the form, so it gets a row of its own. Not met in any test run |
+
+**Step 5: the measurements**
+
+The first 20,000 words of `/usr/share/dict/words` as the trial takes them (19,821), admitted in order, with the nine declared classes bound as the table of wholes (as certificate 46's `coded` binds them). Run alone on a machine where the other implementer's tests were running (four processes). "Changed": earlier codes an admission changed; "touched": earlier forms that took a coordinate, whether or not they had it (the trial's count). Milliseconds: the mean and the greatest over the 100 admissions before 1,000, 5,000 and 19,000 stored forms.
+
+| Width | Forms given a coordinate | Codes changed by an admission, mean / greatest | Touched, mean / greatest | Admissions changing any | ms near 1,000 | ms near 5,000 | ms near 19,000 | All 19,821: seconds; greatest admission | Accidents left; shared codes; parts outside |
+| --- | ---: | --- | --- | ---: | --- | --- | --- | --- | --- |
+| 64 + 64 | 6,138 | 7.89 / 14,813 | 13.71 / 16,040 | 2,942 | 0.50 (11.5) | 1.17 (22.6) | 3.20 (36.2) | 63.1 s; 8.29 s | 0; 0; 0 |
+| 96 + 96 | 4,874 | 4.10 / 4,513 | 7.83 / 7,025 | 2,549 | 0.61 (8.1) | 1.07 (15.5) | 2.78 (4.9) | 40.4 s; 0.44 s | 0; 0; 0 |
+
+The trial's stand-in brought to the same choices (its keys kept fresh after a repair, the two choices of mine below) gives the same code to every one of the 19,821 forms at 64 and at 96 (0 differ), the same forms given a coordinate and the same touched counts. It takes 116 s and 67 s; the source 63 s and 40 s.
+
+Before the queue was tested together, the same run at 64 took 119 s, with a greatest admission of 25.1 s.
+
+The trial's own numbers in §23.3b.3 (6,676 forms given; 13.4 and 17,459 earlier codes) differ because its keys were not written again after a repair: rule 56 then missed two forms with one code (the first at `abietineae`, form 217) and the repair gave a coordinate in its place. With the keys kept fresh the stand-in and the source agree code for code.
+
+How the two choices of mine move the numbers at 64 (all with no accident left and no shared code; the second and third rows without the table of wholes, the last with it):
+
+| At 64 + 64 | Forms given | Touched, mean / greatest | Ones, parts half (least / mean / greatest) | Forms with holders whose parts-half against lane is empty |
+| --- | ---: | --- | --- | ---: |
+| Before the repair (round 3c's coding) | 0 | 0 | 5 / 28.3 / 46 | 29 of 3,777 |
+| The trial's way (ch), keys fresh | 5,924 | 14.65 / 13,304 | 8 / 33.0 / 50 | 97 |
+| and off the against lane | 5,467 | 10.51 / 8,415 | 7 / 29.1 / 47 | 41 |
+| and inside the classes (built) | 6,138 | 13.71 / 16,040 | 8 / 31.1 / 48 (wholes half 6 / 35.4 / 55) | 29 |
+
+The lesson's forms (the 15 forms of the sixteen sentences and their answers, admitted in sorted order, as `admit_training_forms` does): at 64 and at 96 one form is given a coordinate (`that`, inside `What` by accident); no admission changes an earlier code; 0.25 ms an admission on average, 0.7 ms at most (0.26 and 0.9 at 96).
+
+**Certificate 53 (`test/test_item17_code.py`)**
+
+- `test_53_no_accident_on_the_dictionary` (a): no accident over the 393 million ordered pairs, no two forms with one code, no linked part outside its holder, no failure; the packed codes are the codes. Printed (run alone): 6,138 forms given a coordinate (6,291 added parts in all); an admission changed 7.89 earlier codes on average and 14,813 at most (touched 13.71 and 16,040); 2,942 admissions changed any; 0.55, 1.22 and 3.44 ms an admission near 1,000, 5,000 and 19,000 stored forms (47 ms the greatest near 19,000); 64.8 s for all 19,821. 93 s for the test alone, the admission included.
+- `test_53_a_forms_links_are_its_runs` (b): in all six orders of `archer`, `archery`, `reach`: `inside[archery] == {archer}`, `holders[archer] == {archery}`, `reach` linked to neither; archer's code inside archery's and not inside reach's, nor reach's inside archer's; no accident; links and codes restored from the saved vocabulary.
+- `test_53_a_later_form_moves_an_earlier_forms_row_lane_and_column` (c): in the lesson's model after four sentences (`is` nominated), admitting `si` changes the codes of `is`, `this` and `This`; the store row of `is`, its stored code (equal to its live code), its against lane, its first Pi row (now `('ps', (11, 38, 54))`, with the part `is`) and the column started from it all follow; the column moved by exactly the member's new share less its old (atol 1e-6), 0.0317 in all. 4.4 s.
+
+How long: the dictionary's admission is shared by certificates 46, 48 and 53 (`dictionary_coded`): about 150 s on this busy machine, charged to the first that runs (`test_46_printed_on_the_dictionary`); the rest of the file runs in about 35 s. The whole file: 190 s (four other processes running), 99 s of it in the first dictionary test.
+
+**Ported tests (old assertion, new assertion)**
+
+| Test | Old | New | Why |
+| --- | --- | --- | --- |
+| `test_item17_code.py::test_48_a_concept_reads_by_difference` | `reads(archer, reach) == reads(archer, archer)` (abs 1e-4) | archer's row reads `[0, 0]` on reach (the first Pi does not find it), and `reads(archer, reach) < reads(archer, archer) - .1` (it reads .484) | reach held archer's code by accident; archer is now a part of the catalog that reach does not hold (rule 61, certificate 53 (b)) |
+| `test_item17_code.py::test_48_on_the_dictionary_and_the_lesson` | `built['run'] and mean(run) < mean(parts)` | `built['run'] and not built['parts'] and mean(run) < 1` | the "parts held without the run" category is now empty: such a code lay inside by accident |
+| `test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng` | `bank.added == {'bal': ('calaba', 'cabala')}` | `bank.added == {'bal': (...), 'calaba': ('calaba', 'cabala')}`; calaba holds the part `calaba` and cabala does not; calaba's code is not inside cabala's | once `bal` tells them apart, calaba lies inside cabala by accident |
+| `test_hash_order_producers.py::test_collision_queue_follows_admission_order` | the queue's read found at the line `key = self.key(self.code(word))`; `bank.added == {'bal': ...}` | the line `code = self.code(word)`; `bank.added` as above | `_settle` reads the code once for both halves' keys; the same reads in the same order |
+| `test_item17_code.py::coded` (fixture) | the table of wholes bound after the forms are admitted | bound before | so the repair keeps its wholes-half coordinates inside the classes, as in the model (where `Models` binds it at construction) |
+
+**Failing, and not ported (the trial's files, left as they are):** `test_item17_code_trial.py::test_the_stand_in_codes_as_word_identity_does` and `::test_10_the_linked_coder_codes_as_the_source_does`. Both compare the stand-in *without* the repair to the source, which now repairs (2,805 of 3,000 codes differ; 50 words hold a part made differently). The stand-in *with* the repair, brought to the same choices, gives the source's codes exactly (step 5).
+
+**Choices (provisional unless marked)**
+
+1. **Off the against lane first** (mine, provisional; `_separate_inner`, `opposed`). As written ("the one that adds the fewest ones to its holders"), the choice takes exactly the coordinates of what a form's nearest holders add, since those are where its holders already have ones: it eats the form's against lane (rule 51). Certificate 48 then failed: `archer` read on `archery` .968 where it read -.016, its whole against lane gone. Taken: among the coordinates that cover the most outers, one off the form's against lane where there is one. It also gives fewer forms coordinates (5,467 against 5,924) and smaller cascades.
+2. **Inside the classes in the wholes half** (mine, provisional; `_kept`). A percept's wholes half is the AND of its wholes' codes with its own tightest whole (rules 5 and 52), so a coordinate given in the wholes half outside a class the form lies in is cut away from the percept's code: two dictionary words shared a percept code (certificate 46 failed). Taken: in the wholes half, a coordinate inside the AND of the codes of the table's rows that hold on every byte of the form, where one covers; else any. The holders' classes lie inside the form's, so they keep it too. The table is the one bound to the basic percepts (`Models` binds it at construction). Cost at 64: 6,138 forms given against 5,467.
+3. Two forms the repair leaves with one code get rule 56's next part (`_rewrite` reports them, `_settle`). Never met.
+4. A part given coordinates and later given more bits by rule 56 keeps its coordinates (the trial's raise drops them).
+5. A part made by the repair has no drawn bits (`bits = 0`); its code is its chosen coordinates (the trial's arithmetic). Its `added` record is the form and the first outer it was told from.
+6. `WordIdentity.revision` is raised when an admission changes earlier codes, so `Interpret` re-reads its words' parts and keys.
+7. The against lane of the promoted forms that a new or changed form holds is written again, since that form may be a nearer holder; before this round only the first Pi's against entries followed a new holder.
+8. The columns follow lazily (`moved`, `_follow_moved`), before any column is read or started.
+9. A vocabulary saved without links rebuilds them; one without coordinates has none.
+
+**The lesson's sixteen sentences**
+
+`test/attention_thinking_certificate.py lesson`: before (`a3f66dbf0d`): 31.75 s of the record. After (`f12dd5bdf4`): 17.22 s, and 18.81 s a second time, on a quiet machine. The 31.75 s before was taken while the other implementer's tests ran; the source of `a3f66dbf0d` exported and run the same way on the quiet machine gave 17.93 s. So no change: the lesson's 15 forms give one coordinate, and no earlier code moves.
+
+**Final counts**
+
+- The round's list (`r4_files.txt`, 120 files) with `test_item17_symbols.py` and every other test file that names what changed (WordIdentity, BasicPercepts, follow_members, holders, admit, vocab_extras, the order-zero readers): 137 files, `-n 4 --dist loadfile`, at `c61210ab16` with step 6's test file: **2 failed, 1,655 passed, 92 skipped, 1 xpassed, 527 s.** The two failures are the trial's comparisons of the source with the unrepaired stand-in (above).
+- Both stopping gates, `test_item17_order_zero.py` whole (certificate 23 as it stands) and `test_item17_symbols.py`, at `f12dd5bdf4`: 25 passed, 41 s.
+- `test_item17_code.py` at `f12dd5bdf4`: 15 passed.
+- The first run of the list, at `133fcae5f3` (before the amendment and the ports): 6 failed, 1,648 passed: the two trial comparisons, `test_46_printed_on_the_dictionary` (two words shared a percept code: choice 2), `test_48_on_the_dictionary_and_the_lesson`, `test_mint_rekeys_existing_word...` and `test_collision_queue_follows_admission_order` (ported).
+- Of the other implementer's 44 files, two are on my list (`test_property_configuration.py`, `test_supplied_answer_training.py`); both passed in both runs. I broke none of them.
+
+**What I would change in §21**
+
+- **Rule 61's choice:** "the coordinate that covers the most of the forms it lies inside, off the form's against lane where it can, in the wholes half inside the AND of its classes' codes where it can, then the fewest ones added to its holders, then the least used." Without the second clause the repair eats rule 51's against lane; without the third, rule 52's AND cuts the coordinate away.
+- **Rule 61's numbers** (with these choices): at 64 + 64, 6,138 of 19,821 forms given a coordinate; an admission changes 7.9 earlier codes on average and 14,813 at most (touching 13.7 and 16,040); 3 ms an admission near 19,000 forms, 8.3 s for the greatest. At 96 + 96: 4,874; 4.1 and 4,513; 2.8 ms; 0.44 s. The cost is a cascade from short forms, not a start-up cost.
+- **Certificate 48:** archer read on reach is no longer read as archer's own; the first Pi does not find it there.
+- **Rule 52, open:** whether a part of the catalog made by the repair belongs to the classes of its characters (the class code the OR of those parts' codes too). It would keep any coordinate, but the letter class would fill within a few hundred repairs.
+- **Rule 51:** the against lane is still emptied for some forms by chance (29 of 3,777, as many as forms with holders, before the repair; 97 with the trial's choice as written).
+- The copies not followed (`ConceptTrust.content`, LTM's kept rows, MTM's literal candidates) want a rule.
