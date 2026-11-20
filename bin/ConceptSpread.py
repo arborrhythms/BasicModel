@@ -73,15 +73,18 @@ def _store_edges(owner, V, device):
     from Spaces import _concept_alloc_of
     alloc = getattr(owner, '_concept_allocator', None)
     if alloc is None:
-        return 0, []
+        edges = []
+        return _pair_edges(owner, V, edges, device), edges
     store = _concept_alloc_of(owner).layer(0)
     if not getattr(store, '_thing_columns', False) or store.values is None or not store.nnz:
-        return 0, []
+        edges = []
+        return _pair_edges(owner, V, edges, device), edges
     view = store.bind(torch.arange(V))
     seats = view._thing_seats.to(device)
     T = int(seats.shape[0])
     if not T:
-        return 0, []
+        edges = []
+        return _pair_edges(owner, V, edges, device), edges
     edges = []
     complete = view._thing_complete.to(device)
     held = (seats >= 0) & complete[:, None]
@@ -96,7 +99,22 @@ def _store_edges(owner, V, device):
     if missing is not None and len(missing):
         keep &= ~missing.to(device)
     edges.append((rows[keep], V + cols[keep], value[keep].abs(), value[keep] < 0))
-    return T, edges
+    return T + _pair_edges(owner, V + T, edges, device), edges
+
+
+def _pair_edges(owner, start, edges, device):
+    """The rows of the pairs the candidate matrices promoted, as symbols
+    from ``start``, each reading its two concepts at one."""
+    pairs = getattr(getattr(owner, 'mtm', None), 'pair_rows', None) or ()
+    rows = [(owner._concept_row_of(a), owner._concept_row_of(b)) for a, b in pairs]
+    rows = [pair for pair in rows if None not in pair]
+    if not rows:
+        return 0
+    member = torch.tensor([r for pair in rows for r in pair], dtype=torch.long, device=device)
+    parent = start + torch.arange(len(rows), device=device).repeat_interleave(2)
+    edges.append((parent, member, torch.ones(len(member), device=device),
+                  torch.zeros(len(member), dtype=torch.bool, device=device)))
+    return len(rows)
 
 
 def structure(owner, device=None):

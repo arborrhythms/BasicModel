@@ -5,7 +5,8 @@ At each look, in training:
 
 * the Pi above order zero: concepts of one order present together at the
   look offer a candidate row over the pair (a symbol of the pair); a
-  candidate held above the penalty is made a symbol;
+  candidate held above the penalty becomes a row of the pair
+  (:func:`pair_rows`);
 * the Sigma: a kind expected at the look by the spread and not read there,
   with a thing present at the look, offers a candidate entry of the kind on
   that thing; held above the penalty it is written as the kind's entry. A
@@ -50,12 +51,29 @@ def pi_step(owner, present):
     held = matrices(owner)['pi']
     found = sorted(cid for cid, value in present.items() if value >= PRESENT)
     for left, right in itertools.combinations(found, 2):
-        if order(left) == order(right) >= 0 and (left, right) not in held and table.fit(left, right) is None:
+        if (order(left) == order(right) >= 0 and (left, right) not in held
+                and (left, right) not in pair_rows(owner) and table.fit(left, right) is None):
             held.offer((left, right))
     gradients = {key: pair_gradient(held.value(key), present.get(key[0], 0.), present.get(key[1], 0.))
                  for key in held.entries if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
     promoted, _ = held.step(gradients)
-    return [table.make(('pair',) + key, *key, owner=owner) for key, _ in promoted]
+    rows = pair_rows(owner)
+    for key, _ in promoted:
+        if key not in rows:
+            rows.append(key)
+    return [key for key, _ in promoted]
+
+
+def pair_rows(owner):
+    """The rows of the Pi above order zero that the candidates promoted,
+    each a pair of concepts of one order; the spread reads them as symbols
+    (:func:`ConceptSpread.structure`). They are not the fit of a concept
+    alone, so no kind reads them for a member."""
+    pool = owner.mtm
+    rows = getattr(pool, 'pair_rows', None)
+    if rows is None:
+        rows = pool.pair_rows = []
+    return rows
 
 
 def sigma_step(owner, present, expected, batch):
@@ -107,7 +125,7 @@ def sigma_step(owner, present, expected, batch):
 @torch.no_grad()
 def at_look(model, field):
     """The candidates' step at one look, in training."""
-    if not (model.training and getattr(model, '_sentence_training', True)) or field is None:
+    if not (getattr(model, 'training', False) and getattr(model, '_sentence_training', True)) or field is None:
         return
     owner = model._concept_owner()
     if getattr(owner, 'mtm', None) is None:
