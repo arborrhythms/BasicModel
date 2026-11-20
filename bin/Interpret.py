@@ -494,15 +494,8 @@ class InterpretLayer(GrammarLayer):
         The kind stands one order above the objects of words; an object at
         or above its order is not one of its members."""
         from Spaces import _concept_alloc_of
-        cs = self.owner
-        kind = _concept_alloc_of(cs).declared_classes.get('objects')
-        kind_row = None if kind is None else cs._concept_row_of(kind)
-        row = cs._concept_row_of(obj)
-        if kind_row is None or row is None or cs._row_order(row) >= cs._row_order(kind_row):
-            return None
-        if not cs.reads_concept(kind_row, row):
-            cs.add_concept_edge(kind_row, row, 1.)
-        return kind_row
+        kind = _concept_alloc_of(self.owner).declared_classes.get('objects')
+        return None if kind is None else self.owner.kind_entry(kind, obj)
 
     def compose(self, value, **interpretation):
         """The field chooser supplies its resolved row. A direct read uses the word API."""

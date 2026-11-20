@@ -13933,6 +13933,15 @@ class ConceptualSpace(Space):
             if torch.is_tensor(prior):
                 with torch.no_grad():
                     prior.add_(float(self.utility_prior_rate) * utility_gain).clamp_(-8.0, 8.0)
+            # Check for an existing fit first: a concept one order above the
+            # members whose entries read the same symbols.
+            orders = [_concept_alloc_of(self).order_of(int(m)) for m in members]
+            fit = (self.concept_fit(members, 1 + max(orders))
+                   if orders and min(orders) >= 0 else None)
+            if fit is not None:
+                admitted[members] = int(fit)
+                hits.pop(members, None)
+                continue
             if not ConceptualSpace._automatic_concept_admitted(
                     self, 1, reason="chunked phrase"):
                 continue
@@ -14996,6 +15005,61 @@ class ConceptualSpace(Space):
         A row brings one concept, the first recorded."""
         _concept_alloc_of(self).brought.setdefault(int(percept), int(row))
         return self.add_concept_feature(row, 'bp', percept, 1.)
+
+    def concept_fit(self, members, order):
+        """The fit of a concept: a concept of ``order`` already made (by the
+        Sigma or by MTM) whose entries read the same symbols that a kind of
+        ``members`` would read, each member's symbol found by its fit
+        (:meth:`SymbolTable.fit`), and nothing else. ``None`` where a member
+        has no symbol (then no concept reads it) or none reads the same."""
+        alloc = _concept_alloc_of(self)
+        table, store = alloc.symbol_table(), alloc.layer(0)
+        columns = set()
+        for member in members:
+            symbol = table.fit(int(member))
+            if symbol is None:
+                return None
+            columns.add(store.column_of_thing(('sym', int(symbol))))
+        if not columns:
+            return None
+        bias = store.bias_column()
+        read = {}
+        for row, column in store._index:
+            if column != bias:
+                read.setdefault(row, set()).add(column)
+        found = sorted(row for row, held in read.items() if held == columns
+                       and self._row_order(row) == int(order))
+        return None if not found else self.concept_id_at_row(found[0])
+
+    def same_thing(self, left, right):
+        """MTM's making from a statement that two are the same ("Felix is
+        my cat"): one symbol holding both concepts, the one that already
+        holds them (its fit) or one made over the two. A symbol's
+        constituents are concepts of one order: two of different orders
+        make none (``None``). Its row is the plain product over both, so it
+        reads nothing where only one is evidenced; each concept keeps its
+        own vector, and any symbol that held one alone stays as it was."""
+        left, right = int(left), int(right)
+        if left == right:
+            return None
+        alloc = _concept_alloc_of(self)
+        if alloc.order_of(left) != alloc.order_of(right) or alloc.order_of(left) < 0:
+            return None
+        pair = tuple(sorted((left, right)))
+        return alloc.symbol_table().make(('same',) + pair, *pair)
+
+    def kind_entry(self, kind, member):
+        """MTM's making from a statement of kind ("Felix is a cat"): the
+        kind's entry on the member's symbol, the symbol found by its fit or
+        made then (:meth:`things_reading`). Idempotent. Returns the store
+        row of the kind, or ``None`` where the member is not of a lower
+        epistemic level than the kind."""
+        kind_row, row = self._concept_row_of(int(kind)), self._concept_row_of(int(member))
+        if kind_row is None or row is None or self._row_order(row) >= self._row_order(kind_row):
+            return None
+        if not self.reads_concept(kind_row, row):
+            self.add_concept_edge(kind_row, row, 1.)
+        return kind_row
 
     def nominate_symbol(self, handle, concept):
         """The one maker of a symbol above order zero: MTM's nomination of

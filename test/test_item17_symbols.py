@@ -489,7 +489,10 @@ def test_6_a_symbol_has_its_own_index_and_no_vector_and_nothing_is_one_to_one():
     from Symbols import SymbolTable
     table = SymbolTable(8)
     first = table.make(('name', 40), 40)
-    second = table.make(('candidate', 3), 40)
+    # A making finds the symbol that already holds its concepts first; a
+    # second symbol over 40 is one that holds another concept too.
+    assert table.make(('candidate', 2), 40) == first
+    second = table.make(('candidate', 3), 40, 41)
     assert (first, second) == (0, 1) and table.make(('name', 40), 41) == first
     assert table.reading(40) == [0, 1] and table.brought == [40, 40]
     restored = SymbolTable(8)
@@ -499,10 +502,11 @@ def test_6_a_symbol_has_its_own_index_and_no_vector_and_nothing_is_one_to_one():
     assert restored.members(2) == [41, 40] and restored.reading(40) == [0, 1, 2]
     lanes = torch.tensor([[[.5, 0.]], [[.8, .1]]])
     read = restored.read(lanes, [40, 41])
+    torch.testing.assert_close(read[1, 0], torch.tensor([.4, 0.]), rtol=0, atol=1e-6)
     torch.testing.assert_close(read[2, 0], torch.tensor([.4, 0.]), rtol=0, atol=1e-6)
     # Nothing addresses "the" symbol of a concept: the fit is the symbol
     # with the fewest constituents among those that hold it.
-    assert restored.fit(41) == 2 and restored.fit(40) == 0 and restored.fit(39) is None
+    assert restored.fit(41) == 1 and restored.fit(40) == 0 and restored.fit(39) is None
     # The Pi's storage is by symbol, and its member keys name concepts.
     assert len(restored.pi.crow) == 8 + 1
     assert all(key[0] == 'concept' for key in restored.pi.keys)
@@ -566,7 +570,10 @@ def test_71_no_symbol_is_made_for_a_concept_and_every_symbol_is_mtms(lesson_at_s
     assert len(table) > 0
     for symbol, (handle, concept) in enumerate(zip(table.handles, table.brought)):
         entry = owner.mtm.entries.get(handle)
-        if handle[0] == 'kind':
+        if handle[0] == 'same':
+            # MTM's making from a statement that two are the same.
+            assert sorted(table.members(symbol)) == sorted(handle[1:]) and concept == handle[1]
+        elif handle[0] == 'kind':
             assert handle[2] == concept and table.members(symbol) == [concept]
             assert (owner._concept_row_of(handle[1]), store.column_of_thing(('sym', symbol))) in store._index
         else:
@@ -763,7 +770,10 @@ def test_cert_f_nothing_is_one_to_one():
     symbol = store.symbol_table.fit(ids[1])
     assert {row for row, thing, _ in entries if thing == ('sym', symbol)} == {green, small}
     assert len({thing for row, thing, _ in entries if row == green}) == 3
-    second = cs.nominate_symbol(('test', 'second'), ids[1])
+    # A making finds the symbol that holds its concept first; a concept is
+    # in a second symbol that holds another concept with it.
+    assert cs.nominate_symbol(('test', 'again'), ids[1]) == symbol
+    second = store.symbol_table.make(('test', 'second'), ids[1], ids[2])
     assert second != symbol and set(store.symbol_table.reading(ids[1])) == {symbol, second}
 
 
@@ -944,3 +954,57 @@ def test_cert_18_every_object_found_or_made_for_a_word_is_a_member_of_objects():
     # No pending name is left in MTM.
     assert not any(isinstance(key, tuple) and key[:1] == ('name',) for key in cs.mtm.entries)
     assert not hasattr(cs.mtm, 'named') and not hasattr(cs.interpret, '_pending')
+
+
+# Step 12: how MTM makes a symbol and a concept from a statement (rule 10).
+
+def test_fit_a_symbol_holds_the_concept_and_a_maker_finds_it_first():
+    cs, store, ids, rows = _small_space()
+    table = cs._concept_allocator.symbol_table()
+    felix, cats = ids[1], ids[2]                     # two concepts of order one
+    first = cs.nominate_symbol(('candidate', 1), felix)
+    # A second making for the same concept finds the symbol that holds it.
+    assert cs.nominate_symbol(('candidate', 2), felix) == first and len(table) == 1
+    assert table.fit(felix) == first and table.fit(felix, cats) is None
+
+
+def test_same_thing_one_symbol_over_both_read_only_when_both_are_evidenced():
+    cs, store, ids, rows = _small_space()
+    table = cs._concept_allocator.symbol_table()
+    felix, cat = ids[1], ids[2]
+    alone = cs.nominate_symbol(('candidate', 1), felix)
+    both = cs.same_thing(felix, cat)
+    assert both != alone and sorted(table.members(both)) == sorted((felix, cat))
+    # Its fit: stating it again, either way round, makes nothing new.
+    assert cs.same_thing(cat, felix) == both and len(table) == 2
+    # Concepts of two orders are never one symbol's constituents.
+    assert cs.same_thing(ids[0], felix) is None
+    # The plain product: both evidenced reads their product; one alone
+    # reads nothing, on both lanes; the symbol of Felix alone is unchanged.
+    lanes = torch.tensor([[.8, .1], [.5, .2]])
+    read = table.read(lanes, [felix, cat], [alone, both])
+    torch.testing.assert_close(read[1], torch.tensor([.4, .02]))
+    torch.testing.assert_close(read[0], torch.tensor([.8, .1]))
+    only = table.read(lanes[:1], [felix], [alone, both])
+    assert float(only[1].abs().sum()) == 0. and torch.allclose(only[0], lanes[0])
+
+
+def test_kind_entry_and_the_fit_of_a_concept():
+    cs, store, ids, rows = _small_space()
+    table = cs._concept_allocator.symbol_table()
+    felix, ciao, kind, other = ids[1], ids[2], ids[3], ids[4]
+    # "Felix is a cat", "Ciao is a cat": the kind's entries on its members'
+    # symbols, found by their fit or made then.
+    assert cs.kind_entry(kind, felix) == rows[3] and cs.kind_entry(kind, ciao) == rows[3]
+    count = len(store._index)
+    assert cs.kind_entry(kind, felix) == rows[3] and len(store._index) == count
+    assert cs.reads_concept(rows[3], rows[1]) and cs.reads_concept(rows[3], rows[2])
+    assert cs.kind_entry(felix, kind) is None        # not of a lower level
+    # A concept fits when its entries read the same symbols: the kind over
+    # Felix and Ciao fits them, and nothing fits Felix alone.
+    assert cs.concept_fit([felix, ciao], 2) == kind and cs.concept_fit([ciao, felix], 2) == kind
+    assert cs.concept_fit([felix], 2) is None and cs.concept_fit([felix, ciao], 1) is None
+    cs.kind_entry(other, felix)
+    assert cs.concept_fit([felix], 2) == other
+    # A member with no symbol has no concept that reads it.
+    assert cs.concept_fit([ids[0]], 1) is None or table.fit(ids[0]) is not None

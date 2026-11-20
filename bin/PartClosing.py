@@ -274,6 +274,10 @@ class PartClosing:
             raise ValueError('equality observation requires its durable evidence')
         if left == right or not float(self.parts.truth_plus[row]) > threshold:
             return
+        if left[0] == right[0] == SYMBOL:
+            # The statement that the two are the same: one symbol holding
+            # both, found by its fit or made.
+            self.owner.same_thing(left[1], right[1])
         for member, side, word in ((left, right, words[1]), (right, left, words[0])):
             self._admit_member(member, side, word, evidence_refs, threshold)
 
@@ -329,6 +333,13 @@ class PartClosing:
             self.alloc.remember_singleton(empty, member, token, value, replace=True)
             self.alloc.singleton_rows[empty] = evidence_refs
             return
+        if all(ref[0] == SYMBOL for ref in (*members, member)):
+            # Check for an existing fit first: a concept one order above the
+            # members whose entries read their symbols and nothing else.
+            fit = self.owner.concept_fit([ref[1] for ref in (*members, member)], order + 1)
+            if fit is not None and ('part-kind', shared, order + 1) not in self.alloc.relate_idx:
+                self.alloc.relate_idx['part-kind', shared, order + 1] = fit
+                self.alloc.relate_idx['part-base', fit] = shared
         parent = index_part_row(self.owner, members[0], shared)
         for admitted in (*members[1:], member):
             if index_part_row(self.owner, admitted, shared) != parent:

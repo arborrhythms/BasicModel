@@ -70,6 +70,7 @@ def index_part_row(cs, part, whole):
         alloc.relate_idx['part-base', parent] = whole_ref
     alloc.parts.add(part_ref, (SYMBOL, parent), truth_plus=1.)
     alloc.singletons.add(parent)
+    member = part_ref[1] if part_ref[0] == SYMBOL else None
     alloc.raised.add(parent)
     alloc.settle(parent)
     if whole_ref[0] == SYMBOL:
@@ -79,6 +80,9 @@ def index_part_row(cs, part, whole):
     cs._priming_edge_revision = None
     from FamiliarTier import class_members
     cs.cover_members(parent, class_members(cs, parent))
+    if member is not None and cs._concept_row_of(member) is not None:
+        # The statement of kind: the class's entry on the member's symbol.
+        cs.kind_entry(parent, member)
     return int(parent)
 
 

@@ -42,15 +42,22 @@ class SymbolTable:
     def __contains__(self, handle):
         return handle in self.index
 
-    def make(self, handle, concept):
-        """The symbol of ``handle``, made if it has none: one Pi row over the
-        concept it brings, at one. A handle made before keeps its symbol."""
+    def make(self, handle, concept, *others):
+        """The symbol of ``handle``: one that already fits (:meth:`fit`:
+        every one of ``concept`` and ``others`` is among its constituents),
+        or else one made: a Pi row over them at one, which brings
+        ``concept``. A handle made before keeps its symbol; a handle whose
+        concepts a symbol already holds names that symbol."""
         found = self.index.get(handle)
+        if found is None:
+            found = self.fit(concept, *others)
         if found is not None:
+            self.index.setdefault(handle, found)
             return found
         if len(self.handles) >= self.capacity:
             raise OverflowError('the symbol table has no room for another symbol')
-        symbol = self.pi.append((('concept', int(concept)),))
+        concepts = tuple(dict.fromkeys(int(c) for c in (concept, *others)))
+        symbol = self.pi.append(tuple(('concept', c) for c in concepts))
         if symbol != len(self.handles):
             raise RuntimeError('the symbol Pi and the symbol index disagree')
         self.index[handle] = symbol
@@ -59,11 +66,13 @@ class SymbolTable:
         self.revision += 1
         return symbol
 
-    def fit(self, concept):
-        """A symbol that holds ``concept``: of those whose rows read it, the
-        one with the fewest constituents (the first made among equals), or
-        ``None``."""
-        found = self.reading(concept)
+    def fit(self, concept, *others):
+        """The fit of a symbol: one among whose constituents ``concept`` (and
+        each of ``others``) is. Of those, the one with the fewest
+        constituents (the first made among equals), or ``None``."""
+        found = set(self.reading(concept))
+        for other in others:
+            found &= set(self.reading(other))
         if not found:
             return None
         return min(found, key=lambda symbol: (len(self.members(symbol)), symbol))

@@ -585,6 +585,15 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None, stream
         for name in words:
             owner.interpret.define(name, cid, trust=trust, evidence=evidence)
         return cid
+    # Check for an existing fit first: a concept of this order that reads
+    # the constituent's symbol and nothing else.
+    fit = (owner.concept_fit((constituent[1],), member_order + 1)
+           if constituent[0] == 'sym' else None)
+    if fit is not None:
+        pool.promote(key, fit)
+        for name in words:
+            owner.interpret.define(name, fit, trust=trust, evidence=evidence)
+        return fit
     from ConceptPlacement import promotion_seat, identity_start
     if not promotion_seat(owner, member_order + 1, context='MTM identity promotion'):
         return None
@@ -855,6 +864,15 @@ def promote_candidates(owner):
                     continue
         else:
             order = 0
+        if order > 0:
+            # Check for an existing fit first: a concept of this order whose
+            # entries read the same symbols as the candidate's members.
+            members = [cid for row in support if (cid := owner.concept_id_at_row(row)) is not None]
+            fit = owner.concept_fit(members, order) if len(members) == len(support) else None
+            if fit is not None:
+                pool.promote(key, fit)
+                result.append(fit)
+                continue
         from ConceptPlacement import promotion_seat
         if not promotion_seat(owner, order, context='MTM candidate promotion'):
             continue
