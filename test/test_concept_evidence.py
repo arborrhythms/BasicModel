@@ -26,7 +26,7 @@ def test_production_snap_background_is_neither(parts):
             cs.add_concept_edge(row, part, 1.)
     native, extents = binary_features(cs, torch.zeros(2, 8, dtype=torch.long))
     snap = cs.cs_read_memberships(native, extents)
-    _, result = cs.cs_forward_content(snap, cs.similarity_codebook.getW())
+    result = cs.cs_forward_content(snap)
     assert torch.count_nonzero(result) == 0
     torch.testing.assert_close(corners(symbols(result)[row])[:, 3], torch.ones(2))
 
@@ -63,7 +63,7 @@ def test_kind_of_a_both_member_and_an_absent_member_is_one_signed_value():
         cs.add_concept_edge(row, col, 1.)
     a = field(cs)
     a[:2, 0, 0] = torch.tensor([[1., 1.], [0., 1.]])
-    _, result = cs.cs_forward_content(a, torch.zeros(64, 8))
+    result = cs.cs_forward_content(a)
     # A kind is one signed value, never both: the both member's value is
     # nothing and the absent member's is -1, summed.
     torch.testing.assert_close(result[row, 0, 0], torch.tensor([0., math.tanh(1.)]))
@@ -104,7 +104,7 @@ def test_discovered_symbol_remains_available_after_nonuse():
     assert key not in cs.mtm.entries and cs.concept_id_at_row(row) == cid
     a0 = field(cs)
     a0[a, 0, 0, 0] = 1.
-    _, result = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
+    result = cs.cs_forward_content(a0)
     # The Sigma reads the present member by its entry's weight.
     store = Spaces._concept_alloc_of(cs).layer()
     weight = sum(float(store.values[p].abs()) for p in cs.concept_entries(row, a))
@@ -167,12 +167,14 @@ def test_restored_knowing_reads_symbols_without_a_percept_carrier():
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
     restored = _cs()
     _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)
-    ss = SimpleNamespace(subspace=SimpleNamespace(what=None, nWhat=8),
-                         _publish_symbol_snapshot=lambda event, *_a, **_kw: SimpleNamespace(event=event))
-    leg = Language.SymbolSpace.forward_concept_to_symbol(ss, restored.subspace)
-    torch.testing.assert_close(leg._symbol_evidence[0, 0], torch.ones(2))
-    assert leg._symbol_evidence[1:].count_nonzero() == 0
-    assert leg.event.shape == (1, 2 * sum(cs._order_caps()), 8)
+    torch.testing.assert_close(restored.subspace._concept_activations, evidence)
+    # The symbols' read of the restored field: the store holds no symbol, so
+    # it reads none and publishes no leg.
+    lanes, ids = restored.symbol_lanes(restored.subspace._concept_activations)
+    assert lanes.shape == (1, 0, 2) and ids.shape == (1, 0)
+    ss = SimpleNamespace(conceptualSpace=restored,
+                         _publish_symbol_snapshot=lambda event, **_kw: SimpleNamespace(event=event))
+    assert Language.SymbolSpace.forward_concept_to_symbol(ss, restored.subspace) is None
 
 
 

@@ -83,9 +83,16 @@ def test_forward_equals_compose_on_a_live_snapshot():
     loader = m.inputSpace.data.data_loader(split="train", num_streams=2)
     inputs, _ = next(iter(loader))
     x = m.inputSpace.prepInput(inputs)
+    # The live snapshot is the conceptual event handed to the symbols'
+    # publication (the symbols' leg carries lanes, not an event the grammar
+    # composes).
+    published = []
+    native_publish = m._publish_reading_symbols
+    m._publish_reading_symbols = lambda carrier: (published.append(carrier.materialize()),
+                                                  native_publish(carrier))[1]
     with torch.no_grad():
         m.forward(x)
-    snap = getattr(m, "_current_discourse_s", None)
+    snap = published[-1] if published else None
     # This fixture starts in the dense signed event chart; the grammar
     # alias comparison consumes its corresponding native cube coordinates.
     if torch.is_tensor(snap):

@@ -95,7 +95,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
     def read(n):
         return cs.cs_read_memberships((torch.tensor([[100 + n]]), extent,
             None, torch.tensor([[65]]), extent), extent)
-    _, evidence = cs.cs_forward_content(read(11), cs.similarity_codebook.getW())
+    evidence = cs.cs_forward_content(read(11))
     own, _ = order_zero_expected(cs, definitions[11][1], published_presence(cs))
     ids, addresses = cs._cs_field_concept_ids.clone(), cs._cs_field_rows.clone()
     codes = cs._field_codes(cs.similarity_codebook.getW()).detach()
@@ -153,9 +153,10 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         # Open attention retains every definition reached by native evidence.
         assert cs._cs_last_a0.shape[0] >= 8
         leg = model.symbolSpace.forward_concept_to_symbol(carrier)
-        # The slot keeps its concept's identity; a symbol has no address.
-        assert int(leg._concept_ids[slot[0]]) == cid
-        assert '_symbol_indices' not in leg.__dict__
+        # The slot keeps its concept's identity; the symbols' leg holds no
+        # concept and a symbol has no address.
+        assert leg is None or not any(name.startswith('_concept_') for name in leg.__dict__)
+        assert leg is None or '_symbol_indices' not in leg.__dict__
         model.End()
     batch = torch.zeros(len(words), 1, 8, dtype=torch.long)
     for b, word in enumerate(words):
@@ -171,10 +172,8 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         slot = (ids == cid).nonzero().flatten()
         assert len(slot) == 1, word
         assert carrier._concept_activations[slot[0], b, :, 0].max() > 0, word
-        kept = leg._concept_ids
-        kept = kept[:, b] if kept.ndim == 2 else kept
-        assert int(kept[slot[0]]) == cid
-    assert '_symbol_indices' not in leg.__dict__
+    assert leg is None or not any(name.startswith('_concept_') for name in leg.__dict__)
+    assert leg is None or '_symbol_indices' not in leg.__dict__
     model.End()
 
 
@@ -197,8 +196,7 @@ def test_batch_members_bind_independently_within_eight_rows():
         y, lanes = order_zero_expected(cs, cs._concept_row_of(cids[b]), published_presence(cs, b))
         assert y > .76
         torch.testing.assert_close(a0[0, b, 0], lanes.to(a0), atol=1e-5, rtol=1e-5)
-    content, field = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
-    assert content.shape[:2] == (12, 2 * sum(cs._field_caps()))
+    field = cs.cs_forward_content(a0)
     assert field.shape[:2] == (sum(cs._field_caps()), 12)
 
 

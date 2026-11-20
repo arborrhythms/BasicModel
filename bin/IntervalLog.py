@@ -135,7 +135,9 @@ def run_probes(config, checkpoint):
                 pairs = words.poles[words.accepted].detach()
                 both['word'].extend(((pairs[:, 0] > 0) & (pairs[:, 1] > 0)).cpu().tolist())
             both['sentence'].extend(field.evidence[0] > 0 and field.evidence[1] > 0 for field in fields)
-            return understanding.symbolic_state.detach().cpu().flatten(), fields, understanding.input_reconstruction
+            # The probes are told apart by the idea; the symbols' lanes vary
+            # in number from one text to another.
+            return understanding.conceptual_state.detach().cpu().flatten(), fields, understanding.input_reconstruction
 
     try:
         if not model.load_weights(str(checkpoint), require_match=True):

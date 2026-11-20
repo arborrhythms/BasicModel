@@ -18,7 +18,7 @@ def perceive(model, interval, active):
         native.get('native_part_spans', native['part_spans']),
         ws.subspace.what.primitive_properties, raw, whole_spans), bracket)
     owner._cs_last_a0 = evidence.detach()
-    _, knowing = owner.cs_forward_content(evidence, None)
+    knowing = owner.cs_forward_content(evidence)
     from Understanding import ConceptualField
     field = ConceptualField(owner._cs_field_concept_ids,
         F.pad(knowing, (0, 0, 0, 0, 0, 0, 0, sum(owner._field_caps())-len(knowing))),

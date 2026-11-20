@@ -15254,7 +15254,7 @@ class ConceptualSpace(Space):
         kept = {name: self.__dict__.get(name) for name in
                 ('_cs_level_acts', '_cs_level_rows', '_cs_wave_qe')}
         try:
-            _, field = self.cs_forward_content(a_0, None)
+            field = self.cs_forward_content(a_0)
         finally:
             for name, value in kept.items():
                 object.__setattr__(self, name, value)
@@ -15430,11 +15430,42 @@ class ConceptualSpace(Space):
                else sim.sum(dim=1)).t()
         return act.clamp(min=0.0) if nonneg else act
 
-    def cs_decode(self, order, concept_activation, what_W):
-        """Two symbol rows share one distributed code at each concept row."""
-        from ConceptEvidence import decode
-        start, end = self.order_slice(order)
-        return decode(concept_activation, what_W[start:end])
+    def symbol_lanes(self, field, inventory_rows=None):
+        """Each symbol's two lanes from a concept field ``[S, B, L, 2]``.
+
+        The field's occurrences are joined (:func:`ConceptEvidence.symbols`),
+        and each symbol read by the store over the seated rows takes the
+        product of its members' lanes (:func:`Layers.thing_lanes`). Returns
+        ``([B, T, 2], [B, T])``: the lanes, and the symbol of each row
+        (``-1`` where a stream holds fewer symbols than another).
+        """
+        from ConceptEvidence import symbols
+        from Layers import thing_lanes
+        pair = symbols(field)
+        S, B = pair.shape[:2]
+        addresses = self._field_inventory_rows(pair.device) if inventory_rows is None else inventory_rows
+        addresses = torch.as_tensor(addresses, device=pair.device)
+        if addresses.ndim == 1:
+            addresses = addresses[:, None].expand(-1, B)
+        lanes, ids = [], []
+        for b in range(B):
+            view = self._concept_field_store(addresses[:S, b])
+            seats = getattr(view, '_thing_seats', None)
+            if seats is None or not len(seats):
+                lanes.append(pair.new_zeros(0, 2))
+                ids.append([])
+                continue
+            lanes.append(thing_lanes(view, pair[:, b:b+1])[:, 0])
+            ids.append([int(thing[1]) for thing in view._things])
+        T = max(len(row) for row in ids) if ids else 0
+        out = pair.new_zeros(B, T, 2)
+        names = torch.full((B, T), -1, dtype=torch.long, device=pair.device)
+        for b, (value, row) in enumerate(zip(lanes, ids)):
+            if row:
+                out = out.index_put((torch.full((len(row),), b, device=pair.device),
+                                     torch.arange(len(row), device=pair.device)), value)
+                names[b, :len(row)] = torch.tensor(row, device=pair.device)
+        return out, names
 
     def definition_sparsity_loss(self, lam=0.0, free_size=None):
         """The rank-ordered soft-L0 training pressure that keeps each concept's
@@ -15477,13 +15508,14 @@ class ConceptualSpace(Space):
         result = signed_lanes(sigma_read(ly, options, start, end))
         return result.reshape(end - start, B, L, 2)
 
-    def cs_forward_content(self, a_0, dictionary):
-        """Compose paired evidence within occurrences, then read two symbols.
+    def cs_forward_content(self, a_0):
+        """Compose paired evidence within occurrences: the concept field.
 
         The taper ranks either pole and admits both together. Only the bounded
-        store span is materialized, independently of dictionary capacity.
+        store span is materialized. Returns the field ``[S, B, L, 2]``; it
+        holds no code.
         """
-        from ConceptEvidence import symbols, decode
+        from ConceptEvidence import symbols
         from Layers import thing_priorities
         if a_0.ndim != 4 or a_0.shape[-1] != 2:
             raise ValueError('snap requires [concept, batch, occurrence, 2]')
@@ -15550,7 +15582,7 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_level_acts', level_acts)
         object.__setattr__(self, '_cs_level_rows', [r.detach() for r in sel_rows])
         object.__setattr__(self, '_cs_wave_qe', None)
-        return (None if dictionary is None else decode(field, self._field_codes(dictionary))), field
+        return field
 
     def cs_reverse_presence(self, field, *, observed=None, inventory_rows=None):
         """Select cases by pi against the field, or choose without a field.
@@ -15935,7 +15967,7 @@ class ConceptualSpace(Space):
             self.add_concept_feature(self._concept_row_of(cid), 'bp', col // 2, 1., negated=bool(pole))
 
     def cs_symbolic_phase(self, settled, *, extents=None, percepts=None, a_0=None):
-        """Read native memberships once after the pump, then compose symbols.
+        """Read native memberships once after the pump; returns ``(settled, field)``.
 
         The distributed carrier retains its tied reconstruction. Presence
         reads feature definitions; precision belongs only to location.
@@ -15960,7 +15992,7 @@ class ConceptualSpace(Space):
             self._cs_field_concept_ids,
             torch.nn.functional.pad(a_0, (0, 0, 0, 0, 0, 0, 0, sum(self._field_caps()) - len(a_0))),
             self._cs_field_where, self._cs_field_when, None))
-        content, acts = self.cs_forward_content(a_0, dict_W)
+        acts = self.cs_forward_content(a_0)
         # Stage the pyramid's per-order winners on the subspace index so a
         # generic materialize() pulls exactly the selected codes (rev 2 #6).
         rows = getattr(self, "_cs_level_rows", None)
@@ -15976,7 +16008,7 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_refinement_field', self.refinement_field(self._percept_field))
         if getattr(self, "_promotion_enabled", False):
             object.__setattr__(self, "_promo_last_acts", acts.detach())
-        return content, acts
+        return settled, acts
 
     def _has_percept_alternatives(self, concept_id):
         """Whether an allocated order-0 definition unions other conjunctions."""

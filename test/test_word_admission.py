@@ -102,6 +102,12 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     inp = model.inputSpace.prepInput(texts)
     # A form is a word from the reading in which MTM nominates it.
     readings_before_nomination(model, lambda: model(inp))
+    # The concept field read here is the carrier handed to the symbols'
+    # publication (the symbols' leg itself holds no concept).
+    published = []
+    native_publish = model._publish_reading_symbols
+    monkeypatch.setattr(model, '_publish_reading_symbols',
+                        lambda carrier: (published.append(carrier), native_publish(carrier))[1])
     with torch.no_grad():
         _, symbols, _, _ = model(inp)
     # §68.73: these are the starting source's staged brackets, including
@@ -114,7 +120,7 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
         expected[b, second] = expected.new_tensor((length + 1, length + 6))
     torch.testing.assert_close(model._attention_spans, expected)
     cs = model._concept_owner()
-    carrier = model.symbol_cache
+    carrier = published[-1]
     rows = carrier._concept_inventory_rows
     evidence = carrier._concept_activations
     where = carrier._concept_where

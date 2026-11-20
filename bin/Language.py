@@ -8869,7 +8869,8 @@ class SymbolSubSpace(SubSpace):
         # The input batch bounds the simultaneous stream memberships; the
         # form event owns the clock band before the conceptual complement.
         _paired = getattr(getattr(conceptualSpace, 'similarity_codebook', None), 'mereology', None)
-        self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim,
+        # The store holds ideas: its content is the what of an idea's event.
+        self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=nWhat,
             episodic_concepts=int(TheXMLConfig.space('SymbolSpace', 'episodicConcepts', 4)),
             relation_capacity=int(TheXMLConfig.space("SymbolSpace","relationCapacity",8192)),
             percept_width=getattr(_paired, 'percept_event_width', muxed))
@@ -13397,8 +13398,8 @@ class SymbolSpace(Space):
             if (_sp is not None and (not isinstance(_sp, WholeSpace)) and hasattr(_sp, 'attach_symbolSpace')):
                 _sp.attach_symbolSpace(self)
 
-    # ``forward_concept_to_symbol`` below reads the paired symbols' evidence
-    # from the concepts' activations; a symbol has no codebook row.
+    # ``forward_concept_to_symbol`` below reads the symbols' two lanes from
+    # the concepts' activations; a symbol has no codebook row.
 
     # -- attribute forwarding to the held coordinator --------------------
     def __getattr__(self, name):
@@ -13622,14 +13623,13 @@ class SymbolSpace(Space):
             object.__setattr__(self, '_word_reference_' + name, value)
         return committed_presences
 
-    def _publish_symbol_snapshot(self, event, source=None, *,
+    def _publish_symbol_snapshot(self, event, *,
                                  prior_symbolic=None, language_plan=None):
         """Return an SS-owned transient result carrier for one peer tick.
 
         The carrier has no parameters and is intentionally not registered as a
-        second state path.  Its event is a zero-copy reference to ``event``;
-        ownership exists solely so a consumer can receive a read-only view and
-        the debug guard has a concrete owner to report.
+        second state path.  Its event is a zero-copy reference to ``event``,
+        the symbols' lanes ``[B, T, 2]``: no place or time is copied to it.
         """
         if not torch.is_tensor(event):
             return None
@@ -13641,10 +13641,6 @@ class SymbolSpace(Space):
             outputShape=(int(payload.shape[1]), int(payload.shape[-1])),
             nInputDim=int(payload.shape[-1]), nOutputDim=int(payload.shape[-1]))
         object.__setattr__(sub, "_owner_space", self)
-        if source is not None and not isinstance(source, SubSpaceView):
-            sub.copy_context(source)
-        object.__setattr__(sub, 'whereEncoding', self.subspace.whereEncoding)
-        object.__setattr__(sub, 'whenEncoding', self.subspace.whenEncoding)
         sub.commit_event(self, payload)
         if prior_symbolic is not None:
             prior = (prior_symbolic.materialize(mode="event")
@@ -13657,67 +13653,30 @@ class SymbolSpace(Space):
 
     def forward_concept_to_symbol(self, concept_sub, *, prior_symbolic=None,
                                   language_plan=None):
-        """Decode paired symbols from the argument's one code per concept.
+        """The symbols' two lanes, ``[B, T, 2]``, read from a concept field.
 
-        A paired field produces [B, 2S, D], with positive and negative rows
-        interleaved. Gradients flow through evidence; the detached dictionary
-        names each concept once. Located, row-aligned input events retain
-        their band on both symbol rows. An opaque conceptual dictionary has
-        no band; its occurrence scope travels in the evidence field.
-        Serial event inputs without a paired field remain detached snapshots.
+        The carrier's field ``_concept_activations`` (``[S, B, L, 2]``) is
+        read by the symbols' Pi (:meth:`ConceptualSpace.symbol_lanes`): each
+        symbol's lanes are the product of its members' lanes. The leg holds
+        no code, place or time (a symbol has no dimensions), and the
+        gradient flows through the field. ``leg._symbol_ids`` (``[B, T]``,
+        ``-1`` for none) names each row's symbol. A carrier with no field,
+        or a field that holds no symbol, gives no leg.
         """
-        # The peer scheduler hands SS a completed CS tensor rather than the
-        # live mutable CS carrier: A(w+1) may already have reused that carrier
-        # when B(w) begins.  Keep the legacy SubSpace/read-view API as well so
-        # parallel callers remain unchanged.
-        raw_event = torch.is_tensor(concept_sub)
-        read_view = isinstance(concept_sub, SubSpaceView)
-        if concept_sub is None:
+        if concept_sub is None or torch.is_tensor(concept_sub):
             return None
-        acts = (None if raw_event or read_view
-                else getattr(concept_sub, '_concept_activations', None))
-        if raw_event:
-            event = concept_sub
-        else:
-            if concept_sub.is_empty() and not torch.is_tensor(acts):
-                return None
-            event = concept_sub.materialize()
-        if not torch.is_tensor(acts) and (event is None or event.dim() < 2):
+        acts = getattr(concept_sub, '_concept_activations', None)
+        owner = getattr(self, 'conceptualSpace', None)
+        if not torch.is_tensor(acts) or owner is None:
             return None
-        if torch.is_tensor(acts):
-            from ConceptEvidence import decode, symbols
-            codes = getattr(concept_sub, '_concept_codes', None)
-            row_events = codes is None
-            if codes is None:
-                if event is None:
-                    raise ValueError('paired symbol read requires concept codes')
-                if event.ndim == 2:
-                    event = event.unsqueeze(0)
-                codes = event.detach().mean(dim=0)
-            if codes.ndim not in (2, 3) or codes.shape[-2] < len(acts):
-                raise ValueError('paired symbol read requires one code per concept')
-            codes = codes[..., :len(acts), :].detach().clone()
-            symbol_event = decode(acts, codes)
-            width = int(getattr(self.subspace, 'nWhat', codes.shape[-1]))
-            if row_events and event.shape[-1] > width:
-                band = event.detach()[..., width:].repeat_interleave(2, dim=1)
-                symbol_event = torch.cat((symbol_event[..., :width], band), dim=-1)
-            leg = self._publish_symbol_snapshot(
-                symbol_event, concept_sub,
-                prior_symbolic=prior_symbolic, language_plan=language_plan)
-            object.__setattr__(leg, '_symbol_evidence', symbols(acts))
-            object.__setattr__(leg, '_concept_activations', acts)
-            object.__setattr__(leg, '_concept_codes', codes)
-            for name in ('where', 'when', 'ids', 'inventory_rows'):
-                object.__setattr__(leg, '_concept_' + name,
-                                   getattr(concept_sub, '_concept_' + name, None))
-            return leg
-        sym_event = event.detach()
-        if sym_event.dim() == 2:
-            sym_event = sym_event.unsqueeze(0)
-        return self._publish_symbol_snapshot(
-            sym_event, concept_sub, prior_symbolic=prior_symbolic,
-            language_plan=language_plan)
+        lanes, ids = owner.symbol_lanes(
+            acts, getattr(concept_sub, '_concept_inventory_rows', None))
+        if not lanes.shape[1]:
+            return None
+        leg = self._publish_symbol_snapshot(
+            lanes, prior_symbolic=prior_symbolic, language_plan=language_plan)
+        object.__setattr__(leg, '_symbol_ids', ids)
+        return leg
 
 
 # The historical ``SymbolSpace = SymbolSubSpace`` alias (retired Phase G of

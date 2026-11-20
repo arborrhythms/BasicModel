@@ -2,8 +2,8 @@
 
 The live field is [concept, batch, bracket, 2]. Each bracket owns one where
 and when pair; concepts have no individual coordinates. Native percept events
-retain the support used for inverse attribution. One distributed code names
-both poles. No signed scalar stores this field.
+retain the support used for inverse attribution. No signed scalar stores this
+field.
 """
 import torch
 
@@ -29,17 +29,6 @@ def corners(pair):
                         torch.minimum(negative, 1 - positive),
                         torch.minimum(positive, negative),
                         torch.minimum(1 - positive, 1 - negative)), -1)
-
-
-def decode(field, codes):
-    """Pack two poles per bound concept; the carrier supplies its concept ids."""
-    pair = symbols(field).permute(1, 0, 2)
-    rows = torch.arange(2 * codes.shape[-2], device=codes.device)
-    # These are packed offsets only. Logical symbol addresses are 2*cid
-    # and 2*cid+1 in the retained carrier, independent of the attended slot.
-    poles = codes.index_select(-2, rows // 2)
-    poles = poles * torch.where(rows % 2 == 0, 1., -1.)[:, None]
-    return pair.flatten(1, 2).unsqueeze(-1) * (poles.unsqueeze(0) if poles.ndim == 2 else poles)
 
 
 def in_extents(position_evidence, position_spans, extents):

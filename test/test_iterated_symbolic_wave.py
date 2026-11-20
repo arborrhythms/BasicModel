@@ -53,7 +53,7 @@ def test_depth_d_sigma_path_completes_in_one_pass():
     a0 = torch.zeros(cs._order_caps()[0], 1)
     a0[:4, 0] = torch.tensor([.25, .5, .75, 1.])
     what = torch.randn(64, _D)
-    _, a = cs.cs_forward_content(_evidence(a0), what)
+    a = cs.cs_forward_content(_evidence(a0))
     # Each order's Sigma sums its members' values and squashes.
     first, second = math.tanh(.25 + .5), math.tanh(.75 + 1.)
     third = math.tanh(first + second)
@@ -64,7 +64,7 @@ def test_depth_d_sigma_path_completes_in_one_pass():
         for (row, _), index in layer._index.items():
             if row in rows[:2]:
                 layer.values[index] = 0.
-    _, absent = cs.cs_forward_content(_evidence(a0), what)
+    absent = cs.cs_forward_content(_evidence(a0))
     assert absent[rows[-1]].count_nonzero() == 0
 
 

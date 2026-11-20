@@ -8560,18 +8560,10 @@ class BasicModel(BaseModel):
             carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
                 (self._last_sentence_field if self.grammar_phases.examination else
                  self._concept_owner()._cs_open_field)}
-        # The answer path's seed (spec 5.3): on the serial grammar path the
-        # resolved input symbol is the grammar's ROOT IDEA (the STM-folded
-        # S in the terminal conceptual state), which varies with the
-        # sentence; the ``symbols`` tensor there is the symbol-space
-        # activation over a codebook with almost no rows at init and is
-        # the same for every sentence (test_output_path_supervised).  The
-        # parallel path keeps ``symbols``.
-        answer_seed = None
-        if (bool(getattr(self, "word_brackets", False)) and torch.is_tensor(conceptual)
-                and torch.is_tensor(symbols) and conceptual.dim() == 3
-                and symbols.dim() == 3 and conceptual.shape[-1] == symbols.shape[-1]):
-            answer_seed = conceptual
+        # The answer path's seed (spec 5.3) is the terminal idea: the
+        # symbols' lanes carry no code, so no answer is read from them.
+        answer_seed = (conceptual if torch.is_tensor(conceptual)
+                       and conceptual.dim() == 3 else None)
         sentence_states, sentence_fields = (self._capture_sentence_end_states()
                                              if self.word_brackets else ((), {}))
         input_reconstruction = self._complete_input_reconstruction()
@@ -11314,16 +11306,14 @@ class BasicModel(BaseModel):
             # evidence; retain that field instead of rereading its word leaves.
             return self.symbolSpace.forward_concept_to_symbol(concept_sub)
         field = owner.cs_read_memberships(percepts, self._reading_word_extents)
-        codes = owner._field_codes(owner.similarity_codebook.getW())
         # The read supplies order-zero evidence. Native field metadata also
         # includes allocated higher-order rows, which remain silent here.
         # Keep their axes aligned without manufacturing higher-order support.
         field = torch.cat((field, field.new_zeros(
-            codes.shape[-2] - field.shape[0], *field.shape[1:])))
+            len(owner._field_inventory_rows()) - field.shape[0], *field.shape[1:])))
         # Symbolization reads the native field; the continuous mixing carrier
         # remains the forward/reconstruction state of ConceptualSpace.
         for name, value in dict(activations=field,
-                codes=codes,
                 ids=owner._cs_field_concept_ids, inventory_rows=owner._cs_field_rows,
                 where=owner._cs_field_where, when=owner._cs_field_when).items():
             object.__setattr__(concept_sub, '_concept_' + name, value)
@@ -14623,11 +14613,6 @@ class BasicModel(BaseModel):
                 # optimizer now (they post-date getOptimizer).
                 if train and optimizer is not None:
                     self._adopt_fresh_parameters(optimizer)
-                # This value is already a public graph output.  Publish its
-                # detached discourse view eagerly as well, avoiding the same
-                # attribute-only escape that PyTorch 2.14 eliminates for S.
-                self._current_discourse_s = (
-                    symbols.detach() if torch.is_tensor(symbols) else None)
             finally:
                 self._exploration_trial = False
             self._end_step()
@@ -15019,9 +15004,12 @@ class BasicModel(BaseModel):
             # stored truths are also recorded from symbol space, so both
             # sides of the disjunction live in the basis's native space.
             if train and self.symbolSpace is not None:
-                symbol_acts = None
-                if hasattr(self, 'symbol_states') and self.symbol_states:
-                    symbol_acts = self.symbol_states[-1]
+                # The falsity penalty compares ideas with the stored truths
+                # (ideas); the symbols' lanes carry no code to compare.
+                try:
+                    symbol_acts = self._reconstruction_seed()
+                except (AttributeError, RuntimeError, TypeError):
+                    symbol_acts = None
                 truth_base = self.errors.total()
                 self.symbolSpace.truth_modulated_loss(
                     lossOut*0 if truth_base is None else truth_base,
@@ -17133,8 +17121,6 @@ class BasicModel(BaseModel):
         #                          (set by enable_compiled_step; None
         #                          here so the eager path is valid even
         #                          if that is never called).
-        #   _current_discourse_s -- S-space_role sentence rep stashed by the
-        #                          forward for the post-body ARMA term.
         #   _staged_concepts_in -- the UNITY view [B, 1, N] parked by
         #                          _lex_embed_stem for the symbolic
         #                          branch (analysis/synthesis dual-input
@@ -17174,7 +17160,6 @@ class BasicModel(BaseModel):
         # ownership diagnostics as an explicitly compiled model.
         self._debug_peer_mutation = (
             os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
-        self._current_discourse_s = None
         # Fullgraph sentence products consumed by the eager loss/diagnostic
         # tail.  The lazy compiled wrapper returns these explicitly so their
         # publication does not depend on Dynamo replaying Python attributes.
@@ -17875,7 +17860,7 @@ class BasicModel(BaseModel):
             object.__setattr__(_cut_cs, "_relevance_priority", _prio)
             _percepts = getattr(self, '_subsymbolic_percepts', None)
             from ConceptSpread import open_prediction
-            _content, _acts = _cut_cs.cs_symbolic_phase(
+            _, _acts = _cut_cs.cs_symbolic_phase(
                 _settled, extents=getattr(_cut_cs, '_cs_field_where', None),
                 percepts=_percepts, a_0=getattr(self, '_subsymbolic_field', None))
             # SEEN write moved to ``_prime_seen_step`` (unconditional, once
@@ -17907,13 +17892,17 @@ class BasicModel(BaseModel):
                 if float(getattr(getattr(self, "loss", None),
                                  "conceptual_similarity_scale", 0.0)
                          or 0.0) > 0.0:
-                    from ConceptEvidence import decode
+                    from ConceptEvidence import symbols
                     codes = _cut_cs._field_codes(_cut_cs.similarity_codebook.getW())
                     slabs = []
                     for order in range(len(_cut_cs._field_caps())):
                         start, stop = _cut_cs._field_order_slice(order)
                         selected = codes[:, start:stop] if codes.ndim == 3 else codes[start:stop]
-                        slabs.append((order, decode(_acts[start:stop], selected)))
+                        # Each concept's one signed value scales its own code:
+                        # one row for each concept of conceptual space.
+                        pair = symbols(_acts[start:stop])
+                        value = (pair[..., 0] - pair[..., 1]).permute(1, 0)
+                        slabs.append((order, value[..., None] * selected))
                     object.__setattr__(self, "_cs_parallel_slab", tuple(slabs))
                     object.__setattr__(self, "_cs_parallel_slab_cs", _cut_cs)
         # A4: thread the per-stage augments to the reverse as a transient
@@ -24239,7 +24228,8 @@ class BasicModel(BaseModel):
             pred = self.normalizer.denormalize(pred, which="output")
 
         # WholeSpace owns properties only. The public symbolic state is the
-        # paired activation of concept identities, published by SymbolSpace.
+        # symbols' two lanes, published by SymbolSpace (none where the field
+        # holds no symbol).
         sym_sub = self._publish_reading_symbols(body_sub)
         if sym_sub is None:
             sym_sub = self.symbolSpace.forward_concept_to_symbol(body_sub)
@@ -24255,13 +24245,6 @@ class BasicModel(BaseModel):
         if input_state is None:
             input_state = self.perceptualSpace._embedded_input
 
-        # Inter-sentence snapshot: pass the S-space_role event to runBatch,
-        # which calls ``SymbolExpectation.observe`` to capture the
-        # sentence rep, compute the ARMA loss, and update the rings.
-        # ``_current_discourse_s`` carries the unmodified S-space_role event;
-        # the layer's ``_pool_sentence_rep`` does the flattening.
-        self._current_discourse_s = (
-            sym_vectors.detach() if sym_vectors is not None else None)
 
         self._universality_score = None
 

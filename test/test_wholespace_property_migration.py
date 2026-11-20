@@ -267,8 +267,8 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     assert lift.nOutput == cs.subspace.muxedSize
     assert lift.nInput != ws.subspace.nWhat
 
-    # Sparse SS activation scales the concept row; the symbol event keeps
-    # its own band, which survives the activation seam untouched.
+    # The symbols' leg holds no concept code and no band: a field whose
+    # store holds no symbol publishes no leg.
     event = torch.randn(1, 8, cs.subspace.muxedSize)
     concept_sub = SubSpace(
         inputShape=(8, cs.subspace.muxedSize),
@@ -276,14 +276,7 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
         nInputDim=cs.subspace.muxedSize,
         nOutputDim=cs.subspace.muxedSize)
     concept_sub.set_event(event)
-    concept_sub._concept_activations = torch.full((8, 1, 1, 2), .25)
-    concept_sub._concept_activations[..., 1] = .75
-    symbol_leg = ss.forward_concept_to_symbol(concept_sub).materialize()
-    assert tuple(symbol_leg.shape) == (1, 16, cs.subspace.muxedSize)
-    torch.testing.assert_close(symbol_leg[:, 0::2, :ss.nWhat], .25 * event[..., :ss.nWhat])
-    torch.testing.assert_close(symbol_leg[:, 1::2, :ss.nWhat], -.75 * event[..., :ss.nWhat])
-    assert torch.equal(symbol_leg[:, 0::2, ss.nWhat:], event[..., ss.nWhat:])
-    assert torch.equal(symbol_leg[:, 1::2, ss.nWhat:], event[..., ss.nWhat:])
+    assert ss.forward_concept_to_symbol(concept_sub) is None
 
 
 

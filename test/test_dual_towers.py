@@ -220,7 +220,6 @@ def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
     store = Spaces._concept_alloc_of(cs0).layer()
     assert len(Spaces._concept_alloc_of(cs0).order_zero_members) > 0, 'the boundary must admit witnessed features'
     carrier = m._combine_last_cs_sub
-    leg = m.symbolSpace.forward_concept_to_symbol(carrier)
     raw = seen['raw']
     raw = raw[:, 0] if raw.ndim == 3 else raw
     for b, row in enumerate(raw):
@@ -234,12 +233,10 @@ def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
         slots = (ids == cid).nonzero().flatten()
         assert len(slots) == 1, word
         slot = slots.item()
-        for evidence in (a0[slot, b],
-                         carrier._concept_activations[slot, b], leg._symbol_evidence[slot, b]):
+        for evidence in (a0[slot, b], carrier._concept_activations[slot, b]):
             assert evidence[..., 0].max() > 0, word
             assert evidence[..., 1].count_nonzero() == 0, word
-        print({'present_word': word, 'extent_pair': a0[slot, b].tolist(),
-               'symbol_pair': leg._symbol_evidence[slot, b].tolist()})
+        print({'present_word': word, 'extent_pair': a0[slot, b].tolist()})
 
 
 @pytest.mark.slow

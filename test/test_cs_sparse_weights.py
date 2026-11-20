@@ -69,8 +69,8 @@ def _mint_field(cs, cid):
     return _mint_row(cs, 0, cid)
 
 
-def _field_forward(cs, evidence, dictionary):
-    return cs.cs_forward_content(cs._compose_order0(evidence), dictionary)
+def _field_forward(cs, evidence, dictionary=None):
+    return cs.cs_forward_content(cs._compose_order0(evidence))
 
 def test_order_slice_taper_contract():
     """The taper partitions the whole inventory; there is no overflow tail."""
@@ -199,20 +199,6 @@ def test_membership_read_never_updates_the_dictionary():
         assert torch.equal(W, before)
 
 
-def test_cs_decode_scales_dictionary_atoms():
-    cs = _cs()
-    what = torch.randn(64, _D)
-    start, end = cs.order_slice(1)
-    a = torch.zeros(end-start, 2, 1, 2)
-    a[0, 0, 0, 0] = .8
-    a[1, 1, 0, 1] = .7
-    code = cs.cs_decode(1, a, what)
-    assert code.shape == (2, 2*(end-start), _D)
-    torch.testing.assert_close(code[0, 0], .8 * what[start])
-    torch.testing.assert_close(code[1, 3], -.7 * what[start+1])
-    assert code[0, 10].count_nonzero() == 0
-
-
 def test_forward_content_shape_and_stacking():
     cs = _cs(nS=16, order=1)
     capacity = cs._order_caps()[0]
@@ -220,8 +206,7 @@ def test_forward_content_shape_and_stacking():
     row = _mint_row(cs, 1, 101)
     readable(cs, 0)
     cs.add_concept_edge(row, 0, 2.)
-    content, a = cs.cs_forward_content(a0, torch.randn(16, _D))
-    assert content.shape == (2, 2*cs.nVectors, _D)
+    a = cs.cs_forward_content(a0)
     assert a.shape == (cs.nVectors, 2, 1, 2)
     torch.testing.assert_close(a[:capacity], a0)
     # The store's Sigma: tanh of the weight times the symbol's value.
@@ -238,11 +223,11 @@ def test_forward_content_literal_poles_and_standing_bias():
     readable(cs, 3, 5)
     cs.add_concept_edge(row, 3, 3.)
     cs.add_concept_edge(row, 5, .5, negated=True)
-    _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
+    a = cs.cs_forward_content(a0)
     # A sum of the entries, the Not entry reading row 5's not-value.
     assert float(a[row, 0, 0, 0]) == pytest.approx(math.tanh(3 * .5 + .5 * .25))
     cs.add_concept_edge(row, 16, .25)
-    _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
+    a = cs.cs_forward_content(a0)
     torch.testing.assert_close(a[row, 0, 0], torch.tensor([math.tanh(3 * .5 + .5 * .25 + .25), 0.]))
 
 
@@ -252,7 +237,7 @@ def test_forward_content_activation_is_bounded():
     readable(cs, 0)
     cs.add_concept_edge(r1, 0, 3.)
     cs.add_concept_edge(r2, r1, 4.)
-    _, a = cs.cs_forward_content(_evidence(torch.full((8, 2), .99)), torch.randn(16, _D))
+    a = cs.cs_forward_content(_evidence(torch.full((8, 2), .99)))
     assert a.min() >= 0 and a.max() <= 1
     assert a[r1, 0, 0, 0] > .9 and a[r2, 0, 0, 0] > .9
 
@@ -260,7 +245,7 @@ def test_forward_content_activation_is_bounded():
 def test_forward_content_empty_store_passes_a0():
     cs = _cs(nS=16, order=1)
     a0 = _evidence(torch.rand(8, 2), torch.rand(8, 2))
-    _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
+    a = cs.cs_forward_content(a0)
     assert torch.equal(a[:8], a0)
     assert a[8:].count_nonzero() == 0
 
@@ -270,7 +255,7 @@ def test_level_stats_are_report_only():
     row = _mint_row(cs, 1, 101)
     readable(cs, 0)
     cs.add_concept_edge(row, 0, 1.)
-    cs.cs_forward_content(_evidence(torch.rand(8, 2, requires_grad=True)), torch.randn(16, _D))
+    cs.cs_forward_content(_evidence(torch.rand(8, 2, requires_grad=True)))
     assert cs._cs_wave_qe is None
     assert len(cs._cs_level_acts) == 3
     assert all(type(v) is float for v in cs._cs_level_acts)
@@ -289,28 +274,24 @@ def test_forward_content_kernels_agree():
     cs.add_concept_edge(row, 0, .4, negated=True)
     cs.add_concept_edge(row, 1, .7)
     a0 = _evidence(torch.rand(8, 2), torch.rand(8, 2))
-    dictionary = torch.randn(16, _D)
-    c1, a1 = cs.cs_forward_content(a0, dictionary)
+    a1 = cs.cs_forward_content(a0)
     Spaces._concept_alloc_of(cs).layer().kernel = 'spmm'
-    c2, a2 = cs.cs_forward_content(a0, dictionary)
-    torch.testing.assert_close(c1, c2)
+    a2 = cs.cs_forward_content(a0)
     torch.testing.assert_close(a1, a2)
 
 
-def test_forward_content_keeps_two_symbol_rows_per_code():
+def test_forward_content_reads_a_not_entry_and_holds_no_code():
     cs = _cs(nS=16, order=1)
     a0 = _evidence(torch.rand(8, 1), torch.rand(8, 1))
-    what = torch.nn.functional.normalize(torch.randn(16, _D), dim=-1)
     row = _mint_row(cs, 1, 101)
     readable(cs, 0)
     cs.add_concept_edge(row, 0, 1., negated=True)
-    content, a = cs.cs_forward_content(a0, what)
+    a = cs.cs_forward_content(a0)
+    assert a.shape == (cs.nVectors, 1, 1, 2)
     from Layers import signed_lanes
     # A Not entry reads the symbol's not-value: the concept's sign is the
     # symbol's exchanged.
     torch.testing.assert_close(a[row, 0, 0], signed_lanes(torch.tanh(a0[0, 0, 0, 1] - a0[0, 0, 0, 0])))
-    torch.testing.assert_close(content[0, 2 * row], a[row, 0, 0, 0] * what[row])
-    torch.testing.assert_close(content[0, 2 * row + 1], -a[row, 0, 0, 1] * what[row])
 
 
 def test_forward_content_differentiable():
@@ -320,10 +301,8 @@ def test_forward_content_differentiable():
     cs.add_concept_edge(r1, 0, .5)
     cs.add_concept_edge(r2, r1, .5)
     positive = torch.rand(8, 2, requires_grad=True)
-    what = torch.randn(16, _D, requires_grad=True)
-    content, _ = cs.cs_forward_content(_evidence(positive), what)
-    content.sum().backward()
-    assert what.grad is not None and what.grad.abs().sum() > 0
+    field = cs.cs_forward_content(_evidence(positive))
+    field.sum().backward()
     assert positive.grad is not None and positive.grad.abs().sum() > 0
     ly = Spaces._concept_alloc_of(cs).layer()
     assert ly.values.grad is not None and ly.values.grad.abs().sum() > 0

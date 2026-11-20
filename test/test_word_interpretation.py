@@ -33,22 +33,15 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
         words = sorted(set(' '.join(sentences).split()))
         assert all(owner.word_concepts(word) for word in words), {
             word: owner.word_concepts(word) for word in words}
-        assert torch.isfinite(symbols).all()
         # Word admission supplies the leaves. Their operator's final set can
         # be empty (e.g. an intersection of disjoint word concepts).
-        from ConceptEvidence import decode
-        from SentenceField import inventory
-        leaf_symbols = [decode(field.evidence, owner._field_codes(
-            owner.similarity_codebook.getW(), inventory(owner, field)))
-            for field in model._sentence_open_fields.values()]
-        assert sum(value.abs().sum() for value in leaf_symbols) > 0, 'derived concepts must have symbol activations'
-        if configuration != 'aligned':
-            from ConceptEvidence import decode
-            carrier = model.symbol_cache
-            evidence = carrier._concept_activations
-            assert evidence.any(), 'symbol bands cannot stand in for concept evidence'
-            expected = decode(evidence, carrier._concept_codes)
-            torch.testing.assert_close(symbols[..., :expected.shape[-1]], expected)
+        assert sum(field.evidence.abs().sum() for field in model._sentence_open_fields.values()) > 0, \
+            'derived concepts must have activations'
+        # The published symbolic state is the symbols' two lanes, no code.
+        if symbols is not None:
+            assert symbols.ndim == 3 and symbols.shape[-1] == 2
+            assert torch.isfinite(symbols).all() and symbols.min() >= 0 and symbols.max() <= 1
+            assert model.symbol_cache._symbol_ids.shape == symbols.shape[:2]
     finally:
         model.End()
         model.symbolSpace.soft_reset()
@@ -58,21 +51,19 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
 def test_word_publication_preserves_the_composed_concept_field():
     from types import SimpleNamespace
     from Models import BasicModel
-    from ConceptEvidence import decode
     # A completed symbolic phase may know both poles and higher-order rows.
     # Publishing symbols must not replace that result with a new native read.
     evidence = torch.tensor([[[[1., 0.]]], [[[0., 1.]]], [[[1., 1.]]]])
-    codes = torch.eye(3)
-    carrier = SimpleNamespace(_concept_activations=evidence, _concept_codes=codes)
+    carrier = SimpleNamespace(_concept_activations=evidence)
     def read_again(*args):
         pytest.fail('completed symbolic evidence was replaced by word admission')
     owner = SimpleNamespace(_sparse_active=lambda: True, cs_read_memberships=read_again)
     host = SimpleNamespace(_reading_word_percepts=object(), _reading_word_extents=None,
         _concept_owner=lambda: owner,
         symbolSpace=SimpleNamespace(forward_concept_to_symbol=lambda value:
-            decode(value._concept_activations, value._concept_codes)))
+            value._concept_activations))
     result = BasicModel._publish_reading_symbols(host, carrier)
-    torch.testing.assert_close(result, decode(evidence, codes), atol=0, rtol=0)
+    assert result is evidence
 
 
 from functools import wraps
@@ -346,7 +337,7 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     bracket = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((torch.tensor([[7, 8]]), spans, None,
                                   torch.tensor([[65, 65]]), spans), bracket)
-    _, field = cs.cs_forward_content(read, cs.similarity_codebook.getW())
+    field = cs.cs_forward_content(read)
     slot = (cs._cs_field_concept_ids == obj).nonzero().flatten().item()
     assert field[slot, 0, 0, 0] > 0
     assert cs._concept_row_of(obj) == row and tuple(cs.concept_parts(obj)) == before

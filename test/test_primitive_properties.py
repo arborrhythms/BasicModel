@@ -213,7 +213,8 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path
     torch.testing.assert_close(cs._percept_field.events, perception.events)
     torch.testing.assert_close(cs._percept_field.spans, perception.spans)
     leg = model.symbolSpace.forward_concept_to_symbol(restored)
-    torch.testing.assert_close(leg._concept_where, where)
+    # A symbol has no place: the leg carries no where of the field.
+    assert leg is None or not hasattr(leg, '_concept_where')
     assert not hasattr(restored, '_concept_position_evidence')
     assert perception.spans[0, :2].tolist() == [[0, 1], [1, 2]]
     model.End()

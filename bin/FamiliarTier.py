@@ -357,7 +357,7 @@ def open_sentence(model, sid, present):
         ws.subspace.what.primitive_properties, raw, whole_spans), brackets)
     from SentenceField import open_field
     owner._cs_last_a0 = field.detach()
-    _, acts = owner.cs_forward_content(field, None)
+    acts = owner.cs_forward_content(field)
     if getattr(owner, '_mereology_raise', False) and owner._percept_field is not None:
         owner._refinement_field = owner.refinement_field(owner._percept_field)
     opened = open_field(model, sid, acts)

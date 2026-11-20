@@ -178,7 +178,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     for step in range(32):
         optimizer.zero_grad()
         read = cs.cs_read_memberships(native, extents)
-        _, field = cs.cs_forward_content(read, dictionary)
+        field = cs.cs_forward_content(read)
         loss = (field[felix, :, 0] - target).square().mean()
         if initial is None:
             initial = float(loss.detach())
@@ -188,7 +188,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     assert initial > .1
     native, extents = binary_features(cs, torch.tensor([[49, 49]]))
     read = cs.cs_read_memberships(native, extents)
-    _, field = cs.cs_forward_content(read, dictionary)
+    field = cs.cs_forward_content(read)
     # The particular is read for, and not against: a pure reading.
     assert float(field[felix, 0, 0, 0].detach()) > .5 and float(field[felix, 0, 0, 1].detach()) == 0
     observe(cs, cs.refinement_field(cs._percept_field), 32)
@@ -202,7 +202,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     for step in range(33, 37):
         optimizer.zero_grad()
         read = cs.cs_read_memberships(native, extents)
-        _, field = cs.cs_forward_content(read, dictionary)
+        field = cs.cs_forward_content(read)
         loss = (field[felix, 0, 0] - torch.tensor([1., 0.])).square().mean()
         loss.backward()
         optimizer.step()

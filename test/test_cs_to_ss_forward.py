@@ -67,27 +67,17 @@ def test_xor_symbols_parallel_forward_smoke():
 
 
 @pytest.mark.slow
-def test_forward_concept_to_symbol_returns_row_aligned_leg():
-    """The leg is the row-aligned view of the concept: same [B, N, D] event as
-    the concept it was handed (detached)."""
+def test_forward_concept_to_symbol_without_a_field_is_none():
+    """A carrier with no concept field gives no leg: the leg is the symbols'
+    two lanes, and a concept event is not published as symbols."""
     m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
-    # a small concept subspace [B, N, D]
-    D = int(ss.subspace.what.getW().shape[-1]) if (
-        getattr(ss.subspace, "what", None) is not None
-        and hasattr(ss.subspace.what, "getW")
-        and ss.subspace.what.getW() is not None) else 8
+    D = 8
     B, N = 2, 3
-    ev = torch.randn(B, N, D)
     sub = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
                           nInputDim=D, nOutputDim=D)
-    sub.set_event(ev)
-    leg = ss.forward_concept_to_symbol(sub)
-    assert leg is not None
-    out = leg.materialize()
-    assert out.shape == ev.shape
-    assert torch.allclose(out, ev)             # row-aligned, detached copy
-    assert not out.requires_grad
+    sub.set_event(torch.randn(B, N, D))
+    assert ss.forward_concept_to_symbol(sub) is None
 
 
 @pytest.mark.slow
@@ -101,76 +91,15 @@ def test_forward_concept_to_symbol_empty_is_none():
 
 
 @pytest.mark.slow
-def test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad():
-    """Sparse-active contract: with ``_concept_activations`` stamped (the 0-D
-    symbols from the sparse forward), the leg is activation x identity-row and
-    the GRADIENT flows through the activation (the old detach bug)."""
+def test_symbol_leg_of_a_field_whose_store_holds_no_symbol_is_none():
+    """A field over a store with no symbol reads none (the leg's lanes,
+    gradient and contents are certificate 6 in test_item17_symbols)."""
     m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
-    W = ss.subspace.what.getW()
-    D = int(W.shape[-1])
-    B, N = 2, 3
-    ev = torch.randn(B, N, D)
-    sub = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
-                          nInputDim=D, nOutputDim=D)
-    sub.set_event(ev)
-    acts = torch.rand(N, B, 1, 2, requires_grad=True)
-    object.__setattr__(sub, "_concept_activations", acts)
-    leg = ss.forward_concept_to_symbol(sub)
-    assert leg is not None
-    out = leg.materialize()
-    assert out.shape == (B, 2 * N, D) and out.requires_grad
-    # leg == activation x (EMA-synced, detached) identity row.
-    rows = W[:N].detach()
-    from ConceptEvidence import decode
-    want = decode(acts, rows)
-    assert torch.allclose(out[..., :int(rows.shape[-1])], want, atol=1e-5)
-    out.sum().backward()
-    assert acts.grad is not None and torch.any(acts.grad != 0)
-    assert W.grad is None or torch.all(W.grad == 0)  # identity stays EMA-only
-
-
-@pytest.mark.slow
-def test_symbol_leg_survives_repeated_sync_backward():
-    """Regression (anomaly crash, 2026-07-02): each stage's leg build syncs
-    the SS codebook IN-PLACE before the next stage's product; backward
-    through an earlier stage's leg must survive the later syncs (the
-    identity rows are cloned, not a live view of the codebook)."""
-    m = _build("XOR_symbols.xml")
-    ss = m.symbolSpace
-    W = ss.subspace.what.getW()
-    D = int(W.shape[-1])
-    B, N = 1, 3
-
-    def _sub():
-        s = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
-                            nInputDim=D, nOutputDim=D)
-        s.set_event(torch.randn(B, N, D))
-        return s
-
-    sub0 = _sub()
-    acts0 = torch.rand(N, B, 1, 2, requires_grad=True)
-    object.__setattr__(sub0, "_concept_activations", acts0)
-    leg0 = ss.forward_concept_to_symbol(sub0)         # stage 0 (saved for bwd)
-    sub1 = _sub()
-    acts1 = torch.rand(N, B, 1, 2, requires_grad=True)
-    object.__setattr__(sub1, "_concept_activations", acts1)
-    ss.forward_concept_to_symbol(sub1)                # stage 1: re-syncs W
-    ss.forward_concept_to_symbol(sub1)                # stage 2: re-syncs W
-    leg0.materialize().sum().backward()               # must NOT raise
-    assert acts0.grad is not None and torch.any(acts0.grad != 0)
-
-
-@pytest.mark.slow
-def test_symbol_leg_fallback_without_activations_stays_detached():
-    """No stamp (sparse-inactive) -> the legacy detached-copy leg."""
-    m = _build("XOR_symbols.xml")
-    ss = m.symbolSpace
-    D = int(ss.subspace.what.getW().shape[-1])
-    B, N = 2, 3
+    D, B, N = 8, 2, 3
     sub = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
                           nInputDim=D, nOutputDim=D)
     sub.set_event(torch.randn(B, N, D))
-    assert getattr(sub, "_concept_activations", None) is None
-    leg = ss.forward_concept_to_symbol(sub)
-    assert leg is not None and not leg.materialize().requires_grad
+    object.__setattr__(sub, "_concept_activations", torch.rand(N, B, 1, 2, requires_grad=True))
+    object.__setattr__(sub, "_concept_inventory_rows", torch.arange(N))
+    assert ss.forward_concept_to_symbol(sub) is None

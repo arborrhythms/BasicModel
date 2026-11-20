@@ -72,8 +72,8 @@ def test_frozen_weights_no_grad():
     a_0[3, 0] = 0.9
     a_0[5, 0] = 0.9
     what = torch.randn(16, 32)
-    content, _a = cs.cs_forward_content(_evidence(a_0), what)
-    content.sum().backward()
+    field = cs.cs_forward_content(_evidence(a_0))
+    field.sum().backward()
     g = ly.values.grad
     assert g is not None
     idx_A = [i for (r, _c), i in ly._index.items() if r == rA]

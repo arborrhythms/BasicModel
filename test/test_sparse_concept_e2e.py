@@ -146,7 +146,7 @@ def test_symbolic_phase_unwritten_definitions_are_neither():
     assert acts.count_nonzero() == 0
     assert cs._percept_field.events.shape[1:] == (2, 1, 128, 2)
     assert not hasattr(cs, "_cs_position_evidence")
-    assert content.shape == (2, 2 * sum(cs._field_caps()), D)
+    assert content is settled
 
 
 def test_symbolic_phase_inactive_is_noop():
@@ -258,14 +258,13 @@ def test_csw_weights_update_under_optimizer_step():
     readable(cs, 0, 2)
     cs.add_concept_edge(r1, 0, weight=0.5)
     cs.add_concept_edge(r2, 2, weight=1.0)
-    what = torch.randn(16, _D)
     a_0 = torch.rand(8, 2)
     vals = cs._sparse_families(1).values
     before = vals.detach().clone()
     opt = torch.optim.SGD([vals], lr=1.0)
-    content, _ = cs.cs_forward_content(_evidence(a_0), what)
+    field = cs.cs_forward_content(_evidence(a_0))
     opt.zero_grad()
-    content.sum().backward()
+    field.sum().backward()
     opt.step()
     assert not torch.allclose(vals.detach(), before)              # trained
 

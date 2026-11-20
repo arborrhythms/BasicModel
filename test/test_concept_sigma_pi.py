@@ -24,7 +24,7 @@ def test_union_holds_one_present_part_across_orders():
                 cs.add_concept_edge(row, missing, weight=1.)
         source = row
         rows.append(row)
-    _, a = cs.cs_forward_content(a0, torch.randn(128, 8))
+    a = cs.cs_forward_content(a0)
     # The one present part carries its value up each order, through each
     # order's Sigma (tanh of the weight times the value); the absent parts
     # add nothing.
@@ -45,7 +45,7 @@ def test_unwritten_alternative_receives_credit_from_present_witness():
     ly = Spaces._concept_alloc_of(cs).layer()
     assert ly.values.item() == 0.
     a0 = _evidence(torch.full((32, 1), .25), torch.full((32, 1), .75))
-    _, a = cs.cs_forward_content(a0, torch.randn(64, 8))
+    a = cs.cs_forward_content(a0)
     # The for lane: at a value of zero the two lanes' derivatives are
     # opposite, so their sum would carry none.
     a[r, ..., 0].sum().backward()
@@ -63,7 +63,7 @@ def test_weak_members_are_summed():
     for part in range(32):
         cs.add_concept_edge(r, part, weight=1.)
     a0 = _evidence(torch.full((cs._order_caps()[0], 1), .001))
-    _, a = cs.cs_forward_content(a0, torch.randn(128, 8))
+    a = cs.cs_forward_content(a0)
     presence = float(a[r, 0, 0, 0])
     # A kind is a list: its members' values are summed by its Sigma.
     assert presence == pytest.approx(math.tanh(32 * .001), abs=2e-7)
