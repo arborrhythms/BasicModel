@@ -161,7 +161,7 @@ def test_empty_question_has_no_order_match():
 def test_flat_episode_selection_keeps_the_strongest_lanes_across_orders():
     from EpisodicMemory import select
     field = brick_question([10, 20], [[.8, .6], [.9, 0.]])
-    ids, values = select(field, 4, torch.tensor([True]))
+    ids, values = select(field, 4, torch.tensor([True]), unkept=())
     assert ids.shape == (1, 4)
     assert ids[0].tolist() == [20, 10, 10, -1]
     assert values[0].tolist() == pytest.approx([.9, .8, -.6, 0.])

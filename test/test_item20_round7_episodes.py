@@ -19,13 +19,13 @@ def test_selection_keeps_strongest_signed_lanes_and_zero_stores_nothing():
                            [[[1., 0.], [0., 0.]]]], requires_grad=True)
     where = torch.tensor([[[0., 2.], [3., 7.]]])
     field = ConceptualField(torch.tensor([9, 4, 2]), values, where, where.long(), None)
-    ids, signed = select(field, 4, torch.tensor([True]))
+    ids, signed = select(field, 4, torch.tensor([True]), unkept=())
     assert ids.tolist() == [[2, 4, 4, 9]]
     torch.testing.assert_close(signed, torch.tensor([[1., -.8, .7, .5]]))
     assert not signed.requires_grad
-    empty = select(field, 0, torch.tensor([True]))
+    empty = select(field, 0, torch.tensor([True]), unkept=())
     assert all(value.shape[1] == 0 for value in empty)
-    absent = select(field, 4, torch.tensor([False]))
+    absent = select(field, 4, torch.tensor([False]), unkept=())
     assert (absent[0] == -1).all() and not absent[1].any()
 
 

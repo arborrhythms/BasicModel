@@ -31,13 +31,18 @@ def test_all_orders_keep_largest_signed_values_in_one_flat_entry():
                            [[[1., 1.], [0., 0.]]]], requires_grad=True)
     field = ConceptualField(torch.tensor([30, 10, 20, 40]), values,
         torch.tensor([[[0, 2], [3, 5]]]), torch.tensor([[[1, 2], [1, 2]]]), None)
-    ids, signed = select(field, 4, torch.tensor([True]))
+    ids, signed = select(field, 4, torch.tensor([True]), unkept=())
     assert ids.tolist() == [[20, 20, 40, 40]]
     torch.testing.assert_close(signed, torch.tensor([[1., -1., 1., -1.]]))
     assert not signed.requires_grad
-    selected, _ = select(field, 2, torch.tensor([True]))
+    selected, _ = select(field, 2, torch.tensor([True]), unkept=())
     assert selected.tolist() == [[20, 20]]
-    assert all(t.shape[1] == 0 for t in select(field, 0, torch.tensor([True])))
+    assert all(t.shape[1] == 0 for t in select(field, 0, torch.tensor([True]), unkept=()))
+    # A concept that holds of every reading (the declared classes) is not
+    # kept, and the next strongest takes its place.
+    ids, signed = select(field, 4, torch.tensor([True]), unkept=(20,))
+    assert ids.tolist() == [[40, 40, 30, 10]]
+    torch.testing.assert_close(signed, torch.tensor([[1., -1., .9, -.8]]))
 
 
 def test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar(tmp_path, monkeypatch):

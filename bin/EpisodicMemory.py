@@ -4,9 +4,21 @@ import torch
 from Understanding import ConceptualField
 
 
+def unkept(owner):
+    """The concepts an entry does not keep: the declared classes "words"
+    and "objects" of the conceptual space ``owner`` hold of every word and
+    every object, so they say nothing of a moment."""
+    if owner is None:
+        return ()
+    from Spaces import _concept_alloc_of
+    declared=_concept_alloc_of(owner).declared_classes
+    return tuple(int(identity) for identity in declared.values())
+
+
 @torch.no_grad()
-def select(field,capacity,present):
-    """The strongest field readings, over all orders, in one fixed list."""
+def select(field,capacity,present,*,unkept):
+    """The strongest field readings, over all orders, in one fixed list;
+    the concepts of ``unkept`` are not kept."""
     B=field.evidence.shape[1]
     ids=torch.full((B,capacity),-1,device=field.evidence.device,dtype=torch.long)
     values=field.evidence.new_zeros(B,capacity)
@@ -15,6 +27,10 @@ def select(field,capacity,present):
     concepts=field.concept_ids[:,None].expand(-1,B) if field.concept_ids.ndim==1 else field.concept_ids
     strongest=field.evidence.amax(2).permute(1,0,2).reshape(B,-1)
     source=concepts.T[:,:,None].expand(-1,-1,2).reshape(B,-1)
+    if unkept:
+        left=torch.isin(source,torch.as_tensor(unkept,dtype=source.dtype,device=source.device))
+        source=source.masked_fill(left,-1)
+        strongest=strongest.masked_fill(left,0.)
     rank=strongest.masked_fill(source<0,-1).argsort(dim=-1,descending=True,stable=True)
     count=min(capacity,rank.shape[1]);rank=rank[:,:count]
     chosen=strongest.gather(1,rank)
@@ -28,7 +44,7 @@ def stage(model,sid,present,field):
     store=model.symbolSpace.ltm_store
     if store is None:
         return
-    model._sentence_episodes[int(sid)]=select(field,store.episodic_capacity,present)
+    model._sentence_episodes[int(sid)]=select(field,store.episodic_capacity,present,unkept=unkept(model._concept_owner()))
 
 
 @torch.no_grad()
@@ -124,7 +140,8 @@ def tree_entry(store, roots):
     from Extension import joined, ConceptSet, as_field
     empty=ConceptSet(store.episodic_concepts.new_empty(0),store.slots.new_empty(0,2))
     field=as_field((joined(roots,empty),),where=store.slots.new_zeros(1,1,2),when=store.slots.new_zeros(1,1,2))
-    ids,values=select(field,store.episodic_capacity,store.slots.new_ones(1,dtype=torch.bool))
+    ids,values=select(field,store.episodic_capacity,store.slots.new_ones(1,dtype=torch.bool),
+                      unkept=unkept(store.owner()))
     return ids[0],values[0]
 
 

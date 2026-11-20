@@ -10,17 +10,20 @@ def matches(store, forest, *, start=None):
     A stored against reading opposes the positive question, and vice versa.
     No row is decoded or visited in the sparse tensor product.
     """
-    from EpisodicMemory import matches as product
+    from EpisodicMemory import matches as product, unkept
     from FieldLogic import reduce
     start = max(0,len(store)-store.ltm_window) if start is None else start
     concepts, values = store.episodic_concepts[start:len(store)],store.episodic_values[start:len(store)]
     indices = torch.arange(start,len(store),device=concepts.device)
     owner_ref = store.__dict__.get('_concept_owner')
     owner = None if owner_ref is None else owner_ref()
+    # What an entry does not keep is not asked of it either.
+    left = set(unkept(owner))
     def operand(field):
         if not len(field.ids) or field.missing:
             return ConceptSet(indices,values.new_zeros(len(indices),2),field.missing)
-        orders = field.ids.new_tensor([0 if owner is None else -1 if owner._csw_row_of(int(cid)) is None
+        orders = field.ids.new_tensor([0 if owner is None else -1 if int(cid) in left
+            or owner._csw_row_of(int(cid)) is None
             else owner._row_order(owner._csw_row_of(int(cid))) for cid in field.ids])
         positive,present = product(concepts,values,field.ids,field.values,orders)
         negative,_ = product(concepts,-values,field.ids,field.values,orders)

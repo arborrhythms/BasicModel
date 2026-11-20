@@ -198,7 +198,7 @@ def test_argument_field_entry_and_placements_round_trip_without_a_word_argument_
         object.__setattr__(owner.subspace,'_concept_'+name,value)
     store = LTM0(owner.nWhat+4,capacity=4,episodic_concepts=16)
     row = store.append_idea(torch.nn.functional.pad(owner.similarity_codebook.lookup_rows(owner._csw_row_of(words[0])),(0,4)))
-    entry = select(result,store.episodic_capacity,torch.tensor([True]))
+    entry = select(result,store.episodic_capacity,torch.tensor([True]),unkept=())
     write(store,row,tuple(value[0] for value in entry))
     checkpoint = tmp_path/'parts.pt'
     structural = BaseModel._collect_structural_extras(NS(conceptualSpaces=[owner],conceptualSpace=owner))
