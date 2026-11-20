@@ -1,14 +1,13 @@
-"""6.8 §7 ports: bracket coverage/priming and word distribution supervision.
+"""6.8 §7 ports: the surprise projection and word distribution supervision.
 
 The prior producer's learned next-word objective belongs to expectation;
-its scope and coverage belong to the typed bracket table. The complete old
-file is retained in the operators-attention source and test-port receipts.
+which word is read belongs to the looks (test_item17_looks).
 """
 import os
 from pathlib import Path
 import pytest
 import torch
-from Attention import BracketKeys, narrow_words
+from Attention import BracketKeys
 from Language import OperationSelectionLayer
 from Layers import SymbolExpectation
 
@@ -26,26 +25,6 @@ def _module_inputs(B=2,K=5,w=8,D=16,seed=0):
     return spans,percept,concept_q,symbol_q
 
 
-def _reading(spans, percept, *, decisions=False):
-    from types import SimpleNamespace
-    from unittest.mock import patch
-    from Attention import open_narrowing
-    from SentenceLooks import Looks
-    keys = BracketKeys._span_keys(percept, spans)
-    rule = torch.nn.Identity()
-    rule.rule_name = 'interpret'
-    chooser = OperationSelectionLayer(d_model=keys.shape[-1], unary_ops=[rule])
-    known = spans[..., 1] > spans[..., 0]
-    if not keys.shape[1]:
-        return narrow_words(chooser, keys, spans, known, budget=32)
-    state = open_narrowing(chooser, keys, spans, known, budget=32)
-    model = SimpleNamespace(_sentence_open_fields={0:None})
-    path = Looks(model, SimpleNamespace(state=state, width=keys.shape[1]), 0, known.any(1))
-    with patch('SentenceLooks.perceive', return_value=None), patch('ModelAttention.handoff'):
-        result = path.run(lambda *_: None)
-    return (result, path.decisions) if decisions else result
-
-
 def _distribution(percept,spans,*,training=True):
     keys=BracketKeys._span_keys(percept,spans)
     B,W,D=keys.shape
@@ -56,39 +35,6 @@ def _distribution(percept,spans,*,training=True):
     def read():
         return owner.expect('word',keys,keys,valid,targets,active=valid)
     return owner,read
-
-
-def test_shift_bootstrap_selects_each_word_once():
-    spans,percept,*_=_module_inputs()
-    value=_reading(spans,percept)
-    assert value.accepted.all() and not value.descended.any()
-    assert value.table.spent.tolist()==[5,5]  # Each call to interpret itself spends no act.
-    for row in range(len(spans)):
-        assert sorted(map(tuple,value.table.intervals[row,value.table.done[row]].tolist()))==list(map(tuple,spans[row].tolist()))
-
-
-def test_scope_is_normalized_unit_range():
-    spans,percept,*_=_module_inputs();out=_reading(spans,percept)
-    scope=out.table.intervals[out.table.done]/percept.shape[1]
-    assert scope.shape[-1]==2
-    assert float(scope.min())>=0. and float(scope.max())<=1.
-    assert (scope[:,1]>=scope[:,0]).all()
-
-
-def test_coverage_mask_excludes_consumed():
-    spans, percept, *_ = _module_inputs()
-    out, decisions = _reading(spans, percept, decisions=True)
-    for row in range(len(spans)):
-        words = [int(d['index'][row]) for d in decisions if d['interpreted'][row]]
-        assert len(set(words)) == len(words) == spans.shape[1]
-        assert out.accepted[row].all()
-
-
-def test_padding_spans_never_selected():
-    spans,percept,*_=_module_inputs();spans[:,-1]=0
-    out=_reading(spans,percept)
-    assert float(out.accepted[:,-1].float().max())<1e-4
-    assert out.accepted[:,:-1].all()
 
 
 def test_projection_reads_the_two_bracket_surprise_components():
@@ -120,8 +66,6 @@ def test_bracket_surprise_preserves_gradient_boundary():
     project(projection,cq,pair).sum().backward()
     assert W.grad is None and cq.grad is None and percept.grad is None
     assert projection.weight.grad is not None
-    out=_reading(spans,percept)
-    assert not out.values.requires_grad and out.accepted.all()
 
 
 def test_next_word_activation_error_matches_both_native_lanes():
@@ -137,12 +81,6 @@ def test_eval_does_not_build_a_training_graph():
     owner.eval()
     with torch.no_grad():out=read()
     assert not out.loss.requires_grad and not out.probabilities.requires_grad
-
-
-def test_no_spans_is_noop():
-    # Empty readings have no candidate bank to score; narrowing has no work.
-    out=_reading(torch.empty(2,0,2,dtype=torch.long),torch.randn(2,8,4))
-    assert not out.table.valid.any() and not out.table.spent.any()
 
 
 def test_gradient_stops_at_primed_symbols():
@@ -178,10 +116,9 @@ def _batch(model):
 
 @pytest.mark.slow
 @pytest.mark.parametrize('name',['MM_reading.xml','MM_20M_xor.xml'])
-def test_normal_configs_share_bracket_and_expectation_owners(name):
+def test_normal_configs_share_expectation_owners(name):
     model=_build(name)
     assert not hasattr(model,'reading_attention')
-    assert set(model._stm_reducer().attention_operations)>={0,1,2}
     assert 'word' in model.symbolSpace.expectation.enabled_levels
 
 
@@ -203,12 +140,9 @@ def test_train_forward_then_backward_is_finite():
 
 
 @pytest.mark.slow
-def test_producer_writes_bracket_scope_and_registers_loss():
+def test_reading_takes_looks_and_registers_loss():
     model=_build('MM_reading.xml');model.train();model(_batch(model))
-    scope=model.conceptualSpace._passback_scope_where
-    assert scope.shape==(4,2) and (scope>=0).all() and (scope<=1).all()
-    table=model._attention_words.table
-    assert table.done.any() and model._word_expectation.loss.requires_grad
+    assert model._attention_words.looks.any() and model._word_expectation.loss.requires_grad
 
 
 @pytest.mark.slow

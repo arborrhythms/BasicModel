@@ -56,14 +56,17 @@ def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
         # look's result is read: each look writes it anew (ConceptSpread
         # .write_look) after its forecast of the look's extent.
         import ConceptSpread
-        from LookForecast import LookForecast, contained
+        from LookForecast import LookForecast
+        from reading_fixtures import SourceOrder
+        # The words are read in their order (a supplied reading).
+        monkeypatch.setattr(model, '_attention_supplied_reading', SourceOrder(), raising=False)
         looks, extents = [], []
         forecast, write = LookForecast.forecast, ConceptSpread.write_look
-        def forecast_extent(self, spans):
-            _, inputs = self._outside(spans)
+        def forecast_extent(self, extent, looked=None):
+            _, inputs = self._outside(extent, looked)
             came = inputs[0].amax(-1) > 0 if len(inputs) else None
-            extents.append((self.spans.detach().clone(), spans.detach().clone(), came))
-            return forecast(self, spans)
+            extents.append((None, extent.detach().clone(), came))
+            return forecast(self, extent, looked)
         def write_kept(owner_, rows, value):
             write(owner_, rows, value)
             looks.append((extents[-1], owner_._expected_knowing[0].detach().clone()))
@@ -79,9 +82,11 @@ def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
             assert owner._observed_knowing[0, hidden_row].sum() == 0
             # The look whose extent holds the hidden word (the second word)
             # and not the word that came.
-            at = [(knowing, came) for (words, span, came), knowing in looks
-                  if bool(contained(span[0], words[0, 1:2])[0, 0])
-                  and not bool(contained(span[0], words[0, :1])[0, 0])]
+            # The look of the hidden word: the look that asked for it, whose
+            # extent holds no reading of the word that came (the hidden word
+            # lights nothing of its own).
+            at = [(knowing, came) for (_, extent, came), knowing in looks
+                  if not bool(extent[0, 0]) and came is not None]
             assert at, 'no look of the hidden word'
             knowing, came = at[0]
             values = knowing[:owner._order_caps()[0], 0]
@@ -90,7 +95,7 @@ def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
             absent[:len(came)] &= ~came
             absent[hidden_row] = False
             print(dict(presentations=200, text=text, hidden_row=hidden_row,
-                       looks=[span[0].tolist() for (_, span, _), _ in looks], came=came.nonzero().flatten().tolist(),
+                       looks=[extent[0].tolist() for (_, extent, _), _ in looks], came=came.nonzero().flatten().tolist(),
                        expected=float(values[hidden_row]), other_absent=float(values[absent].max())))
             assert values[hidden_row] > values[absent].max()
             assert not owner._expected_knowing.requires_grad

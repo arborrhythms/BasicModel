@@ -60,7 +60,7 @@ def test_compose_single_reduction_space_role():
     assert layer.r_reduce >= 8
     assert [op.gl.rule_name for op in layer.unary_ops] == ['interpret', 'sign']
     assert any(isinstance(op.gl, Language.BindLayer) for op in layer.ops)
-    assert 5 in layer.attention_operations
+    assert not hasattr(layer, 'attention_operations')
 
 
 def test_lift_lower_stay_invertible_cs_ops():

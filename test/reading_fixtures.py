@@ -132,12 +132,12 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def field_text_config(*, examine):
+def field_text_config():
     """Keep MM_xor's former text field pipeline at its original dimensions.
 
     Item 1.8 §3.1 makes the declared operations choose the pipeline. The
     symbolic cover MM_text now has vector connectives; field-body fixtures
-    therefore declare their field/examination operations explicitly.
+    therefore declare their field operations explicitly.
     """
     import tempfile
     from pathlib import Path
@@ -148,8 +148,7 @@ def field_text_config(*, examine):
         symbolic = grammar.getroot().find('Symbolic')
         symbolic.clear()
         compose = ET.SubElement(symbolic, 'compose')
-        names = ('focus',) if examine else ()
-        for name in (*names, 'intersection', 'union', 'not'):
+        for name in ('intersection', 'union', 'not'):
             ET.SubElement(compose, 'rule', operands='field').text = f'F = {name}.forward(F)'
         grammar_path = Path(directory) / 'field.grammar'
         grammar.write(grammar_path)
@@ -419,30 +418,24 @@ def keep_existing_references(monkeypatch):
     monkeypatch.setattr(ReferenceContext, 'prepare_operands', supplied)
 
 
-def read_in_source_order(model, monkeypatch, *, every_look=False):
-    """Control word arrival for tests of a later grammar or credit decision.
+class SourceOrder:
+    """Each sentence's live words by their place in the text: a reading
+    supplied as the sequence of requests for each next word."""
+    def positions(self, forms, spans):
+        return [sorted((i for i, (lo, hi) in enumerate(extents) if hi > lo), key=lambda i: extents[i][0])
+                for extents in spans.tolist()]
 
-    With ``every_look``, a look at which no focus or descent is legal takes
-    the first legal action (by slot, then by operation) in place of
-    attention's draw, so that two readings of one state walk alike."""
+
+def read_in_source_order(model, monkeypatch):
+    """Supply each sentence's reading in source order for tests of a later
+    grammar or credit decision: at each look the request for the next unread
+    word, which the grammar's option at the look interprets."""
+    monkeypatch.setattr(model, '_attention_supplied_reading', SourceOrder(), raising=False)
     chooser = model._stm_reducer()
-    attend, interpret = chooser.attend, chooser.choose_interpret
-
-    def focus(keys, legal, space, **options):
-        progress = legal[..., :2].any(-1)
-        slot = progress.long().argmax(-1)
-        op = legal[torch.arange(len(slot), device=slot.device), slot, :2].long().argmax(-1)
-        named = torch.where(progress.any(-1), 6 * slot + op, -1)
-        if every_look:
-            flat = legal.reshape(len(legal), -1)
-            named = torch.where(progress.any(-1), named,
-                                torch.where(flat.any(-1), flat.long().argmax(-1), -1))
-        options['replay_action'] = named
-        return attend(keys, legal, space, **options)
+    interpret = chooser.choose_interpret
 
     def read(word, allowed, **options):
         options['replay_action'] = allowed.long()
         return interpret(word, allowed, **options)
 
-    monkeypatch.setattr(chooser, 'attend', focus)
     monkeypatch.setattr(chooser, 'choose_interpret', read)

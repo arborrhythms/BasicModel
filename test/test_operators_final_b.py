@@ -80,7 +80,7 @@ def forced_prefix_certificate():
     from test_mm_xor import _fresh_model
     from MereologicalCodes import MereologicalCodes
     path = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-06-operators-round2c/disjunction-initial-rng.pt'
-    original_forward, original_attend = OperationSelectionLayer.forward, OperationSelectionLayer.attend
+    original_forward = OperationSelectionLayer.forward
     original_interpret = OperationSelectionLayer.choose_interpret
     commit, begin = BasicModel._commit_sentence, MereologicalCodes.begin_forward
     reads, snapshots = [], []
@@ -100,13 +100,6 @@ def forced_prefix_certificate():
         # The certificate prescribes a completed reading of both words.
         options['replay_action'] = allowed.long()
         return original_interpret(module, word, allowed, **options)
-    def narrowing(module,keys,legal,space,**kw):
-        action=legal.flatten(1).long().argmax(-1)
-        for op in (0,1,4,3,5):
-            slots=legal[:,:,op]
-            action=torch.where(slots.any(-1),slots.long().argmax(-1)*legal.shape[-1]+op,action)
-        kw['replay_action']=action
-        return original_attend(module,keys,legal,space,**kw)
     def capture(m,state,sid,active,*args):
         texts,unavailable=m.reconstruct_grammar_sentence(state,sid,active)
         bank=m._sentence_primed_bank; root=state[1][6][:,sid]
@@ -136,11 +129,14 @@ def forced_prefix_certificate():
         return commit(m,state,sid,active,*args)
     with torch.random.fork_rng(), patch.object(OperationSelectionLayer,'forward',disjunction), \
          patch.object(OperationSelectionLayer,'choose_interpret',interpret), \
-         patch.object(OperationSelectionLayer,'attend',narrowing), patch.object(BasicModel,'_commit_sentence',capture), \
+         patch.object(BasicModel,'_commit_sentence',capture), \
          patch.object(MereologicalCodes,'begin_forward',snapshot):
         torch.set_rng_state(torch.load(path, weights_only=True))
         model,_,data=_fresh_model('data/XOR_grammar.xml')
         try:
+            from reading_fixtures import SourceOrder
+            # The words are read in their order (a supplied reading).
+            model._attention_supplied_reading = SourceOrder()
             derived=model._concept_owner().similarity_codebook.mereology
             assert derived.context_width == 128
             raw,target=next(iter(data.data_loader(split='test',num_streams=4)))

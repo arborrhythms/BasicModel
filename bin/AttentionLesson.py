@@ -126,9 +126,7 @@ class ReadingTargets:
         return self.loss / self.count.clamp_min(1)
 
 
-@contextmanager
-def reading_lesson(model, parts):
-    """Teach the supplied part sequence during this training invocation only."""
+def _reading(parts):
     def encode(part):
         if isinstance(part, tuple):
             word, occurrence = part
@@ -136,13 +134,33 @@ def reading_lesson(model, parts):
                 raise ValueError('a named occurrence must be a nonnegative integer')
             return (word.encode('utf8') if isinstance(word, str) else word, occurrence)
         return part.encode('utf8') if isinstance(part, str) else part
-    lesson = ReadingLesson(tuple(tuple(encode(part) for part in row) for row in parts))
+    return ReadingLesson(tuple(tuple(encode(part) for part in row) for row in parts))
+
+
+@contextmanager
+def reading_lesson(model, parts):
+    """Teach the supplied part sequence during this training invocation only."""
+    lesson = _reading(parts)
     old = getattr(model, '_attention_reading_lesson', None)
     model._attention_reading_lesson = lesson
     try:
         yield lesson
     finally:
         model._attention_reading_lesson = old
+
+
+@contextmanager
+def supplied_reading(model, parts):
+    """Read each sentence by the supplied sequence of requests, each for the
+    next named word's concept, in place of ``attend``'s: a reading given,
+    not left to the draw among equals."""
+    reading = _reading(parts)
+    old = getattr(model, '_attention_supplied_reading', None)
+    model._attention_supplied_reading = reading
+    try:
+        yield reading
+    finally:
+        model._attention_supplied_reading = old
 
 
 def _prompt_need(model, prompts):

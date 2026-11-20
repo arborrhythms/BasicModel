@@ -21,14 +21,13 @@ def test_interpret_both_directions_preserve_form_presence_and_both_lanes():
 
 
 @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
-@pytest.mark.parametrize('walk',['narrowing','compose'])
+@pytest.mark.parametrize('walk',['compose'])
 def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eager_reading):
     from test_mm_xor import _fresh_model
     from Language import OperationSelectionLayer
     from SentenceFork import SentenceFork
     import SentenceCredit
     model,_,data=_fresh_model('data/'+config+'.xml')
-    original_attend=OperationSelectionLayer.attend
     original_forward=OperationSelectionLayer.forward
     original_departure=SentenceCredit.departure
     original_record=SentenceFork.record
@@ -53,17 +52,6 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
         draw['candidate_round']=torch.full_like(draw['round'],-1)
         draw['bind_round']=torch.full_like(draw['round'],-1)
         return draw
-    def attend(module,keys,legal,space,**kwargs):
-        available=legal.flatten(1)
-        action=torch.full((len(keys),),available.shape[1],dtype=torch.long)
-        for op in (0,2,1):
-            slots=legal[:,:,op]
-            action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
-        mask=kwargs.get('masked_action')
-        if mask is not None:
-            action=torch.where(mask>=0,torch.full_like(action,5),action)
-        kwargs['replay_action']=action
-        return original_attend(module,keys,legal,space,**kwargs)
     def disjunction(module,x,**kwargs):
         refs=kwargs.get('reference_data')
         binary=tuple(range(module.r_reduce)) if refs is None else refs['binary_ops']
@@ -95,7 +83,6 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
             return original_forward(module,x,**kwargs)
     monkeypatch.setattr(SentenceCredit,'departure',depart)
     monkeypatch.setattr(SentenceFork,'record',numeric_fork)
-    monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
     monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
     snapshots=[]
     original=model._sentence_path_cost

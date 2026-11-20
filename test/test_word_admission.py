@@ -94,7 +94,7 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     # This parameter tests the former field-only word read at the same
     # dimensions; §3.1 now requires its operations to declare that path.
     path = str(Path(_PROJECT) / 'data' / configuration)
-    context = field_text_config(examine=False) if configuration == 'MM_text.xml' else nullcontext(path)
+    context = field_text_config() if configuration == 'MM_text.xml' else nullcontext(path)
     with context as path:
         model, _, data = _fresh_model(path)
     model.eval()

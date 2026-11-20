@@ -22,7 +22,7 @@ def test_whole_slab_keeps_repeated_and_cut_word_intervals(surface, monkeypatch):
     import Meronomy
     import ModelAttention
     keep_existing_references(monkeypatch)
-    with field_text_config(examine=False) as config:
+    with field_text_config() as config:
         model, _, _ = _fresh_model(config)
     model.eval()
     computed, staged = [], []

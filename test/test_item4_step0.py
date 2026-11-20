@@ -154,36 +154,3 @@ def test_open_region_with_only_negation_offers_conclude(monkeypatch):
     assert result.work.spent < 512 and open_slots(result.meaning)
     assert [r.operation for r in result.records if r.kind == 'thought'] == ['conclude']
 
-
-def test_bounded_bracket_scoring_preserves_menu_draw_and_gradients():
-    from copy import deepcopy
-    from Language import OperationSelectionLayer
-    full = OperationSelectionLayer(d_model=8)
-    bounded = deepcopy(full)
-    keys = torch.randn(2, 64, 8)
-    legal = torch.zeros(2, 64, 6, dtype=torch.bool)
-    legal[0, :3, :3] = True
-    legal[1, :2, 1:4] = True
-    space = torch.zeros(2, 64, dtype=torch.long)
-    # Since the forecast of a look the per-bracket term is no longer a
-    # scalar prior on the scores: it is a context per bracket, added to
-    # the keys before they are scored.
-    context = torch.randn(2, 64, 8)
-    options = dict(context=context, masked_action=torch.tensor([0, 2]), return_details=True)
-    state = torch.get_rng_state()
-    expected = full.attend(keys, legal, space, **options)
-    after = torch.get_rng_state()
-    torch.set_rng_state(state)
-    actual = bounded.attend(keys, legal, space, slot_limit=3, **options)
-    assert torch.equal(torch.get_rng_state(), after)
-    for left, right in zip(expected[:3], actual[:3]):
-        torch.testing.assert_close(left, right)
-    for name in expected[3]:
-        torch.testing.assert_close(expected[3][name], actual[3][name])
-    expected[3]['probability'].log().sum().backward()
-    actual[3]['probability'].log().sum().backward()
-    for left, right in zip(full.parameters(), bounded.parameters()):
-        if left.grad is None:
-            assert right.grad is None
-        else:
-            torch.testing.assert_close(left.grad, right.grad)

@@ -33,7 +33,8 @@ class LookForecast:
         self.slots = torch.arange(readings, device=spans.device)
         self.observations = evidence[:, :, :self.basic_count]
         everything = torch.zeros(len(evidence), readings, dtype=torch.bool, device=spans.device)
-        everything[:, :spans.shape[1]] = spans[..., 1] > spans[..., 0]
+        width = min(readings, spans.shape[1])
+        everything[:, :width] = (spans[..., 1] > spans[..., 0])[:, :width]
         self.latest = self.surprise(self.read(evidence, everything), self.forecast(everything), everything)
 
     def _located(self, field):
@@ -59,11 +60,13 @@ class LookForecast:
         width = int(self.slots.max()) + 1
         return F.pad(extent, (0, max(0, width - extent.shape[1])))[:, :width]
 
-    def _outside(self, extent):
-        """Each stream's look (``live``, ``[B]``) and what the readings
-        outside its extent observed, at the order-zero addresses."""
+    def _outside(self, extent, looked=None):
+        """Each stream's look (``live``, ``[B]``: ``looked``, or where its
+        extent holds a reading) and what the readings outside its extent
+        observed, at the order-zero addresses. A look whose extent holds
+        nothing is expected from everything observed."""
         extent = self._extent(extent)
-        live = extent.any(-1)
+        live = extent.any(-1) if looked is None else looked.to(extent.device)
         outside = ~extent.gather(1, self.slots[None].expand(len(extent), -1))
         knowing = self._pool(self.observations, outside[:, None])[:, 0][live]
         inputs = knowing.new_zeros(len(knowing), self.order_zero_width, 2)
@@ -76,10 +79,10 @@ class LookForecast:
         return torch.cat((value[:, :self.order_zero_width], value[:, allocated[self.basic_count:]]), 1)
 
     @torch.no_grad()
-    def forecast(self, extent):
+    def forecast(self, extent, looked=None):
         """What each stream's look is expected to hold, ``[B, width, 2]``,
         from the readings outside its extent only."""
-        live, inputs = self._outside(extent)
+        live, inputs = self._outside(extent, looked)
         result = self.observations.new_zeros(*live.shape, self.width, 2)
         if not bool(live.any()):
             return result
@@ -92,11 +95,11 @@ class LookForecast:
         return torch.cat((torch.arange(self.order_zero_width, device=allocated.device),
                           allocated[self.basic_count:]))
 
-    def stage_cost(self, field, extent):
+    def stage_cost(self, field, extent, looked=None):
         """The concepts' stage at a look, ``[B]``: what each concept expected
         from the readings outside the look's extent, with the gradient of
         its own entries alone, against what the look brought."""
-        live, inputs = self._outside(extent)
+        live, inputs = self._outside(extent, looked)
         error = self.observations.new_zeros(live.shape[0])
         if not bool(live.any()):
             return error
@@ -108,12 +111,12 @@ class LookForecast:
         batch = live.nonzero()[:, 0]
         return error.index_add(0, batch, cost)
 
-    def percept_stage_cost(self, perception, extent):
+    def percept_stage_cost(self, perception, extent, looked=None):
         """The basic percepts' stage at a look, ``[B]``: what each basic
         percept expected from the readings outside the look's extent, with
         the gradient of its own entries of the first Pi alone, against the
         basic percepts the look brought (``perception``, the look's read)."""
-        live, inputs = self._outside(extent)
+        live, inputs = self._outside(extent, looked)
         error = self.observations.new_zeros(live.shape[0])
         if perception is None or not bool(live.any()):
             return error
@@ -140,20 +143,20 @@ class LookForecast:
         return result
 
     @staticmethod
-    def surprise(actual, forecast, extent):
+    def surprise(actual, forecast, extent, looked=None):
         """The look's excess and omission, ``[B, 2]``: one gain field with
         the look's activity as its attention and its forecast as its
         expected."""
         from Expectation import gain_field
-        attention = extent.any(-1).to(actual)[:, None]
+        attention = (extent.any(-1) if looked is None else looked).to(actual)[:, None]
         field = gain_field(actual.clamp(0., 1.), forecast.clamp(0., 1.), attention=attention)
         return torch.stack((field.excess.sum((-1, -2)), field.omission.sum((-1, -2))), -1)
 
     @torch.no_grad()
-    def observe(self, field, extent, forecast):
+    def observe(self, field, extent, forecast, looked=None):
         evidence = self._located(field)
-        pair = self.surprise(self.read(evidence, extent), forecast, extent)
-        live = extent.any(-1)
+        pair = self.surprise(self.read(evidence, extent), forecast, extent, looked)
+        live = extent.any(-1) if looked is None else looked
         self.latest = torch.where(live[:, None], pair, self.latest)
         self.slots = torch.cat((self.slots, torch.arange(evidence.shape[1], device=self.slots.device)))
         self.observations = torch.cat((self.observations, torch.where(

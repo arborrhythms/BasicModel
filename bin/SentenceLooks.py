@@ -38,7 +38,7 @@ def where_match(bank, band_share, activity, readings):
     held = token[:, None, :] == slots[None, :, None]                      # [B, readings, events]
     first = torch.where(held, place[:, None, :], torch.iinfo(place.dtype).max).amin(-1, keepdim=True)
     start = held & (place[:, None, :] == first)
-    presence = activity[..., 0].amax(-1) if activity.ndim == 3 else activity
+    presence = activity[..., 0]
     share = torch.where(start, (band_share * presence)[:, None, :], 0.).sum(-1)
     live = held.any(-1)
     best = torch.where(live, share, -torch.inf).amax(-1, keepdim=True)
@@ -70,11 +70,13 @@ def extent_of(bank, activity, readings):
     return ((token[:, None, :] == slots[None, :, None]) & lit[:, None, :]).any(-1)
 
 
-def word_activity(field, concepts, known, extent, activity, bank):
+def word_activity(field, concepts, known, extent, own, bank):
     """Each word's activity in a look's returned set, ``[B, W]``: a word
     with a word concept, that concept's value at its reading (for less
-    against); a word with none, its reading's presence in the look. ``-inf``
-    where a word was not returned."""
+    against), where the look holds the reading. A word with no word concept
+    has no concept to return it; it is read whole, at its events' own
+    activity in the bank, where the look returned no word. ``-inf`` where a
+    word was not found."""
     B, W = concepts.shape
     ids = field.concept_ids
     ids = ids[:, None].expand(-1, B) if ids.ndim == 1 else ids
@@ -85,12 +87,11 @@ def word_activity(field, concepts, known, extent, activity, bank):
     token = bank.token
     slots = torch.arange(W, device=token.device)
     presence = torch.where(token[:, None, :] == slots[None, :, None],
-                           activity[..., 0][:, None, :], 0.).amax(-1)
+                           own[..., 0][:, None, :], 0.).amax(-1)
     width = min(W, extent.shape[1])
     inside = F.pad(extent[:, :width], (0, W - width))
     word = torch.where(known & inside & (concept > 0), concept, -torch.inf)
-    unknown = torch.where(~known & inside & (presence > 0), presence.to(torch.float32), -torch.inf)
-    # A word not yet known is read whole where the look returned no word.
+    unknown = torch.where(~known & (presence > 0), presence.to(torch.float32), -torch.inf)
     found = torch.isfinite(word).any(-1, keepdim=True)
     return torch.where(found, word, unknown)
 
@@ -120,16 +121,20 @@ def requested(model, query):
 
 def word_request(model, concepts, index):
     """The request for each stream's word ``index`` ``[B]`` by its word
-    concept, for one: a reading supplied as a sequence of requests."""
+    concept, for one: a reading supplied as a sequence of requests. A word
+    with no word concept is asked for as "words" alone, and comes back
+    whole."""
     owner = model._concept_owner()
-    V = int(owner.nVectors)
     B = len(index)
-    request = torch.zeros(V, B, 2, device=concepts.device)
+    words = requested(model, owner.similarity_codebook.W.new_zeros(B, int(model._stm_reducer().d_model)))
+    request = torch.zeros_like(words)
     for b, word in enumerate(index.tolist()):
         cid = int(concepts[b, word]) if word >= 0 else -1
         row = owner._concept_row_of(cid) if cid >= 0 else None
         if row is not None:
             request[row, b, 0] = 1.
+        elif word >= 0:
+            request[:, b] = words[:, b]
     return request
 
 
@@ -210,6 +215,8 @@ class Looks:
 
     def source_orders(self):
         """Original word positions in each row's interpretation order."""
+        if not self.decisions:
+            return tuple([] for _ in range(len(self.present)))
         arrivals = torch.stack([torch.where(turn['interpreted'], turn['index'], -1)
                                 for turn in self.decisions], dim=1)
         return tuple([word for word in row if word >= 0] for row in arrivals.tolist())
@@ -264,22 +271,22 @@ class Looks:
             look_field, activity, match = look(model, bank, request, own, perception)
             extent = extent_of(bank, activity, W) & rows[:, None]
             if forecasts is not None:
-                prediction = forecasts.forecast(extent)
+                prediction = forecasts.forecast(extent, rows)
                 # What is expected is written anew at each look, before
                 # what the look brings is read.
                 from ConceptSpread import write_look
                 write_look(forecasts.owner, forecasts.inventory_rows(), prediction)
-                surprise = forecasts.observe(look_field, extent, prediction)
+                surprise = forecasts.observe(look_field, extent, prediction, rows)
                 if model.training:
                     looks = model.__dict__.setdefault('_expectation_looks', [])
-                    looks.append((forecasts.stage_cost(look_field, extent), rows.clone()))
+                    looks.append((forecasts.stage_cost(look_field, extent, rows), rows.clone()))
                     percepts = model.__dict__.setdefault('_expectation_percept_looks', [])
                     perceived = getattr(owner, '_percept_field', None)
-                    percepts.append((forecasts.percept_stage_cost(perceived, extent), rows.clone()))
+                    percepts.append((forecasts.percept_stage_cost(perceived, extent, rows), rows.clone()))
             at_look(model, look_field, extent)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
                                     surprise=surprise, match=match.detach()))
-            words = word_activity(look_field, concepts, state.known, extent, activity, bank)
+            words = word_activity(look_field, concepts, state.known, extent, own, bank)
             unread = live & ~state.accepted & rows[:, None]
             words = torch.where(unread, words, -torch.inf)
             if self.teacher is not None:

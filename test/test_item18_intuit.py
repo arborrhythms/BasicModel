@@ -73,10 +73,10 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
     def opened(*args, **kwargs):
         open_calls.append(True)
         return original_open(*args, **kwargs)
-    def looked(path, spans):
-        if (spans[..., 1] > spans[..., 0]).any():
+    def looked(path, extent, rows=None):
+        if extent.any() or (rows is not None and rows.any()):
             look_calls.append(True)
-        return original_look(path, spans)
+        return original_look(path, extent, rows)
     monkeypatch.setattr(ConceptSpread, 'open_prediction', opened)
     monkeypatch.setattr(LookForecast, 'forecast', looked)
     spread = ConceptSpread.spread

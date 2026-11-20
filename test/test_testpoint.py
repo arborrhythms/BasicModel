@@ -500,15 +500,19 @@ class TestBlindSpot:
     def _looks(self, model, monkeypatch, text):
         import SentenceLooks
         from test_item18_expect import read
+        from reading_fixtures import SourceOrder
         seen = []
-        perceive = SentenceLooks.perceive
-        def kept(model_, interval, rows):
-            field = perceive(model_, interval, rows)
-            seen.append((interval.detach().clone(), model_._concept_owner()._percept_field))
-            return field
-        monkeypatch.setattr(SentenceLooks, 'perceive', kept)
+        look = SentenceLooks.look
+        def kept(model_, bank, request, own, perception):
+            result = look(model_, bank, request, own, perception)
+            extent = SentenceLooks.extent_of(bank, result[1], 2)
+            seen.append((extent[0].nonzero().flatten().tolist(), model_._concept_owner()._percept_field))
+            return result
+        monkeypatch.setattr(SentenceLooks, 'look', kept)
+        # The words are read in their order (a supplied reading).
+        monkeypatch.setattr(model, '_attention_supplied_reading', SourceOrder(), raising=False)
         read(model, text)
-        monkeypatch.setattr(SentenceLooks, 'perceive', perceive)
+        monkeypatch.setattr(SentenceLooks, 'look', look)
         return seen
 
     def _withhold(self, monkeypatch, model, word, every):
@@ -562,15 +566,18 @@ class TestBlindSpot:
                     parts = perception.parts
                     at = lambda values, row: None if row not in held else float(values[held[row], 0].amax())
                     read_at.append(dict(
-                        where=interval[0].tolist(), withheld=bool(withheld.any()),
+                        where=interval, withheld=bool(withheld.any()),
                         parts_present=0 if parts is None else int((parts[1].amax(-1) > 0).sum()),
                         gamma_perceived=at(perception.values, gamma), gamma_read_back=at(back, gamma),
                         alpha_perceived=at(perception.values, alpha), alpha_read_back=at(back, alpha)))
                 rows[label] = read_at
             model.omission.draw = ordinary
             print(dict(gamma_percept=gamma, alpha_percept=alpha, basic_percepts=len(basic.index), looks=rows))
-            half = [look for look in rows['half'] if look['where'] == [6, 11]]
-            beside = [look for look in rows['half'] if look['where'] == [0, 5]]
+            # The look of the first word holds the readings of the whole
+            # sentence on its way back; the withheld word lights nothing of
+            # its own for a look to land on.
+            half = [look for look in rows['half'] if look['where'] == [0] and look['withheld']]
+            beside = [look for look in rows['half'] if look['where'] == [0]]
             # The word beside the blind spot is unchanged on the way back.
             assert beside and all(look['alpha_read_back'] == look['alpha_perceived'] for look in beside)
             # Nothing is read back where nothing was withheld.
@@ -665,7 +672,8 @@ class TestBellSalivate:
 
     def test_bell_salivate(self, tmp_path, monkeypatch):
         import ConceptSpread
-        from LookForecast import LookForecast, contained
+        from LookForecast import LookForecast
+        from reading_fixtures import SourceOrder
         from PrependedSymbols import word_view
         from nomination_fixtures import readings_before_nomination
         from test_item18_expect import lesson, read, omit_second
@@ -681,21 +689,22 @@ class TestBellSalivate:
             owner = model._concept_owner()
             looks = []
             forecast, write = LookForecast.forecast, ConceptSpread.write_look
-            def forecast_extent(self, spans):
-                looks.append([self.spans.detach().clone(), spans.detach().clone(), None])
-                return forecast(self, spans)
+            def forecast_extent(self, extent, looked=None):
+                looks.append([None, extent.detach().clone(), None])
+                return forecast(self, extent, looked)
             def write_kept(owner_, at, value):
                 write(owner_, at, value)
                 looks[-1][2] = owner_._expected_knowing[0].detach().clone()
             monkeypatch.setattr(LookForecast, 'forecast', forecast_extent)
             monkeypatch.setattr(ConceptSpread, 'write_look', write_kept)
             omit_second(monkeypatch, model)
+            # The words are read in their order (a supplied reading).
+            monkeypatch.setattr(model, '_attention_supplied_reading', SourceOrder(), raising=False)
             def at_second(text):
                 looks.clear()
                 read(model, text)
-                held = [knowing for words, span, knowing in looks if knowing is not None
-                        and bool(contained(span[0], words[0, 1:2])[0, 0])
-                        and not bool(contained(span[0], words[0, :1])[0, 0])]
+                held = [knowing for _, extent, knowing in looks if knowing is not None
+                        and not bool(extent[0, 0])]
                 return None if not held else held[0][:, 0]
             readings = {}
             for stage in ('before', 'after'):

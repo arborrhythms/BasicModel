@@ -84,13 +84,14 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
     legacy['state_dict'] = {key: value for key, value in legacy['state_dict'].items()
                             if not key.startswith('attention_context.')}
     legacy['state_dict']['candidate_attention.readout.bias'] = torch.tensor([0.125])
-    # A checkpoint of the linear chooser held the brackets' anchors beside
-    # the space prior; the network reads none, and they are dropped.
-    anchor_keys = [key[:-len('space_prior')] + 'bracket_anchor'
-                   for key in legacy['state_dict'] if key.endswith('.space_prior')]
-    assert anchor_keys
+    # A checkpoint of the linear chooser held the brackets' anchors and
+    # space prior; the network reads none, and they are dropped.
+    prefixes = {key[:key.index('operation_layer.') + len('operation_layer.')]
+                for key in legacy['state_dict'] if 'operation_layer.' in key}
+    assert prefixes
+    anchor_keys = [prefix + name for prefix in prefixes for name in ('bracket_anchor', 'space_prior')]
     for key in anchor_keys:
-        legacy['state_dict'][key] = torch.full((6, 4), .375)
+        legacy['state_dict'][key] = torch.full((6, 4) if key.endswith('anchor') else (6,), .375)
     torch.save(legacy, path)
     del legacy
     gc.collect()

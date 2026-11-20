@@ -142,7 +142,6 @@ def stage_input(model):
     model._attention_words=None
     model._attention_poles=None
     model._attention_grammar_mask=None
-    model._attention_whole=None
     model._attention_word_concepts=None
     model._attention_open=None
     model._attention_greedy=None
@@ -251,18 +250,8 @@ def stage_input(model):
         return SentenceReading(chooser, keys[:, :live_width], reading_spans, known[:, :live_width],
             poles[:, :live_width], limit.clamp(0, model.attention_budget), W, model.attention_budget,
             exploit=exploit, departure=departure, replay_until=replay_until)
-    def whole(*, sentence=None):
-        """The sentence read at once, with no look: every live word, a word
-        with no word concept read whole."""
-        state=opening(sentence=sentence)
-        here=state.spans[...,1]>state.spans[...,0]
-        state.accepted=here.clone()
-        state.values=torch.where(here[...,None],state.keys,0.)
-        state.descended=here&~state.known
-        return state.reading()
     model._attention_spans=spans
     model._attention_forms=(forms,ids,keys,live)
-    model._attention_whole=whole
     phases = getattr(model, 'grammar_phases', None)
     if phases is not None and not phases.vector:
         return
@@ -271,7 +260,8 @@ def stage_input(model):
         # The sentence owns its reading: its looks are run with its
         # composition, one word arriving at each.
         return
-    reading=whole()
+    # A read with no sentence takes no look and interprets no word.
+    reading=opening().reading()
     model._attention_greedy=reading
     handoff(model,reading)
 

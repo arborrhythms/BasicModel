@@ -40,7 +40,7 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
             assert len(trial['reads']) == 2
             assert all(read['rows'].all() for read in trial['reads'])
         assert report['iterations'].tolist() == [2, 2]
-        assert all(m.counts['bracket'] > 0 for m in model._attention_meters)
+        assert all(m.counts['look'] > 0 for m in model._attention_meters)
         assert all('serial-word-loop' not in m.counts for m in model._attention_meters)
         assert model._last_field_cost is None  # the compose-forest reconstruction is retired
         assert model._sentence_field is None and model._sentence_read_order is None
@@ -113,12 +113,13 @@ def test_reversed_candidate_reads_keep_native_field_order_without_teacher(tmp_pa
     _select_completed_binary_path(model)
     chooser = model._stm_reducer()
     chooser.interpret_bias = 0.  # This reading deliberately declines the first offer.
-    attend, interpret = chooser.attend, chooser.choose_interpret
-    def last_focus(keys, legal, space, **options):
-        focus = legal[...,:2].any(-1)
-        slot = torch.where(focus, torch.arange(focus.shape[1])[None], -1).amax(-1).clamp_min(0)
-        options['replay_action'] = slot*6 + legal[torch.arange(len(slot)),slot,:2].long().argmax(-1)
-        return attend(keys, legal, space, **options)
+    interpret = chooser.choose_interpret
+    from reading_fixtures import SourceOrder
+    class LastFirst(SourceOrder):
+        def positions(self, forms, spans):
+            return [row[::-1] for row in super().positions(forms, spans)]
+    # The words are read last first (a supplied reading).
+    monkeypatch.setattr(model, '_attention_supplied_reading', LastFirst(), raising=False)
     chooser.trial_choices = []
     def read(word, allowed, **options):
         single = allowed.any().item()
@@ -126,7 +127,6 @@ def test_reversed_candidate_reads_keep_native_field_order_without_teacher(tmp_pa
             chooser.trial_choices.append(None)
         options['replay_action'] = (allowed & (len(chooser.trial_choices) > 1)).long()
         return interpret(word, allowed, **options)
-    monkeypatch.setattr(chooser,'attend',last_focus)
     monkeypatch.setattr(chooser,'choose_interpret',read)
     try:
         inputs = model.inputSpace.prepInput(['alpha beta', 'beta alpha'])

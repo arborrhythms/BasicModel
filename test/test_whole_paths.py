@@ -641,14 +641,13 @@ def test_numeric_grammar_replays_reverse_word_arrivals(monkeypatch):
     model, _, data = _fresh_model(str(config))
     force_absolute_reading(model)
     chooser = model._stm_reducer()
-    attend, interpret = chooser.attend, chooser.choose_interpret
-
-    def right_first(keys, legal, space, **options):
-        focus = legal[..., :2].any(-1)
-        slot = focus.shape[1] - 1 - focus.flip((-1,)).long().argmax(-1)
-        op = legal[torch.arange(len(slot), device=slot.device), slot, :2].long().argmax(-1)
-        options['replay_action'] = torch.where(focus.any(-1), 6 * slot + op, -1)
-        return attend(keys, legal, space, **options)
+    interpret = chooser.choose_interpret
+    from reading_fixtures import SourceOrder
+    class RightFirst(SourceOrder):
+        def positions(self, forms, spans):
+            return [row[::-1] for row in super().positions(forms, spans)]
+    # The words are read right first (a supplied reading).
+    monkeypatch.setattr(model, '_attention_supplied_reading', RightFirst(), raising=False)
 
     def read(word, allowed, **options):
         options['replay_action'] = allowed.long()
@@ -662,7 +661,6 @@ def test_numeric_grammar_replays_reverse_word_arrivals(monkeypatch):
             captured.append((result[0].tolist(), result[1].tolist()))
         return result
 
-    monkeypatch.setattr(chooser, 'attend', right_first)
     monkeypatch.setattr(chooser, 'choose_interpret', read)
     monkeypatch.setattr(model, '_derivation_program', capture)
     try:

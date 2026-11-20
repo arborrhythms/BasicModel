@@ -47,7 +47,7 @@ def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading, tmp_
 
     def observe_walk(path, *args, **kwargs):
         result = run(path, *args, **kwargs)
-        calls.append(len(path.walk.state.actions))
+        calls.append(path.walk.taken)
         offers.extend(int(d['index'][0]) for d in path.decisions if torch.isfinite(d['logits'][0, 1]))
         return result
 

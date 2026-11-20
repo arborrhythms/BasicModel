@@ -204,9 +204,9 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         router = ss.languageLayer
         self.assertIsNotNone(
             router, "LanguageLayer must be built")
-        self.assertTrue(
-            5 in router.operation_layer.attention_operations,
-            "Expected field negation in the shared attention chooser")
+        self.assertFalse(
+            hasattr(router.operation_layer, 'attention_operations'),
+            "Attention asks for concepts; no operation is declared for it")
         self.assertTrue(
             router.operation_layer.r_reduce > 0,
             "Expected at least one binary space_role attached")

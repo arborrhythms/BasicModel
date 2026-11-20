@@ -77,23 +77,3 @@ from test_cs_sparse_weights import _cs, _mint_row
 
 from test_concept_memberships import binary_features
 
-
-def test_passback_scales_unknown_parts_without_erasing_location():
-    cs = SimpleNamespace(_field_caps=lambda: (2,), cs_percept_attribution=lambda *a, **k:
-        (torch.tensor([0]), torch.tensor([[[[1., 0.]]]]),
-         torch.tensor([[[0, 1], [1, 2]]])))
-    model = SimpleNamespace(subsymbolic_loop={1}, conceptualSpaces=[cs],
-        conceptualSpace=cs, _concept_owner=lambda: cs, _subsymbolic_field=torch.zeros(2, 1, 1, 2),
-        perceptualSpace=SimpleNamespace(nWhat=2, _forward_input={
-            'part_spans': torch.tensor([[[0, 1], [1, 2]]])}),
-        _staged_concepts_in=torch.tensor([[[65, 66]]]))
-    sub = Spaces.SubSpace(inputShape=(2, 4), outputShape=(2, 4), nInputDim=4, nOutputDim=4)
-    event = torch.tensor([[[.4, .8, -.2, .6], [.8, .4, .6, -.2]]])
-    sub.set_event(event)
-    result = BasicModel._passback_scope_ps(model, 1, sub, None).materialize()
-    assert bool((result[..., :2] > 0).all())
-    torch.testing.assert_close(result[0, 0, :2], event[0, 0, :2])
-    torch.testing.assert_close(result[0, 1, :2], .5 * event[0, 1, :2])
-    torch.testing.assert_close(result[..., 2:], event[..., 2:])
-    torch.testing.assert_close(sub.materialize(), event)
-

@@ -40,13 +40,13 @@ def test_native_every_completed_field_reaches_the_chooser(tmp_path, monkeypatch,
         return choose(model, root, active, actions, **kwargs)
     path_cost = BasicModel._sentence_path_cost
     def cost(model, state, sid, active, **kwargs):
-        # A trial sees its provisional brackets as already paid. Scoring
+        # A trial sees its looks as already paid. Scoring
         # silence must not read with the pre-bracket remaining allowance.
         reading = getattr(model, '_attention_words', None)
         if reading is not None:
             for b, meter in enumerate(model._attention_meters):
                 if bool(active[b]):
-                    assert meter.spent >= int(reading.table.spent[b])
+                    assert meter.spent >= int(reading.looks[b])
                     work_rows.append(dict(row=b, spent=meter.spent, remaining=meter.remaining))
         return path_cost(model, state, sid, active, **kwargs)
     monkeypatch.setattr(BasicModel, '_sentence_path_cost', cost)

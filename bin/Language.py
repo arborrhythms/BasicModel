@@ -6634,12 +6634,14 @@ class OperationSelectionLayer(nn.Module):
         concept "words" alone); ``codes`` ``[V, D]`` are the concepts' codes
         and ``query`` ``[B, D]`` the context's map (``AttentionContext``).
         A concept is asked for where its code reads the query above zero and
-        asked against where below; the map starts at zero, so the request
-        starts at ``base`` alone."""
+        asked against where below (:func:`Layers.signed_lanes`, whose
+        derivative reaches both lanes at zero); the map starts at zero, so
+        the request starts at ``base`` alone and can be taught from there."""
+        from Layers import signed_lanes
         width = min(int(codes.shape[-1]), int(query.shape[-1]))
         score = codes[:, :width].detach().to(query) @ query[:, :width].T
-        asked = base.to(score)[:, None] + score.clamp_min(0.)
-        return torch.stack((asked, (-score).clamp_min(0.)), -1)
+        lanes = signed_lanes(score)
+        return lanes + torch.stack((base.to(score)[:, None].expand_as(score), torch.zeros_like(score)), -1)
 
     def choose_interpret(self, word, allowed, *, masked_action=None, replay_action=None):
         """Grammar's existing unary scorer chooses interpretation or abstention."""

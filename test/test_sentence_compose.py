@@ -109,6 +109,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         return perceive(*args, **kwargs)
     if not compiled:
         monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
+    # The words are read in their order (a supplied reading).
+    from reading_fixtures import SourceOrder
+    monkeypatch.setattr(model, '_attention_supplied_reading', SourceOrder(), raising=False)
     original = model._sentence_train_step
     def step(loss):
         events.append(('step', float(loss.detach())))
@@ -166,12 +169,12 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
                 torch.testing.assert_close(actual.meaning.role_mask, occupied)
                 assert not hasattr(actual, 'actions')
         if not compiled:
-            # One perception for each word's first arrival in a row: in each
-            # sentence the one-word row is read at the opening look, the
-            # other row's two words at their own looks. Every call of a
-            # sentence sees exactly the sentences committed before it, and
-            # the explore path reuses those perceptions without a call.
-            assert [count for count, _ in perceived] == [0, 0, 0, 1, 1, 1]
+            # One perception for each word's first arrival at a look: the
+            # rows read their first words at the first look and the two-word
+            # row its second at the next. Every call of a sentence sees
+            # exactly the sentences committed before it, and the explore
+            # path reuses those perceptions without a call.
+            assert [count for count, _ in perceived] == [0, 0, 1, 1]
             assert all(trial == 'exploit' for _, trial in perceived), perceived
     finally:
         model.End()

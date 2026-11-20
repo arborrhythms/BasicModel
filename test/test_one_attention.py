@@ -1,4 +1,4 @@
-"""6.8's typed brackets, one chooser, level expectation and fixed word whole."""
+"""One reading by looks, level expectation and fixed word whole."""
 import pytest
 import torch
 from chooser_steering import stand_in
@@ -7,7 +7,7 @@ from chooser_steering import stand_in
 def _field_model():
     from reading_fixtures import field_text_config
     from test_mm_xor import _fresh_model
-    with field_text_config(examine=True) as config:
+    with field_text_config() as config:
         return _fresh_model(config)
 
 
@@ -30,81 +30,6 @@ def test_word_whole_membership_is_fixed_while_other_properties_can_learn():
     torch.testing.assert_close(props.coefficients()[8],before[8])
     assert not torch.equal(props.coefficients()[0],before[0])
     assert not props.coefficients()[8].requires_grad or props.members.grad[8].count_nonzero() == 0
-
-
-def test_bracket_table_is_bounded_typed_and_shares_one_meter():
-    from Attention import BracketTable, SPACE_INPUT, SPACE_SYMBOL
-    table=BracketTable.open(torch.tensor([11,9]),budget=4)
-    assert table.intervals.shape == (2,4,2)
-    assert table.valid.sum(1).tolist() == [1,1]
-    assert table.space[:,0].tolist() == [SPACE_INPUT,SPACE_INPUT]
-    table=table.split(torch.tensor([0,0]),torch.tensor([5,4]),space=torch.tensor([SPACE_INPUT,SPACE_SYMBOL]))
-    assert table.valid.sum(1).tolist() == [2,2]
-    assert table.spent.tolist() == [1,1]
-    assert table.remaining.tolist() == [3,3]
-    assert table.space[1,:2].tolist() == [SPACE_SYMBOL,SPACE_SYMBOL]
-    assert table.intervals[0,:2].tolist() == [[0,5],[5,11]]
-
-
-def test_pooling_keeps_both_poles_and_unknown_neither_exactly_zero():
-    from Attention import pooled_read
-    poles=torch.tensor([[[[1.,0.],[0.,1.],[0.,0.]]],[[[0.,0.],[0.,0.],[0.,0.]]]])
-    spans=torch.tensor([[[0,2],[2,4],[4,5]]])
-    reading=pooled_read(poles,spans,torch.tensor([[[0,4],[4,5]]]))
-    assert reading.poles.tolist() == [[[[1.,1.],[0.,0.]],[[0.,0.],[0.,0.]]]]
-    assert reading.both.tolist() == [[True,False]]
-    assert reading.neither.tolist() == [[False,True]]
-    assert not reading.pure.any()
-
-
-def test_pinned_masks_known_word_never_descends_and_wide_never_interprets():
-    from Attention import narrowing_mask
-    pure=torch.tensor([[True,False,False,True]])
-    both=torch.tensor([[False,True,False,False]])
-    neither=torch.tensor([[False,False,True,False]])
-    word=torch.tensor([[True,False,True,False]])
-    mask=narrowing_mask(pure,both,neither,singular=pure,word=word,can_split=~word,has_parts=torch.ones_like(word))
-    assert mask.tolist() == [[[False,False,True],[True,True,False],[False,True,False],[False,True,False]]]
-
-
-def test_normal_field_answer_reaches_final_field_and_keeps_first_word():
-    from test_mm_xor import _fresh_model
-    from nomination_fixtures import nominated_forms
-    model,_,_= _field_model()
-    model.train()
-    texts=['hello world','hello there','loving world','loving there']
-    # The forms are words, nominated by MTM before this reading.
-    nominated_forms(model,texts)
-    value=model.inputSpace.prepInput(texts)
-    _,_,output,_=model.forward(value)
-    # §3.9 replaces the root-state reader with the final field. Its linear
-    # weights start at zero, so use a nonzero residual at that initialization.
-    (output-1.).square().sum().backward()
-    assert model.outputSpace.field_readout.weight.grad.abs().sum() > 0
-    field=model._sentence_open_fields[0]
-    assert field.evidence[:,:,0].abs().sum((0,2)).gt(0).all()
-
-
-def test_narrowing_uses_the_shared_operation_chooser_and_compiles():
-    from Language import OperationSelectionLayer
-    from Attention import narrow_words
-    chooser=OperationSelectionLayer(d_model=4)
-    stand_in(chooser)
-    keys=torch.tensor([[[1.,0.,0.,0.],[0.,1.,0.,0.]]])
-    spans=torch.tensor([[[0,5],[6,11]]])
-    known=torch.tensor([[True,False]])
-    def run(keys,known):
-        return narrow_words(chooser,keys,spans,known,budget=8)
-    value=run(keys,known)
-    compiled=torch.compile(run,backend='aot_eager',fullgraph=True)(keys,known)
-    torch.testing.assert_close(compiled.table.intervals,value.table.intervals)
-    assert value.accepted.tolist()==[[True,True]]
-    assert value.descended.tolist()==[[False,True]]
-    assert value.table.spent.tolist()==[4]
-    assert value.table.remaining.tolist()==[4]
-    assert not value.values.requires_grad
-    assert value.probabilities.requires_grad
-    assert chooser.stand_in.bracket.grad is None
 
 
 @pytest.mark.parametrize('name',['subsymbolicOrder','symbolicOrder','subsymbolicLoop','serial','modeSchedule','readingAttention','globalAttention','globalAttentionConsume','selectedThoughtBudget'])
@@ -178,73 +103,27 @@ def test_word_forecast_conditions_on_observed_prefix_without_reading_future():
     assert not torch.equal(a.probabilities[:,2],c.probabilities[:,2])
 
 
-def test_empty_word_bracket_is_a_masked_noop():
-    from Attention import narrow_words
-    from Language import OperationSelectionLayer
-    result=narrow_words(OperationSelectionLayer(d_model=4),torch.empty(2,0,4),
-        torch.empty(2,0,2,dtype=torch.long),torch.empty(2,0,dtype=torch.bool),budget=8)
-    assert result.values.shape==(2,0,4)
-    assert not result.table.valid.any() and not result.table.spent.any()
-
-
-def read_offered_words(chooser, keys, spans, known, **kwargs):
-    from Attention import open_narrowing, narrow_step, interpretation_at, record_interpretation, close_narrowing, narrowing_view
-    state = open_narrowing(chooser, keys, spans, known, **kwargs)
-    slot = torch.zeros(len(keys),dtype=torch.long)
-    while True:
-        _, offered = interpretation_at(state, slot)
-        record_interpretation(state, slot, offered)
-        if len(state.actions) == state.budget or not narrowing_view(state)[8].any():
-            return close_narrowing(state)
-        narrow_step(state)
-        slot = state.look_slot
-
-
-def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
-    from types import SimpleNamespace
-    from Attention import narrow_words
-    def field_first(keys,legal,space,**kwargs):
-        priority=torch.arange(legal.shape[-1],device=keys.device).expand_as(legal)
-        logits=priority.to(keys).masked_fill(~legal,-torch.inf).flatten(1)
-        return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(len(keys)), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
-    chooser=SimpleNamespace(attention_operations=(0,1,3,4,5),attend=field_first)
-    starts=torch.arange(8)*2
-    spans=torch.stack((starts,starts+1),-1)[None]
-    result=read_offered_words(chooser,torch.eye(8)[None],spans,torch.zeros(1,8,dtype=torch.bool),budget=32)
-    assert result.accepted.all()
-    assert result.table.spent.item()<=32
-
-
-@pytest.mark.parametrize('composing', [False, True], ids=['field', 'grammar'])
-def test_normal_model_opens_narrows_and_scores_word_expectation(composing, tmp_path, monkeypatch, eager_reading):
+def test_normal_model_opens_reads_and_scores_word_expectation(tmp_path, monkeypatch, eager_reading):
     from test_compiled_word_chunk import _tiny_canonical_model
     from reading_fixtures import read_in_source_order
-    if composing:
-        model = _tiny_canonical_model(tmp_path,monkeypatch,batch_size=4)
-        model._tensor_peer_while_eager=True
-        read_in_source_order(model,monkeypatch)
-    else:
-        model, _, _ = _field_model()
+    model = _tiny_canonical_model(tmp_path,monkeypatch,batch_size=4)
+    model._tensor_peer_while_eager=True
+    read_in_source_order(model,monkeypatch)
     model.train()
     value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
     model.forward(value)
-    table=model._attention_words.table
-    assert table.intervals.shape[1] == model.attention_budget
-    assert (table.spent <= model.attention_budget).all()
+    reading=model._attention_words
+    assert reading.actions.shape[1] == model.attention_budget
+    assert (reading.looks <= model.attention_budget).all()
     assert model._open_read is not None and not model._open_read.requires_grad
     expected=model._word_expectation
     assert expected.probabilities.shape[:2] == model._attention_words.accepted.shape
     active = model._word_expectation_mask
     torch.testing.assert_close(model._word_expectation.surprise, expected.surprise)
-    if composing:
-        assert active.any()
-        torch.testing.assert_close(expected.probabilities.sum(-1),active.to(expected.loss))
-        expected.loss.sum().backward()
-        assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
-    else:
-        assert not active.any()
-        torch.testing.assert_close(expected.probabilities.sum(-1),torch.ones_like(expected.loss))
-        assert not expected.loss.any()
+    assert active.any()
+    torch.testing.assert_close(expected.probabilities.sum(-1),active.to(expected.loss))
+    expected.loss.sum().backward()
+    assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
 
 
 @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
@@ -254,36 +133,25 @@ def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
         Grammar()._fill_rule_list([],{'rule':{'_':f'S = {operation}.forward(S)','operands':'symbol'}})
 
 
-def test_bracket_candidates_are_grammar_declared_field_operations_without_generate():
-    from Language import Grammar
-    g=Grammar();rules=[]
-    for name in ('focus','unfocus'):
-        g._fill_rule_list(rules,{'rule':{'_':f'X = {name}.forward(X)','operands':'field'}})
-        with pytest.raises(ValueError,match='generate'):
-            g._fill_rule_list([],{'rule':f'X = {name}.reverse(X)'},face='generate')
-    assert [r.operand_kinds for r in rules] == [('field',)]*2
-
-
-def test_shared_meter_cannot_replenish_between_input_and_thought():
-    from QueryWork import QueryWorkBudget
-    from Attention import BracketTable
-    table=BracketTable.open(torch.tensor([7]),budget=4)
-    table=table.split(torch.tensor([0]),torch.tensor([2]))
-    work=QueryWorkBudget.from_brackets(table,row=0)
-    assert work.spent == 1 and work.remaining == 3
-    assert work.consume('thought',3)
-    assert not work.consume('more')
-
-
-def test_unknown_repeated_word_has_one_byte_descent():
-    from Attention import narrow_words
-    from Language import OperationSelectionLayer
-    keys=torch.eye(4)[None,:2]
-    out=read_offered_words(OperationSelectionLayer(d_model=4),keys,
-        torch.tensor([[[0,3],[4,7]]]),torch.tensor([[False,False]]),
-        identities=torch.tensor([[9,9]]),budget=8)
-    assert out.table.spent.tolist()==[3]
-    assert out.accepted.all() and out.descended.all()
+def test_unknown_repeated_word_is_read_whole_once_at_each_place():
+    """Two occurrences of a word with no word concept: each is returned whole
+    by the look, one is taken, the done mark lowers it, and the next look
+    takes the other."""
+    from types import SimpleNamespace
+    from SentenceLooks import word_activity, lower
+    from Attention import draw_among
+    bank=SimpleNamespace(token=torch.tensor([[0,0,0,1,1,1]]))
+    own=torch.ones(1,6,2)
+    field=SimpleNamespace(concept_ids=torch.tensor([5]),evidence=torch.zeros(1,1,2,2))
+    concepts=torch.full((1,2),-1); known=torch.zeros(1,2,dtype=torch.bool)
+    read=[]
+    for _ in range(2):
+        extent=torch.stack([(own[0,:3,0]>0).any(),(own[0,3:,0]>0).any()])[None]
+        words=word_activity(field,concepts,known,extent,own,bank)
+        index,drawn,_,_=draw_among(words)
+        read.append(int(index)); own=lower(own,bank,index,torch.tensor([True]))
+    assert sorted(read) == [0,1]
+    assert not own.any()
 
 
 def test_native_attention_keeps_every_complete_letter_run(tmp_path,monkeypatch,eager_reading):
@@ -298,8 +166,8 @@ def test_native_attention_keeps_every_complete_letter_run(tmp_path,monkeypatch,e
         model.understand(raw)
     reading=model._attention_words
     assert reading.accepted.sum(-1).tolist() == [4,5], {
-        'forms':model._attention_forms[0], 'table':reading.table.intervals,
-        'accepted':reading.accepted,'spent':reading.table.spent,
+        'forms':model._attention_forms[0],
+        'accepted':reading.accepted,'looks':reading.looks,
         'actions':reading.actions,
         'offsets':getattr(model.inputSpace,'_ar_word_part_offsets',None)}
 
@@ -372,27 +240,6 @@ def test_fixed_word_storage_survives_projection():
     torch.testing.assert_close(properties.members[8],before,rtol=0,atol=0)
 
 
-def test_normal_narrowing_reads_native_poles(monkeypatch):
-    from test_mm_xor import _fresh_model
-    import ModelAttention
-    model, _, _ = _field_model()
-    model.eval()
-    value = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
-    with torch.no_grad(): model.forward(value)
-    calls=[]
-    original=ModelAttention.narrow_words
-    def traced(*args, **kwargs):
-        calls.append((kwargs.get('poles'), kwargs.get('glance_keys')))
-        return original(*args, **kwargs)
-    monkeypatch.setattr(ModelAttention, 'narrow_words', traced)
-    with torch.no_grad(): model.forward(value)
-    assert calls and all(torch.is_tensor(poles) for poles, _ in calls), 'normal narrowing discards native paired evidence'
-    pairs = model._last_examination['surprise']
-    expected = torch.nn.functional.linear(pairs, model.attention_context.weight[:, -2:])
-    for _, keys in calls:
-        torch.testing.assert_close(keys, expected[:, :keys.shape[1]])
-
-
 def test_prior_thought_reserves_the_input_allowance():
     from test_negative_expectation import _anticipating_model
     model, owner, meaning = _anticipating_model()
@@ -404,43 +251,17 @@ def test_prior_thought_reserves_the_input_allowance():
     assert model._pending_attention_meters[0].remaining == 4
 
 
-def test_normal_input_stages_greedy_and_defers_comparison_to_sentence(monkeypatch):
+def test_normal_input_stages_and_defers_its_reading_to_the_sentence():
  from test_mm_xor import _fresh_model
- import ModelAttention
  model,_,_=_fresh_model('data/MM_text.xml'); model.train()
- calls=[]; versions=[]
- original=ModelAttention.narrow_words
- def traced(*args,**kwargs):
-  calls.append('explore' if kwargs.get('exploit') is not None else 'greedy')
-  versions.append(tuple(p._version for p in model._stm_reducer().parameters()))
-  return original(*args,**kwargs)
- monkeypatch.setattr(ModelAttention,'narrow_words',traced)
  value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
  model._lex_embed_stem(value)
- assert calls==['greedy'], calls
- assert model._attention_read is not None
  assert model._attention_words is model._attention_greedy
- # With no sentence the read is attention's walk alone: no word is admitted.
+ # With no sentence no look is taken: no word is admitted.
  assert not model._attention_words.accepted.any()
+ assert not model._attention_words.looks.any()
  assert not hasattr(model, '_attention_score_term')
  assert not hasattr(model, '_last_attention_comparison')
-
-
-def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
-    from Attention import narrow_words
-    from types import SimpleNamespace
-    masks=[]
-    def choose(keys,legal,space,**kwargs):
-        masks.append(legal.clone())
-        index = torch.tensor([4]) if len(masks)==1 else legal.flatten(1).long().argmax(-1)
-        return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(1), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
-    chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=choose)
-    result=read_offered_words(chooser,torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),
-        torch.ones(1,2,dtype=torch.bool),poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=6)
-    assert masks[0][0,0,0]  # native both permits divide
-    assert not masks[1][0,0,0]  # or leaves a pure parent
-    assert result.accepted.all()
-    torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,1.]]]))
 
 
 def test_narrowing_selection_has_no_percept_stage_scorer():
@@ -448,20 +269,6 @@ def test_narrowing_selection_has_no_percept_stage_scorer():
     assert not hasattr(ModelAttention, 'percept_reconstruction_score')
     assert not hasattr(WalkTrials, 'narrowing_pair')
     assert not hasattr(WalkTrials, 'attention_score_function')
-
-
-def test_divide_isolates_impure_first_word_and_reaches_pure_neighbors():
-    from Attention import narrow_words
-    from Language import OperationSelectionLayer
-    from test_attention_thinking_handoff import first_legal
-    chooser = first_legal()
-    chooser.attention_operations = (0, 1)
-    result = read_offered_words(chooser, torch.eye(3)[None],
-        torch.tensor([[[0, 2], [3, 5], [6, 8]]]), torch.ones(1, 3, dtype=torch.bool),
-        poles=torch.tensor([[[1., 1.], [1., 0.], [1., 0.]]]), budget=16)
-    assert result.accepted.tolist() == [[False, True, True]]
-    assert not result.descended.any()
-    assert result.table.spent.item() <= 16
 
 
 def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
@@ -546,45 +353,20 @@ def test_glance_forecast_reads_only_live_word_extents(tmp_path, monkeypatch):
             short = LookForecast(owner, opened, opened.where)
             padded = torch.nn.functional.pad(opened.where, (0, 0, 0, 7))
             long = LookForecast(owner, opened, padded)
-        assert calls == [2, 2]
-        torch.testing.assert_close(short.latest, long.latest[:, :opened.where.shape[1]], rtol=0, atol=0)
-        assert not long.latest[:, opened.where.shape[1]:].count_nonzero()
+        # One forecast for each stream's look, whatever padding follows.
+        assert calls == [1, 1]
+        torch.testing.assert_close(short.latest, long.latest, rtol=0, atol=0)
     finally:
         model.End()
         model.symbolSpace.soft_reset()
 
 
-def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypatch):
+def test_a_read_with_no_sentence_holds_every_word_place_and_reads_none():
     from test_mm_xor import _fresh_model
-    import ModelAttention
     model, _, _ = _fresh_model('data/MM_text.xml')
     model.eval()
-    original = ModelAttention.narrow_words
-    calls = []
-    def bounded(chooser, keys, spans, known, **kwargs):
-        calls.append(keys.shape[1])
-        assert keys.shape[1] == 3, 'padding multiplied the bracket work'
-        actual = original(chooser, keys, spans, known, **kwargs)
-        padded = dict(kwargs)
-        for name in ('identities', 'prior', 'poles'):
-            if padded.get(name) is not None:
-                padded[name] = torch.nn.functional.pad(padded[name],
-                    (0, 0, 0, 7) if name == 'poles' else (0, 7),
-                    value=-1 if name == 'identities' else 0)
-        reference = original(chooser,
-            torch.nn.functional.pad(keys, (0, 0, 0, 7)),
-            torch.nn.functional.pad(spans, (0, 0, 0, 7)),
-            torch.nn.functional.pad(known, (0, 7)), **padded)
-        for before, after in zip(reference.table, actual.table):
-            torch.testing.assert_close(after, before)
-        torch.testing.assert_close(actual.actions, reference.actions)
-        torch.testing.assert_close(actual.values, reference.values[:, :3])
-        torch.testing.assert_close(actual.accepted, reference.accepted[:, :3])
-        return actual
-    monkeypatch.setattr(ModelAttention, 'narrow_words', bounded)
     with torch.no_grad():
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
-    assert calls == [3]
     assert model._attention_words.values.shape[:2] == model.inputSpace._word_active_mask.shape
-    # With no sentence the read is attention's walk alone: no word is admitted.
     assert not model._attention_words.accepted.any()
+

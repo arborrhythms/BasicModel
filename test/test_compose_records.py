@@ -219,12 +219,9 @@ def test_tensor_pipeline_records_both_one_word_packed_ends(tmp_path, monkeypatch
         return x.new_full((*x.shape[:2], 1), -1e6), scores
     chooser.score_binary, chooser.score_unary = binary, unary
     # This test calls the tensor body directly. Supply each word through
-    # the real bracket decisions before exercising its two closing groups.
-    import ModelAttention
+    # a supplied reading before exercising its two closing groups.
     from reading_fixtures import read_in_source_order
-    from test_one_attention import read_offered_words
     read_in_source_order(model, monkeypatch)
-    monkeypatch.setattr(ModelAttention, 'narrow_words', read_offered_words)
     def eager_while(condition, body, values):
         while bool(condition(*values)):
             values = body(*values)

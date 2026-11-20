@@ -29,18 +29,19 @@ def test_attention_score_function_has_greedy_baseline_and_uniform_counts(advanta
     torch.testing.assert_close(numerical, gradient[0, 1])
 
 
-def test_attention_uniform_departure_and_no_pathwise_credit(monkeypatch):
+def test_attend_gives_a_request_over_concepts_on_two_lanes():
     from Language import OperationSelectionLayer
-    chooser = OperationSelectionLayer(d_model=2)
-    keys = torch.tensor([[[1., 0.]]], requires_grad=True)
-    legal = torch.tensor([[[True, True, True, False, False, False]]])
-    action, credit, _, details = chooser.attend(keys, legal, torch.zeros(1, 1, dtype=torch.long),
-        masked_action=torch.tensor([0]), return_details=True)
-    assert action.item() in (1, 2) and 1. <= details['alternative_count'].item() <= 4.
-    assert not credit.requires_grad
-    details['probability'].sum().backward()
-    assert keys.grad is None
-    assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in chooser.parameters())
+    codes = torch.tensor([[1., 0.], [0., 1.], [1., 1.]])
+    base = torch.tensor([0., 1., 0.])
+    query = torch.zeros(2, 2, requires_grad=True)
+    request = OperationSelectionLayer.attend(query, codes, base)
+    assert request.shape == (3, 2, 2)
+    torch.testing.assert_close(request[..., 0], base[:, None].expand(3, 2))
+    assert not request[..., 1].any()
+    asked = OperationSelectionLayer.attend(torch.tensor([[2., -1.]]), codes, base)
+    torch.testing.assert_close(asked[:, 0], torch.tensor([[2., 0.], [1., 1.], [1., 0.]]))
+    request[..., 0].sum().backward()
+    assert query.grad is not None
 
 
 def test_saved_review22_roots_recover_multisets_and_recompose_exactly():

@@ -123,7 +123,7 @@ def checkpoint_field_configuration():
     from reading_fixtures import field_text_config
     # Keep the original parallel field pipeline for this resume contract;
     # item 1.8 §3.1 now requires its operations to declare that path.
-    with field_text_config(examine=False) as path:
+    with field_text_config() as path:
         yield path
 
 

@@ -18,25 +18,13 @@ def test_69_complete_inventory():
               'intersection', 'union', 'add', 'subtract', 'multiply', 'divide',
               'change', 'lift', 'lower', 'verb', 'compound', 'marker',
               'modifier', 'preposition', 'surface', 'swap', 'bind'}
-    assert names('compose') == common | {'focus', 'unfocus', 'sign'}
+    assert names('compose') == common | {'sign'}
     assert names('generate') == common - {'bind'}
     assert names('thought') == {'ask', 'query', 'part', 'whole', 'not', 'non',
         'bind', 'isTrue', 'exist', 'isPart', 'isWhole', 'isEqual', 'infer',
         'inferBackward', 'intuit', 'implies', 'define'}
     assert all('referent' not in row.attrib for section in ('compose', 'generate', 'thought')
                for row in root.findall('Symbolic/' + section + '/rule'))
-
-
-def test_69_focus_splits_the_existing_bracket_at_one_act():
-    from Language import FocusLayer, UnfocusLayer
-    from Attention import BracketTable
-    assert FocusLayer.bracket_action == (0, 1)
-    assert UnfocusLayer.bracket_action == 2
-    table = BracketTable.open(torch.tensor([11, 9]), budget=4)
-    result = table.split(torch.tensor([0, 0]), torch.tensor([5, 4]), descend=True)
-    assert result.intervals[:, :2].tolist() == [[[0, 5], [5, 11]], [[0, 4], [4, 9]]]
-    assert result.level[:, :2].tolist() == [[1, 1], [1, 1]]
-    assert result.spent.tolist() == [1, 1]
 
 
 @pytest.mark.parametrize('name', ['add', 'subtract', 'multiply', 'divide'])

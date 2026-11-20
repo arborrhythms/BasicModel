@@ -21187,7 +21187,8 @@ class BasicModel(BaseModel):
                 trace = self._reconstruction_stack()
                 owners, _, _ = self._compose_round_owners(trace._choice_actions)
                 eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
-                interpretations = (None if not look_trials or look_trials[0] is None else
+                interpretations = (None if not look_trials or look_trials[0] is None
+                    or not look_trials[0].decisions else
                     torch.stack([decision['eligible'] for decision in look_trials[0].decisions],-1))
                 decisions = [plan['decisions'] for plan in observations[0].get('reference_plans', ())]
                 bind_rounds = present.new_zeros(B, max(map(len, decisions), default=0))

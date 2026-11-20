@@ -105,5 +105,5 @@ def test_one_operation_layer_owns_both_arities():
     assert shared.r_reduce > 0
     assert [op.gl.rule_name for op in shared.unary_ops] == ['interpret', 'sign']
     assert sum(isinstance(op.gl, BindLayer) for op in shared.ops) == 1
-    assert 5 in shared.attention_operations
+    assert not hasattr(shared, 'attention_operations')
     assert not hasattr(model.symbolSpace.languageLayer, '_unary_layers')

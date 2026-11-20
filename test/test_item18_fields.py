@@ -72,14 +72,13 @@ def test_grammar_declares_three_independent_kinds(monkeypatch):
         owner=SimpleNamespace(_model=SimpleNamespace(grammar_phases=phases),
             _symbolic_order=0,_serial=phases.per_word)
         return ConceptualSpace._sparse_active(owner)
-    for source,expected in [('field.grammar',(False,False,False)),
-                            ('examination.grammar',(True,False,False)),
-                            ('complete.grammar',(True,True,True))]:
+    for source,expected in [('field.grammar',(False,False)),
+                            ('complete.grammar',(True,True))]:
         grammar=Grammar();grammar.load_from_grammar_file(source)
         monkeypatch.setattr(TheGrammar,'_ensure_configured',lambda:None)
         monkeypatch.setattr(TheGrammar,'rules',grammar.rules)
         phases=GrammarPhases.configured()
-        assert (phases.examination,phases.vector,phases.interpret)==expected
+        assert (phases.vector,phases.interpret)==expected
         assert reads_at_order_zero(phases) == (source=='field.grammar')
 
     from util import init_config,TheXMLConfig
