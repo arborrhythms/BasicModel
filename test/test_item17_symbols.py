@@ -132,8 +132,7 @@ def test_51b_the_gradient_reaches_the_for_and_the_against_weights_apart():
     for column in range(3):
         sigma.start_column(column, codes[column, 0], against=codes[column, 1])
     presence = torch.tensor([[.9, .1], [.2, .7], [.5, .5]])[:, None]
-    x = combine(presence, codes, where=torch.rand(1, (width - content) // 2),
-                when=torch.rand(1, (width - content) // 2))
+    x = combine(presence, codes, where=torch.rand(1, width - content))
     assert bool(x[..., 0, :].any()) and bool(x[..., 1, :].any())
     y = sigma.concepts(x, [0, 1, 2])
     target = torch.tensor([[1., -1., 0.]])

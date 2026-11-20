@@ -200,7 +200,7 @@ def read_word(evidence, mask, reading, place, *, content_width):
     order-zero Sigma, its for weights and its against weights (``D`` wide
     each), and the basic percept's read pair, what tells for it and what
     against it (``C`` wide each); ``place`` ``[B, N, D - C]`` is each
-    location's own place and time. The percept enters at its net, as
+    location's own place. The percept enters at its net, as
     :func:`combine` has it, and each lane is read by its own column.
     """
     width = (reading.shape[-1] - 2 * content_width) // 2
@@ -230,7 +230,7 @@ def read_word(evidence, mask, reading, place, *, content_width):
     return torch.tanh(net + (combined[..., 1, :] * (column[..., 1, :] + column[..., 0, :])).sum(-1))
 
 
-def combine(presence, codes, *, where=None, when=None):
+def combine(presence, codes, *, where=None):
     """The combined vector of each reading, on two lanes.
 
     ``presence`` is ``[P, ..., 2]``, each percept's Pi value on the two
@@ -240,10 +240,10 @@ def combine(presence, codes, *, where=None, when=None):
     net above zero what tells for it joins the for lane and what tells
     against it the against lane; below zero the reverse; a percept read
     both for and against equally adds nothing. Each lane's content is
-    ``1 - prod_p (1 - v_p)^{n_p}``. ``where`` and ``when``, ``[..., D]`` in
-    ``[0, 1]``, are the reading's own place and time; they are taken at the
-    reading's presence, the greatest of its percepts' values on the lane.
-    The result is ``[..., 2, W + D]``.
+    ``1 - prod_p (1 - v_p)^{n_p}``. ``where``, ``[..., D]`` in ``[0, 1]``,
+    is the reading's own place, taken at the reading's presence, the
+    greatest of its percepts' values on the lane. A reading's time is not
+    read. The result is ``[..., 2, W + D]``.
     """
     gaps = torch.log((1.0 - codes).clamp_min(EPS_LOG)).to(presence)
     net = presence[..., 0] - presence[..., 1]
@@ -253,9 +253,8 @@ def combine(presence, codes, *, where=None, when=None):
     content = 1.0 - torch.exp(torch.stack((toward, away), -2))
     parts = [content]
     present = presence.amax(0) if len(presence) else presence.new_zeros(presence.shape[1:])
-    for coordinates in (where, when):
-        if coordinates is not None:
-            parts.append(present[..., :, None] * coordinates.to(presence)[..., None, :])
+    if where is not None:
+        parts.append(present[..., :, None] * where.to(presence)[..., None, :])
     return torch.cat(parts, -1)
 
 
@@ -275,8 +274,8 @@ class OrderZeroSigma(SigmaLayer3):
         super().__init__(int(width), int(concepts), scale=0.0)
         self.against = nn.Parameter(-self.weight.detach().clone())
         self.content_width = int(content_width)
-        # Of the rest: the reading's own place, then its own time.
-        self.where_width = self.when_width = (int(width) - self.content_width) // 2
+        # The rest is the reading's own place; its time is not read.
+        self.where_width = int(width) - self.content_width
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -284,6 +283,12 @@ class OrderZeroSigma(SigmaLayer3):
         # weights: they are its for weights negated.
         if prefix + 'weight' in state_dict and prefix + 'against' not in state_dict:
             state_dict[prefix + 'against'] = -state_dict[prefix + 'weight']
+        # A Sigma saved when it read the reading's time has those rows last,
+        # after the content and the place: they are dropped.
+        for name in ('weight', 'against'):
+            saved = state_dict.get(prefix + name)
+            if saved is not None and saved.ndim == 2 and saved.shape[0] > self.nInput:
+                state_dict[prefix + name] = saved[:self.nInput]
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
 
@@ -293,7 +298,7 @@ class OrderZeroSigma(SigmaLayer3):
 
     @torch.no_grad()
     def start_column(self, column, vectors, signs=None, against=None):
-        """A column from its members: place and time weights at zero, then
+        """A column from its members: place weights at zero, then
         each member added (:meth:`add_member`). A member with sign -1 is a
         Not entry; ``against`` holds what tells against each member."""
         vectors = torch.as_tensor(vectors).to(self.weight).reshape(-1, self.content_width)

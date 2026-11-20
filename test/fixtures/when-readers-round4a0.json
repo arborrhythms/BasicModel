@@ -699,17 +699,6 @@
     },
     {
       "file": "bin/Spaces.py",
-      "function": "ConceptualSpace.install_order_zero",
-      "attributes": [
-        "when_encoding"
-      ],
-      "role": "order-zero Sigma construction",
-      "previous_absolute_time": false,
-      "now": "Reads only the width of the model's when encoding, to size the order-zero Sigma's time coordinates (sigma-pi \u00a721, rule 7); no band is read.",
-      "reads": null
-    },
-    {
-      "file": "bin/Spaces.py",
       "function": "Embedding.decode_reverse_meta",
       "attributes": [
         "whenEncoding"

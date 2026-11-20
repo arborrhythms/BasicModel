@@ -84,16 +84,14 @@ class NumericPercepts:
         presence = basic.held(torch.stack(lanes), nominated) if lanes else presence
         codes = (basic.read_codes(nominated) if nominated else basic.codes.new_zeros(0, 2, basic.width)).to(values)
         where = self.model.where_registry.encode('numeric', torch.cat((axes, axes[:1])).expand(B, -1)).to(values)
-        moment = self.model.present()
-        when = self.model.when_encoding.encode(torch.full((B, A + 1), moment, device=values.device)).to(values)
-        combined = combine(presence, codes, where=where, when=when)
+        combined = combine(presence, codes, where=where)
         rows = inventory(owner)
         evidence = owner.order_zero_field(combined, rows)
         evidence = close(owner, rows, evidence)
         ids = torch.tensor([owner.concept_id_at_row(row) for row in rows], device=values.device)
         bracket = torch.stack((places[:, 0, 0], places[:, -1, 1]), -1)
         where = torch.cat((places, bracket[:, None]), 1)
-        when = torch.full_like(where, moment)
+        when = torch.full_like(where, self.model.present())
         return ConceptualField(ids, evidence, where, when, percepts)
 
     def reverse(self, field):

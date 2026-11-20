@@ -14837,23 +14837,21 @@ class ConceptualSpace(Space):
 
     def install_order_zero(self):
         """The Sigma of order zero: the perceptual width (a basic percept's
-        vector, then the reading's place and time) by the order-zero rows,
-        on two channels, the for lane and the against lane."""
+        vector, then the reading's place) by the order-zero rows, on two
+        channels, the for lane and the against lane. A reading's time is
+        not read."""
         if getattr(self, 'order_zero', None) is not None:
             self._follow_moved()
             return self.order_zero
         from OrderZero import OrderZeroSigma
         content = int(self.basic_percepts.width)
-        # The widths of a reading's own place and time are the model's
-        # where registry's and when encoding's; a model with neither reads none.
+        # The width of a reading's own place is the model's where
+        # registry's; a model with none reads none.
         model = getattr(self, '_model', None)
         registry = getattr(model, 'where_registry', None)
-        encoding = getattr(model, 'when_encoding', None)
         origin = torch.zeros(1, dtype=torch.long)
         where = 0 if registry is None else int(registry.encode('text', origin).shape[-1])
-        when = 0 if encoding is None else int(encoding.encode(origin).shape[-1])
-        sigma = OrderZeroSigma(content + where + when, self._order_caps()[0], content_width=content)
-        sigma.where_width, sigma.when_width = where, when
+        sigma = OrderZeroSigma(content + where, self._order_caps()[0], content_width=content)
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
         # A frozen concept is read as a reference and never by perception.
@@ -14885,7 +14883,7 @@ class ConceptualSpace(Space):
     def order_zero_input(self, perception):
         """Each reading's combined vector on two lanes, ``[B, E, 2, D]``:
         the active basic percepts combined on the gaps, then the reading's
-        own place and time at the degree that it is present."""
+        own place at the degree that it is present. Its time is not read."""
         from OrderZero import combine
         self._follow_moved()
         basic = self.basic_percepts
@@ -14896,11 +14894,10 @@ class ConceptualSpace(Space):
                               for row in rows]) if rows else basic.codes.new_zeros(0, 2, basic.width))
         model = getattr(self, '_model', None)
         registry = getattr(model, 'where_registry', None)
-        encoding = getattr(model, 'when_encoding', None)
         brackets = perception.where
         sigma = self.order_zero
-        where = when = None
-        if brackets is not None and sigma.where_width + sigma.when_width:
+        where = None
+        if brackets is not None and sigma.where_width:
             starts = brackets[..., 0].long()
             valid = (brackets[..., 1] > brackets[..., 0])[..., None]
             if registry is not None:
@@ -14911,12 +14908,8 @@ class ConceptualSpace(Space):
                 where = torch.where(valid, registry.encode('text', torch.where(inside, starts, -1)), 0.)
             else:
                 where = brackets.new_zeros(*starts.shape, sigma.where_width, dtype=codes.dtype)
-            if encoding is not None and perception.when is not None:
-                when = torch.where(valid, encoding.encode(perception.when[..., 0].long()).to(codes), 0.)
-            else:
-                when = where.new_zeros(*starts.shape, sigma.when_width)
-        combined = combine(perception.values, codes.to(perception.values), where=where, when=when)
-        # A reading with no bracket has no place or time to read.
+        combined = combine(perception.values, codes.to(perception.values), where=where)
+        # A reading with no bracket has no place to read.
         return torch.nn.functional.pad(combined, (0, sigma.nInput - combined.shape[-1]))
 
     def order_zero_field(self, combined, rows):

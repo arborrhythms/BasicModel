@@ -101,13 +101,16 @@ def test_the_combined_vector_is_one_less_the_product_of_the_gaps():
     torch.testing.assert_close(combine(both, pairs), x)
 
 
-def test_a_readings_own_place_and_time_follow_its_presence_and_are_not_combined():
+def test_a_readings_own_place_follows_its_presence_and_is_not_combined():
+    """Rule 7: a reading's own place is read at its presence; its time is
+    not read, so the combined vector ends with the place."""
     codes = _codes((0, 1), (2, 3), width=8)
     presence = torch.tensor([[[.5, 0.]], [[1., 0.]]])  # two percepts, one reading
-    where, when = torch.tensor([[.25, .75]]), torch.tensor([[1., .5]])
-    x = combine(presence, _pairs(codes), where=where, when=when)
-    torch.testing.assert_close(x[0, 0, 8:], torch.tensor([.25, .75, 1., .5]))
-    torch.testing.assert_close(x[0, 1, 8:], torch.zeros(4))
+    where = torch.tensor([[.25, .75]])
+    x = combine(presence, _pairs(codes), where=where)
+    assert x.shape[-1] == 8 + 2
+    torch.testing.assert_close(x[0, 0, 8:], torch.tensor([.25, .75]))
+    torch.testing.assert_close(x[0, 1, 8:], torch.zeros(2))
 
 
 def test_a_new_percept_needs_no_new_weight():
@@ -189,7 +192,7 @@ def test_the_way_back_as_far_as_it_goes():
         sigma.weight.copy_(torch.eye(width) + .1 * torch.rand(width, width))
     codes = torch.rand(3, width - 4)
     presence = torch.rand(3, 2, 2) * .5
-    x = combine(presence, _pairs(codes), where=torch.rand(2, 2), when=torch.rand(2, 2))
+    x = combine(presence, _pairs(codes), where=torch.rand(2, 4))
     signed = x[..., 0, :] - x[..., 1, :]
     y = torch.tanh(signed @ sigma.weight)
     back = sigma.reverse(y)
@@ -201,22 +204,22 @@ def test_the_way_back_as_far_as_it_goes():
         narrow.reverse(torch.zeros(1, width - 1))
 
 
-def test_place_and_time_weights_after_teaching():
+def test_place_weights_after_teaching():
     """§18.24, certificate 20, reported: a concept taught at several places
-    keeps what it learns on the place and time coordinates."""
+    keeps what it learns on the place coordinates (rule 7: no time is read)."""
     seed = int.from_bytes(os.urandom(4), 'little')
     torch.manual_seed(seed)
     sigma = OrderZeroSigma(12, 1, content_width=8)
     code = _codes((0, 1, 2), width=8)
     sigma.start_column(0, code)
     places = torch.rand(6, 4)
-    x = combine(torch.ones(1, 6, 2) * torch.tensor([1., 0.]), _pairs(code), where=places[:, :2], when=places[:, 2:])
+    x = combine(torch.ones(1, 6, 2) * torch.tensor([1., 0.]), _pairs(code), where=places)
     optimizer = torch.optim.Adam(sigma.parameters(), lr=.05)
     for _ in range(300):
         optimizer.zero_grad()
         ((sigma.concepts(x, [0]) - .9) ** 2).mean().backward()
         optimizer.step()
-    print(dict(seed=seed, content=sigma.weight[:8, 0].tolist(), place_and_time=sigma.weight[8:, 0].tolist()))
+    print(dict(seed=seed, content=sigma.weight[:8, 0].tolist(), place=sigma.weight[8:, 0].tolist()))
 
 
 def test_the_order_zero_sigma_is_dense_and_not_penalized(lesson):
@@ -227,8 +230,9 @@ def test_the_order_zero_sigma_is_dense_and_not_penalized(lesson):
     model = lesson['model']
     origin = torch.zeros(1, dtype=torch.long)
     assert sigma.where_width == model.where_registry.encode('text', origin).shape[-1]
-    assert sigma.when_width == model.when_encoding.encode(origin).shape[-1]
-    width = owner.basic_percepts.width + sigma.where_width + sigma.when_width
+    # Rule 7: the reading's time is not read; the width holds no when.
+    assert not hasattr(sigma, 'when_width')
+    width = owner.basic_percepts.width + sigma.where_width
     assert tuple(sigma.weight.shape) == (width, owner._order_caps()[0])
     assert any(p is sigma.weight for p in owner.getParameters())
     assert any(key.endswith('order_zero.weight') for key in owner.state_dict())
