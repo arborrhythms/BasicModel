@@ -9076,13 +9076,16 @@ chooses from. The old classes are not edited.
    as two unsigned lanes, its positive part on the for lane and its
    negative part on the against lane; a single reading is never
    "both". *Mine:* it has no bias; where an answer is read from a
-   Sigma, the signed number is read.
-4. *The cycle* (Alec, §18.25, as amended by rules 20, 21 and 26). At
-   an order with $n$ concepts: $n$ signed values, stored as $2n$
-   unsigned lanes; the rows above that MTM has nominated read those
-   lanes, each row its own lane; each symbol's pair is combined, for
-   less against, into one signed input; the next Sigma reads those
-   inputs.
+   Sigma, the signed number is read. *Since rule 59:* an input has
+   two weights, one on its for channel and one on its against
+   channel, the second begun as the first negated. A Not entry is
+   then a for weight below zero or an against weight above zero.
+4. *The cycle* (Alec, §18.25, as amended by rules 20, 21, 26 and
+   59). At an order with $n$ concepts: $n$ signed values, stored as
+   $2n$ unsigned lanes; the rows above that MTM has nominated read
+   those lanes, each row its own lane; the next Sigma reads each
+   symbol's pair as two channels, each with its own weight (rule
+   59), which at its start is the pair combined, for less against.
 29. *One structure: Pi, Not, Sigma, at every order* (Alec, §19.20).
     - *At the basic level* the Pi makes the basic percepts, their
       vectors are combined (rule 7), and the Sigma is dense over the
@@ -10026,7 +10029,7 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     its concept comes with it, and `interpret` finds it.
 12. *Square.* At every order the concepts equal the rows in number,
     and a new concept reads only its own row, at one; at order zero
-    its column of $U$ is its row's vector, normalized.
+    its column of $U$ is the mean of its row's two sides (rule 54).
 13. *Thinned.* Under the penalty, a Sigma entry above order zero that
     no cost supports goes to zero, as a Pi entry does; the Sigma of
     order zero is not penalized.
@@ -10998,8 +11001,10 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
 3. A symbol is two unsigned rows of PiLayer3 and brings one concept
    (rule 10). It is made at MTM's nomination, or by interpret for a
    meta concept, and not at a concept's allocation.
-4. The cycle above order zero (rules 4, 11 and 12): SigmaLayer3,
-   sparse, reads each symbol's pair combined into one signed input.
+4. The cycle above order zero (rules 4, 11, 12 and 59):
+   SigmaLayer3, sparse, as compressed rows, reads each symbol's pair
+   as two channels with weights of their own from the start (the
+   against weights begun as the for weights negated).
    The least and the greatest of SparseLayer.fold_presence go above
    order zero, and SparseLayer._fold_weights with them
    (_concept_rung_presence in bin/Spaces.py, FieldProjection.close).
