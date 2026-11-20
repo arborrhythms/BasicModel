@@ -374,7 +374,7 @@ input, for expectation; thought and the output, for intuition's map; and the
 System 2 content, for the read to a point. The mechanism is in
 [Expectation](ExpectationRetention.md#intuitions-map-and-the-read-to-a-point).
 
-### Symbols, the field and the one hypersphere
+### Symbols, the field and the spaces of the orders
 
 The two maps work over a vertical structure and a horizontal one,
 which Alec set out as follows.
@@ -394,9 +394,10 @@ which Alec set out as follows.
   multiple layers of parts and wholes", and no grammatical operation;
   [extend](Extend.md) is what applies a sentence's operators to it. It was
   described before as the order-zero concepts only.
-- *Horizontal.* "Its just one hypersphere, but concepts are distributed
-  according to ramsified algorithms (types live in token space, wholes
-  live in part space)." A concept is placed by its context, and its
+- *Horizontal.* Each order's concepts are placed in a space of their own
+  (Alec, 2026-11-20: "it is not clear that the space of nouns, for example,
+  should be constrained by the space of events"). A concept is placed by
+  its context, and its
   context is the field: "the symbolic activation determines placement
   within conceptual space, but again, only relative to other concepts
   within the same order". A class is placed in this way like any other

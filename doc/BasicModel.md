@@ -332,13 +332,13 @@ extension of the sentence-concept"; "For kinds, a token implies a type. For
 mereology, a whole implies a part." A kind's extension is its stored members,
 reached through the sparse edge-graph ([Extend](Extend.md)).
 
-Because every concept, at any order, is a point placed by the contexts it
-occurs in, specific and general objects share **one conceptual space**: a single
-dictionary holds each concept as a *point*, and the relational graph is
-structure laid *over* that space, not a second space. The single-space claim is
-not a new assumption — it follows from grounding (symbols are a subtype of
-perceptual objects; see [Symbolic Space](#symbolic-space) below). One
-refinement matters: a concept's home in the space is its **point/atom**, *not*
+Every concept, at any order, is a point placed by the contexts it occurs in,
+and each order's concepts have **a conceptual space of their own** (Alec,
+2026-11-20: "the concepts at every order live in spaces with different
+geometries", "since it is not clear that the space of nouns, for example,
+should be constrained by the space of events"). A dictionary holds each
+concept as a *point*, and the relational graph is structure laid *over* those
+spaces, not a further space. One refinement matters: a concept's home in the space is its **point/atom**, *not*
 necessarily a convex region. Gärdenfors's convexity holds for *natural*
 concepts and is the **order-0 / extensional limit**, cleanest at the grounded
 base; **discontiguous, high-order** objects still live in the same space as

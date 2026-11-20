@@ -17,7 +17,7 @@ field of understanding. Stated by Alec on 2026-11-12; quotations are his.
   concepts, each with its trust on the two lanes, for and against.
   It is the symbolic activation at every order, tokens, their types and
   the types of those, and holds no grammatical operation
-  ([Reasoning](Reasoning.md#symbols-the-field-and-the-one-hypersphere)).
+  ([Reasoning](Reasoning.md#symbols-the-field-and-the-spaces-of-the-orders)).
 - **The field of understanding** is the field a sentence is left with when
   every operator of its tree has been extended. "It is non-conceptual
   understanding in that not all order-zero concepts are necessarily

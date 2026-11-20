@@ -9448,6 +9448,14 @@ Making a *new* kind where none was expected is left to MTM, which does it well.
 
 This takes the place of rule 67's table of gathered gradients: the candidate matrix is that table, with the entries read and not only counted.
 
+### 19.109 Alec: a conceptual space for each order; time is read as a sinusoid; the chooser is the network alone (2026-11-20)
+
+**A conceptual space for each order.** Asked (§23.D.2) whether his "the concepts at every order live in spaces with different geometries" withdraws his "single conceptual space" of 2026-10-22: "the second withdraws the first, since it is not clear that the space of nouns, for example, should be constrained by the space of events." *Decided.* Each order's concepts have a conceptual space of their own. The sentence of 2026-10-22 is out of the standing docs (`Architecture.md`, `Orders.md`, `Reasoning.md`, `BasicModel.md`) and the glossary says one space for each order. In the source one table holds every order's rows and a step of placement already moves a row only relative to rows of its own order; what is to be checked when rule 72 is tried is that nothing else compares codes across orders.
+
+**Time, where a network reads it.** "Please verify that any neurally-read temporal value should be sinusoidal (continuous), not incremental (ticks)." *Decided* (rule 64, amended). Whatever a learned reader takes that stands for time reaches it as a sinusoidal code, and never as a count, a number of ticks or a difference of ticks. *What it corrects in Claude's own text:* rule 64 had the comparator give "the distance in ticks, exact within the code's range, offered to the operators as a value they can weigh". The comparator gives how far back a stamp is as a sinusoidal code of that distance. The integer clock stays an integer for what is not learned: ordering, addressing, the naming of rows. *The verification he asks for* is a census of every learned reader in the source and the form in which each temporal value reaches it; it is running, and is recorded as §23.T.1.
+
+**The chooser.** "The Transform chooser should be MLP-only." *Decided* (rule 74). The linear score goes: `AnchorDotTransformChooser`, the key `transformChooser` and its default, and whatever only the linear form read (the anchors of each act). Every configuration gets the network. The 34 configurations that left the key out change what chooses in them, the XOR configurations of a stopping gate among them, so the pass that makes the change measures both gates and the lesson before and after and changes no bar.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10706,14 +10714,20 @@ chooses from. The old classes are not edited.
     - *A comparator.* They have a comparator that takes the present
       and a concept's stamp and gives how far back the concept is.
       A stamp is not rewritten as an age before they see it.
+    - *Sinusoidal wherever it is learned from* (Alec, §19.109:
+      "any neurally-read temporal value should be sinusoidal
+      (continuous), not incremental (ticks)"). What a learned reader
+      takes that stands for time reaches it as a sinusoidal code:
+      the present, a stamp, and the comparator's "how far back". The
+      integer is for what is not learned.
     - *A concept is opaque* (Alec, §19.91: "we should treat the
       concept as opaque always, so of course keep its parts
       together"). Its `.where` and its `.when` stay with it; a row
       promoted to a concept keeps its stamp.
     *Mine:* the comparator is one function over two codes that
-    gives the distance in ticks, exact within the code's range,
-    offered to the operators as a value they can weigh; what the
-    source has now is in §23.T, and the change is round 6's.
+    gives the code of their distance; what the source has now is in
+    §23.T and §23.T.1, and the change is round 6's. *Withdrawn:*
+    "the distance in ticks" (§19.109).
 
 65. *A slot of episodic memory* (Alec, §19.90: "Entry should be slot
     in episodic memory ( the idea is semantic memory). Most active
@@ -10913,6 +10927,14 @@ chooses from. The old classes are not edited.
     penalty (rule 67's measure); what offers one is co-occurrence at
     a place for a Pi and substitution at a place for a Sigma
     (§19.107); the weakest is forgotten when room is needed.
+
+74. *The chooser of acts is the network, and there is no other*
+    (Alec, §19.109: "The Transform chooser should be MLP-only"). The
+    linear score, one learned vector for each act, goes, with the
+    key that chose between the two and what only the linear form
+    read. *Why* (§19.106): a linear score weighs each thing it reads
+    by itself and cannot learn a choice that depends on two things
+    together.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -11229,7 +11251,9 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     an operator receive the present in that code. (d) The comparator
     gives the number of ticks between the present and a stamp,
     exactly, over stamps one tick back, a thousand back and a
-    million back. (e) A row promoted to a concept keeps its stamp.
+    million back, as the sinusoidal code of that distance; no
+    learned reader is given a count of ticks, by a test of what each
+    receives. (e) A row promoted to a concept keeps its stamp.
     (f) The code on the model is the encoder's code of the integer
     beside it after every advance of the clock.
 56. *The analysis from above is wired, over both towers* (rule 36;
@@ -12419,8 +12443,9 @@ which form of the where match is built.
       age before they see it (RowTime.relative_idea, age_band and
       their readers: say what each becomes).
     - A comparator: one function over the present and a stamp that
-      gives how far back the stamp is, in ticks, offered to the
-      operators as a value.
+      gives how far back the stamp is, as a sinusoidal code. No
+      learned reader takes a count of ticks or a difference of ticks
+      (§19.109); §23.T.1 lists what does today.
     - A concept keeps its .where and its .when; a row promoted to a
       concept keeps its stamp (MemoryConsolidation).
     Certificate 55. A change of what the chooser reads changes what

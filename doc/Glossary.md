@@ -187,8 +187,12 @@ lanes, with a place and a time. It is the positive unit hypercube. No meaning
 is stored in it. In the source it is held by `PartSpace` and `WholeSpace`.
 
 **Conceptual space.** The space of meanings. A concept's meaning is a point
-of it, and so is an idea, the meaning of a whole sentence. Its values are
-signed. In the source: `ConceptualSpace`.
+of it, and so is an idea, the meaning of a whole sentence. There is one for
+each order: "the concepts at every order live in spaces with different
+geometries", "since it is not clear that the space of nouns, for example,
+should be constrained by the space of events" (Alec, 2026-11-20). A concept's
+value in a reading is signed; the coordinates of its meaning are held at zero
+or above, in pairs of poles. In the source: `ConceptualSpace`.
 
 **Symbolic space.** The symbols, taken together. Percepts and concepts live in
 topological spaces; symbols do not (Alec, 2026-11-20). It "is a set and a space of
@@ -268,7 +272,9 @@ its code is made in one place and held on the model beside it, where every
 reader reads it. A concept's `.when` is the stamp of that clock at the
 concept's moment, and it stays with the concept, which is opaque. The chooser
 and the operators are given the present in the same code, with a *comparator*
-that tells "how far back in history the concept they have recalled is".
+that tells "how far back in history the concept they have recalled is". Any
+temporal value a network reads is "sinusoidal (continuous), not incremental
+(ticks)" (Alec, 2026-11-20); the integer is for what is not learned.
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most

@@ -355,12 +355,13 @@ rules, through `infer`. Location keeps its other readers:
 `bind`'s content term, MTM's candidate matching and the
 reconstruction bank's selection.
 
-**One conceptual space (Alec, 2026-10-22).** Every concept is placed in
-conceptual space by its context, concrete and abstract alike; a raised class
-is placed by its context like any other concept. The concepts of each order
-lie in a geometry of their own (Alec, 2026-11-20: "the concepts at every
-order live in spaces with different geometries"), so a symbol's cone is
-tested against the concepts of one order alone. Forms and meanings never
+**A conceptual space for each order (Alec, 2026-11-20).** Every concept is
+placed by its context, concrete and abstract alike, and a raised class is
+placed by its context like any other concept; but "the concepts at every
+order live in spaces with different geometries", "since it is not clear that
+the space of nouns, for example, should be constrained by the space of
+events". Each order's concepts have a conceptual space of their own, and a
+symbol's cone is tested against the concepts of one order alone. Forms and meanings never
 share a metric: placement never reads the percept cube
 ([SymbolFirewall](SymbolFirewall.md)).
 

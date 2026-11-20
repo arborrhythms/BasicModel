@@ -226,7 +226,8 @@ share a class are drawn together among words, and classes that share words
 among classes; a word's degree of membership is its nearness to the class's
 words, never to the class's own position.
 A kind of thing is formed by the same fold with explanation over meaning
-coordinates as the evidence. Same machinery, one conceptual space.
+coordinates as the evidence. Same machinery, in the conceptual space of the
+order concerned.
 
 Two definitions of "noun" caused the trouble in the literature —
 thing-word versus NP-filler. They belong to different ladders: *thing* is
@@ -442,18 +443,15 @@ intersection that is its invariant or the union that is its extension, is
 kept open in
 [FutureWork](FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21).
 
-**One conceptual space, not strata (Alec, 2026-10-22).** "I am not convinced
-we should sort by stratum, which is good for LTM. Here we are connecting
-priming across orders (good), and the more I think about it, the more I am
-in favor of a single conceptual space (so concrete and abstract concepts all
-intermingled)." Strata remain the structure of LTM: LTM0 occurrences, LTM1
-relations, the derived LTM2. In conceptual space one `similarity_codebook`
-holds every order's rows. The context that places a row holds every order,
-but a step moves a row only relative to rows of its own order (Placement,
-below). The concepts of each order so lie in a geometry of their
-own: "the concepts at every order live in spaces with different geometries"
-(Alec, 2026-11-20), and a symbol's cone is tested against one order's
-concepts alone. Crowding is answered by the placement objective's
+**A conceptual space for each order (Alec, 2026-11-20).** "The concepts at
+every order live in spaces with different geometries", "since it is not
+clear that the space of nouns, for example, should be constrained by the
+space of events." Each order's concepts are placed in a space of their own:
+the context that places a row holds every order, since priming connects
+across orders, but a step moves a row only relative to rows of its own order
+(Placement, below), and a symbol's cone is tested against one order's
+concepts alone. Strata remain the structure of LTM as well: LTM0
+occurrences, LTM1 relations, the derived LTM2. Crowding is answered by the placement objective's
 negatives. What §9 keeps: all symbols in the one mereological tree, the Part
 edges as the record of membership, and membership read by edge, not by
 distance.
