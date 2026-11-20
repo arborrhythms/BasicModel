@@ -237,3 +237,22 @@ def test_60_4_on_the_lesson_beside_what_mtm_makes(tmp_path, monkeypatch):
                    implicit_pairs=sorted(pairs), same=sorted(pairs & after), new=sorted(pairs - after)))
     finally:
         model.End(); model.symbolSpace.soft_reset()
+
+
+def test_60_2_a_pair_is_offered_from_what_the_sentence_held():
+    """A word the omission withheld inside a look's extent is present at the
+    look for the Pi's candidates, at one: a pair is offered from what the
+    sentence held, not from what was left once a word was taken out."""
+    from types import SimpleNamespace
+    from CandidateGrowth import withheld_words
+    from Omission import Draw
+    words = {'alpha': 7, 'gamma': 9}
+    owner = SimpleNamespace(interpret=SimpleNamespace(word_for_form=words.get))
+    forms = torch.tensor([[[False, False], [True, True]]])
+    targets = dict(draw=Draw(forms.any(-1), forms, torch.zeros(1, dtype=torch.long)),
+                   word_bytes=((b'alpha', b'gamma'),))
+    model = SimpleNamespace(_omission_targets=targets, _concept_owner=lambda: owner)
+    assert withheld_words(model, torch.tensor([[True, True]])) == [{9: 1.}]
+    assert withheld_words(model, torch.tensor([[True, False]])) == [{}]
+    model._omission_targets = None
+    assert withheld_words(model, torch.tensor([[True, True]])) == [{}]

@@ -124,15 +124,45 @@ def sigma_step(owner, present, expected, batch):
 
 
 @torch.no_grad()
-def at_look(model, field):
-    """The candidates' step at one look, in training."""
+def withheld_words(model, extent):
+    """The concepts of the words the omission withheld inside a look's
+    extent (``extent`` ``[B, W]``, the word places the look holds), each at
+    one: ``[{cid: 1.}]`` for each stream. What the sentence held, though
+    the stem the look read had them taken out."""
+    targets = getattr(model, '_omission_targets', None)
+    if targets is None or extent is None:
+        return [{} for _ in range(len(extent) if extent is not None else 0)]
+    owner = model._concept_owner()
+    hidden = targets['draw'].forms.any(-1)
+    words = targets['word_bytes']
+    held = []
+    for b in range(len(extent)):
+        row = {}
+        width = min(extent.shape[1], hidden.shape[1])
+        for w in (extent[b, :width] & hidden[b, :width].to(extent.device)).nonzero().flatten().tolist():
+            if b < len(words) and w < len(words[b]):
+                raw = words[b][w]
+                form = raw.decode('latin1') if isinstance(raw, bytes) else str(raw)
+                cid = owner.interpret.word_for_form(form.strip())
+                if cid is not None:
+                    row[int(cid)] = 1.
+        held.append(row)
+    return held
+
+
+def at_look(model, field, extent=None):
+    """The candidates' step at one look, in training. A pair is offered and
+    weighed from what the sentence held at the look: its field, and the
+    words the omission withheld inside the look's ``extent`` (``[B, W]``)."""
     if not (getattr(model, 'training', False) and getattr(model, '_sentence_training', True)) or field is None:
         return
     owner = model._concept_owner()
     if getattr(owner, 'mtm', None) is None:
         return
     expected = getattr(owner, '_expected_knowing', None)
+    held = withheld_words(model, extent) if extent is not None else None
     for batch in range(field.evidence.shape[1]):
         present = presence(owner, field, batch)
-        pi_step(owner, present)
+        sentence = present if not held or not held[batch] else {**present, **held[batch]}
+        pi_step(owner, sentence)
         sigma_step(owner, present, expected, batch)

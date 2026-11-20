@@ -156,7 +156,10 @@ class Looks:
             # Candidate entries of the Pi above order zero and of the Sigma
             # take their step from what the look holds together.
             from CandidateGrowth import at_look
-            at_look(self.model, field)
+            words = self.model._attention_spans[:, :state.spans.shape[1]].to(interval.device)
+            extent = ((words[..., 0] >= interval[:, None, 0]) & (words[..., 1] <= interval[:, None, 1])
+                      & (words[..., 1] > words[..., 0]) & rows[:, None])
+            at_look(self.model, field, extent)
             self.fields.append(dict(field=field, where=interval.detach().clone(), active=rows.clone(),
                                     surprise=surprise))
             index, allowed = interpretation_at(state,slot)
