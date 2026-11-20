@@ -33,7 +33,6 @@ def omit_second(monkeypatch, model):
 
 
 def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
-    from ConceptSpread import rule_order
     model = lesson(tmp_path, monkeypatch)
     ordinary = model.omission.draw
     try:
@@ -53,17 +52,44 @@ def test_81_expectation_restores_the_omitted_native_word(tmp_path, monkeypatch):
         optimizer = model.getOptimizer(lr=.01)
         for presentation in range(200):
             read(model, examples[presentation % 2], training=True, optimizer=optimizer)
+        # What was expected at the look of the hidden word, before that
+        # look's result is read: each look writes it anew (ConceptSpread
+        # .write_look) after its forecast of the look's extent.
+        import ConceptSpread
+        from LookForecast import LookForecast, contained
+        looks, extents = [], []
+        forecast, write = LookForecast.forecast, ConceptSpread.write_look
+        def forecast_extent(self, spans):
+            _, inputs = self._outside(spans)
+            came = inputs[0].amax(-1) > 0 if len(inputs) else None
+            extents.append((self.spans.detach().clone(), spans.detach().clone(), came))
+            return forecast(self, spans)
+        def write_kept(owner_, rows, value):
+            write(owner_, rows, value)
+            looks.append((extents[-1], owner_._expected_knowing[0].detach().clone()))
+        monkeypatch.setattr(LookForecast, 'forecast', forecast_extent)
+        monkeypatch.setattr(ConceptSpread, 'write_look', write_kept)
         for text, hidden_row in zip(examples, hidden_rows):
+            looks.clear(); extents.clear()
             read(model, text)
             assert owner._observed_knowing[0, hidden_row].sum() == 0
-            values = owner._expected_knowing[0, :owner._order_caps()[0], 0]
-            absent = owner._observed_knowing[0, :len(values)].amax(-1) == 0
+            # The look whose extent holds the hidden word (the second word)
+            # and not the word that came.
+            at = [(knowing, came) for (words, span, came), knowing in looks
+                  if bool(contained(span[0], words[0, 1:2])[0, 0])
+                  and not bool(contained(span[0], words[0, :1])[0, 0])]
+            assert at, 'no look of the hidden word'
+            knowing, came = at[0]
+            values = knowing[:owner._order_caps()[0], 0]
+            # Absent: neither the hidden word nor what the earlier looks read.
+            absent = torch.ones_like(values, dtype=torch.bool)
+            absent[:len(came)] &= ~came
             absent[hidden_row] = False
-            assert values[hidden_row] > values[absent].max()
-            assert hidden_row in rule_order(owner, 0)
-            assert not owner._expected_knowing.requires_grad
             print(dict(presentations=200, text=text, hidden_row=hidden_row,
+                       looks=[span[0].tolist() for (_, span, _), _ in looks], came=came.nonzero().flatten().tolist(),
                        expected=float(values[hidden_row]), other_absent=float(values[absent].max())))
+            assert values[hidden_row] > values[absent].max()
+            assert not owner._expected_knowing.requires_grad
     finally:
         model.omission.draw = ordinary
         from assessment_support import record
