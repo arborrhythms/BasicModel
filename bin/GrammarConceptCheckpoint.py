@@ -185,6 +185,8 @@ def prepare(model, state, structural, vocab, training=None):
         parts = layer['parts']
         for matrix in parts.get('matrices', {}).values():
             matrix['rows'] = [inverse[row] for row in matrix['rows']]
+        if 'brought' in allocator:
+            allocator['brought'] = {percept: inverse[row] for percept, row in allocator['brought'].items()}
         if 'order_zero_members' in allocator:
             allocator['order_zero_members'] = {(inverse[row], percept, negated): weight
                 for (row, percept, negated), weight in allocator['order_zero_members'].items()}

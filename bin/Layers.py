@@ -5179,7 +5179,7 @@ class SparseSigmaLayer3(Layer):
     ``count`` how many are written. The compressed rows (the entries of each
     concept) and the index of columns (the entries reading each row) are
     kept beside them (:class:`_EntryIndex`): an addition costs a constant
-    amortized, and a read costs the entries of the concepts it reads.
+    amortized, and a read costs the entries on the rows present.
     """
 
     def __init__(self, nInput, nOutput, entries):
@@ -5283,7 +5283,8 @@ class SparseSigmaLayer3(Layer):
         """Each of ``rows``' value (``-1`` reads zero), ``[R, ...]``, from the
         options ``options`` ``[P, ..., 2]`` of rows ``inputs`` ``[P]`` (the
         Not's). A row not among ``inputs`` reads zero. It costs the entries
-        of ``rows``, found by the compressed rows."""
+        on the rows present, found by the index of columns: asking every
+        concept costs what the present rows reach."""
         device = options.device
         inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape(-1)
         rows = torch.as_tensor(rows, dtype=torch.long, device=device).reshape(-1)
@@ -5292,20 +5293,27 @@ class SparseSigmaLayer3(Layer):
             return options.new_zeros(shape)
         valid = (rows >= 0) & (rows < self.nOutput)
         wanted, index = torch.unique(rows.clamp(0, self.nOutput - 1), return_inverse=True)
-        entries, slot = self._rows.gather(wanted.to(self._rows.order.device))
+        # Each present row once, at its first place in ``inputs``.
+        ordered, by = torch.sort(inputs, stable=True)
+        first = torch.ones_like(ordered, dtype=torch.bool)
+        first[1:] = ordered[1:] != ordered[:-1]
+        first &= (ordered >= 0) & (ordered < self.nInput)
+        present, place = ordered[first], by[first]
+        if not len(present):
+            return options.new_zeros(shape)
+        entries, slot = self._columns.gather(present.to(self._columns.order.device))
         entries, slot = entries.to(device), slot.to(device)
-        # The position in ``inputs`` of each entry's row, by a search of the
-        # sorted inputs: no vector as long as the inputs' capacity.
-        ordered, by = torch.sort(inputs)
-        read = self.entry_input.to(device).index_select(0, entries)
-        at = torch.searchsorted(ordered, read).clamp_max(len(ordered) - 1)
-        held = ordered[at] == read
-        entries, slot, read = entries[held], slot[held], by[at[held]]
+        # The place among the concepts asked of each entry's concept, by a
+        # search of the sorted concepts asked.
+        concept = self.entry_row.to(device).index_select(0, entries)
+        at = torch.searchsorted(wanted, concept).clamp_max(len(wanted) - 1)
+        held = wanted[at] == concept
+        entries, at, read = entries[held], at[held], place[slot[held]]
         n = len(entries)
         value = self.value.index_select(0, entries.to(self.value.device)).to(options)
         value = value.reshape(n, *([1] * (options.ndim - 2)))
         terms = _EntryRead.apply(value.expand(n, *options.shape[1:-1]), options.index_select(0, read))
-        total = options.new_zeros(len(wanted), *shape[1:]).index_add(0, slot, terms)
+        total = options.new_zeros(len(wanted), *shape[1:]).index_add(0, at, terms)
         y = torch.tanh(total).index_select(0, index)
         return y * valid.reshape(-1, *([1] * (y.ndim - 1))).to(y)
 
@@ -6305,6 +6313,7 @@ class ConceptAllocator:
         self.formal_arguments = {}       # declared argument -> ordinary higher-order concept
         self.declared_classes = {}       # "words", "objects" -> declared class concept
         self.order_zero_members = ConceptMembers()  # the percepts each order-zero concept started from
+        self.brought = {}                # basic percept -> the order-zero concept its nomination brought
         self.order_from_row = None       # construction-owned physical block read
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary

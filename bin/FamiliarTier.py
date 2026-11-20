@@ -942,7 +942,7 @@ def promote_candidates(owner):
                     # Its members now have a holder: their stored against
                     # lanes are written again.
                     owner.basic_percepts.follow(p for p, in percepts)
-                    owner.add_concept_feature(row, 'bp', percept, 1.)
+                    owner.bring_concept(percept, row)
             elif literal[0] == 'ps':
                 # The existing field-case curriculum witnesses an entire
                 # native run. Its parts/wholes become one basic percept at
@@ -951,7 +951,7 @@ def promote_candidates(owner):
                 wholes = owner._model.wholeSpace.property_rows_for_bytes(raw)
                 percept = owner.basic_percepts.reserve(literal[1], wholes)
                 owner.basic_percepts.promote(percept)
-                owner.add_concept_feature(row, 'bp', percept, 1.)
+                owner.bring_concept(percept, row)
             else:
                 owner.add_concept_feature(row, literal[0], literal[1], 1.)
         result.append(cid)

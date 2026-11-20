@@ -14925,14 +14925,18 @@ class ConceptualSpace(Space):
             self.order_zero_not.make(sigma, row, percept, weight=1.)
 
     def concept_of_basic_percept(self, percept):
-        """The order-zero concept a nominated row brought, or ``None``: the
-        lowest-numbered order-zero concept recorded with the row as a member
-        (the row's own concept is allocated when the row is nominated, before
-        any concept made later takes the row as a member). Other concepts may
+        """The order-zero concept a nominated row brought, or ``None``, as
+        recorded at its nomination (:meth:`bring_concept`). Other concepts may
         read the row too (``order_zero.rows_reading``); this names only the
         one the row started."""
-        rows = _concept_alloc_of(self).order_zero_members.rows_of(percept)
-        return rows[0] if rows else None
+        return _concept_alloc_of(self).brought.get(int(percept))
+
+    def bring_concept(self, percept, row):
+        """Record that the nomination of basic percept ``percept`` brought the
+        order-zero concept ``row``, and start the concept on the row at one.
+        A row brings one concept, the first recorded."""
+        _concept_alloc_of(self).brought.setdefault(int(percept), int(row))
+        return self.add_concept_feature(row, 'bp', percept, 1.)
 
     def concept_percepts(self, row):
         """The basic percepts an order-zero concept was started from."""
@@ -15752,7 +15756,10 @@ class ConceptualSpace(Space):
                 # same word joins that column.
                 percept = self.basic_percepts.reserve(part_ids, whole_ids, word=concept_id)
                 self.basic_percepts.promote(percept)
-                self.add_concept_feature(c_row, 'bp', percept, 1., negated=bool(pole))
+                if pole:
+                    self.add_concept_feature(c_row, 'bp', percept, 1., negated=True)
+                else:
+                    self.bring_concept(percept, c_row)
                 words = alloc.declared_classes.get('words')
                 words_row = None if words is None else self._csw_row_of(words)
                 if words_row is not None and (words_row, c_row) not in alloc.layer()._index:

@@ -3944,7 +3944,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
-            "declared_classes", "order_zero_members",
+            "declared_classes", "order_zero_members", "brought",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4111,7 +4111,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
-            "declared_classes", "order_zero_members",
+            "declared_classes", "order_zero_members", "brought",
         )
         for name in fields:
             if name not in saved:
@@ -4255,6 +4255,14 @@ class BaseModel(Mereology, nn.Module):
                 alloc.order_zero_members.clear()
                 alloc.order_zero_members.update(
                     layer.saved_feature_record(blob.get("parts")))
+        if "brought" not in saved:
+            # A checkpoint from before the record of nominations: a row's
+            # own concept was allocated with it, before any concept made
+            # later took the row as a member, so it is the lowest recorded.
+            alloc.brought.clear()
+            for row, percept, negated in sorted(alloc.order_zero_members):
+                if not negated:
+                    alloc.brought.setdefault(percept, row)
 
         # Migration is deferred until the common store's semantic rows load.
         if saved.get('word_obj_meta') or saved.get('interpretations'):
