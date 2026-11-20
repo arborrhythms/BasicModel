@@ -115,6 +115,16 @@ them into one signed value; a Sigma reads no pair.
 A concept in a reading is ternary. On values between the three, the layers
 take products and the squashed sum.
 
+**Intersection, union.** The least and the greatest of graded values. They
+are operations of the basic level, below symbols (Alec, 2026-11-19: "I like
+the intersection/union operations as subsymbolic (basic level) and
+conjunction/disjunction at the symbolic level").
+
+**Conjunction, disjunction.** The symbolic level's two: a conjunction is a row
+of a Pi, which needs all of its members, and a disjunction is a column of a
+Sigma, which any member may be enough for. There is no third pair named `and`
+and `or`.
+
 **Quaternary logic.** The logic of two lanes: true, false, neither, and both.
 Evidence is quaternary. "Both" is never a state of one concept: it stands
 across the basic percepts of one reading, one row carrying a property for and
@@ -241,3 +251,10 @@ on both the what/where of conceptual space, and carries those selected
 percepts into the activation space on all existing concepts" (Alec,
 2026-11-19). In the model the filter is a number from 0 to 1 at each percept
 of the sentence, and the first look of a sentence takes all of it at once.
+
+**Analysis, synthesis.** Synthesis is the way up: the Pi builds rows from
+parts and properties, and the Sigma builds concepts from rows. Analysis is
+the way down, and what drives it is conceptual attention: a request over
+concepts carried down onto the what and the where, "over both particles and
+properties" (Alec, 2026-11-19). It reads the same matrices as the way up, by
+their transposes, and has no weights of its own.

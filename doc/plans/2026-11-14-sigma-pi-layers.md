@@ -9011,6 +9011,16 @@ It is item 1.5's, recorded there.
 
 *Decided* (rule 64, certificate 55 (f)). The clock is one integer on the model. Its sinusoidal code is made once, when the clock advances, and is held on the model next to the integer. The architecture reads the present there: the chooser, the operators, and whatever stamps a `.when`. No reader encodes the clock for itself. In the source today the nearest thing is the shared `model.when_encoding` with its mirror of the clock (§23.T); round 6's step 16 makes it the one place.
 
+### 19.93 Alec: intersection and union at the basic level, conjunction and disjunction at the symbolic; top-down conceptual attention drives the analysis (2026-11-19)
+
+His answers to the two points left open with him.
+
+**On graded values, the grammar's least and greatest against the Pi's product** (open point 8 of §21). "I like the intersection/union operations as subsymbolic (basic level) and conjunction/disjunction at the symbolic level. I don't think that leaves room for an and/or, but in general we can expose different operations to the languages and see what UG picks." *Decided.* The two are two things at two levels and are not made to agree. Intersection and union, the least and the greatest of graded values, are operations of the basic level, below symbols. Conjunction and disjunction are the symbolic level's: the Pi, a row that needs all of its members, and the Sigma, a concept that any member may be enough for. No third pair named `and` and `or` stands beside them. More than one operation may be offered to a grammar, and which it uses is learned.
+
+**On rule 57, the Sigma driving the wholes half of a code.** "We want top-down conceptual attention, I think that can drive the what/where pathways over both particles and properties. The sigma driving wholes (properties) was an early version of that, but we need something driving that analysis top-down just like synthesis drives bottom-up part construction. Please make sure that we have the wired version thereof, as with the part construction." *Decided.* Rule 57's Sigma is withdrawn as the early version. What drives the analysis from above is conceptual attention: the request over concepts, carried down onto the what and the where, over both towers, the parts and the properties. It is the counterpart of the synthesis, which builds rows upward from parts.
+
+*Claude's reading of "the wired version", to be confirmed:* computed by the structure's own matrices and no others. The way up is the first Pi's entries over a row's parts and its properties, then the Not, then the Sigma. The way down is those same entries read by their transposes: a requested concept gives its share to its rows through the Sigma's weights and the Not, and each row gives its share to every member, the parts on the part tower and the properties on the property tower, and to its where. No second set of weights is learned for the way down, and nothing is looked up on the host. Rule 36 has this for a row's activity and its where; it is now said for both towers (rule 36, certificate 56; round 6, step 3). Round 5's trial of rule 57 goes.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9732,7 +9742,18 @@ chooses from. The old classes are not edited.
     zero since it pulls back over PI, but it can reinforce either
     positive or negative evidence"): salience is never below zero,
     and a request may make salient what tells for a wanted concept
-    or what tells against it.
+    or what tells against it. *Both towers, and wired* (Alec,
+    §19.93: "top-down conceptual attention ... can drive the
+    what/where pathways over both particles and properties ...
+    Please make sure that we have the wired version thereof, as
+    with the part construction"): the map passes the first Pi to
+    every member of a row, its parts on the part tower and its
+    properties on the property tower, each on its lane, and to its
+    where. It is the analysis from above, as the Pi's rows are the
+    synthesis from below, and it reads the same entries by their
+    transposes: no weight of its own, and no lookup on the host.
+    Since rule 63 it passes the Not between the Sigma and the Pi,
+    which gives each of a row's two lanes its share.
 37. *The returned set* (Alec, §19.45; §19.49, answer 3; §19.53). The
     way up is run again on the bank with the look's activity. What it
     gives, each concept at its token, is the returned set. The
@@ -10024,12 +10045,18 @@ chooses from. The old classes are not edited.
     discriminate"; the whole that can is one driven by the concepts
     (rule 57), which says nothing at a word's first readings, so the
     part is needed meanwhile.
-57. *Wholes driven by the concepts* (Alec, §19.70, §19.73: "a
+57. *Withdrawn as a Sigma on the wholes half; the analysis from above
+    is conceptual attention* (Alec, §19.93: "The sigma driving wholes
+    (properties) was an early version of that, but we need something
+    driving that analysis top-down just like synthesis drives
+    bottom-up part construction"). What rule 57 was for is done by
+    rule 36 over both towers. As it was written: *Wholes driven by
+    the concepts* (Alec, §19.70, §19.73: "a
     sigma being driven by the downward conceptual projection ...
     synthesis on the way up and analysis on the way down"). Not
     built in round 3c. A conceptual property is one more row of the
     table of wholes, written by the downward projection of rule 30;
-    round 5 tries it in tests first (*mine*). "Every other part of
+    round 5 tries it in tests first (*mine*; withdrawn). "Every other part of
     the catalog is evidence against" is withdrawn (Alec, §19.73):
     only a form's strict wholes in the part tower tell against it.
 
@@ -10542,6 +10569,17 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     million back. (e) A row promoted to a concept keeps its stamp.
     (f) The code on the model is the encoder's code of the integer
     beside it after every advance of the clock.
+56. *The analysis from above is wired, over both towers* (rule 36;
+    Alec, §19.93). (a) A request for a word's concept makes salient
+    the events of its row's parts and the events that carry its
+    row's properties, each by the entry of the first Pi that reads
+    it on the way up. (b) A request for a concept that reads a
+    property alone makes salient the events that carry the property
+    and no others. (c) The map reads no parameter but those of the
+    way up, by a test of the source's names, and makes no read of a
+    tensor on the host. (d) Evidence against: a requested concept
+    with a Not entry on a row gives its share to that row's against
+    lane.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -10664,7 +10702,11 @@ section:
    (§19.12; Alec: "We can spec it later"). Built so.
 8. *On graded readings* the layers give the product logic and the
    grammar's field operators the least and the greatest (§19.13).
-   They are left to differ.
+   *Closed by Alec (§19.93):* they are two things at two levels.
+   Intersection and union belong to the basic level; conjunction
+   and disjunction, the Pi and the Sigma, to the symbolic level;
+   there is no third pair `and` and `or`. Operations may be offered
+   to a grammar and what it uses is learned.
 9. *Whether `data/shamatha.grammar` keeps its `not` rule* (§19.15).
    It is kept.
 10. *Whether the basic level's against lane is fed by perceived
@@ -11434,17 +11476,9 @@ Round 5 of item 1.7. Rules 23 to 28, 30 and 31 of §21. Certificates
    that §19.23 and §19.25 name. Where 25 and 26 say "learned" they
    are certificates of learning.
 
-7. Wholes driven by the concepts (rule 57; Alec, §19.73), tried in
-   tests only, as an extension of test/code_trial.py's last toy and
-   on the lesson's model: a conceptual property is one more row of
-   the table of wholes, and a percept's wholes half takes it from
-   the downward projection of the concepts that hold of it (step
-   3's way down), through weights of zero or above. Return: whether
-   it tells apart words that their parts leave alike (the tie of
-   `that` and `What`); whether a class inside another comes to lie
-   inside it; what a word's wholes are before its concepts are
-   learned; and what you would build. Nothing in bin/ reads it in
-   this round.
+7. Withdrawn (Alec, §19.93): rule 57's trial of a Sigma driving
+   the wholes half. The analysis from above is round 6's salience
+   map over both towers (step 3 there, certificate 56).
 
 Run: the new test file and the testpoints; every test file that
 names what you changed; both stopping gates; the lesson's sixteen
@@ -11483,6 +11517,15 @@ which form of the where match is built.
    by its weights, onto each event's activity and onto its band.
    test/looks_round2.py has it both ways (salience,
    salience_by_transposes); the transposes are what is built.
+   Over both towers, wired (Alec, §19.93; rule 36): from a
+   requested concept through the Sigma's weights and the Not
+   (rule 63) to its rows, and through the first Pi's own entries
+   to every member of a row, its parts and its properties, each on
+   its lane, and to its where. No weight but those of the way up,
+   and no read on the host. Certificate 56. Say where the first
+   Pi's entries over a row's properties are held today
+   (BasicPercepts' wholes, PerceptProperties) and whether the map
+   reaches them by the same matrix the way up reads.
 4. A look (rules 34, 37, 39 and 47), as round 2 tried it
    (look and where_match of test/looks_round2.py). An event's
    activity is its share capped at its own activity. A reading's
