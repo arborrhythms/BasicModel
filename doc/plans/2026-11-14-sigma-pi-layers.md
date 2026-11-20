@@ -9229,10 +9229,11 @@ chooses from. The old classes are not edited.
    Sigma, the signed number is read. *Since rule 63* (which withdraws
    rule 59): the Sigma is monotone. Each entry has one weight, held
    at zero or above, on the one signed value the Not gives for its
-   input; the gradient cannot carry a weight through zero. A Not
-   entry is an entry of the Not and not a weight below zero of the
-   Sigma: it exchanges that input's pair for that concept, and the
-   Sigma's weight on it is again at zero or above.
+   input. A Not entry is an entry of the Not and not a weight below
+   zero of the Sigma: it exchanges that input's pair for that
+   concept, and the Sigma's weight on it is again at zero or above.
+   The gradient may carry an entry through zero, which makes it a
+   Not entry (§19.91); the weight, its size, is never below zero.
 4. *The cycle* (Alec, §18.25, as amended by rules 20, 21, 26 and
    63). At an order with $n$ concepts: $n$ signed values, stored as
    $2n$ unsigned lanes; the rows above that MTM has nominated read
@@ -11353,11 +11354,11 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    meta concept, and not at a concept's allocation.
 4. The cycle above order zero (rules 4, 11, 12 and 63):
    the Not joins each symbol's pair into one signed value, for less
-   against, and SigmaLayer3, sparse, as compressed rows, reads those
-   signed values with weights held at zero or above. A Not entry is
-   an entry of the Not (the pair read exchanged), never a weight
-   below zero. They are the Not and the Sigma of order zero, the
-   same two classes.
+   against, and the sparse Sigma reads those signed values with
+   weights at zero or above. A Not entry is an entry of the Not
+   (the pair read exchanged), never a weight below zero. They are
+   the Not and the Sigma of order zero, the same two classes
+   (NotLayer3, SparseSigmaLayer3; §23.4.1).
    The least and the greatest of SparseLayer.fold_presence go above
    order zero, and SparseLayer._fold_weights with them
    (_concept_rung_presence in bin/Spaces.py, FieldProjection.close).
@@ -11404,11 +11405,14 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    first pass and withdrawn). At every order: the Pi gives each row
    its two values; the Not gives one signed value for each row, for
    less against, and its entries exchange a row's pair for one
-   concept; the Sigma reads the signed values with weights held at
-   zero or above, which the gradient cannot carry through zero. A
-   Not entry is made by the Not's teaching and never by the Sigma's
-   gradient. A concept's own value stays one signed number, and both
-   is two concepts. Certificate 51 as restated.
+   concept; the Sigma reads the signed values with weights at zero
+   or above. An entry's size is the Sigma's weight and its sign is
+   the Not's; the gradient may carry an entry through zero, which
+   makes it a Not entry (Alec, §19.91), and a declared Not member
+   makes one. A concept's own value stays one signed number, and
+   both is two concepts. Certificate 51 as restated. Built at order
+   zero (§23.4.1: NotLayer3, SparseSigmaLayer3); above order zero
+   it is the same two classes.
 0. Before the steps below, in the pass that builds the Sigma above
    order zero (rule 62; Alec, §19.89): the Sigma of order zero
    becomes that same Sigma. It reads the one signed value that the
