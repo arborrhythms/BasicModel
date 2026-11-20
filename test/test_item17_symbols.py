@@ -120,24 +120,43 @@ def test_51b_with_no_not_entry_raising_a_row_never_lowers_a_concept():
         assert bool((sigma(not_(raised), range(rows), range(concepts)) >= y - 1e-7).all())
 
 
-def test_51c_the_not_gives_for_less_against():
-    """(c) A row read for gives 1, read against -1, read both 0; read
-    through a Not entry, the opposite."""
-    signed = NotLayer3(1)(torch.tensor([[[1., 0.], [0., 1.], [1., 1.]]]))
-    print(dict(read_for=float(signed[0, 0]), read_against=float(signed[0, 1]), read_both=float(signed[0, 2])))
-    assert signed[0].tolist() == [1., -1., 0.]
-    assert NotLayer3.exchange(signed, torch.tensor(-1.))[0].tolist() == [-1., 1., 0.]
+def test_51c_the_not_offers_the_value_and_the_not_value():
+    """(c) The Not offers each row two options: its value, for less
+    against (read for 1, read against -1, read both 0), and its not-value,
+    the pair exchanged (-1, 1, 0). An entry at or above zero reads the
+    value, one below zero the not-value."""
+    options = NotLayer3(1)(torch.tensor([[[1., 0.], [0., 1.], [1., 1.]]]))
+    print(dict(value=options[0, :, 0].tolist(), not_value=options[0, :, 1].tolist()))
+    assert options[0, :, 0].tolist() == [1., -1., 0.]
+    assert options[0, :, 1].tolist() == [-1., 1., 0.]
+    assert NotLayer3.choose(options, torch.tensor(1.))[0].tolist() == [1., -1., 0.]
+    assert NotLayer3.choose(options, torch.tensor(-1.))[0].tolist() == [-1., 1., 0.]
 
 
-def test_51d_a_not_entry_is_made_by_the_gradient_and_by_omission():
-    """(d) A concept started on its row (a for entry at one), taught to be
-    present where the row is read against and absent where it is read for,
-    comes by the gradient alone to read the row through a Not entry: its
-    entry is carried through zero, and its weight grows from there. With one
-    signed value for the row it cannot read zero on one side and one on the
-    other: it settles between, the two readings each other's opposite. And
-    an omission makes Not entries, with no step of the gradient: in "A
-    alone, not A with X", on X and AX, so X alone reads below zero."""
+def test_51c_a_concept_of_presence_and_one_of_absence_over_one_row():
+    """Two concepts over one row: one reads its value, one its not-value,
+    and both stand; neither row nor concept is limited to one of the other."""
+    not_, sigma = NotLayer3(2), SparseSigmaLayer3(2, 3, 8)
+    sigma.add(0, 0)
+    not_.make(sigma, 1, 0)
+    sigma.add(2, 0), sigma.add(2, 1)
+    lanes = torch.tensor([[[1., 0.]], [[1., 0.]]])
+    y = sigma(not_(lanes), [0, 1], [0, 1, 2])[:, 0]
+    t = float(torch.tanh(torch.tensor(1.)))
+    assert y[0].item() == pytest.approx(t) and y[1].item() == pytest.approx(-t)
+    assert y[2].item() == pytest.approx(float(torch.tanh(torch.tensor(2.))))
+    assert sigma.rows_reading(0) == [0, 1, 2]
+
+
+def test_51d_a_not_entry_is_made_by_the_gradient():
+    """(d) A concept started on its row (an entry on its value, at one),
+    taught to be present where the row is read against and absent where it
+    is read for, comes by the gradient alone to read the row's not-value:
+    its entry is carried through zero, and its weight grows from there. The
+    value and the not-value of one row are each other's opposite, so it
+    cannot read zero on one side and one on the other: it settles between,
+    the two readings each other's opposite. A Not entry is otherwise made
+    only by a declared Not member (``NotLayer3.make``)."""
     not_, sigma = NotLayer3(1), SparseSigmaLayer3(1, 1, 1)
     sigma.add(0, 0)
     lanes = torch.tensor([[[1., 0.], [0., 1.]]])  # read for, read against
@@ -153,25 +172,9 @@ def test_51d_a_not_entry_is_made_by_the_gradient_and_by_omission():
         optimizer.step()
     after = entry()
     print(dict(before=before, after=after))
-    # One signed value for the row: the concept reads the row read for as
-    # the opposite of the row read against, so it settles between the two
-    # targets, present where the row is read against and denied where it
-    # is read for.
     assert after['entry'][0][2] and after['weight'] > 0
     assert after['reads'][1] > 0 > after['reads'][0]
-    # The omission: a concept with for entries on A, X and AX (rows 0, 1, 2)
-    # is read where A, X and AX are present and does not come; it comes
-    # where A alone is present. The Not makes X and AX Not entries, with no
-    # step of the gradient.
-    not_, sigma = NotLayer3(3), SparseSigmaLayer3(3, 1, 3)
-    for row in range(3):
-        sigma.add(0, row)
-    lanes = torch.tensor([[[1., 0.], [1., 0.]], [[0., 0.], [1., 0.]], [[0., 0.], [1., 0.]]])  # [row, reading, 2]
-    expected = sigma(not_(lanes), [0, 1, 2], [0])[0].detach()
-    made = not_.teach_omission(sigma, 0, lanes, [0, 1, 2], came=torch.tensor([True, False]), expected=expected)
-    print(dict(expected=expected.tolist(), made_by_omission=made, entries=sigma.entries(0)))
-    assert made == [1, 2] and [n for _, _, n in sigma.entries(0)] == [False, True, True]
-    assert float(sigma(not_(torch.tensor([[[1., 0.]]])), [1], [0])[0, 0]) < 0  # X alone
+    assert not hasattr(NotLayer3, 'teach_omission')
 
 
 def test_a_checkpoint_of_the_dense_sigma_is_refused_with_the_reason():
@@ -321,3 +324,79 @@ def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_
             assert min(mine) > .5 and max(other) == 0.
     finally:
         model.End(); model.symbolSpace.soft_reset()
+
+
+# The sparse Sigma's read costs the entries it reads (rule 19): the same
+# values and gradients as the read it replaced, which passed over every
+# written entry with an index as long as the inputs' capacity.
+
+class _PresentEntryRead(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, value, signed):
+        ctx.save_for_backward(value, signed)
+        return torch.where(value < 0, -signed, signed) * value.abs()
+
+    @staticmethod
+    def backward(ctx, gradient):
+        value, signed = ctx.saved_tensors
+        return gradient * signed, gradient * value
+
+
+def _present_forward(sigma, signed, inputs, rows):
+    """The read of 1f58fe1511, over every written entry."""
+    inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1)
+    rows = torch.as_tensor(rows, dtype=torch.long).reshape(-1)
+    shape = (len(rows), *signed.shape[1:])
+    n = sigma.nnz
+    if not n or not len(rows) or not len(inputs):
+        return signed.new_zeros(shape)
+    position = torch.full((sigma.nInput,), -1, dtype=torch.long)
+    known = (inputs >= 0) & (inputs < sigma.nInput)
+    position[inputs.clamp(0, sigma.nInput - 1)[known]] = torch.arange(len(inputs))[known]
+    valid = (rows >= 0) & (rows < sigma.nOutput)
+    wanted = torch.unique(rows[valid])
+    slot = torch.full((sigma.nOutput,), -1, dtype=torch.long)
+    slot[wanted] = torch.arange(len(wanted))
+    at = slot[sigma.entry_row[:n]]
+    read = position[sigma.entry_input[:n]]
+    keep = ((at >= 0) & (read >= 0)).to(signed.dtype)
+    value = (sigma.value[:n].to(signed) * keep).reshape(n, *([1] * (signed.ndim - 1)))
+    terms = _PresentEntryRead.apply(value.expand(n, *signed.shape[1:]), signed.index_select(0, read.clamp_min(0)))
+    total = signed.new_zeros(max(len(wanted), 1), *shape[1:]).index_add(0, at.clamp_min(0), terms)
+    y = torch.tanh(total)
+    index = slot[rows.clamp(0, sigma.nOutput - 1)]
+    held = valid & (index >= 0)
+    y = y.index_select(0, index.clamp_min(0))
+    return y * held.reshape(-1, *([1] * (y.ndim - 1))).to(y)
+
+
+@pytest.mark.parametrize('nots', (0, .4))
+def test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced(nots):
+    """Random entries (with a share ``nots`` of Not entries, made by the
+    Not), random rows read and asked: the read by the compressed rows gives
+    the values and the gradients, in the entries and in the rows' values,
+    of the read over every entry; entries at zero included. Added in many
+    steps, so the compressed part and the entries added since are both
+    read."""
+    torch.manual_seed(int.from_bytes(__import__('os').urandom(4), 'little'))
+    P, C = 40, 30
+    not_, sigma = NotLayer3(P), SparseSigmaLayer3(P, C, 600)
+    for _ in range(500):
+        c, r = int(torch.randint(C, ())), int(torch.randint(P, ()))
+        if float(torch.rand(())) < nots:
+            not_.make(sigma, c, r, float(torch.rand(())))
+        else:
+            sigma.add(c, r, float(torch.rand(())) * (float(torch.rand(())) > .1))
+    for _ in range(5):
+        inputs = torch.randperm(P)[:int(torch.randint(1, P, ()))]
+        rows = torch.cat((torch.randint(-1, C, (12,)), torch.randperm(C)[:5]))
+        lanes = torch.rand(len(inputs), 3, 2, requires_grad=True)
+        y = sigma(not_(lanes), inputs, rows)
+        g = torch.randn_like(y)
+        got = torch.autograd.grad(y, (sigma.value, lanes), g)
+        y0 = _present_forward(sigma, NotLayer3.value(lanes), inputs, rows)
+        want = torch.autograd.grad(y0, (sigma.value, lanes), g)
+        torch.testing.assert_close(y, y0, atol=1e-6, rtol=0)
+        for a, b in zip(got, want):
+            torch.testing.assert_close(a, b, atol=1e-6, rtol=0)
+    print(dict(entries=sigma.nnz, not_entries=int(NotLayer3.entries(sigma).sum())))

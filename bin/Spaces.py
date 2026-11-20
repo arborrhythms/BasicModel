@@ -14836,8 +14836,8 @@ class ConceptualSpace(Space):
 
     def install_order_zero(self):
         """Order zero after its Pi: the Not (``order_zero_not``), each basic
-        percept's two values as one signed value, and the Sigma
-        (``order_zero``), sparse, over those signed values by the order-zero
+        percept's two options (its value and its not-value), and the Sigma
+        (``order_zero``), sparse, over those options by the order-zero
         concepts. It reads no code and no place."""
         if getattr(self, 'order_zero', None) is not None:
             return self.order_zero
@@ -14906,9 +14906,9 @@ class ConceptualSpace(Space):
         """A member joins the concept: its entry on the member's row is
         written at one (at zero for a candidate, ``sign`` zero), or added
         to; a Not member is made a Not entry by the Not (the concept reads
-        the row exchanged). An entry is for or Not, never both: where the
-        concept already has a weighted entry on the row, of either kind, a
-        member of the other kind leaves it as it is."""
+        the row's not-value). A concept has one entry on a row, reading one
+        of the two options: where it already has a weighted entry on the
+        row, a member of the other option leaves it as it is."""
         sigma = self.install_order_zero()
         if row >= sigma.nOutput:
             raise ValueError('an order-zero concept lies outside the order-zero Sigma')

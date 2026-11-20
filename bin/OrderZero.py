@@ -3,14 +3,15 @@
 A basic percept is one row of the first Pi over its parts and wholes, on two
 lanes. Its value for a reading is the product of its members' memberships,
 each to the power of its weight, on that lane alone. A row is admitted only
-when MTM nominates it, and each row brings one concept. The Pi alone reads
-the percepts' codes.
+when MTM nominates it, and it brings a concept, which starts with one entry,
+on that row, at one. The Pi alone reads the percepts' codes.
 
-After the Pi, the Not (``NotLayer3``) gives each row one signed value, for
-less against, and the concepts of order zero are a ``SparseSigmaLayer3``
-over those values: a concept reads each row it has an entry on by a weight
-at zero or above, the row as it is or, through a Not entry, exchanged, and
-starts with one entry, on its own row, at one.
+After the Pi, the Not (``NotLayer3``) offers two options for each row: its
+value, for less against, and its not-value, against less for. The concepts
+of order zero are a ``SparseSigmaLayer3`` over those options: a concept
+reads each row it has an entry on by one of the two, with a weight at zero
+or above, so a concept of presence reads a row's value and a concept of
+absence its not-value. Any number of concepts may read one row.
 """
 import torch
 from torch import nn
@@ -194,11 +195,12 @@ def read_word(evidence, mask, value):
     location, and ``mask`` which are its members there. The Pi: the basic
     percept's value on each lane is the product of its members' memberships
     on that lane, zero where one is at or below the floor; the run of parts
-    stands at its presence on both lanes. The Not: the row's signed value,
-    for less against, read exchanged where the concept's entry is a Not
-    entry. The Sigma: ``value`` ``[B, 1, 1]`` is the concept's entry on the
-    row, whose size is the Sigma's weight; the concept reads that row and
-    nothing else.
+    stands at its presence on both lanes. The Not: the row's two options,
+    its value and its not-value. The Sigma: ``value`` ``[B, 1, 1]`` is the
+    learned number of one concept's entry on the row, the concept the row
+    brought (the word's own concept): its side of zero is the option it
+    reads, its size the Sigma's weight. Other concepts that read the row
+    are read by the order-zero field, not here.
     """
     from Layers import NotLayer3, _EntryRead
     lanes = torch.stack((evidence.clamp(0, 1), (-evidence).clamp(0, 1)), -1)
@@ -213,5 +215,5 @@ def read_word(evidence, mask, value):
     presence = torch.where(absent, 0., torch.exp(logs))
     whole = mask[..., 1:].any(-1)
     presence = torch.stack((presence[..., 0], torch.where(whole, presence[..., 1], 0.)), -1)
-    signed = NotLayer3.signed(presence)
-    return torch.tanh(_EntryRead.apply(value[..., 0].to(signed).expand_as(signed), signed))
+    options = NotLayer3.options(presence)
+    return torch.tanh(_EntryRead.apply(value[..., 0].to(options).expand_as(options[..., 0]), options))

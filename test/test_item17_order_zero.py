@@ -86,8 +86,9 @@ class Order0:
 
 
 def test_the_sigma_reads_each_rows_signed_value_and_an_absent_row_changes_nothing():
-    """The Not gives each row for less against; a concept reads each row it
-    has an entry on by its weight, through a Not entry the row exchanged,
+    """The Not offers each row's value (for less against) and not-value; a
+    concept reads each row it has an entry on by its weight, through a Not
+    entry the not-value,
     ``tanh(sum w s - sum w_not s)``; a row at zero, a row not among the
     inputs and a row it has no entry on change nothing; a concept with no
     entry reads zero."""
@@ -217,7 +218,7 @@ def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
     assert {'order_zero.value', 'order_zero.entry_row', 'order_zero.entry_input', 'order_zero.count'} <= keys
     assert not hasattr(sigma, 'l1_lambda')
     n = sigma.nnz
-    assert n > 0 and int(sigma.crow[-1]) == n
+    assert n > 0 and sum(len(sigma.entries(c)) for c in set(sigma.entry_row[:n].tolist())) == n
     assert bool((sigma.weight >= 0).all())
     for concept in sorted(set(sigma.entry_row[:n].tolist()))[:20]:
         assert all(concept in sigma.rows_reading(i) for i, _, _ in sigma.entries(concept))
@@ -233,7 +234,7 @@ def test_the_sparse_sigma_is_stored_in_capacity_allocated_beforehand():
     sigma.add(0, 2)  # an entry already written is added to
     assert (sigma.value.data_ptr(), sigma.entry_row.data_ptr(), sigma.entry_input.data_ptr()) == before
     assert sigma.entries(0) == [(2, 2., False)] and sigma.entries(2) == [(1, .5, True)]
-    assert sigma.crow.tolist() == [0, 1, 1, 2] and sigma.rows_reading(2) == [0]
+    assert [len(sigma.entries(c)) for c in range(3)] == [1, 0, 1] and sigma.rows_reading(2) == [0]
     with pytest.raises(ValueError):
         sigma.add(1, 3, -1.)
     sigma.add(1, 3)
@@ -346,12 +347,9 @@ def _taught(cases, *, rows, steps=2000, project=False, seed):
     all its members are. The concept has an entry on every row, each at
     zero, so what is learned does not depend on a draw. Every weight is at
     zero or above; the gradient may carry an entry through zero, which makes
-    it a Not entry, and every 50 steps the Not teaches by omission
-    (``NotLayer3.teach_omission``): where the concept was read and did not
-    come, a row present there and in no reading where it came has its entry
-    made a Not entry. With ``project`` there is no omission teaching and
-    every entry is held a for entry (its learned number at zero or above),
-    so there is no Not entry."""
+    it a Not entry (it reads the row's not-value): that is the only teaching
+    of the Not here. With ``project`` every entry is held on the value (its
+    learned number at zero or above), so there is no Not entry."""
     torch.manual_seed(seed)
     pi = PerceptPi(len(rows), 4 * len(rows))
     keys = [('bp', r) for r in range(len(rows))]
@@ -385,8 +383,6 @@ def _taught(cases, *, rows, steps=2000, project=False, seed):
         if project:
             with torch.no_grad():
                 sigma.value.clamp_(min=0)
-        elif step % 50 == 49:
-            not_.teach_omission(sigma, 0, inputs, every, came=target > .5, expected=y.detach())
 
     def read(present):
         return float(order(presence(present)[:, None], every, [0]).detach())
@@ -405,7 +401,8 @@ def _with_rows(supports, conjunctions):
 
 
 def test_with_no_omission_there_is_no_not_entry_and_nothing_is_against():
-    """Certificate 23 (a)."""
+    """Certificate 23 (a): nothing expected fails to come, so nothing teaches
+    a Not entry, and the gradient makes none."""
     rows = _with_rows(((0, 1, 2), (3, 4, 5), (6, 7, 8)), ((0, 1),))
     seed = _drawn(1)[0]
     # What came is one; nothing expected failed to come.
@@ -441,7 +438,7 @@ def test_the_basic_level_learns_negative_patterning_and_conditioned_inhibition()
 
 def test_the_basic_level_learns_xor_of_two_perceived_words_with_no_not_entry():
     """Certificate 23 (c): true and false each perceived at two places, a
-    row for each pair; no omission teaching, so no Not entry. The Sigma starts at
+    row for each pair; every entry held on the value, so no Not entry. The Sigma starts at
     zero, so what is learned does not depend on a draw: one run."""
     seeds = _drawn(1)
     words = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11))  # true1, false1, true2, false2
