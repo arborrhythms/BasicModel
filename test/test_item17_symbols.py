@@ -424,13 +424,13 @@ def test_the_concept_a_row_brought_is_recorded_at_its_nomination(lesson_at_start
         assert percept in owner.concept_percepts(row)
 
 
-# The memberships of bytes in the properties are read by order zero and not
-# taught by a concept's error (provisional; the question is with Alec).
+# The memberships of bytes in the properties are read by order zero and
+# taught by a concept's error: declared classes are not fixed.
 
-def test_the_order_zero_word_read_passes_no_gradient_to_the_wholes_content():
+def test_the_order_zero_word_read_passes_its_gradient_to_the_wholes_content():
     """The word step's order-zero evidence reads the wholes' content (the
-    memberships read through the properties' codes) and gives it no
-    gradient; the part event's gradient is untouched."""
+    memberships read through the properties' codes) and gives it its
+    gradient, as it gives the part event its own."""
     from types import SimpleNamespace
     from Spaces import ConceptualSpace
     owner = SimpleNamespace(outputShape=(3,), matched_code_evidence=ConceptualSpace.matched_code_evidence)
@@ -443,7 +443,7 @@ def test_the_order_zero_word_read_passes_no_gradient_to_the_wholes_content():
         part_n_what=4, whole_n_what=4)
     assert bool(mask[..., 1].any()) and bool(mask[..., 0].any())
     evidence.sum().backward()
-    assert wholes.grad is None
+    assert wholes.grad is not None and bool(wholes.grad.abs().gt(0).any())
     assert parts.grad is not None and bool(parts.grad.abs().gt(0).any())
 
 

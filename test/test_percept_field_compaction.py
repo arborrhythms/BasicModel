@@ -28,8 +28,9 @@ def test_compact_native_events_preserve_values_locations_and_teach_no_property()
     torch.testing.assert_close(compact.spans,torch.cat((spans,whole),1),rtol=0,atol=0)
     assert compact.values[0,:,0,0].eq(1).all() and not compact.values[:,:,2].any()
     torch.testing.assert_close(compact.events[1,:,1,-1],torch.tensor([[.3,.3],[.3,.3]]))
-    # The order-zero read reads the memberships and teaches them nothing.
-    assert not short.values.requires_grad and not compact.values.requires_grad
+    # The order-zero read reads the memberships and takes their gradient:
+    # declared classes are not fixed.
+    assert short.values.requires_grad and compact.values.requires_grad
     selected=compact.select(1,1)
     assert selected.events.shape==(2,1,1,3,2)
     torch.testing.assert_close(selected.event_evidence(keys),compact.events[:,1:2,1:2])

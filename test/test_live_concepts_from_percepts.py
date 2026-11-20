@@ -42,8 +42,8 @@ def test_identified_evidence_masks_padding_without_erasing_observed_negative_mat
     assert torch.count_nonzero(part.grad[..., :2]) > 0
     assert torch.count_nonzero(part.grad[..., 2:]) == 0  # bands are not evidence
     # The wholes' content is the memberships read through the properties'
-    # codes: the order-zero evidence reads it and does not teach it.
-    assert whole.grad is None
+    # codes: the order-zero evidence reads it and its error teaches it.
+    assert whole.grad is not None and torch.isfinite(whole.grad).all()
 
 
 def test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean():
