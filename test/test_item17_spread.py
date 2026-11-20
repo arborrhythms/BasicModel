@@ -85,11 +85,30 @@ def test_17_evidence_unchanged_and_no_parameter():
     assert 'nn.Module' not in source and 'Parameter(' not in source
 
 
+def test_19b_the_join_stays_below_one_and_in_order():
+    # k present words, each read by its own kind, each kind reading one other
+    # word too: the other word takes a half from each kind. Summed, three
+    # halves would pass one; joined, it stays below one and rises with k.
+    values = []
+    for k in (1, 2, 3, 6):
+        n = 2 * k + 1
+        edges = [(k + 1 + j, j, 1., False) for j in range(k)] + [(k + 1 + j, k, 1., False) for j in range(k)]
+        observed = torch.zeros(n, 1, 2)
+        observed[:k, 0, 0] = 1.
+        value, _ = spread(SimpleNamespace(_order_caps=lambda: (n,)), observed, structure_=graph(n, 0, edges))
+        values.append(float(value[k, 0, 0]))
+    print(dict(other_word_by_kinds=values))
+    assert values == pytest.approx([1 - .5 ** k for k in (1, 2, 3, 6)])
+    assert all(a < b for a, b in zip(values, values[1:])) and values[-1] < 1
+
+
 def test_19_siblings_below_the_cause():
     parents = [(2 + k, child, 1., False) for k in range(5) for child in (0, 1)]
     value, _ = spread(SimpleNamespace(_order_caps=lambda: (7,)), present(7, 0),
                       structure_=graph(7, 0, parents))
-    assert float(value[1, 0, 0]) == pytest.approx(.5)
+    # Each parent takes a fifth of the cause and gives half of it to the
+    # sibling; the five shares join as the product on complements.
+    assert float(value[1, 0, 0]) == pytest.approx(1 - .9 ** 5)
     rng = random.Random(0)
     greatest = 0.
     for _ in range(300):
@@ -103,7 +122,7 @@ def test_19_siblings_below_the_cause():
         siblings = value[1:children, 0, 0]
         greatest = max(greatest, float(siblings.max()))
         assert bool((siblings < 1).all())
-    print(dict(two_children_five_parents=.5, greatest_sibling=greatest))
+    print(dict(two_children_five_parents=float(1 - .9 ** 5), greatest_sibling=greatest))
 
 
 def test_20_a_class_reads_members_of_every_lower_order():

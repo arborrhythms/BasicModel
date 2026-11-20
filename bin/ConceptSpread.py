@@ -18,8 +18,9 @@ The structure read, as edges from a row to what it reads (its inputs):
 Up: a node's value is split among the rows that read it, each by its
 weight's share of all the weights it is read with (its fan). Down: a row's
 value is split among its inputs, each by its weight's share of the row.
-What a node receives is summed over all its parents and children, at most
-one.
+What a node receives from several rows is joined as the product on
+complements, one less the product of one less each share: it stays below
+one and in order, more rows that give, a higher value.
 """
 from dataclasses import dataclass
 import torch
@@ -136,13 +137,24 @@ def structure(owner, device=None):
     return Structure(parent, child, weight, negated, V, T, R, P, keys)
 
 
+def union(*values):
+    """One less the product of one less each value."""
+    rest = 1. - values[0]
+    for value in values[1:]:
+        rest = rest * (1. - value)
+    return 1. - rest
+
+
 def _carry(values, source, target, share, negated, size):
     """Each edge carries its source's two lanes, by its share, to its
-    target, exchanged through a Not entry; summed at each target."""
+    target, exchanged through a Not entry; joined at each target as the
+    product on complements."""
     lanes = values.index_select(0, source)
     lanes = torch.where(negated[:, None, None], lanes.flip(-1), lanes)
     lanes = lanes * share[:, None, None]
-    return values.new_zeros(size, *values.shape[1:]).index_add(0, target, lanes)
+    index = target.reshape(-1, *([1] * (lanes.ndim - 1))).expand_as(lanes)
+    rest = values.new_ones(size, *values.shape[1:]).scatter_reduce(0, index, 1. - lanes, 'prod')
+    return 1. - rest
 
 
 def _flow(graph, observed, percepts, depth):
@@ -152,7 +164,7 @@ def _flow(graph, observed, percepts, depth):
     source[:min(len(observed), graph.concepts)] = observed[:graph.concepts]
     if percepts is not None and graph.parts:
         source[graph.part_start:graph.part_start + len(percepts)] = percepts[:graph.parts]
-    source = source.detach()
+    source = source.detach().clamp(0., 1.)
     up, down = torch.zeros_like(source), torch.zeros_like(source)
     if not len(graph.parent):
         return source, up, down, None, None
@@ -163,12 +175,12 @@ def _flow(graph, observed, percepts, depth):
     up_share = weight / fan.index_select(0, graph.child)
     down_share = weight / row.index_select(0, graph.parent)
     for _ in range(depth):
-        nxt = _carry(source + up, graph.child, graph.parent, up_share, graph.negated, N).clamp(max=1.)
+        nxt = _carry(union(source, up), graph.child, graph.parent, up_share, graph.negated, N)
         if torch.equal(nxt, up):
             break
         up = nxt
     for _ in range(depth):
-        nxt = _carry(source + up + down, graph.parent, graph.child, down_share, graph.negated, N).clamp(max=1.)
+        nxt = _carry(union(source, up, down), graph.parent, graph.child, down_share, graph.negated, N)
         if torch.equal(nxt, down):
             break
         down = nxt
@@ -179,14 +191,15 @@ def spread(owner, observed, *, percepts=None, structure_=None):
     """The expected value of every node, ``[N, B, 2]``, from the observed
     concepts ``observed`` ``[V, B, 2]`` (and, where given, the present
     parts of the first Pi ``percepts`` ``[P, B, 2]``): up once by the fan,
-    then down once by the share, at most one. The observed values are the
+    then down once by the share, each joined as the product on complements.
+    The observed values are the
     sources and are not returned as expected. It is arithmetic: nothing is
     taught through it."""
     graph = structure(owner, observed.device) if structure_ is None else structure_
     depth = 4 * (len(owner._order_caps()) + 1)
     with torch.no_grad():
         _, up, down, _, _ = _flow(graph, observed, percepts, depth)
-    return (up + down).clamp(max=1.), graph
+    return union(up, down), graph
 
 
 def staged(owner, observed, *, percepts=None):
@@ -200,16 +213,13 @@ def staged(owner, observed, *, percepts=None):
     source, up, down, fan, _ = _flow(graph, observed, percepts, depth)
     V = graph.concepts
     if fan is None:
-        return (up + down)[:V].clamp(max=1.)
+        return union(up, down)[:V]
     own = graph.parent < V
     weight = graph.weight.to(observed)[own]
     child, parent = graph.child[own], graph.parent[own]
     share = weight / fan.index_select(0, child)
-    reading = _carry(source + up, child, parent, share, graph.negated[own], graph.size)
-    total = reading[:V] + down[:V]
-    # At most one, with the gradient kept at the cap: a concept the spread
-    # saturates is still taught by what arrives.
-    return total - (total - 1.).clamp(min=0.).detach()
+    reading = _carry(union(source, up), child, parent, share, graph.negated[own], graph.size)
+    return union(reading[:V], down[:V])
 
 
 def stage_values(owner, observed, *, percepts=None):
