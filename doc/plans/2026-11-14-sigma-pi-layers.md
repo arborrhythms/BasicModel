@@ -17659,3 +17659,101 @@ So it was not the disk, and it is not new: the test fails about one run in four 
 1. *Part C was not started, for the second pass running, and the reason given is sound.* A column of the store means "this concept row's lanes" at about 458 places, and one that is written as a symbol and read as a concept row gives a wrong value and no error. The return's design keeps every value where each symbol has the one member part B gave it, which is what lets the change be checked: the store's read before and after, equal. *Taken as the next pass's whole task,* split as the return proposes: (b1) with every symbol at one member, the values unchanged; (b2) a symbol of several members read by their product. Nothing else is given to that pass.
 2. *How an order-zero concept gets its symbol is not in the rules, and is put to Alec.* The words' concepts are what the store reads most, and neither MTM's nomination above order zero, nor `interpret`, nor a declaration makes their symbols. Built provisionally: the symbol is made where the basic percept's nomination brings the concept, one symbol for one concept to start with. The other ways are at the first entry above order zero that reads the concept, or at a second nomination by MTM when the concept recurs, which would leave a word unread above order zero until then. *Claude's first choice is as built.* It does make a symbol for every word whether or not anything above reads it.
 3. *The lesson measures nothing again, as accepted.* After E-out it finds 14 to 64 words over 12 runs. Part B and what follows it in round 4 are judged by their own tests of equal values and by the list.
+
+### 23.4.6 Round 4, seventh pass: stopped (step (b1) withdrawn by Alec, §19.101), with the list of the store's column writers and readers
+
+*The return of the implementer (Claude on Opus).* Checkout `/Users/arogers/github/WikiOracle/basicmodel`, branch `main`.
+
+#### State when stopped
+
+- **Nothing committed.** HEAD is `2d242fcde1` (the coordinator's spec commit, `doc/` only), whose parent is `17b32a2db4`, where the pass started. `git status` shows no change in `bin/`, `test/` or `data/`.
+- **The working tree was restored to HEAD** by explicit paths (8 files in `bin/`, 21 in `test/`), and the one file I created, `test/symbol_fixtures.py`, was removed.
+- **Saved:** the whole diff is in `scratchpad/r4p7_stopped.patch` (78 KB, made with `git diff`). The untracked file is in `scratchpad/r4p7_stopped_symbol_fixtures.py`. Notes, scripts and outputs are in `scratchpad/p7/`: `plan.md`, `ports.md`, `store_read.py`, `compare.py`, `wrong_read.py`, `skipped.py`, `before.pt`, `after*.pt`, and the run lists.
+
+#### What had been found and done when stopped (all reverted)
+
+- **Built:** the store's columns made the table's indices, with every symbol at one member. The table moved onto the store, with the column-to-symbol functions on `ConceptualAttentionLayer`. These were changed: `bind`, `add_edge`'s self test, `grow_inventory`, the writers (`add_concept_edge`, `_populate_concept_weights`, `_prepare_part_learning`, `_set_concept_edge_value`), the unbound readers (`_bind_attended_concepts`, `concept_weights`, `FieldProjection.close`, `CaseSelection.stage_case_bank`), the checkpoint mark and the reading of an old checkpoint, and `GrammarConceptCheckpoint`. 25 test files were ported.
+- **The guard:** while I worked, symbol index s was written to column n−1−s. With it on, a reader that took a column for a concept row read an empty row. Checked by running the old `bind` under the guard: 92 non-zero outputs of the store's read against 193.
+- **The certificate:** I recorded the store's read (`_concept_rung_presence` 902 calls and `cs_reverse_presence` 198 calls) on the lesson's 16 readings at lr 0, before (HEAD) and after, with the guard on and with it off. The two were equal: greatest difference 0.0, inputs identical.
+- **The list under the guard** (284 files): 3 failed, 3,269 passed, 144 skipped. The failures were `test_81` (carried), plus two that were fixed afterwards. The run without the guard was stopped when the coordinator's message came, so it has no result.
+- **What it showed** (now moot, recorded for the next design):
+  1. MTM's explicit makings over members read concepts that no symbol reads. These are `FamiliarTier.cover_members`, reached from the class raise and from `promote_candidates`, and the chunked phrase in `_commit_chunk_admissions`. A writer that refuses such a concept breaks them.
+  2. `bring_concept`'s handle `('percept', p)` collides when a second concept is started on the same basic percept, as an object witnessed for a word is. `symbol_for` then returned the word's symbol and gave the second concept none.
+  3. The 23.4.5 count of "28 test files" includes many that write through `add_concept_edge` with resolved concepts and need no port. 25 needed one.
+
+#### The writers and readers of the store's columns on HEAD (`2d242fcde1` = `17b32a2db4` in `bin/`), verified
+
+**What a column is today.** The store `ConceptualAttentionLayer` (`ConceptAllocator.layer(0)`) is square: `nInput = 2(n+1)`, where `n = nOutput` is the number of store rows. Column `c` of lane block `c // (n+1)` (0 = for, 1 = against):
+
+- `c % (n+1) < n`: the two lanes of the **concept on store row** `c % (n+1)`;
+- `c % (n+1) == n`: the **bias** (EVERYTHING, read at (1, 0)).
+
+So in the table below, "row lanes" means the column is a concept row's lanes and "bias" means the bias column.
+
+**Concept kinds read, as measured** (23.4.5 part B, on this source):
+
+- **Lesson** (16 sentences, lr .001): 64 entries reading 8 concepts.
+  - The concepts read: 5 order-zero word concepts and 3 of the grammar's arguments.
+  - The readers: `words` 10 entries, arguments 30, operator classes 6, MTM candidates 18.
+  - I recounted at lr 0 on HEAD: 96 entries, 46 of them on a non-bias column; the same 8 concepts (5 at order 0 read by order 1, 3 at order 1 read by order 2).
+- **XOR gate:** 0 entries.
+- **Named shared class gate:** 3 entries reading 3 raised classes (order 1, read by an order-2 raised class).
+- **Never read as a source:** operator classes, `words`, `objects`, promoted identities, candidates, objects defined by `interpret`.
+
+**Writers** (they put an entry on a column):
+
+| File, function | What it writes | Column kind | Readers (row) and sources (column) it writes, in practice |
+| --- | --- | --- | --- |
+| `bin/Spaces.py`, `ConceptualSpace.add_concept_edge(row, col, weight, negated)` | `ly.add_edge(row, col (+ n+1 if negated))`; `col == nVectors` → bias (via `_bias_col`) | row lanes; bias | The one general writer. Its callers are the next three rows and tests |
+| `bin/Spaces.py`, `_populate_concept_weights`: word reading at order 0 | `add_concept_edge(words_row, c_row)`; tests `(words_row, c_row) in _index` | row lanes | `words` (declared class, order 1) reads an order-zero word concept |
+| `bin/Spaces.py`, `_populate_concept_weights`: `('sym', x)` parts above order zero | `matrix._index.get((c_row, s_row))`, else `add_concept_edge(c_row, s_row)`; `_EVERYTHING` in wholes → `add_concept_edge(c_row, nVectors)` | row lanes; bias | A concept over its `('sym', x)` parts. Callers: `_commit_chunk_admissions` (a chunked phrase over member concepts); the concept population at `Spaces.py` ~14400 (`loc_sym` with its witness parts); `Interpret` (306, 357, 387, 419, 433: word and object readings, mostly order 0, which go to the order-zero Sigma, not the store) |
+| `bin/Spaces.py`, `_populate_concept_weights`: raised-class witness (`witness[0]` a dict row → weight) | `matrix.add_edge(row, member_row)`; `matrix._index.get((row, member_row))`, merged by max | row lanes (lane 0) | Callers: (1) `ConceptHierarchy.observe_member`, reached from `PartsOfSpeech` 191 (a grammar argument reads the word concept that filled it: argument ← order-0 word) and 398 (an operator class reads an argument: operator class ← argument); (2) `FamiliarTier.cover_members` (not conjunctive), reached from `ConceptIndex.index_part_row` (a raised class reads its members: raised class ← member concepts), from `Memory.promote_candidates` / `FamiliarTier` 936 (an MTM candidate reads its support: candidate ← support concepts) and from `Memory` 1157 (`class_members` cover) |
+| `bin/Spaces.py`, `_prepare_part_learning`: witnesses | `store.add_edge(row, source + pole·(n+1))` at weight 0 | row lanes, both lanes | `DefinitionFold.prepare` → `examples`: a witnessed class row reads a member's row (`FamiliarTier.member_row`): a class reads its member |
+| `bin/Spaces.py`, `_prepare_part_learning`: opposite lane | for each written entry `(row, col)` that is not the bias: `add_edge(row, (col + n+1) % 2(n+1))` at 0 | row lanes (the other lane of the same source) | Every reader above, both lanes |
+| `bin/Spaces.py`, `_prepare_part_learning`: active context | for each defined row, `add_edge(row, source)` and `(row, source + n+1)` at 0 over the sources active in `_cs_last_a0`, of order 0 for an order-1 row and of order k−1 for order k | row lanes | Order-1 readers (`words`, arguments, candidates) ← active order-0 word concepts; order-2 readers (operator classes, raised classes) ← active order-1 concepts |
+| `bin/Spaces.py`, `_set_concept_edge_value(cid, code, side, value)` | sets `ly.values[ly._index[(c_row, s_row)]]` | row lanes (lane 0) | A concept and its `sym_part`/`sym_whole` constituent: any kind |
+| `bin/Spaces.py`, `_drop_concept_edge(..., side='everything')` | `ly.remove_edges([(c_row, _bias_col())])` | bias | Any concept with an EVERYTHING whole |
+| `bin/Layers.py`, `SparseLayer.add_edge` | the self test `c % (n+1)` against the reading row (`_paired_sources`) | row lanes | Every writer above |
+| `bin/Layers.py`, `ConceptAllocator.layer` / `ConceptualAttentionLayer.square` | make the square store `2(n+1) × n`, `_paired_sources = nInput == 2(n+1)` | the layout itself | |
+| `bin/Layers.py`, `ConceptualAttentionLayer.grow_inventory(size)` | remaps each column: concept row kept, bias `old → size`, lane offset `old+1 → size+1` | row lanes; bias | Every entry |
+| `bin/Layers.py`, `hebbian_strengthen_row`, `decay_row`; `bin/Spaces.py`, `_hebbian_strengthen`, `_decay_concept_edges`, `_normalize_concept_parts` | scale values by reading row only | none (rows only) | |
+| `bin/Models.py`, `_restore_allocator_extras` | writes `_rows`, `_cols`, `_index` from the blob. `old_columns` (`nInput == n+1`, signed values) and `square_expansion` remap `col % (saved_n+1)`, with the bias to the live n | row lanes; bias | Checkpoint restore |
+| `bin/Models.py`, `_collect_structural_extras` | saves `cols` as they are | row lanes; bias | Checkpoint save |
+| `bin/GrammarConceptCheckpoint.py`, `prepare` (`columns()`) | `inverse[col % (old+1)] + (col // (old+1))·(new+1)`, bias `old → new` (rows move when grammar seats are added) | row lanes; bias | Checkpoint migration |
+
+**Readers** (they take a column for what it reads):
+
+| File, function | How it reads the column | Column kind | Concept kinds it meets |
+| --- | --- | --- | --- |
+| `bin/Layers.py`, `SparseLayer.bind(inventory_rows, paired=True)`, through `ConceptualSpace._concept_field_store` | `lookup[cols % (n+1)]`: a column's concept row → its seat in the bound field; lane `cols // (n+1)`; the bias → seat `size`; a row not in the field → `_missing_sources` | row lanes; bias | All of them. It is the path of every read below |
+| `bin/Layers.py`, `SparseLayer._fold_weights` | pairs a column with its other lane: `(col + offset) % 2·offset`, `offset = n+1` (by `_fold_source_columns`) | lane pairing (the same source) | All |
+| `bin/Layers.py`, `SparseLayer.fold_presence` (least and greatest), `attribute_presence` | `dual`: `(cols + nInput//2) % nInput`. Reads `u` by column (on the bound view, by seat) | lane pairing; bias | All. These are what step (c) replaces |
+| `bin/Layers.py`, `ConceptualAttentionLayer.definition_sparsity_penalty` | `cols % (n+1) < n`: every column but the bias | row lanes vs bias | All readers' definitions |
+| `bin/Spaces.py`, `_concept_rung_presence` | builds `x = [for lanes; 1; against lanes; 0]` by seat and folds the bound view (least and greatest) | via `bind` | Order-1 readers (`words`, arguments, candidates) ← order-0 words; order-2 (operator classes, raised classes) ← order-1 |
+| `bin/Spaces.py`, `cs_forward_content` | `_concept_rung_presence`; the relevance hop `bound.forward_linear_abs` | via `bind` | Same |
+| `bin/Spaces.py`, `cs_reverse_presence` (`descend`) | `attribute_presence` on the bound view, `combined[:S]` and `combined[S+1:2S+1]` by seat | via `bind` | Same, downward. Callers: `cs_percept_attribution`, `SentenceField` 29, `CaseSelection` 198 |
+| `bin/Spaces.py`, `_bind_attended_concepts` | `pc % (S+1)` → source row (reachability closure); `pc == S` → bias (standing rows) | row lanes; bias | The rows reached from the active order-zero members: words → `words`, arguments → operator classes, and raised classes |
+| `bin/Spaces.py`, `concept_weights(row, negated)` | `c % (n+1)` → source row, the bias → `nVectors`; lane `c > n` | row lanes; bias | Read in `bin/` by nothing; read only by tests (32 lines in 13 files) |
+| `bin/Spaces.py`, `_populate_concept_weights` (the `_index.get((c_row, s_row))` and `(words_row, c_row) in _index` tests above) | key lookup with a concept row as the column | row lanes | As written above |
+| `bin/Spaces.py`, `_prepare_part_learning` (`col % offset != n`, `(row, col) in _index`) | as written above | row lanes; bias | As written above |
+| `bin/Spaces.py`, `_set_concept_edge_value` (`_index.get((c_row, s_row))`) | key lookup | row lanes | Any |
+| `bin/Spaces.py`, rows only: `has_concept_edges`-style `any(r == row for r, _ in store._index)` (~15918), the frozen-row positions (~16068) | rows only, not columns | | |
+| `bin/FieldProjection.py`, `close(owner, rows, evidence)` | `column % (n+1)` → source row (the dependency order and the operand); `column >= n+1` → against (flip); `source == n` → bias (1, 0); the least/greatest by `FieldLogic.reduce('union')` with `_fold_weights` | row lanes; bias | The defined rows of a field. Callers: `close_bracket`, `stimulate`, `IntuitionField.read` (64), `LookForecast.forecast` (79), `NumericPercepts.read` (86), `placement_context`; through `stimulate`/`placement_context`: `ScalarPercepts`, `OutputOccurrences`, `ReferenceClose`, `Examination` |
+| `bin/CaseSelection.py`, `stage_case_bank` | the edge walk `source % (n+1) < n` over `store._rows/_cols` (written > 0) → the rows reachable from the required ids; then `store.bind(rows)` and `attribute_presence`; then `cs_reverse_presence` | row lanes (bias excluded) | Grammar case banks: classes and arguments over their member words |
+| `bin/DefinitionFold.py`, `loss` | `_concept_rung_presence(compact, ...)` over the witnessed classes | via `bind` | Raised and named classes (`witnessed`) ← member sources |
+| `bin/Models.py`, `_restore_allocator_extras`; `bin/GrammarConceptCheckpoint.py`, `prepare` | as in the writers' table | row lanes; bias | |
+
+**Callers that read only through the functions above**, with no column arithmetic of their own: `ConceptHierarchy`, `FamiliarTier`, `Interpret`, `NumericPercepts`, `ScalarPercepts`, `SentenceField`, `Examination`, `IntuitionField`, `LookForecast`, `OutputOccurrences`, `ReferenceClose`, `PartsOfSpeech`, `Memory`, `ConceptIndex`. `MemoryLink`, `exact`, `EntryRead` and `ClauseRow` were in 23.4.5's 22 by a textual match (`pool.bind`, `mtm.close`, `nOutput` of other layers), and none of them touches the store's columns.
+
+**A source check that holds on HEAD:** only `Layers.py`, `Spaces.py`, `FieldProjection.py`, `CaseSelection.py`, `GrammarConceptCheckpoint.py` and `Models.py` decode a column (`% (… nOutput + 1)` or `_cols` / `_index` keys taken as rows).
+
+#### Final counts
+
+None on HEAD for this pass: nothing was changed. The last whole run was on the guarded working tree (284 files): 3 failed, 3,269 passed, 144 skipped, 2 xpassed, 1,245 s. The failures were `test_81` and two tests later repaired in the working tree, now reverted.
+
+#### Review (Claude, 2026-11-20)
+
+- *The source is as the pass found it:* no file of `bin/`, `test/` or `data/` differs from `17b32a2db4`, checked by Claude. Nothing of step (b1) is committed. The diff is kept in the scratch directory as a patch and is not applied.
+- *The step was built and its values were equal when it was stopped* (the store's read on the lesson's readings, greatest difference nothing). That shows the route was passable, and it is still withdrawn: it made the store read one symbol for each concept, which is the structure Alec has ruled out (§19.101).
+- *What is kept from it.* The list above of every writer and reader of the store's columns, with what each column is and which kinds of concept it meets; that the decoding of a column is in six files only (`Layers.py`, `Spaces.py`, `FieldProjection.py`, `CaseSelection.py`, `GrammarConceptCheckpoint.py`, `Models.py`); and the way of working behind a guard so that a column read the old way lands on an empty row.
+- *Two findings for the next design.* MTM's makings over members (`cover_members`, from the class raise and from `promote_candidates`, and the chunked phrase in `_commit_chunk_admissions`) read concepts through the store that no symbol read. And the sixth pass's handle for a word's symbol, the basic percept, is not unique where a second concept is started on one basic percept, as an object witnessed for a word is: one more sign that "one symbol for one concept" was the wrong unit.
