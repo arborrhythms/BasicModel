@@ -109,7 +109,15 @@ def reconstruct(owner, *, word=None, value=None):
     collections = concepts(owner)
     return tuple(form for cid, evidence in zip(field.concept_ids.tolist(), field.evidence[:, 0, 0])
                  if owner._concept_row_of(cid) in collections and bool(holds(evidence.detach()))
-                 and (form := owner.interpret.lexical_form(cid)) is not None)
+                 for form in named_forms(owner, cid))
+
+
+def named_forms(owner, cid):
+    """The forms of the words that name a collection: those tied to it at
+    the definition threshold or above (:func:`PerceptCollections.words`)."""
+    from PerceptCollections import words
+    return tuple(form for word in words(owner, cid)
+                 if (form := owner.interpret.lexical_form(word)) is not None)
 
 
 def _scalar_readings(owner, field, batch):
@@ -129,7 +137,7 @@ def decode(owner, field, percepts=()):
         held = (holds(lanes) & scalar).any(-1)
         objects = [cid for cid, value in zip(ids.tolist(), held)
                    if owner._concept_row_of(cid) in collections and bool(value)]
-        words = tuple(form for cid in objects if (form := owner.interpret.lexical_form(cid)) is not None)
+        words = tuple(form for cid in objects for form in named_forms(owner, cid))
         percept = percepts[batch] if batch < len(percepts) else None
         if percept is not None:
             value = float(number(owner.basic_percepts.felt([percept])[0]))

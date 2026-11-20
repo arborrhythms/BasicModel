@@ -29,7 +29,8 @@ def test_scalar_boxes_are_counted_native_definitions(tmp_path,monkeypatch):
         from PerceptCollections import objects as known
         identity, = known(owner, words[item['text']])
         row = owner._concept_row_of(identity)
-        assert int(owner.similarity_codebook.trust.views[row]) == 6
+        from WordTies import ties
+        assert ties(owner).get(words[item['text']], identity).views == 6
         objects.append(identity)
         assert owner._concept_allocator.order_of(identity) == 0
         assert reconstruct(owner,word=words[item['text']]) == pytest.approx(item['scalar'])

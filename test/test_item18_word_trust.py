@@ -84,7 +84,9 @@ def test_88_scalar_definition_reads_one_after_the_same_six_views(named_scalar_mo
     for name, obj in objects.items():
         word = owner.interpret.word_for_form(name)
         row = owner.definitions.row(word, obj)
-        assert int(owner.similarity_codebook.trust.views[owner._concept_row_of(obj)]) == 6
+        from WordTies import ties
+        tie = ties(owner).get(word, obj)
+        assert tie.views == 6 and tie.certainty == 1.
         assert float(store.parts.truth_plus[row]) == 1.
 
 

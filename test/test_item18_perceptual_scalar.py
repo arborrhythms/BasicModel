@@ -26,9 +26,12 @@ def test_shared_value_does_not_mix_two_words_definition_views(named_scalar_model
         if view + 1 < owner.concept_mint_count:
             assert all(not objects(owner, word) for word in words)
     identities = [objects(owner, word)[0] for word in words]
-    assert len(set(identities)) == 2
-    for identity in identities:
-        assert int(owner.similarity_codebook.trust.views[owner._concept_row_of(identity)]) == 6
+    # The second word is tied to the object the first made, which already
+    # reads the percept wholly; each tie keeps its own six views.
+    assert len(set(identities)) == 1
+    from WordTies import ties
+    for word, identity in zip(words, identities):
+        assert ties(owner).get(word, identity).views == 6
 
 
 def test_basic_percept_reference_reads_without_a_concept_annotation(named_scalar_model):
@@ -73,11 +76,14 @@ def test_intervals_generalize_their_percepts_and_have_distinct_codes(named_scala
         word = owner.interpret.word_for_form(form)
         row = store.append_idea(code(owner, value))
         observe(owner, word, value, store.occurrence_of(row), stream=0)
-    a, b = [owner.similarity_codebook.lookup_rows([owner._concept_row_of(objects[name])])[0]
-            for name in ('alpha', 'beta')]
-    assert not torch.equal(a, b)
+    a, c = [owner.similarity_codebook.lookup_rows([owner._concept_row_of(objects[name])])[0]
+            for name in ('alpha', 'gamma')]
+    # One object for alpha and beta, widened by alpha, the word that made it;
+    # beta's tie holds at 2. Its code is distinct from gamma's.
+    assert objects['alpha'] == objects['beta']
+    assert not torch.equal(a, c)
     assert set(reconstruct(owner, value=1.5)) == {'alpha', 'beta'}
-    assert reconstruct(owner, value=2.5) == ('alpha',)
+    assert set(reconstruct(owner, value=2.5)) == {'alpha', 'beta'}
     assert reconstruct(owner, value=4.) == ()
 
 
@@ -133,7 +139,9 @@ def test_value_percepts_use_the_basic_checkpoint_and_shared_retirement(named_sca
     basic.load_state_dict(saved)
     assert tuple(reconstruct(owner, value=value) for value in (1., 2., 4.)) == before
     owner._concept_allocator.retired.add(objects['alpha'])
-    assert reconstruct(owner, value=1.) == ('beta',)
+    # Both words are tied to the one object: retired, it names neither.
+    assert reconstruct(owner, value=1.) == ()
+    assert reconstruct(owner, value=2.) == ('gamma',)
 
 
 def test_text_uses_the_same_percept_collection_reader(named_scalar_model, monkeypatch):
@@ -196,10 +204,12 @@ def test_value_collection_restores_through_the_integrated_checkpoint(
         assert reconstruct(owner, value=1.) == ('alpha', 'beta')
         assert reconstruct(owner, value=2.) == ('gamma',)
         assert reconstruct(owner, value=4.) == ()
+        from ScalarPercepts import named_forms
+        from WordTies import ties
         for form, cid in objects.items():
-            assert owner.interpret.lexical_form(cid) == form
+            assert form in named_forms(owner, cid)
             assert owner._concept_allocator.order_of(cid) == 0
-            assert int(owner.similarity_codebook.trust.views[owner._concept_row_of(cid)]) == 6
+            assert ties(owner).get(owner.interpret.word_for_form(form), cid).views == 6
     finally:
         restored.End()
         restored.symbolSpace.soft_reset()

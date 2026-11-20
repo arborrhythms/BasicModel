@@ -180,6 +180,8 @@ class InterpretLayer(GrammarLayer):
             value = self.owner.definitions.description(int(identity))
         else:
             words = self.owner.definitions.words(int(identity))
+            from PerceptCollections import said_by
+            words = said_by(self.owner, identity, words)
             if len(words) != 1:
                 return None
             value = self.owner.definitions.description(words[0])
@@ -689,7 +691,8 @@ class InterpretLayer(GrammarLayer):
             return torch.cat((self.activate(word_atoms, presence, evidence=evidence), obj[..., width:]), -1)
         if self.no_object(obj):
             return int(obj)
-        words = self.owner.definitions.words(int(obj))
+        from PerceptCollections import said_by
+        words = said_by(self.owner, obj, self.owner.definitions.words(int(obj)))
         if len(words) != 1:
             raise ValueError('object requires a lexical selection')
         return words[0]

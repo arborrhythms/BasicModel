@@ -49,10 +49,15 @@ def test_equal_codes_are_said_by_their_given_object_references(named_scalar_mode
     values = [owner.similarity_codebook.W[owner._concept_row_of(objects[name])].detach()
               for name in ('alpha', 'beta')]
     torch.testing.assert_close(values[0], values[1], rtol=0, atol=0)
-    assert objects['alpha'] != objects['beta']
+    # Look-first: beta is tied to the object alpha made; it is said by the
+    # word of its most certain tie, the first among equals.
+    assert objects['alpha'] == objects['beta']
+    from WordTies import ties
+    held = ties(owner)
+    assert [held.certainty(owner.interpret.word_for_form(name), objects[name]) for name in ('alpha', 'beta')] == [1., 1.]
     for name, value in zip(('alpha', 'beta'), values):
         answer = scalar_answer(model, value, ('sym', objects[name]))
-        assert answer.texts == (name,)
+        assert answer.texts == ('alpha',)
 
 
 def test_reference_names_the_terminal_even_without_semantic_support(named_scalar_model):

@@ -1676,7 +1676,8 @@ class MediumTermMemory(MemoryStore):
             timelines=tuple(tuple(map(event_state, timeline.events))
                             for timeline in entry.timelines)) for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()),
-            sightings=tuple((key, tuple(readings)) for key, readings in self.sightings.items()))
+            sightings=tuple((key, tuple(readings)) for key, readings in self.sightings.items()),
+            word_ties=None if getattr(self, 'word_ties', None) is None else self.word_ties.state())
 
     def sight(self, key, reading):
         """Record one reading of a form not yet nominated; the number of
@@ -1689,6 +1690,12 @@ class MediumTermMemory(MemoryStore):
         """Validate a complete pool before replacing its current context."""
         self.sightings = {} if state is None else {
             key: set(readings) for key, readings in state.get('sightings', ())}
+        held = None if state is None else state.get('word_ties')
+        if held is None:
+            self.__dict__.pop('word_ties', None)
+        else:
+            from WordTies import WordTies
+            self.word_ties = WordTies.restored(held)
         if state is None:
             self.entries, self.names, self.pending = {}, {}, {}
             self.pending_step = 0

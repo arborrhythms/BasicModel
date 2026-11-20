@@ -16799,7 +16799,8 @@ class ConceptualSpace(Space):
                 else self.definitions.deref(word))
 
     def word_concept_of_object(self, cid):
-        words = self.definitions.words(cid)
+        from PerceptCollections import said_by
+        words = said_by(self, cid, self.definitions.words(cid))
         return words[0] if len(words) == 1 else None
 
     def bind_word_concept(self, form, concept_id):
