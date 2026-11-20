@@ -9005,6 +9005,12 @@ Tried, and it holds. With the stored forms kept by part, one list of forms for e
 
 It is item 1.5's, recorded there.
 
+### 19.92 Alec: the clock's code is exposed on the model beside it (2026-11-19)
+
+"One integer clock, but the arch can read the sinusoid encoding of it as exposed adjacently ( on the model )."
+
+*Decided* (rule 64, certificate 55 (f)). The clock is one integer on the model. Its sinusoidal code is made once, when the clock advances, and is held on the model next to the integer. The architecture reads the present there: the chooser, the operators, and whatever stamps a `.when`. No reader encodes the clock for itself. In the source today the nearest thing is the shared `model.when_encoding` with its mirror of the clock (§23.T); round 6's step 16 makes it the one place.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10205,10 +10211,15 @@ chooses from. The old classes are not edited.
     in history the concept they have recalled is").
     - *One integer clock.* The model has one whole-number clock, and
       no second one kept in step with it.
-    - *One code.* Its sinusoidal code is made in one place, by one
-      encoder, and is the same for every reader.
-    - *The present is given.* The chooser and the operators are
-      given the present time in that code.
+    - *One code, exposed on the model beside the clock* (Alec,
+      §19.92: "One integer clock, but the arch can read the sinusoid
+      encoding of it as exposed adjacently ( on the model )"). The
+      sinusoidal code of the clock is made in one place, by one
+      encoder, when the clock advances, and is held on the model
+      next to the integer. Every reader in the architecture reads it
+      there; none encodes the clock itself.
+    - *The present is given.* The chooser and the operators read the
+      present time as that code on the model.
     - *A comparator.* They have a comparator that takes the present
       and a concept's stamp and gives how far back the concept is.
       A stamp is not rewritten as an age before they see it.
@@ -10529,6 +10540,8 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     gives the number of ticks between the present and a stamp,
     exactly, over stamps one tick back, a thousand back and a
     million back. (e) A row promoted to a concept keeps its stamp.
+    (f) The code on the model is the encoder's code of the integer
+    beside it after every advance of the clock.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -11555,11 +11568,13 @@ which form of the where match is built.
       step with it (say what names a row then). MTM's count of
       closes, the tick of an STM read and the count that schedules
       forgetting are counts and are named so, not times.
-    - One encoder: every code of a time comes from the one shared
-      instance; the encoders made on the spot go, and
-      SymbolExpectation's own present with them.
-    - The present is given to the chooser of each grammar and to the
-      operators, in the code. A stamp is no longer rewritten as an
+    - One encoder, and its code exposed on the model beside the
+      clock (Alec, §19.92): the sinusoid of the present is made once
+      when the clock advances and held on the model next to the
+      integer; every reader reads it there. The encoders made on the
+      spot go, and SymbolExpectation's own present with them.
+    - The chooser of each grammar and the operators read the present
+      as that code on the model. A stamp is no longer rewritten as an
       age before they see it (RowTime.relative_idea, age_band and
       their readers: say what each becomes).
     - A comparator: one function over the present and a stamp that

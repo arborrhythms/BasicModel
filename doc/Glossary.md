@@ -202,8 +202,9 @@ words of an output comes from it.
 ## Memory
 
 **Time.** The model has one time: "one integer clock and one sinusoidal
-encoding of it" (Alec, 2026-11-19). The code is made in one place and is the
-same for every reader. A concept's `.when` is the stamp of that clock at the
+encoding of it" (Alec, 2026-11-19). The clock is an integer on the model, and
+its code is made in one place and held on the model beside it, where every
+reader reads it. A concept's `.when` is the stamp of that clock at the
 concept's moment, and it stays with the concept, which is opaque. The chooser
 and the operators are given the present in the same code, with a *comparator*
 that tells "how far back in history the concept they have recalled is".
