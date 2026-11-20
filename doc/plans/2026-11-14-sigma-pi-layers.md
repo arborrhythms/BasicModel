@@ -9203,6 +9203,35 @@ So there is a nonlinear network guiding the choice for compose, `attend` and tho
 
 **3. The grades.** "good." *Decided* (rule 70): the sentence, then its words in order, then a word's parts.
 
+### 19.101 Alec: there is no "symbol of a concept" (2026-11-20)
+
+Asked by Claude (§23.4.5, finding 2): "Should a word's order-zero concept get its symbol when its row is nominated?" His answer:
+
+"* a basic percept or symbol is created implicitly by PI or when nominated by MTM when recognizing that their constituents always occur together.
+* a concept is created implicitly by Sigma or when nominated by MTM when recognizing that the objects form a kind.
+
+So the rubric of "the symbol of a concept" suggests a 1:1 correspondance that is no longer valid."
+
+*Decided* (rule 71; rules 10 and 20 amended). The question was wrongly put, and so was what three passes built towards. A row of a Pi, a basic percept or a symbol, exists because its constituents always occur together: the Pi makes it implicitly, or MTM nominates it on recognizing that. A concept exists because its objects form a kind: the Sigma makes it implicitly, or MTM nominates it on recognizing that. Nothing makes a symbol *for* a concept, and nothing makes a concept *for* a row beyond how a row starts (rule 21).
+
+*What this withdraws in what is built and briefed.*
+
+- The sixth pass's symbols made one for each concept the store reads (§23.4.5, part B: `symbol_for` at a declaration, in `bring_concept` for every word, at the class raise, in `define`; 110 symbols in the lesson, 101 of them for declared concepts). They come out. MTM's own nominations of symbols (`promote_identity`, `promote_candidates`) stay.
+- Rule 10's sentence written by Claude in §23.4.4's review, "a concept that is declared and not nominated has its symbol made at its declaration", and the first step of what was left of round 4, "a symbol for every concept the store reads".
+- The seventh pass, whose one task was to make the store's columns those one-member symbols with every value unchanged. It was told to stop, to leave the source as it found it, and to return its list of every writer and reader of the store's columns, which is wanted whatever the columns become.
+
+*What a Sigma above order zero then reads* (Claude's reading of his sentences, with §19.98's "concepts are created from symbols and percepts via Not and Sigma"; put to him). A Sigma reads rows of a Pi, and the rows beneath a concept are of two kinds: basic percepts and symbols. Laid against what the store reads today (§23.4.5's measure):
+
+| What reads | What it reads today | Under his two sentences |
+| --- | --- | --- |
+| The concept `words`, the grammar's arguments, and MTM's candidates | the order-zero concepts of the lesson's words (5 of the 8 things read in the lesson) | A kind whose objects are words reads the words' basic percepts, their rows, through the Not. It needs no symbol and no order-zero concept between. |
+| The grammar's operator classes | the arguments, which are concepts (3 of the 8) | *The open case, below.* |
+| A class that MTM raises from statements that share a side | classes, which are concepts (the gate's 3) | *The open case.* |
+
+*The open case, put to him with an example.* A kind whose objects are themselves concepts: the operator class that ranges over the arguments `noun` and `adjective`, or the higher `cat` that ranges over what "Felix is a cat" and "Ciao is a cat" made. A Sigma reads rows, so there must be rows for it to read. His words of §19.87 have MTM make them: "MTM should be the place where that higher-order concept is created, by creating a higher order symbol over those two if not present". *Claude's first choice, as its reading of that:* the row is a symbol that MTM nominates when it recognizes the kind, and its constituents are what occurs together in each instance (in "Felix is a cat", Felix and cat), so the higher concept collects one symbol for each instance and not one symbol for each member concept. The other reading: one symbol whose single constituent is the member concept, made only at that moment and only because the kind needs it, which is the one-to-one form again and so is not taken.
+
+*§19.83's "it connects to both lower rows"* (order one is n/2 connected to 3n/2) is read again in this light: the two rows beneath a concept of order one are the n basic percepts and the n/2 symbols of its own order. Claude had written "its own order's symbols and the n concepts of order zero".
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9620,11 +9649,10 @@ chooses from. The old classes are not edited.
     concept* (Alec, §18.25; rules 2 and 21), which is how it starts
     and not a limit (rule 21, §19.94). The symbols have a table of
     their own, with their own index and the record of the concept
-    each brought (`SymbolTable`, §23.4.4). *Mine:* a concept that is
-    declared and not nominated (rule 20's list: the grammar's
-    arguments and classes, "words", "objects") has its symbol made
-    at its declaration, so that everything read above order zero is
-    read through a symbol. It is made when MTM
+    each brought (`SymbolTable`, §23.4.4). *Withdrawn (§19.101):*
+    Claude's sentence that a declared concept has its symbol made at
+    its declaration; no symbol is made for a concept (rule 71). It
+    is made when MTM
     nominates it (rule 20), or by `interpret` for a meta concept, and
     not at a concept's allocation. A conjunction is promoted as a new
     symbol, a Pi row over its members, under a new concept, a Sigma
@@ -10574,6 +10602,28 @@ chooses from. The old classes are not edited.
     order (reading without comprehension, item 1.6), then a word's
     parts; each grade is passed, over 12 runs, before the next is
     given.
+
+71. *What makes what; there is no symbol of a concept* (Alec,
+    §19.101: "a basic percept or symbol is created implicitly by PI
+    or when nominated by MTM when recognizing that their
+    constituents always occur together. a concept is created
+    implicitly by Sigma or when nominated by MTM when recognizing
+    that the objects form a kind. So the rubric of "the symbol of a
+    concept" suggests a 1:1 correspondance that is no longer
+    valid").
+    - A row of a Pi, a basic percept or a symbol, is its
+      constituents occurring together. It is made implicitly by the
+      Pi, or nominated by MTM on recognizing that they always do.
+    - A concept is a kind of objects. It is made implicitly by the
+      Sigma, or nominated by MTM on recognizing that they form one.
+    - No symbol is made for a concept and none is addressed by one.
+      The source has no function that gives "the" symbol of a
+      concept.
+    - *Mine, put to him:* a Sigma reads rows, and the rows beneath a
+      concept are the basic percepts and the symbols; a kind of
+      words reads the words' basic percepts through the Not; a kind
+      of concepts reads symbols that MTM nominates for the kind's
+      instances.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -11706,12 +11756,11 @@ level. Certificates 4, 6, 13, 18 and 23 (d). Read §18.22, §18.23,
    (§23.4.3); the symbol table, made at nomination, in the fifth
    (§23.4.4). What is left, in order (§23.4.4's review): (a) a
    symbol for every concept the store reads, at declaration and by
-   interpret (done in the sixth pass, §23.4.5, with the symbols of
-   the words' order-zero concepts and of the classes MTM raises);
-   (b) the store's columns become the table's indices, the least
-   and the greatest kept, in two: (b1) with every symbol at one
-   member, the store's values unchanged; (b2) a symbol of several
-   members read by their product; (c) the least and the greatest
+   interpret (built in the sixth pass, §23.4.5, and WITHDRAWN by
+   Alec, §19.101: there is no symbol of a concept; those symbols
+   come out); (b) the store's columns become rows of a Pi, basic
+   percepts and symbols (rule 71), the form of it waiting on his
+   answer to §19.101's open case; (c) the least and the greatest
    replaced by the Not and the sparse Sigma, with their readers,
    which is steps 4 and 11; (d) the SS leg carries each symbol's
    two lanes and no code, ConceptEvidence.decode's vectors gone.) Symbols are split from concepts

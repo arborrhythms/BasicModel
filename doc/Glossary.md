@@ -74,18 +74,23 @@ no symbols.
 **Concept.** What bears meaning. In a reading a concept is one signed value:
 positive for present, negative for absent, and its size is its certainty
 (Alec, 2026-11-19: "The concept remains a signed fuzzy keen on certainty").
-Its meaning is a point of *conceptual space*. A concept is made in one of two
-ways: implicitly, by a Sigma over the rows beneath it; or explicitly, by MTM,
-from a statement such as "Felix is a cat", which makes a link of part to
-whole or of member to kind, depending on the orders of the two.
+Its meaning is a point of *conceptual space*. A concept is a kind of objects:
+it "is created implicitly by Sigma or when nominated by MTM when recognizing
+that the objects form a kind" (Alec, 2026-11-20). What its Sigma reads are
+rows of a Pi, basic percepts and symbols. From a statement such as "Felix is
+a cat" MTM makes a link of part to whole or of member to kind, depending on
+the orders of the two.
 
 **Symbol.** A row of a Pi above order zero: a conjunction of concepts of
 lower orders. A symbol has no dimensions and "does not live in any space,
 which is what makes its collection by sigma so set-like" (Alec, 2026-11-19).
-It is made in one of two ways: implicitly, by a Pi, when MTM nominates what
-recurs; or explicitly, by MTM, from a statement such as "Felix is my cat",
-which says that two are the same. "Since implicit generally precedes
-explicit, MTM should check for an existing fit first."
+It is its constituents occurring together: "a basic percept or symbol is
+created implicitly by PI or when nominated by MTM when recognizing that their
+constituents always occur together" (Alec, 2026-11-20). There is no symbol
+*of* a concept: nothing makes a symbol for a concept, one for one. MTM also
+makes a symbol from a statement such as "Felix is my cat", which says that
+two are the same. "Since implicit generally precedes explicit, MTM should
+check for an existing fit first."
 
 **Order.** How far a concept stands above the basic percepts. A concept of
 order zero is read from basic percepts. A concept formed above symbols is one
