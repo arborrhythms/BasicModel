@@ -15,8 +15,10 @@ def install(model):
     if not model.attention_budget:
         return
     registry, cs = model.where_registry, model.conceptualSpace
-    sizes = tuple(registry.slices[name][1] - registry.slices[name][0]
-                  for name in ('parts', 'wholes', 'symbols'))
+    # The heat of the percepts' two codebooks by their where slices, and of
+    # the concepts by the concept inventory (priming reads concept rows).
+    sizes = (*(registry.slices[name][1] - registry.slices[name][0] for name in ('parts', 'wholes')),
+             int(model._concept_owner()._priming_dim()))
     geometry = tuple((int(space.outputShape[0]), int(space.subspace.muxedSize))
                      for space in (model.perceptualSpace, model.wholeSpace))
     width = sum(sizes) + sum(n*d for n,d in geometry) + geometry[0][0]*geometry[0][1]

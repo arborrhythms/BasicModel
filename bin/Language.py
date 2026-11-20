@@ -13708,26 +13708,6 @@ class SymbolSpace(Space):
             object.__setattr__(leg, '_symbol_evidence', symbols(acts))
             object.__setattr__(leg, '_concept_activations', acts)
             object.__setattr__(leg, '_concept_codes', codes)
-            ids = getattr(concept_sub, '_concept_ids', None)
-            if ids is not None:
-                # Packed slots travel with logical symbol addresses: 2*cid
-                # and 2*cid+1. Rebinding a slot cannot rename a symbol.
-                addresses = 2 * ids[..., None] + torch.arange(2, device=ids.device)
-                object.__setattr__(leg, '_symbol_indices', addresses)
-                registry = getattr(self, 'where_registry', None)
-                if registry is not None:
-                    rows = concept_sub._concept_inventory_rows
-                    locations = 2 * rows[..., None] + torch.arange(2, device=rows.device)
-                    band = registry.encode('symbols', locations)
-                    object.__setattr__(leg, '_symbol_where', band)
-                    # Dictionary symbols are unlocated. Located readings carry
-                    # their relative band below in _concept_when.
-                    object.__setattr__(leg, '_symbol_when', torch.zeros_like(band))
-                    # The SS carrier owns its bands; concept codes stay opaque.
-                    # Broadcast the same identity addresses over batch/readings.
-                    # These are the symbol's address bands, alongside its
-                    # opaque concept code. Rebuilding the event with band
-                    # setters would discard a snapshot's full-width content.
             for name in ('where', 'when', 'ids', 'inventory_rows'):
                 object.__setattr__(leg, '_concept_' + name,
                                    getattr(concept_sub, '_concept_' + name, None))

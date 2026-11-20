@@ -108,12 +108,9 @@ def model(tmp_path):
         torch._dynamo.reset()
 
 
-def test_symbol_range_has_one_address_per_pole_without_word_slots(model):
-    start, end = model.where_registry.slices['symbols']
-    symbols = model.symbolSpace.subspace.what
-    rows = max(int(getattr(symbols, 'lexicon_capacity', symbols.nVectors)),
-               int(model.conceptualSpaces[0].nVectors))
-    assert end - start == 2 * rows
+def test_a_symbol_has_no_address_in_the_where_registry(model):
+    # A symbol has no dimensions and does not live in any space (rule 9).
+    assert 'symbols' not in model.where_registry.slices
 
 
 def test_repeated_percept_occurrences_use_input_starts_and_one_time(model):

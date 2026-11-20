@@ -153,7 +153,9 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         # Open attention retains every definition reached by native evidence.
         assert cs._cs_last_a0.shape[0] >= 8
         leg = model.symbolSpace.forward_concept_to_symbol(carrier)
-        assert leg._symbol_indices[slot[0]].tolist() == [2 * cid, 2 * cid + 1]
+        # The slot keeps its concept's identity; a symbol has no address.
+        assert int(leg._concept_ids[slot[0]]) == cid
+        assert '_symbol_indices' not in leg.__dict__
         model.End()
     batch = torch.zeros(len(words), 1, 8, dtype=torch.long)
     for b, word in enumerate(words):
@@ -169,9 +171,10 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         slot = (ids == cid).nonzero().flatten()
         assert len(slot) == 1, word
         assert carrier._concept_activations[slot[0], b, :, 0].max() > 0, word
-        symbols = leg._symbol_indices
-        pair = symbols[slot[0], b] if symbols.ndim == 3 else symbols[slot[0]]
-        assert pair.tolist() == [2 * cid, 2 * cid + 1]
+        kept = leg._concept_ids
+        kept = kept[:, b] if kept.ndim == 2 else kept
+        assert int(kept[slot[0]]) == cid
+    assert '_symbol_indices' not in leg.__dict__
     model.End()
 
 

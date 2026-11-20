@@ -11,15 +11,15 @@ def test_where_ranges_are_fixed_and_owned_by_the_model(tmp_path):
     from test_grounded_xor import grounded_model
     first, _ = grounded_model(tmp_path)
     layout = first.where_registry
-    inputs, parts, wholes, symbols = [layout.slices[key] for key in
-                                      ('text', 'parts', 'wholes', 'symbols')]
+    inputs, parts, wholes = [layout.slices[key] for key in ('text', 'parts', 'wholes')]
+    # A symbol has no address (rule 9): no slice follows the wholes'.
+    assert 'symbols' not in layout.slices
     assert inputs[0] == 0 and inputs[1] == layout.slices['numeric'][0]
     assert layout.slices['numeric'][1] == layout.slices['scalar'][0]
     assert layout.slices['scalar'][1] == parts[0]
-    assert parts[1] == wholes[0] and wholes[1] == symbols[0]
+    assert parts[1] == wholes[0] and wholes[1] == layout.slices['conceptual'][0]
     assert first.perceptualSpace.subspace.what.where_offset == parts[0]
     assert first.wholeSpace.subspace.what.where_offset == wholes[0]
-    assert first.symbolSpace.subspace.what.where_offset == symbols[0]
     first.perceptualSpace.percept_store.ensure_atomic_bytes([b'x', b'y'])
     assert first.where_registry is layout
     first.End()
@@ -35,10 +35,10 @@ def test_where_ranges_are_fixed_and_owned_by_the_model(tmp_path):
     second.symbolSpace.soft_reset()
 
 
-def test_input_occurrences_and_thought_symbols_use_their_own_ranges():
+def test_input_occurrences_and_conceptual_slots_use_their_own_ranges():
     from WhereRegistry import WhereRegistry
     registry = WhereRegistry([('text', 256), ('parts', 64), ('wholes', 8),
-                              ('symbols', 128)])
+                              ('conceptual', 128)])
     rows = torch.tensor([[12, 12, -1]])
     positions = torch.tensor([[0, 1, 2]])
     where = registry.intervals('text', torch.where(rows >= 0, positions, -1))
@@ -46,10 +46,10 @@ def test_input_occurrences_and_thought_symbols_use_their_own_ranges():
     assert where.dtype == torch.int64
     assert where[0, 0, 0] == registry.slices['text'][0]
     assert where[0, 2].tolist() == [-1., -1.]
-    thought = registry.intervals('symbols', rows)
-    assert thought[0, 0, 0] == registry.slices['symbols'][0] + 12
+    thought = registry.intervals('conceptual', rows)
+    assert thought[0, 0, 0] == registry.slices['conceptual'][0] + 12
     torch.testing.assert_close(thought[0, 0], thought[0, 1])
-    assert registry.slices['symbols'][1] - registry.slices['symbols'][0] == 128
+    assert registry.slices['conceptual'][1] - registry.slices['conceptual'][0] == 128
 
 
 def test_live_conceptual_eight_space_has_fixed_sinusoidal_slot_addresses(tmp_path):

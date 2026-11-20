@@ -33,7 +33,13 @@ class SentenceField:
         column = (self.positions == index).long().argmax()
         identity = torch.where(payload[2] >= 0,payload[2],payload[4])
         registry = self.model.where_registry
-        known = registry.intervals('symbols', identity)
+        # A symbol has no address. An identified occurrence is placed where
+        # it stands in the text, the address its word step was given.
+        from PrependedSymbols import word_view
+        band = word_view(self.model.inputSpace, 'symbol_where')[:, index]
+        start = registry.encoding.decode_index(band).to(torch.long)
+        known = torch.where((identity >= 0)[:, None] & band.ne(0).any(-1, keepdim=True),
+                            torch.stack((start, start + 1), -1), -1)
         pair = self.model._attention_words.poles[:,index]
         if native:
             parts, wholes, codes, roles, evidence, mask = native

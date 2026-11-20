@@ -48,7 +48,6 @@ class WhereRegistry:
 def install_where_registry(model):
     parts = model.perceptualSpace.subspace.what
     whole = model.wholeSpace.subspace.what
-    symbols = model.symbolSpace.subspace.what
 
     def capacity(basis):
         return int(getattr(basis, 'lexicon_capacity', getattr(basis, 'nVectors', 0)))
@@ -76,7 +75,6 @@ def install_where_registry(model):
         ('scalar', 1),
         ('parts', capacity(parts)),
         ('wholes', capacity(whole)),
-        ('symbols', 2 * max(capacity(symbols), int(model.conceptualSpaces[0].nVectors))),
         # The current conceptual eight-space has locations of its own.
         # The C stages use the same slot geometry, independently of which
         # codebook rows or composed ideas currently occupy those slots.
@@ -84,8 +82,8 @@ def install_where_registry(model):
     ))
     parts.where_offset = registry.slices['parts'][0]
     whole.where_offset = registry.slices['wholes'][0]
-    symbols.where_offset = registry.slices['symbols'][0]
-    for basis in (parts, whole, symbols):
+    # A symbol has no dimensions and no address: it has no slice here.
+    for basis in (parts, whole):
         if callable(getattr(basis, 'freeze_capacity', None)) and not getattr(basis, '_capacity_frozen', False):
             basis.freeze_capacity('perceptual nVectors')
     import weakref
@@ -135,9 +133,5 @@ def install_where_registry(model):
         object.__setattr__(sub, 'whereEncoding', model.where_encoding)
         object.__setattr__(sub, 'whenEncoding', model.when_encoding)
     object.__setattr__(model.perceptualSpace, 'where_registry', registry)
-    for space in [model.wholeSpace]:
-        object.__setattr__(space, 'where_registry', registry)
-        if getattr(space, '_symbol_where', None) is not None:
-            rows = torch.arange(space._symbol_where.shape[0])
-            space._symbol_where = registry.encoding.encode(rows + space.subspace.what.where_offset)
+    object.__setattr__(model.wholeSpace, 'where_registry', registry)
     return registry
