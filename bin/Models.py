@@ -21649,7 +21649,7 @@ class BasicModel(BaseModel):
         n_locations = int(cs.outputShape[0])
         reducer = self._stm_reducer()
         interpretation = self._concept_owner().interpret
-        from Interpret import positive_evidence
+        from Layers import signed_lanes
         language = self.languageSpace
         n_rules = int(language._n_rules)
         trace = self._reconstruction_stack()
@@ -21975,11 +21975,14 @@ class BasicModel(BaseModel):
                 feedback[0], torch.zeros_like(feedback[0]))
             routed_valid = torch.logical_and(
                 feedback[1], same_sentence.reshape(B, 1))
+            # The signed read is its two unsigned lanes: a word stored
+            # against carries its value on the against lane. The form's
+            # presence is how much it is read, on either lane.
+            lanes = signed_lanes(activation.reshape(B))
             payload = (
-                symbolic_event, symbolic_orders, row, activation.abs(),
+                symbolic_event, symbolic_orders, row, lanes.sum(-1).reshape_as(activation),
                 object_row, object_order, object_atom, row_gate, commit,
-                routed_feedback, routed_valid,
-                positive_evidence(activation.reshape(B).abs()))
+                routed_feedback, routed_valid, lanes)
             if not sentence_transactions:
                 payload=self._attention_sentence_payload(payload,index)
             return payload, (next_sym,)
@@ -22462,9 +22465,9 @@ class BasicModel(BaseModel):
                 prior = self._per_word_contributions[p]
                 prior = torch.zeros_like(event[:, 0]) if prior is None else prior
                 self._per_word_contributions[p] = torch.where(gate, event[:, 0], prior)
-                payload = (event, orders, row, activation.abs(), obj, obj_order,
-                           atom, gate, gate, *empty_feedback,
-                           positive_evidence(activation.reshape(B).abs()))
+                lanes = signed_lanes(activation.reshape(B))
+                payload = (event, orders, row, lanes.sum(-1).reshape_as(activation), obj, obj_order,
+                           atom, gate, gate, *empty_feedback, lanes)
                 percept = ps.subspace.materialize()[:, 0]
                 slab = self._tensor_write_word_column(current_sub[1], index, percept)
                 return payload, (event, slab, *current_sub[2:])
