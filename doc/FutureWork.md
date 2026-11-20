@@ -225,33 +225,41 @@ behavior under their own setup; they do not establish this curriculum.
 
 ## 7. Episodic memory: a few active indices beside each row
 
-**Built.** An episodic entry is kept on the sentence's `LTM0` row: a flat
-list of up to `episodicConcepts` references, the strongest activations of the
-field of understanding whatever their orders, with one signed value each
-(`episodic_concepts`, `episodic_values`), stored detached. A question is
-matched against the entries of the latest `ltmWindow` rows by content, order
-by order (`EpisodicMemory.matches`, `relevance`), and a review publishes a
-recalled entry as the querying stream's field
+A row of `LTM0` keeps an idea, which is semantic memory, and a few *slots*,
+which are episodic memory (Alec, 2026-11-19: "Entry should be slot in
+episodic memory ( the idea is semantic memory)"): a flat list of up to
+`episodicConcepts`, each one concept of the row's moment, whatever its order,
+with one signed value (`episodic_concepts`, `episodic_values`), stored
+detached. A question is matched against the slots of the latest `ltmWindow`
+rows by content, order by order (`EpisodicMemory.matches`, `relevance`), and
+a review publishes a recalled row's slots as the querying stream's field
 ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11);
 [STM §10](STM.md#10-ltm-as-the-chain-of-stm-end-states)). Alec, 2026-11-11:
 "it will clarify the architecture to store concepts instead of percepts. That
 will allow us to do animal cognition (system 1 reconstruction) without
 calling compose and generate."
 
-The reason for an entry is the one given when it was first proposed (Alec,
+The reason for the slots is the one given when it was first proposed (Alec,
 2026-09-20 and 2026-09-28). LTM holds serial form only: a row is one idea, and
 several things at once can be stored only by chaining, which serializes what
 was simultaneous, strains generativity as the chain grows and keeps nothing
 that was active but not composed. Composition commits to one reading, so a
 word's other senses and the candidates that nearly won are lost unless they
 are kept beside the row. A stored idea is a story, semantic memory; storing
-the activations of all symbols would need a massive bandwidth, so a few of the
-strongest stand for them.
+the activations of all symbols would need a massive bandwidth, so a few
+stand for them.
 
 What is open:
 
+- **Which concepts fill the slots.** Not the most active (Alec, 2026-11-19:
+  "Most active is clearly not useful; perhaps least expected, or sentence
+  dominant such as np, vp, ?"). Two candidates are to be measured on whether
+  a question on top of the STM stack finds the row that answers it: the
+  least expected concepts of the moment, those whose value is furthest from
+  what the expectation gave, and the heads of the sentence's dominant
+  constituents.
 - **Narrowing by place.** Whether a recall also takes a `.where`
-  bracket. An entry keeps no place (an earlier proposal, 2026-10-09, kept a
+  bracket. A slot keeps no place (an earlier proposal, 2026-10-09, kept a
   bank of located fields, each candidate carrying its `.where` and `.when`
   extent), and memory is addressed by content, a row's time being content
   inside its idea.
@@ -260,9 +268,9 @@ What is open:
   it was stored with; this is built on Claude's reading, which Alec may
   override. Open: a bound or a decay on a reinstated field, so that
   remembering differs from knowing, and whether learning or expectation should
-  read a field that is lived again but not observed again (an entry is
+  read a field that is lived again but not observed again (a slot is
   detached and trains nothing).
-- **Transfer.** The operation that takes two entries and returns a
+- **Transfer.** The operation that takes two slots and returns a
   duration, and who reads it.
   [Kaufmann and Viera (2026), "Temporal cognition in apes"](https://doi.org/10.1080/00048402.2026.2649411)
   count informational transfer among the marks of a temporal representation,
@@ -274,23 +282,21 @@ What is open:
   `relation_evidence` for `'implies'`, and as the present by
   `ActivationPredictor` where `expectationMap` is `predictor`. No
   computation takes the duration between two
-  remembered events as a quantity for another computation; episodic entries
-  supply its operands, the same concept at two stamps
+  remembered events as a quantity for another computation; the comparator
+  given to the chooser and the operators tells how far back one stamp is
+  from the present, and the slots supply the operands, the same concept at two stamps
   ([`.when` as a duration](#when-as-a-duration-store-only-the-deltas-alec-2026-11-10)).
-- **The earlier design.** The indices first proposed were the most
-  active percepts or concepts at the moment a row was written. An entry now
-  holds the strongest concepts of the field of understanding, of any order,
-  with their signed evidence
-  $d = c^+ - c^-$. The dissonance $m = \min(c^+, c^-)$, which a stored
+- **The signed value.** A slot holds a concept of the field of
+  understanding, of any order, with its signed evidence $d = c^+ - c^-$. The dissonance $m = \min(c^+, c^-)$, which a stored
   resultant cannot carry (both and neither land on the same point), is not
   kept: a reading whose two poles are equal leaves no reference. Whether it
   should be is open.
-- **Forgetting.** An entry follows its row through compaction and
-  forgetting. Open: whether an entry is detail that goes before its row
+- **Forgetting.** The slots follow their row through compaction and
+  forgetting. Open: whether the slots are detail that goes before their row
   (§3).
-- **Senses.** An entry's use as evidence for discriminating a word's senses
+- **Senses.** The slots' use as evidence for discriminating a word's senses
   at interpretation time (§5) is not built.
-- **System 1 alone.** An entry is written only with an `LTM0` row, so a
+- **System 1 alone.** Slots are written only with an `LTM0` row, so a
   configuration that composes no sentences keeps none. Whether a mind with
   System 1 alone should keep and re-enter episodes is open.
 
@@ -419,7 +425,7 @@ actions do we have conscious access afterward, since a metacognitive memory
 is what lets later control improve on earlier performance.
 
 **What a row carries and what it does not.** It carries its idea with its
-`time`, its signed `trust`, its `referent`, the episodic entry of §7 and its
+`time`, its signed `trust`, its `referent`, the slots of §7 and its
 `activity`, set at write from the sentence's surprise and raised by every
 access. It does not carry a separate count of *reads* (retrievals by the
 thought loop or priming, as opposed to re-witnessing), an effort trace of the reading (compose steps, departures
@@ -1213,7 +1219,7 @@ term are not returning. Still catalogued:
   is exact without inversion; the proposal's home is the open read's
   presences over concepts. Two related steps are built: the field of known
   concepts that a point stimulates (`FieldProjection.stimulate`), and the
-  entry of a sentence's strongest activations kept on its row (§7).
+  slots of a sentence's moment kept on its row (§7).
 - *An order marker*: the symmetric connectives leave no word order in the
   understanding, so the reconstruction gate admits a transposition; order
   would come from a non-commutative binding.
@@ -1871,13 +1877,15 @@ layout.
 ## `.when` is model time in every store (Alec, 2026-11-10)
 
 Alec: ".when should not be per-document, it should be model time, even for
-semantic memory." It is built: every stamp is on one model-time ladder, one
-tick per sentence and one per thought idea; learned readers take an age or a
-difference, never the absolute stamp; document ordinals remain addresses
-only; and the one clock continues along the retained history, so times rise
-strictly and a row is named by its time (`row_name`)
-([Architecture](Architecture.md), "One where, one when, many whats";
-`RowTime`). Memory is addressed by content, a row's time being content inside
+semantic memory." Every stamp is of the model's one integer clock, one tick
+per sentence and one per thought idea, and the clock's sinusoidal code is
+made in one place and held on the model beside it (Alec, 2026-11-19). The
+chooser and the operators are given the present in that code and a
+comparator that tells how far back a stamp is; a stamp is never rewritten as
+an age. Document ordinals remain addresses only, and the one clock continues
+along the retained history, so times rise strictly and a row is named by its
+time (`row_name`) ([Architecture](Architecture.md), "One where, one when,
+many whats"). Memory is addressed by content, a row's time being content inside
 its idea (§7). Whether `.when` should become a duration is the next entry.
 
 ## `.when` as a duration: store only the deltas? (Alec, 2026-11-10)
@@ -1908,7 +1916,7 @@ written and is never read back.
 *To settle if taken up:* what a recall reads, and what names a row, when only
 deltas are stored (a running sum per read, or an absolute stamp kept at
 intervals); whether
-write-on-change applies to episodic entries alone or to idea rows too; and
+write-on-change applies to slots alone or to idea rows too; and
 whether a re-witness extends an interval instead of keeping the first
 stamp. [Kaufmann and Viera (2026)](https://doi.org/10.1080/00048402.2026.2649411)
 count a duration used as a quantity, informational transfer, among the

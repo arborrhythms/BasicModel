@@ -1522,7 +1522,7 @@ covers memory, the two truths, expectation, testimony and feeling.
   sentence gestalt (St. John & McClelland 1990), recursive auto-association
   with a tied decoder and clean-up memory (Pollack 1990; Plate 1995), the
   semantic pointer (Eliasmith 2013) and the preverbal message (Levelt 1989).
-  An episodic entry beside a row is the hippocampal index to a pattern of
+  The slots beside a row's idea are the hippocampal index to a pattern of
   activity, reinstated at retrieval (Teyler & DiScenna 1986; Danker &
   Anderson 2010); an abstraction computed from many activated traces is
   multiple-trace memory (Hintzman 1986). Retrieval by cue, index and rank is
@@ -1738,7 +1738,7 @@ describe the `optimal` and `human` settings it would select. Items marked
     so conjunction and intersection over graded activations are not assumed
     to model concept combination. One committed reading loses a word's
     infrequent senses, which instance stores keep (Jamieson et al. 2018);
-    this is the functional argument for episodic entries. Conceptual spaces
+    this is the functional argument for a row's slots. Conceptual spaces
     require natural concepts to be convex (Gardenfors 2000); a higher-order
     concept here may be disconnected, and categories that are not linearly
     separable are learned without a reliable cost (Shepard, Hovland & Jenkins
@@ -2272,9 +2272,10 @@ witnessing is what plants the seeds of attachment to identity, the
 Yogācāra reading under [Buddhist Epistemology](#buddhist-epistemology)
 and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-of-identity-alec-2026-10-23).
 
-What a sentence keeps of its moment is an episodic entry beside its `LTM0`
-row: up to `episodicConcepts` of the strongest concepts of the field it
-leaves, of every order. A recall by content reinstates them as the attended
+What a sentence keeps of its moment is held in the slots beside its `LTM0`
+row's idea: up to `episodicConcepts` concepts of the field it leaves, of
+every order, each with its value. The idea is semantic memory and the slots
+episodic memory. A recall by content reinstates them as the attended
 field; Alec:
 "review of episodic memory should be represented as the attended field,
 otherwise we could not reason about as a previously lived experience." Memory
