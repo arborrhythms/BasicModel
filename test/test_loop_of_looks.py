@@ -260,22 +260,26 @@ def test_9_unfocus_restores_unread_parent_and_costs_one_act():
     chooser = Chooser()
     state = open_narrowing(chooser, torch.eye(3)[None], torch.tensor([[[0,3],[4,7],[8,14]]]),
                            torch.ones(1,3,dtype=torch.bool), budget=8)
-    parent = narrowing_view(state)[0]
     narrow_step(state)
     # The unfocus that would undo the descend just taken is not legal at the
-    # next step; after a look in place at the word the parent now holds, it is.
+    # next step: it would bring the walk back to a state it has been in.
     assert not narrowing_view(state)[8][...,2].any()
+    # A second descend, on the two words the first left together.
+    chooser.action = 1*6+1
     narrow_step(state)
-    assert narrowing_view(state)[8][0,0,2]
-    chooser.action = 2
+    parent = narrowing_view(state)[0]
+    assert parent.valid[0, 2] and parent.intervals[0, 1].tolist() == [4, 7]
+    # Undoing it now would return to the state after the first descend.
+    assert not narrowing_view(state)[8][...,2].any()
+    # Once a word outside it has been read, the undo is a state not met before.
+    record_interpretation(state,torch.tensor([0]),torch.tensor([True]))
+    assert narrowing_view(state)[8][0,1,2]
+    chooser.action = 1*6+2
     narrow_step(state)
     restored = narrowing_view(state)[0]
-    for key in ('intervals','level','space','valid','done'):
-        assert getattr(restored,key).equal(getattr(parent,key))
-    assert restored.spent.item() == 3 and not narrowing_view(state)[8][...,2].any()
-    chooser.action = 1
-    narrow_step(state)
-    record_interpretation(state,torch.tensor([0]),torch.tensor([True]))
+    assert restored.intervals[0, 1].tolist() == [4, 14] and not restored.valid[0, 2]
+    assert restored.spent.item() == 3
+    # The first descend holds the word read, so it is not undone.
     assert not narrowing_view(state)[8][...,2].any()
 
 
