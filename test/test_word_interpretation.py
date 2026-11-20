@@ -38,8 +38,9 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
         assert sum(field.evidence.abs().sum() for field in model._sentence_open_fields.values()) > 0, \
             'derived concepts must have activations'
         # The published symbolic state is the symbols' two lanes, no code.
-        if symbols is not None:
-            assert symbols.ndim == 3 and symbols.shape[-1] == 2
+        # A reading that holds no symbol publishes the empty leg [B, 0, 2].
+        assert symbols is not None and symbols.ndim == 3 and symbols.shape[-1] == 2
+        if symbols.shape[1]:
             assert torch.isfinite(symbols).all() and symbols.min() >= 0 and symbols.max() <= 1
             assert model.symbol_cache._symbol_ids.shape == symbols.shape[:2]
     finally:
