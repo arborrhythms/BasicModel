@@ -93,20 +93,24 @@ def stimulate(owner, point, *, order=0, where=None, when=None):
     if point.ndim != 3:
         raise ValueError('stimulate expects batch by reading by code')
     rows = inventory(owner)
-    codes = owner.similarity_codebook.lookup_rows(rows).to(point)
-    positive, _ = match(point[None], codes[:, None, None],
-                        codebook=owner.similarity_codebook, lane=0)
-    negative, _ = match(point[None], codes[:, None, None],
-                        codebook=owner.similarity_codebook, lane=1)
-    direct = torch.stack((positive, negative), -1)
+    requested = torch.as_tensor(order, device=point.device, dtype=torch.long)
+    native = requested.new_tensor([owner._row_order(row) for row in rows])
+    # A point is compared with the codes of the orders it is read at only.
+    compared = torch.isin(native, requested.flatten().unique()).nonzero().flatten()
+    direct = point.new_zeros(len(rows), *point.shape[:2], 2)
+    if len(compared):
+        codes = owner.similarity_codebook.lookup_rows([rows[i] for i in compared.tolist()]).to(point)
+        positive, _ = match(point[None], codes[:, None, None],
+                            codebook=owner.similarity_codebook, lane=0)
+        negative, _ = match(point[None], codes[:, None, None],
+                            codebook=owner.similarity_codebook, lane=1)
+        direct[compared] = torch.stack((positive, negative), -1).to(direct)
     # Percept collections share the native boundary reader before closure.
     if hasattr(owner, 'basic_percepts'):
         from PerceptCollections import read
         collections = read(owner, point)
         if collections:
             direct = torch.stack([collections.get(row, direct[i]) for i, row in enumerate(rows)])
-    requested = torch.as_tensor(order, device=point.device, dtype=torch.long)
-    native = requested.new_tensor([owner._row_order(row) for row in rows])
     direct = direct * (native[:, None, None] == requested)[..., None]
     evidence = close(owner, rows, direct)
     B, E = point.shape[:2]
