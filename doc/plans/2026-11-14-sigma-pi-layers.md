@@ -18770,3 +18770,124 @@ Under the standing rule of 2026-11-20 this pass ran spot tests only (60 files an
 - *Left:* parts 2 and 3 (the SS leg, a signed value as two lanes), with certificate 6 over the leg.
 - *The certificate that now fails some of the time* (every membership declared at one stays exactly one) is retired and not chased: Alec has decided that declared classes are not fixed (§19.106), so what it asserts is no longer the design.
 - *One storage, not two, is still owed:* the store keeps storage of its own beside `SparseSigmaLayer3`'s because it removes entries and moves optimizer state. The next pass gives `SparseSigmaLayer3` what it lacks or says why not.
+
+### 23.4.10 Round 4, eleventh pass: the symbols' leg, signed lanes, the chooser as network alone, the load as a cost (parts 1 to 4 built; 5, 6, 7 not started)
+
+Checkout `basicmodel`, `main`, from `f73069f3f1`. Commits: `ca75add4e8` (the membership certificate removed; it also carried certificate 6's leg test, whose code is the next commit), `7f335b1263` (part 1), `2efc16715e` (part 2), `06d00f7572` (parts 3 and 4, one commit: their edits share `Language.OperationSelectionLayer`, `MLPTransformChooser` and their tests, and I did not split them).
+
+#### What fails or is unfinished, first
+
+- **Part 5 (blank object, meta concept, "objects" membership; certificate 18) not started.** The pending name is `MTMPool.named` (`bin/Memory.py` 1464) with its tokens, transient ids, `Interpret._pending`/`_field_pending` and the kept close that later gives the entry its symbol; replacing it runs through Memory and Interpret and could not be left whole in what remained of this pass.
+- **Part 6 (MTM makes a symbol and a concept from a statement; fit check) not started.**
+- **Part 7 (one storage) not started.** The reason the store keeps its own storage is still §23.4.9's (it grows and removes entries and migrates optimizer moments; `SparseSigmaLayer3` has fixed capacity and no removal); I did not attempt it.
+- Not run (expected to fail, not tests of the list): `test/postmerge_word_lanes.py` (a probe script) reads `doc/benchmarks/.../explore-1.xml`, which holds `<transformChooser>`, now refused. 2,309 configurations under `doc/benchmarks` hold the key; any test that loads one without stripping it fails (two did, `test_loop_of_looks` and `test_interpret_bias`, and strip it now).
+- Slow tests ported and not run: `test_cs_to_ss_forward.py` (3).
+
+#### Part 1: the symbols' leg carries each symbol's two lanes and no code (`7f335b1263`)
+
+| File, function | What it became |
+| --- | --- |
+| `ConceptEvidence.decode` | gone |
+| `Spaces.ConceptualSpace.symbol_lanes(field, rows)` (new; `cs_decode` gone) | the field's occurrences joined, then each symbol the store reads over the seated rows: `thing_lanes` (product of its members' lanes). Returns `[B, T, 2]` and the symbols `[B, T]` (-1 for none). Per stream: a host loop over `store.bind` |
+| `Language.SymbolSpace.forward_concept_to_symbol` | the leg's event is `symbol_lanes` of the carrier's `_concept_activations`; `leg._symbol_ids` names its rows; no code, band, `_concept_*` or `_symbol_evidence` on the leg. A carrier with no field (the old detached copy of the concept event, which XOR used) or a field with no symbol gives no leg |
+| `_publish_symbol_snapshot` | no `source`; copies no place or time |
+| `cs_forward_content(a_0)` | returns the field alone (its `decode` of the content went); `cs_symbolic_phase` returns `(settled, field)`; callers `FamiliarTier`, `SentenceLooks`, `Spaces` (2) |
+| `Models._publish_reading_symbols` | stamps no codes; pads the field to the field's rows |
+| `Models` `_cs_parallel_slab` (SBOW, off by default) | each concept's one signed value (for less against) times its own code: one row a concept, no symbol rows |
+| `symbol_states`, the forward's second output | the leg's lanes, or none |
+| `_capture_understanding` answer seed | the terminal idea whenever it is `[B, N, D]` (*provisional*: the parallel path read the symbolic state, which was the concept event copied) |
+| truth falsity penalty (`TruthLoss`, 0 by default) | reads the idea (`_reconstruction_seed`), not the leg |
+| `IntervalLog.run_probes` | tells probes apart by `conceptual_state` |
+| `_current_discourse_s` | gone (written, never read) |
+| LTM0 `content_width` | `nWhat`, the idea's what (it held `symbol_dim`, the same number) |
+| `commit_symbolic_peer_results` | unchanged: it keeps the leg it is given as a sidecar |
+
+Certificate 6, first clause over the leg (`test_item17_symbols.py::test_cert_6_the_symbols_leg_carries_each_symbols_two_lanes_and_no_code`): member (.7, .2) under one kind: leg `(1, 1, 2)`, lanes `[.7, .2]`, symbols `[[0]]`; the leg holds only `event` and `_symbol_ids`; gradient to the field 1.0; a field reading no symbol gives no leg. Passes.
+
+XOR now publishes no symbolic state (it has no symbols).
+
+#### Part 2: a word's signed read is its two lanes (`2efc16715e`)
+
+`Models` word step (two places, `stage_cs_sym` and the non-canonical `stage_cs_sub`): the payload's evidence pair is `signed_lanes(activation)` (was `positive_evidence(|a|)`): a word stored against carries its value on the against lane; the presence slot is the lanes' sum (= |a|; derivative at zero now reaches both lanes). Readers traced: `_attention_sentence_payload` (replaces the pair by the walk's poles when attention reads), `word_step` → `symbol_field.read(incoming_lanes)`, `stage_cs_lang` → `interpretation.activate` (for-block and against-block of the code), `field.arrive`, STM push (presence). The walk's own pair (`ModelAttention.reference_evidence`) was already the poles. No certificate added.
+
+#### Part 3: the chooser is the network alone (rule 74)
+
+| Went | Its readers became |
+| --- | --- |
+| `TransformChooser`, `AnchorDotTransformChooser`, `SelectedThoughtChooser` | `MLPTransformChooser(nn.Module)` only; `make_transform_chooser(d_model, n_copy, n_op, ordered_binary)` takes no kind |
+| key `transformChooser` (schema entry and enum, default `anchordot`, `Models.transform_chooser`, `LanguageLayer.transform_chooser`) | refused at load (`util._apply_legacy_renames`); removed from the 10 configurations that set it, so all 44 build the network |
+| `stop_anchor`, `reduce_anchor`, `apply_anchor`, `bracket_anchor` (read only by the linear form; the network ignored them) and the anchor arguments of `score_unary`/`score_binary` | gone from `OperationSelectionLayer` and every call (`attend`, `choose_interpret`, the closing case score, `forward`, `Generative`); a checkpoint's anchors are dropped with a warning (`Models` restore); `GrammarCheckpoint` anchor remaps, `Attention._CapturedAttentionChooser` (it only detached `stop_anchor`), `GrammarPreference.require_opaque_mlp`, the anchors in `Models` optimizer groups gone |
+
+Gates before and after part 3 (and part 4): `test_mm_xor::test_convergence` best loss .1979 after 32 epochs, the same in 5 runs before and 3 after (MM_xor reaches no chooser); `test_item25 …raised_class` passes before and after. No bar or count changed.
+
+#### Part 4: the pressure is a cost, and the chooser reads the rounds left (rule 75)
+
+- Went: `OperationSelectionLayer.reduce_pressure` (the learned number), `reduction_pressure` and its addition to the binary scores; `LanguageLayer`'s `reduce_pressure`; the key `reducePressure` (refused at load).
+- The cost: `WholePaths.load_cost(model, observation, like)`, charged like the operator's (`application_cost`) as the path term `compose.load` (reconstruction side): each program replayed on its stack depth (a word +1, a binary but `bind` -1), the depth held at each step summed, over the allowance (STM capacity - 1), times **`reductionCost`, default 1** (`configured_reduction_cost`, `LanguageSpace.reduction_cost`). On the lesson's sentences ("This is Felix.", three words, allowance 7): a parse that folds as it reads holds 1, 2, 1, 2, 1 = 7/7 = **1.0**; one that reads all three first holds 1, 2, 3, 2, 1 = 9/7 = **1.29** (computed from the rule, with interpret's unary steps adding the depth they hold; not measured on the lesson).
+- The signal: `Language.budget_code(rounds_left)` = `WhereEncoding(nWhere=4).set_capacity(256).encode(rounds)`, the two-rung sinusoid of `.where`, in [0, 1]; `MLPTransformChooser.budget_projection` (4 → hidden, zero at the start, no random draw; zero-filled for an old checkpoint) adds it to the first hidden layer of every candidate whenever `forward` is given `rounds_left`. No learned weight reads a count.
+
+#### Certificates of parts 3 and 4
+
+| Test | Numbers | Result |
+| --- | --- | --- |
+| `test_reduction_pressure::test_the_load_left_is_a_path_cost_linear_in_what_is_left` | program 1,2,1,2,1 → 1.0; with a bind 1,2,2 → 5/7; ×2 at `reductionCost` 2; no parameter named pressure | passes |
+| `…::test_the_chooser_reads_the_rounds_left_as_a_sinusoid_and_can_learn_the_cost` | 4 distinct codes in [0,1]; logits equal at rounds 3 and 1 while the reader is zero, differ once it is not; gradient reaches it | passes |
+| `…::test_reduction_cost_default_and_xml_override_and_the_retired_pressure` | default 1, `<reductionCost>0.75</reductionCost>` read, `<reducePressure>` refused | passes |
+| `test_mlp_transform_chooser::test_the_linear_chooser_and_its_key_are_gone`, `…_layers_hold_the_network_and_no_anchor`, `…_every_configuration_builds_the_network_in_the_router`, `…_the_retired_key_is_refused` | | pass |
+
+#### Ported tests
+
+| File::test (count) | Old | New |
+| --- | --- | --- |
+| tests that steered a choice by filling anchors: `test_compose_operations` (9), `test_compose_review` (5), `test_review16_score_function` (2), `test_signal_router_{unary,layer,scorer}` (5), `test_identity_threading` (2), `test_peer_pipeline` (1), `test_verb_spectrum` (2), `test_one_backward` (1), `test_look_forecast` (1), `test_one_attention` (1), `test_loop_of_looks` (1), `test_reduction_pressure` (6) | the layer's `*_anchor` filled; grads asserted on the anchors | a test stand-in (`test/chooser_steering.stand_in`: the chooser's two score methods replaced, for that test, by inner products with the vectors `stop`, `reduce`, `unary`, `bracket`, which the test fills); the same assertions on the stand-in's vectors |
+| `test_intra_routing_grad_to_router` (2) | grad reaches `apply_anchor`, `reduce_anchor` | grad reaches the chooser's `tool_embedding` and `mlp[0].weight` |
+| ~30 constructions `OperationSelectionLayer(..., chooser='mlp')` in 25 files; score calls with `None, None` (12) | | the argument dropped |
+| `test_mlp_transform_chooser` (4) | factory by kind; default anchordot; anchors kept | factory builds the network; no anchor in the state; every configuration builds the network; the key refused |
+| `test_transform_chooser_parity.py` (whole file, 6) | the linear form's parity with an einsum | retired; replaced by the four tests above |
+| `test_chooser_architecture` (SelectedThought tests 2, factory, real model, legacy state) | SelectedThoughtChooser rng/shapes; `kind` "grammar"/"step"; `transformChooser` set | retired the two step-head tests (the class is gone; thought's choice is the operation layer's chooser, still asserted by `test_real_model_xml_wires_both_chooser_architectures`); grammar only; legacy state has a zero `budget_projection`; the capacity test passes a budget code |
+| `test_structural_preference` (2) | SelectedThoughtChooser tie; opaque ops refuse anchordot | retired (class and choice gone) |
+| `test_review10_contracts::test_thought_departure_samples…` (2) | SelectedThoughtChooser.choose | retired (the class); the operation layer's `select_logits` departure stays tested in the same file |
+| `test_thought_review`, `test_negative_expectation` (1 each) | an old checkpoint built from SelectedThoughtChooser | built from a local module with the same parameters |
+| `test_item4_step0` | parametrized anchordot/mlp | the network |
+| `test_native_candidate_attention` | bracket anchors kept with one entry zeroed | a checkpoint's bracket anchors are dropped |
+| `test_selected_relation_meaning`, `test_selected_query_compose`, `test_stored_idea_generation` | fixtures with `stop_anchor` | `argument_inputs`; score stand-in takes no anchors |
+| `test_relation_closing` | bracket scores from the zero `bracket_anchor` | the forced scorer gives the brackets zeros (the tie the zero anchors gave) |
+| `test_reduction_pressure` | pressure grows with load and urgency; enters credit; weight finite; XML override | the load cost; temperature does not enter credit (probabilities = softmax(-c,-c,-c,0)); `reductionCost` finite; default/override/refusal |
+| `test_constituent_lesson` (2) | pressure's step disabled; wait lesson trains the pressure | a chooser weight; the wait lesson trains the chooser (`tool_embedding` grad, wait cost falls) |
+| `test_item18_operator_cost` | path cost | the load cost patched to zero (certified apart) |
+| `test_operators_final_b` | R = leaf + application | R = leaf + application + load |
+| `test_modification_lessons`, `test_parts_of_speech`, `test_item18_completion` | `reduce_pressure=` | dropped |
+| `test_loop_of_looks`, `test_interpret_bias` | doc's explore-1.xml | its `<transformChooser>` stripped |
+| part 1: `test_cs_sparse_weights` (8), `test_concept_evidence` (1), `test_word_interpretation` (2), `test_word_admission` (3), `test_order0_attended_field` (2), `test_primitive_properties`, `test_wholespace_property_migration`, `test_dual_towers`, `test_sparse_concept_e2e`, `test_meronomy_ladder` (1 each); `cs_forward_content(a, dict)` → `cs_forward_content(a)` in 9 files | leg = activation × code, `_symbol_evidence`, `leg._concept_*`, content shapes, `_current_discourse_s` | the leg's lanes (or none) and no `_concept_*` on it; the concept field read from the carrier handed to the publication; content gone (`cs_symbolic_phase` returns `settled`); `test_cs_decode_scales_dictionary_atoms` retired (replaced by certificate 6) |
+| `test_cs_to_ss_forward` (slow, 4, not run) | row-aligned detached copy; activation × row; repeated sync | without a field, none; a field with no symbol, none (the leg's contents are certificate 6) |
+| `test_item17_symbols::test_the_lessons_training_keeps_every_declared_membership…` | | removed (§19.106) |
+
+#### Choices
+
+1. The leg reads only the symbols that the store's kinds read over the seated rows (`store.bind`'s things), per stream, padded (*provisional*).
+2. No leg where no symbol is read; XOR publishes no symbolic state (*provisional*).
+3. The answer seed and the falsity penalty read the idea (*provisional*).
+4. The load cost is the depth held at each step over the allowance (the pressure's occupancy term made a cost; the deadline masks stay) (*provisional*); key `reductionCost`, default 1 (*provisional*).
+5. The budget code's ladder capacity 256, one code (the rounds of the budget in hand at `forward`) (*provisional*).
+6. Old checkpoints: anchors dropped with a warning, `budget_projection` zero-filled (*provisional*).
+7. Parts 3 and 4 in one commit.
+
+#### Spot tests run
+
+Part 1: 25 files 300 passed, 31 skipped; 16 files 227 passed. Part 2: 22 files and both gates 450 passed, 12 skipped. Parts 3 and 4: 60 files and both gates, 742 passed, 14 skipped (72 s); before the last ports 7 failed, each ported above. Both gates pass at the end (3.4 s).
+
+#### What is left, step by step
+
+1. Part 5: replace `MTMPool.named` in `InterpretLayer.reading` by a blank object (a new concept one order above its word, no members, code zero; no read divides by its length) and `define(word, blank)` as the meta concept; every object `define` writes made a member of "objects" (`add_concept_edge(objects_row, obj_row, 1.)`); retire `_pending`/`_field_pending`/`named` with their readers; certificate 18.
+2. Part 6: MTM's statement of identity (one symbol over both, `SymbolTable.fit` = same members) and of kind (an entry on the member's symbol; two sharing a side raise an order), with the fit check (a concept fits by the same read).
+3. Part 7: give `SparseSigmaLayer3` growth, removal and moment migration, or keep the two storages.
+4. The list, with the doc-benchmark configurations that hold `<transformChooser>` in mind.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests only, by the pass (742 passed with both gates on its last part); the list is run by Claude on its last commit and recorded with the round's end.
+
+- *Built:* the symbols' leg carries two lanes and no code; a signed value goes up and back as two lanes; the chooser is the network alone; the pressure of the rounds left is a cost (`reductionCost`) and the chooser reads what is left as a sinusoidal code. Both gates pass before and after, and the XOR gate's loss is the same to four places, since that configuration never reaches the chooser.
+- *Not started:* the blank object and the meta concept (§22.4 step 6), MTM's making from a statement with the fit check (step 12), and one storage for the store. They are the round's last pass.
+- *To note:* 2,309 configurations kept under `doc/benchmarks` still hold the key `transformChooser`, which is now refused at load; the two tests that load one of them strip the key first. The benchmarks are a record and are left as they are.
+- *The cost on the lesson was computed from the rule and not measured;* it is measured with the round's end.
