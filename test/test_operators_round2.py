@@ -30,7 +30,7 @@ def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
     import WalkTrials
     from SentenceCredit import departure,score_function
     attention=SimpleNamespace(alternatives=torch.tensor([[True,False,True]]),
-        round_words=torch.tensor([[0,0,1]]))
+        actions=torch.tensor([[0,0,1]]))
     seen=[]
     def choose(mask):
         seen.append(mask)

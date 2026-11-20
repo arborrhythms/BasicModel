@@ -28,7 +28,7 @@ def test_eligible_walks_respect_sentence_and_active_rows(monkeypatch):
     monkeypatch.setattr(torch,'rand',lambda n,**kwargs:torch.full((n,),.75))
     reading=SimpleNamespace(alternatives=torch.tensor([
         [True,True,True], [False,False,False], [False,True,True], [True,True,True]]),
-        round_words=torch.tensor([[0,1,-1]]).expand(4,-1))
+        actions=torch.tensor([[0,1,-1]]).expand(4,-1))
     draw=departure(reading,torch.tensor([[False,False],[True,True],[False,False],[True,True]]),
         active=torch.tensor([True,True,True,False]),
         sentence_ids=torch.tensor([[0,1]]).expand(4,-1),sentence=0,

@@ -174,7 +174,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
             # row its second at the next. Every call of a sentence sees
             # exactly the sentences committed before it, and the explore
             # path reuses those perceptions without a call.
-            assert [count for count, _ in perceived] == [0, 0, 1, 1]
+            assert [count for count, _ in perceived] == [0, 0, 1, 1, 1]
             assert all(trial == 'exploit' for _, trial in perceived), perceived
     finally:
         model.End()

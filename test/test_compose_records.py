@@ -219,9 +219,20 @@ def test_tensor_pipeline_records_both_one_word_packed_ends(tmp_path, monkeypatch
         return x.new_full((*x.shape[:2], 1), -1e6), scores
     chooser.score_binary, chooser.score_unary = binary, unary
     # This test calls the tensor body directly. Supply each word through
-    # a supplied reading before exercising its two closing groups.
-    from reading_fixtures import read_in_source_order
-    read_in_source_order(model, monkeypatch)
+    # a supplied reading before exercising its two closing groups: the
+    # staged read, which takes no look, is given every word as read.
+    import ModelAttention
+    stage = ModelAttention.stage_input
+    def staged(model_):
+        stage(model_)
+        state = model_._attention_open() if model_._attention_open is not None else None
+        if state is not None:
+            live = state.spans[..., 1] > state.spans[..., 0]
+            for word in range(live.shape[1]):
+                state.record(torch.full((live.shape[0],), word), live[:, word])
+            model_._attention_greedy = state.reading()
+            ModelAttention.handoff(model_, model_._attention_greedy)
+    monkeypatch.setattr(ModelAttention, 'stage_input', staged)
     def eager_while(condition, body, values):
         while bool(condition(*values)):
             values = body(*values)
