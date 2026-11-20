@@ -108,6 +108,27 @@ class LookForecast:
         batch = live.nonzero()[:, 0]
         return error.index_add(0, batch, cost)
 
+    def percept_stage_cost(self, perception, spans):
+        """The basic percepts' stage at a look, ``[B]``: what each basic
+        percept expected from the readings outside the look's extent, with
+        the gradient of its own entries of the first Pi alone, against the
+        basic percepts the look brought (``perception``, the look's read)."""
+        live, inputs = self._outside(spans)
+        error = self.observations.new_zeros(live.shape[0])
+        if perception is None or not bool(live.any()):
+            return error
+        held = [(i, key[1]) for i, key in enumerate(perception.keys) if key[0] == 'bp']
+        if not held:
+            return error
+        width = max(row for _, row in held) + 1
+        values = perception.values.detach().amax(2)
+        arrived = values.new_zeros(values.shape[1], width, 2)
+        for i, row in held:
+            arrived[:, row] = values[i]
+        batch = live.nonzero()[:, 0]
+        cost = ConceptSpread.percept_cost(self.owner, inputs, arrived.index_select(0, batch))
+        return error.index_add(0, batch, cost)
+
     def read(self, evidence, locations, spans):
         """Read both lanes within each span at the same addresses as a forecast."""
         values = self._pool(evidence, contained(spans, locations))

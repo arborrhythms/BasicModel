@@ -486,5 +486,104 @@ class TestStructureValid(unittest.TestCase):
         self.assertLess(cat_in_caat, 1.)
 
 
+# ---------------------------------------------------------------------------
+# A blind spot is filled (certificate 24)
+# ---------------------------------------------------------------------------
+
+class TestBlindSpot:
+    """On the small lesson ("alpha gamma", "beta delta"), with every second
+    form of the second word withheld: the structure expects that word's
+    basic percept at its place from the parts that remain, and the way back
+    reads it there; the word beside it is unchanged; a word never taught is
+    not completed. Prints the values of sigma-pi section 19.23."""
+
+    def _looks(self, model, monkeypatch, text):
+        import SentenceLooks
+        from test_item18_expect import read
+        seen = []
+        perceive = SentenceLooks.perceive
+        def kept(model_, interval, rows):
+            field = perceive(model_, interval, rows)
+            seen.append((interval.detach().clone(), model_._concept_owner()._percept_field))
+            return field
+        monkeypatch.setattr(SentenceLooks, 'perceive', kept)
+        read(model, text)
+        monkeypatch.setattr(SentenceLooks, 'perceive', perceive)
+        return seen
+
+    def _withhold(self, monkeypatch, model, word, every):
+        import torch
+        from Omission import Draw
+        def draw(valid, *, training):
+            hidden = torch.zeros_like(valid)
+            hidden[:, word, ::every] = valid[:, word, ::every]
+            words = hidden.any(-1) if every == 1 else torch.zeros_like(valid.any(-1))
+            return Draw(words, hidden, torch.zeros(len(valid), dtype=torch.long))
+        monkeypatch.setattr(model.omission, 'draw', draw)
+
+    def test_blind_spot(self, tmp_path, monkeypatch):
+        import torch
+        import ConceptSpread
+        from test_item18_expect import lesson, read
+        from nomination_fixtures import readings_before_nomination
+        model = lesson(tmp_path, monkeypatch)
+        try:
+            for text in ('alpha gamma', 'beta delta'):
+                readings_before_nomination(model, lambda: read(model, text))
+                read(model, text)
+            owner = model._concept_owner()
+            basic = owner.basic_percepts
+            from PrependedSymbols import word_view
+            read(model, 'alpha gamma')
+            concept_rows = word_view(model.inputSpace, 'concept_rows')[0, :2].tolist()
+            percept_of = {row: percept for row, percept, negated in owner._concept_allocator.order_zero_members
+                          if not negated}
+            alpha, gamma = (percept_of.get(row) for row in concept_rows)
+            ordinary = model.omission.draw
+            rows = {}
+            for label, text, every in (('none', 'alpha gamma', None), ('half', 'alpha gamma', 2),
+                                       ('whole', 'alpha gamma', 1), ('untaught', 'alpha omega', None)):
+                if every is None:
+                    model.omission.draw = ordinary
+                else:
+                    self._withhold(monkeypatch, model, 1, every)
+                looks = self._looks(model, monkeypatch, text)
+                # The concepts the sentence observed: with the second word
+                # withheld, the first word's alone.
+                knowing = owner._observed_knowing[:1].clone()
+                read_at = []
+                for interval, perception in looks:
+                    if perception is None or not perception.keys:
+                        continue
+                    held = {key[1]: i for i, key in enumerate(perception.keys)}
+                    # Withheld: the readings of the second word's place.
+                    withheld = (perception.where[..., 0] >= 6) & (every is not None)
+                    back = ConceptSpread.read_back(owner, perception, withheld, knowing)
+                    parts = perception.parts
+                    at = lambda values, row: None if row not in held else float(values[held[row], 0].amax())
+                    read_at.append(dict(
+                        where=interval[0].tolist(), withheld=bool(withheld.any()),
+                        parts_present=0 if parts is None else int((parts[1].amax(-1) > 0).sum()),
+                        gamma_perceived=at(perception.values, gamma), gamma_read_back=at(back, gamma),
+                        alpha_perceived=at(perception.values, alpha), alpha_read_back=at(back, alpha)))
+                rows[label] = read_at
+            model.omission.draw = ordinary
+            print(dict(gamma_percept=gamma, alpha_percept=alpha, basic_percepts=len(basic.index), looks=rows))
+            half = [look for look in rows['half'] if look['where'] == [6, 11]]
+            beside = [look for look in rows['half'] if look['where'] == [0, 5]]
+            # The word beside the blind spot is unchanged on the way back.
+            assert beside and all(look['alpha_read_back'] == look['alpha_perceived'] for look in beside)
+            # Nothing is read back where nothing was withheld.
+            for look in rows['none']:
+                assert look['gamma_read_back'] == look['gamma_perceived']
+            # A word never taught has no basic percept to complete.
+            assert len(basic.index) == len(set(range(len(basic.index))))
+            # The hidden word, withheld at its place, is read back there from
+            # what the structure expects.
+            assert half and half[0]['gamma_perceived'] == 0. and half[0]['gamma_read_back'] > 0.
+        finally:
+            model.End(); model.symbolSpace.soft_reset()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

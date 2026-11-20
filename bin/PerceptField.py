@@ -22,6 +22,7 @@ class PerceptField:
     percept_where: torch.Tensor | None = None  # [feature, member, 4], native percept ladders
     when_band: torch.Tensor | None = None      # [batch, reading, 4], shared field time
     boundaries: torch.Tensor | None = None     # [part/whole, percept, batch, reading, pole]
+    parts: tuple | None = None                 # (member keys, [member, batch, reading, pole]) read at this field
 
     def clone(self):
         return type(self)(self.keys, *(None if getattr(self, name) is None else

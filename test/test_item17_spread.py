@@ -229,3 +229,53 @@ def test_68_intuits_map_starts_each_row_on_a_few_concepts_and_learns_exact_conce
                                  for b in range(8)))
     print(dict(of_8=learned))
     assert learned['few'] == 8
+
+
+def test_16_a_meta_concept_primed_by_another_word_prefers_its_object():
+    """Rule 3 of 1.8 §55.1: finding a word raises its meta concepts and their
+    objects; of the word's two objects, the one whose meta concept another
+    word of the sentence primed is preferred at comprehension."""
+    from Interpret import InterpretLayer
+    # Concepts: the word 0, another word 1, two objects 2 and 3, their meta
+    # concepts 4 and 5, a third word 6; symbols 7 to 11 of the word, the
+    # other word, the two objects and the third word. Meta concept 4 reads
+    # the word, its object and the other word; meta concept 5 the word, its
+    # object and the third word, so the two are alike when the word is alone.
+    edges = [(7, 0, 1., False), (8, 1, 1., False), (9, 2, 1., False), (10, 3, 1., False), (11, 6, 1., False),
+             (4, 7, 1., False), (4, 9, 1., False), (4, 8, 1., False),
+             (5, 7, 1., False), (5, 10, 1., False), (5, 11, 1., False)]
+    g = graph(7, 5, edges)
+    alone, _ = spread(OWNER, present(7, 0), structure_=g)
+    observed = present(7, 0)
+    observed[1, 0, 0] = 1.
+    both, _ = spread(OWNER, observed, structure_=g)
+    print(dict(alone=dict(meta=[float(alone[4, 0, 0]), float(alone[5, 0, 0])],
+                          objects=[float(alone[2, 0, 0]), float(alone[3, 0, 0])]),
+               primed=dict(meta=[float(both[4, 0, 0]), float(both[5, 0, 0])],
+                           objects=[float(both[2, 0, 0]), float(both[3, 0, 0])])))
+    # The word alone raises both meta concepts and both objects, equally.
+    assert float(alone[4, 0, 0]) > 0 and float(alone[5, 0, 0]) > 0
+    assert float(alone[2, 0, 0]) == pytest.approx(float(alone[3, 0, 0])) and float(alone[2, 0, 0]) > 0
+    # With the other word, the primed meta concept's object is the higher.
+    assert float(both[2, 0, 0]) > float(both[3, 0, 0])
+    owner = SimpleNamespace(_expected_knowing=both[:7].transpose(0, 1).clone(),
+                            _concept_row_of=lambda cid: int(cid), _concept_source_order=lambda cid: 1)
+    layer = SimpleNamespace(owner=owner)
+    assert InterpretLayer.preferred_objects(layer, (3, 2), batch=0) == (2,)
+    assert InterpretLayer.preferred_objects(layer, (2, 3), batch=0) == (2,)
+
+
+def test_57d_the_percepts_stage_is_registered_beside_the_concepts():
+    """Rule 66: the basic percepts are a stage of their own, registered as
+    ``expectation.percepts`` beside ``expectation.concepts``; the output is
+    no stage."""
+    terms = {}
+    registry = SimpleNamespace(error=lambda name, value, baseline, **kw: terms.__setitem__(name, (value, kw)))
+    mask = torch.tensor([True])
+    model = SimpleNamespace(_expectation_looks=[(torch.tensor([.3]), mask)],
+                            _expectation_percept_looks=[(torch.tensor([.2]), mask), (torch.tensor([.1]), mask)])
+    ConceptSpread.complete(model, mask, registry)
+    assert set(terms) == {'expectation.concepts', 'expectation.percepts'}
+    assert float(terms['expectation.percepts'][0]) == pytest.approx(.3)
+    assert all(kw['category'] == 'expectation' for _, kw in terms.values())
+    assert model._expectation_looks == [] and model._expectation_percept_looks == []

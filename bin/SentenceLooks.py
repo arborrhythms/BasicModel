@@ -143,6 +143,9 @@ class Looks:
                 if forecasts is not None and self.model.training:
                     looks = self.model.__dict__.setdefault('_expectation_looks', [])
                     looks.append((forecasts.stage_cost(field, span), rows.clone()))
+                    percepts = self.model.__dict__.setdefault('_expectation_percept_looks', [])
+                    perception = getattr(self.model._concept_owner(), '_percept_field', None)
+                    percepts.append((forecasts.percept_stage_cost(perception, span), rows.clone()))
             self.fields.append(dict(field=field, where=interval.detach().clone(), active=rows.clone(),
                                     surprise=surprise))
             index, allowed = interpretation_at(state,slot)

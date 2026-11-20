@@ -600,9 +600,13 @@ class BasicPercepts(nn.Module):
             width = max((len(group) for group in grouped), default=0)
             bands = (torch.stack([torch.nn.functional.pad(group, (0, 0, 0, width-len(group)))
                                   for group in grouped]) if grouped else native.percept_where[:0])
+        parts = None
+        if rows:
+            order = list(dict.fromkeys(keys))
+            parts = (tuple(order), native.values.index_select(0, native.selected(order)).detach())
         return PerceptField(tuple(('bp', row) for row in rows), value, event, native.spans,
             native.where, native.when, bands, native.when_band,
-            torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape))
+            torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape), parts)
 
     def _row_values(self, members, happened, rows, groups, order, opposed=None):
         """Each row's two lanes for a reading, ``[rows, ..., 2]``.

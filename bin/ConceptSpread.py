@@ -202,24 +202,90 @@ def spread(owner, observed, *, percepts=None, structure_=None):
     return union(up, down), graph
 
 
+def _staged(owner, observed, percepts, stage):
+    graph = structure(owner, observed.device)
+    depth = 4 * (len(owner._order_caps()) + 1)
+    source, up, down, fan, _ = _flow(graph, observed, percepts, depth)
+    lo, hi = ((0, graph.concepts) if stage == 'concepts' else (graph.percept_start, graph.part_start))
+    if fan is None:
+        return union(up, down)[lo:hi]
+    own = (graph.parent >= lo) & (graph.parent < hi)
+    weight = graph.weight.to(observed)[own]
+    child, parent = graph.child[own], graph.parent[own]
+    share = weight / fan.index_select(0, child)
+    reading = _carry(union(source, up), child, parent, share, graph.negated[own], graph.size)
+    return union(reading[lo:hi], down[lo:hi])
+
+
 def staged(owner, observed, *, percepts=None):
     """The expected concepts ``[V, B, 2]`` with the gradient of their own
     stage alone: each concept's reading of the things beneath it (its
     Sigma's entries, by their share of the fan), from what the spread left
     beneath, detached; what reaches it from above is detached too. No
     gradient crosses into another stage or the way back."""
-    graph = structure(owner, observed.device)
-    depth = 4 * (len(owner._order_caps()) + 1)
-    source, up, down, fan, _ = _flow(graph, observed, percepts, depth)
-    V = graph.concepts
-    if fan is None:
-        return union(up, down)[:V]
-    own = graph.parent < V
-    weight = graph.weight.to(observed)[own]
-    child, parent = graph.child[own], graph.parent[own]
-    share = weight / fan.index_select(0, child)
-    reading = _carry(union(source, up), child, parent, share, graph.negated[own], graph.size)
-    return union(reading[:V], down[:V])
+    return _staged(owner, observed, percepts, 'concepts')
+
+
+def staged_percepts(owner, observed, *, percepts=None):
+    """The expected basic percepts ``[R, B, 2]`` with the gradient of their
+    own stage alone: each basic percept's reading of its parts (the first
+    Pi's for entries, by their share of the fan), from what the spread left
+    at the parts, detached; what reaches it from the concepts above is
+    detached."""
+    return _staged(owner, observed, percepts, 'percepts')
+
+
+def present_parts(graph, perception):
+    """The parts of the first Pi that a perception read, ``[P, B, R, 2]``
+    (``R`` its readings), at the structure's part nodes; ``None`` where it
+    read none."""
+    held = getattr(perception, 'parts', None)
+    if held is None or not graph.parts:
+        return None
+    keys, values = held
+    index = {key: i for i, key in enumerate(graph.part_keys)}
+    found = [(index[key], i) for i, key in enumerate(keys) if key in index]
+    result = values.new_zeros(graph.parts, *values.shape[1:])
+    if found:
+        at, src = (torch.tensor(side, dtype=torch.long, device=values.device) for side in zip(*found))
+        result[at] = values.index_select(0, src).clamp(0., 1.)
+    return result
+
+
+def blind_spot(owner, perception, knowing=None):
+    """What the structure expects of the basic percepts at each reading of a
+    perception, ``[R_basic, B, readings, 2]``, from the parts that reading
+    holds and the concepts observed elsewhere (``knowing`` ``[B, W, 2]``):
+    a part that is present raises the rows that read it, and a row gives a
+    share to each of its parts; a concept observed elsewhere gives its share
+    down to the basic percepts of what it is read with. So a basic percept
+    whose parts are withheld is expected from what remains. Detached; never
+    evidence."""
+    graph = structure(owner, perception.values.device)
+    B, readings = perception.values.shape[1:3]
+    parts = present_parts(graph, perception)
+    flat = None if parts is None else parts.flatten(1, 2)
+    observed = perception.values.new_zeros(graph.concepts, B * readings, 2)
+    if knowing is not None:
+        width = min(knowing.shape[1], graph.concepts)
+        observed[:width] = knowing[:, :width].detach().transpose(0, 1).repeat_interleave(readings, 1)
+    value, _ = spread(owner, observed, percepts=flat, structure_=graph)
+    return value[graph.percept_start:graph.part_start].reshape(graph.percepts, B, readings, 2)
+
+
+def read_back(owner, perception, withheld, knowing=None):
+    """The basic percepts the way back reads: those perceived, and where a
+    reading's percepts were withheld (``withheld`` ``[B, readings]``), the
+    expected ones of :func:`blind_spot` joined in their place. The values of
+    ``perception`` are not changed."""
+    rows = [key[1] for key in perception.keys if key[0] == 'bp']
+    expected = blind_spot(owner, perception, knowing)
+    if not rows or not len(expected):
+        return perception.values.detach()
+    filled = expected[torch.tensor(rows, dtype=torch.long, device=expected.device)]
+    perceived = perception.values.detach()
+    gate = withheld.to(torch.bool)[None, :, :, None]
+    return torch.where(gate, union(perceived, filled), perceived)
 
 
 def stage_values(owner, observed, *, percepts=None):
@@ -256,6 +322,27 @@ def expected(owner, knowing, *, percepts=None):
     return value[:V].transpose(0, 1)
 
 
+def percept_cost(owner, before, arrived):
+    """The basic percepts' stage at one look, ``[B]``: what each basic
+    percept expected from what the earlier looks left (``before`` ``[B, V,
+    2]``), with the gradient of its own entries of the first Pi alone,
+    against the basic percepts the look brought (``arrived`` ``[B, R, 2]``
+    for the first ``R`` basic percepts)."""
+    V = int(owner.nVectors)
+    B = before.shape[0]
+    observed = before.new_zeros(V, B, 2)
+    observed[:before.shape[1]] = before.transpose(0, 1).detach()
+    expected = staged_percepts(owner, observed)
+    R = min(arrived.shape[1], len(expected))
+    if not R:
+        return before.new_zeros(B)
+    error = (expected[:R] - arrived[:, :R].transpose(0, 1).detach()).square().mean((0, 2))
+    stages = dict(getattr(owner, '_expectation_stages', None) or {})
+    stages['percepts'] = float(error.detach().mean())
+    owner._expectation_stages = stages
+    return error
+
+
 def look_cost(owner, before, arrived):
     """The stages of expectation at one look. ``before`` ``[B, V, 2]`` is
     what the earlier looks left, ``arrived`` ``[B, V, 2]`` what the look
@@ -276,6 +363,7 @@ def look_cost(owner, before, arrived):
         symbols = stage_values(owner, target)['symbols']
         expected_symbols = value[graph.concepts:graph.percept_start]
         owner._expectation_stages = dict(
+            getattr(owner, '_expectation_stages', None) or {},
             concepts=float(error.detach().mean()),
             symbols=float((expected_symbols - symbols).square().mean()) if len(symbols) else 0.)
     return error
@@ -299,6 +387,7 @@ def open_prediction(model, present, *, sid=None):
     prediction = expected(owner, knowing)
     model._concept_prediction = Prediction(prediction[:, :len(rows)], rows, present.clone())
     model._expectation_looks = []
+    model._expectation_percept_looks = []
     with torch.no_grad():
         stored = owner._expected_knowing[:B]
         stored.copy_(torch.where(present[:, None, None], prediction, stored))
@@ -313,20 +402,22 @@ def write_look(owner, rows, value):
         owner._expected_knowing[:B, rows] = value.detach()
 
 
-def loss(model):
-    looks = getattr(model, '_expectation_looks', None)
+def loss(model, looks='_expectation_looks'):
+    looks = getattr(model, looks, None)
     if not looks:
         return None
     return torch.stack([error for error, _ in looks]).sum(0)
 
 
 def complete(model, present, registry):
-    """The concepts' stage of expectation, summed over the looks: at each
-    look what was expected against what arrived, each look's cost on its own
-    stage's entries."""
-    looks = getattr(model, '_expectation_looks', None)
-    if not looks:
-        return
-    active = torch.stack([mask for _, mask in looks]).any(0)
-    registry.error('expectation.concepts', loss(model), 1., mask=active & present, category='expectation')
-    model._expectation_looks = []
+    """The stages of expectation, each summed over the looks: at each look
+    what was expected against what arrived, each look's cost on its own
+    stage's entries: the concepts (``expectation.concepts``) and the basic
+    percepts (``expectation.percepts``)."""
+    for name, looks in (('expectation.concepts', '_expectation_looks'),
+                        ('expectation.percepts', '_expectation_percept_looks')):
+        held = getattr(model, looks, None)
+        if held:
+            active = torch.stack([mask for _, mask in held]).any(0)
+            registry.error(name, loss(model, looks), 1., mask=active & present, category='expectation')
+        setattr(model, looks, [])
