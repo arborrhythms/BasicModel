@@ -20,21 +20,21 @@ def readable(cs, *rows):
     return rows
 
 
-def symbol_columns(cs, reader, *rows, lane=0):
+def symbol_columns(cs, reader, *rows):
     """The store's columns by which ``reader`` reads each of ``rows``
     (through :meth:`ConceptualSpace.things_reading`, making a symbol where
     none holds the row's concept)."""
     store = cs._concept_allocator.layer(0)
     readable(cs, *rows)
-    return [store.column_of_thing(thing, lane) for row in rows
+    return [store.column_of_thing(thing) for row in rows
             for thing in cs.things_reading(reader, row)]
 
 
-def store_columns(store, *rows, lane=0):
+def store_columns(store, *rows):
     """On a bare store (no space): each of ``rows`` holds a concept
     (recorded as ``1_000_000 + row`` where it holds none) and a symbol
-    holds it, found or made; returns those symbols' columns in lane block
-    ``lane``."""
+    holds it, found or made; returns those symbols' columns (an entry's
+    option is its sign)."""
     columns = []
     for row in rows:
         row = int(row)
@@ -48,5 +48,5 @@ def store_columns(store, *rows, lane=0):
         symbol = table.fit(int(concept))
         if symbol is None:
             symbol = table.make(('test', int(concept)), int(concept))
-        columns.append(store.column_of_thing(('sym', symbol), lane))
+        columns.append(store.column_of_thing(('sym', symbol)))
     return columns

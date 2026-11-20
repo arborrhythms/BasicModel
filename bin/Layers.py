@@ -5309,13 +5309,23 @@ class SparseSigmaLayer3(Layer):
         at = torch.searchsorted(wanted, concept).clamp_max(len(wanted) - 1)
         held = wanted[at] == concept
         entries, at, read = entries[held], at[held], place[slot[held]]
-        n = len(entries)
         value = self.value.index_select(0, entries.to(self.value.device)).to(options)
-        value = value.reshape(n, *([1] * (options.ndim - 2)))
-        terms = _EntryRead.apply(value.expand(n, *options.shape[1:-1]), options.index_select(0, read))
-        total = options.new_zeros(len(wanted), *shape[1:]).index_add(0, at, terms)
-        y = torch.tanh(total).index_select(0, index)
+        y = self.fold(value, at, read, options, len(wanted)).index_select(0, index)
         return y * valid.reshape(-1, *([1] * (y.ndim - 1))).to(y)
+
+    @staticmethod
+    def fold(value, concepts, inputs, options, size):
+        """The read of a sparse Sigma: ``size`` concepts' signed values,
+        ``[size, ...]``, from the entries ``value`` ``[E]`` (each one learned
+        number, its size the weight and its side of zero the option) of
+        concepts ``concepts`` ``[E]`` on the options ``options`` ``[P, ..., 2]``
+        at ``inputs`` ``[E]``: ``tanh`` of each concept's sum. The one read of
+        every sparse Sigma, at order zero and above it."""
+        n = len(value)
+        value = value.reshape(n, *([1] * (options.ndim - 2))).expand(n, *options.shape[1:-1])
+        terms = _EntryRead.apply(value, options.index_select(0, inputs))
+        total = options.new_zeros(int(size), *options.shape[1:-1]).index_add(0, concepts, terms)
+        return torch.tanh(total)
 
     def reverse(self, y, inputs):
         """The signed values of rows ``inputs`` ``[P, ...]`` from the
@@ -5386,25 +5396,6 @@ class SigmaPiLayer(Layer):
 
     def reverse(self, y):
         raise RuntimeError('a SigmaPiLayer has no way back')
-
-
-class _SelectDefinitionEdges(torch.autograd.Function):
-    """Gather unique COO positions; its pullback needs no atomic addition.
-
-    A range selects each edge once. index_select's general backward permits
-    duplicate indices and uses index_add; copy is exact for this narrower
-    contract, including a membership with several batch columns.
-    """
-    @staticmethod
-    def forward(ctx, value, positions):
-        ctx.save_for_backward(positions)
-        ctx.shape = value.shape
-        return value.index_select(0, positions)
-
-    @staticmethod
-    def backward(ctx, gradient):
-        (positions,) = ctx.saved_tensors
-        return gradient.new_zeros(ctx.shape).index_copy(0, positions, gradient), None
 
 
 class SparseLayer(Layer):
@@ -5582,8 +5573,6 @@ class SparseLayer(Layer):
         if self._forbid_self_edges and r in self._edge_sources(c):
             raise ValueError(
                 f"SparseLayer: self-edge ({r}, {c}) forbidden")
-        if getattr(self, '_sidecar_owned', False) and float(weight) < 0:
-            raise ValueError('concept exponents must be nonnegative')
         pos = self._index.get((r, c))
         if pos is not None:
             return pos
@@ -5723,189 +5712,28 @@ class SparseLayer(Layer):
             object.__setattr__(view, 'values', self.values.index_select(0, selected))
         view._inventory_edges = selected
         view._missing_sources = missing
-        view._paired_sources = False
-        source_columns = getattr(self, '_fold_source_columns', self._cols)
-        view._fold_source_columns = tuple(source_columns[pos] for _, _, pos in host)
-        view._fold_source_offset = getattr(self, '_fold_source_offset', self.nInput // 2)
         return view
-
-    def _fold_weights(self, like):
-        """One signed weight per source, represented by its two stored poles.
-
-        COO topology owns the partner gather. Values remain independent learned
-        parameters; subtraction sends each pair's credit with opposite signs.
-        The existing straight-through floor also passes credit at a zero sum.
-        """
-        raw = self.values.clone().to(like)
-        if getattr(self, '_paired_sources', False):
-            rows, _ = self._indices(like.device)
-            offset = getattr(self, '_fold_source_offset', self.nInput // 2)
-            cache = getattr(self, '_fold_partners', None)
-            if cache is None or cache[0] is not rows or cache[1] != offset:
-                columns = getattr(self, '_fold_source_columns', self._cols)
-                lookup = {(row, col): i for i, (row, col) in enumerate(zip(self._rows, columns))}
-                positions = [lookup.get((row, (col + offset) % (2 * offset)), len(columns))
-                             for row, col in zip(self._rows, columns)]
-                cache = (rows, offset, torch.tensor(positions,
-                         dtype=torch.long, device=like.device))
-                self._fold_partners = cache
-            padded = torch.cat((raw, raw.new_zeros(1)))
-            raw = raw - padded.index_select(0, cache[2])
-            # Only the represented pole receives fold credit away from zero.
-            # At zero both old floor derivatives pass through subtraction;
-            # their difference is the signed coefficient's derivative.
-            credit = (cache[2] == len(self._cols)) | (raw >= 0)
-            raw = torch.where(credit, raw, raw.detach())
-        return raw + (raw.clamp_min(0) - raw).detach()
-
-    def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
-                      own=None, own_mask=None, own_known=None, dual=False,
-                      edge_memberships=None, edge_known=None):
-        """Reduce weighted memberships by min/max; polarity is a source column.
-
-        A dual pass swaps the source blocks and exchanges least with greatest. Empty
-        definitions, including all-zero exponents, assert neither polarity.
-        Each pole reduces its known contributions independently; a zero
-        pole is an observed zero and vetoes a conjunctive fold on that pole.
-        Exponents qualify individual memberships, never count witnesses.
-        Finite log floors preserve gradients without moving Boolean rails.
-        """
-        conjunctive = bool(conjunctive) != bool(dual)
-        end = self.nOutput if end is None else int(end)
-        rows, cols = self._indices(u.device)
-        # Topology is already host-owned and changes only at an edge edit.
-        # A tensor boolean subscript would run nonzero on every fold (and
-        # synchronize an accelerator to discover its data-dependent size).
-        # Reuse integer positions for this range until _indices is rebuilt.
-        if int(start) == 0 and end == self.nOutput:
-            select = slice(None)
-        else:
-            cache = getattr(self, '_presence_ranges', None)
-            if cache is None or cache[0] is not rows:
-                cache = (rows, {})
-                self._presence_ranges = cache
-            key = (int(start), end)
-            if key not in cache[1]:
-                cache[1][key] = torch.tensor(
-                    [i for i, row in enumerate(self._rows) if int(start) <= row < end],
-                    dtype=torch.long, device=u.device)
-            select = cache[1][key]
-        def selected(value):
-            return value if isinstance(select, slice) else _SelectDefinitionEdges.apply(value, select)
-        rows, cols = selected(rows), selected(cols)
-        if dual:
-            cols = (cols + self.nInput // 2) % self.nInput
-        out = u.new_full((end - int(start), u.shape[-1]), 1. if conjunctive else 0.)
-        mass = u.new_zeros(end - int(start))
-        seen = torch.zeros_like(out, dtype=torch.bool)
-        if self.values is not None:
-            w = selected(self._fold_weights(u))
-            # Native percept inventories can be large. A membership read
-            # gathers only the written edges, using this same pi scatter.
-            v = (u.index_select(0, cols) if edge_memberships is None
-                 else selected(edge_memberships)).clamp(0, 1)
-            if edge_known is not None:
-                known = selected(edge_known)
-            else:
-                known = torch.ones_like(v, dtype=torch.bool)
-            missing = getattr(self, '_missing_sources', None)
-            if missing is not None:
-                known = known & ~selected(missing.to(v.device))[:, None]
-            from FieldLogic import power
-            powered = power(v, w[:, None], conjunctive=conjunctive)
-            if conjunctive:
-                # A zero exponent is an unwritten edge, not q**0 evidence.
-                # Straight-through incidence permits inserting and removing
-                # an edge even at a crisp membership rail. Its magnitude
-                # still qualifies the membership through the power above.
-                written = (w > 0).to(w)
-                # Only an unwritten edge needs surrogate incidence credit.
-                # A written edge differentiates its exponent exactly; adding
-                # incidence credit there reverses the gradient for fractions.
-                insertion = written + (w - w.detach()) * (w.detach() == 0).to(w)
-                candidate = powered * insertion[:, None]
-                neutral = torch.where(w[:, None] > 0, candidate, 1.)
-                powered = candidate + (neutral - candidate).detach()
-            # Sorting is per pole. Opposite evidence is retained by the
-            # other pass; it never erases the support reduced by this one.
-            powered = torch.where(known, powered, 1. if conjunctive else 0.)
-            out = out.scatter_reduce(0, (rows - int(start))[:, None].expand_as(powered),
-                                     powered, reduce='amin' if conjunctive else 'amax',
-                                     include_self=False)
-            seen = seen.scatter_reduce(0, (rows - int(start))[:, None].expand_as(known),
-                                       known & (w[:, None] > 0), reduce='amax')
-            mass = mass.index_add(0, rows - int(start), w)
-        if own is not None:
-            present = own_mask[:, None] if own_known is None else own_mask[:, None] & own_known
-            present = present & (own > 0)
-            neutral = torch.where(present, own, 1. if conjunctive else 0.)
-            other = own + (neutral - own).detach()
-            out = torch.minimum(out, other) if conjunctive else torch.maximum(out, other)
-            mass = mass + own_mask.to(mass)
-            seen = seen | present
-        # Forward unknown is exactly zero. Preserve the exponent derivative
-        # for a zero candidate on a present witness, so either pole can learn.
-        exact = torch.where(seen, out, 0.)
-        result = out + (exact - out).detach()
-        return result * (mass > 0)[:, None] if conjunctive else result
-
-    def attribute_presence(self, y, *, observed=None, conjunctive=False,
-                           start=0, end=None, dual=False):
-        """Intersect a request with present cases, or choose when imagining.
-
-        With no field, a disjunction selects its strongest written case;
-        ties use sparse insertion order. A conjunction attributes every
-        required part. No union transpose or division of support is used.
-        """
-        end = self.nOutput if end is None else int(end)
-        result = y.new_zeros(self.nInput, y.shape[-1])
-        if self.values is None:
-            return result
-        rows, cols = self._indices(y.device)
-        weights = self._fold_weights(y)
-        selected = (rows >= int(start)) & (rows < end) & (weights > 0)
-        missing = getattr(self, '_missing_sources', None)
-        if missing is not None:
-            selected &= ~missing.to(selected.device)
-        rows, cols, weights = rows[selected], cols[selected], weights[selected]
-        if dual:
-            cols = (cols + self.nInput // 2) % self.nInput
-        if not len(rows):
-            return result
-        request = y.index_select(0, rows)
-        # Undo the selected definition's exponent before attributing its
-        # evidence to a part. The case remains discrete; its live exponent
-        # qualifies the selected support, just as it does in fold_presence.
-        eps = torch.finfo(request.dtype).eps
-        bounded = request.clamp(0, 1)
-        rail = bounded if conjunctive else 1 - bounded
-        safe = rail + (rail.clamp_min(eps) - rail).detach()
-        powered = (safe.log() / weights[:, None].clamp_min(eps)).exp()
-        exact = torch.where(rail == 0, torch.zeros_like(powered), powered)
-        powered = powered + (exact - powered).detach()
-        request = powered if conjunctive else 1 - powered
-        if observed is not None:
-            contribution = torch.minimum(request, observed.index_select(0, cols))
-        elif conjunctive:
-            contribution = request
-        else:
-            # Case choice is explicit. Existing learned exponents provide
-            # its priorities; the selected case receives the whole request.
-            chosen = torch.zeros_like(weights, dtype=torch.bool)
-            for row in rows.unique().tolist():
-                candidates = (rows == row).nonzero().flatten()
-                chosen[candidates[weights[candidates].argmax()]] = True
-            contribution = request * chosen[:, None]
-        return result.scatter_reduce(0, cols[:, None].expand_as(contribution),
-                                     contribution, reduce='amax', include_self=True)
 
 
 class ConceptualAttentionLayer(SparseLayer):
-    """Concept records and disjunctive parts W_sigma on one row inventory.
+    """The concepts above order zero: a sparse Sigma over the options of the
+    symbols (the Not's), with the records and the row map of the concepts.
 
-    W_pi stores conjunctive parts of the same concepts. Context weights are
-    native definitions. Familiar candidates live in MediumTermMemory.
+    Each entry is one learned signed number, as in :class:`SparseSigmaLayer3`:
+    its size is the Sigma's weight and its side of zero the option it reads,
+    the symbol's value at or above zero and its not-value below (a Not
+    entry). The read is :meth:`SparseSigmaLayer3.fold`. What this class adds
+    is the bookkeeping a sparse Sigma of fixed capacity has not: entries
+    written and removed while the model learns, with their optimizer state,
+    the records of the concepts and their rows.
     """
+
+    #: The mark of a checkpoint whose store this class reads.
+    COLUMNS = 'signed symbols'
+    REFUSED = ('the concept store of this checkpoint joins its inputs by the least and the greatest, '
+               'with a column for each lane of each input; the store is a sparse Sigma now, one '
+               'signed entry for each symbol it reads, whose sign is the option the Not offers. '
+               'An entry of the old store has no single reading in the new one: teach the model again')
 
     def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
                  device=None, roles=None, forbid_self_edges=False):
@@ -5923,7 +5751,7 @@ class ConceptualAttentionLayer(SparseLayer):
 
         self._sidecar_owned = True
         # A square store's columns are things: see :meth:`square`.
-        self._paired_sources = False
+        self._thing_columns = False
         self._room = None
         for name, value in (
                 ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
@@ -5943,26 +5771,6 @@ class ConceptualAttentionLayer(SparseLayer):
     def definition_matrices(self):
         return (self,)
 
-    @torch.no_grad()
-    def project_parts(self):
-        """Preserve polarity and the learned nonnegative definition weights."""
-        for matrix in self.part_matrices():
-            if matrix.values is not None:
-                matrix.values.clamp_min_(0)
-
-    def migrate_part_moments(self, optimizer):
-        """A signed-to-pole checkpoint conversion reverses first moments."""
-        for matrix in self.part_matrices():
-            signs = getattr(matrix, '_checkpoint_exponent_signs', None)
-            if signs is None:
-                continue
-            for leaf in RadixLayer._optimizer_leaves(optimizer):
-                moment = leaf.state.get(matrix.values, {}).get('exp_avg')
-                if moment is not None:
-                    moment.mul_(signs.to(moment))
-            del matrix._checkpoint_exponent_signs
-
-
     def grow_inventory(self, size):
         """Grow definition storage independently of the bounded attended field.
         A column is a thing, which the rows do not move."""
@@ -5980,25 +5788,25 @@ class ConceptualAttentionLayer(SparseLayer):
 
     @classmethod
     def square(cls, n_concepts, device=None, *, symbols=None):
-        """``n_concepts`` concept rows read things, in two lane blocks (for,
-        against): the rows of the symbols' Pi (room for ``symbols``, by
-        default one for each concept row) and the bias (EVERYTHING, read at
-        (1, 0)). No column is a concept's row. A concept may not read a
-        symbol that holds it.
+        """``n_concepts`` concept rows read things: the rows of the symbols'
+        Pi (room for ``symbols``, by default one for each concept row) and
+        the bias (EVERYTHING, whose value is one), one column each. No
+        column is a concept's row. A concept may not read a symbol that
+        holds it.
         """
         n = int(n_concepts)
         symbols = n if symbols is None else int(symbols)
         if symbols < 1:
             raise ValueError('the concept store needs room for its symbols')
-        layer = cls(2 * (symbols + 1), n, device=device, forbid_self_edges=True)
-        layer._paired_sources = True
+        layer = cls(symbols + 1, n, device=device, forbid_self_edges=True)
+        layer._thing_columns = True
         layer._room = symbols
         return layer
 
-    # -- the columns are things: each lane block holds one column for each
-    # row of the symbols' Pi (a symbol, :class:`Symbols.SymbolTable`) and
-    # the bias. A thing is ``('sym', s)``; the bias is ``None``. Every
-    # reader and writer of a column goes through the functions below. -----
+    # -- the columns are things: one column for each row of the symbols' Pi
+    # (a symbol, :class:`Symbols.SymbolTable`) and one for the bias. A thing
+    # is ``('sym', s)``; the bias is ``None``. Every reader and writer of a
+    # column goes through the functions below. ---------------------------
 
     @property
     def symbol_table(self):
@@ -6011,33 +5819,33 @@ class ConceptualAttentionLayer(SparseLayer):
             table = self.__dict__['_symbol_table'] = SymbolTable(room)
         return table
 
-    @property
-    def lane_width(self):
-        """Columns in one lane block: the symbols and the bias."""
-        return self._room + 1
-
-    def column_of_thing(self, thing, lane=0):
-        """The column of ``thing`` (``None``: the bias) in lane block ``lane``."""
+    def column_of_thing(self, thing):
+        """The column of ``thing`` (``None``: the bias)."""
         if thing is None:
-            position = self._room
-        elif thing[0] == 'sym' and 0 <= int(thing[1]) < self._room:
-            position = int(thing[1])
-        else:
-            raise ValueError(f'{thing!r} is no thing of this store')
-        return position + int(lane) * self.lane_width
+            return self._room
+        if thing[0] == 'sym' and 0 <= int(thing[1]) < self._room:
+            return int(thing[1])
+        raise ValueError(f'{thing!r} is no thing of this store')
 
     def thing_of_column(self, column):
-        """The thing that ``column`` of either lane block reads, ``None`` for
-        the bias."""
-        position = int(column) % self.lane_width
-        return None if position == self._room else ('sym', position)
+        """The thing that ``column`` reads, ``None`` for the bias."""
+        return None if int(column) == self._room else ('sym', int(column))
 
-    def column_lane(self, column):
-        """The lane block of ``column``: 0 for, 1 against."""
-        return int(column) // self.lane_width
+    def bias_column(self):
+        return self._room
 
-    def bias_column(self, lane=0):
-        return self.column_of_thing(None, lane)
+    def negated(self, position):
+        """Whether the entry at ``position`` reads its symbol's not-value
+        (a Not entry)."""
+        return bool(self.values is not None and float(self.values[int(position)]) < 0)
+
+    @torch.no_grad()
+    def raise_entry(self, position, weight):
+        """Raise the weight of the entry at ``position`` to at least
+        ``weight``, keeping the option it reads."""
+        value = float(self.values[int(position)])
+        size = max(abs(value), float(weight))
+        self.values[int(position)] = -size if value < 0 else size
 
     def thing_rows(self, thing):
         """The store rows of the concepts a symbol holds; a member with no
@@ -6053,8 +5861,8 @@ class ConceptualAttentionLayer(SparseLayer):
         return self.thing_rows(self.thing_of_column(column))
 
     def _thing_spec(self, position):
-        """``(thing, member rows, complete)`` of a lane-block position:
-        ``complete`` is false where a member of a symbol has no row."""
+        """``(thing, member rows, complete)`` of a column: ``complete`` is
+        false where a member of a symbol has no row."""
         key = (self.symbol_table.revision, len(self._tensor_rows), self._room)
         cache = self.__dict__.get('_thing_specs')
         if cache is None or cache[0] != key:
@@ -6068,31 +5876,39 @@ class ConceptualAttentionLayer(SparseLayer):
         return found
 
     def _edge_sources(self, column):
-        if not self._paired_sources:
+        if not self._thing_columns:
             return (int(column),)
         return self.column_rows(column)
 
     def add_edge(self, row, col, weight=0.0, role=None):
-        """An entry of ``row`` on column ``col``: a symbol the table has made,
-        or the bias."""
-        if self._paired_sources and role is None and 0 <= int(col) < self.nInput:
+        """An entry of ``row`` on column ``col`` (a symbol the table has made,
+        or the bias) at the signed number ``weight``: its size the weight,
+        below zero a Not entry. An entry already written keeps its number,
+        but for one at zero, which takes ``weight``."""
+        if self._thing_columns and role is None and 0 <= int(col) < self.nInput:
             thing = self.thing_of_column(col)
             if thing is not None and int(thing[1]) >= len(self.symbol_table):
                 raise ValueError(f'column {int(col)} reads symbol {thing[1]}, which the table has not made')
+        position = self._index.get((int(row), int(col)))
+        if position is not None:
+            if float(weight) and self.values is not None and float(self.values[position]) == 0.:
+                with torch.no_grad():
+                    self.values[position] = float(weight)
+            return position
         return super().add_edge(row, col, weight=weight, role=role)
 
     def bind(self, inventory_rows):
         """A differentiable view of the entries whose rows are seated in
         ``inventory_rows``, over the symbols they read.
 
-        The view's rows are the seats; its columns are two lane blocks of
-        the symbols read (``view._things``) and the bias.
-        ``view._thing_seats`` (``[T, K]``, ``-1`` for none) gives the seats
-        of each symbol's member concepts. An entry whose symbol has a member
-        that is not seated is missing: it contributes no evidence, as a
-        source outside the field.
+        The view's rows are the seats; its columns are the symbols read
+        (``view._things``) and the bias, last. ``view._thing_seats``
+        (``[T, K]``, ``-1`` for none) gives the seats of each symbol's
+        member concepts. An entry whose symbol has a member that is not
+        seated is missing: it contributes no evidence, as a source outside
+        the field.
         """
-        if not self._paired_sources:
+        if not self._thing_columns:
             return super().bind(inventory_rows)
         device = self._device()
         addresses = [int(row) for row in torch.as_tensor(inventory_rows).reshape(-1).tolist()]
@@ -6101,17 +5917,16 @@ class ConceptualAttentionLayer(SparseLayer):
         for seat, row in enumerate(addresses):
             if 0 <= row < self.nOutput:
                 lookup[row] = seat
-        width = self.lane_width
         rows_host = self._rows
         selected = [i for i, row in enumerate(rows_host) if row in lookup]
         slots, specs = {}, []
         for i in selected:
-            position = self._cols[i] % width
+            position = self._cols[i]
             if position not in slots and position != self._room:
                 slots[position] = len(specs)
                 specs.append(self._thing_spec(position))
         T = len(specs)
-        view = SparseLayer(2 * (T + 1), size, nonlinear=False, device=device)
+        view = SparseLayer(T + 1, size, nonlinear=False, device=device)
         members = max([1] + [len(rows) for _, rows, _ in specs])
         seats = torch.full((T, members), -1, dtype=torch.long)
         complete = []
@@ -6122,11 +5937,9 @@ class ConceptualAttentionLayer(SparseLayer):
             complete.append(whole and all(seat >= 0 for seat in seated))
         host_rows, host_cols, missing = [], [], []
         for i in selected:
-            column = self._cols[i]
-            position, lane = column % width, column // width
-            slot = slots.get(position, T)
+            slot = slots.get(self._cols[i], T)
             host_rows.append(lookup[rows_host[i]])
-            host_cols.append(slot + lane * (T + 1))
+            host_cols.append(slot)
             missing.append(slot < T and not complete[slot])
         selected_t = torch.tensor(selected, dtype=torch.long, device=device)
         rows_t = torch.tensor(host_rows, dtype=torch.long, device=device)
@@ -6138,20 +5951,21 @@ class ConceptualAttentionLayer(SparseLayer):
             object.__setattr__(view, 'values', self.values.index_select(0, selected_t))
         view._inventory_edges = selected_t
         view._missing_sources = torch.tensor(missing, dtype=torch.bool, device=device)
-        view._paired_sources = True
-        view._fold_source_columns = tuple(self._cols[i] for i in selected)
-        view._fold_source_offset = self.nInput // 2
+        view._thing_columns = True
         view._things = [thing for thing, _, _ in specs]
         view._thing_seats = seats.to(device)
         view._thing_complete = torch.tensor(complete, dtype=torch.bool, device=device)
         return view
 
-    def forward(self, presence):
-        """The concept store reads disjunctive parts in their presence chart."""
-        return self.fold_presence(presence)
+    def forward(self, options):
+        """Every concept's signed value from the options ``[nInput, ..., 2]``
+        of the things (the Not's), by :meth:`SparseSigmaLayer3.fold`."""
+        return sigma_read(self, options)
 
-    def reverse(self, presence):
-        return self.attribute_presence(presence)
+    def reverse(self, request):
+        """The request ``[nOutput, ..., 2]`` carried to the things' lanes
+        through each entry's option (:func:`sigma_transpose`)."""
+        return sigma_transpose(self, request)
 
     def parts_extras(self):
         """Checkpoint the row-aligned discovery state."""
@@ -6306,15 +6120,17 @@ class ConceptualAttentionLayer(SparseLayer):
         return self._tensor_rows.get(k)
 
     def hebbian_strengthen_row(self, row, eta=0.1, cap=4.0):
-        """Bump every edge on ``row`` by ``eta`` (clamped to ``cap``);
-        ``no_grad`` -- evidence weights update by their own law."""
+        """Raise the weight of every entry on ``row`` by ``eta`` (to at most
+        ``cap``), keeping each entry's option; ``no_grad`` -- evidence
+        weights update by their own law."""
         if self.values is None:
             return
         with torch.no_grad():
             for (r, _c), i in self._index.items():
                 if r == int(row):
-                    self.values[i] = min(float(cap),
-                                         float(self.values[i]) + float(eta))
+                    value = float(self.values[i])
+                    size = min(float(cap), abs(value) + float(eta))
+                    self.values[i] = -size if value < 0 else size
 
     def decay_row(self, row, factor=0.9):
         """Scale every edge on ``row`` by ``factor`` (the forgetting
@@ -6346,13 +6162,12 @@ class ConceptualAttentionLayer(SparseLayer):
         vals = self.values
         if vals is None or not torch.is_tensor(vals) or vals.numel() == 0:
             return None
-        ncol = int(self.nInput)
         free = max(0, int(free_size))
         rows_t, cols_t = self._indices(vals.device)
-        # Every column but the bias reads a thing.
-        concept_col = (((cols_t != self.bias_column(0)) & (cols_t != self.bias_column(1)))
-                       if getattr(self, '_paired_sources', False) else cols_t < ncol - 1)
-        rows, weights = rows_t[concept_col], vals[concept_col].clamp_min(0)
+        # Every column but the bias reads a thing; an entry's weight is its
+        # size, whichever option it reads.
+        concept_col = cols_t != self.bias_column()
+        rows, weights = rows_t[concept_col], vals[concept_col].abs()
         # Sort edges by magnitude, then stably group rows. Segment ranks
         # exempt each row's core without allocating an inventory-sized square.
         by_weight = weights.argsort(descending=True, stable=True)
@@ -6385,34 +6200,101 @@ def thing_lanes(view, seat_values):
     return lanes * view._thing_complete[:, None, None].to(lanes)
 
 
-def thing_input(view, seat_values):
-    """The view's input, ``[2 (T + 1), N]``: each symbol's for lane, the
-    bias at one, each symbol's against lane, the bias's against at zero."""
+def thing_options(view, seat_values):
+    """The Not over a bound ``view``'s columns, ``[T + 1, N, 2]``: each
+    symbol's value and not-value from its two lanes (:func:`thing_lanes`),
+    and the bias's, whose value is one."""
     lanes = thing_lanes(view, seat_values)
-    N = seat_values.shape[1]
-    return torch.cat((lanes[..., 0], lanes.new_ones(1, N), lanes[..., 1], lanes.new_zeros(1, N)))
+    bias = lanes.new_zeros(1, lanes.shape[1], 2)
+    bias[..., 0] = 1.
+    return NotLayer3.options(torch.cat((lanes, bias)))
 
 
-def seat_lanes(view, combined, size):
-    """A result over the view's columns (``[2 (T + 1), N]``) carried to the
-    seats, ``[size, N, 2]``: each thing's two lanes reach the seats of the
-    concepts it holds (a symbol's members), the greatest where several
-    reach one seat."""
-    T = view.nInput // 2 - 1
-    N = combined.shape[-1]
-    result = combined.new_zeros(size, N, 2)
-    if not T:
+def _entry_range(matrix, start, end, device):
+    """The positions of ``matrix``'s entries on rows ``start:end`` that
+    are read: a source of the field (not missing)."""
+    rows, cols = matrix._indices(device)
+    keep = (rows >= int(start)) & (rows < int(end))
+    missing = getattr(matrix, '_missing_sources', None)
+    if missing is not None and len(missing):
+        keep &= ~missing.to(device)
+    return keep.nonzero().flatten(), rows, cols
+
+
+def sigma_read(matrix, options, start=0, end=None):
+    """The concepts ``start:end`` of a store or a bound view, signed,
+    ``[end - start, N]``, from the options ``options`` ``[nInput, N, 2]``
+    of its columns: :meth:`SparseSigmaLayer3.fold` over its entries, an
+    entry outside the rows or whose source is missing read at nothing (by
+    a mask, so the read has no size that depends on the data)."""
+    end = matrix.nOutput if end is None else int(end)
+    size = end - int(start)
+    if matrix.values is None or not matrix.nnz or size <= 0:
+        return options.new_zeros(max(size, 0), *options.shape[1:-1])
+    rows, cols = matrix._indices(options.device)
+    keep = (rows >= int(start)) & (rows < end)
+    missing = getattr(matrix, '_missing_sources', None)
+    if missing is not None and len(missing):
+        keep = keep & ~missing.to(options.device)
+    value = matrix.values.to(options) * keep.to(options)
+    return SparseSigmaLayer3.fold(value, (rows - int(start)).clamp(0, size - 1), cols, options, size)
+
+
+def sigma_transpose(matrix, request, *, observed=None, start=0, end=None):
+    """The Sigma's transpose: a request on the concepts ``request``
+    (``[nOutput, N, 2]``, two lanes each) carried to the columns,
+    ``[nInput, N, 2]``. Each entry of weight above zero on rows
+    ``start:end`` carries its concept's two lanes to its column, exchanged
+    for a Not entry (the option it reads). With ``observed`` (``[nInput, N,
+    2]``) each is the lesser of the request and what was observed; with
+    none, a concept's request goes to its strongest entry alone (its
+    case, the first written among equals). The greatest where several
+    reach one column."""
+    end = matrix.nOutput if end is None else int(end)
+    result = request.new_zeros(matrix.nInput, *request.shape[1:])
+    if matrix.values is None or not matrix.nnz:
         return result
-    things = torch.stack((combined[:T], combined[T + 1:2 * T + 1]), -1)
+    keep, rows, cols = _entry_range(matrix, start, end, request.device)
+    value = matrix.values.to(request).index_select(0, keep).detach()
+    keep = keep[value != 0]
+    value = value[value != 0]
+    if not len(keep):
+        return result
+    rows, cols = rows.index_select(0, keep), cols.index_select(0, keep)
+    lanes = request.index_select(0, rows)
+    lanes = torch.where((value < 0).reshape(-1, *([1] * (lanes.ndim - 1))), lanes.flip(-1), lanes)
+    if observed is not None:
+        lanes = torch.minimum(lanes, observed.index_select(0, cols))
+    else:
+        size = value.abs()
+        strongest = size.new_full((matrix.nOutput,), -1.).scatter_reduce(
+            0, rows, size, reduce='amax', include_self=True)
+        first = torch.arange(len(rows), device=rows.device)
+        top = size == strongest.index_select(0, rows)
+        chosen_at = torch.full((matrix.nOutput,), len(rows), dtype=torch.long, device=rows.device)
+        chosen_at = chosen_at.scatter_reduce(0, rows[top], first[top], reduce='amin', include_self=True)
+        chosen = chosen_at.index_select(0, rows) == first
+        lanes = lanes * chosen.reshape(-1, *([1] * (lanes.ndim - 1))).to(lanes)
+    index = cols.reshape(-1, *([1] * (lanes.ndim - 1))).expand_as(lanes)
+    return result.scatter_reduce(0, index, lanes, reduce='amax', include_self=True)
+
+
+def seat_lanes(view, things, size):
+    """The lanes of a bound view's things (``[T, N, 2]``, or with the bias
+    after them) carried to the seats, ``[size, N, 2]``: each symbol's two
+    lanes reach the seats of the concepts it holds (the symbols' Pi read
+    back), the greatest where several reach one seat."""
     seats = view._thing_seats
+    T = seats.shape[0]
+    result = things.new_zeros(size, *things.shape[1:])
     held = seats >= 0
-    if not bool(held.any()):
+    if not T or not bool(held.any()):
         return result
     slot = torch.arange(T, device=seats.device)[:, None].expand_as(seats)[held]
     target = seats[held]
-    source = things.index_select(0, slot)
-    return result.scatter_reduce(0, target[:, None, None].expand_as(source), source,
-                                 reduce='amax', include_self=True)
+    source = things[:T].index_select(0, slot)
+    return result.scatter_reduce(0, target.reshape(-1, *([1] * (source.ndim - 1))).expand_as(source),
+                                 source, reduce='amax', include_self=True)
 
 
 def thing_priorities(view, seat_priority):

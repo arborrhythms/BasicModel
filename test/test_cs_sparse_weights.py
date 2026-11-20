@@ -16,6 +16,7 @@ _BIN = os.path.join(
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
+import math
 import torch
 from definition_fixtures import with_definitions
 import pytest
@@ -223,7 +224,8 @@ def test_forward_content_shape_and_stacking():
     assert content.shape == (2, 2*cs.nVectors, _D)
     assert a.shape == (cs.nVectors, 2, 1, 2)
     torch.testing.assert_close(a[:capacity], a0)
-    torch.testing.assert_close(a[row, :, 0, 0], 1 - (1 - a0[0, :, 0, 0]).square())
+    # The store's Sigma: tanh of the weight times the symbol's value.
+    torch.testing.assert_close(a[row, :, 0, 0], torch.tanh(2 * a0[0, :, 0, 0]))
     assert a[row + 1:].count_nonzero() == 0
 
 
@@ -237,10 +239,11 @@ def test_forward_content_literal_poles_and_standing_bias():
     cs.add_concept_edge(row, 3, 3.)
     cs.add_concept_edge(row, 5, .5, negated=True)
     _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
-    assert float(a[row, 0, 0, 0]) == pytest.approx(max(1 - .5**3, 1 - .75**.5))
+    # A sum of the entries, the Not entry reading row 5's not-value.
+    assert float(a[row, 0, 0, 0]) == pytest.approx(math.tanh(3 * .5 + .5 * .25))
     cs.add_concept_edge(row, 16, .25)
     _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
-    torch.testing.assert_close(a[row, 0, 0], torch.tensor([1., 0.]))
+    torch.testing.assert_close(a[row, 0, 0], torch.tensor([math.tanh(3 * .5 + .5 * .25 + .25), 0.]))
 
 
 def test_forward_content_activation_is_bounded():
@@ -302,7 +305,10 @@ def test_forward_content_keeps_two_symbol_rows_per_code():
     readable(cs, 0)
     cs.add_concept_edge(row, 0, 1., negated=True)
     content, a = cs.cs_forward_content(a0, what)
-    torch.testing.assert_close(a[row, 0, 0], a0[0, 0, 0].flip(0))
+    from Layers import signed_lanes
+    # A Not entry reads the symbol's not-value: the concept's sign is the
+    # symbol's exchanged.
+    torch.testing.assert_close(a[row, 0, 0], signed_lanes(torch.tanh(a0[0, 0, 0, 1] - a0[0, 0, 0, 0])))
     torch.testing.assert_close(content[0, 2 * row], a[row, 0, 0, 0] * what[row])
     torch.testing.assert_close(content[0, 2 * row + 1], -a[row, 0, 0, 1] * what[row])
 

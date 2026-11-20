@@ -12,39 +12,33 @@ def inventory(owner):
 
 
 def close(owner, rows, evidence):
-    """Fold each definition once, in dependency order, retaining live edges."""
+    """Read each definition once, in dependency order: each kind's entries,
+    each on its symbol's value or not-value (the Not), summed by the
+    store's Sigma and stored as one signed value on two lanes."""
+    from Layers import NotLayer3, SparseSigmaLayer3, signed_lanes
     store = owner._concept_allocator.layer(0)
     positions = {int(row): i for i, row in enumerate(rows)}
-    # This closure reads the same sparse definitions as the native fold.
-    # Opposite columns are one signed source here too.
-    folded_weights = {matrix: matrix._fold_weights(evidence)
-                      for matrix in (store,)
-                      if matrix.values is not None}
+    values = store.values
     definitions = {}
     for row in positions:
-        definitions[row] = []
-        for matrix, operation in ((store, 'union'),):
-            # An entry reads a symbol, the rows of the concepts it holds, or
-            # the bias (None).
-            edges = [(None if store.thing_of_column(column) is None else store.column_rows(column),
-                      store.column_lane(column) == 1, index)
-                     for (target, column), index in matrix._index.items()
-                     if target == row and float(folded_weights[matrix][index].detach()) > 0]
-            if edges:
-                definitions[row].append((matrix, operation, edges))
+        # An entry reads a symbol, the rows of the concepts it holds, or
+        # the bias (None).
+        definitions[row] = [(None if store.thing_of_column(column) is None else store.column_rows(column), index)
+                            for (target, column), index in store._index.items()
+                            if target == row and values is not None and float(values[index].detach()) != 0]
     done, pending = {}, set(positions)
     while pending:
         ready = [row for row in sorted(pending) if all(
             source not in positions or source in done
-            for _, _, edges in definitions[row] for sources, _, _ in edges
-            for source in (sources or ()))]
+            for sources, _ in definitions[row] for source in (sources or ()))]
         if not ready:
             raise ValueError('cyclic concept field definitions')
         for row in ready:
             value = evidence[positions[row]]
-            for matrix, operation, edges in definitions[row]:
-                operands, weights = [], []
-                for sources, negative, edge in edges:
+            edges = definitions[row]
+            if edges:
+                operands = []
+                for sources, _ in edges:
                     if sources is None:
                         item = torch.zeros_like(value)
                         item[..., 0] = 1.
@@ -52,13 +46,15 @@ def close(owner, rows, evidence):
                         # A symbol is the product of the concepts it holds.
                         held = [done.get(source, torch.zeros_like(value)) for source in sources]
                         item = torch.stack(held).prod(0) if held else torch.zeros_like(value)
-                    operands.append(item.flip(-1) if negative else item)
-                    weights.append(folded_weights[matrix][edge])
-                combined = reduce(torch.stack(operands, -2), operation=operation,
-                                  weights=torch.stack(weights))
+                    operands.append(item)
+                options = NotLayer3.options(torch.stack(operands))
+                entry = values.index_select(0, torch.tensor([index for _, index in edges],
+                                                            device=values.device)).to(options)
+                read = SparseSigmaLayer3.fold(entry, torch.zeros(len(edges), dtype=torch.long, device=options.device),
+                                              torch.arange(len(edges), device=options.device), options, 1)[0]
                 # A row without direct evidence takes its definition. Direct
                 # perceptual evidence and a definition are independent sources.
-                value = torch.maximum(value, combined)
+                value = torch.maximum(value, signed_lanes(read))
             done[row] = value
             pending.remove(row)
     return torch.stack([done[int(row)] for row in rows]) if rows else evidence

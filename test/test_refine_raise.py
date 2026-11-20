@@ -2,6 +2,8 @@
 from basic_fixtures import feature as basic_feature, with_property_half
 from types import SimpleNamespace
 
+import math
+
 import pytest
 import torch
 
@@ -84,7 +86,8 @@ def test_convergence_state_roundtrips_with_definition_inventory():
     observe(other, other_field, 2)
     assert other._refinement_raise_ready[other_row].any()
     # A new attended slot does not own this history.
-    assert float(store.refinement_best[row]) == 1.
+    # Its best is the both of the order-zero member through the Sigma, tanh(1).
+    assert float(store.refinement_best[row]) == pytest.approx(math.tanh(1.))
 
 
 def test_pure_or_unknown_scattered_reading_never_requests_a_raise():
@@ -181,7 +184,6 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
             initial = float(loss.detach())
         loss.backward()
         optimizer.step()
-        store.project_parts()
         cs._model._training_step_count += 1
     assert initial > .1
     native, extents = binary_features(cs, torch.tensor([[49, 49]]))
@@ -204,7 +206,6 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
         loss = (field[felix, 0, 0] - torch.tensor([1., 0.])).square().mean()
         loss.backward()
         optimizer.step()
-        store.project_parts()
         observe(cs, cs.refinement_field(cs._percept_field), step)
     cat = cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence)
     assert cat is not None and cs.mtm.entries[cat].order == 2

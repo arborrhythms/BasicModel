@@ -169,7 +169,7 @@ def stage_case_bank(space, required_ids, *, limit):
         if row is not None and row not in rows:
             rows.append(row)
     rows = rows[:int(limit)]
-    written = [] if store.values is None else (store.values.detach() > 0).cpu().tolist()
+    written = [] if store.values is None else (store.values.detach() != 0).cpu().tolist()
     # Each written entry reads the concepts its symbol holds.
     edges = [(target, source)
              for (target, column), present in zip(zip(store._rows, store._cols), written)
@@ -191,10 +191,12 @@ def stage_case_bank(space, required_ids, *, limit):
     count = len(rows)
     identity = torch.eye(count, device=basis.device, dtype=basis.dtype)
     matrix = store.bind(rows)
-    # Supplying an observed field makes attribution retain every written
+    # Supplying an observed field makes the transpose retain every written
     # case. No unconditioned strongest-case choice runs during staging.
-    source = matrix.attribute_presence(identity, observed=basis.new_ones(matrix.nInput, count))
-    from Layers import seat_lanes
+    from Layers import sigma_transpose, seat_lanes
+    lanes = torch.stack((identity, torch.zeros_like(identity)), -1)
+    source = sigma_transpose(matrix, lanes, observed=torch.ones(matrix.nInput, count, 2,
+                                                                device=basis.device, dtype=basis.dtype))
     cases = seat_lanes(matrix, source, count).transpose(0, 1)
     request = torch.stack((identity, torch.zeros_like(identity)), -1).unsqueeze(2)
     observed = space.cs_reverse_presence(request, observed=torch.ones_like(request), inventory_rows=addresses)

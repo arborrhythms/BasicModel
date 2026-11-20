@@ -15,7 +15,7 @@ def test_retained_leaf_is_fullgraph_equal_without_batch_recompilation(name):
 @pytest.mark.skipif(not torch.backends.mps.is_available() or
                     os.environ.get('BASICMODEL_DEVICE') not in ('mps', 'gpu'),
                     reason='explicit MPS certificate; default sweep uses CPU')
-@pytest.mark.parametrize('name', ('fold_unsorted', 'where_decode_2', 'where_decode_index_2'))
+@pytest.mark.parametrize('name', ('sigma_unsorted', 'where_decode_2', 'where_decode_index_2'))
 def test_mps_retains_range_pullbacks_and_large_single_rung_addresses(name):
     # The range pullback must copy each unique edge once; the decoder must
     # divide, rather than multiply by a rounded reciprocal before rounding.
@@ -38,23 +38,23 @@ def test_mps_retains_range_pullbacks_and_large_single_rung_addresses(name):
 
 
 def test_sparse_range_cache_follows_edits_and_keeps_all_pullbacks():
-    from Layers import SparseLayer
+    from Layers import SparseLayer, NotLayer3, sigma_read
     layer = SparseLayer(6, 4)
-    for row, col, weight in ((0, 0, .5), (1, 1, 1.), (1, 2, 0.), (3, 5, 2.)):
+    for row, col, weight in ((0, 0, .5), (1, 1, 1.), (1, 2, 0.), (3, 5, -2.)):
         layer.add_edge(row, col, weight)
-    source = torch.arange(18, dtype=torch.float64).reshape(6, 3).remainder(7).div(6).requires_grad_()
+    lanes = torch.arange(36, dtype=torch.float64).reshape(6, 3, 2).remainder(7).div(6).requires_grad_()
     layer.double()
-    for conjunction in (False, True):
-        for dual in (False, True):
-            def check():
-                whole = layer.fold_presence(source, conjunctive=conjunction, dual=dual)[1:3]
-                part = layer.fold_presence(source, start=1, end=3, conjunctive=conjunction, dual=dual)
-                torch.testing.assert_close(part, whole, rtol=0, atol=0)
-                left = torch.autograd.grad(part.sum(), (source, layer.values), retain_graph=True)
-                right = torch.autograd.grad(whole.sum(), (source, layer.values))
-                torch.testing.assert_close(left, right, rtol=0, atol=0)
-            check()
-            layer.add_edge(2, 4, .75)
-            check()
-            layer.remove_edges([(2, 4)])
-            check()
+
+    def check():
+        source = NotLayer3.options(lanes)
+        whole = sigma_read(layer, source)[1:3]
+        part = sigma_read(layer, source, start=1, end=3)
+        torch.testing.assert_close(part, whole, rtol=0, atol=0)
+        left = torch.autograd.grad(part.sum(), (lanes, layer.values), retain_graph=True)
+        right = torch.autograd.grad(whole.sum(), (lanes, layer.values))
+        torch.testing.assert_close(left, right, rtol=0, atol=0)
+    check()
+    layer.add_edge(2, 4, .75)
+    check()
+    layer.remove_edges([(2, 4)])
+    check()

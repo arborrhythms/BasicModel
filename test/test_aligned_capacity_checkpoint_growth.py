@@ -558,10 +558,14 @@ def _allocator_blob(old_n, *, row_next=None):
         "joint": {},
         "layers": {
             0: {
+                # A store of symbol columns: room for old_n symbols, then
+                # the bias; each entry one signed number.
                 "nInput": old_n + 1,
                 "nOutput": old_n,
+                "columns": "signed symbols",
+                "symbols": old_n,
                 "constituents": {7: [("whole", "everything")]},
-                "tensor_rows": {("shared", 7): 2},
+                "tensor_rows": {("concept", 7): 2},
                 "row_next": {0: 3} if row_next is None else row_next,
                 "rows": [2],
                 # old_n is the old trailing EVERYTHING bias column.
@@ -585,7 +589,7 @@ def test_allocator_square_growth_moves_only_the_everything_bias():
     model._restore_allocator_extras(cs, _allocator_blob(old_n))
 
     layer = allocator.layer()
-    assert (layer.nOutput, layer.nInput) == (new_n, 2 * (new_n + 1))
+    assert (layer.nOutput, layer.nInput) == (new_n, new_n + 1)
     assert layer._rows == [2]
     assert layer._cols == [new_n]
     assert layer._index == {(2, new_n): 0}

@@ -382,24 +382,6 @@ def _symbols_nominated_by_mtm(state, *, columns_are_things=False):
     return dict(state, symbols=kept)
 
 
-def _read_rows_as_things(cs, layer, read_as_rows):
-    """The entries of a store whose columns were concept rows, read once as
-    symbols. ``read_as_rows[i]`` is entry ``i``'s ``(source row, lane)``
-    (``None``: the bias). Each source is read as
-    :meth:`ConceptualSpace.things_reading` reads it: through a symbol that
-    holds its concept, found or made for the kind that read it."""
-    columns = []
-    for row, (source, lane) in zip(layer._rows, read_as_rows):
-        thing = None if source is None else cs.things_reading(row, source)[0]
-        columns.append(layer.column_of_thing(thing, lane))
-    if len(set(zip(layer._rows, columns))) != len(columns):
-        raise ValueError('two checkpoint columns read one symbol on one row')
-    layer._cols = columns
-    layer._index = {pair: i for i, pair in enumerate(zip(layer._rows, columns))}
-    layer._dev_cache = None
-    layer.__dict__.pop('_fold_partners', None)
-
-
 def _mps_rng_state_or_none():
     """Return the Metal RNG state when this PyTorch build exposes it."""
     get_state = getattr(getattr(torch, "mps", None), "get_rng_state", None)
@@ -2960,7 +2942,6 @@ class BaseModel(Mereology, nn.Module):
             allocator = getattr(cs, '_concept_allocator', None)
             if allocator is not None:
                 for layer in allocator._layers.values():
-                    layer.migrate_part_moments(optimizer)
                     # Definition growth is a boundary mutation. Attach its
                     # current leaves now, before any candidate is appended.
                     for matrix in layer.definition_matrices():
@@ -4034,9 +4015,9 @@ class BaseModel(Mereology, nn.Module):
                             getattr(layer, "_row_next", {})),
                         "rows": [int(v) for v in getattr(layer, "_rows", ())],
                         "cols": [int(v) for v in getattr(layer, "_cols", ())],
-                        # Each column of a lane block is a symbol of the
-                        # table, or the bias.
-                        "columns": "symbols",
+                        # Each column is a symbol of the table, or the
+                        # bias; each entry one signed number.
+                        "columns": layer.COLUMNS,
                         "symbols": getattr(layer, "_room", None),
                         "init_vals": [
                             float(v) for v in getattr(layer, "_init_vals", ())
@@ -4138,6 +4119,10 @@ class BaseModel(Mereology, nn.Module):
 
     def _restore_allocator_extras(self, cs, saved):
         """Restore one ConceptAllocator without replacing its live aliases."""
+        # A retired META definition is refused before anything of the
+        # allocator, its store among them, is read.
+        if saved.get('word_obj_meta') or saved.get('interpretations'):
+            raise ValueError('retired META definition artifacts are not LTM2 inputs')
         if saved.get('word_descriptions') and 'named_identities' not in saved:
             raise ValueError('checkpoint word descriptions require named_identities; '
                              'their definition writer cannot be recovered from Part rows')
@@ -4209,7 +4194,6 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError('invalid reclaimed concept capacity in checkpoint')
 
         layer_blobs = saved.get("layers") or {}
-        rows_as_columns = []
         if len(layer_blobs) > 1:
             raise ValueError(
                 "checkpoint has multiple ConceptAllocator layers; the live "
@@ -4224,17 +4208,14 @@ class BaseModel(Mereology, nn.Module):
                 layer.grow_inventory(saved_n_output)
             live_n_input = int(layer.nInput)
             live_n_output = int(layer.nOutput)
-            things = blob.get('columns') == 'symbols'
-            old_columns = not things and saved_n_input == saved_n_output + 1
-            paired_columns = not things and saved_n_input == 2 * (saved_n_output + 1)
+            if blob.get('columns') != layer.COLUMNS:
+                raise ValueError(layer.REFUSED)
             shape_mismatch = saved_n_output != live_n_output
             square_expansion = bool(
                 shape_mismatch and self._aligned_inventory_capacity() is not None
-                and (old_columns or paired_columns or things)
-                and layer._paired_sources
+                and layer._thing_columns
                 and saved_n_output < live_n_output)
-            if (shape_mismatch and not square_expansion) or (
-                    not (things or old_columns or paired_columns) and saved_n_input != live_n_input):
+            if shape_mismatch and not square_expansion:
                 raise ValueError('ConceptAllocator store shape mismatch')
             rows = [int(v) for v in blob.get('rows', ())]
             cols = [int(v) for v in blob.get('cols', ())]
@@ -4245,27 +4226,10 @@ class BaseModel(Mereology, nn.Module):
             values = blob.get('values')
             if values is not None and int(values.numel()) != len(rows):
                 raise ValueError('ConceptAllocator sparse values/indices length mismatch')
-            if things and layer._paired_sources and blob.get('symbols') != layer._room:
-                # Another room: each column keeps its symbol and its lane.
-                from Layers import ConceptualAttentionLayer
-                saved = ConceptualAttentionLayer.square(1, symbols=blob['symbols'])
-                cols = [layer.column_of_thing(saved.thing_of_column(col), saved.column_lane(col))
-                        for col in cols]
-            elif old_columns or paired_columns:
-                # A checkpoint whose columns were concept rows: each column's
-                # row and lane, read as things once the table and the record
-                # of nominations are restored (below).
-                read_as_rows = []
-                for i, col in enumerate(cols):
-                    source = col if old_columns else col % (saved_n_output + 1)
-                    negative = (values is not None and float(values[i]) < 0) if old_columns else col > saved_n_output
-                    read_as_rows.append((None if source == saved_n_output else source, int(negative)))
-                rows_as_columns.append((layer, read_as_rows))
-                # Placeholders until then, one for each entry.
-                cols = list(range(len(cols)))
-                if old_columns and values is not None:
-                    layer._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
-                    values = values.abs()
+            if layer._thing_columns and blob.get('symbols') != layer._room:
+                # Another room: each column keeps its symbol; the bias is last.
+                saved_bias = int(blob['symbols'])
+                cols = [layer.bias_column() if col == saved_bias else col for col in cols]
             if len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows):
                 raise ValueError(
                     "ConceptAllocator sparse COO checkpoint is malformed")
@@ -4276,7 +4240,7 @@ class BaseModel(Mereology, nn.Module):
             if values is not None and int(values.numel()) != len(rows):
                 raise ValueError(
                     "ConceptAllocator sparse values/indices length mismatch")
-            init_vals = [abs(float(v)) for v in blob.get("init_vals", ())]
+            init_vals = [float(v) for v in blob.get("init_vals", ())]
             if len(init_vals) != len(rows):
                 if values is None:
                     raise ValueError(
@@ -4328,7 +4292,7 @@ class BaseModel(Mereology, nn.Module):
         # nomination: its table is empty.
         alloc.symbol_table().restore(_symbols_nominated_by_mtm(_checkpoint_host_copy(
             saved.get("symbol_table") or dict(version=1, symbols=())),
-            columns_are_things=any(blob.get('columns') == 'symbols' for blob in layer_blobs.values())))
+            columns_are_things=bool(layer_blobs)))
         if "brought" not in saved:
             # A checkpoint from before the record of nominations: a row's
             # own concept was allocated with it, before any concept made
@@ -4337,15 +4301,7 @@ class BaseModel(Mereology, nn.Module):
             for row, percept, negated in sorted(alloc.order_zero_members):
                 if not negated:
                     alloc.brought.setdefault(percept, row)
-        # A checkpoint whose columns were concept rows is read once: each
-        # column becomes a symbol that holds the concept its row held, found
-        # or made for the kind that read it.
-        for layer, read_as_rows in rows_as_columns:
-            _read_rows_as_things(cs, layer, read_as_rows)
 
-        # Migration is deferred until the common store's semantic rows load.
-        if saved.get('word_obj_meta') or saved.get('interpretations'):
-            object.__setattr__(cs, '_legacy_definition_bindings', saved)
         register = getattr(cs, "_sparse_families", None)
         if callable(register) and layer_blobs:
             register(0)
@@ -4495,8 +4451,6 @@ class BaseModel(Mereology, nn.Module):
         remap = finish_legacy(self, extras)
 
         for cs in conceptual_spaces:
-            if cs.__dict__.pop('_legacy_definition_bindings', None) is not None:
-                raise ValueError('retired META definition artifacts are not LTM2 inputs')
             cs.definitions.rebuild()
             components = getattr(cs, 'components', None)
             if components is not None:
@@ -19889,11 +19843,6 @@ class BasicModel(BaseModel):
             primitives = getattr(getattr(subspace, 'what', None), 'primitive_properties', None)
             if primitives is not None:
                 primitives.project(optimizer=optimizer)
-            for cs in self.conceptualSpaces:
-                allocator = getattr(cs, '_concept_allocator', None)
-                if allocator is not None:
-                    for layer in allocator._layers.values():
-                        layer.project_parts()
         self._clamp_symbolic_codebook()
         self._normalize_perceptual_embedding()
 

@@ -98,7 +98,7 @@ def test_symbolic_order_does_not_admit_a_same_order_edge():
     for cid in (100, 101): force_order(cs, cid, 1)
     target = cs._csw_concept_row(1, 100)
     source = cs._csw_concept_row(1, 101)
-    with pytest.raises(ValueError, match='lower orders only'):
+    with pytest.raises(ValueError, match='lower epistemic levels only'):
         cs.add_concept_edge(target, source, 1.)
     assert cs.concept_weights(target) == []
 

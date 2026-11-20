@@ -22,10 +22,10 @@ def _row_layer(weights, pole_weight=None, n=6):
     from symbol_fixtures import store_columns
     ly = ConceptualAttentionLayer.square(n)
     for k, w in enumerate(weights):
-        ly.add_edge(0, store_columns(ly, 1 + k, lane=int(w < 0))[0], weight=abs(w))
+        # A signed entry: its size the weight, below zero a Not entry.
+        ly.add_edge(0, store_columns(ly, 1 + k)[0], weight=w)
     if pole_weight is not None:
-        ly.add_edge(0, ly.bias_column(0), weight=pole_weight)
-        ly.add_edge(0, ly.bias_column(1), weight=pole_weight)
+        ly.add_edge(0, ly.bias_column(), weight=pole_weight)
     return ly
 
 
@@ -47,7 +47,7 @@ def test_penalty_excludes_everything_pole():
 
 
 def test_penalty_counts_negated_parts_by_their_nonnegative_exponent():
-    # Fixture signs select the source pole; stored exponents are nonnegative.
+    # A Not entry is counted by its weight, its size.
     ly = _row_layer([1.0, -0.9, 0.3, -0.1])
     assert abs(float(ly.definition_sparsity_penalty(2)) - 0.4) < 1e-6
 
@@ -60,8 +60,7 @@ def test_gradient_lands_only_on_marginal_ranks():
     first, second, third, fourth = (store_columns(ly, k)[0] for k in (1, 2, 3, 4))
     assert grad[first] == 0.0 and grad[second] == 0.0, "top-2 (core) are unpenalized"
     assert grad[third] == 1.0 and grad[fourth] == 1.0, "marginal ranks are pulled down"
-    assert grad[ly.bias_column(0)] == 0.0, "the EVERYTHING pole is never penalized"
-    assert grad[ly.bias_column(1)] == 0.0, "its negative pole is never penalized"
+    assert grad[ly.bias_column()] == 0.0, "the EVERYTHING pole is never penalized"
 
 
 def test_penalty_none_when_empty():

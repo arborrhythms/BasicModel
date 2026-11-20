@@ -1,4 +1,6 @@
 """Concept parts compose in presence charts; one inventory, two COO passes."""
+import math
+
 import pytest
 import torch
 import Spaces
@@ -23,7 +25,14 @@ def test_union_holds_one_present_part_across_orders():
         source = row
         rows.append(row)
     _, a = cs.cs_forward_content(a0, torch.randn(128, 8))
-    torch.testing.assert_close(a[rows, :, 0, 0], torch.ones(4, 1), atol=2e-6, rtol=0)
+    # The one present part carries its value up each order, through each
+    # order's Sigma (tanh of the weight times the value); the absent parts
+    # add nothing.
+    expected, value = [], 1.
+    for _ in rows:
+        value = math.tanh(value)
+        expected.append([value])
+    torch.testing.assert_close(a[rows, :, 0, 0], torch.tensor(expected), atol=2e-6, rtol=0)
 
 
 
@@ -37,7 +46,9 @@ def test_unwritten_alternative_receives_credit_from_present_witness():
     assert ly.values.item() == 0.
     a0 = _evidence(torch.full((32, 1), .25), torch.full((32, 1), .75))
     _, a = cs.cs_forward_content(a0, torch.randn(64, 8))
-    a[r].sum().backward()
+    # The for lane: at a value of zero the two lanes' derivatives are
+    # opposite, so their sum would carry none.
+    a[r, ..., 0].sum().backward()
     assert torch.isfinite(ly.values.grad).all()
     assert ly.values.grad.abs().sum() > 0
     assert a[r].count_nonzero() == 0
@@ -45,7 +56,7 @@ def test_unwritten_alternative_receives_credit_from_present_witness():
 
 
 
-def test_weak_disjuncts_do_not_accumulate():
+def test_weak_members_are_summed():
     cs = _cs(nS=128, order=2)
     r = _mint_row(cs, 1, 101)
     readable(cs, *range(32))
@@ -54,7 +65,8 @@ def test_weak_disjuncts_do_not_accumulate():
     a0 = _evidence(torch.full((cs._order_caps()[0], 1), .001))
     _, a = cs.cs_forward_content(a0, torch.randn(128, 8))
     presence = float(a[r, 0, 0, 0])
-    assert presence == pytest.approx(.001, abs=2e-7)
+    # A kind is a list: its members' values are summed by its Sigma.
+    assert presence == pytest.approx(math.tanh(32 * .001), abs=2e-7)
 
 
 
@@ -69,7 +81,7 @@ def test_sparse_growth_preserves_adam_and_pending_credit():
     optimizer.step()
     optimizer.zero_grad()
     before = optimizer.state[layer.values]['exp_avg'].clone()
-    pending = layer.fold_presence(torch.full((4, 1), .25)).sum()
+    pending = layer.forward_linear(torch.full((4, 1), .25)).sum()
     layer.add_edge(2, 1, .2)
     torch.testing.assert_close(optimizer.state[layer.values]['exp_avg'][:1], before)
     assert optimizer.state[layer.values]['exp_avg'][1] == 0
@@ -86,7 +98,7 @@ def test_recycled_edge_cannot_receive_pending_gradient():
     from Layers import SparseLayer
     layer = SparseLayer(3, 2, nonlinear=False)
     layer.add_edge(1, 0, .5)
-    loss = layer.fold_presence(torch.full((3, 1), .5)).sum()
+    loss = layer.forward_linear(torch.full((3, 1), .5)).sum()
     layer.remove_edges([(1, 0)])
     layer.add_edge(1, 0, .5)
     loss.backward()

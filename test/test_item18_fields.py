@@ -8,15 +8,17 @@ def test_definition_bracket_and_cue_share_weighted_arithmetic(operation):
     from FieldLogic import reduce
     from Layers import SparseLayer
     evidence = torch.tensor([[.2,.6],[.8,.3],[0.,.1]])
-    matrix = SparseLayer(6, 1)
+    from Layers import NotLayer3, sigma_read
+    matrix = SparseLayer(3, 1)
     for column in range(3):
         matrix.add_edge(0,column,weight=1.)
-    source = evidence.T.reshape(6,1)
     conjunction = operation == 'intersection'
-    actual = torch.stack([matrix.fold_presence(source, conjunctive=conjunction, dual=dual)[0,0]
-                          for dual in (False,True)])
     expected = torch.tensor([0.,.6] if conjunction else [.8,.1])
-    torch.testing.assert_close(actual,expected)
+    # A definition is the store's Sigma, a sum over the Not's options, and
+    # not the bracket's reduce: the three values -.4, .5 and -.1 sum to 0.
+    actual = sigma_read(matrix, NotLayer3.options(evidence[:, None]))[0, 0]
+    torch.testing.assert_close(actual, torch.tanh(evidence[:, 0] - evidence[:, 1]).new_tensor(
+        float(torch.tanh((evidence[:, 0] - evidence[:, 1]).sum()))))
     torch.testing.assert_close(reduce(evidence,operation=operation),expected)
 
 

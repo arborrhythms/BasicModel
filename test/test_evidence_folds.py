@@ -75,17 +75,20 @@ def test_property_alternatives_use_max_min_for_graded_primitive_inputs():
                                torch.tensor([.5, .8]))
 
 
-def test_sparse_requirements_and_alternatives_are_weighted_min_and_max():
+def test_sparse_sigma_reads_the_weighted_sum_of_options():
+    # The store's read is a sparse Sigma over the Not's options (in place of
+    # the weighted least and greatest): tanh of the weighted sum.
+    import math
+    from Layers import NotLayer3, sigma_read
     layer = SparseLayer(3, 2, nonlinear=False)
     for target in range(2):
         for source in range(3):
             layer.add_edge(target, source, .5 if source == 0 else 1.)
-    source = torch.tensor([[.25], [.6], [.6]], requires_grad=True)
-    torch.testing.assert_close(layer.fold_presence(source, conjunctive=True),
-                               torch.full((2, 1), .5))
-    torch.testing.assert_close(layer.fold_presence(source), torch.full((2, 1), .6))
-    layer.fold_presence(source, conjunctive=True).sum().backward()
-    assert torch.isfinite(source.grad).all()
+    lanes = torch.tensor([[[.25, 0.]], [[.6, 0.]], [[.6, 0.]]], requires_grad=True)
+    value = sigma_read(layer, NotLayer3.options(lanes))
+    torch.testing.assert_close(value, torch.full((2, 1), math.tanh(.5 * .25 + .6 + .6)))
+    value.sum().backward()
+    assert torch.isfinite(lanes.grad).all()
 
 
 from types import SimpleNamespace

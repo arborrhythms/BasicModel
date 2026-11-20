@@ -182,7 +182,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
         evidence = cs.cs_read_memberships(native, spans)
         loss = (evidence[0, 0, 0, 0] - .8).square()
         losses.append(float(loss.detach()))
-        loss.backward(); optimizer.step(); store.project_parts()
+        loss.backward(); optimizer.step()
     assert losses[-1] < losses[0]
     assert not torch.equal(parameter, initial)
     before = cs.cs_read_memberships(native, spans).detach()

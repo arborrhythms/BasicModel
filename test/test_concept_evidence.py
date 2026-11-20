@@ -1,5 +1,6 @@
 """Live paired evidence: snap, scoped composition, reverse and persistence."""
 import pytest
+import math
 import torch
 
 import Spaces
@@ -54,7 +55,7 @@ def test_membership_read_keeps_both_until_symbol_readout():
     assert float(corners(symbols(read.detach()))[0, 0, 2]) == 0.
 
 
-def test_kind_both_member_and_absent_member_is_both():
+def test_kind_of_a_both_member_and_an_absent_member_is_one_signed_value():
     cs = _cs()
     row = _mint_row(cs, 1, 101)
     readable(cs, 0, 1)
@@ -63,7 +64,9 @@ def test_kind_both_member_and_absent_member_is_both():
     a = field(cs)
     a[:2, 0, 0] = torch.tensor([[1., 1.], [0., 1.]])
     _, result = cs.cs_forward_content(a, torch.zeros(64, 8))
-    torch.testing.assert_close(result[row, 0, 0], torch.ones(2))
+    # A kind is one signed value, never both: the both member's value is
+    # nothing and the absent member's is -1, summed.
+    torch.testing.assert_close(result[row, 0, 0], torch.tensor([0., math.tanh(1.)]))
 
 
 
@@ -102,7 +105,10 @@ def test_discovered_symbol_remains_available_after_nonuse():
     a0 = field(cs)
     a0[a, 0, 0, 0] = 1.
     _, result = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
-    assert result[row, 0, 0, 0] == 1
+    # The Sigma reads the present member by its entry's weight.
+    store = Spaces._concept_alloc_of(cs).layer()
+    weight = sum(float(store.values[p].abs()) for p in cs.concept_entries(row, a))
+    assert float(result[row, 0, 0, 0]) == pytest.approx(math.tanh(weight))
 
 
 
@@ -145,7 +151,6 @@ def test_discovered_and_end_definitions_keep_learned_exponent_scale():
     store = Spaces._concept_alloc_of(cs).layer()
     store.assigned[discovered] = True
     before = store.values.detach().clone()
-    store.project_parts()
     torch.testing.assert_close(store.values, before)
 
 

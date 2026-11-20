@@ -9,6 +9,7 @@ percepts' rows and never a percept's code (rule 62). The certificates
 of the round's other steps join this file.
 """
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -675,10 +676,10 @@ def test_71_a_checkpoint_drops_the_symbols_made_for_a_concept():
 # symbol. The store's columns are the symbols' rows, with the bias.
 
 def _store_things(owner):
-    """Every entry of the store as (reader row, thing, lane)."""
+    """Every entry of the store as (reader row, thing, Not entry)."""
     store = owner._concept_allocator.layer(0)
-    return [(row, store.thing_of_column(column), store.column_lane(column))
-            for row, column in zip(store._rows, store._cols)]
+    return [(row, store.thing_of_column(column), store.negated(position))
+            for position, (row, column) in enumerate(zip(store._rows, store._cols))]
 
 
 def test_cert_a_no_column_of_the_store_is_addressed_by_a_concepts_row(lesson_at_start):
@@ -699,7 +700,7 @@ def test_cert_a_no_column_of_the_store_is_addressed_by_a_concepts_row(lesson_at_
     entries = _store_things(owner)
     on_symbols = [thing for _, thing, _ in entries if thing is not None]
     assert all(thing[0] == 'sym' and thing[1] < len(table) for thing in on_symbols)
-    assert store.nInput == 2 * (table.capacity + 1)
+    assert store.nInput == table.capacity + 1
     print(f'\nthe lesson store: {len(entries)} entries, {len(on_symbols)} on symbols, '
           f'{len(entries) - len(on_symbols)} on the bias; symbols in the table {len(table)}')
     assert on_symbols
@@ -713,7 +714,7 @@ def test_cert_b_words_reads_a_word_through_a_symbol_over_its_concept(lesson_at_s
     alloc = owner._concept_allocator
     table = alloc.symbol_table()
     words_row = owner._concept_row_of(alloc.declared_classes['words'])
-    reads = [thing for row, thing, lane in _store_things(owner) if row == words_row and lane == 0]
+    reads = [thing for row, thing, negated in _store_things(owner) if row == words_row and not negated]
     assert reads and all(thing[0] == 'sym' for thing in reads), reads
     member, = table.members(reads[0][1])
     word_row = owner._concept_row_of(member)
@@ -725,7 +726,9 @@ def test_cert_b_words_reads_a_word_through_a_symbol_over_its_concept(lesson_at_s
     lit, unlit = read(.76), read(0.)
     print(f'\nwords through symbol {reads[0][1]} over word concept {member}: '
           f'present {lit.tolist()}, absent {unlit.tolist()}')
-    assert float(lit[0]) == pytest.approx(.76) and bool((unlit == 0).all())
+    # The Sigma's read: tanh of the weight (one) times the symbol's value.
+    assert float(lit[0]) == pytest.approx(math.tanh(.76)) and float(lit[1]) == 0.
+    assert bool((unlit == 0).all())
 
 
 def test_cert_c_an_operator_class_reads_its_arguments_through_symbols(lesson_at_start):
@@ -782,6 +785,8 @@ def test_cert_d_green_things_collect_from_every_lower_epistemic_level():
         seats = torch.tensor([[[[f, 0.]]], [[[c, 0.]]], [[[0., 0.]]]])
         return float(cs._concept_rung_presence(seats, 2, 3, inventory_rows=inventory)[0, 0, 0, 0])
     assert read(.8, 0.) > .5 and read(0., .8) > .5 and read(0., 0.) == 0.
+    # A list: the two members' values are summed.
+    assert read(.8, .8) == pytest.approx(math.tanh(1.6))
     with pytest.raises(ValueError, match='lower epistemic levels only'):
         cs.add_concept_edge(green, other, 1.)
     state = table.state()
@@ -833,24 +838,85 @@ def test_cert_f_nothing_is_one_to_one():
     assert second != symbol and set(store.symbol_table.reading(ids[1])) == {symbol, second}
 
 
-def test_cert_8_an_old_store_whose_columns_were_concept_rows_is_read_once_as_symbols():
-    """An old checkpoint's store wrote each column as a concept's row. Read
-    once: each column becomes a symbol that holds that row's concept, found
-    or made for the kind that read it; the bias stays the bias; values
-    kept."""
-    import torch.nn as nn
-    from Models import _read_rows_as_things
+def test_cert_8_an_old_store_is_refused_with_the_reason():
+    """A checkpoint whose store joined its inputs by the least and the
+    greatest (a column for each lane of each input, unmarked) is refused,
+    and the refusal says why."""
+    from types import SimpleNamespace
+    from Models import BaseModel
     cs, store, ids, rows = _small_space()
-    word, cats, _, green, _ = rows
-    found = cs.nominate_symbol(('name', 'felix'), ids[0])
-    read_as_rows = [(word, 0), (cats, 1), (None, 0)]
-    store._rows, store._cols = [green] * 3, [0, 1, 2]
-    store._init_vals = [.5, .25, 1.]
-    store._index = {(green, c): i for i, c in enumerate(store._cols)}
-    store.values = nn.Parameter(torch.tensor([.5, .25, 1.]))
-    _read_rows_as_things(cs, store, read_as_rows)
-    things = [(store.thing_of_column(c), store.column_lane(c)) for c in store._cols]
-    made = store.symbol_table.fit(ids[1])
-    assert things == [(('sym', found), 0), (('sym', made), 1), (None, 0)]
-    assert store.symbol_table.handles[made] == ('kind', ids[3], ids[1])
-    torch.testing.assert_close(store.values.detach(), torch.tensor([.5, .25, 1.]))
+    old = {'next_id': 100, 'layers': {0: {
+        'nInput': 2 * (store._room + 1), 'nOutput': store.nOutput, 'constituents': {},
+        'tensor_rows': {}, 'row_next': {}, 'rows': [rows[3]], 'cols': [0], 'columns': 'symbols',
+        'symbols': store._room, 'init_vals': [.5], 'values': torch.tensor([.5])}}}
+    with pytest.raises(ValueError, match='the least and the greatest'):
+        BaseModel._restore_allocator_extras(SimpleNamespace(), cs, old)
+
+
+# Certificates 4, 13 and 23 (d) above order zero: the symbols' Pi gives
+# each symbol two lanes, the Not its value and not-value, and the store's
+# Sigma reads one option for each entry, with weights at zero or above.
+
+def _member_lanes(cs, rows, member, lanes):
+    seats = torch.zeros(len(rows), 1, 1, 2)
+    seats[rows.index(member), 0, 0] = torch.tensor(lanes)
+    return seats
+
+
+def test_cert_4_the_next_sigma_reads_one_combined_input_for_each_symbol():
+    """Certificate 4: the kind reads one input for its symbol, for less
+    against (.7 - .2), by its weight, through tanh; the bound view has one
+    column for each symbol and the bias."""
+    cs, store, ids, rows = _small_space()
+    word, cats, dogs, green, _ = rows
+    cs.add_concept_edge(cats, word, 2.)
+    inventory = [word, cats]
+    view = store.bind(torch.tensor(inventory))
+    assert view.nInput == len(view._things) + 1 == 2
+    value = cs._concept_rung_presence(_member_lanes(cs, inventory, word, (.7, .2)), 1, 2,
+                                      inventory_rows=torch.tensor(inventory))[0, 0, 0]
+    print(f'\ncertificate 4: member (.7, .2), weight 2: kind {value.tolist()}')
+    torch.testing.assert_close(value, torch.tensor([math.tanh(2 * .5), 0.]))
+    assert all(store.symbol_table.members(t[1]) for t in view._things)
+
+
+def test_cert_23d_above_order_zero_a_not_entry_reads_a_symbols_pair_exchanged():
+    """Certificate 23 (d): a Not entry above order zero is an entry whose
+    sign chooses the symbol's not-value: its weight is at zero or above
+    (the entry's size), the kind reads the pair exchanged, and a kind of
+    presence and one of absence over one symbol are each other's
+    opposite."""
+    cs, store, ids, rows = _small_space()
+    word, cats, dogs, green, _ = rows
+    cs.add_concept_edge(cats, word, 1., negated=True)
+    cs.add_concept_edge(dogs, word, 1.)
+    assert cs.concept_weights(cats, negated=True) == [(word, 1.)]
+    assert cs.concept_weights(cats) == [] and cs.concept_weights(dogs) == [(word, 1.)]
+    assert float(store.values.detach().abs().min()) >= 0 and store.negated(cs.concept_entries(cats, word)[0])
+    inventory = [word, cats, dogs]
+    read = cs._concept_rung_presence(_member_lanes(cs, inventory, word, (.7, .2)), 1, 3,
+                                     inventory_rows=torch.tensor(inventory))[:, 0, 0]
+    print(f'\ncertificate 23 (d): member (.7, .2): absence {read[0].tolist()}, presence {read[1].tolist()}')
+    torch.testing.assert_close(read[0], torch.tensor([0., math.tanh(.5)]))
+    torch.testing.assert_close(read[0], read[1].flip(-1))
+
+
+def test_cert_13_an_entry_above_order_zero_that_no_cost_supports_goes_to_zero():
+    """Certificate 13: under the penalty alone (no other cost), a Sigma
+    entry above order zero falls to zero, whichever option it reads; the
+    order-zero Sigma is not in the penalty."""
+    cs, store, ids, rows = _small_space()
+    word, cats, dogs, green, _ = rows
+    cs.add_concept_edge(cats, word, .3)
+    cs.add_concept_edge(dogs, word, .3, negated=True)
+    optimizer = torch.optim.SGD([store.values], lr=.02)
+    for _ in range(30):
+        optimizer.zero_grad()
+        cs.definition_sparsity_loss(lam=1., free_size=0).backward()
+        optimizer.step()
+    print(f'\ncertificate 13: after 30 steps {store.values.detach().tolist()}')
+    assert bool((store.values.detach().abs() <= .02).all())
+    order_zero = getattr(cs, 'order_zero', None)
+    if order_zero is not None:
+        penalty = cs.definition_sparsity_loss(lam=1., free_size=0)
+        assert torch.autograd.grad(penalty, order_zero.value, allow_unused=True)[0] is None

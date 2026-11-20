@@ -25,7 +25,7 @@ class Case:
 
 def cases(device='cpu', dtype=torch.float32):
     from MeaningKernels import householder, householder_action, LaneKernel
-    from Layers import cube_chart, cube_unchart, SparseLayer
+    from Layers import cube_chart, cube_unchart, SparseLayer, NotLayer3, sigma_read
     from IdentityRows import meet_ratios
     from Spaces import WhereEncoding
 
@@ -56,39 +56,29 @@ def cases(device='cpu', dtype=torch.float32):
     yield Case('cube_unchart', cube_unchart, lambda b: (fixed((b, 32)),))
     yield Case('meet_ratios', meet_ratios,
                lambda b: (fixed((b, 32), True), fixed((b, 24), True)))
-    for conjunction in (False, True):
-        for dual in (False, True):
-            layer = SparseLayer(16, 8, device=torch.device(device))
-            for row, col, weight in ((0, 0, 1.), (1, 0, .5), (1, 2, 1.),
-                                     (2, 3, 0.), (3, 5, 2.), (4, 15, 1.), (7, 7, .75)):
-                layer.add_edge(row, col, weight)
-            layer.to(device=device, dtype=dtype)
-            layer._missing_sources = torch.tensor([False, False, True, False, False, False, False], device=device)
-            for ranged in (False, True):
-                start, end = (1, 6) if ranged else (0, 8)
-                yield Case(f'fold_{conjunction}_{dual}_{ranged}',
-                    partial(layer.fold_presence, conjunctive=conjunction, dual=dual, start=start, end=end),
-                    lambda b: (fixed((16, b), True),), batch_axis=1, parameters=(layer.values,))
-            def own_fold(u, own, mask, known, edge, edge_known, *, layer=layer,
-                         conjunction=conjunction, dual=dual):
-                return layer.fold_presence(u, start=1, end=6, conjunctive=conjunction, dual=dual,
-                    own=own, own_mask=mask, own_known=known,
-                    edge_memberships=edge, edge_known=edge_known)
-            yield Case(f'fold_own_{conjunction}_{dual}', own_fold,
-                lambda b: (fixed((16, b), True), fixed((5, b), True),
-                           torch.tensor([True, False, True, True, False], device=device),
-                           fixed((5, b), True) > .3, fixed((7, b), True),
-                           fixed((7, b), True) > .2),
-                batch_axis=(1, 1, None, 1, 1, 1), parameters=(layer.values,))
+    # The read of a sparse Sigma over the Not's options (sigma_read): each
+    # entry one signed number, its size the weight and its sign the option.
+    def options(b):
+        return NotLayer3.options(fixed((16, b, 2), True))
+    layer = SparseLayer(16, 8, device=torch.device(device))
+    for row, col, weight in ((0, 0, 1.), (1, 0, .5), (1, 2, -1.),
+                             (2, 3, 0.), (3, 5, 2.), (4, 15, -1.), (7, 7, .75)):
+        layer.add_edge(row, col, weight)
+    layer.to(device=device, dtype=dtype)
+    layer._missing_sources = torch.tensor([False, False, True, False, False, False, False], device=device)
+    for ranged in (False, True):
+        start, end = (1, 6) if ranged else (0, 8)
+        yield Case(f'sigma_{ranged}', partial(sigma_read, layer, start=start, end=end),
+                   lambda b: (options(b),), batch_axis=1, parameters=(layer.values,))
     empty = SparseLayer(16, 8, device=torch.device(device))
-    yield Case('fold_empty', empty.fold_presence, lambda b: (fixed((16, b), True),), batch_axis=1)
+    yield Case('sigma_empty', partial(sigma_read, empty), lambda b: (options(b),), batch_axis=1)
     unsorted = SparseLayer(16, 8, device=torch.device(device))
-    for row, col, weight in ((7, 7, .75), (1, 0, .5), (0, 0, 1.), (4, 15, 1.),
-                             (3, 5, 2.), (1, 2, 1.), (2, 3, 0.)):
+    for row, col, weight in ((7, 7, .75), (1, 0, .5), (0, 0, 1.), (4, 15, -1.),
+                             (3, 5, 2.), (1, 2, -1.), (2, 3, 0.)):
         unsorted.add_edge(row, col, weight)
     unsorted.to(device=device, dtype=dtype)
-    yield Case('fold_unsorted', partial(unsorted.fold_presence, start=1, end=6),
-               lambda b: (fixed((16, b), True),), batch_axis=1, parameters=(unsorted.values,))
+    yield Case('sigma_unsorted', partial(sigma_read, unsorted, start=1, end=6),
+               lambda b: (options(b),), batch_axis=1, parameters=(unsorted.values,))
     for width in (2, 4):
         encoding = WhereEncoding(nWhere=width).set_capacity(2**26)
         def positions(b):
@@ -107,10 +97,7 @@ CASE_NAMES = (
     'householder', 'householder_action', 'householder_action_transpose',
     *[f'lane_{state}_{direction}' for state in ('neutral', 'learned') for direction in ('forward', 'inverse')],
     'cube_chart_True', 'cube_chart_False', 'cube_unchart', 'meet_ratios',
-    *[name for conjunction in (False, True) for dual in (False, True)
-      for name in (*[f'fold_{conjunction}_{dual}_{ranged}' for ranged in (False, True)],
-                   f'fold_own_{conjunction}_{dual}')],
-    'fold_empty', 'fold_unsorted',
+    'sigma_False', 'sigma_True', 'sigma_empty', 'sigma_unsorted',
     *[f'where_{method}_{width}' for width in (2, 4) for method in ('encode', 'decode', 'decode_index')],
 )
 

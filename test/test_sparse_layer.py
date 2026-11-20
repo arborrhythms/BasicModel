@@ -29,10 +29,11 @@ def test_add_edge_idempotent_and_grows_values():
 
 
 def test_membership_fold_uses_the_input_dtype_and_growth_keeps_parameter_precision():
+    from Layers import NotLayer3, sigma_read
     layer = SparseLayer(2, 1)
     layer.add_edge(0, 0, weight=.5)
-    field = torch.tensor([[.25], [.75]], dtype=torch.float64)
-    value = layer.fold_presence(field, conjunctive=True)
+    field = NotLayer3.options(torch.tensor([[[.25, 0.]], [[.75, 0.]]], dtype=torch.float64))
+    value = sigma_read(layer, field)
     assert value.dtype == field.dtype
     gradient, = torch.autograd.grad(value.sum(), layer.values)
     assert torch.isfinite(gradient).all()
@@ -140,29 +141,33 @@ def test_self_edge_allowed_by_default():
 
 def test_conceptual_attention_layer_is_square_and_forbids_self_edges():
     from symbol_fixtures import store_columns
-    ly = ConceptualAttentionLayer.square(8)   # 8 rows read 8 symbols and the bias, two lanes
-    assert (ly.nInput, ly.nOutput) == (18, 8)
-    # A row may not read a thing that holds its own concept, on either lane.
-    for lane in (0, 1):
+    ly = ConceptualAttentionLayer.square(8)   # 8 rows read 8 symbols and the bias, one column each
+    assert (ly.nInput, ly.nOutput) == (9, 8)
+    # A row may not read a thing that holds its own concept, by either option.
+    for weight in (1., -1.):
         with pytest.raises(ValueError, match="self-edge"):
-            ly.add_edge(3, store_columns(ly, 3, lane=lane)[0])
+            ly.add_edge(3, store_columns(ly, 3)[0], weight=weight)
 
 
 def test_conceptual_attention_union_uses_presence_chart():
+    # The store is a sparse Sigma: a concept reads tanh of its weighted
+    # options (here one entry at .5 on a symbol at .75 for).
     from symbol_fixtures import store_columns
     ly = ConceptualAttentionLayer.square(4)
     column, = store_columns(ly, 0)
     ly.add_edge(2, column, weight=.5)
-    u = torch.zeros(10, 1)
-    u[column] = .75
-    out = ly.fold_presence(u)
-    torch.testing.assert_close(out[2], torch.tensor([.5]))
+    u = torch.zeros(5, 1, 2)
+    u[column, 0, 0] = .75
+    from Layers import NotLayer3
+    out = ly(NotLayer3.options(u))
+    torch.testing.assert_close(out[2], torch.tanh(torch.tensor([.5 * .75])))
     assert not out[:2].any()
 
 
 def test_conceptual_attention_empty_union_is_absent():
+    from Layers import NotLayer3
     ly = ConceptualAttentionLayer.square(3)
-    assert not ly.fold_presence(torch.rand(8, 2)).any()
+    assert not ly(NotLayer3.options(torch.rand(4, 2, 2))).any()
 
 
 # -- concept relation store (moved off SparseLayer onto ConceptualAttentionLayer)

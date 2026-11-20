@@ -2,6 +2,7 @@
 import warnings
 
 import pytest
+import math
 import torch
 
 
@@ -168,9 +169,8 @@ def test_intuit_deposits_only_when_selected_and_derives_higher_orders(monkeypatc
     assert read(owner, row=0, work=QueryWorkBudget(64)) is None
     field = knowing(model)
     address = (field.concept_ids == parent).nonzero().item()
-    # The parent takes the greater for (.8 of a) and the lesser against
-    # (0 of a, below .2 of b).
-    torch.testing.assert_close(field.evidence[address,0,0], torch.tensor([.8,0.]))
+    # The parent's Sigma sums its members' values, .8 of a and -.2 of b.
+    torch.testing.assert_close(field.evidence[address,0,0], torch.tensor([math.tanh(.6),0.]))
     trial.restore(effects_only=True)
     torch.testing.assert_close(knowing(model).evidence, field.evidence)
     trial.restore()

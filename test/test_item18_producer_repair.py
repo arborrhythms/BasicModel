@@ -2,6 +2,7 @@
 
 Certificate 7 is the two existing named stopping-gate tests, run unchanged.
 """
+import math
 import pytest
 import torch
 from Layers import ConceptualAttentionLayer, SparseLayer
@@ -56,92 +57,85 @@ def test_02_admitted_word_and_basic_percept_are_positive_before_teaching(eager_r
     finally:model.End();model.symbolSpace.soft_reset()
 
 
-def paired_layer(layout,weights,*,anchor=False):
-    # Row 2 reads, on both lanes, a symbol that holds row 0's concept; the
-    # anchor reads one that holds row 1's.
+def signed_layer(value,*,anchor=False):
+    # Row 2 reads, by one signed entry, a symbol that holds row 0's concept
+    # (its size the weight, its sign the option); the anchor reads one
+    # that holds row 1's.
     from symbol_fixtures import store_columns
     layer=ConceptualAttentionLayer.square(3)
-    columns=store_columns(layer,0)+store_columns(layer,0,lane=1)
-    for c,w in zip(columns,weights):layer.add_edge(2,c,weight=w)
+    layer.add_edge(2,store_columns(layer,0)[0],weight=value)
     if anchor:layer.add_edge(2,store_columns(layer,1)[0],weight=1.)
     return layer
 
 
 def by_column(layer,rows):
-    """The things' lanes by column, from the lanes of each row's symbol
-    (``rows``: row -> (for, against)) and the bias, (1, 0)."""
+    """The things' two lanes by column, ``[nInput, 1, 2]``, from the lanes
+    of each row's symbol (``rows``: row -> (for, against)) and the bias,
+    (1, 0)."""
     from symbol_fixtures import store_columns
-    u=torch.zeros(layer.nInput,1)
-    u[layer.bias_column()]=1.
-    for row,(positive,negative) in rows.items():
-        u[store_columns(layer,row)[0]]=positive
-        u[store_columns(layer,row,lane=1)[0]]=negative
+    u=torch.zeros(layer.nInput,1,2)
+    u[layer.bias_column(),0,0]=1.
+    for row,pair in rows.items():
+        u[store_columns(layer,row)[0],0]=torch.tensor(pair)
     return u
 
 
-def fold(layer,layout,*,conjunctive=False,values=None):
-    # Row 0 at (values[0], values[1]); row 1, the anchor, at values[2] and
-    # 1 - values[2]; the bias reads (1, 0). The control, a plain layer,
-    # reads the same values at columns 0, 4, 1, 5 and 3.
-    values=(.25,.8,1. if conjunctive else 0.) if values is None else values
-    if isinstance(layer,ConceptualAttentionLayer):
-        u=by_column(layer,{0:(values[0],values[1]),1:(values[2],1-values[2])})
-    else:
-        u=torch.tensor([[values[0]],[values[2]],[0.],[1.],[values[1]],[1-values[2]],[0.],[0.]])
-    return layer.fold_presence(u,start=2,end=3,conjunctive=conjunctive)
+def read(layer,rows,**kw):
+    from Layers import NotLayer3,sigma_read
+    return sigma_read(layer,NotLayer3.options(by_column(layer,rows)),**kw)
 
 
-@pytest.mark.parametrize('weights,expected',[( (1.,1e-7),[1.,0.]),((.2,.7),[0.,1.]),((.5,.5),[0.,0.])])
-def test_06_higher_order_pair_values(weights,expected):
-    layer=paired_layer('concept',weights)
-    u=by_column(layer,{0:(1.,0.)})
-    pair=torch.stack([layer.fold_presence(u,dual=bool(p))[2,0] for p in (0,1)])
-    torch.testing.assert_close(pair,torch.tensor(expected),rtol=0,atol=0)
+@pytest.mark.parametrize('value,expected',[(1.,[math.tanh(1.),0.]),(-.5,[0.,math.tanh(.5)]),(0.,[0.,0.])])
+def test_06_higher_order_pair_values(value,expected):
+    # One signed entry: its size the Sigma's weight, its sign the Not's
+    # option; the concept is one signed value on two lanes.
+    from Layers import signed_lanes
+    layer=signed_layer(value)
+    pair=signed_lanes(read(layer,{0:(1.,0.)}))[2,0]
+    torch.testing.assert_close(pair,torch.tensor(expected))
 
 
-@pytest.mark.parametrize('weights',[(.8,.2),(.2,.8),(.5,.5)])
-def test_06_higher_order_pair_gradients(weights):
-    layer=paired_layer('concept',weights,anchor=True)
-    gradient,=torch.autograd.grad(fold(layer,'concept').sum(),layer.values)
+@pytest.mark.parametrize('value',[.6,-.6,0.])
+def test_06_higher_order_pair_gradients(value):
+    # The entry's gradient is the symbol's value through the squash, at
+    # every value of the entry, zero included: teaching carries an entry
+    # from one option to the other through zero.
+    layer=signed_layer(value,anchor=True)
+    y=read(layer,{0:(.25,.8),1:(0.,1.)},start=2,end=3)
+    gradient,=torch.autograd.grad(y.sum(),layer.values)
+    s=.25-.8
+    torch.testing.assert_close(gradient[0],torch.tensor(s*(1-float(y)**2)))
     assert gradient[0]!=0
-    torch.testing.assert_close(gradient[0],-gradient[1],rtol=0,atol=0)
-    if weights[0]==weights[1]:
-        control=SparseLayer(8,3)
-        for column,weight in ((0,0.),(4,0.),(1,1.)):
-            control.add_edge(2,column,weight)
-        g,=torch.autograd.grad(fold(control,'concept').sum(),control.values)
-        torch.testing.assert_close(gradient[:2],torch.stack((g[0]-g[1],g[1]-g[0])),rtol=0,atol=0)
 
 
-@pytest.mark.parametrize('weights,expected',[
-    ((1.,1e-7),[1.,0.]), ((.2,.7),[0.,1.]), ((.5,.5),[0.,0.])])
-def test_06_definition_closure_reads_the_same_signed_pair(weights,expected):
+@pytest.mark.parametrize('value,expected',[
+    (1.,[math.tanh(1.),0.]), (-.5,[0.,math.tanh(.5)]), (0.,[0.,0.])])
+def test_06_definition_closure_reads_the_same_signed_pair(value,expected):
     from types import SimpleNamespace
     from FieldProjection import close
-    layer=paired_layer('concept',weights)
+    layer=signed_layer(value)
     owner=SimpleNamespace(_concept_allocator=SimpleNamespace(layer=lambda order:layer))
     evidence=torch.tensor([[1.,0.],[0.,0.]])
     result=close(owner,[0,2],evidence)
     torch.testing.assert_close(result[0],evidence[0],rtol=0,atol=0)
-    torch.testing.assert_close(result[1],torch.tensor(expected),rtol=0,atol=0)
+    torch.testing.assert_close(result[1],torch.tensor(expected))
 
 
-@pytest.mark.parametrize('weights',[(.8,.2),(.2,.8),(.5,.5)])
-@pytest.mark.parametrize('conjunctive',[False,True])
-def test_06_reverse_attributes_only_the_signed_definition(weights,conjunctive):
+@pytest.mark.parametrize('value',[.6,-.6,0.])
+def test_06_reverse_attributes_only_the_signed_definition(value):
+    # The Sigma's transpose carries the request through the entry's option:
+    # to the symbol's for lane by a for entry, its against lane by a Not
+    # entry, and nowhere by an entry at zero.
+    from Layers import sigma_transpose
     from symbol_fixtures import store_columns
-    layer=paired_layer('concept',weights)
-    control=SparseLayer(8,3)
-    control.add_edge(2,store_columns(layer,0)[0],weight=max(weights[0]-weights[1],0.))
-    control.add_edge(2,store_columns(layer,0,lane=1)[0],weight=max(weights[1]-weights[0],0.))
-    query=torch.tensor([[0.],[0.],[.4]])
-    observed=torch.ones(8,1)
-    for field in (None,observed):
-        actual=layer.attribute_presence(query,observed=field,conjunctive=conjunctive)
-        expected=control.attribute_presence(query,observed=field,conjunctive=conjunctive)
-        torch.testing.assert_close(actual,expected,rtol=0,atol=0)
-    if weights[0]==weights[1]:
-        assert torch.count_nonzero(actual)==0
+    layer=signed_layer(value)
+    column=store_columns(layer,0)[0]
+    query=torch.tensor([[[0.,0.]],[[0.,0.]],[[.4,0.]]])
+    expected=torch.zeros(layer.nInput,1,2)
+    if value>0:expected[column,0,0]=.4
+    if value<0:expected[column,0,1]=.4
+    for field in (None,torch.ones(layer.nInput,1,2)):
+        torch.testing.assert_close(sigma_transpose(layer,query,observed=field),expected,rtol=0,atol=0)
 
 
 def test_06_cancelled_definition_does_not_create_a_dependency_cycle():
@@ -150,8 +144,7 @@ def test_06_cancelled_definition_does_not_create_a_dependency_cycle():
     from symbol_fixtures import store_columns
     layer=ConceptualAttentionLayer.square(3)
     for target,source in ((0,2),(2,0)):
-        for lane in (0,1):
-            layer.add_edge(target,store_columns(layer,source,lane=lane)[0],weight=.5)
+        layer.add_edge(target,store_columns(layer,source)[0],weight=0.)
     owner=SimpleNamespace(_concept_allocator=SimpleNamespace(layer=lambda order:layer))
     evidence=torch.tensor([[.25,0.],[0.,.75]])
     torch.testing.assert_close(close(owner,[0,2],evidence),evidence,rtol=0,atol=0)
@@ -174,15 +167,14 @@ def test_05_percept_attribution_reads_the_same_signed_feature(weights,expected):
 
 
 def test_pairing_survives_binding_and_range_cache_growth():
-    layer=paired_layer('concept',(1.,.1))
+    from Layers import NotLayer3,sigma_read
+    layer=signed_layer(.9)
     from symbol_fixtures import store_columns
     view=layer.bind([2,0])
-    # The view's input: the one thing read (row 0's symbol), the bias, and
-    # their against lanes.
-    u=torch.tensor([[1.],[1.],[0.],[0.]])
-    assert view.fold_presence(u,start=0,end=1).item()==1.
+    # The view's input: the one thing read (row 0's symbol) and the bias.
+    u=torch.tensor([[[1.,0.]],[[1.,0.]]])
+    assert sigma_read(view,NotLayer3.options(u),start=0,end=1).item()==pytest.approx(math.tanh(.9))
     layer.add_edge(2,store_columns(layer,1)[0],weight=.2)
-    # Two things whose concepts are not seated are both missing; they must
-    # not become partners.
+    # Two things whose concepts are not seated are both missing.
     view=layer.bind([2])
-    assert view.fold_presence(torch.zeros(view.nInput,1)).item()==0.
+    assert sigma_read(view,NotLayer3.options(torch.zeros(view.nInput,1,2))).item()==0.

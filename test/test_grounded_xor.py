@@ -117,7 +117,6 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         else:
             backward(model, optimizer, loss)
         optimizer.step()
-        store.project_parts()
         model.End()
     model.forward(x)
     # The name is one signed value: against on 00, for on 11. Seen both ways
@@ -197,7 +196,6 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         else:
             backward(model, optimizer, loss)
         optimizer.step()
-        store.project_parts()
     with torch.no_grad():
         model.End()
         model.forward(x)

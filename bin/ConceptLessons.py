@@ -80,8 +80,6 @@ def teach_concept_lessons(model):
         for feature in item['features']:
             cs.add_concept_feature(row, feature['tower'], feature['row'],
                                    feature['weight'], negated=feature.get('negative', False))
-    store = cs._concept_allocator.layer(0)
-
     def read_name(concept):
         carrier = model._combine_last_cs_sub
         ids, evidence = carrier._concept_ids, carrier._concept_activations
@@ -104,7 +102,6 @@ def teach_concept_lessons(model):
             loss = (read_name(item['concept']) - target).square().mean()
             loss.backward()
             optimizer.step()
-            store.project_parts()
             model.End()
         history.append(float(loss.detach()))
 

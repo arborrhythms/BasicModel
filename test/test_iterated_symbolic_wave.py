@@ -1,6 +1,7 @@
 from definition_fixtures import class_over
 """Adjacent sigma orders propagate in one pass and cannot self-reference."""
 import pytest
+import math
 import torch
 import Spaces
 from test_basicmodel import _populate_test_config
@@ -53,7 +54,10 @@ def test_depth_d_sigma_path_completes_in_one_pass():
     a0[:4, 0] = torch.tensor([.25, .5, .75, 1.])
     what = torch.randn(64, _D)
     _, a = cs.cs_forward_content(_evidence(a0), what)
-    torch.testing.assert_close(a[rows, 0, 0, 0], torch.tensor([.5, 1., 1., 1.]))
+    # Each order's Sigma sums its members' values and squashes.
+    first, second = math.tanh(.25 + .5), math.tanh(.75 + 1.)
+    third = math.tanh(first + second)
+    torch.testing.assert_close(a[rows, 0, 0, 0], torch.tensor([first, second, third, math.tanh(third)]))
     # Removing both first-rung alternatives removes the only path upward.
     layer = _layer(cs)
     with torch.no_grad():

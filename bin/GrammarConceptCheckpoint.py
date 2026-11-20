@@ -9,6 +9,8 @@ import warnings
 
 import torch
 
+from Layers import ConceptualAttentionLayer
+
 
 def row_plan(space, allocator, layer, additions):
     """A complete permutation, including unallocated rows and added seats."""
@@ -180,19 +182,11 @@ def prepare(model, state, structural, vocab, training=None):
             row = added_rows[offset]
             layer['tensor_rows']['concept', concept] = row
             layer['constituents'][concept] = []
-        def columns(values):
-            if layer.get('columns') == 'symbols':
-                # A column is a symbol, which the concept rows do not move.
-                return list(values)
-            # An older checkpoint's columns are concept rows, which move
-            # with the rows; they are read as things when it is restored.
-            return [(new_size if col % (old_size+1) == old_size else inverse[col % (old_size+1)])
-                    + (col // (old_size+1)) * (new_size+1) for col in values]
+        if layer.get('columns') != ConceptualAttentionLayer.COLUMNS:
+            raise ValueError(ConceptualAttentionLayer.REFUSED)
+        # A column is a symbol, which the concept rows do not move.
         layer['rows'] = [inverse[row] for row in layer['rows']]
-        layer['cols'] = columns(layer['cols'])
         layer['nOutput'] = new_size
-        if layer.get('columns') != 'symbols':
-            layer['nInput'] = 2*(new_size+1)
         parts = layer['parts']
         for matrix in parts.get('matrices', {}).values():
             matrix['rows'] = [inverse[row] for row in matrix['rows']]
