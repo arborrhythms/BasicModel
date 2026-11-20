@@ -49,37 +49,6 @@ def _p5_combine(presence, codes):
     return 1 - torch.exp(torch.einsum('p...l,pw->...lw', presence, gaps))
 
 
-# 0. The stand-in codes forms as WordIdentity does.
-
-def test_the_stand_in_codes_as_word_identity_does():
-    """On the first 3,000 words, the trial's coder as built and
-    WordIdentity give the same row to every form that holds no part the two
-    made differently. (Since round 3c, step 7, WordIdentity gives two forms
-    with one code rule 56's next part where the stand-in raised bits or
-    shared the row; the forms those parts touch are counted.)"""
-    from Layers import RadixLayer
-    from WordIdentity import WordIdentity, text_of
-    sample = words()[:3000]
-    # The source's parts half is 64 wide (rule 50); the stand-in as built
-    # keys forms on their parts alone, as WordIdentity does with no wholes half.
-    store = RadixLayer(64, initial_cap=8000)
-    identity = WordIdentity(store, pair_dim=64)
-    for w in sample:
-        identity.admit(w.encode())
-    mine = ct.Coder('built').admit_all(sample)
-    runs = lambda bits, added: {run for run in added} | {str(atom[1] if isinstance(atom, tuple) else atom)
-                                                          for atom in bits}
-    apart = runs(identity.bits, identity.added) ^ runs(mine.bits, mine.added)
-    apart |= {str(a[1] if isinstance(a, tuple) else a) for a in identity.bits} | {str(a) for a in mine.bits}
-    apart = {text_of(r) if isinstance(r, bytes) else r for r in apart}
-    kept = [w for w in sample if not any(run in w for run in apart) and w not in mine.shared
-            and w not in mine.shared.values()]
-    differ = sum(int(np.any(identity.form(w.encode()).numpy() != mine.parts_vector(w)[:64])) for w in kept)
-    print(dict(words=len(sample), compared=len(kept), rows_that_differ=differ,
-               shared=(0, len(mine.shared)), added=(len(identity.added), len(mine.added))))
-    assert kept and differ == 0
-
-
 # 1. The dictionary.
 
 def test_1_the_dictionary_under_each_layout():
@@ -862,21 +831,22 @@ def test_9_the_catalog_basis_on_the_lesson(lesson):
 # §19.86: no code inside another by accident.
 
 def test_10_the_linked_coder_codes_as_the_source_does():
-    """The stand-in, without the repair, gives the first 3,000 words the
-    source's codes (both halves) and the source's added parts."""
-    from Layers import RadixLayer
-    from WordIdentity import WordIdentity
+    """The stand-in with the source's repair (``SourceCoder``: rule 61 as
+    built) gives the first 3,000 words the source's codes (both halves)
+    and the source's added parts, those of rule 43 and those the repair
+    makes. The source is coded as in the model, the table of wholes bound
+    before the forms are admitted (test_item17_code.coded)."""
+    from test_item17_code import coded
     sample = words()[:3000]
-    identity = WordIdentity(RadixLayer(128, initial_cap=8000), pair_dim=64, property_width=64)
-    for w in sample:
-        identity.admit(w.encode())
-    mine = ct.LinkedCoder(64).admit_all(sample)
+    identity = coded([w.encode() for w in sample])[0]
+    mine = ct.SourceCoder(64).admit_all(sample)
     differ = 0
     for w in sample:
         m = mine.code(w)
         differ += int(not np.array_equal(identity.code(w.encode()).cpu().numpy(),
                                          np.array([(m >> i) & 1 for i in range(128)], dtype=np.float32)))
-    print(dict(words=len(sample), differ=differ, added=(len(identity.added), len(mine.added))))
+    print(dict(words=len(sample), differ=differ, added=(len(identity.added), len(mine.added)),
+               given=len(mine.given_forms)))
     assert differ == 0
     assert {w.decode() if isinstance(w, bytes) else w for w in identity.added} == set(mine.added)
 

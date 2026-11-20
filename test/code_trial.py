@@ -1231,6 +1231,97 @@ class LinkedCoder:
         return accidents, true_out
 
 
+class SourceCoder(LinkedCoder):
+    """The stand-in brought to the source's repair (rule 61, as round 3d
+    built it in ``WordIdentity._separate_inner``): ``ch``, with three
+    things the trial's ``ch`` lacks.
+
+    - Its keys are kept fresh after a repair, so rule 56's next part sees
+      the codes as they are.
+    - Among the coordinates that cover the most outers, one off the inner
+      form's against lane (the parts-half coordinates that its nearest
+      stored holders add) is taken where there is one.
+    - In the wholes half, a coordinate inside the AND of the codes of the
+      declared classes that hold on every byte of the inner form is taken
+      where any covers (the source's ``_kept``)."""
+
+    def __init__(self, n=64, **kwargs):
+        super().__init__(n, repair='ch', **kwargs)
+        self._classes = None
+
+    def _write(self, form):
+        super()._write(form)
+        new, old = self.code(form), self.keys.get(form)
+        if old is not None and old != new:
+            if self.forms.get(old) == form:
+                del self.forms[old]
+            self.keys[form] = new
+            self.forms[new] = form
+
+    def _opposed(self, inner):
+        holders = [h for h in self._holders_of_run(inner) if h != inner]
+        if not holders:
+            return 0
+        least = min(map(len, holders))
+        added = set().union(*(self.parts[h] for h in holders if len(h) == least)) - self.parts[inner]
+        mask = 0
+        for atom in added:
+            mask |= self.atom_mask(atom)
+        return mask & ((1 << self.n) - 1) & ~self.code(inner)
+
+    def _kept(self, inner):
+        if self._classes is None:
+            self._classes = []
+            for members in declared_wholes().values():
+                m = 0
+                for b in members:
+                    m |= mask_of(bit_stream(self.CATALOG + bytes([b]), self.n)[:self.ones])
+                self._classes.append((members, m << self.n))
+        bound = ((1 << self.n) - 1) << self.n
+        held = set(inner.encode())
+        for members, m in self._classes:
+            if held <= members:
+                bound &= m
+        return ((1 << self.n) - 1) | bound
+
+    def _separate_inner(self, inner, outers):
+        own = self.code(inner)
+        holder_codes = [self.code(h) for h in self._holders_of_run(inner) if h != inner]
+        opposed = self._opposed(inner)
+        kept = self._kept(inner)
+        given, pending = 0, list(outers)
+        while pending:
+            zeros = {o: ~self.code(o) & ((1 << self.width) - 1) & ~own & ~given for o in pending}
+            candidates = 0
+            for z in zeros.values():
+                candidates |= z
+            if not candidates:
+                self.failures.append((inner, tuple(pending)))
+                return None
+            inside = any(z & kept for z in zeros.values())
+            scored = []
+            for i in range(self.width):
+                if (candidates >> i) & 1:
+                    covers = [o for o, z in zeros.items() if (z >> i) & 1]
+                    counted = [o for o in covers if (kept >> i) & 1] if inside else covers
+                    added = sum(1 for h in holder_codes if not (h >> i) & 1)
+                    scored.append(((len(counted), -((opposed >> i) & 1), -added, -int(self.usage[i]), -i), i, covers))
+            _score, best, cover = max(scored)
+            given |= 1 << best
+            pending = [o for o in pending if o not in cover]
+        self.stats['repairs'] += 1
+        for i in range(self.width):
+            if (given >> i) & 1:
+                self.usage[i] += 1
+        if inner in self.atoms:
+            self.atoms[inner] |= given
+            holders = self._holders_of_run(inner)
+        else:
+            holders = self._add_part(inner, ('form', inner, tuple(outers)), mask=given)
+        self.given_forms.add(inner)
+        return sorted(set(holders) | {inner}, key=self.order.__getitem__)
+
+
 def ones_in_halves(coder):
     p = [popcount(coder.code(w) & ((1 << coder.n) - 1)) for w in coder.words]
     h = [popcount(coder.code(w) >> coder.n) for w in coder.words]
