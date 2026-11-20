@@ -21,7 +21,7 @@ def test_kernel_uses_activation_and_is_invariant_to_form_length(cls, magnitude):
 @pytest.mark.parametrize('cls', [ConjunctionLayer, DisjunctionLayer])
 def test_operation_candidates_receive_leaf_activation_and_keep_code_directions(cls):
     x = torch.tensor([[[.8, .2, .4], [.1, .7, .3]]])
-    layer = OperationSelectionLayer(d_model=3, ops=[cls()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=3, ops=[cls()])
     activations = torch.tensor([[.5, .6]])
     expected = cls().compose(x[:, 0], x[:, 1], left_activation=.5, right_activation=.6)
     result = layer._stacked_reduced(x, activations=activations)

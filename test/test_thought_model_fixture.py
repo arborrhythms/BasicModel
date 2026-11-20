@@ -48,7 +48,7 @@ def model_for(cs, store=None):
 
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64

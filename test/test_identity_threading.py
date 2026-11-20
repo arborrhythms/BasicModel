@@ -10,6 +10,7 @@ from Memory import STMChunks as chunks
 from chunk_fixtures import Walk, choice, value as working_value
 from Spaces import LanguageOperationChoice
 from nomination_fixtures import recurrent_word
+from chooser_steering import stand_in
 
 
 def address(number):
@@ -215,10 +216,11 @@ def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compi
     from ReferenceContext import prepare_operands
     rule=SimpleNamespace(method_name='bind',head_role=1)
     layer=OperationSelectionLayer(d_model=2,ops=[BindLayer()],unary_ops=[])
+    stand_in(layer)
     layer.operator_cost = 0.  # This certificate isolates the unlearned dummy score.
     with torch.no_grad():
-        layer.reduce_anchor.fill_(1)
-        layer.stop_anchor.fill_(-100)
+        layer.stand_in.reduce.fill_(1)
+        layer.stand_in.stop.fill_(-100)
     mention=torch.tensor([[[.1,.2],[0.,0.]]],requires_grad=True)
     antecedent=torch.tensor([[[.8,.7],[.3,.4]]],requires_grad=True)
     bank=SimpleNamespace()
@@ -245,11 +247,11 @@ def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compi
     torch.testing.assert_close(probabilities,logits.softmax(-1))
     path.sum().backward(retain_graph=True)
     torch.testing.assert_close(antecedent.grad,torch.tensor([[[1.,1.],[0.,0.]]]))
-    assert layer.reduce_anchor.grad is None or torch.count_nonzero(layer.reduce_anchor.grad)==0
+    assert layer.stand_in.reduce.grad is None or torch.count_nonzero(layer.stand_in.reduce.grad)==0
     (-probabilities[0,1].log()).backward()
-    assert layer.reduce_anchor.grad is not None and layer.reduce_anchor.grad.abs().sum()>0
+    assert layer.stand_in.reduce.grad is not None and layer.stand_in.reduce.grad.abs().sum()>0
     with torch.no_grad():
-        layer.reduce_anchor.fill_(-10)
+        layer.stand_in.reduce.fill_(-10)
     _,identity,logits,_,_,_=run(mention,antecedent)
     assert identity.tolist()==[0] and logits[0,0]==0 and (logits[0,1:]<0).all()
 

@@ -16,7 +16,6 @@
     <serialWordBuckets>16</serialWordBuckets>
     <serialResidualPartCapacity>64</serialResidualPartCapacity>
     <sigmaPi>butterfly</sigmaPi>
-    <transformChooser>mlp</transformChooser>
     <answerSynthesis>true</answerSynthesis>
     <ltmConsolidation>true</ltmConsolidation>
     <attentionBudget>32</attentionBudget>

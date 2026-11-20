@@ -17,7 +17,7 @@ def test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing
         def forward(self, left, right):
             return left+right
     layer = OperationSelectionLayer(d_model=4, ops=(Sum(),),
-                                    unary_ops=(torch.nn.Identity(),), chooser='mlp')
+                                    unary_ops=(torch.nn.Identity(),))
     language = SimpleNamespace(_tree_layer=lambda _: layer,
         _compose_binary_rules=(SimpleNamespace(method_name='sum'),),
         _compose_unary_rules=(SimpleNamespace(method_name='identity'),))
@@ -115,7 +115,7 @@ def test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce(
     class Sum(torch.nn.Module):
         def forward(self, left, right):
             return left+right
-    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),), chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),))
     language = SimpleNamespace(_tree_layer=lambda _: layer,
         _compose_binary_rules=(SimpleNamespace(method_name='sum'),), _compose_unary_rules=())
     trajectory = TrainingTrajectory(monkeypatch)
@@ -151,7 +151,7 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
         def forward(self, left, right):
             return right
     names = ('lower', 'definite', 'universal')
-    layer = OperationSelectionLayer(d_model=4, ops=tuple(Head() for _ in names), chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=tuple(Head() for _ in names))
     language = SimpleNamespace(_tree_layer=lambda _: layer,
         _compose_binary_rules=tuple(SimpleNamespace(method_name='lower', surface_name=name) for name in names),
         _compose_unary_rules=())
@@ -205,7 +205,7 @@ def test_native_constituent_lesson_captures_student_states_without_cases(tmp_pat
                 split='train', batch_override=(inputs, torch.empty(4, 0)), source_rows=[[b] for b in range(4)],
                 questions=tuple(What.present(b, split='train') for b in range(4)))
             assert updates['paired'] == 2
-            pressure = model.languageSpace._tree_layer(2).reduce_pressure
+            pressure = model.languageSpace._tree_layer(2).chooser.tool_embedding
             before = pressure.detach().clone()
             pressure.grad = torch.ones_like(pressure)
             disabled = updates['batch_end_disabled']
@@ -217,7 +217,7 @@ def test_native_constituent_lesson_captures_student_states_without_cases(tmp_pat
         model.End()
 
 
-def test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer(tmp_path, monkeypatch):
+def test_wait_lesson_trains_the_chooser_with_the_order_lesson_optimizer(tmp_path, monkeypatch):
     from identity_experiment import make_model
     from ObjectiveOwnership import backward_owned
     model = make_model(tmp_path, monkeypatch)
@@ -226,23 +226,22 @@ def test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer(tmp_path, m
         optimizer = model.getOptimizer(lr=.003)
         groups = model.objective_parameter_groups(optimizer)
         owned = {id(p) for p in groups['compose_lesson']}
-        assert owned == {id(p) for p in layer.chooser.parameters()} | {id(layer.reduce_pressure)}
+        assert owned == {id(p) for p in layer.chooser.parameters()}
         compose = next(o for o in optimizer.optimizers if getattr(o, 'objective_owner', None) == 'compose_lesson')
         attention = next(o for o in optimizer.optimizers if getattr(o, 'objective_owner', None) == 'attention')
         assert isinstance(compose._inner, torch.optim.Adam) and isinstance(attention._inner, torch.optim.Adam)
         for key in ('lr', 'betas', 'eps', 'weight_decay', 'capturable'):
             assert compose.param_groups[0][key] == attention.param_groups[0][key]
-        assert sum(p is layer.reduce_pressure for g in optimizer.param_groups for p in g['params']) == 1
+        assert sum(p is layer.chooser.tool_embedding for g in optimizer.param_groups for p in g['params']) == 1
         window = torch.rand(1, 2, layer.d_model)
         def wait_cost():
             _, _, route = layer(window, slots=2, allowance=7, rounds_left=3)
             return -route['probabilities'][0, -1].log()
         before = wait_cost()
         backward_owned({'compose_lesson': before}, groups)
-        assert layer.reduce_pressure.grad > 0
+        assert layer.chooser.tool_embedding.grad.abs().sum() > 0
         assert all(p.grad is None for g in optimizer.param_groups for p in g['params'] if id(p) not in owned)
         optimizer.step()
-        assert layer.reduce_pressure < 1.
         assert wait_cost() < before
     finally:
         model.End()

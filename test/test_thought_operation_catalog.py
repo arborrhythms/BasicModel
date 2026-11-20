@@ -1073,7 +1073,7 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
     install(model)
     model.what_thinking_detach = "episode"
     from Language import OperationSelectionLayer
-    model.shared_grammar = OperationSelectionLayer(d_model=space.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=space.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     with torch.no_grad():

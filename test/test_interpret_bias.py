@@ -10,7 +10,8 @@ def explore_configuration(tmp_path):
     from pathlib import Path
     source = Path('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml').read_text()
     path = tmp_path / 'explore-1.xml'
-    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', ''))
+    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', '')
+                    .replace('<transformChooser>mlp</transformChooser>', ''))
     return str(path)
 
 

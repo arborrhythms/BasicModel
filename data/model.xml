@@ -20,6 +20,9 @@
     <explorePaths>1</explorePaths>
     <!-- One logit unit and one path-cost unit per kept operator application. -->
     <operatorCost>1</operatorCost>
+    <!-- Path-cost units per step for the working-memory load left, as a
+         fraction of the allowance; the chooser reads the rounds left. -->
+    <reductionCost>1</reductionCost>
     <interpretBias>1</interpretBias>
     <omissionTarget>0.9</omissionTarget>
     <omissionLimit>0.5</omissionLimit>
@@ -56,9 +59,6 @@
          Both training derivations use this temperature. Model softmax
          probabilities used for gradient credit remain untempered. -->
     <composeTemperature>0</composeTemperature>
-    <!-- Fixed binary-logit load prior; its probabilities also carry credit.
-         Deadlines force the required reductions independently of this weight. -->
-    <reducePressure>1.0</reducePressure>
 
     <!-- symbolicOrder is the symbolic / relational loop budget, not the
          primary mode selector. Omitted here so legacy configs inherit the

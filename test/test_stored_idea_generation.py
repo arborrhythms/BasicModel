@@ -250,14 +250,13 @@ def determiner_language(words):
     from Language import LowerLayer
     rules = [SimpleNamespace(determiner_mode=mode, key=i) for i, mode in enumerate(('mint', 'bind'))]
     seen = []
-    def score(pairs, folded, _stop, _reduce, *, op_indices):
+    def score(pairs, folded, *, op_indices):
         seen.append((pairs.clone(), folded.clone()))
         # Stand-in learned weights. Renaming/reordering candidates cannot
         # turn a word identity into a grammar lookup.
         weights = words[int(op_indices[0])]
         return None, (pairs[:, 0] @ weights)[:, None, None]
-    layer = SimpleNamespace(d_model=4, chooser=SimpleNamespace(score_binary=score),
-        stop_anchor=torch.zeros(1, 4), reduce_anchor=torch.zeros(2, 4))
+    layer = SimpleNamespace(d_model=4, chooser=SimpleNamespace(score_binary=score))
     language = additive_language()
     language._generate_binary_rules = language._compose_binary_rules = rules
     language._generate_rule_key = lambda rule, arity: rule.key

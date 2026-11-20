@@ -25,6 +25,7 @@ from torch import nn
 
 from util import TheXMLConfig
 from Language import OperationSelectionLayer, ChangeLayer, VerbLayer
+from chooser_steering import stand_in
 
 _D = 8
 
@@ -159,13 +160,13 @@ def _overflow_router_case(selected_op):
         verb._verb_spec.bias.zero_()
 
     router = OperationSelectionLayer(
-        d_model=4, ops=[verb, _LeftOperand()],
-        chooser="anchordot")
+        d_model=4, ops=[verb, _LeftOperand()])
+    stand_in(router)
     with torch.no_grad():
         # Make REDUCE beat two COPY actions, then choose the requested op.
-        router.stop_anchor.fill_(-100.0)
-        router.reduce_anchor.zero_()
-        router.reduce_anchor[selected_op].fill_(100.0)
+        router.stand_in.stop.fill_(-100.0)
+        router.stand_in.reduce.zero_()
+        router.stand_in.reduce[selected_op].fill_(100.0)
 
     x = torch.tensor(
         [[[0.5, 0.5, 0.5, 0.5], [1.0, 1.0, 1.0, 1.0]]],

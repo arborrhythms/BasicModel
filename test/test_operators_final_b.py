@@ -128,7 +128,7 @@ def forced_prefix_certificate():
             content_cost=content.detach().tolist(),
             percept_cost=percept.detach().tolist(),
             leaf_cost=(input_reverse+content+percept).detach().tolist(),
-            application_cost=charge('operator.application').detach().tolist(),
+            application_cost=(charge('operator.application')+charge('compose.load')).detach().tolist(),
             byte_identity=m._last_decoder_byte_identity.detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),

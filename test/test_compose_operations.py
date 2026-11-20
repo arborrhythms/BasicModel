@@ -2,6 +2,7 @@
 import torch
 from torch import nn
 import Language
+from chooser_steering import stand_in
 
 
 class Add(nn.Module):
@@ -17,10 +18,11 @@ class Negate(nn.Module):
 def layer():
     result = Language.OperationSelectionLayer(
         d_model=1, ops=[Add()], unary_ops=[Negate()])
+    stand_in(result)
     with torch.no_grad():
-        result.reduce_anchor.fill_(1)
-        result.apply_anchor.fill_(0)
-        result.stop_anchor.fill_(100)
+        result.stand_in.reduce.fill_(1)
+        result.stand_in.unary.fill_(0)
+        result.stand_in.stop.fill_(100)
     result.separate_chooser = True
     return result
 
@@ -40,7 +42,7 @@ def test_one_binary_operation_across_all_locations():
 def test_unary_and_binary_compete_in_the_same_softmax():
     step = layer()
     with torch.no_grad():
-        step.apply_anchor.fill_(-10)
+        step.stand_in.unary.fill_(-10)
     x = torch.tensor([[[1.], [2.], [3.]]])
     _, path, route = step(x, slots=1)
     assert route['kind'].tolist() == [2]
@@ -63,14 +65,14 @@ def test_hard_candidate_and_score_function_have_separate_gradients():
     x = torch.tensor([[[1.], [2.], [3.]]], requires_grad=True)
     _, path, route = step(x, slots=1)
     path.sum().backward()
-    assert step.reduce_anchor.grad is None
-    assert step.apply_anchor.grad is None
+    assert step.stand_in.reduce.grad is None
+    assert step.stand_in.unary.grad is None
     operand_gradient = x.grad.clone()
     (-route['probability'].sum()).backward()
-    assert step.reduce_anchor.grad is not None
-    assert step.reduce_anchor.grad.abs().sum() > 0
-    assert step.apply_anchor.grad is not None
-    assert step.apply_anchor.grad.abs().sum() > 0
+    assert step.stand_in.reduce.grad is not None
+    assert step.stand_in.reduce.grad.abs().sum() > 0
+    assert step.stand_in.unary.grad is not None
+    assert step.stand_in.unary.grad.abs().sum() > 0
     assert torch.isfinite(x.grad).all()
     torch.testing.assert_close(x.grad, operand_gradient, atol=0, rtol=0)
 
@@ -121,7 +123,7 @@ def test_padding_never_supplies_an_operation_and_inactive_rows_freeze():
 def test_budget_exhaustion_reports_overlarge_derivation():
     step = layer()
     with torch.no_grad():
-        step.apply_anchor.fill_(-100)
+        step.stand_in.unary.fill_(-100)
     result = step.derive(torch.tensor([[[1.], [2.], [3.]]]), rounds=1, slots=1, greedy=True)
     assert not result['complete'].any()
     # Two reductions cannot fit in one round. The deadline still makes

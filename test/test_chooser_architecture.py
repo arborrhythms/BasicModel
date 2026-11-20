@@ -24,7 +24,7 @@ import torch
 from torch import nn
 
 import Language
-from Language import MLPTransformChooser, SelectedThoughtChooser, make_transform_chooser
+from Language import MLPTransformChooser, make_transform_chooser
 from Meaning import ConceptualMeaning
 
 def _meaning():
@@ -56,6 +56,9 @@ def test_default_grammar_head_preserves_legacy_weights_rng_and_outputs(d_model):
     with torch.random.fork_rng(devices=[]):
         legacy.what_projection = nn.Linear(29, 3, bias=False)
     nn.init.zeros_(legacy.what_projection.weight)
+    # The reader of the budget's code starts at zero and draws nothing.
+    legacy.budget_projection = nn.Module()
+    legacy.budget_projection.weight = nn.Parameter(torch.zeros(hidden, 4))
     expected_rng = torch.random.get_rng_state().clone()
 
     torch.manual_seed(127)
@@ -65,7 +68,7 @@ def test_default_grammar_head_preserves_legacy_weights_rng_and_outputs(d_model):
 
     x = torch.randn(2, 3, d_model)
     candidates = torch.randn(2, 3, 2, d_model)
-    copy_score, op_score = chooser.score_unary(x, candidates, None, None)
+    copy_score, op_score = chooser.score_unary(x, candidates)
     positions = chooser._pos_emb(3, x.device, x.dtype)
     for count, values, tools, actual in (
         (1, x.unsqueeze(2), legacy.tool_embedding[:1], copy_score),
@@ -78,18 +81,6 @@ def test_default_grammar_head_preserves_legacy_weights_rng_and_outputs(d_model):
             positions.view(1, 3, 1, 8).expand(2, 3, count, 8),
         ], dim=-1)
         assert torch.equal(actual, legacy.mlp(features).squeeze(-1))
-
-
-def test_default_step_head_preserves_rng_and_first_candidate_tie():
-    torch.manual_seed(153)
-    rng_before = torch.random.get_rng_state().clone()
-    chooser = SelectedThoughtChooser(context_dim=29)
-    assert torch.equal(torch.random.get_rng_state(), rng_before)
-    contexts = torch.randn(2, 29)
-    assert torch.equal(chooser.logits(contexts, (False, True)), torch.zeros(2))
-    choice, log_prob = chooser.choose(contexts, (False, True))
-    assert choice == 0
-    assert torch.allclose(log_prob, -torch.tensor(2.0).log())
 
 
 @pytest.mark.parametrize("depth", [1, 3])
@@ -105,10 +96,11 @@ def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
 
     x = torch.randn(2, 4, 4, requires_grad=True)
     context = torch.randn(2, 29, requires_grad=True)
+    budget = Language.budget_code(torch.tensor([3, 1]), 2, device='cpu', dtype=torch.float32)
     unary = chooser.score_unary(
-        x, torch.randn(2, 4, 2, 4), None, None, what_ctx=context)
+        x, torch.randn(2, 4, 2, 4), what_ctx=context, budget=budget)
     binary = chooser.score_binary(
-        x, torch.randn(2, 3, 2, 4), None, None, what_ctx=context)
+        x, torch.randn(2, 3, 2, 4), what_ctx=context, budget=budget)
     assert [tuple(score.shape) for score in unary + binary] == [
         (2, 4, 1), (2, 4, 2), (2, 4, 1), (2, 3, 2)]
     sum(score.square().mean() + score.mean() for score in unary + binary).backward()
@@ -120,43 +112,13 @@ def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
         assert value.grad is not None and value.grad.abs().sum() > 0
 
 
-@pytest.mark.parametrize("depth", [1, 3])
-def test_custom_step_capacity_gradients_after_output_head_learns(depth):
-    torch.manual_seed(251)
-    chooser = SelectedThoughtChooser(context_dim=7, hidden=11, depth=depth)
-    layers = _linears(chooser)
-    assert [(layer.in_features, layer.out_features) for layer in layers] == (
-        [(9, 11)] + [(11, 11)] * (depth - 1) + [(11, 1)])
-    assert sum(isinstance(layer, nn.GELU) for layer in chooser.mlp) == depth
-    assert torch.count_nonzero(layers[-1].weight) == 0
-    assert torch.count_nonzero(layers[-1].bias) == 0
-    context = torch.randn(3, 7, requires_grad=True)
-    concludes = (False, False, True)
-    logits = chooser.logits(context, concludes)
-    assert logits.shape == (3,) and torch.count_nonzero(logits) == 0
-    # Zero final weights deliberately block the initial hidden-state gradient.
-    # Once that head changes, the complete configured depth must receive credit.
-    with torch.no_grad():
-        layers[-1].weight.fill_(0.1)
-    logits = chooser.logits(context, concludes)
-    (logits.square().mean() + logits.mean()).backward()
-    for name, parameter in chooser.named_parameters():
-        assert parameter.grad is not None, name
-        assert torch.isfinite(parameter.grad).all(), name
-        assert parameter.grad.abs().sum() > 0, name
-    assert context.grad is not None and context.grad.abs().sum() > 0
-
-
-@pytest.mark.parametrize("kind", ["grammar", "step"])
 @pytest.mark.parametrize("parameter,value", [
     ("hidden", 0), ("hidden", -1), ("depth", 0), ("depth", -1),
     ("hidden", True), ("hidden", 1.5), ("depth", True), ("depth", 1.5),
 ])
-def test_direct_heads_reject_nonpositive_capacity(kind, parameter, value):
-    constructor, kwargs = ((MLPTransformChooser, {"d_model": 4, "n_copy": 1, "n_op": 2})
-                           if kind == "grammar" else (SelectedThoughtChooser, {"context_dim": 7}))
+def test_direct_heads_reject_nonpositive_capacity(parameter, value):
     with pytest.raises(ValueError):
-        constructor(**kwargs, **{parameter: value})
+        MLPTransformChooser(d_model=4, n_copy=1, n_op=2, **{parameter: value})
 
 
 @pytest.mark.parametrize("hidden,depth,expected_hidden", [(0, 1, 8), (19, 3, 19)])
@@ -170,13 +132,11 @@ def test_xml_grammar_factory_wires_width_depth(monkeypatch, tmp_path,
         "</architecture></model>")
     config = XMLConfig(path=str(config_path), defaults_path=str(_ROOT / "data/model.xml"))
     monkeypatch.setattr(Language, "TheXMLConfig", config)
-    chooser = make_transform_chooser("mlp", d_model=4, n_copy=1, n_op=2)
+    chooser = make_transform_chooser(d_model=4, n_copy=1, n_op=2)
     layers = _linears(chooser)
     assert len(layers) == depth + 1
     assert layers[0].out_features == expected_hidden
     assert layers[-1].in_features == expected_hidden
-    assert not list(make_transform_chooser(
-        "anchordot", d_model=4, n_copy=1, n_op=2).parameters())
 
 
 def test_canonical_xml_defaults_pin_existing_architectures():
@@ -225,7 +185,7 @@ def test_real_model_xml_wires_both_chooser_architectures(monkeypatch, tmp_path):
     document = ET.parse(_ROOT / "data/MM_text.xml")
     architecture = document.find("architecture")
     for name, value in {
-        "transformChooser": "mlp", "transformChooserHidden": 19,
+        "transformChooserHidden": 19,
         "transformChooserDepth": 2, "whatThinkingHidden": 23,
         "whatThinkingDepth": 3,
     }.items():

@@ -88,7 +88,6 @@
     <l1Lambda>0.01</l1Lambda>
 
     <!-- Allocate explicit capacity to contextual grammar routing. -->
-    <transformChooser>mlp</transformChooser>
     <!-- What spec Step 9 cutover (2026-09-09): the canonical model answers
          through the separate reverseOutput() path (resolve -> conceptual /
          perceptual synthesis with dedicated weights -> OutputSpace adapter),

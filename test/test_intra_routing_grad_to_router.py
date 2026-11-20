@@ -96,7 +96,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             rp.grad_fn, "soft rule_probs must carry a graph back to the router.")
         self.assertTrue(torch.isfinite(rp).all(), "rule_probs must be finite.")
 
-    def test_grad_reaches_unary_anchors_via_projection(self):
+    def test_grad_reaches_the_chooser_via_projection(self):
         """A loss through a NON-UNIFORM projection of ``rule_probs`` (the
         predictor's routing_proj bias shape) backprops non-zero grad into
         the router's unary scorer anchors.
@@ -133,16 +133,10 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         # registered under -- there is exactly one -- and assert the
         # router exposes the APPLY/COPY anchor scorers on it.
         ul = ll.operation_layer
-        self.assertTrue(
-            hasattr(ul, "apply_anchor") and hasattr(ul, "stop_anchor"),
-            "unary reduction layer must expose the router's APPLY/COPY "
-            "anchor scorers.")
-        # De-saturate the straight-through action softmax so the gradient
-        # path magnitude is not masked by an incidental one-hot posterior.
-        with torch.no_grad():
-            ul.apply_anchor.zero_()
-            ul.stop_anchor.zero_()
-        for p in (ul.apply_anchor, ul.stop_anchor):
+        # The chooser of acts is the network; its weights are what the
+        # gradient of the rule probabilities reaches.
+        weights = (ul.chooser.tool_embedding, ul.chooser.mlp[0].weight)
+        for p in weights:
             p.grad = None
         torch.manual_seed(0)
         D = ll.feature_dim
@@ -154,15 +148,12 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         proj = nn.Linear(int(rp.shape[1]), 5, bias=True)
         loss = proj(rp).pow(2).sum()
         loss.backward()
-        apply_g = ul.apply_anchor.grad
-        self.assertIsNotNone(
-            apply_g, "unary apply_anchor must receive grad from rule_probs.")
-        self.assertGreater(
-            float(apply_g.abs().sum()), 0.0,
-            "gradient must reach the unary apply_anchor (the router's "
-            "APPLY scorer) through rule_probs.")
+        for p in weights:
+            self.assertIsNotNone(p.grad, "the chooser must receive grad from rule_probs.")
+            self.assertGreater(float(p.grad.abs().sum()), 0.0,
+                "gradient must reach the chooser's network through rule_probs.")
 
-    def test_grad_reaches_unary_and_binary_anchors_bare_router(self):
+    def test_grad_reaches_the_chooser_bare_router(self):
         """On a bare router with NO space_role mask, both the unary
         ``apply_anchor`` and the binary ``reduce_anchor`` receive non-zero
         grad -- the complete unary + binary marginal -> rule_probs ->
@@ -231,20 +222,16 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
 
         ul = router.operation_layer
         bl = router.operation_layer
-        for p in (ul.apply_anchor, bl.reduce_anchor):
+        weights = (ul.chooser.tool_embedding, ul.chooser.mlp[0].weight)
+        for p in weights:
             p.grad = None
         proj = nn.Linear(int(rp.shape[1]), 5, bias=True)
         proj(rp).pow(2).sum().backward()
-
-        self.assertIsNotNone(ul.apply_anchor.grad)
-        self.assertGreater(
-            float(ul.apply_anchor.grad.abs().sum()), 0.0,
-            "grad must reach the unary apply_anchor.")
-        self.assertIsNotNone(bl.reduce_anchor.grad)
-        self.assertGreater(
-            float(bl.reduce_anchor.grad.abs().sum()), 0.0,
-            "grad must reach the binary reduce_anchor (the router's REDUCE "
-            "scorer) through the reduce_marginal_op aggregation.")
+        for p in weights:
+            self.assertIsNotNone(p.grad)
+            self.assertGreater(float(p.grad.abs().sum()), 0.0,
+                "grad must reach the chooser's network through the "
+                "reduce_marginal_op aggregation.")
 
     def test_default_only_fallback_is_detached(self):
         """The default-only fast path (no router; ``_last_space_role_routings``

@@ -11,7 +11,6 @@ class PilotProbe:
         self.model, self.output = model, output
         self.states = []
         self.before_values = {'wait': [], 'fold': []}
-        self.initial_pressure = float(model.languageSpace._tree_layer(2).reduce_pressure.detach())
         self.collecting = True
 
     def capture(self, language, programs, lessons):
@@ -26,8 +25,8 @@ class PilotProbe:
                         state['observed_probabilities']).clamp_min(1e-30).log()))
 
     @staticmethod
-    def summary(values, pressure):
-        return dict(pressure=pressure, **{name: dict(count=len(rows),
+    def summary(values):
+        return dict(**{name: dict(count=len(rows),
             ce=sum(rows)/len(rows) if rows else None) for name, rows in values.items()})
 
     def finish(self):
@@ -48,8 +47,8 @@ class PilotProbe:
                     before=float(-student_target_probability(layer, state,
                         state['observed_probabilities']).clamp_min(1e-30).log()),
                     after=value, unreachable=not bool(probability > 0)))
-        before = self.summary(self.before_values, self.initial_pressure)
-        after = self.summary(values, float(layer.reduce_pressure.detach()))
+        before = self.summary(self.before_values)
+        after = self.summary(values)
         passed = all(before[name]['count'] and before[name]['ce']-after[name]['ce'] > 1e-5
                      for name in ('wait', 'fold'))
         result = dict(before=before, after=after, passed=bool(passed),

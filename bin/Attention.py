@@ -465,25 +465,6 @@ _NARROW_HISTORY = ('actions','alternatives','probabilities','counts','round_word
                    'field_scopes','field_operations')
 
 
-class _CapturedAttentionChooser:
-    """Keep an unused stop-score input outside conditional autograd.
-
-    OperationSelectionLayer.attend discards the learned stop score: its
-    stop logit is the fixed legal-menu sentinel. Cond otherwise turns that
-    unused parameter's None gradient into zero, allowing momentum updates.
-    Detach before entering cond, while reusing the exact attend method.
-    """
-    def __init__(self, chooser):
-        self._source=chooser
-        self.stop_anchor=chooser.stop_anchor.detach()
-
-    def __getattr__(self, name):
-        return getattr(self._source,name)
-
-    def attend(self, *args, **kwargs):
-        return type(self._source).attend(self,*args,**kwargs)
-
-
 def _captured_narrowing(state):
     """Tensor-conditional lowering of the same stop for fullgraph callers.
 
@@ -517,9 +498,7 @@ def _captured_narrowing(state):
 
     carried=pack(state)
     width=len(BracketTable._fields)+len(_NARROW_CARRY)
-    from Language import OperationSelectionLayer
-    chooser=(_CapturedAttentionChooser(state.chooser)
-             if type(state.chooser) is OperationSelectionLayer else state.chooser)
+    chooser=state.chooser
     for turn in range(len(state.actions),int(state.budget)):
         def advance(*values):
             values=unpack(values)

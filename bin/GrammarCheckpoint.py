@@ -207,9 +207,7 @@ def align(model, state, old):
             if len(matches) != 1:
                 raise ValueError(f'grammar catalogue has no unique operation owner: {key}')
             binary,unary,tools = matches[0]
-            if key.endswith('.reduce_anchor'):axis,indices=0,binary
-            elif key.endswith('.apply_anchor'):axis,indices=0,unary
-            elif key.endswith(('.tool_embedding','.what_projection.weight')):axis,indices=0,tools
+            if key.endswith(('.tool_embedding','.what_projection.weight')):axis,indices=0,tools
             elif key.endswith(('.mlp.0.weight','.operand_order.weight','.copy_order.weight')):
                 suffix = 8 if key.endswith('.mlp.0.weight') else 0
                 prefix = value.shape[1]-old.get('chooser_role_context', len(old['roles']))-suffix

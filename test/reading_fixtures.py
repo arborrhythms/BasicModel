@@ -282,7 +282,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     owner.attention_budget = 0
     from Language import OperationSelectionLayer
     if not hasattr(owner, 'shared_grammar'):
-        owner.shared_grammar = OperationSelectionLayer(d_model=width, chooser='mlp')
+        owner.shared_grammar = OperationSelectionLayer(d_model=width)
         select = owner.shared_grammar.select_logits
         def skip(logits, **options):
             options['replay_action'] = torch.tensor([logits.shape[-1]-1], device=logits.device)

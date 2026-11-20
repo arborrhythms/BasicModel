@@ -40,7 +40,7 @@ def test_language_owns_rule_meaning_for_each_local_compose_action(monkeypatch):
         if rule.space_role == "CS" and rule.arity == 1)
     assert binary and unary
     monkeypatch.setattr(Language, "TheGrammar", grammar)
-    operations=SimpleNamespace(stop_anchor=torch.empty(0),
+    operations=SimpleNamespace(argument_inputs=torch.empty(0, 2, dtype=torch.long),
         ops=tuple(SimpleNamespace() for _ in binary),
         unary_ops=tuple(SimpleNamespace() for _ in unary))
     operations.configure_arguments=MethodType(Language.OperationSelectionLayer.configure_arguments,operations)

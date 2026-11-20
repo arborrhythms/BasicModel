@@ -14,7 +14,6 @@
     <serialResidualPartCapacity>64</serialResidualPartCapacity>
     <sigmaPi>butterfly</sigmaPi>
     <l1Lambda>0.01</l1Lambda>
-    <transformChooser>mlp</transformChooser>
     <transformChooserHidden>0</transformChooserHidden>
     <transformChooserDepth>2</transformChooserDepth>
     <whatThinkingHidden>16</whatThinkingHidden>

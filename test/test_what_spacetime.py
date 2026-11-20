@@ -286,24 +286,22 @@ def test_mlp_grammar_chooser_consumes_target_free_what_context():
     chooser = MLPTransformChooser(d_model=2, n_copy=1, n_op=1)
     x = torch.tensor([[[0.25, -0.5]]])
     applied = torch.tensor([[[[0.5, 0.25]]]])
-    copy_anchor = torch.zeros(1, 2)
-    apply_anchor = torch.zeros(1, 2)
     context = torch.zeros(1, MLPTransformChooser.WHAT_CONTEXT_DIM)
     context[0, 0] = 1.0                       # relation: present
     context[0, 17] = 1.0                      # one LTM input
     context[0, 18] = 1.0                      # one LTM output
 
     baseline = chooser.score_unary(
-        x, applied, copy_anchor, apply_anchor)
+        x, applied)
     conditioned = chooser.score_unary(
-        x, applied, copy_anchor, apply_anchor, what_ctx=context)
+        x, applied, what_ctx=context)
     assert torch.equal(baseline[0], conditioned[0])
     assert torch.equal(baseline[1], conditioned[1])
 
     with torch.no_grad():
         chooser.what_projection.weight[1, 0] = 2.0
     shifted = chooser.score_unary(
-        x, applied, copy_anchor, apply_anchor, what_ctx=context)
+        x, applied, what_ctx=context)
     assert torch.equal(shifted[0], baseline[0])
     assert torch.allclose(shifted[1], baseline[1] + 2.0)
 

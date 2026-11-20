@@ -51,7 +51,7 @@ def _catalog_world():
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -289,7 +289,7 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -347,7 +347,7 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -445,7 +445,7 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -501,7 +501,7 @@ def test_normal_boundary_refuses_unproved_semantic_meaning_as_its_answer_seed(mo
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -553,7 +553,7 @@ def test_normal_boundary_keeps_selected_prediction_provisional(
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -628,7 +628,7 @@ def test_normal_boundary_retains_the_unproved_controller_selected_operation(monk
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -688,7 +688,7 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -748,7 +748,7 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -809,7 +809,7 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64
@@ -871,7 +871,7 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     model.attention_budget = 64

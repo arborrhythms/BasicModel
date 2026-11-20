@@ -7,7 +7,7 @@ import pytest
 def _prefer_unary(monkeypatch, both=False):
     from Language import OperationSelectionLayer, NotLayer, NonLayer, SumLayer
     layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()],
-        unary_ops=[NotLayer(representation='poles'), NonLayer(representation='poles')] if both else [NotLayer(representation='poles')], chooser='mlp')
+        unary_ops=[NotLayer(representation='poles'), NonLayer(representation='poles')] if both else [NotLayer(representation='poles')])
     def binary(content, candidates, *args, **kwargs):
         B, N, _ = content.shape
         return content.new_zeros(B, N, 1), content.new_zeros(B, N-1, 1)
@@ -74,7 +74,7 @@ def test_exploration_forces_only_a_round_with_a_legal_alternative(monkeypatch):
 
 def test_single_legal_derivation_is_compared_without_inventing_an_alternative():
     from Language import OperationSelectionLayer, SumLayer
-    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()])
     value = torch.tensor([[[.2, .4], [.7, .3]]])
     exploit, explore = layer.derive_pair(value, rounds=6, slots=1, greedy=True)
     assert exploit['complete'].all() and explore['complete'].all()

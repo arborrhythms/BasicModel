@@ -19,9 +19,9 @@ def frozen(value):
 
 @contextmanager
 def observe_preferences(result):
-    from Language import OperationSelectionLayer, MLPTransformChooser, AnchorDotTransformChooser
+    from Language import OperationSelectionLayer, MLPTransformChooser
     from Models import BasicModel
-    methods={(cls,name):getattr(cls,name) for cls in (MLPTransformChooser,AnchorDotTransformChooser)
+    methods={(cls,name):getattr(cls,name) for cls in (MLPTransformChooser,)
              for name in ('score_binary','score_unary')}
     forward,preference,train=(OperationSelectionLayer.forward,
         BasicModel._compose_preference_loss,BasicModel._sentence_train_step)

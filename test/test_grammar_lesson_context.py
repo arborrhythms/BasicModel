@@ -14,7 +14,7 @@ def test_teacher_state_uses_neutral_context_without_mutating_the_reading():
     class Difference(torch.nn.Module):
         def forward(self, left, right):
             return left - right
-    layer = OperationSelectionLayer(d_model=4, ops=(Sum(), Difference()), chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(), Difference()))
     context = torch.ones(3, layer.chooser.WHAT_CONTEXT_DIM)
     layer._what_context = context
     language = SimpleNamespace(_tree_layer=lambda _: layer,
@@ -38,7 +38,7 @@ def test_unary_lesson_credits_the_unary_action_in_the_joint_menu():
         def forward(self, left, right):
             return left + right
     layer = OperationSelectionLayer(d_model=4, ops=(Sum(),),
-        unary_ops=(torch.nn.Identity(),), chooser='mlp')
+        unary_ops=(torch.nn.Identity(),))
     language = SimpleNamespace(_tree_layer=lambda _: layer,
         _compose_binary_rules=(SimpleNamespace(method_name='sum'),),
         _compose_unary_rules=(SimpleNamespace(method_name='identity'),))

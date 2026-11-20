@@ -316,7 +316,7 @@ def test_surface_inverses(tmp_path, monkeypatch):
     transpose = SwapLayer()
     a,b = transpose.reverse(*transpose.compose(left,right))
     assert torch.equal(a,left) and torch.equal(b,right)
-    layer = OperationSelectionLayer(d_model=8,ops=[_BinaryGrammarOpAdapter(transpose)],chooser='mlp')
+    layer = OperationSelectionLayer(d_model=8,ops=[_BinaryGrammarOpAdapter(transpose)])
     def binary(x,candidates,*args,**kwargs):
         return x.new_zeros((*x.shape[:2],1)), x.new_full(candidates.shape[:-1],100.)
     monkeypatch.setattr(layer.chooser,'score_binary',binary)

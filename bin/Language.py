@@ -8,7 +8,7 @@ import torch
 from Layers import bounded_atanh as _bounded_atanh, cube_chart, cube_unchart, assert_cube
 import torch.nn as nn
 import torch.nn.functional as F
-from GrammarPreference import operator_is_structural, structural_argmax, require_opaque_mlp
+from GrammarPreference import operator_is_structural, structural_argmax
 import random
 try:
     from torchviz import make_dot
@@ -5213,14 +5213,12 @@ class LanguageLayer(Layer):
     """
 
     def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
-                 max_depth, temperature=0.0, reduce_pressure=1.0):
+                 max_depth, temperature=0.0):
         super().__init__(int(n_input), int(n_output))
         self.n_input, self.n_output = int(n_input), int(n_output)
         self.hidden_dim, self.feature_dim = int(hidden_dim), int(feature_dim)
         self.max_depth, self.temperature = int(max_depth), float(temperature)
-        self.reduce_pressure = float(reduce_pressure)
         self.subsymbolic_order = 1
-        self.transform_chooser = "anchordot"
         self.operation_layer = None
         self._operation_specs = {}
         self._unary_rule_ids, self._binary_rule_ids = {}, {}
@@ -5251,8 +5249,7 @@ class LanguageLayer(Layer):
         self.operation_layer = OperationSelectionLayer(
             d_model=self.feature_dim, ops=binary[0], unary_ops=unary[0],
             op_names=binary[2], unary_names=unary[2], op_space_roles=binary[3],
-            temperature=self.temperature, reduce_pressure=self.reduce_pressure,
-            chooser=self.transform_chooser)
+            temperature=self.temperature)
         self.binary_rule_ids, self.unary_rule_ids = binary[1], unary[1]
         self.binary_roles, self.unary_roles = binary[4], unary[4]
 
@@ -6043,91 +6040,6 @@ def sample_eligible_logits(logits, draw=None):
     return (draw.reshape(*logits.shape[:-1], 1) >= cumulative).sum(-1).clamp_max(logits.shape[-1] - 1)
 
 
-class TransformChooser(nn.Module):
-    """Routing policy: scores tool/location candidates for a structured
-    layer.
-
-    The plan separates the transform/tool IMPLEMENTATION (the
-    ``GrammarLayer`` ops) from the CHOICE POLICY (which op to apply,
-    where). ``OperationSelectionLayer`` delegates candidate scoring here;
-    its joint softmax and selected operation execution stay on the layer.
-
-    The default chooser (:class:`AnchorDotTransformChooser`) reproduces the
-    layers' inline anchor-dot scoring exactly. ``MLPTransformChooser`` swaps
-    in a contextual network behind a config flag. Subclasses implement
-    ``score_unary`` / ``score_binary``.
-    """
-
-    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    what_ctx=None, op_offset=0, op_indices=None):
-        raise NotImplementedError
-
-    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     what_ctx=None, op_indices=None):
-        raise NotImplementedError
-
-
-class AnchorDotTransformChooser(TransformChooser):
-    """Anchor-dot placement scorer -- the scorer-level byte-identical default.
-
-    Reproduces the original inline scoring (Stern et al. 2017 /
-    Vaswani et al. 2017 style): the placement score is the inner product
-    between a candidate's output and a per-rule learnable anchor. The scorer
-    Deliberately STATELESS: the ``copy_anchor`` / ``apply_anchor`` /
-    ``reduce_anchor`` Parameters stay OWNED BY THE LAYER and are passed in
-    at call time. Moving them into this submodule would rename their
-    state_dict keys (``layer.copy_anchor`` -> ``layer.chooser.copy_anchor``)
-    and risk a pinned basin; a param-less chooser adds no keys and keeps
-    the scoring byte-identical. (The future MLPTransformChooser owns its own
-    params -- a deliberate new-params cutover, behind a config flag.)
-    """
-
-    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    what_ctx=None, op_offset=0, op_indices=None):
-        """Return ``(copy_score, apply_score)`` for the unary layer.
-
-        ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
-        ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
-
-        """
-        # Device safety (MPS): the anchors are the owning layer's Parameters; if
-        # a device move missed them (e.g. choosers built lazily after the model's
-        # .to(device)), align to the input's device. No-op when co-located.
-        copy_anchor = copy_anchor.to(x_score.device)
-        apply_anchor = apply_anchor.to(x_score.device)
-        copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
-        r_apply = int(apply_anchor.shape[0])
-        if r_apply > 0 and applied_score.shape[2] > 0:
-            apply_score = torch.einsum(
-                'bnad,ad->bna', applied_score, apply_anchor)
-        else:
-            apply_score = x_score.new_zeros(
-                x_score.shape[0], x_score.shape[1], r_apply)
-        return copy_score, apply_score
-
-    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     what_ctx=None, op_indices=None):
-        """Return ``(copy_score, reduce_score)`` for the binary layer.
-
-        ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
-        ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
-
-        """
-        # Device safety (MPS): align the owning layer's anchor Parameters to the
-        # input's device in case a device move missed them. No-op when co-located.
-        copy_anchor = copy_anchor.to(x_score.device)
-        reduce_anchor = reduce_anchor.to(x_score.device)
-        copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
-        r_reduce = int(reduce_anchor.shape[0])
-        if reduced_score.shape[1] > 0 and r_reduce > 0:
-            reduce_score = torch.einsum(
-                'bnrd,rd->bnr', reduced_score, reduce_anchor)
-        else:
-            reduce_score = x_score.new_zeros(
-                x_score.shape[0], max(x_score.shape[1] - 1, 0), r_reduce)
-        return copy_score, reduce_score
-
-
 def _chooser_size(value, name, *, minimum=1):
     """Validate architectural dimensions without silently truncating them."""
     try:
@@ -6149,104 +6061,14 @@ def _chooser_mlp(in_dim, hidden, depth):
     return nn.Sequential(*layers)
 
 
-class SelectedThoughtChooser(nn.Module):
-    """Hard selector for an ordinary grammatical thought at a boundary.
+class MLPTransformChooser(nn.Module):
+    """The chooser of acts: a learned MLP over each candidate's context.
 
-    BasicModel supplies complete masked root/active/candidate roles, bounded
-    semantic metadata, attended visible memory, execution level and pressure.  References
-    and native IDs deliberately stay out of the numerical features: they are
-    addresses owned by the registry/history, not operand values.  Each
-    operation is represented by its complete candidate meaning; the only
-    categorical feature distinguishes an ordinary operation from the
-    controller's non-semantic conclude transition.  It never encodes a
-    semantic id, alias, or catalog position.  The two-wide feature shape is
-    retained so existing saved policy tensors map ``query`` -> operation and
-    ``finish`` -> conclude without a shape migration.
-    """
-
-    ACTION_KINDS = ("operation", "conclude")
-    CANDIDATE_FEATURES = len(ACTION_KINDS)
-
-    def __init__(self, *, context_dim, hidden=16, depth=1):
-        super().__init__()
-        self.context_dim = int(context_dim)
-        if self.context_dim < 1:
-            raise ValueError("selected thought context must be nonempty")
-        self.hidden = _chooser_size(hidden, "selectedThoughtHidden")
-        self.depth = _chooser_size(depth, "selectedThoughtDepth")
-        with torch.random.fork_rng(devices=[]):
-            self.mlp = _chooser_mlp(
-                self.context_dim + self.CANDIDATE_FEATURES,
-                self.hidden, self.depth)
-        nn.init.zeros_(self.mlp[-1].weight)
-        nn.init.zeros_(self.mlp[-1].bias)
-
-    def logits(self, contexts, concludes):
-        """Score candidate-meaning contexts plus their conclude flag.
-
-        ``contexts`` has one full semantic context per action.  ``concludes``
-        is structural control metadata only; it is deliberately not an
-        operator/index encoding.
-        """
-        contexts = torch.as_tensor(contexts)
-        if contexts.dim() == 1:
-            contexts = contexts.unsqueeze(0)
-        if (contexts.dim() != 2
-                or int(contexts.shape[-1]) != self.context_dim):
-            raise ValueError(
-                f"selected thought contexts have width {tuple(contexts.shape)} "
-                f"!= [K, {self.context_dim}]")
-        concludes = torch.as_tensor(concludes, device=contexts.device,
-                                    dtype=torch.bool).reshape(-1)
-        if int(concludes.numel()) != int(contexts.shape[0]):
-            raise ValueError("selected thought needs one conclude flag per context")
-        if not int(contexts.shape[0]):
-            return contexts.new_zeros(0)
-        features = contexts.new_zeros(
-            int(contexts.shape[0]), self.CANDIDATE_FEATURES)
-        features[:, 0] = (~concludes).to(features)
-        features[:, 1] = concludes.to(features)
-        return self.mlp(torch.cat((contexts, features), dim=-1)).squeeze(-1)
-
-    def choose(self, contexts, concludes, *, sample=False, temperature=1.0,
-               structural=None, excluded=None, forced=None):
-        """Return a hard action index and its live policy log probability."""
-        logits = self.logits(contexts, concludes)
-        if logits.numel() == 0:
-            raise ValueError("SelectedThoughtChooser.choose needs one action")
-        log_probs = torch.log_softmax(
-            logits / max(1e-6, float(temperature)), dim=-1)
-        choice_logits=logits.detach().clone()
-        if excluded is not None and logits.numel()>1:
-            choice_logits[int(excluded)]=-torch.inf
-        if forced is not None:
-            index=int(forced)
-            if not 0<=index<logits.numel():raise ValueError('thought replay chose an unavailable action')
-        elif excluded is not None and torch.isfinite(choice_logits).any():
-            index = int(sample_eligible_logits(choice_logits).item())
-        elif sample and logits.numel() > 1:
-            index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
-        else:
-            index = int(structural_argmax(choice_logits, structural).item())
-        return index, log_probs[index]
-
-
-class MLPTransformChooser(TransformChooser):
-    """Contextual MLP placement scorer -- the expressive cutover chooser.
-
-    Replaces the anchor-dot single inner product with a learned MLP over
-    per-candidate CONTEXT: the slot / pair state, the candidate op's output,
-    a learned tool-identity embedding, and a sinusoidal position encoding.
-    It produces the same per-(op, location) logit shapes as
-    ``AnchorDotTransformChooser`` -- ``copy_score`` / ``apply_score`` (unary)
-    and ``copy_score`` / ``reduce_score`` (binary) -- so it is a drop-in for
-    the structured grammar layers.
-
-    UNLIKE the anchor-dot chooser this OWNS parameters (the tool embeddings
-    + the MLP), so enabling it CHANGES the state_dict and starts a fresh
-    basin -- a deliberate cutover behind ``<transformChooser>mlp`` (default
-    anchordot). The copy/apply/reduce anchors passed by the layer are
-    ignored; the MLP conditions on context instead.
+    It reads the slot / pair state, the candidate op's output, a learned
+    tool-identity embedding and a sinusoidal position encoding, and gives
+    ``copy_score`` / ``apply_score`` (unary) and ``copy_score`` /
+    ``reduce_score`` (binary) for every (op, location). It is the only
+    chooser: a choice may depend on several things read together.
 
     Sizing (one chooser per layer): ``n_copy`` copy ops then ``n_op``
     apply/reduce ops, one tool-embedding row each (copy rows first).
@@ -6334,9 +6156,16 @@ class MLPTransformChooser(TransformChooser):
                 self.WHAT_CONTEXT_DIM, max(1, self.n_copy + self.n_op),
                 bias=False)
         nn.init.zeros_(self.what_projection.weight)
+        # How much is left of the budget in hand (``budget_code``) enters
+        # the first hidden layer. Zero at the start, it draws nothing from
+        # the random stream; the path cost of the load left teaches it.
+        self.budget_projection = nn.Linear(BUDGET_WIDTH, self.hidden, bias=False, device='meta')
+        self.budget_projection.weight = nn.Parameter(self.mlp[0].weight.new_zeros(self.hidden, BUDGET_WIDTH))
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        if prefix + 'budget_projection.weight' not in state_dict:
+            state_dict[prefix + 'budget_projection.weight'] = torch.zeros_like(self.budget_projection.weight)
         if hasattr(self, 'reference_choice') and prefix + 'reference_choice.weight' not in state_dict:
             state_dict[prefix + 'reference_choice.weight'] = self.reference_choice.weight.detach().clone()
         if hasattr(self, 'reference_choice'):
@@ -6381,7 +6210,7 @@ class MLPTransformChooser(TransformChooser):
         return pe[:, :self.pos_dim]
 
     def _score(self, slot, cand, tool_rows, pos, order_ctx=None,
-               order_projection=None, reference_ctx=None):
+               order_projection=None, reference_ctx=None, budget=None):
         """Score ``R`` candidates at each of ``Npos`` locations.
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
@@ -6404,8 +6233,11 @@ class MLPTransformChooser(TransformChooser):
         # zero fallbacks agree even under autocast (the MLP may emit
         # bf16/fp16; the fallbacks keep the input dtype).
         projection = self.operand_order if order_projection is None else order_projection
-        if (projection is not None and order_ctx is not None) or reference_ctx is not None:
+        if ((projection is not None and order_ctx is not None) or reference_ctx is not None
+                or budget is not None):
             hidden = self.mlp[0](feat)
+            if budget is not None:
+                hidden = hidden + self.budget_projection(budget.to(hidden.dtype))[:, None, None]
             if projection is not None and order_ctx is not None:
                 hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
             if reference_ctx is not None:
@@ -6435,19 +6267,19 @@ class MLPTransformChooser(TransformChooser):
                 f"what grammar context batch {ctx.shape[0]} != {batch}")
         return self.what_projection(ctx).to(dtype)
 
-    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    what_ctx=None, op_offset=0, op_indices=None, reference_ctx=None):
+    def score_unary(self, x_score, applied_score, *,
+                    what_ctx=None, op_offset=0, op_indices=None, reference_ctx=None, budget=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
-        copy_score = self._score(x_score, x_score, copy_rows, pos)                      # copy=slot
+        copy_score = self._score(x_score, x_score, copy_rows, pos, budget=budget)       # copy=slot
         r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
         if r_apply > 0:
             indices = (torch.arange(r_apply, device=x_score.device) if op_indices is None else op_indices)
             indices = indices + self.n_copy + op_offset
             apply_rows = self.tool_embedding.index_select(0, indices)
             apply_score = self._score(x_score, applied_score, apply_rows, pos,
-                                      reference_ctx=reference_ctx)
+                                      reference_ctx=reference_ctx, budget=budget)
         else:
             apply_score = x_score.new_zeros(B, N, 0)
         what_bias = self._what_bias(
@@ -6458,8 +6290,8 @@ class MLPTransformChooser(TransformChooser):
                 apply_score = apply_score + what_bias.index_select(-1, indices)[:, None]
         return copy_score, apply_score
 
-    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     what_ctx=None, op_indices=None, reference_ctx=None):
+    def score_binary(self, x_score, reduced_score, *,
+                     what_ctx=None, op_indices=None, reference_ctx=None, budget=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -6470,7 +6302,7 @@ class MLPTransformChooser(TransformChooser):
             copy_context = torch.cat((pair, zero), 1) + torch.cat((zero, pair), 1)
         copy_score = self._score(x_score, x_score, copy_rows, pos,
                                  order_ctx=copy_context,
-                                 order_projection=self.copy_order)
+                                 order_projection=self.copy_order, budget=budget)
         if (N >= 2 and reduced_score.dim() == 4
                 and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
             pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
@@ -6488,7 +6320,7 @@ class MLPTransformChooser(TransformChooser):
             reduce_rows = self.tool_embedding.index_select(0, indices)
             reduce_score = self._score(
                 pair_slot, reduced_score, reduce_rows, pos_pair,
-                order_ctx=order_ctx, reference_ctx=reference_ctx)
+                order_ctx=order_ctx, reference_ctx=reference_ctx, budget=budget)
         else:
             reduce_score = x_score.new_zeros(B, max(N - 1, 0), int(reduced_score.shape[2]) if reduced_score.dim() == 4 else self.n_op)
         what_bias = self._what_bias(
@@ -6500,38 +6332,24 @@ class MLPTransformChooser(TransformChooser):
         return copy_score, reduce_score
 
 
-def make_transform_chooser(kind, *, d_model, n_copy, n_op,
-                           ordered_binary=False):
-    """Factory: build the placement chooser for a structured layer.
-
-    ``kind`` ``"anchordot"`` (default) -> the stateless behavior-preserving
-    scorer (no params, basin unchanged); ``"mlp"`` -> the contextual
-    :class:`MLPTransformChooser` (owns params; a deliberate new-basin
-    cutover behind ``<transformChooser>``).
-
-    ``ordered_binary`` retains left/right differences in a binary MLP head.
-    """
-    k = str(kind or "anchordot").strip().lower()
-    if k == "mlp":
-        hidden = _chooser_size(TheXMLConfig.get(
-            "architecture.transformChooserHidden", default=0),
-            "transformChooserHidden", minimum=0)
-        depth = _chooser_size(TheXMLConfig.get(
-            "architecture.transformChooserDepth", default=1),
-            "transformChooserDepth")
-        return MLPTransformChooser(
-            d_model=d_model, n_copy=n_copy, n_op=n_op,
-            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary,
-            binding_choices=ordered_binary and any(
-                getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
-                bool(getattr(rule, 'reference_roles', ()))
-                for rule in (getattr(TheGrammar, 'rules_upward', None) or ())))
-    # Accept exactly the values the <transformChooser> XSD enum allows, so
-    # the factory and schema validation agree on the legal set.
-    if k != "anchordot":
-        raise ValueError(
-            f"<transformChooser> must be 'anchordot' or 'mlp' (got {kind!r}).")
-    return AnchorDotTransformChooser()
+def make_transform_chooser(*, d_model, n_copy, n_op, ordered_binary=False):
+    """Build the chooser of acts for a structured layer: the
+    :class:`MLPTransformChooser`, sized by ``transformChooserHidden`` and
+    ``transformChooserDepth``. ``ordered_binary`` retains left/right
+    differences in a binary head."""
+    hidden = _chooser_size(TheXMLConfig.get(
+        "architecture.transformChooserHidden", default=0),
+        "transformChooserHidden", minimum=0)
+    depth = _chooser_size(TheXMLConfig.get(
+        "architecture.transformChooserDepth", default=1),
+        "transformChooserDepth")
+    return MLPTransformChooser(
+        d_model=d_model, n_copy=n_copy, n_op=n_op,
+        hidden=hidden or None, depth=depth, ordered_binary=ordered_binary,
+        binding_choices=ordered_binary and any(
+            getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
+            bool(getattr(rule, 'reference_roles', ()))
+            for rule in (getattr(TheGrammar, 'rules_upward', None) or ())))
 
 
 
@@ -6539,6 +6357,37 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op,
 
 
 
+
+
+def configured_reduction_cost():
+    """Path cost per step for the load left on the stack (a fraction of
+    its allowance): the scale of a cost, never a learned weight."""
+    cost = float(TheXMLConfig.get('architecture.reductionCost', default=1.))
+    if not math.isfinite(cost) or cost < 0:
+        raise ValueError('reductionCost must be finite and nonnegative')
+    return cost
+
+
+_BUDGET_CODE = None
+
+
+def budget_code(rounds_left, batch, *, device, dtype):
+    """How much is left of the budget in hand, ``[B, 4]``: the count of
+    rounds as the two-rung sinusoid of ``.where`` (``WhereEncoding``), so
+    that the chooser reads it as positions are read, never as a count."""
+    global _BUDGET_CODE
+    if _BUDGET_CODE is None:
+        from Spaces import WhereEncoding
+        _BUDGET_CODE = WhereEncoding(nWhere=4).set_capacity(BUDGET_CAPACITY)
+    left = torch.as_tensor(rounds_left, device=device).to(torch.long).reshape(-1)
+    left = left.expand(batch) if left.numel() == 1 else left
+    return _BUDGET_CODE.encode(left.clamp_min(0)).to(dtype)
+
+
+# The ladder's capacity for a budget's rounds: above any compose, closing
+# or attention budget the model holds.
+BUDGET_CAPACITY = 256
+BUDGET_WIDTH = 4
 
 
 def configured_operator_cost():
@@ -6564,9 +6413,8 @@ class OperationSelectionLayer(nn.Module):
     departure; neither the hard argmax nor STOP supplies a pathwise gradient.
     """
 
-    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0, reduce_pressure=1.0,
-                 op_names=None, unary_names=None, op_space_roles=None,
-                 chooser="anchordot"):
+    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0,
+                 op_names=None, unary_names=None, op_space_roles=None):
         super().__init__()
         self.operator_cost = configured_operator_cost()
         self.separate_chooser = bool(TheXMLConfig.get("architecture.separateChooser", default=False))
@@ -6588,7 +6436,6 @@ class OperationSelectionLayer(nn.Module):
             getattr(candidate, 'inverse_identity', None) is not None
             and getattr(candidate, 'inverse_identity', None) == getattr(previous, 'operation_identity', None)
             for candidate in declared) for previous in declared)
-        require_opaque_mlp((*self.ops, *self.unary_ops), chooser)
         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
         from Expectation import unit, positive
@@ -6600,18 +6447,10 @@ class OperationSelectionLayer(nn.Module):
         self.temperature = float(temperature)
         if not math.isfinite(self.temperature) or self.temperature < 0:
             raise ValueError("compose temperature must be finite and nonnegative")
-        pressure = float(reduce_pressure)
-        if not math.isfinite(pressure) or pressure < 0:
-            raise ValueError("reduction pressure must be finite and nonnegative")
-        self.reduce_pressure = nn.Parameter(torch.tensor(pressure))
-        self.stop_anchor = nn.Parameter(torch.randn(1, self.d_model) * .02)
-        self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * .02)
-        self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
         self.chooser = make_transform_chooser(
-            chooser, d_model=self.d_model, n_copy=1,
+            d_model=self.d_model, n_copy=1,
             n_op=self.r_reduce + self.r_apply + 6,
             ordered_binary=True)
-        self.bracket_anchor = nn.Parameter(torch.zeros(6,self.d_model))
         self.attention_operations = (0, 1, 2)
         self.space_prior = nn.Parameter(torch.zeros(6))
         self.op_names = list(op_names) if op_names is not None else None
@@ -6626,7 +6465,7 @@ class OperationSelectionLayer(nn.Module):
         for rule in (*binary_rules, *unary_rules):
             name = operation_name(rule)
             rows.append([index[f'{name}_argin{i+1}'] for i in range(len(rule.rhs_symbols))])
-        self.argument_inputs = torch.tensor([row+[row[0]]*(2-len(row)) for row in rows], dtype=torch.long, device=self.stop_anchor.device).reshape(-1, 2)
+        self.argument_inputs = torch.tensor([row+[row[0]]*(2-len(row)) for row in rows], dtype=torch.long, device=self.argument_inputs.device).reshape(-1, 2)
         self.argument_operation_names = tuple(operation_name(rule) for rule in (*binary_rules, *unary_rules))
 
     def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False,
@@ -6834,7 +6673,7 @@ class OperationSelectionLayer(nn.Module):
         # probabilities, random draws and work charges retain their contract.
         torch._assert_async(~legal[:, width:].any(), 'attention slot bound excludes a legal action')
         candidates=keys[:,:width,None].expand(B,width,legal.shape[-1],D)
-        _,scores=self.chooser.score_unary(keys[:,:width],candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+        _,scores=self.chooser.score_unary(keys[:,:width],candidates,
                                           op_offset=self.r_reduce+self.r_apply)
         scores=F.pad(scores,(0,0,0,K-width),value=-torch.inf)
         scores=scores+self.space_prior[space][...,None]
@@ -6859,7 +6698,6 @@ class OperationSelectionLayer(nn.Module):
             index = torch.tensor([self.interpret_index], device=word.device)
             key = word.detach()[:, None]
             copy, apply = self.chooser.score_unary(key, key[:, :, None],
-                self.stop_anchor, self.apply_anchor[index],
                 op_offset=self.r_reduce, op_indices=index)
             logits = torch.cat((copy[:, 0, :1], apply[:, 0]-self.operator_cost), -1)
         logits = torch.stack((logits[:, 0], logits[:, 1].masked_fill(~allowed, -torch.inf)), -1)
@@ -6934,7 +6772,6 @@ class OperationSelectionLayer(nn.Module):
         indices = torch.full((count,), self.r_reduce+self.r_apply+3,
                              dtype=torch.long, device=state.device)
         stop, scores = self.chooser.score_unary(state, candidates,
-            self.stop_anchor, self.bracket_anchor[3:4].expand(count, -1),
             op_indices=indices)
         # Position features distinguish the roles; reduction pools scores,
         # never operands or references into a replacement conceptual object.
@@ -6946,15 +6783,6 @@ class OperationSelectionLayer(nn.Module):
         stops = torch.tensor([request is None for request in requests],
                              device=state.device, dtype=torch.bool)
         return torch.where(stops[None], pooled(stop), logits)
-
-    def reduction_pressure(self, depth, *, allowance, rounds_left):
-        """Lesson-owned load gain, using the whole stack and an inclusive deadline."""
-        depth = depth.to(torch.get_default_dtype()) if not depth.is_floating_point() else depth
-        allowance = torch.as_tensor(allowance, device=depth.device, dtype=depth.dtype)
-        remaining = torch.as_tensor(rounds_left, device=depth.device, dtype=depth.dtype)
-        required = (depth - allowance).clamp_min(0)
-        return torch.where(depth > 0, self.reduce_pressure * (
-            depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
 
     def prime_bias(self, candidates, prime, orders):
         """The uncapped expectation prior in each candidate's own order."""
@@ -7010,14 +6838,16 @@ class OperationSelectionLayer(nn.Module):
                         for i, value in enumerate(operands)),
                         reference_data[label + '_found'].to(x.dtype)), -1)))
                 reference_contexts = tuple(contexts)
+            # The chooser reads how much is left of the budget in hand as a
+            # sinusoidal code; the load left is a path cost it can learn.
+            budget = (None if rounds_left is None else
+                      budget_code(rounds_left, x.shape[0], device=x.device, dtype=x.dtype))
             stop_scores, binary_scores = self.chooser.score_binary(
-                feature(content), feature(binary[..., :self.d_model]), self.stop_anchor,
-                self.reduce_anchor.index_select(0, bi), what_ctx=score_context,
-                op_indices=bi, **reference_contexts[0])
+                feature(content), feature(binary[..., :self.d_model]), what_ctx=score_context,
+                op_indices=bi, budget=budget, **reference_contexts[0])
             _, unary_scores = self.chooser.score_unary(
-                feature(content), feature(unary[..., :self.d_model]), self.stop_anchor,
-                self.apply_anchor.index_select(0, ui), what_ctx=score_context,
-                op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
+                feature(content), feature(unary[..., :self.d_model]), what_ctx=score_context,
+                op_offset=self.r_reduce, op_indices=ui, budget=budget, **reference_contexts[1])
             score_delta = None
             if symbol_read is not None and symbol_read.strength > 0.:
                 # Identify before attenuation. Composed operands have presence
@@ -7040,13 +6870,11 @@ class OperationSelectionLayer(nn.Module):
                 unary_gain = symbol_read.gains(unary.flatten(1,2), orders=unary_orders).reshape(unary.shape[:-1])
                 dimmed = feature(content) * operand_gain.detach()[...,None]
                 stop_content, binary_content = self.chooser.score_binary(dimmed,
-                    feature(content_binary[..., :self.d_model])*binary_gain.detach()[...,None], self.stop_anchor,
-                    self.reduce_anchor.index_select(0,bi), what_ctx=score_context,
-                    op_indices=bi, **reference_contexts[0])
+                    feature(content_binary[..., :self.d_model])*binary_gain.detach()[...,None], what_ctx=score_context,
+                    op_indices=bi, budget=budget, **reference_contexts[0])
                 _, unary_content = self.chooser.score_unary(dimmed,
-                    feature(unary[..., :self.d_model])*unary_gain.detach()[...,None], self.stop_anchor,
-                    self.apply_anchor.index_select(0,ui), what_ctx=score_context,
-                    op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
+                    feature(unary[..., :self.d_model])*unary_gain.detach()[...,None], what_ctx=score_context,
+                    op_offset=self.r_reduce, op_indices=ui, budget=budget, **reference_contexts[1])
                 stop_delta = ((stop_content-stop_scores).squeeze(-1)*live).sum(-1)/depth.clamp_min(1)
                 score_delta = torch.cat(((binary_content-binary_scores).flatten(1),
                     (unary_content-unary_scores).flatten(1), stop_delta[:,None]), -1)
@@ -7077,9 +6905,6 @@ class OperationSelectionLayer(nn.Module):
             required = (load - torch.as_tensor(limit, device=x.device)).clamp_min(0)
             needs_reduction = required > 0
             deadline = required >= torch.as_tensor(rounds_left, device=x.device)
-            pressure = self.reduction_pressure(load.to(binary_scores),
-                allowance=limit, rounds_left=rounds_left)
-            binary_scores = binary_scores + pressure[:, None, None] * (~swaps & ~binds)[None,None]
         if reference_data is None:
             needs_cases = torch.tensor([bool(getattr(getattr(op, 'gl', op), 'case_head_role', 0))
                                         for op in self.ops], device=x.device, dtype=torch.bool)
@@ -8770,7 +8595,6 @@ class SymbolSubSpace(SubSpace):
         chart_hidden = self._resolve_hidden_dim(nSymbols)
         compose_temperature = float(TheXMLConfig.get(
             "architecture.composeTemperature", 0.0))
-        reduce_pressure = float(TheXMLConfig.get("architecture.reducePressure", 1.0))
         self.languageLayer = LanguageLayer(
             n_input=nSymbols, n_output=nSymbols,
             hidden_dim=chart_hidden,
@@ -8780,7 +8604,6 @@ class SymbolSubSpace(SubSpace):
             feature_dim=self.muxedSize,
             max_depth=max(nSymbols - 1, 1),
             temperature=compose_temperature,
-            reduce_pressure=reduce_pressure,
         )
         # The signal router's grammar reference (read by per-rule gating
         # and the diagnostics that used to call ``chart.grammar``).
@@ -9872,8 +9695,7 @@ class SymbolSubSpace(SubSpace):
           tensor. This keeps a graph back to the router's anchor
           scorers, so the intra-sentence predictor's ``routing_proj``
           bias backprops predictor-loss -> ``rule_probs`` -> router
-          marginals -> router scorer params (``copy_anchor`` /
-          ``apply_anchor`` / ``reduce_anchor``).
+          marginals -> the chooser's network.
         * HARD path (``_synthesize_rule_probs_hard``): the default-only /
           ``useGrammar='none'`` fast path never calls
           ``LanguageLayer.compose`` (so ``_last_space_role_routings`` is
@@ -10346,17 +10168,7 @@ class SymbolSubSpace(SubSpace):
                 bucket["op_names"].append(name)
                 # preserve the op's *original* space_role letter as the role label
                 bucket["op_space_roles"].append(space_role)
-        # Placement-chooser cutover: pick the chooser kind BEFORE the
-        # structured layers are built (they choose at construction).
-        # ``<architecture><transformChooser>`` -- default "anchordot"
-        # (stateless, basin unchanged); "mlp" builds the contextual
-        # MLPTransformChooser (owns params, deliberate new basin).
-        router.transform_chooser = str(TheXMLConfig.get(
-            "architecture.transformChooser", default="anchordot"))
         for arity, bucket in sorted(by_arity.items()):
-            if (router.transform_chooser != 'mlp'
-                    and any(not operator_is_structural(op) for op in bucket['ops'])):
-                raise ValueError('opaque grammar operators require the ordinary mlp chooser')
             if arity == 1:
                 router.attach_unary_ops(
                     ops=bucket["ops"], rule_ids=bucket["rule_ids"],
@@ -11256,6 +11068,7 @@ class LanguageSpace(nn.Module):
     def __init__(self, symbol_space):
         super().__init__()
         self.operator_cost = configured_operator_cost()
+        self.reduction_cost = configured_reduction_cost()
         object.__setattr__(self, "_symbol_space", symbol_space)
         object.__setattr__(
             self, "_language_layer_ref",

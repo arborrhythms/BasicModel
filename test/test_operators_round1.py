@@ -31,7 +31,7 @@ def test_attention_score_function_has_greedy_baseline_and_uniform_counts(advanta
 
 def test_attention_uniform_departure_and_no_pathwise_credit(monkeypatch):
     from Language import OperationSelectionLayer
-    chooser = OperationSelectionLayer(d_model=2, chooser='mlp')
+    chooser = OperationSelectionLayer(d_model=2)
     keys = torch.tensor([[[1., 0.]]], requires_grad=True)
     legal = torch.tensor([[[True, True, True, False, False, False]]])
     action, credit, _, details = chooser.attend(keys, legal, torch.zeros(1, 1, dtype=torch.long),

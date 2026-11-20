@@ -10,7 +10,7 @@ def test_observer_counts_detached_compose_calls(monkeypatch):
     monkeypatch.syspath_prepend(str(root / 'test/fixtures/2026-10-07-operators-final'))
     from round2_score_probe import observe_score_function
     from Language import OperationSelectionLayer
-    layer = OperationSelectionLayer(d_model=4, chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4)
     result = {'_active_epoch': 1}
     # This is the native compose setting when the sampled departure belongs
     # to narrowing. The chooser runs, but its logits own no policy gradient.

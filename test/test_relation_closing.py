@@ -95,7 +95,8 @@ def test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows(mon
     def unary(*args, **kwargs):
         stop, scores = score_unary(*args, **kwargs)
         if kwargs.get('op_offset') == model._stm_reducer().r_reduce + model._stm_reducer().r_apply:
-            return stop, scores
+            # The brackets tie, as at the start of a walk.
+            return stop, torch.zeros_like(scores)
         indices = kwargs.get('op_indices')
         forced = torch.full_like(scores, -torch.inf)
         if indices is not None:
@@ -146,7 +147,8 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
     def unary(*args, **kwargs):
         stop, scores = score_unary(*args, **kwargs)
         if kwargs.get('op_offset') == model._stm_reducer().r_reduce + model._stm_reducer().r_apply:
-            return stop, scores
+            # The brackets tie, as at the start of a walk.
+            return stop, torch.zeros_like(scores)
         indices = kwargs.get('op_indices')
         forced = torch.full_like(scores, -torch.inf)
         if indices is not None:

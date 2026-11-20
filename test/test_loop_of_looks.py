@@ -2,6 +2,7 @@
 from dataclasses import fields
 import torch
 import pytest
+from chooser_steering import stand_in
 
 
 def explore_configuration(tmp_path):
@@ -11,7 +12,8 @@ def explore_configuration(tmp_path):
     from pathlib import Path
     source = Path('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml').read_text()
     path = tmp_path / 'explore-1.xml'
-    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', ''))
+    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', '')
+                    .replace('<transformChooser>mlp</transformChooser>', ''))
     return str(path)
 
 
@@ -322,6 +324,7 @@ def test_11_lesson_teaches_shortest_walk_and_interpretation(length, bias, monkey
     word_rule = torch.nn.Identity()
     word_rule.rule_name = 'interpret'
     chooser = OperationSelectionLayer(d_model=4, unary_ops=[word_rule])
+    stand_in(chooser)
     chooser.interpret_bias = bias
     chooser.attention_operations = tuple(range(6))
     spans = torch.arange(length)[:,None] * 2 + torch.tensor([[0,1]])
@@ -350,7 +353,7 @@ def test_11_lesson_teaches_shortest_walk_and_interpretation(length, bias, monkey
         return
     assert taught.item() > 0
     taught.sum().backward()
-    assert chooser.apply_anchor.grad is not None and chooser.apply_anchor.grad.abs().sum() > 0
+    assert chooser.stand_in.unary.grad is not None and chooser.stand_in.unary.grad.abs().sum() > 0
 
 
 def test_4_verbal_xor_offers_its_declared_interpretation():
@@ -359,7 +362,7 @@ def test_4_verbal_xor_offers_its_declared_interpretation():
     try:
         chooser = model._stm_reducer()
         pure = torch.tensor([True, False])
-        word = chooser.apply_anchor.new_zeros(2, chooser.d_model)
+        word = torch.zeros(2, chooser.d_model)
         choice = chooser.choose_interpret(word, pure)
         assert choice['eligible'].tolist() == [True, False]
         assert torch.isfinite(choice['logits'][:, 0]).all()

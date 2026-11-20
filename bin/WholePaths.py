@@ -198,6 +198,35 @@ def application_cost(language, observation, output_trace, like):
     return count * language.operator_cost
 
 
+def load_cost(model, observation, like):
+    """The working-memory load left, charged at every recorded step.
+
+    Each composed program is replayed on its stack depth: a word pushes
+    one, a binary rewrite (but a bind) takes one. At each step the depth
+    held, as a fraction of the allowance, is charged; the sum is linear in
+    what is left and in the steps it is left for, under ``reductionCost``.
+    """
+    from ReadingIndex import steps
+    language = model.languageSpace
+    allowance = int(model.conceptualSpace.stm.capacity) - 1
+    rules = language._compose_binary_rules
+    cost = like.new_zeros(len(like))
+    for row, program in enumerate(observation.get('entries', ())):
+        if program is None:
+            continue
+        depth = total = 0
+        for kind, local, _ in steps(program):
+            if kind < 0:
+                break
+            if kind == 0:
+                depth += 1
+            elif kind == 1 and getattr(rules[local], 'method_name', None) != 'bind':
+                depth -= 1
+            total += depth
+        cost[row] = total
+    return cost * (language.reduction_cost / max(1, int(allowance)))
+
+
 @trial_activity()
 def finish(model, state, sid, active, *, trust, base=None, draw=None):
     """Run only the suffix after this path's departure, ending before a write."""
@@ -304,6 +333,10 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         registry._terms.pop('operator.application', None)
         registry.add('operator.application',
             application_cost(model.languageSpace, observation, output_trace, observation['record'].root),
+            category='reg', objective='reconstruction', side='R')
+        registry._terms.pop('compose.load', None)
+        registry.add('compose.load',
+            load_cost(model, observation, observation['record'].root),
             category='reg', objective='reconstruction', side='R')
         effects = ThoughtTrialState(model)
         parts = components(registry, expectation, observation['record'].root.sum(-1)*0, answer=cost)

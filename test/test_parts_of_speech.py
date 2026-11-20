@@ -33,7 +33,7 @@ def chooser():
     binary = [rule('lower', head=2), rule('intersection',head=0)]
     unary = [rule('surface_unary', 1)]
     arguments = formal_arguments(binary+unary)
-    layer = OperationSelectionLayer(d_model=4, ops=[Pair(), Pair()], unary_ops=[Unary()], reduce_pressure=0.)
+    layer = OperationSelectionLayer(d_model=4, ops=[Pair(), Pair()], unary_ops=[Unary()])
     layer.configure_arguments(arguments, binary, unary)
     _, parts, _ = argument_inventory(arguments)
     return layer, parts

@@ -26,7 +26,7 @@ def word_loop_prime(model, reducer):
 
 def test_word_loop_priming_score_is_invariant_to_other_order_rotation():
     from Language import OperationSelectionLayer
-    reducer = OperationSelectionLayer(d_model=3, chooser='mlp')
+    reducer = OperationSelectionLayer(d_model=3)
     keys = torch.eye(3)[:2].clone()
     prediction = NS(symbol_keys=keys, symbol_orders=torch.tensor([0, 1]),
         expected_activation=torch.tensor([[1., 0.], [1., 0.]]))
@@ -49,7 +49,7 @@ def test_word_loop_priming_score_is_invariant_to_other_order_rotation():
 def test_prime_uses_its_own_order_for_value_and_normalization():
     from Expectation import OrderPrime
     from Language import OperationSelectionLayer
-    reducer = OperationSelectionLayer(d_model=3, chooser='mlp')
+    reducer = OperationSelectionLayer(d_model=3)
     prediction = NS(symbol_keys=torch.eye(3), symbol_orders=torch.tensor([0, 0, 1]),
         expected_activation=torch.tensor([[1., 0.], [0., 1.], [1., 1.]]))
     prime = OrderPrime.from_predictions([prediction], torch.zeros(1, 3), 3)

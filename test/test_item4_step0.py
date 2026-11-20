@@ -31,7 +31,7 @@ def test_initial_reference_candidates_are_uniform_and_the_difference_can_learn(c
     # cannot establish the conditional initialization contract.
     candidates = torch.randn(2, 2, count, 8) * torch.logspace(-2, 2, count)[None, None, :, None]
     context = torch.randn(2, 2, count, 18)
-    _, logits = chooser.score_unary(source, candidates, None, None,
+    _, logits = chooser.score_unary(source, candidates,
         op_indices=torch.zeros(count, dtype=torch.long), reference_ctx=context)
     torch.testing.assert_close(logits.softmax(-1), torch.full_like(logits, 1 / count),
                                rtol=0, atol=0)
@@ -155,11 +155,10 @@ def test_open_region_with_only_negation_offers_conclude(monkeypatch):
     assert [r.operation for r in result.records if r.kind == 'thought'] == ['conclude']
 
 
-@pytest.mark.parametrize('kind', ('anchordot', 'mlp'))
-def test_bounded_bracket_scoring_preserves_menu_draw_and_gradients(kind):
+def test_bounded_bracket_scoring_preserves_menu_draw_and_gradients():
     from copy import deepcopy
     from Language import OperationSelectionLayer
-    full = OperationSelectionLayer(d_model=8, chooser=kind)
+    full = OperationSelectionLayer(d_model=8)
     bounded = deepcopy(full)
     keys = torch.randn(2, 64, 8)
     legal = torch.zeros(2, 64, 6, dtype=torch.bool)

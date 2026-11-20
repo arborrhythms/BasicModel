@@ -159,7 +159,6 @@ def policy_fixture():
     language.generate_policy = nn.Linear(2, 2)
     operation = nn.Module()
     operation.chooser = nn.Linear(2, 2)
-    operation.reduce_pressure = nn.Parameter(torch.ones(()))
     operation.exploration_fraction = 1.
     operation.exploration_temperature = 1.
     model.selection = operation

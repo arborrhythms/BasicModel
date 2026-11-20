@@ -9,7 +9,7 @@ def test_repeated_unary_has_the_same_cost_as_its_first_use(monkeypatch):
     import UnaryHistory
     from Language import OperationSelectionLayer, SumLayer
     from test_item20_round5_unary import Half
-    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], unary_ops=[Half()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], unary_ops=[Half()])
     layer.operator_cost = .75
     monkeypatch.setattr(layer.chooser, 'score_binary', lambda x, candidates, *a, **k:
         (x.new_full((*x.shape[:2], 1), -2.), x.new_zeros(x.shape[0], x.shape[1]-1, 1)))
@@ -30,7 +30,7 @@ def test_repeated_unary_has_the_same_cost_as_its_first_use(monkeypatch):
 def test_binary_bind_dummy_pays_the_declared_operator_cost():
     from Language import OperationSelectionLayer, SumLayer
     from Expectation import OrderPrime
-    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()])
     layer.operator_cost = .75
     value = torch.tensor([[[.8, .4], [.2, .1]]])
     refs = dict(binary_ops=(0,), unary_ops=(), binary_bind=(True,),
@@ -65,6 +65,9 @@ def test_complete_path_pays_c_for_one_more_kept_application(monkeypatch):
         present=lambda: 7, _sentence_fields={}, _sentence_answer_predictions=None,
         inputSpace=NS(data=NS(has_supervised_outputs=True)),
         languageSpace=NS(operator_cost=.75, _generate_binary_ops=(None,), _generate_unary_ops=(None,)))
+    # The load left is costed apart (test_reduction_pressure); at zero this
+    # isolates the operator's cost.
+    monkeypatch.setattr(WholePaths, 'load_cost', lambda model, observation, like: like.new_zeros(len(like)))
     before = ThoughtTrialState(model)
     paths = []
     monkeypatch.setattr(WholePaths, 'output', lambda *a, **k:

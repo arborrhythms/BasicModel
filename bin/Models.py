@@ -1991,14 +1991,8 @@ class BaseModel(Mereology, nn.Module):
         # deliberately not mutated while Dynamo captures the model.
         self._prelude_pumps = 0
 
-        # TransformChooser kind. Mirrors the router-side read in
-        # LanguageLayer._wire_signal_router_grammar_ops so the cutover reaches
-        # the model-built structured layers too (the STM reducer). Default
-        # "anchordot" -> stateless, basin unchanged.
-        self.transform_chooser = str(TheXMLConfig.get(
-            "architecture.transformChooser", default="anchordot"))
-        # Validate even when the selected scorer is stateless. Zero hidden
-        # width retains the established grammar-width-derived default.
+        # The chooser's size. Zero hidden width retains the grammar-width-
+        # derived default.
         from Language import _chooser_size
         self.transform_chooser_hidden = _chooser_size(TheXMLConfig.get(
             "architecture.transformChooserHidden", default=0),
@@ -2580,14 +2574,7 @@ class BaseModel(Mereology, nn.Module):
         layer = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
         operation = getattr(layer, 'operation_layer', None)
         compose = parameters([getattr(operation, 'chooser', None)])
-        pressure = getattr(operation, 'reduce_pressure', None)
-        if isinstance(pressure, nn.Parameter) and id(pressure) in available:
-            compose.add(id(pressure))
-        # The anchor scorer is stateless: its operation logits are owned by
-        # the containing layer's three anchors. MLP choosers own their weights.
-        compose_policy = compose | {id(p) for name in ('stop_anchor', 'reduce_anchor', 'apply_anchor')
-                                if (p := getattr(operation, name, None)) is not None
-                                and id(p) in available}
+        compose_policy = set(compose)
         generate = parameters([getattr(language, 'generate_policy', None)])
         decoder = generate | parameters([getattr(op, 'gl', op) for op in
             (*getattr(language, '_generate_binary_ops', ()),
@@ -2609,8 +2596,7 @@ class BaseModel(Mereology, nn.Module):
                 (('reconstruction', reconstruction), ('expectation', expectation), ('output', output),
                  ('attention', attention),
                  ('compose_lesson', compose), ('generate_lesson', generate), ('chooser', reconstruction),
-                 ('reading_policy', compose_policy | {id(getattr(operation, name, None))
-                     for name in ('bracket_anchor', 'space_prior')}),
+                 ('reading_policy', compose_policy | {id(getattr(operation, 'space_prior', None))}),
                  ('compose_policy', compose_policy), ('generate_policy', generate))}
 
     def _adopt_fresh_parameters(self, optimizer):
@@ -4593,15 +4579,13 @@ class BaseModel(Mereology, nn.Module):
             state.pop(key)
             attention_transforms[key] = None
             warnings.warn(f'Dropped retired candidate chooser checkpoint key {key}')
-        if retired_attention:
-            # Attention address 2 used to accept a word. Undo starts fresh,
-            # including its Adam moments, while the other five anchors keep theirs.
-            for key in state:
-                if key.endswith('.bracket_anchor'):
-                    anchor = state[key].clone()
-                    anchor[2].zero_()
-                    state[key] = anchor
-                    attention_transforms[key] = (key, 0, (0, 1, -1, 3, 4, 5))
+        # The linear chooser's anchors are retired: the chooser of acts is
+        # the network alone, which reads none of them.
+        for key in [key for key in state if key.endswith(
+                ('.stop_anchor', '.reduce_anchor', '.apply_anchor', '.bracket_anchor'))]:
+            state.pop(key)
+            attention_transforms[key] = None
+            warnings.warn(f'Dropped retired chooser anchor checkpoint key {key}')
 
         retired_pair_weights = [key for key in state
             if key == 'decomposition_chooser.weight' or key.endswith('.decomposition_chooser.weight')]

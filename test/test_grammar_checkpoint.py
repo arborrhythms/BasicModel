@@ -10,7 +10,7 @@ def host(names):
     model = torch.nn.Module()
     model.operation_layer = OperationSelectionLayer(d_model=4,
         ops=[torch.nn.Linear(4, 4) for _ in names], op_names=list(names),
-        unary_names=[], chooser='mlp')
+        unary_names=[])
     model.alias = model.operation_layer
     return model
 

@@ -5,6 +5,7 @@ import json
 import os
 import torch
 import pytest
+from chooser_steering import stand_in
 
 
 def receipt(tmp_path, name, value):
@@ -52,11 +53,12 @@ def test_compose_credit_reaches_live_semantics_and_its_three_writers_are_attribu
         theta = torch.nn.Parameter(torch.tensor([[[.2], [.3], [.7]]]))
         reader = torch.nn.Parameter(torch.tensor(.8))
         chooser = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()])
+        stand_in(chooser)
         chooser.separate_chooser = separate
         with torch.no_grad():
-            chooser.reduce_anchor.fill_(.4)
-            chooser.apply_anchor.fill_(.2)
-            chooser.stop_anchor.fill_(.1)
+            chooser.stand_in.reduce.fill_(.4)
+            chooser.stand_in.unary.fill_(.2)
+            chooser.stand_in.stop.fill_(.1)
         _, value, route = chooser(theta, slots=1)
         probability = route['probabilities'][:, 0, None]
         credit, _ = score_function(probability, torch.ones_like(probability),
@@ -74,7 +76,7 @@ def test_compose_credit_reaches_live_semantics_and_its_three_writers_are_attribu
             expected = .6*gradients['reconstruction'] + gradients['output'] + gradients['chooser']
             surrogate(costs, theta.new_tensor(.6)).backward()
             torch.testing.assert_close(theta.grad, expected)
-            assert reader.grad is not None and chooser.reduce_anchor.grad is not None
+            assert reader.grad is not None and chooser.stand_in.reduce.grad is not None
         reports.append(dict(separate_chooser=separate,
             gradients={name:None if value is None else value.tolist() for name,value in gradients.items()}))
     receipt(tmp_path, 'semantic-writers', reports)
@@ -233,7 +235,7 @@ def test_thought_and_generate_features_stay_detached_when_compose_is_live():
     from Language import OperationSelectionLayer, GeneratePolicy
     from Meaning import ConceptualMeaning
     semantic=torch.nn.Parameter(torch.tensor([.2,.3,.7,.6]))
-    layer=OperationSelectionLayer(d_model=4,chooser='mlp')
+    layer=OperationSelectionLayer(d_model=4)
     layer.separate_chooser=False
     active=ConceptualMeaning.from_description(semantic)
     request=ConceptualMeaning.from_description(semantic*.7)

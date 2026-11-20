@@ -4,25 +4,27 @@ import torch
 
 from Language import OperationSelectionLayer
 from test_compose_operations import Add, Negate, layer
+from chooser_steering import stand_in
 
 
 def test_zero_temperature_keeps_the_score_function_gradient():
     step = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()],
                                    temperature=0)
+    stand_in(step)
     step.separate_chooser = True
     with torch.no_grad():
-        step.reduce_anchor.fill_(1)
-        step.apply_anchor.zero_()
+        step.stand_in.reduce.fill_(1)
+        step.stand_in.unary.zero_()
     x = torch.tensor([[[1.], [2.], [3.]]], requires_grad=True)
     _, path, route = step(x, sample=True)
     path.sum().backward()
-    assert step.reduce_anchor.grad is None
-    assert step.apply_anchor.grad is None
+    assert step.stand_in.reduce.grad is None
+    assert step.stand_in.unary.grad is None
     (-route['probability'].sum()).backward()
     assert route['action'].tolist() == [1]
     assert 0 < route['probability'].item() < 1
-    assert step.reduce_anchor.grad.abs().sum() > 0
-    assert step.apply_anchor.grad.abs().sum() > 0
+    assert step.stand_in.reduce.grad.abs().sum() > 0
+    assert step.stand_in.unary.grad.abs().sum() > 0
 
 
 def test_temperature_and_forced_mask_do_not_change_model_credit():

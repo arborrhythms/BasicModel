@@ -31,12 +31,3 @@ def structural_argmax(scores, structural=None):
     return eligible.to(torch.long).argmax(dim=-1)
 
 
-def require_opaque_mlp(ops, chooser):
-    """Explicit opaque extensions cannot bypass the ordinary grammar MLP.
-
-    Unlabelled standalone tensor fixtures predate the catalog and retain their
-    compatibility scorer. Production registration checks every implementation.
-    """
-    if any(getattr(getattr(op, 'gl', op), 'routing_kind', None) == 'opaque'
-           for op in ops) and chooser != 'mlp':
-        raise ValueError('opaque grammar operators require the ordinary mlp chooser')

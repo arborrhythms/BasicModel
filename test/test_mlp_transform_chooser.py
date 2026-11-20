@@ -1,11 +1,8 @@
-"""MLPTransformChooser -- the contextual routing chooser.
+"""MLPTransformChooser -- the chooser of acts, and the only one.
 
 A learned MLP over per-candidate context (slot/pair state, candidate
-output, tool embedding, position) that produces the same per-(op, location)
-logit shapes as the anchor-dot scorer, so it drops into the live structured
-grammar layers. UNLIKE anchor-dot it owns parameters -> selecting it changes
-the state_dict (a deliberate new basin), behind <transformChooser>mlp
-(default anchordot).
+output, tool embedding, position) that gives the per-(op, location) logits
+of the structured grammar layers.
 """
 
 import os
@@ -24,13 +21,15 @@ import torch
 import torch.nn as nn
 
 from Language import (
-    TransformChooser, AnchorDotTransformChooser, MLPTransformChooser,
-    make_transform_chooser, OperationSelectionLayer,
+    MLPTransformChooser, make_transform_chooser, OperationSelectionLayer,
 )
 
 
-def test_is_a_transform_chooser():
-    assert issubclass(MLPTransformChooser, TransformChooser)
+def test_the_linear_chooser_and_its_key_are_gone():
+    import Language
+    assert not hasattr(Language, 'AnchorDotTransformChooser')
+    assert not hasattr(Language, 'TransformChooser')
+    assert not hasattr(Language, 'SelectedThoughtChooser')
 
 
 def test_unary_score_shapes_match_the_contract():
@@ -38,7 +37,7 @@ def test_unary_score_shapes_match_the_contract():
     ch = MLPTransformChooser(d_model=D, n_copy=R_copy, n_op=R_apply)
     x = torch.randn(B, N, D)
     applied = torch.randn(B, N, R_apply, D)
-    copy_score, apply_score = ch.score_unary(x, applied, None, None)
+    copy_score, apply_score = ch.score_unary(x, applied)
     assert copy_score.shape == (B, N, R_copy)
     assert apply_score.shape == (B, N, R_apply)
 
@@ -48,7 +47,7 @@ def test_binary_score_shapes_match_the_contract():
     ch = MLPTransformChooser(d_model=D, n_copy=R_copy, n_op=R_reduce)
     x = torch.randn(B, N, D)
     reduced = torch.randn(B, N - 1, R_reduce, D)
-    copy_score, reduce_score = ch.score_binary(x, reduced, None, None)
+    copy_score, reduce_score = ch.score_binary(x, reduced)
     assert copy_score.shape == (B, N, R_copy)
     assert reduce_score.shape == (B, N - 1, R_reduce)
 
@@ -58,7 +57,7 @@ def test_owns_params_and_scores_are_differentiable():
     assert sum(p.numel() for p in ch.parameters()) > 0
     x = torch.randn(1, 4, 4)
     reduced = torch.randn(1, 3, 2, 4)
-    cs, rs = ch.score_binary(x, reduced, None, None)
+    cs, rs = ch.score_binary(x, reduced)
     (cs.sum() + rs.sum()).backward()
     assert ch.tool_embedding.grad is not None
     assert any(p.grad is not None for p in ch.mlp.parameters())
@@ -72,7 +71,6 @@ def test_feeds_the_binary_router_layer():
     layer = OperationSelectionLayer(
         d_model=4,
         ops=[_AddOp(), _AddOp(), _AddOp()],
-        chooser="mlp",
     )
     x = torch.randn(1, 5, 4)
     hard, soft, routing = layer(x)
@@ -85,45 +83,31 @@ def test_feeds_the_binary_router_layer():
 def test_degenerate_shapes():
     ch = MLPTransformChooser(d_model=4, n_copy=1, n_op=2)
     # N=1: no reduce pairs.
-    cs, rs = ch.score_binary(torch.randn(1, 1, 4), torch.randn(1, 0, 2, 4),
-                             None, None)
+    cs, rs = ch.score_binary(torch.randn(1, 1, 4), torch.randn(1, 0, 2, 4))
     assert cs.shape == (1, 1, 1) and rs.shape == (1, 0, 2)
     # R_apply = 0 (unary).
-    cs2, as2 = ch.score_unary(torch.randn(1, 4, 4), torch.randn(1, 4, 0, 4),
-                              None, None)
+    cs2, as2 = ch.score_unary(torch.randn(1, 4, 4), torch.randn(1, 4, 0, 4))
     assert as2.shape == (1, 4, 0)
 
 
-def test_factory_selects_and_validates():
-    assert isinstance(
-        make_transform_chooser("anchordot", d_model=4, n_copy=1, n_op=2),
-        AnchorDotTransformChooser)
-    assert isinstance(
-        make_transform_chooser("mlp", d_model=4, n_copy=1, n_op=2),
-        MLPTransformChooser)
-    with pytest.raises(ValueError):
-        make_transform_chooser("bogus", d_model=4, n_copy=1, n_op=2)
+def test_factory_builds_the_network():
+    assert isinstance(make_transform_chooser(d_model=4, n_copy=1, n_op=2),
+                      MLPTransformChooser)
 
 
-def test_layers_select_chooser_and_state_dict_reflects_it():
-    # Default (anchordot): no chooser params in the state_dict.
-    u_ad = OperationSelectionLayer(d_model=4, ops=[],)
-    assert isinstance(u_ad.chooser, AnchorDotTransformChooser)
-    assert not any("chooser" in k for k in u_ad.state_dict())
-
-    # MLP: the chooser owns params -> they appear in the layer state_dict.
+def test_layers_hold_the_network_and_no_anchor():
+    # The chooser owns params -> they appear in the layer state_dict.
     class _AddOp(nn.Module):
         def forward(self, a, b):
             return a + b
 
-    b_mlp = OperationSelectionLayer(
-        d_model=4, ops=[_AddOp(), _AddOp()], chooser="mlp")
-    assert isinstance(b_mlp.chooser, MLPTransformChooser)
-    keys = list(b_mlp.state_dict())
+    layer = OperationSelectionLayer(d_model=4, ops=[_AddOp(), _AddOp()])
+    assert isinstance(layer.chooser, MLPTransformChooser)
+    keys = list(layer.state_dict())
     assert any("chooser.tool_embedding" in k for k in keys)
     assert any("chooser.mlp" in k for k in keys)
-    # The anchors still exist (the layer keeps them; the MLP ignores them).
-    assert any("reduce_anchor" in k for k in keys)
+    assert not any(k.endswith(("stop_anchor", "reduce_anchor", "apply_anchor", "bracket_anchor"))
+                   for k in keys)
 
 
 # -- end-to-end: config -> router -> layers ------------------------------
@@ -175,21 +159,20 @@ def _router_choosers(m):
     return [type(l.chooser).__name__ for l in layers]
 
 
-def test_config_mlp_builds_mlp_choosers_in_the_router():
-    m = _build_model("mlp")
+def test_every_configuration_builds_the_network_in_the_router():
+    m = _build_model(None)
     names = _router_choosers(m)
     assert all(n == "MLPTransformChooser" for n in names), names
 
 
-def test_config_default_keeps_anchordot_choosers():
-    m = _build_model(None)        # no <transformChooser> -> default anchordot
-    names = _router_choosers(m)
-    assert all(n == "AnchorDotTransformChooser" for n in names), names
+def test_the_retired_key_is_refused():
+    with pytest.raises(ValueError, match='transformChooser'):
+        _build_model("mlp")
 
 
 def test_config_mlp_router_parameters_have_one_optimizer_owner():
     """Router Parameters are enlisted after grammar-op ModuleDict wiring."""
-    m = _build_model("mlp")
+    m = _build_model(None)
     optimizer = m.getOptimizer(lr=1e-3)
     optimizer_params = [
         parameter

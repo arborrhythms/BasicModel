@@ -2,6 +2,7 @@
 import torch
 from torch import nn
 from Language import OperationSelectionLayer
+from chooser_steering import stand_in
 
 class Add(nn.Module):
     def forward(self, left, right):
@@ -23,16 +24,17 @@ def test_layer_forward_shapes():
 def test_chosen_operator_has_full_gradient_and_separate_probability_credit():
     x = torch.tensor([[[1.], [2.]]], requires_grad=True)
     step = OperationSelectionLayer(d_model=1, ops=[Add(), Mul()])
+    stand_in(step)
     step.separate_chooser = True
     with torch.no_grad():
-        step.reduce_anchor.zero_()
+        step.stand_in.reduce.zero_()
     _, path, route = step(x)
     path.sum().backward()
     torch.testing.assert_close(x.grad, torch.ones_like(x))
     torch.testing.assert_close(route['probabilities'][0], torch.tensor([.5, .5, 0.]))
-    assert step.reduce_anchor.grad is None
+    assert step.stand_in.reduce.grad is None
     (-route['probability'].sum()).backward()
-    assert step.reduce_anchor.grad.abs().sum() > 0
+    assert step.stand_in.reduce.grad.abs().sum() > 0
     torch.testing.assert_close(x.grad, torch.ones_like(x))
 
 def test_layer_n_one_stops_without_unary_ops():

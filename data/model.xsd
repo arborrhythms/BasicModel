@@ -49,6 +49,7 @@
       <xs:element name="reconstructionJitter" type="unitInterval" minOccurs="0"/>
       <xs:element name="explorePaths" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="operatorCost" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="reductionCost" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="interpretBias" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionTarget" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionLimit" type="unitInterval" minOccurs="0"/>
@@ -85,12 +86,6 @@
           <xs:minInclusive value="0"/>
         </xs:restriction></xs:simpleType>
       </xs:element>
-      <!-- Working-memory load prior shared by all binary candidates. -->
-      <xs:element name="reducePressure" minOccurs="0" default="1.0">
-        <xs:simpleType><xs:restriction base="xs:double">
-          <xs:minInclusive value="0"/>
-        </xs:restriction></xs:simpleType>
-      </xs:element>
       <!-- symbolicOrder is the symbolic iteration budget K of the conceptual
            wave. We are NOT forcing ramsification: the value is the maximum
            possible conceptual order, i.e. the order reached if a novel concept
@@ -112,14 +107,6 @@
            no-op once a row's depth reaches 1). Inert in parallel mode:
            no per-sentence parse tree to bound. -->
       <xs:element name="syntacticOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- TransformChooser kind. The placement scorer the structured
-           grammar layers use: "anchordot" (default) is the stateless
-           inner-product scorer (no params, state_dict / basin unchanged);
-           "mlp" is the contextual MLPTransformChooser (a learned MLP over
-           slot/pair state, candidate output, tool embedding and position).
-           The MLP OWNS parameters, so selecting it changes the state_dict
-           and starts a fresh basin (a deliberate cutover). -->
-      <xs:element name="transformChooser" type="transformChooserEnum" minOccurs="0"/>
       <!-- MLP capacity only: hidden=0 derives max(8, grammar feature width).
            Depth counts hidden Linear/GELU blocks, not recurrent passes.
            Defaults 0/1 preserve existing parameters and initialization. -->
@@ -584,14 +571,6 @@
       <xs:enumeration value="boundary"/>
       <xs:enumeration value="both"/>
       <xs:enumeration value="off"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <!-- Placement-chooser kind for the structured grammar layers. -->
-  <xs:simpleType name="transformChooserEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="anchordot"/>
-      <xs:enumeration value="mlp"/>
     </xs:restriction>
   </xs:simpleType>
 

@@ -473,7 +473,6 @@ def determiner_expansions(language, parent, order, basis, orders, *, binding=Non
         folded = op.compose(pairs[:, 0], pairs[:, 1])
         _, scores = layer.chooser.score_binary(
             pairs[..., :layer.d_model], folded[:, None, None, :layer.d_model],
-            layer.stop_anchor, layer.reduce_anchor[operation:operation+1],
             op_indices=torch.tensor([operation], device=basis.device))
         scores = scores.reshape(-1)
         finite = (torch.isfinite(scores) & torch.isfinite(basis).all(-1) & basis.ne(0).any(-1)

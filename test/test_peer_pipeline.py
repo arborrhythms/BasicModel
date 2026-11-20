@@ -21,6 +21,7 @@ from Spaces import (
 from Models import StaticPeerPipeline, TensorPeerWhilePipeline
 from Language import LanguageSpace, RoutingState
 from Memory import ShortTermMemory
+from chooser_steering import stand_in
 
 
 @pytest.fixture(autouse=True)
@@ -49,10 +50,11 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
     grammar.configure({'compose':{'F':['sum(F,F)','not(F)']}})
     monkeypatch.setattr(Language,'TheGrammar',grammar)
     layer = OperationSelectionLayer(d_model=2, ops=[_Add()], unary_ops=[_Negate()])
+    stand_in(layer)
     with torch.no_grad():
-        layer.reduce_anchor.fill_(1)
-        layer.apply_anchor.zero_()
-        layer.stop_anchor.zero_()
+        layer.stand_in.reduce.fill_(1)
+        layer.stand_in.unary.zero_()
+        layer.stand_in.stop.zero_()
     owner = SimpleNamespace(operation_layer=layer, _binary_rule_ids={'CS': (0,)},
                             _unary_rule_ids={'CS': (1,)})
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))
@@ -84,7 +86,7 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
     torch.testing.assert_close(next_view[3][0], torch.tensor([5, 0, -1]))
     torch.testing.assert_close(next_view[4][0], torch.tensor([-1, 10, -1]))
     with torch.no_grad():
-        layer.apply_anchor.fill_(-100)
+        layer.stand_in.unary.fill_(-100)
     unary = language.choose_operation(next_state, gate, slots=1)
     assert unary.kind.tolist() == [2, 0]
     assert unary.position[0] == 1  # the older of the two slots

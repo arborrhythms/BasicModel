@@ -1,4 +1,5 @@
-"""Decision 7: working-memory load and deadlines in the one-softmax chooser."""
+"""Working-memory load and deadlines in the one-softmax chooser: the load
+left is a path cost, and the chooser reads the rounds left as a code."""
 from types import SimpleNamespace
 
 import pytest
@@ -7,15 +8,17 @@ from torch import nn
 
 import Language
 from test_compose_operations import Add
+from chooser_steering import stand_in
 
 
 def unary_first():
     step = Language.OperationSelectionLayer(d_model=1, ops=[Add()],
                                             unary_ops=[nn.Identity()])
+    stand_in(step)
     with torch.no_grad():
-        step.reduce_anchor.zero_()
-        step.apply_anchor.fill_(1000.)
-        step.stop_anchor.zero_()
+        step.stand_in.reduce.zero_()
+        step.stand_in.unary.fill_(1000.)
+        step.stand_in.stop.zero_()
     return step
 
 
@@ -52,11 +55,8 @@ def test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word():
         BasicModel._compose_admission(model, torch.tensor([[True]]))
 
 
-@pytest.mark.parametrize('pressure', [0., 1.])
-def test_unary_preference_still_completes_absolute_and_relative_ends(pressure):
+def test_unary_preference_still_completes_absolute_and_relative_ends():
     step = unary_first()
-    with torch.no_grad():
-        step.reduce_pressure.fill_(pressure)
     result = step.derive(torch.ones(2, 8, 1), slots=torch.tensor([1, 3]),
                          rounds=16, greedy=True)
     assert result['complete'].all()
@@ -72,33 +72,59 @@ def test_row_allowance_is_one_or_three_never_two():
     assert not (slots == 2).any()
 
 
-def test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency():
-    step = unary_first()
-    occupancy = step.reduction_pressure(torch.arange(9.), allowance=7, rounds_left=3)
-    assert occupancy[0] == 0
-    assert (occupancy[1:] > occupancy[:-1]).all()
-    urgency = step.reduction_pressure(torch.tensor([4., 4., 4.]),
-        allowance=2, rounds_left=torch.tensor([4., 2., 1.]))
-    assert (urgency[1:] > urgency[:-1]).all()
-    torch.testing.assert_close(urgency, torch.tensor([2.5, 3., 4.]))
+def test_the_load_left_is_a_path_cost_linear_in_what_is_left():
+    """Rule 75: no learned number multiplies a count. A program's cost is
+    the depth held at each step over the allowance, times reductionCost:
+    three words read and folded by two binaries hold 1, 2, 1, 2, 1."""
+    from WholePaths import load_cost
+    language = SimpleNamespace(reduction_cost=1.,
+        _compose_binary_rules=(SimpleNamespace(method_name='sum'), SimpleNamespace(method_name='bind')))
+    model = SimpleNamespace(languageSpace=language,
+                            conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=8)))
+    program = torch.tensor([[0, 0, 0], [0, 0, 1], [1, 0, 0], [0, 0, 2], [1, 0, 0], [-1, 0, 0]])
+    bound = torch.tensor([[0, 0, 0], [0, 0, 1], [1, 1, 0], [-1, 0, 0]])
+    cost = load_cost(model, dict(entries=(program, bound, None)), torch.zeros(3))
+    torch.testing.assert_close(cost, torch.tensor([7 / 7, (1 + 2 + 2) / 7, 0.]))
+    language.reduction_cost = 2.
+    cost = load_cost(model, dict(entries=(program,)), torch.zeros(1))
+    torch.testing.assert_close(cost, torch.tensor([2.]))
+    assert not any('pressure' in name for name, _ in unary_first().named_parameters())
 
 
-def test_pressure_enters_credit_but_temperature_does_not():
+def test_the_chooser_reads_the_rounds_left_as_a_sinusoid_and_can_learn_the_cost():
+    """Rule 75: the chooser is shown how much is left of the budget in hand,
+    in the measure of .where; its reader starts at zero and the gradient of
+    a score reaches it."""
+    from Language import budget_code, OperationSelectionLayer
+    code = budget_code(torch.tensor([3, 2, 1, 0]), 4, device='cpu', dtype=torch.float32)
+    assert code.shape == (4, 4) and bool((code >= 0).all() and (code <= 1).all())
+    assert len({tuple(row) for row in code.tolist()}) == 4
+    step = OperationSelectionLayer(d_model=2, ops=[Add()])
+    x = torch.ones(1, 3, 2)
+    _, _, early = step(x, slots=3, allowance=3, rounds_left=3)
+    _, _, late = step(x, slots=3, allowance=3, rounds_left=1)
+    torch.testing.assert_close(early['logits'], late['logits'])
+    with torch.no_grad():
+        step.chooser.budget_projection.weight.normal_()
+    _, _, early = step(x, slots=3, allowance=3, rounds_left=3)
+    _, _, late = step(x, slots=3, allowance=3, rounds_left=1)
+    assert not torch.equal(early['logits'], late['logits'])
+    early['probability'].sum().backward()
+    assert step.chooser.budget_projection.weight.grad.abs().sum() > 0
+
+
+def test_temperature_does_not_enter_credit():
     step = unary_first()
     with torch.no_grad():
-        step.apply_anchor.zero_()
+        step.stand_in.unary.zero_()
     x = torch.ones(1, 2, 1)
-    with torch.no_grad():
-        step.reduce_pressure.zero_()
-    _, _, unloaded = step(x, slots=2, allowance=2, rounds_left=3)
-    with torch.no_grad():
-        step.reduce_pressure.fill_(1.)
-    for temperature in (0., .25, 2.):
+    _, _, cold = step(x, slots=2, allowance=2, rounds_left=3)
+    for temperature in (.25, 2.):
         step.temperature = temperature
-        _, _, loaded = step(x, slots=2, allowance=2, rounds_left=3)
-        torch.testing.assert_close(loaded['probabilities'],
-                                   torch.tensor([[1.-step.operator_cost, -step.operator_cost, -step.operator_cost, 0.]]).softmax(-1))
-        assert loaded['probabilities'][0, 0] > unloaded['probabilities'][0, 0]
+        _, _, warm = step(x, slots=2, allowance=2, rounds_left=3)
+        torch.testing.assert_close(warm['probabilities'], cold['probabilities'])
+    torch.testing.assert_close(cold['probabilities'], torch.tensor(
+        [[-step.operator_cost, -step.operator_cost, -step.operator_cost, 0.]]).softmax(-1))
 
 
 def test_deadline_masks_unary_and_stop_in_the_credit_distribution():
@@ -113,13 +139,13 @@ def test_deadline_masks_unary_and_stop_in_the_credit_distribution():
 def test_early_stop_cannot_leave_a_small_relative_stack_full():
     step = unary_first()
     with torch.no_grad():
-        step.stop_anchor.fill_(2000.)
+        step.stand_in.stop.fill_(2000.)
     _, _, route = step(torch.ones(1, 2, 1), slots=3, allowance=1, rounds_left=3)
     assert route['kind'].tolist() == [2]
     assert route['probabilities'][0, -1] == 0
 
 
-def test_pressure_and_deadlines_keep_fullgraph_forward_and_backward():
+def test_deadlines_keep_fullgraph_forward_and_backward():
     step = unary_first()
     x = torch.ones(2, 4, 1, requires_grad=True)
     def run(value, count):
@@ -198,22 +224,29 @@ def test_native_packed_unary_preference_still_records_every_sentence(tmp_path, m
 
 
 @pytest.mark.parametrize('value', [-1., float('inf'), float('nan')])
-def test_pressure_weight_must_be_finite_and_nonnegative(value):
-    with pytest.raises(ValueError, match='pressure'):
-        Language.OperationSelectionLayer(d_model=1, ops=[Add()], reduce_pressure=value)
+def test_reduction_cost_must_be_finite_and_nonnegative(value, monkeypatch):
+    read = Language.TheXMLConfig.get
+    monkeypatch.setattr(Language.TheXMLConfig, 'get', lambda key, *args, **kwargs:
+        value if key == 'architecture.reductionCost' else read(key, *args, **kwargs))
+    with pytest.raises(ValueError, match='reductionCost'):
+        Language.configured_reduction_cost()
 
 
-def test_pressure_default_and_xml_override_share_the_compose_layer():
+def test_reduction_cost_default_and_xml_override_and_the_retired_pressure():
     from test_compose_pair_driver import _build
-    assert unary_first().reduce_pressure == 1.
-    model = _build('<reducePressure>0.75</reducePressure>')
+    model = _build('<reductionCost>0.75</reductionCost>')
     try:
-        step = model.symbolSpace.languageLayer.operation_layer
-        assert step.reduce_pressure == .75
-        assert step is model.languageSpace._tree_layer(2)
+        assert model.languageSpace.reduction_cost == .75
+        assert not hasattr(model.symbolSpace.languageLayer.operation_layer, 'reduce_pressure')
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+    from pathlib import Path
+    from util import XMLConfig
+    defaults = XMLConfig(defaults_path=str(Path(__file__).resolve().parents[1] / 'data/model.xml'))
+    assert defaults.get('architecture.reductionCost') == 1
+    with pytest.raises(ValueError, match='reducePressure'):
+        _build('<reducePressure>0.75</reducePressure>')
 
 
 def test_last_relative_closing_round_cannot_reduce_three_slots_to_two():

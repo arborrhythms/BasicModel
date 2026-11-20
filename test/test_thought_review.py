@@ -47,12 +47,11 @@ def test_metadata_preserves_binding_identity_without_allocator_magnitudes():
 
 
 def test_old_context_checkpoint_resets_policy_and_its_optimizer_moments():
-    from Language import SelectedThoughtChooser
     from checkpoint_migrations import build_optimizer_param_manifest, remap_optimizer_state_by_name
     from Models import BasicModel
     old = BasicModel()
     old.selected_thought_choosers = torch.nn.ModuleDict({
-        '8': SelectedThoughtChooser(context_dim=9 * 8 + 15)})
+        '8': _retired_thought_chooser(9 * 8 + 15)})
     optimizer = torch.optim.Adam(old.parameters(), lr=.01)
     sum(p.sum() for p in old.parameters()).backward()
     optimizer.step()
@@ -149,3 +148,12 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     for record in selected.records:
         if record.kind == 'return':
             assert any(memory.thought_reference(record) in later.sources for later in selected.records)
+
+
+def _retired_thought_chooser(context_dim, hidden=16):
+    """The parameters a checkpoint of the retired thought chooser held:
+    one hidden block over the context and two action flags."""
+    module = torch.nn.Module()
+    module.mlp = torch.nn.Sequential(torch.nn.Linear(context_dim + 2, hidden),
+                                     torch.nn.GELU(), torch.nn.Linear(hidden, 1))
+    return module

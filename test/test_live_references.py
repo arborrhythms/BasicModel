@@ -209,7 +209,7 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
         def forward(self, left, right): return left+right
     class Difference(torch.nn.Module):
         def forward(self,left,right): return left-right
-    layer = OperationSelectionLayer(d_model=4, ops=(Sum(), Difference()), chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(), Difference()))
     first = torch.tensor([1., 0., 0., 0.])
     second = torch.tensor([0., 0., 1., 0.])
     prior = torch.tensor([.2, .3, .4, .5])

@@ -27,7 +27,7 @@ def test_native_compose_reads_dimmed_content_and_preserves_raw_candidates(gain,m
     from Language import OperationSelectionLayer, LanguageSpace
     class Mean(torch.nn.Module):
         def forward(self,a,b,**kwargs): return (a+b)/2
-    layer=OperationSelectionLayer(d_model=4,ops=[Mean()],chooser='mlp')
+    layer=OperationSelectionLayer(d_model=4,ops=[Mean()])
     keys=torch.eye(4)[None]
     layer._symbol_expectation_read=SymbolRead(keys,torch.tensor([1.,0.]).expand(1,4,2),gain,1e-6,'clip', identities=torch.arange(4))
     host=SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
@@ -74,7 +74,7 @@ def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
         def compose(self, left, right, *, left_activation, right_activation):
             calls.append((left_activation.clone(), right_activation.clone()))
             return left*left_activation[...,None] + right*right_activation[...,None]
-    layer = OperationSelectionLayer(d_model=4, ops=[Weighted()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=[Weighted()])
     keys = torch.eye(4)[None]
     layer._symbol_expectation_read = SymbolRead(keys, torch.tensor([1.,0.]).expand(1,4,2), .5, 1e-6, 'clip', identities=torch.arange(4))
     host = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),

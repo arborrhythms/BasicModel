@@ -48,7 +48,7 @@ def world():
     from clock_fixtures import install
     install(model)
     object.__setattr__(cs, '_model', model)
-    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1])
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
     return model, registry, store, refs

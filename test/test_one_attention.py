@@ -1,6 +1,7 @@
 """6.8's typed brackets, one chooser, level expectation and fixed word whole."""
 import pytest
 import torch
+from chooser_steering import stand_in
 
 
 def _field_model():
@@ -88,6 +89,7 @@ def test_narrowing_uses_the_shared_operation_chooser_and_compiles():
     from Language import OperationSelectionLayer
     from Attention import narrow_words
     chooser=OperationSelectionLayer(d_model=4)
+    stand_in(chooser)
     keys=torch.tensor([[[1.,0.,0.,0.],[0.,1.,0.,0.]]])
     spans=torch.tensor([[[0,5],[6,11]]])
     known=torch.tensor([[True,False]])
@@ -102,7 +104,7 @@ def test_narrowing_uses_the_shared_operation_chooser_and_compiles():
     assert value.table.remaining.tolist()==[4]
     assert not value.values.requires_grad
     assert value.probabilities.requires_grad
-    assert chooser.bracket_anchor.grad is None
+    assert chooser.stand_in.bracket.grad is None
 
 
 @pytest.mark.parametrize('name',['subsymbolicOrder','symbolicOrder','subsymbolicLoop','serial','modeSchedule','readingAttention','globalAttention','globalAttentionConsume','selectedThoughtBudget'])

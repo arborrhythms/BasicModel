@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from Language import OperationSelectionLayer
 from test_compose_operations import Add, Negate
+from chooser_steering import stand_in
 
 
 class Product(nn.Module):
@@ -13,11 +14,12 @@ class Product(nn.Module):
 def test_departure_values_are_unique_and_identity_and_exact_stop_are_excluded():
     layer = OperationSelectionLayer(d_model=1, ops=[Add(), Add(), Product(), Product()],
         unary_ops=[nn.Identity(), Negate()])
+    stand_in(layer)
     with torch.no_grad():
-        layer.reduce_anchor.fill_(0)
-        layer.reduce_anchor[0].fill_(1)
-        layer.apply_anchor.fill_(0)
-        layer.stop_anchor.fill_(0)
+        layer.stand_in.reduce.fill_(0)
+        layer.stand_in.reduce[0].fill_(1)
+        layer.stand_in.unary.fill_(0)
+        layer.stand_in.stop.fill_(0)
     _, _, route = layer(torch.tensor([[[2.], [3.]]]), slots=2, stop_exact=torch.tensor([True]))
     assert route['action'].tolist() == [0]
     assert route['departure_eligible'].tolist() == [[False, False, True, False,
@@ -43,8 +45,9 @@ def test_uniform_endpoint_is_independent_of_logits_and_credits_the_original_prob
 
 def test_greedy_stop_has_operand_gradient_and_no_chooser_gradient():
     layer = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()])
+    stand_in(layer)
     with torch.no_grad():
-        layer.stop_anchor.fill_(100.)
+        layer.stand_in.stop.fill_(100.)
     x = torch.tensor([[[2.], [3.]]], requires_grad=True)
     _, path, route = layer(x, slots=2)
     assert route['stopped'].all()

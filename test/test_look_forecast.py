@@ -1,6 +1,7 @@
 """The forecast at a look depends on observations outside its extent."""
 from dataclasses import replace
 import torch
+from chooser_steering import stand_in
 
 
 def test_inside_changes_the_read_but_not_the_forecast(tmp_path, monkeypatch):
@@ -59,6 +60,7 @@ def test_zero_started_projection_preserves_bracket_logits_and_can_learn():
     from AttentionContext import project
     from Language import OperationSelectionLayer
     chooser = OperationSelectionLayer(d_model=2)
+    stand_in(chooser)
     keys = torch.tensor([[[1., 0.], [0., 1.]]])
     allowed = torch.ones(1, 2, 6, dtype=torch.bool)
     spaces = torch.zeros(1, 2, dtype=torch.long)
@@ -72,7 +74,7 @@ def test_zero_started_projection_preserves_bracket_logits_and_can_learn():
     torch.testing.assert_close(actual, scores(None), rtol=0, atol=0)
     # Once an act has a learned key, its gradient reaches the surprise columns.
     with torch.no_grad():
-        chooser.bracket_anchor[0, 0] = 1.
+        chooser.stand_in.bracket[0, 0] = 1.
     scores(project(mapping, prefix, surprise))[0, 0].backward()
     assert mapping.weight.grad[:, -2:].count_nonzero()
     assert prefix.grad is None and surprise.grad is None

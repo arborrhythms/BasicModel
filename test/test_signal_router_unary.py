@@ -2,6 +2,7 @@
 import torch
 from torch import nn
 from Language import OperationSelectionLayer
+from chooser_steering import stand_in
 
 class Negate(nn.Module):
     def forward(self, x):
@@ -22,26 +23,28 @@ def test_unary_output_shape_and_one_global_softmax():
 
 def test_exactly_one_unary_position_changes():
     step = OperationSelectionLayer(d_model=1, unary_ops=[Negate()])
+    stand_in(step)
     x = torch.tensor([[[1.], [2.], [3.], [4.]]])
     with torch.no_grad():
-        step.apply_anchor.fill_(-1)
+        step.stand_in.unary.fill_(-1)
     _, path, route = step(x)
     assert (path != x).any(-1).sum(-1).tolist() == [1]
     assert route['position'].tolist() == [3]
 
 def test_unary_and_stop_anchors_receive_only_score_function_credit():
     step = OperationSelectionLayer(d_model=1, unary_ops=[Negate()])
+    stand_in(step)
     step.separate_chooser = True
     with torch.no_grad():
-        step.stop_anchor.zero_(); step.apply_anchor.fill_(-1)
+        step.stand_in.stop.zero_(); step.stand_in.unary.fill_(-1)
     x = torch.tensor([[[1.]]], requires_grad=True)
     _, path, route = step(x)
     path.sum().backward()
     assert x.grad.abs().sum() > 0
-    assert step.stop_anchor.grad is None
-    assert step.apply_anchor.grad is None
+    assert step.stand_in.stop.grad is None
+    assert step.stand_in.unary.grad is None
     operand_gradient = x.grad.clone()
     (-route['probability'].sum()).backward()
-    assert step.stop_anchor.grad.abs().sum() > 0
-    assert step.apply_anchor.grad.abs().sum() > 0
+    assert step.stand_in.stop.grad.abs().sum() > 0
+    assert step.stand_in.unary.grad.abs().sum() > 0
     torch.testing.assert_close(x.grad, operand_gradient, atol=0, rtol=0)

@@ -37,7 +37,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False, order_limit
             for index in ids))
 
     operations=SimpleNamespace(ops=bank(binary).ops,unary_ops=bank(unary).ops,
-                               stop_anchor=torch.empty(0))
+                               argument_inputs=torch.empty(0, 2, dtype=torch.long))
     # This fixture recovers selected kernels without constructing a chooser,
     # but its argument metadata follows the same configuration contract.
     operations.configure_arguments=MethodType(Language.OperationSelectionLayer.configure_arguments,operations)

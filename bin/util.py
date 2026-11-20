@@ -1504,6 +1504,12 @@ class XMLConfig:
             if retired in architecture:
                 raise ValueError(f'{source_path}: <{retired}> is retired; '
                                  'use the typed bracket and attentionBudget')
+        if 'reducePressure' in architecture:
+            raise ValueError(f'{source_path}: <reducePressure> is retired; '
+                             'the load left is a path cost (reductionCost)')
+        if 'transformChooser' in architecture:
+            raise ValueError(f'{source_path}: <transformChooser> is retired; '
+                             'the chooser of acts is the network alone')
 
         training=architecture.get('training',{}) or {}
         for retired in ('interLossWeight','armaScale','interContrastiveWeight','selectedThoughtPolicyWeight'):

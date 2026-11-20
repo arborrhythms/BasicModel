@@ -167,7 +167,7 @@ def test_identity_candidates_share_the_operation_softmax_and_live_credit():
     refs = candidates['unary_refs'][0, 0, :, 0]
     legal = candidates['unary_valid'][0, 0]
     assert set(refs[legal].tolist()) == {-1, 11, 12}
-    layer = OperationSelectionLayer(d_model=4, ops=(), unary_ops=(Identity(),), chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=(), unary_ops=(Identity(),))
     for identity in (11, 12, -1):
         action = ((refs == identity) & legal).nonzero()[0, 0].reshape(1)
         from operation_fixtures import selected_action

@@ -47,8 +47,7 @@ def test_natural_relation_words_have_no_bootstrap_operator_assignment(filename):
 def test_same_candidate_values_do_not_erase_operand_order():
     torch.manual_seed(391)
     layer = OperationSelectionLayer(
-        d_model=4, ops=[_SymmetricCandidate(), _SymmetricCandidate()],
-        chooser="mlp")
+        d_model=4, ops=[_SymmetricCandidate(), _SymmetricCandidate()])
     chooser = layer.chooser
     pair = torch.tensor([[[0.9, -0.4, 0.2, 0.7], [-0.1, 0.8, -0.5, 0.3]]])
     x = torch.cat((pair, pair.flip(1)))
@@ -58,11 +57,11 @@ def test_same_candidate_values_do_not_erase_operand_order():
     optimizer = torch.optim.Adam(chooser.parameters(), lr=0.03)
     for _ in range(160):
         optimizer.zero_grad()
-        _, scores = chooser.score_binary(x, candidate, None, None)
+        _, scores = chooser.score_binary(x, candidate)
         loss = torch.nn.functional.cross_entropy(scores[:, 0], labels)
         loss.backward()
         optimizer.step()
-    _, scores = chooser.score_binary(x, candidate, None, None)
+    _, scores = chooser.score_binary(x, candidate)
     assert scores[:, 0].argmax(-1).tolist() == labels.tolist()
     assert float(torch.nn.functional.cross_entropy(scores[:, 0], labels).detach()) < 0.05
 
@@ -81,8 +80,8 @@ def test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zer
     assert torch.count_nonzero(current.operand_order.weight) == 0
     assert torch.count_nonzero(current.copy_order.weight) == 0
     x, candidate, cats = torch.randn(2, 3, 4), torch.randn(2, 2, 2, 4), torch.randn(2, 3, 2)
-    old = legacy.score_binary(x, candidate, None, None)
-    new = current.score_binary(x, candidate, None, None)
+    old = legacy.score_binary(x, candidate)
+    new = current.score_binary(x, candidate)
     for a, b in zip(old, new):
         torch.testing.assert_close(a, b, atol=0, rtol=0)
     state = current.state_dict()
@@ -131,7 +130,7 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
             optimizer.state[dict(current.named_parameters())[name]]["exp_avg"], atol=0, rtol=0)
     x, candidate, cats = torch.randn(2, 3, 4), torch.randn(2, 2, 2, 4), torch.randn(2, 3, 2)
     def score(value):
-        return current.score_binary(value, candidate, None, None)
+        return current.score_binary(value, candidate)
     try:
         compiled = torch.compile(score, backend="eager", fullgraph=True)
         torch.testing.assert_close(compiled(x), score(x))
@@ -144,7 +143,7 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
         restored.load_state_dict(current.state_dict(), strict=True)
         resumed = torch.optim.Adam(restored.parameters(), lr=.001)
         resumed.load_state_dict(optimizer.state_dict())
-        torch.testing.assert_close(restored.score_binary(x, candidate, None, None), score(x))
+        torch.testing.assert_close(restored.score_binary(x, candidate), score(x))
         torch.testing.assert_close(resumed.state[restored.operand_order.weight]["exp_avg"],
                                    optimizer.state[current.operand_order.weight]["exp_avg"])
         torch.testing.assert_close(resumed.state[restored.copy_order.weight]["exp_avg"],

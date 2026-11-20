@@ -111,7 +111,7 @@ def test_np_grammar_admits_all_declared_operations():
     binary=[rule(name) for name in ('lower','definite','intersection','product','verb')]
     unary=[rule('bind',1),rule('surface_unary',1)]
     arguments=formal_arguments(binary+unary)
-    layer=OperationSelectionLayer(d_model=4,ops=[Pair() for _ in binary],unary_ops=[Unary() for _ in unary],reduce_pressure=0.)
+    layer=OperationSelectionLayer(d_model=4,ops=[Pair() for _ in binary],unary_ops=[Unary() for _ in unary])
     layer.configure_arguments(arguments,binary,unary)
     logits=layer(torch.ones(1,2,4),slots=2,occupation=torch.ones(1,2,len(arguments)))[2]['logits']
     assert torch.isfinite(logits).all()

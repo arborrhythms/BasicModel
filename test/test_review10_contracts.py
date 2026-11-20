@@ -28,20 +28,6 @@ def test_departure_can_choose_below_second_rank_and_preserves_credit(monkeypatch
     assert logits.grad[0, 0] != 0  # exclusion changes the draw, not policy credit
 
 
-@pytest.mark.parametrize('kind', ['thought', 'anticipation'])
-def test_thought_departure_samples_remaining_actions_and_replay_wins(monkeypatch, kind):
-    from Language import SelectedThoughtChooser
-    chooser = SelectedThoughtChooser(context_dim=2)
-    logits = torch.tensor([3., 2., 1., -torch.inf], requires_grad=True)
-    monkeypatch.setattr(chooser, 'logits', lambda *a: logits)
-    monkeypatch.setattr(torch, 'rand', high_draw)
-    selected, credit = chooser.choose(torch.ones(4, 2), torch.zeros(4), excluded=0)
-    assert selected == 2
-    torch.testing.assert_close(credit, logits.log_softmax(-1)[2])
-    replayed, _ = chooser.choose(torch.ones(4, 2), torch.zeros(4), excluded=0, forced=1)
-    assert replayed == 1
-
-
 def test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix(monkeypatch):
     from test_decoder_exploration import decoder
     import util

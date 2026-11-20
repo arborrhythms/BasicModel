@@ -25,8 +25,7 @@ def test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser():
     assert [bool(item[3][0, 0]) for item in options] == [True, True, True, False]
     chooser = MLPTransformChooser(d_model=4, n_copy=1, n_op=1, binding_choices=True)
     context = torch.cat((torch.stack((value, -value), 2), value.new_zeros(8, 1, 2, 4)), -1)
-    _, scores = chooser.score_unary(value, value[:, :, None].expand(-1, -1, 2, -1),
-        None, None, op_indices=torch.zeros(2, dtype=torch.long), reference_ctx=context)
+    _, scores = chooser.score_unary(value, value[:, :, None].expand(-1, -1, 2, -1), op_indices=torch.zeros(2, dtype=torch.long), reference_ctx=context)
     probability = scores.softmax(-1)[..., 1]
     assert bool(((probability > .49) & (probability < .51)).all())
     loss = -probability.log().mean()

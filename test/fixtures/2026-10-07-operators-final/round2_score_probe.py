@@ -12,10 +12,10 @@ from review15_preference_probe import frozen
 
 @contextmanager
 def observe_score_function(result):
-    from Language import OperationSelectionLayer, MLPTransformChooser, AnchorDotTransformChooser
+    from Language import OperationSelectionLayer, MLPTransformChooser
     from Models import BasicModel
     methods = {(cls, name): getattr(cls, name)
-        for cls in (MLPTransformChooser, AnchorDotTransformChooser)
+        for cls in (MLPTransformChooser,)
         for name in ('score_binary', 'score_unary')}
     attend = OperationSelectionLayer.attend
     forward = OperationSelectionLayer.forward

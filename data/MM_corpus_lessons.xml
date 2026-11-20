@@ -11,7 +11,7 @@
     <sentenceProtocol>false</sentenceProtocol>
     <serialWordCapacity>32</serialWordCapacity><serialWordBuckets>32</serialWordBuckets>
     <serialResidualPartCapacity>64</serialResidualPartCapacity>
-    <sigmaPi>butterfly</sigmaPi><transformChooser>mlp</transformChooser>
+    <sigmaPi>butterfly</sigmaPi>
     <answerSynthesis>true</answerSynthesis><attentionBudget>32</attentionBudget>
     <data><dataType>embedding</dataType><dataset>text</dataset></data>
     <training>

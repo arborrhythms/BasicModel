@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch import nn
 
-from Language import OperationSelectionLayer, SelectedThoughtChooser
+from Language import OperationSelectionLayer
 from Models import StaticPeerPipeline
 from GrammarPreference import structural_argmax
 
@@ -18,7 +18,7 @@ class _Candidate(nn.Module):
 
 
 def test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp():
-    layer = OperationSelectionLayer(d_model=4, chooser='mlp',
+    layer = OperationSelectionLayer(d_model=4,
         ops=[_Candidate('opaque'), _Candidate('structural')])
     with torch.no_grad():
         for parameter in layer.chooser.parameters():
@@ -29,7 +29,7 @@ def test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp():
 
 
 def test_compose_probability_rounding_does_not_overturn_a_better_logit(monkeypatch):
-    layer = OperationSelectionLayer(d_model=1, chooser='mlp',
+    layer = OperationSelectionLayer(d_model=1,
         ops=[_Candidate('opaque'), _Candidate('structural')])
     layer.operator_cost = 0.  # This fixture measures the chooser's exact score tie rule.
     def score(x, reduced, *_args, **_kwargs):
@@ -39,14 +39,6 @@ def test_compose_probability_rounding_does_not_overturn_a_better_logit(monkeypat
     _, _, routing = layer(torch.ones(1, 2, 1))
     assert routing['probabilities'].tolist() == [[.5, .5, 0.]]
     assert routing['op'].tolist() == [0]
-
-
-def test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit():
-    chooser = SelectedThoughtChooser(context_dim=4)
-    index, logp = chooser.choose(torch.randn(2, 4), [False, False],
-                                structural=(False, True))
-    assert index == 1
-    assert logp.requires_grad
 
 
 def test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay():
@@ -72,12 +64,6 @@ def test_preference_never_overturns_a_better_score_or_unmasks_a_rule(dtype):
     assert int(structural_argmax(close, (False, True))) == 0
 
 
-def test_opaque_candidates_cannot_select_an_anchor_only_scorer():
-    with pytest.raises(ValueError, match='ordinary mlp'):
-        OperationSelectionLayer(d_model=4, chooser='anchordot',
-            ops=[_Candidate('opaque'), _Candidate('structural')])
-
-
 def test_unary_and_generate_use_the_same_exact_tie_order():
     from Language import OperationSelectionLayer, LanguageSpace
     from types import SimpleNamespace as NS
@@ -85,7 +71,7 @@ def test_unary_and_generate_use_the_same_exact_tie_order():
         def forward(self, x):
             return x
     ops = [Unary('opaque'), Unary('structural')]
-    layer = OperationSelectionLayer(d_model=4, chooser='mlp', unary_ops=ops)
+    layer = OperationSelectionLayer(d_model=4, unary_ops=ops)
     layer.operator_cost = 0.
     with torch.no_grad():
         for p in layer.chooser.parameters():
@@ -110,7 +96,7 @@ def test_preference_compiles_fullgraph_without_host_reads():
 
 
 def test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout():
-    layer = OperationSelectionLayer(d_model=4, chooser='mlp',
+    layer = OperationSelectionLayer(d_model=4,
         ops=[_Candidate('opaque'), _Candidate('structural')])
     keys = set(layer.state_dict())
     with torch.no_grad():

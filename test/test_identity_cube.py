@@ -125,7 +125,7 @@ def test_wide_cube_identity_length_is_not_a_compose_activation(gain):
     from types import SimpleNamespace
     from Language import ConjunctionLayer, DisjunctionLayer, OperationSelectionLayer, LanguageSpace
     from Expectation import SymbolRead
-    layer = OperationSelectionLayer(d_model=4, ops=[ConjunctionLayer(), DisjunctionLayer()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=[ConjunctionLayer(), DisjunctionLayer()])
     values = torch.tensor([[[1., 1., 1., .5], [1., .8, 1., 1.]]])
     layer._symbol_expectation_read = SymbolRead(values, torch.tensor([1., 0.]).expand(1,2,2),
         gain, 1e-6, 'clip', identities=torch.tensor([1,2]))

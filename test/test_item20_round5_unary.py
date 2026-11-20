@@ -17,7 +17,7 @@ class Half(nn.Module):
 
 def test_uniform_operator_cost_does_not_forbid_a_legitimate_unary_chain(monkeypatch):
     from Language import OperationSelectionLayer, SumLayer
-    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], unary_ops=[Half()], chooser='mlp')
+    layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], unary_ops=[Half()])
     layer.operator_cost = 1.
     bias = nn.Parameter(torch.tensor(20.))
     monkeypatch.setattr(layer.chooser, 'score_binary', lambda x, candidates, *a, **k:

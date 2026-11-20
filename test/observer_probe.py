@@ -19,8 +19,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
                    for group in optimizer.param_groups for p in group['params'])
     assert list(model.languageSpace.decomposition_chooser.parameters()) == []
     operation=model.languageSpace._tree_layer(2)
-    assert all(any(p is anchor for p in preference) for anchor in
-               (operation.stop_anchor,operation.reduce_anchor,operation.apply_anchor))
+    assert all(any(p is weight for p in preference) for weight in operation.chooser.parameters())
     raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
     batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
     from operators_run_audit import observe_run, json_value

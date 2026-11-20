@@ -188,8 +188,7 @@ def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
 
 def test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns():
     from Models import BasicModel
-    from Language import SelectedThoughtChooser
-    old = SelectedThoughtChooser(context_dim=32, hidden=16)
+    old = _retired_thought_chooser(32, hidden=16)
     prefix = 'selected_thought_choosers.8.'
     state = {prefix+name: value.clone() for name,value in old.state_dict().items()}
     expected = set(state)
@@ -290,3 +289,12 @@ def test_retired_expectation_surfaces_are_absent():
         Layers.SymbolExpectation(4, 4, 4, p=1)
     with pytest.raises(TypeError):
         Layers.SymbolExpectation(4, 4, 4, expectation_scope='root')
+
+
+def _retired_thought_chooser(context_dim, hidden=16):
+    """The parameters a checkpoint of the retired thought chooser held:
+    one hidden block over the context and two action flags."""
+    module = torch.nn.Module()
+    module.mlp = torch.nn.Sequential(torch.nn.Linear(context_dim + 2, hidden),
+                                     torch.nn.GELU(), torch.nn.Linear(hidden, 1))
+    return module
