@@ -82,15 +82,16 @@ def idea_read_measurements(owner, samples):
 
 @contextmanager
 def look_lane_counts(sink):
-    """Observe the whole properties and basic percepts actually read at each extent."""
+    """Observe the basic percepts actually read at each extent. The wholes
+    are columns of the table the basic percepts are read from, not a read of
+    their own: ``whole_both`` is ``None``."""
     from unittest.mock import patch
-    import FamiliarTier, PerceptField, SentenceLooks
+    import FamiliarTier, SentenceLooks
     from BasicPercepts import BasicPercepts
 
     def measured(original, kind):
         def measure(*args, **kwargs):
-            whole_read = PerceptField.read_percepts
-            basic_read = BasicPercepts.read
+            basic_read = BasicPercepts.read_bank
             counts = {}
 
             def count(field, family):
@@ -105,20 +106,15 @@ def look_lane_counts(sink):
                             extent = counts.setdefault((b, place, start, stop), {})
                             extent[family] = both[b][place]
 
-            def whole(*a, **kw):
-                result = whole_read(*a, **kw)
-                count(result, 'ws')
-                return result
-
             def basic(*a, **kw):
                 result = basic_read(*a, **kw)
                 count(result, 'bp')
                 return result
 
-            with patch.object(PerceptField, 'read_percepts', whole), patch.object(BasicPercepts, 'read', basic):
+            with patch.object(BasicPercepts, 'read_bank', basic):
                 result = original(*args, **kwargs)
             sink(dict(kind=kind, extents=[
-                dict(batch=b, place=p, where=[start, stop], whole_both=poles['ws'],
+                dict(batch=b, place=p, where=[start, stop], whole_both=poles.get('ws'),
                      basic_both=poles['bp'])
                 for (b, p, start, stop), poles in counts.items()]))
             return result
@@ -132,19 +128,14 @@ def look_lane_counts(sink):
 @contextmanager
 def native_provenance(sink):
     """Read actual native-return values, including the pre-definition field."""
-    import ModelAttention, PerceptField
+    import ModelAttention
     original = ModelAttention.native_word_poles
     def observed(model, spans, forms, known):
         owner = model._concept_owner()
         read = owner.cs_read_memberships
-        native_read = PerceptField.read_percepts
         originals = {name: (name in vars(owner), vars(owner).get(name))
                      for name in ('cs_read_memberships',)}
-        captured, natives = [], []
-        def native(*args, **kwargs):
-            result = native_read(*args, **kwargs)
-            natives.append(result)
-            return result
+        captured = []
         def reading(*args, **kwargs):
             result = read(*args, **kwargs)
             # The order-zero concepts as the Sigma of order zero read them,
@@ -154,7 +145,6 @@ def native_provenance(sink):
             ids = owner._cs_field_concept_ids[:result.shape[0]]
             record = owner._concept_allocator.order_zero_members
             basic = owner.basic_percepts
-            native = natives[-1] if natives else None
             entries=[]
             for b, row in enumerate(forms):
                 identities = ids if ids.ndim == 1 else ids[:, b]
@@ -176,18 +166,13 @@ def native_provenance(sink):
                             if key not in perception.keys: continue
                             i=perception.keys.index(key)
                             parts,wholes=basic.occurrences[bp]
+                            # The row at each attended percept of this reading,
+                            # as the first Pi read it from the table.
                             components=[]
-                            if native is not None:
-                                # Include every native component; ancestral part IDs are
-                                # expanded by the real BasicPercepts reader, not guessed here.
-                                for j,k in enumerate(native.keys):
-                                    if (k[0]=='ws' and k[1] in wholes) or k[0]=='ps':
-                                        value=native.values[j,b,p]
-                                        if bool(value.any()):
-                                            events=native.events[j,b,p]
-                                            live=events.any(-1).nonzero().flatten()
-                                            components.append(dict(key=k,pair=value.detach().tolist(),
-                                                events=[dict(span=native.spans[b,int(e)].tolist(),pair=events[e].detach().tolist()) for e in live]))
+                            held=(perception.reading[b]==p)&perception.events[i,b].any(-1)
+                            for a in held.nonzero().flatten().tolist():
+                                components.append(dict(span=perception.spans[b,a].tolist(),
+                                    pair=perception.events[i,b,a].detach().tolist()))
                             edges.append(dict(bp=bp,negated=neg,weight=weight,
                                 parts=parts,wholes=wholes,pair=perception.values[i,b,p].detach().tolist(),
                                 native=components))
@@ -201,13 +186,11 @@ def native_provenance(sink):
             captured.extend(entries)
             return result
         owner.cs_read_memberships=reading
-        PerceptField.read_percepts=native
         try:
             result=original(model,spans,forms,known)
             sink(dict(words=captured,poles=result.detach().tolist(),forms=forms))
             return result
         finally:
-            PerceptField.read_percepts=native_read
             for name,(had,value) in originals.items():
                 if had:setattr(owner,name,value)
                 else:delattr(owner,name)

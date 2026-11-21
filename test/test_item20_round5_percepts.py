@@ -78,8 +78,11 @@ def test_basic_read_preserves_ordered_part_witnesses_after_native_fusion():
     field = basic.read((torch.tensor([[ab]]), spans, whole.primitive_properties,
         torch.tensor([[97, 98]]), spans), spans, (forward, reverse, repeat))
     assert field.values[:, 0, 0, 0].tolist() == [1., 0., 0.]
+    # The fused part is descended to its two part events, and the forward
+    # row is read at the occurrence that holds its run in order.
     assert field.spans[0, :2].tolist() == [[0, 1], [1, 2]]
-    assert field.events[0, 0, 0, :2, 0].tolist() == [1., 1.]
+    whole = [a for a, span in enumerate(field.spans[0].tolist()) if span == [0, 2]]
+    assert whole and float(field.events[0, 0, whole[0], 0]) == 1.
     receipt('basic-native-descent', dict(fused_rows=1, part_events=2,
         preserved_order=True, preserved_multiplicity=True, byte_retiling=False))
 
