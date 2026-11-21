@@ -272,7 +272,7 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             records.append(dict(start=start, places=len(basic.place_rows), first_sentence=asked,
                                 request_start=dict(places={p: round(float(learned[c]), 5) for p, c in concept.items()},
                                                    others={r: round(float(learned[r]), 5) for r in words}),
-                                pure=sum(not w for _, _, w in basic.place_rows.values()),
+                                pure=sum(w is None for _, _, w in basic.place_rows.values()),
                                 before=before, after=after))
             print(records[-1])
         finally:
