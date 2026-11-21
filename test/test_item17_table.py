@@ -156,22 +156,32 @@ def test_62_33b_what_is_where(tmp_path, monkeypatch):
         slot = {int(o): a for a, o in enumerate(perception.index[0].tolist())}
         assert torch.allclose(before[slot[first]], before[slot[second]])
         with torch.no_grad():
-            basic.where_entries[row] = torch.cat((c, 1 - c)) * 10.
+            basic.where_entries[row] = torch.cat((c, torch.full_like(c, basic.PLACE_WEIGHT)))
         try:
             look = attended(bank)
             perception = basic.read_bank(bank, look=look)
             kept = perception.events[r, 0]
-            print(dict(at_first=kept[slot[first]].tolist(), at_second=kept[slot[second]].tolist()))
+            print(dict(at_first=kept[slot[first]].tolist(), at_second=kept[slot[second]].tolist(),
+                       before=before[slot[first]].tolist()))
+            # One at its own place, as with the entry at nothing; less at the other.
+            assert torch.allclose(kept[slot[first]], before[slot[first]], atol=1e-5)
             assert float(kept[slot[first], 0]) > float(kept[slot[second], 0])
-            # (33 (b)) The gradient from the row's value at the first reaches
-            # the where wires' row at its place.
+            # (33 (b)) The gradient from the row's value at an attended
+            # percept reaches the where wires' row at its place. At the first
+            # it is nothing: the value is at its greatest where the wires are
+            # what the row keeps. At the second it is not.
             code = bank.registry.code
-            code.grad = None
-            kept[slot[first], 0].backward()
-            address = bank.registry.slices['text'][0] + int(bank.span[0, first, 0])
-            grad = code.grad.abs().sum(-1)
-            print(dict(gradient_at_place=float(grad[address]), elsewhere=float(grad.sum() - grad[address])))
-            assert float(grad[address]) > 0
+            grads = {}
+            for name, at in (('first', first), ('second', second)):
+                code.grad = None
+                perception = basic.read_bank(bank, look=attended(bank))
+                perception.events[r, 0, slot[at], 0].backward()
+                address = bank.registry.slices['text'][0] + int(bank.span[0, at, 0])
+                grad = code.grad.abs().sum(-1)
+                grads[name] = (float(grad[address]), float(grad.sum() - grad[address]))
+            print(dict(gradient_at_place_and_elsewhere=grads))
+            assert grads['second'][0] > 0 and grads['second'][1] == 0
+            assert grads['first'][0] < grads['second'][0]
             # (c) The request for its concept lands most on the first.
             request = torch.zeros(int(owner.nVectors), 1, 2)
             request[concept, 0, 0] = 1.

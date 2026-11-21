@@ -115,11 +115,30 @@ def attended(bank, where=None, share=None, capacity=None):
     return Attended(index, filled, members, table, chosen, token, bank.time.gather(1, index))
 
 
+class PlaceEntries(nn.Module):
+    """Each row's entries on the where wires and on the when wires of an
+    attended percept: ``where`` ``[capacity, 2 * WHERE_WIRES]`` and ``when``
+    ``[capacity, 2 * WHEN_WIRES]``, each the kept value of every wire, then
+    its weight. Learned; a weight is read at zero or above, and a row whose
+    weights are at nothing reads one at every place (rule 31)."""
+    def __init__(self, capacity):
+        super().__init__()
+        self.where = nn.Parameter(torch.zeros(int(capacity), 2 * WHERE_WIRES))
+        self.when = nn.Parameter(torch.zeros(int(capacity), 2 * WHEN_WIRES))
+
+    def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        state.setdefault(prefix + 'where', self.where.detach().clone())
+        state.setdefault(prefix + 'when', self.when.detach().clone())
+        super()._load_from_state_dict(state, prefix, *args, **kwargs)
+
+
 class BasicPercepts(nn.Module):
     #: Entries of the first Pi allocated for each row, on average.
     ENTRIES_PER_ROW = 16
     #: The size of the keyed draw that raises a conjunction above its members.
     INCREMENT = .1
+    #: The weight the cone of a place writes on each of its where wires.
+    PLACE_WEIGHT = 10.
 
     def __init__(self, native, identity_width, property_width, capacity):
         super().__init__()
@@ -162,11 +181,19 @@ class BasicPercepts(nn.Module):
         # A place's row: its entries on the where wires' two lanes and the
         # members it keeps (:mod:`Places`); the cones met at each band.
         self.place_rows, self.place_cones = {}, {}
-        # Each row's entries on the where wires and on the when wires of an
-        # attended percept, each wire on its two lanes (``c``, ``1 - c``).
-        # Learned, at zero or more, starting at nothing (rule 31).
-        self.where_entries = nn.Parameter(torch.zeros(self.capacity, 2 * WHERE_WIRES))
-        self.when_entries = nn.Parameter(torch.zeros(self.capacity, 2 * WHEN_WIRES))
+        # Each row's kept value and weight on the where wires and on the when
+        # wires of an attended percept. They are learned, so the module that
+        # learns them registers them (``PartSpace.place_entries``); the
+        # identity that holds this table keeps no parameter.
+        object.__setattr__(self, 'entries', PlaceEntries(self.capacity))
+
+    @property
+    def where_entries(self):
+        return self.entries.where
+
+    @property
+    def when_entries(self):
+        return self.entries.when
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)
@@ -372,25 +399,39 @@ class BasicPercepts(nn.Module):
             if self.pi.append(self.member_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             with torch.no_grad():
-                self.where_entries[row] = torch.cat((plus, minus)).to(self.where_entries)
+                self.where_entries[row] = torch.cat((plus, torch.full_like(plus, self.PLACE_WEIGHT))).to(
+                    self.where_entries)
             self.revision += 1
         return row
 
     def place_factor(self, table, rows):
         """Each row's entries on the where and the when wires read at each
-        attended percept, ``[rows, B, A]``: ``exp(E+ . log c + E- . log(1 -
-        c))`` over the wires ``c`` of ``table`` ``[B, A, columns, 2]``; one
-        where every entry is at nothing."""
+        attended percept, ``[rows, B, A]``: ``exp(- sum w . (e . log(e / c)
+        + (1 - e) . log((1 - e) / (1 - c))))`` over the wires ``c`` of
+        ``table`` ``[B, A, columns, 2]``, ``e`` the row's kept value and
+        ``w`` its weight on each. One where the wires are what the row
+        keeps, falling as they differ, and one everywhere where every
+        weight is at nothing."""
         index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
-        entries = torch.cat((self.where_entries, self.when_entries), -1).index_select(0, index)
-        entries = torch.where(entries >= 0, entries, 0.).to(table)
-        wires = table[..., self.width:self.width + WHERE_WIRES + WHEN_WIRES, 0].clamp(1e-6, 1 - 1e-6)
-        n = WHERE_WIRES + WHEN_WIRES
-        plus = torch.cat((entries[:, :WHERE_WIRES], entries[:, 2 * WHERE_WIRES:2 * WHERE_WIRES + WHEN_WIRES]), -1)
-        minus = torch.cat((entries[:, WHERE_WIRES:2 * WHERE_WIRES], entries[:, 2 * WHERE_WIRES + WHEN_WIRES:]), -1)
-        logs = torch.einsum('bac,rc->rba', wires.log(), plus[:, :n]) + torch.einsum(
-            'bac,rc->rba', (1 - wires).log(), minus[:, :n])
-        return logs.exp()
+        where = self.where_entries.index_select(0, index).to(table)
+        when = self.when_entries.index_select(0, index).to(table)
+        kept = torch.cat((where[:, :WHERE_WIRES], when[:, :WHEN_WIRES]), -1).clamp(0., 1.)       # [R, n]
+        weight = torch.cat((where[:, WHERE_WIRES:], when[:, WHEN_WIRES:]), -1)
+        weight = torch.where(weight >= 0, weight, 0.)
+        c = table[..., self.width:self.width + WHERE_WIRES + WHEN_WIRES, 0].clamp(1e-6, 1 - 1e-6)  # [B, A, n]
+        own = (weight * (torch.xlogy(kept, kept) + torch.xlogy(1 - kept, 1 - kept))).sum(-1)       # [R]
+        cross = (torch.einsum('bac,rc->rba', c.log(), weight * kept)
+                 + torch.einsum('bac,rc->rba', (1 - c).log(), weight * (1 - kept)))
+        return torch.exp(-(own[:, None, None] - cross).clamp_min(0.))
+
+    def where_weight(self, rows):
+        """Each row's weights on the where wires summed, ``[rows]``: the
+        share on the where wires of an attended percept is the row's share
+        there times its value times this (the derivative of the factor by
+        each wire's two lanes, times the lanes)."""
+        index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
+        weight = self.where_entries.index_select(0, index)[:, WHERE_WIRES:]
+        return torch.where(weight >= 0, weight, 0.).sum(-1)
 
     def carrying(self, tower, features):
         features = tuple(features if isinstance(features, (tuple, list)) else (int(features),))
@@ -1040,6 +1081,4 @@ class BasicPercepts(nn.Module):
         state.setdefault(prefix+'value_codes', torch.zeros_like(self.value_codes))
         state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))
         state.setdefault(prefix+'places', torch.full_like(self.places, -1))
-        state.setdefault(prefix+'where_entries', self.where_entries.detach().clone())
-        state.setdefault(prefix+'when_entries', self.when_entries.detach().clone())
         super()._load_from_state_dict(state, prefix, *args, **kwargs)

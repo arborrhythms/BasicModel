@@ -10630,6 +10630,12 @@ class PartSpace(Space):
                     if (_p.requires_grad
                             and all(_p is not q for q in self.params)):
                         self.params.append(_p)
+        # The first Pi's entries on the where and the when wires are learned
+        # here; the table of basic percepts that reads them keeps none.
+        self.place_entries = self.basic_percepts.entries
+        for _p in self.place_entries.parameters():
+            if all(_p is not q for q in self.params):
+                self.params.append(_p)
 
     def _register_requirements(self):
         """Register PartSpace-specific config requirements.

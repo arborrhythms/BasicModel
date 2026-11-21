@@ -37,24 +37,32 @@ class SalienceMap:
     members: torch.Tensor     # [keys, B, readings, 2] the share at each member of the first Pi
 
 
-def _down(graph, request, values, readings, depth=8):
+def _down(graph, request, values, readings, depth=8, nodes=None):
     """The gradient of the asked concepts at every node of the structure
     above the basic percepts' members, ``[N, B, readings, 2]``. ``request``
     ``[V, B, 2]``; ``values`` ``[N, B, readings, 2]`` the open run's values
     (read at the symbols, whose Pi is passed by its derivative). ``depth``
     steps down, enough for the structure's orders; there is no test on the
-    host for an earlier end."""
-    N = graph.size
+    host for an earlier end. ``nodes`` (sorted) are the structure's nodes
+    that the node axis holds, all of them where not given; a node on no
+    edge passes nothing down."""
     B = request.shape[1]
-    grad = request.new_zeros(N, B, readings, 2)
-    # Never below zero; at exactly zero the derivative passes, so that a
-    # request that starts at nothing can be taught (as signed_lanes).
-    asked = request[:graph.concepts, :, None, :]
-    grad[:graph.concepts] = torch.where(asked >= 0, asked, 0.)
     keep = graph.child < graph.part_start
     parent, child = graph.parent[keep], graph.child[keep]
     weight, negated = graph.weight[keep].detach().to(request), graph.negated[keep]
     symbol = ((parent >= graph.concepts) & (parent < graph.percept_start))[:, None, None, None]
+    # Never below zero; at exactly zero the derivative passes, so that a
+    # request that starts at nothing can be taught (as signed_lanes).
+    asked = torch.where(request >= 0, request, 0.)[:, :, None, :].expand(-1, -1, readings, -1)
+    if nodes is None:
+        N = graph.size
+        grad = request.new_zeros(N, B, readings, 2)
+        grad[:graph.concepts] = asked[:graph.concepts]
+    else:
+        N = len(nodes)
+        concept = (nodes < graph.concepts)[:, None, None, None]
+        grad = torch.where(concept, asked.index_select(0, nodes.clamp_max(graph.concepts - 1)), 0.)
+        parent, child = torch.searchsorted(nodes, parent), torch.searchsorted(nodes, child)
     tiny = torch.finfo(request.dtype).tiny
     source = grad.clone()
     for _ in range(depth):
@@ -103,14 +111,8 @@ def first_pi(bank, perception, row_grad, activity=None, basic=None):
     places = getattr(basic, 'place_rows', {}) if basic is not None else {}
     wires = None
     if basic is not None and R:
-        from BasicPercepts import WHERE_WIRES
         factor = basic.place_factor(perception_table(bank, index, filled), bank.rows)   # [R, B, A]
-        entries = torch.where(basic.where_entries >= 0, basic.where_entries, 0.).detach()
-        entries = entries.index_select(0, torch.tensor(bank.rows, dtype=torch.long,
-                                                       device=entries.device)).to(members)
-        c = perception_table(bank, index, filled)[..., bank.width:bank.width + WHERE_WIRES, 0]
-        wires = (torch.einsum('bac,rc->rba', c, entries[:, :WHERE_WIRES])
-                 + torch.einsum('bac,rc->rba', 1 - c, entries[:, WHERE_WIRES:]))   # [R, B, A]
+        wires = basic.where_weight(bank.rows).detach().to(members)                    # [R]
     else:
         factor = members.new_ones(R, B, index.shape[1])
 
@@ -201,20 +203,27 @@ def salience(owner, bank, request, *, perception=None, field=None):
     readings = perception.values.shape[2]
     device = perception.values.device
     graph = ConceptSpread.structure(owner, device)
-    values = request.new_zeros(graph.size, request.shape[1], readings, 2)
-    if field is not None:
-        width = min(len(field), graph.concepts)
-        values[:width] = field[:width].detach()
+    rows = torch.tensor(bank.rows, dtype=torch.long, device=device)
+    # The node axis holds the nodes on an edge above the first Pi's members
+    # and the bank's rows: a concept on no edge passes nothing down to a
+    # basic percept.
+    above = graph.child < graph.part_start
+    nodes = torch.unique(torch.cat((graph.parent[above], graph.child[above], graph.percept_start + rows)))
+    values = request.new_zeros(len(nodes), request.shape[1], readings, 2)
+    width = 0 if field is None else min(len(field), graph.concepts)
+    if width:
+        values = torch.where((nodes < width)[:, None, None, None],
+                             field.detach().to(values).index_select(0, nodes.clamp_max(width - 1)), values)
     # The symbols' values at the open run: the product of what they hold.
     held = (graph.parent >= graph.concepts) & (graph.parent < graph.percept_start)
-    logs = torch.log(values.index_select(0, graph.child[held]).clamp_min(1e-30))
-    product = torch.exp(values.new_zeros(graph.size, *values.shape[1:]).index_add(0, graph.parent[held], logs))
-    is_symbol = torch.zeros(graph.size, dtype=torch.bool, device=device)
-    is_symbol[graph.concepts:graph.percept_start] = True
+    parent, child = torch.searchsorted(nodes, graph.parent[held]), torch.searchsorted(nodes, graph.child[held])
+    logs = torch.log(values.index_select(0, child).clamp_min(1e-30))
+    product = torch.exp(torch.zeros_like(values).index_add(0, parent, logs))
+    is_symbol = (nodes >= graph.concepts) & (nodes < graph.percept_start)
     values = torch.where(is_symbol[:, None, None, None], product, values)
-    grad = _down(graph, request.to(values), values, readings, 2 * (len(owner._order_caps()) + 1))
-    rows = torch.tensor(bank.rows, dtype=torch.long, device=device)
-    row_grad = grad.index_select(0, graph.percept_start + rows) if len(bank.rows) else grad[:0]
+    grad = _down(graph, request.to(values), values, readings, 2 * (len(owner._order_caps()) + 1), nodes=nodes)
+    row_grad = (grad.index_select(0, torch.searchsorted(nodes, graph.percept_start + rows))
+                if len(bank.rows) else grad[:0])
     members, events, band = first_pi(bank, perception, row_grad, basic=basic)
     filled = perception.reading >= 0
     return SalienceMap(onto_bank(bank, perception.index, filled, events),
