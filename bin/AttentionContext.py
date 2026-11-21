@@ -4,12 +4,32 @@ from torch import nn
 from torch.nn import functional as F
 
 
+class RequestStart(nn.Module):
+    """The request's start: one learned value for each concept row, added to
+    the for lane of what the context's map asks (``attend``); one on each of
+    ``rows`` and nothing elsewhere at the start."""
+    def __init__(self, size, rows=(), device=None):
+        super().__init__()
+        self.value = nn.Parameter(torch.zeros(int(size), device=device))
+        with torch.no_grad():
+            for row in rows:
+                self.value[int(row)] = 1.
+
+
 def install(model):
     from util import TheXMLConfig
     from AttentionObjective import tolerate_heterogeneity
     model.het_tolerance = float(TheXMLConfig.get('architecture.hetTolerance', default=1.))
     tolerate_heterogeneity(torch.zeros(1, 2), model.het_tolerance)
     model.attention_context = None
+    model.request_start = None
+    owner = model._concept_owner() if hasattr(model, '_concept_owner') else None
+    if owner is not None and hasattr(owner, 'similarity_codebook'):
+        from Spaces import _concept_alloc_of
+        words = _concept_alloc_of(owner).declared_classes.get('words')
+        row = None if words is None else owner._concept_row_of(words)
+        model.request_start = RequestStart(int(owner.nVectors), () if row is None else (row,),
+                                           device=owner.similarity_codebook.W.device)
     if not model.attention_budget:
         return
     registry, cs = model.where_registry, model.conceptualSpace

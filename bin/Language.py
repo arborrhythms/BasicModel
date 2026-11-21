@@ -6632,21 +6632,29 @@ class OperationSelectionLayer(nn.Module):
         return torch.cat(representatives, -1)
 
     @staticmethod
-    def attend(query, codes, base):
+    def attend(query, codes, start, rows=None):
         """The request: a mask over concepts on two lanes, ``[V, B, 2]``.
 
-        ``base`` ``[V]`` is what is asked with nothing yet learned (the
-        concept "words" alone); ``codes`` ``[V, D]`` are the concepts' codes
-        and ``query`` ``[B, D]`` the context's map (``AttentionContext``).
-        A concept is asked for where its code reads the query above zero and
-        asked against where below (:func:`Layers.signed_lanes`, whose
-        derivative reaches both lanes at zero); the map starts at zero, so
-        the request starts at ``base`` alone and can be taught from there."""
+        ``start`` ``[V]`` is the request's learned start, added to the for
+        lane (one on the concept "words" and nothing elsewhere before it is
+        taught); ``codes`` ``[<= V, D]`` are the concepts' codes (of the
+        concept rows ``rows``, or the first rows where not given) and ``query``
+        ``[B, D]`` the context's map (``AttentionContext``). A concept is
+        asked for where its code reads the query above zero and asked
+        against where below (:func:`Layers.signed_lanes`, whose derivative
+        reaches both lanes at zero); the map starts at zero, so the request
+        starts at ``start`` alone and can be taught from there."""
         from Layers import signed_lanes
+        from torch.nn import functional as F
+        # The query is fitted to the codes' width, so that the codes are read
+        # whole and kept for the backward as they are, not copied.
         width = min(int(codes.shape[-1]), int(query.shape[-1]))
-        score = codes[:, :width].detach().to(query) @ query[:, :width].T
+        query = F.pad(query[:, :width], (0, int(codes.shape[-1]) - width))
+        score = F.linear(query, codes.detach().to(query)).T
+        score = (F.pad(score, (0, 0, 0, len(start) - len(score))) if rows is None else
+                 score.new_zeros(len(start), score.shape[1]).index_copy(0, rows, score))
         lanes = signed_lanes(score)
-        return lanes + torch.stack((base.to(score)[:, None].expand_as(score), torch.zeros_like(score)), -1)
+        return lanes + torch.stack((start.to(score)[:, None].expand_as(score), torch.zeros_like(score)), -1)
 
     def choose_interpret(self, word, allowed, *, masked_action=None, replay_action=None):
         """Grammar's existing unary scorer chooses interpretation or abstention."""

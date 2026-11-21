@@ -2580,7 +2580,7 @@ class BaseModel(Mereology, nn.Module):
              *getattr(language, '_generate_unary_ops', ()))])
         output.difference_update(decoder - generate)
         output.update(generate)
-        attention = parameters([getattr(self, 'attention_context', None)])
+        attention = parameters([getattr(self, 'attention_context', None), getattr(self, 'request_start', None)])
         reconstruction = set(available) - expectation - output - attention
         from DefinitionFold import category as definition_category
         sigma_owner = definition_category(self)
@@ -2710,7 +2710,7 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        for _att_name in ("answer_attention", "attention_context", "percept_expectation"):
+        for _att_name in ("answer_attention", "attention_context", "request_start", "percept_expectation"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -4533,6 +4533,8 @@ class BaseModel(Mereology, nn.Module):
         if hasattr(self, 'omission'):
             for key, value in self.omission.state_dict().items():
                 state.setdefault('omission.' + key, value.clone())
+        if getattr(self, 'request_start', None) is not None:
+            state.setdefault('request_start.value', self.request_start.value.detach().clone())
 
         retired_attention = [key for key in state if key.startswith('candidate_attention.')]
         attention_transforms = {}

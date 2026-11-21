@@ -102,18 +102,18 @@ def lower(own, bank, index, rows):
 
 def requested(model, query):
     """``attend``'s request ``[V, B, 2]`` from the context's ``query``
-    ``[B, D]``: "words" alone, and each concept as its code reads the query."""
+    ``[B, D]``: the learned start (``model.request_start``), and each concept
+    as its code reads the query."""
     owner = model._concept_owner()
-    V = int(owner.nVectors)
-    base = torch.zeros(V, device=query.device, dtype=query.dtype)
+    # The codes of the rows that hold a concept: the read of the query keeps
+    # them for its backward at every look, and a row with no concept is
+    # asked by the start alone.
     from Spaces import _concept_alloc_of
-    words = _concept_alloc_of(owner).declared_classes.get('words')
-    row = None if words is None else owner._concept_row_of(words)
-    if row is not None:
-        base[row] = 1.
-    codes = owner.similarity_codebook.W.detach()[:V].to(query)
-    codes = F.pad(codes, (0, 0, 0, V - len(codes)))
-    return model._stm_reducer().attend(query, codes, base)
+    held = sorted(set(_concept_alloc_of(owner).layer(0)._tensor_rows.values()))
+    V = int(owner.nVectors)
+    rows = torch.tensor([row for row in held if 0 <= row < V], dtype=torch.long, device=query.device)
+    codes = owner.similarity_codebook.W.detach().index_select(0, rows.to(owner.similarity_codebook.W.device))
+    return model._stm_reducer().attend(query, codes, model.request_start.value, rows)
 
 
 def word_request(model, concepts, index):

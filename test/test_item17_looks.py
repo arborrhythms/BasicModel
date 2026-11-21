@@ -331,7 +331,8 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
         perception = owner.basic_percepts.read_bank(bank)
         concepts = model._attention_word_concepts[:, :2]
         query = torch.zeros(1, int(model._stm_reducer().d_model))
-        request = SentenceLooks.requested(model, query).requires_grad_()
+        # The request's start is a parameter: the request is taken as a leaf.
+        request = SentenceLooks.requested(model, query).detach().requires_grad_()
         field, activity, _ = SentenceLooks.look(model, bank, request, bank.activity, perception)
         extent = SentenceLooks.extent_of(bank, activity, 2)
         value = SentenceLooks.word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool), extent, bank.activity, bank)
