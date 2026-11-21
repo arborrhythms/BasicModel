@@ -13078,6 +13078,99 @@ of the request; the reconstruction in passes and certificate 64;
 round 6's part C ("words" pressing against the space) and part D.
 ~~~
 
+*The second pass* (added 2026-11-21, after §23.6.6):
+
+~~~
+Round 6d of item 1.7, second pass. Read §19.116 to §19.118, rules
+76 and 77, and §23.6.6 (the first pass's return and its review).
+Four small things first, then the large one. If the pass cannot
+finish, it stops before step 4 or inside it at a point where the
+touched files' tests and both gates pass.
+
+0. Carried. (a) The list's failures on the first pass's source, as
+   §23.6.6 gives them: each to its producer, repaired or ported.
+   (b) The benchmark's first batch finishes: run
+   bin/bench_training_step.py on data/BasicModel.xml at a batch of
+   4, alone, and repair each tensor left on another device than
+   the field's (Layers.thing_lanes from _concept_rung_presence;
+   Layers.seat_lanes from CaseSelection.stage_case_bank; any that
+   follow) at its producer, where the tensor is made or bound, not
+   by moving it at each use. Return the seconds of the first step
+   and the greatest memory held, and say what holds the 11.61 GB
+   that the driver held at the first lookup.
+
+1. A kept where reads one at its own place (provisional; Claude's,
+   §23.6.6). As built, a row's factor on the where and when wires
+   is exp(E+ . log c + E- . log(1 - c)), which is far below one
+   even where the wires are exactly the row's own (8.45e-7 in
+   certificate 62), since a wire of a sinusoid is never one on
+   both of its lanes. Read it against the row's own kept values:
+   for each wire the row holds a kept value e and a weight w at
+   zero or above, both learned, and the factor is
+   exp(- sum w . (e . log(e / c) + (1 - e) . log((1 - e) /
+   (1 - c)))). It is one where the wires equal what the row keeps,
+   falls as they differ, and is one everywhere while w is nothing
+   (a dropped field). The cone writes e (the place met) and a
+   starting w that the return states. The way down passes the same
+   factor by its derivative. Certificate 62 (a) and (c) again, with
+   the row's value at its own place and at the other.
+
+2. The request's start is learned (rule 35: "a mask over all
+   concepts ... and it is learned"). SentenceLooks.requested's base
+   becomes a parameter of attend, one value for each concept row,
+   starting at one on "words" and nothing elsewhere, added to what
+   the context's map gives. It takes its gradient as the request
+   does, from nothing (ccef14fb3a).
+
+3. Measure, recorded and no bar: the places' measure of §23.6.5
+   (two-word of 6, lesson of 16, held out of 6, before and after
+   the lesson, three starts drawn afresh), the where match at each
+   look of the first sentence, the request's start on each place's
+   concept after the lesson, and the lesson's script with --runs 3.
+   If nothing is read in order, say what the request's start
+   learned and what the where match was; add no mechanism.
+
+4. The first Pi reads the table's wires (rule 76). Step 1 of the
+   first pass found the read of rows from codes equal to
+   read_bank's but for three things, none of which argues against
+   it: places, which have no what; four against lanes within 1e-4
+   (graded wholes against codes of 0 and 1); and "is" at "This",
+   read [0, 1] from the codes and [1, 1] by read_bank. The last is
+   accepted as the code gives it and goes to Alec.
+   (a) The what columns of the field are the code the rows hold:
+   the parts half from the occurrence's identity atoms, the wholes
+   half the least of its present wholes' codes and its tightest
+   whole, as the first pass's trial built them (not the byte
+   leaves' codes). Certificate 61 on the bank's own table: equal
+   but for the three things above.
+   (b) A row's value at an attended percept is read from that
+   row of the table: its for lane where the percept holds the
+   row's parts and the row's wholes hold the percept
+   (BasicPercepts.read_points is the existing read), its against
+   lane from against_codes, times the factor of step 1. A
+   conjunction and held are as now.
+   (c) The way down passes a row's share onto the what columns it
+   read and the where columns, at each attended percept.
+   (d) PerceptBank.members, PerceptField.read_occurrences and
+   member_bands go, with whatever read on the host they needed at
+   the lookup; say what, if anything, of the lookup is still read
+   on the host.
+   (e) Where a test or a reader needs something the codes cannot
+   give (a graded whole; an ordered run that the code does not
+   tell apart), list it with the row and the sentence and keep the
+   table's read; it goes to Claude and Alec. Do not keep a second
+   read beside it.
+
+5. Tests as the first pass: both gates before and at the end; the
+   files that name what a step changed; the looks' certificates 30
+   to 43; certificates 61 to 63 and 33 (b); the lesson's script.
+   Claude runs the list.
+
+6. Return as scratch-1.7/r6d_return_2.md, what fails or is
+   unfinished first; then each step, by function; step 3's
+   measure; what step 4 (e) lists; removed; ported; commits.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -21232,3 +21325,186 @@ Four things are now measured, in order.
 *Sentences a second: there is no number, and the reason matters more than the number would.* `bin/bench_training_step.py` on `data/BasicModel.xml`, batches of 4 over 60 documents, alone on the machine, at full precision, `bf16` and `fp16`: each stopped in the first batch with "Invalid buffer size: 290.93 GiB", at `BasicPercepts.read_bank` (`lies = happened[..., None, :, 0] * inside[None, :, None]`): the read of the bank is a dense product over members, sentences, readings, rows and events. So Alec's thought that the earlier failures at a batch of 8 came of the tests running beside them (§23.5) is not the cause: the production configuration does not run at all on this source, at any precision, and half precision cannot help a tensor of that size. The same run on item 1.8's landed source (`3926005f12`) is made now, as the measure of what item 1.7 changed. *To Alec: this stands before any push of item 1.7.* The repair is the bank read by what is present (the rows the lookup names, at the readings that hold them), and not by every row at every event; it is what item 1.5's first part is for, and the part of it that item 1.7 broke has to be done in item 1.7.
 
 *The same run on item 1.8's landed source* (`3926005f12`, alone on the machine, a batch of 4 over 60 documents, full precision): it also stops in the first batch, out of memory on MPS (9.95 GiB held, 11.75 GiB more asked, 16.85 GiB allowed). So the production configuration did not fit this machine at a batch of 4 before item 1.7 either, and Claude's sentence above, that item 1.7 broke it, is too strong: item 1.7 made the first read far larger (291 GiB asked, where 11.75 GiB was), and it did not run before. There is therefore no baseline of sentences a second from this machine for either source. What is owed before a push of item 1.7 is that it be no worse than item 1.8 at this read; making the configuration fit is item 1.5's.
+
+### 23.6.6 Round 6d, first pass: the field of percepts and the table of attended percepts; the read of the bank fits; the first Pi still reads members (Claude on Opus, standing in for Codex, 2026-11-21)
+
+
+Started at `602350c7b8`, on `main`, in this checkout. Ends at `74d7f76053`. Nothing pushed. No doc/ or specification edited. `c5b478c9ee`, `98daffd1aa`, `5f75da3b84` and `a884d0d9e0` in the range are not mine. Steps 0 to 9 were done; step 8's benchmark ran but its batch did not finish (below).
+
+#### What fails or is unfinished, first
+
+- **The benchmark's first batch does not finish, but the first read fits.** `bin/bench_training_step.py` on `data/BasicModel.xml`, a batch of 4 over 60 documents, run alone on the machine. The lookup and `read_bank` of both sentences of the first batch ran on MPS. The batch then stopped later, with `RuntimeError: Passed CPU tensor to MPS op` in `Layers.thing_lanes`, called from `FamiliarTier.open_sentence` → `cs_forward_content` → `_concept_rung_presence`. The cause is that `view._thing_seats` is on the CPU while the field is on MPS: the store's `bind` takes `_device()`, which is the CPU when the store has no `values`. I moved the seats to the field's device to test this, and the run stopped at the next mismatch of the same kind: `Layers.seat_lanes`, from `CaseSelection.stage_case_bank` in `Models._prime_sentence_symbols`. That is code the benchmark never reached before, because it used to stop at the read of the bank. I reverted both trial fixes, so none is in the source. I made no further repairs here: there may be more mismatches past these two, and they are not item 1.7's table.
+- **The table's what columns do not reproduce the rows' codes** (certificate 61 after the change: 17 differences, below). They are carried in the bank and nothing reads them yet. The rows read their members.
+- **Provisional: a tensor of members by occurrences.** Step 2 says the bank holds no tensor of members by events. Step 1's comparison sent the rows to their members, and the readers that read them today (`PartSpace.part_memberships`, the atom witnesses) read on the host. So the bank holds each member at each occurrence, `PerceptBank.members` `[keys, B, occurrences, 2]`, made once at the lookup, and a look only gathers from it. It has no axis of readings. On the benchmark's first batch it is 2.1 MB.
+- **Reading in order: 0 in every count, after as before.** The where match at untaught starts is flat (all 1.0).
+- `test_item18_expect.py::test_81` was not run (known).
+
+#### Step 0
+
+- (a) Ported the five tests. Old and new assertions are under "Tests ported" below.
+- (b) The lesson's script, 3 runs before any edit of bin/: no "binary operation underflows the recorded forest". TestBellSalivate: 2 of 2 passed before any edit of bin/ (my run of 5 was cut, because the source changed under runs 3 to 5, which then failed to import). After the change: 5 of 5 passed (133, 175, 121, 170, 137 s), and the lesson's script ran 3 runs. **Neither error came back in any run**, so there was nothing to repair.
+- (c) Declared `wordTieCapacity` (256), `candidateCapacity` (64), `candidatePenalty` (0.2), `structureReadThreshold` (0.001) and `attendedPercepts` (256) in `data/model.xsd` (`architectureType`) and `data/model.xml`. model.xml validates against the schema (lxml). `attended_capacity()` reads the key with a default of 256.
+
+#### Step 1: the comparison (certificate 61, before any edit of bin/)
+
+On the lesson's sixteen sentences (11 distinct banks; 15 to 19 occurrences each). Each occurrence's code: the parts half is the greatest of the codes of its atoms (`identity.atoms_of`), and the wholes half is the least of the present wholes' `whole_codes` and its `identity.tightest`. Each row is read by `read_points` (part and whole), with the against lane from `against_codes`. A reading's value is the greatest over the occurrences inside its bracket. This was compared with `read_bank`:
+
+- 181 (row, reading) pairs: **64 equal, 117 differ.**
+- 112 differences are the places: a place reads the where wires and has no what code.
+- 1 difference is on the for lane: `is` at `This`, where read_bank gives [1, 1] and the code read gives [0, 1]. read_bank reads `is`'s wholes at the events where its run lies (the letters i and s). The code read needs one occurrence to hold the parts and also lie inside the wholes, and no occurrence is `is` inside `This`.
+- 4 differences are on the against lane, all below 1e-4 (`Ciao`, `What`, `Ciao`, `Felix` at its own word, e.g. `Felix` [1.0, 0.0001] against [1.0, 0.0]). read_bank's wholes are graded evidence; the codes are 0 or 1.
+
+**Not equal.** So I built on step 1's second choice: each row reads its present members (its run of parts, its wholes, its against entries) at each attended percept's span, by the readers that read them today. The table still carries the code's columns.
+
+The same certificate after the change (`test_61`, codes now taken from the bank's own what columns): 52 equal, 129 differ (112 places, 17 for). Each of the 17 is a word's row at its own word, read [1, 0] by read_bank and [0, 0] by the code. The what columns as built (the parts half the union of the byte leaves' part codes, the wholes half the least of the present wholes' codes, with no tightest whole) are not the code the rows hold. The leaves are radix bytes, not identity atoms.
+
+#### What each step built, by function
+
+- **Step 2.** `BasicPercepts.lookup` makes the occurrences: each part's event, each known form of several units where it is found (`BasicPercepts._form_spans`: an ordered, adjacent run of the part events, for each `('ps', run)` member of two or more parts that are not identity atoms), each whole's span, and each reading's bracket, once each per stream. For each occurrence it holds `span`, `token` (the reading), `time`, `activity` and `table` `[B, O, width + 4 + 4, 2]`. The table holds the what on two lanes (`_occurrence_what`), the where wires from `registry.encode` (each wire on `c` and `1 - c`) and the when wires from `when_encoding.encode(time)`. It also holds `members` `[keys, B, O, 2]` from `PerceptField.read_occurrences` (part runs by `part_memberships` at each occurrence span; wholes by `evidence_on_counts` over the bytes it covers) and `percept_where` from `PerceptField.member_bands`. It is still made by the one lookup and let go at the close.
+- **Step 3.** `BasicPercepts.attended(bank, where=None, share=None, capacity=None)` → `Attended` (index, filled, members, table, span, token, time). When a sentence fits, all of its occurrences are taken and nothing is drawn. Otherwise: occurrences inside `where` (default: the sentence's extent), largest first, and those that contain it, smallest first, alternating by level (`_dense_rank`). Within a level, the greater `share` comes first, then a draw (`torch.rand`; no "first found"). The where columns are gathered again from `WhereRegistry.code`, so the gradient reaches it.
+- **Step 4.** `BasicPercepts.read_bank(bank, activity=None, look=None)`:
+  - A row's lanes at each attended percept come from `_row_lanes` over the members there. A place with no what reads [1, 0].
+  - Both lanes are multiplied by `place_factor`, `exp(E+·log c + E-·log(1 − c))` over the where and when wires. The entries are the new parameters `where_entries` and `when_entries` `[capacity, 8]`, read at zero or above with `where(x >= 0, x, 0)`. They start at nothing, so the factor is exactly 1.
+  - Conjunctions and `held` are as before.
+  - A reading is the greatest over its attended percepts (`scatter_reduce` amax).
+  - It returns a `PerceptField` whose `events` is `[rows, B, attended, 2]`, plus `reading` and `index`.
+  - `reserve_place` now writes the cone into `where_entries`. A place's members in the first Pi are its whats only.
+  - `Places.readings` and `Places.meet` read the where columns of each reading's bracket occurrence from the table, and the members' presence in each reading.
+- **Step 5.** `Salience.first_pi(bank, perception, row_grad, activity=None, basic=None)`:
+  - The Not is as before (`b7dd261cd1`).
+  - A reading's share reaches the attended percepts at its greatest: the members' shares are split evenly among equals, as the framework's amax does, and each attended percept at the greatest takes the whole share.
+  - At each attended percept: the run takes dF·for + dA·against, each whole dF·for, and each against source dA·factor·p·s·Π(1 − others). The share on the where wires is dF·for·(E+·c + E-·(1 − c)). A place passes its whats as wholes.
+  - `onto_bank` maps the shares onto the bank's occurrences. `SalienceMap.events` is `[B, O, 2]` and `band` is `[B, O]`.
+  - The request's gradient at zero (`ccef14fb3a`) is untouched.
+- **Step 6.**
+  - The open run reads the whole sentence (all occurrences, up to 256).
+  - A look's `perceive` calls `read_bank(bank, activity)`, which chooses its table by the activity's share when a sentence does not fit.
+  - `SentenceLooks.where_match` sums the where share over every occurrence a reading holds, weighted by presence.
+  - `extent_of`, `word_activity`, `lower` and `FragmentRead.knowing` read `bank.token` and `activity` over occurrences, unchanged.
+- **Consumers ported.**
+  - `PerceptField`: `events` is per attended percept, with `reading` and `index` fields. `select` masks to the reading. `event_evidence` expands by reading (used only on a selected field).
+  - `WalkTrials`' merge of `_percept_field`.
+  - `Spaces._clear_percept_field` also clears `reading`.
+  - `Spaces.cs_percept_attribution` no longer forms the events tensor. It was formed only to check its shape, and at W256 it would have been `[members, B, K, A, 2]`.
+  - `Spaces.refine_over_collected`: a witness is the least attended percept that holds it. One that holds another witness is not a witness itself. Without this, a reading's bracket filled the gap between witnesses.
+
+#### What was removed (step 7)
+
+- `PerceptBank.at`, `PerceptBank.native` and its `events` (the tensor of members by readings by events), `PerceptBank.place` and `PerceptBank.band`.
+- `lies` and `_row_values` in `read_bank`.
+- `PerceptField.read_percepts`: it has no caller left and is replaced by `read_occurrences`.
+- `BasicPercepts.member_weights`, and the place rows' `('where', i, lane)` keys in the first Pi.
+- `Places.value`, `Places.down`, `Places.starts`, `Places.wires` and `Places.where_keys`.
+- The events read in `cs_percept_attribution`.
+
+`_row_lanes` stays: it is the read at an attended percept. No file was moved.
+
+#### Certificates
+
+- **61:** above.
+- **62** (`test_item17_table.py::test_62_33b_what_is_where`, on "alpha gamma alpha"):
+  - (b) The row reads fully at two occurrences, [0, 5] and [12, 17]. They have equal what columns and different where columns (wire 3: .500 against .355).
+  - (a) With the where entries at nothing, both are read alike. With the cone of the first (entries 10·c on the for lanes and 10·(1 − c) on the against lanes): 8.45e-7 at the first, 4.37e-7 at the second. The factor falls as exp(−k·H), so 200 underflowed to 0.
+  - (c) The request's share is 2.53e-6 at the first and 1.31e-6 at the second. The where share is 2.53e-5 at the first and 1.30e-5 at the second.
+- **33 (b)** (same test): the gradient of the row's value at the first reaches `WhereRegistry.code` at its place's address, 1.8e-12, and 0 everywhere else.
+- **63** (`test_63_what_a_look_reads_is_its_table`): the bank has no `native` and no `band`. `members` is `(6, 1, 26, 2)` and `table` is `(1, 26, 136, 2)`. With the capacity at half (13), `read_bank`'s events are `[.., 13, 2]`, and the chosen occurrences' extents are 5, 5, 5, 4, then 1s: the largest first. The benchmark half is below.
+- **30 to 43** (`test_item17_looks.py`, 18 tests): all pass. `test_31a` passes against the ported framework reference. 31c, 32, 34, 37, 38a, 39, 40, 41 and 43 pass; 38b is recorded.
+- **Places** (`test_item17_places.py`): 3 pass. A request for a place's concept lands in that place's own reading 7 of 7 times, and at the reading's first byte 5 of 7 (places 9 and 14 land on another occurrence inside the reading).
+
+#### Step 8: memory and counts
+
+- **Occurrences** on the benchmark's first batch, per stream: [1326, 1142, 1497, 1539] (axis 1539) for the first sentence and [1333, 1148, 1498, 1538] for the second, over 254 and 256 readings.
+- **Members of the first Pi** the lookup names: **43** (14 rows, then 48), so a look's read is `[43, 4, 256, 2]`.
+- **Bank sizes:** members 2.1 MB, table 6.7 MB.
+- **Greatest memory sampled:** 11.61 GB held by the MPS driver, sampled at each lookup. There is no per-step peak, because no step finished.
+- **Comparison:** item 1.8 asked for 11.75 GiB in one tensor at this read, and the last pass asked for 291 GiB. Both lookups and both reads of the bank completed.
+- **On the lesson:** 15 to 19 occurrences per sentence (16 to 18 after known forms of several units were added).
+
+The coordinator expected about 1,500 occurrences a stream at W256, and that is what came.
+
+#### Places and sentences read in order on the lesson (recorded)
+
+- **The lesson's script, `--runs 3`.** Before (at `efa9b5531c`'s bin, which is `602350c7b8`'s): starts 1833072625, 969037323 and 2237214652; 64 of 64 words each; sentences in order 1, 0, 0; words in order 4, 0, 0; draws 26 each; 26.3, 26.2 and 19.0 s. After (`74d7f76053`): starts 1135289177, 367484721 and 3622229412; 64 of 64 words; sentences in order 0, 0, 0; draws 26 each; 22.9, 21.0 and 18.7 s.
+- **`test_reading_in_order_before_and_after_the_lesson`, after the change.** 3 starts drawn afresh (243769977884016, 127651418153906 and 4113374834173). Each has 14 places, 12 of them with no what. Read in order (two-word of 6, lesson of 16, held out of 6): 0, 0, 0 before and 0, 0, 0 after, in every start. On the first sentence the where match was 1.0 at every live reading at each look. No forest error in 617 s. The last pass had the same 14 and 12, and 0 throughout.
+
+#### Tests ported (old assertion, then new)
+
+- `test_item17_code.py::test_48`. Old: every nominated row is a word's (`word_of[r]`). New: every one that is not a place.
+- `test_item17_sparse_growth.py::test_58` (lesson). Old: every brought concept and every declared member. New: neither a place's row nor its concept.
+- `test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows` (both configurations). Old: the allocated rows equal words | lexical | constructed, and every other concept is typed 'concept'. New: the same less the places' concepts' rows; a place's concept is skipped.
+- `test_operators_round4a.py::test_one_presentation_updates_detached_context_at_the_close`. Old: 4 context rows that are not arguments. New: 4 that are neither arguments nor places.
+- `test_item17_looks.py`, `hand_bank` and `row_values`. Old: a bank of `native.events` `[keys, B, K, P, 2]`, with wholes read where the run lies. New: a `PerceptBank` of members at occurrences, with each row read at each occurrence and a reading the greatest.
+- `test_56a`. Old: every single-byte event of word 0 takes a share. New: some occurrence of word 0 takes one, and none of word 1's (the shares now land on the occurrences that hold the row).
+- `test_56b`. Old: a 2-tuple from `first_pi`. New: a 3-tuple; the same `[1, 0, 1]`.
+- `test_56e`. Old: `[1.2, 0, 0]` read where the run lies. New: the same numbers read at each occurrence.
+- `test_31c`. Old: the run's place detached, `v0·(p·v1)·(p·v2)`. New: `v0·v1·v2` at the one occurrence; the same assertion.
+- `test_31a`. Old: the members' shares against the backward of `_row_values` over the native values and events. New: against the backward of the product at each attended percept, a reading's value the amax over them; atol 1e-6.
+- `test_item17_places.py::test_a_place_concept_asked_lights_its_own_readings_band`. Old: the band's argmax is the start event of the reading where the row reads most. New: the argmax occurrence is in that reading (whether it is at the start is printed).
+- `test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither`. Old: events `[.., 2, 1, 128, 2]`. New: `[.., 2, 65, 2]`.
+- `test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols`. Old: `(1, 2, 8, 2)`. New: `(1, 6, 2)`.
+- `test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent`. Old: `events[0, 0, k, :, lane]`, and `events.shape[2] == 0` with no reading. New: events masked by `reading == k`, and `values.shape[2] == 0`.
+- `test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events`. Old: `read_percepts` over one bracket. New: `read_occurrences` over one occurrence and one padding; the padding reads nothing.
+- `test_percept_field_compaction.py`, three tests rewritten for `read_occurrences`:
+  - Padding leaves the members unchanged.
+  - At B28/W256 no 5-dimensional tensor and no `[.., W, W]` is made; the old check was against the dense `[K, B, W, P, 2]` events.
+  - An interior gap does not make an ordered run.
+
+None was skipped or marked to fail.
+
+#### Test files run, with counts and seconds
+
+- Gates before any edit of bin/: 2 passed, 4.97 s.
+- The five tests to port, before: 5 failed, 40 s. After: 2 passed, 41.6 s, and 3 passed, 21.6 s.
+- Certificate 61 before the change (`test_item17_table.py`): 1 passed, 29.4 s.
+- Gates after the rewrite: 2 passed, 4.87 s.
+- `test_item17_looks.py` and `test_item17_places.py` (not the measure): 6 failed, 19 passed, 79 s. Then 3 failed, 22 passed, 42 s. Then all pass.
+- 28 files that name what changed: 9 failed, 1 error, 315 passed, 16 skipped, 273 s. After the ports: 26 passed, 37 s (refine, memberships, table).
+- **The final run: both gates, `test_item17_looks.py`, `test_item17_places.py` (not the measure), the 28 files, and `test_item17_sparse_growth.py`, `test_review14_addendum.py`, `test_operators_round4a.py`, `test_epoch_history.py` and `test_item20_round6_reverse.py`: 397 passed, 16 skipped, 0 failed, 288 s** (at the bin of `b1ee0399cb`).
+- Gates at the end (`74d7f76053`): 2 passed, 4.93 s.
+- TestBellSalivate, 5 runs after: 5 passed.
+- The lesson's script, 3 runs: 71 s.
+- The places' measure: 1 passed, 617 s.
+
+#### Commits
+
+- `2d176e5120`: four tests ported to the places' rows.
+- `efa9b5531c`: the keys declared.
+- `d900713b85`: certificate 61 in tests, before any edit of bin/.
+- `b1ee0399cb`: the table of attended percepts; the bank, the read, the way down, the looks and the places; the removals and the ports.
+- `74d7f76053`: certificates 61 (on the table), 62 with 33 (b), and 63.
+
+#### What surprised me
+
+- **The read of a reading changed meaning, and nearly nothing noticed.** Today a word's wholes were read at the events where its run lies. Now a row is the product of its entries within one attended percept, so a whole must hold over that occurrence. Every lesson word still reads at its own word, and every certificate of the looks still passes.
+- **A run of two parts with no occurrence of its own had nowhere to be.** `test_refine_raise` (grouped) failed until each known form of several units became an occurrence where it is found. The ungrouped case needed a second repair: a witness is the least occurrence that holds it, or else a reading's bracket fills the gap between witnesses.
+- **The where code barely moves over a sentence, so a where entry must be steep to tell two places apart, and a steep entry underflows the value.** With the cone at weight 200 the row read exactly 0 at both places. At 10 it read 8.4e-7 against 4.4e-7.
+- **The benchmark now reads its bank in a few megabytes.** It then stops on two device mismatches in code it never reached before (`thing_lanes`, `seat_lanes`), which are not the table's.
+- **The table's what columns are not the rows' code.** The codes of byte leaves are not the codes of identity atoms. Certificate 61 says so: 17 word rows read [0, 0] from them.
+
+#### Review (Claude, 2026-11-21)
+
+Spot tests by the pass; both gates pass at the start and the end. The return's claims were checked against the source: `PerceptBank.native`, `band`, `at` and `read_percepts` are gone; `attended`, `place_factor`, `where_entries` and `when_entries` are there.
+
+- *What Alec asked for is built as a presentation.* The field is made once at the lookup, every occurrence at every level with its what, where and when in one row; a look reads at most 256 rows of it; on the benchmark's first batch a stream has 1,142 to 1,539 occurrences (Claude's estimate of §19.117 was about 1,500) and the field is 6.7 MB. What asked for 291 GiB is gone, with the tensor that item 1.8 asked 11.75 GiB for.
+- *It is not yet what the first Pi reads, and that was Claude's text.* Step 1 said that on any difference the rows should read their members. The differences were three, and none argues against the read from codes: 112 are places, which have no what and are not a difference of the read; four are against lanes within 1e-4 (graded wholes against codes of 0 and 1); one is real, `is` at `This`, which the codes read [0, 1] and `read_bank` reads [1, 1]. So the pass, following the text, kept the members and made a tensor of them (`PerceptBank.members`, each member at each occurrence), which is a second presentation beside the table. And the what columns it wrote into the table are not the rows' code (byte leaves' codes, where the trial used the identity atoms and the tightest whole), so 17 words read nothing from them. The second pass makes the table's wires what the rows read, and the members go.
+- *`is` inside `This`, for Alec.* Today the row `is` reads both at `This`: for, since its letters lie there, and against, since a nearer holder adds parts (rules 51 to 53). From the codes it reads against only: no occurrence both holds its parts and lies inside its wholes. Through the Not the first is nothing and the second is a no. Claude takes the second as what the table gives ("both" is read only at a basic percept, §19.68, and here it is the percept itself that is not there), and it is his to reverse.
+- *A kept where suppresses its own row.* With entries on the where wires a row read 8.45e-7 at its own place and 4.37e-7 at the other. The cause is in the wires and not in the weights: a sinusoid's wire is c on one lane and 1 − c on the other, never one on both, so a product of them to any powers is far below one even where the wires are exactly the row's own, and steeper entries only lower it (at 200, nothing). And the where code is nearly flat over a sentence: its finer period is 256 places, so two word starts five letters apart differ by about .06 on a wire. *Provisional, mine (second pass, step 1):* the row keeps a value and a weight for each wire and is read against its own kept value, so that it is one at its own place and falls away from it. *For Alec:* whether the where should instead have finer periods (a ladder down to a few letters), which would tell neighbouring words apart at small weights; with two periods of 256 and above it takes weights in the hundreds.
+- *The benchmark gets further and does not finish.* The lookups and the reads of the bank ran; the batch then stops on tensors left on the CPU (`Layers.thing_lanes`, then `Layers.seat_lanes`). They are faults of this item's and of earlier source that the run never reached. The driver held 11.61 GB at the first lookup, before any of it; what holds that is not known. Second pass, step 0.
+- *Reading in order is 0,* as before, and the where match is flat at one at every look. Nothing in this pass was meant to change it; the request still cannot ask for one place apart from another.
+- *A slip of the pass:* it removed its own benchmark output with `rm` and not by a move into a dated folder. Nothing of the repository or of Alec's was touched.
+
+#### The list on the first pass's source (Claude, 2026-11-21)
+
+On `74d7f76053`, in a clone, 306 files (the list of round 4 and `test_item17_table.py`), six processes: 8 failed, 3,334 passed, 161 skipped, in 1,345 s. `test_81` is known. The seven others are new, in files the pass did not run:
+
+| Test | What it says | To |
+| --- | --- | --- |
+| `test_item18_producer_repair.py::test_02_admitted_word_and_basic_percept_are_positive_before_teaching` | calls `PerceptField.read_percepts`, which is gone | port |
+| `test_postmerge_observers.py::test_stepped_trace_and_provenance_preserve_read_and_state` | the same | port |
+| `test_item20_round5_percepts.py::test_basic_read_preserves_ordered_part_witnesses_after_native_fusion` | indexes the events with a readings axis | port |
+| `test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers` | the inventory of readers of the when lacks `BasicPercepts.lookup` | port (the inventory) |
+| `test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube` | `WordIdentity` now has parameters: `where_entries` and `when_entries` sit on `BasicPercepts` inside it | diagnose: where the learned entries belong |
+| `test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery` | two of four values differ by 1.0 | diagnose |
+| `test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]` | 8 of 8,448 values differ, by .0015, at wires 134 and 135 of a row (the when wires of the table) | diagnose |
+
+All seven go to step 0 of the second pass.
