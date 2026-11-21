@@ -258,7 +258,12 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
                     model.End()
             after = dict(two=count(two), lesson=count(lesson), held=count(HELD_OUT))
             asked = looked_at(model, monkeypatch, 'This is Felix.')
+            _, concept = places_of(model)
+            learned = model.request_start.value.detach()
+            words = [r for r in range(len(learned)) if float(learned[r]) != 0. and r not in concept.values()]
             records.append(dict(start=start, places=len(basic.place_rows), first_sentence=asked,
+                                request_start=dict(places={p: round(float(learned[c]), 5) for p, c in concept.items()},
+                                                   others={r: round(float(learned[r]), 5) for r in words}),
                                 pure=sum(not w for _, _, w in basic.place_rows.values()),
                                 before=before, after=after))
             print(records[-1])
