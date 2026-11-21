@@ -9551,6 +9551,52 @@ Round 5's first pass built the look-first of rule 31 (§19.27) and took it out: 
 
 *Decided, and it corrects Claude's reading of §19.113* ("the top-down reconstruction should fill in a blind spot"), which was a description of what the ordinary reconstruction does and not a mechanism to add. Nothing reads expected percepts into the way back. `ConceptSpread.read_back` and `blind_spot`, the leave-one-out built for it (`_flow`'s `elsewhere`, `_down_elsewhere`), and `FieldReverse._blind_spot_support` with its call in `reverse` go. The clause of rule 30 that Claude added ("where a look's percepts were withheld the way back reads the expected ones in their place") is withdrawn. Certificate 24 is restated: with a word's forms withheld, what the ordinary reconstruction gives at that place and its error are read, as a certificate of learning; nothing is filled. The percepts' stage of expectation (§19.113) stays: it is expectation, compared with what a look brings, and is never written into the way back.
 
+### 19.116 Alec: a look presents about a hundred attended percepts, each with its what, its where and its when (2026-11-21)
+
+Asked (§23.6.5) whether to keep places and give the request a learned start, or to put reading in order off to item 1.6 and take the places out:
+
+"The perceptual field cannot present just wires to all entries in the .what codebook and .where parameter since that does not say what is where, and we will not be able to reconstruct where that what occurs.
+
+We cannot present the full cross product of what and where, I think, since that will be (64 + 64) x Percepts x nwhere
+
+So every look needs to present maybe 100 percepts (if that), it can't present all, so they should be presented at the basic level (the vertical level that defines approximately 1 basic percept over the provided .where, along with the complete set of parts and wholes covered by and covering that location, if possible, but perhaps only a few layers in each direction.
+
+(64 + 64 + nwhere + nwhen) x nAttendedPercepts
+
+Where nAttendedPercepts =~ 100
+
+That might mean that reconstruction is allowed to take multiple passes at the output, so have an expectation loss for each look as well as a final reconstruction loss on the whole image.
+
+We need to fix this in 1.7, even if it takes a few more rounds.
+
+1.6 should not "take the places out", afaik, but the subspace if the attended percepts that references where could map al ti that parameter, in case the sinusoid values are someday learned."
+
+*Decided* (rules 76 and 77; certificates 61 to 64; round 6d, §22.6d).
+
+1. *What was built does not say what is where.* The provisional places (§23.6.5) present rows of content that read no where beside rows of place that read no what: wires to the what code and wires to the where parameter, side by side. Nothing in that says which what stands at which where, and the way back cannot say where a what occurs. That presentation is withdrawn. Places are not (5).
+2. *Nor the cross product,* every percept at every where, which is (64 + 64) × percepts × nWhere.
+3. *A look presents a table of attended percepts,* about a hundred rows. Each row is one percept as it occurs: the 64 wires of the parts half and the 64 of the wholes half of its code, its where and its when, in one row. The table is (64 + 64 + nWhere + nWhen) × nAttendedPercepts. It is the muxed input of §19.115, one row for each attended percept, and it is what a row of the first Pi reads.
+4. *Which percepts.* Those at the basic level for the where the look is given: the level of the percept tower at which about one percept covers that where. With it come the parts that the where covers and the wholes that cover the where, all of them if they fit, and otherwise a few levels in each direction.
+5. *Places stay,* in item 1.6 too. The where columns of the table are read from the one where parameter (`WhereRegistry.code`), so that if the sinusoid's values are someday learned, every attended percept's where teaches that one parameter.
+6. *Two costs.* An expectation cost at each look (§19.113), and a final reconstruction cost on the whole input. Since a look holds only about a hundred percepts, the reconstruction may take several passes at the output.
+7. *In item 1.7,* over as many rounds as it takes.
+
+*Verified in the source (Claude, 2026-11-21).*
+
+- *What is presented today.* `PerceptBank.native.events` is `[member, B, reading, event, 2]`: each member of each row of the first Pi that the lookup names, read at each event of each reading. `BasicPercepts.read_bank` forms `lies` from it, `[member, B, reading, event, event]`, which is the 291 GiB of §23.6.5; item 1.8's `read_percepts` forms `events` over the same axes, which is its 11.75 GiB. A look does not narrow it: it reads the whole bank again with an activity on each event (`PerceptBank.at`).
+- *The where is beside the what and not with it.* `PerceptBank.band` is `[B, events, 4]`. Only a place's row reads it, at the event at a reading's start (`Places.value`); a row of content reads the events and no band.
+- *The code is there, and the first Pi does not read it.* A percept's code is held on two lanes at the configured widths (`BasicPercepts.codes` and `against_codes`, `identity_width + property_width`), and a read of rows against a point of that width exists (`BasicPercepts.read_points`). The rows of the first Pi have keys of the tower as their members (`('ps', run)`, `('ws', whole)`), read by `read_percepts`.
+- *The size of the table.* `[B, 100, 64 + 64 + 4 + 4]` on two lanes is under a megabyte at a batch of 4, and a member read at each attended percept is `[member, B, 100, 2]`. So the table is also the repair of the read that does not fit (§23.6.5), with no work of its own.
+
+*Claude's reading of what Alec left open* (each is what the round builds on, marked provisional there; for his correction):
+
+- (a) *An attended percept is an occurrence:* a node of the percept tower as it occurs in the sentence, with its span. A part's event, a word's bracket, a known form of several units (round 6's part C had this as an open item; it is now an occurrence like any other), a whole.
+- (b) *The where a look is given is an extent.* The open run's is the whole sentence. A look's is the span of the attended percept on which the request, carried down, lands most.
+- (c) *Levels by extent.* The occurrences inside the given where, the largest first, and those that contain it, the smallest first, taken a level down and a level up in turn until the table is full. A level that does not fit whole is taken by the share of the request on each of its occurrences; what is still equal is a draw (§19.52: no "first found").
+- (d) *How a row of the first Pi reads the table.* Within one attended percept, the row's entries on the what, the where and the when are joined by the product, so a what is read at its own where. Across the attended percepts of a reading the row's values are joined as the bank joins events today. An entry on a where or a when wire starts at nothing (rule 31). A place is then a row that holds where entries and no what, read by the same product, with no path of its own.
+- (e) *Reconstruction in passes.* The way back runs once for each look that was taken and gives that look's table back, each row's what at its where and when; each pass writes its rows onto the output at the where they give. The final cost is on the whole output so written. This is built last, so that he may correct it first.
+- (f) *The lanes.* The what is on the code's two lanes; a where or a when wire c is on the lanes c and 1 − c, as the places' rows read it.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -11074,6 +11120,39 @@ chooses from. The old classes are not edited.
     by itself and cannot learn a choice that depends on two things
     together.
 
+76. *A look presents a table of attended percepts, each with its
+    what, its where and its when* (Alec, §19.116: "every look needs
+    to present maybe 100 percepts ... (64 + 64 + nwhere + nwhen) x
+    nAttendedPercepts"). A row of the table is one percept as it
+    occurs in the input: its code's parts half and wholes half, the
+    where wires of its place and the when wires of its time. The
+    rows are those at the basic level for the where the look is
+    given, the level at which about one percept covers that where,
+    with the parts the where covers and the wholes that cover it,
+    all if they fit and else a few levels each way. The count is a
+    key (`attendedPercepts`, 100). The first Pi reads this table and
+    nothing else of the percepts (rule 62, §19.115): within one
+    attended percept a row's entries on what, where and when are
+    joined by the product. Neither wires to every entry of the what
+    code beside wires to the where parameter, nor the cross product
+    of the two, is presented. The where columns are read from the
+    one where parameter (`WhereRegistry.code`). *Mine* (§19.116, a
+    to d and f): an attended percept is an occurrence with its
+    span; the where a look is given is an extent; levels are taken
+    by extent, nearest first, and a level that does not fit by the
+    request's share and then a draw; a place is a row with where
+    entries and no what, read as any row.
+
+77. *Two costs, and the reconstruction in passes* (Alec, §19.116:
+    "reconstruction is allowed to take multiple passes at the
+    output, so have an expectation loss for each look as well as a
+    final reconstruction loss on the whole image"). The expectation
+    cost is charged at each look (rule 66). The reconstruction cost
+    is charged once, on the whole input. *Mine* (§19.116, e): the
+    way back runs once for each look that was taken, gives that
+    look's table back, and writes each row at the where it gives;
+    the final cost is on the whole output so written.
+
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
     built*). An entry that is not stored is an entry at zero of the
@@ -11453,6 +11532,42 @@ certificate is recorded and not repaired (1.8 §43); those are marked
     with no statement, and a word met beside it gains none; and the
     rows and entries made implicitly on the lesson beside those MTM
     makes.
+
+61. *The table against the present read* (rule 76; in tests first,
+    before the source is changed). For each sentence of the lesson,
+    the table is built from the sentence's occurrences, and each
+    row of the first Pi that the lookup names is read from it, with
+    every where and when entry at nothing. Its two lanes at each
+    reading are compared with `BasicPercepts.read_bank`'s on the
+    same sentence. They are equal, or every difference is listed by
+    row and reading with its cause.
+
+62. *What is where* (rule 76). (a) A row that keeps an entry on a
+    where wire reads its what at that where and reads less of the
+    same what at another where; with the entry at nothing it reads
+    both alike. (b) A sentence that holds one word twice gives two
+    attended percepts with one what and two wheres. (c) A request
+    for the concept of a row that keeps a where, carried down,
+    lands most on the attended percept that has both its what and
+    its where, and a gradient from it reaches the rows of
+    `WhereRegistry.code` at that place (certificate 33 (b)).
+
+63. *The size of what a look reads* (rule 76). No tensor made by
+    the one lookup of a sentence or by a look has an axis of events
+    beside another axis of events, or an axis of readings beside
+    one of events; what is read of the percepts is `[.., attended,
+    ..]`. The first batch of `bin/bench_training_step.py` on
+    `data/BasicModel.xml` at a batch of 4 is read, and the greatest
+    memory held is returned beside item 1.8's (11.75 GiB asked for
+    one tensor, §23.6.5).
+
+64. *The reconstruction in passes* (rule 77; a later pass of round
+    6d). With a sentence read in several looks, the way back gives
+    each look's table again, each row's what at its where and when;
+    the whole output written by the passes is compared with the
+    input, and its cost is returned beside the reconstruction cost
+    of item 1.8's last return. A what written at another where than
+    its own is counted as an error.
 
 **What stays.** The grammar's option at a look and `interpretBias`
 (1.8 §60.1, rule 5b; `OperationSelectionLayer.interpret_at_look`); the
@@ -12807,6 +12922,134 @@ source does today is in §19.85).
 Run: the new test file; every test file that names what you
 changed; both stopping gates; the lesson's sixteen sentences before
 and after. Return as §23.6c.
+~~~
+
+### 22.6d Round 6d: the table of attended percepts (added 2026-11-21, after §19.116)
+
+~~~
+Round 6d of item 1.7, after rounds 6, 6b and 6c and before round 7.
+Rules 76 and 77 of §21; certificates 61 to 64, and 33 (b). Read
+§19.115, §19.116 and §23.6.5 first. It is taken in passes. This
+text is the first pass: the table on the way up and on the way
+down, and the read that does not fit gone. The look with a where of
+its own, and the reconstruction in passes, are later passes and are
+not started here. What is marked provisional is Claude's reading
+(§19.116, a to f): build on it, and say in the return where the
+source argued against it.
+
+0. Carried, first. (a) Places stay: port the five tests of the list
+   that the provisional places changed (§23.6.5, "The list"). (b)
+   Run the lesson's script three times and TestBellSalivate five
+   times. If "binary operation underflows the recorded forest"
+   (Models._derivation_program) or "identity map requires finite
+   coordinates in [0, 1]" comes again, find its producer and repair
+   it; if neither comes, say so. (c) Declare in data/model.xsd and
+   data/model.xml the keys the source reads and the schema does not
+   hold: wordTieCapacity, candidateCapacity, candidatePenalty,
+   structureReadThreshold, and this round's attendedPercepts (100).
+
+1. Before any edit of bin/, in tests only (certificate 61). From
+   the present bank of each sentence of the lesson, list its
+   occurrences: each part's event, each word's bracket, each known
+   form of several units, each whole, with its span. Give each its
+   code on two lanes (BasicPercepts.lanes for a promoted row;
+   part_codes and whole_codes for a native percept; for a bracket
+   with no row, the collection of what it holds). Read each row of
+   the first Pi that the lookup names from those codes, on two
+   lanes (BasicPercepts.read_points is the existing read of rows
+   against a point; codes and against_codes are the rows' lanes),
+   and compare with read_bank's values at each reading. Return the
+   comparison. If the two agree, the rows of the first Pi read the
+   table's wires in the steps below. If they do not, list every
+   difference with its cause, and in the steps below read each
+   row's present members (its run of parts, its wholes, its against
+   entries) at each attended percept's span by the readers that
+   read them today; the table still carries the code's columns, and
+   the difference goes to Claude and Alec. Do not stop for it.
+
+2. The bank holds occurrences. PerceptBank holds, for each stream,
+   the sentence's occurrences: span, the reading that holds it,
+   its time, and what it is (a native part, a row, a whole). It
+   holds no tensor of members by events. It is still made by the
+   one lookup of a sentence and let go at the close; a look reads
+   nothing on the host.
+
+3. The table. attended(bank, where, share=None) gives the
+   occurrences a look attends, at most attendedPercepts of them,
+   and their table: for each, its what on the code's two lanes
+   (identity_width + property_width wires), its where (the rows of
+   WhereRegistry.code at its start, gathered so that a gradient
+   reaches that parameter; each wire c on the lanes c and 1 - c),
+   its when (when_code of its reading's time, likewise), the
+   reading that holds it, its span, and whether the row is filled.
+   Which occurrences (provisional): those inside the given where,
+   the largest first, and those that contain it, the smallest
+   first, a level down and a level up in turn until the table is
+   full. A level that does not fit whole is taken by share (the
+   request carried down onto the last table, where one is given),
+   and what is still equal by a draw. No "first found", and no rule
+   that prefers the start of the sentence.
+
+4. The first Pi reads the table (rule 76). A row's value at an
+   attended percept is the product of its entries there: its what
+   (as step 1 settled), and its entries on the where and the when
+   wires, which are learned and start at nothing (rule 31), so that
+   the product is unchanged until one is learned. A reading's value
+   joins its attended percepts as read_bank joins events today. A
+   place (bin/Places.py) is a row that holds where entries and no
+   what: it is read by this same product at every attended percept,
+   and Places.value, with its read at a reading's start alone,
+   goes. How a place is nominated (Places.meet, the cone) stays,
+   reading the table's where columns.
+
+5. The way down lands on the table. Salience.first_pi and
+   Places.down become one pass of a row's share onto its entries at
+   each attended percept: the share on the what columns and the
+   share on the where columns of one row of the table. SalienceMap
+   gives each attended percept's share and its where share. The
+   Not on the way down (b7dd261cd1) and the request's gradient at
+   nothing (ccef14fb3a) stay. Certificate 31 (a) still holds: the
+   transposes equal the framework's backward.
+
+6. The look, in this pass. The open run's where is the whole
+   sentence. A look's activity is over the rows of the table,
+   capped by each row's own activity, as it is over events today;
+   the where match of a reading is read from the where share of
+   its attended percepts; a word interpreted is lowered over the
+   rows of its reading. Where a sentence does not fit the table, a
+   look's table is chosen again by its request's share (step 3).
+   A look with a where of its own is the next pass.
+
+7. Remove what this replaces, and list it: PerceptBank.at and the
+   members-by-events tensor; lies in read_bank; _row_values and
+   _row_lanes where the table's read replaces them; Places.value
+   and Places.down; PerceptBank.band as a thing beside the events.
+   If read_percepts keeps a caller, name it and say what it reads;
+   no caller on the path of a sentence may make its events tensor.
+
+8. Certificates 62, 63 and 33 (b), as tests. For 63, run the
+   smallest call of bin/bench_training_step.py that reads one batch
+   of 4 of data/BasicModel.xml, alone, with no test beside it;
+   return whether the first batch is read and the greatest memory
+   held. No sentences a second: that measure is Claude's, later.
+
+9. Tests. Both stopping gates before any edit of bin/ and at the
+   end. Between, only the files that name what a step changed.
+   The looks' certificates 30 to 43 again, and the lesson's script
+   with --runs 3. Claude runs the list. A test that asserted the
+   shape of the bank's events is ported, with its old and its new
+   assertion in the return; none is skipped or marked to fail.
+
+10. Return as scratch-1.7/r6d_return_1.md, what fails or is
+    unfinished first: step 1's comparison; what each step built, by
+    function; what was removed; the certificates with their
+    numbers; the greatest memory of step 8; places and readings in
+    order on the lesson, before and after, as §23.6.5 measured them
+    (recorded, not a bar); tests ported; commits.
+
+Not in this pass: a look with a where of its own; a learned start
+of the request; the reconstruction in passes and certificate 64;
+round 6's part C ("words" pressing against the space) and part D.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
