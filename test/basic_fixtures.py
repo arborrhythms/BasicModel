@@ -63,3 +63,21 @@ def with_property_half(cs, width=8):
     cs._fixture_basic_percepts = basic
     object.__setattr__(cs, '_basic_percepts', basic)
     return cs
+
+
+def with_own_codes(cs, parts, width=8):
+    """Give each of the fixture's ``parts`` a code of its own (one
+    coordinate of the parts half each, every other part's code nothing) and
+    the basic percepts a property half (:func:`with_property_half`), so that
+    the table's what columns tell the parts and the wholes apart. Done at
+    construction, before any row."""
+    with_property_half(cs, width)
+    basis = cs.basic_percepts.native._basis
+    parts = sorted(dict.fromkeys(map(int, parts)))
+    if len(parts) > cs.basic_percepts.identity_width:
+        raise ValueError('more parts than coordinates of the parts half')
+    with torch.no_grad():
+        basis.W.zero_()
+        basis.W[torch.tensor(parts, device=basis.W.device),
+                torch.arange(len(parts), device=basis.W.device)] = 1.
+    return cs

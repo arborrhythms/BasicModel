@@ -1,5 +1,7 @@
-"""Order-zero definitions read native features, independently of codes."""
-from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
+"""Order-zero definitions read native features through the table's what
+columns: each part with a code of its own, each whole a cut of the property
+half."""
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence, with_own_codes
 import pytest
 import torch
 
@@ -22,7 +24,7 @@ def binary_features(cs, raw):
 
 
 def test_one_property_has_the_four_extent_corners():
-    cs = _cs()
+    cs = with_own_codes(_cs(), (48, 49))
     native, extents = binary_features(cs, torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]]))
     actual = cs.cs_read_memberships(native, extents)
     # Each row of a basic percept that carries the property reads its part's
@@ -34,9 +36,19 @@ def test_one_property_has_the_four_extent_corners():
     for prop in (0, 1):
         for part in (48, 49):
             index = field.keys.index(('bp', basic.index[((part,), (prop,))]))
+            for b in range(4):
+                for j in range(2):
+                    byte = [a for a, span in enumerate(field.spans[b].tolist()) if span == [j, j + 1]]
+                    expected = torch.tensor(at[prop, part]) * float(raw[b, j] == part)
+                    torch.testing.assert_close(field.events[index, b, byte[0]].detach().cpu(), expected)
+            # A reading is the greatest over its attended percepts: where the
+            # whole is not held over all of its bytes (48 49, 49 48), the
+            # extent holds the row's parts outside its wholes, so a row whose
+            # part is present reads against there as well.
             presence = (raw == part).any(-1).float()[:, None]
-            torch.testing.assert_close(field.values[index, :, 0].detach(),
-                                       presence * torch.tensor(at[prop, part]))
+            mixed = torch.tensor([0., 0., 1., 1.])[:, None]
+            expected = presence * torch.maximum(torch.tensor(at[prop, part]), mixed * torch.tensor([0., 1.]))
+            torch.testing.assert_close(field.values[index, :, 0].detach().cpu(), expected)
     # The four corners, true, false, both and both, are read across the
     # concept's members' rows: for where only for is given, against where
     # only against, both where each is.
@@ -49,7 +61,7 @@ def test_one_property_has_the_four_extent_corners():
 
 
 def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
-    cs = _cs()
+    cs = with_own_codes(_cs(), (48, 49, 65))
     for length in (1, 8, 256, 1024):
         native, extents = binary_features(cs, torch.full((1, length), 65))
         actual = cs.cs_read_memberships(native, extents)
@@ -60,7 +72,7 @@ def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
 
 
 def test_a_located_part_need_not_pervade_but_the_whole_property_must():
-    cs = _cs()
+    cs = with_own_codes(_cs(), (7, 8))
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48, 49], [0., 1.])
     # A PS percept and a WS property have independent native addresses.
@@ -72,10 +84,11 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     whole = torch.tensor([[[0, 2]]]).expand(3, -1, -1)
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
     # The part at [0,1] suffices at [0,2]; the property must hold at both
-    # positions. A missing property adds no counterevidence to the present part.
+    # positions. Where it holds at one only, the extent holds the row's
+    # parts and lies outside its whole: against.
     # Inspect this occurrence before the extent readout union.
-    torch.testing.assert_close(cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((part,), (0,))]) for part in (7, 8)]).amax(0)[:, 0, -1],
-                               torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
+    torch.testing.assert_close(cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((part,), (0,))]) for part in (7, 8)]).amax(0)[:, 0, -1].cpu(),
+                               torch.tensor([[1., 0.], [0., 1.], [0., 1.]]))
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
@@ -84,7 +97,7 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
 
 @pytest.mark.parametrize('literal', [(7,), (7, 8)])
 def test_part_containment_belongs_to_the_subject_extent(literal):
-    cs = _cs()
+    cs = with_own_codes(_cs(), (7, 8, 9))
     basic_feature(cs, 0, 'ps', literal, 1.)
     raw = torch.full((1, 8), 65)
     ids = torch.tensor([[7, 8, 9, 9, 9, 9, 9, 9]])
@@ -130,7 +143,7 @@ def test_raw_analysis_layout_clips_regions_to_observed_input():
 
 
 def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
-    cs = _cs()
+    cs = with_own_codes(_cs(), (65,))
     primitive = PrimitiveProperties(2)
     with torch.no_grad():
         primitive.members[:, 65] = torch.tensor([.25, .36])

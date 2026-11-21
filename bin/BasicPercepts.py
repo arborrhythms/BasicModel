@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 
 #: The where wires and the when wires of an attended percept.
@@ -109,21 +110,47 @@ def attended(bank, where=None, share=None, capacity=None):
     return Attended(index, filled, table, chosen, token, bank.time.gather(1, index))
 
 
+def least_of_greater(x, c, chunk=1 << 24):
+    """``min_k max(x[b, a, k], c[r, k])``, ``[R, B, A]``, for wires ``x``
+    ``[B, A, K]`` and a constant ``c`` ``[R, K]``. The least is found
+    without a gradient, a slab of rows at a time, and its value is then
+    taken from ``x`` by index, so the gradient reaches ``x`` at the least
+    wire alone and nothing ``[R, B, A, K]`` is kept for the backward."""
+    B, A, K = x.shape
+    R = c.shape[0]
+    if not K:
+        return x.new_ones(R, B, A)
+    c = c.to(x)
+    step = max(1, chunk // max(1, B * A * K))
+    with torch.no_grad():
+        held = x.detach()[None]
+        least = torch.cat([torch.maximum(held, c[r:r + step, None, None, :]).argmin(-1)
+                           for r in range(0, R, step)]) if R else x.new_zeros(0, B, A, dtype=torch.long)
+    base = (torch.arange(B * A, device=x.device) * K).reshape(B, A)
+    taken = x.reshape(-1)[base[None] + least]
+    kept = c.gather(1, least.reshape(R, -1)).reshape(R, B, A)
+    return torch.maximum(taken, kept)
+
+
 def held_at(bank, table, codes=None):
     """Each row of ``bank`` at each attended percept of ``table`` ``[B, A,
-    columns, 2]``, read from the codes of 0 and 1 on the what columns
-    (:meth:`BasicPercepts.read_points` for such codes): ``part``, the
-    percept holds the row's parts; ``whole``, the row's wholes hold the
-    percept; ``added``, the percept holds a part that the row's against lane
-    names (a part its nearer holders add). Each ``[rows, B, A]``."""
+    columns, 2]``, read from the graded what columns by the least and the
+    greatest (each ``[rows, B, A]``): ``part``, the least of the percept's
+    parts wires over the row's parts; ``whole``, the least, over the wires
+    the row's wholes cut, of one less the percept's wholes wire; ``added``,
+    the greatest of the percept's parts wires over the parts the row's
+    against lane names (a part its nearer holders add). A row's own code
+    is graded too: ``max(wire, 1 - code)`` stands for a part it holds to the
+    degree ``code``. At codes of 0 and 1 these are the read of
+    :meth:`BasicPercepts.read_points`."""
     codes = bank.codes if codes is None else codes
     iw, width = bank.identity_width, bank.width
     point = table[..., :width, 0].to(codes)
-    row, against = codes[:, 0], codes[:, 1]
-    miss = torch.einsum('rc,bac->rba', row[:, :iw], 1 - point[..., :iw])
-    outside = torch.einsum('bac,rc->rba', point[..., iw:], 1 - row[:, iw:])
-    hit = torch.einsum('bac,rc->rba', point[..., :iw], (against[:, :iw] > .5).to(codes))
-    return (miss < .5).to(codes), (outside < .5).to(codes), (hit > .5).to(codes)
+    row, against = codes[:, 0].detach(), codes[:, 1].detach()
+    part = least_of_greater(point[..., :iw], 1 - row[:, :iw])
+    whole = least_of_greater(1 - point[..., iw:], row[:, iw:])
+    added = 1 - least_of_greater(1 - point[..., :iw], 1 - against[:, :iw])
+    return part, whole, added
 
 
 class PlaceEntries(nn.Module):
@@ -721,10 +748,13 @@ class BasicPercepts(nn.Module):
         """Each occurrence's code ``[B, O, width]``, as a row's code is made
         (:meth:`subspace_bounds`). The parts half: the greatest of the codes
         of the identity atoms of the bytes it spans (of the part leaves it
-        covers, where the store has no identity). The wholes half: the least
-        of the codes of ``wholes`` present over every byte it spans and of
-        its tightest whole (all ones where none). The bytes are read on the
-        host once, and each distinct run of bytes is coded once."""
+        covers, where the store has no identity), each present to degree
+        one. The wholes half: the least, over ``wholes``, of the greater of
+        a whole's code and one less the degree it holds over the bytes
+        spanned (its for lane, where it covers them all), and its tightest
+        whole (all ones where none). Graded, with the gradient of each
+        whole's degree. The bytes are read on the host once, and each
+        distinct run of bytes is coded once."""
         from PerceptProperties import counts_in_spans
         part_ids, part_spans, primitive, raw, _ = percepts
         raw = raw[:, 0] if raw.ndim == 3 else raw
@@ -764,17 +794,21 @@ class BasicPercepts(nn.Module):
             leaf_spans = part_spans.to(device)
             inside = ((leaf_spans[:, None, :, 0] >= spans[..., :1]) & (leaf_spans[:, None, :, 1] <= spans[..., 1:])
                       & (leaves >= 0)[:, None]).to(codes)                                     # [B, O, P]
-            codes[..., :self.identity_width] = (inside @ part).clamp(max=1.)
+            codes[..., :self.identity_width] = (inside[..., None] * part[:, None]).amax(2) if part.shape[1] else 0.
         if wholes and self.property_width and self.whole is not None and primitive is not None and O:
+            # A whole held to the degree ``f`` (its for lane over the bytes
+            # spanned, where it covers them all) bounds the wholes wires by
+            # the greater of its code and ``1 - f``; nothing is cut.
             counts = counts_in_spans(raw, spans.to(device), observed=raw != 0)
             selected = counts[real]
             evidence = primitive.evidence_on_counts(selected, rows=torch.tensor(wholes, device=device))
             complete = selected.sum(-1) == (spans[..., 1] - spans[..., 0])[real]
-            present = codes.new_zeros(B, O, len(wholes), dtype=torch.bool)
-            present[real] = (evidence[..., 0] >= .5) & complete[..., None]
-            whole_codes = self.whole_codes(list(wholes)).to(codes)
-            for n in range(len(wholes)):
-                held = torch.where(present[..., n, None], torch.minimum(held, whole_codes[n]), held)
+            degree = codes.new_zeros(B, O, len(wholes))
+            degree = degree.index_put((real.nonzero(as_tuple=True)),
+                                      (evidence[..., 0] * complete[..., None]).to(codes))
+            whole_codes = self.whole_codes(list(wholes)).to(codes)                          # [W, pw]
+            bound = least_of_greater(1 - degree, whole_codes.T).permute(1, 2, 0)             # [B, O, pw]
+            held = torch.minimum(held, bound)
         codes[..., self.identity_width:] = held
         return codes * real[..., None]
 
@@ -935,7 +969,13 @@ class BasicPercepts(nn.Module):
                  if when_encoding is not None else what.new_zeros(*place.shape, WHEN_WIRES))
         lanes = lambda c: torch.stack((c, 1 - c), -1) * real[..., None, None]
         table = torch.cat((what * real[..., None, None], lanes(wires), lanes(ticks)), -2)
-        activity = real[..., None].expand(-1, -1, 2).to(dtype)
+        # An occurrence is present where every byte it spans is observed: a
+        # missing byte supplies neither lane of any row read there.
+        text = raw[:, 0] if raw.ndim == 3 else raw
+        seen = F.pad((text != 0).long().cumsum(-1), (1, 0))
+        ends = spans.clamp(0, text.shape[-1])
+        observed = (seen.gather(1, ends[..., 1]) - seen.gather(1, ends[..., 0])) == spans[..., 1] - spans[..., 0]
+        activity = (real & observed)[..., None].expand(-1, -1, 2).to(dtype)
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
         return PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
