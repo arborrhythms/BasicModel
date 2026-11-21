@@ -21111,9 +21111,13 @@ class BasicModel(BaseModel):
                         cached[word] = (index,payload,native,fresh if old is None else old[3]|fresh)
                     _,payload,native,_ = cached[word]
                     payload = masked_payload(payload,rows)
+                    from FragmentRead import as_leaf
+                    payload, restore = as_leaf(self,payload,index,rows)
                     if field is not None:
                         field.arrive(index,payload,native,rows)
                     word_step(index,payload,native)
+                    if restore is not None:
+                        restore()
                 start_compose(torch.zeros((),device=words.device,dtype=torch.long))
                 looks = None
                 separate_closing = field is not None or reading_walk is not None
@@ -21423,6 +21427,8 @@ class BasicModel(BaseModel):
                 complete_intuition(self, present, close_errors)
                 from IdeaRead import complete as complete_idea
                 complete_idea(self, self._last_sentence_understanding, present, close_errors)
+                from FragmentRead import complete as complete_fragments
+                complete_fragments(self, observations, selected, present, close_errors, sid, looks=look_trials)
                 if single:
                     from ObjectiveOwnership import registry_costs
                     combine(single_costs, registry_costs(close_errors))

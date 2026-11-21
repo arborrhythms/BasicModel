@@ -339,14 +339,38 @@ class Looks:
             choice.update(index=index, slot=index.clamp_min(0))
             self.decisions.append(choice)
             interpreted = choice['interpreted'] & found
+            fragment = None
+            if self.teacher is None:
+                # The grammar's option to take the basic level's read of the
+                # run of words that begins here as one constituent.
+                from FragmentRead import take
+                replayed = None
+                if self.prior is not None and decision < len(self.prior.decisions):
+                    replayed = self.prior.decisions[decision].get('fragment_taking')
+                fragment = take(model, state, bank, extent, index, interpreted, prior=replayed)
+                if fragment is not None:
+                    choice['fragment_taking'] = fragment['taking']
+                    choice['fragment'] = fragment['run']
             state.record(word, interpreted)
             own = lower(own, bank, index, interpreted)
+            if fragment is not None and fragment['idea'] is not None:
+                others = fragment['run'] & (torch.arange(W, device=index.device)[None] != index[:, None])
+                for value in others.any(0).nonzero().flatten().tolist():
+                    with_it = others[:, value]
+                    at = torch.full_like(index, value)
+                    state.record(at, with_it)
+                    own = lower(own, bank, at, with_it)
+                model._fragment_leaf = dict(index=index, taking=fragment['taking'],
+                                            idea=fragment['idea'], classes=fragment['classes'])
             handoff_reading(model, state)
             model._sentence_look_fields = dict(getattr(model, '_sentence_look_fields', {}))
             model._sentence_look_fields[self.sid] = tuple(self.fields)
             # Batch rows can interpret different words at the same look.
-            for value in index[interpreted].unique().tolist():
-                arrive(torch.tensor(value, device=index.device), interpreted & (index == value))
+            try:
+                for value in index[interpreted].unique().tolist():
+                    arrive(torch.tensor(value, device=index.device), interpreted & (index == value))
+            finally:
+                model.__dict__.pop('_fragment_leaf', None)
         return state.reading()
 
 

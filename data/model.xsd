@@ -51,6 +51,7 @@
       <xs:element name="operatorCost" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="reductionCost" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="interpretBias" type="unitInterval" minOccurs="0"/>
+      <xs:element name="fragmentBias" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionTarget" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionLimit" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionHorizon" type="xs:positiveInteger" minOccurs="0"/>

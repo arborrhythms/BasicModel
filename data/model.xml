@@ -24,6 +24,9 @@
          fraction of the allowance; the chooser reads the rounds left. -->
     <reductionCost>1</reductionCost>
     <interpretBias>1</interpretBias>
+    <!-- The probability that a look over a run of words takes the idea the
+         basic level reads from it as one constituent. -->
+    <fragmentBias>0</fragmentBias>
     <omissionTarget>0.9</omissionTarget>
     <omissionLimit>0.5</omissionLimit>
     <omissionHorizon>1024</omissionHorizon>

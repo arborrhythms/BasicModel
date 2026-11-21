@@ -6409,6 +6409,9 @@ class OperationSelectionLayer(nn.Module):
         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
         from Expectation import unit, positive
         self.interpret_bias = unit(TheXMLConfig.get('architecture.interpretBias', default=1.), 'interpretBias')
+        # The probability that a look over a run of words takes its read idea
+        # as one constituent (FragmentRead); at zero nothing of it runs.
+        self.fragment_bias = unit(TheXMLConfig.get('architecture.fragmentBias', default=0.), 'fragmentBias')
         self.exploration_fraction = unit(TheXMLConfig.training('explorationUniformFraction', .5), 'explorationUniformFraction')
         if self.exploration_fraction == 0.:
             raise ValueError('explorationUniformFraction must be positive')
