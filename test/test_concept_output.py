@@ -1,6 +1,4 @@
 """Native concept identity, learned output, and its independent ordered inverse."""
-from basic_fixtures import feature as basic_feature
-from order_fixtures import force_order
 from pathlib import Path
 from types import SimpleNamespace
 from dataclasses import replace
