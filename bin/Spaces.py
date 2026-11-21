@@ -15212,10 +15212,15 @@ class ConceptualSpace(Space):
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
         when = torch.stack((positions, positions + 1), -1)
-        return basic.lookup(percepts, extents, rows,
+        bank = basic.lookup(percepts, extents, rows,
             dtype=self.similarity_codebook.W.dtype, when=when,
             registry=getattr(model, 'where_registry', None),
             when_encoding=getattr(model, 'when_encoding', None))
+        # The occurrences at each place are met, and a place's row is
+        # nominated on the count that nominates a form.
+        from Places import meet
+        meet(self, bank)
+        return bank
 
     def cs_read_bank(self, bank, activity=None, *, publish=True):
         """The order-zero concepts of a bank's readings, each event present

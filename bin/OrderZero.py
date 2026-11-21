@@ -65,9 +65,9 @@ class SparsePiLayer3(nn.Module):
             self.keys.append(key)
         return found
 
-    def append(self, keys, weight=1.0, against=()):
-        """Write the next row over its members at ``weight`` on both lanes,
-        then its against entries."""
+    def append(self, keys, weight=1.0, against=(), weights=None):
+        """Write the next row over its members at ``weight`` on both lanes
+        (or each at its own of ``weights``), then its against entries."""
         ids = list(dict.fromkeys(self.member(key) for key in keys))
         opposed = [i for i in dict.fromkeys(self.member(key) for key in against) if i not in ids]
         row, start = self.n_rows, self.nnz
@@ -79,6 +79,9 @@ class SparsePiLayer3(nn.Module):
         if end > start:
             self.col[start:end] = torch.tensor(ids + opposed, dtype=torch.long, device=self.col.device)
             self.value[:, start:end] = float(weight)
+            if weights is not None:
+                self.value[:, start:start + len(ids)] = torch.tensor(
+                    [float(w) for w in weights][:len(ids)], dtype=self.value.dtype, device=self.value.device)
             self.against[start:end] = False
             self.against[start + len(ids):end] = True
         self.crow[row + 1] = end

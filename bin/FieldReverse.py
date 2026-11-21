@@ -114,8 +114,10 @@ def reverse(model, sub, field):
         found = supports.get(col)
         supports[col] = attributed[edge, ..., 0] if found is None else torch.maximum(found, attributed[edge, ..., 0])
     for col, support in supports.items():
-        if cs.basic_percepts.is_value(col // 2):
-            continue  # Values have no byte locations; the value inverse reads their percepts.
+        if cs.basic_percepts.is_value(col // 2) or col // 2 in cs.basic_percepts.place_rows:
+            # Values have no byte locations (the value inverse reads their
+            # percepts); a place has no part and puts back no byte.
+            continue
         group, wholes = cs.basic_percepts.occurrences[col // 2]
         for whole in wholes:
             properties[whole][col % 2] = torch.maximum(properties[whole][col % 2], place(support))

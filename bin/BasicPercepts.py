@@ -79,12 +79,16 @@ class BasicPercepts(nn.Module):
         # The stored form each row of a form spells, and the rows of each
         # form; each row's key in ``index``.
         self.forms, self.form_rows, self._keys = {}, {}, {}
+        # A place's row: its entries on the where wires' two lanes and the
+        # members it keeps (:mod:`Places`); the cones met at each band.
+        self.place_rows, self.place_cones = {}, {}
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)
 
     def is_value(self, row):
-        return min(self.occurrences[int(row)][0]) < -self.identity_width
+        parts = self.occurrences[int(row)][0]
+        return bool(parts) and min(parts) < -self.identity_width
 
     def whole_codes(self, references):
         return self._boundary_codes(references, whole=True)
@@ -261,6 +265,40 @@ class BasicPercepts(nn.Module):
             self.words[int(word)] = row
         return row
 
+    def reserve_place(self, plus, minus, whats=()):
+        """A row of the first Pi whose entries are on the where wires, ``plus``
+        on their for lane and ``minus`` on their against lane, and on the
+        members ``whats`` it keeps (none for a place met by many forms)."""
+        plus = torch.as_tensor(plus, dtype=torch.float32).detach().cpu()
+        minus = torch.as_tensor(minus, dtype=torch.float32).detach().cpu()
+        whats = tuple(whats)
+        key = ('place', tuple(round(v, 6) for v in plus.tolist()),
+               tuple(round(v, 6) for v in minus.tolist()), whats)
+        row = self.index.get(key)
+        if row is None:
+            row = len(self.index)
+            if row >= self.capacity:
+                raise OverflowError('BasicPercepts capacity exhausted')
+            self.index[key] = row
+            self._keys[row] = key
+            self.occurrences[row] = (), ()
+            self.place_rows[row] = plus, minus, whats
+            self.forms[row] = None
+            if self.pi.append(self.member_keys(row), weights=self.member_weights(row)) != row:
+                raise RuntimeError('the first Pi disagrees with the basic percept rows')
+            self.revision += 1
+        return row
+
+    def member_weights(self, row):
+        """The weights of a row's entries in the first Pi, in the order of
+        :meth:`member_keys` (``None``: each at one)."""
+        held = self.place_rows.get(int(row))
+        if held is None:
+            return None
+        plus, minus, whats = held
+        wires = torch.cat((plus, minus))
+        return [1.] * len(whats) + [float(v) for v in wires if float(v) != 0.]
+
     def carrying(self, tower, features):
         features = tuple(features if isinstance(features, (tuple, list)) else (int(features),))
         if tower == 'ps':
@@ -403,6 +441,8 @@ class BasicPercepts(nn.Module):
         (rule 52); for a value, the bins above it (rule 55)."""
         if not 0 <= int(row) < len(self.index):
             raise ValueError('unavailable basic percept reference')
+        if int(row) in self.place_rows:
+            return self.codes.new_zeros(self.width)
         code = self.code(row)
         parts, _wholes = self.occurrences[int(row)]
         held = code.new_zeros(self.identity_width)
@@ -441,7 +481,7 @@ class BasicPercepts(nn.Module):
     def against_keys(self, row):
         """A row's against entries in the first Pi: the parts that its
         nearest holders add, each as a run of one part (rule 53)."""
-        if int(row) in self.conjunctions:
+        if int(row) in self.conjunctions or int(row) in self.place_rows:
             return []
         parts, _wholes = self.occurrences[int(row)]
         identity = getattr(self.native, 'identity', None)
@@ -470,7 +510,8 @@ class BasicPercepts(nn.Module):
             return
         self.pi.clear()
         for row in rows:
-            self.pi.append(self.member_keys(row), against=self.against_keys(row))
+            self.pi.append(self.member_keys(row), against=self.against_keys(row),
+                           weights=self.member_weights(row))
 
     def lanes(self, row):
         """A percept's two lanes, ``[2, width]``: for, then against."""
@@ -479,6 +520,9 @@ class BasicPercepts(nn.Module):
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
             raise ValueError('unavailable basic percept reference')
+        if int(row) in self.place_rows:
+            # A place has no part and no whole: it is read on the where wires.
+            return self.codes.new_zeros(self.width)
         members = self.conjunctions.get(int(row))
         if members is not None:
             # The greatest over its members' codes and a small draw keyed to
@@ -513,6 +557,11 @@ class BasicPercepts(nn.Module):
         run of parts and each of its wholes. A value percept has none."""
         if int(row) in self.conjunctions:
             return [('bp', member) for member in self.conjunctions[int(row)]]
+        if int(row) in self.place_rows:
+            from Places import where_keys
+            plus, minus, whats = self.place_rows[int(row)]
+            wires = torch.cat((plus, minus))
+            return list(whats) + [key for key, v in zip(where_keys(len(plus)), wires) if float(v) != 0.]
         parts, wholes = self.occurrences[int(row)]
         if min(parts) < -self.identity_width:
             return []
@@ -575,8 +624,12 @@ class BasicPercepts(nn.Module):
         self._refresh_pi()
         keys, groups, opposed = [], [], []
         for row in rows:
-            group = [] if row in self.conjunctions else self.member_keys(row)
+            # A place is read on the where wires (:mod:`Places`); the members
+            # it keeps are read with the bank's keys.
+            group = [] if row in self.conjunctions or row in self.place_rows else self.member_keys(row)
             keys.extend(group); groups.append(group)
+            if row in self.place_rows:
+                keys.extend(self.place_rows[row][2])
             opposed.append(self.pi.row_against(row))
             keys.extend(opposed[-1])
         native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
@@ -626,6 +679,10 @@ class BasicPercepts(nn.Module):
             value = self._row_values(members, happened, rows, groups, order, opposed)
             event = self._row_lanes(happened, run, rows, order, presence=lies)
             values, events = list(value), list(event)
+            from Places import value as place_value
+            presence = (bank.activity if activity is None else activity)[..., 0].to(members)
+            for index, (lanes, at) in place_value(self, bank, native, presence, rows)[0].items():
+                values[index], events[index] = lanes, at
             # Members come before the conjunctions over them.
             members = [('bp', r) for r in rows]
             for index, row in enumerate(rows):
@@ -817,7 +874,9 @@ class BasicPercepts(nn.Module):
         from IndependentComponents import _pack_state
         return _pack_state(dict(version=2, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), places=self.places[:len(self.index)].tolist(),
                                 conjunctions=tuple(self.conjunctions.items()),
-                                forms=tuple((row, raw) for row, raw in self.forms.items() if raw is not None)))
+                                forms=tuple((row, raw) for row, raw in self.forms.items() if raw is not None),
+                                place_rows=tuple((row, (plus.tolist(), minus.tolist(), whats))
+                                                 for row, (plus, minus, whats) in self.place_rows.items())))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
@@ -837,8 +896,13 @@ class BasicPercepts(nn.Module):
             self.form_rows.setdefault(bytes(raw), []).append(int(row))
         conjunctions = dict(state.get('conjunctions', ()))
         places = state.get('places', [-1] * len(state['occurrences']))
+        place_rows = dict(state.get('place_rows', ()))
         self.places.fill_(-1)
+        self.place_rows, self.place_cones = {}, {}
         for row, ((parts, wholes), place) in enumerate(zip(state['occurrences'], places)):
+            if row in place_rows:
+                self.reserve_place(*place_rows[row])
+                continue
             self.reserve(parts, wholes, place=None if place < 0 else place,
                          members=conjunctions.get(row))
         self.words = dict(state['words'])

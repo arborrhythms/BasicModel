@@ -155,7 +155,9 @@ def salience(owner, bank, request, *, perception=None, field=None):
     rows = torch.tensor(bank.rows, dtype=torch.long, device=device)
     row_grad = grad.index_select(0, graph.percept_start + rows) if len(bank.rows) else grad[:0]
     members, events = first_pi(bank, perception, row_grad)
-    # No weight of the way up reads a where wire (the Sigma of order zero
-    # reads rows, never a code or a place), so the bands take no share.
-    band = events.new_zeros(events.shape[:2])
-    return SalienceMap(events, band, row_grad, members)
+    # No concept reads a where wire; a place's row of the first Pi does, and
+    # is passed by its entries onto the band of its reading's start.
+    import Places
+    band, kept = Places.down(basic, bank, perception, row_grad)
+    events = events + torch.stack((kept, torch.zeros_like(kept)), -1).to(events)
+    return SalienceMap(events, band.to(events), row_grad, members)
