@@ -156,8 +156,10 @@ def word_percepts(reverse, field, width):
     return F.pad(result, (0, width - result.shape[-1])) if result.shape[-1] < width else result[..., :width]
 
 
-def reconstruct(model, record, errors, active, *, previous=None):
-    """Input and order-zero reconstructions share exactly one reverse chain."""
+def reconstruct(model, record, errors, active, *, previous=None, silent=None):
+    """Input and order-zero reconstructions share exactly one reverse chain.
+    A silent sentence (``silent`` ``[B]``, rule S -> NULL) puts back NULL at
+    every place, and that is scored against the sentence."""
     field = record.open_field
     if previous is None:
         first = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
@@ -170,6 +172,11 @@ def reconstruct(model, record, errors, active, *, previous=None):
     model._reverse_event_loss(visible, observed,
         registry=errors, name='reconstruction_reverse', weight=model.loss.reconstruction_scale)
     generation, second = reconstruct_generation(model, record, target, active)
+    if silent is not None and bool(silent.any()):
+        from Interpret import SilenceLayer
+        put = second._reconstruction_percepts
+        gate = silent.to(put.device).reshape(-1, *([1] * (put.ndim - 1)))
+        second._reconstruction_percepts = torch.where(gate, SilenceLayer().reverse(put), put)
     model._sentence_order_zero_field = generation.field
     publish(model, generation.field)
     model._reverse_event_loss(second._reconstruction_percepts, target,

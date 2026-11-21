@@ -75,11 +75,11 @@ def measure_layout(model, rows, *, packed):
     reconstruct = SentenceField.reconstruct
     captured = {}
 
-    def capture(owner, record, errors, active):
+    def capture(owner, record, errors, active, **options):
         captured[int(record.sentence)] = dict(
             roots=record.roots.detach().clone(), end=record.end_slots.detach().clone(),
             depth=record.depths.detach().clone(), end_depth=record.end_depth.detach().clone())
-        result = reconstruct(owner, record, errors, active)
+        result = reconstruct(owner, record, errors, active, **options)
         captured[int(record.sentence)]['byte_cost'] = owner._last_decoder_byte_identity.detach().clone()
         return result
 
