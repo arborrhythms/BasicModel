@@ -214,12 +214,12 @@ output, and thoughts are a distillation of intuition."
 
 - *Understanding* is the conceptual definitions, trained by
   reconstruction: they explain the input.
-- *Expectation* is bottom-up. It is the reconstruction in stages on the
-  structure's own Pi, Not and Sigma, run once per sentence at the open pass
+- *Expectation* is bottom-up. It is made at each look on the
+  structure's own Pi, Not and Sigma
   ([below](#expectation-in-stages-on-the-structure)). The expected field is the
   spread of activation that primes attention, the chooser and retrieval.
-  It is taught by the reconstruction's error, omission among it, and it is
-  never evidence.
+  It is taught stage by stage, each order's expected values against what
+  the look brings there, and it is never evidence.
 - *Intuition* is top-down. `intuit` is an operator of thought with a Pi,
   Not and Sigma of its own outside the architecture: when thought calls it,
   its map gives the intuited field, which the operator writes into the
@@ -354,11 +354,10 @@ expectation now the architecture's (Alec, 2026-11-19: "if expectation comes
 from the arch, please let intuit have the pi-not-sigma that exists outside of
 the architecture"). Beside them is a read from a field to a point.
 
-- *Expectation*, `expect`, is the reconstruction in stages on the
-  structure's own Pi, Not and Sigma: the percepts, the concepts at each
-  order, and the output. It is built in, and taught by the reconstruction's
-  error, which is expectation over the input itself; omission teaches it
-  alone.
+- *Expectation*, `expect`, is made at each look on the structure's own Pi,
+  Not and Sigma. Its stages are the basic percepts, the concepts and the
+  symbols, and not the output. It is built in, and taught stage by stage: at
+  each order what was expected against what arrives there.
 - *Intuition's map* is a Pi, Not and Sigma of its own, from the observed
   concepts of order zero to the same concepts, which the operator `intuit`
   calls. It is taught by the field that thought leaves, with the output's
@@ -566,7 +565,7 @@ taught."
   What is already there is the kind of operation: "the neural pathways are there, in the sense that we
   already have those operations between those spaces." In a stack the way up
   is the pi stage to the hidden layer and the way down the sigma stage.
-- **What teaches the maps.** Expectation by the reconstruction in stages,
+- **What teaches the maps.** Expectation stage by stage at each look,
   intuition's map by the field thought leaves and the output's cost, and the
   read to a point by the idea comprehension leaves, as below. So the explicit side
   teaches the implicit one:
@@ -609,19 +608,22 @@ computationally, and my general feeling is that type relations are in fact
 strict (felix is a cat) but neighbor relations are not (Felix is like Ciao).
 So perhaps expectation is nonlinear in virtue of vertical propagation."
 
-Expectation has no map beside the structure. It is the reconstruction made
-in stages on the structure's own Pi, Not and Sigma (Alec, 2026-11-19: "we
-are predicting the state of percepts, concepts, and output. using the
-existing architecture will allow us to to sparse in interconnection, which
-should help amplify the salience"). What is expected is what the vertical
+Expectation has no map beside the structure. It is made at each look on the
+structure's own Pi, Not and Sigma (Alec, 2026-11-19: "using the existing
+architecture will allow us to to sparse in interconnection, which should
+help amplify the salience"; 2026-11-20: "at each attend(), we want to expect
+perceptual and symbolic activation and then learn that stage by stage as we
+move over the orders"). What is expected is what the vertical
 spread gives, once up and then down, on the matrices of every order
 (Alec, 2026-11-17):
 
 - *Up, by fan.* A concept's or a symbol's value is split among the rows that
   read it, each by its weight's share of all the weights it is read with.
 - *Down, by share.* A row's value is split among its inputs, each by its
-  weight's share of the row. What a row receives is summed over its parents
-  and children, at most one, and a Not entry passes to the other lane.
+  weight's share of the row. What a row receives from its parents and
+  children is joined as the product on complements (one less the product of
+  one less each), which never reaches one, and a Not entry passes to the
+  other lane.
 - *Siblings get less than the concept that caused them:* a concept present
   at one gives every other concept the spread reaches less than one.
 - *Across orders in one step.* A kind collects from every epistemic level
@@ -632,11 +634,14 @@ spread gives, once up and then down, on the matrices of every order
   receives from the rows its neighbours raised; this writes expected
   percepts, and a row still requires its members.
 
-It has three stages, the percepts expected at order zero, the concepts
-expected at each order, and the output, and each is compared with what the
-whole sentence has at that stage. It publishes its field once per sentence,
-at the open pass (`ConceptSpread.open_prediction`), and is taken again,
-unpublished, to forecast each look from everything outside it
+Its stages are the basic percepts, the concepts and the symbols, and not
+the output (Alec, 2026-11-20). At each look what was expected at a stage is
+compared with what the look brings there, and that cost teaches its own stage
+alone; nothing of it is carried through the way up and the way down again.
+The top-down reconstruction is a different thing: what an input is missing
+shows as the reconstruction's own error, and no function fills it in. The
+field is written at the sentence's open (`ConceptSpread.open_prediction`)
+and anew at each look, which is forecast from everything outside it
 ([Expectation](ExpectationRetention.md#the-forecast-of-a-look)). It also runs
 at the end of the read, before comprehension takes its leaves' objects, so
 that the object a sentence's words primed is preferred. A model with no

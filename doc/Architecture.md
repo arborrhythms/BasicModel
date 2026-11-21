@@ -345,11 +345,11 @@ path of the sentence (`ConceptSpread.open_prediction`). The relevance read (`rel
 $1 + \max(\text{expected knowing}) + \text{desire}$ for each stream and row,
 clamped at zero ($1 + \text{desire}$ on the serial concept path). Attention,
 the compose chooser, retrieval, rule order (`ConceptSpread.rule_order`) and the sparse
-projection onto the tower rows read it detached. Expectation is taught by the
-reconstruction in stages: where units of the sentence were hidden, the
-concepts' stage (`expectation.concepts`) is the difference between what is
-expected from the lossy field and the detached field with the hidden units
-present, and a sentence with nothing hidden gives that stage no cost. The spread biases where attention goes and carries
+projection onto the tower rows read it detached. Expectation is made at each
+look and learned stage by stage: at each look the concepts' stage
+(`expectation.concepts`) is the difference between what the earlier looks led
+it to expect and what the look brings, and the basic percepts' stage
+(`expectation.percepts`) likewise; each cost teaches its own stage alone. The spread biases where attention goes and carries
 no truth: nearness in meaning asserts nothing, and truth moves only along
 rules, through `infer`. Location keeps its other readers:
 `bind`'s content term, MTM's candidate matching and the
@@ -2017,15 +2017,17 @@ with no symbols never runs it over the orders. It also runs at the end of the
 read, before comprehension takes its leaves' objects, so that an object a
 sentence's words primed is preferred.
 
-**Expectation is the reconstruction in stages.** There is no map of
-expectation beside the structure (Alec, 2026-11-19: "a reconstruction that
-happens in stages: we are predicting the state of percepts, concepts, and
-output"). What is expected is what the spread gives on the Pi, the Not and
-the Sigma of each order, in three stages: the percepts expected at order
-zero, the concepts expected at each order, and the output. Each stage is
-compared with what the whole sentence has there, and its teacher is the
-reconstruction's error; where part of a sentence is hidden, the error at what
-was hidden teaches it. Its interconnection is the structure's, which is
+**Expectation is made at each look and learned stage by stage.** There is no
+map of expectation beside the structure. What is expected is what the spread
+gives on the Pi, the Not and the Sigma of each order (Alec, 2026-11-20: "at
+each attend(), we want to expect perceptual and symbolic activation and then
+learn that stage by stage as we move over the orders"). The stages are the
+basic percepts, the concepts and the symbols, and not the output. At each
+order what was expected is compared with what arrives there, and that cost
+teaches its own stage alone: expectation is not trained "all the way though on
+layers going both up and down again". The top-down reconstruction is a
+different thing. What is missing from an input shows as the reconstruction's
+own error, and no function fills it in. Its interconnection is the structure's, which is
 sparse, "which should help amplify the salience". It "is not counted as
 evidence, it is just removing some of the burden from later layers. it
 should be used only to guess at network activation" (Alec, 2026-11-19), and
@@ -2829,7 +2831,7 @@ Output is a sequence of order-0 points, one decode per item; the word order come
 
 The architecture is a dual-process model, and the distinction is structural, not a label on speeds. The line between the two systems "is equivalently at symbols, or higher-order logic (which is what symbols allow)" (Alec, 2026-11-18). The distinction is the design's account of what separates animal from human cognition.
 
-**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the first block of Pi, Not and Sigma that makes the order-0 concepts, the order-0 decoder, expectation (the reconstruction in stages on the structure's own Pi, Not and Sigma, run once at the open pass by `ConceptSpread.open_prediction`; in a mind with symbols it runs over the orders, [Sigma and Pi Layers](#sigma-and-pi-layers)), intuition's own map (a Pi, Not and Sigma outside the architecture, which the operator `intuit` calls), and memory's linking at order zero: MTM's nomination of basic percepts and its behavioral chains, by recurrence. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
+**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the first block of Pi, Not and Sigma that makes the order-0 concepts, the order-0 decoder, expectation (made at each look on the structure's own Pi, Not and Sigma, by `ConceptSpread`, and taught stage by stage; in a mind with symbols it runs over the orders, [Sigma and Pi Layers](#sigma-and-pi-layers)), intuition's own map (a Pi, Not and Sigma outside the architecture, which the operator `intuit` calls), and memory's linking at order zero: MTM's nomination of basic percepts and its behavioral chains, by recurrence. It holds no symbol: "symbols only exist at order-1 when MTM promotes them. MTM does promote percepts to basic percepts, but both of those are basic (or order zero)" (Alec, 2026-11-18). Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, follows the continuity of things and of courses of events, and learns all of it without grammar. The identity of a thing across moments is a symbol of order 1, and System 2's. The loop with no thinking step is that mind.
 
 **System 2** is the higher-order logic that symbols allow: symbols, which begin at order 1 with what MTM promotes there, its identities among them, and the higher orders, the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
 
@@ -3141,7 +3143,7 @@ from an operator, whereas expect is built in to a model parameter").
 | Where it is computed | in the architecture: the spread on the structure's own Pi, Not and Sigma | outside the architecture: a Pi, Not and Sigma of its own, from concepts to concepts |
 | What turns it on | built in; a parameter of the model | an operator, when thought calls it |
 | What it gives | the expected field, a guess at activation, never evidence | the intuited field, which the operator writes into knowing, marked as intuition |
-| Taught by | the reconstruction in stages: percepts, concepts, output | the field that thought leaves, with the output's cost |
+| Taught by | stage by stage at each look: basic percepts, concepts, symbols, each against what arrives | the field that thought leaves, with the output's cost |
 
 Intuition's map, each kernel of `marker`, and the read from a field to a
 point (`idea_stack`) are learned maps from one space to another, not explicit

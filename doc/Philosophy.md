@@ -753,8 +753,8 @@ is the object.
   scene. What attention excludes is *not taken up*: not conceived, no trace,
   no absence. Where there is a prediction it only biases where attention
   opens: what primes attention, the chooser and retrieval is the field
-  expectation gives, the reconstruction in stages on the structure's own Pi,
-  Not and Sigma, read detached, and it selects without adding anything.
+  expectation gives, made at each look on the structure's own Pi, Not and
+  Sigma, read detached, and it selects without adding anything.
 - **Where there is also a prediction, it is applied to everything but the
   object.** The context is dimmed to the extent that it was expected, and
   the object of observation is conceived in full, expected or not. This is
@@ -2302,9 +2302,8 @@ The object file remains MTM's origin at every level, including basic percepts: r
 In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison.
 
 System 1 holds no explicit rule. What it expects and what it intuits are two
-things: expectation, the reconstruction in stages on the structure's own Pi,
-Not and Sigma, taught by the reconstruction's error, so that it restores what
-a sentence left out; and intuition's map, a Pi, Not and Sigma of its own from
+things: expectation, made at each look on the structure's own Pi, Not and
+Sigma and taught stage by stage by what each look brings; and intuition's map, a Pi, Not and Sigma of its own from
 concepts to concepts, called by the operator `intuit` and taught by the field
 thought leaves and by the output cost.
 System 2 holds the explicit structure: the grammar, and the relations of

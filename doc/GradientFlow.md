@@ -147,12 +147,13 @@ top-down gradient reaches expectation and expectation's loss reaches nothing
 else. Where an expectation gain is configured, the gain multiplies the signal
 detached (`Expectation.gain_field`), so a predictor cannot learn to mispredict
 in order to brighten a signal or to over-predict in order to silence it. At
-the conceptual layer the expectation is the reconstruction in stages on the
+the conceptual layer the expectation is made at each look on the
 structure's own Pi, Not and Sigma ([Expectation](ExpectationRetention.md)),
 whose output is also the spread that primes attention, the chooser and
-retrieval, read detached; it is taught by the reconstruction's error, and
-where units were hidden by the detached field with them present
-(`expectation.concepts`). `intuit` has a Pi, Not and Sigma of its own
+retrieval, read detached; it is taught stage by stage, each order's expected
+values against what the look brings there (`expectation.percepts`,
+`expectation.concepts`), and no cost of it crosses a stage or passes through
+the way back. `intuit` has a Pi, Not and Sigma of its own
 outside the architecture: it writes the intuited field into the open basic
 field, marked as intuition, and closes it along the definitions
 (`FieldProjection.close`); its map is taught by the field that thought
@@ -500,7 +501,7 @@ lanes and `reconstruction.walk_credit` belong to reconstruction/R. No
 compose-tree teacher trains the generate policy. Shared numerical inverse operators retain their ownership;
 `separateChooser=true` still restricts parameter writes by owner.
 
-Expectation is taught by the reconstruction, and `intuit`'s map by the
+Expectation is taught stage by stage at each look, and `intuit`'s map by the
 field that thought leaves, with the output's cost. Numeric heads retain
 their forward readout with `answerSynthesis=false`.
 

@@ -222,7 +222,8 @@ only when the look returns that one word; a look over several words reads the
 sum of its words' latest pairs. `attend` reads the pairs through two columns
 of its context projection that start at zero (`AttentionContext.project`), so
 an untaught `attend` asks as it would without them. The comparison is reported and is
-not a cost: expectation is taught by the reconstruction, at the open pass.
+not a cost: expectation is taught stage by stage at each look, by what the
+look brings at each order.
 
 ## The observation and its surprise
 

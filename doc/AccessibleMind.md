@@ -157,9 +157,10 @@ become chooser features. Open references gate conclusion. One `attentionBudget`
 covers every nested attempt; the grammar scorer receives the expectation image
 as context. A departure is judged by its whole path's reconstruction and
 supplied-answer cost; the walk's metered work bounds it but is not a cost.
-Expectation's input, the observed field, is always detached, and it learns
-from the reconstruction in stages, omission among it, against the detached
-field with the hidden units present
+Expectation's input, the observed field, is always detached. It is made at
+each look and learns stage by stage (basic percepts, concepts, symbols): at
+each order what was expected against what arrives there, each cost within
+its own stage
 ([Reasoning](Reasoning.md#expectation-in-stages-on-the-structure)).
 
 ## Cued LTM reads
