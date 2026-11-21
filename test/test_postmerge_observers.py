@@ -40,7 +40,7 @@ def test_stepped_trace_and_provenance_preserve_read_and_state(tmp_path,monkeypat
         assert any(row['kind']=='deposit' and row['count'] for row in deposits)
         assert all(not row['negative'] for row in deposits if row['kind']=='deposit')
         trace=observed['attention']['trace']
-        assert trace and trace['masks'] and trace['choices']
+        assert trace and trace['requests'] and trace['turns']
         assert trace['actions'][0]==observed['attention']['actions']
         observed['attention']['trace']=plain['attention']['trace']
         assert observed==plain

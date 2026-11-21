@@ -96,14 +96,14 @@ def test_native_admissible_terminal_has_finite_float32_loss_and_parameter_gradie
     from Models import BasicModel
     from test_one_backward import receipt
     model = SimpleNamespace(_readback_percept_width=300, _image_form_width=328)
-    model.conditioner = torch.nn.Linear(29, 392, bias=False, dtype=torch.float32)
+    model.conditioner = torch.nn.Linear(41, 392, bias=False, dtype=torch.float32)
     with torch.no_grad():
         model.conditioner.weight.zero_()
     model._question_conditioner = lambda width, device, dtype: model.conditioner
     idea = torch.full((1, 3, 392), .5)
     idea[:, :, 328:360] = 1e-15
     idea[:, :, 360:] = 0
-    parent = BasicModel._condition_answer_on_question(model, idea, torch.ones(1, 29))[:, 0]
+    parent = BasicModel._condition_answer_on_question(model, idea, torch.ones(1, 41))[:, 0]
     parent.retain_grad()
     terminal = parent.detach().clone()
     terminal[:, 328:360] = .5

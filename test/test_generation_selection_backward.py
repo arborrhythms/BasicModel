@@ -25,7 +25,7 @@ def conditioned_root(dtype, *, form_value=.5, for_value=.5, against_value=0., sy
     model._question_conditioner(392, device=torch.device('cpu'), dtype=dtype)
     idea = torch.full((1, 392), form_value, dtype=dtype, device='cpu')
     idea[:, 328:360], idea[:, 360:] = for_value, against_value
-    root = model.condition(idea, idea.new_ones(1, 29))
+    root = model.condition(idea, idea.new_ones(1, __import__("Language").MLPTransformChooser.WHAT_CONTEXT_DIM))
     return model.question_conditioners['392'].weight, root
 
 

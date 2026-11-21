@@ -54,7 +54,7 @@ def test_default_grammar_head_preserves_legacy_weights_rng_and_outputs(d_model):
     legacy.mlp = nn.Sequential(
         nn.Linear(2 * d_model + 16, hidden), nn.GELU(), nn.Linear(hidden, 1))
     with torch.random.fork_rng(devices=[]):
-        legacy.what_projection = nn.Linear(29, 3, bias=False)
+        legacy.what_projection = nn.Linear(41, 3, bias=False)
     nn.init.zeros_(legacy.what_projection.weight)
     # The reader of the budget's code starts at zero and draws nothing.
     legacy.budget_projection = nn.Module()
@@ -95,7 +95,7 @@ def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
     assert sum(isinstance(layer, nn.GELU) for layer in chooser.mlp) == depth
 
     x = torch.randn(2, 4, 4, requires_grad=True)
-    context = torch.randn(2, 29, requires_grad=True)
+    context = torch.randn(2, 41, requires_grad=True)
     budget = Language.budget_code(Language.budget_encoding(), torch.tensor([3, 1]), 2, device='cpu', dtype=torch.float32)
     unary = chooser.score_unary(
         x, torch.randn(2, 4, 2, 4), what_ctx=context, budget=budget)
