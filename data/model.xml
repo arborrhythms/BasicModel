@@ -27,6 +27,15 @@
     <!-- The probability that a look over a run of words takes the idea the
          basic level reads from it as one constituent. -->
     <fragmentBias>0</fragmentBias>
+    <!-- The pairs of words a sentence may tie (WordTies). -->
+    <wordTieCapacity>256</wordTieCapacity>
+    <!-- The candidate entries held at a look, and the penalty on each. -->
+    <candidateCapacity>64</candidateCapacity>
+    <candidatePenalty>0.2</candidatePenalty>
+    <!-- The least value at which a structure is read. -->
+    <structureReadThreshold>0.001</structureReadThreshold>
+    <!-- The rows of the table a look presents: the attended percepts. -->
+    <attendedPercepts>256</attendedPercepts>
     <omissionTarget>0.9</omissionTarget>
     <omissionLimit>0.5</omissionLimit>
     <omissionHorizon>1024</omissionHorizon>
