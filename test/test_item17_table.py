@@ -215,9 +215,12 @@ def test_63_what_a_look_reads_is_its_table(tmp_path, monkeypatch):
         basic = owner.basic_percepts
         O = bank.token.shape[1]
         assert not hasattr(bank, 'native') and not hasattr(bank, 'band')
-        assert bank.members.shape[2] == O and bank.members.ndim == 4
+        # No member is read at the occurrences: the bank holds the rows'
+        # codes, one row each, and the occurrences' table.
+        assert not hasattr(bank, 'members')
+        assert bank.codes.shape == (len(bank.rows), 2, bank.width)
         assert bank.table.shape[1] == O and bank.table.ndim == 4
-        print(dict(occurrences=O, members=tuple(bank.members.shape), table=tuple(bank.table.shape)))
+        print(dict(occurrences=O, codes=tuple(bank.codes.shape), table=tuple(bank.table.shape)))
         capacity = O // 2
         monkeypatch.setattr(BasicPercepts, 'attended_capacity', lambda: capacity)
         with torch.no_grad():

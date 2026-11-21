@@ -85,7 +85,8 @@ def places_of(model):
 def test_a_place_is_nominated_by_the_cone_and_brings_a_concept(tmp_path, monkeypatch):
     """The occurrences met at a place are counted under one key; on the count
     that nominates a form, the cone over them is a row: entries on the where
-    wires, and on a member only where every occurrence there holds it. Each
+    wires, and a what code (the least parts and the greatest wholes over the
+    codes met) only where the occurrences there share a part. Each
     place's row has a concept of order zero; no content row and no concept
     has an entry on a where wire."""
     model = model_for(tmp_path, monkeypatch)
@@ -94,9 +95,12 @@ def test_a_place_is_nominated_by_the_cone_and_brings_a_concept(tmp_path, monkeyp
         nominate(model, one + two + lesson)
         basic, concept = places_of(model)
         rows = sorted(basic.place_rows)
-        pure = [row for row in rows if not basic.place_rows[row][2]]
+        pure = [row for row in rows if basic.place_rows[row][2] is None]
+        kept = {row: basic.place_rows[row][2] for row in rows if basic.place_rows[row][2] is not None}
         print(dict(places=len(rows), with_no_what=len(pure),
-                   kept={row: basic.place_rows[row][2] for row in rows if basic.place_rows[row][2]}))
+                   kept={row: what.nonzero().flatten().tolist() for row, what in kept.items()}))
+        # A kept what holds a part.
+        assert all(bool(what[:basic.identity_width].any()) for what in kept.values())
         assert pure and set(rows) == set(concept)
         for row in range(len(basic.index)):
             if row in basic.place_rows:
