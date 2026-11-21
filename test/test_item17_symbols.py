@@ -234,6 +234,8 @@ def test_54c_where_a_forms_holder_stands_in_its_place_the_concept_reads_zero():
     """(c) The concept of ``archer`` reads its own row at tanh(1) and reads
     zero on ``archery``, whose row of ``archer`` reads for 1 and against 1,
     which the Not makes one signed value, 0. ``is`` on ``this`` likewise.
+    On ``reach``, which holds its parts outside its tightest whole, it
+    reads -tanh(1).
     Read through the first Pi, the Not and the Sigma of order zero's
     classes, one concept on each row, at its start."""
     from test_item17_code import coded, _read_form
@@ -256,7 +258,10 @@ def test_54c_where_a_forms_holder_stands_in_its_place_the_concept_reads_zero():
     assert table['archer on archer'] == pytest.approx(one, abs=1e-6)
     assert table['is on is'] == pytest.approx(one, abs=1e-6)
     assert table['archer on archery'] == 0. and table['is on this'] == 0.
-    assert table['archer on reach'] == 0.
+    # ``reach`` holds the parts of ``archer`` and lies outside its tightest
+    # whole: the row reads against, and the concept one signed value below
+    # zero.
+    assert table['archer on reach'] == pytest.approx(-one, abs=1e-6)
 
 
 def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_apart(tmp_path, monkeypatch):
