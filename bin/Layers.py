@@ -5471,6 +5471,16 @@ class SparseLayer(Layer):
             return self.values.device
         return self._target_device or torch.device("cpu")
 
+    def _apply(self, fn, *args, **kwargs):
+        # A layer with no entries yet holds no tensor that a move carries;
+        # its target device follows the move, so that what it makes later
+        # (a bound view, its first entries) is made where the module lives.
+        result = super()._apply(fn, *args, **kwargs)
+        probe = fn(torch.empty(0, device=self._device()))
+        if torch.is_tensor(probe):
+            self._target_device = probe.device
+        return result
+
     def _grow_values(self):
         # Tail-preserving: keep trained prefix, init the new tail.
         n = self.nnz
