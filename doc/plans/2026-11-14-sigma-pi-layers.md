@@ -9597,6 +9597,19 @@ We need to fix this in 1.7, even if it takes a few more rounds.
 - (e) *Reconstruction in passes.* The way back runs once for each look that was taken and gives that look's table back, each row's what at its where and when; each pass writes its rows onto the output at the where they give. The final cost is on the whole output so written. This is built last, so that he may correct it first.
 - (f) *The lanes.* The what is on the code's two lanes; a where or a when wire c is on the lanes c and 1 − c, as the places' rows read it.
 
+### 19.117 Alec: the whole field of location-bound percepts is made before every sentence, and it is the domain of the first Pi (2026-11-21)
+
+"Does this make sense, the hyper cube of percepts that I propose to present to the first pi? It can't be just a reference into the percept codebook, because each percept needs an associated location. That muxing looks more like it used to, but it happens before the pi. I leave it to you to decide if we can create the entire field of location-bound percepts before every sentence at all mereological orders: I think we can, so that will be the domain the the first pi operates on."
+
+*It makes sense, and it is decided so (Claude, as he left it to me).*
+
+- *Why a reference is not enough.* A reference into the percept codebook names a what. One what occurs at several places, so a reference carries no place, and a row of the Pi that reads references can never be taught a place. A row of the field is the what with its own where and when.
+- *It is the old muxing, moved.* Until rule 62 the where and the when were joined to the Pi's content after the product and read by the Sigma (`OrderZero.combine`, §19.115). Now they are joined before the product and read by the row of the Pi.
+- *The whole field can be made before every sentence.* Its rows are the sentence's occurrences at every level of the tower: each part's event, each word, each known form of several units, each whole that covers them. At 256 words a sentence that is about 1,500 rows; each row is 64 + 64 + 4 + 4 wires on two lanes; so the field is about 1.6 MB a stream and about 46 MB at the production batch of 28. What did not fit was never the percepts: it was every member read at every event of every reading (§19.116).
+- *The field and the table.* The field is made once, at the one lookup of a sentence, and is the domain of the first Pi. A look presents at most `attendedPercepts` rows of it (rule 76): the look selects rows and computes no code. Step 2 of round 6d is read so: the bank holds the field, already muxed.
+- *What a level is here.* A whole of the wholes tower (a class a form lies in) is not an occurrence of its own; it is in the wholes half of each occurrence's code. The occurrences above a word are the known forms that hold it. Nothing is made for a span that no known percept covers.
+- *To watch:* an image's field is every patch at every level, about 4/3 of its finest level, which is larger than a sentence's but still linear in the input. The implementer returns the count of occurrences on the lesson and on the benchmark's first batch.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
