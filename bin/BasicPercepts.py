@@ -5,34 +5,114 @@ import torch
 from torch import nn
 
 
+#: The where wires and the when wires of an attended percept.
+WHERE_WIRES = WHEN_WIRES = 4
+
+
+def attended_capacity():
+    """The rows of the table a look presents, ``attendedPercepts``."""
+    from util import TheXMLConfig
+    return int(TheXMLConfig.get('architecture.attendedPercepts', default=256))
+
+
 @dataclass(frozen=True)
 class PerceptBank:
-    """The percepts of a sentence, read once by one lookup and held on the
-    device: each member read at each event (``native.events``, ``[member,
-    B, reading, event, 2]``), the events' spans, the rows of the first Pi
-    the lookup names with their members and against entries. A look is an
-    activity over the events; nothing of the lookup is read again."""
-    native: object
+    """The location-bound percepts of a sentence, made once by its one
+    lookup and held on the device: every occurrence at every level of the
+    percept tower (a part's event, a whole's span, a reading's bracket), each
+    as its muxed row (``table``: the code's two lanes, the where wires and
+    the when wires, each wire ``c`` on the lanes ``c`` and ``1 - c``), with
+    its span, the reading that holds it and its time; and each member of the
+    rows of the first Pi the lookup names, read at each occurrence. A look
+    reads a table of at most ``attendedPercepts`` of them
+    (:func:`attended`)."""
     rows: tuple
     groups: tuple
     opposed: tuple
-    keys: tuple
-    place: torch.Tensor = None      # [B, events] each event's place, its start
-    token: torch.Tensor = None      # [B, events] the reading that holds it, or -1
-    band: torch.Tensor = None       # [B, events, 4] the where wires at its place
-    time: torch.Tensor = None       # [B, events] the time of the reading that holds it
-    activity: torch.Tensor = None   # [B, events, 2] its own activity, on two lanes
+    keys: tuple                     # the members, in the order of ``members``
+    members: torch.Tensor           # [keys, B, occurrences, 2] each member at each occurrence
+    span: torch.Tensor              # [B, occurrences, 2]
+    token: torch.Tensor             # [B, occurrences] the reading that holds it, or -1
+    time: torch.Tensor              # [B, occurrences] the time of that reading
+    table: torch.Tensor             # [B, occurrences, width + where + when, 2]
+    activity: torch.Tensor          # [B, occurrences, 2] its own activity, on two lanes
+    where: torch.Tensor             # [B, readings, 2] each reading's bracket
+    when: torch.Tensor              # [B, readings, 2] each reading's interval
+    width: int = 0                  # the what columns of ``table``
+    percept_where: torch.Tensor = None   # [keys, member, 4] the members' ladders
+    when_band: torch.Tensor = None       # [B, readings, 4]
+    registry: object = None              # the where wires (``WhereRegistry``)
 
-    def at(self, activity):
-        """The members' reading with each event present to the degree of
-        ``activity`` ``[B, events, 2]``, each lane by its own."""
-        from dataclasses import replace
-        events = self.native.events
-        width = events.shape[-2]
-        activity = activity[:, :width].to(events)
-        events = events * activity[None, :, None]
-        values = events.amax(-2) if width else events.sum(-2)
-        return replace(self.native, values=values, events=events)
+
+@dataclass(frozen=True)
+class Attended:
+    """A look's table: each attended percept's occurrence ``index`` ``[B,
+    A]``, whether the row is filled, its members, its muxed row (the where
+    columns gathered from the where wires), its span, reading and time."""
+    index: torch.Tensor
+    filled: torch.Tensor
+    members: torch.Tensor     # [keys, B, A, 2]
+    table: torch.Tensor       # [B, A, width + where + when, 2]
+    span: torch.Tensor        # [B, A, 2]
+    token: torch.Tensor       # [B, A]
+    time: torch.Tensor        # [B, A]
+
+
+def _dense_rank(key, mask):
+    """The rank of each masked value among the distinct masked values of its
+    stream, ascending, ``[B, O]``."""
+    big = key.abs().max() + 1 if key.numel() else key.new_ones(())
+    held = torch.where(mask, key, big)
+    ordered, order = held.sort(-1)
+    new = torch.ones_like(ordered, dtype=torch.bool)
+    new[:, 1:] = ordered[:, 1:] != ordered[:, :-1]
+    ranks = new.long().cumsum(-1) - 1
+    return torch.empty_like(ranks).scatter_(1, order, ranks)
+
+
+def attended(bank, where=None, share=None, capacity=None):
+    """The occurrences a look attends and their table (:class:`Attended`).
+
+    All of them where they fit. Otherwise those inside ``where`` ``[B, 2]``
+    (the sentence's extent where not given), the largest first, and those
+    that contain it, the smallest first, a level down and a level up in
+    turn, until the table is full; within a level that does not fit whole,
+    the greater ``share`` ``[B, O]`` first, then a draw."""
+    capacity = attended_capacity() if capacity is None else int(capacity)
+    span = bank.span
+    B, O = bank.token.shape
+    real = span[..., 1] > span[..., 0]
+    if O <= capacity:
+        index = torch.arange(O, device=span.device)[None].expand(B, -1)
+        filled = real
+    else:
+        if where is None:
+            far = torch.iinfo(span.dtype).max
+            where = torch.stack((torch.where(real, span[..., 0], far).amin(-1),
+                                 torch.where(real, span[..., 1], -1).amax(-1)), -1)
+        extent = span[..., 1] - span[..., 0]
+        inside = real & (span[..., 0] >= where[:, None, 0]) & (span[..., 1] <= where[:, None, 1])
+        around = real & ~inside & (span[..., 0] <= where[:, None, 0]) & (span[..., 1] >= where[:, None, 1])
+        last = 2 * O + 2
+        level = torch.where(inside, 2 * _dense_rank(-extent, inside),
+                            torch.where(around, 2 * _dense_rank(extent, around) + 1, last))
+        share = torch.zeros(B, O, device=span.device) if share is None else share.detach().to(span.device)
+        order = torch.rand(B, O, device=span.device).argsort(-1)
+        order = order.gather(1, (-share.float().gather(1, order)).argsort(dim=-1, stable=True))
+        order = order.gather(1, level.gather(1, order).argsort(dim=-1, stable=True))
+        index = order[:, :capacity]
+        filled = level.gather(1, index) < last
+    keys = bank.members.shape[0]
+    members = bank.members.gather(2, index[None, ..., None].expand(keys, -1, -1, 2))
+    table = bank.table.gather(1, index[..., None, None].expand(-1, -1, *bank.table.shape[2:]))
+    chosen = span.gather(1, index[..., None].expand(-1, -1, 2))
+    if bank.registry is not None:
+        start = torch.where(filled, chosen[..., 0], -1)
+        wires = bank.registry.encode('text', start).to(table)
+        lanes = torch.stack((wires, 1 - wires), -1) * filled[..., None, None]
+        table = torch.cat((table[..., :bank.width, :], lanes, table[..., bank.width + wires.shape[-1]:, :]), -2)
+    token = torch.where(filled, bank.token.gather(1, index), -1)
+    return Attended(index, filled, members, table, chosen, token, bank.time.gather(1, index))
 
 
 class BasicPercepts(nn.Module):
@@ -82,6 +162,11 @@ class BasicPercepts(nn.Module):
         # A place's row: its entries on the where wires' two lanes and the
         # members it keeps (:mod:`Places`); the cones met at each band.
         self.place_rows, self.place_cones = {}, {}
+        # Each row's entries on the where wires and on the when wires of an
+        # attended percept, each wire on its two lanes (``c``, ``1 - c``).
+        # Learned, at zero or more, starting at nothing (rule 31).
+        self.where_entries = nn.Parameter(torch.zeros(self.capacity, 2 * WHERE_WIRES))
+        self.when_entries = nn.Parameter(torch.zeros(self.capacity, 2 * WHEN_WIRES))
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)
@@ -284,20 +369,28 @@ class BasicPercepts(nn.Module):
             self.occurrences[row] = (), ()
             self.place_rows[row] = plus, minus, whats
             self.forms[row] = None
-            if self.pi.append(self.member_keys(row), weights=self.member_weights(row)) != row:
+            if self.pi.append(self.member_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
+            with torch.no_grad():
+                self.where_entries[row] = torch.cat((plus, minus)).to(self.where_entries)
             self.revision += 1
         return row
 
-    def member_weights(self, row):
-        """The weights of a row's entries in the first Pi, in the order of
-        :meth:`member_keys` (``None``: each at one)."""
-        held = self.place_rows.get(int(row))
-        if held is None:
-            return None
-        plus, minus, whats = held
-        wires = torch.cat((plus, minus))
-        return [1.] * len(whats) + [float(v) for v in wires if float(v) != 0.]
+    def place_factor(self, table, rows):
+        """Each row's entries on the where and the when wires read at each
+        attended percept, ``[rows, B, A]``: ``exp(E+ . log c + E- . log(1 -
+        c))`` over the wires ``c`` of ``table`` ``[B, A, columns, 2]``; one
+        where every entry is at nothing."""
+        index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
+        entries = torch.cat((self.where_entries, self.when_entries), -1).index_select(0, index)
+        entries = torch.where(entries >= 0, entries, 0.).to(table)
+        wires = table[..., self.width:self.width + WHERE_WIRES + WHEN_WIRES, 0].clamp(1e-6, 1 - 1e-6)
+        n = WHERE_WIRES + WHEN_WIRES
+        plus = torch.cat((entries[:, :WHERE_WIRES], entries[:, 2 * WHERE_WIRES:2 * WHERE_WIRES + WHEN_WIRES]), -1)
+        minus = torch.cat((entries[:, WHERE_WIRES:2 * WHERE_WIRES], entries[:, 2 * WHERE_WIRES + WHEN_WIRES:]), -1)
+        logs = torch.einsum('bac,rc->rba', wires.log(), plus[:, :n]) + torch.einsum(
+            'bac,rc->rba', (1 - wires).log(), minus[:, :n])
+        return logs.exp()
 
     def carrying(self, tower, features):
         features = tuple(features if isinstance(features, (tuple, list)) else (int(features),))
@@ -510,8 +603,7 @@ class BasicPercepts(nn.Module):
             return
         self.pi.clear()
         for row in rows:
-            self.pi.append(self.member_keys(row), against=self.against_keys(row),
-                           weights=self.member_weights(row))
+            self.pi.append(self.member_keys(row), against=self.against_keys(row))
 
     def lanes(self, row):
         """A percept's two lanes, ``[2, width]``: for, then against."""
@@ -558,10 +650,7 @@ class BasicPercepts(nn.Module):
         if int(row) in self.conjunctions:
             return [('bp', member) for member in self.conjunctions[int(row)]]
         if int(row) in self.place_rows:
-            from Places import where_keys
-            plus, minus, whats = self.place_rows[int(row)]
-            wires = torch.cat((plus, minus))
-            return list(whats) + [key for key, v in zip(where_keys(len(plus)), wires) if float(v) != 0.]
+            return list(self.place_rows[int(row)][2])
         parts, wholes = self.occurrences[int(row)]
         if min(parts) < -self.identity_width:
             return []
@@ -573,18 +662,65 @@ class BasicPercepts(nn.Module):
         """Tie both towers live, with the complementary pole from properties."""
         return self.read_bank(self.lookup(percepts, brackets, rows, **options))
 
+    def _occurrence_what(self, leaves, leaf_spans, spans, members, keys):
+        """Each occurrence's code ``[B, O, width]``: the parts half the union
+        of the codes of the parts it covers; the wholes half the least of
+        the codes of the wholes present over it (all ones where none)."""
+        B, O = spans.shape[:2]
+        codes = self.codes.new_zeros(B, O, self.width)
+        if leaves.shape[1]:
+            part = self.part_codes(leaves.clamp_min(0)).to(codes) * (leaves >= 0)[..., None]   # [B, P, iw]
+            inside = ((leaf_spans[:, None, :, 0] >= spans[..., :1]) & (leaf_spans[:, None, :, 1] <= spans[..., 1:])
+                      & (leaves >= 0)[:, None]).to(codes)                                     # [B, O, P]
+            codes[..., :self.identity_width] = (inside @ part).clamp(max=1.)
+        held = codes.new_ones(B, O, self.property_width)
+        ws = [(i, key[1]) for i, key in enumerate(keys) if key[0] == 'ws']
+        if ws and self.property_width and self.whole is not None:
+            wholes = self.whole_codes([w for _, w in ws]).to(codes)
+            for n, (i, _) in enumerate(ws):
+                present = members[i, ..., 0] >= .5
+                held = torch.where(present[..., None], torch.minimum(held, wholes[n]), held)
+        codes[..., self.identity_width:] = held
+        return codes
+
+    def _form_spans(self, part_ids, part_spans, keys):
+        """Where each run of several parts among ``keys`` is found as an
+        ordered, adjacent run of the part events: its span, for each
+        stream."""
+        identity = getattr(self.native, 'identity', None)
+        atoms = (set(identity.atoms.values()) | set(identity.word_rows.values())) if identity is not None else set()
+        valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
+        found = [[] for _ in range(part_ids.shape[0])]
+        starts, ends = [], []
+        for key in keys:
+            run = key[1] if key[0] == 'ps' and isinstance(key[1], tuple) else ()
+            count = part_ids.shape[1] - len(run) + 1
+            if len(run) < 2 or count < 1 or set(run) <= atoms:
+                continue
+            match = valid[:, :count].clone()
+            for offset, pid in enumerate(run):
+                match &= valid[:, offset:offset + count] & (part_ids[:, offset:offset + count] == pid)
+                if offset:
+                    match &= part_spans[:, offset - 1:offset - 1 + count, 1] == part_spans[:, offset:offset + count, 0]
+            starts.append(torch.where(match, part_spans[:, :count, 0], -1))
+            ends.append(torch.where(match, part_spans[:, len(run) - 1:len(run) - 1 + count, 1], -1))
+        if starts:
+            spans = torch.stack((torch.cat(starts, 1), torch.cat(ends, 1)), -1)
+            for b, row in enumerate(spans.tolist()):
+                found[b] = [tuple(span) for span in row if span[0] >= 0]
+        return found
+
     def lookup(self, percepts, brackets, rows, **options):
-        """The one lookup of a sentence: every native event of the percepts,
-        each member of ``rows`` read at each event inside each bracket, held
-        as a :class:`PerceptBank`. What a look reads of it is
-        :meth:`read_bank` with the look's activity over the events."""
-        from PerceptField import read_percepts
+        """The one lookup of a sentence (:class:`PerceptBank`): its
+        occurrences, each part's event, each whole's span and each reading's
+        bracket, with each member of ``rows`` read at each occurrence and
+        each occurrence's muxed row. What a look reads of it is
+        :meth:`read_bank` over a table of :func:`attended` ones."""
+        from PerceptField import read_occurrences, member_bands
         from Spaces import PartSpace
         rows = tuple(dict.fromkeys(map(int, rows)))
         # A nested native row retains its recorded part witnesses. Descend
         # those references, not its spelling or an alternative byte tiling.
-        # Concept columns and basic-percept identities remain unchanged when
-        # perception promotes an ordered run to one native row.
         ancestry = getattr(self.native, 'part_groups', {})
         leaves = self._leaves()
         if ancestry:
@@ -611,92 +747,121 @@ class BasicPercepts(nn.Module):
                     ids[batch, :len(events)] = values[:, 0]
                     spans[batch, :len(events)] = values[:, 1:]
             percepts = ids, spans, primitive, raw, whole_spans
-        requested = rows
+        ordered = {}
         def with_members(row, seen):
             for member in self.conjunctions.get(row, ()):
                 with_members(member, seen)
             seen.setdefault(row, None)
             return seen
-        ordered = {}
         for row in rows:
             with_members(row, ordered)
         rows = tuple(ordered)
         self._refresh_pi()
         keys, groups, opposed = [], [], []
         for row in rows:
-            # A place is read on the where wires (:mod:`Places`); the members
-            # it keeps are read with the bank's keys.
-            group = [] if row in self.conjunctions or row in self.place_rows else self.member_keys(row)
+            group = [] if row in self.conjunctions else self.member_keys(row)
             keys.extend(group); groups.append(group)
-            if row in self.place_rows:
-                keys.extend(self.place_rows[row][2])
             opposed.append(self.pi.row_against(row))
             keys.extend(opposed[-1])
-        native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
-            native=self.native, **options)
-        spans, brackets = native.spans, native.where.to(native.spans.device)
+        keys = tuple(dict.fromkeys(keys))
+        # The occurrences: each part's event, each known form of several
+        # units where it is found, each whole's span, each reading's
+        # bracket, once each in a stream.
+        part_ids, part_spans, _primitive, raw, whole_spans = percepts
+        device = (raw[:, 0] if raw.ndim == 3 else raw).device
+        brackets = brackets.to(device)
+        forms = self._form_spans(part_ids.to(device), part_spans.to(device), keys)
+        found = []
+        for b in range(brackets.shape[0]):
+            held = dict.fromkeys(tuple(span) for source in (part_spans[b].tolist(), forms[b],
+                                                            whole_spans[b].tolist(), brackets[b].tolist())
+                                 for span in source if span[1] > span[0])
+            found.append(list(held))
+        O = max(map(len, found), default=0)
+        spans = torch.zeros(brackets.shape[0], O, 2, dtype=torch.long, device=device)
+        for b, held in enumerate(found):
+            if held:
+                spans[b, :len(held)] = torch.tensor(held, dtype=torch.long, device=device)
         real = spans[..., 1] > spans[..., 0]
         holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
                  & real[:, None])
         token = (torch.where(holds.any(1), holds.int().argmax(1), -1) if holds.shape[1]
                  else torch.full_like(spans[..., 0], -1))
-        place = torch.where(real, spans[..., 0], -1)
-        registry = options.get('registry')
-        band = None if registry is None else registry.encode('text', place)
-        time = (torch.where(token >= 0, native.when[..., 0].to(token.device).gather(1, token.clamp_min(0)), -1)
+        dtype = options.get('dtype')
+        members = read_occurrences(percepts, spans, keys, part_reader=PartSpace.part_memberships,
+                                   native=self.native, dtype=dtype)
+        when = options.get('when')
+        when = torch.zeros_like(brackets) if when is None else when.to(device)
+        time = (torch.where(token >= 0, when[..., 0].gather(1, token.clamp_min(0)), -1)
                 if holds.shape[1] else token.clone())
-        activity = real[..., None].expand(-1, -1, 2).to(native.events.dtype)
-        return PerceptBank(native, rows, tuple(map(tuple, groups)), tuple(map(tuple, opposed)), tuple(keys),
-                           place, token, band, time, activity)
+        what = self._occurrence_what(part_ids.to(device), part_spans.to(device), spans, members, keys)
+        what = torch.stack((what, torch.cat((torch.zeros_like(what[..., :self.identity_width]),
+                                             1 - what[..., self.identity_width:]), -1)), -1)
+        registry, when_encoding = options.get('registry'), options.get('when_encoding')
+        place = torch.where(real, spans[..., 0], -1)
+        wires = (registry.encode('text', place).detach().to(what) if registry is not None
+                 else what.new_zeros(*place.shape, WHERE_WIRES))
+        ticks = (when_encoding.encode(time.clamp_min(0)).to(what) * (time >= 0)[..., None]
+                 if when_encoding is not None else what.new_zeros(*place.shape, WHEN_WIRES))
+        lanes = lambda c: torch.stack((c, 1 - c), -1) * real[..., None, None]
+        table = torch.cat((what * real[..., None, None], lanes(wires), lanes(ticks)), -2)
+        activity = real[..., None].expand(-1, -1, 2).to(members.dtype)
+        bands = member_bands(keys, registry, device) if registry is not None else None
+        when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
+        return PerceptBank(rows, tuple(map(tuple, groups)), tuple(map(tuple, opposed)), keys, members,
+                           spans, token, time, table, activity, brackets.clone(), when.clone(),
+                           self.width, bands, when_band, registry)
 
-    def read_bank(self, bank, activity=None):
-        """The basic percepts of a bank's readings, with each event present
-        to the degree of ``activity`` ``[B, events, 2]`` (one where it is not
-        given): what the open run read, or what a look reads."""
+    def read_bank(self, bank, activity=None, look=None):
+        """The basic percepts of a bank's readings over a look's table
+        (``look``, or the :func:`attended` ones, chosen by ``activity``'s
+        share where a sentence does not fit), each occurrence present to the
+        degree of ``activity`` ``[B, occurrences, 2]`` (its own where not
+        given). A row's value at an attended percept is the product of its
+        entries there, on what, where and when; a reading's is the greatest
+        over the attended percepts it holds."""
         from PerceptField import PerceptField
-        native = bank.native if activity is None else bank.at(activity)
-        rows, keys = bank.rows, bank.keys
-        groups, opposed = [list(group) for group in bank.groups], [list(group) for group in bank.opposed]
-        values, events, boundaries = [], [], []
+        if look is None:
+            look = attended(bank, share=None if activity is None else activity.sum(-1))
+        own = bank.activity if activity is None else activity
+        index = look.index[..., None].expand(-1, -1, 2)
+        presence = own.to(look.members).gather(1, index) * look.filled[..., None]
+        members = look.members * presence[None]
+        rows, order = bank.rows, list(bank.keys)
+        groups = [list(group) for group in bank.groups]
+        K = bank.where.shape[1]
+        slot = torch.where(look.token >= 0, look.token, K)
+
+        def by_reading(x):
+            """``[n, B, A, 2]`` joined over each reading's attended percepts."""
+            out = x.new_zeros(x.shape[0], x.shape[1], K + 1, 2)
+            return out.scatter_reduce(2, slot[None, ..., None].expand_as(x), x, 'amax')[:, :, :K]
+        events, values, boundaries = members.new_zeros(0, *members.shape[1:]), None, []
         if rows:
-            order = list(dict.fromkeys(keys))
-            selected = native.selected(order)
-            members = native.values.index_select(0, selected)
-            happened = native.events.index_select(0, selected)
-            # A run of parts is the percept's presence: present wherever it
-            # lies in the extent, and at an event wherever it lies inside
-            # that event's span; the same on both lanes (it has no against
-            # of its own). A reading's value reads the wholes where the run
-            # lies; an event reads them over the event's span.
             run = torch.tensor([key[0] == 'ps' for key in order], dtype=torch.bool, device=members.device)
-            spans = native.spans.to(happened.device)
-            inside = ((spans[:, :, None, 0] <= spans[:, None, :, 0])
-                      & (spans[:, None, :, 1] <= spans[:, :, None, 1])
-                      & (spans[:, None, :, 1] > spans[:, None, :, 0])).to(happened)
-            lies = happened[..., None, :, 0] * inside[None, :, None]
-            # A reading with no event (a value alone, no word) holds no run.
-            lies = lies.amax(-1) if lies.shape[-1] else lies.sum(-1)
-            value = self._row_values(members, happened, rows, groups, order, opposed)
-            event = self._row_lanes(happened, run, rows, order, presence=lies)
-            values, events = list(value), list(event)
-            from Places import value as place_value
-            presence = (bank.activity if activity is None else activity)[..., 0].to(members)
-            for index, (lanes, at) in place_value(self, bank, native, presence, rows)[0].items():
-                values[index], events[index] = lanes, at
+            lanes = list(self._row_lanes(members, run, rows, order) if order
+                         else members.new_zeros(len(rows), *members.shape[1:]))
+            for index_, row in enumerate(rows):
+                if row in self.place_rows and not self.place_rows[row][2]:
+                    lanes[index_] = torch.stack((torch.ones_like(lanes[index_][..., 0]),
+                                                 torch.zeros_like(lanes[index_][..., 0])), -1)
+            factor = self.place_factor(look.table, rows)
+            lanes = list(torch.stack(lanes) * factor[..., None])
             # Members come before the conjunctions over them.
-            members = [('bp', r) for r in rows]
-            for index, row in enumerate(rows):
+            held = [('bp', r) for r in rows]
+            for index_, row in enumerate(rows):
                 if row in self.conjunctions:
-                    values[index] = self.pi(torch.stack(values), (row,), members)[0]
-                    events[index] = self.pi(torch.stack(events), (row,), members)[0]
-            values = list(self.held(torch.stack(values), rows))
-            events = list(self.held(torch.stack(events), rows))
+                    lanes[index_] = self.pi(torch.stack(lanes), (row,), held)[0]
+            events = self.held(torch.stack(lanes), rows)
+            values = by_reading(events)
+        reading = by_reading(members) if len(order) else members.new_zeros(0, members.shape[1], K, 2)
+        position = {key: i for i, key in enumerate(order)}
         for group in groups:
             if not group:
-                zero = native.values.new_zeros(native.values.shape[1:])
+                zero = reading.new_zeros(reading.shape[1:])
                 boundaries.append(torch.stack((zero, zero)))
                 continue
-            value = native.values.index_select(0, native.selected(group))
+            value = reading.index_select(0, torch.tensor([position[k] for k in group], device=reading.device))
             # The boundaries of a collection: the run of parts, and the
             # least of its wholes on the for lane with the least on the
             # against lane over the run and the wholes.
@@ -707,73 +872,24 @@ class BasicPercepts(nn.Module):
             whole = (torch.stack((least(value[1:], 0), least(value[1:], 1)), -1) if len(value) > 1
                      else torch.stack((torch.ones_like(value[0, ..., 0]), torch.zeros_like(value[0, ..., 0])), -1))
             boundaries.append(torch.stack((value[0], whole)))
-        shape = (0, *native.values.shape[1:])
-        value = torch.stack(values) if values else native.values.new_zeros(shape)
-        event = torch.stack(events) if events else native.events.new_zeros((0, *native.events.shape[1:]))
+        if values is None:
+            values = members.new_zeros(0, members.shape[1], K, 2)
         bands = None
-        if native.percept_where is not None:
+        if bank.percept_where is not None:
             grouped = []
             for group in groups:
-                selected = native.percept_where.index_select(0, native.selected(group)).flatten(0, 1)
+                chosen = [position[k] for k in group]
+                selected = bank.percept_where.index_select(
+                    0, torch.tensor(chosen, dtype=torch.long, device=bank.percept_where.device)).flatten(0, 1)
                 grouped.append(selected[selected.any(-1)])
             width = max((len(group) for group in grouped), default=0)
             bands = (torch.stack([torch.nn.functional.pad(group, (0, 0, 0, width-len(group)))
-                                  for group in grouped]) if grouped else native.percept_where[:0])
-        parts = None
-        if rows:
-            order = list(dict.fromkeys(keys))
-            parts = (tuple(order), native.values.index_select(0, native.selected(order)).detach())
-        return PerceptField(tuple(('bp', row) for row in rows), value, event, native.spans,
-            native.where, native.when, bands, native.when_band,
-            torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape), parts)
-
-    def _row_values(self, members, happened, rows, groups, order, opposed=None):
-        """Each row's two lanes for a reading, ``[rows, ..., 2]``.
-
-        The presence is the run's for lane over the reading. Each whole, and
-        each against entry, is read where the run lies: its lanes at the
-        events of the run's own parts, the greatest over them. The for lane
-        is the presence times the product of the wholes' for lanes. The
-        against lane is the presence times the union, ``1 - prod (1 - a)``,
-        of the wholes' against lanes and the against entries' presence (rule
-        53: a part that a nearer holder adds, found where the run lies). A
-        row with neither reads ``[presence, 0]``; a row with no member reads
-        nothing.
-        """
-        if not len(order):
-            return members.new_zeros(len(rows), *members.shape[1:])
-        opposed = [[] for _ in groups] if opposed is None else opposed
-        position = {key: index for index, key in enumerate(order)}
-        runs = [position[group[0]] if group else -1 for group in groups]
-        device = members.device
-        run = torch.tensor(runs, dtype=torch.long, device=device)
-        held = (run >= 0).reshape(-1, *([1] * (members.ndim - 2))).to(members)
-        safe = run.clamp_min(0)
-        presence = members.index_select(0, safe)[..., 0] * held
-        at_run = happened.index_select(0, safe)[..., 0]
-
-        def where_run_lies(lists):
-            width = max((len(w) for w in lists), default=0)
-            if not width:
-                return None, None
-            index = torch.tensor([w + [0] * (width - len(w)) for w in lists], dtype=torch.long, device=device)
-            mask = torch.tensor([[True] * len(w) + [False] * (width - len(w)) for w in lists], device=device)
-            lanes = happened.index_select(0, index.flatten()).reshape(len(rows), width, *happened.shape[1:])
-            lanes = at_run[:, None, ..., None] * lanes
-            # With no event in the reading there is nowhere for the run to lie.
-            lanes = lanes.amax(-2) if lanes.shape[-2] else lanes.sum(-2)
-            return lanes, mask.reshape(len(rows), width, *([1] * (lanes.ndim - 2)))
-
-        lanes, mask = where_run_lies([[position[key] for key in group[1:]] for group in groups])
-        if lanes is None:
-            for_lane, kept = torch.ones_like(presence), torch.ones_like(presence)
-        else:
-            for_lane = torch.where(mask[..., 0], lanes[..., 0], 1.).prod(1)
-            kept = torch.where(mask[..., 0], 1. - lanes[..., 1], 1.).prod(1)
-        entries, mask = where_run_lies([[position[key] for key in keys if key in position] for keys in opposed])
-        if entries is not None:
-            kept = kept * torch.where(mask[..., 0], 1. - entries[..., 0].clamp(0, 1), 1.).prod(1)
-        return torch.stack((presence * for_lane, presence * (1. - kept)), -1)
+                                  for group in grouped]) if grouped else bank.percept_where[:0])
+        parts = (tuple(order), reading.detach()) if rows else None
+        return PerceptField(tuple(('bp', row) for row in rows), values, events, look.span,
+            bank.where, bank.when, bands, bank.when_band,
+            torch.stack(boundaries, 1) if boundaries else values.new_zeros(2, *values.shape), parts,
+            look.token, look.index)
 
     def _row_lanes(self, members, run, rows, order, *, presence=None):
         """Each row's two lanes from its members' memberships, ``[K, ..., 2]``.
@@ -899,12 +1015,15 @@ class BasicPercepts(nn.Module):
         place_rows = dict(state.get('place_rows', ()))
         self.places.fill_(-1)
         self.place_rows, self.place_cones = {}, {}
+        learned = self.where_entries.detach().clone()
         for row, ((parts, wholes), place) in enumerate(zip(state['occurrences'], places)):
             if row in place_rows:
                 self.reserve_place(*place_rows[row])
                 continue
             self.reserve(parts, wholes, place=None if place < 0 else place,
                          members=conjunctions.get(row))
+        with torch.no_grad():
+            self.where_entries.copy_(learned)
         self.words = dict(state['words'])
         self.selectors = dict(state['selectors'])
         if state.get('scalar_state') is not None:
@@ -921,4 +1040,6 @@ class BasicPercepts(nn.Module):
         state.setdefault(prefix+'value_codes', torch.zeros_like(self.value_codes))
         state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))
         state.setdefault(prefix+'places', torch.full_like(self.places, -1))
+        state.setdefault(prefix+'where_entries', self.where_entries.detach().clone())
+        state.setdefault(prefix+'when_entries', self.when_entries.detach().clone())
         super()._load_from_state_dict(state, prefix, *args, **kwargs)

@@ -34,7 +34,7 @@ def bias(model):
 
 def knowing(owner, bank, words):
     """The order-zero field ``[B, n0, 2]`` of a look over the word slots
-    ``words`` ``[B, W]`` of ``bank``: each event present at its own activity
+    ``words`` ``[B, W]`` of ``bank``: each occurrence present at its own activity
     where its word is in ``words``, and absent elsewhere. Nothing is
     published and nothing is kept."""
     token = bank.token

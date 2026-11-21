@@ -229,25 +229,28 @@ class ThoughtTrialState:
                     for row, index in enumerate(indices)])
             if name == '_percept_field' and first is not None:
                 keys = tuple(sorted(set().union(*(value.keys for value in values))))
-                R, E = max(v.values.shape[2] for v in values), max(v.events.shape[3] for v in values)
+                R, E = max(v.values.shape[2] for v in values), max(v.events.shape[2] for v in values)
                 lookup = {key: i for i, key in enumerate(keys)}
                 data = first.values.new_zeros(len(keys), batch, R, 2)
-                events = first.events.new_zeros(len(keys), batch, R, E, 2)
+                events = first.events.new_zeros(len(keys), batch, E, 2)
                 where, when = first.where.new_zeros(batch, R, 2), first.when.new_zeros(batch, R, 2)
                 spans = first.spans.new_zeros(batch, E, 2)
+                reading = first.reading.new_full((batch, E), -1)
+                index = first.index.new_zeros(batch, E)
                 bands = None if first.when_band is None else first.when_band.new_zeros(batch, R, 4)
-                for row, index in enumerate(indices):
-                    value = values[index]
-                    r, e = value.values.shape[2], value.events.shape[3]
+                for row, index_ in enumerate(indices):
+                    value = values[index_]
+                    r, e = value.values.shape[2], value.events.shape[2]
                     for old, key in enumerate(value.keys):
                         data[lookup[key], row, :r] = value.values[old, row]
-                        events[lookup[key], row, :r, :e] = value.events[old, row]
+                        events[lookup[key], row, :e] = value.events[old, row]
                     where[row, :r], when[row, :r] = value.where[row], value.when[row]
                     spans[row, :e] = value.spans[row]
+                    reading[row, :e], index[row, :e] = value.reading[row], value.index[row]
                     if bands is not None:
                         bands[row, :r] = value.when_band[row]
                 return replace(first, keys=keys, values=data, events=events, where=where,
-                               when=when, spans=spans, when_band=bands)
+                               when=when, spans=spans, when_band=bands, reading=reading, index=index)
             if name == '_sentence_answer_predictions' and torch.is_tensor(first) and first.ndim == 3:
                 # Realized text has a path-dependent byte extent. Keep each
                 # selected stream, with zero padding just as at public output.

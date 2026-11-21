@@ -113,7 +113,8 @@ def test_a_place_is_nominated_by_the_cone_and_brings_a_concept(tmp_path, monkeyp
 
 def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatch):
     """A request for a place's concept is passed down by the row's entries:
-    the band share is greatest at the start of the reading at that place."""
+    the share on the where wires is greatest at an occurrence of the reading
+    at that place."""
     import Salience
     from test_item17_looks import held_banks
     from test_item18_expect import read
@@ -126,9 +127,7 @@ def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatc
         owner, bank = model._concept_owner(), banks[-1]
         basic, concept = places_of(model)
         perception = basic.read_bank(bank)
-        from Places import starts
-        start = starts(bank, perception.values.shape[2])[0]
-        live = [(k, int(e)) for k, e in enumerate(start.tolist()) if e >= 0]
+        start = bank.where[0, :, 0]
         checked = 0
         print(dict(start=start.tolist(), values={row: [round(v, 4) for v in perception.values[
             bank.rows.index(row), 0, :, 0].tolist()] for row in concept if row in bank.rows}))
@@ -144,8 +143,10 @@ def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatc
             band = Salience.salience(owner, bank, request, perception=perception).band[0]
             at = int(band.argmax())
             print(dict(place=row, reading=k, value=round(float(value[k]), 4), band_at=at,
-                       start=start[k].item(), share=round(float(band[at]), 4)))
-            assert at == int(start[k])
+                       band_span=bank.span[0, at].tolist(), start=start[k].item(), share=round(float(band[at]), 4)))
+            # The share lands on an occurrence of that reading, where the
+            # row reads most in it (printed: whether that is its start).
+            assert int(bank.token[0, at]) == k
             checked += 1
         assert checked
     finally:

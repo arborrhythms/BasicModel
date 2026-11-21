@@ -144,7 +144,8 @@ def test_symbolic_phase_unwritten_definitions_are_neither():
                                         percepts=(raw, spans, None, raw, spans))
     assert acts.shape == (sum(cs._field_caps()), 2, 1, 2)
     assert acts.count_nonzero() == 0
-    assert cs._percept_field.events.shape[1:] == (2, 1, 128, 2)
+    # One reading's 64 part events and its bracket: 65 attended percepts.
+    assert cs._percept_field.events.shape[1:] == (2, 65, 2)
     assert not hasattr(cs, "_cs_position_evidence")
     assert content is settled
 

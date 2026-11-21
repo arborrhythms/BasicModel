@@ -30,7 +30,8 @@ def test_different_positions_in_one_extent_supply_the_two_symbols():
         # The concept is one signed number, for less against.
         _, lanes = order_zero_expected(cs, 0, published_presence(cs, 0, reading))
         torch.testing.assert_close(read[0, 0, reading], lanes.to(read), atol=1e-5, rtol=1e-5)
-    assert cs._percept_field.events.shape[1:] == (1, 2, 8, 2)
+    # Four part events and two brackets: six attended percepts.
+    assert cs._percept_field.events.shape[1:] == (1, 6, 2)
     assert not hasattr(cs, "_cs_position_evidence")
 
 

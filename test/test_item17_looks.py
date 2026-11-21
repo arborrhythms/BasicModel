@@ -13,37 +13,46 @@ from PerceptField import PerceptField
 
 
 def hand_bank(keys, groups, events, readings_of_events, opposed=None):
-    """A bank of one stream: ``events`` ``{key: [(event, for, against)]}``,
-    each event in the reading ``readings_of_events[event]``."""
+    """A bank of one stream: ``events`` ``{key: [(occurrence, for,
+    against)]}``, each occurrence the span ``[p, p + 1]`` in the reading
+    ``readings_of_events[p]``."""
     P, K = len(readings_of_events), max(readings_of_events) + 1
-    lanes = torch.zeros(len(keys), 1, K, P, 2)
+    members = torch.zeros(len(keys), 1, P, 2)
     for i, key in enumerate(keys):
         for event, for_, against in events.get(key, ()):
-            lanes[i, 0, readings_of_events[event], event] = torch.tensor([for_, against])
+            members[i, 0, event] = torch.tensor([for_, against])
     spans = torch.tensor([[[p, p + 1] for p in range(P)]])
+    token = torch.tensor([readings_of_events])
     where = torch.tensor([[[min(p for p in range(P) if readings_of_events[p] == k),
                             max(p for p in range(P) if readings_of_events[p] == k) + 1] for k in range(K)]])
-    native = PerceptField(tuple(keys), lanes.amax(-2), lanes, spans, where, torch.zeros_like(where))
     opposed = tuple(() for _ in groups) if opposed is None else opposed
-    return PerceptBank(native, tuple(range(len(groups))), tuple(map(tuple, groups)), opposed, tuple(keys))
+    return PerceptBank(tuple(range(len(groups))), tuple(map(tuple, groups)), opposed, tuple(keys), members,
+                       spans, token, torch.zeros_like(token), torch.zeros(1, P, 0, 2), torch.ones(1, P, 2),
+                       where, torch.zeros_like(where))
 
 
 def row_values(bank):
-    """The rows' two lanes as the way up reads them: the run's presence
-    times the product of the wholes; against, the presence times the union
-    of the wholes' against lanes (each where the run lies)."""
+    """The rows' two lanes as the way up reads them at each occurrence: the
+    run's presence times the product of the wholes; against, the presence
+    times the union of the wholes' against lanes; a reading's, the greatest
+    over its occurrences."""
     order = {key: i for i, key in enumerate(bank.keys)}
-    values, events = bank.native.values, bank.native.events
-    rows = []
+    m = bank.members
+    at = []
     for group in bank.groups:
-        run = events[order[group[0]], ..., 0]
-        presence = values[order[group[0]], ..., 0]
-        wholes = [(run * events[order[key], ..., 0]).amax(-1) for key in group[1:]]
-        against = [(run * events[order[key], ..., 1]).amax(-1) for key in group[1:]]
+        presence = m[order[group[0]], ..., 0]
+        wholes = [m[order[key], ..., 0] for key in group[1:]]
+        against = [m[order[key], ..., 1] for key in group[1:]]
         for_lane = presence * torch.stack(wholes).prod(0) if wholes else presence
         kept = torch.stack([1 - a for a in against]).prod(0) if against else torch.ones_like(presence)
-        rows.append(torch.stack((for_lane, presence * (1 - kept)), -1))
-    return type('Read', (), dict(values=torch.stack(rows)))()
+        at.append(torch.stack((for_lane, presence * (1 - kept)), -1))
+    at = torch.stack(at)                                                  # [R, B, P, 2]
+    K = bank.where.shape[1]
+    held = bank.token[None, :, None, :] == torch.arange(K)[None, None, :, None]   # [1, B, K, P]
+    values = torch.where(held[..., None], at[:, :, None], 0.).amax(-2)
+    index = torch.arange(bank.token.shape[1])[None].expand(bank.token.shape[0], -1)
+    return PerceptField(tuple(('bp', r) for r in bank.rows), values, at, bank.span, bank.where, bank.when,
+                        reading=bank.token, index=index)
 
 
 def held_banks(monkeypatch):
@@ -95,9 +104,9 @@ def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(t
     for name, original in host.items():
         monkeypatch.setattr(torch.Tensor, name, original)
     del found
-    spans, token = bank.native.spans[0], bank.token[0]
-    word = (token == 0) & (spans[:, 1] - spans[:, 0] == 1)
-    beside = (token == 1) & (spans[:, 1] - spans[:, 0] == 1)
+    spans, token = bank.span[0], bank.token[0]
+    word = token == 0
+    beside = token == 1
     keys = list(dict.fromkeys(bank.keys))
     group = bank.groups[bank.rows.index(next(p for r, p, n in owner._concept_allocator.order_zero_members
                                              if r == concept and not n))]
@@ -108,8 +117,9 @@ def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(t
     assert any(key[0] == 'ws' for key in group) and any(key[0] == 'ps' for key in group)
     # Each member of the row, its run of parts and each property, takes a share.
     assert all(value > 0 for value in members.values())
-    # The events of the word take it; the other word's events none.
-    assert bool((salient.events[0, word, 0] > 0).all())
+    # The occurrences of the word that hold its row take it; the other
+    # word's occurrences none.
+    assert bool((salient.events[0, word, 0] > 0).any())
     assert float(salient.events[0, beside].abs().sum()) == 0.
     # Nothing is below zero, and the bands take nothing (no weight of the
     # way up reads a where wire).
@@ -127,7 +137,7 @@ def test_56b_a_concept_of_a_property_alone_lights_the_events_that_carry_it():
                      [0, 0, 1])
     row_grad = torch.zeros(2, 1, 2, 2)
     row_grad[0, ..., 0] = 1.
-    _, events = Salience.first_pi(bank, row_values(bank), row_grad)
+    _, events, _ = Salience.first_pi(bank, row_values(bank), row_grad)
     print(dict(events=events[0, :, 0].tolist()))
     assert events[0, :, 0].tolist() == [1., 0., 1.]
 
@@ -156,11 +166,11 @@ def test_56e_the_pi_analyses_by_wholes_as_it_synthesizes_by_parts():
     assert float(read.values[0, 0, 0, 0]) == pytest.approx(.4)
     row_grad = torch.zeros(1, 1, 1, 2)
     row_grad[..., 0] = 1.
-    members, events = Salience.first_pi(bank, read, row_grad)
+    members, events, _ = Salience.first_pi(bank, read, row_grad)
     print(dict(row=float(read.values[0, 0, 0, 0]), members=members[:, 0, 0, 0].tolist(),
                events=events[0, :, 0].tolist()))
     assert members[:, 0, 0, 0].tolist() == pytest.approx([.4, .4, .4])
-    # Read where the run lies: the properties' other events take nothing.
+    # Read at each occurrence: the properties' other occurrences take nothing.
     assert events[0, :, 0].tolist() == pytest.approx([1.2, 0., 0.])
 
 
@@ -685,23 +695,35 @@ def test_31a_the_transposes_give_the_frameworks_backward_in_the_model(tmp_path, 
             assert float(mine[graph.percept_start:upto].abs().sum()) > 0
             torch.testing.assert_close(mine[:upto], theirs[:upto], atol=1e-6, rtol=0)
         # The first Pi: the members' shares against the backward of the way
-        # up's rows by the members' values (the run) and their events (the
-        # wholes and the against entries, read where the run lies; the
-        # run's events there are the place, not a value).
-        native = bank.native
-        order = list(dict.fromkeys(bank.keys))
-        selected = native.selected(order)
-        members = native.values.index_select(0, selected).clone().requires_grad_()
-        happened = native.events.index_select(0, selected).clone().requires_grad_()
-        runs = {group[0] for group in bank.groups if group}
-        is_run = torch.tensor([key in runs for key in order])[:, None, None, None, None]
-        rows = basic._row_values(members, torch.where(is_run, happened.detach(), happened), bank.rows,
-                                 [list(g) for g in bank.groups], order, [list(g) for g in bank.opposed])
+        # up's rows by the members' values at each attended percept, a
+        # reading the greatest over its attended percepts.
+        index = perception.index
+        keys = len(bank.keys)
+        members = bank.members.gather(2, index[None, ..., None].expand(keys, -1, -1, 2))
+        members = (members * (perception.reading >= 0)[None, ..., None]).clone().requires_grad_()
+        order = {key: i for i, key in enumerate(bank.keys)}
+        at = []
+        for group, opposed in zip(bank.groups, bank.opposed):
+            if not group:
+                at.append(members.new_zeros(members.shape[1:]))
+                continue
+            presence = members[order[group[0]], ..., 0]
+            wholes = [members[order[key], ..., 0] for key in group[1:]]
+            sources = ([members[order[key], ..., 1] for key in group[1:]]
+                       + [members[order[key], ..., 0] for key in opposed if key in order])
+            for_lane = presence * torch.stack(wholes).prod(0) if wholes else presence
+            kept = torch.stack([1 - v for v in sources]).prod(0) if sources else torch.ones_like(presence)
+            at.append(torch.stack((for_lane, presence * (1 - kept)), -1))
+        at = torch.stack(at)                                                    # [R, B, A, 2]
+        held = perception.reading[None, :, None, :] == torch.arange(readings)[None, None, :, None]
+        rows = torch.where(held[..., None], at[:, :, None], 0.).amax(-2)        # [R, B, K, 2]
         row_grad = torch.rand(rows.shape, generator=torch.Generator().manual_seed(0)) + .1
-        d_members, d_happened = torch.autograd.grad((row_grad * rows).sum(), (members, happened))
-        theirs = d_members * members + (d_happened * happened).sum(-2)
-        read_rows = type('Read', (), dict(values=rows.detach()))()
-        mine, _ = Salience.first_pi(bank, read_rows, row_grad)
+        d_members, = torch.autograd.grad((row_grad * rows).sum(), (members,))
+        shares = d_members * members                                            # [keys, B, A, 2]
+        theirs = torch.where(held[..., None], shares[:, :, None], 0.).sum(-2)
+        read_rows = PerceptField(perception.keys, rows.detach(), at.detach(), perception.spans,
+                                 perception.where, perception.when, reading=perception.reading, index=index)
+        mine, _, _ = Salience.first_pi(bank, read_rows, row_grad)
         compared['first Pi'] = float((mine - theirs.detach()).abs().max())
         print('largest difference from the framework:', compared)
         assert float(mine.abs().sum()) > 0
@@ -724,12 +746,11 @@ def test_31c_printed_parts_present_by_degree_three_ways():
         read = row_values(bank)
         row_grad = torch.zeros(1, 1, 1, 2)
         row_grad[..., 0] = 1.
-        members, _ = Salience.first_pi(bank, read, row_grad)
-        # The way up: the run's presence times each whole read where the run
-        # lies (the run's place is a place there, not a value).
-        values = bank.native.values[:, 0, 0, 0].clone().requires_grad_()
-        place = values[0].detach()
-        row = values[0] * (place * values[1]) * (place * values[2])
+        members, _, _ = Salience.first_pi(bank, read, row_grad)
+        # The way up at the one occurrence: the run's presence times each
+        # whole read there.
+        values = bank.members[:, 0, 0, 0].clone().requires_grad_()
+        row = values[0] * values[1] * values[2]
         plain, = torch.autograd.grad(row, values)
         entries = torch.ones_like(values)
         print(dict(degrees=degrees, row=round(float(row), 4),

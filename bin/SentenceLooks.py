@@ -1,11 +1,11 @@
 """A sentence's looks: each a request carried down onto the sentence's
 percept bank, read up again, and what it returns handed to the grammar.
 
-A look (§21, rules 34, 37 and 39): an event's activity is its share of the
-request capped at its own activity; a reading's where match is
-``exp(s - max s)`` of the share on its start's band, applied once to the
-reading's values; the way up again on the bank with that activity gives
-the returned set. ``interpret`` takes the most active word, and a word
+A look (§21, rules 34, 37 and 39): an occurrence's activity is its share of
+the request capped at its own activity; a reading's where match is
+``exp(s - max s)`` of the share on the where wires of what it holds, applied
+once to the reading's values; the way up again on a table of the bank chosen
+by that activity gives the returned set. ``interpret`` takes the most active word, and a word
 interpreted is lowered in the bank's own activity over its extent.
 """
 from dataclasses import fields
@@ -14,9 +14,9 @@ from torch.nn import functional as F
 
 
 def perceive(model, activity):
-    """A look's read of the sentence's bank with each event present to the
-    degree of ``activity`` ``[B, events, 2]``: no lookup and no read on the
-    host."""
+    """A look's read of the sentence's bank with each occurrence present to
+    the degree of ``activity`` ``[B, occurrences, 2]``: no lookup and no read
+    on the host."""
     owner = model._concept_owner()
     bank = model._sentence_bank
     evidence = owner.cs_read_bank(bank, activity)
@@ -29,26 +29,23 @@ def perceive(model, activity):
 
 
 def where_match(bank, band_share, activity, readings):
-    """Each reading's where match ``[B, readings]``: the share on the band
-    of the event at its start, weighted by that event's presence in the
+    """Each reading's where match ``[B, readings]``: the share on the where
+    wires of the occurrences it holds, each weighted by its presence in the
     look, referred to the most salient reading through the exponential."""
     token = bank.token
-    place = torch.where(token >= 0, bank.place, torch.iinfo(bank.place.dtype).max)
     slots = torch.arange(readings, device=token.device)
-    held = token[:, None, :] == slots[None, :, None]                      # [B, readings, events]
-    first = torch.where(held, place[:, None, :], torch.iinfo(place.dtype).max).amin(-1, keepdim=True)
-    start = held & (place[:, None, :] == first)
+    held = token[:, None, :] == slots[None, :, None]                      # [B, readings, occurrences]
     presence = activity[..., 0]
-    share = torch.where(start, (band_share * presence)[:, None, :], 0.).sum(-1)
+    share = torch.where(held, (band_share * presence)[:, None, :], 0.).sum(-1)
     live = held.any(-1)
     best = torch.where(live, share, -torch.inf).amax(-1, keepdim=True)
     return torch.where(live, (share - torch.where(torch.isfinite(best), best, 0.)).exp(), 0.)
 
 
 def look(model, bank, request, own, perception):
-    """One look of ``request`` ``[V, B, 2]`` over ``bank`` with the events'
-    own activity ``own`` ``[B, events, 2]``: the returned field, the look's
-    activity over the events, and each reading's where match."""
+    """One look of ``request`` ``[V, B, 2]`` over ``bank`` with the occurrences'
+    own activity ``own`` ``[B, occurrences, 2]``: the returned field, the look's
+    activity over the occurrences, and each reading's where match."""
     from Salience import salience
     owner = model._concept_owner()
     salient = salience(owner, bank, request, perception=perception)
@@ -62,8 +59,8 @@ def look(model, bank, request, own, perception):
 
 
 def extent_of(bank, activity, readings):
-    """The readings a look holds, ``[B, readings]``: those with an event
-    active in it."""
+    """The readings a look holds, ``[B, readings]``: those with an
+    occurrence active in it."""
     token = bank.token
     lit = (activity.amax(-1) > 0) & (token >= 0)
     slots = torch.arange(readings, device=token.device)
@@ -98,7 +95,7 @@ def word_activity(field, concepts, known, extent, own, bank):
 
 def lower(own, bank, index, rows):
     """The done mark: a word interpreted is lowered in the bank's own
-    activity over its extent (the events of its reading)."""
+    activity over its extent (the occurrences of its reading)."""
     gone = (bank.token == index[:, None]) & rows[:, None] & (index[:, None] >= 0)
     return torch.where(gone[..., None], 0., own)
 

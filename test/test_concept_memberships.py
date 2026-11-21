@@ -99,8 +99,9 @@ def test_part_containment_belongs_to_the_subject_extent(literal):
     assert y > .76
     torch.testing.assert_close(actual[0, 0, 0], lanes.to(actual), atol=1e-5, rtol=1e-5)
     torch.testing.assert_close(actual[0, 0, 1], torch.zeros(2).to(actual))
-    assert cs._percept_field.events[0, 0, 0, :, 1].count_nonzero() == 0
-    assert cs._percept_field.events[0, 0, 1, :, 0].count_nonzero() == 0
+    reading = cs._percept_field.reading[0]
+    assert cs._percept_field.events[0, 0, reading == 0, 1].count_nonzero() == 0
+    assert cs._percept_field.events[0, 0, reading == 1, 0].count_nonzero() == 0
     # Absent parts supply neither pole, even in a completely observed subject.
     missing = cs.cs_read_memberships((ids[:, :6], positions[:, :6], None,
                                       raw, positions), extents)
@@ -110,7 +111,7 @@ def test_part_containment_belongs_to_the_subject_extent(literal):
         apart = cs.cs_read_memberships((ids, positions, None, raw, positions), separated)
         assert apart[0, 0, :, 0].count_nonzero() == 0
     empty = cs.cs_read_memberships((ids, positions, None, raw, positions), extents[:, :0])
-    assert empty.shape[2] == cs._percept_field.events.shape[2] == 0
+    assert empty.shape[2] == cs._percept_field.values.shape[2] == 0
 
 
 def test_raw_analysis_layout_clips_regions_to_observed_input():

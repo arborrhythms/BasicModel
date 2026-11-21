@@ -166,7 +166,7 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
 
 def test_property_read_selects_rows_and_in_bracket_events(monkeypatch):
     from PerceptProperties import PrimitiveProperties
-    from PerceptField import read_percepts
+    from PerceptField import read_occurrences
     from Spaces import PartSpace
     primitive = PrimitiveProperties(8192)
     primitive.teach(17, [65], [1.])
@@ -180,11 +180,12 @@ def test_property_read_selects_rows_and_in_bracket_events(monkeypatch):
     monkeypatch.setattr(primitive, 'evidence_on_counts', observed)
     raw = torch.tensor([[65, 65, 65, 65]])
     spans = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
-    bracket = spans[:, 1:2]
-    field = read_percepts((raw[:, :0], spans[:, :0], primitive, raw, spans),
-                         bracket, [('ws', 17)], part_reader=PartSpace.part_memberships)
+    occurrence = torch.cat((spans[:, 1:2], torch.zeros(1, 1, 2, dtype=torch.long)), 1)
+    members = read_occurrences((raw[:, :0], spans[:, :0], primitive, raw, spans),
+                               occurrence, [('ws', 17)], part_reader=PartSpace.part_memberships)
     assert seen == [True]
-    torch.testing.assert_close(field.values[0, 0, 0], torch.tensor([1., 0.]))
+    torch.testing.assert_close(members[0, 0, 0], torch.tensor([1., 0.]))
+    assert not members[0, 0, 1].any()
 
 
 @pytest.mark.parametrize('trial', range(3))

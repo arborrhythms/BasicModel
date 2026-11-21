@@ -13668,6 +13668,8 @@ class ConceptualSpace(Space):
                 perception.values[:, int(batch)] = 0
                 perception.events[:, int(batch)] = 0
                 perception.spans[int(batch)] = 0
+                if perception.reading is not None:
+                    perception.reading[int(batch)] = -1
                 perception.where[int(batch)] = 0
                 perception.when[int(batch)] = 0
                 if perception.when_band is not None:
@@ -15708,7 +15710,8 @@ class ConceptualSpace(Space):
                               perception=None):
         """Attribute each requested pole through definitions to percept events.
 
-        Return native pole columns and [edge,batch,reading,event] support.
+        Return native pole columns, [edge,batch,reading,1] support and the
+        supplied perception's attended spans.
         Concept rows have no event coordinates; only the supplied perception
         can locate a demand. Omitting it gives an unlocated inverse.
         """
@@ -15741,11 +15744,7 @@ class ConceptualSpace(Space):
                 output[2 * present + pole, b, :, 0] = values * shares[present, None]
         spans = None
         if perception is not None:
-            keys = [('bp', percept) for _, percept, _ in members]
-            events = perception.event_evidence(keys)
-            # Same native row, two poles. Repetition cannot increase support.
-            events = events.permute(0, 4, 1, 2, 3).flatten(0, 1).to(output)
-            if events.shape[1:3] != output.shape[1:3]:
+            if perception.values.shape[1:3] != output.shape[1:3]:
                 raise ValueError('percept events must match the supplied field readings')
             spans = perception.spans
         return native_columns.flatten(), output, spans
@@ -16159,6 +16158,12 @@ class ConceptualSpace(Space):
             native = events.amax(-1)
             attribution = torch.minimum(attribution, native)
             support = (attribution[:, 0, 0] > 0).any(0)
+            # A witness is the least attended percept that holds it: one that
+            # holds another witness is not a witness of its own.
+            at = spans[batch]
+            holds = ((at[:, None, 0] <= at[None, :, 0]) & (at[None, :, 1] <= at[:, None, 1])
+                     & (at[:, None] != at[None, :]).any(-1))
+            support = support & ~(holds & support[None, :]).any(-1)
             observation = self.run_structure(spans[batch].float(), valid=support)
             runs = int(observation['n_runs'])
             stalled = int(store.refinement_stale[row]) >= self.mereology_refine_patience
