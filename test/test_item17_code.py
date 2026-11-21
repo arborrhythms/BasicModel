@@ -100,9 +100,8 @@ def test_46_the_code_is_two_halves_of_64_on_two_lanes():
         assert bool(((two >= 0) & (two <= 1)).all())
         # No coordinate is one on both lanes.
         assert not bool((two[0].eq(1) & two[1].eq(1)).any())
-        # Stored and saved with the code.
-        torch.testing.assert_close(basic.codes[row], two[0])
-        torch.testing.assert_close(basic.against_codes[row], two[1])
+        # Read at the lookup as the lanes, from the parts and the wholes.
+        torch.testing.assert_close(basic.bank_codes((row,))[0], two)
         # The parts half's for lane is at or above each of its parts'.
         for part in identity.parts(word):
             assert bool((basic.part_codes([part])[0] <= two[0, :64]).all())
@@ -194,8 +193,8 @@ def test_46_printed_on_the_dictionary():
     every 40th against all)."""
     identity, basic, _book, rows, _measure = dictionary_coded()
     words = list(rows)
-    F = torch.stack([basic.codes[rows[w]] for w in words]).cpu().numpy() > .5
-    A = torch.stack([basic.against_codes[rows[w]] for w in words]).cpu().numpy() > .5
+    F = torch.stack([basic.code(rows[w]) for w in words]).detach().cpu().numpy() > .5
+    A = torch.stack([basic.against(rows[w]) for w in words]).detach().cpu().numpy() > .5
     def sharing(M):
         keys = {}
         for i, r in enumerate(M):
@@ -223,9 +222,8 @@ def test_a_checkpoint_of_the_old_layout_is_refused_with_the_reason():
     from BasicPercepts import BasicPercepts
     native = Codebook()
     native.W = nn.Parameter(torch.zeros(3, 352))
-    old = BasicPercepts(NS(_basis=native), 96, 256, 4).state_dict()
-    old.pop('against_codes')
     new = BasicPercepts(NS(_basis=native), 64, 64, 4)
+    old = dict(new.state_dict(), codes=torch.zeros(4, 352))
     with pytest.raises(ValueError, match='64 parts and 64 wholes wide on each of two lanes'):
         new.load_state_dict(old)
 
@@ -300,7 +298,7 @@ def test_48_on_the_dictionary():
     identity, basic, _book, rows, _measure = dictionary_coded()
     words = list(rows)
     index = [rows[w] for w in words]
-    F = basic.codes[index].cpu().numpy() > .5
+    F = torch.stack([basic.code(row) for row in index]).detach().cpu().numpy() > .5
     parts = [set(identity.words[w]) for w in words]
     kinds = {'run': 0, 'parts': 0, 'accident': 0}
     for i in range(0, len(words), 40):
@@ -501,17 +499,16 @@ def test_53_a_later_form_moves_an_earlier_forms_row_and_lane_and_not_its_concept
         sigma = owner.install_order_zero()
         store_row = identity.word_rows[b'is']
         fixed = identity.store._basis.fixed_row_codes[store_row].clone()
-        code, against = basic.codes[row].clone(), basic.against_codes[row].clone()
+        code, against = basic.code(row).detach().clone(), basic.against(row).detach().clone()
         members = basic.pi.row_members(row)
         entries = sigma.entries(concept)
         identity.admit(b'si')
         assert b'is' in identity.last_changed
         now = identity.store._basis.fixed_row_codes[store_row]
         assert not torch.equal(now, fixed) and torch.equal(now[:identity.width], identity.form(b'is'))
-        assert not torch.equal(basic.codes[row], code)
-        torch.testing.assert_close(basic.codes[row], basic.code(row).detach(), rtol=0, atol=0)
-        torch.testing.assert_close(basic.against_codes[row], basic.against(row).detach(), rtol=0, atol=0)
-        assert not torch.equal(basic.against_codes[row], against) or not torch.equal(basic.codes[row], code)
+        # The row's code is read again from its form's new code.
+        assert not torch.equal(basic.code(row).detach(), code)
+        torch.testing.assert_close(basic.bank_codes((row,))[0], basic.lanes(row).detach().clamp(0, 1))
         assert basic.pi.row_members(row) == basic.member_keys(row) != members
         assert sorted(basic.pi.row_against(row)) == sorted(basic.against_keys(row))
         # The concept reads the row, not its code: its entries do not move.

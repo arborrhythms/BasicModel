@@ -29,14 +29,14 @@ def percepts(capacity=4):
 
 def test_basic_table_is_preallocated_and_full_raises_without_resize():
     basic, native, whole = percepts(2)
-    pointer, shape = basic.codes.data_ptr(), basic.codes.shape
+    pointer, shape = basic.promoted.data_ptr(), basic.promoted.shape
     a = basic.reserve((0,), (0,), word=10)
     b = basic.reserve((0, 1), (1,), word=11)
     assert a != b and int(basic.count) == 0
     torch.testing.assert_close(basic.code(a), torch.cat((native.W[0], whole.lookup_rows(0)[3:])))
     torch.testing.assert_close(basic.code(b)[:3], native.W[:2].amax(0))
     with pytest.raises(OverflowError, match='capacity'): basic.reserve((2,), ())
-    assert (basic.codes.data_ptr(), basic.codes.shape) == (pointer, shape)
+    assert (basic.promoted.data_ptr(), basic.promoted.shape) == (pointer, shape)
     receipt('basic-construction', dict(capacity=2, reserved=2, promoted=0, shape=list(shape),
         full_raises=True, resized=False, centroid=True))
 
@@ -72,19 +72,38 @@ def test_basic_read_preserves_ordered_part_witnesses_after_native_fusion():
     native = RadixLayer(3, initial_cap=8)
     a, b, ab = [native.insert(value) for value in (b'a', b'b', b'ab')]
     native.part_groups[ab] = (a, b)
+    # Each part has a code of its own.
+    with torch.no_grad():
+        native._basis.W.zero_()
+        native._basis.W[a, 0] = native._basis.W[b, 1] = 1.
     object.__setattr__(basic, 'native', native)
     forward, reverse, repeat = [basic.reserve(parts, ()) for parts in ((a, b), (b, a), (a, a))]
     spans = torch.tensor([[[0, 2]]])
     field = basic.read((torch.tensor([[ab]]), spans, whole.primitive_properties,
         torch.tensor([[97, 98]]), spans), spans, (forward, reverse, repeat))
-    assert field.values[:, 0, 0, 0].tolist() == [1., 0., 0.]
+    # The rows spell no stored form, so each is read by the set of its parts
+    # (rules 41 and 43): all three are held at the occurrence [0, 2].
+    assert field.values[:, 0, 0, 0].tolist() == [1., 1., 1.]
     # The fused part is descended to its two part events, and the forward
-    # row is read at the occurrence that holds its run in order.
+    # row is read at the occurrence that holds its parts.
     assert field.spans[0, :2].tolist() == [[0, 1], [1, 2]]
     whole = [a for a, span in enumerate(field.spans[0].tolist()) if span == [0, 2]]
     assert whole and float(field.events[0, 0, whole[0], 0]) == 1.
     receipt('basic-native-descent', dict(fused_rows=1, part_events=2,
-        preserved_order=True, preserved_multiplicity=True, byte_retiling=False))
+        preserved_order=False, preserved_multiplicity=False, byte_retiling=False))
+
+
+def test_stored_forms_of_one_set_of_characters_are_told_apart():
+    """(a, b), (b, a) and (a, a) stored as forms: each row reads for at its
+    own form and nothing at the other two; the three tightest wholes
+    differ."""
+    from test_item17_code import coded, _read_form
+    forms = (b'ab', b'ba', b'aa')
+    identity, basic, book, rows = coded(forms)
+    read = torch.stack([_read_form(basic, book, form, [rows[w] for w in forms]) for form in forms])
+    torch.testing.assert_close(read[..., 0].cpu(), torch.eye(3))
+    tightest = [identity.tightest(identity.parts(form)) for form in forms]
+    assert all(not torch.equal(tightest[i], tightest[j]) for i in range(3) for j in range(i))
 
 
 def test_basic_compose_presence_keeps_the_existing_weighted_mean_pullback():

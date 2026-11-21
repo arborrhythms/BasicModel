@@ -58,7 +58,7 @@ class FeatureTable:
     def codes(self, basic, percepts):
         """Max of each percept's parts and min of its wholes, including empty wholes."""
         if not len(percepts):
-            return basic.codes.new_empty(0, basic.width)
+            return basic.value_codes.new_empty(0, basic.width)
         if bool(((percepts < 0) | (percepts >= len(basic.index))).any()):
             raise ValueError('unavailable basic percept reference')
         lookup = percepts.new_full((len(basic.occurrences),), -1)
@@ -66,7 +66,7 @@ class FeatureTable:
         blocks = []
         for side, ((parents, members), width) in enumerate(zip(
                 self.towers, (basic.identity_width, basic.property_width))):
-            block = basic.codes.new_full((len(percepts), width), float(side))
+            block = basic.value_codes.new_full((len(percepts), width), float(side))
             target = lookup[parents]
             selected = target >= 0
             if width and bool(selected.any()):
@@ -88,17 +88,17 @@ class FeatureTable:
         present = target >= 0
         # A member's weight less its weight as a Not member, then the
         # percept chart.
-        values = self.weights[present].to(torch.promote_types(torch.float32, basic.codes.dtype))
+        values = self.weights[present].to(torch.promote_types(torch.float32, basic.value_codes.dtype))
         weights = values[:, 0] - values[:, 1]
         positive = weights > 0
-        target, weights = target[present][positive], weights[positive].to(basic.codes)
+        target, weights = target[present][positive], weights[positive].to(basic.value_codes)
         percepts = self.percepts[present][positive]
         counts = torch.bincount(target, minlength=len(rows))
         fallback = torch.where(counts == 0, fallback, -1)
         selected = fallback >= 0
         requested, inverse = torch.unique(torch.cat((percepts, fallback[selected])), return_inverse=True)
         codes = self.codes(basic, requested)
-        forms = basic.codes.new_zeros(len(rows), basic.width)
+        forms = basic.value_codes.new_zeros(len(rows), basic.width)
         forms[selected] = codes[inverse[len(percepts):]]
         # Match the native sum's reduction length and order exactly. Padding
         # unequal lists or accumulating one float at a time can change the last bit.

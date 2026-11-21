@@ -156,7 +156,7 @@ def test_3_the_lessons_concepts_under_each_layout(lesson):
     rows, forms = _lesson_forms(owner, basic)
     vocabulary = [w.decode() for w in identity.words]
     print(dict(nominated=forms, vocabulary=vocabulary))
-    codes = basic.codes[rows].double().numpy()
+    codes = torch.stack([basic.code(r) for r in rows]).detach().cpu().double().numpy()
     concepts = [owner.concept_of_basic_percept(r) for r in rows]
     # The model's concepts read rows, not codes (rule 62): the trial's
     # columns below are the trial's own.

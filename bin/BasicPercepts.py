@@ -188,10 +188,10 @@ class BasicPercepts(nn.Module):
         self.width = self.identity_width + self.property_width
         object.__setattr__(self, 'native', native)
         object.__setattr__(self, 'whole', None)
-        # A percept's code is two lanes, each within 0 to 1: the for lane in
-        # ``codes`` and the against lane in ``against_codes``.
-        self.register_buffer('codes', torch.zeros(self.capacity, self.width))
-        self.register_buffer('against_codes', torch.zeros(self.capacity, self.width))
+        # A percept's code is two lanes, each within 0 to 1 (:meth:`lanes`),
+        # read from the codes of its parts and wholes whenever it is read: a
+        # whole's code may change after the row is promoted, so no copy is
+        # kept.
         self.register_buffer('promoted', torch.zeros(self.capacity, dtype=torch.bool))
         self.register_buffer('count', torch.zeros((), dtype=torch.long))
         # A reserved address can read its occurrence's own parts/wholes before
@@ -268,17 +268,17 @@ class BasicPercepts(nn.Module):
         of its own (:meth:`value_coordinates`). Parts half: the OR of the
         bins at or below the value, built up from all zeros. Wholes half: all
         ones with the bins above it cut away. On a line these are one code."""
-        bins = self.value_bin(felt, width).to(self.codes.device)
-        ordered = (torch.arange(width, device=self.codes.device) <= bins[..., None]).to(self.codes.dtype)
-        coordinates = self.value_coordinates(width, place).to(self.codes.device)
+        bins = self.value_bin(felt, width).to(self.value_codes.device)
+        ordered = (torch.arange(width, device=self.value_codes.device) <= bins[..., None]).to(self.value_codes.dtype)
+        coordinates = self.value_coordinates(width, place).to(self.value_codes.device)
         result = torch.zeros_like(ordered)
         result[..., coordinates] = ordered
         return result
 
     def _boundary_codes(self, references, *, whole, place=None):
-        ids = torch.as_tensor(references, device=self.codes.device, dtype=torch.long)
+        ids = torch.as_tensor(references, device=self.value_codes.device, dtype=torch.long)
         width = self.property_width if whole else self.identity_width
-        result = self.codes.new_zeros(*ids.shape, width)
+        result = self.value_codes.new_zeros(*ids.shape, width)
         values = ids < -self.identity_width
         if bool(values.any()):
             # A value is its own tightest part and its own whole: its code in
@@ -293,7 +293,7 @@ class BasicPercepts(nn.Module):
 
     def felt_of(self, references):
         """The exact felt value in the table of each value reference."""
-        ids = torch.as_tensor(references, device=self.codes.device, dtype=torch.long)
+        ids = torch.as_tensor(references, device=self.value_codes.device, dtype=torch.long)
         seats = -ids - self.identity_width - 1
         if bool(((seats < 0) | (seats >= self.value_count)).any()):
             raise ValueError('unavailable value percept reference')
@@ -327,7 +327,7 @@ class BasicPercepts(nn.Module):
     @torch.no_grad()
     def perceive_value(self, value, *, place=None):
         """Admit the exact value as both its tightest part and its whole."""
-        value = torch.as_tensor(value, device=self.codes.device, dtype=self.codes.dtype)
+        value = torch.as_tensor(value, device=self.value_codes.device, dtype=self.value_codes.dtype)
         if value.ndim or not bool((value > 0) & (value <= 1)):
             raise ValueError('a value percept requires one felt presence in (0, 1]')
         known = (self.value_codes[:int(self.value_count)] == value).nonzero().flatten()
@@ -502,7 +502,7 @@ class BasicPercepts(nn.Module):
         ones), the classes it lies in, and the form itself as its tightest
         whole."""
         parts, wholes = self.occurrences[int(row)]
-        ids = torch.tensor(parts, device=self.codes.device, dtype=torch.long)
+        ids = torch.tensor(parts, device=self.value_codes.device, dtype=torch.long)
         # A value's catalog is its place's (rule 55).
         place = int(self.places[int(row)])
         identity = self._boundary_codes(ids, whole=False, place=place).amax(0)
@@ -511,7 +511,7 @@ class BasicPercepts(nn.Module):
         if wholes:
             if self.whole is None and any(reference >= -self.identity_width for reference in wholes):
                 raise ValueError('basic percept property read requires its WholeSpace')
-            ids = torch.tensor(wholes, device=self.codes.device, dtype=torch.long)
+            ids = torch.tensor(wholes, device=self.value_codes.device, dtype=torch.long)
             properties = self._boundary_codes(ids, whole=True, place=place).amin(0)
         else:
             properties = identity.new_ones(self.property_width)
@@ -567,8 +567,8 @@ class BasicPercepts(nn.Module):
         and in the first Pi. Every promoted row of a changed form, of a form
         that a changed or ``new`` form holds as a run (its against lane reads
         its nearest holders), and of a conjunction over one of them, has its
-        stored code and against lane written again, in one write. Returns the
-        rows whose stored code or against lane changed."""
+        code read again, as every code is read (:meth:`lanes`). Returns
+        those promoted rows."""
         identity = getattr(self.native, 'identity', None)
         if identity is None:
             return []
@@ -592,19 +592,11 @@ class BasicPercepts(nn.Module):
                 rows.add(whole)
                 rows.update(members)
         rows = [row for row in sorted(rows) if bool(self.promoted[row])]
-        moved = []
-        if rows:
-            index = torch.tensor(rows, device=self.codes.device)
-            before = torch.stack((self.codes[index], self.against_codes[index]), 1)
-            self.codes[index] = torch.stack([self.code(row) for row in rows]).detach().to(self.codes)
-            self.against_codes[index] = torch.stack([self.against(row) for row in rows]).detach().to(self.codes)
-            after = torch.stack((self.codes[index], self.against_codes[index]), 1)
-            moved = [row for row, b, a in zip(rows, before, after) if not torch.equal(b, a)]
-        if moved or extended:
+        if rows or extended:
             self.revision += 1
         if extended:
             self._refresh_pi()
-        return moved
+        return rows
 
     def against(self, row):
         """A percept's against lane, as wide as its code.
@@ -617,7 +609,7 @@ class BasicPercepts(nn.Module):
         if not 0 <= int(row) < len(self.index):
             raise ValueError('unavailable basic percept reference')
         if int(row) in self.place_rows:
-            return self.codes.new_zeros(self.width)
+            return self.value_codes.new_zeros(self.width)
         code = self.code(row)
         parts, _wholes = self.occurrences[int(row)]
         held = code.new_zeros(self.identity_width)
@@ -639,18 +631,13 @@ class BasicPercepts(nn.Module):
                 1 - code[:self.identity_width].detach().clamp(0, 1)))
         return torch.cat((held, 1 - code[self.identity_width:].clamp(0, 1)))
 
-    @torch.no_grad()
     def follow(self, rows):
-        """Write again the stored against lane of ``rows``, whose holders may
-        have changed, and return the rows whose against lane changed."""
-        changed = []
-        for row in map(int, rows):
-            if not bool(self.promoted[row]):
-                continue
-            before = self.against_codes[row].clone()
-            self.against_codes[row].copy_(self.against(row))
-            if not torch.equal(before, self.against_codes[row]):
-                changed.append(row)
+        """``rows``, whose holders may have changed: their against lanes are
+        read again at the next read (:meth:`against`). Returns the promoted
+        ones."""
+        changed = [row for row in map(int, rows) if bool(self.promoted[row])]
+        if changed:
+            self.revision += 1
         return changed
 
     def against_keys(self, row):
@@ -696,7 +683,7 @@ class BasicPercepts(nn.Module):
             raise ValueError('unavailable basic percept reference')
         if int(row) in self.place_rows:
             # A place has no part and no whole: it is read on the where wires.
-            return self.codes.new_zeros(self.width)
+            return self.value_codes.new_zeros(self.width)
         members = self.conjunctions.get(int(row))
         if members is not None:
             # The greatest over its members' codes and a small draw keyed to
@@ -710,8 +697,6 @@ class BasicPercepts(nn.Module):
     def promote(self, row):
         row = int(row)
         if not self.promoted[row]:
-            self.codes[row].copy_(self.code(row))
-            self.against_codes[row].copy_(self.against(row))
             self.promoted[row] = True
             self.count += 1
             self.revision += 1
@@ -761,7 +746,7 @@ class BasicPercepts(nn.Module):
         device = raw.device
         B, O = spans.shape[:2]
         real = spans[..., 1] > spans[..., 0]
-        codes = self.codes.new_zeros(B, O, self.width)
+        codes = self.value_codes.new_zeros(B, O, self.width)
         held = codes.new_ones(B, O, self.property_width)
         identity = getattr(self.native, 'identity', None)
         if identity is not None and O:
@@ -773,8 +758,8 @@ class BasicPercepts(nn.Module):
                     if run not in coded:
                         coded[run] = len(coded)
                     index.append(coded[run])
-            parts = self.codes.new_zeros(len(coded), self.identity_width)
-            tight = self.codes.new_ones(len(coded), self.property_width)
+            parts = self.value_codes.new_zeros(len(coded), self.identity_width)
+            tight = self.value_codes.new_ones(len(coded), self.property_width)
             for run, n in coded.items():
                 if run is None:
                     continue
@@ -813,12 +798,11 @@ class BasicPercepts(nn.Module):
         return codes * real[..., None]
 
     def bank_codes(self, rows):
-        """Each row's code on two lanes ``[rows, 2, width]``, read now from
-        the codes of its parts and wholes as the occurrences' are (a stored
-        code may predate a change of a whole's code). A
+        """Each row's code on two lanes ``[rows, 2, width]``, read from the
+        codes of its parts and wholes, once at the lookup of a sentence. A
         place's is the what it keeps (no parts and every whole where it
         keeps none), with nothing against."""
-        result = self.codes.new_zeros(len(rows), 2, self.width)
+        result = self.value_codes.new_zeros(len(rows), 2, self.width)
         for n, row in enumerate(rows):
             if row in self.place_rows:
                 what = self.place_rows[row][2]
@@ -1057,12 +1041,12 @@ class BasicPercepts(nn.Module):
         return torch.stack(result)
 
     def lookup_rows(self, rows, *, valid=None):
-        rows = torch.as_tensor(rows, device=self.codes.device, dtype=torch.long)
+        rows = torch.as_tensor(rows, device=self.value_codes.device, dtype=torch.long)
         valid = torch.ones_like(rows, dtype=torch.bool) if valid is None else valid
         if bool(((rows < 0) | (rows >= len(self.index)))[valid].any()):
             raise ValueError('unavailable basic percept row')
         selected = torch.unique(rows[valid])
-        result = self.codes.new_zeros(*rows.shape, self.width)
+        result = self.value_codes.new_zeros(*rows.shape, self.width)
         for row in selected.tolist():
             result = result + (valid & (rows == row))[..., None] * self.code(row)
         return result
@@ -1147,7 +1131,10 @@ class BasicPercepts(nn.Module):
             warnings.warn('retired scalar sidecar cannot supply perceptual witnesses; relearn its definitions')
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
-        codes = state.get(prefix+'codes')
+        # A checkpoint that stored the rows' codes: its width is checked, and
+        # the codes are read again from the parts and wholes.
+        codes = state.pop(prefix+'codes', None)
+        state.pop(prefix+'against_codes', None)
         if codes is not None and codes.shape[-1] != self.width:
             raise ValueError(f'a basic percept code of this layout is {self.identity_width} parts and '
                              f'{self.property_width} wholes wide on each of two lanes; the checkpoint\'s '
