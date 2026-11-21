@@ -10691,6 +10691,11 @@ chooses from. The old classes are not edited.
     what the readers of truth and existence do
     (`Queries._region_evidence`), which read the best row on each
     lane and push nothing.
+    *Amended from round 6c's return (§23.6.4):* "a row already held
+    in STM" is a row held by a chunk on the stack. An idea kept at a
+    sentence's close is held off the stack: it is matched, and its
+    chunk is moved to the top, so that a question finds the sentence
+    just read.
 
 61. *No code lies inside another's by accident* (Alec, §19.86: "Codes
     lying inside one another by accident should not be permitted.
@@ -20465,3 +20470,311 @@ Spot tests by the pass; both gates pass at three points. The list on `cc0fc32571
 | Seconds a run | 24.1 |
 
 So both causes of §23.L are gone: no walk loops, with the table's acts gone, and no known word reads both. The known word that came to read against in a probe of 24 presentations (§23.6.1) does not appear in the lesson's twelve runs; it is left as measured and not proposed for. What the lesson does not do is read in order, which is the question of the where.
+
+### 23.6.4 Rounds 6b and 6c, and the trial of a place as a row: a place teaches reading in order and arises by the cone; a run of words read at one time; the query keyed on the top of STM (Claude on Opus, standing in for Codex, 2026-11-20)
+
+Started at `22be03fece`, on `main`, in this checkout. Ends at `19bdcbde89`. Nothing is pushed. No doc/*.md and no part of the specification was edited. Parts A, B, C and D were all done, in that order. `d818620712` in the range is not mine.
+
+#### What fails or is unfinished, first
+
+- *Certificate 32 holds only in part.* A word's concept reads nothing at the token of a longer known word that holds its letters (`is` at `This`, `here` at `There`, `the` at `there`: 0.0 there, .7616 at its own token), and the test states that. But the look that asks for the inner word also lights the longer word's events, and the longer word is returned at the same value (.7616 against .7616) and drawn among equals: `This` was taken for the request `is`, and `There` for `here`. Two producers, found by a probe: (1) in the bank, the run of `is` at the reading of `This` has every event of the token lit (T, h, i, s), so `Salience.first_pi` puts the run's share on all four; (2) the row of `is` there reads for 1 and against 1, and rule 36 passes a Sigma by its weights, so the for lane takes the request's share whatever the against lane holds. Changing either is a change to rule 36 or to the bank, so it was not made. **For Claude and Alec.**
+- *The read of a run (6b) is taught on the compose's recorded value, not the comprehension's.* The sentence's read is taught on the semantic root (`meaning_root`); a constituent has no semantic point kept per node, so its target is `Reading.operation_values[at, 2]`. Provisional (below).
+- *A taken read keeps its first word's identity.* Its leaf carries the read idea as its value and the read part of speech in the word table, but where interpret is forced the comprehension (`Comprehension.Evaluation.leaf`) still combines that value with the first word's object atoms. Not changed.
+- *Not run by me (brief):* the lesson's sixteen sentences with the key off and on, before and after 6c. The coordinator runs the script.
+- `test_item17_symbols.py::test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced[0]` failed once in the 56-file run of C (random entries, no seed). It passed alone, and the file passed four times in a row (35 passed each). It does not touch the query.
+- `test_item18_expect.py::test_81` is a learning certificate and was not run.
+
+#### Part A: the trial of a place as a row (`test/looks_where_trial.py`, `test/test_item17_where_trial.py`; commit `5d552f8172`)
+
+*What was added.* `PlaceTrial` (on `PiWhere`): `P` rows of the first Pi with entries `Pp`, `Pm` on the where wires' two lanes and `Pw` on the whats (none for a place). The row is `b = exp(Pw log m + Pp log c + Pm log(1 - c))`, and its concept reads it at `G`, as any row's does. The request (`PlaceReader`) asks for "words", the row concepts and the place concepts, on their for lane. The way down passes a place row by its entries: share `d_b · b · (c Pp + (1 - c) Pm)` onto the reading's where share, and through `Pw` onto the whats. The content rows keep no entry on a wire, and no concept has a weight on one. The lesson is the fourth pass's, unchanged: minimal sentences first (10, 10, then 60 steps), Adam at .05, and only the request learns. The place rows are fixed. Starts are drawn from `os.urandom`.
+
+*Rows given.* One row for each place a word starts at in the taught sentences: 0, 4, 5, 6, 7, 8 and 9 (7 rows). Entries are at that place's code (`E+ = c*`, `E- = 1 - c*`), with none on any what.
+
+*Rows nominated.* The cone over the occurrences at each place (rule 72: the least of their coordinates; weight on what they share, none on what varies). The occurrences are the word tokens of the one-word, two-word and lesson sentences, grouped by start. Its rows arise at all 7 places:
+- 0 (37 occurrences, 15 forms) and 8 (Ciao, Felix, that, this): no what. These are places, equal to the rows given.
+- 4, 5 and 6 (`is` only): they keep `i`, `s`, `is`, so each is "is here".
+- 7 (here, there): keeps `e`, `h`, `r`.
+- 9 (Ciao, Felix): keeps `i`.
+
+So 2 of 7 are pure places on this lesson. A place met by one form is that form at that place.
+
+*The candidate matrix cannot offer them.* `CandidateMatrix.meet` tallies pairs of constituents' presence over every reading. Its 28 pairs of the where lanes have one worth each (from -.995 to .996), whatever the place.
+
+*The when.* "When in" puts each place row's entries on the when wires too: at the when code for rows given, and the cone's least (the same code) for rows nominated. "When out" leaves them at zero.
+
+*Measures, three starts drawn for each form* (the counts are two-word sentences in order of 6, the lesson of 16, held out of 6, and the lesson with the request held at its start context of 16):
+
+| Form | Two-word | Lesson | Held out | Request held |
+| --- | --- | --- | --- | --- |
+| Places given, when out | 6, 6, 0 | 16, 16, 0 | 6, 6, 0 | 16, 16, 0 |
+| Places nominated by the cone, when out | 6, 6, 0 | 16, 16, 0 | 6, 6, 0 | 16, 16, 0 |
+| Places given, when in | 0, 6, 6 | 0, 16, 16 | 0, 6, 6 | 0, 16, 16 |
+| Places nominated by the cone, when in | 0, 6, 6 | 0, 16, 16 | 0, 6, 6 | 0, 16, 16 |
+| No place rows (the request alone) | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 |
+
+Starts, in table order:
+- 148473891041061, 115541040318221, 71754798697598
+- 66379820538747, 175176935264474, 170683630336820
+- 31373799546620, 217313466235480, 195617410904428
+- 156829982245264, 182312933771359, 202453286840460
+- 243833643019037, 33592610985753, 39642322299636
+
+Before the lesson every count was 0, with three exceptions: one start read 6, 16 and 4 before (195617410904428), and three read 1, 1 and 2 held out.
+
+*In plain words.*
+- A place as a row teaches reading in order, and it transfers. Where a start learns at all, all 6 held-out orders are read in order, including `is This Felix?`, whose second word starts at 3, where no row exists.
+- The request does learn to ask for a place, but it asks for one place only, the first. In a start I probed, the request for place 0 rose to 3.46 and every other place was pushed below zero. The share of the place-0 row falls off with distance (the code is a smooth sinusoid), so the leftmost unread word wins at every look. That is why the request held at its start context reads as well as the learned one: what is learned is "begin at the beginning", not "the next place".
+- Each start is all or nothing. A start fails when its request for place 0 begins below zero: on its for lane (rule 36) it then takes no gradient and stays there. 8 of 12 starts with place rows succeeded.
+- The when wires in or out make no difference, since the rows are fixed and the when is the same at every reading.
+- Rows of places arise without being given, by the cone: 7 of 7 places, 2 of them pure. Those 7 rows, whats and all, teach as well as the rows given.
+
+*Tests* (`test_item17_where_trial.py`, mechanism only):
+- `test_the_cone_over_a_place_keeps_its_where_and_drops_the_whats_that_vary`: the rows at 0 and 8 have no what and equal the given rows, and the row at 5 keeps `is`.
+- `test_a_place_concept_asked_makes_its_own_reading_the_most_salient`: on "This is Felix.", asking for the concept of place 0, 5 or 8 gives that reading the largest where share.
+
+Nothing for the where was built in bin/.
+
+#### Part B: round 6b, a run of words read at one time (`bin/FragmentRead.py`; commits `e5233de99f`, `fc4e3e91db`)
+
+*What step 1 found.*
+- `IdeaRead.open_read` keeps the open order-zero field. `complete` reads it through `ConceptualSpace.idea_stack` (a `SigmaPiStack`, from caps0 to the idea width 136) and books `expectation.idea` against `record.meaning_root`. `expected_point` has no consumer.
+- The kept reading is `observations[selected[b]]['entries'][b]`, a `Reading`. Its `action_index` (a `ReadingIndex`) gives each operation's operands, parents and roots. `operation_values[at, 2]` is the composed value at each node. Leaf `i` is word slot `_sentence_read_order[b][i]`. The class an operation filled is the argument seat of its parent (`{operation}_argin{k}`, `PartsOfSpeech.arguments`).
+- A look over several words: with "words" asked, the extent holds every unread word. The open run (look zero) holds every word.
+- `interpretBias` is read by `OperationSelectionLayer` (`Language.py`) and used in `interpret_at_look`. The grammar's option at a look is `Looks.run` (`SentenceLooks.py`).
+- `cs_read_bank(bank, activity, publish=False).amax(2)` over a bank's full activity equals `_idea_observation` exactly (difference 0.0), so a run's field is the same read restricted to its words' events, with nothing published.
+
+*What was built.*
+- `bin/FragmentRead.py`:
+  - `bias(model)`: the key, `fragmentBias`.
+  - `knowing(owner, bank, words)`: the order-zero field `[B, n0, 2]` of the run's words alone, detached and unpublished.
+  - `read(owner, field)`: the idea stack's read.
+  - `classes(language, idea)`: `PartsOfSpeech.value_scores` of the read idea.
+  - `constituents(language, program, slots, length)`: the kept reading's constituents that are one run of 2 to 3 words, each the last operation over those words, with the seat it filled in its parent.
+  - `complete(model, observations, selected, present, registry, sid, looks)`: books `expectation.idea`'s pair for runs, as `expectation.fragment` (the read against the composed value) and `expectation.fragment_class` (the read part of speech against the seat filled), category `expectation`. Field and targets are detached.
+  - `run_at`, `take`: the run that begins at the word a look took, and the draw of the option.
+  - `as_leaf`: the taken read as the first word's payload (`event` and `atom` become the read idea; its row of `_occupation_word_table` becomes the read classes during its word step, then is put back).
+- `bin/Language.py`, `OperationSelectionLayer.__init__`: `self.fragment_bias`.
+- `bin/Models.py`: `FragmentRead.complete` beside `IdeaRead.complete` at the close; `as_leaf` and its restore around `word_step` in the walk's `arrival`.
+- `bin/SentenceLooks.py`, `Looks.run`: after the grammar's decision at a look, `take` is asked. The draw is replayed from the greedy path's decision and is never made while the reading lesson teaches. A taken run's other words are recorded read and lowered, and do not arrive. The decision keeps `fragment` and `fragment_taking`.
+- `data/model.xml`, `data/model.xsd`: `fragmentBias`, 0 by default (`unitInterval`).
+
+*The key and the bound.* The key is **`architecture.fragmentBias`**, the probability of taking the read, 0 by default. At 0 nothing of the read runs: no read, no teaching, no take, so the source behaves as found (certificate 50 (a)). The bound on a constituent's length is **3 words** (`FragmentRead.LENGTH`).
+
+*The operations of a walk, "alpha gamma beta", three reads each* (leaves, actions, runs taken):
+- Option off: (3, 5), (3, 5), (3, 22). The untrained grammar runs chains of unary operations.
+- Option on: (1, 1, run of words 0 to 2), (2, 3, run 1 to 2), (2, 3, run 1 to 2).
+
+Each run taken is one leaf in place of its words, with no operations over them. The cost of a take is one unpublished bank read over the run's events, and one forward of the idea stack (64 hidden units, one pair). Teaching costs the same for each kept constituent, plus `value_scores`.
+
+*Certificate 50* (`test/test_item17_fragments.py`, 5 passed, 24.1 s):
+
+| | Test | Result |
+| --- | --- | --- |
+| (a) | `test_50a_with_the_option_off_nothing_of_the_read_runs`: the read's functions made to raise; two training reads; no `fragment` cost; no run taken; leaves equal the words read | pass |
+| (b) | `test_50b_no_form_row_or_symbol_is_made_for_a_run`: `next_id`, the concept count and the word forms unchanged across every `take`, `complete` and `as_leaf`; no form with a space; runs taken: "alpha gamma beta", "gamma beta" | pass |
+| (c) | `test_50c_the_read_has_the_composed_ideas_shape_and_teaches_the_idea_stack_alone`: read shape = composed value's (136); the field takes no gradient; after `backward`, only the idea stack's parameters hold a gradient | pass |
+| (d) | `test_50d_with_the_option_on_a_run_is_one_constituent_and_the_walk_is_shorter`: counts above; leaves = words less the runs' extra words; actions 7 against 32; the leaf's value is the read idea; the word table holds the read classes at the leaf | pass |
+| (e) | `test_50e_learning_...` (learning, recorded), 8 presentations each of "alpha gamma" and "beta delta" | printed |
+
+What (e) printed:
+- "alpha gamma": read against its own composed idea .0791 first, .0516 last; against the other sentence's idea .0689 last.
+- "beta delta": .0862 first, .0728 last; against "alpha gamma"'s idea .0430 last.
+
+The read draws nearer its teacher, but it does not yet tell the two sentences apart.
+
+#### Part C: round 6c, the query from the top of STM (commits `f65064f87c`, `7b3e0cbc1a`)
+
+*What step 1 found* (the survey of §19.85 again, at `22be03fece`).
+- *Callers:*
+  - `ThoughtFaces.query` and `ask` call `ThoughtLTMCapability.query(request)`.
+  - `query` called `EpisodicMemory.query(store, field)` for a field. For anything else it called `best_match`: by relation (`relation_evidence`, LTM1), by timeline, by truth, by deduction (`_region_evidence`), or for an open question by `_cued`.
+  - `_cued` keyed `EpisodicMemory.query` on `ExtendedRecall.forest(owner, description)`.
+- *The result:* every frame that passed went to `EntryRead.recall_chunks`, which loaded each as a chunk off the stack (`stack=False`).
+- *Readers of the loaded chunks:* `ThoughtChunks.recalled` (in `ThoughtStream.candidates`, for follow-up relation patterns and `_query_exclude`), `held_frames`, and the effects keyed on `chunks_loaded` (`AccessibleMind`, `ThoughtStream.materialize`, `integrate`).
+- *The stack:* a thought's focus is pinned on it (`ThoughtChunks.begin`, `put(pin=True)`). An idea kept at a sentence's close is held off it (`STMChunks.keep_close`), with refs `(OCCURRENCE, name)` to its row.
+- *Tests:* 9 tests in 7 files stated the old loading. They are ported below.
+
+*What was built.*
+- `bin/EpisodicMemory.py`:
+  - `stm_key(store, stm, row, work)`: the entry of concepts of the top chunk of the stack. A chunk pointing at a row is that row's `entry_set`. A thought's chunk is its idea's extension (or the generate walk's, `ExtendedRecall.forest`) made into an entry by `tree_entry`, as a row's entry is made. The result is a cue of one node, or `()`.
+  - `held_rows`: the rows a chunk on the stack holds.
+  - `query(..., excluded=)`: rows left out.
+  - `_flat_set`, shared with `entry_set`.
+- `bin/EntryRead.py`: `recall_chunks` is replaced by **`push_recalled(frame, work, stream)`**: one row pushed onto the top of the stack (`STMChunks.deposit(stack=True)`). A row held off the stack is that chunk, re-read and moved to the top. A row held on the stack is not pushed (`'held_in_stm'`).
+- `bin/Queries.py`:
+  - `ThoughtLTMCapability._cued` keys on `stm_key`, leaving out the rows held on the stack.
+  - `ThoughtLTMCapability.query` always matches the top of the stack, whatever the pattern. Rows held on the stack are left out. One frame, the best by its match, is pushed. The result carries `frames` (that one) and `pushed`.
+- `bin/AccessibleMind.py`, `bin/ThoughtStream.py`: `chunks_loaded` is read as `pushed`.
+
+*Rule 65 in the key.* The key passes through `tree_entry` and `ExtendedRecall.matches`, which already map an uncertain object to its one word (`EpisodicMemory.uncertain`: a blank object only, as built; not widened). An uncertain object fills no slot of the key; its word's concept does (`test_65_...`).
+
+*What each reader that assumed a question became* (step 4).
+- *`best_match`'s open slots:* they still choose the readers by address and filter the answer (`tau`, `_query_exclude`, `can_answer`) over the rows `_cued` ranks. What ranks them is now the top of the stack, not the question. When `best_match` finds nothing, the top row by the key is pushed.
+- *`_cued`'s role mask:* it no longer shapes the key. It still gates whether the episodic read runs (an occupied role), and `cued_rows` still uses it for rows by address.
+- *`closing_question`:* unchanged. It forms the question at a question's close; the thought begins with it pinned on top, so it is the key.
+- *The readers of the chunks held off the stack* (`recalled`, `held_frames`, `ThoughtStream.candidates`): unchanged. A pushed row is retained as a loaded one was, so they read it, but now one row per query.
+- *An answer* is read from the top of the stack after the push (`pushed`, and the chunk on top).
+- *The readers of truth and existence* (`_region_evidence`): left as they are. They still read the request's forest and push nothing (rule 60's open point).
+
+*Certificate 52 and rule 65* (`test/test_item17_query.py`, 5 passed, 3.1 s):
+
+| | Test | Result |
+| --- | --- | --- |
+| 52 (a) | `test_52a_...`: a question on top; one row pushed (depth +1); the row answering it on top | pass |
+| 52 (b) | `test_52b_...`: an idea that is no question on top; the row most like it pushed | pass |
+| 52 (c) | `test_52c_...`: the second query's key is the row just pushed; that row is left out; the next most like it (row 2) pushed | pass |
+| 52 (d) | `test_52d_...`: empty stack, nothing pushed; a top chunk with no entry, nothing pushed | pass |
+| 65 | `test_65_an_uncertain_object_in_the_key_fills_no_slot_its_word_does` | pass |
+
+*The docs' places that name `EpisodicMemory.reinstate`* (step 6; it is not in the source):
+- `doc/Reasoning.md:208`
+- `doc/Architecture.md:1456`, `:2876` (with `ThoughtLTMCapability.query`), `:3112`
+- `doc/STM.md:717`
+
+The same reinstatement is described in prose, unnamed, at:
+- `doc/Architecture.md:521`, `:528`
+- `doc/Params.md:534` (`episodicConcepts`)
+- `doc/Philosophy.md:1370`, `:2288`
+- `doc/FutureWork.md:267-269`
+- `doc/GradientFlow.md:481`
+
+#### Part D: certificates 31 (a), 31 (c) and 32 (`test/test_item17_looks.py`; commit `19bdcbde89`)
+
+| | Test | Result |
+| --- | --- | --- |
+| 31 (a) | `test_31a_the_transposes_give_the_frameworks_backward_in_the_model`: on "alpha gamma", `Salience._down` against the backward of the way up unrolled (each Sigma linear before its squash, each symbol's Pi linearized at the open run), for "words" and for `alpha`; and `Salience.first_pi`'s member shares against the backward of `BasicPercepts._row_values` by the members' values and events (the run's events held as the place). Atol 1e-6. | pass; greatest difference 0.0 in all three |
+| 31 (c) | `test_31c_printed_parts_present_by_degree_three_ways`: a run and two properties at (1, 1, 1), (.9, .6, .3), (.5, .5, .5) | pass |
+| 32 | `test_32_a_known_word_is_not_read_inside_a_longer_known_word` | pass, in part (first item above) |
+
+What 31 (c) printed:
+
+| Degrees | Row | Transposes | Plain gradient | Entries alone |
+| --- | --- | --- | --- | --- |
+| 1, 1, 1 | 1.0 | 1, 1, 1 | 1, 1, 1 | 1, 1, 1 |
+| .9, .6, .3 | .1312 | .1312 each | .1458, .2187, .4374 | 1, 1, 1 |
+| .5, .5, .5 | .0312 | .0312 each | .0625 each | 1, 1, 1 |
+
+The transposes equal the plain gradient times each value.
+
+What 32 printed, for the inner word's concept by reading and what the look returns:
+- `is`: [0, .7616, 0]; returned [.7616 (This), .7616, -]; This taken by the draw.
+- `here`: [0, 0, .7616]; returned [.7616 (There), -, .7616]; There taken.
+- `the`: [0, 0, .7616]; returned [.7616 (there), -, .7616]; the taken.
+
+Certificate 44 is round 7's.
+
+#### The gates
+
+| Point | Commit | Result |
+| --- | --- | --- |
+| Before any edit of bin/ | `22be03fece` (after the trial, tests only) | both pass, 2 passed, 4.75 s |
+| After B | `e5233de99f` (its tree) | both pass, inside the run of 16 files (233 passed, 9 skipped, 174.5 s) |
+| After C | `f65064f87c` (its tree) | both pass, inside the 29-file run (416 passed, 11 skipped, 59.7 s) and the 56-file run (847 passed, 15 skipped, 1 failed, 78.8 s) |
+| After D | `19bdcbde89` | both pass, inside the final run (38 passed, 48.4 s) |
+
+No bar, iteration count, presentation count, learning rate, seed or capacity was changed.
+
+#### Choices on my own recommendation (provisional)
+
+*A* (`5d552f8172`):
+- The place rows are fixed and only the request learns.
+- Given entries sit at the place's code at strength one.
+- The cone runs over the word tokens of every taught sentence, grouped by start.
+
+*B* (`e5233de99f`):
+1. A constituent's target is the compose's recorded value at its node (`operation_values[at, 2]`), since no semantic point is kept per node.
+2. The class a constituent filled is its parent's argument seat. A unary chain over the same words is one constituent, the last operation of the chain. A root has no class target.
+3. The part of speech is read by `PartsOfSpeech.value_scores` of the read idea, and taught by a squared error against the seat's one-hot. Its error reaches the idea stack alone.
+4. The teaching runs only when `fragmentBias` is above zero, so that zero is the source as found. To teach without taking, a probability that is never drawn is set (the tests use 1e-12).
+5. The run begins at the word the look took and goes right through slots in the extent that are unread and known, up to 3 words.
+6. A taken read is the first word's leaf: the read idea as its value, the read classes as its row of the word table. The other words are read with it and do not arrive.
+7. The draw is replayed from the greedy path. A path that took a read does not teach that stream. No read is taken while the reading lesson teaches.
+
+*C* (`f65064f87c`):
+1. A thought chunk's entry is its idea's extension made into an entry by `tree_entry`.
+2. "A row already held in STM" is read as held by a chunk on the stack. A row held off the stack, such as the idea kept at the last close, is matched, and its chunk is moved onto the top. Otherwise a question could not find the sentence just read.
+3. The query always matches the top of the stack. For a pattern that is not a field, `best_match`'s readers choose first, and the best by match is pushed.
+4. `chunks_loaded` is renamed `pushed`.
+
+*D* (`19bdcbde89`): certificate 32 is stated as the inner word's concept reading nothing at the longer word's token, and the look's tie is printed and not asserted.
+
+#### Tests ported or retired (old assertion, then new)
+
+- `test_layout_removal.py::test_content_recall_loads_only_the_requested_stream_and_identity_pool`. Old: `recall_chunks` loads the chain at stream 1, slot 0. New: `push_recalled` pushes it at stream 1, slot 0, on top of the stack.
+- `test_accessible_mind.py::test_thought_effect_uses_cached_row_identity`. Old: two recalls retain one occurrence at its original time. New: the first push retains it; the second returns `held_in_stm`; one occurrence, at its time.
+- `test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only`. Old: `recall_chunks((row,))`. New: `push_recalled(row)`, assertions unchanged.
+- `test_stm_chunk_gates.py::test_content_cue_reenters_shared_chunks_with_stored_stamp_and_identities`. Old: recall re-enters at slot 0 with the stored stamp. New: the same by `push_recalled`, and the chunk is on top.
+- `test_item25_repair.py::test_recalled_chunk_addresses_depend_only_on_their_own_stream`. Old: two recalls refresh one slot. New: push, then `held_in_stm`. The slot and other-stream assertions are unchanged.
+- `test_item20_round7_episodes.py::test_content_query_retains_entries_in_requesting_stm_and_preserves_perception`. Old: a field cue recalls the rows. New: the kept idea, with its row's entry, is pinned as the focus (the top of the stack), and the query pushes the row. The retention, perception and other-stream assertions are unchanged.
+- `test_episodic_concepts.py::test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar`: ported the same way, still with no grammar run.
+- `test_item18_trust.py::test_51_...[False]` and `[True]`. Old: `query(question)` gives `chunks_loaded`. New: the question is pinned on top and `query` gives `pushed`. The chunk and entry assertions are unchanged.
+
+None retired.
+
+#### Test files run, with counts and seconds
+
+- Gates before any edit of bin/: 2 passed, 4.75 s.
+- A: `test_item17_where_trial.py`, 4 passed, 3.4 s. The trial's report (3 starts × 5 forms), about 41 s.
+- B:
+  - `test_item17_fragments.py`: 5 passed, 24.1 s.
+  - The files naming what B changed, with both gates: 233 passed, 9 skipped, 174.5 s. The files: `test_chooser_architecture`, `test_dimensional_governance`, `test_familiar_tier`, `test_interpret_bias`, `test_item17_fragments`, `test_item17_stacks`, `test_item18_idea_read`, `test_item17_looks`, `test_loop_of_looks`, `test_one_attention`, `test_native_attention_field`, `test_priming_diffusion`, `test_sentence_expectation`, `test_testpoint`, `test_thought_intuition`, `test_within_whole_division`.
+- C:
+  - The 29 files naming the query, with the gates, before the ports: 9 failed, 407 passed, 11 skipped, 50.4 s.
+  - The same after the ports: 416 passed, 11 skipped, 59.7 s.
+  - 26 more files naming the thought readers: 427 passed, 4 skipped, 52.7 s.
+  - All 56 with `test_item17_query.py` and the gates: 847 passed, 15 skipped, 1 failed (the random `test_item17_symbols` case above), 78.8 s.
+  - `test_item17_symbols.py` alone, four times: 35 passed each, 30 to 48 s.
+- D: `test_item17_looks.py`, `test_item17_where_trial.py`, `test_item17_fragments.py`, `test_item17_query.py` and both gates: 38 passed, 48.4 s.
+
+#### Commits
+
+- `5d552f8172`: A, the trial.
+- `e5233de99f`: B, the read and the option.
+- `fc4e3e91db`: certificate 50.
+- `f65064f87c`: C, the query and the ports.
+- `7b3e0cbc1a`: certificate 52 and rule 65.
+- `19bdcbde89`: D, certificates 31 (a), 31 (c) and 32.
+
+#### What is left
+
+- Alec's answer on a place as a row: the measures are above. Then, if yes:
+  - the rows built in bin/;
+  - nomination by the cone in the model, since `CandidateMatrix` cannot offer them;
+  - what stops a request at its first place from asking for the next.
+- Certificate 32's tie (the two producers above).
+- The read's target as a semantic point per constituent, and interpret's treatment of a taken read's leaf.
+- The lesson's sixteen sentences with `fragmentBias` off and on, and before and after 6c (the coordinator's run).
+- What the readers of truth and existence do (rule 60's open point).
+- Certificate 44 (round 7).
+
+#### What surprised me
+
+- A place as a row reads every held-out order where a row that requires its whats read none. But what it learns is "begin at the beginning": one constant request for place 0, which wins because a place row's share falls off smoothly with distance.
+- Whether a start learns at all is decided by the sign of one entry of the request at its start: below zero, the request takes no gradient on its for lane.
+- The cone nominates pure places only where the forms met there share no character. On this small lesson that is the first place and one other.
+- At a sentence's close the kept idea leaves the stack, so a query keyed on the top of the stack has nothing to match until a thought's focus is pinned. Excluding everything STM holds would have hidden the sentence just read.
+- The untrained walk of three words took 22 actions once, against 5 at other times, from chains of unary operations. A taken read cut it to 1.
+
+#### What I would change in §21
+
+- Rule 60: "a row already held in STM" should read "held on the stack". Rule 60 should also say that a row held off the stack (an idea kept at a close) is matched, and that its chunk is what is pushed.
+- Rule 58: say that the teaching runs where the option's probability is above zero, or give the teaching a switch of its own; and say which target a constituent's read is taught by, the compose's value or a semantic point.
+- Rule 36 or rule 53: what a request for a word does at the token of a longer word that holds it (certificate 32's tie).
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass; both gates pass at four points. The list and the lesson on `19bdcbde89` are run with the next pass's.
+
+- *A place as a row teaches reading in order, and new orders with it.* Where a start learns, all three measures are complete: 6 of 6 two-word sentences, 16 of 16 of the lesson, 6 of 6 held out, against 0 or 1 of 6 held out for every form of a row that requires its whats (§23.6.3). 8 of 12 starts learn. With no place row, nothing is read in order in any start.
+- *Such rows arise without being given,* by rule 72's cone over the occurrences at a place: a row at each of the 7 places, 2 of them with no what at all (the places met by many forms), the others "this form here" (a place met by one form). The 7 nominated rows teach as well as the 7 given. The candidate matrix cannot offer them, since it weighs pairs over all readings and a place is what the occurrences of one place share.
+- *What is learned is small and should be said plainly:* one constant request, for the first place. The leftmost unread word then wins each look, because a place row's share falls off with distance and what was read is lowered. It is "begin at the beginning and take what is next", which is reading in order; it is not a request that moves. Alec's rule 38 has `attend` change the place it asks for from the state of STM; that is not what was learned here and is not needed for these sentences.
+- *A start that fails, fails for one reason:* its request for the first place begins below zero, and a request on its for lane takes no gradient there. In the model the request's map starts at nothing and not below, so this may not arise; it is measured when built.
+- *The when wires in or out change nothing* with fixed place rows. So nothing is decided about the when by this trial, and the first choice of §23.6.3 stands (a row's entries on the when are read where a look's readings differ in time).
+- *Round 6b is built behind its key* (`fragmentBias`, nothing at zero): a run of two or three words read at one time through the idea stack, taught by the composed value of that constituent, and takable as one leaf, with no form, row or symbol made. A walk of three words is 1 to 3 actions with the read taken, against 5 to 22 without. Its certificate of learning shows the read drawing nearer its teacher and not yet telling two sentences apart, after 8 presentations.
+- *Round 6c is built:* the query's key is the entry of concepts of the top of the STM stack, and the best row is pushed onto the stack, one row a query. *Accepted, with rule 60 amended to say so:* "a row already held in STM" is a row held by a chunk on the stack; an idea kept at a sentence's close is held off the stack, is matched, and is moved to the top, since otherwise a question could not find the sentence just read.
+- *Certificate 32 holds in part, and what is missing is a fault of the way down, not of the bank.* A request for `is` makes `This` as salient as `is`, though the concept `is` reads nothing at `This` (its row there is for 1 and against 1). The way down passes the for lane's share whatever the against lane holds. *Mine, to the next pass:* a request reaches a reading through the Not as well as through the Sigma: the share a row's reading takes is what the concept reads there, for less against, and nothing where the two are equal.
+- *The docs name `EpisodicMemory.reinstate`,* which is not in the source, at five places, and describe it at six more. Corrected by Claude with this review.
+
+#### Built provisionally, on the trial's measure, while the question is with Alec
+
+The question put to him (§23.6.3) was whether a row of the first Pi may be a place. The trial answers what could be measured: it teaches order, it transfers, and it arises by a rule he gave. *The next pass builds it in the model, each part in a commit of its own and marked provisional,* so that his answer can keep it or take it out: places nominated by the cone over the occurrences at a place, each with its concept; the way down through a place's entries onto the band; then what waited on the where (step 6's Not entry, a known form of several units as an event, the reading lesson measured in the model, the reconstruction over what and where, and certificates 33 (b), 33 (c), 34 and 45).
