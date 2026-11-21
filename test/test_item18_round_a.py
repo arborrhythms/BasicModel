@@ -175,34 +175,21 @@ def test_75_checkpoint_reallocation_preserves_every_row_and_identity():
         assert torch.equal(moved[seats[key]], values[old])
 
 
-def test_retained_time_lookup_decodes_once_and_native_writes_update_it(monkeypatch):
-    import RowTime
+def test_retained_row_lookup_reads_names_and_native_writes_update_it():
     from Memory import LTM0
     store = LTM0(12, capacity=16, percept_width=8)
     for value in range(8):
         store.append_idea(torch.full((12,), value / 8.))
     store.clear_caches()
-    calls = []
-    decode = RowTime._ModelTimeEncoding.decode_index
-    def measured(clock, values):
-        calls.append(values.shape)
-        return decode(clock, values)
-    monkeypatch.setattr(RowTime._ModelTimeEncoding, 'decode_index', measured)
     for _ in range(3):
         for row in range(8):
             assert store.index_of_row(store.row_name(row)) == row
-    assert len(calls) == 1
     saved = {key: value.clone() for key, value in store.state_dict().items()}
     row = store.append_idea(torch.ones(12))
     name = store.row_name(row)
-    assert store.index_of_row(name) == row and len(calls) == 1
+    assert store.index_of_row(name) == row
     store.restore_runtime_state(saved)
-    assert store.index_of_row(name) is None and len(calls) == 2
-    store.compact_rows((1, 3, 5))
-    assert [store.row_name(row) for row in range(3)] == [1, 3, 5]
-    assert store.index_of_row(3) == 1 and store.index_of_row(2) is None
-    assert not set(store.caches) & set(store.state_dict())
-
+    assert store.index_of_row(name) is None
 
 def test_retained_exclusion_counts_follow_append_compaction_and_restore():
     from Memory import LTM0

@@ -21,7 +21,7 @@ class IdeaStack(STM0):
         self.parts.handle_reserved = source.parts.contains
         self._tree_sites = sites
         self._tree_root = tree.roots[0]
-        self.model_clock.fill_(tree.semantic_start)
+        self.names_issued.fill_(tree.semantic_start)
 
     def name_for(self, term, *, sentence, count):
         address = self._tree_sites.get(id(term))
@@ -201,10 +201,10 @@ class SentenceStrata(nn.Module):
             relation_capacity=relation_capacity) for _ in range(self.streams))
         self._leases = [None] * len(self.idea_stores)
         self._traces = [None] * len(self.idea_stores)
-        self._clock = 0
+        self._names = 0
 
     def capture(self, program, language, stream, *, after=0):
-        self._clock = max(self._clock, int(after))
+        self._names = max(self._names, int(after))
         indices = range(self.trials*stream, self.trials*(stream+1))
         index = next((i for i in indices if self._leases[i] is None or self._leases[i]() is None), None)
         if index is None:
@@ -220,9 +220,9 @@ class SentenceStrata(nn.Module):
             record = ReadingIndex(program.actions, len(program.leaves), language)
             object.__setattr__(program, 'action_index', record)
         record.validate_interfaces(language)
-        trace = Trace(program, record, self._clock + 1)
+        trace = Trace(program, record, self._names + 1)
         tree = Tree(trace, ideas)
-        self._clock += len(trace.index.steps) + ideas.capacity
+        self._names += len(trace.index.steps) + ideas.capacity
         self._traces[index] = trace
         self._leases[index] = weakref.ref(tree)
         object.__setattr__(program, 'actions', trace.index.actions)
@@ -258,19 +258,19 @@ class SentenceStrata(nn.Module):
             store.address_domain = owner.address_domain
             if address is None:
                 # A relation's recent head has no LTM0 row. Reserve its
-                # occurrence name from the same clock as the retained rows;
-                # the syntax counter can otherwise alias a later row's time.
-                from RowTime import next_time, encoder
-                address = int(encoder().decode_index(next_time(owner)))
+                # occurrence name from the retained rows' own count of names;
+                # the syntax counter can otherwise alias a later row's name.
+                from RowTime import name_row
+                address = name_row(owner)
         store.to(device=point.device, dtype=point.dtype)
         previous = None if address is None else store.index_of_row(address)
         if previous is not None or len(store) == store.capacity:
             store.slots = store.slots.detach().clone()
             retired = 0 if previous is None else previous
             store.compact_rows([index for index in range(len(store)) if index != retired])
-        self._clock += 1
+        self._names += 1
         meaning = replace(ConceptualMeaning.from_description(point.detach()), bindings={'_relations': tuple(relations)})
-        row = store.append_meaning(meaning, name=self._clock if address is None else address)
+        row = store.append_meaning(meaning, name=self._names if address is None else address)
         if source is not None:
             selected, pending = set(), [relation for context in store.working.values()
                 for relation in dict(context['bindings']).get('_relations', ())]

@@ -21,7 +21,7 @@ def install(model):
                      for space in (model.perceptualSpace, model.wholeSpace))
     width = sum(sizes) + sum(n*d for n,d in geometry) + geometry[0][0]*geometry[0][1]
     dim = int(cs.stm.concept_dim)
-    width += int(cs.stm.capacity)*(dim+16) + (2+len(model._concept_owner()._order_caps()))*dim
+    width += int(cs.stm.capacity)*(dim+28) + (2+len(model._concept_owner()._order_caps()))*dim
     model._attention_geometry = sizes, geometry
     with torch.random.fork_rng(devices=[]):
         projection = nn.Linear(width + 2, dim, bias=False, device='cpu')
@@ -69,14 +69,14 @@ def _needs(model, batch, width, like, opened=None):
     if opened is None:
         opened = getattr(bank, 'query', None)
     gist = getattr(model, '_last_gist', None)
-    from RowTime import relative_idea
-    return torch.cat([relative_idea(model, _fit(value, batch, count, width, like)).flatten(1)
+    from RowTime import compared
+    return torch.cat([compared(model, _fit(value, batch, count, width, like)).flatten(1)
                       for value, count in ((opened, 1), (gist, 1))], -1)
 
 
 def context(model, stm, field, surprise=None):
     """Summarize the understood prefix before the next attention decision."""
-    from RowTime import age_interval, age_band
+    from RowTime import encoder, how_far_back
     values = stm[0]
     B = len(values)
     registry = model.where_registry
@@ -93,25 +93,31 @@ def context(model, stm, field, surprise=None):
         # Only the explicit native working field belongs to this read.
         key = _fit(value, B, *shape, values)
         if space.subspace.nWhen:
-            key = torch.cat((key[..., :-4], age_band(model, key[..., -4:])), -1)
+            key = torch.cat((key[..., :-4], how_far_back(model.present_code(), key[..., -4:])), -1)
         keys.append(key.flatten(1))
     cs = model.conceptualSpace
     buffer, reference_rows = stm[0], stm[4]
     K, D = int(cs.stm.capacity), int(cs.stm.concept_dim)
     occupied = buffer.ne(0).any(-1)
-    from RowTime import relative_idea
-    contents = relative_idea(model, _fit(buffer, B, K, D, values)) * occupied[..., None]
+    from RowTime import compared
+    contents = compared(model, _fit(buffer, B, K, D, values)) * occupied[..., None]
     shared = stm
     spatial = shared[11].to(values)
-    temporal = age_band(model, shared[12]).to(values)
+    temporal = how_far_back(model.present_code(), shared[12].to(values))
     symbolic_heat = heat[:, sum(sizes[:2]):]
     salience = symbolic_heat.gather(1, reference_rows.clamp(0, sizes[2] - 1))
     salience = torch.where(occupied & (reference_rows >= 0), salience, 0.)
-    stamps = (values.new_zeros(B, K, 6) if placements is None else torch.cat((
-        placements['where'] / registry.capacity,
-        torch.where(occupied[..., None].to(placements['when'].device),
-                    age_interval(model, placements['when']), 0.).to(values)
-            / float(model.when_age_scale), placements['lanes']), -1))
+    # A slot's interval of places and of times, each end as a code: the
+    # places by the where encoder, the times by how far back each end lies.
+    if placements is None:
+        stamps = values.new_zeros(B, K, 18)
+    else:
+        held = occupied[..., None, None]
+        places = registry.encoding.encode(placements['where'].to(values.device)).to(values)
+        times = how_far_back(model.present_code(), encoder().encode(placements['when']).to(values))
+        stamps = torch.cat((torch.where(held, places, 0.).flatten(-2),
+                            torch.where(held, times, 0.).flatten(-2),
+                            placements['lanes'].to(values)), -1)
     conceptual = torch.cat((contents, spatial, temporal,
                             occupied[..., None].to(values), salience[..., None], stamps), -1)
     prime = getattr(model._stm_reducer(), '_expectation_prime', None)

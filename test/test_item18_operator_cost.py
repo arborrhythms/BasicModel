@@ -65,6 +65,7 @@ def test_complete_path_pays_c_for_one_more_kept_application(monkeypatch):
         present=lambda: 7, _sentence_fields={}, _sentence_answer_predictions=None,
         inputSpace=NS(data=NS(has_supervised_outputs=True)),
         languageSpace=NS(operator_cost=.75, _generate_binary_ops=(None,), _generate_unary_ops=(None,)))
+    __import__('clock_fixtures').install(model, 7)
     # The load left is costed apart (test_reduction_pressure); at zero this
     # isolates the operator's cost.
     monkeypatch.setattr(WholePaths, 'load_cost', lambda model, observation, like: like.new_zeros(len(like)))

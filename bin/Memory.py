@@ -144,26 +144,27 @@ class STMChunks:
 
 
     @staticmethod
-    def read(state, indices, gate=None, *, tick=None):
-        """Refresh only actual reads; enumerating an offered bind calls no read."""
+    def read(state, indices, gate=None, *, count=None):
+        """Refresh only actual reads; enumerating an offered bind calls no read.
+        A read is marked by the count of reads so far, not by a time."""
         if indices.ndim == 1:
             indices = indices[:, None]
         if gate is None:
             gate = torch.ones_like(indices, dtype=torch.bool)
         elif gate.ndim == 1:
             gate = gate[:, None]
-        tick = state[STMChunks.READ].amax(-1)+1 if tick is None else torch.as_tensor(tick, device=indices.device).expand(indices.shape[0])
+        count = state[STMChunks.READ].amax(-1)+1 if count is None else torch.as_tensor(count, device=indices.device).expand(indices.shape[0])
         positions = torch.arange(state[STMChunks.STACK].shape[1], device=indices.device)[None, :, None]
         touched = ((positions == indices[:, None]) & gate[:, None] & (indices[:, None] >= 0)).any(-1)
         result = list(state)
-        result[STMChunks.READ] = torch.where(touched, tick[:, None], state[STMChunks.READ])
+        result[STMChunks.READ] = torch.where(touched, count[:, None], state[STMChunks.READ])
         return tuple(result)
 
 
     @staticmethod
     def deposit(state, value, gate, *, order=None, grammar_order=None, row=None,
                 activation=None, refs=None, identity=None, timeline=None,
-                where=None, when=None, truth=None, stack=False, tick=None):
+                where=None, when=None, truth=None, stack=False, count=None):
         """Allocate one arrival; remembered and prepended entries stay off stack."""
         before = state
         state, index = STMChunks.allocate_chunk(state, gate)
@@ -183,8 +184,8 @@ class STMChunks:
             result[STMChunks.STACK] = torch.where(active[:, None] & (state[STMChunks.STACK] >= 0), state[STMChunks.STACK]+1, state[STMChunks.STACK])
             result[STMChunks.STACK] = STMChunks.write(result[STMChunks.STACK], index, torch.zeros_like(index), active)
             result[STMChunks.DEPTH] = before[STMChunks.DEPTH] + active.long()
-        next_tick = before[STMChunks.READ].amax(-1)+1 if tick is None else tick
-        return STMChunks.read(tuple(result), index, active, tick=next_tick), index
+        reads = before[STMChunks.READ].amax(-1)+1 if count is None else count
+        return STMChunks.read(tuple(result), index, active, count=reads), index
 
 
     @staticmethod
@@ -1262,21 +1263,21 @@ class MediumTermMemory(MemoryStore):
         return result
 
     def record_reading(self, key, stream, pair):
-        """One two-lane witness per kept-close clock, retained within the horizon."""
+        """One two-lane witness per kept-close count, retained within the horizon."""
         entry = self.entries[key]
-        clock = self.closes.get(stream, 0)+1
+        count = self.closes.get(stream, 0)+1
         import math
         pair = tuple(float(x) for x in pair)
         if len(pair) != 2 or any(not math.isfinite(x) or x < 0 for x in pair):
             raise ValueError('candidate reading requires two finite nonnegative lanes')
         # Several focal rows can identify one candidate in the same field.
         # Retain both lanes independently; the last focal must not erase one.
-        prior = next((item[2:] for item in entry.readings if item[:2] == (stream, clock)), (0., 0.))
+        prior = next((item[2:] for item in entry.readings if item[:2] == (stream, count)), (0., 0.))
         pair = tuple(max(a, b) for a, b in zip(pair, prior))
         retained = tuple(item for item in entry.readings
-            if item[:2] != (stream, clock) and
+            if item[:2] != (stream, count) and
             self.closes.get(item[0], 0)+1-item[1] <= self.horizon)
-        readings = (*retained, (stream, clock, *pair))
+        readings = (*retained, (stream, count, *pair))
         self.entries[key] = replace(entry, readings=readings,
             count=len(readings) if entry.order is not None else entry.count)
 
@@ -1375,10 +1376,10 @@ class MediumTermMemory(MemoryStore):
         return torch.stack(values).amax(0)
 
     def record_link(self, reference, occurrence, stream, *, kind=None, order=None):
-        """The member's path clock is the current kept close, not world time."""
+        """The member's path count is the count of kept closes, not world time."""
         key = self.token_of(reference)
         if key is None:
-            raise ValueError('link clock requires a retained collection')
+            raise ValueError('link count requires a retained collection')
         entry = self.entries[key]
         refinement = dict(entry.refinement)
         mentions = dict(refinement.get('mentions', {}))
@@ -1412,7 +1413,7 @@ class MediumTermMemory(MemoryStore):
         if key is None:
             return False
         mentions = self.entries[key].refinement.get('mentions', {})
-        latest = max((clock for member_stream, clock in mentions.values()
+        latest = max((count for member_stream, count in mentions.values()
                       if member_stream == stream), default=None)
         return latest is not None and self.closes.get(stream, 0)+1-latest <= self.horizon
 
@@ -1614,9 +1615,9 @@ class MediumTermMemory(MemoryStore):
         for field in ('member_concepts', 'event_links'):
             refinement[field] = {**previous.refinement.get(field, {}), **refinement.get(field, {})}
         self.entries[target] = replace(self.entries[target], refinement=refinement)
-        for stream, clock in self.accesses.pop(source, {}).items():
+        for stream, count in self.accesses.pop(source, {}).items():
             retained = self.accesses.setdefault(target, {})
-            retained[stream] = max(clock, retained.get(stream, 0))
+            retained[stream] = max(count, retained.get(stream, 0))
         self._release_id(previous)
         del self.entries[source]
         return target
@@ -1626,25 +1627,25 @@ class MediumTermMemory(MemoryStore):
         self.pending_step += 1
         self.pending={key:value for key,value in self.pending.items()
             if self.pending_step-value[0] <= self.horizon}
-        clock = self.closes.get(stream, 0) + 1
-        self.closes[stream] = clock
+        count = self.closes.get(stream, 0) + 1
+        self.closes[stream] = count
         for key, entry in self.entries.items():
             if entry.order is None:
-                self.accesses.setdefault(key, {stream: clock})
+                self.accesses.setdefault(key, {stream: count})
         for reference in references:
             key = self.token_of(reference)
             if key is not None:
-                self.accesses.setdefault(key, {})[stream] = clock
+                self.accesses.setdefault(key, {})[stream] = count
                 entry = self.entries[key]
                 if entry.order is None and reference in self.names:
                     refinement = dict(entry.refinement)
                     mentions = {address: seen for address, seen in refinement.get('mentions', {}).items()
                                 if self.closes.get(seen[0], 0)-seen[1] <= self.horizon}
-                    mentions.setdefault(reference, (stream, clock))
+                    mentions.setdefault(reference, (stream, count))
                     refinement['mentions'] = mentions
                     self.entries[key] = replace(entry, refinement=refinement)
         for key, accesses in tuple(self.accesses.items()):
-            if stream in accesses and clock - accesses[stream] > self.horizon:
+            if stream in accesses and count - accesses[stream] > self.horizon:
                 del accesses[stream]
                 if not accesses:
                     self._detach(key)
@@ -1864,9 +1865,9 @@ class MediumTermMemory(MemoryStore):
 
 class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
     """The common idea read; durability and working syntax have separate owners."""
-    columns = ('slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity')
+    columns = ('slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity', 'row_names')
     caches = ('_observation_revision', '_coordinate_counts', '_coordinate_joint')
-    auxiliary = {'count': 'occupied seats', 'model_clock': 'next occurrence time',
+    auxiliary = {'count': 'occupied seats', 'names_issued': 'row names issued',
         'percept_layout': 'construction geometry', 'truth_schema': 'checkpoint layout',
         'forget_passes': 'pass count', 'forget_sentences': 'kept sentence count',
         'forget_last_sentence': 'last scheduled pass', 'forget_pending': 'scheduled pass'}
@@ -1891,9 +1892,12 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
             torch.full((self.capacity,),-1,dtype=torch.long)), -1))
         self.register_buffer('activity', torch.zeros(self.capacity))
         self.register_buffer('count', torch.tensor(0,dtype=torch.long))
-        self.register_buffer('model_clock', torch.tensor(0,dtype=torch.long))
+        # A row is named by a count of the names issued; its time is the
+        # model's present, stamped in its when band.
+        self.register_buffer('row_names',torch.full((self.capacity,),-1,dtype=torch.long))
+        self.register_buffer('names_issued', torch.tensor(0,dtype=torch.long))
         self.register_buffer('percept_layout', torch.tensor(self.percept_width,dtype=torch.long))
-        self.register_buffer('truth_schema', torch.tensor(18,dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(19,dtype=torch.long))
         for name in ('forget_passes','forget_sentences','forget_last_sentence'):
             self.register_buffer(name,torch.tensor(0,dtype=torch.long))
         self.register_buffer('forget_pending',torch.tensor(False))
@@ -2225,9 +2229,9 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
 
 
 class LTM0(IdeaRows):
-    """One immutable signed claim, typed referent and flat extension per time."""
+    """One immutable signed claim, typed referent and flat extension per row,
+    named by a count and stamped with the present."""
     address_domain='time-v1'
-    caches = (*IdeaRows.caches, '_time_index_revision', '_row_times', '_rows_by_time')
 
     def __init__(self,nDim,capacity=1024,content_width=None,*,percept_width=None,
                  relation_capacity=8192,read_capacity=None,episodic_concepts=0):
@@ -2239,45 +2243,18 @@ class LTM0(IdeaRows):
             raise ValueError('LTM0 requires the native percept time band')
 
     def row_name(self,row):
-        self._ensure_time_index()
-        return self._row_times[int(row)]
+        return int(self.row_names[int(row)])
 
     def index_of_row(self,reference):
-        self._ensure_time_index()
-        return self._rows_by_time.get(int(reference))
-
-    def _ensure_time_index(self):
-        if self._time_index_revision == self._idea_revision:
-            return
-        from RowTime import encoder
-        self._row_times = encoder().decode_index(self.time[:len(self)]).tolist()
-        self._rows_by_time = {int(time): row for row, time in enumerate(self._row_times)}
-        self._time_index_revision = self._idea_revision
-
-    def rebuild_caches(self):
-        super().rebuild_caches()
-        self._ensure_time_index()
-
-    def _append_cache_state(self):
-        return super()._append_cache_state(), self._time_index_revision == self._idea_revision
-
-    def _append_cached(self, row, valid):
-        if valid[1]:
-            # next_time has just advanced the clock past the written row.
-            time = int(self.model_clock) - 1
-            self._row_times.append(time)
-            self._rows_by_time[time] = row
-            self._time_index_revision = self._idea_revision
-        # Reading the observation's order can resolve an occurrence referent
-        # through this index. Publish its append first, so that read cannot
-        # rebuild the index and have this same time appended a second time.
-        super()._append_cached(row, valid[0])
+        found=self.row_names[:len(self)].eq(int(reference)).nonzero().flatten()
+        return int(found[0]) if len(found) else None
 
     @torch.no_grad()
     def _write_point(self,row,point):
-        from RowTime import next_time,write_time
+        from RowTime import name_row,present_stamp,write_time
         self.slots[row].copy_(point)
-        write_time(self,row,next_time(self))
+        write_time(self,row,present_stamp(self))
+        self.row_names[row]=name_row(self)
 
     def raw_meaning_of(self,index):
         value=super().raw_meaning_of(index)
@@ -2285,77 +2262,29 @@ class LTM0(IdeaRows):
         return value if isinstance(index,tuple) or owner is None else owner.mtm.pending_meaning(self.occurrence_of(index),value)
 
     def validate_checkpoint(self, state, prefix):
-        """Reject unrepresentable legacy rows before importing any store."""
-        from RowTime import checkpoint_times
+        """A checkpoint of rows named by their time, kept before rows were
+        named by a count, is refused."""
         version=int(state.get(prefix+'truth_schema',-1))
-        if version not in (16,17,18):
-            raise ValueError('unsupported LTM0 checkpoint layout')
+        if version != int(self.truth_schema):
+            raise ValueError('LTM0 checkpoint layout of before the one clock is refused')
         if state[prefix+'slots'].shape != self.slots.shape:
             raise ValueError('LTM0 checkpoint capacity/width differs from construction')
-        count=int(state[prefix+'count'])
-        slots = state[prefix+'slots']
-        layout = int(state[prefix+'percept_layout'])
-        if version < 18:
-            from CoordinateCheckpoint import point
-            slots = point(slots, layout)
-        ticks=checkpoint_times(slots,count,layout)
-        if version >= 17:
-            self.validate_referents(state, prefix, ticks)
-        if version == 16:
-            plus,minus=state[prefix+'truth_plus'],state[prefix+'truth_minus']
-            if (plus.shape != self.trust.shape or minus.shape != plus.shape
-                    or plus.dtype != self.trust.dtype or minus.dtype != plus.dtype
-                    or not bool(torch.isfinite(plus).all() & torch.isfinite(minus).all())
-                    or bool(((plus < 0) | (plus > 1) | (minus < 0) | (minus > 1)).any())):
-                raise ValueError('invalid legacy idea evidence')
-            if bool((plus[:count].ne(0) & minus[:count].ne(0)).any()):
-                raise ValueError('legacy idea has both truth lanes; checkpoint cannot preserve them in one signed row')
-        return ticks
+        self.validate_referents(state, prefix, state[prefix+'row_names'])
 
     def prepare_checkpoint(self,state,prefix):
         import warnings
-        ticks=self.validate_checkpoint(state,prefix)
-        version=int(state[prefix+'truth_schema'])
-        count=int(state[prefix+'count'])
-        order=ticks.argsort(stable=True)
-        if version < 18:
-            from CoordinateCheckpoint import point
-            state[prefix+'slots'] = point(state[prefix+'slots'], int(state[prefix+'percept_layout']))
-            warnings.warn('LTM0 checkpoint: converted location/time sinusoids to [0, 1]')
-        if version == 16:
-            addresses=state.get(prefix+'addressing.address_keys')
-            self._legacy_times={} if addresses is None else dict(zip(addresses[:count].tolist(),ticks.tolist()))
-            plus,minus=state[prefix+'truth_plus'],state[prefix+'truth_minus']
-            state[prefix+'trust']=torch.where(plus > 0,plus,-minus)
-            state[prefix+'referent']=self.referent.clone()
-            state[prefix+'activity']=torch.where(torch.arange(self.capacity,device=self.activity.device)<count,
-                self.activity_config.default,0.).to(self.activity)
-            for name in ('episodic_concepts','episodic_values'):
-                if state[prefix+name].ndim != 3:
-                    raise ValueError('legacy entry has no order axis')
-            ids=state[prefix+'episodic_concepts'].flatten(1)
-            values=state[prefix+'episodic_values'].flatten(1)
-            ranking=values.abs().masked_fill(ids<0,-1).argsort(dim=-1,descending=True,stable=True)[:,:self.episodic_capacity]
-            picked_ids,picked_values=ids.gather(1,ranking),values.gather(1,ranking)
-            padding=self.episodic_capacity-picked_ids.shape[1]
-            state[prefix+'episodic_concepts']=torch.nn.functional.pad(picked_ids,(0,padding),value=-1)
-            state[prefix+'episodic_values']=torch.nn.functional.pad(picked_values,(0,padding))
+        self.validate_checkpoint(state,prefix)
         allowed={*self.columns,*self.auxiliary}
         for key in tuple(state):
             if key.startswith(prefix) and key[len(prefix):] not in allowed:
                 state.pop(key)
                 warnings.warn('LTM0 checkpoint: dropped retired field or cache '+key[len(prefix):])
-        state[prefix+'truth_schema']=self.truth_schema.clone()
-        state[prefix+'model_clock']=self.model_clock.new_tensor(max(int(state[prefix+'model_clock']),int(ticks.max())+1 if count else 0))
         for name in self.columns:
             value,target=state.get(prefix+name),getattr(self,name)
             if value is None or value.shape != target.shape or value.dtype != target.dtype:
                 raise ValueError('LTM0 checkpoint column differs from construction: '+name)
             if value.is_floating_point() and not bool(torch.isfinite(value).all()):
                 raise ValueError('nonfinite idea checkpoint column: '+name)
-            if count:
-                value=value.clone();value[:count]=value[:count][order]
-                state[prefix+name]=value
         if bool((state[prefix+'trust'].abs()>1).any()) or bool(((state[prefix+'activity']<0)|(state[prefix+'activity']>1)).any()):
             raise ValueError('invalid idea trust or activity')
     def _load_from_state_dict(self,state,prefix,*args,**kwargs):
@@ -2805,12 +2734,10 @@ class STM1(LTM1):
 class STM0(IdeaRows):
     """Transient ideas and syntax, without LTM0's durable time contract."""
     address_domain='stm-v1'
-    columns=(*IdeaRows.columns,'row_names')
 
     def __init__(self,width,capacity,*,percept_width=0,relation_capacity=2,episodic_concepts=0):
         super().__init__(width,capacity,percept_width=percept_width,episodic_concepts=episodic_concepts,
             relation_capacity=relation_capacity,read_capacity=capacity)
-        self.register_buffer('row_names',torch.full((capacity,),-1,dtype=torch.long))
         import weakref
         object.__setattr__(self,'parts',STM1(relation_capacity))
         self.parts._occurrence_store=weakref.ref(self)
@@ -2828,9 +2755,9 @@ class STM0(IdeaRows):
         # Functional replacement retains the live graph of the pinned tree.
         with torch.enable_grad():
             self.slots=self.slots.index_copy(0,self.count.new_tensor([row]),point[None])
-        name = self.__dict__.get('_next_row_name', int(self.model_clock))
+        name = self.__dict__.get('_next_row_name', int(self.names_issued))
         self.row_names[row] = name
-        self.model_clock.fill_(max(int(self.model_clock), name + 1))
+        self.names_issued.fill_(max(int(self.names_issued), name + 1))
         if '_next_row_name' in self.__dict__:
             self._next_row_name = name + 1
 
@@ -2860,13 +2787,9 @@ class STM0(IdeaRows):
             self.__dict__.pop('_next_row_name', None)
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        if int(state[prefix+'truth_schema']) != int(self.truth_schema):
+            raise ValueError('STM0 checkpoint layout of before the one clock is refused')
         self.validate_referents(state, prefix, state[prefix+'row_names'])
-        if int(state[prefix+'truth_schema']) < 18:
-            from CoordinateCheckpoint import point
-            import warnings
-            state[prefix+'slots'] = point(state[prefix+'slots'], int(state[prefix+'percept_layout']))
-            state[prefix+'truth_schema'] = self.truth_schema.clone()
-            warnings.warn('STM0 checkpoint: converted location/time sinusoids to [0, 1]')
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
 
     def compact_rows(self,keep):

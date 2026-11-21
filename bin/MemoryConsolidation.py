@@ -3,10 +3,8 @@ import torch
 
 
 def _content(store, row):
-    value = store.slots[row].detach().clone()
-    if store.when_start is not None:
-        value[store.when_start:store.when_start+4] = 0
-    return value
+    """The row's whole point: a concept keeps its .where and its .when."""
+    return store.slots[row].detach().clone()
 
 
 def _fold(owner, store, rows, *, order=1, members=None):

@@ -67,7 +67,7 @@ def test_pre_layout_checkpoint_is_rejected_without_migration():
     state['truth_schema'].fill_(10)
     restored = LTM0(12, 8, percept_width=8)
     before = copy.deepcopy(restored.state_dict())
-    with pytest.raises(ValueError, match='unsupported LTM0 checkpoint layout'):
+    with pytest.raises(ValueError, match='before the one clock is refused'):
         restored.load_state_dict(state)
     for name, value in before.items():
         torch.testing.assert_close(restored.state_dict()[name], value, rtol=0, atol=0)

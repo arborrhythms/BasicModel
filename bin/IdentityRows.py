@@ -179,17 +179,6 @@ def migrate_checkpoint(model, state, live, drift, transforms):
             del state[key]
             transforms[key] = None
             drift[key] = dict(action='retired cue matrix; native form regions learn from exposure')
-        key = prefix+'reference_close.policy'
-        if key in state and state[key].shape == (5,):
-            previous = state[key]
-            indices = (-1, 0, 1, -1, -1, 2, 3, 4)
-            value = live[key].detach().to(previous).clone()
-            for dst, src in enumerate(indices):
-                if src >= 0:
-                    value[dst] = previous[src]
-            state[key] = value
-            transforms[key] = (key, 0, indices)
-            drift[key] = dict(action='content becomes meet ratios; retain expectation/recency/role weights')
     for key in tuple(state):
         if key.endswith('.identity.projection') and key not in live:
             del state[key]

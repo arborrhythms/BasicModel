@@ -218,7 +218,7 @@ def stage(model, state, present):
     store, pool = model.symbolSpace.ltm_store, owner.mtm
     state = reconcile(state,pool,store)
     resolver = owner.components.reference_close
-    stamp = model.when_encoding.encode(model.present()).to(state[0])
+    stamp = model.present_code().to(state[0])
     for field in (*WORD_FIELDS, *LOOKUP_FIELDS):
         value = getattr(entries, field)
         if value.requires_grad:

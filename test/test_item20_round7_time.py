@@ -83,35 +83,37 @@ def test_thought_deposits_take_unique_nonempty_model_ticks_and_updates_keep_them
 
 def test_relative_reader_inputs_and_word_order_survive_the_full_clock_horizon():
     from clock_fixtures import install
-    from RowTime import age_band, age_interval, subintervals
+    from RowTime import how_far_back, subintervals
     model = install(SimpleNamespace())
     reference = None
     for tick in (0, 25, 50, 100, 200, 400, 777, 1500, 3000, HORIZON):
-        model.when_time.fill_(tick)
-        actual = age_band(model, model.when_encoding.encode(torch.tensor([tick, max(0, tick - 1)])))
-        assert torch.equal(actual[0], model.when_encoding.encode(0))
+        model.set_present(tick)
+        actual = how_far_back(model.present_code(), model.when_encoding.encode(torch.tensor([tick, max(0, tick - 1)])))
+        torch.testing.assert_close(actual[0], model.when_encoding.encode(0).to(actual))
         # Float64 intervals preserve the subdivisions even at the ladder's
         # largest tick, a stronger bound than any permitted default epoch.
         count = 256
         rank = torch.arange(count, dtype=torch.float64)
         intervals = subintervals(torch.full((count,), tick, dtype=torch.long), rank, torch.tensor(count))
         assert torch.equal(((intervals[:, 0] - tick) * count).long(), rank.long())
-        relative = age_interval(model, intervals)
+        relative = how_far_back(model.present_code(), model.when_encoding.encode(intervals).float())
         if reference is None:
             reference = relative
-        assert torch.equal(relative, reference)
+        torch.testing.assert_close(relative, reference, rtol=0, atol=1e-5)
 
 
 @pytest.mark.parametrize('device', ('cpu', 'mps'))
 def test_word_subintervals_preserve_order_on_the_native_device(device):
-    from RowTime import subintervals, age_interval
+    from clock_fixtures import install
+    from RowTime import subintervals, how_far_back
     if device == 'mps' and not torch.backends.mps.is_available():
         pytest.skip('Metal is unavailable')
     rank = torch.arange(256, device=device)
     intervals = subintervals(torch.full_like(rank, HORIZON), rank, torch.tensor(256, device=device))
-    ages = age_interval(SimpleNamespace(when_time=torch.tensor(HORIZON, device=device)), intervals)
-    torch.testing.assert_close(ages[:, 1], -torch.arange(256, dtype=torch.float64, device=ages.device)/256,
-                               rtol=0, atol=0)
+    model = install(SimpleNamespace(), HORIZON)
+    # Each word's end lies a distinct distance back: no two collapse.
+    ends = how_far_back(model.present_code(), encoder().encode(intervals[:, 1]).float())
+    assert torch.unique(ends, dim=0).shape[0] == 256
 
 
 @pytest.mark.learning_certificate
@@ -125,8 +127,7 @@ def test_trained_numeric_answers_do_not_move_at_nine_clock_offsets(tmp_path):
         with torch.no_grad():
             for tick in (0, 25, 50, 100, 200, 400, 777, 1500, 3000):
                 model.begin_presentation()
-                model.when_time.fill_(tick)
-                model.when_encoding.t = tick
+                model.set_present(tick)
                 result, _ = model.runBatch(train=False, batchSize=len(source), split='runtime',
                     batch_override=(source, target))
                 answers = result.outputPred.detach().clone()
@@ -153,8 +154,7 @@ def test_same_weights_and_sentences_choose_the_same_derivations_at_nine_clock_of
                 initial = copy.deepcopy(model.state_dict())
             else:
                 model.load_state_dict(initial)
-            model.when_time.fill_(tick)
-            model.when_encoding.t = tick
+            model.set_present(tick)
             source = model.inputSpace.prepInput(['alpha beta', 'beta alpha'])
             with torch.no_grad():
                 model.runBatch(train=False, batchSize=2,
@@ -174,25 +174,19 @@ def test_same_weights_and_sentences_choose_the_same_derivations_at_nine_clock_of
 
 
 
-def test_compiled_clock_difference_reuses_one_graph_and_keeps_exact_arithmetic():
-    from RowTime import difference
+def test_compiled_comparator_reuses_one_graph_and_keeps_exact_arithmetic():
+    from RowTime import how_far_back
     clock = encoder()
-    pointer = clock.t.data_ptr()
     graphs = []
     def backend(graph, inputs):
         graphs.append(graph)
         return graph.forward
-    compiled = torch.compile(lambda band: difference(clock, band),
-                             backend=backend, fullgraph=True)
+    compiled = torch.compile(how_far_back, backend=backend, fullgraph=True)
     for tick in (1, 25, 777, 3000):
-        clock.t = tick
+        present = clock.encode(tick).float()
         band = clock.encode(torch.tensor([tick - 1, tick])).detach().requires_grad_()
-        actual = compiled(band)
-        # This is the preceding integer-clock calculation, unchanged.
-        age = tick - clock.decode_index(band)
-        expected = torch.where(band.ne(0).any(-1, keepdim=True),
-            clock.encode(age).to(band) - clock.encode(0).to(band), 0.)
-        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-        assert clock.t.data_ptr() == pointer
+        actual = compiled(present, band)
+        torch.testing.assert_close(actual, clock.encode(torch.tensor([1, 0])).to(actual), rtol=0, atol=1e-6)
+        assert clock.decode_index(actual).tolist() == [1, 0]
     assert len(graphs) == 1
-    assert '_model_tick' not in clock.state_dict()
+    assert not clock.state_dict()

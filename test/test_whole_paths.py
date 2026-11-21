@@ -67,7 +67,7 @@ def test_retained_named_transient_captures_its_concept_not_its_mtm_address():
         _concept_owner=lambda: SimpleNamespace(mtm=pool,
             _concept_row_of=lambda cid: 0 if cid == 17 else None),
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[17]])),
-        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), languageSpace=SimpleNamespace(),
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7))), languageSpace=SimpleNamespace(),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=strata)))
     positions = torch.tensor([[0]])
     values = torch.ones(1, 1, 4)
@@ -402,6 +402,7 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
         when_encoding=NS(t=7), present=lambda: 7, _sentence_fields={}, _sentence_answer_predictions=None,
         inputSpace=NS(data=NS(has_supervised_outputs=True)),
         languageSpace=NS(operator_cost=1., _generate_binary_ops=(), _generate_unary_ops=()))
+    __import__('clock_fixtures').install(model, 7)
     before = ThoughtTrialState(model)
     registry = Error(row_mask=active)
     registry.add('reconstruction', torch.tensor([2.]), objective='reconstruction')

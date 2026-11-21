@@ -121,7 +121,8 @@ class ThoughtTrialState:
         self.activity = snapshot()
         self.clock = model.when_time.detach().clone()
         store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
-        self.store_clock = None if store is None else (store, store.model_clock.detach().clone())
+        # The store's count of row names: a name once issued is never reissued.
+        self.store_names = None if store is None else (store, store.names_issued.detach().clone())
         from Memory import STMChunks
         stm = getattr(getattr(model, 'conceptualSpace', None), 'stm', None)
         owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
@@ -160,9 +161,9 @@ class ThoughtTrialState:
             departing = copy(self)
             # One global clock must not undo another stream's later thought.
             departing.clock = torch.maximum(self.clock, current.clock)
-            if self.store_clock is not None:
-                departing.store_clock = (self.store_clock[0],
-                    torch.maximum(self.store_clock[1], current.store_clock[1]))
+            if self.store_names is not None:
+                departing.store_names = (self.store_names[0],
+                    torch.maximum(self.store_names[1], current.store_names[1]))
             batch = len(self.model._what_memory()._what_slots)
             if not 0 <= int(row) < batch:
                 raise IndexError('thought departure stream is outside the active batch')
@@ -171,11 +172,10 @@ class ThoughtTrialState:
             type(self).keep((current, departing), selected)
             return
         if not effects_only:
-            self.model.when_time.copy_(self.clock)
-            self.model.when_encoding.t = self.model.present()
-            if self.store_clock is not None:
-                store, clock = self.store_clock
-                store.model_clock.copy_(clock)
+            self.model.set_present(int(self.clock))
+            if self.store_names is not None:
+                store, names = self.store_names
+                store.names_issued.copy_(names)
         if self.thought_strata is not None and not effects_only:
             from ThoughtStrata import restore
             stm, snapshot = self.thought_strata
@@ -275,9 +275,9 @@ class ThoughtTrialState:
                     return {key: values[indices[key]][key] for key in keys if key in values[indices[key]]}
             return first
         chosen.clock = torch.stack([states[index].clock for index in set(indices)]).amax(0)
-        if chosen.store_clock is not None:
-            chosen.store_clock = (chosen.store_clock[0],
-                torch.stack([states[index].store_clock[1] for index in set(indices)]).amax(0))
+        if chosen.store_names is not None:
+            chosen.store_names = (chosen.store_names[0],
+                torch.stack([states[index].store_names[1] for index in set(indices)]).amax(0))
         from MemoryActivity import select
         chosen.activity = select([state.activity for state in states], winners)
         chosen.saved = []

@@ -7,9 +7,10 @@ def install(model, tick=0):
     from Models import BasicModel
     from RowTime import encoder
     model.when_time = torch.tensor(tick, dtype=torch.long)
+    model.when_code = encoder().encode(model.when_time).float()
     model.when_encoding = encoder()
-    model.present = MethodType(BasicModel.present, model)
-    model._advance_when_time = MethodType(BasicModel._advance_when_time, model)
+    for name in ('present', '_advance_when_time', 'set_present', '_encode_present', 'present_code'):
+        setattr(model, name, MethodType(getattr(BasicModel, name), model))
     model._sentence_ticks = {}
     if not hasattr(model, '_open_sentence_slot'):
         model._open_sentence_slot = None

@@ -51,7 +51,7 @@ def clock(language, like, bank):
     if not bank:
         return None
     model = language.parts_of_speech.owner._model
-    return model.when_encoding.encode(model.when_time).to(like).expand(len(like), -1)
+    return model.present_code().to(like).expand(len(like), -1)
 
 
 def forecast(language, emitted, count, *, orders=None, now=None, bank):

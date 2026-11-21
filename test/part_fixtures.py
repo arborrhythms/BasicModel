@@ -21,7 +21,9 @@ def native_store(width=4, capacity=32, points=(), *, percept_width=0, order_limi
     store = (LTM0(width, capacity=capacity, percept_width=percept_width) if percept_width
              else STM0(width, capacity=capacity, relation_capacity=8192))
     object.__setattr__(store, '_fixture_owner', owner)
-    attach_clause_index(SimpleNamespace(), store, owner)
+    # The store's rows take the present of a model clock at zero.
+    from clock_fixtures import install
+    attach_clause_index(install(SimpleNamespace(), 0), store, owner)
     symbols = tuple(symbol(store, point) for point in points)
     return store, symbols
 

@@ -1,4 +1,5 @@
 """Model time in the percept band, never a separate durable time column."""
+import math
 import torch
 from functools import wraps
 
@@ -7,31 +8,17 @@ from functools import wraps
 HORIZON = (1 << 32) - 1
 
 
-from Spaces import WhenEncoding
+from Spaces import WhenEncoding, signed_phase, unsigned_phase
 
-
-class _ModelTimeEncoding(WhenEncoding):
-    """A transient tensor clock, so compiled reads do not guard its value.
-
-    BasicModel.when_time remains the saved clock. This encoder's existing
-    current-time view follows assignments in place and adds no checkpoint key.
-    """
-    @property
-    def t(self):
-        return self._model_tick
-
-    @t.setter
-    def t(self, value):
-        if '_model_tick' not in self._buffers:
-            self.register_buffer('_model_tick', torch.as_tensor(value, dtype=torch.long),
-                                 persistent=False)
-        else:
-            self._model_tick.copy_(torch.as_tensor(value, device=self._model_tick.device,
-                                                  dtype=torch.long))
+_ENCODER = None
 
 
 def encoder():
-    return _ModelTimeEncoding(n_when=4).set_capacity(HORIZON)
+    """The one encoder of model time: every code of a time is made by it."""
+    global _ENCODER
+    if _ENCODER is None:
+        _ENCODER = WhenEncoding(n_when=4).set_capacity(HORIZON)
+    return _ENCODER
 
 
 def produced(method):
@@ -48,17 +35,53 @@ def produced(method):
     return sentence
 
 
-def age_interval(model, interval):
-    """Age reverses the ends of a historical interval, including age zero."""
-    return model.when_time.to(interval.device) - interval.flip(-1)
+def how_far_back(present, stamp):
+    """The comparator: the code of how far ``stamp`` lies behind ``present``.
+
+    Both are codes of the one encoder, each a tick's unit bracket on two
+    rungs. On each rung the stamp's phase is taken from the present's, and
+    the bracket is laid again from the difference, so the result is the
+    encoder's own code of the distance in ticks. A band of zeros (no stamp)
+    gives zeros.
+    """
+    clock = encoder()
+    # A present per stream reads every stamp of that stream.
+    while present.ndim < stamp.ndim:
+        present = present.unsqueeze(-2)
+    # The rotation is taken in double precision, so a distance decodes to
+    # its exact tick count over the whole ladder.
+    present = signed_phase(present.to(device=stamp.device, dtype=torch.float64))
+    signed = signed_phase(stamp.to(torch.float64))
+    pairs = []
+    for rung, step in zip(range(0, stamp.shape[-1], 2), (clock.div_lf, clock.div_hf)):
+        ps, pc = present[..., rung], present[..., rung + 1]
+        ss, sc = signed[..., rung], signed[..., rung + 1]
+        sin, cos = ps * sc - pc * ss, pc * sc + ps * ss
+        norm = torch.sqrt(sin * sin + cos * cos).clamp_min(1e-300)
+        sin, cos = sin / norm, cos / norm
+        turn_sin, turn_cos = math.sin(step), math.cos(step)
+        pairs += [.5 * (sin + sin * turn_cos + cos * turn_sin),
+                  .5 * (cos + cos * turn_cos - sin * turn_sin)]
+    code = unsigned_phase(torch.stack(pairs, -1)).to(stamp.dtype)
+    return torch.where(stamp.ne(0).any(-1, keepdim=True), code, 0.)
+
+
+def compared(model, idea):
+    """A reader's full-width idea, its stamp read through the comparator
+    against the present on the model."""
+    store = model.symbolSpace.ltm_store
+    start = None if store is None else store.when_start
+    if start is None or idea.shape[-1] <= start:
+        return idea
+    return torch.cat((idea[..., :start], how_far_back(model.present_code(), idea[..., start:start+4]),
+                      idea[..., start+4:]), -1)
 
 
 def subintervals(onset, rank, count):
     """Exact word order within a tick, even at the ladder's last tick.
 
     Metal has no float64 storage. Its small coordinate table stays on the
-    host; readers subtract the clock there before moving ages to the device.
-    Content, evidence and their gradients stay on their native device.
+    host; content, evidence and their gradients stay on their native device.
     """
     device = 'cpu' if onset.device.type == 'mps' else onset.device
     onset = onset.to(device=device).to(dtype=torch.float64)
@@ -67,73 +90,31 @@ def subintervals(onset, rank, count):
     return torch.stack((onset + rank / count, onset + (rank + 1) / count), -1)
 
 
-def age_band(model, band):
-    """A learned reader sees elapsed time, never the phase of a stored time."""
-    occupied = band.ne(0).any(-1)
-    age = model.when_time.to(band.device) - model.when_encoding.decode_index(band)
-    return torch.where(occupied[..., None], model.when_encoding.encode(age).to(band), 0.)
+def present_stamp(store):
+    """The present's code for a row written now, from the model that owns
+    the store (or the one encoder's code of a present it was given); zeros
+    (no stamp) for a store with no present."""
+    source = getattr(store, '_model_present_code', None)
+    band = store.slots.new_zeros(4)
+    if source is not None:
+        return source().to(band)
+    tick = getattr(store, '_model_present', None)
+    return band if tick is None else encoder().encode(int(tick())).to(band)
 
 
-def relative_to(band, now):
-    """Express a stored band relative to the supplied observation tick."""
-    clock = encoder()
-    tick = clock.decode_index(now)
-    while tick.ndim < band.ndim - 1:
-        tick = tick.unsqueeze(-1)
-    age = tick - clock.decode_index(band)
-    return torch.where(band.ne(0).any(-1, keepdim=True), clock.encode(age).to(band), 0.)
-
-
-def difference(clock, band):
-    """A composition reads elapsed time as a departure from the present.
-
-    Times stay on the shared ladder. The learned content mixer receives
-    differences from its zero-age band, so the current tick contributes no
-    constant content and changing the clock's origin cannot change a read.
-    """
-    age = clock.t - clock.decode_index(band)
-    delta = clock.encode(age).to(band) - clock.encode(0).to(band)
-    return torch.where(band.ne(0).any(-1, keepdim=True), delta, 0.)
-
-
-def relative_idea(model, idea):
-    """A reader's full-width idea, with its located form expressed as age."""
-    store = model.symbolSpace.ltm_store
-    start = None if store is None else store.when_start
-    if start is None or idea.shape[-1] <= start:
-        return idea
-    return torch.cat((idea[..., :start], age_band(model, idea[..., start:start+4]),
-                      idea[..., start+4:]), -1)
-
-
-def next_time(store):
+def present_tick(store):
+    """The model's present as an integer, for what is not learned (the
+    order of mentions); zero for a store with no model."""
     source = getattr(store, '_model_present', None)
-    tick = max(int(store.model_clock), 0 if source is None else int(source()))
-    if not 0 <= tick <= HORIZON:
-        raise OverflowError('model time exceeds the declared row-time ladder horizon')
-    store.model_clock.fill_(max(int(store.model_clock), tick + 1))
-    return encoder().encode(tick).to(store.slots)
+    return 0 if source is None else int(source())
 
 
-def checkpoint_times(slots, count, percept_width):
-    """Read unique legacy names before any destination checkpoint mutation.
-
-    Untimed or duplicate occurrences cannot be renamed without losing their
-    distinction. Alec chose rejection rather than changing the stored bands.
-    """
-    if slots.ndim != 2 or not 0 <= count <= len(slots):
-        raise ValueError('invalid occurrence checkpoint shape or count')
-    if not count:
-        return slots.new_empty(0, dtype=torch.long)
-    if not 8 <= percept_width <= slots.shape[-1]:
-        raise ValueError('ambiguous occurrence times: checkpoint has no time band')
-    bands = slots[:count, percept_width-4:percept_width]
-    if not bool(torch.isfinite(bands).all()) or not bool(bands.ne(0).any(-1).all()):
-        raise ValueError('ambiguous occurrence times: missing or nonfinite time band')
-    ticks = encoder().decode_index(bands)
-    if len(ticks.unique()) != count:
-        raise ValueError('ambiguous occurrence times: several rows have the same time')
-    return ticks
+def name_row(store):
+    """The next row name of ``store``: the count of the names it has issued,
+    with this one. Names begin at one; zero names nothing."""
+    name = int(store.names_issued) + 1
+    store.names_issued.fill_(name)
+    return name
 
 
 def read_time(store, index):

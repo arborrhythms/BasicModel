@@ -6041,13 +6041,12 @@ class MLPTransformChooser(nn.Module):
     their existing input and checkpoint layout.
     """
 
-    # relation one-hot (5), signed/magnitude offset (2), the question's
-    # absolute dataset position and its target position normalized by the
-    # split extent (2), the model's 4-dim .where ladder of each of those two
-    # positions (8), LTM input/output counts (2), derived open depth (1),
-    # closure pressure (1), and four bounded summary features for each side
-    # of the latest relevant LTM slot (8).
-    WHAT_CONTEXT_DIM = 29
+    # relation one-hot (5); the model's 4-dim .where ladder of the offset to
+    # the target, of the question's and the target's positions, of the LTM
+    # input and output counts, of the open depth and of the closure
+    # pressure (28); and four bounded summary features for each side of the
+    # latest relevant LTM slot (8).
+    WHAT_CONTEXT_DIM = 41
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
                  hidden=None, depth=1, ordered_binary=False, binding_choices=False):
@@ -8407,13 +8406,13 @@ class SymbolSubSpace(SubSpace):
         # 2026-06-06 uniform-band convention gives WS (2, 2) so the
         # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
         from Spaces import WhereEncoding as _WhereEncoding
-        from Spaces import WhenEncoding as _WhenEncoding
+        from RowTime import encoder as _when_encoder
         SubSpace.__init__(
             self,
             inputShape=[0, muxed], outputShape=[0, muxed],
             nInputDim=muxed, nOutputDim=muxed,
             whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
-            whenEncoding=_WhenEncoding(n_when=nWhen) if nWhen else None,
+            whenEncoding=_when_encoder() if nWhen else None,
         )
         # Restamp nWhat / nWhere / nWhen to mirror ConceptualSpace's column
         # layout (downstream callers read these to size projections).
@@ -11432,8 +11431,8 @@ class LanguageSpace(nn.Module):
         # The source band is retained in STM. Grammar reads its age in this
         # presentation, so shifting the whole clock cannot choose a rule.
         model = self._symbol_space.conceptualSpace._model
-        from RowTime import relative_idea
-        chunks = (relative_idea(model, state[0]), *state[1:])
+        from RowTime import compared
+        chunks = (compared(model, state[0]), *state[1:])
         state = STMChunks.stack_view(chunks)
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -11485,8 +11484,8 @@ class LanguageSpace(nn.Module):
         if reference_scope is not None:
             from ReferenceContext import prepare_operands
             reference_bank = self._reference_bank._replace(
-                values=relative_idea(model, self._reference_bank.values),
-                query=relative_idea(model, self._reference_bank.query))
+                values=compared(model, self._reference_bank.values),
+                query=compared(model, self._reference_bank.query))
             scopes = reference_scope[:,:,:2].gather(1, source[..., None].expand(B, n, 2))
             positions = depth[:, None] - 1 - source
             live_positions = depth[:, None] - 1 - torch.arange(K, device=buffer.device)[None]

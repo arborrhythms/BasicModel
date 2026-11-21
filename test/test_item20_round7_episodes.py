@@ -59,15 +59,13 @@ def test_episode_columns_compact_keep_prior_entries_and_load_empty_entries():
     assert store.episodic_concepts[0].tolist() == [7, -1]
     assert (store.episodic_concepts[1:] == -1).all()
     assert not store.episodic_values[1:].any()
-    from test_item18_reduction import legacy_idea_state
-    saved = legacy_idea_state(store)
+    saved = store.state_dict()
     saved['episodic_concepts'].fill_(-1)
     saved['episodic_values'].zero_()
     restored = LTM0(12, capacity=4, percept_width=12, episodic_concepts=2)
-    with pytest.warns(UserWarning, match='retired'):
-        restored.load_state_dict(saved)
+    restored.load_state_dict(saved)
     assert (restored.episodic_concepts == -1).all() and not restored.episodic_values.any()
-    assert int(restored.truth_schema) == 18
+    assert int(restored.truth_schema) == 19
 
 
 def test_content_query_retains_entries_in_requesting_stm_and_preserves_perception(tmp_path, monkeypatch):
@@ -83,7 +81,7 @@ def test_content_query_retains_entries_in_requesting_stm_and_preserves_perceptio
     written_times = {}
     write = store.write_clause
     def recorded(clause, **kwargs):
-        tick = max(model.present(), int(store.model_clock))
+        tick = model.present()
         row = write(clause, **kwargs)
         if isinstance(row, int) and kwargs.get('stream', -1) >= 0:
             committed[kwargs['stream']] = row

@@ -113,13 +113,7 @@ def install_where_registry(model):
     # their content-only layout has no muxed tail. Their nWhere/nWhen stays 0.
     from Spaces import Space, SubSpace
     model.where_encoding = registry.encoding
-    ltm_capacity = int(TheXMLConfig.space('SymbolSpace', 'ltmCapacity', default=1024) or 1024)
-    addresses = getattr(getattr(model.inputSpace, 'data', None), 'source_addresses', {})
-    document_bound = max((int(row.get('sentence', 0)) + 2 for rows in addresses.values()
-                          for row in rows), default=1)
-    # The attention scale is a fixed spatial/history bound, not the clock's
-    # representable horizon. All stored and live times use RowTime's ladder.
-    model.when_age_scale = max(ltm_capacity, document_bound)
+    # The one encoder of model time; every space's when band is its code.
     from RowTime import encoder
     model.when_encoding = encoder()
     model._sentence_ticks = {}

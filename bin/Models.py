@@ -4454,29 +4454,6 @@ class BaseModel(Mereology, nn.Module):
         from MemoryIndex import configure_model_index
         configure_model_index(self, getattr(getattr(self, 'symbolSpace', None), 'ltm_store', None))
 
-    @staticmethod
-    def _widen_what_projection_checkpoint_state(state, model_state):
-        """Zero-pad a narrower saved ``what_projection.weight`` to the live
-        ``WHAT_CONTEXT_DIM``. Only the context (last) axis may grow; any
-        other difference is left for the shape-mismatch audit."""
-        widened = 0
-        for key in list(state.keys()):
-            if not key.endswith("what_projection.weight"):
-                continue
-            live = model_state.get(key)
-            saved = state[key]
-            if (live is None or not torch.is_tensor(saved)
-                    or saved.dim() != 2 or live.dim() != 2
-                    or saved.shape[0] != live.shape[0]
-                    or saved.shape[1] >= live.shape[1]):
-                continue
-            padded = torch.zeros(
-                live.shape, dtype=saved.dtype, device=saved.device)
-            padded[:, :saved.shape[1]] = saved
-            state[key] = padded
-            widened += 1
-        return widened
-
     def load_weights(self, path=None, strict=False, require_match=False, *, grammar_catalog=None):
         """Load model state from a single .ckpt bundle.
 
@@ -5083,12 +5060,6 @@ class BaseModel(Mereology, nn.Module):
                     f"(positive poles only; negative poles zero).",
                     stacklevel=2,
                 )
-
-        # A widened What chooser context (2026-09-08: absolute .where
-        # positions joined the target-free context) only adds zero columns
-        # to the zero-initialized ``what_projection``; older heads load with
-        # the new columns at zero, exactly like a fresh head.
-        self._widen_what_projection_checkpoint_state(state, model_state)
 
         # Retired occurrence columns and index caches are not restore inputs.
         from Memory import LTM0
@@ -5994,10 +5965,10 @@ class BasicModel(BaseModel):
                   if image is not None and image.image.shape == active.roles.shape else active)
         walk = getattr(self, '_thought_walk', None)
         policy_grad = walk is None or len(walk['actions']) == walk.get('departure', -1)
-        from RowTime import relative_idea
+        from RowTime import compared
         requests = tuple(None if a is None else replace(a.request,
-            roles=relative_idea(self, a.request.roles)) for a in actions)
-        viewed = replace(viewed, roles=relative_idea(self, viewed.roles))
+            roles=compared(self, a.request.roles)) for a in actions)
+        viewed = replace(viewed, roles=compared(self, viewed.roles))
         with torch.set_grad_enabled(torch.is_grad_enabled() and policy_grad), \
                 torch.autograd.graph.saved_tensors_hooks(lambda tensor: tensor.clone(), lambda tensor: tensor):
             logits = chooser.thought_logits(viewed, requests)
@@ -6014,7 +5985,7 @@ class BasicModel(BaseModel):
                 elif step == walk['departure']:
                     masked = torch.tensor([walk['exploit'][step]], device=logits.device)
         # The alternative sees the whole raw observation and no expected prime.
-        free_logits = chooser.thought_logits(replace(active, roles=relative_idea(self, active.roles)), requests)
+        free_logits = chooser.thought_logits(replace(active, roles=compared(self, active.roles)), requests)
         chosen, probability, valid, proposal_inverse = chooser.select_logits(logits,
             structural=(True,)*len(actions), masked_action=masked, replay_action=replay,
             departure_eligible=torch.isfinite(logits), alternative_logits=free_logits, return_proposal=True)
@@ -9601,8 +9572,8 @@ class BasicModel(BaseModel):
         else:
             idea = self._generation_read(idea, record=structure,
                 charge=walk_options is None)
-        from RowTime import relative_idea
-        idea = relative_idea(self, idea)
+        from RowTime import compared
+        idea = compared(self, idea)
         # A prepared answer may be trained after a no-grad capture,
         # without entering forward/runBatch's anchor setup first.
         _ensure_grad_anchors(idea.device, (idea.dtype,))
@@ -10166,10 +10137,12 @@ class BasicModel(BaseModel):
     def _what_grammar_context(self, questions, *, device, dtype):
         """Build target-free chooser context for a question batch.
 
-        The question's absolute dataset position and its target position are
-        given to the chooser both normalized by the split extent and through
-        the model's own ``.where`` ladder (``_what_where_encoder``); the
-        zero-initialized ``what_projection`` learns the mapping.
+        The question's relation, then each quantity a learned weight reads
+        as a code of the model's own ``.where`` ladder
+        (``_what_where_encoder``): the offset from the question to its
+        target, both positions, the counts of input and output slots, the
+        open depth and the closure pressure. The zero-initialized
+        ``what_projection`` learns the mapping.
         """
         memory = self._what_memory()
         rows = []
@@ -10188,30 +10161,20 @@ class BasicModel(BaseModel):
                 }
             detailed.append(context)
             encoder = self._what_where_encoder(question.split)
-            extent = float(max(1, int(encoder.maxVal)))
-            *relation_offset, where, target_where = question.context_values()
-            # Out-of-range targets (an unavailable past/future) are left
-            # unclamped: the ladder folds them and the normalized scalar
-            # leaves [0, 1], so "no such position" stays learnable.
-            scalar = torch.tensor(
-                tuple(relation_offset) + (
-                    where / extent, target_where / extent,
-                ), device=device, dtype=dtype)
-            where_ladder = torch.cat((
-                encoder.encode(where), encoder.encode(target_where),
-            )).to(device=device, dtype=dtype)
-            memory_scalar = torch.tensor((
+            *relations, offset, _magnitude, where, target_where = question.context_values()
+            codes = encoder.encode(torch.tensor((
+                offset, where, target_where,
                 float(sum(context["input_mask"])),
                 float(sum(context["output_mask"])),
                 float(context["open_depth"]),
                 float(context["closure_pressure"]),
-            ), device=device, dtype=dtype)
+            ), dtype=torch.float64)).flatten().to(device=device, dtype=dtype)
             input_summary = self._what_representation_summary(
                 context["input_representations"], device=device, dtype=dtype)
             output_summary = self._what_representation_summary(
                 context["output_representations"], device=device, dtype=dtype)
-            rows.append(torch.cat((scalar, where_ladder, memory_scalar,
-                                   input_summary, output_summary)))
+            rows.append(torch.cat((torch.tensor(relations, device=device, dtype=dtype),
+                                   codes, input_summary, output_summary)))
         tensor = torch.stack(rows, dim=0)
         return tensor, tuple(detailed)
 
@@ -13112,7 +13075,7 @@ class BasicModel(BaseModel):
                     for value in case_bank.for_stream(b)))
             entry = replace(entry, case_bank=case_bank)
             self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b,
-                after=int(self.symbolSpace.ltm_store.model_clock))
+                after=int(self.symbolSpace.ltm_store.names_issued))
             entries.append(entry)
         return tuple(entries)
 
@@ -13794,16 +13757,25 @@ class BasicModel(BaseModel):
 
     def _advance_when_time(self):
         """Advance the one clock for a sentence or newly deposited thought."""
-        from RowTime import HORIZON
-        store = getattr(getattr(self, 'symbolSpace', None), 'ltm_store', None)
-        tick = max(self.present() + 1, int(store.model_clock) if store is not None else 0)
-        if tick > HORIZON:
+        return self.set_present(self.present() + 1)
+
+    def set_present(self, tick):
+        """Set the one clock and make the code of the present beside it."""
+        from RowTime import HORIZON, encoder
+        tick = int(tick)
+        if not 0 <= tick <= HORIZON:
             raise OverflowError('model time exceeds the declared row-time ladder horizon')
-        # Closing can write several occurrences during one sentence. A new
-        # thought must also advance past those times, including recalled ones.
         self.when_time.fill_(tick)
-        self.when_encoding.t = self.present()
-        return self.present()
+        self._encode_present()
+        return tick
+
+    def _encode_present(self):
+        from RowTime import encoder
+        self.when_code.copy_(encoder().encode(self.when_time.to(self.when_code.device)).to(self.when_code))
+
+    def present_code(self):
+        """The code of the present, held on the model beside the clock."""
+        return self.when_code
 
     def _composes_sentences(self):
         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
@@ -16275,6 +16247,14 @@ class BasicModel(BaseModel):
         if "when_time" not in self._buffers:
             self.register_buffer(
                 "when_time", torch.zeros((), dtype=torch.long))
+        if "when_code" not in self._buffers:
+            # The present's code, made by the one encoder whenever the clock
+            # is set; every reader of the present reads it here.
+            from RowTime import encoder
+            self.register_buffer("when_code", encoder().encode(
+                torch.zeros((), dtype=torch.long)).float().cpu(), persistent=False)
+            self.register_load_state_dict_post_hook(
+                lambda module, keys: module._encode_present())
         self.symbolSpace = None  # wired below once the home spaces exist
         self.reversible = True
         self.nInput = nInput
@@ -23413,15 +23393,15 @@ class BasicModel(BaseModel):
         if torch.is_tensor(column):concept_q=column.detach().mean(1)
         stm=getattr(self.conceptualSpace,'stm',None)
         symbol_q=BracketKeys._pool(stm.snapshot(detach=True) if stm is not None else None)
-        from RowTime import relative_idea, age_band
-        concept_q = None if concept_q is None else relative_idea(self, concept_q)
-        symbol_q = None if symbol_q is None else relative_idea(self, symbol_q)
+        from RowTime import compared, how_far_back
+        concept_q = None if concept_q is None else compared(self, concept_q)
+        symbol_q = None if symbol_q is None else compared(self, symbol_q)
         for space in spaces:
             key = space['keys']
             if space['id'] in (ga.SPACE_STM, ga.SPACE_LTM):
-                space['score_keys'] = relative_idea(self, key)
+                space['score_keys'] = compared(self, key)
             elif space['id'] == ga.SPACE_INPUT and self.perceptualSpace.subspace.nWhen:
-                space['score_keys'] = torch.cat((key[..., :-4], age_band(self, key[..., -4:])), -1)
+                space['score_keys'] = torch.cat((key[..., :-4], how_far_back(self.present_code(), key[..., -4:])), -1)
         work=getattr(self,'_attention_meters',()) or None
         if work is not None and not charge:
             from copy import copy

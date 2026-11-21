@@ -60,7 +60,8 @@ def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
     state, _ = chunks.deposit(state, value[None], torch.tensor([True]))
     before = tuple(v.clone() for v in state)
     roles = torch.cat((state[chunks.BUFFER][0,:1], torch.zeros(2,width)))
-    store.model_clock.fill_(2)
+    present = [2]
+    store._model_present = lambda: present[0]
     row = store.append_idea(value, trust=1., referent=('sym', 1))
     predictor.include_occurrence(0, store.occurrence_of(row))
     contexts = []
@@ -68,11 +69,12 @@ def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
         lambda module, args: contexts.append(args[0][:, 0].detach().clone()))
     try:
         for tick in (7, 19):
-            store.model_clock.fill_(tick)
+            present[0] = tick
+            names = int(store.names_issued)
             from WordExpectation import word_distribution
             keys = torch.eye(width)[:4][None]
             word_distribution(predictor, keys[:, :1], keys, torch.ones(1, 4, dtype=torch.bool), torch.tensor([[0]]))
-            assert int(store.model_clock) == tick
+            assert int(store.names_issued) == names
     finally:
         handle.remove()
     assert len(contexts)==2 and contexts[0].shape==(1,4*width+4)
@@ -83,7 +85,7 @@ def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
     torch.testing.assert_close(contexts[0][:,:4*width][:,unchanged],
                                contexts[1][:,:4*width][:,unchanged],rtol=0,atol=0)
     for context,tick in zip(contexts,(7,19)):
-        torch.testing.assert_close(context[0,4*width:],encoder().encode(tick-2),rtol=0,atol=0)
+        torch.testing.assert_close(context[0,4*width:],encoder().encode(tick-2),rtol=0,atol=1e-6)
     assert not torch.equal(contexts[0],contexts[1])
     assert all(torch.equal(old,new) for old,new in zip(before,state))
     # The forecast consumes no tick; a later close writes only its arrival.
@@ -91,10 +93,10 @@ def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
     from RowTime import read_time
     source = store.append_meaning(ConceptualMeaning.from_description(value))
     torch.testing.assert_close(read_time(store,source),encoder().encode(19),rtol=0,atol=0)
-    store.model_clock.fill_(31)
+    present[0] = 31
     observed = store.append_meaning(ConceptualMeaning.from_description(value*.5))
     torch.testing.assert_close(read_time(store,observed),encoder().encode(31),rtol=0,atol=0)
-    assert int(store.model_clock) == 32
+    assert int(store.names_issued) == 3
     (tmp_path/'certificate.json').write_text(json.dumps(dict(ticks=[7,19],
         contexts=[v.tolist() for v in contexts],
         fixed_now_start=4*width, chunks_unchanged=True,

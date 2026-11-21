@@ -29,7 +29,7 @@ def _serial_read(tmp_path, clock=0, offset=0):
     model._tensor_peer_while_eager = True
     model.checkpoint_every_batches = 0
     store = model.symbolSpace.ltm_store
-    initial_rows, initial_clock = len(store), int(store.model_clock)
+    initial_rows, initial_clock = len(store), int(store.names_issued)
     omission_rows, forecast_rows = [], []
     import ThoughtStream
     patches = pytest.MonkeyPatch()
@@ -50,12 +50,12 @@ def _serial_read(tmp_path, clock=0, offset=0):
     patches.setattr(store,'append_meaning',append)
     import RowTime
     issued = []
-    next_time = RowTime.next_time
+    present_stamp = RowTime.present_stamp
     def issue_time(*args, **kwargs):
-        result = next_time(*args, **kwargs)
+        result = present_stamp(*args, **kwargs)
         issued.append(int(RowTime.encoder().decode_index(result)))
         return result
-    patches.setattr(RowTime, 'next_time', issue_time)
+    patches.setattr(RowTime, 'present_stamp', issue_time)
     try:
         programs = []
         for text in ('cat sat','cat ran'):
@@ -178,17 +178,19 @@ def test_clock_independence(tmp_path, eager_reading):
         assert torch.isfinite(value['answer']).all()
         start = value['time_start']
         stamps = value['rows']['slots'][value['initial_rows']:value['count'],start:start+4]
-        # Reading pending identities can close into a Part row. Both durable
-        # row stores use the same model clock and carry its percept stamp.
+        # Reading pending identities can close into a Part row. Every row
+        # carries the present of the one model clock as its stamp.
         stamped = stamps.ne(0).any(-1)
         times = encoder().decode_index(stamps[stamped])
-        # A kept MTM event also issues a time without requiring a durable
-        # row. Verify the clock against every producer, not only row writes.
+        # Rows written at one present share its stamp; the clock only moves
+        # forward, and each row has a name of its own.
         issued = value['issued']
         assert times.numel() and issued
-        assert issued == tuple(sorted(set(issued)))
+        assert list(issued) == sorted(issued)
         assert set(times.tolist()) <= set(issued)
-        assert int(value['rows']['model_clock']) == issued[-1]+1
+        names = value['rows']['row_names'][:value['count']]
+        assert names.unique().numel() == names.numel()
+        assert int(value['rows']['names_issued']) >= int(names.max())
         if baseline is None:
             baseline = value
             continue
@@ -201,10 +203,9 @@ def test_clock_independence(tmp_path, eager_reading):
         # compare the retained references by the same physical-row isomorphism.
         torch.testing.assert_close(value['semantics'],baseline['semantics'],rtol=0,atol=0)
         assert value['omissions'] == baseline['omissions']
-        assert times.unique().numel() == times.numel()
         for name in value['rows']:
-            if name == 'model_clock':
-                continue  # Verified against the actual write times above.
+            if name == 'names_issued':
+                continue  # Verified against the row names above.
             if name == 'referent':
                 continue  # Typed references are compared by seat isomorphism above.
             if name in ('activity','trust'):

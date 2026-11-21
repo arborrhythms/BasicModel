@@ -73,7 +73,7 @@ def test_program_reads_compact_journal_by_global_address_and_keeps_value_gradien
         _choice_ref_relations=relations, _choice_journal_columns=columns)
     clock_reads = []
     model = SimpleNamespace(_reconstruction_stack=lambda: trace,
-        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))),
+        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7))),
         languageSpace=SimpleNamespace(_compose_binary_rules=(SimpleNamespace(method_name='sum'),)),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
@@ -230,7 +230,7 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
         return ids.clone(),torch.full_like(ids,-1)
     clock_reads = []
     model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
-        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7)),
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7)),
                                     _word_reference_orders=torch.tensor([[0,2]])),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve,
             _compose_binary_rules=(SimpleNamespace(method_name='sum'),)),
@@ -343,7 +343,7 @@ def test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading():
     clock_reads = []
     host = SimpleNamespace(_open_sentence_slot=0, _tensor_pushed_ideas=words,
         _concept_owner=lambda: SimpleNamespace(mtm=SimpleNamespace(entries={})),
-        inputSpace=inp, symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))),
+        inputSpace=inp, symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7))),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
         _word_symbol_rows=lambda: rows, _word_symbol_concept_ids=lambda: rows,
         _answer_leaf_slab=lambda _: words, _word_lexical_forms=lambda *args: [(), ()],

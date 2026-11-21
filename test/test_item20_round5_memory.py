@@ -326,6 +326,7 @@ def test_staged_pending_names_keep_their_member_order_on_arrival_and_refresh():
         model = NS(_concept_owner=lambda: owner, inputSpace=NS(symbol_entries=entries),
             symbolSpace=NS(ltm_store=store), _open_sentence_slot=0,
             when_encoding=encoder(), present=lambda: 1)
+        __import__('clock_fixtures').install(model, 1)
         state = stage(model, chunks.empty(1, 8, store.nDim), torch.tensor([True]))
         index = (state[chunks.IDENTITY][0] == entry.transient).nonzero().item()
         assert state[chunks.ORDERS][0, index] == order
@@ -719,9 +720,9 @@ def test_mtm_v12_and_policy_migrations_are_reported_and_invalid_members_are_atom
     with pytest.raises(ValueError, match='member reference'): pool.restore(bad)
     assert pool.entries is before
     state = resolver.state_dict(); state['policy'] = state['policy'][:8].clone()
-    resolver.load_state_dict(state)
-    assert resolver.policy.shape == (12,) and not resolver.policy[8:].any()
-    receipt('memory-migrations', dict(mtm=pool.migration_report, policy=resolver.policy_migration,
+    with pytest.raises(ValueError, match='before the one clock is refused'):
+        resolver.load_state_dict(state)
+    receipt('memory-migrations', dict(mtm=pool.migration_report, policy='refused',
         invalid_restore_atomic=True))
 
 
@@ -830,7 +831,7 @@ def test_pool_and_unpooled_stm_share_the_menu_and_states_never_prepend():
     query = store.append_idea(atoms[0], name=603)
     choices, features, _ = menu(owner, Occurrence(store.occurrence_of(query), kind='state', order=0), {},
         value=atoms[0], where=None, when=2, stream=0)
-    assert pooled in choices and unpooled in choices and features.shape[-1] == 12
+    assert pooled in choices and unpooled in choices and features.shape[-1] == 14
     assert features[choices.index(unpooled), -1] == 1
     assert pool.token_of(unpooled) is None  # A menu read cannot create the collection.
     pooled_refs = refs.clone(); pooled_refs[0, 0, 1] = 601
@@ -843,6 +844,7 @@ def test_pool_and_unpooled_stm_share_the_menu_and_states_never_prepend():
     model = NS(_concept_owner=lambda: owner, inputSpace=NS(symbol_entries=entries),
         symbolSpace=NS(ltm_store=store), _open_sentence_slot=0,
         when_encoding=encoder(), present=lambda: 1)
+    __import__('clock_fixtures').install(model, 1)
     stage(model, carried, torch.tensor([True]))
     assert entries.concept_ids[:, :entries.prepend].eq(-1).all()
     receipt('pool-stm-menu', dict(pool_candidate=True, unpooled_stm_candidate=True,

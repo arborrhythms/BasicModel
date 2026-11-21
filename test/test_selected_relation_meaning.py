@@ -424,7 +424,7 @@ def test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept(monk
     journal = SimpleNamespace(_choice_refs=actual_refs,
         _choice_values=torch.stack((leaves[0], leaves[1], entry.end_state[0]))[None,None])
     host = SimpleNamespace(_concept_owner=lambda:cs, languageSpace=language,
-        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=torch.tensor(7))), _reconstruction_stack=lambda:journal,
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7))), _reconstruction_stack=lambda:journal,
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[a[1],b[1] if word_available else -1]])),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=SimpleNamespace(capture=lambda *args, **kwargs:None))))
     positions=torch.tensor([[0,1]])

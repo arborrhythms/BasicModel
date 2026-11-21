@@ -29,19 +29,6 @@
       "reads": "age"
     },
     {
-      "file": "bin/BasicPercepts.py",
-      "function": "BasicPercepts.read",
-      "attributes": [
-        "when",
-        "when_band"
-      ],
-      "role": "basic percept read",
-      "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 91,
-      "reads": "absolute"
-    },
-    {
       "file": "bin/Comprehension.py",
       "function": "Evaluation.leaf",
       "attributes": [
@@ -135,18 +122,6 @@
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 69,
-      "reads": "absolute"
-    },
-    {
-      "file": "bin/GenerateOccupation.py",
-      "function": "clock",
-      "attributes": [
-        "when_encoding"
-      ],
-      "role": "generation forecast observation time",
-      "previous_absolute_time": false,
-      "now": "Encodes the observation tick before the walk; the predictor receives relative ages.",
-      "line": 25,
       "reads": "absolute"
     },
     {
@@ -291,17 +266,6 @@
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 20,
       "reads": "absolute"
-    },
-    {
-      "file": "bin/Models.py",
-      "function": "BasicModel._advance_when_time",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when_encoding"
-      ],
-      "line": 13806,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/Models.py",
@@ -462,17 +426,6 @@
       "reads": "difference"
     },
     {
-      "file": "bin/RowTime.py",
-      "function": "age_band",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when_encoding"
-      ],
-      "line": 70,
-      "reads": "age",
-      "now": "Learned inputs use age, computed from the present tick and the observation band or interval."
-    },
-    {
       "file": "bin/ScalarPercepts.py",
       "function": "join",
       "attributes": [
@@ -624,18 +577,6 @@
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 13920,
-      "reads": "absolute"
-    },
-    {
-      "file": "bin/Spaces.py",
-      "function": "ConceptualSpace.cs_read_memberships",
-      "attributes": [
-        "when_encoding"
-      ],
-      "role": "binding/closing reader",
-      "previous_absolute_time": true,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 14952,
       "reads": "absolute"
     },
     {
@@ -1156,17 +1097,6 @@
       "reads": "absolute"
     },
     {
-      "file": "bin/ThoughtChunks.py",
-      "function": "_next_when",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when_encoding"
-      ],
-      "line": 13,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
-    },
-    {
       "file": "bin/Understanding.py",
       "function": "SentenceEndState.detached",
       "attributes": [
@@ -1189,17 +1119,6 @@
         "when",
         "when_band"
       ]
-    },
-    {
-      "file": "bin/WalkTrials.py",
-      "function": "ThoughtTrialState.restore",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when_encoding"
-      ],
-      "line": 153,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/WhereRegistry.py",
@@ -1345,6 +1264,42 @@
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 794,
       "reads": "absolute"
+    },
+    {
+      "file": "bin/BasicPercepts.py",
+      "function": "BasicPercepts.lookup",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "basic percept lookup",
+      "previous_absolute_time": false,
+      "now": "Reads the when band of an event as stamped; the present comes from the model.",
+      "line": 0,
+      "reads": "stamp"
+    },
+    {
+      "file": "bin/BasicPercepts.py",
+      "function": "BasicPercepts.read_bank",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "bank read",
+      "previous_absolute_time": false,
+      "now": "Reads the when band of an event as stamped; the present comes from the model.",
+      "line": 0,
+      "reads": "stamp"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.cs_lookup",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "conceptual lookup",
+      "previous_absolute_time": false,
+      "now": "Reads the when band of an event as stamped; the present comes from the model.",
+      "line": 0,
+      "reads": "stamp"
     }
   ],
   "dynamic_readers": [
@@ -1861,6 +1816,36 @@
     [
       "bin/SentenceLooks.py",
       "perceive"
+    ]
+  ],
+  "one_clock_removed_readers": [
+    [
+      "bin/BasicPercepts.py",
+      "BasicPercepts.read"
+    ],
+    [
+      "bin/GenerateOccupation.py",
+      "clock"
+    ],
+    [
+      "bin/Models.py",
+      "BasicModel._advance_when_time"
+    ],
+    [
+      "bin/RowTime.py",
+      "age_band"
+    ],
+    [
+      "bin/Spaces.py",
+      "ConceptualSpace.cs_read_memberships"
+    ],
+    [
+      "bin/ThoughtChunks.py",
+      "_next_when"
+    ],
+    [
+      "bin/WalkTrials.py",
+      "ThoughtTrialState.restore"
     ]
   ]
 }

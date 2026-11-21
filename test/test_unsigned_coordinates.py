@@ -35,29 +35,22 @@ def test_unsigned_range_preserves_extent_and_rotation():
     torch.testing.assert_close(torch.stack((start,end)), torch.tensor([9.,21.]), atol=1e-4, rtol=0)
 
 
-def test_centered_checkpoint_keeps_addresses_empty_bands_and_content():
+def test_centered_checkpoint_is_refused_and_the_current_one_keeps_addresses_and_content():
     from copy import deepcopy
     from Memory import LTM0
-    from RowTime import encoder
     store = LTM0(12, capacity=4, percept_width=8)
     value = torch.tensor([0.,0.,0.,0.,0.,0.,0.,0.,.2,.4,.6,.8])
     store.append_idea(value, trust=.7)
     state = deepcopy(store.state_dict())
     original = state['slots'].clone()
     state['truth_schema'].fill_(17)
-    phase = state['slots'][..., :8].reshape(4,2,4)
-    phase.copy_(torch.where(phase.ne(0).any(-1,keepdim=True), 2*phase-1, 0.))
-    before = state['slots'].clone()
     restored = LTM0(12, capacity=4, percept_width=8)
-    with pytest.warns(UserWarning, match='sinusoids'):
+    with pytest.raises(ValueError, match='before the one clock is refused'):
         restored.load_state_dict(state)
-    torch.testing.assert_close(restored.slots, original, rtol=0, atol=0)
-    torch.testing.assert_close(state['slots'], before, rtol=0, atol=0)
-    assert restored.occurrence_of(0) == store.occurrence_of(0)
-    assert int(encoder().decode_index(restored.time[0])) == store.row_name(0)
     again = LTM0(12, capacity=4, percept_width=8)
-    again.load_state_dict(deepcopy(restored.state_dict()))
+    again.load_state_dict(deepcopy(store.state_dict()))
     torch.testing.assert_close(again.slots, original, rtol=0, atol=0)
+    assert again.occurrence_of(0) == store.occurrence_of(0)
 
 
 def test_checkpoint_sidecar_conversion_keeps_empty_bands_and_is_once_only():

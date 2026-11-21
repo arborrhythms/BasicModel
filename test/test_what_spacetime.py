@@ -317,10 +317,14 @@ def test_what_grammar_context_uses_model_where_ladder():
     assert row.shape[-1] == MLPTransformChooser.WHAT_CONTEXT_DIM
     extent = data.what_extent("train")
     assert extent == 4
-    assert torch.allclose(row[7:9], torch.tensor([2 / 4, 1 / 4]))
     ladder = WhereEncoding(extent, 4, 0)
+    # The offset to the target and both positions reach the chooser as
+    # codes of the ladder, and no normalized number is given.
+    assert torch.allclose(row[5:9], ladder.encode(-1).float())
     assert torch.allclose(row[9:13], ladder.encode(2).float())
     assert torch.allclose(row[13:17], ladder.encode(1).float())
+    # The counts of slots, the open depth and the pressure, as codes too.
+    assert torch.allclose(row[17:33], ladder.encode(torch.zeros(4)).float().flatten())
     assert detailed[0]["temporal"] == question.context_values()
 
     other, _ = model._what_grammar_context(
@@ -330,25 +334,6 @@ def test_what_grammar_context_uses_model_where_ladder():
         (What.present(1),), device=torch.device("cpu"), dtype=torch.float32)
     # ... but the absolute position separates otherwise identical questions.
     assert not torch.equal(other[0], shifted[0])
-
-
-def test_what_projection_checkpoint_widens_from_19():
-    live = torch.zeros(2, MLPTransformChooser.WHAT_CONTEXT_DIM)
-    saved = torch.arange(38, dtype=torch.float32).reshape(2, 19)
-    state = {"symbolSpace.chooser.what_projection.weight": saved.clone(),
-             "other.weight": torch.ones(3)}
-    model_state = {"symbolSpace.chooser.what_projection.weight": live,
-                   "other.weight": torch.ones(3)}
-    assert BasicModel._widen_what_projection_checkpoint_state(
-        state, model_state) == 1
-    widened = state["symbolSpace.chooser.what_projection.weight"]
-    assert widened.shape == live.shape
-    assert torch.equal(widened[:, :19], saved)
-    assert torch.equal(widened[:, 19:], torch.zeros(2, live.shape[1] - 19))
-    # A mismatch on the row axis is not our migration; leave it for the audit.
-    state["symbolSpace.chooser.what_projection.weight"] = torch.zeros(3, 19)
-    assert BasicModel._widen_what_projection_checkpoint_state(
-        state, model_state) == 0
 
 
 def test_questions_for_batch_folds_driver_counters_into_the_split():

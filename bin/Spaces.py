@@ -967,13 +967,11 @@ class WhenStartDurationEncoding(Encoding):
 
 
 def event_when_encoding(n_when):
-    """Construct a standalone ladder from the LTM allocation.
-
-    Model construction replaces these temporary references with one shared
-    model-owned document-position encoding.
-    """
-    capacity = int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024)
-    return WhenEncoding(n_when=n_when).set_capacity(capacity)
+    """A space's when band: the one encoder of model time, or none."""
+    if not n_when:
+        return WhenEncoding(n_when=0)
+    from RowTime import encoder
+    return encoder()
 
 
 # ``WhenEncoding`` resolves to the v2 start ladder (2026-07-04 encoding
@@ -17419,14 +17417,16 @@ class ConceptualSpace(Space):
         return ev[..., :cdim], ev[..., cdim:], ev
 
     @staticmethod
-    def _bind_read(sub, content_dim):
-        """Read a stream for composition, keeping its stored stamp intact."""
+    def _bind_read(sub, content_dim, present=None):
+        """Read a stream for composition, keeping its stored stamp intact:
+        the composition reads how far back the stamp lies from ``present``,
+        the code of the model's present."""
         content, band, event = ConceptualSpace._bind_demux(sub, content_dim)
-        if event is not None and sub.nWhen == 4:
+        if event is not None and sub.nWhen == 4 and present is not None:
             start = sub.nWhat + sub.nWhere
             if content.shape[-1] > start:
-                from RowTime import difference
-                relative = difference(sub.whenEncoding, event[..., start:start+4])
+                from RowTime import how_far_back
+                relative = how_far_back(present, event[..., start:start+4])
                 content = torch.cat((event[..., :start], relative, event[..., start+4:]), -1)[..., :content.shape[-1]]
         return content, band, event
 
@@ -18387,11 +18387,13 @@ class ConceptualSpace(Space):
         if combine is None:
             return None
         D = int(combine.content_dim)
-        cs_content, cs_band, cs_event = self._bind_read(CS_sub, D)
+        model = getattr(self, '_model', None)
+        present = model.present_code() if callable(getattr(model, 'present_code', None)) else None
+        cs_content, cs_band, cs_event = self._bind_read(CS_sub, D, present)
         if cs_event is None:
             return None
         nv = int(combine.n_vectors)
-        ps_content, _, _ = self._bind_read(PS_sub, D)
+        ps_content, _, _ = self._bind_read(PS_sub, D, present)
         # Regroup a wide leg (e.g. the t>0 symbolic-iteration WS emit
         # [B, 1020, 8]) into the deep n_vectors slots the combine binds,
         # BEFORE _bind_fit (which pads the last dim). No-op when already deep.
@@ -18402,7 +18404,7 @@ class ConceptualSpace(Space):
             # factored. Dark by default; the 2N mixing matrix below is
             # untouched either way -- the knob governs what crosses it.
             PS_t = self._factor_crossing(PS_t)
-        ws_content, _, _ = self._bind_read(WS_sub, D)
+        ws_content, _, _ = self._bind_read(WS_sub, D, present)
         ws_content = self._bind_regroup(ws_content, nv)
         WS_t = self._bind_fit(ws_content, D, cs_content)
         if PS_t.shape[-2] != nv or WS_t.shape[-2] != nv:

@@ -263,6 +263,7 @@ def test_mixed_thought_trials_keep_the_selected_history_frontier():
     memory = NS(_what_slots=[deque([NS(id=8)]), deque([NS(id=9)])], _thought_next_id=10)
     model = NS(_what_memory=lambda: memory, when_time=torch.tensor(7),
         when_encoding=NS(t=7), present=lambda: 7)
+    __import__('clock_fixtures').install(model, 7)
     first = ThoughtTrialState(model)
     memory._what_slots = [deque([NS(id=18)]), deque([NS(id=19)])]
     memory._thought_next_id = 20
@@ -283,6 +284,7 @@ def test_mixed_thought_trials_select_active_rows_of_reserved_stm():
     owner = NS(stm=stm)
     model = NS(_what_memory=lambda: memory, conceptualSpace=owner, when_time=torch.tensor(7),
         when_encoding=NS(t=7), present=lambda: 7)
+    __import__('clock_fixtures').install(model, 7)
     state = list(stm.state)
     state[STMChunks.WHEN] = torch.ones_like(state[STMChunks.WHEN])
     stm.set_state(tuple(state))

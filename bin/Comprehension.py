@@ -203,7 +203,7 @@ class Evaluation:
         from ReferenceContext import denoted_order, OrderReference
         from Queries import StructuralGrammarContext, ConceptualSpaceCapability
         from ChunkJournal import action_context
-        from RowTime import relative_idea
+        from RowTime import compared
         offset = max(0, word) if kind == 2 else 0
         if offset:
             self.stack.append(self.stack.pop(-1-offset))
@@ -217,7 +217,7 @@ class Evaluation:
             # A selected external operand is a recorded input, never a copied
             # operator result. Unsubstituted operands come from this evaluation.
             point = (self.program.operation_values[at, role] if selected else
-                     relative_idea(self.model, child.point))
+                     compared(self.model, child.point))
             if self.program.held_refresh is not None and not selected:
                 refreshed = self.held.read(self.program.held_refresh[at,role],relative=True)
                 if refreshed is not None:

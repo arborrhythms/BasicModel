@@ -99,7 +99,7 @@ def test_reading_nonoperation_has_empty_rows_and_no_row_zero_gradient(kind):
     # stands where it is legal, and the rows are named by their role.
     language = SimpleNamespace(_compose_unary_rules=(SimpleNamespace(method_name='generic'),),
                                _compose_binary_rules=())
-    owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(model_clock=0)), _reconstruction_stack=lambda: journal,
+    owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=0)), _reconstruction_stack=lambda: journal,
                             _concept_owner=lambda: None, languageSpace=language,
                             conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
                                 strata=SimpleNamespace(capture=lambda *args, **kwargs: None))))

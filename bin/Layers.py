@@ -9838,21 +9838,19 @@ class SymbolExpectation(Layer):
         self._inter_context_occurrences[b].clear()
 
     def _prediction_inputs(self, inputs, *, orders=None):
-        from RowTime import encoder, relative_to
+        from RowTime import how_far_back
         keys, context, activation = (value.detach() for value in inputs[:3])
         store = self._ltm_store
         start = None if store is None else store.when_start
         orders = (self._bank_orders if orders is None else orders) if context.ndim == 3 else None
         if start is None:
             return (keys, context, activation) if orders is None else (keys, context, activation, None, orders)
-        present = getattr(store, '_model_present', None)
-        now = (inputs[3].detach() if len(inputs) == 4 else
-               encoder().encode(int(store.model_clock) if present is None else int(present()))
-               .to(context).expand(len(context), -1))
+        from RowTime import present_stamp
+        now = inputs[3].detach() if len(inputs) == 4 else present_stamp(store).to(context)
         def relative(value):
             return torch.cat((value[..., :start],
-                relative_to(value[..., start:start+4], now), value[..., start+4:]), -1)
-        recent_age = relative_to(context[..., self.concept_dim+start:self.concept_dim+start+4], now)
+                how_far_back(now, value[..., start:start+4]), value[..., start+4:]), -1)
+        recent_age = how_far_back(now, context[..., self.concept_dim+start:self.concept_dim+start+4])
         context = relative(context.reshape(*context.shape[:-1], 2, self.concept_dim)).flatten(-2)
         return relative(keys), context, activation, recent_age, orders
 

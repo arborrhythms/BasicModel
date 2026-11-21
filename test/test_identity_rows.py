@@ -146,6 +146,8 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
 
 
 def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon():
+    from types import SimpleNamespace
+    from clock_fixtures import install
     from RowTime import encoder,HORIZON
     store=LTM0(12,capacity=8,percept_width=8)
     tick=[731]
@@ -158,9 +160,8 @@ def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon
     torch.testing.assert_close(store.slots[row,8:],store.slots[other,8:],rtol=0,atol=0)
     trials=torch.tensor([0,731,1000000,HORIZON-1,HORIZON])
     torch.testing.assert_close(encoder().decode_index(encoder().encode(trials)),trials,rtol=0,atol=0)
-    tick[0]=HORIZON+1
     with pytest.raises(OverflowError,match='horizon'):
-        store.append_idea(torch.ones(12))
+        install(SimpleNamespace(),0).set_present(HORIZON+1)
 
 
 def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time():
@@ -177,7 +178,10 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     migrate_checkpoint(host,state,host.state_dict(),drift,transforms)
     assert not any('nouns' in k or 'cue_policy' in k for k in state)
     assert _unpack_state(state['components.reference_close._extra_state']) == {'version':3}
-    assert state['components.reference_close.policy'].tolist() == [0,0,1,1,0,2,3,4,0,0,0,0]
+    # An old policy is not migrated: the reference's own loader refuses it.
+    assert state['components.reference_close.policy'].tolist() == [0,1,2,3,4]
+    with pytest.raises(ValueError,match='before the one clock is refused'):
+        host.load_state_dict(state,strict=False)
     stable={};migrate_checkpoint(host,state,host.state_dict(),stable,{})
     assert not stable
     durable=LTM0(12,capacity=512,percept_width=8)

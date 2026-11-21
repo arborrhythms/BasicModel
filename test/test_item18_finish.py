@@ -172,7 +172,7 @@ def test_flat_episode_selection_keeps_the_strongest_lanes_across_orders():
     assert values[0].tolist() == pytest.approx([.9, .8, -.6, 0.])
 
 
-def test_old_ordered_entry_loads_its_strongest_readings_with_warning():
+def test_an_old_ordered_entry_is_refused():
     store = memory_brick()
     state = store.state_dict()
     state['truth_schema'] = torch.tensor(16)
@@ -190,12 +190,8 @@ def test_old_ordered_entry_loads_its_strongest_readings_with_warning():
     state['episodic_values'] = torch.zeros(8, 3, 4)
     state['episodic_concepts'][0, 1, 0] = 20
     state['episodic_values'][0, 1, 0] = .7
-    with pytest.warns(UserWarning):
+    with pytest.raises(ValueError, match='before the one clock is refused'):
         store.load_state_dict(state)
-    assert store.episodic_concepts[0, 0] == 20
-    assert store.episodic_values[0, 0] == pytest.approx(.7)
-    assert (store.episodic_concepts[:, 1:] == -1).all()
-    assert not store.episodic_values[:, 1:].any()
 
 
 def test_relation_write_updates_reference_indexes_without_rebuild(monkeypatch):

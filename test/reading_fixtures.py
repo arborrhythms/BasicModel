@@ -301,7 +301,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
                                  for cid in entry.concept_ids], device=entry.concept_ids.device))
     from Models import _boundary_registry
     _boundary_registry(owner)
-    short_term.strata.capture(entry, language, 0, after=int(store.model_clock))
+    short_term.strata.capture(entry, language, 0, after=int(store.names_issued))
     readings = (entry if active else None,)
     owner._capture_reading_programs = lambda **kwargs: (readings, {sid: readings})
     owner._expectation_documents_for_slot = lambda *args: [document]

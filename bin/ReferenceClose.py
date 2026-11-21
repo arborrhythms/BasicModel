@@ -13,6 +13,12 @@ from Memory import NULL_CONCEPT
 from torch import nn
 from ConceptualMatch import match
 
+# The features the policy weighs for each candidate: two coverages, the
+# prediction, the prime and the form; the candidate's and the request's
+# roles; the overlap of places, how far back the last mention lies (a code
+# of four), the difference from the last member and presence in STM.
+FEATURES = 14
+
 
 def constituents(clause):
     seen, result = set(), []
@@ -36,7 +42,7 @@ class ReferenceClose(nn.Module):
         # G0: added defining parts enlarge the native code support. Request
         # coverage therefore ties underspecified re-mentions at initialization;
         # candidate coverage remains a separately trainable content feature.
-        self.policy = nn.Parameter(torch.tensor([0., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0.]))
+        self.policy = nn.Parameter(torch.tensor([0., 1., 1., 1.] + [0.] * (FEATURES - 4)))
         self.last_audit = ()
 
     @property
@@ -606,7 +612,6 @@ class ReferenceClose(nn.Module):
                 continue
             form = (content.sum()*0 if region is None else match(region.to(value),
                 candidate['content'].detach().to(value), codebook=codebook)[0])
-            recency = sum(other['position'] > candidate['position'] for other in individuals.values())
             order = member_order
             if order is None:
                 owner = self.components.owner
@@ -615,11 +620,10 @@ class ReferenceClose(nn.Module):
                          else owner._concept_source_order(identity))
             features.append(torch.stack((candidate_coverage,request_coverage,
                 self.prediction(candidate.get('token') or candidate.get('kind', identity),predicate,role),self.prime(value,stream,order),form,
-                content.new_tensor(-recency/max(1,len(individuals))),
                 content.new_tensor(candidate['role']/2),content.new_tensor(role/2),
                 *self.continuity(candidate, content, stream=stream, where=where, coordinate_read=coordinate_read))))
             choices.append(identity)
-        phi = torch.stack(features).to(self.policy) if features else self.policy.new_empty((0,12))
+        phi = torch.stack(features).to(self.policy) if features else self.policy.new_empty((0,FEATURES))
         return tuple(choices),phi,self.logits(phi)
 
     def continuity(self, candidate, value, *, stream, where, coordinate_read):
@@ -627,12 +631,15 @@ class ReferenceClose(nn.Module):
         token = pool.token_of(candidate.get('token'))
         entry = pool.entries.get(token)
         zeros = value.new_zeros(())
+        from RowTime import encoder
         if entry is None:
-            return zeros, zeros, zeros, value.new_tensor(float(candidate.get('in_stm', False)))
+            return (zeros, *value.new_zeros(4), zeros,
+                    value.new_tensor(float(candidate.get('in_stm', False))))
         mentions = entry.refinement.get('mentions', {})
-        latest = max((clock for member_stream, clock in mentions.values() if member_stream == stream),
+        latest = max((count for member_stream, count in mentions.values() if member_stream == stream),
                      default=pool.closes.get(stream, 0)+1)
-        gap = value.new_tensor((pool.closes.get(stream, 0)+1-latest)/pool.horizon)
+        # How far back the last mention lies, in kept closes, as a code.
+        gap = encoder().encode(pool.closes.get(stream, 0)+1-latest).to(value)
         overlap = zeros if where is None else torch.minimum(where.to(value), entry.where.to(value)).sum()
         tail = entry.occurrences[-1] if entry.occurrences else token
         concept = next((concept for address, concept in reversed(entry.refinement.get('members', ())) if address == tail), pool.reading_of(tail))
@@ -640,7 +647,7 @@ class ReferenceClose(nn.Module):
         difference = (value-last).square().mean()
         stm = getattr(self.components.owner, 'stm', None)
         present = False if stm is None else bool((stm.state[7] == entry.transient).any()) if entry.transient is not None else False
-        return overlap, gap, difference, value.new_tensor(float(present))
+        return (overlap, *gap, difference, value.new_tensor(float(present)))
 
     @staticmethod
     def choice_cost(features, logits, selected):
@@ -1097,7 +1104,7 @@ class ReferenceClose(nn.Module):
                         if key not in introductions or not self._term_depends_on(
                             introductions[key], node.composition, local_bindings)}
             if (request.get('sign_leaf') or request.get('no_op_leaf')):
-                choices, phi = (), self.policy.new_empty((0, 12))
+                choices, phi = (), self.policy.new_empty((0, FEATURES))
             else:
                 choices, phi, logits = self.score(content, predicate, cue, role, menu,
                     stream=stream, asserted=site['asserted'], member_order=order)
@@ -1600,8 +1607,8 @@ class ReferenceClose(nn.Module):
         mtm = self.components.owner.mtm
         previous = dict(mtm.entries) if verb_action is not None else {}
         observed = set()
-        from RowTime import encoder, next_time
-        when = int(encoder().decode_index(next_time(self.store)))
+        from RowTime import present_tick
+        when = present_tick(self.store)
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
         allocated, audit, uses, sites, native_tokens = {}, [], [], {}, {}
         closed_mentions, refinements = set(), []
@@ -1680,7 +1687,6 @@ class ReferenceClose(nn.Module):
                 # are owned by the open pass and its mint by the update.
                 closed_mentions.add(reference)
             elif isinstance(reference, tuple) and reference[:1] == ('ltm',):
-                from RowTime import encoder, next_time
                 kind = self._derivation_symbol(occurrence)
                 token = mtm.token_of(reference)
                 if kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
@@ -1750,14 +1756,13 @@ class ReferenceClose(nn.Module):
             if isinstance(selected, int) and selected in alloc.individuals and mtm.token_of(token) is not None:
                 # A native identity needs no synthetic occurrence holding its
                 # working vector. Refine through the existing introduction.
-                from RowTime import encoder, next_time
                 bind(token, token, kind=selected,
                          when=when, value=point(self.components.owner, selected))
                 selected = token
             if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
                     and selected != token and mtm.token_of(token) is not None):
-                from RowTime import encoder, next_time
-                when = int(encoder().decode_index(next_time(self.store)))
+                from RowTime import present_tick
+                when = present_tick(self.store)
                 if mtm.token_of(selected) not in (None, mtm.token_of(token)):
                     if token in mtm.entries and mtm.entries[token].occurrences == (token,):
                         mtm.merge(token, selected, when=when)
@@ -2069,7 +2074,6 @@ class ReferenceClose(nn.Module):
             for key, value in self.state_dict().items():
                 state_dict[prefix + key] = value
         key = prefix+'policy'
-        if key in state_dict and state_dict[key].shape == (8,):
-            state_dict[key] = torch.cat((state_dict[key], state_dict[key].new_zeros(4)))
-            self.policy_migration = dict(before=8, after=12, added_weights=[0., 0., 0., 0.])
+        if key in state_dict and state_dict[key].shape != self.policy.shape:
+            raise ValueError('reference policy checkpoint of before the one clock is refused')
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)

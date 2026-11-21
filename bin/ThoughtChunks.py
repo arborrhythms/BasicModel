@@ -14,8 +14,8 @@ def _next_when(stm, row):
     model = stm._time_owner()
     if model is None:
         raise RuntimeError('thought time requires its live model clock')
-    tick = model._advance_when_time()
-    return tuple(model.when_encoding.encode(tick).tolist())
+    model._advance_when_time()
+    return tuple(model.present_code().tolist())
 
 
 def attach(memory, stm):

@@ -4,7 +4,7 @@ import pytest
 import torch
 
 
-def test_appending_a_referent_keeps_the_time_index_aligned():
+def test_appending_a_referent_keeps_the_row_names_aligned():
     from test_reference_close import fixture
 
     resolver, store, atoms = fixture(percept=True)
@@ -19,7 +19,7 @@ def test_appending_a_referent_keeps_the_time_index_aligned():
     for row, address in zip((first, second, third), references):
         assert store.location(address) == row
         torch.testing.assert_close(store.point_of_row(address), store.slots[row])
-    assert len(store._row_times) == len(store)
+    assert [store.row_name(row) for row in (first, second, third)] == [1, 2, 3]
 
 
 def test_pending_question_keeps_its_retained_context_point():
@@ -97,13 +97,14 @@ def test_23_9_all_retained_occurrences_supply_exclusion_after_mtm_expires():
         torch.testing.assert_close(histories[0][name], histories[1][name], rtol=0, atol=0)
 
 
-def test_43_each_write_advances_past_a_stationary_model_present():
+def test_43_writes_at_one_present_share_its_stamp_and_take_distinct_names():
     from Memory import LTM0
     from RowTime import encoder
     store = LTM0(16, capacity=4)
-    store._model_present = lambda: 9
+    store._model_present_code = lambda: encoder().encode(9)
     rows = [store.append_idea(torch.eye(16)[i]) for i in range(2)]
-    assert [int(encoder().decode_index(store.entry_time(row))) for row in rows] == [9, 10]
+    assert [int(encoder().decode_index(store.entry_time(row))) for row in rows] == [9, 9]
+    assert [store.row_name(row) for row in rows] == [1, 2]
 
 
 @pytest.mark.parametrize('mentioned', (False, True))
@@ -150,12 +151,14 @@ def test_23_13_promotion_without_actual_events_keeps_the_current_mtm_value(menti
 
 
 def test_43_a_new_thought_advances_past_retained_occurrence_times():
+    from RowTime import encoder
     from test_item6_2_thinking import world
     model, registry, store, (reference, _, _) = world()
     for _ in range(4):
         store.append_idea(registry._payload(reference))
     saved = store.slots[:len(store)].clone()
-    assert model._advance_when_time() > max(store.row_name(i) for i in range(len(store)))
+    now = model._advance_when_time()
+    assert now > max(int(encoder().decode_index(store.entry_time(i))) for i in range(len(store)))
     torch.testing.assert_close(store.slots[:len(store)], saved, rtol=0, atol=0)
 
 
@@ -188,7 +191,7 @@ def test_43_63_time_and_concept_with_the_same_integer_keep_their_native_orders()
     owner = resolver.components.owner
     other = known_concept(owner, points[8], order=2)
     shared = known_concept(owner, points[9], order=0)
-    store._model_present = lambda: other
+    store.names_issued.fill_(other - 1)
     row = store.append_idea(points[10])
     assert store.row_name(row) == other
     assert owner._concept_source_order((OCCURRENCE, other)) == 0
@@ -197,19 +200,19 @@ def test_43_63_time_and_concept_with_the_same_integer_keep_their_native_orders()
     assert owner._concept_allocator.order_of(parent) == 1
 
 
-@pytest.mark.parametrize('missing', (False, True))
-def test_47_ambiguous_legacy_times_are_rejected_without_loading(missing):
+@pytest.mark.parametrize('clock', (False, True))
+def test_47_a_checkpoint_of_before_the_one_clock_is_refused_without_loading(clock):
     from Memory import LTM0
-    from RowTime import encoder
     source = LTM0(16, capacity=4)
     for i in range(2):
         source.append_idea(torch.eye(16)[i])
     checkpoint = copy.deepcopy(source.state_dict())
-    band = torch.zeros(4) if missing else encoder().encode(9)
-    checkpoint['slots'][:2, 12:16] = band
+    checkpoint['truth_schema'] = torch.tensor(18)
+    if clock:
+        checkpoint['model_clock'] = checkpoint.pop('names_issued')
     before = {key: value.clone() for key, value in checkpoint.items() if torch.is_tensor(value)}
     restored = LTM0(16, capacity=4)
-    with pytest.raises(ValueError, match='ambiguous occurrence times'):
+    with pytest.raises(ValueError, match='before the one clock is refused'):
         restored.load_state_dict(checkpoint)
     assert len(restored) == 0
     for key, value in before.items():
@@ -232,7 +235,7 @@ def test_41_relations_keep_only_pair_trust_and_activity():
 def test_41_44_52_ideas_keep_flat_entries_and_immutable_signed_trust():
     from Memory import LTM0
     store = LTM0(16, capacity=4, episodic_concepts=2)
-    assert set(store.columns) == {'slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity'}
+    assert set(store.columns) == {'slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity', 'row_names'}
     assert store.episodic_concepts.shape == (4, 2)
     first = store.append_idea(torch.ones(16), trust=-.6)
     second = store.append_idea(torch.ones(16), trust=-.6)
@@ -263,7 +266,7 @@ def legacy_idea_state(store):
 
 
 @pytest.mark.parametrize('model_load', (False, True))
-def test_47_old_both_lane_idea_is_rejected_before_any_destination_changes(model_load):
+def test_47_an_old_layout_is_refused_before_any_destination_changes(model_load):
     from Memory import LTM0
     from MemoryCheckpoint import prepare
     source = LTM0(16, capacity=4, episodic_concepts=2)
@@ -284,7 +287,7 @@ def test_47_old_both_lane_idea_is_rejected_before_any_destination_changes(model_
             **{'last.'+key: value for key, value in checkpoint.items()}}
     before = copy.deepcopy(destination.state_dict())
     supplied = copy.deepcopy(checkpoint)
-    with pytest.raises(ValueError, match='both truth lanes'):
+    with pytest.raises(ValueError, match='before the one clock is refused'):
         if model_load:
             prepare(destination, checkpoint)
         destination.load_state_dict(checkpoint)
@@ -296,23 +299,6 @@ def test_47_old_both_lane_idea_is_rejected_before_any_destination_changes(model_
     assert not hasattr(target, '_legacy_times')
     if model_load:
         assert not hasattr(destination.first, '_legacy_times')
-
-
-def test_47_single_lane_legacy_trust_idea_time_and_entry_are_preserved():
-    from Memory import LTM0
-    source = LTM0(16, capacity=4, episodic_concepts=2)
-    for i, trust in enumerate((.3, -.6, 1., 0.)):
-        row = source.append_idea(torch.eye(16)[i], trust=trust)
-        source.episodic_concepts[row] = torch.tensor([10+i, 20+i])
-        source.episodic_values[row] = torch.tensor([.8, -.2])
-    checkpoint = legacy_idea_state(source)
-    restored = LTM0(16, capacity=4, episodic_concepts=2)
-    with pytest.warns(UserWarning, match='retired'):
-        restored.load_state_dict(checkpoint)
-    assert len(restored) == len(source)
-    for key in ('slots', 'trust', 'episodic_concepts', 'episodic_values'):
-        torch.testing.assert_close(getattr(restored, key), getattr(source, key), rtol=0, atol=0)
-    assert restored._legacy_times == {100+i: source.row_name(i) for i in range(4)}
 
 
 def test_42_activity_promotes_a_row_once_and_keeps_its_native_order():

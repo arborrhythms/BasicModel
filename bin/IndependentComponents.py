@@ -466,7 +466,7 @@ class IndependentComponents(nn.Module):
         store = self.owner._closed_clause_store()
         retained = store.row(row)
         identity = retained['row_id']
-        witness = (retained['occurrence'], int(store.model_clock))
+        witness = (retained['occurrence'], int(store.names_issued))
         before = {id(p) for p in self.parameters()}
         # A's individuals were admitted from the kept NP occurrences at this
         # close. Whole-row residual recurrence is not individual identity.

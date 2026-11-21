@@ -35,6 +35,7 @@ def test_thought_departure_preserves_the_other_streams_reading():
     model = NS(when_time=torch.tensor(7), when_encoding=NS(t=7),
                conceptualSpace=owner, _what_memory=lambda: memory,
                _assert_query_boundary=lambda row: None)
+    __import__('clock_fixtures').install(model, 7)
     model.present = lambda: int(model.when_time)
     model.run_selected_thought = MethodType(BasicModel.run_selected_thought, model)
     fork = dict(state=ThoughtTrialState(model), work=object())

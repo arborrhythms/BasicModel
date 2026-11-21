@@ -69,8 +69,8 @@ class Evaluation:
             raise ValueError(f'held-concept refresh reads outside the initial/published concepts: seat {index}, identity {identity}, timeline {timeline}')
         value = concepts.values[index]
         if relative:
-            from RowTime import relative_idea
-            value = relative_idea(self.model,value)
+            from RowTime import compared
+            value = compared(self.model,value)
         return value
 
     def publish(self, witness, operands, result, frames, head):

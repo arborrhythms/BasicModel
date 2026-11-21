@@ -183,7 +183,7 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
         focus = bindings(put(stm, value, row=0, pin=True))['_chunk_when']
         if batch > 1:
             put(stm, value, row=1, pin=True)
-            stm.set_state(chunks.read(stm.state, torch.tensor([-1, 0]), torch.tensor([False, True]), tick=1000))
+            stm.set_state(chunks.read(stm.state, torch.tensor([-1, 0]), torch.tensor([False, True]), count=1000))
         before = tuple(t[1:].clone() for t in stm.state)
         shapes = tuple(tuple(t.shape) for t in stm.state)
         truth_pointer = stm._live_chunk_truth.data_ptr()

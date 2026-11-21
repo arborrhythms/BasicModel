@@ -93,7 +93,9 @@ def test_declared_nested_part_chain_preserves_typed_occurrences():
         node = second[1]
     assert store.parts.references(node) == ((SYMBOL, said), (OCCURRENCE, store.row_name(rows[2])))
     assert store.parts.rows_referencing(SYMBOL, said)
-    assert [int(encoder().decode_index(store.entry_time(row))) for row in rows] == [0, 1, 2]
+    # The rows of one present share its stamp and are told apart by name.
+    assert [int(encoder().decode_index(store.entry_time(row))) for row in rows] == [0, 0, 0]
+    assert len({store.row_name(row) for row in rows}) == 3
     assert not hasattr(store.parts, 'percept') and not hasattr(store.parts, 'when')
     assert store.parts.contains(result[1])
     before = copy.deepcopy(store.parts.state_dict())

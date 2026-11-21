@@ -179,6 +179,7 @@ def attach_clause_index(model, store, space):
     present = getattr(model, 'present', None)
     if callable(present) and hasattr(model, 'when_time'):
         object.__setattr__(store, '_model_present', present)
+        object.__setattr__(store, '_model_present_code', model.present_code)
 
     def concept_point(cid):
         owner = space_ref()

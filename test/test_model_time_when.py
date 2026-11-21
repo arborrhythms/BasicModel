@@ -216,8 +216,9 @@ def test_when_time_stamps_live_position_encoders_on_the_shared_ladder():
         if enc is not None and getattr(enc, "nDim", 0) > 0:
             seen_live = True
             assert enc is m.when_encoding
-            assert int(enc.t) == m.present()
             assert m.present() == N
+            # The present's code is held on the model, made by that encoder.
+            torch.testing.assert_close(m.present_code(), enc.encode(N).to(m.present_code()))
     assert seen_live, "expected at least one live when-encoder on the model"
 
 

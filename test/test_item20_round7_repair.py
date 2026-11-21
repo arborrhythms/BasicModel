@@ -191,18 +191,18 @@ def test_composition_reads_time_differences_and_preserves_the_stored_stamp():
     clock = encoder()
     reference = None
     for tick in (0, 25, 50, 100, 200, 400, 777, 1500, 3000):
-        clock.t = tick + 7
+        present = clock.encode(tick + 7)
         value = torch.cat((torch.ones(1, 2, 10), clock.encode(torch.tensor([[tick, tick+7]]))), -1)
         before = value.clone()
         sub = SimpleNamespace(is_empty=lambda: False, materialize=lambda: value,
             nWhat=6, nWhere=4, nWhen=4, whenEncoding=clock)
-        read, _, stored = ConceptualSpace._bind_read(sub, 14)
+        read, _, stored = ConceptualSpace._bind_read(sub, 14, present)
         assert torch.equal(stored, before) and torch.equal(value, before)
-        assert not read[0, 1, -4:].any()
-        assert bool(read[0, 0, -4:].any())
+        # Each stamp is read as how far back it lies: seven ticks and none.
+        torch.testing.assert_close(read[0, :, -4:], clock.encode(torch.tensor([7, 0])).to(read), rtol=0, atol=1e-6)
         if reference is None:
             reference = read
-        assert torch.equal(read, reference)
+        torch.testing.assert_close(read, reference, rtol=0, atol=1e-6)
 
 
 @pytest.mark.parametrize('member_order', (0, 1))
