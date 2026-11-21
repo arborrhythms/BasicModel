@@ -176,6 +176,9 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
         result = run(*args, **kw)
         if kw.get('optimizer') is not None:
             symbols = set(alloc.concepts) - baseline - set(alloc.parts.indices().tolist())
+            # A place's concept reads a row of the first Pi on the where wires;
+            # nothing of a sentence written to LTM names it.
+            symbols -= {cid for cid in symbols if 'place' in alloc.symbol_types.get(cid, ())}
             records = grounded(store,symbols)
             assert len(store) > 0
             reports.append(dict(epoch=len(reports)+1, minted=sorted(symbols-seen),

@@ -143,6 +143,11 @@ def test_the_mereological_order_of_the_lesson_percepts(lesson):
                 assert bool((code >= basic.code(member)).all())
             checked += 1
             continue
+        if row in basic.place_rows:
+            # A place has no part and no whole: it is read on the where wires.
+            assert not basic.occurrences[row][0] and not bool(code.any())
+            checked += 1
+            continue
         parts, wholes = basic.occurrences[row]
         identity = code[:basic.identity_width]
         part_codes = basic.part_codes(torch.tensor(parts))

@@ -130,7 +130,7 @@ def test_2_a_set_of_wholes_as_an_address():
 def _lesson_forms(owner, basic):
     """The nominated rows and their forms (the lexical form of each row's
     word; a row's run of parts holds each character once)."""
-    rows = [r for r in range(len(basic.index)) if bool(basic.promoted[r])]
+    rows = [r for r in range(len(basic.index)) if bool(basic.promoted[r]) and r not in basic.place_rows]
     word_of = {row: word for word, row in basic.words.items()}
     forms = []
     for r in rows:

@@ -33,6 +33,8 @@ def where_keys(width):
 def starts(bank, readings):
     """The event at each reading's start, ``[B, readings]`` (``-1`` none)."""
     token, place = bank.token, bank.place
+    if not token.shape[1]:
+        return token.new_full((token.shape[0], readings), -1)
     far = torch.iinfo(place.dtype).max
     slots = torch.arange(readings, device=token.device)
     held = token[:, None, :] == slots[None, :, None]                       # [B, K, P]
@@ -56,7 +58,7 @@ def value(basic, bank, native, presence, rows):
     """Each place row of ``rows`` on the way up: ``{index: (lanes [B, K, 2],
     events [B, K, P, 2])}`` and the reading's start events."""
     found = [(i, int(row)) for i, row in enumerate(rows) if int(row) in basic.place_rows]
-    if not found or bank.band is None:
+    if not found or bank.band is None or not bank.token.shape[1]:
         return {}, None
     K = native.values.shape[2]
     start = starts(bank, K)
@@ -93,7 +95,7 @@ def down(basic, bank, perception, row_grad, activity=None):
     rows = bank.rows
     places = [(i, int(row)) for i, row in enumerate(rows) if int(row) in basic.place_rows]
     events = bank.token.new_zeros(bank.token.shape, dtype=perception.values.dtype)
-    if not places or bank.band is None:
+    if not places or bank.band is None or not bank.token.shape[1]:
         return events, events.clone()
     native = bank.native if activity is None else bank.at(activity)
     K = perception.values.shape[2]
@@ -130,7 +132,7 @@ def meet(owner, bank):
     """Count the occurrences of a sentence's bank at their places and
     nominate a place's row on the count that nominates a form."""
     basic = getattr(owner, 'basic_percepts', None)
-    if basic is None or bank.band is None or bank.token is None:
+    if basic is None or bank.band is None or bank.token is None or not bank.token.shape[1]:
         return []
     K = bank.native.values.shape[2]
     start = starts(bank, K)
@@ -179,5 +181,5 @@ def admit(owner, plus, minus, whats):
     inventory = owner._csw_concept_row(0, concept)
     if inventory is None:
         return row
-    owner.add_concept_feature(inventory, 'bp', row, 1.)
+    owner.bring_concept(row, inventory)
     return row
