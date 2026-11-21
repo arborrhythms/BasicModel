@@ -20778,3 +20778,180 @@ Spot tests by the pass; both gates pass at four points. The list and the lesson 
 #### Built provisionally, on the trial's measure, while the question is with Alec
 
 The question put to him (§23.6.3) was whether a row of the first Pi may be a place. The trial answers what could be measured: it teaches order, it transfers, and it arises by a rule he gave. *The next pass builds it in the model, each part in a commit of its own and marked provisional,* so that his answer can keep it or take it out: places nominated by the cone over the occurrences at a place, each with its concept; the way down through a place's entries onto the band; then what waited on the where (step 6's Not entry, a known form of several units as an event, the reading lesson measured in the model, the reconstruction over what and where, and certificates 33 (b), 33 (c), 34 and 45).
+
+### 23.6.5 Round 6, last pass: places as rows of the first Pi built in the model (provisional), and the Not on the way down; reading in order is not learned in the model (Claude on Opus, standing in for Codex, 2026-11-20)
+
+Started at `8a819c3e97`, on `main`, in this checkout. Ends at `f4b00524ee`. Nothing is pushed. No doc/*.md and no part of the specification was edited. `533d263703` in the range is not mine. Parts A and B were done. **I stopped before C.** C, D and E were not started: E is decided (below) but no file was moved.
+
+#### What fails or is unfinished, first
+
+- *Places do not teach reading in order in the model.* Over 3 starts drawn afresh, 0 of 6 two-word sentences, 0 of 16 lesson sentences and 0 of 6 held-out orders were read in order, both before and after the lesson. (The trial read 6, 16 and 6 in 8 of 12 starts.) What differs from the trial is measured, and no mechanism was added to force it. After the lesson the request asks every place's concept alike: at each look of "This is Felix." the greatest and least request over the 14 place concepts are equal (2284.98, then 2242.22, then 2185.06). In the trial, each place had an entry of its own in the request's map. In the model the request for a concept is that concept's code (detached) times the context's query. Every place concept's code has the same norm (8.0), and as read, the request does not tell one place from another. Asked at about 2,000, the where match becomes all or nothing: [0, 0, 1, 0, ...]. The third reading (place 8) wins every look, because the sum of the 12 pure places' rows peaks there. **For Claude and Alec.**
+- *A place's row is barely peaked at its own place.* The where code changes little over a sentence: the registry's 4 wires at capacity 4096 are the trial's code, and from place 0 to place 13 they move by .005, .0005, .157 and .025. So the row of place 0 reads .247 at 0, .244 at 5, .240 at 8 and .229 at 13. Passed down by its entries, it still has its largest band share at its own reading in 7 of 7 cases checked (below). This is the same in the trial, so it is not the difference.
+- *Not built:* all of C (step 6's "words" Not entry on the space; a known form of several units as an event of the bank; certificates 33 (b), 33 (c), 34), all of D (step 11; certificate 45; round 2's measure again in the model), and E's moves.
+- *The third start of the 3-start measure* raised `ValueError: binary operation underflows the recorded forest` (`Models._derivation_program`) during its lesson. I did not diagnose it. A fourth start, run alone, passed.
+- `test_testpoint.py::TestBellSalivate::test_bell_salivate` failed once in the run of the 40 files, with "identity map requires finite coordinates in [0, 1]". It passed when run again after the `bring_concept` change. I do not know whether places caused it.
+- `test_item18_expect.py::test_81` was not run (known).
+
+#### Part A: places as rows of the first Pi (provisional; `bin/Places.py`)
+
+*How a place is nominated in the model.*
+- At the one lookup of a sentence (`ConceptualSpace.cs_lookup`), `Places.meet` takes every reading of the bank as an occurrence. An occurrence is the band of the event at the reading's start (the 4 where wires, each on two lanes `c`, `1 - c`) and the members of the percept tower present in that reading (a member at .5 or more).
+- The occurrences at one band are counted under MTM's count of a form, `ConceptualSpace.nominates(('place', band), reading)`. The key is the band's code rounded to 6 places, and the count is the one that nominates a form, `conceptMintCount`. No key was added.
+- The cone (rule 72) is kept beside the count in `BasicPercepts.place_cones`: the least of each where lane over the occurrences, and the members every occurrence holds.
+- On the nominating reading, `BasicPercepts.reserve_place` writes the row. It is a row of the first Pi (`SparsePiLayer3`) whose members are the where wires' lanes, keys `('where', i, 'for' | 'against')`, at the cone's values (`append` now takes per-entry `weights`), together with the kept members at one. The row is promoted, and its concept of order zero is made by `bring_concept`, as any row's (rule 21). No concept has a weight on a where wire, and no content row has an entry on one. Nothing is declared by hand.
+
+*How many arise.* On the lesson's one-word, two-word, sixteen and held-out sentences: 14 places, 12 of them with no what. On four sentences ("This is Felix.", "That is Ciao.", "Here is Felix.", "Who is there?"): 7 places, 5 pure. On three ("This is Felix.", "Ciao Felix.", "Felix is here."), the two places met by one form kept `('ps', ...)`, `('ws', 0)`, `('ws', 8)`.
+
+*Way up and way down.*
+- Up (`Places.value`, read in `BasicPercepts.read_bank`): `b = presence_at_start * exp(sum log m_kept + E+ . log c + E- . log(1 - c))` on the for lane, nothing on the against lane. The event at the reading's start carries the value.
+- Down (`Places.down`, called by `Salience.salience`): the share on the band of the start event is `d . b . (E+ c + E- (1 - c))`, the trial's share. Each kept member takes `d . b` at its events. `SalienceMap.band` now carries it, and `SentenceLooks.where_match` reads it, as rules 34 and 39 say.
+
+*The request at an untaught start, and its gradient.*
+- It is exactly 0 on both lanes for every place concept (`attend`: codes times a query that starts at zero).
+- At the source as found, such a request took **no gradient**. Torch's `clamp_min(0)` gives no derivative at exactly zero, and that clamp is on the request in `Salience._down` (the whole request had a gradient of 0.0 over one presentation).
+- Changed in `ccef14fb3a` (provisional): the request is held at or above zero with `where(x >= 0, x, 0)`, which passes the derivative at zero, as `signed_lanes` does. After it, one presentation of "This is Felix." gives the place entries 1.79, .754, .0025 and 0 at its four looks.
+- The cap still gives "words" no gradient (test 15 as before).
+
+*The when.* No when wire is in a place's row. Within one sentence's looks every reading has one time. Nothing more was built.
+
+*Sentences read in order, before and after the lesson* (`test_reading_in_order_before_and_after_the_lesson`). The model is the looks' tests' small model, with 64 concept rows. The lesson is minimal sentences first: the 11 one-word sentences once each, the 6 two-word sentences twice, then the 16 sentences twice, under `reading_lesson` at a rate of .01. Counts are given as two-word (of 6), lesson (of 16), held out (of 6):
+
+| Start | Places (pure) | Before | After |
+| --- | --- | --- | --- |
+| 42163763491491 | 14 (12) | 0, 0, 0 | 0, 0, 0 |
+| 183543842763712 | 14 (12) | 0, 0, 0 | 0, 0, 0 |
+| (third start) | | | raised the forest error above |
+| 275031329035128 (run alone) | 14 (12) | 0, 0, 0 | 0, 0, 0 |
+
+*Certificate 38 (b), recorded again:* by the lesson's script (below), 0 sentences in order in each of 3 runs.
+
+*Tests* (`test/test_item17_places.py`):
+- `test_a_place_is_nominated_by_the_cone_and_brings_a_concept`: places arise, some with no what; each brings a concept that reads its row; no content row has a where entry. Pass.
+- `test_a_place_concept_asked_lights_its_own_readings_band`: on "This is Felix.", asking for each place's concept puts the largest band share at the start of the reading where that row reads most. Pass, 7 of 7. Rows 3, 4, 5 and 6 are at their own starts 0, 5, 8 and 13, with shares .741, .728, .715 and .691.
+- `test_the_request_for_a_place_at_an_untaught_start`: the request is 0, and the gradient is printed. Pass.
+- `test_reading_in_order_before_and_after_the_lesson`: recorded (table above).
+
+#### Part B: what a request reaches through the Not (`b7dd261cd1`)
+
+In `Salience.first_pi`, the share a row's reading takes is `d_for . max(for - against, 0)` and `d_against . max(against - for, 0)`, and it is shared among the row's members as before. A row read for and against alike takes nothing.
+
+*Certificate 32, whole* (`test_32_a_known_word_is_not_read_inside_a_longer_known_word`, now asserting the look):
+
+| Request | Concept by reading | Returned | Taken |
+| --- | --- | --- | --- |
+| `is` | [0, .7616, 0] | [-inf, .7616, -inf] | 1, no draw |
+| `here` | [0, 0, .7616] | [-inf, -inf, .7616] | 2, no draw |
+| `the` | [0, 0, .7616] | [-inf, -inf, .7616] | 2, no draw |
+
+Before this change, `This`, `There` and `there` were returned at .7616 and drawn. Certificate 31 (a) still holds: the greatest difference from the framework is 0.0 for "words", for `alpha` and for the first Pi.
+
+#### Parts C and D: not built. Round 2's measure again: not made.
+
+#### The gates
+
+| Point | Commit | Result |
+| --- | --- | --- |
+| Before any edit of bin/ | `8a819c3e97` | 2 passed, 3.42 s |
+| After A | `ccef14fb3a` (B held out) | 2 passed, 3.43 s |
+| After B | `b7dd261cd1` | 2 passed, 3.41 s |
+| End | `f4b00524ee` | 2 passed, 3.44 s; also inside the 105-test run |
+
+No bar, iteration count, presentation count, learning rate, seed or capacity was changed.
+
+#### Certificates 30 to 45
+
+| | Test | Result |
+| --- | --- | --- |
+| 30, 33 (a), 35, 36, 42 | `test_item17_looks.py::test_30_33a_35_36_42_...` | pass |
+| 31 (a) | `test_31a_...` | pass (0.0) |
+| 31 (b), 33 (d) | `test_31_33d_...` | pass |
+| 31 (c) | `test_31c_...` | pass |
+| 32 | `test_32_...` | **pass, whole** |
+| 34 (the where match, rules 34 and 39) | `test_34_the_where_match_...` | pass |
+| 37 | `test_37_...` (both) | pass |
+| 38 (a) | `test_38a_...` | pass |
+| 38 (b) | `test_38b_...` and the places' measure | recorded, 0 in order |
+| 39, 40, 41, 43 | `test_39_...` to `test_43_...` | pass |
+
+Left: 33 (b) and (c), 34 ("words" presses against the space) and 45 (C and D, not built); 44 (round 7). Since a place's row now reads the where, 33 (b) could be stated with it: a gradient from an asked place concept reaches the band. It is not yet written as a test of its own.
+
+#### The lesson's script, `--runs 3` (at `f4b00524ee`, CPU)
+
+| Run | Start drawn | Words found | Sentences in order | Words in order | At the allowance | Draws | Known against | Known both | Seconds |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 3614978666 | 64 of 64 | 0 | 0 | 0 | 26 | 0 | 0 | 28.2 |
+| 2 | 828298754 | 64 of 64 | 0 | 0 | 0 | 26 | 0 | 0 | 21.8 |
+| 3 | 2923193291 | 64 of 64 | 0 | 0 | 0 | 26 | 0 | 0 | 15.6 |
+
+#### Provisional commits (the where), to take out whole
+
+- `22f24d659d`: places as rows of the first Pi (`bin/Places.py`; `BasicPercepts.reserve_place`, `member_weights`, `place_rows`, `place_cones`, the guards in `code`, `against`, `against_keys`, `member_keys`, `lookup`, `read_bank` and the extra state; `SparsePiLayer3.append(weights=)`; `cs_lookup` calls `meet`; `Salience` passes places down; `FieldReverse` skips a place).
+- `ccef14fb3a`: the request at zero takes its gradient (this one is useful without places too).
+- `f4b00524ee`: the places' fixes (`bring_concept`, a bank with no event), the ports below, and `test_item17_places.py`.
+
+`b7dd261cd1` (B) is not about the where and stands alone.
+
+#### Tests ported or retired (old assertion, then new)
+
+- `test_item17_order_zero.py::test_the_mereological_order_of_the_lesson_percepts`. Old: every row's code is the greatest of its parts' codes. New: the same for every row that is not a place; a place has no parts and its code is nothing.
+- `test_item17_code_trial.py::_lesson_forms` (used by tests 3, 4, 6b, 7 and 9). Old: every promoted row is a word's row. New: every promoted row that is not a place.
+- `test_epoch_history.py::test_native_train_keeps_last_grounding_...`. Old: every concept made in training is grounded in LTM. New: every one except a place's concept, which no sentence in LTM names.
+- `test_item17_looks.py::test_32_...`. Old: the inner word's concept reads nothing at the longer token, and the tie is printed. New: that, and the look takes the inner word, with no draw.
+
+None retired.
+
+#### Test files run, with counts and seconds
+
+- Gates: 2 passed at each point, 3.41 to 3.44 s.
+- `test_item17_looks.py` and both gates, after A: 24 passed, 46 s.
+- `test_item17_looks.py`, tests 32 and 31 (a), after B: 2 passed, 11.5 s.
+- The 40 files that name `Salience`, `BasicPercepts`, `basic_percepts`, `FieldReverse`, `SparsePiLayer3`, `cs_lookup` or `read_bank`, with both gates: 12 failed, 417 passed, 13 skipped, 321 s.
+  - The 12 were five tests of the code trial (`KeyError`, a place is no word); the mereological order; "a new concept reads only its own row" (fixed by `bring_concept`); two of `test_item20_round6_reverse` (a stand-in with no `place_rows`); the epoch history; the scalar test (a bank with no event); and bell-salivate.
+- After the fixes and ports, the 8 files with failures, `test_item17_places.py` (not the measure), `test_item17_looks.py` and both gates: 105 passed, 6 skipped, 286 s.
+- The measure: 3 starts, 753 s (third start raised). 1 start, 244 s.
+- The lesson's script, 3 runs: about 66 s.
+
+#### Commits
+
+`22f24d659d` (A), `ccef14fb3a` (A, the gradient at zero), `b7dd261cd1` (B), `f4b00524ee` (A's fixes, ports and tests).
+
+#### What is left
+
+- Alec's answer on a place as a row, now with this measure: in the model a place arises (14 on the lesson, 12 pure), its share lands on its own band, and its request takes a gradient from zero; but the request cannot ask for one place apart from another, since a concept is asked by its code times the query and the place concepts' codes are alike.
+- C: the "words" Not entry on the space; a known form of several units as an event (`read_percepts` makes events of the stem's units, so this is a change to the lookup); certificates 33 (b), 33 (c), 34.
+- D: step 11 and certificate 45, with round 2's measure in the model.
+- E: the prototype's files all stay (below).
+- The forest error of the third start.
+
+*E, decided and not moved.* `test/looks_where_trial.py` and `test_item17_where_trial.py` stay. The model's tests now state the cone and a place's share at its own place, but not the trial's three ways of passing a wire or its measure of order. `test/looks_round2.py`, `looks_round2_report.py` and `test_item17_looks_round2.py` stay, since the reconstruction over what and where (D) is not in the model. `looks_prototype*.py` stay, since the trial imports them.
+
+#### What surprised me
+
+- In the model the request at exactly zero took no gradient at all: torch's `clamp_min` passes nothing at the bound. So a place's concept, or any concept the request starts at nothing for, could never be taught. The trial's failing starts began below zero; the model's start is zero.
+- After the lesson the request had risen to about 2,000 on every place concept alike. It learned to ask for places, but not for one place, so one reading in the middle wins every look.
+- The trial's where code and the model's are the same, and both are flat over a sentence: a row at place 0 reads .247 at its own place and .229 thirteen places away.
+- A place's concept takes a concept row like a word's: 14 of the 64 rows on the lesson. In the default small model (32 rows) places compete with words for room.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass; both gates pass at four points. Parts A and B of five; the stop before C was right, since C and D rest on the where being learned.
+
+- *In the model a place does everything the trial's did but one thing.* Places arise by the cone, 14 on the lesson and 12 of them with no what; a request for a place's concept puts its largest share on that place's own band, 7 of 7; and the request takes a gradient from nothing, once a fault was removed. What it does not do is ask for one place apart from another, and without that nothing is read in order: 0 of 6, 0 of 16 and 0 of 6 held out, in each start, before and after the lesson.
+- *The difference from the trial is one thing and it is named.* In the trial the request had an entry of its own for each concept, and what it learned was one constant request, for the first place. In the model the request for a concept is that concept's code read by the context's map (`attend`: the codes times a query), so concepts whose codes are alike are asked alike; the places' codes are alike, since over a sentence the where code barely moves (a row at place 0 reads .247 there and .229 thirteen places on); and so every place is asked at one value, and the reading in the middle wins every look.
+- *A fault found on the way, and it was general:* a request at exactly nothing took no gradient at all, through a clamp at its bound, so no concept that the request starts at nothing for could ever be taught to it. Repaired (`ccef14fb3a`); it stands whatever is decided of places.
+- *Certificate 32 holds whole.* The way down passes the Not: a row's reading takes what the concept reads there, for less against. A request for `is` takes `is` at its own token, with no draw, and the transposes still equal the framework's backward exactly.
+- *Two errors met and not diagnosed,* which are not to be left: one start of the lesson raised "binary operation underflows the recorded forest" (`Models._derivation_program`), and `TestBellSalivate` failed once with "identity map requires finite coordinates in [0, 1]". Whether places cause either is not known. To the next pass, first.
+- *A cost of places to note:* each takes a concept's row, 14 of 64 on the lesson, so in a small model they compete with words for room.
+
+#### Where the where stands, for Alec (2026-11-20)
+
+Four things are now measured, in order.
+
+1. A row of the Pi that requires its whats and also reads the where learns where its content usually stands, and not place (§23.6.3).
+2. A row that is a place, entries on the where wires and no what, teaches reading in order in a trial, new orders included, and arises by the cone (§23.6.4).
+3. Built in the model, such rows arise and are reached by a request, and reading in order is still not learned, because the request cannot ask for one place and not another (above).
+4. What the trial's request had and the model's has not is an entry of its own for each concept. What it learned with it was a constant: begin at the first place.
+
+*No further pass is started on this.* The next step is a choice about `attend`, on top of the choice about places that he has not yet made, and each pass costs what he said he cannot spend freely. *Claude's recommendation, if places are kept:* the request's start, which today is "words" alone and fixed, becomes learned: one value for each concept, beside what the context's map adds, starting at "words" alone. Rule 35 has the request as "a mask over all concepts ... and it is learned", and a learned start is the least thing that gives it an entry for a place. It is one small pass, measured by the test that now reads 0 of 16. If it does not teach order in the model either, reading in order goes to item 1.6 and the places come out.
+
+*What is done in the meantime, at no cost in passes:* the list on this source; the measure of sentences a second, alone on the machine, at the three precisions; and the docs' keys checked against the schema.
