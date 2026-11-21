@@ -117,18 +117,18 @@ def attended(bank, where=None, share=None, capacity=None):
 
 class PlaceEntries(nn.Module):
     """Each row's entries on the where wires and on the when wires of an
-    attended percept: ``where`` ``[capacity, 2 * WHERE_WIRES]`` and ``when``
-    ``[capacity, 2 * WHEN_WIRES]``, each the kept value of every wire, then
+    attended percept: ``where_entries`` ``[capacity, 2 * WHERE_WIRES]`` and
+    ``when_entries`` ``[capacity, 2 * WHEN_WIRES]``, each the kept value of every wire, then
     its weight. Learned; a weight is read at zero or above, and a row whose
     weights are at nothing reads one at every place (rule 31)."""
     def __init__(self, capacity):
         super().__init__()
-        self.where = nn.Parameter(torch.zeros(int(capacity), 2 * WHERE_WIRES))
-        self.when = nn.Parameter(torch.zeros(int(capacity), 2 * WHEN_WIRES))
+        self.where_entries = nn.Parameter(torch.zeros(int(capacity), 2 * WHERE_WIRES))
+        self.when_entries = nn.Parameter(torch.zeros(int(capacity), 2 * WHEN_WIRES))
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
-        state.setdefault(prefix + 'where', self.where.detach().clone())
-        state.setdefault(prefix + 'when', self.when.detach().clone())
+        for name in ('where_entries', 'when_entries'):
+            state.setdefault(prefix + name, getattr(self, name).detach().clone())
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
 
 
@@ -189,11 +189,11 @@ class BasicPercepts(nn.Module):
 
     @property
     def where_entries(self):
-        return self.entries.where
+        return self.entries.where_entries
 
     @property
     def when_entries(self):
-        return self.entries.when
+        return self.entries.when_entries
 
     def part_codes(self, references):
         return self._boundary_codes(references, whole=False)

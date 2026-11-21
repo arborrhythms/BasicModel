@@ -1267,18 +1267,6 @@
     },
     {
       "file": "bin/BasicPercepts.py",
-      "function": "BasicPercepts.lookup",
-      "attributes": [
-        "nWhen"
-      ],
-      "role": "basic percept lookup",
-      "previous_absolute_time": false,
-      "now": "Reads the when band of an event as stamped; the present comes from the model.",
-      "line": 0,
-      "reads": "stamp"
-    },
-    {
-      "file": "bin/BasicPercepts.py",
       "function": "BasicPercepts.read_bank",
       "attributes": [
         "nWhen"
