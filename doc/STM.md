@@ -313,13 +313,12 @@ does the STM bookkeeping ([Spaces.py](../bin/Spaces.py)):
    forbidden until the complete STM fits the sentence's allowance (one slot
    for an absolute sentence, three for a relative one; Section 9) and the
    phase allowance; online rounds allow `K - 1` occupied slots, which reserves
-   the next word's slot. A binary-logit prior grows with whole-STM occupancy
-   and with the reductions still required per remaining round,
-   $p = g\,(d/a + r/n)$ for depth $d$, allowance $a$, required reductions
-   $r = \max(d - a, 0)$ and remaining rounds $n$. Its gain $g$ is a learned
-   parameter of the compose chooser (`reduce_pressure`, initialized from
-   `reducePressure`, default 1), so a grammar lesson can weaken or strengthen
-   the preference to fold; the formula and the deadline masks are fixed. When
+   the next word's slot. Holding a load is a cost and not a prior on the
+   scores: for depth $d$ and allowance $a$ the fraction $d/a$ held is charged
+   at every recorded step, under `reductionCost`, and the chooser is shown how
+   much of its budget is left as a sinusoidal code, so that a grammar lesson
+   can teach it when to fold; the deadline masks are fixed. With required
+   reductions $r = \max(d - a, 0)$ and remaining rounds $n$, when
    remaining rounds equal required reductions, unary and STOP candidates are
    masked. An initially infeasible budget may still leave an incomplete
    sentence; an attempted push into a full stack is an assertion failure. The

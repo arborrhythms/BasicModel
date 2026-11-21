@@ -818,8 +818,9 @@ conceptual identities live in ConceptualSpace.
 
 The grammar placement policy and the thought-step policy are separate modules.
 `MLPTransformChooser` scores a grammar operation at a slot/pair from its current
-state, candidate result, role context, tool embedding and position. With
-`transformChooser=mlp`, `<architecture><transformChooserHidden>` selects its
+state, candidate result, role context, tool embedding and position. It is the
+only chooser of acts (Alec, 2026-11-20: "The Transform chooser should be
+MLP-only"). `<architecture><transformChooserHidden>` selects its
 hidden width (`0` means `max(8, d_model)`) and `transformChooserDepth` selects
 the number of hidden Linear/GELU blocks (default `1`). Every block has the same
 width; a scalar Linear head follows. The 29-dimensional What context still
@@ -892,12 +893,12 @@ sentences and the relation in three slots.
 With depth `d`, allowance `a`, and `r` rounds left including the current round,
 the required reductions are `n = max(0, d - a)`. When `r - n <= 0`, only binary
 candidates remain legal. Before that deadline, unary operations remain legal;
-STOP also requires both the row limit and the phase allowance to fit. Every
-binary logit receives `g * (d/a + n/r)`, with zero pressure on an
-empty stack. The gain `g` is a learned parameter of the chooser
-(`OperationSelectionLayer.reduce_pressure`), initialized from
-`architecture.reducePressure` (default `1.0`); the formula and the deadline
-masks are fixed, and the pressure enters the model's gradient credit. See
+STOP also requires both the row limit and the phase allowance to fit. No
+bonus is added to a binary operation's score: the load left is charged
+as a cost under `architecture.reductionCost` (`WholePaths.load_cost`), and the
+chooser is shown how much of its budget is left as a sinusoidal code
+(`Language.budget_code`), so that it can learn to reduce before the cost falls.
+The deadline masks are fixed. See
 [Params](Params.md) for the numerical guards and the declared measurement value.
 Three online rounds and `2K` closing rounds suffice to admit every word and finish
 each row. A deliberately infeasible initial budget may still yield an incomplete

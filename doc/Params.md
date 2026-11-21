@@ -26,7 +26,7 @@ Analysis, and DisCoCat. `dataType=embedding`, sentence prediction, and
 reconstruction cover the LLM-like prediction/generation path.
 `attentionBudget`, `bindingDepth`, `conceptLayers`, `mereologyRaise`, `monotonic`, and the
 codebook settings control the FCA-like concept order and part/whole lattice.
-`transformChooser` and the grammar-layer settings control the DisCoCat-like
+The grammar-layer settings control the DisCoCat-like
 typed composition path.
 
 Overlay merge order:
@@ -75,15 +75,14 @@ sub-elements `<training>` and `<data>` (see below).
 | `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. Exactly one WholeSpace is shared by these stages; its property inventory and where slice do not multiply with this depth. |
 | `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. `data/model.xml` declares 1; where no file declares it, two read sites (the concept order limit and the serial word-major path) fall back to 2 and two others to 1. |
 | `composeTemperature` | finite float $\ge 0$ | `0` | Sampling temperature of the hard choices in training. Zero selects the greatest logit, with the structural rule on exact ties. Positive values sample `softmax(logits / temperature)` during training. Evaluation always uses argmax. Straight-through credit always uses the untempered model softmax; this parameter never scales its gradients. |
-| `reducePressure` | finite float $\ge 0$ | `1.0` | Initial value of the compose chooser's learned load gain. Each binary logit gets `reducePressure * (d / a + max(0, d - a) / r)`, zero on an empty stack: `d` is the STM depth, `a` the allowance (`K - 1` during online rounds; at the closing, one for an absolute sentence and three for a relative one) and `r` the rounds remaining in the phase, the current one included. The divisors are clamped to at least one for numerical safety, while deadline masking uses the actual allowance and count of remaining rounds: when `r <= max(0, d - a)` only binary operations are eligible. Every binary operator gets the same bonus, and it enters the model's softmax and straight-through credit before the sampling temperature. See [Language](Language.md#one-operation-per-round). |
+| `reductionCost` | finite float $\ge 0$ | `1.0` | Scale of the cost of working-memory load left during compose (`WholePaths.load_cost`). Each composed program is replayed on its stack depth, and at every recorded step the depth held, as a fraction of the allowance, is charged; the sum is linear in what is left and in the steps it is left for. No learned number multiplies a count: the chooser is instead shown how much of its budget is left as a sinusoidal code among its inputs (`Language.budget_code`), so that it can learn to reduce before the cost falls (Alec, 2026-11-20: "it should be a cost, as long as the network is exposed to a temporal signal that will allow it to learn that cost"). Deadline masking is unchanged: when the rounds left do not exceed the excess depth, only binary operations are eligible. See [Language](Language.md#one-operation-per-round). |
 | `attentionPromotion` | bool | `false` | Enable familiar candidates in MTM. The open sentence field observes them; the kept close promotes them. Explicit clause admission is independent of this switch. |
 | `conceptMintCount` | positive int | `3` | Readings within `mtmHorizon` after which MTM nominates a row of a Pi: a basic percept at order zero, a symbol at every order above. Each nominated row brings one concept, and nothing becomes a row on its first reading. A reading is one sentence of one stream, so a form that stands twice in a sentence is counted once, and every reader of a form adds to the one count MTM keeps under it. A candidate whose horizon reading is both refines and waits. A kept defining clause also promotes its pending subject. |
 | `conceptUseFloor` | decimal | `0.5` | Field activation must exceed this floor to count as an MTM access. |
 | `conceptMatchCos` | decimal | `0.8` | Minimum cosine for a same-order MTM candidate match, using conceptual-width centroids. Located conjunctions retain the complete native literal identity. |
 | `conceptPartFloor` | decimal | `0.001` | Drop support below this magnitude when a candidate is promoted; retained definition edges merge by maximum. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
-| `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
-| `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP when `transformChooser=mlp`; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. Inert for `anchordot`. |
+| `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
 | `whatThinkingHidden`, `whatThinkingDepth` | int | `16`, `1` | Unread in effect: both are parsed and validated, but the selected-thought chooser they sized is no longer built (thought is scored by `OperationSelectionLayer.thought_logits`). |
 | `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank of the conceptual space's `IntuitionLayer`, which applies stored implications when thought calls `infer`. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. `intuit` has no stack of its own: it deposits `expect`'s field and closes it upward. |
@@ -411,16 +410,20 @@ Grammatical lift/lower own their chart maps.
 | `raiseEvidence` | unitInterval | `0.0` | A retained row qualifies as a witness when its positive evidence exceeds this value. |
 | `raiseCount` | int $\ge 2$ | `3` | Number of pairwise distinct witnesses of the same order required to create the shared side's class. |
 | `readerBlockNormalization` | bool | `true` | Scale the form block and the meaning block of a value read from the sentence's primed symbol bank, each by that block's largest norm over the frozen bank, so the read stays affine. |
-| `expectationMap` | string | `sigmaPi` | Form of `expect`, the map from the observed order-zero field to the expected one. `sigmaPi` builds a stack of its own; `predictor` builds an `ActivationPredictor` in its place. |
-| `expectHidden` | int | `64` | Width of the one hidden layer of `expect`'s stack. The stack reads both lanes of the whole observed field over the order-zero rows and gives the whole expected field over the same rows; it is sized once, at construction, by the capacity of the order-zero block. |
-| `expectLayers` | int | `1` | Pi and Sigma pairs of `expect`'s stack. |
+| `intuitHidden` | int | `64` | Width of the one hidden layer of `intuit`'s own map, a Pi, Not and Sigma stack from the concepts of order zero to themselves that stands outside the architecture (`ConceptualSpace.intuit_map`). It is sized once, at construction. Each row of its first Pi starts on two concepts: a row started on every concept does not learn on exact concepts. |
+| `intuitLayers` | int | `1` | Pi and Sigma pairs of `intuit`'s map. |
+| `fragmentBias` | float in $[0, 1]$ | `0` | Probability that, at a look whose word begins a run of two or three unread known words that the kept reading made one constituent, the grammar takes that run as one leaf read at one time through the idea stack (`FragmentRead`), with no composition over its words. At `0` nothing of the read runs: no read, no teaching and no take. Above `0` the read is also taught, by the composed value of the constituent (`expectation.fragment`) and by the class it filled (`expectation.fragment_class`). No form, row or symbol is made for a run. |
+| `wordTieCapacity` | positive int | `256` | Room for the ties of words to objects kept in MTM (`WordTies`). A tie holds its own certainty; the weakest tie is forgotten when room is needed. Read by the source and not yet declared in the schema. |
+| `candidateCapacity` | positive int | `64` | Room of each medium-term matrix of candidate entries beside a Pi or a Sigma (`CandidateGrowth`). Read by the source and not yet declared in the schema. |
+| `candidatePenalty` | float $\ge 0$ | `0.2` | The penalty a candidate entry must earn its weight against (`CandidateMatrix`); measured as the middle of the strengths (.1 to .3) at which the trials make exactly the right entries. Read by the source and not yet declared in the schema. |
+| `structureReadThreshold` | float $\ge 0$ | `0.001` | The weight at or above which thought reads an entry of a Sigma or a Pi as present (`StructureRead`: `parts`, `wholes`). Read by the source and not yet declared in the schema. |
 | `ideaHidden` | positive int | `64` | Width of the hidden layer of the read to a point, from the observed order-zero field, both lanes, to one point of a code's width. Built only on the conceptual space that owns the concepts, and only where sentences are comprehended. |
 | `ideaLayers` | positive int | `1` | Pi and Sigma pairs of the read to a point. |
 | `markerKernels` | int | `8` | Learned kernels of the one-operand `marker` operator. Each kernel is one candidate of the operator, chosen by the chooser from the sentence's context; none is named. |
 | `markerHidden` | int | `64` | Hidden width of each `marker` kernel's stack, from the operand's form block to its meaning block. |
 | `markerLayers` | int | `2` | Pi and Sigma pairs of each `marker` kernel's stack. |
 
-`expectationMap`, `expectHidden`, `expectLayers`, `ideaHidden`, `ideaLayers`,
+`intuitHidden`, `intuitLayers`, `ideaHidden`, `ideaLayers`,
 `markerKernels`, `markerHidden` and `markerLayers` are declared in
 `data/model.xsd`, each with the default above, so a configuration that omits
 them is unchanged. The three maps are one class, a stacked sigma-pi
@@ -877,8 +880,11 @@ follows the order-zero Sigma), `reconstruct`, `truthCriterion`, `readout`,
 `intraLossWeight`, `reconstructionReferenceWeight`, `verbTeacherWeight`,
 `modalTeacherWeight`, `architecture.learning`, `exploreTemperature`,
 `stmReduceTau`, `rowExpectationGain`, `documentExpectationGain` and
-`sentenceExpectationLossWeight` (nothing estimates a sentence), `intuitHidden`
-and `intuitLayers` (`intuit` has no stack of its own),
+`sentenceExpectationLossWeight` (nothing estimates a sentence),
+`expectationMap`, `expectHidden` and `expectLayers` (expectation has no map
+beside the structure; the stack is `intuit`'s, under `intuitHidden` and
+`intuitLayers`), `transformChooser` (the chooser of acts is the network
+alone), `reducePressure` (the load is a cost, `reductionCost`),
 `wherePeriod`, `whenPeriod`, `whenRungRatio` or `language.useGrammar`, so a
 configuration that declares one fails schema validation. Nor does it declare
 the weighted forgetting settings `forgetTrustWeight`, `forgetUtilityWeight`,
