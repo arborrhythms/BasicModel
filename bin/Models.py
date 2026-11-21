@@ -11496,7 +11496,10 @@ class BasicModel(BaseModel):
                     or tuple(offsets.shape[:2]) != (B, W) or offsets.shape[2] < 1):
                 raise RuntimeError('input word occurrences require their byte starts')
             starts = torch.where(object_rows >= 0, offsets[:, :, 0], -1)
-            isp._ar_word_symbol_where = registry.encode('text', starts)
+            # A word's place as recorded for the batch: the salience map
+            # lands on the bank's own read of the where wires, inside its
+            # sentence, so the record keeps no graph across sentences.
+            isp._ar_word_symbol_where = registry.encode('text', starts).detach()
             from Occurrence import relative_positions
             positions = relative_positions(self, isp._packed_sentence_ids.to(rows.device))
             isp._ar_word_symbol_when = self.when_encoding.encode(positions)
@@ -21440,6 +21443,9 @@ class BasicModel(BaseModel):
             from SentenceTraining import finish_sentence
             finish_sentence(self)
             observations.clear()
+            # The sentence's bank closes with it.
+            self._sentence_banks = {}
+            self._sentence_bank = None
             self._open_sentence_slot = None
             store = getattr(self.symbolSpace, 'ltm_store', None)
             if store is not None:

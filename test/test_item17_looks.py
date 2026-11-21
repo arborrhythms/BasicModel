@@ -46,6 +46,19 @@ def row_values(bank):
     return type('Read', (), dict(values=torch.stack(rows)))()
 
 
+def held_banks(monkeypatch):
+    """The bank of each sentence opened, kept for the test: the model lets
+    a sentence's bank go when the sentence closes."""
+    import FamiliarTier
+    banks, opened = [], FamiliarTier.open_sentence
+    def recorded(model, sid, present):
+        result = opened(model, sid, present)
+        banks.append(model._sentence_bank)
+        return result
+    monkeypatch.setattr(FamiliarTier, 'open_sentence', recorded)
+    return banks
+
+
 def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(tmp_path, monkeypatch):
     """(a) In a model: the request for a word's concept lands on the events of
     its row's run of parts and on the events that carry its row's properties,
@@ -57,8 +70,9 @@ def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(t
     for text in ('alpha gamma', 'beta delta'):
         readings_before_nomination(model, lambda: read(model, text))
         read(model, text)
+    banks = held_banks(monkeypatch)
     read(model, 'alpha gamma')
-    owner, bank = model._concept_owner(), model._sentence_bank
+    owner, bank = model._concept_owner(), banks[-1]
     concept, other = word_view(model.inputSpace, 'concept_rows')[0, :2].tolist()
     request = torch.zeros(int(owner.nVectors), 1, 2)
     request[concept, 0, 0] = 1.
@@ -221,8 +235,10 @@ def test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word(tmp_
     from test_item18_expect import read
     model = nominated_lesson(tmp_path, monkeypatch)
     try:
+        banks = held_banks(monkeypatch)
         read(model, 'alpha gamma')
-        owner, bank = model._concept_owner(), model._sentence_bank
+        owner, bank = model._concept_owner(), banks[-1]
+        model._sentence_bank = bank   # the look reads the bank it is given
         perception = owner.basic_percepts.read_bank(bank)
         alpha, gamma = word_rows(model, 'alpha', 'gamma')
         concepts = model._attention_word_concepts[:, :2]
@@ -298,8 +314,10 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
     from test_item18_expect import read
     model = nominated_lesson(tmp_path, monkeypatch)
     try:
+        banks = held_banks(monkeypatch)
         read(model, 'alpha gamma')
-        owner, bank = model._concept_owner(), model._sentence_bank
+        owner, bank = model._concept_owner(), banks[-1]
+        model._sentence_bank = bank   # the look reads the bank it is given
         perception = owner.basic_percepts.read_bank(bank)
         concepts = model._attention_word_concepts[:, :2]
         query = torch.zeros(1, int(model._stm_reducer().d_model))
