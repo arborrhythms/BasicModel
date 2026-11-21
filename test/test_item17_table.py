@@ -1,43 +1,25 @@
 """Item 1.7, rule 76: the table of attended percepts (sigma-pi §21,
-certificates 61 to 63).
+certificates 61 to 63, and 33 (b)).
 
 Certificate 61 is read on the lesson's sixteen sentences: each sentence's
-occurrences (each part's event, each word's bracket, each whole), each
-with its code on two lanes, the rows of the first Pi read from those codes
-by ``BasicPercepts.read_points``, and the reading's value the greatest over
-the occurrences inside its bracket; compared with ``read_bank`` on the same
-sentence. The comparison is printed; it asserts only that it was made.
+occurrences (each part's event, each whole's span, each reading's bracket)
+with their codes, the what columns of the bank's table, the rows of the
+first Pi read from those codes by ``BasicPercepts.read_points``, and a
+reading's value the greatest over the occurrences inside its bracket;
+compared with ``read_bank`` on the same sentence, which reads each row's
+members at each attended percept. The comparison is printed; it asserts
+only that it was made.
 """
 import torch
 
 
-def _occurrence_code(basic, identity, raw, wholes):
-    """An occurrence's code on its for lane: the parts half the greatest of
-    its parts' codes, the wholes half the least of the wholes present over
-    its span and its tightest whole (as ``subspace_bounds`` for a row)."""
-    if identity is None:
-        return None
-    atoms = identity.words.get(raw) or identity.atoms_of(raw)
-    rows = [identity.atoms[a] for a in atoms if a in identity.atoms]
-    if not rows:
-        return None
-    parts = basic.part_codes(rows).amax(0)
-    held = basic.codes.new_ones(basic.property_width)
-    if wholes:
-        held = basic.whole_codes(list(wholes)).amin(0)
-    tightest = identity.tightest(rows)
-    if tightest is not None:
-        held = torch.minimum(held, tightest.to(held))
-    return torch.cat((parts, held))
-
-
 def compare_table(basic, percepts, bank):
-    """Each row of the bank read at each reading from the codes of the
-    sentence's occurrences, beside ``read_bank``'s; returns the counts and
-    every difference ``(row, form, reading text, read_bank lanes, table
-    lanes, kind)``."""
+    """Each row of the bank read at each reading from the what columns of
+    the bank's table (each occurrence's code on its for lane) by
+    ``read_points``, beside ``read_bank``'s; returns the counts and every
+    difference ``(row, form, reading text, read_bank lanes, table lanes,
+    kind)``."""
     native = basic.native
-    identity = getattr(native, 'identity', None)
     leaves = basic._leaves()
     ids, spans = percepts[0][0].tolist(), percepts[1][0].tolist()
     text = {}
@@ -52,31 +34,17 @@ def compare_table(basic, percepts, bank):
     raw_of = lambda a, z: bytes(text.get(i, 32) for i in range(a, z))
     with torch.no_grad():
         read = basic.read_bank(bank).values[:, 0]                          # [R, K, 2]
-    events = bank.native.spans[0].tolist()
-    brackets = bank.native.where[0].tolist()
-    occurrences = [tuple(span) for span in events if span[1] > span[0]]
-    occurrences += [tuple(b) for b in brackets if b[1] > b[0] and tuple(b) not in occurrences]
-    keys = list(bank.native.keys)
-    ws = [(i, key[1]) for i, key in enumerate(keys) if key[0] == 'ws']
-    lit = bank.native.events[:, 0, ..., 0].amax(1) if bank.native.events.shape[-2] else None   # [keys, P]
-    points, against_hits = [], []
-    for start, end in occurrences:
-        raw = raw_of(start, end)
-        present = []
-        for i, whole in ws:
-            for p, (a, z) in enumerate(events):
-                if (a, z) == (start, end) and lit is not None and float(lit[i, p]) >= .5:
-                    present.append(whole)
-        code = _occurrence_code(basic, identity, raw, present)
-        points.append(code if code is not None else basic.codes.new_zeros(basic.width))
-    points = torch.stack(points)                                          # [O, width]
-    rows = [r for r in bank.rows]
-    real = [r for r in rows if r not in basic.place_rows and r not in basic.conjunctions]
+    brackets = bank.where[0].tolist()
+    real = bank.span[0, :, 1] > bank.span[0, :, 0]
+    occurrences = [tuple(span) for span in bank.span[0][real].tolist()]
+    points = bank.table[0][real][:, :bank.width, 0]                       # [O, width]
+    rows = list(bank.rows)
+    plain = [r for r in rows if r not in basic.place_rows and r not in basic.conjunctions]
     table = read.new_zeros(len(rows), len(brackets), 2)
-    if real:
-        boundary = basic.read_points(points[None].to(basic.codes), real)  # [2, R, 1, O, 2]
+    if plain:
+        boundary = basic.read_points(points[None].to(basic.codes), plain)  # [2, R, 1, O, 2]
         part, whole = boundary[0, :, 0, :, 0], boundary[1, :, 0, :, 0]   # [R, O]
-        against = basic.against_codes[real][:, :basic.identity_width] > .5
+        against = basic.against_codes[plain][:, :basic.identity_width] > .5
         hit = (points[None, :, :basic.identity_width] > .5) & against[:, None]
         added = hit.any(-1).to(part)
         value = torch.stack((part * whole, part * torch.maximum(1 - whole, added)), -1)   # [R, O, 2]
@@ -84,7 +52,7 @@ def compare_table(basic, percepts, bank):
             inside = torch.tensor([a <= s and e <= z for s, e in occurrences])
             if bool(inside.any()):
                 at = value[:, inside].amax(1)
-                for n, r in enumerate(real):
+                for n, r in enumerate(plain):
                     table[rows.index(r), k] = at[n]
     differences, equal = [], 0
     for n, r in enumerate(rows):
@@ -136,3 +104,121 @@ def test_61_the_table_against_the_present_read(monkeypatch):
     for d in differences:
         print('  row', d[0], d[1], 'at', repr(d[2]), 'read_bank', d[3], 'table', d[4], d[5])
     assert results
+
+
+def _word_percept(model, word):
+    """The basic percept row a word's concept was brought by."""
+    from test_item17_looks import word_rows
+    from Spaces import _concept_alloc_of
+    owner = model._concept_owner()
+    concept, = word_rows(model, word)
+    return next(p for p, r in _concept_alloc_of(owner).brought.items() if r == concept), concept
+
+
+def test_62_33b_what_is_where(tmp_path, monkeypatch):
+    """Certificate 62. (b) A sentence that holds one word twice gives two
+    attended percepts with one what and two wheres. (a) A row that keeps an
+    entry on the where wires of the first reads its what there and less at
+    the second; with the entry at nothing it reads both alike. (c) A request
+    for its concept, carried down, lands most on the attended percept that
+    has both its what and its where; and (33 (b)) a gradient from the row's
+    value there reaches the row of ``WhereRegistry.code`` at that place."""
+    import Salience
+    from BasicPercepts import attended, WHERE_WIRES
+    from test_item17_looks import nominated_lesson, held_banks
+    from test_item18_expect import read
+    model = nominated_lesson(tmp_path, monkeypatch)
+    try:
+        banks = held_banks(monkeypatch)
+        read(model, 'alpha gamma alpha')
+        owner, bank = model._concept_owner(), banks[-1]
+        basic = owner.basic_percepts
+        row, concept = _word_percept(model, 'alpha')
+        r = bank.rows.index(row)
+        with torch.no_grad():
+            perception = basic.read_bank(bank)
+        # (b) The occurrences at which the row reads fully: one what, two wheres.
+        at = perception.events[r, 0, :, 0]
+        full = (at >= at.max() - 1e-6) & (at > 0)
+        index = perception.index[0][full]
+        spans = bank.span[0, index]
+        words = [i for i, (a, z) in zip(index.tolist(), spans.tolist()) if z - a == 5]
+        first, second = sorted(words, key=lambda i: int(bank.span[0, i, 0]))[:2]
+        what = bank.table[0, :, :bank.width]
+        where = bank.table[0, :, bank.width:bank.width + WHERE_WIRES, 0]
+        print(dict(full=spans.tolist(), first=bank.span[0, first].tolist(), second=bank.span[0, second].tolist(),
+                   where_first=where[first].tolist(), where_second=where[second].tolist()))
+        assert torch.equal(what[first], what[second])
+        assert not torch.equal(where[first], where[second])
+        # (a) An entry on the where wires of the first.
+        c = where[first].clamp(1e-6, 1 - 1e-6)
+        before = perception.events[r, 0]
+        slot = {int(o): a for a, o in enumerate(perception.index[0].tolist())}
+        assert torch.allclose(before[slot[first]], before[slot[second]])
+        with torch.no_grad():
+            basic.where_entries[row] = torch.cat((c, 1 - c)) * 10.
+        try:
+            look = attended(bank)
+            perception = basic.read_bank(bank, look=look)
+            kept = perception.events[r, 0]
+            print(dict(at_first=kept[slot[first]].tolist(), at_second=kept[slot[second]].tolist()))
+            assert float(kept[slot[first], 0]) > float(kept[slot[second], 0])
+            # (33 (b)) The gradient from the row's value at the first reaches
+            # the where wires' row at its place.
+            code = bank.registry.code
+            code.grad = None
+            kept[slot[first], 0].backward()
+            address = bank.registry.slices['text'][0] + int(bank.span[0, first, 0])
+            grad = code.grad.abs().sum(-1)
+            print(dict(gradient_at_place=float(grad[address]), elsewhere=float(grad.sum() - grad[address])))
+            assert float(grad[address]) > 0
+            # (c) The request for its concept lands most on the first.
+            request = torch.zeros(int(owner.nVectors), 1, 2)
+            request[concept, 0, 0] = 1.
+            with torch.no_grad():
+                salient = Salience.salience(owner, bank, request, perception=basic.read_bank(bank, look=look))
+            share = salient.events[0, :, 0] + salient.events[0, :, 1]
+            print(dict(share_first=float(share[first]), share_second=float(share[second]),
+                       where_first=float(salient.band[0, first]), where_second=float(salient.band[0, second])))
+            assert float(share[first]) > float(share[second])
+            assert float(salient.band[0, first]) > float(salient.band[0, second])
+        finally:
+            with torch.no_grad():
+                basic.where_entries[row] = 0.
+    finally:
+        model.End()
+
+
+def test_63_what_a_look_reads_is_its_table(tmp_path, monkeypatch):
+    """Certificate 63: the bank's tensors have one axis of occurrences and no
+    axis of readings beside it; what a look reads of the percepts is
+    ``[.., attended, ..]``, at most ``attendedPercepts`` of them, also where
+    a sentence holds more occurrences than that."""
+    import BasicPercepts
+    from test_item17_looks import nominated_lesson, held_banks
+    from test_item18_expect import read
+    model = nominated_lesson(tmp_path, monkeypatch)
+    try:
+        banks = held_banks(monkeypatch)
+        read(model, 'alpha gamma beta delta')
+        owner, bank = model._concept_owner(), banks[-1]
+        basic = owner.basic_percepts
+        O = bank.token.shape[1]
+        assert not hasattr(bank, 'native') and not hasattr(bank, 'band')
+        assert bank.members.shape[2] == O and bank.members.ndim == 4
+        assert bank.table.shape[1] == O and bank.table.ndim == 4
+        print(dict(occurrences=O, members=tuple(bank.members.shape), table=tuple(bank.table.shape)))
+        capacity = O // 2
+        monkeypatch.setattr(BasicPercepts, 'attended_capacity', lambda: capacity)
+        with torch.no_grad():
+            perception = basic.read_bank(bank)
+        assert perception.events.shape[2] == capacity and perception.events.ndim == 4
+        chosen = perception.index[0][perception.reading[0] >= 0]
+        extents = (bank.span[0, :, 1] - bank.span[0, :, 0])
+        print(dict(capacity=capacity, chosen_extents=sorted(extents[chosen].tolist(), reverse=True)))
+        # The largest occurrences inside the sentence come first.
+        left = torch.ones(O, dtype=torch.bool)
+        left[chosen] = False
+        assert int(extents[chosen].min()) >= int(torch.where(left, extents, 0).max())
+    finally:
+        model.End()
