@@ -63,8 +63,9 @@ def test_26_full_row_inventory_leaves_no_word_identity():
 
 def test_29_shared_whole_does_not_evidence_an_absent_word():
     from test_cs_sparse_weights import _cs
+    from basic_fixtures import with_own_codes
     from PerceptProperties import PrimitiveProperties
-    cs = _cs()
+    cs = with_own_codes(_cs(), (7, 8))
     word = recurrent_word(cs.interpret, [7], [0], form='word', word_reading=True)
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [65], [1.])
@@ -165,27 +166,38 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
 
 
 def test_property_read_selects_rows_and_in_bracket_events(monkeypatch):
+    """The lookup reads a property's evidence once, for the wholes its rows
+    name and at the bank's occurrences only (a padded bracket is none)."""
+    from types import SimpleNamespace as NS
+    from BasicPercepts import BasicPercepts
     from PerceptProperties import PrimitiveProperties
-    from PerceptField import read_occurrences
-    from Spaces import PartSpace
+    from Spaces import Codebook
     primitive = PrimitiveProperties(8192)
     primitive.teach(17, [65], [1.])
     seen = []
     original = primitive.evidence_on_counts
     def observed(counts, *, rows=None):
         assert rows is not None and rows.tolist() == [17], 'unreferenced property rows evaluated'
-        assert counts.reshape(-1, 256).shape[0] == 1, 'events outside bracket evaluated'
+        assert counts.reshape(-1, 256).shape[0] == 1, 'events outside the occurrences evaluated'
         seen.append(True)
         return original(counts, rows=rows)
     monkeypatch.setattr(primitive, 'evidence_on_counts', observed)
+    book = Codebook()
+    book.W = torch.nn.Parameter(torch.zeros(1, 3))
+    basic = BasicPercepts(NS(_basis=book), 3, 8, 4)
+    cut = torch.zeros(8)
+    cut[17 % 4::4] = 1.
+    basic.bind(NS(lookup_rows=lambda ids: torch.cat((torch.zeros(*torch.as_tensor(ids).shape, 3),
+                                                     (1 - cut).expand(*torch.as_tensor(ids).shape, 8)), -1)))
+    row = basic.reserve((0,), (17,))
     raw = torch.tensor([[65, 65, 65, 65]])
     spans = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
     occurrence = torch.cat((spans[:, 1:2], torch.zeros(1, 1, 2, dtype=torch.long)), 1)
-    members = read_occurrences((raw[:, :0], spans[:, :0], primitive, raw, spans),
-                               occurrence, [('ws', 17)], part_reader=PartSpace.part_memberships)
+    field = basic.read((raw[:, :0], spans[:, :0], primitive, raw, spans[:, 1:2]), occurrence, (row,))
     assert seen == [True]
-    torch.testing.assert_close(members[0, 0, 0], torch.tensor([1., 0.]))
-    assert not members[0, 0, 1].any()
+    assert field.spans[0].tolist() == [[1, 2]]
+    torch.testing.assert_close(field.values[0, 0, 0], torch.tensor([1., 0.]))
+    assert not field.values[0, 0, 1].any()
 
 
 @pytest.mark.parametrize('trial', range(3))
