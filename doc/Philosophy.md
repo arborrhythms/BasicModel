@@ -1367,8 +1367,8 @@ covers memory, the two truths, expectation, testimony and feeling.
   split explicit: ideas in `LTM0`, relations in `LTM1`.
   The episodic side has slots of its own: a sentence keeps up to
   `episodicConcepts` concepts of the field it leaves, of every order, in
-  slots beside its idea, and a recall by content reinstates them as the
-  attended field. The slots belong to an idea: a sentence that only
+  slots beside its idea, and a recall by content matches against them and
+  brings the best row back onto the STM stack. The slots belong to an idea: a sentence that only
   states a relation leaves the relation, the fact without the dated occasion
   of learning it, which is the difference Tulving (1972) draws. See
   [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
@@ -2285,13 +2285,13 @@ and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-
 What a sentence keeps of its moment is held in the slots beside its `LTM0`
 row's idea: up to `episodicConcepts` concepts of the field it leaves, of
 every order, each with its value. The idea is semantic memory and the slots
-episodic memory. A recall by content reinstates them as the attended
-field; Alec:
-"review of episodic memory should be represented as the attended field,
-otherwise we could not reason about as a previously lived experience." Memory
-is still reconstruction and not re-perception: the field is rebuilt from a
-few stored concepts, it carries the stamp it was stored with and not the
-present one, and reviewing it observes nothing new. `.when` is model time in
+episodic memory. A recall by content matches the most recent idea of STM
+against the slots and pushes the best row onto the STM stack (Alec,
+2026-11-19: "Query should be a match against the most recent STM ... The
+result will push the top LTM result onto the STM stack"). Memory
+is still reconstruction and not re-perception: what returns is a few stored
+concepts with their idea, it carries the stamp it was stored with and not the
+present one, and recalling it observes nothing new. `.when` is model time in
 every store, semantic memory included. See
 [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 

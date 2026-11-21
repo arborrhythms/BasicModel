@@ -712,17 +712,14 @@ not the most active (Alec, 2026-11-19: "Most active is clearly not useful;
 perhaps least expected, or sentence dominant such as np, vp, ?"). Zero
 readings are absent. No place or pole pair is stored; the row's time
 supplies time. A close that writes only an `LTM1` relation writes no slot,
-and is counted. A recall reinstates a returned row's slots as the requesting
-stream's field
-(`EpisodicMemory.reinstate`): it lays out the readings by their concepts'
-owned surface lengths with one separator between; a missing surface gives an
-empty extent and a stale concept id is skipped, each counted. The field is
-published directly and empties that stream's present percept readings until
-the next open pass; other streams are unchanged.
-`reverse` reads the episode without compose or generate. The review rebuilds
-each reading's pole pair as $(\max(v, 0), \max(-v, 0))$ from its signed value
-$v$, at the row's time; the signed value belongs to these stored references
-only, and the field stays a pair. Forgetting carries the columns with their
+and is counted. A recall matches the entry of concepts of the top of the STM
+stack against the rows' slots and pushes the best row onto the top of the
+requesting stream's stack (`EntryRead.push_recalled`), one row a query, at the
+row's own time; other streams are unchanged. A row held by a chunk on the stack
+is left out, and an idea kept at the last close, which is held off the stack, is
+matched and moved to the top. A slot's signed value $v$ stands for the pole pair
+$(\max(v, 0), \max(-v, 0))$; the signed value belongs to these stored
+references only. Forgetting carries the columns with their
 rows. The slots are
 the reading of their moment, not perceptual memory: a percept that had no concept
 when it was seen leaves nothing, where a word stood is not kept, and `reverse`

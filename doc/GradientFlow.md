@@ -478,8 +478,8 @@ per covered position. The native spelling buffers are allocated at construction;
 vectorized decoding never allocates a batch-by-position-by-inventory slab.
 
 **Slots and time.** A row's slots are filled under `torch.no_grad` and
-stored detached (`EpisodicMemory.select`, `write`), and a field reinstated
-by a recall books no loss term of its own: the episodic side of long-term
+stored detached (`EpisodicMemory.select`, `write`), and a row pushed onto
+STM by a recall books no loss term of its own: the episodic side of long-term
 memory is System 1's content and trains nothing. A stamp is never rewritten
 as an age: the chooser and the operators read the present on the model and
 compare a concept's `.when` with it by the comparator, which gives how far

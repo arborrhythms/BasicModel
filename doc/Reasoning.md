@@ -204,9 +204,9 @@ In the dual-process terms of 2026-11-09, expectation and intuition's map are Sys
 and `infer`'s selection in the serial workspace, with `query`'s recall, is
 System 2
 ([Architecture](Architecture.md#dual-process-theory-as-a-design-consideration)).
-A `query` that recalls rows reinstates the concepts kept in their entries as
-the attended field (`EpisodicMemory.reinstate`), so thought can reason over a
-past sentence as an experience lived before
+A `query` matches the top of the STM stack against the rows' slots and pushes
+the best row onto the stack (`EntryRead.push_recalled`), so thought can reason
+over a past sentence from the top of its own stack
 ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
 Alec: "Intuition is beyond understanding, it is conditioned by desired

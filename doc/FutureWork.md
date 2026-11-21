@@ -263,13 +263,13 @@ What is open:
   bank of located fields, each candidate carrying its `.where` and `.when`
   extent), and memory is addressed by content, a row's time being content
   inside its idea.
-- **Review.** A review displaces the querying stream's present field
-  until the next open attention pass, and a reinstated field keeps the stamp
-  it was stored with; this is built on Claude's reading, which Alec may
-  override. Open: a bound or a decay on a reinstated field, so that
-  remembering differs from knowing, and whether learning or expectation should
-  read a field that is lived again but not observed again (a slot is
-  detached and trains nothing).
+- **Review.** A recalled row is pushed onto the STM stack with the stamp it
+  was stored with, and nothing is published as the stream's field. Open:
+  whether a recalled episode should also be laid out as an attended field
+  (Alec, 2026-11-10: "review of episodic memory should be represented as the
+  attended field, otherwise we could not reason about as a previously lived
+  experience"), which the source did until item 1.8 and does not now; and, if
+  it is, a bound or a decay on it so that remembering differs from knowing.
 - **Transfer.** The operation that takes two slots and returns a
   duration, and who reads it.
   [Kaufmann and Viera (2026), "Temporal cognition in apes"](https://doi.org/10.1080/00048402.2026.2649411)

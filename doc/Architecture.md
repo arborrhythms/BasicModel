@@ -525,7 +525,7 @@ cognition.
   The individuated episodes of this account have
   their own place in the store: a row keeps, beside its idea, a few slots,
   each one concept of its moment with its value, and a recall by content
-  reinstates them as the stream's knowing
+  matches against them and brings the best row back onto the STM stack
   ([Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
 - **Dual-process cognition** (Sloman 1996; Kahneman). A fast, parallel,
@@ -1450,19 +1450,17 @@ thought's row fills its slots from its own extension
 keeps no slot. The columns follow compaction, forgetting and checkpoints with
 their rows.
 
-A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks
-the rows of the window by their slots ("Recall and answers" below) and
-publishes the recalled rows' concepts as the querying stream's knowing
-(`EpisodicMemory.reinstate`): the two poles are
-rebuilt from the sign, the readings are laid out by their concepts' surface
-lengths one position apart, and each carries the original sentence's tick. The
-stream's present percept readings are cleared and other streams are untouched;
-`reverse` alone reconstructs this field, without compose or generate. A
-concept that has expired since is skipped and counted, and a concept with no
-surface keeps an empty extent and is counted.
-Rows without slots leave attention unchanged. `End` releases the present
-percept field and its coordinates; `_episode_review_field` retains a review until
-the next open attention pass.
+A recall by content in the thought loop (`ThoughtLTMCapability.query`) matches
+the entry of concepts of the top of the STM stack against the slots of the
+window's rows ("Recall and answers" below) and pushes the best row onto the top of the STM stack (`EntryRead.push_recalled`),
+one row a query, with the time it was stored with (Alec, 2026-11-19: "Query
+should be a match against the most recent STM. That allows it to match a
+question, if there, or any other idea. The result will push the top LTM result
+onto the STM stack"). A row that a chunk on the stack already holds is left out;
+an idea kept at the last close is held off the stack, is matched, and is moved
+to the top. Nothing is published as the stream's knowing and no percept is read
+again: thought reads the recalled row from the top of the stack. Other streams
+are untouched, and rows without slots match nothing.
 
 **Two kinds of time.** Occurrence time is where and when the
 utterance or percept occurred: a row's `.where` and `.when`, written by the
@@ -2873,7 +2871,7 @@ The mechanism is described under "When" in [One where, one when, many whats](#on
 
 - *System 1 supplies it and System 2 narrows it.* `EpisodicMemory.stage` fills the slots from the kept path's field of understanding: the set the kept compose tree's `compose_extend` calls leave over the sentence's activations, which the open attention pass (`FamiliarTier.open_sentence`) and the input's knowing supply ("Extend and the field of understanding" below). So a row's slots are a few concepts of knowing, as the sentence's operators left them, kept; which of them fill the slots is not settled, and they are not the most active.
 - *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the slots to `ClauseRows.write_clause` with the row its kept close writes; a kept thought's row fills its slots from its own extension (`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation keeps no slot.
-- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks the window's rows by their slots and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
+- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) matches the top of the STM stack against the window's rows by their slots and pushes the best row onto the stack (`EntryRead.push_recalled`), with its stored stamp, where thought reads it. Alec, 2026-11-19: "Query should be a match against the most recent STM ... The result will push the top LTM result onto the STM stack."
 - *Memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only a row's slots come back as a field.
 - *No learning rides on a slot.* It is stored detached, and a review books no loss of its own.
 
@@ -3108,8 +3106,8 @@ least. A stored against reading opposes the positive question. The
 question's operators combine the operands' results as their `compose_extend`
 combines sets (`ExtendedRecall.matches`). The rows are ranked by the result,
 the newest first among equals; reading a row is charged to the work meter,
-and the recalled rows' slots are published as the querying stream's knowing
-(`EpisodicMemory.reinstate`). Neither side holds a percept's code: both are
+and the best row is pushed onto the top of the querying stream's STM stack
+(`EntryRead.push_recalled`). Neither side holds a percept's code: both are
 concepts, matched by their references.
 
 An answer is read from a recalled row by walking its idea with `generate`
