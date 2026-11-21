@@ -614,3 +614,169 @@ def test_43_a_word_read_at_for_one_and_against_a_trace_is_interpreted():
                           torch.ones(1, 2, dtype=torch.bool), own, bank)
     assert float(value[0, 0]) == pytest.approx(.9998)
     assert draw_among(value)[0].tolist() == [0]
+
+
+# --- The salience map against the framework's backward (certificate 31) -----
+
+def _framework_down(graph, request, values, readings, depth):
+    """The way down of the structure by the framework's backward: the way up
+    unrolled ``depth`` times with each Sigma linear in its children (before
+    its squash) and each symbol's Pi linearized at the open run's values."""
+    keep = graph.child < graph.part_start
+    parent, child = graph.parent[keep], graph.child[keep]
+    weight, negated = graph.weight[keep].detach().to(request), graph.negated[keep]
+    symbol = ((parent >= graph.concepts) & (parent < graph.percept_start))[:, None, None, None]
+    tiny = torch.finfo(request.dtype).tiny
+    coeff = torch.where(symbol, values.index_select(0, parent) / values.index_select(0, child).clamp_min(tiny),
+                        1.) * weight[:, None, None, None]
+    leaves = request.new_zeros(graph.size, request.shape[1], readings, 2).requires_grad_()
+    x = leaves
+    for _ in range(depth):
+        lanes = x.index_select(0, child)
+        lanes = torch.where(negated[:, None, None, None], lanes.flip(-1), lanes)
+        x = leaves + torch.zeros_like(leaves).index_add(0, parent, coeff * lanes)
+    asked = request[:graph.concepts, :, None, :].clamp_min(0.)
+    loss = (asked * x[:graph.concepts]).sum()
+    return torch.autograd.grad(loss, leaves)[0]
+
+
+def test_31a_the_transposes_give_the_frameworks_backward_in_the_model(tmp_path, monkeypatch):
+    """(a) In a model, on "alpha gamma": the structure passed down by its
+    weights and the symbols' derivatives (``Salience._down``), and the first
+    Pi passed down to its members (``Salience.first_pi``), each against the
+    framework's backward on the same local derivatives (atol 1e-6)."""
+    import ConceptSpread
+    import SentenceLooks
+    from test_item18_expect import read
+    model = nominated_lesson(tmp_path, monkeypatch)
+    try:
+        banks = held_banks(monkeypatch)
+        read(model, 'alpha gamma')
+        owner, bank = model._concept_owner(), banks[-1]
+        basic = owner.basic_percepts
+        perception = basic.read_bank(bank)
+        readings = perception.values.shape[2]
+        graph = ConceptSpread.structure(owner, perception.values.device)
+        # The open run's values: the order-zero concepts as read, the
+        # symbols the product of what they hold.
+        with torch.no_grad():
+            field = owner.cs_read_bank(bank, publish=False)
+        values = field.new_zeros(graph.size, field.shape[1], readings, 2)
+        width = min(len(field), graph.concepts)
+        values[:width] = field[:width]
+        held = (graph.parent >= graph.concepts) & (graph.parent < graph.percept_start)
+        logs = torch.log(values.index_select(0, graph.child[held]).clamp_min(1e-30))
+        product = torch.exp(values.new_zeros(values.shape).index_add(0, graph.parent[held], logs))
+        is_symbol = torch.zeros(graph.size, dtype=torch.bool)
+        is_symbol[graph.concepts:graph.percept_start] = True
+        values = torch.where(is_symbol[:, None, None, None], product, values)
+        alpha, gamma = word_rows(model, 'alpha', 'gamma')
+        concepts = model._attention_word_concepts[:, :2]
+        words = SentenceLooks.requested(model, torch.zeros(1, int(model._stm_reducer().d_model)))
+        depth = 2 * (len(owner._order_caps()) + 1)
+        compared = {}
+        for name, request in (('words', words),
+                              ('alpha', SentenceLooks.word_request(model, concepts, torch.tensor([0])))):
+            request = request.to(values)
+            mine = Salience._down(graph, request, values, readings, depth)
+            theirs = _framework_down(graph, request, values, readings, depth)
+            upto = graph.part_start
+            compared[name] = float((mine[:upto] - theirs[:upto]).abs().max())
+            assert float(mine[graph.percept_start:upto].abs().sum()) > 0
+            torch.testing.assert_close(mine[:upto], theirs[:upto], atol=1e-6, rtol=0)
+        # The first Pi: the members' shares against the backward of the way
+        # up's rows by the members' values (the run) and their events (the
+        # wholes and the against entries, read where the run lies; the
+        # run's events there are the place, not a value).
+        native = bank.native
+        order = list(dict.fromkeys(bank.keys))
+        selected = native.selected(order)
+        members = native.values.index_select(0, selected).clone().requires_grad_()
+        happened = native.events.index_select(0, selected).clone().requires_grad_()
+        runs = {group[0] for group in bank.groups if group}
+        is_run = torch.tensor([key in runs for key in order])[:, None, None, None, None]
+        rows = basic._row_values(members, torch.where(is_run, happened.detach(), happened), bank.rows,
+                                 [list(g) for g in bank.groups], order, [list(g) for g in bank.opposed])
+        row_grad = torch.rand(rows.shape, generator=torch.Generator().manual_seed(0)) + .1
+        d_members, d_happened = torch.autograd.grad((row_grad * rows).sum(), (members, happened))
+        theirs = d_members * members + (d_happened * happened).sum(-2)
+        read_rows = type('Read', (), dict(values=rows.detach()))()
+        mine, _ = Salience.first_pi(bank, read_rows, row_grad)
+        compared['first Pi'] = float((mine - theirs.detach()).abs().max())
+        print('largest difference from the framework:', compared)
+        assert float(mine.abs().sum()) > 0
+        torch.testing.assert_close(mine, theirs.detach(), atol=1e-6, rtol=0)
+    finally:
+        model.End()
+
+
+def test_31c_printed_parts_present_by_degree_three_ways():
+    """(c) Printed: a row of a run and two properties, its parts present by
+    degree, passed down three ways: by the transposes (the share, the
+    gradient times the value), by the plain gradient, and by the rows'
+    entries alone (each member the row's share, whatever its value)."""
+    keys = [('ps', 'a'), ('ws', 'red'), ('ws', 'round')]
+    for degrees in ((1., 1., 1.), (.9, .6, .3), (.5, .5, .5)):
+        run, red, round_ = degrees
+        bank = hand_bank(keys, [keys],
+                         {('ps', 'a'): [(0, run, 0.)], ('ws', 'red'): [(0, red, 0.)],
+                          ('ws', 'round'): [(0, round_, 0.)]}, [0])
+        read = row_values(bank)
+        row_grad = torch.zeros(1, 1, 1, 2)
+        row_grad[..., 0] = 1.
+        members, _ = Salience.first_pi(bank, read, row_grad)
+        # The way up: the run's presence times each whole read where the run
+        # lies (the run's place is a place there, not a value).
+        values = bank.native.values[:, 0, 0, 0].clone().requires_grad_()
+        place = values[0].detach()
+        row = values[0] * (place * values[1]) * (place * values[2])
+        plain, = torch.autograd.grad(row, values)
+        entries = torch.ones_like(values)
+        print(dict(degrees=degrees, row=round(float(row), 4),
+                   transposes=[round(v, 4) for v in members[:, 0, 0, 0].tolist()],
+                   plain_gradient=[round(v, 4) for v in plain.tolist()],
+                   entries_alone=entries.tolist()))
+        torch.testing.assert_close(float(row), float(read.values[0, 0, 0, 0]))
+        torch.testing.assert_close(members[:, 0, 0, 0], (plain * values.detach()).float())
+        assert float(members.min()) >= 0.
+
+
+def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkeypatch):
+    """A word's concept reads nothing at the token of a longer known word
+    that holds its letters, ``is`` at ``This``, ``here`` at ``There``, ``the``
+    at ``there``, and reads at its own token; the look that asks for it
+    returns it there. Printed: what the same look returns at the longer
+    word's token, the longer word's own concept, and the draw."""
+    import SentenceLooks
+    from test_item18_expect import read
+    model = nominated_lesson(tmp_path, monkeypatch, texts=('This is here', 'There is the', 'the is there'))
+    try:
+        banks = held_banks(monkeypatch)
+        found = {}
+        for text, word, at, longer in (('This is here', 'is', 1, 0), ('There is here', 'here', 2, 0),
+                                       ('there is the', 'the', 2, 0)):
+            read(model, text)
+            owner, bank = model._concept_owner(), banks[-1]
+            model._sentence_bank = bank
+            perception = owner.basic_percepts.read_bank(bank)
+            count = len(text.split())
+            concepts = model._attention_word_concepts[:, :count]
+            request = SentenceLooks.word_request(model, concepts, torch.tensor([at]))
+            field, activity, _ = SentenceLooks.look(model, bank, request, bank.activity, perception)
+            ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, 0]
+            own = (ids == concepts[0, at]).nonzero().flatten()
+            signed = field.evidence[own[0], 0, :count]
+            inner = (signed[:, 0] - signed[:, 1]).tolist()
+            extent = SentenceLooks.extent_of(bank, activity, count)
+            value = SentenceLooks.word_activity(field, concepts, torch.ones(1, count, dtype=torch.bool),
+                                                extent, bank.activity, bank)
+            from Attention import draw_among
+            index, drawn, _, _ = draw_among(value)
+            found[(text, word)] = dict(inner_concept_by_reading=[round(v, 4) for v in inner],
+                                       returned=[round(float(v), 4) for v in value[0]],
+                                       taken=int(index[0]), drawn=bool(drawn[0]))
+            assert abs(inner[longer]) < 1e-6 and inner[at] > 0, found[(text, word)]
+            assert torch.isfinite(value[0, at])
+        print(found)
+    finally:
+        model.End()
