@@ -132,6 +132,34 @@ def test_55d_a_question_context_gives_its_quantities_as_codes():
     torch.testing.assert_close(codes, expected)
 
 
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='needs the MPS device')
+def test_55d_the_comparator_and_a_question_context_run_on_mps():
+    """Metal has no float64: the comparator and the question context take
+    their double precision on the host and return their codes to the device,
+    with the comparator exact at a million ticks from four thousand million."""
+    from Models import BasicModel
+    from RowTime import encoder, how_far_back
+    from Spaces import WhereEncoding
+    from What import What
+    clock, mps = encoder(), torch.device('mps')
+    present = 4_000_000_000
+    for back in (1, 1000, 1_000_000):
+        code = how_far_back(clock.encode(present).float().to(mps), clock.encode(present - back).float().to(mps))
+        assert code.device.type == 'mps' and code.dtype == torch.float32
+        assert int(clock.decode_index(code.cpu())) == back
+    ladder = WhereEncoding(8, 4, 0)
+    model = SimpleNamespace(_what_memory=lambda: SimpleNamespace(what_context=lambda question, b: dict(
+        temporal=question.context_values(), input_mask=(1, 1, 1), output_mask=(1,),
+        input_representations=(), output_representations=(), open_depth=2, parity=True,
+        closure_pressure=0.)),
+        _what_where_encoder=lambda split: ladder,
+        _what_representation_summary=lambda value, device, dtype: torch.zeros(4, device=device, dtype=dtype))
+    rows, _ = BasicModel._what_grammar_context(model, (What.past(5, offset=-2),), device=mps, dtype=torch.float32)
+    assert rows.device.type == 'mps'
+    expected = ladder.encode(torch.tensor([-2., 5., 3., 3., 1., 2., 0.])).float()
+    torch.testing.assert_close(rows[0, 5:33].reshape(7, 4).cpu(), expected)
+
+
 def test_55e_a_row_promoted_to_a_concept_keeps_its_stamp():
     from Memory import LTM0
     from MemoryConsolidation import _content

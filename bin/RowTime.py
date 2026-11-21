@@ -49,9 +49,12 @@ def how_far_back(present, stamp):
     while present.ndim < stamp.ndim:
         present = present.unsqueeze(-2)
     # The rotation is taken in double precision, so a distance decodes to
-    # its exact tick count over the whole ladder.
-    present = signed_phase(present.to(device=stamp.device, dtype=torch.float64))
-    signed = signed_phase(stamp.to(torch.float64))
+    # its exact tick count over the whole ladder. Metal has no float64: there
+    # the rotation is taken on the host and its code returned to the device.
+    device, dtype = stamp.device, stamp.dtype
+    work = torch.device('cpu') if device.type == 'mps' else device
+    present = signed_phase(present.to(device=work).to(torch.float64))
+    signed = signed_phase(stamp.to(device=work).to(torch.float64))
     pairs = []
     for rung, step in zip(range(0, stamp.shape[-1], 2), (clock.div_lf, clock.div_hf)):
         ps, pc = present[..., rung], present[..., rung + 1]
@@ -62,7 +65,7 @@ def how_far_back(present, stamp):
         turn_sin, turn_cos = math.sin(step), math.cos(step)
         pairs += [.5 * (sin + sin * turn_cos + cos * turn_sin),
                   .5 * (cos + cos * turn_cos - sin * turn_sin)]
-    code = unsigned_phase(torch.stack(pairs, -1)).to(stamp.dtype)
+    code = unsigned_phase(torch.stack(pairs, -1)).to(dtype).to(device)
     return torch.where(stamp.ne(0).any(-1, keepdim=True), code, 0.)
 
 

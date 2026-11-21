@@ -10162,13 +10162,15 @@ class BasicModel(BaseModel):
             detailed.append(context)
             encoder = self._what_where_encoder(question.split)
             *relations, offset, _magnitude, where, target_where = question.context_values()
+            # Coded in double precision on the host (Metal has no float64),
+            # then moved to the device.
             codes = encoder.encode(torch.tensor((
                 offset, where, target_where,
                 float(sum(context["input_mask"])),
                 float(sum(context["output_mask"])),
                 float(context["open_depth"]),
                 float(context["closure_pressure"]),
-            ), dtype=torch.float64)).flatten().to(device=device, dtype=dtype)
+            ), dtype=torch.float64, device='cpu')).flatten().to(device=device, dtype=dtype)
             input_summary = self._what_representation_summary(
                 context["input_representations"], device=device, dtype=dtype)
             output_summary = self._what_representation_summary(
