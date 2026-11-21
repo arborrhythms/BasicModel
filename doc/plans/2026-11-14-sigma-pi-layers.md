@@ -9610,6 +9610,17 @@ We need to fix this in 1.7, even if it takes a few more rounds.
 - *What a level is here.* A whole of the wholes tower (a class a form lies in) is not an occurrence of its own; it is in the wholes half of each occurrence's code. The occurrences above a word are the known forms that hold it. Nothing is made for a span that no known percept covers.
 - *To watch:* an image's field is every patch at every level, about 4/3 of its finest level, which is larger than a sentence's but still linear in the input. The implementer returns the count of occurrences on the lesson and on the benchmark's first batch.
 
+### 19.118 Alec: more than a hundred attended percepts (2026-11-21)
+
+"Let's aim for more than 100... use your judgement."
+
+*Decided (Claude, as he left it to me): 256,* as the default of the key `attendedPercepts`.
+
+- *Why 256.* It is the production sentence's capacity in words (`maxSentenceWords` and `serialWordCapacity` of `data/BasicModel.xml`). So at the open run, whose where is the whole sentence, the level of words fits whole in every sentence the model reads, and no draw is needed among words. A look at a word then holds the word, all of its parts and every known form that holds it, with room to spare.
+- *What it costs.* A look's table is 256 × 136 wires on two lanes, about 0.3 MB a stream. A member of the first Pi read at each attended percept is `[member, B, 256, 2]`: with 10,000 members named at a batch of 28 that is about 0.6 GB at full precision and half that at 16 bits. The count of members named is not yet measured; the pass returns it with the greatest memory held (certificate 63).
+- *Why not the whole field.* A sentence of 256 words has about 1,500 occurrences (§19.117, an estimate). Presenting them all is six times the read for parts of words that no look has asked for, and it is what "it can't present all" (§19.116) rules out.
+- It stays a key. If certificate 63's memory says the production batch has room, it can be raised without a change of source.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -11143,7 +11154,8 @@ chooses from. The old classes are not edited.
     given, the level at which about one percept covers that where,
     with the parts the where covers and the wholes that cover it,
     all if they fit and else a few levels each way. The count is a
-    key (`attendedPercepts`, 100). The first Pi reads this table and
+    key (`attendedPercepts`, 256; §19.118). The first Pi reads this
+    table and
     nothing else of the percepts (rule 62, §19.115): within one
     attended percept a row's entries on what, where and when are
     joined by the product. Neither wires to every entry of the what
@@ -12959,7 +12971,8 @@ source argued against it.
    it; if neither comes, say so. (c) Declare in data/model.xsd and
    data/model.xml the keys the source reads and the schema does not
    hold: wordTieCapacity, candidateCapacity, candidatePenalty,
-   structureReadThreshold, and this round's attendedPercepts (100).
+   structureReadThreshold, and this round's attendedPercepts (256,
+   §19.118).
 
 1. Before any edit of bin/, in tests only (certificate 61). From
    the present bank of each sentence of the lesson, list its
