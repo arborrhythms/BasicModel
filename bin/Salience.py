@@ -117,7 +117,11 @@ def first_pi(bank, perception, row_grad, activity=None, basic=None):
         """Where an attended percept holds its reading's greatest ``v``."""
         return ((v_at >= at_reading(v) - tiny) & (v_at > 0) & filled).to(v_at)
 
-    d_for, d_against = row_grad[..., 0].clamp_min(0.), row_grad[..., 1].clamp_min(0.)
+    # Never below zero; at exactly zero the derivative passes (as in
+    # ``_down``), so that the share on the where wires teaches a request
+    # that starts at nothing.
+    d_for = torch.where(row_grad[..., 0] >= 0, row_grad[..., 0], 0.)
+    d_against = torch.where(row_grad[..., 1] >= 0, row_grad[..., 1], 0.)
     value_for, value_against = rows[..., 0], rows[..., 1]
     # Through the Not: the share a row's reading takes is what the concept
     # reads there, for less against, and nothing where the two are equal.

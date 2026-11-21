@@ -154,8 +154,9 @@ def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatc
 
 
 def test_the_request_for_a_place_at_an_untaught_start(tmp_path, monkeypatch):
-    """Printed: what ``attend`` asks of each place's concept at an untaught
-    start, and the gradient one presentation of the lesson gives it."""
+    """What ``attend`` asks of each place's concept at an untaught start
+    (nothing), and the gradient one presentation of the lesson gives it
+    (printed; not nothing at some look)."""
     import SentenceLooks
     from AttentionLesson import reading_lesson
     from test_item18_expect import read
@@ -186,6 +187,9 @@ def test_the_request_for_a_place_at_an_untaught_start(tmp_path, monkeypatch):
                    whole_gradient=[None if r.grad is None else r.grad.abs().sum().item() for r in asked],
                    codes_norm=codes.norm(dim=-1).tolist()))
         assert asked and all(float(v.abs().max()) == 0. for v in values)
+        # The where match passes a gradient onto a place's concept in the
+        # request at some look, so that the request can learn to ask for it.
+        assert any(g is not None and float(g.abs().sum()) > 0. for g in grads)
     finally:
         model.End()
 
