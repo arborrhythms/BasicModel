@@ -15,7 +15,8 @@ from test_concept_memberships import binary_features
 
 def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     from PerceptProperties import PrimitiveProperties
-    cs = _cs()
+    from basic_fixtures import with_own_codes
+    cs = with_own_codes(_cs(), (7, 8))
     cid = cs.new_concept()
     force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)

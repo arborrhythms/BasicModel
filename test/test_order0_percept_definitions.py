@@ -13,7 +13,8 @@ from nomination_fixtures import recurrent_interpretation
 
 @pytest.mark.parametrize('conceptual_pi', [False, True])
 def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
-    cs = _cs()
+    from basic_fixtures import with_own_codes
+    cs = with_own_codes(_cs(), (65,))
     primitive = PrimitiveProperties(4)
     with torch.no_grad():
         primitive.members[:, 65] = torch.tensor([.25, .36, .81, .49])

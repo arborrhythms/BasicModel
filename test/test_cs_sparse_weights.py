@@ -155,8 +155,8 @@ def test_membership_read_is_input_dependent_and_differentiable():
     from test_concept_memberships import binary_features
     # The basic percepts have a property half, so a property and its Not
     # have different vectors and the concept's column does not cancel.
-    from basic_fixtures import with_property_half
-    cs = with_property_half(_cs(nS=16, order=1))
+    from basic_fixtures import with_own_codes
+    cs = with_own_codes(_cs(nS=16, order=1), (48, 49))
     # One byte: over [48, 49] each property is seen both ways and every row
     # reads the same on its two lanes, so the concept reads nothing.
     native, extents = binary_features(cs, torch.tensor([[48]]))

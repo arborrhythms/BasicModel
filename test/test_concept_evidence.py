@@ -32,7 +32,8 @@ def test_production_snap_background_is_neither(parts):
 
 
 def test_membership_read_keeps_both_until_symbol_readout():
-    cs = _cs()
+    from basic_fixtures import with_own_codes
+    cs = with_own_codes(_cs(), (48, 49))
     native, extents = binary_features(cs, torch.tensor([[49, 48]]))
     read = cs.cs_read_memberships(native, extents)
     field = cs._percept_field
@@ -42,11 +43,12 @@ def test_membership_read_keeps_both_until_symbol_readout():
                                torch.tensor([1., 0.]))
     # Seen true and false in the extent, it is both across the rows of the
     # basic percepts that carry it: the row of 49 reads for where it lies,
-    # the row of 48 against.
+    # the row of 48 against; the extent, which holds both parts and the
+    # property not over all of it, tells against each.
     basic = cs.basic_percepts
-    for part, expected in ((49, [1., 0.]), (48, [0., 1.])):
+    for part, expected in ((49, [1., 1.]), (48, [0., 1.])):
         index = field.keys.index(('bp', basic.index[((part,), (0,))]))
-        torch.testing.assert_close(field.values[index, 0, 0].detach(), torch.tensor(expected))
+        torch.testing.assert_close(field.values[index, 0, 0].detach().cpu(), torch.tensor(expected))
     torch.testing.assert_close(cs.order_zero_both(field, [0]), torch.ones(1, 1, 1))
     # The concept, and the symbol read from it, are one signed number:
     # for less against, never both.

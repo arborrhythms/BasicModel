@@ -15,7 +15,8 @@ from test_cs_sparse_weights import _cs, _mint_row
 
 
 def test_seam_never_invents_counterevidence_from_an_absent_property():
-    cs = _cs()
+    from basic_fixtures import with_own_codes
+    cs = with_own_codes(_cs(), (48, 49, 65))
     primitive = PrimitiveProperties(2)
     primitive.teach(0, [48, 49], [0., 1.])
     primitive.teach(1, [48, 49], [1., 0.])

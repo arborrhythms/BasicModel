@@ -66,18 +66,25 @@ def with_property_half(cs, width=8):
 
 
 def with_own_codes(cs, parts, width=8):
-    """Give each of the fixture's ``parts`` a code of its own (one
-    coordinate of the parts half each, every other part's code nothing) and
-    the basic percepts a property half (:func:`with_property_half`), so that
+    """Give each of the fixture's ``parts`` a code of its own (a distinct
+    set of coordinates of the parts half, one each where they fit, else the
+    fewest that tell them apart; every other part's code nothing) and the
+    basic percepts a property half (:func:`with_property_half`), so that
     the table's what columns tell the parts and the wholes apart. Done at
     construction, before any row."""
+    from itertools import combinations
     with_property_half(cs, width)
     basis = cs.basic_percepts.native._basis
     parts = sorted(dict.fromkeys(map(int, parts)))
-    if len(parts) > cs.basic_percepts.identity_width:
-        raise ValueError('more parts than coordinates of the parts half')
+    coordinates = cs.basic_percepts.identity_width
+    for ones in range(1, coordinates + 1):
+        sets = list(combinations(range(coordinates), ones))
+        if len(sets) >= len(parts):
+            break
+    else:
+        raise ValueError('more parts than codes of the parts half')
     with torch.no_grad():
         basis.W.zero_()
-        basis.W[torch.tensor(parts, device=basis.W.device),
-                torch.arange(len(parts), device=basis.W.device)] = 1.
+        for part, chosen in zip(parts, sets):
+            basis.W[part, list(chosen)] = 1.
     return cs

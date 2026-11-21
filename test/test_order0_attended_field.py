@@ -1,5 +1,5 @@
 """11b corrections: recurrent parts and a transient attended concept field."""
-from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence, with_own_codes
 import pytest
 import torch
 
@@ -35,7 +35,7 @@ def test_containment_reads_canonical_ids_without_expanding_bytes():
 
 
 def test_inventory_outlives_the_eight_attended_rows():
-    cs = _cs(nS=64, order=3)
+    cs = with_own_codes(_cs(nS=64, order=3), range(100, 112))
     cs.outputShape[0] = 8
     assert cs._order_caps()[0] == 35  # §27.2: inventory blocks are fixed at construction.
     definitions = []
@@ -82,7 +82,7 @@ def test_formation_stops_aggregation_until_the_next_turn():
 def test_bound_snapshot_and_checkpoint_keep_concept_ids():
     from types import SimpleNamespace
     from test_structural_checkpoint import _model_with
-    cs = _cs(nS=64, order=3)
+    cs = with_own_codes(_cs(nS=64, order=3), range(100, 112))
     cs.outputShape[0] = 8
     definitions = []
     for n in range(12):
@@ -117,7 +117,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
     assert float(cs.subspace._concept_activations[0, 0, -1, 0].detach()) == pytest.approx(own, abs=1e-5)
     torch.testing.assert_close(cs.subspace._concept_ids, ids)
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
-    restored = _cs(nS=64, order=3)
+    restored = with_own_codes(_cs(nS=64, order=3), range(100, 112))
     restored.outputShape[0] = 8
     restored.similarity_codebook.W.data.copy_(cs.similarity_codebook.W)
     _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)
@@ -183,7 +183,7 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
 
 
 def test_batch_members_bind_independently_within_eight_rows():
-    cs = _cs(nS=64, order=3)
+    cs = with_own_codes(_cs(nS=64, order=3), range(100, 112))
     cs.outputShape[0] = 8
     cids = []
     for n in range(12):

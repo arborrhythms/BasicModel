@@ -1,4 +1,4 @@
-from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence
+from basic_fixtures import feature as basic_feature, order_zero_expected, published_presence, with_own_codes
 from order_fixtures import force_order
 from types import SimpleNamespace
 
@@ -43,7 +43,7 @@ def _one_part(part=7):
 @pytest.mark.parametrize("source_serial", [False, True])
 @pytest.mark.parametrize("binding", ["mixing", "aligned"])
 def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, source_serial, binding):
-    source = _cs(nS=64, order=3)
+    source = with_own_codes(_cs(nS=64, order=3), (7,))
     source._serial = source_serial
     source._concept_binding = binding
     cid = source.new_concept()
@@ -62,7 +62,7 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     checkpoint = tmp_path / "shared-inventory.pt"
     model.save_weights(checkpoint)
 
-    restored = _cs(nS=64, order=3)
+    restored = with_own_codes(_cs(nS=64, order=3), (7,))
     restored._serial = not source_serial
     restored._concept_binding = binding
     # The model installs the order-zero Sigma where it binds the basic
@@ -86,7 +86,7 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
 
 
 def test_one_active_percept_reaches_every_referencing_concept():
-    cs = _cs(nS=64, order=3)
+    cs = with_own_codes(_cs(nS=64, order=3), (7,))
     cs.outputShape[0] = 8
     identities = []
     for _ in range(12):
@@ -116,7 +116,7 @@ def test_one_active_percept_reaches_every_referencing_concept():
     ((0, 0), (0., 0.)),
 ])
 def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
-    cs = _cs()
+    cs = with_own_codes(_cs(), (48, 49))
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48, 49], [0., 1.])
     basic_feature(cs, 0, "ws", 0, 1., parts=(48, 49))
@@ -136,7 +136,11 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     for part in (48, 49):
         index = percepts.keys.index(('bp', basic.index[((part,), (0,))]))
         presence = float((inside == part).any())
-        torch.testing.assert_close(percepts.values[index, 0, 0].detach(), presence * at[part])
+        # A bracket that holds both parts holds the property not over all
+        # of it: it tells against each row whose part is present.
+        mixed = torch.tensor([0., float(len(set(inside.tolist())) > 1)])
+        torch.testing.assert_close(percepts.values[index, 0, 0].detach().cpu(),
+                                   presence * torch.maximum(at[part], mixed))
     torch.testing.assert_close(cs.order_zero_both(percepts, [0])[0, 0, 0], torch.tensor(min(expected)))
     # The concept is one signed number, for less against.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))
