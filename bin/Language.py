@@ -47,7 +47,7 @@ from collections import namedtuple as _namedtuple
 # IsEqualLayer, PartLayer) physically live in this module
 # below, after the Grammar singleton.
 from Layers import GrammarLayer
-from Interpret import InterpretLayer, SignLayer
+from Interpret import InterpretLayer, SignLayer, SilenceLayer
 from Layers import EqualLayer
 # true/false/swap/copy/area/luminosity/isaPart were parked in bin/Legacy.py
 # in the 2026-07-17 cleanup (documented-dormant ops, not in this algebra).
@@ -1631,6 +1631,8 @@ class Grammar:
         # silently falls through ``_default_compose_rules``'s
         # ``_NATURAL_FOLD_METHODS`` filter and leaves the chart with no
         # CS-space_role rule, breaking ConceptualSpace dispatch).
+        if re.search(r'\bsilence\b', rhs):
+            raise ValueError('silence is in no grammar file: the closing applies it')
         rhs_stripped = rhs.lstrip()
         eq_prefix = f"{lhs}="
         if (rhs_stripped.startswith(eq_prefix)
@@ -4594,6 +4596,7 @@ GRAMMAR_LAYER_CLASSES = {
     'add': AddLayer, 'subtract': SubtractLayer, 'multiply': MultiplyLayer, 'divide': DivideLayer,
     'interpret':    InterpretLayer,
     'sign':         SignLayer,
+    'silence':      SilenceLayer,
     'bind':         BindLayer,
     'not':          NotLayer,
     'non':          NonLayer,

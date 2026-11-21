@@ -34,6 +34,18 @@ def leaf_readings(language, actions, count, *, forced):
     A stack entry retains a leaf only until its first non-reading operation.
     The symbol and no-op are abstentions, so neither needs a grammar rule.
     """
+    return _read_leaves(language, actions, count, forced=forced)[0]
+
+
+def well_formed(language, actions, count, *, forced):
+    """Whether every word left uninterpreted entered the tree as a literal:
+    taken as an operand by a rule of the grammar. A word that no rule took
+    stands alone, and the sentence is not well formed."""
+    readings, stack = _read_leaves(language, actions, count, forced=forced)
+    return not any(leaf is not None and readings[leaf] == 'no_op' for leaf in stack)
+
+
+def _read_leaves(language, actions, count, *, forced):
     stack, readings, shifted = [], ['symbol' if forced else 'no_op'] * count, set()
     for kind, local, position in recorded_steps(actions):
         if kind < 0:
@@ -73,7 +85,45 @@ def leaf_readings(language, actions, count, *, forced):
             stack.insert(len(stack)-1-at, stack.pop())
     if len(shifted) != count or forced and any(value == 'no_op' for value in readings):
         raise ValueError('every forced reading leaf must be a sign or a symbol')
-    return tuple(readings)
+    return tuple(readings), tuple(stack)
+
+
+class SilenceLayer(GrammarLayer):
+    """S -> NULL: the sentence whose read gives no well-formed formula.
+
+    In no grammar file and chosen by nothing: the closing applies it where
+    a sentence's trees did not reduce to one. Its row holds no word and no
+    concept, and what it puts back is NULL at every place.
+    """
+    rule_name = 'silence'
+    arity = 0
+    space_role = 'SS'
+    invertible = True
+    mandatory = False
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput=nInput, nOutput=nOutput)
+
+    def forward(self, like):
+        """The empty sentence: NULL in the shape of ``like``."""
+        return torch.zeros_like(like)
+
+    compose = forward
+
+    def reverse(self, like):
+        """NULL put back at every place of ``like``."""
+        return torch.zeros_like(like)
+
+    @staticmethod
+    def silent(depths, active):
+        """The rows whose closing published no tree: depth below zero."""
+        return active & (depths < 0)
+
+    @staticmethod
+    def write(store, like):
+        """The silent sentence's row: no word, no concept, no trust; it
+        carries only the present's stamp."""
+        return store.append_idea(torch.zeros_like(like), trust=0.)
 
 
 class SignLayer(GrammarLayer):

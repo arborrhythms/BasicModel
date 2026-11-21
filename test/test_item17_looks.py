@@ -363,3 +363,95 @@ def test_38b_the_reading_lesson_by_grades(tmp_path, monkeypatch):
         assert [len(grade) for grade in grades] == [4, 2] and grades[0] == list(texts)
     finally:
         model.End()
+
+
+def _language():
+    """A grammar of one unary rule that takes a word as its operand
+    (``op``), beside interpret and sign."""
+    from types import SimpleNamespace
+    rule = lambda name: SimpleNamespace(method_name=name)
+    return SimpleNamespace(_compose_unary_rules=(rule('interpret'), rule('sign'), rule('op')),
+                           _compose_binary_rules=(rule('join'),))
+
+
+def test_40_a_literal_enters_only_under_a_rule_that_takes_it():
+    """Certificate 40 (rule 42): a word left uninterpreted enters the tree
+    as a literal where a rule takes it as an operand; where none does, the
+    sentence is not well formed and ends in silence."""
+    from Interpret import leaf_readings, well_formed
+    language = _language()
+    shift = lambda word: [0, -1, word]
+    unary = lambda local, at=0: [2, local, at]
+    binary = lambda local: [1, local, -1]
+    # Two words, the second uninterpreted and taken by the binary rule.
+    taken = torch.tensor([shift(0), unary(0), shift(1), binary(0)])
+    assert leaf_readings(language, taken, 2, forced=False) == ('symbol', 'no_op')
+    assert well_formed(language, taken, 2, forced=False)
+    # One word taken by the unary rule ``op`` as a literal.
+    assert well_formed(language, torch.tensor([shift(0), unary(2)]), 1, forced=False)
+    # One word that nothing takes: no formula.
+    assert not well_formed(language, torch.tensor([shift(0)]), 1, forced=False)
+    # Interpreted, it stands as a symbol.
+    assert well_formed(language, torch.tensor([shift(0), unary(0)]), 1, forced=False)
+
+
+def test_41_silence_is_registered_and_in_no_grammar_file():
+    from Language import GRAMMAR_LAYER_CLASSES
+    from Interpret import SilenceLayer
+    assert GRAMMAR_LAYER_CLASSES['silence'] is SilenceLayer
+    assert SilenceLayer.rule_name == 'silence' and SilenceLayer.arity == 0
+    root = Path(__file__).resolve().parents[1] / 'data'
+    for path in (*root.glob('*.grammar'), *root.glob('*.xml')):
+        assert 'silence' not in path.read_text(), path
+
+
+def test_41_a_grammar_file_may_not_name_silence():
+    from Language import TheGrammar
+    with pytest.raises(ValueError, match='silence'):
+        TheGrammar._parse_rule('S', 'silence()')
+
+
+def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
+    """Certificate 41 (rule 48): with a grammar that joins no two words, a
+    two-word sentence is written as S -> NULL: its row holds no word and no
+    concept, MTM takes nothing, the put back is NULL, its cost is booked;
+    a one-word sentence of the same grammar reduces and is unchanged."""
+    import Language, Models
+    from Interpret import SilenceLayer
+    from util import init_config
+    from data import TheData
+    config = Path(__file__).resolve().parents[1] / 'data' / 'MM_ltm_consolidation_fixture.xml'
+    init_config(path=str(config), defaults_path=str(config.parent / 'model.xml'))
+    Language.TheGrammar._configured = False
+    model, _ = Models.BasicModel.from_config(str(config))
+    TheData.load('xor')
+    model.eval()
+    try:
+        store = model.symbolSpace.ltm_store
+        booked = []
+        add = Models.Error.add
+        def recorded(registry, name, value, *args, **kwargs):
+            if name == 'compose.silence':
+                booked.append(value.detach().clone())
+            return add(registry, name, value, *args, **kwargs)
+        Models.Error.add = recorded
+        try:
+            for texts, silent in ((['alpha gamma'], True), (['alpha'], False)):
+                before, entries = len(store), dict(model._concept_owner().mtm.entries)
+                with torch.no_grad():
+                    model.forward(model.inputSpace.prepInput(texts))
+                assert bool(model._sentence_silence.any()) is silent
+                if silent:
+                    rows = range(before, len(store))
+                    assert len(rows) == 1
+                    row = rows[0]
+                    assert not store.slots[row, :store.when_start].any()
+                    assert store.referent_of(row) is None and float(store.trust[row]) == 0.
+                    assert model._concept_owner().mtm.entries == entries
+                    assert booked and float(booked[-1].sum()) == 1.
+        finally:
+            Models.Error.add = add
+    finally:
+        model.End()
+    like = torch.rand(2, 5)
+    assert not SilenceLayer().reverse(like).any() and not SilenceLayer()(like).any()

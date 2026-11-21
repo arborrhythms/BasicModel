@@ -19933,12 +19933,19 @@ class BasicModel(BaseModel):
     def _sentence_observation(self, state, sid, active, *, admit=False, record=None, incoming_trust=1.):
         current_stm, lang, _feedback = state
         B, _K, D = current_stm[0].shape
+        _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)
+        # A word left uninterpreted that no rule took (rule of the literal):
+        # the sentence is not well formed, and its closing publishes no tree.
+        from Interpret import well_formed
+        for b, entry in enumerate(programs.get(sid, (None,) * B)):
+            if (entry is not None and not entry.interpret_forced and int(lang[11][b, sid]) > 0
+                    and not well_formed(self.languageSpace, entry, len(entry.leaves), forced=False)):
+                lang[11][b, sid] = -1
         depths = lang[11][:, sid]
         mask = active & (depths > 0)
         slots = lang[10][:, sid].reshape(B, 3, D)
         payloads = [slots[b, :int(depths[b])] if bool(mask[b]) else None for b in range(B)]
         depth_list = [int(d) if bool(m) else 0 for d, m in zip(depths, mask)]
-        _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)
         # A row whose trees did not reduce to one has no program to read.
         entries = tuple(entry if bool(mask[b]) else None
                         for b, entry in enumerate(programs.get(sid, (None,) * B)))
@@ -20103,6 +20110,13 @@ class BasicModel(BaseModel):
         errors = Error(row_mask=active)
         record = self._trial_understanding(state, sid, active)
         observation = self._sentence_observation(state, sid, active, record=record, incoming_trust=incoming_trust)
+        # A sentence whose trees did not reduce, or that left a word no rule
+        # took, is written as silence; its cost is booked, one a sentence.
+        from Interpret import SilenceLayer
+        silent = SilenceLayer.silent(lang[11][:, sid], active)
+        if bool(silent.any()):
+            errors.add('compose.silence', silent.to(root), category='reconstruction',
+                       objective='reconstruction', side='R', kind='relative')
         record = observation['record']
         from MemoryLink import preview_cost
         if observation['reference_plans']:
@@ -20451,6 +20465,13 @@ class BasicModel(BaseModel):
         disc = getattr(self.symbolSpace, 'expectation', None)
         store = getattr(self.symbolSpace, 'ltm_store', None)
         row_addresses = [-1] * len(rows)
+        from Interpret import SilenceLayer
+        silent = SilenceLayer.silent(state[1][11][:, sid], active)
+        self._sentence_silence = silent
+        if store is not None:
+            # S -> NULL: a row with no word and no concept; MTM takes nothing.
+            for b in silent.nonzero().flatten().tolist():
+                SilenceLayer.write(store, store.slots[0])
         observe_sides = getattr(self, '_observe_lesson_sides', False)
         written_clauses = [dict(observe_sides=True) if observe_sides else {} for _ in rows]
         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
