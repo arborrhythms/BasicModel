@@ -32,6 +32,7 @@ of the taken words). What changes is who reads the where:
   look takes the lesson's word; the done mark lowers it. Adam over the
   request's map and the entries.
 """
+from dataclasses import dataclass
 import math
 import os
 
@@ -269,6 +270,227 @@ def own_place_shares(*, k=1., places=(0, 5, 10, 15, 20, 25), forward=True):
     return starts, rows
 
 
+# --- A place as a row ---------------------------------------------------------
+#
+# A row of the first Pi with entries on the where wires and none on any what:
+# it requires no content. A concept over it (``G`` on the row's value, as any
+# row's concept) is a place; the request may ask for it beside "words" and the
+# row concepts. The way down passes the row by its entries. The content rows
+# keep no entry on a wire.
+
+@dataclass
+class PlaceRequest(Request):
+    places: torch.Tensor = None             # [P], one for each place row
+
+
+class PlaceTrial(PiWhere):
+    """``PiWhere`` with ``P`` place rows: ``Pw`` [P, R] their what entries
+    (none for a place), ``Pp``, ``Pm`` [P, D] their entries on the wires'
+    two lanes. The content rows' entries on the wires stay at nothing."""
+
+    def __init__(self, lex, Pw, Pp, Pm, *, labels=()):
+        super().__init__(lex, forward=True, when=True)
+        self.Pw, self.Pp, self.Pm = Pw.to(DTYPE), Pp.to(DTYPE), Pm.to(DTYPE)
+        self.labels = tuple(labels)
+
+    @property
+    def P(self):
+        return len(self.Pp)
+
+    def up_whole(self, bank, activity, *, Ep=None, Em=None, wires=None, squash=True):
+        out = super().up_whole(bank, activity, Ep=Ep, Em=Em, wires=wires, squash=squash)
+        act = torch.tanh if squash else (lambda v: v)
+        c = out['wires'].clamp(EPS, 1 - EPS)
+        log_what = out['clamped'].log() @ self.Pw.T
+        bp = (log_what + c.log() @ self.Pp.T + (1 - c).log() @ self.Pm.T).exp()      # [K, P]
+        out.update(bp=bp, cwp=act(G * (1 - (-bp).exp())))
+        return out
+
+    def shares(self, bank, activity, request, *, way='entries', Ep=None, Em=None):
+        what, s, when_share, out = super().shares(bank, activity, request, way=way, Ep=Ep, Em=Em)
+        places = getattr(request, 'places', None)
+        if places is None or not self.P:
+            return what, s, when_share, out
+        # The place concepts asked on their for lane (rule 36), each Sigma
+        # passed by its weight G, each place row passed by its entries.
+        bp = out['bp']
+        gate = G * places.clamp_min(0.) * (-bp).exp() * bp                # [K, P]
+        c = out['wires'].clamp(EPS, 1 - EPS)
+        wire = c[:, None, :] * self.Pp + (1 - c)[:, None, :] * self.Pm    # [K, P, D]
+        per_wire = (gate[..., None] * wire).sum(1)
+        # A place row with what entries passes its share to them as the
+        # Pi's transpose, as a content row does.
+        d_m = (gate @ self.Pw) / out['clamped'] * (out['m'] >= EPS)
+        at_max = (activity == out['m'][bank.token, bank.row]).to(activity.dtype)
+        what = what + activity * d_m[bank.token, bank.row] * at_max
+        return what, s + per_wire[:, :N_WHERE].sum(-1), when_share + per_wire[:, N_WHERE:].sum(-1), out
+
+
+class PlaceReader(Reader):
+    """The request over "words", the row concepts and the place concepts."""
+
+    def __init__(self, trial, generator, noise=1e-2):
+        R, P = trial.lex.R, trial.P
+        self.R = R
+        self.A = noise * torch.randn(R + P + 1, CONTEXT, generator=generator, dtype=DTYPE)
+        self.A[0, 0] = 1.
+        self.A.requires_grad_()
+
+    def request(self, ctx, A=None):
+        m = (self.A if A is None else A) @ ctx
+        return PlaceRequest(words=m[0], concepts=m[1:self.R + 1], places=m[self.R + 1:])
+
+
+def lesson_banks(lex):
+    one, two, lesson_texts = minimal_sentences()
+    return {name: [Bank.read(t, lex) for t in texts]
+            for name, texts in (('one', one), ('two', two), ('lesson', lesson_texts), ('held', HELD_OUT))}
+
+
+def word_starts(banks):
+    """Every place a word starts at in the given sentences."""
+    return sorted({bank.spans[k][0] for bank in banks for k in bank.word_tokens()})
+
+
+def given_places(trial, places, *, when=False):
+    """Rows of places given: entries at each place's code on the where wires,
+    and with ``when`` at the when code on the when wires; none on a what."""
+    P, D = len(places), trial.D
+    Pp, Pm = torch.zeros(P, D, dtype=DTYPE), torch.zeros(P, D, dtype=DTYPE)
+    code = trial.theta.detach()[torch.tensor(places, dtype=torch.long)]
+    Pp[:, :N_WHERE], Pm[:, :N_WHERE] = code, 1 - code
+    if when and trial.when.numel():
+        Pp[:, N_WHERE:], Pm[:, N_WHERE:] = trial.when, 1 - trial.when
+    return torch.zeros(P, trial.lex.R, dtype=DTYPE), Pp, Pm
+
+
+def occurrences(trial, banks):
+    """Each word token met: its start, and its coordinates in perceptual space
+    (the what memberships of every row, and the wires' two lanes)."""
+    met = []
+    for bank in banks:
+        out = PiWhere.up_whole(trial, bank, bank.live())
+        what = (out['m'] >= .5).to(DTYPE)
+        c = out['wires'].detach()
+        for k in bank.word_tokens():
+            met.append((bank.spans[k][0], bank.words[k], what[k], c[k], 1 - c[k]))
+    return met
+
+
+def cone_places(trial, banks, *, when=False):
+    """Rows nominated by the cone's rule (rule 72): at each place, the least of
+    its occurrences' coordinates: weight on what they share and none on what
+    varies. A place met by one form only keeps that form's whats."""
+    by_place = {}
+    for start, form, what, cp, cm in occurrences(trial, banks):
+        by_place.setdefault(start, []).append((form, what, cp, cm))
+    rows, record = [], []
+    for start in sorted(by_place):
+        met = by_place[start]
+        Pw = torch.stack([w for _, w, _, _ in met]).amin(0)
+        Pp = torch.stack([p for _, _, p, _ in met]).amin(0)
+        Pm = torch.stack([m for _, _, _, m in met]).amin(0)
+        if not when:
+            Pp[N_WHERE:], Pm[N_WHERE:] = 0., 0.
+        rows.append((Pw, Pp, Pm))
+        record.append(dict(place=start, occurrences=len(met), forms=sorted({f for f, *_ in met}),
+                           whats=[trial.lex.names[i] for i in Pw.nonzero().flatten().tolist()]))
+    Pw, Pp, Pm = (torch.stack(t) for t in zip(*rows))
+    return (Pw, Pp, Pm), record
+
+
+def candidate_offers(trial, banks):
+    """What ``CandidateMatrix`` offers from the where wires: each pair of the
+    wires' lanes tallied at every word token met, as a Pi's pair candidate.
+    Returns the pairs and their worth; the tally has no place in it."""
+    from CandidateMatrix import CandidateMatrix
+    lanes = 2 * N_WHERE
+    matrix = CandidateMatrix(capacity=lanes * lanes)
+    worth = {}
+    for start, _, _, cp, cm in occurrences(trial, banks):
+        v = torch.cat([cp[:N_WHERE], cm[:N_WHERE]])
+        for i in range(lanes):
+            for j in range(i + 1, lanes):
+                matrix.offer((i, j))
+                worth[(i, j)] = matrix.meet((i, j), v[i], v[j])
+    return worth
+
+
+def place_count(trial, reader, banks, **kw):
+    with torch.no_grad():
+        return sum(read(trial, reader, bank, **kw)[1] for bank in banks)
+
+
+def teach_places(rows, *, seed=None, stages=(10, 10, 60), rate=.05, labels=()):
+    """One start of the reading lesson with the place rows ``rows`` (fixed);
+    Adam over the request's map alone."""
+    seed = fresh_seed() if seed is None else seed
+    generator = torch.Generator().manual_seed(seed)
+    lex = lexicon()
+    trial = PlaceTrial(lex, *rows, labels=labels)
+    reader = PlaceReader(trial, generator)
+    optimizer = torch.optim.Adam([reader.A], lr=rate)
+    banks = lesson_banks(lex)
+
+    def measure():
+        return {name: place_count(trial, reader, banks[name]) for name in ('two', 'lesson', 'held')}
+
+    record = dict(seed=seed, P=trial.P, before=measure())
+    A0 = reader.A.detach().clone()
+    for name, steps in zip(('one', 'two', 'lesson'), stages):
+        for _ in range(steps):
+            optimizer.zero_grad()
+            loss = sum(read(trial, reader, bank, train=True)[0] for bank in banks[name])
+            loss.backward()
+            optimizer.step()
+    record['after'] = measure()
+    record['still'] = place_count(trial, reader, banks['lesson'], still=True)
+    moved = reader.A.detach() - A0
+    record['places_asked'] = round(float(moved[lex.R + 1:].norm()), 3)
+    record['request_context'] = round(float(moved[:, 1:].norm()), 3)
+    return record
+
+
+def place_forms(when):
+    lex = lexicon()
+    trial = PiWhere(lex)
+    banks = lesson_banks(lex)
+    taught = banks['one'] + banks['two'] + banks['lesson']
+    starts = word_starts(taught)
+    given = given_places(trial, starts, when=when)
+    nominated, record = cone_places(trial, taught, when=when)
+    return starts, given, nominated, record
+
+
+def place_report(runs=3):
+    lex = lexicon()
+    trial = PiWhere(lex)
+    banks = lesson_banks(lex)
+    taught = banks['one'] + banks['two'] + banks['lesson']
+    starts, _, nominated, record = place_forms(False)
+    print('Places a word starts at in the lesson:', starts)
+    print('The cone over the occurrences at each place:')
+    for r in record:
+        print(f"  place {r['place']}: {r['occurrences']} occurrences of {r['forms']}; whats kept {r['whats']}")
+    print('  rows nominated:', len(record), 'with no what:', sum(not r['whats'] for r in record))
+    worth = candidate_offers(trial, taught)
+    print('CandidateMatrix over the where lanes: pairs', len(worth), 'worth from',
+          round(min(worth.values()), 3), 'to', round(max(worth.values()), 3), '(one tally for every place)')
+    forms = []
+    for when in (False, True):
+        _, given, nominated, _ = place_forms(when)
+        forms.append((f'places given, when {"in" if when else "out"}', given))
+        forms.append((f'places nominated by the cone, when {"in" if when else "out"}', nominated))
+    forms.append(('no place rows (the request alone)', given_places(trial, [])))
+    for name, rows in forms:
+        print(name)
+        for _ in range(runs):
+            r = teach_places(rows)
+            print(f"  seed {r['seed']}: rows {r['P']}, before {r['before']}, after {r['after']}, "
+                  f"request held at its start context {r['still']}, places asked (moved) "
+                  f"{r['places_asked']}, request's context part moved {r['request_context']}")
+
+
 def report(runs=3, **kw):
     for forward in (True, False):
       starts, rows = own_place_shares(forward=forward)
@@ -299,4 +521,8 @@ def report(runs=3, **kw):
 
 if __name__ == '__main__':
     import sys
-    report(runs=int(sys.argv[1]) if len(sys.argv) > 1 else 3)
+    runs = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+    if len(sys.argv) > 2 and sys.argv[2] == 'places':
+        place_report(runs)
+    else:
+        report(runs=runs)

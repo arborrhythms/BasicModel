@@ -37,3 +37,34 @@ def test_from_entries_at_nothing_the_entries_take_a_gradient_and_the_request_non
     present = set(bank.row.tolist())
     size = where.abs().sum(-1)[:trial.lex.R] + where.abs().sum(-1)[trial.lex.R:]
     assert {int(r) for r in (size > 1e-6 * size.max()).nonzero()} <= present
+
+
+def test_the_cone_over_a_place_keeps_its_where_and_drops_the_whats_that_vary():
+    from looks_where_trial import place_forms
+    starts, given, (Pw, Pp, Pm), record = place_forms(False)
+    by_place = {r['place']: r for r in record}
+    assert [r['place'] for r in record] == starts
+    for place in (0, 8):
+        # Met by forms that share no character: a place, with no what.
+        assert by_place[place]['whats'] == []
+        j = starts.index(place)
+        assert float(Pw[j].abs().sum()) == 0.
+        assert torch.allclose(Pp[j], given[1][j]) and torch.allclose(Pm[j], given[2][j])
+    # Met by one form only, the row keeps that form's whats.
+    assert 'is' in by_place[5]['whats']
+
+
+def test_a_place_concept_asked_makes_its_own_reading_the_most_salient():
+    from looks_where_trial import PlaceRequest, PlaceTrial, given_places
+    from looks_round2 import DTYPE
+    lex = lexicon()
+    trial = PlaceTrial(lex, *given_places(PiWhere(lex), [0, 5, 8]))
+    bank = Bank.read('This is Felix.', lex)
+    starts = [bank.spans[k][0] for k in range(len(bank.spans))]
+    for j, place in enumerate((0, 5, 8)):
+        asked = torch.zeros(3, dtype=DTYPE)
+        asked[j] = 1.
+        request = PlaceRequest(words=1., concepts=torch.zeros(lex.R, dtype=DTYPE), places=asked)
+        _, s, _, _ = trial.shares(bank, bank.live(), request)
+        words = bank.word_tokens()
+        assert starts[max(words, key=lambda k: float(s[k]))] == place
