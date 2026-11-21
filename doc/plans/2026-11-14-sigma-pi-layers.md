@@ -9528,6 +9528,29 @@ Round 5's first pass built the look-first of rule 31 (§19.27) and took it out: 
 - What told "is" from "water" by an object's trust reads the tie's.
 - Certificates 25 and 26 are written in this item as certificates of learning, recorded and not repaired, since the look-first they waited for is built.
 
+### 19.115 Alec: a row of the Pi reads the whole muxed input, its where and when with it; and no function fills a blind spot (2026-11-20)
+
+**What reads the where.** Asked (§23.6.1) what should read the where so that a request can ask for a place, a row of the Pi or the concepts' own weights: "A row of the pi should read the entire muxed concept, which incudes the .where and .when that get muxed into it when read from a percept. If you are saying there is no more muxing, then that should happen before the PI multiplies the percepts together, so that the basic percept can decide to include or drop the .where and .when fields as the gradient determines. And that would restore the wire width to the width that the PerceptualSpace had been returning in a subspace. Please verify that this makes sense, and is essentialy a return to previous behavior."
+
+*Decided* (rules 47 and 62 amended; Claude's clause in rule 62, "no concept has a weight on a where wire", is withdrawn as the cause of §23.6.1's failure). What a row of a Pi reads is its input whole: the what, the where and the when, muxed before the product. The row's entries on the where and the when wires are learned, so that a basic percept keeps a place and a time or drops them as the gradient determines. The Pi alone reads them (§19.89 stands); no concept has a weight of its own on a where wire.
+
+*Verified in the source (Claude, 2026-11-20).*
+
+- *The width is still there.* `PerceptualSpace`'s subspace has `muxedSize = nWhat + nWhere + nWhen`, and a percept's event carries its band of where wires (`registry.band`, written by `PartSpace._radix_code_events`).
+- *The first Pi does not read it today.* `OrderZero.SparsePiLayer3.forward` takes, for each member of a row (a run of parts, a whole), one membership on two lanes and multiplies them. It reads no where wire and no when wire, and its entries are buffers written from occurrences, not weights that are learned.
+- *What it was before.* Until rule 62 (`c9afb238e7`, round 3), `OrderZero.combine(presence, codes, where=, when=)` joined the reading's place and time to the Pi's content, a vector of the perceptual width and the where and when, and the dense Sigma of order zero read that vector with learned weights. So the where and the when were muxed after the Pi and read by the Sigma.
+- *So it is a return in two respects and a change in one.* The wires return, and so does a learned weight on each where and when wire that the gradient may raise or leave at nothing. What changes is who holds that weight: the row of the Pi, before the product, where it was the Sigma after it. That is what §19.89 asks ("the only thing touching that is the pi. This applies to both .what and .where").
+
+*It makes sense, with three things for the trial to settle (mine):*
+
+1. *One where and one when for a row's reading.* A row's members are parts at different places. First choice: the row reads its members' whats as now, and one where and one when for the reading, those of the event at its start (as `combine` took them, and as rule 39 reads the where match), each wire an entry of the row. Not a where for each member inside the product, which is what cut the word that was asked for in the prototype (§20.5).
+2. *A dropped field is an entry at nothing,* which leaves the product as it is; a generalization starts so, holding no place (rule 31), and an occurrence may keep one. A weight at nothing still takes a gradient on the way up. On the way down it passes nothing until it has been learned, so the salience map lands on a band only through rows that have kept a place: the trial says whether reading in order is learned from that start, and whether round 2's finding (a row of a Pi on the where wires had no share at its own place) holds in this form.
+3. *The same at every order* (rule 29): a symbol's row reads the concepts beneath it whole, and a concept keeps its where and its when (rule 64).
+
+**No function fills a blind spot.** Of the review's "the blind spot's fill is not specific to a place ... and the reconstruction does not call it yet": "we are not calling any function to fill: we would just expect that as a prediction error, since a missing bit in a large domain requires a finely detailed reconstruction."
+
+*Decided, and it corrects Claude's reading of §19.113* ("the top-down reconstruction should fill in a blind spot"), which was a description of what the ordinary reconstruction does and not a mechanism to add. Nothing reads expected percepts into the way back. `ConceptSpread.read_back` and `blind_spot`, the leave-one-out built for it (`_flow`'s `elsewhere`, `_down_elsewhere`), and `FieldReverse._blind_spot_support` with its call in `reverse` go. The clause of rule 30 that Claude added ("where a look's percepts were withheld the way back reads the expected ones in their place") is withdrawn. Certificate 24 is restated: with a word's forms withheld, what the ordinary reconstruction gives at that place and its error are read, as a certificate of learning; nothing is filled. The percepts' stage of expectation (§19.113) stays: it is expectation, compared with what a look brings, and is never written into the way back.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10134,9 +10157,10 @@ chooses from. The old classes are not edited.
     and a row gives a share to each of its parts, so a part that is
     missing receives from the rows its neighbours raised. It writes
     expected percepts and changes no evidence; a row still requires
-    its members (rule 2). At the reconstruction, where a look's
-    percepts were withheld the way back reads the expected ones in
-    their place. A concept reaches its row directly (rule 21).
+    its members (rule 2). Nothing reads the expected percepts into
+    the way back, and no function fills a blind spot (Alec,
+    §19.115): what is missing shows as the reconstruction's own
+    error. A concept reaches its row directly (rule 21).
 
 **I. Thought reads the structure** (§19.12).
 
@@ -10374,11 +10398,12 @@ chooses from. The old classes are not edited.
       must stay fixed if the sinusoid coding is to remain meaningful
       across all .where" (Alec, §19.66). It is the one where tensor
       of every space, a row for each address of the registry
-      (§19.66). Concepts read
-      the where through the weights they have on the where
-      coordinates of the combined vector (rules 7 and 8). Those
-      weights start at zero for a new concept, since a generalization
-      holds no place (rule 31), and they are learned.
+      (§19.66). The where is read by the rows of the Pi (Alec,
+      §19.115; it takes the place of the concepts' weights on the
+      where coordinates of the combined vector): a row reads its
+      input whole, the where and the when muxed before the product,
+      and its entries on those wires start at nothing, since a
+      generalization holds no place (rule 31), and are learned.
     - *Mine, the where match; tried in round 2 and built so
       (§23.2.1).* A reading's where is the band of the event at its
       start, weighted by that event's presence. An event's where
@@ -10391,7 +10416,9 @@ chooses from. The old classes are not edited.
       asked; and it is one everywhere when nothing of where was
       asked, so that a request with no where part selects the level
       and leaves every place in (§19.53).
-    - *Settled by round 2 (§23.2.1).* The concepts' weights on the
+    - *Measured in round 2 (§23.2.1), with the weights on the
+      concepts, where they no longer are (§19.115); to be measured
+      again with the weights on the Pi's rows.* The concepts' weights on the
       where coordinates are enough: with them the word at a place is
       returned in 16 of 16 sentences, and reading in order was learned
       from every start, with no location concept made. A row of a Pi
@@ -10709,9 +10736,12 @@ chooses from. The old classes are not edited.
     place of rule 7's joined vector as the Sigma's input, of rule 8's
     dense matrix, and of the column of rules 8b and 54; the code
     stays what rules 50 to 61 make it, and the Pi alone reads it.
-    *Mine:* the where enters at the Pi as well, as a look's match of
-    place (rule 34), and no concept has a weight on a where wire;
-    how reading in order is then learned is round 6's to show. *Given
+    The where and the when enter at the Pi (Alec, §19.115: "A row of
+    the pi should read the entire muxed concept, which incudes the
+    .where and .when ... so that the basic percept can decide to
+    include or drop the .where and .when fields as the gradient
+    determines"): a row's entries on those wires are learned, and no
+    concept has a weight of its own on a where wire. *Given
     up:* a concept answering to a word it was never given (§18.24,
     15).
 
@@ -12653,11 +12683,10 @@ which form of the where match is built.
       meeting counts for it (Alec, §19.101: "their constituents
       always occur together"). Certificate 60 (2) gains the other
       direction; test_item18_expect's test_81 is read again.
-    - The blind spot's fill is specific to a place: what is observed
-      at another place is expected at this one only through a row
-      above that holds it with something else, never through its
-      own row. The reconstruction reads ConceptSpread.read_back
-      where a look's percepts were withheld (rule 30).
+    - (Built in the first pass and WITHDRAWN by Alec, §19.115: no
+      function fills a blind spot. ConceptSpread.read_back,
+      blind_spot, the leave-one-out of _flow and
+      FieldReverse._blind_spot_support go, in the fourth pass.)
     - Half precision (Alec, 2026-11-20; the item 1.5 plan): the
       fallback of MODEL_AMP to full precision on MPS goes from
       bin/util.py (the installed PyTorch runs autocast there in
@@ -12669,6 +12698,24 @@ which form of the where match is built.
     since Alec's answer is that declared classes are not fixed
     (§19.106). Both gates and what the lesson's known words read
     are returned before and after.
+
+20. The Pi reads its input whole (Alec, §19.115; rules 47 and 62
+    as amended), in the fourth pass, tried in tests first:
+    - A row of the first Pi reads, beside its members' whats, the
+      where and the when of its reading (the event at its start),
+      each wire an entry of the row on two lanes. The entries are
+      learned; they start at nothing; the mereology's entries on
+      the whats stay as they are (rule 35).
+    - The salience map passes a row by those entries onto the band,
+      and the where match of rules 34 and 39 reads what lands there.
+    - The same for a symbol's row over the concepts beneath it,
+      which keep their where and when (rules 29 and 64).
+    - The trial, before the build: reading in order on the minimal
+      sentences from an untaught start, by the reading lesson's
+      grades; and whether a row with entries on the where wires has
+      a share at its own place (round 2 found none, §23.2.1).
+    - If the trial does not teach order, return its numbers and
+      build nothing else for the where: it goes back to Alec.
 
 The passes (Alec, 2026-11-20: one or two a round where it can be;
 this round is three): first, steps 1 to 7, 10, 15, the first bullet
