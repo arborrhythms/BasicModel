@@ -61,6 +61,8 @@ def mention(point, *, mode='mint', reference=-1):
 
 
 def keep(resolver, clause, frames=(), *, position=0):
+    from test_reference_close import next_sentence
+    next_sentence(resolver.store)
     plan = resolver.preview(clause, chunk_context(resolver, frames))
     before = dict(resolver.components.owner.mtm.entries)
     kept = resolver.prepare(clause, plan)

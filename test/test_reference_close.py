@@ -24,8 +24,19 @@ def fixture(*, percept=False):
     import weakref
     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
     resolver = owner.components.reference_close
-    attach_clause_index(SimpleNamespace(), store, owner)
+    # The store's rows and mentions take the present of a model clock; each
+    # sentence a helper closes advances it, as a model's sentence does.
+    from clock_fixtures import install
+    clock = install(SimpleNamespace(), 0)
+    attach_clause_index(clock, store, owner)
+    object.__setattr__(store, '_fixture_clock', clock)
     return resolver, store, torch.eye(12)
+
+
+def next_sentence(store):
+    clock = store.__dict__.get('_fixture_clock')
+    if clock is not None:
+        clock._advance_when_time()
 
 
 @torch.no_grad()
@@ -82,6 +93,7 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
     clause = Clause(ConceptualMeaning.from_description(value), point=value,
                     children=(np,), refs=(('clause', 0), -1, -1), order=2,
                     composition=composition)
+    next_sentence(resolver.store)
     plan = resolver.preview(clause, chunk_context(resolver, frames))
     if dummy_if_missing and plan['items'][0]['selected'] is None:
         # These complete mentions retain the compose menu's dummy outcome;

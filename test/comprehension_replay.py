@@ -79,6 +79,7 @@ def replay(record, monkeypatch):
         parts_of_speech=SimpleNamespace(seats=inputs['seats']))
     model = SimpleNamespace(_concept_owner=lambda: owner, languageSpace=language,
         symbolSpace=SimpleNamespace(ltm_store=store), when_time=inputs['when_time'], when_encoding=encoder())
+    __import__('clock_fixtures').install(model, int(inputs['when_time']))
     program = Reading(**inputs['program'])
     strata = SentenceStrata(**inputs['strata'])
     strata.capture(program, language, 0, after=inputs['after'])

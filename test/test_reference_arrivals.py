@@ -119,7 +119,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     entry = resolver.components.owner.mtm.entries[token]
     assert entry.kind == words['three'] and entry.count == 3
     assert sum(item['token'] == token for item in plan['arrivals']) == 1
-    assert all(item['features'].shape[-1] == 12 for item in plan['arrivals'])
+    assert all(item['features'].shape[-1] == 14 for item in plan['arrivals'])
     assert plan['cost'].requires_grad
     value = store.meaning_of(pending)
     assert not open_slots(value) and not bindings(value).get('_forward_references')

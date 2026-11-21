@@ -41,7 +41,7 @@ def test_basic_table_is_preallocated_and_full_raises_without_resize():
         full_raises=True, resized=False, centroid=True))
 
 
-def test_basic_read_ties_both_towers_and_does_not_teach_the_properties():
+def test_basic_read_ties_both_towers_and_teaches_the_properties():
     basic, native, whole = percepts()
     row = basic.reserve((0,), (0,))
     primitive = whole.primitive_properties
@@ -53,9 +53,9 @@ def test_basic_read_ties_both_towers_and_does_not_teach_the_properties():
     # is present wholly, its whole .4 for and .6 against.
     presence, whole_pair = 1., torch.tensor([.4, .6])
     torch.testing.assert_close(field.values[0, 0, 0], presence * whole_pair)
-    # The read gives the memberships no gradient: order zero reads which
-    # bytes belong to a property and does not teach it.
-    assert not field.values.requires_grad
+    # The read gives the memberships their gradient: order zero's read of
+    # which bytes belong to a property takes its error.
+    assert field.values.requires_grad
     absent = (torch.tensor([[1]]), spans, primitive, torch.tensor([[97]]), spans)
     assert basic.read(absent, spans, (row,)).values.count_nonzero() == 0
     from FormContainment import audit
