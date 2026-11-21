@@ -745,8 +745,9 @@ def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkey
     """A word's concept reads nothing at the token of a longer known word
     that holds its letters, ``is`` at ``This``, ``here`` at ``There``, ``the``
     at ``there``, and reads at its own token; the look that asks for it
-    returns it there. Printed: what the same look returns at the longer
-    word's token, the longer word's own concept, and the draw."""
+    returns it there and not the longer word: the request reaches a row's
+    reading through the Not, for less against, so the inner word's row at
+    the longer token (read for and against alike) takes nothing."""
     import SentenceLooks
     from test_item18_expect import read
     model = nominated_lesson(tmp_path, monkeypatch, texts=('This is here', 'There is the', 'the is there'))
@@ -777,6 +778,9 @@ def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkey
                                        taken=int(index[0]), drawn=bool(drawn[0]))
             assert abs(inner[longer]) < 1e-6 and inner[at] > 0, found[(text, word)]
             assert torch.isfinite(value[0, at])
+            assert not torch.isfinite(value[0, longer]) or float(value[0, longer]) < float(value[0, at]), \
+                found[(text, word)]
+            assert int(index[0]) == at and not bool(drawn[0]), found[(text, word)]
         print(found)
     finally:
         model.End()

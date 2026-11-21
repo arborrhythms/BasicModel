@@ -10,6 +10,8 @@ the same entries:
   lit still returns its percepts; a Not entry passes the share to the other
   lane, so a request may make salient what tells for a concept or what
   tells against it;
+* the Not makes a row one value, for less against: a row's reading takes
+  a share only where it tells one way more than the other;
 * a Pi is passed by the derivative of its product at the values of the open
   run (the local derivatives kept from the run that read the whole
   sentence): a member's share is the row's share times the row's value;
@@ -101,6 +103,13 @@ def first_pi(bank, perception, row_grad, activity=None):
             continue
         d_for, d_against = row_grad[index, ..., 0].clamp_min(0.), row_grad[index, ..., 1].clamp_min(0.)
         value_for, value_against = rows[index, ..., 0], rows[index, ..., 1]
+        # Through the Not: the share a row's reading takes is what the
+        # concept reads there, for less against, and nothing where the two
+        # are equal. Each lane's share is scaled to it.
+        net = value_for - value_against
+        d_for = torch.where(value_for > tiny, d_for * net.clamp_min(0.) / value_for.clamp_min(tiny), 0.)
+        d_against = torch.where(value_against > tiny,
+                                d_against * (-net).clamp_min(0.) / value_against.clamp_min(tiny), 0.)
         run = position[group[0]]
         presence = members[run, ..., 0]
         at_run = happened[run, ..., 0]                         # [B, K, P]
