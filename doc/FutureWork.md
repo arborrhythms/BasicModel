@@ -278,9 +278,8 @@ What is open:
   duration with a velocity gives a distance. They propose no memory
   architecture, so this is a consistency check and not a derivation. `.when`
   is read today as the name of a row (`row_name`), as content inside an idea,
-  which a question matches like any content, as an order by
-  `relation_evidence` for `'implies'`, and as the present by
-  `ActivationPredictor` where `expectationMap` is `predictor`. No
+  which a question matches like any content, and as an order by
+  `relation_evidence` for `'implies'`. No
   computation takes the duration between two
   remembered events as a quantity for another computation; the comparator
   given to the chooser and the operators tells how far back one stamp is
@@ -1296,10 +1295,10 @@ replaces stacked layers, and each step is charged by the work meter. The cost
 is that discrete choices are credited through the keep rather than by
 backpropagation through a dense map.
 
-`intuit` is built as that choice with no map of its own: it deposits
-`expect`'s field, the stack of pi and sigma stages from concepts to concepts
-(`expectHidden`, `expectLayers`), detached, and closes it along the
-definitions (`IntuitionField.read`, Alec, 2026-11-17); what it gives may
+`intuit` is built as that choice: it deposits the field of its own map, a
+stack of Pi and Sigma stages from concepts to concepts (`intuit_map`;
+`intuitHidden`, `intuitLayers`), and closes it along the definitions
+(`IntuitionField.read`, Alec, 2026-11-17); what it gives may
 answer and reconstruct (`ThoughtAnswer.accepted` takes kind `intuition`). The
 firing of stored rules is reached through `infer`
 ([Reasoning](Reasoning.md), "Intuition, understanding and thought"). One
@@ -2021,8 +2020,8 @@ What neither result gives:
 
 - *Size.* The number of terms can grow as $2^{n-1}$ in the number $n$ of
   symbols a sentence combines; parity, of which XOR is the case $n = 2$,
-  needs every one of them. `expect`'s hidden width, `expectHidden`, which
-  `intuit` uses, is 64 by default. A deep
+  needs every one of them. The hidden width of `intuit`'s map,
+  `intuitHidden`, is 64 by default. A deep
   composition can need an exponentially wide shallow map (Telgarsky, 2016;
   Eldan and Shamir, 2016).
 - *Learning.* That the map exists does not say System 2's activations teach
@@ -2116,7 +2115,7 @@ remains:
   does. For it a bracket is a box, its parts and wholes are boxes, and the
   fold ladder is a quadtree (above, "Images (future)").
 - *Learning on images.* It is first a measurement, beside the same file
-  with `expectHidden` at zero, and a bar is set after it.
+  with `intuitHidden` at zero, and a bar is set after it.
 - *Grey levels.* Where the levels of a grey image come from.
 - Two modalities at once are not part of it.
 
