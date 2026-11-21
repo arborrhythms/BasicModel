@@ -58,8 +58,11 @@ def test_58_the_sparse_sigma_is_the_full_one_on_the_lessons_readings():
     try:
         owner = model._concept_owner()
         alloc = owner._concept_allocator
-        own = {row: percept for percept, row in alloc.brought.items()}
-        declared = {(row, percept) for row, percept, _ in alloc.order_zero_members}
+        # A place's row reads the where wires, not a word's form: the
+        # lesson's rows are its words'.
+        places = owner.basic_percepts.place_rows
+        own = {row: percept for percept, row in alloc.brought.items() if percept not in places}
+        declared = {(row, percept) for row, percept, _ in alloc.order_zero_members if percept not in places}
         made = omission_readings(fields, own, declared)
     finally:
         model.End()

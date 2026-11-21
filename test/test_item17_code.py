@@ -329,7 +329,8 @@ def test_48_the_lessons_concepts_told_apart():
         basic = owner.basic_percepts
         book = model.wholeSpace.subspace.what
         nominated = [r for r in range(len(basic.index)) if bool(basic.promoted[r])
-                     and owner.concept_of_basic_percept(r) is not None and r not in basic.conjunctions]
+                     and owner.concept_of_basic_percept(r) is not None and r not in basic.conjunctions
+                     and r not in basic.place_rows]
         word_of = {row: word for word, row in basic.words.items()}
         forms = [owner.interpret.lexical_form(word_of[r]) for r in nominated]
         concepts = [owner.concept_of_basic_percept(r) for r in nominated]

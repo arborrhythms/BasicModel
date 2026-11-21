@@ -47,7 +47,10 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         lexical = {owner._concept_row_of(w) for w, objs in owner._concept_allocator.named_identities.items()
                    if any(owner._concept_row_of(o) in word_rows for o in objs)}
         assert len(lexical) == 4
-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | lexical | constructed
+        # A place brings a concept of order zero as a word does; it is no word.
+        places = {owner._concept_row_of(cid) for cid, kinds in owner._concept_allocator.symbol_types.items()
+                  if 'place' in kinds}
+        assert set(owner._concept_allocator.layer()._tensor_row_keys) - places == word_rows | lexical | constructed
         admitted.append(word_rows)
     model._stage_reading_word_concepts = observe_admission
     try:
@@ -85,6 +88,8 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
                 assert row in constructed
                 assert 'word' not in owner._concept_allocator.symbol_types.get(cid, ())
                 continue
+            if 'place' in owner._concept_allocator.symbol_types.get(cid, ()):
+                continue  # a place's concept reads its row of the where wires
             assert 'concept' in owner._concept_allocator.symbol_types.get(cid, ())
             for tag, identity in owner.concept_parts(cid):
                 assert tag in ('sym', 'occ')

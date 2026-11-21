@@ -47,7 +47,11 @@ def test_one_presentation_updates_detached_context_at_the_close(eager_reading):
         # The declared class "words", which each nominated word joins, is a
         # declared seat like the arguments (sigma-pi §21, rule 20).
         argument_rows |= {model._concept_owner()._concept_row_of(cid) for cid in model._concept_owner()._concept_allocator.declared_classes.values()}
-        assert len([item for item in context if item["row"] not in argument_rows]) == 4
+        # A place brings a concept of order zero as a word does; it is no word.
+        owner = model._concept_owner()
+        places = {owner._concept_row_of(cid) for cid, kinds in owner._concept_allocator.symbol_types.items()
+                  if 'place' in kinds}
+        assert len([item for item in context if item["row"] not in argument_rows | places]) == 4
         for record in context:
             assert record['direction_norm'] == pytest.approx(1.)
             if record['row'] not in argument_rows:
