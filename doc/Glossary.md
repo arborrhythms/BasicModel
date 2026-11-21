@@ -342,8 +342,28 @@ matrices of the way up as the *salience map*, onto what each percept is and
 onto where it is.
 
 **Bank.** The one lookup of a sentence's percepts, held on the device for all
-of that sentence's looks. A look reads the bank with an activity for each
-event and looks nothing up again. In the source: `PerceptBank`.
+of that sentence's looks. It holds the sentence's *field of percepts*; a look
+selects rows of it and looks nothing up again. In the source: `PerceptBank`.
+
+**Occurrence.** A percept as it occurs in the input, with its span: a part's
+event, a word, a known form of several parts, a whole that covers them. One
+percept may occur at several places; each is an occurrence of its own.
+
+**Field of percepts.** Every occurrence of a sentence, at every level of the
+percept tower, each as one row: its code, the where wires of its place and
+the when wires of its time. It is made once, before the sentence is read,
+and it is the domain of the first Pi. A reference into the percept codebook
+would not do in its place, "because each percept needs an associated
+location" (Alec, 2026-11-21).
+
+**Attended percepts.** The rows of the field that one look presents, at most
+`attendedPercepts` of them (256, a sentence's capacity in words). They are
+the rows "at the basic level (the vertical level that defines approximately 1
+basic percept over the provided .where, along with the complete set of parts
+and wholes covered by and covering that location, if possible, but perhaps
+only a few layers in each direction" (Alec, 2026-11-21). Within one attended
+percept a row of the first Pi joins its entries on the what, the where and
+the when by the product, so a what is read at its own where.
 
 **Where, when.** The place and the time of a percept, carried on wires of
 their own beside its what, from one fixed sinusoid for each. A row of a Pi
