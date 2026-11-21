@@ -20222,3 +20222,228 @@ Before this pass, the list on `a3c6614c4c` (the second pass's source): 10 failed
 #### The list on the third pass's source (Claude, 2026-11-20)
 
 On `be18056af0` (run in a clone at `a3c7798656`, which adds only text), 300 files, six processes: 3 failed, 3,298 passed, 161 skipped, in 1,280 s. `test_81` (a certificate of learning) and `test_reverse_traversal` are known. The third is new and is a fault of this pass: `test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch` fails on MPS with "Cannot convert a MPS Tensor to float64", in `Models._what_grammar_context`: the one time's codes are made in double precision, which MPS does not have. No test of the pass ran on MPS. Sent to the fourth pass, to be repaired first, with a test on MPS added.
+
+### 23.6.3 Round 6, fourth pass: the trial of a Pi that reads the where, the fill withdrawn, the leftovers of the third pass, and the MPS fault (Claude on Opus, standing in for Codex, 2026-11-20)
+
+Started at `a3c7798656`, on `main`, in this checkout. Ends at `cc0fc32571`. Nothing is pushed. No doc/*.md and no part of the specification was edited. Parts A, C, E (in part) and F were done, and so was the MPS repair the coordinator sent. Part B was not built, because the trial does not teach reading in order. Part D waits on B, so it was not built either.
+
+#### What fails or is unfinished, first
+
+- *Reading in order is not taught by a row of the first Pi reading the where (part A).* On the small lesson's minimal sentences the trial teaches the lesson's own order in some forms. That order is carried by content, not position: sentences held out in new orders are read in order in 0 or 1 of 6, in every form and every start. The request never learns to ask for a place: held at its start context, it reads as well as or better than the learned request. In the form step 20 specifies (where and when wires in the product, learned at Adam's rate .05), nothing is read in order at all: 0 of 6 two-word sentences, 0 of 16 of the lesson, 0 of 6 held out, in 3 of 3 starts. By the brief, part B stops here, and nothing for the where is built in bin/. **This goes to Alec.** The numbers are below.
+- *Not built, waiting on B:* step 6's "words" Not entry on the space; a known form of several units as an event of its own; the reading lesson measured in the model before and after; and part D (step 11, the reconstruction over what and where, with round 2's measure again in the model).
+- *Certificates left* (E): 31 (a) and (c), 32, 33 (b) and (c), 34, 38 (b) as a pass (it is recorded), 44 and 45. The reasons are below.
+- *The prototype's files stay* (`test/looks_round2.py`, `test/looks_round2_report.py`, `test/test_item17_looks_round2.py`, and `test/looks_prototype*.py`). The trial imports them, and the model's own tests do not yet state the where pathway, reading in order or the reconstruction over both pathways.
+- `test_item18_expect.py::test_81` still fails. It is a learning certificate and is left as it is.
+
+#### Part A: the trial (`test/looks_where_trial.py`, `test/test_item17_where_trial.py`; commit `4ae355411a`)
+
+*What it is.* It is built on `looks_round2`: its lexicon, bank, request and context of taken words. A row of the first Pi reads its members' whats and one where and one when for its reading. The where is the band of the event at the token's start (`theta` at that place). The when is the comparator's code of the reading's time: `RowTime.how_far_back` of the present against itself, since every event of a sentence is read at one present. Each wire is an entry of the row on two lanes, `c` and `1 - c`. The row is `b = exp(W log m + E+ · log c + E- · log(1 - c))`. The entries start at zero and are kept at zero or more. No concept has a weight on a wire. The salience map passes each Sigma by its weights and the Pi's what members by its product's derivative. The wires are passed three ways, to measure (i):
+- by entries: share `d_b · b · (E+ c + E- (1 - c))`;
+- by the derivative, each lane its own wire;
+- by the derivative on `c`, both lanes through it, which is round 2's row.
+
+The where match is `exp(s - max s)` over the readings and multiplies a reading once. The request is on its for lane: a request below zero makes nothing salient, by rule 36. The reading lesson: minimal sentences first, then the next unread word booked `-log softmax(10 · returned)` over the unread words, with the done mark. The grades are one-word sentences (15, 10 steps), two-word sentences (6, 10 steps), then the lesson's 16 (60 steps), with Adam over the request's map and the entries. Each start is drawn from `os.urandom` and printed. "Held out" is six sentences of known words in orders the lesson never shows (`is This Felix?`, `Felix is here.`, `Ciao is that.`, `is that Ciao?`, `here is Felix.`, `Felix is there.`). "Before" counts 0 everywhere: an untaught look returns every word equally, and the trial counts a tie as not read (the model would draw among them).
+
+*(i) A share at its own place.* Take a row of `Felix` whose where entries peak at one place (`E+ = c*`, `E- = 1 - c*`), with the word at tokens starting at 0, 6, 12, 18, 24 and 30:
+- *Passed by the derivative on `c` (round 2's form):* the share is exactly 0 at the row's own place and largest elsewhere. Peaked at 0, with the wires in the product: 0, .117, .196, .240, .250, .232. Peaked at 12: -.208, -.106, 0, .078, .126, .145. Round 2's finding holds in this form.
+- *Passed by its entries:* the share is largest at the row's own place for every centre. Peaked at 0: 1.736, 1.712, 1.640, 1.522, 1.363, 1.169. Peaked at 12: 1.362, 1.621, **1.655**, 1.626, 1.543, 1.411. Peaked at 24: largest at 24 (1.572). It is the same with the wires out of the product (3.311 at 0; 3.311 at 12).
+- *Passed by the derivative with each lane its own wire:* the share is peaked only through the row's own value `b`. With the wires out of the product it is flat (4.415 at every place).
+- *What makes the difference:* by the derivative, a wire's value cancels against `1/c` (a log-domain product's `c · ∂b/∂c` is `b · E`), and the two lanes subtract to zero at the peak. Passed by its entries, the share is linear in the wire's value, so it is an inner product of the entries with the place's code, which peaks at the place. This is stated in `test_a_row_passed_by_its_entries_has_its_largest_share_at_its_own_place`.
+
+*(ii) Reading in order, three fresh starts for each form.* Each form below lists two-word sentences in order (of 6), the lesson (of 16), held out (of 6), the request held at its start context (lesson, of 16), and the where match off (lesson, of 16).
+
+| Form | Two-word | Lesson | Held out | Request held | Match off |
+| --- | --- | --- | --- | --- | --- |
+| As specified: where and when in the product, by entries, rate .05 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 |
+| As specified, rate .01 | 6, 6, 6 | 12, 12, 12 | 1, 1, 1 | 6, 6, 7 | 0, 0, 0 |
+| Where wires only, rate .05 | 6, 6, 6 | 2, 2, 0 | 0, 0, 0 | 2, 2, 3 | 0, 0, 0 |
+| Where wires only, rate .01 | 6, 6, 6 | 16, 16, 16 | 0, 0, 0 | 16, 16, 16 | 0, 0, 0 |
+| Where wires only, out of the product (the match alone) | 6, 6, 6 | 16, 16, 0 | 0, 0, 0 | 16, 16, 16 | 0, 0, 0 |
+| Where wires only, rate .01, by the derivative on `c` (round 2) | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 10, 14, 10 |
+| The request alone, no entries | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 | 0, 0, 0 |
+
+Starts, in table order:
+- 139421172496818, 165659424824718, 146092695768112
+- 253917067579078, 225612798820618, 144353393820944
+- 267978108959572, 125088953312587, 152467614280937
+- 58745865582988, 157831056320713, 219354393990692
+- 81515488162317, 211117206484604, 221861128285885
+- 202955250165243, 57455897245301, 151673275089155
+- 166544036403583, 13458662960488, 99659334072787
+
+What stops it:
+1. *The wires in the product cut every row.* An entry on a wire multiplies the row by `c^E`, which is below one everywhere off the wire's maximum. As the entries rise, every row is dimmed, the later words most of all. At rate .05 the words after the first fell to 0 on the way up, and the later looks had nothing to take.
+2. *The when wires are the same at every reading of a sentence,* so they tell no reading from another. They still dim every row in the product, and their entries rose to 22 to 36 in sum. They took 60 of the first gradient's norm of 188. Without them, or at the lower rate, the lesson is read.
+3. *What is learned is content's usual position.* The entries that rise are on the rows of the sentence-initial capitals `T`, `H` and `W`, on the space, and on initial words (`What`, `Who`, `There`). A row requires its whats (rule 2), so no row carries a place apart from its content. In round 2, by contrast, a concept's weights read the where at every token whatever was there ("location concepts over the network"). So held-out orders fail: `is This Felix?` is read `This` first.
+4. *The request does not learn to ask for a place.* Held at its start context it reads as well (16 of 16) or better (6 against 12). The context-dependent part of the request moved (norm .6 to 4.5) without helping.
+
+*(iii) What teaches an entry to rise from nothing.* At zero entries, the first gradient on two-word sentences is:
+- on the request: 0.0. The cap of rule 34 holds the what, and the where share is zero.
+- on the entries: 178 to 188 in norm, of which 177 to 178 is the where and 60 the when.
+
+The reading loss reaches an entry through the where match. Passed by its entries, the share's derivative at nothing is `d_b · b · c`, which depends on the place. Passed by the derivative, it is `d_b · b` at every wire alike. The loss also reaches an entry through the wires' factor in the product. Only rows present in the sentence take that gradient: an absent row, held at the Pi's floor, takes a millionth or less (`test_from_entries_at_nothing_the_entries_take_a_gradient_and_the_request_none`). Once entries exist the request takes a gradient through the share, but it learns no place.
+
+*The question for Alec.* With the where read only by rows that require their whats, place cannot be had apart from content. Order is learned as "which words come first" and does not transfer to new orders. The ways I see:
+1. A row of the Pi over the where wires alone: a place percept with no what, nominated like any row, read by the request.
+2. Round 2's concept weights on the where wires: the exception to §19.89, which is known to teach order (held out 6 of 6).
+3. Leave it to item 1.6.
+
+In each of them the when wires should not enter the product within a sentence, or should enter only where readings differ in time.
+
+#### Part B: not built (above). Part D: not built (waits on B).
+
+#### Part C: the fill withdrawn (commit `ff6712428d`)
+
+- *What went:*
+  - from `bin/ConceptSpread.py`: `read_back`, `blind_spot` and `present_parts` (nothing else read it); `_down_elsewhere`; `_flow`'s `elsewhere` argument and its branch; and `spread`'s `elsewhere` argument.
+  - from `bin/FieldReverse.py`: `_blind_spot_support` and its loop in `reverse`.
+- *What stays:* the percepts' stage of expectation (`expectation.percepts`, `_expected_percepts`).
+- *Certificate 24 restated* (`test_testpoint.py::TestBlindSpot::test_blind_spot`). It asserts that the four fill functions and `_blind_spot_support` are gone, and that the word beside the withheld one is put back as it was. It prints, for each byte place of "alpha gamma", whether the ordinary reconstruction (`Models._reverse_field`) put back the right row, its strength and its error. The error at a place is 1 - strength where the row is right, and 1 otherwise. What it printed:
+  - nothing withheld: "alpha" 5 places right at .762 (error 1.19), "gamma" the same (1.19), the space nothing;
+  - every second form of "gamma" withheld: "alpha" 1.19, and at "gamma" nothing put back at any place (error 5.0 of 5);
+  - all withheld: the same (1.19 and 5.0).
+  Nothing is filled. What is missing shows as the reconstruction's own error.
+- *Retired:* `test_item17_spread.py::test_24_the_blind_spots_fill_is_specific_to_a_place` (old: alpha observed elsewhere is expected here only through a row above that holds it with something else). It is replaced by the restated certificate 24 (new: no fill, and the error at the withheld place is printed).
+
+#### The MPS fault (coordinator's message; commit `a3a34e56d6`)
+
+`test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch` failed on MPS with "Cannot convert a MPS Tensor to float64".
+- *Producer 1:* `Models._what_grammar_context` built the question's quantities with `torch.tensor(..., dtype=torch.float64)` on the default device (MPS). It now builds them on the CPU, codes them there with the where ladder in double precision, and moves the codes to the device at the model's dtype.
+- *Producer 2:* `RowTime.how_far_back` cast the present and the stamp to float64 on the stamp's device. On MPS it now takes the rotation on the host in float64 and returns the code to the stamp's device and dtype. On any other device it is unchanged.
+- *The search* of RowTime, WhereRegistry, AttentionContext, ReferenceClose, Models and Language for `float64` and `.double()` found no other cast an MPS tensor reaches:
+  - `RowTime.subintervals` already works on the host for MPS;
+  - `Models`'s readback score already keeps the input dtype on MPS;
+  - WhereRegistry, AttentionContext, ReferenceClose and Language have none.
+- *New test:* `test_item17_time.py::test_55d_the_comparator_and_a_question_context_run_on_mps`, skipped where there is no MPS device (the convention of the device tests). On MPS the comparator decodes exactly at 1, 1,000 and 1,000,000 ticks back from 4,000,000,000, and the question context is on MPS and equals the ladder's codes. It ran here: `test_item17_time.py` 10 passed, 5.2 s. The training test now passes on MPS (1 passed, 20.8 s). Certificate 55 (d)'s CPU tests pass unchanged.
+
+#### Part F
+
+- *`test_reverse_traversal.py::test_reconstruction_uses_held_word_support_after_attention_changes`* (`9ef7fe4271`).
+  - *The producer:* "12 plus 1" stages the units `1`, `2`, ``, `plus`, ``, `1`, and `2` has no word concept. The supplied reading asked for `2` with "words" alone (`word_request`). That returned the known words `plus` and `1`, so `word_activity` gave `2` `-inf`: a word with no concept is read whole only where the look returned no word. `2` was not allowed, so it was never accepted, and the supplied reading asked for it again at each of the 32 looks. The reading was `[0], [1] × 31`, and only the first unit was interpreted.
+  - *The repair:* the request for a word with no word concept is empty, so the look returns no known word and the word is read whole at its own activity. The test passes (`test_reverse_traversal.py` 5 passed, 7 skipped, 7.5 s).
+- *Silence's NULL* (`3acace185e`). `SentenceField.reconstruct(..., silent=)` takes `_sentence_path_cost`'s silent mask. For a silent row, what the grammar's inverse puts back (`_reconstruction_percepts`) is replaced by `SilenceLayer.reverse` (NULL at every place), and that is what `reconstruction_order_zero` scores against the sentence. Certificate 41's test now checks it: with an inverse made to put back ones, the silent sentence's put back is all zero and the reduced one's is not.
+- *The lesson's script* (`62d797a26d`). `draw_start()` draws a 32-bit start from `os.urandom`, seeds torch, numpy and Python, and prints it as `start_drawn`. The start is recorded in `initial.json` and in the report over runs. `--replay` restores the saved streams as before.
+- *`'time-v1'`* (`0b9082494e`) becomes `'name-v1'`, in `LTM0.address_domain`, the thought records' namespace (`Layers`) and the checkpoint remap. Ported: `test_math_chain.py` and `fixtures/item18-first-document-situation.json` (the string only).
+
+#### The gates
+
+| Point | Commit | Result |
+| --- | --- | --- |
+| Before any edit of bin/ | `a3c7798656` | both pass, 5.3 s |
+| After B | not built | |
+| After C | `ff6712428d` (tree before the commit) | both pass, in the run of 18 files (209 passed, 6 skipped, 167 s) |
+| After D | not built | |
+| After F and the MPS repair | `cc0fc32571` | both pass (51 passed, 7 skipped with the files below, 51 s); also inside the 60-file F run |
+
+#### Sentences read in order before and after the lesson
+
+- *In the trial:* in the table above.
+- *In the model:* not measured, since B was not built. The lesson's script at the end gives no-lesson readings (below).
+
+#### Certificates 30 to 45
+
+| | Test (`test_item17_looks.py` unless said) | Result |
+| --- | --- | --- |
+| 30 | `test_30_33a_35_36_42_...`: no `SubSpace.materialize()` inside a look, over "alpha gamma"'s looks (host reads of a span other than `materialize` are not counted) | pass, 0 calls |
+| 31 (b), 33 (d) | `test_31_33d_...` (earlier pass) | pass |
+| 33 (a) | `test_30_33a_...`: the where wires equal the encoding's code before and after a training step, and are in no optimizer group | pass |
+| 34 (rules 34, 39) | `test_34_the_where_match_...` (earlier pass) | pass |
+| 35 | `test_30_33a_...`: on "qzv alpha xwpt", "words" returns `alpha` alone (finite at 0.762), the runs of letters nothing | pass |
+| 36 | `test_30_33a_...`: after a look for another word, the same request gives the same field and word values exactly | pass |
+| 37 (dimming) | `test_37_dimming_lowers_both_lanes_and_is_never_against` | pass |
+| 37 (rule 37) | `test_37_interpret_takes_...` (earlier pass) | pass |
+| 38 (a), 38 (c) | `test_38a_...`, `test_assessment.py` (earlier pass) | pass |
+| 38 (b) | `test_38b_...` (learning, recorded) | not run this pass |
+| 39 | `test_39_...` (earlier pass) | pass |
+| 40, 41 | `test_40_...`, `test_41_...` (41 now also reads the NULL put back) | pass |
+| 42 | `test_30_33a_...`: "alpha omega" with a supplied reading, `omega` read whole and taken (actions `[0, 1]`, both accepted, `omega` descended) | pass |
+| 43 | `test_43_a_word_read_at_for_one_and_against_a_trace_is_interpreted` | pass (.9998 taken) |
+
+Left, and why:
+- 31 (a): the transposes against the framework's backward in the model need a second backward through `Salience`; not written for lack of time.
+- 31 (c): printed in part by `test_15`.
+- 32: needs a lesson with a word inside a longer known word.
+- 33 (b), (c): no weight reads the where in the model (B not built).
+- 34 ("words" presses against the space): step 6's Not entry is not built.
+- 44: a measure of seconds and host reads; not run.
+- 45: needs D.
+
+#### The lesson's script, `--runs 3` (at `cc0fc32571`, CPU)
+
+| Run | Start drawn | Words found | Sentences in order | Words in order | Paths at the allowance | Draws | Known words against | Known words both | Seconds |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 3542604776 | 64 of 64 | 1 | 4 | 0 | 26 | 0 | 0 | 18.9 |
+| 2 | 2440680124 | 64 of 64 | 1 | 4 | 0 | 26 | 0 | 0 | 21.4 |
+| 3 | 2312861283 | 64 of 64 | 0 | 0 | 0 | 26 | 0 | 0 | 25.3 |
+
+The runs now differ.
+
+#### Choices on my own recommendation (provisional)
+
+- In the trial, the request's share is taken on its for lane alone (a request below zero makes nothing salient). Without it, a negative "words" gave negative shares and a punctuation reading won the match. `4ae355411a`.
+- A supplied reading's request for a word with no word concept is empty, not "words" alone. `9ef7fe4271`.
+- A silent sentence's put back is NULL, and the sentence's bytes are scored against it; the target is not made NULL. `3acace185e`.
+- The address domain is named `'name-v1'`. `0b9082494e`.
+- On MPS, the comparator's rotation and the question context's ladder codes are computed on the host in float64. `a3a34e56d6`.
+
+#### Tests ported or retired (old assertion, then new)
+
+- `test_item17_spread.py::test_24_...`: retired (above).
+- `test_testpoint.py::TestBlindSpot::test_blind_spot`: old, the hidden word read back at its place > 0 by `read_back`. New, no fill function exists; the word beside is put back unchanged; the error at the withheld place is printed.
+- `test_reference_reconstruction.py` (the fixture's `_reconstruct_trial`) and `test_packed_reconstruction_parity.py` (`capture`): the stand-ins for `SentenceField.reconstruct` take its new keyword. Their assertions are unchanged.
+- `test_math_chain.py`, `fixtures/item18-first-document-situation.json`: `'time-v1'` becomes `'name-v1'`.
+- `test_item17_looks.py::test_41_a_sentence_whose_trees_do_not_reduce_...`: gains the NULL put back.
+
+#### Test files run, with counts and seconds
+
+- Gates before any edit: 2 passed, 5.3 s.
+- `test_item17_where_trial.py`: 2 passed, 3.3 s. The trial's report: two runs (measure (i) and 3 starts × 7 forms), about 4 minutes each.
+- After C, 15 files naming `ConceptSpread` or `FieldReverse`, plus the trial and both gates: 209 passed, 6 skipped, 167 s.
+- `test_testpoint.py::TestBlindSpot`: 1 passed, 6.4 s.
+- F, the 60 files naming the supplied reading, `SentenceField`, the address domain or the namespace, plus both gates: 583 passed, 59 skipped, 7 failed, 742 s.
+  - Six were the two stand-ins of `SentenceField.reconstruct` (above). Ported, they pass: `test_reference_reconstruction.py` 12 passed, 4.1 s; `test_one_backward_standing.py` with `test_packed_reconstruction_parity.py`, 22 passed, 3 skipped, 18.4 s.
+  - The seventh is `test_81` (known).
+- `test_item17_time.py`: 10 passed, 5.2 s. `test_basicmodel.py::TestTrainingUpdatesWeights`: 1 passed, 20.8 s (MPS).
+- Final: `test_item17_looks.py`, `test_item17_time.py`, `test_item17_where_trial.py`, `test_reverse_traversal.py`, `test_reference_reconstruction.py`, the training test and both gates: 51 passed, 7 skipped, 51 s.
+
+#### Commits
+
+`4ae355411a` (A), `ff6712428d` (C), `a3a34e56d6` (MPS), `9ef7fe4271`, `3acace185e`, `62d797a26d`, `0b9082494e` (F), `cc0fc32571` (E, and 41's NULL). Not mine in the range: `1dc1f6fb5d`.
+
+#### What is left
+
+- Alec's answer on what reads the where (above). Then B, step 6's Not entry, the multi-unit event, the reading lesson measured in the model, D, and the certificates that need them (33 (b) and (c), 34, 45).
+- Certificates 31 (a) and (c), 32 and 44.
+- The prototype's files, once the model's tests state the where.
+
+#### What surprised me
+
+- Round 2's "no share at its own place" was an artefact of the derivative taken on the wire's value with both lanes through it. Passed by its entries, a row on the where wires has its largest share at its own place.
+- In a row's product, the when wires are a pure loss within a sentence: they are the same at every reading, and their entries dimmed every row until nothing was read.
+- With the wires in the product and the lower rate, the lesson was read 16 of 16 while held-out orders were read 0 of 6. The order learned is the content's.
+- The supplied reading's stall came from asking an unknown word for as "words", which returns every other known word.
+
+#### Review (Claude, 2026-11-20)
+
+Spot tests by the pass; both gates pass at three points. The list on `cc0fc32571` is run by Claude and recorded with the next return.
+
+- *The trial was done as asked and stopped where it was told to stop.* Nothing for the where is built in `bin/`.
+- *One finding of round 2 is overturned, and it removes an obstacle.* A row of a Pi on the where wires has its largest share at its own place when the way down passes the row by its entries, as a Sigma is passed by its weights. Round 2's "no share at its own place" came of taking the derivative on the wire's value with both lanes through it.
+- *What the trial shows is not that the Pi cannot read the where, but what a row that requires its whats can learn of it.* Such a row learns where its own content usually stands. The lesson's own sentences are read in order (up to 16 of 16) and new orders of the same words are not (0 or 1 of 6, every form, every start), and the request, which is what should ask for a place, learns nothing: held at its start it reads as well. Place is not had apart from content.
+- *The when wires hurt inside a sentence.* Every reading of a sentence has one time, so they tell no reading from another, and in the product they dim every row; their entries rose all the same. This is put to Alec with the where.
+- *The fault on MPS is repaired* at both producers, with a test that runs on MPS, and the training test passes there. *The fill is gone.* *The supplied reading's stall* was a real fault (a word with no word concept asked for as "words") and is repaired.
+- *Left:* certificates 31 (a) and (c), 32, 44, and those that wait on the where (33 (b), (c), 34, 45); the prototype's files.
+
+#### To Alec: what the trial found, and the next thing to try
+
+*What he asked for was tried as he said it:* a row of the Pi reads its input whole, the where and the when muxed in before the product, the entries on those wires learned from nothing. It teaches the lesson's order and not order: the rows that take up a place are the rows of what usually stands there (the capitals that begin a sentence, the space, the first words).
+
+*Claude's reading of why, in his own terms.* A basic percept is an occurrence, and a row that keeps a place is "this content at this place". For a request to ask for a place and for nothing else, there has to be a thing that is a place and nothing else. Rule 72 says how such a thing arises: a cone has weight on the coordinates its members share and none on those on which they vary. The occurrences that stand at one place share its where and vary in everything else. So their class is a row with weight on the where wires and none on any what: *a place*, made as any row is made, by nomination from what is found together (rule 73), and by no hand. A concept over such a row is the location concept that rule 47 says will be learned; the request asks for it as it asks for "words"; and the way down, passed by entries, lands on that place's band.
+
+*What stands in the way in the source:* a row of the first Pi requires its whats (rule 2), and its entries on them are the mereology's and are not taught (rule 35). A place needs a row that has dropped them.
+
+*So the question is narrower than before.* May a row of the first Pi be a place: entries on the where wires and none on a what? If yes, it is tried in tests first, as this was: rows of places given, and then rows of places nominated from occurrences, with held-out orders as the measure. If no, the two ways left are the concepts' own weights on the where (round 2: held-out orders 6 of 6; the exception to §19.89) or leaving reading in order to item 1.6.
+
+*And of the when:* within a sentence it is the same at every reading. First choice: a row's entries on the when wires are read only where the readings of a look differ in time, which is across sentences and in memory, and not within one sentence's looks.
+
+*Not waiting on this:* the trial of a place as a row is added to the next pass in tests only, so that his answer can rest on a measure; rounds 6b and 6c are built in that pass.
