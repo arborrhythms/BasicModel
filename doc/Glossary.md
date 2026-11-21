@@ -291,6 +291,25 @@ medium-term structures easily, and are either promoted or forgotten according
 to their value as members" (Alec, 2026-11-20). What it holds
 is easily promoted and easily forgotten. In the source: `MediumTermMemory`.
 
+**Candidate.** An entry or a row on trial in MTM, beside the Pi or the Sigma
+it would join. It starts at nothing, is read as an entry is, and is promoted
+or forgotten by its value as a member. A Pi's candidate is offered by what is
+found together, and is worth what both of its constituents say of it: one
+present without the other counts against it. A Sigma's candidate is offered by
+a thing found where a kind was expected. In the source: `CandidateMatrix`.
+
+**Tie.** A word's link to an object, kept in MTM with a certainty of its own.
+An object is looked for before one is made, so two words may be tied to one
+object; what tells them apart is each tie's certainty, which rises when the
+word and the object are active together and the tie holds, and falls when it
+does not. In the source: `WordTies`.
+
+**Cone.** The region of a row of a Pi in the space beneath it: weight on the
+coordinates its members share, none on a coordinate on which they vary, and an
+against side for what its nearest neighbours hold that it does not (Alec,
+2026-11-20: "that class is defined as a conic region in similarity space,
+which may in fact be a subspace of that space").
+
 **Slot.** A place of episodic memory: one concept of a moment, with its value.
 A row of LTM keeps an idea, which is semantic memory, and a few slots, which
 are episodic memory (Alec, 2026-11-19: "Entry should be slot in episodic
@@ -314,6 +333,25 @@ on both the what/where of conceptual space, and carries those selected
 percepts into the activation space on all existing concepts" (Alec,
 2026-11-19). In the model the filter is a number from 0 to 1 at each percept
 of the sentence, and the first look of a sentence takes all of it at once.
+There is one act of attention, `attend`; nothing forbids an act, and what was
+read is lowered, not removed.
+
+**Request.** What `attend` gives: a mask over all concepts, on two lanes,
+learned. It starts at the concept "words" alone. A look carries it down the
+matrices of the way up as the *salience map*, onto what each percept is and
+onto where it is.
+
+**Bank.** The one lookup of a sentence's percepts, held on the device for all
+of that sentence's looks. A look reads the bank with an activity for each
+event and looks nothing up again. In the source: `PerceptBank`.
+
+**Where, when.** The place and the time of a percept, carried on wires of
+their own beside its what, from one fixed sinusoid for each. A row of a Pi
+reads its input whole, "which incudes the .where and .when that get muxed into
+it when read from a percept ... so that the basic percept can decide to
+include or drop the .where and .when fields as the gradient determines" (Alec,
+2026-11-20). An occurrence keeps a place; a generalization holds none. The Pi
+alone reads these wires; no concept has a weight of its own on one.
 
 **Expectation.** A guess at the network's activation, computed in the
 architecture, on the structure's own Pi, Not and Sigma. It is built in and
@@ -321,9 +359,11 @@ turned on by a parameter of the model. It is made at each `attend()`: "we want
 to expect perceptual and symbolic activation and then learn that stage by
 stage as we move over the orders" (Alec, 2026-11-20). At each order what was
 expected is compared with what arrives there, and it is not trained through
-the way up and the way down again. The top-down reconstruction is a different
-thing: it fills in a blind spot, from what the framework of percepts and
-concepts assumes of what is missing. Expectation "is not counted as evidence, it is just
+the way up and the way down again. Its stages are the basic percepts, the
+concepts and the symbols, and not the output. The top-down reconstruction is a
+different thing, and nothing fills a blind spot: "we would just expect that as
+a prediction error, since a missing bit in a large domain requires a finely
+detailed reconstruction" (Alec, 2026-11-20). Expectation "is not counted as evidence, it is just
 removing some of the burden from later layers" (Alec, 2026-11-19). It joins
 the signal as a gain on what arrives, with its gradient stopped, and as a
 prime of selection. What it gives is the *expected field*.
