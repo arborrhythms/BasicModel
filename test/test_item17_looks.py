@@ -453,12 +453,27 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
                 booked.append(value.detach().clone())
             return add(registry, name, value, *args, **kwargs)
         Models.Error.add = recorded
+        import SentenceField
+        generated = SentenceField.reconstruct_generation
+        put = []
+        def kept(*args, **kwargs):
+            # The grammar's inverse puts back something at every place, so
+            # that what the silence leaves of it shows.
+            result = generated(*args, **kwargs)
+            result[1]._reconstruction_percepts = torch.ones_like(result[1]._reconstruction_percepts)
+            put.append(result[1])
+            return result
+        SentenceField.reconstruct_generation = kept
         try:
             for texts, silent in ((['alpha gamma'], True), (['alpha'], False)):
                 before, entries = len(store), dict(model._concept_owner().mtm.entries)
+                put.clear()
                 with torch.no_grad():
                     model.forward(model.inputSpace.prepInput(texts))
                 assert bool(model._sentence_silence.any()) is silent
+                # What the model's reconstruction puts back for a silent
+                # sentence is NULL at every place; it is scored so.
+                assert put and bool(put[-1]._reconstruction_percepts.any()) is not silent
                 if silent:
                     rows = range(before, len(store))
                     assert len(rows) == 1
@@ -469,7 +484,133 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
                     assert booked and float(booked[-1].sum()) == 1.
         finally:
             Models.Error.add = add
+            SentenceField.reconstruct_generation = generated
     finally:
         model.End()
     like = torch.rand(2, 5)
     assert not SilenceLayer().reverse(like).any() and not SilenceLayer()(like).any()
+
+
+def test_30_33a_35_36_42_the_bank_the_where_wires_garbage_the_same_look_and_an_unknown_word(tmp_path, monkeypatch):
+    """Certificate 30 (rule 33): no ``materialize()`` on a look's path,
+    counted over a sentence's looks. 33 (a) (rule 47): the where wires equal
+    the encoding's code at every place before and after a training step,
+    and are in no optimizer's groups. 35: a known word among runs of letters
+    that are no form is returned alone by "words". 36 (1.8 §74): a look with
+    the same request gives the same result whatever was looked at before
+    it. 42: a word not yet known, asked for in a supplied reading, is read
+    whole and taken."""
+    import SentenceLooks
+    import Spaces
+    from test_item18_expect import read
+    from reading_fixtures import SourceOrder
+    model = nominated_lesson(tmp_path, monkeypatch)
+    try:
+        # 33 (a).
+        registry = model.where_registry
+        code = registry.encoding.encode(torch.arange(registry.capacity)).float().to(registry.code)
+        torch.testing.assert_close(registry.code.detach(), code)
+        optimizer = model.getOptimizer(lr=.003)
+        held = {id(p) for group in optimizer.param_groups for p in group['params']}
+        assert id(registry.code) not in held
+        read(model, 'alpha gamma', training=True, optimizer=optimizer)
+        torch.testing.assert_close(registry.code.detach(), code)
+        # 30: count the materialize() calls made inside a look.
+        inside, calls = [False], [0]
+        materialize, look = Spaces.SubSpace.materialize, SentenceLooks.look
+        def counted(self, *args, **kwargs):
+            calls[0] += inside[0]
+            return materialize(self, *args, **kwargs)
+        def watched(*args, **kwargs):
+            inside[0] = True
+            try:
+                return look(*args, **kwargs)
+            finally:
+                inside[0] = False
+        monkeypatch.setattr(Spaces.SubSpace, 'materialize', counted)
+        monkeypatch.setattr(SentenceLooks, 'look', watched)
+        looks = []
+        run = SentenceLooks.Looks.run
+        def observed(self, arrive, **kwargs):
+            result = run(self, arrive, **kwargs)
+            looks.append(int(result.looks[0]))
+            return result
+        monkeypatch.setattr(SentenceLooks.Looks, 'run', observed)
+        read(model, 'alpha gamma')
+        assert looks and looks[0] >= 2
+        assert calls[0] == 0
+        monkeypatch.setattr(SentenceLooks, 'look', look)
+        # 35 and 36: "words" over a sentence with runs of letters that are no form.
+        banks = held_banks(monkeypatch)
+        read(model, 'qzv alpha xwpt')
+        owner, bank = model._concept_owner(), banks[-1]
+        model._sentence_bank = bank
+        perception = owner.basic_percepts.read_bank(bank)
+        concepts = model._attention_word_concepts[:, :3]
+        known = concepts >= 0
+        words = SentenceLooks.requested(model, torch.zeros(1, int(model._stm_reducer().d_model)))
+        def found(request, own):
+            field, activity, _ = SentenceLooks.look(model, bank, request, own, perception)
+            extent = SentenceLooks.extent_of(bank, activity, 3)
+            value = SentenceLooks.word_activity(field, concepts, known, extent, own, bank)
+            return field.evidence.detach().clone(), value[0].detach().clone()
+        first_field, first = found(words, bank.activity)
+        print(dict(known=known[0].tolist(), words=first.tolist()))
+        assert known[0].tolist() == [False, True, False]
+        assert torch.isfinite(first).tolist() == [False, True, False]
+        # 36: a look for another word, then the first request again.
+        found(SentenceLooks.word_request(model, concepts, torch.tensor([1])), bank.activity)
+        again_field, again = found(words, bank.activity)
+        torch.testing.assert_close(again_field, first_field, rtol=0, atol=0)
+        torch.testing.assert_close(again, first, rtol=0, atol=0)
+        # 42: a supplied reading takes the word not yet known.
+        monkeypatch.setattr(model, '_attention_supplied_reading', SourceOrder(), raising=False)
+        seen = []
+        def kept(self, arrive, **kwargs):
+            result = run(self, arrive, **kwargs)
+            seen.append(result)
+            return result
+        monkeypatch.setattr(SentenceLooks.Looks, 'run', kept)
+        read(model, 'alpha omega')
+        reading = seen[0]
+        print(dict(actions=reading.actions[0].tolist(), accepted=reading.accepted[0, :2].tolist(),
+                   descended=reading.descended[0, :2].tolist()))
+        assert [a for a in reading.actions[0].tolist() if a >= 0] == [0, 1]
+        assert reading.accepted[0, :2].all() and bool(reading.descended[0, 1])
+    finally:
+        model.End()
+
+
+def test_37_dimming_lowers_both_lanes_and_is_never_against():
+    """Certificate 37 (rule 39): a reading away from where the request looks
+    is lowered on both lanes by its where match, which lies in (0, 1], so it
+    is never read as against; the key ``attentionFloor`` is read by no look."""
+    from types import SimpleNamespace
+    from SentenceLooks import where_match
+    bank = SimpleNamespace(token=torch.tensor([[0, 1, 2]]), place=torch.tensor([[0, 4, 9]]))
+    match = where_match(bank, torch.tensor([[3., 1., 0.]]), torch.ones(1, 3, 2), 3)
+    assert match[0, 0] == 1 and bool((match > 0).all()) and bool((match <= 1).all())
+    evidence = torch.tensor([[[[.8, .1], [.6, .2], [.9, 0.]]]])            # [S, B, readings, 2]
+    dimmed = evidence * match[None, :, :, None]
+    assert bool((dimmed <= evidence).all()) and bool((dimmed >= 0).all())
+    value = dimmed[..., 0] - dimmed[..., 1]
+    assert bool((torch.sign(value) == torch.sign(evidence[..., 0] - evidence[..., 1])).all())
+    root = Path(__file__).resolve().parents[1] / 'bin'
+    assert 'attentionFloor' not in (root / 'SentenceLooks.py').read_text()
+
+
+def test_43_a_word_read_at_for_one_and_against_a_trace_is_interpreted():
+    """Certificate 43 (1.8 §64.7): a word concept read at for 1 and against
+    0.0002 is one signed number just under one, the most active, and taken."""
+    from types import SimpleNamespace
+    from SentenceLooks import word_activity
+    from Attention import draw_among
+    evidence = torch.tensor([[[[1., .0002], [.4, 0.]]]])                    # [S, B, W, 2]
+    field = SimpleNamespace(concept_ids=torch.tensor([7]), evidence=evidence)
+    concepts = torch.tensor([[7, 7]])
+    bank = SimpleNamespace(token=torch.tensor([[0, 1]]))
+    own = torch.ones(1, 2, 2)
+    value = word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool),
+                          torch.ones(1, 2, dtype=torch.bool), own, bank)
+    assert float(value[0, 0]) == pytest.approx(.9998)
+    assert draw_among(value)[0].tolist() == [0]
