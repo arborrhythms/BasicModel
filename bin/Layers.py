@@ -9449,7 +9449,7 @@ class WhatInteractionMemory(LevelledThoughtHistory):
         self._what_slots = [collections.deque() for _ in range(self.batch)]
         self._what_closure_pressure = [0.0 for _ in range(self.batch)]
         self._episode_live = {}          # row -> live ordinary thought records
-        self._thought_namespace = 'time-v1'
+        self._thought_namespace = 'name-v1'
         self._thought_next_id = 0
 
     # -- sizing / resets ----------------------------------------------------

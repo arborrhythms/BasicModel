@@ -278,7 +278,7 @@ def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_
     from WhereRegistry import WhereRegistry
     frame = SituationFrame(1, torch.eye(4)[:3], torch.tensor([True, False, False]),
                            12345, torch.eye(4)[0] if has_point else None,
-                           occurrence=('ltm', 'time-v1', 12345) if has_point else ('sym', 12345))
+                           occurrence=('ltm', 'name-v1', 12345) if has_point else ('sym', 12345))
     discourse = SimpleNamespace(_inter_chain_window=2, _inter_last_meaning=[None],
                                 situation_references=lambda row: (frame,))
     owner = SimpleNamespace(components=None)

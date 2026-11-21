@@ -32,7 +32,7 @@ def finish_legacy(model, extras):
 
     def remap(value, *, typed=False):
         if isinstance(value,dict) and value.get('namespace') == 'address-v1' and 'rows' in value:
-            value=dict(value,namespace='time-v1')
+            value=dict(value,namespace='name-v1')
         if isinstance(value,tuple) and len(value)==3 and value[:2]==('ltm','address-v1'):
             if value[2] not in old:
                 raise ValueError('legacy occurrence reference has no retained row')

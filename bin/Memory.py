@@ -2231,7 +2231,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
 class LTM0(IdeaRows):
     """One immutable signed claim, typed referent and flat extension per row,
     named by a count and stamped with the present."""
-    address_domain='time-v1'
+    address_domain='name-v1'
 
     def __init__(self,nDim,capacity=1024,content_width=None,*,percept_width=None,
                  relation_capacity=8192,read_capacity=None,episodic_concepts=0):
