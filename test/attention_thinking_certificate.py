@@ -1,4 +1,4 @@
-"""Recorded-stream, exact certificates against 3926005f12; CPU only.
+"""The reading lesson's loop of requests, recorded batch by batch; CPU only.
 
 Run this file with the source checkout's bin and test first on PYTHONPATH.
 The observer neither selects an initialization nor alters a fixture or bar.
@@ -56,124 +56,82 @@ def stream_digest():
 
 
 class Observer:
-    def __init__(self, patch, output, *, certify, require_word_driven=False):
-        import Attention, ModelAttention, Language
+    """Records each sentence's loop of requests: the looks each path took,
+    the words it read and in what order, the looks that drew among equals,
+    and the lanes of each known word at the first look that held it."""
+    def __init__(self, patch, output, *, require_word_driven=False):
+        import Language
+        import SentenceLooks
         from Layers import Error
-        from test_attention_thinking_steps import original_attention, exact
-        self.output, self.certify = output, certify
+        from SentenceLooks import Looks
+        self.output = output
         self.require_word_driven = require_word_driven
         self.calls, self.actions, self.costs, self.records = [], [], [], []
         self.walk_steps = []
         self.word_driven = []
-        self.read_both = 0
         self.in_attention = 0
-        self.reference_seconds = 0.
-        base = original_attention() if certify else None
-        opened = []
-        if hasattr(Attention, 'open_narrowing'):
-            opening = Attention.open_narrowing
-            def observe_open(*args, **kwargs):
-                state = opening(*args, **kwargs)
-                state._certificate_arguments = (
-                    state.chooser, state.keys, state.spans, state.known,
-                    {key: value for key, value in kwargs.items()
-                     if key not in ('chooser', 'keys', 'spans', 'known')})
-                if certify:
-                    opened.append(state)
-                return state
-            patch.setattr(Attention, 'open_narrowing', observe_open)
-            if hasattr(ModelAttention, 'open_narrowing'):
-                patch.setattr(ModelAttention, 'open_narrowing', observe_open)
-        read = Attention.narrow_words
-        def recorded(chooser, keys, spans, known, kwargs, value, initial, final, steps):
-            self.walk_steps.append(steps)
-            if certify:
-                started = time.perf_counter()
-                torch.set_rng_state(initial)
-                wanted = base.narrow_words(chooser, keys, spans, known, **kwargs)
-                exact(value, wanted)
-                exact(torch.get_rng_state(), final)
-                self.reference_seconds += time.perf_counter() - started
-            self.calls.append(dict(inputs=frozen((keys, spans, known, kwargs)),
-                result=frozen(value), actions=value.actions.tolist(),
-                known=known.tolist(), spans=spans.tolist(),
-                budget=kwargs['budget'], spent=value.table.spent.tolist(),
-                departure=None if kwargs.get('departure') is None else kwargs['departure'].tolist()))
-            return value
-        def observed(chooser, keys, spans, known, **kwargs):
-            initial = torch.get_rng_state()
-            value = read(chooser, keys, spans, known, **kwargs)
-            final = torch.get_rng_state()
-            steps = opened.pop().steps_taken if opened else kwargs['budget']
-            return recorded(chooser, keys, spans, known, kwargs, value, initial, final, steps)
-        patch.setattr(Attention, 'narrow_words', observed)
-        patch.setattr(ModelAttention, 'narrow_words', observed)
-        # A known word read both: its for and its against lane above zero
-        # at the walk's read of the native word poles.
-        poles_of = ModelAttention.native_word_poles
-        def counted_poles(model, spans, forms, known):
-            poles = poles_of(model, spans, forms, known)
-            lanes = poles[known.to(poles.device)]
-            self.read_both += int(((lanes[..., 0] > 0) & (lanes[..., 1] > 0)).sum())
-            return poles
-        patch.setattr(ModelAttention, 'native_word_poles', counted_poles)
         self.attend_count = 0
-        from SentenceLooks import Looks
-        import ConceptSpread
-        expected = ConceptSpread.expected
-        expect_calls = []
-        def counted_expect(owner, knowing):
-            expect_calls.append(len(knowing))
-            return expected(owner, knowing)
-        patch.setattr(ConceptSpread, 'expected', counted_expect)
+        lanes_seen = []
+        activity = SentenceLooks.word_activity
+        def observed_activity(field, concepts, known, extent, own, bank):
+            if lanes_seen:
+                B, W = concepts.shape
+                ids = field.concept_ids
+                ids = ids[:, None].expand(-1, B) if ids.ndim == 1 else ids
+                evidence = field.evidence[:, :, :W].detach()                     # [S, B, W, 2]
+                match = (ids[:, :, None] == concepts[None]) & (concepts[None] >= 0)
+                lanes = torch.where(match[..., None], evidence, 0.).amax(0)       # [B, W, 2]
+                width = min(W, extent.shape[1])
+                for b, w in (known[:, :width] & extent[:, :width]).nonzero().tolist():
+                    lanes_seen[-1].setdefault((b, w), lanes[b, w].tolist())
+            return activity(field, concepts, known, extent, own, bank)
+        patch.setattr(SentenceLooks, 'word_activity', observed_activity)
         native_run = Looks.run
-        stepping = Attention.narrow_step
-        seen_states = []
-        def table_state(state):
-            table = state.table
-            return hashlib.sha256(b''.join(
-                value.detach().cpu().contiguous().numpy().tobytes() for value in (
-                    table.intervals, table.valid, table.space, table.level, table.done,
-                    state.accepted, state.descended, state.reductions, state.field_valid))).hexdigest()
-        def stepped(state, **kwargs):
-            if seen_states:
-                seen_states[-1].append(table_state(state))
-            return stepping(state, **kwargs)
-        patch.setattr(Attention, 'narrow_step', stepped)
         def measured_path(path, arrive, **kwargs):
-            if certify:
-                raise ValueError('the historical acceptance oracle cannot certify the loop of looks')
-            state = path.walk.state
-            words = []
-            first_expect = len(expect_calls)
+            state = path.walk
             before = self.attend_count
+            arrivals = []
             def arrived(index, rows):
-                words.append(dict(index=int(index), rows=rows.tolist(), after_attend=self.attend_count-before))
+                arrivals.append(dict(index=int(index), rows=rows.tolist()))
                 return arrive(index, rows)
-            seen_states.append([])
+            lanes_seen.append({})
             try:
                 result = native_run(path, arrived, **kwargs)
             finally:
-                states = seen_states.pop()
-            steps = self.attend_count-before
-            self.walk_steps.append(steps)
-            self.calls.append(dict(actions=result.actions.tolist(), spent=result.table.spent.tolist(),
+                lanes = lanes_seen.pop()
+            live = ((state.spans[..., 1] > state.spans[..., 0]) & path.present[:, None])
+            orders = path.source_orders()
+            streams = []
+            for b in range(len(path.present)):
+                if not bool(path.present[b]):
+                    continue
+                order = list(orders[b])
+                count = int(live[b].sum())
+                known = [(w, lane) for (row, w), lane in sorted(lanes.items()) if row == b]
+                streams.append(dict(
+                    words=len(order), live=count, order=order,
+                    in_order=bool(len(order) == count and order == sorted(order)),
+                    looks=int(result.looks[b]), allowance=int(state.limit[b]),
+                    at_allowance=bool(int(state.taken) >= int(state.limit[b])),
+                    drawn=int(result.alternatives[b].sum()),
+                    known_against=sum(1 for _, (f, a) in known if a > f),
+                    known_both=sum(1 for _, (f, a) in known if f > 0 and a > 0)))
+            self.walk_steps.append(self.attend_count - before)
+            self.calls.append(dict(actions=result.actions.tolist(), looks=result.looks.tolist(),
                                    departure=None if path.draw is None else frozen(path.draw)))
-            self.word_driven.append(dict(looks=len(path.fields), attend_calls=steps, words=words,
-                repeated_states=len(states) - len(set(states)),
-                look_expect_calls=len(expect_calls) - first_expect,
-                look_expect_forecasts=sum(expect_calls[first_expect:])))
+            self.word_driven.append(dict(looks=len(path.fields), attend_calls=self.attend_count - before,
+                                         words=arrivals, streams=streams))
             return result
         patch.setattr(Looks, 'run', measured_path)
         attend = Language.OperationSelectionLayer.attend
-        def attending(chooser, *args, **kwargs):
+        def attending(*args, **kwargs):
             self.attend_count += 1
             self.in_attention += 1
             try:
-                return attend(chooser, *args, **kwargs)
+                return attend(*args, **kwargs)
             finally:
                 self.in_attention -= 1
-        patch.setattr(Language.OperationSelectionLayer, 'attend', attending)
+        patch.setattr(Language.OperationSelectionLayer, 'attend', staticmethod(attending))
         select = Language.OperationSelectionLayer.select_logits
         def selecting(chooser, *args, **kwargs):
             result = select(chooser, *args, **kwargs)
@@ -203,11 +161,10 @@ class Observer:
         self.records.append(dict(batch=index, label=label, seconds=seconds,
             attention_calls=len(self.calls), departure_calls=sum(c['departure'] is not None for c in self.calls),
             parameter_count=len(record['parameters']), costs=len(self.costs), walk_steps=self.walk_steps,
-            word_driven=self.word_driven, known_read_both=self.read_both))
+            word_driven=self.word_driven))
         self.calls, self.actions, self.costs = [], [], []
         self.walk_steps = []
         self.word_driven = []
-        self.read_both = 0
         print(json.dumps(self.records[-1]), flush=True)
 
 
@@ -232,10 +189,9 @@ def lesson(observer):
     seconds = 0.
     def timed(*args, **kwargs):
         nonlocal seconds
-        overhead = observer.reference_seconds
         started = time.perf_counter()
         result = run(*args, **kwargs)
-        seconds = time.perf_counter()-started-(observer.reference_seconds-overhead)
+        seconds = time.perf_counter()-started
         return result
     model.runBatch = timed
     class Complete(Exception):
@@ -291,14 +247,29 @@ def gates(observer, patch):
         model.End()
 
 
+def summary(records):
+    """Over the first path of each sentence: the words found, the sentences
+    and words read in order, the first paths that took the allowance of
+    looks, the looks that drew among equals, and the known words whose
+    first look held them read against (against above for) or both (both
+    lanes above zero)."""
+    first = [stream for record in records if record['word_driven']
+             for stream in record['word_driven'][0]['streams']]
+    return dict(sentences=len(first),
+                words=sum(s['words'] for s in first),
+                live=sum(s['live'] for s in first),
+                in_order=sum(s['in_order'] for s in first),
+                words_in_order=sum(s['words'] for s in first if s['in_order']),
+                at_allowance=sum(s['at_allowance'] for s in first),
+                drawn=sum(s['drawn'] for s in first),
+                known_against=sum(s['known_against'] for s in first),
+                known_both=sum(s['known_both'] for s in first))
+
+
 def over_runs(output, runs):
     """The lesson run ``runs`` times, each in a fresh process with no seed
-    chosen, into ``output/run-NN``, and its report over the runs: the words
-    found in the first walk of each of the sixteen sentences, summed; the
-    first walks that ran to the cap of 32 steps; the first walks that came
-    back to a state of their table they had been in; the readings of a
-    known word whose for and against lanes were both above zero; and the
-    seconds."""
+    chosen, into ``output/run-NN``, and its report over the runs: the
+    summary of each run's sixteen sentences, and the seconds."""
     import subprocess
     import sys
     output.mkdir(parents=True, exist_ok=False)
@@ -308,26 +279,13 @@ def over_runs(output, runs):
         subprocess.run([sys.executable, __file__, 'lesson', '--output', str(where)],
                        check=True, stdout=subprocess.DEVNULL)
         result = json.loads((where/'result.json').read_text())
-        first = [record['word_driven'][0] if record['word_driven'] else None
-                 for record in result['records']]
-        steps = [record['walk_steps'][0] if record['walk_steps'] else None
-                 for record in result['records']]
-        each.append(dict(run=k + 1, seconds=result['seconds'],
-                         words=sum(len(walk['words']) for walk in first if walk),
-                         at_cap=sum(step == 32 for step in steps),
-                         repeating=sum(bool(walk.get('repeated_states')) for walk in first if walk),
-                         known_read_both=sum(record.get('known_read_both', 0) for record in result['records']),
-                         first_walk_steps=steps))
+        each.append(dict(run=k + 1, seconds=result['seconds'], **summary(result['records'])))
         print(json.dumps(each[-1]), flush=True)
-    words = [run['words'] for run in each]
-    capped = [run['at_cap'] for run in each]
+    keys = [key for key in each[0] if key not in ('run', 'seconds')]
     report = dict(runs=runs, seed_selected=False, each=each,
-                  words=dict(each=words, mean=sum(words) / runs, least=min(words), greatest=max(words)),
-                  at_cap=dict(each=capped, mean=sum(capped) / runs, total=sum(capped)),
-                  repeating=dict(each=[run['repeating'] for run in each],
-                                 total=sum(run['repeating'] for run in each)),
-                  known_read_both=dict(each=[run['known_read_both'] for run in each],
-                                       total=sum(run['known_read_both'] for run in each)),
+                  **{key: dict(each=[run[key] for run in each], total=sum(run[key] for run in each),
+                               least=min(run[key] for run in each), greatest=max(run[key] for run in each))
+                     for key in keys},
                   seconds=dict(mean=sum(run['seconds'] for run in each) / runs))
     (output/'runs.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({key: value for key, value in report.items() if key != 'each'}, indent=2), flush=True)
@@ -339,13 +297,12 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--replay', type=Path)
     parser.add_argument('--compare', type=Path)
-    parser.add_argument('--certify', action='store_true')
     parser.add_argument('--require-word-driven', action='store_true')
     parser.add_argument('--runs', type=int, default=1,
                         help='run the lesson this many times, each in a fresh process, and report over the runs')
     args = parser.parse_args()
     if args.runs > 1:
-        if args.kind != 'lesson' or args.replay or args.compare or args.certify:
+        if args.kind != 'lesson' or args.replay or args.compare:
             parser.error('--runs reports over fresh lessons alone')
         over_runs(args.output, args.runs)
         return
@@ -355,7 +312,7 @@ def main():
     from reading_fixtures import use_eager_reading
     with MonkeyPatch.context() as patch:
         use_eager_reading(patch)
-        observer = Observer(patch, args.output, certify=args.certify,
+        observer = Observer(patch, args.output,
                             require_word_driven=args.require_word_driven)
         if args.replay:
             restore(torch.load(args.replay/'initial-rng.pt', weights_only=False))
@@ -371,7 +328,7 @@ def main():
             gates(observer, patch)
         report = dict(kind=args.kind, pythonhashseed=os.environ.get('PYTHONHASHSEED'),
                       seed_selected=False, seconds=time.perf_counter()-started,
-                      certificate_reference_seconds=observer.reference_seconds, records=observer.records)
+                      summary=summary(observer.records), records=observer.records)
         torch.save(stream(), args.output/'final-rng.pt')
         if args.compare:
             old = json.loads((args.compare/'result.json').read_text())
