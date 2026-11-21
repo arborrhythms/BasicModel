@@ -43,7 +43,10 @@ def _down(graph, request, values, readings, depth=8):
     N = graph.size
     B = request.shape[1]
     grad = request.new_zeros(N, B, readings, 2)
-    grad[:graph.concepts] = request[:graph.concepts, :, None, :].clamp_min(0.)
+    # Never below zero; at exactly zero the derivative passes, so that a
+    # request that starts at nothing can be taught (as signed_lanes).
+    asked = request[:graph.concepts, :, None, :]
+    grad[:graph.concepts] = torch.where(asked >= 0, asked, 0.)
     keep = graph.child < graph.part_start
     parent, child = graph.parent[keep], graph.child[keep]
     weight, negated = graph.weight[keep].detach().to(request), graph.negated[keep]

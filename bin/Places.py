@@ -106,7 +106,8 @@ def down(basic, bank, perception, row_grad, activity=None):
     position = {key: i for i, key in enumerate(order)}
     for index, row in places:
         plus, minus, kept = basic.place_rows[row]
-        d = row_grad[index, ..., 0].clamp_min(0.)                            # [B, K]
+        d = row_grad[index, ..., 0]
+        d = torch.where(d >= 0, d, 0.)                                       # [B, K]
         gate = d * perception.values[index, ..., 0]
         share = gate * (c * plus.to(c) + (1 - c) * minus.to(c)).sum(-1) * has.to(c)
         band = band.scatter_add(1, start.clamp_min(0), torch.where(has, share, 0.))
