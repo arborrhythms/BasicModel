@@ -19983,3 +19983,238 @@ Two ways, and a third that defers it.
 3. *Neither in this item.* A test supplies its reading, as every ported test now does; an untaught model takes its words by a draw judged by its outcome; reading in order is item 1.6's. The lesson and any grammar read on unsupplied sentences stay weak until then.
 
 *Claude's recommendation:* the first, tried in tests before it is built, with the second as what is built if the trial does not teach order. The next pass does not wait on this: it takes the one time (step 16), the literal and silence (step 9), and the repairs above. The reconstruction over what and where (step 11) and certificates 30 to 45 follow his answer.
+
+### 23.6.2 Round 6, third pass: the fixtures' reading of a word, the lesson's script, one time, a literal and silence (Claude on Opus, standing in for Codex, 2026-11-20)
+
+Started at `a3c6614c4c`, on `main`, in this checkout. Ends at `be18056af0`. Nothing is pushed; no doc/*.md and no part of the specification was edited. Parts A, B and C were all coded. Both gates pass at every point measured, the last on `be18056af0`.
+
+#### What fails or is unfinished, first
+
+- `test_reverse_traversal.py::test_reconstruction_uses_held_word_support_after_attention_changes` still fails, as it did at `a3c6614c4c`. Diagnosed part of the way: the held reading's leaf mask holds the first unit only (`[True, False, ...]` over the units `1`, `2`, ``, `plus`, ``, `1`, with the reading supplied in source order). With one word, the decode reconstructs it exactly, so the byte cost is 0.0 and `before[2].gt(0).all()` fails. Why the supplied reading takes the first unit and no other was not found in this pass.
+- `test_item18_expect.py::test_81` still fails. It is a learning certificate and is left as it is: the hidden word was expected at .142 against .524 (it was .049 against .612 at the end of the second pass).
+- *Silence's put back is not wired into the model.* `SilenceLayer.reverse` gives NULL (zeros) at every place, and certificate 41 states that much. But a silent sentence's reconstruction in the model is not routed through it: the sentence has no program, so nothing is reconstructed for it, and no NULL target is scored.
+- *The literal (rule 42) is checked, and no rule was added to take it.* `sign` still requires an interpreted leaf. An uninterpreted word enters as a literal wherever any rule takes it as an operand. Where no rule takes it, the sentence is written as silence. This applies only where `interpret` is not mandatory (interpretBias below 1).
+- *The lesson's sixteen sentences were not measured before and after B.* The brief allowed the lesson script to run once, with `--runs 2`, and I ran that before B. I did not run it after B. Twelve runs are yours.
+- *Torch's default random stream is the same in each fresh process.* The two runs of `--runs 2` came out identical, so "no seed selected" does not give independent runs. Twelve runs will need a seed drawn per run.
+
+#### What was built, by file and function
+
+*A.1 The fixtures (`8e8d8c57f1`).*
+- `data/MM_text_fixture.xml` and `data/MM_ltm_consolidation_fixture.xml` each gain `S = interpret.forward(S)`, so `GrammarPhases.vector` (`per_word`) is true again.
+- *The cause.* Every other rule of these grammars (`not`, `intersection`, `union`) is `field_only`, so `LanguageLayer` attaches no binary act to compose. A two-word sentence (the xor data) cannot be reduced. At the closing (`stage_cs_lang`, closing=True), with load 2 and allowance 1, every act is masked, including STOP (`needs_reduction`), and `OperationSelectionLayer.forward` asserted "compose has no legal alternative". With that assertion lifted, the second producer showed itself: `_sentence_observation` captured a program for a row whose trees did not reduce (`admit=False` passes no completeness mask). `Extension.understand` then read two trees, and `ClauseJournal._finish_clause` raised "a completed field must have one or three slots".
+- *The repair.* `OperationSelectionLayer.forward` asserts a legal act only before the closing; at the closing, a stream with no legal act ends unreduced, and the closing publishes depth -1 for it. `Models._sentence_observation` gives a row with no published tree no program. This is the place silence is applied (C).
+
+*A.2 The lesson's script (`6c004e9b33`).* `test/attention_thinking_certificate.py`:
+- `Observer` now patches `Looks.run`, `SentenceLooks.word_activity` (the lanes of each known word at the first look that holds it), `OperationSelectionLayer.attend` (as a static method) and `select_logits`. Each path records its arrivals, its order (`source_orders`), its looks, its allowance, its draws (`reading.alternatives`), and its known words read against (against above for) and read both (both lanes above zero).
+- `summary(records)` reports these over the first path of each sentence.
+- `over_runs` reports each of them over the runs.
+- The certify path (an oracle of the walk) goes, with `--certify`.
+
+*A.3.* The five files named in the brief: 43 passed, so none needed a port. The eight that you sent:
+- `test_cs_sparse_weights` and `test_item20_round5_percepts` are ported to the gradient (listed below).
+- `test_postmerge_observers`: the trace's fields are ported.
+- `test_relation_closing`: diagnosed and given a supplied reading.
+- The `.when` inventory: updated.
+- `test_item20_round34_repair`: repaired in the source (below).
+- `test_reverse_traversal`: not repaired (above).
+
+*The audit of tensors kept across a sentence boundary (`be18056af0`).*
+- *Decided: a fault on both counts, not an exemption.* The bank is a sentence's one lookup, and its readers are that sentence's looks. Holding it into the next sentence keeps sentence 0's graph alive after that sentence's backward. `Models` (the sentence loop, after `finish_sentence`) now lets go of `_sentence_banks` and `_sentence_bank` when the sentence closes.
+- `inputSpace.symbol_entries.symbol_where`: the word's recorded place is staged once for the batch from `WhereRegistry.encode`, a read of the fixed where parameter. It carried that read's graph into every sentence's staging. The salience map of rule 47 lands on the bank's own band, inside its sentence, so the record needs no graph. `Models` (word staging) now stages `_ar_word_symbol_where` detached.
+- The audit then passes. Three looks tests that read `model._sentence_bank` after the sentence now keep the bank of the sentence they read (`held_banks`).
+
+*B. One time (`79fb34555e`, with test ports in `c35959feea` and `4b17a8f586`).*
+- `bin/RowTime.py`:
+  - `encoder()` is the one encoder, a single instance.
+  - `how_far_back(present, stamp)` is the comparator. On each rung it takes the stamp's phase from the present's (in double precision) and lays the unit bracket again, so its output is the encoder's own code of the distance. It decodes exactly at 1, 1,000 and 1,000,000 ticks back from presents of 5,000,000 and 4,000,000,000.
+  - `compared(model, idea)` reads an idea's stamp through the comparator against the model's present code.
+  - `present_stamp(store)` gives the present's code for a row written now: the model's code; or, for a store given only an integer present (test fakes), that integer's code by the one encoder; or zeros.
+  - `present_tick(store)` gives the present as an integer for MTM's `when`.
+  - `name_row(store)` gives the next row name, a count starting at one.
+  - Gone: `_ModelTimeEncoding`, `age_interval`, `age_band`, `relative_to`, `difference`, `relative_idea`, `next_time`, `checkpoint_times`.
+- `bin/Models.py`:
+  - `BasicModel.when_code` is a buffer beside `when_time` (not persistent).
+  - `set_present(tick)` sets the clock and makes the code; `_advance_when_time` is `set_present(present+1)`, with no greatest taken against a store's clock.
+  - `present_code()` reads the code, and a load hook re-encodes it after `load_state_dict`.
+  - `_what_grammar_context`: 5 relation bits, then the where-ladder code of the offset, both positions, the two slot counts, the open depth and the closure pressure (28), then the 8 summaries. The magnitude and the normalized positions go.
+  - `_widen_what_projection_checkpoint_state` goes.
+- `bin/Language.py`: `WHAT_CONTEXT_DIM` is 41. `SymbolSubSpace` takes the one encoder.
+- `bin/Memory.py`:
+  - `IdeaRows`: `model_clock` goes. `names_issued` (a count) and the `row_names` column are now in `IdeaRows` itself. `truth_schema` is 19.
+  - `LTM0` names its rows by `row_names` and stamps them with the present (`present_stamp`). Its time index (`_row_times`, `_rows_by_time`, `_ensure_time_index`, `_append_cached`) goes.
+  - Its `validate_checkpoint` and `prepare_checkpoint` refuse any other schema ("before the one clock is refused"). The migrations from 16, 17 and 18 go. `STM0` refuses likewise.
+  - `STMChunks.read` and `deposit`: `tick` becomes `count`. MTM's local clocks become counts.
+- `bin/WhereRegistry.py`: `model.when_encoding = encoder()`; `when_age_scale` goes.
+- `bin/Spaces.py`:
+  - `event_when_encoding` returns the one encoder, or a zero-width codec.
+  - `ConceptualSpace._bind_read(sub, dim, present)` reads how far back a stamp lies from the model's present code; its caller passes `self._model.present_code()`.
+- `bin/AttentionContext.py`: each slot's stamps are the where code of each end of its interval of places (8), the comparator's code of each end of its interval of times (8) and the lanes (2), 18 in place of 6. The keys and the temporal column go through the comparator, and the projection width grows to `dim+28` a slot.
+- `bin/ReferenceClose.py`:
+  - The recency rank goes, and the gap in kept closes becomes a code of four by the one encoder; `FEATURES = 14`.
+  - An old policy is refused, and the 8-to-12 migration goes. `IdentityRows.migrate_checkpoint`'s 5-weight policy migration goes too.
+  - `when` comes from `present_tick`.
+- `bin/Layers.py`, `SymbolExpectation._prediction_inputs`: the present comes from the store's model (`present_stamp`), and its own present built from `model_clock` goes. Ages come by the comparator.
+- `bin/MemoryConsolidation.py`, `_content`: a promoted row keeps its `.when` (its `.where` was already kept).
+- `bin/SentenceStrata.py`: `_clock` becomes `_names`, and a reserved name comes from `name_row`.
+- `bin/WalkTrials.py`: the store's count of names is snapshotted, and the clock is restored by `set_present`.
+- `bin/ClauseRow.py`: a store gets `_model_present_code`.
+- `bin/GenerateOccupation.py`, `ThoughtChunks.py`, `PrependedSymbols.py`: these read `present_code()`.
+- `bin/IndependentComponents.py`: its witness uses `names_issued`.
+- `test/test_item17_time.py`: certificate 55 (new).
+
+*C. A literal and silence (`d57e9c3284`).*
+- `bin/Interpret.py`:
+  - `SilenceLayer`: rule_name `silence`, arity 0. `forward` and `reverse` give NULL (zeros). `silent(depths, active)` marks the rows whose closing published no tree. `write(store, like)` writes a row of zeros with no referent and trust 0, carrying only the present's stamp.
+  - `well_formed(language, actions, count, forced)`: false when a word left uninterpreted is still alone on the stack (no rule took it).
+  - `leaf_readings` is unchanged; both now read `_read_leaves`.
+- `bin/Language.py`: `'silence': SilenceLayer` is in `GRAMMAR_LAYER_CLASSES`. `_parse_rule` refuses a rule naming `silence` ("silence is in no grammar file").
+- `bin/Models.py`:
+  - `_sentence_observation`: a row whose program is not well formed (interpret not mandatory) has its published depth set to -1.
+  - `_sentence_path_cost` books `compose.silence`, one for each silent sentence, when any is silent.
+  - `_commit_sentence` writes each silent row by `SilenceLayer.write`, does not close MTM or consolidate for it, and records `_sentence_silence`.
+- Silence is detected at the published depth, which both the closing of the word bricks and `_stm_reduce_to_single_S` mark negative.
+
+#### What went
+
+`RowTime._ModelTimeEncoding`, `age_interval`, `age_band`, `relative_to`, `difference`, `relative_idea`, `next_time` and `checkpoint_times`. `IdeaRows.model_clock`. `LTM0._row_times`, `_rows_by_time`, `_ensure_time_index`, `_append_cached` and its own `rebuild_caches` and `_append_cache_state`. The LTM0 and STM0 checkpoint migrations of schemas 16 to 18. `model.when_age_scale`. `BasicModel._widen_what_projection_checkpoint_state`. ReferenceClose's recency rank, its policy migration and IdentityRows' policy migration. `when_encoding.t`. The lesson script's certify path.
+
+#### Each place of §23.T and §23.T.1, and what it reads now
+
+- *Two clocks:* one. `BasicModel.when_time` is the clock. An LTM0 or STM0 row is named by `names_issued`, a count starting at one, and stamped with the present. Rows written at one present share its stamp.
+- *MTM's count of closes:* `closes`, with its locals named counts. *The tick of an STM read:* `count`. *Forgetting:* `forget_sentences`, a count already.
+- *Encoders made on the spot:* every one is now `RowTime.encoder()`, a single instance. The model's code is `when_code`, made at each `set_present` and after a load. `SymbolExpectation`'s own present goes.
+- *`relative_idea`* becomes `compared`: the stamp is read through the comparator against `present_code()`. Readers: compose's chooser (`Language`, the chunks and the bind bank), thought's choice and requests (`Models`), the opened need and gist (`AttentionContext`), comprehension, held concepts, the bind read's keys.
+- *`age_band`* becomes `how_far_back(model.present_code(), band)` (`AttentionContext` keys and its temporal column, `Models` input keys).
+- *`RowTime.difference` (the bind read)* becomes `how_far_back` against the present code passed to `_bind_read`.
+- *The attention context's interval of ages* becomes the comparator's codes of both ends. The normalized place interval becomes where codes of both ends.
+- *ReferenceClose's recency rank* goes; *its gap* becomes a code.
+- *A question's offset, its magnitude and the normalized positions* become a code of the offset; the magnitude and the normalized numbers go.
+- *The counts of slots, the open depth and the closure pressure* become codes.
+- *The pressure of the rounds left:* left as it is (a cost with a key).
+- *Stamps read as they stand* (`attend_meanings`, `ltm_attention`, `SentenceRecordReader`): unchanged.
+- *A concept's stamp:* kept on promotion.
+- *Checkpoints of before:* refused (LTM0 and STM0 at schema 19, the ReferenceClose policy's width, `what_projection`'s width by the shape audit).
+
+#### The gates
+
+| Point | Commit | Result |
+| --- | --- | --- |
+| before B, after A | `8e8d8c57f1` | both pass, 3.7 s |
+| after B | `79fb34555e` | both pass, 4.8 s |
+| after C | `d57e9c3284` | both pass (27 passed with certificates 55, 40 and 41, 38 s) |
+| end | `be18056af0` | both pass, 3.4 s |
+
+#### Certificates
+
+| | Test | Result |
+| --- | --- | --- |
+| 55 (a) | `test_item17_time.py::test_55a_one_clock_and_no_second_counter_is_read_as_time` | pass |
+| 55 (b) | `::test_55b_every_code_of_a_time_comes_from_the_one_encoder` | pass |
+| 55 (c) | `::test_55c_the_chooser_and_an_operator_receive_the_present_in_that_code` | pass |
+| 55 (d) | `::test_55d_the_comparator_gives_how_far_back_exactly_as_a_code[5000000, 4000000000]`, `::test_55d_no_learned_reader_is_given_a_count_of_ticks`, `::test_55d_a_question_context_gives_its_quantities_as_codes` | pass |
+| 55 (e) | `::test_55e_a_row_promoted_to_a_concept_keeps_its_stamp` | pass |
+| 55 (f) | `::test_55f_the_code_on_the_model_follows_every_advance_of_the_clock` | pass |
+| 40 (rule 42) | `test_item17_looks.py::test_40_a_literal_enters_only_under_a_rule_that_takes_it` | pass |
+| 41 (rule 48) | `::test_41_silence_is_registered_and_in_no_grammar_file`, `::test_41_a_grammar_file_may_not_name_silence`, `::test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence` (two words under the field-only grammar: one row of zeros, no referent, trust 0, MTM unchanged, cost 1 booked; one word: not silent; `SilenceLayer` gives NULL) | pass |
+
+#### The lesson script, `--runs 2` (at `6c004e9b33`)
+
+- Both runs: 16 sentences, 64 words found of 64 live, 0 sentences read in order (0 words), 0 first paths at the allowance of 32 (each took 4 looks), 26 looks that drew among equals, 0 known words read against, 0 read both. 28.2 seconds a run (62 s in all).
+- An example: "This is Felix." was read `[4, 0, 5, 2]`.
+- The two runs were identical (see "What fails").
+
+#### Choices on my own recommendation (provisional)
+
+- The closing ends a stream that has no legal act, rather than asserting; a row with no tree has no program. `8e8d8c57f1`.
+- Rows are named by a count from one, and stamped with the shared present. The address domain keeps its string `'time-v1'`, which no longer describes it, to spare the fixtures that hold it. `79fb34555e`.
+- Readers get the comparator's code in the band the age took, with the present read from the model inside the comparator. Their widths do not change, and the present is not given a column of its own. `79fb34555e`.
+- The bind read's band is the code of the distance, not that code less the code of zero. `79fb34555e`.
+- ReferenceClose's gap is counted in kept closes and coded by the one encoder. `79fb34555e`.
+- The question context codes its offset and counts with the question's own where ladder. `79fb34555e`.
+- `present_stamp` codes an integer present that a store was given, for test fakes. `79fb34555e`.
+- The silent row is a row of zeros with trust 0, and its booked cost is 1 a sentence (`compose.silence`). The literal check applies only where interpret is not mandatory. `d57e9c3284`.
+- A sentence's bank is let go at its close, and the word's recorded place is staged detached. `be18056af0`.
+
+#### Tests ported or retired (old assertion, then new)
+
+- `test_item18_reduction`:
+  - `test_appending_a_referent_keeps_the_time_index_aligned` becomes `..._keeps_the_row_names_aligned`: `len(_row_times) == len(store)` becomes names `[1, 2, 3]`.
+  - `test_43_each_write_advances_past_a_stationary_model_present` becomes `test_43_writes_at_one_present_share_its_stamp_and_take_distinct_names`: times `[9, 10]` become `[9, 9]`, with names `[1, 2]`.
+  - `test_43_a_new_thought_advances_past_retained_occurrence_times`: an advance greater than the greatest row name becomes an advance greater than the greatest decoded stamp.
+  - `test_43_63_...`: a present equal to the concept id becomes `names_issued` set so that the row's name equals it.
+  - `test_47_ambiguous_legacy_times_are_rejected_without_loading[missing]` becomes `test_47_a_checkpoint_of_before_the_one_clock_is_refused_without_loading[clock]`.
+  - `test_41_44_52`: the columns gain `row_names`.
+  - `test_47_old_both_lane_idea_...` becomes `test_47_an_old_layout_is_refused_...`: "both truth lanes" becomes "before the one clock is refused".
+  - *Retired:* `test_47_single_lane_legacy_trust_idea_time_and_entry_are_preserved`, replaced by the refusal test.
+- `test_item18_finish::test_old_ordered_entry_loads_its_strongest_readings_with_warning` becomes `test_an_old_ordered_entry_is_refused`.
+- `test_what_spacetime::test_what_grammar_context_uses_model_where_ladder`: `row[7:9] == [2/4, 1/4]` becomes `row[5:9] ==` the code of offset -1 and `row[17:33] ==` the codes of the four counts. *Retired:* `test_what_projection_checkpoint_widens_from_19` (the widening goes), replaced by the new layout's test.
+- `test_identity_rows`:
+  - The policy migrated from 5 to 12 weights becomes the policy left as saved and refused by the reference's loader.
+  - A store write past HORIZON raising becomes `set_present(HORIZON+1)` raising.
+- `test_layout_removal::test_declared_nested_part_chain_...`: times `[0, 1, 2]` become `[0, 0, 0]`, with three distinct names.
+- `test_model_time_when::test_when_time_stamps_...`: `int(enc.t) == present` becomes `present_code() == enc.encode(present)`.
+- `test_item18_round_a::test_retained_time_lookup_decodes_once_...` becomes `test_retained_row_lookup_reads_names_...`: a lookup by one decode of the time index becomes a lookup by name.
+- `test_operators_round4a0::test_pre_layout_checkpoint_...`: the message becomes "before the one clock is refused". `fixtures/when-readers-round4a0.json`: 7 readers gone (2 of them gone before this pass) and 3 added (from before this pass); listed under `one_clock_removed_readers`.
+- `test_item55_mechanisms`: issued times from `next_time`, unique, with `model_clock` one past the last, become times issued from `present_stamp`, nondecreasing, with unique row names and `names_issued` at or above the greatest name.
+- `test_item20_round7_time`:
+  - `age_band` and `age_interval` equal across ticks become the comparator's codes equal across ticks (atol 1e-5).
+  - The subintervals' ages `-k/256` exactly become 256 distinct codes.
+  - In both tests at nine clock offsets, `when_encoding.t` becomes `set_present`.
+  - `test_compiled_clock_difference_...` becomes `test_compiled_comparator_reuses_one_graph_and_keeps_exact_arithmetic`.
+- `test_stm_chunk_repairs::test_word_read_uses_current_time_...`: `model_clock` used as the present becomes a present given to the store, with `names_issued` unchanged by a read and 3 after the third row.
+- `test_item20_round7_episodes`: a schema-16 load with a warning to 18 becomes the store's own load at 19; a written tick of `max(present, model_clock)` becomes the present.
+- `test_item20_round7_repair::test_composition_reads_time_differences_...`: zero at age zero becomes the codes of 7 and of 0 ticks back.
+- `test_item20_round5_memory`: an 8-weight policy widened to 12 becomes refused; features 12 become 14; two fake models get `clock_fixtures.install`.
+- `test_unsigned_coordinates::test_centered_checkpoint_keeps_...` becomes `test_centered_checkpoint_is_refused_and_the_current_one_keeps_addresses_and_content`.
+- `test_reference_arrivals`: features 12 become 14.
+- `test_generation_selection_backward`, `test_generative_residual_finite`, `test_chooser_architecture`: a context of width 29 becomes 41.
+- `test_cs_sparse_weights::test_membership_read_is_input_dependent_and_differentiable`: no gradient on the memberships becomes a gradient.
+- `test_item20_round5_percepts::test_basic_read_ties_both_towers_and_does_not_teach_the_properties` becomes `..._and_teaches_the_properties`: no gradient on the values becomes a gradient.
+- `test_postmerge_observers::test_stepped_trace_...`: `trace['masks']` and `['choices']` become `['requests']` and `['turns']`.
+- `test_relation_closing::test_mixing_relation_keeps_admitted_object_ids_...[first-encounter, admitted]`. *The cause:* the evaluation's object ids come in reading order (the draw read the second word first in three of four rows), and the test compared them with the source order. *The port:* a supplied reading; the assertions are unchanged.
+- Fixtures:
+  - `clock_fixtures.install` binds `set_present`, `present_code` and `when_code`.
+  - `part_fixtures.native_store` and `test_reference_close.fixture` attach a model clock at zero; `close` and `keep` advance it once a sentence.
+  - Fake models in `test_item18_completion`, `test_item18_operator_cost`, `test_whole_path_repairs`, `test_whole_paths` and `comprehension_replay` are installed with the clock.
+  - `ltm_store` fakes give `names_issued`.
+- `test_item17_looks`: the three tests that read `model._sentence_bank` after the sentence now keep it (`held_banks`).
+
+#### Test files run, with counts and seconds
+
+- A.1: the 17 files of the two fixtures, 168 passed and 3 skipped, 50 s; at first 5 failed (the cause above).
+- A.3: the five named files, 43 passed, 72 s.
+- B: the 64 files naming the time's names, at first 138 failed. At the end: 816 passed, 26 skipped, 1 xpassed, 71 s.
+- B: the 250 further files naming the changed modules: 2,594 passed and 12 failed, 1,087 s. Seven were repaired (above). Five failed at `a3c6614c4c` too: `test_81`, the boundary audit (repaired since), `test_relation_closing` twice (ported since) and `test_reverse_traversal`.
+- C: the 87 files naming what C changed: 1,102 passed and 6 failed, 789 s. The 6 were the question context's width, ported; those files then passed (57 with the observers' file).
+- The bank: 17 files, 233 passed and 3 failed (ported), 130 s.
+- At the end: `test_item17_time.py` and `test_item17_looks.py`, 25 passed, 33 s; both gates, 2 passed, 3.4 s.
+
+#### Commits
+
+`8e8d8c57f1` (A.1), `6c004e9b33` (A.2), `79fb34555e` (B), `c35959feea` (B's test fixtures), `d57e9c3284` (C), `4b17a8f586` (tests: the context width, the trace, a supplied reading, the gradient), `be18056af0` (the bank and the recorded place). Not mine in the range: `1250eb5dcb`, `ac0f07432f`, `d73d7ed540`.
+
+#### What is left
+
+- Silence's NULL put back in the model's reconstruction.
+- A rule that takes a literal (whether `sign` takes an uninterpreted word).
+- `test_reverse_traversal`'s held reading of one unit.
+- The lesson's sixteen sentences before and after B, and the twelve runs, with a seed drawn per run.
+- The address domain's name `'time-v1'`.
+- Steps 11 and 12, which wait on Alec's answer about the where.
+
+#### What surprised me
+
+- `DocumentWhenEncoding` codes a tick as the mean of two neighbouring phases. A plain phase difference of two codes decodes half a tick short, so the comparator has to lay the bracket again.
+- LTM0's rows were named by their time, and `next_time` kept those names unique by pushing a second clock ahead of the model's. Removing the second clock meant giving rows names of their own.
+- In a field-only grammar, the declared `S = intersection(S, S)` never reaches compose (`field_only`). Such a grammar can read one word and no two: that is silence's case exactly.
+- The lesson's two "fresh" runs were identical.
+
+#### Review (Claude, 2026-11-20)
+
+Before this pass, the list on `a3c6614c4c` (the second pass's source): 10 failed, 3,209 passed, 160 skipped in 1,326 s; two known, eight sent to this pass, of which seven are repaired or ported here and one is left (`test_reverse_traversal`). Both gates pass at four points of this pass. The list on `be18056af0` is run by Claude and recorded with the next return.
+
+- *One time is built whole* (rule 64, rule 75, certificate 55, six points): one clock, one encoder with its code on the model beside the clock, a comparator that gives how far back as a code and decodes exactly at a million ticks from four thousand million, and no learned reader left that takes a count, a rank or a normalized position. Rows of LTM are named by a count of their own, where their time had named them, which is what let the second clock go. Checkpoints of before are refused, as Alec accepted (§19.106).
+- *The audit of what is kept across a sentence was right, and both findings were faults:* a sentence's bank is let go at its close, and the recorded place of a word is staged detached. Not exempted.
+- *The lesson, read once by the ported script, has changed its nature.* Sixteen sentences: 64 of 64 words found, every sentence in 4 looks, no path at its allowance, no known word read against or both; and no sentence read in order. So with the table gone the walks no longer loop (§23.L's first cause is gone with the acts that made it), and what is left is order, which is the where (§19.115). *One run only:* the script's runs come out identical, since a fresh process starts the same random stream, so twelve runs say nothing until each draws its own start. That is a fault of the measure and goes to the next pass; a start drawn afresh for each run is not a seed chosen for an assertion.
+- *The closing no longer asserts a legal act:* a stream with none ends unreduced and is written as silence. Accepted, and it is what rule 48 asks; the assertion before the closing stays.
+- *Left to the next pass:* silence's NULL in the model's reconstruction; whether a rule takes a literal (`sign`); `test_reverse_traversal` (a supplied reading takes the first unit only); the name `'time-v1'` of an address domain that is no longer a time.
