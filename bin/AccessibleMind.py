@@ -171,7 +171,7 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
             effect_round.claim(S.KNOWING)
         return
     if kind == 'recall':
-        if result.evidence.get('chunks_loaded'):
+        if result.evidence.get('pushed'):
             effect_round.claim(S.SERIAL)
         return
     if kind not in ('reference', 'frames'):

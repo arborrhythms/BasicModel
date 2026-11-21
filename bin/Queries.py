@@ -971,8 +971,7 @@ class ThoughtLTMCapability:
         from Memory import IdeaRows
         if not isinstance(store, IdeaRows):
             return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
-        from EpisodicMemory import query
-        from ExtendedRecall import forest
+        from EpisodicMemory import query, stm_key, held_rows
         owner_ref = getattr(store, '_concept_owner', None)
         owner = None if owner_ref is None else owner_ref()
         scoped = tuple(dict.fromkeys((*references, *(ref for ref in description.role_refs if ref is not None))))
@@ -981,8 +980,13 @@ class ThoughtLTMCapability:
         start = max(0,len(store)-store.ltm_window)
         if (owner is not None and store.episodic_capacity and bool(occupied.any())
                 and bool(store.episodic_values[start:len(store)].any())):
-            cue = forest(owner,description,work=work)
-            found = query(store,cue,max_records=max_records,work=work,references=scoped)
+            # The key is the most recent STM, the top of its stack (rule 60),
+            # whatever the request; a row STM already holds is left out.
+            row = object.__getattribute__(self, '_ThoughtLTMCapability__row')
+            stm = getattr(owner, 'stm', None)
+            cue = stm_key(store, stm, row, work=work)
+            found = query(store,cue,stream=row,max_records=max_records,work=work,references=scoped,
+                          excluded=held_rows(store, stm, row))
         result = store.cued_rows(description,
             primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
             references=scoped,
@@ -1476,22 +1480,40 @@ class ThoughtLTMCapability:
         distinct. Rows share one history.
         """
         from Understanding import ConceptualField
-        from EpisodicMemory import query
+        from EpisodicMemory import query, stm_key, held_rows
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         stream = object.__getattribute__(self, '_ThoughtLTMCapability__row')
+        owner_ref = getattr(store, '_concept_owner', None)
+        owner = None if owner_ref is None else owner_ref()
+        stm = getattr(owner, 'stm', None)
+        held = held_rows(store, stm, stream)
+        # The key is the top of STM's stack, whatever the pattern (rule 60):
+        # a question when one is there, or any other idea.
+        matched = query(store, stm_key(store, stm, stream, work=work), stream=stream,
+                        max_records=1, work=work, references=references, excluded=held)
         if isinstance(pattern, ConceptualField):
-            found = query(store, pattern, stream=stream, max_records=max_records,
-                          work=work, references=references)
+            found = matched
             frames = found['value']
         else:
+            # A question's readers by address, and its answer filter over
+            # the rows the key ranks, choose first; where they find nothing
+            # the top row by the key is pushed.
             found = self.best_match(pattern, max_records=max_records, work=work,
                                     references=references)
-            frames = found.get('frames', ()) or found.get('episodic_frames', ())
-        missing = store.recall_chunks(frames, work=work, stream=stream) if frames else ()
+            frames = found.get('frames', ()) or found.get('episodic_frames', ()) or matched['value']
+            found = dict(found, records_scanned=found.get('records_scanned', 0) + matched['records_scanned'],
+                         incomplete=tuple(dict.fromkeys((*found.get('incomplete', ()), *matched['incomplete']))))
+        # The top row, one STM does not already hold, is pushed onto the
+        # stack; the answer is read from the top of the stack after it.
+        frames = tuple(frame for frame in frames if store.location(frame['occurrence']) not in held)
+        ranked = sorted(range(len(frames)), key=lambda i: -float(frames[i].get('match', 0.)))
+        frames = tuple(frames[i] for i in ranked[:1])
+        missing = store.push_recalled(frames[0], work=work, stream=stream) if frames else ()
         # The metadata records the read; no semantic result is manufactured.
         result = {name: value for name, value in found.items() if name not in
                   ('value', 'meaning', 'answer_operand', 'answer_candidates', 'binding_value', 'reference')}
-        return dict(result, value=None, frames=frames, result_kind='set', chunks_loaded=bool(frames),
+        return dict(result, value=None, frames=frames, result_kind='set',
+            pushed=bool(frames) and 'held_in_stm' not in missing and 'stm_all_chunks_on_stack' not in missing,
             incomplete=tuple(dict.fromkeys((*found.get('incomplete', ()), *missing))))
 
     def lookup(self, *args, **kwargs):

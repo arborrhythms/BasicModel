@@ -113,6 +113,12 @@ def test_content_query_retains_entries_in_requesting_stm_and_preserves_perceptio
         old_other = held(owner.stm, 1)
         from WalkTrials import ThoughtTrialState
         trial = ThoughtTrialState(model)
+        # The query's key is the top of STM's stack (sigma-pi §21, rule 60):
+        # the kept idea, with its entry, is taken up as a thought's focus.
+        from ThoughtChunks import put
+        from Extension import Node
+        from dataclasses import replace
+        put(owner.stm, replace(store.meaning_of(row), extension=(Node(entry_set(store, row)),)), row=0, pin=True)
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
         found = query.query(model._last_sentence_understanding.understanding_field,
             max_records=store.capacity, work=QueryWorkBudget(2048))

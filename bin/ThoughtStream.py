@@ -17,7 +17,7 @@ def materialize(result):
     from Queries import _freeze_boundary_value
     from Meaning import ConceptualMeaning
     evidence = dict(result.evidence)
-    if result.semantic_id in ('query', 'intuit') or evidence.get('chunks_loaded'):
+    if result.semantic_id in ('query', 'intuit') or evidence.get('pushed'):
         return result  # These effects have no returned semantic operand.
     meaning = evidence.get('meaning')
     if meaning is None:
@@ -217,7 +217,7 @@ def integrate(registry, goal, result, records, *, stm, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
-    if result.semantic_id == 'query' or result.evidence.get('knowing_written') or result.evidence.get('chunks_loaded'):
+    if result.semantic_id == 'query' or result.evidence.get('knowing_written') or result.evidence.get('pushed'):
         # System 1 changes the field or loads STM. A later selected operation
         # reads that state; this effect is not itself a concluded operand.
         try:

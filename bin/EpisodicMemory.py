@@ -123,8 +123,9 @@ def relevance(results, present):
     return reduce(poles, operation='intersection', dim=1, mask=present)[..., 0]
 
 
-def query(store, cue, *, stream=0, max_records, work=None, references=()):
-    """Rank the window by per-order content, then materialize selected rows."""
+def query(store, cue, *, stream=0, max_records, work=None, references=(), excluded=()):
+    """Rank the window by per-order content, then materialize selected rows;
+    the rows ``excluded`` are left out."""
     from ExtendedRecall import field_forest, matches as extend_matches
     forest = field_forest(cue,stream) if isinstance(cue,ConceptualField) else cue
     if not forest or not len(store) or not store.episodic_capacity:
@@ -132,6 +133,10 @@ def query(store, cue, *, stream=0, max_records, work=None, references=()):
     start = max(0,len(store)-store.ltm_window)
     result = extend_matches(store,forest,start=start)
     scores = result.values[:,0]
+    if excluded:
+        left = torch.tensor([row-start for row in excluded if start <= row < len(store)],
+                            dtype=torch.long,device=scores.device)
+        scores = scores.index_fill(0,left,0.) if len(left) else scores
     # Stable ordering starts newest first, then sorts by descending relevance.
     ranked = torch.argsort(scores.flip(0), descending=True, stable=True)
     selected = (len(scores)-1-ranked)[scores.flip(0)[ranked] > 0][:max_records]
@@ -189,8 +194,71 @@ def tree_entry(store, roots):
 
 def entry_set(store, row):
     """Read a flat entry as concepts with independent for and against lanes."""
+    return _flat_set(store.episodic_concepts[row], store.episodic_values[row])
+
+
+def held_rows(store, stm, row):
+    """The rows of ``store`` that a chunk on the stack of STM's stream ``row``
+    holds."""
+    if stm is None or not hasattr(stm, 'state'):
+        return ()
+    from Memory import STMChunks as chunks
+    state = stm.state
+    if not 0 <= row < state[0].shape[0]:
+        return ()
+    refs, read = state[chunks.REFS][row, :, 0], state[chunks.READ][row]
+    stacked = state[chunks.STACK][row] >= 0
+    held = []
+    for (kind, name), count, on in zip(refs.tolist(), read.tolist(), stacked.tolist()):
+        if count > 0 and on and kind == chunks.OCCURRENCE:
+            location = store.location(('ltm', store.address_domain, int(name)))
+            if isinstance(location, int):
+                held.append(location)
+    return tuple(dict.fromkeys(held))
+
+
+def stm_key(store, stm, row, *, work=None):
+    """The entry of concepts of the top chunk of STM's stack, as a cue of one
+    node, or ``()`` where the stack is empty or the chunk has no entry.
+
+    A chunk that points at a row of ``store`` (a recalled row, or an idea
+    kept at a sentence's close) is that row's entry; a chunk of a thought is
+    its idea's extension made into an entry as a row's is made."""
+    if stm is None or not hasattr(stm, 'state') or not store.episodic_capacity:
+        return ()
+    from Memory import STMChunks as chunks
+    from Extension import Node
+    state = stm.state
+    if not 0 <= row < state[0].shape[0]:
+        return ()
+    top = int(chunks.at(state)[row])
+    if top < 0:
+        return ()
+    kind, name = state[chunks.REFS][row, top, 0].tolist()
+    entry = None
+    if kind == chunks.OCCURRENCE:
+        location = store.location(('ltm', store.address_domain, int(name)))
+        if isinstance(location, int):
+            entry = entry_set(store, location)
+    else:
+        contents = getattr(stm, '_thought_contents', ())
+        item = contents[row][top] if row < len(contents) and top < len(contents[row]) else None
+        if item is not None and torch.equal(state[chunks.WHEN][row, top],
+                                            state[chunks.WHEN].new_tensor(item[0])):
+            meaning = item[1].read()
+            owner = store.owner()
+            from ExtendedRecall import forest
+            roots = meaning.extension or (() if owner is None else forest(owner, meaning, work=work))
+            if roots:
+                ids, values = tree_entry(store, roots)
+                entry = _flat_set(ids, values)
+    if entry is None or not len(entry.ids) or not bool(entry.values.any()):
+        return ()
+    return (Node(entry),)
+
+
+def _flat_set(ids, values):
     from Extension import ConceptSet
-    ids, values = store.episodic_concepts[row], store.episodic_values[row]
     valid = ids >= 0
     unique, inverse = ids[valid].unique(return_inverse=True)
     lanes = torch.stack((values[valid].clamp_min(0), (-values[valid]).clamp_min(0)), -1)

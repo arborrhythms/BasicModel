@@ -100,7 +100,7 @@ def test_content_cue_reenters_shared_chunks_with_stored_stamp_and_identities():
     stored_time = store.entry_time(chain).clone()
     result = store.cued_rows(store.meaning_of(chain), references=(chain,),
         max_records=1, work=QueryWorkBudget(64))
-    assert not store.recall_chunks(result['value'], work=QueryWorkBudget(64))
+    assert not store.push_recalled(result['value'][0], work=QueryWorkBudget(64))
     assert result['value'] and not result['incomplete']
     state = owner.stm.state
     when = clock.when_encoding.encode(clock.present())
@@ -109,6 +109,7 @@ def test_content_cue_reenters_shared_chunks_with_stored_stamp_and_identities():
     torch.testing.assert_close(state[chunks.WHEN][0,0],when,rtol=0,atol=0)
     torch.testing.assert_close(state[0][0,0,store.when_start:store.when_start+4],when,rtol=0,atol=0)
     assert state[chunks.READ][0,0] > old.max()
+    assert int(chunks.at(state)[0]) == 0
     assert all(owner.mtm.token_of(store.occurrence_of(row)) is not None for row in rows)
     state,index = chunks.deposit(state,torch.full((1,16),.9),torch.tensor([True]),stack=True)
     assert index.tolist() == [1]

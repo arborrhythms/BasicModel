@@ -287,8 +287,9 @@ def test_content_recall_loads_only_the_requested_stream_and_identity_pool():
     result = store.cued_rows(store.meaning_of(chain), references=(chain,),
                               max_records=1, work=QueryWorkBudget(64))
     assert tuple(row['occurrence'] for row in result['value']) == (chain,)
-    assert not store.recall_chunks(result['value'], work=QueryWorkBudget(64), stream=1)
+    assert not store.push_recalled(result['value'][0], work=QueryWorkBudget(64), stream=1)
     assert owner.stm.state[STMChunks.REFS][1, 0, 0].tolist() == [STMChunks.RELATION, chain[1]]
+    assert int(STMChunks.at(owner.stm.state)[1]) == 0
     assert not owner.stm.state[STMChunks.READ][0].any()
     assert all(owner.mtm.token_of(store.occurrence_of(row)) is not None for row in rows)
 

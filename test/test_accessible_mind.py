@@ -45,8 +45,9 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     meaning = replace(_meaning(),role_refs=(('sym',member),None,None))
     address = store.append_meaning(meaning)
     frame = store.row(address)
-    for _ in range(2):
-        assert not store.recall_chunks((frame,),stream=0,work=QueryWorkBudget(32))
+    assert not store.push_recalled(frame,stream=0,work=QueryWorkBudget(32))
+    # A row STM already holds is not pushed again.
+    assert store.push_recalled(frame,stream=0,work=QueryWorkBudget(32)) == ('held_in_stm',)
     from ThoughtChunks import held
     ideas = held(cs.stm, 0)
     # Repeated reads retain the same occurrence at its original time.
@@ -229,7 +230,7 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
     attach_clause_index(SimpleNamespace(), store, cs)
     address = store.append_meaning(held)
-    assert not store.recall_chunks((store.row(address),),stream=0,work=QueryWorkBudget(32))
+    assert not store.push_recalled(store.row(address),stream=0,work=QueryWorkBudget(32))
     from ThoughtChunks import held as stored_ideas
     retained = stored_ideas(cs.stm, 0)
     assert len(retained) == 1

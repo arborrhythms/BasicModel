@@ -187,8 +187,9 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
         before = tuple(t[1:].clone() for t in stm.state)
         shapes = tuple(tuple(t.shape) for t in stm.state)
         truth_pointer = stm._live_chunk_truth.data_ptr()
-        for _ in range(2):
-            store.recall_chunks((store.row(source),), stream=0, work=QueryWorkBudget(32))
+        assert not store.push_recalled(store.row(source), stream=0, work=QueryWorkBudget(32))
+        # A row STM already holds is not pushed again.
+        assert store.push_recalled(store.row(source), stream=0, work=QueryWorkBudget(32)) == ('held_in_stm',)
         recalled = sorted(tuple(when) for when, content in held(stm, 0)
                           if bindings(content).get('_rule_row') and when != focus)
         # §48: re-reading one retained occurrence refreshes its original slot.

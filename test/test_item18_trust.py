@@ -185,9 +185,13 @@ def test_51_training_and_serving_keep_the_same_open_answer_and_different_authori
     question = with_slots(replace(clause.meaning, extension=(requested,)),
                           (('referent', 2),), pair=(0., 0.))
     # Recall brings the matched row into STM; System 1 produces no operand.
+    # The question is on top of STM's stack, and is the query's key
+    # (sigma-pi §21, rule 60); the row is pushed above it.
     assert not store.meaning_of(0).extension
+    from ThoughtChunks import put
+    put(owner.stm, question, row=0, pin=True)
     opened = reader.query(question, max_records=8, work=QueryWorkBudget(128))
-    assert opened['value'] is None and opened['chunks_loaded']
+    assert opened['value'] is None and opened['pushed']
     from ThoughtChunks import read
     chunk = read(owner.stm, tuple(store.entry_time(0).tolist()), 0)
     from Extension import ConceptSet

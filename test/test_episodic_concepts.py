@@ -80,6 +80,12 @@ def test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar(
         monkeypatch.setattr(model, 'generate', forbidden)
         monkeypatch.setattr(model.languageSpace, 'reverse_binary_step', forbidden)
         before, percepts = knowing(model), owner._percept_field
+        # The query's key is the top of STM's stack (sigma-pi §21, rule 60):
+        # the kept idea, with its entry, is taken up as a thought's focus.
+        from ThoughtChunks import put
+        from Extension import Node
+        from dataclasses import replace
+        put(owner.stm, replace(store.meaning_of(row), extension=(Node(entry_set(store, row)),)), row=0, pin=True)
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
         found = query.query(opened, max_records=store.capacity, work=QueryWorkBudget(2048))
         assert found['frames'] and found['value'] is None
