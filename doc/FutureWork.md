@@ -2387,13 +2387,13 @@ need some record of having examined a particular place, and feedback about
 the both/neither over symbols so we know if we should attend() by zooming in
 or out (just as the thought operators for that). That can be future work."
 
-What exists. `Attention.narrowing_mask` already reads the two lanes over a
-bracket's words: both lanes make a division legal, and neither lane lets
-`focus` enter an unknown word's parts. That sets which acts are legal; it is
-not fed to the chooser as a reason to narrow or to widen. The lanes are read
-over word concepts and their objects (`ModelAttention.native_word_poles`), not
-over symbols. The bracket table marks a bracket done only when its word is
-interpreted, and keeps the last focuses so that `unfocus` can restore them.
+What exists. A look is one `attend`: a request over concepts carried down
+onto the sentence's field of percepts and read up again
+(`SentenceLooks.look`). A word that was interpreted is lowered in the bank's
+own activity over its extent (`SentenceLooks.lower`); nothing else records
+that a place was examined. The two lanes over word concepts and their objects
+are read (`ModelAttention.native_word_poles`), not over symbols, and they are
+not fed to the chooser as a reason to narrow or to widen.
 
 *Decided* (Alec, 2026-11-20; sigma-pi plan, rule 69). The record forbids
 nothing and lowers no score by hand: no rule forbids a walk an act, since
