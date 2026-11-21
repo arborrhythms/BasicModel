@@ -9,8 +9,6 @@ from dataclasses import dataclass
 
 import torch
 
-from PerceptProperties import counts_in_spans
-
 
 @dataclass(frozen=True)
 class PerceptField:
@@ -65,47 +63,3 @@ class PerceptField:
         slots = torch.arange(self.values.shape[2], device=chosen.device)
         held = (self.reading[:, None, :] == slots[None, :, None]).to(chosen)    # [B, K, A]
         return chosen[:, :, None] * held[None, ..., None]
-
-
-def read_occurrences(percepts, spans, keys, *, part_reader, native=None, dtype=None):
-    """Each member of ``keys`` at each occurrence ``spans`` ``[B, O, 2]``,
-    ``[keys, B, O, 2]``: a run of parts present where the occurrence holds
-    it, on its for lane; a whole by the evidence of the bytes the
-    occurrence covers, both lanes, where it covers them all."""
-    part_ids, part_spans, primitive, raw, _whole_spans = percepts
-    raw = raw[:, 0] if raw.ndim == 3 else raw
-    keys = tuple(dict.fromkeys(keys))
-    B, O = spans.shape[:2]
-    spans = spans.to(raw.device)
-    members = torch.zeros(len(keys), B, O, 2, device=raw.device, dtype=dtype)
-    real = spans[..., 1] > spans[..., 0]
-    ps = [i for i, key in enumerate(keys) if key[0] == 'ps']
-    if ps and O:
-        present = part_reader(native, [keys[i][1] for i in ps], part_ids, part_spans, spans, raw.shape[1])
-        pair = torch.stack((present[..., 0], torch.zeros_like(present[..., 0])), -1).to(members)
-        members = members.index_copy(0, torch.tensor(ps, device=raw.device), pair)
-    ws = [i for i, key in enumerate(keys) if key[0] == 'ws']
-    if ws and primitive is not None and O:
-        counts = counts_in_spans(raw, spans, observed=raw != 0)
-        ids = torch.tensor([keys[i][1] for i in ws], device=raw.device)
-        selected = counts[real]
-        pair = primitive.evidence_on_counts(selected, rows=ids)
-        complete = selected.sum(-1) == (spans[..., 1] - spans[..., 0])[real]
-        pair = pair * complete[..., None, None]
-        placed = pair.new_zeros(B, O, len(ws), 2)
-        placed[real] = pair
-        members = members.index_copy(0, torch.tensor(ws, device=raw.device),
-                                     placed.permute(2, 0, 1, 3).to(members))
-    return members * real[None, ..., None]
-
-
-def member_bands(keys, registry, device):
-    """The where ladders of each member of the percept tower, ``[keys,
-    width, 4]``: a run's band for every part it holds."""
-    groups = [[registry.slices['parts' if role == 'ps' else 'wholes'][0] + member
-               for member in (row if isinstance(row, tuple) else (row,))]
-              for role, row in keys]
-    width = max((len(group) for group in groups), default=1)
-    addresses = torch.tensor([group + [-1] * (width - len(group)) for group in groups],
-                             dtype=torch.long, device=device).reshape(len(keys), width)
-    return registry.band(addresses)

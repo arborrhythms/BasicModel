@@ -127,19 +127,14 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     both = cs.order_zero_both(cs._percept_field, [0])[0, :, 0]
     torch.testing.assert_close(both, torch.tensor([0., 1., 1., 0.]))
     torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
-    # Before conceptual folds, the native property events still discriminate
-    # both byte positions. Concepts themselves retain only the bracket pool.
+    # Before conceptual folds, the attended percepts still discriminate: in
+    # 01 and 10 the row of the property's form reads for at the byte that is
+    # its own and against at the bracket that holds it with the other byte.
+    # Concepts themselves retain only the bracket pool.
     rows = cs.basic_percepts.carrying('ws', 9)
-    events = cs._percept_field.event_evidence([('bp', row) for row in rows]).amax(0)[:, 0]
-    spans = cs._percept_field.spans
-    located = []
-    for start in (0, 1):
-        mask = (spans[..., 0] == start) & (spans[..., 1] == start + 1)
-        located.append((events * mask[..., None]).amax(1))
-    a, b = located
-    torch.testing.assert_close(torch.minimum(torch.maximum(a[:, 0], b[:, 0]),
-                                            torch.maximum(a[:, 1], b[:, 1])),
-                               torch.tensor([0., 1., 1., 0.]))
+    events = cs._percept_field.event_evidence([('bp', row) for row in rows]).amax(0)[:, 0]   # [B, A, 2]
+    lanes = events.amax(1)
+    torch.testing.assert_close(torch.minimum(lanes[:, 0], lanes[:, 1]), torch.tensor([0., 1., 1., 0.]))
     cs.observe_open_field(model._combine_last_cs_sub._concept_activations)
     for batch in range(4):
         cs.mtm.close(None, stream=batch,
