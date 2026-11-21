@@ -175,11 +175,8 @@ def _carry(values, source, target, share, negated, size):
     return 1. - rest
 
 
-def _flow(graph, observed, percepts, depth, *, elsewhere=False):
-    """The sources, and the spread's up and down at every node, detached.
-    With ``elsewhere`` the observed concepts were observed at another place:
-    they go up, and come down only through the rows above that read them,
-    never from themselves to their own rows."""
+def _flow(graph, observed, percepts, depth):
+    """The sources, and the spread's up and down at every node, detached."""
     N = graph.size
     source = observed.new_zeros(N, *observed.shape[1:])
     source[:min(len(observed), graph.concepts)] = observed[:graph.concepts]
@@ -200,8 +197,6 @@ def _flow(graph, observed, percepts, depth, *, elsewhere=False):
         if torch.equal(nxt, up):
             break
         up = nxt
-    if elsewhere:
-        return source, up, _down_elsewhere(graph, source, up, up_share, down_share, depth), fan, row
     for _ in range(depth):
         nxt = _carry(union(source, up, down), graph.parent, graph.child, down_share, graph.negated, N)
         if torch.equal(nxt, down):
@@ -210,42 +205,7 @@ def _flow(graph, observed, percepts, depth, *, elsewhere=False):
     return source, up, down, fan, row
 
 
-def _down_elsewhere(graph, source, up, up_share, down_share, depth):
-    """The way down when the observed concepts were observed at another
-    place. A concept's own value does not come down to its own rows, and
-    what a row gives each of its inputs leaves out what that input gave it
-    on the way up: the product on complements over the row's other inputs,
-    counted exactly where one of them is one. So a thing comes back to its
-    place only through a row that holds it with something else."""
-    N = graph.size
-    below = source.clone()
-    below[:graph.concepts] = 0.
-    negated = graph.negated[:, None, None]
-    given = union(source, up).index_select(0, graph.child)
-    given = torch.where(negated, given.flip(-1), given) * up_share[:, None, None]
-    rest = 1. - given
-    full = rest == 0
-    at_parent = graph.parent.reshape(-1, 1, 1).expand_as(rest)
-    zeros = source.new_zeros(N, *source.shape[1:]).scatter_add(0, at_parent, full.to(source))
-    product = source.new_ones(N, *source.shape[1:]).scatter_reduce(
-        0, at_parent, torch.where(full, 1., rest), 'prod')
-    zeros, product = zeros.index_select(0, graph.parent), product.index_select(0, graph.parent)
-    others = torch.where(full, torch.where(zeros == 1, product, 0.),
-                         torch.where(zeros > 0, 0., product / torch.where(full, 1., rest)))
-    index = graph.child.reshape(-1, *([1] * (source.ndim - 1))).expand_as(given)
-    down = torch.zeros_like(source)
-    for _ in range(depth):
-        kept = (1. - union(below, down)).index_select(0, graph.parent)
-        lanes = (1. - kept * others).clamp(0., 1.)
-        lanes = torch.where(negated, lanes.flip(-1), lanes) * down_share[:, None, None]
-        nxt = 1. - source.new_ones(N, *source.shape[1:]).scatter_reduce(0, index, 1. - lanes, 'prod')
-        if torch.equal(nxt, down):
-            break
-        down = nxt
-    return down
-
-
-def spread(owner, observed, *, percepts=None, structure_=None, elsewhere=False):
+def spread(owner, observed, *, percepts=None, structure_=None):
     """The expected value of every node, ``[N, B, 2]``, from the observed
     concepts ``observed`` ``[V, B, 2]`` (and, where given, the present
     parts of the first Pi ``percepts`` ``[P, B, 2]``): up once by the fan,
@@ -256,7 +216,7 @@ def spread(owner, observed, *, percepts=None, structure_=None, elsewhere=False):
     graph = structure(owner, observed.device) if structure_ is None else structure_
     depth = 4 * (len(owner._order_caps()) + 1)
     with torch.no_grad():
-        _, up, down, _, _ = _flow(graph, observed, percepts, depth, elsewhere=elsewhere)
+        _, up, down, _, _ = _flow(graph, observed, percepts, depth)
     return union(up, down), graph
 
 
@@ -291,61 +251,6 @@ def staged_percepts(owner, observed, *, percepts=None):
     at the parts, detached; what reaches it from the concepts above is
     detached."""
     return _staged(owner, observed, percepts, 'percepts')
-
-
-def present_parts(graph, perception):
-    """The parts of the first Pi that a perception read, ``[P, B, R, 2]``
-    (``R`` its readings), at the structure's part nodes; ``None`` where it
-    read none."""
-    held = getattr(perception, 'parts', None)
-    if held is None or not graph.parts:
-        return None
-    keys, values = held
-    index = {key: i for i, key in enumerate(graph.part_keys)}
-    found = [(index[key], i) for i, key in enumerate(keys) if key in index]
-    result = values.new_zeros(graph.parts, *values.shape[1:])
-    if found:
-        at, src = (torch.tensor(side, dtype=torch.long, device=values.device) for side in zip(*found))
-        result[at] = values.index_select(0, src).clamp(0., 1.)
-    return result
-
-
-def blind_spot(owner, perception, knowing=None):
-    """What the structure expects of the basic percepts at each reading of a
-    perception, ``[R_basic, B, readings, 2]``, from the parts that reading
-    holds and the concepts observed elsewhere (``knowing`` ``[B, W, 2]``):
-    a part that is present raises the rows that read it, and a row gives a
-    share to each of its parts; a concept observed elsewhere goes up to the
-    rows above that read it and comes down from them to what they read with
-    it, and never from itself to its own basic percepts, so what is
-    observed at another place is not expected at this one by its own row.
-    So a basic percept whose parts are withheld is expected from what
-    remains. Detached; never evidence."""
-    graph = structure(owner, perception.values.device)
-    B, readings = perception.values.shape[1:3]
-    parts = present_parts(graph, perception)
-    flat = None if parts is None else parts.flatten(1, 2)
-    observed = perception.values.new_zeros(graph.concepts, B * readings, 2)
-    if knowing is not None:
-        width = min(knowing.shape[1], graph.concepts)
-        observed[:width] = knowing[:, :width].detach().transpose(0, 1).repeat_interleave(readings, 1)
-    value, _ = spread(owner, observed, percepts=flat, structure_=graph, elsewhere=True)
-    return value[graph.percept_start:graph.part_start].reshape(graph.percepts, B, readings, 2)
-
-
-def read_back(owner, perception, withheld, knowing=None):
-    """The basic percepts the way back reads: those perceived, and where a
-    reading's percepts were withheld (``withheld`` ``[B, readings]``), the
-    expected ones of :func:`blind_spot` joined in their place. The values of
-    ``perception`` are not changed."""
-    rows = [key[1] for key in perception.keys if key[0] == 'bp']
-    expected = blind_spot(owner, perception, knowing)
-    if not rows or not len(expected):
-        return perception.values.detach()
-    filled = expected[torch.tensor(rows, dtype=torch.long, device=expected.device)]
-    perceived = perception.values.detach()
-    gate = withheld.to(torch.bool)[None, :, :, None]
-    return torch.where(gate, union(perceived, filled), perceived)
 
 
 def stage_values(owner, observed, *, percepts=None):

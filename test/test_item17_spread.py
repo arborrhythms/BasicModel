@@ -279,29 +279,3 @@ def test_57d_the_percepts_stage_is_registered_beside_the_concepts():
     assert float(terms['expectation.percepts'][0]) == pytest.approx(.3)
     assert all(kw['category'] == 'expectation' for _, kw in terms.values())
     assert model._expectation_looks == [] and model._expectation_percept_looks == []
-
-
-def test_24_the_blind_spots_fill_is_specific_to_a_place():
-    """What is observed at another place is expected at this one only through
-    a row above that holds it with something else, never through its own
-    row. Concepts: alpha 0, gamma 1, a kind 2; symbols: alpha's 3, gamma's 4;
-    basic percepts: alpha's 5, gamma's 6."""
-    def structure(kind):
-        edges = [(0, 5, 1., False), (1, 6, 1., False), (3, 0, 1., False), (4, 1, 1., False)]
-        if kind:
-            edges += [(2, 3, 1., False), (2, 4, 1., False)]
-        parent, child, weight, negated = zip(*edges)
-        return Structure(torch.tensor(parent), torch.tensor(child), torch.tensor(weight, dtype=torch.float),
-                         torch.tensor(negated), 3, 2, 2, 0, ())
-    alpha = present(3, 0)
-    for kind in (False, True):
-        here, _ = spread(OWNER, alpha, structure_=structure(kind), elsewhere=True)
-        anywhere, _ = spread(OWNER, alpha, structure_=structure(kind))
-        print(dict(kind=kind, alpha_here=float(here[5, 0, 0]), gamma_here=float(here[6, 0, 0]),
-                   alpha_by_its_own_row=float(anywhere[5, 0, 0])))
-        # Its own row gives alpha back wherever it is read ...
-        assert float(anywhere[5, 0, 0]) == pytest.approx(1.)
-        # ... but alpha observed elsewhere is not expected here by it.
-        assert float(here[5, 0, 0]) == pytest.approx(0.)
-        # gamma is expected here only through the kind that holds both.
-        assert (float(here[6, 0, 0]) > 0) == kind

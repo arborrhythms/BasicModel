@@ -113,9 +113,6 @@ def reverse(model, sub, field):
     for edge, col in enumerate(columns.tolist()):
         found = supports.get(col)
         supports[col] = attributed[edge, ..., 0] if found is None else torch.maximum(found, attributed[edge, ..., 0])
-    for col, filled in _blind_spot_support(model, cs, field, start, (B, E)).items():
-        found = supports.get(col)
-        supports[col] = filled.to(attributed) if found is None else torch.maximum(found, filled.to(found))
     for col, support in supports.items():
         if cs.basic_percepts.is_value(col // 2):
             continue  # Values have no byte locations; the value inverse reads their percepts.
@@ -192,41 +189,6 @@ def reverse(model, sub, field):
                   ~covered & (strength > 0).any(-1)[:, None])
     recovered._radix_activity = NativeActivity(selected, strength, code, separators)
     return recovered
-
-
-def _blind_spot_support(model, cs, field, start, shape):
-    """Where a look's percepts were withheld, the basic percepts the way back
-    reads there (:func:`ConceptSpread.read_back`) beyond those perceived:
-    ``{column: support [B, E]}`` at the field's readings that hold each
-    withheld reading of the perception. Empty where nothing was withheld."""
-    from Omission import target
-    hidden = (target(model) or {}).get('bytes')
-    perception = getattr(cs, '_percept_field', None)
-    if (hidden is None or perception is None or not perception.keys
-            or perception.where.shape[0] != shape[0] or hidden.shape[0] != shape[0]):
-        return {}
-    import ConceptSpread
-    where = (perception.where - start).to(hidden.device)
-    positions = torch.arange(hidden.shape[1], device=hidden.device)
-    inside = (positions >= where[..., :1]) & (positions < where[..., 1:])
-    withheld = (inside & hidden[:, None, :]).any(-1)
-    if not bool(withheld.any()):
-        return {}
-    knowing = getattr(cs, '_observed_knowing', None)
-    if knowing is not None:
-        knowing = knowing[:shape[0]]
-    back = ConceptSpread.read_back(cs, perception, withheld, knowing)
-    joined = (back - perception.values.detach()).clamp_min(0.)[..., 0]
-    held = field.where.to(where.device)
-    contained = ((where[:, None, :, 0] >= held[:, :, None, 0]) & (where[:, None, :, 1] <= held[:, :, None, 1])
-                 & withheld[:, None, :])
-    rows = [(i, key[1]) for i, key in enumerate(perception.keys) if key[0] == 'bp']
-    if not rows:
-        return {}
-    index = torch.tensor([i for i, _ in rows], dtype=torch.long, device=joined.device)
-    support = (joined.index_select(0, index)[:, :, None, :] * contained[None]).amax(-1)
-    some = (support.flatten(1).amax(1) > 0).tolist()
-    return {2 * int(row): support[k] for k, (_, row) in enumerate(rows) if some[k]}
 
 
 def word_texts(surface, where):
