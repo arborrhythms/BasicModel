@@ -13171,6 +13171,96 @@ touched files' tests and both gates pass.
    measure; what step 4 (e) lists; removed; ported; commits.
 ~~~
 
+*The third pass* (added 2026-11-21, after §23.6.7):
+
+~~~
+Round 6d of item 1.7, third pass. Read §23.6.7 (the second pass's
+return and its review, with the list on its source) and the second
+pass's text above. The work is on the branch item17-r6d2-step4-wip
+(c0106c098a), which holds step 4 unfinished. Check that branch out
+in this checkout, bring it up to main if main has moved, finish it
+there, and when both gates and the files named below pass, move
+main forward to it (a fast-forward) and leave the checkout on main
+with the branch removed.
+
+1. The what columns are graded, and the read is by the least and
+   the greatest (§23.6.7, review, 1). A wire of the parts half is
+   the greatest, over the occurrence's atoms, of the atom's code
+   times the degree the atom is present. A wire of the wholes half
+   is the least, over the wholes read at the occurrence, of the
+   greater of that whole's code and one less the degree it holds
+   (its for lane). A row's parts are held to the least of the
+   occurrence's wires over the row's parts; its wholes hold the
+   occurrence to the least, over the wires the row cuts, of one
+   less the occurrence's wire; added is the greatest of the
+   occurrence's wires over the parts the row's against lane names.
+   For, against and the factor as on the branch. Nothing is cut at
+   .5. The read's gradient reaches the primitive memberships
+   (test_basic_read_ties_both_towers_and_teaches_the_properties,
+   and the other two of (e) 1, pass as they assert today, or each
+   difference of value is returned with its numbers). The way down
+   passes a row's share by this read's derivative.
+
+2. The ports of step 4 (e) and of "Step 4 on the branch":
+   (a) the ordered run: the test stores the three forms (a, b),
+   (b, a) and (a, a) and asserts them told apart by their tightest
+   wholes; a row whose parts spell no stored form is read by the
+   set of its parts (rules 41 and 43), and the port says so;
+   (b) the fixtures whose codes tell no part apart (_cs() and its
+   like): give their parts codes of their own, and assert each
+   test's claim on the table's read; a claim that is only that the
+   read is independent of codes is retired by a move into a dated
+   folder under /tmp and listed with its old assertion;
+   (c) the tests that build members by hand or read
+   read_occurrences, bank.members or first_pi's members;
+   (d) test_word_admission.py::
+   test_29_each_reading_publishes_only_its_words[MM_text.xml]:
+   diagnose to its producer.
+
+3. A stored code that is stale. The branch reads a row's code live
+   at the lookup. Say how often that is computed (once a sentence
+   for each named row, or more), and whether BasicPercepts.codes
+   and against_codes still have a reader; if a whole's code can
+   change after a row is promoted, the stored code is written
+   again when it does (as follow_forms does for forms) or the
+   stored buffers go. One of the two; not both reads.
+
+4. The gradient from the where match to the request, which the
+   first pass lost. test_item17_places.py::
+   test_the_request_for_a_place_at_an_untaught_start printed 1.79,
+   .754, .0025 and 0 at f4b00524ee and prints 0.0 at every look
+   from 74d7f76053 on. Find where it was lost (the where share of
+   a place's row, onto_bank, where_match, or what the test reads)
+   and restore it in the finished read; the test asserts that
+   after one presentation the gradient on a place's entry of the
+   request is not nothing at some look.
+
+5. Then step 3 of the second pass again, recorded and no bar: the
+   places' measure (three starts drawn afresh), the where match at
+   each look of the first sentence, the request's start on each
+   place's concept after the lesson, and the lesson's script with
+   --runs 3. Add no mechanism.
+
+6. The list's failures on the second pass's source that §23.6.7
+   gives, each to its producer. test_81 and
+   test_prepared_answer_boundary[True] are left as they are.
+
+7. Tests: both gates before any edit and at the end; the 27 files
+   the second pass ran on the branch, with the files this pass
+   touches; certificates 30 to 43, 47, 61 to 63 and 33 (b); the
+   lesson's script. Claude runs the list.
+
+8. Return as scratch-1.7/r6d_return_3.md, what fails or is
+   unfinished first; step 1's values on the three graded tests;
+   what was retired, with its old assertion; step 3's answer;
+   where step 4's gradient was lost and its value now; step 5's
+   measure; removed; ported; commits; and whether main was moved
+   forward.
+
+Not in this pass: the benchmark (its looks are item 1.5's); the
+reconstruction in passes; round 6's parts C and D.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -21508,3 +21598,294 @@ On `74d7f76053`, in a clone, 306 files (the list of round 4 and `test_item17_tab
 | `test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]` | 8 of 8,448 values differ, by .0015, at wires 134 and 135 of a row (the when wires of the table) | diagnose |
 
 All seven go to step 0 of the second pass.
+
+### 23.6.7 Round 6d, second pass: a kept where reads one at its own place, the request's start, the device faults; the first Pi's read of the table's wires is built on a branch and not finished (Claude on Opus, standing in for Codex, 2026-11-21)
+
+
+Started at `bb8aba8338`, on `main`, in this checkout. `main` ends at `d188a06133`. Nothing pushed. No doc/ or specification edited. `51a06876b1` (FutureWork) in the range is not mine. Steps 0 to 3 are done on `main`. Step 4 was built but is **not on main**: it is parked on the local branch `item17-r6d2-step4-wip` (`c0106c098a`, rebased on `d188a06133`), because about twenty tests that read members, graded wholes or ordered runs were not yet ported when I stopped.
+
+#### What fails or is unfinished, first
+
+- **Step 4 is not on main.** I stopped inside it. On `main` the touched files' tests and both gates pass (below), except one test whose repair is step 4 (`test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery`, see step 0). On the branch, the list I ran gave 19 failed, 196 passed, 6 skipped, 1 error (122 s). What fails there is listed under step 4 (e) and "Step 4 on the branch".
+- **The benchmark's first batch still does not finish.** The two device faults are repaired at their producer, and two memory faults that followed were repaired too. The batch then reads 32 looks of its first sentence in 37 s, holding 16.5 GB (MPS current) / 16.6 GB (driver), and then stays busy on the CPU for more than 10 minutes with no further look. I stopped it. No step finished, so there are no step seconds and no per-step peak.
+- **Reading in order: 0 in every count, before and after the lesson, in all three starts.** The learned request start did not move: it is still exactly 1.0 on "words" and 0.0 on every place's concept after the lesson. The look passes no gradient to the request through its cap (test_15 asserts that the gradient on the request is 0). So no gradient reaches the start either.
+- `test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]` is flaky. It depends on the starting weights and is not repaired (step 0).
+- `test_item18_expect.py::test_81` was not run (a known failure). It is not skipped.
+
+#### Step 0
+
+##### (a) The seven of the list
+
+1. `test_item18_producer_repair.py::test_02_...` and 2. `test_postmerge_observers.py::test_stepped_trace_and_provenance_preserve_read_and_state`.
+   - **Cause:** the helper `test/postmerge_word_lanes.py::native_provenance` patched `PerceptField.read_percepts`, which is gone.
+   - **Repair:** ported. The observer no longer patches a reader. Each edge's components are read from the published `owner._percept_field`: for each attended percept of the reading where the row reads, its span and its pair from `events`. `look_lane_counts`, which nothing tests, was ported the same way: it counts `BasicPercepts.read_bank`, and `whole_both` is `None`.
+   - Both pass.
+3. `test_item20_round5_percepts.py::test_basic_read_preserves_ordered_part_witnesses_after_native_fusion`.
+   - **Cause:** it indexed `events` with a readings axis.
+   - **Repair:** ported (below). It passes on main.
+4. `test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers`.
+   - **Cause:** the reverse of what the list said. The fixture names `BasicPercepts.lookup` as a reader of `nWhen`, but `lookup` reads no attribute of the when any more (it takes `when` and `when_encoding` as options).
+   - **Repair:** the row is removed from `test/fixtures/when-readers-round4a0.json`.
+   - My new `PlaceEntries` first had attributes named `where` and `when`, which the inventory counted as readers of the when. They are now named `where_entries` and `when_entries`. The test passes.
+5. `test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube`.
+   - **Cause:** `where_entries` and `when_entries` were `nn.Parameter`s of `BasicPercepts`, which is a submodule of `WordIdentity` (`self.basic`). So the fixed identity had parameters. Those parameters were also in no optimizer: `PartSpace` walks an explicit `params` list. So they were never learned.
+   - **Decided:** the learned entries belong to the module that learns. They are a module of their own, `BasicPercepts.PlaceEntries` (`where_entries`, `when_entries`, `[capacity, 8]` each). `BasicPercepts` holds it by reference (`basic.entries`, not registered), and `PartSpace.__init__` registers it as `place_entries` and enlists its parameters in its `params`. The identity stays parameter-free and the atoms stay fixed. The entries are saved under the Space and learned by its optimizer.
+   - A checkpoint without the keys takes the module's own values (`PlaceEntries._load_from_state_dict`). The test passes.
+6. `test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery`.
+   - **Cause** (at line 51 of `learn_grounded_xor`, "both" at 01 and 10): the per-occurrence read of members. At the bracket [0,2] of "01", the whole 9 is read by `evidence_on_counts` over the two bytes as [0, 0] (a mixed span is neither for nor against). So the row of "1" reads [1, 0] at its byte and [0, 0] at the bracket, and never against. The old read took the whole's against lane at the "0" byte.
+   - **Repair:** step 4's code read. At the bracket the row holds its parts and its whole does not hold the point, so it reads [0, 1], and the reading reads [1, 1].
+   - Two more things were needed on the branch:
+     - (i) A row's code is read live (`bank_codes`). The stored promoted code of "0" had a wholes half of zeros, written before whole 10's code was taught.
+     - (ii) Lines 53–65 asserted that the "native property events" discriminate at the two single bytes. Ported in `test/test_grounded_xor.py::learn_grounded_xor`: both is read across the attended percepts of the reading (for at the byte, against at the bracket). Listed under 4 (e).
+   - It passes on the branch and fails on main.
+7. `test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]`.
+   - **Cause:** not the table. It depends on the unseeded starting weights.
+     - At `602350c7b8` (before the first pass), with `torch.manual_seed` 1, 2 and 4, it fails the same way. With 0, 3 and 5 it passes, on both sources. Unseeded runs pass and fail by turns.
+     - The 8 differing values are at columns 134 and 135 of the generated words (`AnswerConstruction.concepts`, `[2, 16, 264]`). Those columns are the second rung of the LTM stamp (`ltm_store.when_start` = 132), not the table's when wires.
+     - The second realization's walk carries an idea whose stamp differs by a few ticks from the first's: one stamped during the intervening "5 plus 6" / "7 plus 8" captures. Whether that idea is the one recalled depends on the starting weights.
+   - **Not repaired.** It is outside this pass's subject. A pinned seed is not allowed, and a port would weaken the test's claim.
+
+##### (b) The benchmark
+
+`BENCH_OUT=… BASIC_BATCH_SIZE=4 BASIC_MAX_DOCS=60 BASIC_MAX_BATCHES=1 BASIC_NUM_EPOCHS=1 .venv/bin/python bin/bench_training_step.py data/BasicModel.xml`, alone. I ran it through a wrapper in scratch that counts memory at each lookup and each look.
+
+Faults, each repaired where the tensor is made:
+
+1. **`Layers.thing_lanes` (from `_concept_rung_presence`) and `Layers.seat_lanes` (from `CaseSelection.stage_case_bank`): one producer.**
+   - `SparseLayer.bind` (and `ConceptualAttentionLayer.bind`) makes its view on `self._device()`. That is `values.device`, or `_target_device` when the store has no entries yet.
+   - The store was made, and its `_target_device` fixed, before the model moved to MPS. With no `values` to carry, the move left it on the CPU.
+   - **Repair:** `SparseLayer._apply` now sets `_target_device` to where the move puts a probe tensor. Both faults are gone with this one change.
+2. **Out of memory in `Salience._down`.** `grad` is `[N, B, readings, 2]` over every node of the structure. N is about 164,000, because it holds every concept of `nVectors` and every first-Pi part. That is 1.25 GiB a tensor, several times over.
+   - **Repair:** `salience` builds the node axis from the nodes on an edge above the first Pi's members, plus the bank's rows (`torch.unique`). `_down` takes `nodes=` and remaps the edges by `searchsorted`. A concept on no edge passes nothing down. With no `nodes`, `_down` is unchanged (certificate 31 (a) still passes).
+3. **Memory retained at each look by `SentenceLooks.requested` / `attend`.** Each look kept 504 MiB.
+   - The codebook was padded to `nVectors` with `F.pad`, which copies. Even unpadded, `saved_sentence_values` (SentenceCompose) clones a saved Parameter's storage whenever its version has changed, and the codebook changes between looks.
+   - **Repair:** `requested` passes `attend` only the codes of rows that hold a concept (`index_select` over the store's `_tensor_rows`), with those rows. `attend` reads them by `F.linear` and scatters the score back to `[V, B]`.
+
+What remains:
+- After repair 3, a look still retains about 0.14 GB (from 16.08 to 16.65 GB between consecutive looks). With 256 looks in a sentence, that does not fit.
+- After look 32 (at 36.6 s), the process ran on the CPU (`libtorch_cpu`, the interpreter) for more than 10 minutes with no further look, no lookup and no step. I stopped it.
+- What it was doing is not known (no py-spy here). The log printed "compiling complete W=256 recurrent word loop" before the lookups.
+
+**First step's seconds:** none finished. **Greatest memory held:** 16.61 GB driver / 16.51 GB current at look 32 of the first sentence (MPS limit 16.85 GiB).
+
+**What holds the 11.61 GB at the first lookup.** MPS current is 9.32 GB, and live MPS tensors are 9.20 GB. Named by their module paths:
+
+| Tensor | Size |
+| --- | --- |
+| `conceptualSpaces.{0,1,2,3}._priming_bridge_src` and `_priming_bridge_bits` `[130,260,075]` int32 (eight tensors) | 521 MB each, 4.17 GB together |
+| `conceptualSpaces.{0..3}._priming_bridge_dst` int16 (four) | 260 MB each, 1.04 GB together |
+| `symbolSpace.subspace.layers.2._ltm_store.slots` `[262144, 1032]` | 1.08 GB |
+| `attention_context.weight` `[1032, 178830]` | 0.74 GB |
+| `conceptualSpaces.0.layers.2.W` and `.trust.content` `[127083, 1032]` | 0.52 GB each |
+| `conceptualSpaces.0.layers.2.mereology.placement` `[127083, 448]` | 0.23 GB |
+| `inputSpace.symbol_entries.lookup_atoms` `[28, 576, 1032]` | 67 MB |
+| `mereology._forms` | 65 MB |
+
+So the priming bridges hold 5.2 GB of the 9.3 GB. The driver's 11.6 GB is that, plus the allocator's cache.
+
+#### Step 1: a kept where reads one at its own place
+
+- `BasicPercepts.place_factor(table, rows)` is `exp(-sum w·(e·log(e/c) + (1-e)·log((1-e)/(1-c))))` over the where and when wires. It uses `torch.xlogy`, clamps the sum at zero and below, and clamps c to [1e-6, 1-1e-6].
+- Each row's entries are `[kept value e of each wire | weight w of each]`, on `where_entries` and `when_entries` (`PlaceEntries`). A weight is read at zero or above; e is clamped to [0, 1].
+- The cone (`reserve_place`) writes e = the kept for lane (`plus`), and **w = `BasicPercepts.PLACE_WEIGHT` = 10** on each where wire.
+- `BasicPercepts.where_weight(rows)` is the sum of a row's where weights. The way down puts `whole_for · dF · for · Σw` on the where wires. That is the derivative of the factor by each wire's two lanes, times the lanes.
+
+Certificate 62 (`test_item17_table.py::test_62_33b_what_is_where`, "alpha gamma alpha", the row of "alpha", its first occurrence's wires kept at weight 10):
+
+- (b) The row reads fully at [0, 5] and [12, 17]. Same what columns; where differs (wires .549, .998, .500, .000 against .554, .997, .355, .022).
+- (a) With the entry at nothing: [1, 0] at both. With the entry: **1.0 at its own place** (equal to the read with no entry) and **0.518 at the other**.
+- (c) The request's share is **3.0 at the first** and **1.55 at the second**. The share on the where wires is **40.0** and **20.7**.
+- 33 (b): the gradient from the row's value at the **second** occurrence reaches `WhereRegistry.code` at the second's place (9.52) and nowhere else (0). At the **first** it is 0. The value is at its greatest there, so its derivative by the wires is nothing. The test asserts the second, and that the first is less. This is a change of what 33 (b) can say, and it goes to Claude.
+
+#### Step 2: the request's start is learned
+
+- `AttentionContext.RequestStart(nn.Module)` holds `value` `[nVectors]`: one on the row of the declared "words", nothing elsewhere. `AttentionContext.install` makes it as `model.request_start`, even with no attention budget.
+- It is in the "attention" parameter group (`Models`, beside `attention_context`) and in the optimizer's list of model-level attention modules. A checkpoint without `request_start.value` takes the start's own value.
+- `OperationSelectionLayer.attend(query, codes, start, rows=None)` adds `start` to the for lane of what the context's map asks. `SentenceLooks.requested` passes `model.request_start.value`.
+- Its gradient passes at nothing, as the request's does: `Salience._down` keeps the derivative at exactly zero.
+
+**Built on the text's first choice, with one note.** The text says "a parameter of attend". `attend` is a static method of `OperationSelectionLayer`, which does not know the concept count when it is made. So the parameter lives beside the context's map, which teaches the request, and `attend` takes it as an argument.
+
+#### Step 3: the measure (recorded, no bar)
+
+##### The places' measure
+
+`test_item17_places.py::test_reading_in_order_before_and_after_the_lesson`, at `5078bdd916` (steps 0 to 2), in a worktree. 1 passed, 819 s. Three starts drawn afresh: 232530436820883, 71307100777364 and 109655025640585.
+
+- Each start has 14 places, 12 of them with no what.
+- Read in order, out of two-word 6, lesson 16, held out 6:
+  - before: 0, 0, 0 in each start;
+  - after: 0, 0, 0 in each start.
+- **The where match at each look of "This is Felix."** was [1, 1, 1, 1, 0, 0, 0, 0] at every look in every start (four looks in the first two starts, three in the third). The live readings are all at one.
+- The request on the place concepts was 0.0 (greatest and least) at every look.
+- **The request's start after the lesson:** 0.0 on each place's concept (rows 1, 2, 4, 6, 14, 18 to 26) and 1.0 on "words" (row 142), in every start. It learned nothing.
+- **What it learned, and why:** nothing. The look passes no gradient to the request through its cap (`min(own, salience)`), so neither the map nor the start receives any. The where match is flat at one because no row's where weight is asked for: the request asks only "words".
+
+##### The lesson's script
+
+`--runs 3`, at `5078bdd916`, 67 s:
+
+| Run | Start | Seconds | Words | Sentences in order | Words in order | Draws |
+| --- | --- | ---: | --- | ---: | ---: | ---: |
+| 1 | 2217670168 | 18.6 | 64 of 64 | 0 | 0 | 26 |
+| 2 | 3731821419 | 22.9 | 64 of 64 | 0 | 0 | 26 |
+| 3 | 896822990 | 16.5 | 64 of 64 | 1 | 4 | 26 |
+
+No forest or identity-map error came.
+
+#### Step 4 (on the branch `item17-r6d2-step4-wip`, not on main)
+
+What is built, by function:
+
+- **`PerceptBank`** holds `rows`, `codes` `[rows, 2, width]` (each row's code: for, then against), `span`, `token`, `time`, `table`, `activity`, `where`, `when`, `width`, `identity_width`, `when_band` and `registry`. It holds no `members`, `keys`, `groups`, `opposed` or `percept_where`. `Attended` has no `members`.
+- **(a) `BasicPercepts._occurrence_what(percepts, spans, wholes)`.**
+  - The parts half: the greatest of the codes of the identity atoms of the occurrence's bytes (`identity.words.get(run) or identity.atoms_of(run)`). Each distinct run of bytes is coded once. Where the store has no identity, it is the union of the part leaves' codes.
+  - The wholes half: the least of the codes of the rows' wholes present over every byte (`evidence_on_counts`, for ≥ .5, complete) and of its tightest whole.
+  - What of the lookup is still read on the host: the sentence's bytes, once (`raw.tolist()`), the atoms and tightest whole of each distinct run, and the spellings searched below.
+- **`BasicPercepts._spelled_spans(raw, rows)`.** Each row's stored form of two or more bytes is an occurrence wherever it is spelled in the sentence.
+  - Without this, "archer" was never an occurrence inside "archery" (certificate 47 failed), because `_form_spans` skips runs of identity atoms.
+  - With it, "is" is an occurrence inside "This", so the row "is" reads [1, 1] at "This", as `read_bank` did before. The [0, 1] that §23.6.6 sent to Alec does not arise.
+- **`BasicPercepts.bank_codes(rows)`.** Each row's code on two lanes, read live (`lanes(row)`), not from the stored promoted code (step 0, item 6). A place's code is its kept what, or no parts and every whole where it keeps none.
+- **(b) `held_at(bank, table)`** (module function). For codes of 0 and 1, read by `einsum` and not by broadcasting: part (the percept holds the row's parts), whole (the row's wholes hold the percept) and added (the percept holds a part the row's against lane names).
+- **`read_bank`.** At each attended percept: for = presence · part · whole · factor; against = presence · part · max(1 − whole, added) · factor. The presence is the for lane of the activity. Conjunctions and `held` are as before. A reading is the greatest over its attended percepts. `PerceptField.parts` and `percept_where` are `None`; `boundaries` is part and whole per reading.
+- **(c) `Salience.first_pi(bank, perception, row_grad, activity=None, basic=None)`.** It is vectorized over rows (no Python loop over rows) and returns `(events, band)`. Each attended percept at its reading's greatest takes `dF·for + dA·against` on its for lane. The where wires take `dF·for·Σw`. A conjunction passes nothing. `SalienceMap` has no `members`.
+- **Places.**
+  - `Places.readings` returns each reading's where wires, whether it has a bracket, and its what code.
+  - The cone in `meet` keeps the least parts and the greatest wholes over the codes met.
+  - `reserve_place(plus, minus, what=None)` keeps a what code, or `None` where no part is shared.
+  - A place's `member_keys` are empty.
+- **(d)** `PerceptBank.members`, `PerceptField.read_occurrences` and `member_bands` are gone, and so are `BasicPercepts._row_lanes` and `Salience.perception_table`.
+
+Certificate 61 on the bank's own table (branch, `test_61`): 11 sentences, 15 to 18 occurrences each. **173 (row, reading) pairs equal, 55 differ, all 55 places** (the comparison does not read a place's what). No for or against difference remains.
+
+##### What step 4 (e) lists
+
+Tests or readers that need what the codes cannot give, each with its row and sentence. The table's read is kept:
+
+1. **A graded whole:**
+   - `test_item20_round5_percepts.py::test_basic_read_ties_both_towers_and_teaches_the_properties`: row (0,)/(0,) on "a", whole .4 for and .6 against.
+   - `test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union`: rows (65,)/(0,) and (65,)/(1,) on "AA", .25/.75 and .36/.64.
+   - `test_percept_field_compaction.py::test_padding_reads_nothing_and_teaches_no_property`: .3/.7.
+   - The same three assert that the read gives the primitive memberships a gradient, which the codes do not.
+2. **An ordered run the code does not tell apart:** `test_item20_round5_percepts.py::test_basic_read_preserves_ordered_part_witnesses_after_native_fusion`. On "ab", the rows (a, b), (b, a) and (a, a) have one parts code, so all read 1 at [0, 2], where [1, 0, 0] is asserted.
+3. **A store whose codes tell no part apart** (the `_cs()` fixture: no identity, no wholes half, every part code all ones):
+   - `test_concept_memberships.py`: the four corners on "11/00/01/10"; a located part; part containment; fractional weights.
+   - `test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word` (parts 7 and 8 on "AA").
+   - `test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols`.
+   - Their file says what they test: "Order-zero definitions read native features, independently of codes".
+4. **A whole witnessed false at a byte that does not hold the row's parts:** `learn_grounded_xor` (the "1" row on "01" and "10"). Ported on the branch: both is now read across the reading's attended percepts.
+
+##### Step 4 on the branch: what was still failing when I stopped
+
+1. The tests in (e) 1 to 3.
+2. Ports not yet made to the bank without members:
+   - `test_item17_looks.py` 56a, 56b, 56e, 31a, 31c (`hand_bank` and `row_values` build members; `first_pi` returned members);
+   - `test_item17_table.py::test_63` (asserts `bank.members`);
+   - `test_item17_places.py::test_a_place_is_nominated_by_the_cone_and_brings_a_concept` (a place's `whats` is now a code);
+   - `test_percept_field_compaction.py` (imports `read_occurrences`; the whole file);
+   - `test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events` (`read_occurrences`).
+3. `test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]`: not diagnosed.
+
+Gates, certificates 47 and 61, `test_definition_integrity.py` and `test_grounded_xor.py` pass on the branch.
+
+#### Removed
+
+On main:
+- `BasicPercepts.where_entries` and `when_entries` as parameters of `BasicPercepts` (now `PlaceEntries`).
+- The per-look pad of the codebook in `SentenceLooks.requested`.
+- The constant `base` of `requested`.
+- The dense node axis of `salience`.
+
+On the branch:
+- `PerceptBank.members`, `keys`, `groups`, `opposed` and `percept_where`; `Attended.members`.
+- `PerceptField.read_occurrences` and `member_bands`.
+- `BasicPercepts._row_lanes`.
+- `Salience.perception_table` and the members' shares of `first_pi`.
+- A place's member keys.
+- `SalienceMap.members`.
+
+No file was moved.
+
+#### Tests ported (old assertion, then new)
+
+On main:
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test/postmerge_word_lanes.py::native_provenance` (used by test_02 and test_stepped_trace) | native components from `read_percepts` (members by events) | each attended percept of the reading where the row reads, with its span and pair, from the published field |
+| `look_lane_counts` | patched `read_percepts` and `BasicPercepts.read` | counts `read_bank`; `whole_both` is `None` |
+| `test_item20_round5_percepts.py::test_basic_read_preserves_ordered_part_witnesses_after_native_fusion` | `events[0, 0, 0, :2, 0] == [1, 1]` (the run read at both part events) | the forward row reads 1 at the occurrence [0, 2], with the part events [0, 1] and [1, 2] first |
+| `test_item17_table.py::test_62_33b_what_is_where` | entries `cat(c, 1 − c)·10`; first reads more than second; gradient at the first's place > 0 | entries `cat(c, PLACE_WEIGHT)`; first reads as with no entry and more than second; the gradient at the second's place > 0 and nothing elsewhere, at the first less (0) |
+| `test_item17_looks.py::test_15` | `requested(...).requires_grad_()` | `requested(...).detach().requires_grad_()`, since the request is no longer a leaf; same assertion |
+| `test/fixtures/when-readers-round4a0.json` | lists `BasicPercepts.lookup` | does not |
+| `test_item17_places.py::test_reading_in_order…` | (recorded) | also records the request's start on each place's concept |
+
+On the branch: `test_grounded_xor.py::learn_grounded_xor`, lines 53–65. Old: at the two single bytes, `min(max for, max against)` = [0, 1, 1, 0]. New: the same over all of the reading's attended percepts.
+
+None was skipped or marked to fail.
+
+#### Test files run, with counts and seconds
+
+- Gates before any edit of bin/: 2 passed, 5.4 s.
+- The seven of the list, before: 6 failed, 2 passed, 10.3 s. (The `[True]` case passed in that run: it is flaky.)
+- After steps 0 to 2 (table, looks, places without the measure, round1, look_forecast, producer_repair test_02, the postmerge test, round5, round3a, gates): 2 failed, 76 passed, 56 s. After the two ports: 2 passed, 5.3 s.
+- Step 4 on the branch (the 27 files below): 19 failed, 196 passed, 6 skipped, 1 error, 122 s.
+- **Final on main (`d188a06133`'s source less the last rename).** Files run:
+  - both gates;
+  - `test_item17_table.py`, `test_item17_looks.py`, `test_item17_places.py` (not the measure), `test_item17_code.py`, `test_item17_order_zero.py`, `test_item17_sparse_growth.py`;
+  - `test_item20_round5_percepts.py`, `test_percept_field_compaction.py`, `test_word_admission.py`, `test_concept_memberships.py`, `test_primitive_properties.py`, `test_sparse_concept_e2e.py`;
+  - `test_review14_addendum.py`, `test_operators_round4a.py`, `test_operators_round4a0.py`, `test_operators_round3a.py`, `test_operators_round1.py`, `test_look_forecast.py`;
+  - `test_item18_producer_repair.py`, `test_postmerge_observers.py`, `test_grounded_xor.py`, `test_definition_integrity.py`, `test_prepared_answer_boundary.py`, `test_item18_expect.py` (without test_81), and the file of `test_refine_raise`.
+
+  Result: 2 failed, 261 passed, 7 skipped, 129 s. The two: `test_definition_integrity::test_word_concepts…` (its repair is step 4) and the round4a0 inventory (repaired by the rename in `d188a06133`: `test_operators_round4a0.py` with `test_62`, 11 passed, 6.9 s).
+- The places' measure: 1 passed, 819 s.
+- The lesson's script, `--runs 3`: 67 s.
+- The benchmark: 9 runs, each stopped by a fault (repaired in turn) or, the last, by me.
+
+#### Commits
+
+On main:
+- `618e6d898b`: a sparse layer's target device follows the move of its module.
+- `cab5c33746`: three tests ported from `read_percepts` and the readings axis.
+- `a41a62d63b`: a kept where reads one at its own place (`PlaceEntries`, `place_factor`, `where_weight`); the entries learned by `PartSpace`; the salience's node axis compacted; certificate 62 again.
+- `ece0c380f8`: the request's start is learned (`RequestStart`); `attend` reads the held rows' codes without a copy per look.
+- `5078bdd916`: the places' measure records the request's start.
+- `d188a06133`: the when-reader inventory; the entries renamed `where_entries` and `when_entries`.
+
+On the branch `item17-r6d2-step4-wip`: `c0106c098a` (step 4, work in progress).
+
+#### What surprised me
+
+- **The table's read with codes reproduces `read_bank` exactly once known forms are found by their spelling.** Every for and against difference of certificate 61 went, including "is" at "This": "is" is an occurrence inside it. The hard part is not the read. It is the tests and fixtures that read members, graded wholes, or stores whose codes say nothing (the `_cs()` fixture's parts are all ones).
+- **Stored codes go stale.** A row's promoted code can predate a change of its wholes' codes (the XOR fixture teaches whole 10 after "0" is promoted). A read from the stored buffer then never holds anything. The branch reads codes live.
+- **A kept where's gradient is nothing at its own place.** It is the maximum of the factor, so certificate 33 (b) can only be shown away from it.
+- **The benchmark's memory is mostly not percepts.** The priming bridges are 5.2 GB of the 9.3 GB held before the first lookup. After the device repairs, each look retained half a gigabyte, because the protected-storage hook of `saved_sentence_values` clones a changed Parameter at every save. Even after that is repaired, about 0.14 GB a look remains.
+- **The learned start cannot learn here:** the look's cap passes the request no gradient (test_15 asserts it), so a parameter added to the request is taught nothing either.
+
+#### Review (Claude, 2026-11-21)
+
+Spot tests by the pass; both gates pass on `main`. Steps 0 to 3 are on `main` (`d188a06133`); step 4 is on the branch `item17-r6d2-step4-wip` (`c0106c098a`), with 19 tests failing there for want of ports.
+
+- *The read of rows from the table's wires is exact.* On the branch, certificate 61 on the bank's own table has no difference left on either lane: 173 pairs equal, and the 55 that differ are places, whose what the comparison does not read. That includes `is` at `This`, once a known form is an occurrence wherever it is spelled: it reads both, as today. So the point sent to Alec in §23.6.6 does not arise, and nothing of the table's read argues against rule 76.
+- *What step 4 (e) lists, decided so (mine; third pass):*
+  1. *A graded whole, and its gradient.* The codes as built are 0 or 1, cut at .5, so a whole held at .4 is lost and the read no longer teaches the properties. That is not acceptable: perception's memberships are learned through this read. The what columns are made graded and the read is by the least and the greatest (the basic level's intersection and union, §19.93): a wire of the wholes half is the least, over the wholes of the occurrence, of the greater of that whole's code and one less the degree it holds; a row's wholes hold the occurrence to the least, over the wires the row cuts, of one less the occurrence's wire; its parts are held to the least of the occurrence's wires over the row's parts. At 0 and 1 this is the read on the branch; at .4 for and .6 against it gives .4 and .6; and its gradient reaches the primitive memberships.
+  2. *An ordered run.* A row whose parts spell no stored form is read by the set of its parts; stored forms are told apart by their tightest whole (rules 41 and 43). The test stores the three forms and asserts them apart.
+  3. *A store whose codes tell no part apart.* Those fixtures were written for a read "independently of codes", which rule 76 withdraws. Each is given parts with codes of their own, and its claim is asserted on the table's read; a claim that is only about independence from codes is retired, by a move into a dated folder, and listed.
+  4. *A whole witnessed false elsewhere in the reading* is as ported on the branch.
+- *The stored code of a row can be stale* (a whole taught after the row was promoted). The branch reads codes live at the lookup; that is right, and the stale store is rule 61's to follow, to be checked in the third pass (`follow_forms` writes codes again when a form changes, but not when a whole's code does).
+- *A kept where now reads one at its own place* (1.0, and .518 at the other, at a weight of 10 written by the cone). The gradient by the where wires is nothing at the row's own place, since the factor is greatest there; certificate 33 (b) is shown at the other place. Accepted: it is what "greatest at its own place" means.
+- *The learned start learned nothing, and the pass's reason is half of it.* The cap does pass no gradient to a request already at one. But a request for a place's concept, at nothing, took a gradient through the where match after `ccef14fb3a` (1.79, .754, .0025 and 0 at four looks, §23.6.5). Claude ran `test_the_request_for_a_place_at_an_untaught_start` at three commits: at `f4b00524ee` it prints those numbers; at `74d7f76053`, the end of the first pass, it prints 0.0 at every look, and so at `a41a62d63b`. *So the first pass lost the gradient from the where match to the request,* and the test, which only prints, did not catch it. With no gradient, neither the context's map nor the start can learn to ask for a place, which is the whole of step 3's result. Third pass: find where it was lost and assert it.
+- *The benchmark.* The device faults had one producer and are repaired; two faults of memory after them are repaired. The batch then reads 32 looks of a 256-word sentence in 37 s, keeps about .14 GB at each look, and then sits on the CPU for more than ten minutes. So the production configuration still does not run, now for the cost of its looks and not of its bank. Of the 9.3 GB held before the first lookup, 5.2 GB is the priming bridges of the four conceptual spaces. Both are item 1.5's subject (§23.6.5: what is owed before a push is that item 1.7 be no worse than item 1.8, which also did not run); recorded there.
+- *`test_prepared_answer_boundary[True]` is not this round's:* it fails on the source before the first pass under three of six starting weights, on the stamp of an idea recalled from LTM. It is left failing and unpinned, and goes to round 7's list.
+- *Where the learned entries live* (`PlaceEntries`, registered and learned by `PartSpace`) and *where the start lives* (`RequestStart`, beside the context's map) are accepted as built.
+
+
+#### The list on the second pass's source (Claude, 2026-11-21)
+
+On `d188a06133` (`main`, without step 4), in a clone, 306 files, six processes: 3 failed, 3,339 passed, 161 skipped, in 1,442 s.
+
+- `test_item18_expect.py::test_81`: known.
+- `test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery`: as the return says; its repair is step 4, on the branch.
+- `test_epoch_history.py::test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs`: new. One concept made in training (113) has no grounding in LTM, where the port of §23.6.5 excepts only a place's concept. Whether 113 is a place's concept that the exception misses, or another, is not known. Third pass, step 6.
+
+`test_prepared_answer_boundary[True]` passed in this run (it fails under some starting weights, above).
