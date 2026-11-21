@@ -20447,3 +20447,21 @@ Spot tests by the pass; both gates pass at three points. The list on `cc0fc32571
 *And of the when:* within a sentence it is the same at every reading. First choice: a row's entries on the when wires are read only where the readings of a look differ in time, which is across sentences and in memory, and not within one sentence's looks.
 
 *Not waiting on this:* the trial of a place as a row is added to the next pass in tests only, so that his answer can rest on a measure; rounds 6b and 6c are built in that pass.
+
+#### The list and the lesson on the fourth pass's source (Claude, 2026-11-20)
+
+*The list,* on `cc0fc32571` (run in a clone at `22be03fece`, which adds only text), six processes: 1 failed, 3,305 passed, 161 skipped, in 1,219 s. The one is `test_item18_expect.py::test_81`, the certificate of learning. Round 4 ended at 22 failed, round 5 at 2, the second pass of this round at 10, the third at 3.
+
+*The lesson,* `lesson --runs 12`, each run from a start drawn afresh:
+
+| Over 12 runs of 16 sentences | |
+| --- | --- |
+| Words found, of 64 | 64 in every run (it was 43.8 in the mean, from 6 to 64, at round 5's end) |
+| First paths at their allowance | 0 in every run (72 in all at round 5's end) |
+| A known word read against | 0 |
+| A known word read both | 0 (12 in all at round 5's end) |
+| Looks that drew among equals | 26 in every run |
+| Sentences read in order, of 192 | 1 |
+| Seconds a run | 24.1 |
+
+So both causes of §23.L are gone: no walk loops, with the table's acts gone, and no known word reads both. The known word that came to read against in a probe of 24 presentations (§23.6.1) does not appear in the lesson's twelve runs; it is left as measured and not proposed for. What the lesson does not do is read in order, which is the question of the where.
