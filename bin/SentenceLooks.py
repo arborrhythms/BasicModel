@@ -122,19 +122,17 @@ def requested(model, query):
 def word_request(model, concepts, index):
     """The request for each stream's word ``index`` ``[B]`` by its word
     concept, for one: a reading supplied as a sequence of requests. A word
-    with no word concept is asked for as "words" alone, and comes back
-    whole."""
+    with no word concept has no concept to ask for: its request is empty,
+    the look returns no known word, and the word is read whole at its own
+    activity (:func:`word_activity`)."""
     owner = model._concept_owner()
-    B = len(index)
-    words = requested(model, owner.similarity_codebook.W.new_zeros(B, int(model._stm_reducer().d_model)))
-    request = torch.zeros_like(words)
+    V = int(owner.nVectors)
+    request = owner.similarity_codebook.W.new_zeros(V, len(index), 2)
     for b, word in enumerate(index.tolist()):
         cid = int(concepts[b, word]) if word >= 0 else -1
         row = owner._concept_row_of(cid) if cid >= 0 else None
         if row is not None:
             request[row, b, 0] = 1.
-        elif word >= 0:
-            request[:, b] = words[:, b]
     return request
 
 
