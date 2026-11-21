@@ -49,6 +49,15 @@ def restore(state):
     random.setstate(state['python'])
 
 
+def draw_start():
+    """A start for the random streams, drawn from the system's entropy."""
+    start = int.from_bytes(os.urandom(8), 'little') % (2 ** 32)
+    torch.manual_seed(start)
+    np.random.seed(start)
+    random.seed(start)
+    return start
+
+
 def stream_digest():
     state = stream()
     return dict(torch=frozen(state['torch']), python=state['python'],
@@ -268,8 +277,9 @@ def summary(records):
 
 def over_runs(output, runs):
     """The lesson run ``runs`` times, each in a fresh process with no seed
-    chosen, into ``output/run-NN``, and its report over the runs: the
-    summary of each run's sixteen sentences, and the seconds."""
+    chosen and its start drawn from the system's entropy, into
+    ``output/run-NN``, and its report over the runs: the start each drew,
+    the summary of each run's sixteen sentences, and the seconds."""
     import subprocess
     import sys
     output.mkdir(parents=True, exist_ok=False)
@@ -279,9 +289,10 @@ def over_runs(output, runs):
         subprocess.run([sys.executable, __file__, 'lesson', '--output', str(where)],
                        check=True, stdout=subprocess.DEVNULL)
         result = json.loads((where/'result.json').read_text())
-        each.append(dict(run=k + 1, seconds=result['seconds'], **summary(result['records'])))
+        start = json.loads((where/'initial.json').read_text()).get('start_drawn')
+        each.append(dict(run=k + 1, start_drawn=start, seconds=result['seconds'], **summary(result['records'])))
         print(json.dumps(each[-1]), flush=True)
-    keys = [key for key in each[0] if key not in ('run', 'seconds')]
+    keys = [key for key in each[0] if key not in ('run', 'seconds', 'start_drawn')]
     report = dict(runs=runs, seed_selected=False, each=each,
                   **{key: dict(each=[run[key] for run in each], total=sum(run[key] for run in each),
                                least=min(run[key] for run in each), greatest=max(run[key] for run in each))
@@ -314,13 +325,19 @@ def main():
         use_eager_reading(patch)
         observer = Observer(patch, args.output,
                             require_word_driven=args.require_word_driven)
+        start = None
         if args.replay:
             restore(torch.load(args.replay/'initial-rng.pt', weights_only=False))
             metadata = json.loads((args.replay/'initial.json').read_text())
             assert os.environ.get('PYTHONHASHSEED') == metadata['pythonhashseed']
+        else:
+            # A fresh process starts the same random streams; each run draws
+            # its start from the system's entropy, and says what it drew.
+            start = draw_start()
+            print(json.dumps(dict(start_drawn=start)), flush=True)
         torch.save(stream(), args.output/'initial-rng.pt')
         (args.output/'initial.json').write_text(json.dumps(dict(
-            pythonhashseed=os.environ.get('PYTHONHASHSEED'), seed_selected=False))+'\n')
+            pythonhashseed=os.environ.get('PYTHONHASHSEED'), seed_selected=False, start_drawn=start))+'\n')
         started = time.perf_counter()
         if args.kind == 'lesson':
             lesson(observer)
