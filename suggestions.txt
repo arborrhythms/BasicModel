@@ -1,0 +1,64 @@
+Reading words left to right with attend()
+2026-11-21
+
+I traced the sentence reader on the item17-r6d8 working tree, based on
+cf1ea4e0e9 with local salience and sentence-look changes. In one unforced
+reading of "What is this?", the grammar received "this", "What", "is", "?".
+The first divergence was in the choice of the word handed to the grammar.
+
+1. The context changes, but the request for a place can stay fixed.
+
+   OperationSelectionLayer.attend in bin/Language.py asks how much of each
+   concept code the context query covers. ConceptualMatch.match sums the
+   coordinatewise minimum of query and code and divides by the size of the
+   code. Once a query coordinate exceeds the code coordinate, increasing
+   it further contributes nothing to either the match or its gradient.
+
+   In a CPU probe of "This is Felix." at the reading lesson's learning
+   rate of 0.01, the first optimizer step was enough to reach this flat
+   region. Reading "This" changed the next query by as much as 3.10 on one
+   coordinate. The largest change across all place requests was exactly
+   zero. At the second look the sum of absolute gradients at the request
+   was 0.00659, and every gradient at the query was zero. In an isolated
+   backward pass, scaling that query to 2% of its magnitude and applying
+   the same incoming gradient gave a nonzero query gradient. That isolates
+   the loss of sensitivity to the match. The scale was a diagnostic probe.
+
+2. The ordinary corpus run does not teach the next-word request.
+
+   The 16-sentence corpus run through MathChainTraining.present supplied
+   no ReadingTargets on any of the 25 reading paths observed. The context
+   projection stayed exactly zero. On a subsequent reading of "This is
+   Felix.", all four looks asked only for the starting concept "words".
+   SentenceLooks.Looks.run lowers the activity of a word after it is
+   interpreted. Attention.draw_among selects the strongest remaining word
+   and draws randomly among exact ties. This can recover every word while
+   visiting the words out of order. The explicit reading_lesson path
+   supplies the next-word loss and replays the named target during training.
+   Its learned order must therefore be measured with that target removed.
+
+3. The places test marks some correct readings as failures.
+
+   test/test_item17_places.py passes the length of the padded forms array
+   to AttentionLesson.in_order. That helper expects the accepted positions
+   to equal range(count). In the corpus fixture the live source positions
+   of "This is Felix." were [0, 2, 4, 5] in a 32-slot array. Reading those
+   four positions in precisely that order still fails this comparison.
+
+   I rescored an explicitly trained places fixture using interpreted
+   arrivals from Looks.source_orders() and the ordered source slots with
+   live spans. After training, one unforced evaluation gave 4 of 6
+   two-word sentences, 0 of 16 lesson sentences and 1 of 6 held-out
+   sentences in order. The existing helper scored zero in all three sets.
+   The corrected counts still show a failure to learn reliable order.
+
+Suggested next experiment
+
+Score interpreted arrivals against the live source slots for each sentence
+and batch row. Include a correct reading with gaps and padding, plus a
+reading of the same words with two arrivals swapped. With that measure in
+place, test the scale of the context query relative to the concept codes.
+Track the request and its gradient on the first two looks, then evaluate
+without a supplied reading on sentences containing the same words in
+different orders. This checks whether the location request can move after
+the first word and whether that movement predicts the next word in text.
