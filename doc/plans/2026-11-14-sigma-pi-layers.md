@@ -9820,6 +9820,22 @@ Checked at `5364c905bc` (Claude):
 
 *Decided:* a trial in tests only, the tenth pass of round 6d (§22.6d). *Mine, to be shown by the trial and not assumed:* whether a request for one place tells the word at that place from its neighbours at all, since the `.where` codes of neighbouring words differ by about .01 on a wire (§19.121, 4; the cue's trial, §23.6.14).
 
+### 19.126 Alec: a "first" concept held lit, a "next" concept lit after it, and the request in the input (2026-11-22)
+
+Alec, after §19.125: "It will be sufficient to keep the unused node on and provide the request in the input, which will give opportunity for successor logic (which, if stored across LTM references, should give the basis for sequence learning).
+So maybe we try one concept held lit as the "first" concept learner, and then light one that is the "next" context learner (we might not want these at low order). Enough info for a small test of a toy?"
+
+Claude's reading, each part *mine* until he confirms it:
+
+- *"The unused node"* is the empty concept of §19.124 (a concept with no definition, there to learn over trained data). It is kept lit; nothing else is built for it.
+- *"The request in the input":* the request a look was given is part of the input of the next `attend`. So what a lit concept can learn is a map from the last request to the next one, which is a successor.
+- *Two concepts.* "first" is lit while no word has been found, and what it learns is the request of the first look. "next" is lit after a word has been found, and what it learns is the successor: the next request from the last.
+- *"Not at low order":* the two concepts are above order zero. The toy has no orders; where they would live in the model is left open.
+- *"Stored across LTM references":* a successor learned once and kept by the references of LTM1 (`ref()`) would chain into a sequence. Not in the toy.
+- *Open in the reading:* whether the request in the input is the request as given (over concepts) or as answered (the `.where` and code of the word the look returned, §19.125). The toy tries both.
+
+*Decided:* a toy, in tests only, step 7 of the tenth pass.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -14167,6 +14183,8 @@ de-muxed; the production configuration.
    - the first word taken at the first look, counted apart from the sentences read in order;
    - for every choice, whether the intended word had a finite score, and whether `is` is taken by a look after the lesson.
 6. Tests in `test/test_item17_tree_attend_trial.py`; no assertion on a drawn outcome; both gates run once at the end. Return `scratch-1.7/r6d_return_10.md`, what fails first.
+
+7. *The toy of §19.126* (added the same day). Places with learned codes, a request over them, and two concepts with nothing learned at the start: "first", lit while no word has been found, and "next", lit after. Each lit concept reads the input by learned entries and gives the next request; the input holds the last look's request (form A: as given; form B: as answered, the place of the word returned). Taught by reading targets on sentences of several lengths and starting places; evaluated with no reading supplied on lengths and starting places not taught, and on Codex's paired histories. No form is given the order. Report, by drawn start: the first word right; sentences read in order; pairs right; what the "next" concept's entries hold after learning (is it one successor for every place, or a table of places). Say what the same two concepts would read in the model, in the source's names, and what is missing there.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
