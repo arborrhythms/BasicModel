@@ -9844,6 +9844,18 @@ Claude's reading, each part *mine* until he confirms it:
 
 *Decided:* a toy, in tests only, step 7 of the tenth pass.
 
+### 19.127 Alec: the reading task is paired with "first, next*, end" on the output (2026-11-22)
+
+Of the toy's two concepts, Alec: "Good, these two are provable sufficient, and invoking a read by flipping on a few neurons can be a method that we can generalize for learning different tasks." (`doc/FutureWork.md`, owed, after his answer on sequence learning over LTM.) Then: "To remove the intrusivity, I think we can pair the reading task with "first, next*, end" on the output."
+
+Claude's reading, *mine* until he confirms it:
+
+- *The intrusion* is the reading lesson's target: a cost that names the next word of the reading and replays it (`ReadingTargets`), laid on the looks from outside (§19.124, 2), as he said of the reconstruction cost ("That loss function gets intrusive", §19.121).
+- *The pairing:* the output is produced by the same sequence, one "first", any number of "next", then "end". The cost is the output's own (the sentence reconstructed in its order), and the reading has no target of its own. The reading and the output share the two concepts, so what the output's cost teaches "first" and "next" is what the reading uses.
+- *"end"* is a third concept, lit when nothing is left; it is where the sequence stops, in place of a count.
+
+*Decided:* tried in the toy, step 8 of the tenth pass.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -14193,6 +14205,8 @@ de-muxed; the production configuration.
 6. Tests in `test/test_item17_tree_attend_trial.py`; no assertion on a drawn outcome; both gates run once at the end. Return `scratch-1.7/r6d_return_10.md`, what fails first.
 
 7. *The toy of §19.126* (added the same day). Places with learned codes, a request over them, and two concepts with nothing learned at the start: "first", lit while no word has been found, and "next", lit after. Each lit concept reads the input by learned entries and gives the next request; the input holds the last look's request (form A: as given; form B: as answered, the place of the word returned). Taught by reading targets on sentences of several lengths and starting places; evaluated with no reading supplied on lengths and starting places not taught, and on Codex's paired histories. No form is given the order. Report, by drawn start: the first word right; sentences read in order; pairs right; what the "next" concept's entries hold after learning (is it one successor for every place, or a table of places). Say what the same two concepts would read in the model, in the source's names, and what is missing there.
+
+8. *The pairing of §19.127* (added the same day), in the toy of step 7. No reading target: the cost is on the output alone, which is the sentence produced in its order by "first", then "next" as often as needed, then "end" (a third concept, which stops the sequence). The reading uses the same "first" and "next". Compare with step 7's toy taught by reading targets: the first word right, sentences read in order, pairs right, and whether the reading stops at the end, by drawn start. Say what gradient reaches the reading's choice from the output's cost, and if none does, what would carry it.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
