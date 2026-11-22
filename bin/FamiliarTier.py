@@ -25,6 +25,14 @@ def kept_close(method):
     return boundary
 
 
+def is_place(owner, row):
+    """Whether the concept at ``row`` is a place's (it reads a row of the
+    first Pi with entries on the where wires)."""
+    from Spaces import _concept_alloc_of
+    cid = owner.concept_id_at_row(int(row))
+    return cid is not None and 'place' in _concept_alloc_of(owner).symbol_types.get(cid, ())
+
+
 def support_order(owner, support, candidate_order=None):
     """The highest member order, whose next order the candidate can become."""
     if candidate_order == 0:
@@ -244,9 +252,13 @@ def observe_field(owner, field=None, *, active_streams=None):
         activated[batch] = tuple(row for row, pair in paired.items() if float(pair[0]) > 0)
         used = {row: float(pair.amax()) for row, pair in paired.items()
                 if row in witnessed and float(pair.amax()) > owner.concept_use_floor}
-        for focal in used:
+        # A place's concept is read at one wherever its place is, so its
+        # co-occurrence tells nothing of what stands there: it is neither a
+        # focal row nor a context of a conjunction by co-occurrence.
+        offered = {row: weight for row, weight in used.items() if not is_place(owner, row)}
+        for focal in offered:
             order = owner._row_order(focal)
-            context = {row: weight for row, weight in used.items() if row != focal}
+            context = {row: weight for row, weight in offered.items() if row != focal}
             if not context:
                 continue
             context_order = support_order(owner, context, order)
