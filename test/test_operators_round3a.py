@@ -48,14 +48,14 @@ def test_mint_rekeys_existing_word_and_checkpoints_without_global_rng():
     old_row = bank.word_rows[b'calaba']
     bank.admit(b'cabala')
     assert torch.equal(state, torch.get_rng_state())
-    # The two have the same parts and the same runs of two; the first run
-    # of three that one holds and the other does not becomes a part. Then
-    # calaba lies inside cabala by accident, and becomes a part of the
-    # catalog with a coordinate cabala lacks (rule 61).
-    assert bank.added == {'bal': ('calaba', 'cabala'), 'calaba': ('calaba', 'cabala')}
-    assert ('part', 'bal') in bank.words[b'cabala'] and ('part', 'bal') not in bank.words[b'calaba']
+    # The two have the same characters and the same runs of two; each, a
+    # stored form, is a part of its own (rule 43), which the other does not
+    # hold, so neither lies inside the other and no run is added.
+    assert bank.added == {'calaba': None, 'cabala': None}
+    assert ('part', 'cabala') in bank.words[b'cabala'] and ('part', 'cabala') not in bank.words[b'calaba']
     assert ('part', 'calaba') in bank.words[b'calaba'] and ('part', 'calaba') not in bank.words[b'cabala']
     assert not bool((bank.form(b'calaba') <= bank.form(b'cabala')).all())
+    assert not bool((bank.form(b'cabala') <= bank.form(b'calaba')).all())
     assert bank.word_rows[b'calaba'] == old_row
     assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
     for word in [b'calaba', b'cabala']:
@@ -101,29 +101,34 @@ def test_masked_part_extends_bits_or_the_next_part_tells_them_apart(monkeypatch,
     """Two forms with one code get rule 43's next part (rule 56): `bal`
     first; while their codes are still one, the next run that one holds and
     the other does not, before any part's bits are raised, whether or not
-    raising bal's bits would have told them apart. No row is shared."""
+    raising bal's bits would have told them apart. No row is shared. The two
+    have one code here because each one's own part is given bits that their
+    characters already have."""
     import WordIdentity
+    stream = WordIdentity.bit_stream
     bank = identity_bank()
-    bank.admit(b'calaba')
-    form = bank.form(b'calaba')[:64]
+    form = torch.zeros(64)
+    form[sorted({i for ch in b'cabl' for i in stream(bytes([ch]), 64)[:3]})] = 1
     used = form.nonzero().flatten().tolist()
     missing = (~form.bool()).nonzero().flatten().tolist()
-    stream = WordIdentity.bit_stream
     def controlled(atom, dimension):
+        if atom in (b'calaba', b'cabala'):
+            return tuple(used[:3] + [i for i in range(dimension) if i not in used[:3]])
         if atom != b'bal':
             return stream(atom, dimension)
         # Its first three bits are calaba's: the rows stay equal at three.
         prefix = used[:3] + ([missing[0]] if separable else [])
         return tuple(prefix+[i for i in range(dimension) if i not in prefix and (separable or i in used)])[:dimension]
     monkeypatch.setattr(WordIdentity, 'bit_stream', controlled)
+    bank.admit(b'calaba')
     bank.admit(b'cabala')
-    assert list(bank.added)[0] == 'bal'
+    assert list(bank.added)[:3] == ['calaba', 'cabala', 'bal']
     assert not torch.equal(bank.code(b'calaba'), bank.code(b'cabala'))
     assert bank.word_rows[b'calaba'] != bank.word_rows[b'cabala']
     for raw in (b'calaba', b'cabala'):
         assert bank.read(bank.code(raw)) == raw
     # Rule 56: the next part comes before any part's bits are raised.
-    assert len(bank.added) > 1 and bank.bits.get(('part', 'bal'), bank.ones) == bank.ones
+    assert len(bank.added) > 3 and bank.bits.get(('part', 'bal'), bank.ones) == bank.ones
 
 
 @pytest.mark.parametrize('complete_first', [False, True])
@@ -151,11 +156,14 @@ def test_live_mint_rekeys_pending_and_completed_definitions(tmp_path, complete_f
 
 
 def test_numeric_mm_keeps_its_original_geometry():
+    """MM_text has the part map: its percept is 64 parts and 64 wholes, with
+    the where and the when."""
     from test_mm_xor import _fresh_model
+    from WordIdentity import WordIdentity
     model, _, _ = _fresh_model('data/MM_text.xml')
     try:
-        assert model.perceptualSpace.subspace.muxedSize == 14
-        assert getattr(model.perceptualSpace.percept_store, 'identity', None) is None
+        assert model.perceptualSpace.subspace.muxedSize == 64 + 64 + 4 + 4
+        assert isinstance(getattr(model.perceptualSpace.percept_store, 'identity', None), WordIdentity)
     finally:
         model.End(); model.symbolSpace.soft_reset()
 

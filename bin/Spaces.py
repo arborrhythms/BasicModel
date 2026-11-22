@@ -11379,7 +11379,10 @@ class PartSpace(Space):
                         else:
                             nested = tuple((identity.word_rows[part],lo,hi)
                                 for part,lo,hi in identity.nested.get(unit,()))
-                            pids = list(identity.admit(unit))
+                            # Nothing is admitted while online learning is
+                            # frozen: an unstored form is read by its parts.
+                            pids = (list(identity.admit(unit)) if admit or unit in identity.words
+                                    else [identity._atom(atom) for atom in identity.atoms_of(unit)])
                         atom_count = len(pids) - len(nested)
                     part_capacity = max(part_capacity, len(pids))
                     if (identity is None and admit and not hidden and len(unit) >= 2 and not truncated
