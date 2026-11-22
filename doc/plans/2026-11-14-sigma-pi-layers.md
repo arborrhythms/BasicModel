@@ -9947,7 +9947,7 @@ One task besides reading is counting with no change in the input stimulus: "Plea
 - *Mine, how the loop would run on what is decided:* the LTM query is the match of the top of STM and the top result is pushed (§19.86). With the word last said on top, the result is the episode that followed it when the count was taught, and pushing it says the next word. The pairs of the count share sides ("1" then "2", "2" then "3"), which is where MTM makes a higher symbol (§19.87). The loop ends at the word named in the request, or where LTM returns nothing (rule 48). *To be checked in the source before it is specified:* that an output is written to LTM as an episode with its predecessor, and that the query can be made from an output and not only from an input.
 - It is in the chart at 5.00 (an estimate). It is not in the eleventh pass.
 
-### 19.132 Alec: `.what` and `.where` may be muxed at the basic percept as the modalities are; one common perceptual space (2026-11-22, a possibility)
+### 19.132 Alec: `.what` and `.where` may be muxed at the basic percept as the modalities are; the `.where` is one space of three dimensions for every model (2026-11-22)
 
 Alec, while the de-muxed way back was being built: "By the way, .what and .where might be muxed together at the basic percept just as different modalities (such as words and numbers) mux together. That would cause all percepts to live in a common (3d) perceptual space, even if some were of reduced rank (e.g., the location of smell might be considered as a point at the nose)."
 
@@ -9956,6 +9956,16 @@ Alec, while the de-muxed way back was being built: "By the way, .what and .where
 - *What it would give:* one mux and one de-mux for modalities and for `.what`, `.where` and `.when` alike, so that the way back of rule 79 separates them by the mechanism that separates words from numbers; and a common space in which a word, a number and a felt thing can be at the same place, which item 1.6's felt world (three axes) needs.
 - *For the twelfth pass:* nothing is built for it. The pass says whether the source's separation of modalities (`InputSpace/demuxed`) and its separation of `.what` from `.where` on the way back are, or could be, one mechanism.
 - *For item 1.6:* taken up there with the number modality.
+
+*Decided, the same day.* To Claude's estimate of the cost (three axes at the two periods of today: 12 wires for 4, a concept 144 wide for 136, about 6% more; the place match per axis, three times today's and not its cube), Alec: "NB: we are treating numbers as felt things.
+
+I would like to see .where as a 3D space for all models, it simplifies things. I am not convinced that we need 4 elements per dim as opposed to 3, but if they are only bf16 that's not too bad."
+
+- *Decided:* the `.where` is a space of three dimensions for every model. A modality with no extent on an axis has a place of reduced rank on it (text lies on one axis). The per-modality `.where` axes of 2026-11-13 give way to it.
+- *Noted:* numbers are felt things (Claude had written "a word, a number and a felt thing" as three).
+- *Open, his doubt:* whether an axis needs four elements or three. It is measured before it is chosen (twelfth pass, d): the margin between neighbouring places with four elements for an axis (two periods, as today), and with three in the forms that fit (say which). Until then an axis keeps four.
+- *The type:* the elements are of the model's type and are BF16 when the whole model is (`MODEL_AMP`); no narrower type of their own.
+- *Mine, for the build:* the place code and its match are kept for each axis apart (one table for an axis, a place the three results together), so that three dimensions cost three matches; the number of axes a key of `data/model.xml`.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
@@ -14365,6 +14375,7 @@ de-muxed; the production configuration.
    - c. *The cost can find a wrong place, and teaches it.* The match is graded where the cost reads it (a percept is pasted to the degree its `.where` matches each place, so that the gradient passes; say the form). Certificates, in tests: a recreated percept at a wrong `.where` costs more than at its own; the cost's gradient on the `.where` parameter and on what makes the `.when` is not nothing; a sentence reconstructed after the change is the sentence, at the ladder's sentences and at the lesson's.
    - d. *How exact a recreated `.where` must be:* measured, at the periods the model has (8192 and 256 addresses). If a recreated `.where` cannot be told from its neighbour's, the rung of §19.129, 3 is added (16 to 32 addresses, a key of `data/model.xml`) and the measure repeated.
    - e. *One output.* With the way back de-muxed, say whether the walk's own cost now reaches the looks, and what becomes of the `say` read; if `say` is no longer needed it goes.
+   - f. *The `.where` in three dimensions for every model* (§19.132, decided). The way back's match of the `.where` is built for each axis apart from the start (a to c), so that this step is a change of width and not of design. After the certificates of c pass: the `.where` has three axes in every configuration (the number of axes a key of `data/model.xml` and the schema; no key in `data/BasicModel.xml`), text lies on the first, and the other two are at one point for it. In d, measure also the margin between neighbours with three elements for an axis against four (his doubt), in the forms that fit, and say which; an axis keeps four until he chooses. Say every width that changed and every test ported for it; nothing of the two gates changes but the width they are given.
    Then steps 1 to 5 are taken again on the model's own output.
 7. *Tests:* both gates; the files touched and their users; `test/test_compiled_lesson_step.py` once. Return `scratch-1.7/r6d_return_12.md`, what fails first. `main` moves only if the rows at 1.00 and 1.75 pass in all three starts, with both gates and the files touched.
 
