@@ -9947,6 +9947,16 @@ One task besides reading is counting with no change in the input stimulus: "Plea
 - *Mine, how the loop would run on what is decided:* the LTM query is the match of the top of STM and the top result is pushed (§19.86). With the word last said on top, the result is the episode that followed it when the count was taught, and pushing it says the next word. The pairs of the count share sides ("1" then "2", "2" then "3"), which is where MTM makes a higher symbol (§19.87). The loop ends at the word named in the request, or where LTM returns nothing (rule 48). *To be checked in the source before it is specified:* that an output is written to LTM as an episode with its predecessor, and that the query can be made from an output and not only from an input.
 - It is in the chart at 5.00 (an estimate). It is not in the eleventh pass.
 
+### 19.132 Alec: `.what` and `.where` may be muxed at the basic percept as the modalities are; one common perceptual space (2026-11-22, a possibility)
+
+Alec, while the de-muxed way back was being built: "By the way, .what and .where might be muxed together at the basic percept just as different modalities (such as words and numbers) mux together. That would cause all percepts to live in a common (3d) perceptual space, even if some were of reduced rank (e.g., the location of smell might be considered as a point at the nose)."
+
+- *Not decided* ("might"). Recorded as a direction.
+- *What it would change* (Claude): today each modality has its own perceptual space with its own `.where` axes (§ of 2026-11-13, "per-modality `.where` axes"), and a basic percept's row keeps its `.where` and `.when` as learned entries beside its `.what` code (rule 62; §19.115, "where and when muxed before the product"). On his thought the `.where` would be one more thing muxed into the percept in the way a second modality is, and every percept of every modality would have a place in one space of three dimensions; a modality with no extent has a place of reduced rank (a point).
+- *What it would give:* one mux and one de-mux for modalities and for `.what`, `.where` and `.when` alike, so that the way back of rule 79 separates them by the mechanism that separates words from numbers; and a common space in which a word, a number and a felt thing can be at the same place, which item 1.6's felt world (three axes) needs.
+- *For the twelfth pass:* nothing is built for it. The pass says whether the source's separation of modalities (`InputSpace/demuxed`) and its separation of `.what` from `.where` on the way back are, or could be, one mechanism.
+- *For item 1.6:* taken up there with the number modality.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

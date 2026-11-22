@@ -1564,3 +1564,7 @@ https://aclanthology.org/2020.findings-emnlp.117/
 ## An object counting task (Alec, 2026-11-22)
 
 Alec, while item 1.7's looks were being taught to read in order: "make sure to introduce an object counting task as 1,2,3,4 counting word on the output." The input holds objects; the output is the counting words, one for each object, in order. It uses the mechanism of sigma-pi §19.126 to §19.128 (a concept lit for the task; the memory of the last look; the output's cost alone), first tried as a toy in item 1.7 (round 6d, tenth pass, step 9). In this item it is a category of the corpus.
+
+## A common perceptual space (Alec, 2026-11-22, a possibility)
+
+"By the way, .what and .where might be muxed together at the basic percept just as different modalities (such as words and numbers) mux together. That would cause all percepts to live in a common (3d) perceptual space, even if some were of reduced rank (e.g., the location of smell might be considered as a point at the nose)." Not decided. If taken, the number modality and the felt world of this item share one space of three dimensions with the words, in place of a space for each modality. Recorded with what it would change as sigma-pi §19.132.
