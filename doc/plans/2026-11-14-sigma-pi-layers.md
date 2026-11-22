@@ -14442,6 +14442,8 @@ de-muxed; the production configuration.
 3. *A place row on the way back:* measure the recreated `.what` with the place rows' `.what` left out of the way back (their `.where` and `.when` kept), by the simulation of the thirteenth pass. In tests only.
 4. *Then the thirteenth pass's steps 1 to 7,* as far as the row at 1.00, with its stop rule.
 
+5. *The `.where` on the way back is built in this pass, and is the critical path* (Alec, 2026-11-22, after Claude set out that reconstruction places words by integers kept on the side and not by the `.where` subspace of the vector: "OK. Most evaluation will have to wait for that to be built, it is critical path."). It follows the trace and its repair, and comes before step 4's climb. First the measure (f) of the thirteenth pass on one sentence: the `.where` wires of each reading's own vector, separated and matched against the grid (`WhereRegistry.code`) for each axis apart; the address right or not, and the margin. Then, if it is right, items a to c of the twelfth pass's changed order are built with that as the source of the place: the recreated percept is taken apart into its subspaces, the `.what` matched against the percept codebook and the `.where` against the grid, the percept pasted at the matched place by a graded paste, and the integers kept on the side, the stamp from the buffer's position and the spelling by a row's index removed. The three certificates of c. If the address is not right from the vector's own wires, nothing is built and the measurements say where the wires stop being the occurrence's.
+
 Return `scratch-1.7/r6d_return_14.md`, what fails first. `main` moves on the thirteenth pass's condition.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
