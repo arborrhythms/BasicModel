@@ -278,13 +278,33 @@ class WordIdentity(nn.Module):
     def against_atoms(self, raw):
         """The parts that a form's nearest holders add to it."""
         own = set(self.words.get(bytes(raw), ()))
+        # A part whose run holds the form is found only where the characters
+        # its holder adds are found, so it adds nothing to them.
+        text = text_of(raw)
         return tuple(sorted({atom for holder in self.nearest_holders(raw)
-                             for atom in self.words[holder] if atom not in own}))
+                             for atom in self.words[holder] if atom not in own and text not in atom[1]}))
 
     def atoms_of(self, raw):
-        """The parts of a form: its characters and the added parts inside it."""
+        """The parts of a form: its characters and the added parts inside it
+        (a stored form being one), in the order the parts were added."""
         text = text_of(raw)
-        return base_atoms(raw) + tuple(('part', run) for run in self.added if run in text)
+        added = self.added
+        n = len(text)
+        if n * (n + 1) // 2 < len(added):
+            rank = self._added_rank()
+            found = {text[i:j] for i in range(n) for j in range(i + 1, n + 1)}.intersection(added)
+            inside = sorted(found, key=rank.__getitem__)
+        else:
+            inside = [run for run in added if run in text]
+        return base_atoms(raw) + tuple(('part', run) for run in inside)
+
+    def _added_rank(self):
+        """Each added part's place in the order of addition."""
+        stamp = (id(self.added), len(self.added))
+        if self.__dict__.get('_rank_stamp') != stamp:
+            self.__dict__['_rank'] = {run: i for i, run in enumerate(self.added)}
+            self.__dict__['_rank_stamp'] = stamp
+        return self.__dict__['_rank']
 
     @torch.no_grad()
     def _fixed(self, row, value, raw=None):
@@ -752,12 +772,26 @@ class WordIdentity(nn.Module):
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
         if raw not in self.words:
+            # A stored form of several characters is a part of its own,
+            # carried by itself and by every stored form that holds it as a
+            # run, those admitted before it and those admitted after.
+            text = text_of(raw)
+            own = ('part', text)
+            if len(text) > 1 and text not in self.added:
+                self.added[text] = None
             self.words[raw] = self.atoms_of(raw)
             self._link(raw)
+            carriers = [holder for holder in sorted(self.holders[raw], key=self.order.__getitem__)
+                        if own not in self.words[holder]] if len(text) > 1 else []
+            for holder in carriers:
+                self.words[holder] = self.words[holder] + (own,)
             for atom in self.words[raw]:
                 self._atom(atom)
             self._place(raw)
-            self._keep(self._settle([raw]), new=raw)
+            if carriers:
+                index = torch.tensor([self.order[word] for word in carriers], device='cpu')
+                self._packed[index] = self._pack(torch.stack([self.code(word) for word in carriers]))
+            self._keep(self._settle(carriers + [raw]), new=raw)
         return self.parts(raw)
 
     def admit_part(self, run):
