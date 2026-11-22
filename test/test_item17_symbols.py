@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from Layers import NotLayer3, SparseSigmaLayer3
+from Layers import NotLayer3, SparseSigmaLDU
 from OrderZero import read_word
 
 
@@ -107,7 +107,7 @@ def test_51b_with_no_not_entry_raising_a_row_never_lowers_a_concept():
     raised in turn."""
     torch.manual_seed(int.from_bytes(__import__('os').urandom(4), 'little'))
     rows, concepts = 6, 4
-    not_, sigma = NotLayer3(rows), SparseSigmaLayer3(rows, concepts, 32)
+    not_, sigma = NotLayer3(rows), SparseSigmaLDU(rows, concepts, 32)
     for c in range(concepts):
         for r in torch.randperm(rows)[:3].tolist():
             sigma.add(c, r, float(torch.rand(())))
@@ -137,7 +137,7 @@ def test_51c_the_not_offers_the_value_and_the_not_value():
 def test_51c_a_concept_of_presence_and_one_of_absence_over_one_row():
     """Two concepts over one row: one reads its value, one its not-value,
     and both stand; neither row nor concept is limited to one of the other."""
-    not_, sigma = NotLayer3(2), SparseSigmaLayer3(2, 3, 8)
+    not_, sigma = NotLayer3(2), SparseSigmaLDU(2, 3, 8)
     sigma.add(0, 0)
     not_.make(sigma, 1, 0)
     sigma.add(2, 0), sigma.add(2, 1)
@@ -158,7 +158,7 @@ def test_51d_a_not_entry_is_made_by_the_gradient():
     cannot read zero on one side and one on the other: it settles between,
     the two readings each other's opposite. A Not entry is otherwise made
     only by a declared Not member (``NotLayer3.make``)."""
-    not_, sigma = NotLayer3(1), SparseSigmaLayer3(1, 1, 1)
+    not_, sigma = NotLayer3(1), SparseSigmaLDU(1, 1, 1)
     sigma.add(0, 0)
     lanes = torch.tensor([[[1., 0.], [0., 1.]]])  # read for, read against
     target = torch.tensor([0., 1.])
@@ -181,7 +181,7 @@ def test_51d_a_not_entry_is_made_by_the_gradient():
 def test_a_checkpoint_of_the_dense_sigma_is_refused_with_the_reason():
     """A Sigma of order zero saved as a dense matrix over the percept code
     has no reading on rows: it is refused, with the reason."""
-    sigma = SparseSigmaLayer3(4, 2, 8)
+    sigma = SparseSigmaLDU(4, 2, 8)
     saved = {'weight': torch.rand(6, 2), 'against': torch.rand(6, 2)}
     with pytest.raises(ValueError, match='no reading on the rows of the first Pi'):
         sigma.load_state_dict(saved, strict=False)
@@ -190,7 +190,7 @@ def test_a_checkpoint_of_the_dense_sigma_is_refused_with_the_reason():
 # Certificate 54: the Sigma of order zero reads rows (rule 62).
 
 ORDER_ZERO_READERS = {
-    'Layers.py': ('NotLayer3', 'SparseSigmaLayer3'),
+    'Layers.py': ('NotLayer3', 'SparseLDULayer', 'SparseSigmaLDU'),
     'OrderZero.py': ('read_word',),
     'NumericPercepts.py': ('read',),
     'Spaces.py': ('order_zero_reading', 'install_order_zero', 'order_zero_field', '_start_order_zero_entry',
@@ -242,7 +242,7 @@ def test_54c_where_a_forms_holder_stands_in_its_place_the_concept_reads_zero():
     words = (b'archer', b'archery', b'is', b'this', b'reach')
     identity, basic, book, rows = coded(words)
     not_ = NotLayer3(basic.capacity)
-    sigma = SparseSigmaLayer3(basic.capacity, len(words), 2 * len(words))
+    sigma = SparseSigmaLDU(basic.capacity, len(words), 2 * len(words))
     concept = {w: k for k, w in enumerate(words)}
     for w in words:
         sigma.add(concept[w], rows[w])
@@ -383,7 +383,7 @@ def test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced(nots):
     read."""
     torch.manual_seed(int.from_bytes(__import__('os').urandom(4), 'little'))
     P, C = 40, 30
-    not_, sigma = NotLayer3(P), SparseSigmaLayer3(P, C, 600)
+    not_, sigma = NotLayer3(P), SparseSigmaLDU(P, C, 600)
     for _ in range(500):
         c, r = int(torch.randint(C, ())), int(torch.randint(P, ()))
         if float(torch.rand(())) < nots:

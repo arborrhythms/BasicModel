@@ -1,4 +1,5 @@
-"""A sparse LDU, in tests (item 1.7, round 6d, seventh pass, step 1).
+"""A sparse LDU with both triangles, in tests (item 1.7, round 6d, seventh pass,
+step 1); the model's layer is :class:`Layers.SparseLDULayer`.
 
 W = L D U in :class:`Layers.InvertibleLinearLayer`'s row-vector form
 (``x @ L @ D @ U``) and with its padding: L unit lower over the inputs, D a
@@ -13,22 +14,17 @@ are entries, each an index pair and a value. The slot axis is the first.
 """
 import torch
 
+from Layers import unit_apply as _apply, unit_solve as _solve
+
 
 def unit_apply(x, entries):
-    """``x @ (I + N)``, ``N`` the entries ``(source, target, value)``."""
-    source, target, value = entries
-    shape = (-1,) + (1,) * (x.ndim - 1)
-    return x.index_add(0, target, x.index_select(0, source) * value.reshape(shape))
+    """``x @ (I + N)``, ``N`` the entries ``(source, target, value)`` (:func:`Layers.unit_apply`)."""
+    return _apply(x, *entries)
 
 
 def unit_solve(y, entries, steps):
-    """``x`` with ``x @ (I + N) = y``: ``x <- y - x @ N``, ``steps`` times."""
-    source, target, value = entries
-    shape = (-1,) + (1,) * (y.ndim - 1)
-    x = y
-    for _ in range(int(steps)):
-        x = y.index_add(0, target, -(x.index_select(0, source) * value.reshape(shape)))
-    return x
+    """``x`` with ``x @ (I + N) = y`` (:func:`Layers.unit_solve`)."""
+    return _solve(y, *entries, steps)
 
 
 def longest_chain(source, target):

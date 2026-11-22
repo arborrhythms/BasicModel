@@ -15,7 +15,7 @@ def close(owner, rows, evidence):
     """Read each definition once, in dependency order: each kind's entries,
     each on its symbol's value or not-value (the Not), summed by the
     store's Sigma and stored as one signed value on two lanes."""
-    from Layers import NotLayer3, SparseSigmaLayer3, signed_lanes
+    from Layers import NotLayer3, sigma_fold, signed_lanes
     store = owner._concept_allocator.layer(0)
     positions = {int(row): i for i, row in enumerate(rows)}
     values = store.values
@@ -50,7 +50,7 @@ def close(owner, rows, evidence):
                 options = NotLayer3.options(torch.stack(operands))
                 entry = values.index_select(0, torch.tensor([index for _, index in edges],
                                                             device=values.device)).to(options)
-                read = SparseSigmaLayer3.fold(entry, torch.zeros(len(edges), dtype=torch.long, device=options.device),
+                read = sigma_fold(entry, torch.zeros(len(edges), dtype=torch.long, device=options.device),
                                               torch.arange(len(edges), device=options.device), options, 1)[0]
                 # A row without direct evidence takes its definition. Direct
                 # perceptual evidence and a definition are independent sources.

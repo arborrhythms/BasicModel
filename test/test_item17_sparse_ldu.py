@@ -63,8 +63,10 @@ def test_b_the_way_back_is_exact_after_as_many_steps_as_the_longest_chain():
     g = _start()
     n = 64
     source, target, value = _triangle(n, 3 * n, False, g)
-    # Values of size one, so that the longest chain's term is not lost in rounding.
-    entries = (source, target, torch.where(value < 0, -1., 1.).to(value))
+    # Values of size about one, so that the longest chain's term is not lost
+    # in rounding, and not all of one size, so that no two chains cancel.
+    size = .75 + .5 * torch.rand(len(value), generator=g, dtype=value.dtype)
+    entries = (source, target, torch.where(value < 0, -size, size))
     chain = longest_chain(source, target)
     x = torch.randn(n, 4, generator=g, dtype=torch.float64)
     y = unit_apply(x, entries)
@@ -99,3 +101,153 @@ def test_c_an_entry_added_or_removed_leaves_it_invertible_with_nothing_factored_
     errors['an entry removed from L'] = round_trip(tuple(t[keep] for t in lower), upper)
     print(errors)
     assert max(errors.values()) < 1e-12
+
+
+# The order-zero Sigma on the sparse LDU (step 2).
+
+def _dense_read(sigma, lanes, inputs):
+    """What the Sigma of order zero reads by its definition, over every
+    concept: ``tanh`` of each concept's entries times its rows' values
+    (for less against), from a dense matrix of the entries."""
+    n = sigma.nnz
+    dense = torch.zeros(sigma.nInput, sigma.nOutput)
+    dense[sigma.entry_input[:n], sigma.entry_row[:n]] = sigma.value[:n].detach()
+    signed = torch.zeros(sigma.nInput, *lanes.shape[1:-1])
+    signed[inputs] = lanes[..., 0] - lanes[..., 1]
+    return torch.tanh(torch.einsum('i...,ic->c...', signed, dense))
+
+
+@pytest.fixture(scope='module')
+def lesson():
+    from test_item17_order_zero import _read_lesson
+    model, patch = _read_lesson(16)
+    yield model._concept_owner()
+    model.End()
+    patch.undo()
+
+
+def test_d_the_lessons_sigma_reads_its_entries_and_returns_its_rows(lesson):
+    """(d) After the lesson's sixteen sentences the order-zero Sigma is the
+    sparse LDU. On the way up it gives the Sigma's values by its definition
+    (each concept's entries on its rows, and nothing else); on the way back
+    it returns every row that brought a concept, exactly, all at once, where
+    a least-squares way back through each row's own entries is exact only
+    when every concept reading a row is asked with it."""
+    from Layers import SparseSigmaLDU
+    sigma, not_ = lesson.order_zero, lesson.order_zero_not
+    assert isinstance(sigma, SparseSigmaLDU)
+    g = _start()
+    n = sigma.nnz
+    rows = sorted(set(sigma.entry_input[:n].tolist()))
+    lanes = torch.rand(len(rows), 3, 2, generator=g) * .5
+    concepts = list(range(sigma.nOutput))
+    up = sigma(not_(lanes), rows, concepts).detach()
+    torch.testing.assert_close(up, _dense_read(sigma, lanes, rows), atol=1e-6, rtol=0)
+    start = time.perf_counter()
+    back = sigma.reverse(up, rows).detach()
+    seconds = time.perf_counter() - start
+    error = float((back - (lanes[..., 0] - lanes[..., 1])).abs().max())
+    print(dict(rows=sigma.nInput, concepts=sigma.nOutput, entries=n, slots=sigma.slots,
+               diagonal=sum(e >= 0 for e in sigma._diagonal), longest_chain=sigma.longest_chain,
+               way_back_error=error, way_back_seconds=round(seconds, 6)))
+    assert error < 1e-5
+
+
+def test_d_a_cycle_keeps_the_entries_and_gives_up_a_row():
+    """(d) A concept that reads, through another concept's row, the row of
+    its own slot would close a cycle: it leaves its slot. The way up keeps
+    exactly the entries; the row it left has no concept of its own and is
+    not returned; every other row is."""
+    from Layers import NotLayer3, SparseSigmaLDU
+    g = _start()
+    sigma, not_ = SparseSigmaLDU(4, 4, 16), NotLayer3(4)
+    for r in range(4):
+        sigma.add(r, r, 1.)
+    sigma.add(1, 0, .5)                        # concept 1 reads row 0
+    sigma.add(0, 1, .5, negated=True)          # concept 0 reads row 1: a cycle
+    # Concept 0 leaves slot 0 for slot 4; its diagonal is an entry of U from
+    # slot 0: the chain is slot 0, slot 1 (concept 1), slot 4.
+    assert sigma.longest_chain == 2 and sigma.slots == 5
+    lanes = torch.rand(4, 2, 2, generator=g) * .5
+    up = sigma(not_(lanes), range(4), range(4)).detach()
+    torch.testing.assert_close(up, _dense_read(sigma, lanes, list(range(4))), atol=1e-6, rtol=0)
+    with pytest.raises(ValueError):
+        sigma.reverse(up, range(4))
+    kept = sorted(sigma.returned())
+    truth = lanes[..., 0] - lanes[..., 1]
+    back = sigma.reverse(up, kept).detach()
+    print(dict(kept=kept, error=float((back - truth[kept]).abs().max())))
+    # Row 0 has no concept of its own now, and concept 1 reads it: rows 0
+    # and 1 are not returned; rows 2 and 3 are, exactly.
+    assert kept == [2, 3]
+    torch.testing.assert_close(back, truth[kept], atol=1e-5, rtol=0)
+
+
+def test_d_an_entry_added_or_removed_needs_nothing_factored_again():
+    """(d) Entries added and removed in any order: the way up reads exactly
+    the entries left, and the way back returns every row with a concept of
+    its own, with no factoring."""
+    from Layers import NotLayer3, SparseSigmaLDU
+    g = _start()
+    P, C = 24, 30
+    sigma, not_ = SparseSigmaLDU(P, C, 200), NotLayer3(P)
+    for r in range(P):
+        sigma.add(r, r, .5 + float(torch.rand(1, generator=g)))
+    for c in range(P, C):
+        for r in torch.randint(P, (3,), generator=g).tolist():
+            if sigma.find(c, r) is None:
+                sigma.add(c, r, float(torch.rand(1, generator=g)), negated=bool(torch.rand(1, generator=g) < .3))
+    for c in range(P):
+        r = int(torch.randint(P, (1,), generator=g))
+        if r < c and sigma.find(c, r) is None:
+            sigma.add(c, r, .3)                 # an earlier row: by level, no cycle
+    lanes = torch.rand(P, 2, 2, generator=g) * .5
+    truth = lanes[..., 0] - lanes[..., 1]
+    for step in range(4):
+        up = sigma(not_(lanes), range(P), range(C)).detach()
+        torch.testing.assert_close(up, _dense_read(sigma, lanes, list(range(P))), atol=1e-6, rtol=0)
+        kept = sorted(sigma.returned())
+        back = sigma.reverse(up, kept).detach()
+        torch.testing.assert_close(back, truth[kept], atol=1e-5, rtol=0)
+        e = int(torch.randint(sigma.nnz, (1,), generator=g))
+        sigma.remove(int(sigma.entry_row[e]), int(sigma.entry_input[e]))
+        print(dict(step=step, entries=sigma.nnz, slots=sigma.slots, chain=sigma.longest_chain, returned=len(kept)))
+
+
+def test_e_the_longest_chain_and_the_way_back_on_the_dictionary():
+    """(e) The dictionary's forms (the first 20,000 words, 19,821, in the
+    order certificate 46 admits them), each a row that brings its concept:
+    the longest chain and the seconds of a way back; and, as a trial, with
+    each concept also reading the rows of the stored forms it holds as runs
+    (a concept after every row it reads, by level)."""
+    import code_trial as ct
+    from Layers import NotLayer3, SparseSigmaLDU
+    try:
+        words = ct.dictionary()
+    except OSError:
+        pytest.skip('no /usr/share/dict/words on this host')
+    g = _start()
+    row = {w: i for i, w in enumerate(words)}
+    runs = [(row[w], row[w[a:b]]) for w in words for a in range(len(w)) for b in range(a + 2, len(w) + 1)
+            if (a, b) != (0, len(w)) and w[a:b] in row]
+    P = len(words)
+    lanes = torch.rand(P, 8, 2, generator=g) * .5
+    truth = lanes[..., 0] - lanes[..., 1]
+    report = {}
+    for name, extra in (('one concept a row', ()), ('and the runs it holds', runs)):
+        start = time.perf_counter()
+        sigma, not_ = SparseSigmaLDU(P, P, P + len(extra)), NotLayer3(P)
+        for r in range(P):
+            sigma.add(r, r, 1.)
+        for concept, held in extra:
+            sigma.add(concept, held, .1)
+        added = time.perf_counter() - start
+        up = sigma(not_(lanes), range(P), range(P)).detach()
+        start = time.perf_counter()
+        back = sigma.reverse(up, range(P)).detach()
+        seconds = time.perf_counter() - start
+        report[name] = dict(entries=sigma.nnz, chain=sigma.longest_chain, seconds_to_add=round(added, 2),
+                            way_back_seconds=round(seconds, 4), error=float((back - truth).abs().max()))
+        assert report[name]['error'] < 1e-4
+    print(report)
+

@@ -14916,10 +14916,10 @@ class ConceptualSpace(Space):
         concepts. It reads no code and no place."""
         if getattr(self, 'order_zero', None) is not None:
             return self.order_zero
-        from Layers import NotLayer3, SparseSigmaLayer3
+        from Layers import NotLayer3, SparseSigmaLDU
         rows, concepts = int(self.basic_percepts.capacity), int(self._order_caps()[0])
         self.order_zero_not = NotLayer3(rows)
-        sigma = SparseSigmaLayer3(rows, concepts, self.ORDER_ZERO_ENTRIES * (rows + concepts))
+        sigma = SparseSigmaLDU(rows, concepts, self.ORDER_ZERO_ENTRIES * (rows + concepts))
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
         # A frozen concept is read as a reference and never by perception.

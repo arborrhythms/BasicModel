@@ -5052,7 +5052,7 @@ class NotLayer3(Layer):
     over one row. An entry that reads the not-value is a Not entry.
 
     Which option an entry reads is held with the Sigma, in the entry's one
-    learned number (``SparseSigmaLayer3.value``): at or above zero it reads
+    learned number (``SparseSigmaLDU.value``): at or above zero it reads
     the value, below zero the not-value, and its size is the Sigma's
     weight. A Not entry is made in two ways: implicitly, by the gradient
     carrying an entry's number through zero; explicitly, by a Not member
@@ -5155,50 +5155,132 @@ class _EntryIndex:
         return entries, slot
 
 
-class SparseSigmaLayer3(Layer):
-    r"""A Sigma of signed concepts over the two options of rows (the Not's),
-    sparse:
+def sigma_fold(value, concepts, inputs, options, size):
+    """The read of a sparse Sigma of the concepts above order zero: ``size``
+    concepts' signed values, ``[size, ...]``, from the entries ``value``
+    ``[E]`` (each one learned number, its size the weight and its side of
+    zero the option) of concepts ``concepts`` ``[E]`` on the options
+    ``options`` ``[P, ..., 2]`` at ``inputs`` ``[E]``: ``tanh`` of each
+    concept's sum."""
+    n = len(value)
+    value = value.reshape(n, *([1] * (options.ndim - 2))).expand(n, *options.shape[1:-1])
+    terms = _EntryRead.apply(value, options.index_select(0, inputs))
+    total = options.new_zeros(int(size), *options.shape[1:-1]).index_add(0, concepts, terms)
+    return torch.tanh(total)
 
-        y_c = tanh( sum_{(c, i)} w_ci o_i(e_ci) ),   w_ci >= 0
 
-    where each entry reads one option of its row, the value or the
-    not-value (:meth:`NotLayer3.choose`), with one weight at zero or above,
-    so with no Not entry raising any row never lowers a concept. Each entry
-    is one learned signed number ``value``, the form in which the gradient
-    moves an entry between the options: its side of zero is the option the
-    entry reads (at or above zero the value, below the not-value) and its
-    size is the Sigma's weight (:attr:`weight`). The read is computed by
-    :class:`_EntryRead`, whose gradient carries an entry through zero. Any
-    number of concepts may read a row, by either option, and a concept may
-    read any number of rows. A concept reads no row it has no entry on.
-    There is no bias.
+def unit_apply(x, source, target, value):
+    """``x @ (I + N)`` along the first axis, ``N`` holding ``value`` at
+    ``(source, target)``: each target gains its source's value times the
+    entry. Scatters, no full matrix."""
+    shape = (-1,) + (1,) * (x.ndim - 1)
+    return x.index_add(0, target, x.index_select(0, source) * value.reshape(shape))
 
-    The entries are written into capacity allocated beforehand (``entries``)
-    in the order they are added: ``value`` ``[entries]`` is the parameter,
-    ``entry_row`` and ``entry_input`` name each entry's concept and row,
-    ``count`` how many are written. The compressed rows (the entries of each
-    concept) and the index of columns (the entries reading each row) are
-    kept beside them (:class:`_EntryIndex`): an addition costs a constant
-    amortized, and a read costs the entries on the rows present.
+
+def unit_solve(y, source, target, value, steps):
+    """``x`` with ``x @ (I + N) = y``, ``N`` strict (its entries make no
+    cycle): ``x <- y - x @ N``, ``steps`` times from ``x = y``. Since
+    ``(I + N)^-1 = I - N + N^2 - ...`` ends after as many terms as the
+    longest chain of entries, that many steps are exact."""
+    shape = (-1,) + (1,) * (y.ndim - 1)
+    x = y
+    for _ in range(int(steps)):
+        x = y.index_add(0, target, -(x.index_select(0, source) * value.reshape(shape)))
+    return x
+
+
+class SparseLDULayer(Layer):
+    r"""A sparse LDU (rule 78, §19.122): ``W = L D U`` in
+    :class:`InvertibleLinearLayer`'s row-vector form, ``x @ L @ D @ U``, with
+    the strict triangle of U stored as entries and D a full vector. L is
+    the identity: no entry is placed in it (see *a cycle*, below).
+
+    *Slots.* The layer's own index is a slot. A slot holds at most one input
+    and at most one output, and its diagonal is D's: an entry of output
+    ``row`` on ``input`` whose two are held by one slot is that slot's
+    diagonal; every other entry is an entry of U from the input's slot to
+    the output's slot. An entry is placed when it is added: an input and an
+    output with no slot take a new slot together (the entry is its
+    diagonal); one with no slot joins the other's slot where the other's
+    slot has room for it (the entry is again its diagonal), or else takes a
+    new slot of its own; two in different slots are joined by an entry of U.
+    An input held by no slot is read by nothing; an output held by no slot
+    reads nothing. So W has exactly the entries written, and the slots are
+    at most ``nInput + nOutput``: D is padded by the slots that hold only an
+    input or only an output.
+
+    *The order by level.* No slot is numbered by level. U's entries make no
+    cycle, so they are a strict triangle in the order of their levels (the
+    slots ordered so that every entry goes from a lower level to a higher),
+    and the way back needs only that and the longest chain. The layer keeps
+    each slot's level (the longest chain of entries that ends at it) on the
+    host, raised along the chains below a new entry when it is added, and
+    the longest chain with it. An entry removed sets the levels again from
+    the entries left.
+
+    *A cycle.* An entry whose U entry would close a cycle (an output that
+    reads, through other outputs' rows, the row of its own slot) moves its
+    output out of its slot to a new slot of its own, with the entries that
+    reach it; its diagonal becomes an entry of U from the slot it leaves.
+    The new slot has no input, so nothing leaves it and no cycle is closed.
+    W keeps exactly its entries; what is given up is that the input left
+    behind has no output of its own, so the way back does not return it.
+
+    *The values.* Each entry is one learned number, ``value``, the entry of
+    W itself: a diagonal is D's, and an entry of U from slot ``a`` is
+    ``d_a`` times U's. So the factors are read from the entries, and
+    nothing is factored again when an entry is added, removed or taught. A
+    slot with no diagonal entry has ``d`` one. A diagonal at nothing passes
+    nothing back (the pseudoinverse's convention).
+
+    *The way up* (:meth:`up`) is scatters, with no division: ``x d`` plus
+    each entry's input times its value. *The way back* (:meth:`back`) is
+    exact: U undone by :func:`unit_solve` as many times as U's longest
+    chain, then D divided out. Where an output's value is not given (a slot
+    with no output) it is taken at nothing, which is the pseudoinverse the
+    padding gives.
+
+    Storage is allocated at construction and grown into: ``entries``
+    entries and ``nInput + nOutput`` slots. The slots are not saved; they
+    are placed again from the entries, in their order, when the layer is
+    loaded.
     """
+
+    DIAGONAL, UPPER = 0, 1
 
     def __init__(self, nInput, nOutput, entries):
         super().__init__(int(nInput), int(nOutput))
         entries = int(entries)
         if self.nInput < 1 or self.nOutput < 1 or entries < 1:
-            raise ValueError('a sparse Sigma needs room for inputs, concepts and entries')
+            raise ValueError('a sparse LDU needs room for inputs, outputs and entries')
         self.value = nn.Parameter(torch.zeros(entries))
         self.register_buffer('entry_row', torch.full((entries,), -1, dtype=torch.long))
         self.register_buffer('entry_input', torch.full((entries,), -1, dtype=torch.long))
         self.register_buffer('count', torch.zeros((), dtype=torch.long))
+        slots = self.nInput + self.nOutput
+        for name, size in (('entry_source', entries), ('entry_target', entries), ('entry_kind', entries),
+                           ('input_slot', self.nInput), ('output_slot', self.nOutput),
+                           ('slot_input', slots), ('slot_output', slots), ('slot_diagonal', slots)):
+            self.register_buffer(name, torch.full((size,), -1, dtype=torch.long), persistent=False)
         self._entry_of, self._n = {}, 0
+        self._reset_slots()
         self._rows = _EntryIndex(self.nOutput, self.entry_row.device)
         self._columns = _EntryIndex(self.nInput, self.entry_row.device)
+
+    # --- the host's record, kept where entries are added ---------------
+
+    def _reset_slots(self):
+        self._slots = 0
+        self._in_slot, self._out_slot = {}, {}
+        self._slot_in, self._slot_out, self._diagonal = [], [], []
+        self._edges = {}
+        self._succ, self._level, self._depth = {}, {}, 0
+        self._returned = None
 
     def _apply(self, fn, *args, **kwargs):
         result = super()._apply(fn, *args, **kwargs)
         if 'count' in self._buffers:
-            self._index()
+            self._index_entries()
         return result
 
     @property
@@ -5214,37 +5296,214 @@ class SparseSigmaLayer3(Layer):
     def nnz(self):
         return self._n
 
-    def _index(self):
-        """The compressed rows and the index of columns, from the entries."""
+    @property
+    def slots(self):
+        """How many slots are held."""
+        return self._slots
+
+    @property
+    def longest_chain(self):
+        """The longest chain of U's entries: the steps of the way back."""
+        return self._depth
+
+    def _index_entries(self):
         n = self._n = int(self.count)
-        rows, inputs = self.entry_row[:n], self.entry_input[:n]
-        self._rows = _EntryIndex(self.nOutput, rows.device)
+        self._rows = _EntryIndex(self.nOutput, self.entry_row.device)
         self._rows.rebuild(self.entry_row, n)
-        self._columns = _EntryIndex(self.nInput, inputs.device)
+        self._columns = _EntryIndex(self.nInput, self.entry_input.device)
         self._columns.rebuild(self.entry_input, n)
-        self._entry_of = {(r, i): e for e, (r, i) in enumerate(zip(rows.tolist(), inputs.tolist()))}
+        rows, inputs = self.entry_row[:n].tolist(), self.entry_input[:n].tolist()
+        self._entry_of = {(r, i): e for e, (r, i) in enumerate(zip(rows, inputs))}
+        return rows, inputs
+
+    def _index(self):
+        """The entries' indexes, and the slots placed again from the
+        entries in their order."""
+        rows, inputs = self._index_entries()
+        self._reset_slots()
+        for e, (r, i) in enumerate(zip(rows, inputs)):
+            self._place(e, r, i, write=False)
+        self._write_slots()
+
+    def _write_slots(self):
+        """The device's copy of the slots, written at once from the host's."""
+        device = self.entry_row.device
+        long = dict(dtype=torch.long, device=device)
+        for name in ('entry_source', 'entry_target', 'entry_kind', 'input_slot', 'output_slot',
+                     'slot_input', 'slot_output', 'slot_diagonal'):
+            getattr(self, name).fill_(-1)
+        if self._edges:
+            entries = torch.tensor(list(self._edges), **long)
+            self.entry_kind[entries] = self.UPPER
+            self.entry_source[entries] = torch.tensor([a for a, _ in self._edges.values()], **long)
+            self.entry_target[entries] = torch.tensor([b for _, b in self._edges.values()], **long)
+        for buffer, held in ((self.input_slot, self._in_slot), (self.output_slot, self._out_slot)):
+            if held:
+                buffer[torch.tensor(list(held), **long)] = torch.tensor(list(held.values()), **long)
+        S = self._slots
+        if S:
+            self.slot_input[:S] = torch.tensor(self._slot_in, **long)
+            self.slot_output[:S] = torch.tensor(self._slot_out, **long)
+            self.slot_diagonal[:S] = torch.tensor(self._diagonal, **long)
+            diagonal = [(e, k) for k, e in enumerate(self._diagonal) if e >= 0]
+            if diagonal:
+                entries = torch.tensor([e for e, _ in diagonal], **long)
+                slots = torch.tensor([k for _, k in diagonal], **long)
+                self.entry_kind[entries] = self.DIAGONAL
+                self.entry_source[entries], self.entry_target[entries] = slots, slots
+
+    def _new_slot(self, input, output, write):
+        k = self._slots
+        if k >= int(self.slot_input.shape[0]):
+            raise OverflowError('the sparse LDU has no room for another slot')
+        self._slots += 1
+        self._slot_in.append(-1)
+        self._slot_out.append(-1)
+        self._diagonal.append(-1)
+        if input >= 0:
+            self._hold_input(k, input, write)
+        if output >= 0:
+            self._hold_output(k, output, write)
+        return k
+
+    def _hold_input(self, k, input, write):
+        self._slot_in[k], self._in_slot[input] = input, k
+        if write:
+            self.slot_input[k], self.input_slot[input] = input, k
+
+    def _hold_output(self, k, output, write):
+        self._slot_out[k], self._out_slot[output] = output, k
+        if write:
+            self.slot_output[k], self.output_slot[output] = output, k
+
+    def _write_entry(self, entry, kind, source, target, write):
+        if write:
+            self.entry_kind[entry], self.entry_source[entry], self.entry_target[entry] = kind, source, target
+
+    def _reaches(self, start, goal):
+        """Whether ``goal`` lies on a chain of U's entries from ``start``."""
+        seen, stack = set(), [start]
+        while stack:
+            node = stack.pop()
+            if node == goal:
+                return True
+            if node not in seen:
+                seen.add(node)
+                stack.extend(self._succ.get(node, ()))
+        return False
+
+    def _link(self, entry, a, b, write):
+        """The entry of U from slot ``a`` to slot ``b``: each slot's level
+        (the longest chain ending at it) raised along the chains from ``b``."""
+        self._edges[entry] = (a, b)
+        self._write_entry(entry, self.UPPER, a, b, write)
+        self._succ.setdefault(a, set()).add(b)
+        stack = [(b, self._level.get(a, 0) + 1)]
+        while stack:
+            node, height = stack.pop()
+            if height <= self._level.get(node, 0):
+                continue
+            self._level[node] = height
+            self._depth = max(self._depth, height)
+            stack.extend((after, height + 1) for after in self._succ.get(node, ()))
+
+    def _relevel(self):
+        """The levels and the longest chain set again from the entries."""
+        edges = self._edges
+        self._edges, self._succ, self._level, self._depth = {}, {}, {}, 0
+        for entry, (a, b) in edges.items():
+            self._link(entry, a, b, False)
+
+    def _move_output(self, k, write):
+        """The output of slot ``k`` moved to a new slot of its own, with the
+        entries that reach it; its diagonal, if any, becomes an entry of U
+        from ``k``. Returns the new slot."""
+        output, diagonal = self._slot_out[k], self._diagonal[k]
+        m = self._new_slot(-1, -1, write)
+        self._slot_out[k], self._diagonal[k] = -1, -1
+        if write:
+            self.slot_output[k], self.slot_diagonal[k] = -1, -1
+        self._hold_output(m, output, write)
+        for e, (a, b) in list(self._edges.items()):
+            if b == k:
+                self._edges[e] = (a, m)
+                self._write_entry(e, self.UPPER, a, m, write)
+        self._relevel()
+        if diagonal >= 0:
+            self._link(diagonal, k, m, write)
+        return m
+
+    def returned(self):
+        """The inputs the way back returns exactly: each held by a slot with
+        its own output (a diagonal) and reached by no chain from a slot
+        whose input has no output, whose value no output gives. Kept on the
+        host, and found again after an entry is added or removed."""
+        if self._returned is None:
+            lost = [k for k in range(self._slots) if self._slot_in[k] >= 0 and self._slot_out[k] < 0]
+            seen = set()
+            while lost:
+                k = lost.pop()
+                if k not in seen:
+                    seen.add(k)
+                    lost.extend(self._succ.get(k, ()))
+            self._returned = {self._slot_in[k] for k in range(self._slots)
+                              if self._diagonal[k] >= 0 and k not in seen}
+        return self._returned
+
+    def _place(self, entry, row, input, write=True):
+        """The entry's slots: its slot's diagonal, or an entry of U."""
+        self._returned = None
+        k, m = self._in_slot.get(input), self._out_slot.get(row)
+        if k is None and m is None:
+            k = m = self._new_slot(input, row, write)
+        elif k is None:
+            if self._slot_in[m] < 0:
+                self._hold_input(m, input, write)
+                k = m
+            else:
+                k = self._new_slot(input, -1, write)
+        elif m is None:
+            if self._slot_out[k] < 0:
+                self._hold_output(k, row, write)
+                m = k
+            else:
+                m = self._new_slot(-1, row, write)
+        if k == m:
+            if self._diagonal[k] >= 0:
+                raise ValueError('a slot has one diagonal entry')
+            self._diagonal[k] = entry
+            if write:
+                self.slot_diagonal[k] = entry
+            self._write_entry(entry, self.DIAGONAL, k, k, write)
+            return
+        if self._reaches(m, k):
+            m = self._move_output(m, write)
+        self._link(entry, k, m, write)
+
+    # --- entries ---------------------------------------------------------
 
     def find(self, row, input):
-        """The entry of concept ``row`` on ``input``, or ``None``."""
+        """The entry of output ``row`` on ``input``, or ``None``."""
         return self._entry_of.get((int(row), int(input)))
 
     @torch.no_grad()
     def add(self, row, input, weight=1.0, *, negated=False):
-        """Write the entry of concept ``row`` on row ``input`` at ``weight``
-        (zero or above), reading the not-value where ``negated`` (the Not's,
-        through :meth:`NotLayer3.make`); on an entry already written, its
-        weight is raised by ``weight`` and its option kept. Returns the
+        """Write the entry of output ``row`` on ``input`` at ``weight`` (zero
+        or above), below nothing where ``negated`` (the Not's, through
+        :meth:`NotLayer3.make`), and place it; on an entry already written,
+        its weight is raised by ``weight`` and its sign kept. Returns the
         entry's index."""
         row, input, weight = int(row), int(input), float(weight)
         if not (0 <= row < self.nOutput and 0 <= input < self.nInput):
-            raise ValueError('a sparse Sigma entry lies outside its concepts or its inputs')
+            raise ValueError('a sparse LDU entry lies outside its outputs or its inputs')
         if weight < 0:
             raise ValueError('a Sigma weight is zero or above; the option is the Not\'s')
         entry = self._entry_of.get((row, input))
         if entry is None:
             entry = self._n
             if entry >= self.capacity:
-                raise OverflowError('the sparse Sigma has no room for another entry')
+                raise OverflowError('the sparse LDU has no room for another entry')
+            self._place(entry, row, input)
             self.entry_row[entry], self.entry_input[entry] = row, input
             self.value[entry] = -weight if negated else weight
             self._n = entry + 1
@@ -5257,15 +5516,49 @@ class SparseSigmaLayer3(Layer):
         self.value[entry] = sign * (abs(float(self.value[entry])) + weight)
         return entry
 
+    @torch.no_grad()
+    def remove(self, row, input):
+        """Remove the entry of output ``row`` on ``input``; the last entry
+        takes its index. A diagonal removed leaves its input in its slot
+        and moves its output to a new slot, with the entries that reach it.
+        Nothing is factored again."""
+        self._returned = None
+        entry = self._entry_of[(int(row), int(input))]
+        if entry in self._edges:
+            del self._edges[entry]
+        else:
+            k = self._diagonal.index(entry)
+            self._diagonal[k] = -1
+            self.slot_diagonal[k] = -1
+            self._move_output(k, True)
+        last = self._n - 1
+        buffers = (self.entry_row, self.entry_input, self.entry_source, self.entry_target, self.entry_kind)
+        if entry != last:
+            for buffer in buffers:
+                buffer[entry] = buffer[last]
+            self.value[entry] = self.value[last]
+            if last in self._edges:
+                self._edges[entry] = self._edges.pop(last)
+            else:
+                slot = self._diagonal.index(last)
+                self._diagonal[slot] = entry
+                self.slot_diagonal[slot] = entry
+        for buffer in buffers:
+            buffer[last] = -1
+        self.value[last] = 0.
+        self.count.fill_(last)
+        self._index_entries()
+        self._relevel()
+
     def entries(self, row):
-        """A concept's entries, ``[(row read, weight, negated)]``, by the
+        """An output's entries, ``[(input read, weight, negated)]``, by the
         compressed rows."""
         value = self.value.detach()
         return [(int(self.entry_input[e]), float(value[e].abs()), bool(value[e] < 0))
                 for e in self._rows.of(row)]
 
     def rows_reading(self, input):
-        """The concepts with an entry on row ``input``, by the index of columns."""
+        """The outputs with an entry on ``input``, by the index of columns."""
         return sorted(int(self.entry_row[e]) for e in self._columns.of(input))
 
     def entry(self, rows, inputs):
@@ -5279,75 +5572,44 @@ class SparseSigmaLayer3(Layer):
         value = self.value.index_select(0, index.clamp_min(0)) * (index >= 0).to(self.value)
         return value.reshape(rows.shape)
 
-    def forward(self, options, inputs, rows):
-        """Each of ``rows``' value (``-1`` reads zero), ``[R, ...]``, from the
-        options ``options`` ``[P, ..., 2]`` of rows ``inputs`` ``[P]`` (the
-        Not's). A row not among ``inputs`` reads zero. It costs the entries
-        on the rows present, found by the index of columns: asking every
-        concept costs what the present rows reach."""
-        device = options.device
-        inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape(-1)
-        rows = torch.as_tensor(rows, dtype=torch.long, device=device).reshape(-1)
-        shape = (len(rows), *options.shape[1:-1])
-        if not self.nnz or not len(rows) or not len(inputs):
-            return options.new_zeros(shape)
-        valid = (rows >= 0) & (rows < self.nOutput)
-        wanted, index = torch.unique(rows.clamp(0, self.nOutput - 1), return_inverse=True)
-        # Each present row once, at its first place in ``inputs``.
-        ordered, by = torch.sort(inputs, stable=True)
-        first = torch.ones_like(ordered, dtype=torch.bool)
-        first[1:] = ordered[1:] != ordered[:-1]
-        first &= (ordered >= 0) & (ordered < self.nInput)
-        present, place = ordered[first], by[first]
-        if not len(present):
-            return options.new_zeros(shape)
-        entries, slot = self._columns.gather(present.to(self._columns.order.device))
-        entries, slot = entries.to(device), slot.to(device)
-        # The place among the concepts asked of each entry's concept, by a
-        # search of the sorted concepts asked.
-        concept = self.entry_row.to(device).index_select(0, entries)
-        at = torch.searchsorted(wanted, concept).clamp_max(len(wanted) - 1)
-        held = wanted[at] == concept
-        entries, at, read = entries[held], at[held], place[slot[held]]
-        value = self.value.index_select(0, entries.to(self.value.device)).to(options)
-        y = self.fold(value, at, read, options, len(wanted)).index_select(0, index)
-        return y * valid.reshape(-1, *([1] * (y.ndim - 1))).to(y)
+    # --- the way up and the way back, over the slots ---------------------
 
-    @staticmethod
-    def fold(value, concepts, inputs, options, size):
-        """The read of a sparse Sigma: ``size`` concepts' signed values,
-        ``[size, ...]``, from the entries ``value`` ``[E]`` (each one learned
-        number, its size the weight and its side of zero the option) of
-        concepts ``concepts`` ``[E]`` on the options ``options`` ``[P, ..., 2]``
-        at ``inputs`` ``[E]``: ``tanh`` of each concept's sum. The one read of
-        every sparse Sigma, at order zero and above it."""
-        n = len(value)
-        value = value.reshape(n, *([1] * (options.ndim - 2))).expand(n, *options.shape[1:-1])
-        terms = _EntryRead.apply(value, options.index_select(0, inputs))
-        total = options.new_zeros(int(size), *options.shape[1:-1]).index_add(0, concepts, terms)
-        return torch.tanh(total)
+    def _factors(self, dtype, device):
+        """U's entries (every entry read, at nothing where it is a
+        diagonal, so no size depends on the data) and D, over the slots."""
+        n, S = self._n, self._slots
+        value = self.value[:n].to(device=device, dtype=dtype)
+        upper = torch.where(self.entry_kind[:n].to(device) == self.UPPER, value, value.new_zeros(()))
+        source = self.entry_source[:n].clamp_min(0).to(device)
+        target = self.entry_target[:n].clamp_min(0).to(device)
+        diagonal = self.slot_diagonal[:S].to(device)
+        d = torch.where(diagonal >= 0, value.index_select(0, diagonal.clamp_min(0)), value.new_ones(()))
+        return source, target, upper, d
 
-    def reverse(self, y, inputs):
-        """The signed values of rows ``inputs`` ``[P, ...]`` from the
-        concepts' values ``y`` ``[nOutput, ...]``, by least squares through
-        the entries on those rows, each by the option it reads: exact where
-        each is read by enough concepts. Refused where fewer concepts read
-        them than there are."""
-        inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1).tolist()
-        position = {int(i): k for k, i in enumerate(inputs)}
-        reading = sorted({e for i in position for e in self._columns.of(i)})
-        pairs = {e: (int(self.entry_row[e]), int(self.entry_input[e])) for e in reading}
-        concepts = sorted({r for r, i in pairs.values()})
-        if len(concepts) < len(inputs):
-            raise ValueError('too few concepts to return the input')
-        slot = {c: k for k, c in enumerate(concepts)}
-        value = self.value.detach()
-        matrix = value.new_zeros(len(inputs), len(concepts))
-        for e, (r, i) in pairs.items():
-            matrix[position[i], slot[r]] = value[e]
-        bound = 1.0 - EPS_LOG
-        a = torch.atanh(y[concepts].clamp(-bound, bound))
-        return torch.einsum('c...,ci->i...', a, torch.linalg.pinv(matrix).to(a))
+    def up(self, x):
+        """``x @ W``, ``x`` ``[slots, ...]`` held by slot: ``x d`` and each
+        entry of U's input times its value, by scatters and no division."""
+        if not self._n:
+            return torch.zeros_like(x)
+        source, target, upper, d = self._factors(x.dtype, x.device)
+        shape = (-1,) + (1,) * (x.ndim - 1)
+        return (x * d.reshape(shape)).index_add(0, target, x.index_select(0, source) * upper.reshape(shape))
+
+    def back(self, y):
+        """The exact way back, ``y`` ``[slots, ...]`` held by slot: U undone
+        in its longest chain of steps, ``x <- y - x @ N`` with ``N`` each
+        entry over its source's ``d``, then D divided out (nothing where D is
+        nothing, as the pseudoinverse has it). A slot with no output is
+        given at nothing."""
+        if not self._n:
+            return torch.zeros_like(y)
+        source, target, upper, d = self._factors(y.dtype, y.device)
+        shape = (-1,) + (1,) * (y.ndim - 1)
+        by = d.index_select(0, source)
+        factor = torch.where(by != 0, upper / torch.where(by != 0, by, 1.), 0.)
+        x = unit_solve(y, source, target, factor, self._depth)
+        d = d.reshape(shape)
+        return torch.where(d != 0, x / torch.where(d != 0, d, 1.), 0.)
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -5360,6 +5622,73 @@ class SparseSigmaLayer3(Layer):
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
         self._index()
+
+
+class SparseSigmaLDU(SparseLDULayer):
+    r"""The Sigma of order zero on the sparse LDU: concepts (the outputs)
+    over the rows of the first Pi (the inputs), through the Not,
+
+        y_c = tanh( sum_{(c, i)} v_ci s_i ),
+
+    ``s_i`` the row's value (for less against) and ``v_ci`` the entry's one
+    learned number: at or above zero the entry reads the row's value, below
+    zero its not-value (a Not entry), and its size is the weight
+    (:attr:`weight`). So with no Not entry raising any row never lowers a
+    concept. Any number of concepts may read a row, and a concept any
+    number of rows; a concept reads no row it has no entry on. There is no
+    bias. The row a concept was brought by is its slot's diagonal, so the
+    way back returns each row from its own concept: the chart undone
+    (``atanh``), then :meth:`SparseLDULayer.back`.
+    """
+
+    def forward(self, options, inputs, rows):
+        """Each of ``rows``' value (``-1`` reads zero), ``[R, ...]``, from the
+        options ``options`` ``[P, ..., 2]`` of rows ``inputs`` ``[P]`` (the
+        Not's: a row's value and its not-value, the value's negation). A
+        row not among ``inputs`` reads zero, and each row is read once, at
+        its first place."""
+        device = options.device
+        inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape(-1)
+        rows = torch.as_tensor(rows, dtype=torch.long, device=device).reshape(-1)
+        shape = (len(rows), *options.shape[1:-1])
+        if not self.nnz or not len(rows) or not len(inputs):
+            return options.new_zeros(shape)
+        S = self._slots
+        value = options[..., 0]
+        ordered, by = torch.sort(inputs, stable=True)
+        first = torch.ones_like(ordered, dtype=torch.bool)
+        first[1:] = ordered[1:] != ordered[:-1]
+        slot = self.input_slot.to(device).index_select(0, ordered.clamp(0, self.nInput - 1))
+        held = first & (ordered >= 0) & (ordered < self.nInput) & (slot >= 0)
+        x = value.new_zeros(S + 1, *value.shape[1:]).index_add(
+            0, torch.where(held, slot, S), value.index_select(0, by))
+        y = self.up(x[:S])
+        y = torch.cat((y, y.new_zeros(1, *y.shape[1:])))
+        at = self.output_slot.to(device).index_select(0, rows.clamp(0, self.nOutput - 1))
+        read = (rows >= 0) & (rows < self.nOutput) & (at >= 0)
+        return torch.tanh(y.index_select(0, torch.where(read, at, S)))
+
+    def reverse(self, y, inputs):
+        """The signed values of rows ``inputs`` ``[P, ...]`` from every
+        concept's value ``y`` ``[nOutput, ...]``: exact for a row that
+        brought a concept and reads none that is not returned
+        (:meth:`SparseLDULayer.returned`), at nothing for a row no concept
+        reads. Refused for any other row: a concept reads it and no concept
+        gives its value."""
+        inputs = [int(i) for i in (inputs.tolist() if torch.is_tensor(inputs) else inputs)]
+        # A row is held by a slot once a concept reads it (the host's record).
+        returned = self.returned()
+        if any(i in self._in_slot and i not in returned for i in inputs):
+            raise ValueError('too few concepts to return the input')
+        S = self._slots
+        bound = 1.0 - EPS_LOG
+        a = torch.atanh(y.clamp(-bound, bound))
+        at = self.output_slot.to(a.device)
+        x = a.new_zeros(S + 1, *a.shape[1:]).index_add(0, torch.where(at >= 0, at, S), a)
+        back = self.back(x[:S])
+        back = torch.cat((back, back.new_zeros(1, *back.shape[1:])))
+        slot = self.input_slot.to(a.device).index_select(0, torch.tensor(inputs, dtype=torch.long, device=a.device))
+        return back.index_select(0, torch.where(slot >= 0, slot, S))
 
 
 class SigmaPiLayer(Layer):
@@ -5729,10 +6058,10 @@ class ConceptualAttentionLayer(SparseLayer):
     """The concepts above order zero: a sparse Sigma over the options of the
     symbols (the Not's), with the records and the row map of the concepts.
 
-    Each entry is one learned signed number, as in :class:`SparseSigmaLayer3`:
+    Each entry is one learned signed number, as in :class:`SparseSigmaLDU`:
     its size is the Sigma's weight and its side of zero the option it reads,
     the symbol's value at or above zero and its not-value below (a Not
-    entry). The read is :meth:`SparseSigmaLayer3.fold`. What this class adds
+    entry). The read is :func:`sigma_fold`. What this class adds
     is the bookkeeping a sparse Sigma of fixed capacity has not: entries
     written and removed while the model learns, with their optimizer state,
     the records of the concepts and their rows.
@@ -5969,7 +6298,7 @@ class ConceptualAttentionLayer(SparseLayer):
 
     def forward(self, options):
         """Every concept's signed value from the options ``[nInput, ..., 2]``
-        of the things (the Not's), by :meth:`SparseSigmaLayer3.fold`."""
+        of the things (the Not's), by :func:`sigma_fold`."""
         return sigma_read(self, options)
 
     def reverse(self, request):
@@ -6234,7 +6563,7 @@ def _entry_range(matrix, start, end, device):
 def sigma_read(matrix, options, start=0, end=None):
     """The concepts ``start:end`` of a store or a bound view, signed,
     ``[end - start, N]``, from the options ``options`` ``[nInput, N, 2]``
-    of its columns: :meth:`SparseSigmaLayer3.fold` over its entries, an
+    of its columns: :func:`sigma_fold` over its entries, an
     entry outside the rows or whose source is missing read at nothing (by
     a mask, so the read has no size that depends on the data)."""
     end = matrix.nOutput if end is None else int(end)
@@ -6247,7 +6576,7 @@ def sigma_read(matrix, options, start=0, end=None):
     if missing is not None and len(missing):
         keep = keep & ~missing.to(options.device)
     value = matrix.values.to(options) * keep.to(options)
-    return SparseSigmaLayer3.fold(value, (rows - int(start)).clamp(0, size - 1), cols, options, size)
+    return sigma_fold(value, (rows - int(start)).clamp(0, size - 1), cols, options, size)
 
 
 def sigma_transpose(matrix, request, *, observed=None, start=0, end=None):

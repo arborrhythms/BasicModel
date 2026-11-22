@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from Layers import EPS_LOG, PiLayer3, NotLayer3, SparseSigmaLayer3
+from Layers import EPS_LOG, PiLayer3, NotLayer3, SparseSigmaLDU
 from OrderZero import SparsePiLayer3, read_word
 
 
@@ -74,7 +74,7 @@ class Order0:
 
     def __init__(self, rows, concepts, entries=(), room=None):
         self.not_ = NotLayer3(rows)
-        self.sigma = SparseSigmaLayer3(rows, concepts, room or 2 * (rows + concepts))
+        self.sigma = SparseSigmaLDU(rows, concepts, room or 2 * (rows + concepts))
         for concept, row, sign in entries:
             if sign > 0:
                 self.sigma.add(concept, row)
@@ -216,7 +216,7 @@ def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
     values: no code and no place (rule 62)."""
     owner, basic = lesson['owner'], lesson['basic']
     sigma, not_ = owner.order_zero, owner.order_zero_not
-    assert isinstance(sigma, SparseSigmaLayer3) and isinstance(not_, NotLayer3)
+    assert isinstance(sigma, SparseSigmaLDU) and isinstance(not_, NotLayer3)
     assert (not_.rows, sigma.nInput, sigma.nOutput) == (basic.capacity, basic.capacity, owner._order_caps()[0])
     assert any(p is sigma.value for p in owner.getParameters())
     keys = {key[key.index('order_zero.'):] for key in owner.state_dict() if 'order_zero.' in key}
@@ -232,7 +232,7 @@ def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
 
 
 def test_the_sparse_sigma_is_stored_in_capacity_allocated_beforehand():
-    sigma, not_ = SparseSigmaLayer3(4, 3, 3), NotLayer3(4)
+    sigma, not_ = SparseSigmaLDU(4, 3, 3), NotLayer3(4)
     before = (sigma.value.data_ptr(), sigma.entry_row.data_ptr(), sigma.entry_input.data_ptr())
     sigma.add(0, 2)
     not_.make(sigma, 2, 1, .5)
@@ -245,7 +245,7 @@ def test_the_sparse_sigma_is_stored_in_capacity_allocated_beforehand():
     sigma.add(1, 3)
     with pytest.raises(OverflowError):
         sigma.add(1, 0)
-    restored = SparseSigmaLayer3(4, 3, 3)
+    restored = SparseSigmaLDU(4, 3, 3)
     restored.load_state_dict(sigma.state_dict())
     assert restored.entries(2) == sigma.entries(2) and restored.rows_reading(1) == [2]
 

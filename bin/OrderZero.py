@@ -8,7 +8,7 @@ on that row, at one. The Pi alone reads the percepts' codes.
 
 After the Pi, the Not (``NotLayer3``) offers two options for each row: its
 value, for less against, and its not-value, against less for. The concepts
-of order zero are a ``SparseSigmaLayer3`` over those options: a concept
+of order zero are a ``SparseSigmaLDU`` over those options: a concept
 reads each row it has an entry on by one of the two, with a weight at zero
 or above, so a concept of presence reads a row's value and a concept of
 absence its not-value. Any number of concepts may read one row.

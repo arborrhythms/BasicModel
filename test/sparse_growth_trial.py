@@ -5,7 +5,7 @@ Both forms read ``y = tanh(V s)``: ``s`` ``[R]`` is each row's signed value
 (the Not's value, for less against; zero where the row is absent) and
 ``V[c, r]`` the learned number of concept ``c``'s entry on row ``r`` (its
 size the Sigma's weight, its side of zero the option it reads, as
-``SparseSigmaLayer3.value``; ``v s`` is ``|v|`` times the chosen option).
+``SparseSigmaLDU.value``; ``v s`` is ``|v|`` times the chosen option).
 Both are taught by the same steps on the same readings: the squared error
 on the concepts an error reaches, a plain gradient step of rate ``lr``,
 then the proximal step of the penalty, ``v <- sign(v) max(|v| - lr lam, 0)``

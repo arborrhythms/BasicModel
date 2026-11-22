@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 from Layers import SigmaConceptsFromPercepts
-from Layers import NotLayer3, SparseSigmaLayer3
+from Layers import NotLayer3, SparseSigmaLDU
 from OrderZero import read_word
 from Spaces import ConceptualSpace
 
@@ -20,7 +20,7 @@ def _space():
     cs.inputShape = cs.outputShape = [2, 4]
     # Four basic percepts, sixteen concepts of order zero.
     cs.order_zero_not = NotLayer3(4)
-    cs.order_zero = SparseSigmaLayer3(4, 16, 16)
+    cs.order_zero = SparseSigmaLDU(4, 16, 16)
     return cs
 
 

@@ -395,8 +395,8 @@ def test_49_collections_of_values_are_told_apart():
     # has an entry on each member's row, and a value is read by its own row
     # alone, so a collection reads its members and nothing else; alpha's
     # reading of 1.5 lies between its readings of 1 and of 2.
-    from Layers import NotLayer3, SparseSigmaLayer3
-    not_, sigma = NotLayer3(basic.capacity), SparseSigmaLayer3(basic.capacity, len(collections), 16)
+    from Layers import NotLayer3, SparseSigmaLDU
+    not_, sigma = NotLayer3(basic.capacity), SparseSigmaLDU(basic.capacity, len(collections), 16)
     names = list(collections)
     for c, name in enumerate(names):
         for r in collections[name]:
