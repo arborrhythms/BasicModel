@@ -24546,3 +24546,267 @@ Claude's list on the ninth pass's commit (`3f2d83a131`, 309 files): **2 failed, 
 - *`primingBridgeCapacity` at 8,388,608 (Claude's number) halves the start of a production batch* (9.25 to 4.29 GB), and the preflight refused in none of four runs.
 - *A production step still does not finish, and now for one reason only: what the looks keep.* A step holds 64 looks (the sentence and its explore path) at .12 to .17 GB each, 14.86 GB before the second walk. The expectation's keys in two parts saved .022 GB a look, which is not the matter. What a look keeps has grown since the sixth pass (.15 and .07 GB then). *The next production pass:* the census of what a look keeps at this source, and whether the first composition's looks can be released before the explore path. No width or capacity is changed for it.
 - *Not measured:* seconds a step, sentences a second, 32 bits against BF16 and FP16. They wait for a step that finishes.
+
+### 23.6.16 Round 6d, tenth pass: the record of each look, a place against its neighbours, and the toys of one lit concept for a task: reading in order and counting, taught by the output alone (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d10`, cut from `main` at 460ec751fc. My commits: c13b345712 (steps 1, 2, 7), 6150a7b975 (step 7 corrected; steps 3 to 5 drafted), fd157d318d (step 8), 1f48e6c2a3 (step 9). The coordinator's spec commits sit between them. One file of `bin/` changed (step 1's record); the rest is `test/test_item17_tree_attend_trial.py`. Nothing pushed, the superproject not touched, no spec or doc edited, `suggestions.txt` left as it was.
+
+#### What fails or is unfinished, first
+
+- **Nothing fails.** The trial file: 6 passed, 1,388 s (three starts each). Both gates and the readers of `Looks.decisions` (`test_item17_in_order`, `test_loop_of_looks`, `test_interpret_bias`, `test_item17_fragments`): 22 passed, 33 s.
+- **No form of the trial learns a successor; no pair is right anywhere it was taught from the first word.** In the model (steps 3 to 5), every read of the record reads every set in order and gets 0 of 12 pairs. In the toys (steps 7 to 9) the same: what is learned is "the leftmost unread word". Pairs are right only when the lesson also reads from a drawn word (step 7: up to 9 of 12).
+- **After the reading lesson the model itself still loses "is"**: no sentence read it (0 of 36 in each of three starts), and no sentence is read in order (step 5). Recorded, not repaired.
+- **The query is still 37 to 46 against codes of 1.0, and nothing reaches it** (gradient 0.0 at both looks in three starts; at the request 0.0 or 0.009).
+- **A wasted run:** my first full run of the file used `-n 6 -s`; xdist swallowed the prints, so the 37-minute run gave no figures and I ran the file again alone.
+- **Taught one after the other, the toy's second task erases the first's output** (step 9). Taught together, both hold in two starts of three; in the third the lesson had not finished at 800 steps (not tuned).
+- **Provisional choices, all mine:** the trial's reads score a word by a bilinear read of its `.where` (not shared size, which is flat here, as the ninth pass found); the toys' `.where` uses periods 64 and 16, not the model's 8192 and 256; "end" in step 8 reads `[memory, found]`; Codex's STM scorer is read from the STM the context is given.
+
+#### Questions
+
+1. **A successor needs readings that do not start at the first word.** From readings that start there, no cost (reading target or output) can tell "leftmost unread" from "next after the last". Should the lesson read also from a drawn word (step 7's "drawn"), and if so, is that a reading target again (the intrusion), or can the output task supply it (for example, "say the sentence from this word")?
+2. **The `.where` periods.** A request for a place tells its word from the neighbours by 0.004 to 0.02 today. A rung of period 16 to 32 addresses would make it 0.16 to 0.25 (step 2). Should a short rung be added to `WhereEncoding`?
+3. **Where should the memory live?** Form B (at the first Pi, beside `attended`'s table) or form C (the last look's conceptual field, `Looks.fields[-1]`, by wire). Neither is read by the next `attend` today. In the toy C stops at the end more reliably; B learned more of the successor when taught from a drawn word.
+4. **Teaching two tasks:** together (both hold) or one after the other (the second erases the first)? Alec's rule for the order of the curriculum decides this.
+5. **Past "4"** the toy says a counting word it knows again (most often "1" or "2"). It stops correctly after the last object. Is a word for "more" wanted, or is that left to item 1.6?
+
+#### Step 7: the toy of "first" and "next" (§19.126, with Alec's correction and additions)
+
+`test_the_first_and_next_concepts_a_toy` in `test/test_item17_tree_attend_trial.py` (18 s for three starts).
+
+**What it is.** The first Pi in small. 32 places, 6 words (each word's `.what` a random unit code of 8 numbers). Each place's `.where` is 4 wires made as `WhereEncoding` makes them, at periods 64 and 16 (the model's 8192 and 256 do not resolve 32 places; step 2). A request (12 numbers, on the `.what` and on the `.where`) is read against every unread percept; the most active is selected, a draw among equals. Above the Pi: a word concept per word and a place concept per place (lit by shared size of its `.where` against the selected one, as `place_factor` reads a row). Added: "first" (lit while nothing has been selected) and "next" (lit after), each with nothing learned at the start; the lit one's read of the input is the next request.
+
+- Input B (Alec's): a memory at the first Pi of the `.what` and `.where` it selected at the last look.
+- Input C (his addition): the last look's conceptual field by wire (the word and place concepts it lit), nothing kept at the Pi.
+- Input A (comparison only): the last request as given.
+- Read "own": a linear read of its own for each concept. Read "shared": one small network over the input (16 rectified units) shared by both, a linear read for each on top.
+- Lesson: reading targets on 48 sentences of 2 to 5 words starting at places 0 to 11, the reading supplied (Adam, rate .05, 600 steps). "Drawn": each sentence also read once from a word drawn in it, rightwards to its end; the cost is taken at the looks after the first.
+- Measured with no reading supplied: taught sentences; lengths 6 to 8 (36); starts 12 to 24 (52); both untaught (39); Codex's pairs "A B A B A" at starts 0 to 11 (12) and 12 to 24 (13).
+
+**Counts, three drawn starts** (155943690392700 / 142518357394464 / 208954023956705). Every case read all 48 taught sentences in order with the first word right. First word right on untaught starts: 44 to 47 of 52 in every case.
+
+| Input, read, lesson | In order: untaught lengths (of 36) | In order: untaught starts (of 52) | In order: both (of 39) | Pairs right, taught starts (of 12) | Pairs right, untaught starts (of 13) | "next" asks p+1 among all places (of 31) | among places to the right (of 31) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| B, own | 22 / 16 / 30 | 20 / 22 / 32 | 2 / 2 / 4 | 0 / 0 / 0 | 0 / 2 / 1 | 1 / 1 / 1 | 25 / 24 / 24 |
+| B, shared | 30 / 28 / 36 | 34 / 30 / 44 | 14 / 9 / 25 | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 1 / 1 | 22 / 26 / 24 |
+| C, own | 36 / 35 / 36 | 45 / 38 / 47 | 24 / 17 / 29 | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 1 / 1 | 18 / 19 / 18 |
+| C, shared | 36 / 36 / 36 | 39 / 36 / 38 | 17 / 15 / 16 | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 1 / 1 | 17 / 17 / 17 |
+| A, own | 36 / 36 / 36 | 41 / 38 / 41 | 14 / 15 / 17 | 0 / 0 / 0 | 0 / 0 / 0 | — | — |
+| B, own, drawn | 12 / 9 / 16 | 23 / 25 / 20 | 1 / 1 / 1 | 8 / 6 / 2 | 8 / 4 / 2 | 14 / 16 / 10 | 18 / 19 / 20 |
+| B, shared, drawn | 31 / 27 / 32 | 36 / 26 / 40 | 15 / 5 / 13 | 7 / 8 / 9 | 9 / 7 / 5 | 16 / 12 / 13 | 25 / 26 / 27 |
+| C, own, drawn | 8 / 21 / 22 | 37 / 41 / 43 | 14 / 20 / 24 | 9 / 2 / 1 | 2 / 0 / 1 | 9 / 8 / 7 | 31 / 31 / 31 |
+| C, shared, drawn | 28 / 32 / 16 | 35 / 36 / 24 | 16 / 14 / 4 | 5 / 6 / 4 | 7 / 5 / 4 | 9 / 10 / 7 | 27 / 27 / 27 |
+
+**What it shows.**
+
+- *Taught only from the first word, every input learns "the leftmost unread word", not a successor.* All read the taught sentences in order, and no pair is right (0 of 12 and 0 to 2 of 13). After the 4th then the 2nd, the leftmost unread is the 1st, not the 3rd. "next" asks p+1 among all places at 1 place of 31: it asks for an end of the sentence, and the unread words being all to the right is what makes that the next one. This is Codex's point made exact: readings that start at the first word cannot tell "leftmost unread" from "successor of the last".
+- *"first" learns a preference for earlier places* (44 to 47 of 52 untaught starts right). It was learned, not given.
+- *A, the request as given, cannot pass a pair by construction:* its input does not depend on which word was taken. It still reads in order as well as the others, which again shows that reading in order from the first word is not the measure of a successor.
+- *Taught also from a drawn word, B learns part of a successor:* pairs 2 to 9 of 12 and 2 to 9 of 13 (shared read: 7 to 9 and 5 to 9). "next" then asks p+1 among all places at 10 to 16 of 31 places, mostly inside the taught places (12 of 15 at best). So it is closer to a table of the places it was taught than to one successor for every place.
+- *C (the conceptual field by wire) reads in order best when taught from the first word,* but on pairs it is weaker than B after the drawn lesson (own read: 1 to 9 of 12, 0 to 2 of 13). Its "next" asks for the place to the right at 31 of 31 places but p+1 among all at 7 to 10: it has learned "rightwards", not "the next".
+- *Shared network against own read:* the shared read fits the lesson to a loss of 0.000 against 0.03 to 0.04, and reads untaught lengths and starts in order more often for B (16 to 36 against 9 to 30). On pairs after the drawn lesson it is equal or better for B, and for C it is better on untaught starts (4 to 7 against 0 to 2).
+- *One successor for every place* would show as p+1 at all 31. No case gets there. With the sinusoid `.where`, a successor is a rotation of each rung by one place; the lesson does not find it from 48 sentences.
+
+**What the same two concepts would read in the model, in the source's names.**
+
+- *The first Pi and what it selected.* The first Pi is `BasicPercepts` (`basic_percepts`, its rows read by `read_bank`). What a look selected is its table, `BasicPercepts.attended(bank, share)`: `Attended.index`, `.table` (the muxed `.what`, `.where` and `.when` of each attended percept), `.span`, `.token`. The percept a row keeps is `kept_percept(rows)` (its code, its `.where` and `.when` entries). Form B's memory would be the `.what` and the `.where` of the attended percepts at the last look, kept beside `attended`'s table. **Missing:** `attended` returns the table for one look and nothing keeps it; `SentenceLooks.look` does not return it; nothing reads a previous look's table. Step 1's record now keeps the `.where` wires and code of the word taken in `Looks.decisions` (`where`, `code`), read from the bank by `Places.readings`, but that is the word taken, not the Pi's selection, and nothing reads it.
+- *Form C, the conceptual field by wire.* Each look makes its field (`SentenceLooks.perceive`, a `ConceptualField`) and keeps it in `Looks.fields` and `model._sentence_look_fields`. **Missing:** the next `attend` does not read it. `requested(model, query)` reads only the query, and the query is `context(surprise)`, the context's map of the last surprise and the sentence's STM (`AttentionContext.context`), all detached.
+- *"first" and "next".* There is one learned start, `model.request_start` (`RequestStart.value`, one value per concept row, 1 on "words"), added to every look's request. **Missing:** a concept lit only while nothing is found, a concept lit after, and a read of either from the memory. The nearest is the context's projection (`attention_context`, a linear map at nothing) which could read a memory if it were given one.
+- *The priming check (asked by Alec).* The priming heat is written once when a sentence opens (`Models._prime_sentence_symbols(sid)`, called before its looks, setting `_sentence_priming_written`) and once after each batch's forward (`_prime_seen_step`). Nothing writes it inside the looks. `AttentionContext.context` reads the heat (`_heat`, `priming_weights`), so every `attend` of a sentence reads the same heat. As the source stands, the next `attend` cannot read the last look's field by wire: a wire from `Looks.fields[-1]` (or from `attended`'s table) into `requested` or `context` would be needed.
+
+#### Step 8: "first, next*, end" on the output (§19.127), beside step 7
+
+`test_first_next_end_on_the_output_a_toy` (70 s for three starts). The toy of step 7 with an "end" concept added: it reads the memory and whether the look found anything (`[memory, found]`), by learned entries at nothing at the start, through a logistic. **Output lesson:** no reading target. The sentence is produced: "first", then "next" at every later step, each request selecting the most active unread percept (its word is the output); at every step "end" gives the chance of stopping. The cost is the output's alone: each step's word in the sentence's order (the cross-entropy of the output's word distribution, each percept's softmax share summed over the percepts that hold a word), and "end" at the step after the last word and not before. Which occurrence of a word is taken is never named. **Beside it:** step 7's lesson (reading targets), with "end" then taught on the output alone, the rest held, so that both readings stop by the same rule. The reading (no reading supplied) uses the same "first" and "next" and stops where "end" is more likely than not.
+
+Three drawn starts: 248412448234443 / 237353054477491 / 64442353052255. Every case: all 48 taught sentences read in order with the first word right and stopped at the end; first word right on untaught starts 43 to 48 of 52; never stopped early. "Not stopped by end" means the reading went on until the look found nothing.
+
+| Input, read, lesson | In order: untaught lengths (36) | untaught starts (52) | both (39) | Stopped by "end" at the end: untaught starts (52) | both (39) | Pairs right: taught starts (12) | untaught starts (13) | "next" asks p+1 among all (31) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| B, own, output | 25 / 28 / 16 | 32 / 28 / 26 | 7 / 6 / 7 | 52 / 48 / 52 | 36 / 24 / 27 | 0 / 0 / 0 | 1 / 0 / 0 | 1 / 1 / 1 |
+| B, shared, output | 36 / 31 / 35 | 36 / 34 / 43 | 13 / 12 / 22 | 52 / 51 / 52 | 34 / 30 / 36 | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 1 / 1 |
+| C, own, output | 34 / 36 / 28 | 46 / 44 / 29 | 23 / 25 / 8 | 52 / 52 / 52 | 39 / 39 / 39 | 0 / 0 / 0 | 0 / 0 / 1 | 1 / 1 / 1 |
+| C, shared, output | 36 / 36 / 36 | 37 / 41 / 44 | 19 / 20 / 23 | 52 / 52 / 52 | 39 / 39 / 39 | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 1 / 1 |
+| B, own, reading targets | 19 / 22 / 11 | 23 / 28 / 25 | 3 / 1 / 3 | 52 / 47 / 52 | 36 / 25 / 32 | 0 / 0 / 0 | 1 / 1 / 2 | 1 / 1 / 1 |
+| C, own, reading targets | 36 / 36 / 35 | 46 / 37 / 38 | 28 / 24 / 20 | 52 / 52 / 52 | 39 / 39 / 39 | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 1 / 1 |
+
+**What it shows.**
+
+- *The output's cost teaches the reading as well as the reading targets do.* In order on untaught lengths and starts, the output lesson is better than the reading targets for B (own read, lengths: 16 to 28 against 11 to 22) and a little below them for C (own read, lengths: 28 to 36 against 35 to 36; both untaught: 8 to 25 against 20 to 28). The intrusion can go: the reading has no target of its own and still reads in order.
+- *It teaches the same thing: the leftmost unread word, not a successor.* Pairs are 0 of 12 at taught starts in every case, and "next" asks p+1 among all places at 1 place of 31. Taught from sentences produced from their first word, the output cannot tell "leftmost unread" from "next after the last" any more than the reading targets can (step 7). Step 7's drawn-word lesson is what moved the pairs; it has no output counterpart here, because a sentence is produced from its first word.
+- *"end" stops at the end wherever the memory reads a known place,* and never early. With C (the conceptual field) it stops at the end in every sentence; with B it misses on untaught places (24 to 36 of 39 on both untaught), where the reading then runs until the look finds nothing.
+
+**What gradient reaches the reading's choice from the output's cost.** At each step the output's word distribution is the softmax share of each unread percept's activity, so the cost's gradient reaches each step's activities, and through them the request and the lit concept's entries and bias: the scores of the choice are taught. It does not reach the choice itself: the percept selected (the most active, or a draw) is discrete, and the memory carried to the next step is read from it with no gradient. So nothing teaches a step what the next steps needed it to select, which is what a successor over repeated words needs (in "A B A B A" the output cost is the same for either A taken). What would carry it, not built: a soft memory (the next step's input as the softmax-weighted sum of the percepts, instead of the one selected), so the gradient passes from later steps' costs into the earlier step's activities; or a score-function cost on the draw (the reward of the later steps' output on the log probability of the percept selected).
+
+#### Step 9: no concept told what it is; reading and counting (§19.128)
+
+`test_one_lit_concept_for_each_task_reading_and_counting_a_toy` (32 s for three starts).
+
+**What it is.** Nothing is named. One network is shared by every task. Its input: the concepts lit (one unused concept per task: one for reading, one for counting), the memory at the first Pi (the `.what` and `.where` it selected at the last look; nothing before the first look), whether the last look found anything (nothing left), and the last word said. It has 32 rectified units and three linear reads on top: the next request, the chance of stopping, and the output word over 10 opaque words (the six words of the sentences, then "1" to "4"). The output word is read from the same kind of units given the percept the look selected (its softmax share, so the output's cost reaches the look's scores). The cost is the output's alone: each step's word, and stopping after the last. The first look, the later looks and the end are told apart only by what the memory holds.
+
+- Reading: sentences of 2 to 5 words at starts 0 to 11 (48); measured on those, on lengths 6 to 8 (36) and on starts 12 to 24 (52), and on the pairs.
+- Counting: scenes of 1 to 4 objects (each of three kinds) at places drawn anywhere in the 32; output "1", "2", ... one per object. Taught on 48 scenes; measured on 6 new scenes of each of 1 to 6 objects (5 and 6 held out).
+- Three lessons: reading then counting; counting then reading; both together (the two costs summed). Adam, rate .02, 800 steps each.
+
+Three drawn starts: 162156681034386 / 135073803288841 / 264263430323101.
+
+**(a) Reading, nothing named.** After the reading lesson alone (first lesson of the first order):
+
+| Set | In order | Said right | Stopped at the end | Stopped early |
+| --- | --- | --- | --- | --- |
+| Taught (48) | 48 / 48 / 48 | 48 / 48 / 48 | 48 / 48 / 48 | 0 / 0 / 0 |
+| Untaught lengths (36) | 36 / 36 / 36 | 36 / 36 / 36 | 36 / 36 / 36 | 0 / 0 / 0 |
+| Untaught starts (52) | 42 / 40 / 37 | 42 / 39 / 37 | 52 / 52 / 52 | 0 / 0 / 0 |
+| Pairs, taught / untaught starts (12 / 13) | 0 / 0 / 0 and 0 / 0 / 0 | | | |
+
+**Yes, it still reads in order and stops,** with one lit concept and no named "first", "next" or "end": better than step 7's named concepts on untaught lengths (36 of 36 in all three) and it stops at the end in every sentence. As before, it learned the leftmost unread word, not a successor: no pair is right.
+
+**(b) Counting.**
+
+| Lesson | Counts right, 1 / 2 / 3 / 4 objects (of 6 each) | Each object looked at once (all counts) | 5 and 6 objects (held out): stopped after the last object; what it said after "4" |
+| --- | --- | --- | --- |
+| Counting (first in its order) | 6, 6, 6, 6 in all three | 36 of 36 in all three | stopped right 12 of 12 in all three; then "3" or "2" or "1" (5 objects), "1 2" or "2 3" (6) |
+| Reading, then counting | 6, 6, 5, 6 / 6, 6, 6, 6 / 6, 6, 6, 6 | 36 of 36 | stopped right; "4" or "1", then "2 3" or "1 2" |
+| Together | 6, 6, 6, 6 in all three | 36 of 36 | stopped right; "word 0", "4" or "3"; then "2 3" or "1 2" |
+
+- **Counting is learned exactly for 1 to 4 objects** in every lesson, every object is looked at once, and the sequence stops after the last object, also for 5 and 6. Past "4" it has no word: it says a counting word it knows again (most often starting over at "1" or "2"), never a fifth word.
+- *"Each object looked at once"* is in part given by the architecture: a percept read is lowered and cannot be selected again (`lower`, the done mark). What is learned is to stop when nothing is left.
+
+**Does one task hold after the other is learned?**
+
+| Order | Reading after both (in order, taught 48 / untaught lengths 36 / untaught starts 52) | Counting after both (right, of 24 for 1 to 4) |
+| --- | --- | --- |
+| Reading, then counting | 16, 0, 16 / 23, 6, 20 / 23, 8, 19 (said right 0 in all) | 23 / 24 / 24 |
+| Counting, then reading | 48, 26, 36 / 48, 29, 35 / 11, 0, 11 | 0 / 0 / 0 (says sentence words) |
+| Together | 48, 35, 29 / 13, 2, 11 / 47, 26, 18 | 24 / 24 / 24 |
+
+- **Taught one after the other, the second task erases the first's output** (said right 0; counting says words). The looks partly survive (reading in order 16 to 23 of 48 after counting) and stopping survives in every case.
+- **Taught together, both hold in two starts of three.** In the second start reading did not finish learning (loss 0.115 at 800 steps; 13 of 48 in order, 37 of 48 said right), and in the third start's counting-then-reading the reading lesson also did not finish (loss 0.169). The sizes and steps were kept as given; not tuned.
+
+**What the two lit concepts share and what differs** (their rows of the first layer, and the units each lights at the first look):
+
+| Lesson | Cosine of their rows | Units lit by both / by reading only / by counting only (of 32) | Place each asks first (reading, counting) |
+| --- | --- | --- | --- |
+| Reading, then counting | -0.26 / -0.38 / -0.26 | 25, 7, 0 / 26, 3, 1 / 23, 3, 0 | 0, 0 in all |
+| Counting, then reading | -0.04 / -0.23 / 0.34 | 18, 0, 10 / 7, 0, 3 / 25, 0, 2 | 0, 0 / 0, 0 / 30, 0 |
+| Together | 0.78 / 0.64 / 0.63 | 31, 0, 1 / 27, 0, 2 / 25, 2, 0 | 0, 0 / 19, 18 / 0, 0 |
+
+- They share most of the network's units and the reads on top; the lit concept differs only in its row of the first layer.
+- Taught together, the two concepts' rows come out alike (cosine 0.63 to 0.78) and light nearly the same units: the work of looking (take the leftmost unread, stop when nothing is left) is shared, and they differ in what is said (the word looked at, or the successor of the last counting word). Taught one after the other, the rows point apart (cosine -0.38 to 0.34) and the second lesson overwrites the shared reads.
+- Both ask first for place 0 (the leftmost), with one exception each in two lessons. For counting the order does not matter to the cost, so it simply took over the reading's way of looking.
+
+#### Step 1: the record, and what the tree holds at each look
+
+**The record (in `bin/SentenceLooks.py`, the only change to `bin/`).** `Looks.run` now adds three keys to each look's decision in `Looks.decisions`: `request` (the request the look was given, `[V, B, 2]`, detached), `where` (the `.where` wires of the word taken, `[B, 4]`) and `code` (its code on the `.what` columns, `[B, 128]`), both read once per sentence from the bank by `Places.readings` (at the reading's bracket), and zero where the look took nothing. Nothing in `bin/` reads them. `test_each_look_records_its_request_and_the_where_and_code_of_its_word` checks them against the bank (passes, about 6 s after the model is built).
+
+**What the tree being built holds at each look today** (one reading of "This is Felix." traced; it took Felix, This, is, then the full stop):
+
+| Look | Word taken | `SentenceField.support_window` (slot 0 newest) | `placements['where']` of slot 0 | STM slots occupied (8) | STM field 11 (`.where` code) of the new slot |
+| --- | --- | --- | --- | --- | --- |
+| 0 (before) | Felix (2) | empty | — | 5 (from earlier sentences) | — |
+| 1 | This (0) | slot 0 = {Felix} | [8, 9] | 6 | Felix's `.where` |
+| 2 | is (1) | slot 0 = {This, Felix} | [0, 9] | 7 | Felix's `.where` |
+| 3 | . (3) | slot 0 = {This, is, Felix} | [0, 9] | 8 | Felix's `.where` |
+
+- `SentenceReading` (`state` of `Attention.py`): `accepted` (each word read), `values` (each read word's key), `actions`, `alternatives`, `probabilities`, `counts`, `descended`. It has no `.where` and no order of the tree.
+- The grammar's walk: STM (`current_stm`, a tuple; field 0 the slots' contents `[B, 8, 136]`, field 4 the reference rows, field 11 a `.where` code per slot `[B, 8, 4]`, field 12 a `.when` code per slot) and the sentence's field (`SentenceField`): `support_window` `[B, 8, W]` says which words each STM slot holds, newest slot first; `placements()` gives each slot's interval of addresses and of times.
+- *Composition merges.* In this reading "This" and "Felix" were composed into one slot after look 2, and "is" into it after look 3. `placements` merges the interval (the least start and the greatest end of the slot's witnesses: [0, 9]). Codex's observation holds for `SentenceField.placements`. STM's field 11 does not merge: the composed slots carried Felix's `.where` code alone.
+- *The chooser.* `interpret_at_look` reads only the key of the word taken (`state.keys[word]`) and whether it is allowed. With `interpret_bias` at 1.0 (this model) it does not consult the grammar's scorer at all. Nothing of the tree reaches it.
+- *`attend`.* `AttentionContext.context` reads the tree: STM contents, field 11, field 12, occupancy, salience, and `placements` encoded. So the `.where` of the words found already reaches the context. But `project` reads its inputs detached (`F.linear(inputs.detach(), ...)`: Codex's second observation holds), its map starts at nothing, and its output (the query) reaches the request only through `attend`'s match against the codes (the flat part of §19.124, 1). In every look of this trace the request asked only row 142 ("words").
+
+#### Step 2: does a request for a place tell its word from its neighbours?
+
+`test_a_request_for_a_place_against_its_neighbours` (73 s). The 12 distinct lesson sentences, 48 words, 27 place concepts nominated; every word's place had a concept.
+
+| Request | Words where the word asked is the greatest | Least margin to the nearest rival | Mean margin |
+| --- | --- | --- | --- |
+| The place concept, share (`Salience.salience`) | 48 of 48 | 0.0068 | 0.30 |
+| The place concept, returned activity (`SentenceLooks.look`, `word_activity`) | 48 of 48 (24 with no rival returned) | 0.036 | 0.046 |
+| The word's `.where` wires directly (shared size) | 48 of 48 | 0.0039 | 0.0087 |
+
+- **Yes: a place tells its word from the neighbours, always, but by very little.** The margins are 0.004 to 0.02 on a scale of 1. The share through the concept equals the direct shared size at the first three words (the place row's entries are the cone of one code). At the last word or two the concept's share at rivals is nothing (margin 1.0): those places' rows also keep a `.what`.
+- **The margin is small because of the periods.** The model's ladder has periods of 8192 and 256 addresses (the registry's capacity is 4096 in the text slice). Words of a sentence lie 3 to 6 addresses apart. The same shared-size margin with the `.where` made of one quadrature pair (measured, not built):
+
+| Period (addresses) | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 8192 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Least margin | 0 | 0 | 0.25 | 0.16 | 0.10 | 0.045 | 0.021 | 0.0006 |
+| Words taken (of 48) | 26 | 35 | 48 | 48 | 48 | 48 | 48 | 48 |
+
+At 16 the margin is 60 times today's; at 8 and below, words alias. A rung of period 16 to 32 would make neighbours plain. Not built.
+
+#### Steps 3 to 5: the start, the tree presented, and the measures, in the model
+
+`test_the_start_and_the_tree_presented_a_trial` (about 7 minutes a start). Three starts drawn afresh: 225704409155966 / 176685804702257 / 281064691826557.
+
+**How it is built** (all in the test; class `Trial`). The model's looks run as they are; the look's request is "words" (the context's map is at nothing before the lesson). The trial replaces only the score of each unread word the look found (`word_activity`; a word the look did not find stays out). Lesson examples are taken from readings given in source order (the two-word and the lesson's 12 distinct sentences: 66 looks, 18 first looks and 48 later). At each look the record is read from step 1's keys (`decisions`' `code` and `where`), the field's `support_window` and the STM the context is given.
+
+- The start (step 3, the comparison form): one learned vector on the `.where` wires (4 numbers).
+- Step 4's reads, each a bilinear read: a word's score is `(2·.where − 1) · (entries @ record + bias)`. This is the smallest learned read that fits; shared size is flat here (ninth pass). The record is: (a) "last", the last word's code and `.where`; (b) "every", every word found, summed (no order); (c) "tree", every word at its place in the tree (`support_window`, newest slot first; a composed slot holds the greatest of its words' codes); and Codex's first scorer, "stm": each STM slot's contents, field 11 (`.where`), field 12 (`.when`) and occupancy, with no `.where` of a look.
+- Adam, rate .05, 500 steps, started small and drawn afresh.
+- Composition was common: in 774 to 840 of 1,416 to 1,428 looks, a slot of the tree held two words or more.
+
+**What the reads learned.** Every read fitted its lesson: all 18 first words and all 48 later words were right, with a loss of 0.0001 to 0.002. The query's greatest coordinate was 15 for the start and 92 to 186 for the others; the codes read are in [−1, 1].
+
+**Measured with no reading supplied** (the same in all three starts and for all four reads):
+
+| Set | In order | First word first | Intended word had a finite score | Draws | "is" read |
+| --- | --- | --- | --- | --- | --- |
+| Two-word (6) | 6 | 6 | 18 of 18 | 0 | 6 of 6 |
+| Lesson, distinct (12) | 12 | 12 | 48 of 48 | 0 | 12 of 12 |
+| Held out (6) | 6 | 6 | 24 of 24 | 0 | 6 of 6 |
+| Reordered (12) | 12 | 12 | 48 of 48 | 0 | 12 of 12 |
+| Pairs, by prefix of 0 / 1 / 2 words (4 each) | 0 / 0 / 0 | | | | |
+
+- **Step 3: the first word is taken at the first look in every sentence by the learned start on the `.where`.** But every sentence begins at address 0 in this model, so it has learned an absolute place; the toy (steps 7 to 9) shows the same start generalising to untaught starts (43 to 48 of 52) because there the sentences begin at many places.
+- **Step 4: every read reads every set in order, and none passes a pair.** That includes "last" and "tree", which hold what a successor needs. Trained only on readings from the first word, they learned "the leftmost unread word", for which "every" (no order at all) does as well. The sets cannot tell the reads apart; the pairs tell them all wrong.
+
+**The model's own reading after the reading lesson** (`teach`, `request_start` as built, nothing of the trial):
+
+| Set | In order | First word at the first look | Intended word had a finite score | "is" read |
+| --- | --- | --- | --- | --- |
+| Two-word (6) | 0 / 0 / 0 | 6 / 6 / 6 | 6 of 18 / 6 of 18 / 6 of 18 | 0 of 6 in all |
+| Lesson (12) | 0 / 0 / 0 | 6 / 1 / 1 | 18 of 44 / 23 of 48 / 23 of 48 | 0 of 12 in all |
+| Held out (6) | 0 / 0 / 0 | 1 / 2 / 0 | 3 of 20 / 6 of 24 / 8 of 24 | 0 of 6 in all |
+| Reordered (12) | 0 / 0 / 0 | 2 / 6 / 2 | 14 of 44 / 18 of 48 / 22 of 48 | 0 of 12 in all |
+
+The request and its gradient at the first two looks of "This is Felix." after the lesson: the query's greatest coordinate is 44.5 and 41.9 / 46.2 and 45.0 / 38.7 and 36.8, against codes of 1.0. The gradient at the query is 0.0 at both looks in all three starts; at the request it is 0.0, 0.0 and 0.009.
+
+- **Step 3 (the model's own start): no.** `request_start` after the lesson takes the first word at the first look in all two-word sentences, but in only 1 to 6 of the 12 lesson sentences.
+- **"is" is never read after the lesson,** and fewer than half the intended words had a finite score. This is the ninth pass's finding, now in three starts. It is not in the trial: the trial's looks request "words" alone and found every word.
+
+#### Tests run
+
+| Run | Result |
+| --- | --- |
+| Probe of the tree at each look (scratch, removed) | 1 passed, 48 s |
+| Steps 1 and 2 | 2 passed, 73 s |
+| Step 7, first form (places with learned codes), then as corrected, then with C and the shared read | passed, 6 s, 6 s, 18 s |
+| Step 8 | 1 passed, 70 s |
+| Step 9 (one start, then three) | 1 passed, 10 s and 32 s |
+| Steps 3 to 5, one start | 1 passed, 870 s |
+| The trial file, `-n 6 --dist loadfile -s` (prints lost to xdist) | 4 passed, 2,212 s |
+| **The trial file, alone, three starts** | **6 passed, 1,388 s** |
+| **Both gates**, with `test_item17_in_order`, `test_loop_of_looks`, `test_interpret_bias`, `test_item17_fragments` | **22 passed, 33 s** |
+
+The printed records are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6d10/`: `final_trial2.txt` (the last full run, all steps), `toy4.txt`, `toy8.txt`, `toy9.txt` (the toy runs whose tables are above), `step1.txt`, `steps12.txt`, `trial1.txt`. The toy tables above come from the runs of `toy4.txt`, `toy8.txt` and `toy9.txt`; the last full run drew other starts and is in `final_trial2.txt`.
+
+#### Main
+
+Both gates and the trial file passed, so `main` is fast-forwarded to the branch's last commit and `item17-r6d10` is deleted. Nothing was pushed.
+
+#### Review (Claude, 2026-11-22)
+
+Spot tests by the pass; both gates pass. Claude's list on this pass's commit (`1f48e6c2a3`) was running when this was written.
+
+- *The toy shows what Alec asked of it.* One unused concept lit for a task, a memory of the last look, and the output's cost alone: the reading is in order on every taught sentence and on every untaught length (36 of 36 in three starts), on 37 to 42 of 52 untaught starts, and it stops at the end in every sentence. No concept is named and no reading target is used. Counting "1" to "4" is exact in every lesson. So the reading target (the intrusion) can go, as §19.127 says.
+- *What is learned is "the leftmost unread word", and for reading a sentence once that is enough.* No form passes Codex's pairs when taught from the first word, because nothing in a reading from the first word tells "leftmost unread" from "the one after the last". The done mark does the rest. A successor over places is needed only where a reading starts elsewhere or returns. *For Alec:* whether that is wanted of reading at all.
+- *A successor is learned where the output asks for one:* the counting word said is the successor of the last counting word said, and it is exact. That is the successor "on the output" of his sentence, and it is the one item 1.6 needs.
+- *"first" learned a preference for earlier places.* It was learned and not given, which his rule allows.
+- *The toy reads by a `.where` the model does not have.* Its places are coded at periods of 64 and 16; the model's are 8192 and 256, at which a place tells its word from a neighbour by .004 to .02 (step 2: always the right word, 48 of 48, but by that little). At a period of 16 the margin is .25. The ladder's ratio is 32 (`whereRungRatio`), so its next rung would be a period of 8, at which words alias (35 of 48). *For Alec:* a rung of 16 to 32 addresses.
+- *The memory:* the last look's conceptual field by wire (his second form, C) reads in order and stops at least as well as the memory at the first Pi (B), and nothing is kept at the Pi for it. *Claude's choice, for Alec:* C. Neither is read by the next `attend` today.
+- *The shared network with a linear read for each is at least as good as a read of its own for each concept,* and in step 9 one network serves both tasks.
+- *Two tasks taught one after the other: the second erases what the first says.* Taught together both hold (two starts of three; the third had not finished at 800 steps). The curriculum is ordered (`doc/Training.md`), so this bears on it. *For Alec.*
+- *The priming heat is not written inside the looks* (once when a sentence opens, once after a batch). So "the primed conceptual field" is not updated at every `attend`; the look's own field is.
+- *Codex's two observations hold:* composition merges the intervals of `SentenceField.placements` (STM's own `.where` field does not merge and keeps one word's); `AttentionContext.project` reads its inputs detached.
+- *The model's own reading is as the ninth pass left it:* after the reading lesson no look takes `is` (0 of 36 in three starts), fewer than half the intended words have a finite score, the query is 37 to 46 against codes of 1.0 and its gradient is 0.0. Nothing was built for it in this pass. What the toy puts in its place is the next pass.
+- *The trial's reads in the model score a word by a bilinear read of its `.where`,* since shared size is flat there. *Provisional, the implementer's.*
+- *The record of step 1* (`request`, `where`, `code` in `Looks.decisions`) is the pass's one change to `bin/`, and nothing reads it. Accepted.
+- *Round 7's list:* the trial file takes 23 minutes for three starts; its starts or sizes are cut once the build has its own tests.
