@@ -14391,6 +14391,16 @@ de-muxed; the production configuration.
    Then steps 1 to 5 are taken again on the model's own output.
 7. *Tests:* both gates; the files touched and their users; `test/test_compiled_lesson_step.py` once. Return `scratch-1.7/r6d_return_12.md`, what fails first. `main` moves only if the rows at 1.00 and 1.75 pass in all three starts, with both gates and the files touched.
 
+*The thirteenth pass* (added 2026-11-22, after §23.6.18), on the same branch: the output walk says a word from its concept. It stops at the first row of `doc/ModelAge.md` that fails.
+
+1. *The `.what` on the way back* (rule 79, first half). The output walk's generated leaf carries the recreated percept's `.what` on the percept band: the inverse of the leaf's concept through the Sigma's way back and the first Pi's (`BasicPercepts.kept_percept`). The terminals are matched against it (`readback_scores`; say whether the cosine stays or the model's one match takes its place, and why). First simulate on one word: the terminals' scores with the leaf so filled, and whether the word's own terminal is the greatest.
+2. *No first found.* Where terminals are equal the word is a draw, not the first of the inventory (`OutputOccurrences.generated`). Priming stays as evidence that is added, if it is graded; say what it does after the change.
+3. *A mark is a word* (Alec: "All content."). `WordSurfaces.is_lexical_form` and the character classes (`Layers._CHAR_CLASS_RANGES`, `PUNCT`) admit a form made of punctuation, so that MTM nominates a concept for it. Say every test ported for it.
+4. *The row at 1.00, by the walk:* the 19 words and the marks, each alone, three starts drawn afresh, 30 rounds or until all are said back in three rounds running; the test model built with streams enough for batches of several; the crash at `ClauseJournal.py:384` found.
+5. *The `.where` on the way back, in tests only, no build:* at each reading of the lesson's sentences, the margin of the right place and whether the recreated `.where` is the right address, for (a) the source as it is; (b) a place row that tells against where its code is not held; (c) signed wires against unsigned; (d) periods of 256 and 16; (e) the place read back from each rung's phase and not by a match. Combinations where two help.
+6. *Then, only if the row at 1.00 passes in all three starts:* the row at 1.75 by the walk, measured and not repaired.
+7. *Tests:* both gates; the files touched and their users. Return `scratch-1.7/r6d_return_13.md`, what fails first. `main` moves only if the row at 1.00 passes by the walk in all three starts, with both gates and the files touched (save the two known failures).
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -25163,3 +25173,145 @@ Spot tests by the pass; both gates pass on the branch (`item17-r6d11`, `0f05c96c
 - *`test_compiled_lesson_step.py` was not run* though the loop it compiles changed. The twelfth pass runs it once.
 - *`test_item20_round34_projection::test_model_xml_default_projects_one_native_batch_and_steps_once` fails on `main` too,* and is not in Claude's list. *Round 7's list:* the test, and the list gains its file.
 - *For Alec:* whether the closing mark is counted as a word in the counting task (the pass counted it); whether the corpus lessons, which have supervised outputs, are also taught the sentence said.
+
+### 23.6.18 Round 6d, twelfth pass: the row at 1.00 fails by the model's own output on `main` too; the output walk's terminals score nothing; the de-muxed way back simulated and not built (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`. My commits: 40579c5c39 (step 1's record), 722390eec1 (the simulation of the de-muxed way back, and four elements against three), 9a366eac90 (the walk's terminal scores, batches, long rounds). The coordinator's spec commits sit between them. Nothing in `bin/`, `data/` or the docs is changed by this pass. Nothing pushed; the superproject, `suggestions.txt`, the spec and `doc/ModelAge.md` are not touched. `main` is not moved.
+
+#### What fails or is unfinished, first
+
+- **The row at 1.00 fails by the model's own output, on `main` as on the branch.** A word alone (19 words), said back by the output walk (`SentenceField.reconstruct_generation`, bytes of `realize`), 30 rounds (570 presentations, 1.9 times the eleventh pass's bound; a round takes 30 to 55 s, so 30 rounds is what fits in about 30 minutes a start):
+
+  | Source | Start 1 | Start 2 | Start 3 |
+  | --- | --- | --- | --- |
+  | `main` (a1aebce56e) | 16 before; then 0 in all 30 rounds | 1 before; then 19 in all 30 rounds | 0 before; 19, 19, 19, 19, 7, 12, then 0 to the end |
+  | Branch, as built | 0 before; 8, 3, 2, 1 … 0 at round 29 | 1 before; 17, 14, 19, 18 … 1 at round 29 | 18 before; 9; then crashed (below) |
+  | Branch, the `say` cost not booked | 0 before; 18 to 19 to round 15; 0 from round 20 | 1 before; 2, 7, then 1 to the end | 19 before; 4, 6, then 2 to 4 |
+
+  **Why** (measured): at the walk's first generated slot, every terminal of the bank scores 0.0 (`readback_scores`, the cosine on the percept band; 18 of 18 valid rows, 19 of 19 words, untrained and after a round). The walk's choice is then the tie broken by `bank.weights` (the priming) and then the inventory order (`OutputOccurrences.generated`: "ties keep inventory order"). So when the word comes back, it comes back because it is the most primed, not because the walk made it from the concept. That is a first-found rule, and it explains why the result depends on the start and swings from 19 to 0. The generated leaf carries nothing on the percept band.
+- **The de-muxed way back (items a to c) is simulated, not built.** The simulation says the number first, as asked: a graded paste by `.where` passes a gradient to `WhereRegistry.code` (1.95 at the model's periods; 2.24 and 2.25 at shorter ones). But the recreated `.where` of a reading picks the wrong address in 4 of 4 readings of "This is Felix.", at the model's periods and at both shorter ones. Built on that, no sentence would be reconstructed, and certificate c ("a sentence reconstructed after the change is the sentence") cannot pass. I did not build around it. The cause is below (item a).
+- **Item f (three axes) is not started.** It waits for c's certificates. Its size: 13 files of `bin/` and 76 of `test/` name the `.where` width (`WHERE_WIRES`, `nWhere`, `WhereEncoding`); `bin/Spaces.py` alone has 99 places.
+- **Steps 2 to 5 wait** (the order of the pass changed). `prompt_need` and `PartLesson.need` are not removed: that is step 3, and it ports five test and experiment files (`attention_curriculum_gates.py`, `test_parts_of_speech.py`, `test_reading_curriculum.py`, `phase_experiment.py`, `np_experiment.py`).
+- **A batch of more than one sentence stops** in the looks' test model: `ValueError: STM batch exceeds its constructed nStreams` (`bin/Memory.py:686`). The fixture (`_tiny_canonical_model`) is built with one stream. One sentence at a time is all that runs.
+- **One long run crashed** (branch, as built, start 92839396795699, round 1): `ValueError: a completed field must have one or three slots` (`bin/ClauseJournal.py:384`), on a word alone. Not diagnosed.
+- **The mark is never said back.** Details under the questions.
+
+#### Questions
+
+1. **The walk's terminal.** Every bank row scores 0.0 at the generated slot, so the word is chosen by priming and then by inventory order. Is the fix to make the generated leaf carry the word's percept band (the inverse of the concept, which is what item a asks for anyway), or should the walk's choice read the concept's row directly? I built neither. I think it is the first: the walk's word should be the matched percept of the de-muxed way back.
+2. **Where a recreated `.where` comes from.** A word's row of the first Pi keeps no `.where` (its `where_entries` are at nothing, so it "reads one at every place"). Only the place rows keep one. In the open field, the place concepts are lit at every reading almost equally: 0.62 to 0.76 at each reading (a `tanh` near 1), summed over 27 place rows, 8 to 12 at each reading. The correct place row is at the top of each reading, but by 0.03 to 0.1. So the recreated `.where` is close to the centroid of all the places. Should the `.where` of a word come from (a) the place concepts at its reading, made sharper (how, without a winner-takes-all?), (b) the word's own row learning `.where` entries (but a word occurs at many places), or (c) something else?
+3. **The mark.** All content is a word. Today a mark is read and counted, but never said back. What keeps it from being pasted: `WordSurfaces.is_lexical_form` refuses a form whose characters are all whitespace or Unicode punctuation (`unicodedata.category(c).startswith('P')`). Its readers are `ModelAttention` (MTM's `found`, line 178) and `Models.py` lines 11044 and 11382, so MTM never nominates a word for "." or "?". With no word concept the mark has no concept row (`said_rows` gives -1), so the `say` read cannot say it. And `FieldReverse.reverse` writes bytes only for rows of the Sigma's way back, so the walk does not put it back either. The character classes are `Layers._CHAR_CLASS_RANGES` (`PUNCT`). Is the repair to let `is_lexical_form` admit a punctuation form? I have not built it.
+4. **`say` and one output.** See item e. Should `say` go now (its cost does not decide the walk's failure; see the table), or wait until the walk's own cost can reach the looks?
+
+#### The answers asked for at the head
+
+**1. Reproduced by the model's own reconstruction, and by `say`** (a word alone, by round). The table above is the walk. The `say` read on the same runs (words right of 19): 2, 1, 2, 1, 1 … 1 at round 29 (start 1); 1, 1, 1, 2, 2 … 7 at round 29 (start 2). With one word only ("Felix" alone), both are right from the first presentation: the say read by its bias (argmax at row 19 when its top is at nothing but the bias), and the walk by the priming. The input's own reverse (`model._input_reconstructions[sid].event`) gives the word, without the mark, at every presentation measured ("Felix." → "Felix").
+
+**2. What "said back" is read from.**
+- `test/test_item17_own_reading.py`: `said_right` compares `d['said']` of each look, which is `spoken`, the argmax of `RequestRead.say`'s logits (forced to the output's word where it is supplied). It is a concept row. It is not the output walk and not bytes.
+- `test/attention_curriculum_gates.py` ("read back"): `words_from_field(owned.event, record.open_field.where, orders)`. These are the input reconstruction's bytes (`FieldReverse.reverse` of the open field), read at the open field's brackets in the looks' order. So it is the model's own reconstruction of the input, but read at the places kept from the lookup.
+
+**3. Is `say` a second output beside the walk?** Yes. The walk (`sentence_generated` → `realize` → `FieldReverse.reverse`) gives bytes, costed as `reconstruction_order_zero` and `input_reconstruction`. `say` is a separate linear read over the concept rows, costed as `attention.output`. For the walk's own cost to reach the looks' scores, the slot the grammar composes at each look would have to be the share-weighted sum of the unread words, not the word drawn (`draw_among`, which is discrete). Then `input_reconstruction` would pass through the shares to the scores and to the request. One caution: once the way back is de-muxed, the walk's bytes go where the recreated `.where` points, whatever order the looks took. Then the walk's cost would teach the places and not the order of reading. The order would need a cost of its own on the output's sequence.
+
+**4. Is the output reconstructing `.where` and `.when` the way the input does?** From the source on this branch:
+- (a) The input's reconstruction (`FieldReverse.reverse`, called by `SentenceField.reconstruct` through `model.reverse`):
+  - The bytes are a row's stored spelling (`radix.bytes_for(pid)`, an index, with no match against the percept codebook), placed at the reading's bracket kept from the lookup (`field.where`).
+  - The `.where` code is stamped from the buffer's position (`where_registry.encode('text', decoder.positions)`, times strength).
+  - The `.when` is `field.when` placed at the bracket and encoded (`whenEncoding.encode`), so it is copied.
+  - A place's row is skipped (`continue` for `place_rows`).
+  - Confirmed: a place cannot be wrong, and nothing teaches `.where` or `.when`.
+- (b) The output walk (`OutputOccurrences.generated`, then `realize`, then the same `FieldReverse.reverse`):
+  - The brackets are made by a cursor over the chosen surfaces' lengths, with one byte between words (`where[b, w] = (cursor, cursor + len(raw))`).
+  - The `.when` is the present tick for every word (`model.present()`), or the open field's `.when`.
+  - The rest is (a). So the place is stamped from the generation's order.
+- (c) The `say` read: no `.where` and no `.when` are produced (it gives a concept row). Its input holds the centred `.where` wires of the unread words' brackets, copied from the lookup (`Places.readings`).
+
+**5. Modalities and `.what`/`.where` as one mechanism** (§19.132). `InputSpace/demuxed` chooses `ModalSpace` (`.what`, `.where` and `.when` held as three tensors, `set_demuxed`) or `PartSpace` (one muxed row whose columns are cut by index, `_radix_where_indices`). It separates the fields, not the modalities. Words and numbers are separated by ranges of the `.where` address (`WhereRegistry.slices`: `text`, `numeric`, `scalar`). `FieldReverse.reverse` keeps only brackets inside `slices['text']`. So today a modality is a region of `.where` space, and `.what` from `.where` is a cut by columns. They could be one mechanism if a modality were a region of the de-muxed `.where` match: the match against `WhereRegistry.code` would also say which modality a recreated percept is in. What stands in the way: the modality's ranges are fixed by construction and read as integers (`>= start`, `<= end`), not matched. And the `.what` widths differ by modality, so the codebook a recreated `.what` is matched against depends on the modality, which would have to be found first.
+
+#### Step 1: a word said back, alone (the say read)
+
+`test/test_item17_word_said_back.py`, one start (249237376376370), rate .01:
+- *One word ("Felix.") by presentation.* The cost falls 1.88, 1.86, 1.75, 1.57, 1.31, 1.00, 0.65, 0.42, 0.34 … 0.18 at 14. The request stays at 0.018 on every concept. Its gradient is 0.0 at both looks: only one word is found, so its share is 1 and does not move. The gradient at `say`'s units is 0.17 → 0.73 → 3e-6 (the word is learned; what is left is the stop's cost).
+- *Then the 19.* The cost falls within round 0 from 5.2 to 1.4, and stays at 0.8 to 1.0 per word for rounds 1 to 3. Said back: 1, 1, 1, 3 of 19.
+- *Which it is.*
+  - Not the request: with one word or one word and a mark, the request does not matter (one finite score).
+  - Not what the read is given: `seen` carries the word's concept row at full mass (1.0), and the opened field holds it.
+  - What it is: the read learns the last word it was taught (cost 5.2 at the first word after "Felix", 1.4 by the end of the round), and a word drawn later is said as the most recent. One presentation per word per round at rate .01 is recency, not a mapping.
+  - All of this is beside the point now: `say` is not the model's own output, and the walk fails for its own reason (the head).
+- *The mark alone* ("." or "?"): one look, one word read. Nothing is reconstructed (input reverse and walk both give no byte). Counting: a mark is a word to the looks (it is taken at a look and has a counting word in the output), so it can be counted. It cannot be said back.
+
+#### The de-muxed way back: the simulation (items a, c, d)
+
+`test/test_item17_demuxed_way_back.py`. "This is Felix.", after the minimal and lesson sentences are nominated (27 place rows, each with a concept). The method:
+- The Sigma's way back is `cs_percept_attribution` (support of each row of the first Pi at each reading).
+- The first Pi's way back is the row's kept percept (`kept_percept`; for a place row, its `where_entries` and `when_entries`).
+- Each reading's `.where` is the place rows' entries weighted by their support.
+- It is matched against `WhereRegistry.code` over the text addresses by shared size (`field_factor`).
+
+Where a layer has no exact way back: the order-zero Sigma's is the attribution over its members (least squares where a row is read by enough concepts), and the first Pi's is the kept percept. Both are used as they are.
+
+| Periods of the `.where` | Reading (bracket) | Best address, the centroid | Margin to the best rival | Best address, the mixture of each place's match | Gradient at `WhereRegistry.code` |
+| --- | --- | --- | --- | --- | --- |
+| 8192, 256 (the model's) | 0, 5, 8, 13 | 3, 3, 3, 7 | −.007, −.006, −.015, −.022 | 0, 0, 4, 6 (margin +.0005, −.003, −.006, −.014) | 1.95 |
+| 256, 32 (patched in the test) | the same | 2, 3, 3, 6 | −.039, −.056, −.085, −.166 | 0, 0, 0, 6 | 2.24 |
+| 256, 16 (patched in the test) | the same | 3, 3, 4, 7 | −.027, −.070, −.069, −.121 | 0, 0, 0, 5 | 2.25 |
+
+- A graded paste (each address in proportion to the match; cost the negative log of the share at the own address) costs 3.07, 2.92 and 3.01, and its gradient reaches the `.where` parameter (the last column) and the recreated `.where` (1.74, 1.63, 1.69). So the gradient is not the problem.
+- The top five place rows at each reading do point at the reading's own place (shorter periods: reading 1 → 5, 6, 4, 7, 8; reading 2 → 8, 7, 9, 6, 5; reading 3 → 13, 12, 14, 0, 3). But their support is 0.76, 0.74, 0.73, 0.70, 0.66, so the sum is close to the centroid. Question 2.
+
+**Item d: how exact a recreated `.where` must be.** At the model's periods, an address's own code against a neighbour 1 to 3 away differs by at least .0032 (mean .0076). With the owner's added measure (one axis, four elements against three; the least margin to a neighbour, then to any other address in 256):
+
+| Form | Elements | To a neighbour | To any other address |
+| --- | ---: | ---: | ---: |
+| Pairs at 8192 and 256 (as built) | 4 | .0032 | .0032 |
+| Pairs at 256 and 16 | 4 | .060 | .049 |
+| Pairs at 256 and 32 | 4 | .030 | .030 |
+| Three phases of 16 (120° apart) | 3 | .117 | 0 (aliases at 16) |
+| Three phases of 256 | 3 | .0071 | .0071 |
+| A pair at 16 and a ramp over 256 | 3 | .078 | .021 |
+| A pair at 16 and a cosine of 512 | 3 | .076 | .0032 |
+
+Three elements can do as well as four over a window: a short pair and a ramp gives .078 and .021, against four's .060 and .049. An axis keeps four until the owner chooses. The rung was not added to the source. Even at the shorter periods the reconstruction failed for the reason of question 2, so the rung alone does not make the row pass.
+
+**Item e.** Not reached in the source. What is known is under answer 3 at the head.
+
+#### Rows of the chart reached
+
+| Row | Result | By how much |
+| --- | --- | --- |
+| 1.00, a word said back (the model's own output) | **Failed**, on `main` and on the branch | After 30 rounds: 0, 19 and 0 of 19 on `main`; 0 and 1 of 19 (one start crashed) on the branch; 0, 1 and 3 with the `say` cost off |
+| 1.75 and above | Not reached (the pass stops at the first row that fails) | |
+
+Metal Baby's age stays where `doc/ModelAge.md` puts it, 0.70. The row at 1.00 fails by its own output in all three starts on both sources. A start that passes, as `main`'s second does (19 for 30 rounds), passes by priming.
+
+#### Removed or ported
+
+Nothing removed, nothing ported. New record tests: `test/test_item17_word_said_back.py` and `test/test_item17_demuxed_way_back.py`. A scratch test on a read-only worktree of `main` (`test_zz_walk_on_main.py`, not committed; the worktree was removed after the runs. It reads each word alone with no gradient, after a round of each word read with training at rate .01, and compares `model._sentence_order_zero_reverse.materialize()`'s bytes with the word).
+
+#### Tests run
+
+| Run | Result |
+| --- | --- |
+| Step 1 probes, one start each (one word, then 19, 4 rounds) | as above |
+| The long runs, 30 rounds, three starts each: branch as built, branch with the `say` cost off, `main` | 8 passed (records), 1 crashed (`ClauseJournal.py:384`); 15 to 28 min each, run side by side |
+| A batch of 4 words alone | `ValueError: STM batch exceeds its constructed nStreams` |
+| The simulation, three periods; four elements against three | 4 passed (records) |
+| Both gates and `test_item17_request_read.py` | 5 passed, 40 s |
+| The two new files, `-n 6` | 5 passed, 170 s |
+| `test/test_compiled_lesson_step.py` | 1 passed, 31 min 39 s (run beside the long runs) |
+
+`main` is not moved: the row at 1.00 does not pass. Records: `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d12/` (`long_*.log`, `long_main_*.raw`, `compiled_lesson_step.log`).
+
+#### Review (Claude, 2026-11-22)
+
+Nothing of `bin/` or `data/` changed; `main` is not moved; Claude's list is not run. Both gates pass, and `test_compiled_lesson_step.py` passes (31.7 minutes).
+
+- *The finding that matters most is older than this item's attention work: the model has not been saying a word back from its meaning.* At the output walk's first generated slot every terminal scores 0.0 (`readback_scores`), because the generated leaf carries nothing on the percept band. The word is then the most primed (`bank.weights`), and among equals the first of the inventory (`OutputOccurrences.generated`). So over 570 presentations of single words on `main`, one start says 0 of 19 in every round, one 19 of 19 in every round, and one 19 then 0. That is a first-found rule, which his rules exclude (a tie is a draw), standing where "the output follows from the thought" was decided (2026-11-11). The row at 1.00 fails, on `main`.
+- *The repair is the first half of rule 79, and it does not need the `.where`.* The generated leaf is to carry the recreated percept's `.what`: the inverse of the concept through the Sigma's way back and the first Pi's (`BasicPercepts.kept_percept`), which the walk's terminals are then matched against. *The thirteenth pass, first.*
+- *The second half, the `.where`, cannot be built on what the concepts hold today.* A word's row keeps no `.where` (a word is at many places); only the 27 place rows do, and at each reading every place concept is lit at .62 to .76, the right one on top by .03 to .1. So the recreated `.where` is near the centroid of the places, and the wrong address in 4 of 4 readings, at the model's periods and at shorter ones. The cause is the read of a place row and not only the periods: by shared size on unsigned wires any two places share most of their size (.957, certificate 62). *The thirteenth pass, in tests only:* a place row's read made to tell against where its code is not held (the against lane), signed against unsigned wires, the shorter periods, and the place read back from each rung's phase, each measured by the margin of the right place at a reading. *For Alec:* where a word's recreated `.where` comes from.
+- *A graded paste does pass a gradient to `WhereRegistry.code`* (1.95), so once the recreated `.where` is right the cost can teach it.
+- *A mark is never said back because it is never a word:* `WordSurfaces.is_lexical_form` refuses a form made only of punctuation, so MTM nominates no concept for "." or "?". Alec's answer already covers the repair ("we need to augment the character classes in perception to paste that content"). *The thirteenth pass.*
+- *Three elements against four for an axis* (his doubt): at periods of 256 and 16, four elements tell a neighbour by .060 and any other address within 256 by .049; three (a pair at 16 and a ramp over 256) by .078 and .021; three phases of one period repeat and tell nothing apart beyond it. So three in the form of a pair and a ramp is as good next to a neighbour and half as good far away. *For Alec.* Either is 15 to 20 times better than today's .0032.
+- *`say` is a second output* and is not the cause of the failure (`main` swings the same way). It stays on the branch until the walk's own cost reaches the looks, and then goes. *For Alec, if he would have it go now.*
+- *Batches of more than one* stop at the test model's one stream; *a crash* (`ClauseJournal.py:384`) in one start is not diagnosed. *The thirteenth pass.*
+- *Item f (three axes)* would touch 13 files of `bin/` and 76 of `test/`. It waits, as the text said, and is a pass of its own.

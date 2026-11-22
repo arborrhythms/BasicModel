@@ -106,22 +106,22 @@ cover. Their ages are estimates.
 
 The model is named Metal Baby. Measured on 2026-11-22, at `1f48e6c2a3`:
 
-**Its age is 0.70.** Object permanence is the only row of the ladder that is
-both measured and passed, and the next measured row fails.
+**Its age is 0.75.** Object permanence and recognising a word by its form
+pass, and the next row, a word said back, fails.
 
 | Row | Result today |
 | --- | --- |
 | 0.70, object permanence | Passed in 3 of the 4 test models that have text; failed in 1 ("unknown word"). The ladder's eight higher rungs were not reached: no test model declares the vocabulary they need. |
 | 0.75, a word recognised by its form | Passed. |
-| 1.00, a word said back | Not settled. On the branch that builds the new reading (`0f05c96ce4`) the new read of the word said gives 4, 11 and 3 of 19 words after 16 rounds, in three starts. That is not the model's own reproduction of its input (the output walk), which was not measured for a word alone. Being measured. |
+| 1.00, a word said back | **Failed**, by the model's own output, on `main`. Each of 19 words presented alone for 30 rounds, three starts: 0 of 19 in every round; 19 of 19 in every round; 19 then 0. The word that comes back is the most primed one, not one made from its concept: at the output's first slot every candidate scores nothing. A closing mark is never said back, since it is never made a word. |
 | 1.75, two words taken in order and said back | Failed. After the reading lesson, 0 of 6 two-word sentences are read in order in each of three starts, though the first word is taken first in 6 of 6. Every word of a sentence is found (64 of 64), but not in order, and "is" is never taken. |
 | 2.25 to 5.00, with the words handed to the model in order | The curriculum's stages `reading_two`, `reading_four`, `identities`, `noun_verb` and `relations` pass when the model does not have to take the words itself. They do not count toward the age, since taking the words in order is the row that fails. |
 | 6.00, exclusive or | Passed (the standing gate). |
 
 So the model is uneven: it has learned things a child learns late (exclusive
 or, relations between named things) while failing one a child learns before
-two, taking two words in order. The age reports the first failure, not the
-best result.
+two: saying one word back. The age reports the first failure, not the best
+result.
 
 In a toy outside the model, the method now being built reads untaught
 lengths in order, stops at the end and counts to "4" exactly. That is the
