@@ -59,26 +59,12 @@ class Attended:
     time: torch.Tensor        # [B, A]
 
 
-def _dense_rank(key, mask):
-    """The rank of each masked value among the distinct masked values of its
-    stream, ascending, ``[B, O]``."""
-    big = key.abs().max() + 1 if key.numel() else key.new_ones(())
-    held = torch.where(mask, key, big)
-    ordered, order = held.sort(-1)
-    new = torch.ones_like(ordered, dtype=torch.bool)
-    new[:, 1:] = ordered[:, 1:] != ordered[:, :-1]
-    ranks = new.long().cumsum(-1) - 1
-    return torch.empty_like(ranks).scatter_(1, order, ranks)
-
-
-def attended(bank, where=None, share=None, capacity=None):
+def attended(bank, share=None, capacity=None):
     """The occurrences a look attends and their table (:class:`Attended`).
 
-    All of them where they fit. Otherwise those inside ``where`` ``[B, 2]``
-    (the sentence's extent where not given), the largest first, and those
-    that contain it, the smallest first, a level down and a level up in
-    turn, until the table is full; within a level that does not fit whole,
-    the greater ``share`` ``[B, O]`` first, then a draw."""
+    All of them where they fit. Otherwise the ``capacity`` most salient by
+    ``share`` ``[B, O]`` (rule 79: "the most salient are those that are
+    returned"), a draw among equals; no order by extent."""
     capacity = attended_capacity() if capacity is None else int(capacity)
     span = bank.span
     B, O = bank.token.shape
@@ -87,22 +73,12 @@ def attended(bank, where=None, share=None, capacity=None):
         index = torch.arange(O, device=span.device)[None].expand(B, -1)
         filled = real
     else:
-        if where is None:
-            far = torch.iinfo(span.dtype).max
-            where = torch.stack((torch.where(real, span[..., 0], far).amin(-1),
-                                 torch.where(real, span[..., 1], -1).amax(-1)), -1)
-        extent = span[..., 1] - span[..., 0]
-        inside = real & (span[..., 0] >= where[:, None, 0]) & (span[..., 1] <= where[:, None, 1])
-        around = real & ~inside & (span[..., 0] <= where[:, None, 0]) & (span[..., 1] >= where[:, None, 1])
-        last = 2 * O + 2
-        level = torch.where(inside, 2 * _dense_rank(-extent, inside),
-                            torch.where(around, 2 * _dense_rank(extent, around) + 1, last))
         share = torch.zeros(B, O, device=span.device) if share is None else share.detach().to(span.device)
+        key = torch.where(real, share.float(), -torch.inf)
         order = torch.rand(B, O, device=span.device).argsort(-1)
-        order = order.gather(1, (-share.float().gather(1, order)).argsort(dim=-1, stable=True))
-        order = order.gather(1, level.gather(1, order).argsort(dim=-1, stable=True))
+        order = order.gather(1, (-key.gather(1, order)).argsort(dim=-1, stable=True))
         index = order[:, :capacity]
-        filled = level.gather(1, index) < last
+        filled = real.gather(1, index)
     table = bank.table.gather(1, index[..., None, None].expand(-1, -1, *bank.table.shape[2:]))
     chosen = span.gather(1, index[..., None].expand(-1, -1, 2))
     if bank.registry is not None:

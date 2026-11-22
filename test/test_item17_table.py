@@ -185,13 +185,14 @@ def test_62_33b_what_is_where(tmp_path, monkeypatch):
             # (c) The request for its concept lands most on the first.
             request = torch.zeros(int(owner.nVectors), 1, 2)
             request[concept, 0, 0] = 1.
+            # Ported (eighth pass): the share on the where wires (``band``)
+            # was asserted greater at the first too; there is no band since
+            # rule 79, the row's read holding its .what and .where together.
             with torch.no_grad():
-                salient = Salience.salience(owner, bank, request, perception=basic.read_bank(bank, look=look))
+                salient = Salience.salience(owner, bank, request)
             share = salient.events[0, :, 0] + salient.events[0, :, 1]
-            print(dict(share_first=float(share[first]), share_second=float(share[second]),
-                       where_first=float(salient.band[0, first]), where_second=float(salient.band[0, second])))
+            print(dict(share_first=float(share[first]), share_second=float(share[second])))
             assert float(share[first]) > float(share[second])
-            assert float(salient.band[0, first]) > float(salient.band[0, second])
         finally:
             with torch.no_grad():
                 basic.where_entries[row] = 0.
@@ -229,9 +230,10 @@ def test_63_what_a_look_reads_is_its_table(tmp_path, monkeypatch):
         chosen = perception.index[0][perception.reading[0] >= 0]
         extents = (bank.span[0, :, 1] - bank.span[0, :, 0])
         print(dict(capacity=capacity, chosen_extents=sorted(extents[chosen].tolist(), reverse=True)))
-        # The largest occurrences inside the sentence come first.
-        left = torch.ones(O, dtype=torch.bool)
-        left[chosen] = False
-        assert int(extents[chosen].min()) >= int(torch.where(left, extents, 0).max())
+        # Ported (eighth pass): the largest occurrences inside the sentence
+        # came first. Since rule 79 the table is the most salient, a draw
+        # among equals, with no order by extent; with nothing asked every
+        # occurrence is equal, and the table is full.
+        assert len(set(perception.index[0].tolist())) == capacity >= len(chosen)
     finally:
         model.End()

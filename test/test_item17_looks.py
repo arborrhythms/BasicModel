@@ -87,12 +87,21 @@ def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(t
             reads['host'] += 1
             return _original(self, *a, **k)
         monkeypatch.setattr(torch.Tensor, name, counted)
-    perception = owner.basic_percepts.read_bank(bank)
+    # Ported (eighth pass): the first Pi's way down by the transposes
+    # (``Salience.first_pi``) is gone; the order-zero Sigma's way back and
+    # the way back through the reading and the Not are counted. The first
+    # Pi's own read of the occurrences (``rows_read``, the way up's
+    # ``outside`` among it) is printed.
+    concepts = Salience.concepts_asked(owner, request)
     reads['host'] = 0
-    found = Salience.first_pi(bank, perception, torch.ones(len(bank.rows), *perception.values.shape[1:]))
+    read = Salience.rows_read(owner.basic_percepts, bank)
+    own_read_reads = reads['host']
+    reads['host'] = 0
+    found = (Salience.rows_asked(owner.order_zero, bank.rows, concepts),
+             Salience.through_the_not(read, bank.token))
     first_pi_reads = reads['host']
     reads['host'] = 0
-    salient = Salience.salience(owner, bank, request, perception=perception)
+    salient = Salience.salience(owner, bank, request)
     # The structure's edges are read by ConceptSpread.structure, which the
     # spread reads too; printed.
     map_reads = reads['host']
@@ -106,6 +115,7 @@ def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(t
     parts, wholes = owner.basic_percepts.occurrences[row]
     print(dict(word_events=salient.events[0, word, 0].tolist(),
                beside_events=salient.events[0, beside, 0].tolist(), first_pi_host_reads=first_pi_reads,
+               own_read_host_reads=own_read_reads,
                map_host_reads=map_reads))
     # The row holds parts and wholes: its code has both halves.
     assert parts and wholes
@@ -114,8 +124,9 @@ def test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties(t
     assert bool((salient.events[0, word, 0] > 0).any())
     assert float(salient.events[0, beside].abs().sum()) == 0.
     # Nothing is below zero.
-    assert float(salient.events.min()) >= 0. and float(salient.band.min()) >= 0.
-    # (c) The first Pi's way down reads nothing on the host.
+    assert float(salient.events.min()) >= 0.
+    # (c) The ways back of the order-zero Sigma and the first Pi read
+    # nothing on the host.
     assert first_pi_reads == 0
 
 
@@ -129,11 +140,13 @@ def test_56b_a_concept_of_a_property_alone_lights_the_events_that_carry_it():
     # b that is red. Where b is not red, red's row reads against.
     bank = hand_bank([[0., 1., 0.], [1., 1., 1.]],
                      [[0., 1., 0.], [1., 1., 1.], [1., 1., 0.]], [0, 1, 2], 1)
-    row_grad = torch.zeros(2, 1, 3, 2)
-    row_grad[0, ..., 0] = 1.
-    events, _ = Salience.first_pi(bank, row_values(bank), row_grad)
-    print(dict(events=events[0, :, 0].tolist()))
-    assert events[0, :, 0].tolist() == [1., 0., 1.]
+    # Ported (eighth pass): by the first Pi's way back (the row's read of
+    # each occurrence, ``Salience.rows_read``) where it was by its transposes
+    # (``first_pi``, which gave the same [1, 0, 1]).
+    read = Salience.rows_read(bare_percepts(bank), bank)
+    events = read[0, 0, :, 0]
+    print(dict(events=events.tolist()))
+    assert events.tolist() == [1., 0., 1.]
 
 
 def test_56d_a_not_entry_gives_its_share_to_the_rows_against_lane():
@@ -146,6 +159,19 @@ def test_56d_a_not_entry_gives_its_share_to_the_rows_against_lane():
         grad = Salience._down(graph, request, torch.zeros(2, 1, 1, 2), 1)
         print(dict(negated=negated, row=grad[1, 0, 0].tolist()))
         assert grad[1, 0, 0, lane] == pytest.approx(.7) and grad[1, 0, 0, 1 - lane] == 0.
+    # At order zero (eighth pass, rule 79): the Sigma's way back, the
+    # inverse of the entry, 1 / .7, on the row's lane the entry reads.
+    from Layers import NotLayer3, SparseSigmaLDU
+    for negated, lane in ((True, 1), (False, 0)):
+        sigma = SparseSigmaLDU(2, 1, 4)
+        if negated:
+            NotLayer3(2).make(sigma, 0, 1, .7)
+        else:
+            sigma.add(0, 1, .7)
+        asked = Salience.rows_asked(sigma, (1, 0), torch.tensor([[[1., 0.]]])).detach()
+        print(dict(negated=negated, rows=asked[:, 0].tolist()))
+        assert float(asked[0, 0, lane]) == pytest.approx(1 / .7) and float(asked[0, 0, 1 - lane]) == 0.
+        assert float(asked[1].abs().sum()) == 0.
 
 
 def test_56e_the_pi_analyses_by_wholes_as_it_synthesizes_by_parts():
@@ -161,12 +187,13 @@ def test_56e_the_pi_analyses_by_wholes_as_it_synthesizes_by_parts():
                      [[1., .2, .4], [0., 0., 1.], [0., 1., 0.]], [0, 0, 0], 1)
     read = row_values(bank)
     assert read.values[0, 0, 0].tolist() == pytest.approx([.6, .4])
-    row_grad = torch.zeros(1, 1, 1, 2)
-    row_grad[..., 0] = 1.
-    events, _ = Salience.first_pi(bank, read, row_grad)
-    print(dict(row=read.values[0, 0, 0].tolist(), events=events[0, :, 0].tolist()))
-    # Through the Not: the share is the for lane less the against, .2.
-    assert events[0, :, 0].tolist() == pytest.approx([.2, 0., 0.])
+    # Ported (eighth pass): by the transposes the share went through the Not,
+    # the for lane less the against, [.2, 0, 0]. By the first Pi's way back a
+    # row asked for lights each occurrence by its read's for lane, [.6, 0, 0];
+    # the Not is in the order-zero Sigma's way back (test 56d).
+    events = Salience.rows_read(bare_percepts(bank), bank)[0, 0, :, 0]
+    print(dict(row=read.values[0, 0, 0].tolist(), events=events.tolist()))
+    assert events.tolist() == pytest.approx([.6, 0., 0.])
 
 
 def test_56c_the_map_reads_no_parameter_of_its_own():
@@ -253,13 +280,16 @@ def test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word(tmp_
         assert len(asked) == 1 and not words[..., 1].any()
         found = {}
         for name, request in (('words', words), ('alpha', SentenceLooks.word_request(model, concepts, torch.tensor([0])))):
-            field, activity, match = SentenceLooks.look(model, bank, request, bank.activity, perception)
+            field, activity = SentenceLooks.look(model, bank, request, bank.activity)
             extent = SentenceLooks.extent_of(bank, activity, 2)
             value = SentenceLooks.word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool),
                                                 extent, bank.activity, bank)
-            found[name] = (extent[0].tolist(), torch.isfinite(value[0]).tolist(), match[0, :2].tolist())
+            found[name] = (extent[0].tolist(), torch.isfinite(value[0]).tolist())
         print(found)
-        assert found['words'][:2] == ([True, True], [True, True]) and found['words'][2] == [1., 1.]
+        # Ported (eighth pass): the where match of each reading was asserted
+        # one ([1., 1.]); there is no where match since rule 79, so no
+        # reading is lowered by the where.
+        assert found['words'] == ([True, True], [True, True])
         assert found['alpha'][:2] == ([True, False], [True, False])
     finally:
         model.End()
@@ -328,14 +358,14 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
         query = torch.zeros(1, int(model._stm_reducer().d_model))
         # The request's start is a parameter: the request is taken as a leaf.
         request = SentenceLooks.requested(model, query).detach().requires_grad_()
-        field, activity, _ = SentenceLooks.look(model, bank, request, bank.activity, perception)
+        field, activity = SentenceLooks.look(model, bank, request, bank.activity)
         extent = SentenceLooks.extent_of(bank, activity, 2)
         value = SentenceLooks.word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool), extent, bank.activity, bank)
         value[torch.isfinite(value)].sum().backward()
         through_cap = float(request.grad.abs().sum())
         weak = bank.activity.clone()
         weak[bank.token == 1] *= .3
-        field, activity, _ = SentenceLooks.look(model, bank, request.detach(), weak, perception)
+        field, activity = SentenceLooks.look(model, bank, request.detach(), weak)
         extent = SentenceLooks.extent_of(bank, activity, 2)
         degree = SentenceLooks.word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool), extent, weak, bank)
         print(dict(gradient_on_the_request=through_cap, words_at_full=value.detach()[0].tolist(),
@@ -556,7 +586,7 @@ def test_30_33a_35_36_42_the_bank_the_where_wires_garbage_the_same_look_and_an_u
         known = concepts >= 0
         words = SentenceLooks.requested(model, torch.zeros(1, int(model._stm_reducer().d_model)))
         def found(request, own):
-            field, activity, _ = SentenceLooks.look(model, bank, request, own, perception)
+            field, activity = SentenceLooks.look(model, bank, request, own)
             extent = SentenceLooks.extent_of(bank, activity, 3)
             value = SentenceLooks.word_activity(field, concepts, known, extent, own, bank)
             return field.evidence.detach().clone(), value[0].detach().clone()
@@ -648,10 +678,10 @@ def _framework_down(graph, request, values, readings, depth):
 
 def test_31a_the_transposes_give_the_frameworks_backward_in_the_model(tmp_path, monkeypatch):
     """(a) In a model, on "alpha gamma": the structure passed down by its
-    weights and the symbols' derivatives (``Salience._down``), and the first
-    Pi passed down onto the attended percepts (``Salience.first_pi``), each
-    against the framework's backward on the same local derivatives (atol
-    1e-6)."""
+    weights and the symbols' derivatives (``Salience._down``, which carries
+    the request above order zero) against the framework's backward on the
+    same local derivatives (atol 1e-6). Ported (eighth pass): the first Pi's
+    part (``Salience.first_pi``) is gone with the transposes."""
     import ConceptSpread
     import SentenceLooks
     from test_item18_expect import read
@@ -691,69 +721,36 @@ def test_31a_the_transposes_give_the_frameworks_backward_in_the_model(tmp_path, 
             compared[name] = float((mine[:upto] - theirs[:upto]).abs().max())
             assert float(mine[graph.percept_start:upto].abs().sum()) > 0
             torch.testing.assert_close(mine[:upto], theirs[:upto], atol=1e-6, rtol=0)
-        # The first Pi: each attended percept's share against the backward
-        # of the way up's rows by its presence, times the presence, with the
-        # share taken through the Not (for less against, on the lane that
-        # is greater) and each attended percept at its reading's greatest
-        # taking the whole of the reading's share.
-        activity = bank.activity.clone().requires_grad_()
-        up = basic.read_bank(bank, activity)
-        rows = up.values
-        row_grad = torch.rand(rows.shape, generator=torch.Generator().manual_seed(0)) + .1
-        tiny = 1e-12
-        net = (rows[..., 0] - rows[..., 1]).detach()
-        through = torch.stack((torch.where(rows[..., 0] > tiny, row_grad[..., 0] * net.clamp_min(0.)
-                                           / rows[..., 0].clamp_min(tiny), 0.),
-                               torch.where(rows[..., 1] > tiny, row_grad[..., 1] * (-net).clamp_min(0.)
-                                           / rows[..., 1].clamp_min(tiny), 0.)), -1).detach()
-        held = perception.reading[None, :, None, :] == torch.arange(readings)[None, None, :, None]
-        at = up.events.detach()                                                 # [R, B, A, 2]
-        greatest = (at[:, :, None] >= rows.detach()[..., None, :] - tiny) & (at[:, :, None] > 0) & held[..., None]
-        ties = greatest.sum(-2).clamp_min(1)                                    # [R, B, K, 2]
-        d_activity, = torch.autograd.grad((through * ties * rows).sum(), (activity,))
-        theirs = (d_activity * activity)[..., 0].detach()
-        events, _ = Salience.first_pi(bank, PerceptField(up.keys, rows.detach(), at, up.spans, up.where,
-                                                         up.when, reading=up.reading, index=up.index),
-                                      row_grad, basic=basic)
-        mine = Salience.onto_bank(bank, up.index, up.reading >= 0, events)[..., 0]
-        compared['first Pi'] = float((mine - theirs.detach()).abs().max())
+        # Ported (eighth pass): the first Pi passed down by its transposes
+        # (``Salience.first_pi``) against the framework's backward is gone;
+        # the first Pi's way back is the row's read (``rows_read``).
         print('largest difference from the framework:', compared)
-        assert float(mine.abs().sum()) > 0
-        torch.testing.assert_close(mine, theirs.detach(), atol=1e-6, rtol=0)
     finally:
         model.End()
 
 
-def test_31c_printed_parts_present_by_degree_three_ways():
+def test_31c_printed_parts_present_by_degree_two_ways():
     """(c) Printed: a row of a part and two properties, at an occurrence
     whose part is present by degree and whose properties are held by
-    degree, passed down three ways: by the transposes (the share, the
-    gradient by the presence times the presence, through the Not), by the
-    plain gradient, and by the row's entries alone (the row's share,
-    whatever its value)."""
+    degree, passed down by the first Pi's way back (the row's read of the
+    occurrence, each lane) and by the plain gradient. Ported (eighth pass):
+    the transposes' share was the greater lane less the other, through the
+    Not; the way back gives each lane its own read."""
     for degrees in ((1., 1., 1.), (.9, .6, .3), (.5, .5, .5)):
         run, red, round_ = degrees
-        # One wire of parts (a), two of wholes: red cuts the first, round
-        # the second.
         bank = hand_bank([[1., 0., 0.]], [[1., 1 - red, 1 - round_]], [0], 1, presence=[run])
         activity = bank.activity.clone().requires_grad_()
         read = row_values(bank, activity)
-        row_grad = torch.ones(1, 1, 1, 2)
-        events, _ = Salience.first_pi(bank, row_values(bank), row_grad)
+        events = Salience.rows_read(bare_percepts(bank), bank)[0, 0, 0]
         for_, against = read.values[0, 0, 0]
         plain, = torch.autograd.grad(for_ - against, activity)
-        net = float(for_ - against)
         print(dict(degrees=degrees, row=[round(float(for_), 4), round(float(against), 4)],
-                   transposes=round(float(events[0, 0, 0]), 4),
-                   plain_gradient=round(float(plain[0, 0, 0]), 4), entries_alone=1.))
-        # The way up at the one occurrence: the presence times the least of
-        # the two properties' degrees, and against one less.
+                   way_back=[round(float(e), 4) for e in events], plain_gradient=round(float(plain[0, 0, 0]), 4)))
         assert float(for_) == pytest.approx(run * min(red, round_))
         assert float(against) == pytest.approx(run * (1 - min(red, round_)))
-        # The share is the greater lane less the other: the plain gradient
-        # times the presence, on the lane that is greater.
-        assert float(events[0, 0, 0]) == pytest.approx(abs(net))
-        assert float(events.min()) >= 0.
+        # The read is of the occurrence's whole percept, at full presence.
+        assert float(events[0]) == pytest.approx(min(red, round_))
+        assert float(events[1]) == pytest.approx(1 - min(red, round_))
 
 
 def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkeypatch):
@@ -778,7 +775,7 @@ def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkey
             count = len(text.split())
             concepts = model._attention_word_concepts[:, :count]
             request = SentenceLooks.word_request(model, concepts, torch.tensor([at]))
-            field, activity, _ = SentenceLooks.look(model, bank, request, bank.activity, perception)
+            field, activity = SentenceLooks.look(model, bank, request, bank.activity)
             ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, 0]
             own = (ids == concepts[0, at]).nonzero().flatten()
             signed = field.evidence[own[0], 0, :count]

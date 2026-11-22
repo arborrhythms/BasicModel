@@ -1,11 +1,11 @@
 """A sentence's looks: each a request carried down onto the sentence's
 percept bank, read up again, and what it returns handed to the grammar.
 
-A look (§21, rules 34, 37 and 39): an occurrence's activity is its share of
-the request capped at its own activity; a reading's where match is
-``exp(s - max s)`` of the share on the where wires of what it holds, applied
-once to the reading's values; the way up again on a table of the bank chosen
-by that activity gives the returned set. ``interpret`` takes the most active word, and a word
+A look (§21, rules 34, 37, 39 and 79): an occurrence's activity is its
+salience, the request carried down by the ways back, capped at its own
+activity; a reading's where match is ``exp(s - max s)`` of the salience of
+what it holds, applied once to the reading's values; the way up again on a table of the bank's most salient
+occurrences gives the returned set. ``interpret`` takes the most active word, and a word
 interpreted is lowered in the bank's own activity over its extent.
 """
 from dataclasses import fields
@@ -42,25 +42,31 @@ def where_match(bank, band_share, activity, readings):
     return torch.where(live, (share - torch.where(torch.isfinite(best), best, 0.)).exp(), 0.)
 
 
-def look(model, bank, request, own, perception):
+def look(model, bank, request, own):
     """One look of ``request`` ``[V, B, 2]`` over ``bank`` with the occurrences'
-    own activity ``own`` ``[B, occurrences, 2]``: the returned field, the look's
-    activity over the occurrences, and each reading's where match."""
+    own activity ``own`` ``[B, occurrences, 2]``: the returned field and the
+    look's activity over the occurrences. The request is carried down by the
+    ways back over every occurrence (:func:`Salience.salience`, rule 79); an
+    occurrence's activity is its salience bounded by its own activity, the
+    look's table is the most salient occurrences (``BasicPercepts.attended``),
+    and each reading's values are multiplied once by its where match on that
+    salience (:func:`where_match`).
+    A look takes no ``.where`` of its own: the ``.where`` is in the concepts."""
     from Salience import salience
     owner = model._concept_owner()
-    salient = salience(owner, bank, request, perception=perception)
+    salient = salience(owner, bank, request)
     # A share is never below zero; at exactly zero its derivative passes, so
     # that a request that starts at nothing is taught through the activity.
     # It bounds the occurrence's own activity, which takes a tie.
-    share = torch.where(salient.events >= 0, salient.events, 0.)
+    share = salient.events
     activity = torch.where(share < own, share, own)
     field = perceive(model, activity)
-    readings = field.evidence.shape[2]
-    match = where_match(bank, salient.band, activity, readings)
+    # Each reading's where match, on the salience of what it holds (the
+    # ways back give no share of the .where apart from the .what): kept,
+    # since without it the request is taught nothing (eighth pass, step 4).
+    match = where_match(bank, share.sum(-1), activity, field.evidence.shape[2])
     from dataclasses import replace
-    field = replace(field, evidence=field.evidence * match[None, :, :, None].to(field.evidence))
-    return field, activity, match
-
+    return replace(field, evidence=field.evidence * match[None, :, :, None].to(field.evidence)), activity
 
 def extent_of(bank, activity, readings):
     """The readings a look holds, ``[B, readings]``: those with an
@@ -242,7 +248,6 @@ class Looks:
         live = (state.spans[..., 1] > state.spans[..., 0]) & self.present[:, None]
         from LookForecast import LookForecast
         forecasts = LookForecast(owner, opened, state.spans) if opened is not None else None
-        perception = owner.basic_percepts.read_bank(bank) if bank is not None else None
         own = bank.activity.clone() if bank is not None else None
         field, rows = opened, self.present
         extent = live
@@ -267,7 +272,7 @@ class Looks:
                          else owner.similarity_codebook.getW().new_zeros(len(rows), int(model._stm_reducer().d_model)))
                 request = requested(model, query)
             prediction = None
-            look_field, activity, match = look(model, bank, request, own, perception)
+            look_field, activity = look(model, bank, request, own)
             extent = extent_of(bank, activity, W) & rows[:, None]
             if forecasts is not None:
                 prediction = forecasts.forecast(extent, rows)
@@ -284,7 +289,7 @@ class Looks:
                     percepts.append((forecasts.percept_stage_cost(perceived, extent, rows), rows.clone()))
             at_look(model, look_field, extent)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
-                                    surprise=surprise, match=match.detach()))
+                                    surprise=surprise))
             words = word_activity(look_field, concepts, state.known, extent, own, bank)
             unread = live & ~state.accepted & rows[:, None]
             words = torch.where(unread, words, -torch.inf)

@@ -144,7 +144,9 @@ def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatc
                 continue
             request = torch.zeros(int(owner.nVectors), 1, 2)
             request[inventory, 0, 0] = 1.
-            band = Salience.salience(owner, bank, request, perception=perception).band[0]
+            # Ported (eighth pass): the share on the where wires (``band``) is
+            # gone (rule 79); the salience, by the ways back, is read instead.
+            band = Salience.salience(owner, bank, request).events[0].sum(-1)
             at = int(band.argmax())
             print(dict(place=row, reading=k, value=round(float(value[k]), 4), band_at=at,
                        band_span=bank.span[0, at].tolist(), start=start[k].item(), share=round(float(band[at]), 4)))

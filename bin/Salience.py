@@ -1,39 +1,40 @@
-"""The salience map: a request over concepts carried down onto the occurrences
-of a sentence's percept bank, by the transposes of the matrices of the way up.
+"""The salience map: a request over concepts carried down onto every
+occurrence of a sentence's percept bank by the ways back of the layers of
+the way up (rule 79, §19.121).
 
-The way up is the first Pi (a basic percept's row read from the what, where
-and when columns of each attended percept of a look's table), the Not and the Sigma of order zero, and above it the symbols'
-Pi and the kinds' Sigma (:func:`ConceptSpread.structure`). The way down reads
-the same entries:
+The way up is the first Pi (a basic percept's row read from the ``.what``,
+``.where`` and ``.when`` of each attended percept of a look's table), the
+Not and the Sigma of order zero, and above it the symbols' Pi and the kinds'
+Sigma (:func:`ConceptSpread.structure`). The way down:
 
-* a Sigma is passed by its weights, before its squash, so a concept already
-  lit still returns its percepts; a Not entry passes the share to the other
-  lane, so a request may make salient what tells for a concept or what
-  tells against it;
-* the Not makes a row one value, for less against: a row's reading takes
-  a share only where it tells one way more than the other;
-* a Pi is passed by the derivative of its product at the values of the open
-  run (the local derivatives kept from the run that read the whole
-  sentence): a member's share is the row's share times the row's value;
-* a reading is the greatest over its attended percepts, and each attended
-  percept at that greatest takes the reading's whole share, on its what
-  columns (by its presence) and on its where wires (by the row's weights
-  there).
+* above order zero the kinds' Sigma has no way back yet, so a request there
+  reaches the order-zero concepts by the transposes of the structure above
+  them (:func:`_down`): a Sigma passed by its weights, a Not entry passing
+  the share to the other lane, a symbol by its weights (by the derivative of
+  its product where the open run's values are given);
+* the order-zero Sigma is passed by its way back (:meth:`Layers.SparseLDULayer.back`),
+  each lane of the concepts' request on its own: what each row of the first
+  Pi is asked, a lane's result below nothing asking the row's other lane;
+* the first Pi's way back is the percept a row keeps: a row's salience at an
+  occurrence is what it is asked times its own read of that occurrence,
+  taken back through the reading (the greatest of its occurrences) and the
+  Not (for less against)
+  (:func:`BasicPercepts.held_at` on the ``.what``,
+  :meth:`BasicPercepts.BasicPercepts.place_factor` on the ``.where`` and the
+  ``.when``), on each lane, over every occurrence of the sentence's field.
 
-What lands on an occurrence of the bank is its share, the gradient of the
-asked concepts by its activity times that activity. It is never below zero. Nothing
-here is a parameter of its own, and nothing is read on the host.
+What lands on an occurrence is the sum over the rows, never below zero.
+Nothing here is a parameter of its own, and nothing is read on the host.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import torch
 
 
 @dataclass(frozen=True)
 class SalienceMap:
-    events: torch.Tensor      # [B, occurrences, 2] each occurrence's share, on its two lanes
-    band: torch.Tensor        # [B, occurrences] the share on each occurrence's where wires
-    rows: torch.Tensor        # [R, B, readings, 2] the share at each basic percept's row
+    events: torch.Tensor      # [B, occurrences, 2] each occurrence's salience, on its two lanes
+    rows: torch.Tensor        # [R, B, 2] what each basic percept's row is asked
 
 
 def _down(graph, request, values, readings, depth=8, nodes=None):
@@ -108,117 +109,116 @@ class _Walk(torch.autograd.Function):
         return h, None, None, None, None, None
 
 
-def first_pi(bank, perception, row_grad, activity=None, basic=None):
-    """The first Pi passed down: each basic percept's row share ``row_grad``
-    ``[R, B, readings, 2]`` (a gradient on the row's two lanes, the rows in
-    the bank's order) onto the attended percepts of ``perception`` (the read
-    of a look's table).
-
-    At an attended percept a row's two lanes are the percept's presence
-    times what its what columns give (for, or against) times the row's
-    entries on the where and the when wires (:meth:`BasicPercepts.read_bank`);
-    a reading's is the greatest over its attended percepts. A reading's share
-    reaches the attended percepts at that greatest, each taking the whole of
-    it; there the share on the what columns is the gradient of the row's lane
-    by the percept's presence times that presence, which is the row's lane
-    itself, and the share on the where wires is that times the derivative
-    of the row's factor on the where by each wire's two lanes, times the
-    lanes (:meth:`BasicPercepts.BasicPercepts.where_share`). A conjunction passes nothing further down. Returns each
-    attended percept's share ``[B, A, 2]`` (on the for lane; nothing reads a
-    percept's against lane) and the share on its where wires ``[B, A]``."""
-    token = perception.reading
-    filled = token >= 0
-    rows_at, rows = perception.events, perception.values         # [R, B, A, 2], [R, B, K, 2]
-    R, B, K = rows.shape[:3]
-    A = token.shape[1]
-    events = rows_at.new_zeros(B, A, 2)
-    band = rows_at.new_zeros(B, A)
-    if not R:
-        return events, band
-    slot = torch.where(filled, token, K)
-    tiny = 1e-12
-    conjunctions = getattr(basic, 'conjunctions', {}) if basic is not None else {}
-    reads = torch.tensor([row not in conjunctions for row in bank.rows], device=rows.device)[:, None, None]
-    if basic is not None and perception.index is not None:
-        index = perception.index.clamp_min(0)
-        table = bank.table.gather(1, index[..., None, None].expand(-1, -1, *bank.table.shape[2:]))
-        wires = basic.where_share(table.detach(), bank.rows).detach().to(rows)
-    else:
-        wires = rows.new_zeros(R, 1, 1)
-
-    def at_reading(x):
-        """``[R, B, K]`` read at each attended percept's reading, ``[R, B, A]``."""
-        return torch.nn.functional.pad(x, (0, 1)).gather(2, slot[None].expand(x.shape[0], -1, -1))
-
-    def greatest(v_at, v):
-        """Where an attended percept holds its reading's greatest ``v``."""
-        return ((v_at >= at_reading(v) - tiny) & (v_at > 0) & filled).to(v_at)
-
-    # Never below zero; at exactly zero the derivative passes (as in
-    # ``_down``), so that the share on the where wires teaches a request
-    # that starts at nothing.
-    d_for = torch.where(row_grad[..., 0] >= 0, row_grad[..., 0], 0.)
-    d_against = torch.where(row_grad[..., 1] >= 0, row_grad[..., 1], 0.)
-    value_for, value_against = rows[..., 0], rows[..., 1]
-    # Through the Not: the share a row's reading takes is what the concept
-    # reads there, for less against, and nothing where the two are equal.
-    # Each lane's share is scaled to it.
-    # The Not's two lanes are those of a signed value: at a row read alike
-    # both ways the derivative reaches both (as ``signed_lanes``).
-    from Layers import signed_lanes
-    net = signed_lanes(value_for - value_against)
-    d_for = torch.where(value_for > tiny, d_for * net[..., 0] / value_for.clamp_min(tiny), 0.)
-    d_against = torch.where(value_against > tiny, d_against * net[..., 1] / value_against.clamp_min(tiny), 0.)
-    for_at, against_at = rows_at[..., 0], rows_at[..., 1]
-    whole_for = greatest(for_at, value_for) * reads
-    whole_against = greatest(against_at, value_against) * reads
-    dF, dA = at_reading(d_for), at_reading(d_against)
-    events[..., 0] = (whole_for * dF * for_at + whole_against * dA * against_at).sum(0)
-    band = (whole_for * dF * for_at * wires).sum(0)
-    return events, band
-
-
-def onto_bank(bank, index, filled, values):
-    """Shares at a look's attended percepts ``[B, A, ...]`` onto the bank's
-    occurrences ``[B, occurrences, ...]``."""
-    values = values * filled.reshape(*filled.shape, *([1] * (values.ndim - 2))).to(values)
-    out = values.new_zeros(bank.token.shape[0], bank.token.shape[1], *values.shape[2:])
-    return out.scatter_add(1, index.reshape(*index.shape, *([1] * (values.ndim - 2))).expand_as(values), values)
-
-
-def salience(owner, bank, request, *, perception=None, field=None):
-    """The salience map of ``request`` ``[V, B, 2]`` (each concept's two
-    lanes: asked for, asked against) over ``bank`` at the open run.
-    ``perception`` is the open run's read of the bank and ``field`` its
-    concepts' values ``[V, B, readings, 2]`` (read where not given)."""
+def concepts_asked(owner, request, field=None):
+    """Each concept's request with what reaches it from above order zero,
+    ``[V, B, 2]``: :func:`_down` on the structure without the order-zero
+    Sigma's and the first Pi's edges. ``field`` ``[V, B, readings, 2]``, the
+    open run's values, passes a symbol by the derivative of its product
+    there, read at the reading where it is greatest; where it is not given a
+    symbol is passed by its weights."""
     import ConceptSpread
-    basic = owner.basic_percepts
-    perception = basic.read_bank(bank) if perception is None else perception
-    readings = perception.values.shape[2]
-    device = perception.values.device
+    device = request.device
     graph = ConceptSpread.structure(owner, device)
-    rows = torch.tensor(bank.rows, dtype=torch.long, device=device)
-    # The node axis holds the nodes on an edge above the first Pi's members
-    # and the bank's rows: a concept on no edge passes nothing down to a
-    # basic percept.
-    above = graph.child < graph.part_start
-    nodes = torch.unique(torch.cat((graph.parent[above], graph.child[above], graph.percept_start + rows)))
-    values = request.new_zeros(len(nodes), request.shape[1], readings, 2)
-    width = 0 if field is None else min(len(field), graph.concepts)
-    if width:
+    above = graph.child < graph.percept_start
+    graph = replace(graph, parent=graph.parent[above], child=graph.child[above],
+                    weight=graph.weight[above], negated=graph.negated[above])
+    V = owner.nVectors
+    if not len(graph.parent):
+        return torch.where(request >= 0, request, 0.)[:V]
+    concepts = torch.arange(V, device=device)
+    nodes = torch.unique(torch.cat((graph.parent, graph.child, concepts)))
+    readings = 1 if field is None else field.shape[2]
+    values = request.new_ones(len(nodes), request.shape[1], readings, 2)
+    if field is not None:
+        width = min(len(field), graph.concepts)
         values = torch.where((nodes < width)[:, None, None, None],
                              field.detach().to(values).index_select(0, nodes.clamp_max(width - 1)), values)
-    # The symbols' values at the open run: the product of what they hold.
-    held = (graph.parent >= graph.concepts) & (graph.parent < graph.percept_start)
-    parent, child = torch.searchsorted(nodes, graph.parent[held]), torch.searchsorted(nodes, graph.child[held])
-    logs = torch.log(values.index_select(0, child).clamp_min(1e-30))
-    product = torch.exp(torch.zeros_like(values).index_add(0, parent, logs))
-    is_symbol = (nodes >= graph.concepts) & (nodes < graph.percept_start)
-    values = torch.where(is_symbol[:, None, None, None], product, values)
+        held = (graph.parent >= graph.concepts) & (graph.parent < graph.percept_start)
+        parent = torch.searchsorted(nodes, graph.parent[held])
+        child = torch.searchsorted(nodes, graph.child[held])
+        logs = torch.log(values.index_select(0, child).clamp_min(1e-30))
+        product = torch.exp(torch.zeros_like(values).index_add(0, parent, logs))
+        is_symbol = (nodes >= graph.concepts) & (nodes < graph.percept_start)
+        values = torch.where(is_symbol[:, None, None, None], product, values)
     grad = _down(graph, request.to(values), values, readings, 2 * (len(owner._order_caps()) + 1), nodes=nodes)
-    row_grad = (grad.index_select(0, torch.searchsorted(nodes, graph.percept_start + rows))
-                if len(bank.rows) else grad[:0])
-    events, band = first_pi(bank, perception, row_grad, basic=basic)
-    filled = perception.reading >= 0
-    return SalienceMap(onto_bank(bank, perception.index, filled, events),
-                       onto_bank(bank, perception.index, filled, band), row_grad)
+    return grad.index_select(0, torch.searchsorted(nodes, concepts)).amax(2)
+
+
+def rows_asked(sigma, rows, concepts):
+    """What each of ``rows`` (basic percepts) is asked, ``[R, B, 2]``, by the
+    order-zero Sigma's way back of each lane of the concepts' request
+    ``concepts`` ``[V, B, 2]``: a lane's result below nothing asks the row's
+    other lane (the Not's). A row no concept reads is asked nothing."""
+    S = sigma.slots
+    R, B = len(rows), concepts.shape[1]
+    if not S or not R:
+        return concepts.new_zeros(R, B, 2)
+    n = min(len(concepts), sigma.nOutput)
+    at = sigma.output_slot[:n].to(concepts.device)
+    x = concepts.new_zeros(S + 1, B, 2).index_add(0, torch.where(at >= 0, at, S), concepts[:n])
+    back = sigma.back(x[:S])
+    back = torch.cat((back, back.new_zeros(1, B, 2)))
+    rows = torch.as_tensor(rows, dtype=torch.long, device=concepts.device)
+    slot = sigma.input_slot.to(concepts.device).index_select(0, rows.clamp_max(sigma.nInput - 1))
+    asked = back.index_select(0, torch.where((rows < sigma.nInput) & (slot >= 0), slot, S))
+    from Layers import signed_lanes
+    f, a = signed_lanes(asked[..., 0]), signed_lanes(asked[..., 1])
+    return torch.stack((f[..., 0] + a[..., 1], f[..., 1] + a[..., 0]), -1)
+
+
+def rows_read(basic, bank):
+    """Each row's read of every occurrence of the bank, on its two lanes,
+    ``[R, B, occurrences, 2]``: the percept the row keeps matched against
+    the occurrence by shared size (the first Pi's own read: ``held_at`` on
+    the ``.what``, ``place_factor`` on the ``.where`` and the ``.when``). A
+    conjunction is read through its members' rows and reads nothing here."""
+    from BasicPercepts import held_at
+    if not bank.rows:
+        return bank.table.new_zeros(0, *bank.token.shape, 2)
+    part, whole, added = held_at(bank, bank.table)
+    at = basic.place_factor(bank.table, bank.rows)
+    outside = basic.outside(bank.table, bank.rows, bank.width)
+    # As the way up reads it (:meth:`BasicPercepts.BasicPercepts.read_bank`),
+    # each occurrence wholly present: only an occurrence of its own tells
+    # against what it holds by what it lacks.
+    told = at if bank.holder is None else at * bank.holder.to(at)[None]
+    unheld = torch.maximum((1 - whole) * told, outside * at)
+    conjunctions = getattr(basic, 'conjunctions', {})
+    keep = torch.tensor([row not in conjunctions for row in bank.rows], device=at.device)
+    keep = keep[:, None, None].to(at)
+    return torch.stack((part * whole * at * keep,
+                        part * torch.maximum(unheld, added * told) * keep), -1)
+
+
+def through_the_not(read, token):
+    """A row's read of each occurrence ``[R, B, occurrences, 2]`` taken back
+    through the way up's reading and its Not: a reading's lane is the
+    greatest of its occurrences' (the way up's), the Not makes the reading one
+    value, for less against, and that value's greater lane goes back to the
+    occurrences that hold its greatest. So a row read for at a run inside a
+    longer word and against at the word, in one reading, lights neither. An
+    occurrence of no reading is its own."""
+    from Layers import signed_lanes
+    R, B, O, _ = read.shape
+    K = O + 1
+    slot = torch.where(token >= 0, token, O)[None, :, :, None].expand(R, B, O, 2)
+    detached = read.detach()
+    greatest = detached.new_zeros(R, B, K, 2).scatter_reduce(2, slot, detached, 'amax')
+    at = greatest.gather(2, slot)                                             # [R, B, O, 2]
+    net = signed_lanes(at[..., 0] - at[..., 1])                               # the reading's one value
+    held = ((detached >= at) & (detached > 0)).to(read)
+    own = (token < 0)[None, :, :, None]
+    return torch.where(own, signed_lanes(read[..., 0] - read[..., 1]), net * held)
+
+
+def salience(owner, bank, request, *, field=None):
+    """The salience map of ``request`` ``[V, B, 2]`` (each concept's two
+    lanes: asked for, asked against) over every occurrence of ``bank``: each
+    row's ask (:func:`rows_asked`, after :func:`concepts_asked`) times its
+    read of the occurrence (:func:`rows_read`) taken back through the
+    reading and the Not (:func:`through_the_not`), summed over the rows."""
+    concepts = concepts_asked(owner, request, field)
+    asked = rows_asked(owner.order_zero, bank.rows, concepts)
+    read = through_the_not(rows_read(owner.basic_percepts, bank).to(asked), bank.token)
+    events = (asked[:, :, None, :] * read).sum(0)
+    return SalienceMap(torch.where(events >= 0, events, 0.), asked)
