@@ -9936,6 +9936,17 @@ The age can be a parameter of the model (and XML), read/written by the assessmen
 - *The chart:* "This mandates a chart called ModelAge somewhere in the doc/*.md that says what tasks have to be learned in order to qualify a certain mental age." (Alec, the same day.) It is `doc/ModelAge.md`, and the list above is its first form; the chart is kept there from now on, and the assessment's list is made to agree with it.
 - *Mine, for the build:* a key `age` with its default (0) in `data/model.xml`; the number kept with the model's saved state, so that it goes with the weights it was measured on; `Assessment.py` the only writer. A model whose weights have changed since its age was written is assessed again before a test is qualified on it.
 
+### 19.131 Alec: the chart is checked and widened; counting on request runs a loop in LTM (2026-11-22)
+
+Alec: "Yes, please check them, and add detail to the chart even if all of it does not currently correspond to particular tests, since it might inform subgoals that will help us to break down a subsequent task.
+
+One task besides reading is counting with no change in the input stimulus: "Please count from one to 15" should run a multi-step behavioral loop in LTM (since LTM is capable of storing outputs directly as one of its episodic memories)."
+
+- *The chart is checked* (Claude, by search, 2026-11-22) and rewritten in `doc/ModelAge.md` with a basis for each row (sourced, or estimate) and rows that have no test yet. Several of Claude's first ages were too young: a thing named in a sentence with "is" moves from 2.00 to 2.75 (the copula is the seventh of Brown's morphemes, 27 to 39 months); a determiner from 2.75 to 3.00 (articles, 28 to 46 months); twenty words from 1.50 to 1.70; a sentence of five or six words to 4.00; four unrelated words said back in order is 5.00 (a forward span of about four items at 5 years), which is the curriculum's `reading_four`. Ages for the number-knower levels and for adverbs and comparatives were not found and stay estimates.
+- *Decided:* a third task, counting on request. The input ("Please count from one to 15") does not change while the count goes on, so no look can say what comes next. Each counting word said is stored in LTM as an episode (LTM stores an output directly), and the next is recalled from it: a loop of several steps that runs in LTM.
+- *Mine, how the loop would run on what is decided:* the LTM query is the match of the top of STM and the top result is pushed (§19.86). With the word last said on top, the result is the episode that followed it when the count was taught, and pushing it says the next word. The pairs of the count share sides ("1" then "2", "2" then "3"), which is where MTM makes a higher symbol (§19.87). The loop ends at the word named in the request, or where LTM returns nothing (rule 48). *To be checked in the source before it is specified:* that an output is written to LTM as an episode with its predecessor, and that the query can be made from an output and not only from an input.
+- It is in the chart at 5.00 (an estimate). It is not in the eleventh pass.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
