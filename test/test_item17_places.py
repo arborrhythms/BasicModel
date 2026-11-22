@@ -273,8 +273,11 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             # concepts: their norms and the greatest difference between two.
             codes = model._concept_owner().similarity_codebook.W.detach()[sorted(concept.values())]
             spread = (codes[:, None] - codes[None]).abs().amax(-1)
+            band = codes[:, basic.width:basic.width + 8]
             place_codes = dict(norms=sorted(set(round(float(v), 4) for v in codes.norm(dim=-1))),
-                               greatest_difference=round(float(spread.max()), 4) if len(codes) else None)
+                               greatest_difference=round(float(spread.max()), 4) if len(codes) else None,
+                               greatest_difference_of_where_and_when=round(float(
+                                   (band[:, None] - band[None]).abs().amax(-1).max()), 4) if len(codes) else None)
             words = [r for r in range(len(learned)) if float(learned[r]) != 0. and r not in concept.values()]
             records.append(dict(start=start, places=len(basic.place_rows), place_codes=place_codes,
                                 first_sentence=asked,
@@ -286,4 +289,7 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
         finally:
             model.End()
             monkeypatch.undo()
-    print(dict(of=dict(two=len(minimal()[1]), lesson=len(LESSON), held=len(HELD_OUT)), runs=records))
+    # The start seeds only weights that this measure does not read, so its
+    # runs give one sample, not several.
+    print(dict(of=dict(two=len(minimal()[1]), lesson=len(LESSON), held=len(HELD_OUT)),
+               runs=records, samples='one: the starts seed nothing the measure reads'))
