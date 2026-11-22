@@ -2647,3 +2647,26 @@ What is to be tried, in tests before anything is built (sigma-pi plan,
   a new word met in the place of a noun gaining an entry of the kind noun
   with no statement; and the rows and entries the implicit way makes laid
   beside those MTM makes.
+
+## A self-organizing map under the percept graph, so that attention is drawn to the centre of salience (Alec, 2026-11-21; future work)
+
+Today the word taken from a look is exactly the most active, and
+equals are told apart by a draw. Alec: "for attention to be drawn
+spatially toward the center of salience, we want the percept graph to
+be superimposed on a SOM so that sensitivity can shape the perceptual
+map. That can be marked as future work, but it is a feature of human
+perception (we talked about sersorimotor sensitivity previously)."
+
+What it would be. The percepts of a sentence lie on a map with
+neighbours, as the units of a self-organizing map do. Salience then
+has a centre on that map, and a look is drawn toward the centre and
+not only to the single most salient percept. The same map is what lets
+sensitivity shape perception: a region that is attended often, or
+carries much error, comes to take more of the map, as the entry "A
+where that gives more of its range to what matters" describes for the
+code of a place.
+
+To specify: the neighbourhood over the percept graph (by `.where`, by
+the part map, or both); how a centre of salience is read from it and
+how it moves a look; and how this lies with the draw among equals
+(sigma-pi plan, §19.121).

@@ -9651,6 +9651,66 @@ Rechecked (Claude, the same day):
 
 Built in the fifth pass of round 6d (§23.6.10). Rule 76 is amended.
 
+### 19.121 Alec: salience selects the percepts, in `.what` and in `.where`; the request goes down by the inverses; reconstruction de-muxes `.what` and `.where` (2026-11-21)
+
+To Claude's question whether a concept's request should be bounded as a part is held, by shared size, Alec: "Yes, the selection of the bottom-up percept is weighted by salience that projects top-down from concepts onto the PI that does the selection. That selection occurs in both .what and .where subspaces. Please verify." And: "So the most salient are those that are returned."
+
+Verified at `5e228de21a` (Claude; probe `scratch-1.7/probe_attended_5e228de21a.py`):
+
+- *Holds.* The request goes down onto the first Pi's rows and through the Pi onto each occurrence, as a share on its `.what` and a share on its `.where` wires (`Salience.salience`, `first_pi`); the share is the occurrence's presence in the Pi's read (`SentenceLooks.look`); the word taken is exactly the most active (`Attention.draw_among`).
+- *Does not hold.*
+  - A sentence of more than `attendedPercepts` (256) occurrences fills the table by length of extent first (`BasicPercepts.attended`); the share only orders the one length that does not fit whole. With 1,861 occurrences and the request on twenty two-letter words, none of the twenty was in the table, in five draws. Production sentences have 1,142 to 1,539 occurrences.
+  - The salience is carried down only onto the open run's table of 256, itself taken by length and a draw.
+  - A second selection on the `.where` is applied after the read, to each reading's returned evidence, through exp(share - greatest) (`SentenceLooks.where_match`).
+  - Presence is the lesser of the share and the occurrence's own activity, so a request in the hundreds makes every asked percept wholly present.
+  The order by length was Claude's (rule 76, *mine*).
+
+His replies, each whole:
+
+1. Of "the request goes down from the concepts by the transposes": "Why not on the inverses? but yes, carry it down over the sentence full of percept, and it will determine the attended area." Then, asked whether the inverses replace the transposes: "Please try inverses. my belief is that the transposes were just approximations, but we have LDUs". *Decided:* the request is carried down by the inverses of the layers of the way up, over the whole field of the sentence, and what it lights is the attended area. Rule 36 (§19.60, §19.64: a gradient from the open run, each Sigma by its weights) is tried against it and gives way if the inverses read as well.
+   - *What the source has for inverses today* (Claude): `PiLayer3` (square) is a contractive LDU with an exact way back. The layers on the model's way up are not that one: the first Pi and the symbols' Pi are `SparsePiLayer3`, which has no `reverse`; the order-zero Sigma is `SparseSigmaLayer3`, whose `reverse` is least squares through its entries, exact where each row is read by enough concepts and refused otherwise; `SigmaPiLayer` has none. So "we have LDUs" holds for the square Pi and not yet for the sparse layers the model reads by.
+   - *Mine:* at the first Pi the inverse of a row is the percept the row keeps: its code on the `.what` (parts half and wholes half) and its entries on the `.where` and the `.when`. Matched against an occurrence of the field by shared size, that is the row's own read of that occurrence (`held_at`, `place_factor`). So a row's salience at an occurrence is what the Sigma's inverse asks of the row, times the row's read of the occurrence, in 0 to 1.
+2. Of "the word taken from a look is exactly the most active": "In fact, for attention to be drawn spatially toward the center of salience, we want the percept graph to be superimposed on a SOM so that sensitivity can shape the perceptual map. That can be marked as future work, but it is a feature of human perception (we talked about sersorimotor sensitivity previously)." *Future work* (`doc/FutureWork.md`).
+3. Of "a look is never given a where": ".where (please use a dot if talking about the filed name) is muxed into the concept. The look provides a query as a set of concepts: some of those concepts will come to represent the attended ware in virtue of that subspace being relevant to the loss function." *Decided:* a look takes no `.where` of its own. The `.where` is in the concepts of the query, and a row of the first Pi reads `.what` and `.where` of the muxed percept together, so there is one share. Claude's "the product of the two shares" is withdrawn, and so is the second selection of `where_match`, unless the trial shows the look needs it.
+4. "So please make sure that both .where and .what are de-muxed from the recreated concept (i.e. the inverse, when doing reconstruction, will be seperated back into two streams which, when matched against their relevant codebooks (or parameter tensor), give us the percepts that can be pasted into the output buffer." And: "That loss function gets intrusive, but its ability to train both where and when gradients seems essential (otherwise the values would not really have an incorrect location)". *Decided, and not built* (Claude, at `5e228de21a`): `FieldReverse.reverse` shares a concept's evidence over the rows it was started from and writes each row's stored spelling (an index, no match against the percept codebook); the bytes go at the reading's bracket kept from the lookup (`field.where`); the `.where` code of the output is stamped from the buffer's position; a place's row is skipped. So a location is copied and can never be wrong, and reconstruction teaches `.where` and `.when` nothing. To be built: the inverse gives the recreated percept; its `.what`, `.where` and `.when` are separated; the `.what` is matched against the percept codebook, the `.where` against the `.where` parameter (`WhereRegistry.code`), the `.when` against its encoding; the matched percept is pasted at the matched place; the cost can find a percept at a wrong place or time, and its gradient reaches `.where` and `.when`.
+   - *To be measured:* the `.where` code has two long periods, the shorter 256 places, so neighbouring places differ by about .01 on a wire; how exact a recreated `.where` must be to match its own place.
+
+Rules 78 and 79 of §21 state this section and the next.
+
+### 19.122 Alec: the sparse layers are LDUs, so that the Sigma and the Pi invert (2026-11-21)
+
+Alec: "inverses: We want for the sigma and pi to have pseudoinverses computed by the LDU when full. We have that, and its useful for reconstruction. I am hoping you can implement the necessary architecture to add sparsity to the LDU matrices, if not inefficient, since then we will have just adjustible LDUs for an invertible matrix."
+
+*What the source has* (Claude). `InvertibleLinearLayer` is W = L D U in the row-vector form `x @ L @ D @ U`: L unit lower `[nInput, nInput]`, U unit upper `[nOutput, nOutput]`, D a diagonal of the rank, padded with nothing where the matrix is not square. Its way back is exact, by two triangular solves, and where the matrix is not square it is the pseudoinverse that the padding gives. `PiLayer2` is that layer in the log domain under the contractive law (diagonal at one or more, the rest at zero or more, bias at zero or less). Every factor is a full matrix. The sparse layers of the way up are not LDUs: `SparseSigmaLayer3` goes back by least squares through its entries, and `SparsePiLayer3` has no way back.
+
+*The architecture* (Claude; tried in scratch, `scratch-1.7/sparse_ldu_probe.py`; to be tried in tests before it is built):
+
+- *A sparse LDU.* The strict triangles of L and U are stored as entries, an index pair and a learned value each, in storage allocated at construction that the layer grows into, as the sparse layers have today. D is a full vector. The form, the padding and the pseudoinverse are `InvertibleLinearLayer`'s.
+- *The way up* is three scatters (`index_select` and `index_add`), with no full matrix.
+- *The way back.* A unit triangle is I + N with N strict, and (I + N)^-1 = I - N + N^2 - ..., which ends after as many terms as the longest chain of entries in N. So the solve is `x <- y - x @ N`, started at `x = y`, that many times: scatters again, no triangular solve, and exact.
+- *Adjustable.* An entry added to or removed from either triangle leaves the matrix invertible, because a unit triangle always inverts and D is kept from nothing. Nothing has to be factored again.
+- *The Sigma on it:* the sparse LDU, then the chart; its way back is the chart's inverse, then the solve. An entry is signed, and one below nothing is a Not entry, as now.
+- *The Pi on it:* the sparse LDU in the log domain under `PiLayer2`'s law; its way back is exact.
+- *Where an entry goes.* The indices are ordered by level: a concept that reads only its own row is of level nothing, and a concept comes after every row it reads. Then "concept i reads row j" is an entry of U, from the concept that row j brought to concept i; L is empty; and W = D U has exactly the entries asked for, each scaled by its row's own diagonal. An entry that goes against the order (two concepts that read each other's rows) goes in L, and then W has products of entries in it, as a full LDU has.
+
+*Measured* (Claude, 2026-11-21, on the CPU while a list ran, so the seconds are rough):
+
+- Exact: the way back returns the input to 1e-15 in 64 bits, and the way up equals the full matrix's.
+- The way back costs the way up times the longest chain. On drawn entries the chains are long:
+
+| Entries | n | Longest chain (L, U) | Way up, 8 vectors | Way back |
+| --- | ---: | ---: | ---: | ---: |
+| 2 a row, anywhere | 1,024 | 24, 26 | .1 ms | 2.9 ms (full solve 1.4 ms) |
+| 2 a row, anywhere | 131,072 | 47, 46 | 12 ms | .59 s |
+| 8 a row, anywhere | 131,072 | 174, 172 | 43 ms | 7.5 s |
+| 2 a row, near the diagonal | 131,072 | 1,145, 1,297 | 9 ms | 11.5 s |
+
+  So on entries placed without an order it is not efficient.
+- On the model's own entries it is. After the lesson's sixteen sentences (`scratch-1.7/lesson_entries_probe.py`, at `a0bcfc47e1`) the order-zero Sigma has 15 entries, every one on its diagonal (each concept reads the row that brought it); the structure above it has 168 edges, and its longest chain, from a concept down to a member of the first Pi, is 6.
+- *So:* efficient, if the chain is kept short, and the order by level keeps it at the number of levels. The layer records its longest chain at each insertion, the solve runs that many times, and the pass returns the chain on the lesson and on the dictionary.
+
+*Not an LDU:* the first Pi reads a look's table, not a vector of rows; its way back is the percept its row keeps (§19.121, 1). *To be said in the return:* the order-zero Sigma is 4,096 rows by 4,108 concepts in the lesson's configuration, so it is not square, and its D is padded.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -11226,6 +11286,36 @@ chooses from. The old classes are not edited.
     way back runs once for each look that was taken, gives that
     look's table back, and writes each row at the where it gives;
     the final cost is on the whole output so written.
+
+78. *The sparse layers are LDUs* (Alec, §19.122: "add sparsity to the
+    LDU matrices ... then we will have just adjustible LDUs for an
+    invertible matrix"). A sparse Sigma and a sparse Pi are W = L D U
+    with the strict triangles of L and U stored as entries and D a
+    full vector. The way up is scatters. The way back is exact: each
+    unit triangle is undone by `x <- y - x @ N`, as many times as
+    the longest chain of its entries. An entry added or removed
+    leaves the matrix invertible. Where the matrix is not square the
+    way back is the pseudoinverse that the padded D gives. *Mine:*
+    the indices are ordered by level, so that an entry is in U and
+    the chain is the number of levels; the layer records its longest
+    chain at each insertion.
+
+79. *The request goes down by the inverses, salience selects the
+    table, and the way back de-muxes* (Alec, §19.121: "Please try
+    inverses"; "the most salient are those that are returned";
+    "both .where and .what are de-muxed from the recreated concept").
+    On trial against rule 36, which gives way if the inverses read
+    as well. The request is a mask in 0 to 1 (a concept is asked for
+    to the degree its code is held by the query, by shared size). It
+    is carried down by the layers' ways back over every occurrence
+    of the sentence's field; a look takes no `.where` of its own,
+    since the `.where` is in the concepts. A look's table is the
+    most salient occurrences, with a draw among equals, and no order
+    by extent. On the way back of reconstruction the recreated
+    percept is separated into its `.what`, its `.where` and its
+    `.when`; each is matched against its codebook or parameter, and
+    the matched percept is pasted at the matched place, so that the
+    cost can find a percept at a wrong place or time.
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -13670,6 +13760,110 @@ Otherwise leave the branch and return to main.
 
 Not in this pass: reading in order (the next pass); the trial of
 the reconstruction once for each look (§19.119, 2).
+~~~
+
+*The seventh pass* (added 2026-11-21, after §19.121, §19.122 and §23.6.11):
+
+~~~
+Round 6d of item 1.7, seventh pass: the sparse LDU, and the trial
+of the request carried down by the inverses. Read §19.121 and
+§19.122 (Alec's words and Claude's measures), rules 78 and 79 of
+§21, and §23.6.11's review. Work on a branch item17-r6d7 cut from
+main in this checkout. Move main forward to it by a fast-forward
+at the end if both gates and the files of step 6 pass but for
+test_81 and test_prepared_answer_boundary[True]; then remove the
+branch and leave the checkout on main. Otherwise leave the branch
+and return to main. Claude's scratch probes are in
+/Users/arogers/.claude/projects/-Users-arogers-github-WikiOracle/
+scratch-1.7/ (sparse_ldu_probe.py, lesson_entries_probe.py,
+probe_attended_5e228de21a.py); read them, they are not source.
+
+1. The sparse LDU, in tests first (test/ only, a helper and its
+   tests): W = L D U in InvertibleLinearLayer's row-vector form
+   and with its padding, the strict triangles of L and U as
+   entries, D a full vector. Show: (a) the way up and the way back
+   equal InvertibleLinearLayer's on the same entries, square and
+   not square; (b) the way back by x <- y - x @ N, as many times as
+   the longest chain, returns the input exactly; (c) an entry
+   added or removed leaves it so, with nothing factored again;
+   (d) on the lesson's order-zero Sigma after its sixteen sentences
+   it gives SparseSigmaLayer3's values on the way up, and on the
+   way back the rows' values exactly where SparseSigmaLayer3.reverse
+   is least squares or refuses; (e) the longest chain and the
+   seconds of a way back, on the lesson and on the dictionary's
+   forms admitted as certificate 46 admits them.
+
+2. Build it (bin/Layers.py): one sparse LDU layer, its storage
+   allocated at construction and grown into, its longest chain
+   recorded at each insertion (on the host, where entries are
+   added; nothing on the host in a way up or a way back). The
+   Sigma on it (the chart after it; a signed entry, a Not entry
+   below nothing, as SparseSigmaLayer3 reads its options now) and
+   the Pi on it (the log domain, PiLayer2's law). The indices are
+   ordered by level (§19.122): say how a level is kept when an
+   entry is added, and what a cycle does. Then the order-zero
+   Sigma is that layer, and SparseSigmaLayer3 is removed, not kept
+   beside it; every reader of order_zero (entries, find, add,
+   rows_reading, the Not, order_zero_both, the salience map,
+   cs_percept_attribution) reads the new layer. Both gates pass at
+   their bars, counts and rates as they are. If the order-zero
+   Sigma cannot be moved without changing what a test asserts,
+   stop at the tests of step 1, return what stood in the way, and
+   go on to step 4. The symbols' Pi and the kinds' Sigma are moved
+   only if the order-zero Sigma went cleanly and you have room;
+   say which were moved.
+
+3. The first Pi's way back (rule 79; §19.121, 1): a function that
+   gives, for a row, the percept it keeps: its .what code on two
+   lanes (bank_codes) and its .where and .when entries
+   (PlaceEntries). No new storage. It is what steps 4 and the next
+   pass's reconstruction read.
+
+4. The trial of the carry-down, in tests only, no source change:
+   the request carried down (i) by the transposes as built
+   (Salience.salience) and (ii) by the ways back: the Sigma's
+   inverse gives what each row is asked, and a row's salience at
+   an occurrence is that times the row's read of the occurrence
+   (the first Pi's own read: held_at and place_factor), over every
+   occurrence of the sentence's field, not the open run's table.
+   Each with the request as attend gives it now and with the
+   request bounded (a concept asked for to the degree its code is
+   held by the query, by shared size, on each lane;
+   ConceptualMatch.match if it fits, and say if it does not). On:
+   (a) the 304 requests of way_back_check.py (§19.52, §19.60):
+   asked words present and returned, and a word present and
+   missed; (b) a sentence of more than 256 occurrences with the
+   request on short words (Claude's probe): how many of the asked
+   are among the 256 most salient; (c) the first two looks of
+   "This is Felix." after the lesson: each place's request, each
+   word's salience, the word taken, with and without
+   SentenceLooks.where_match. Return the four columns side by
+   side. Build nothing from it in this pass.
+
+5. Left failing, not skipped, not ported: test_81 and
+   test_prepared_answer_boundary[True].
+
+6. Tests: both gates before any edit and at the end; the files
+   this pass touches; test_definition_integrity.py,
+   test_grounded_xor.py, test_concept_memberships.py,
+   test_refine_raise.py, test_serial_concepts.py,
+   test_concept_evidence.py, test_field_binding.py; the files of
+   the looks, the places (not the measure), the table, the symbols
+   and the code; the lesson's script with --runs 2. Claude runs
+   the list.
+
+7. Return as scratch-1.7/r6d_return_7.md, what fails or is
+   unfinished first; step 1's five results with their figures;
+   step 2's layer, how a level is kept, what was moved and what
+   was removed; step 3; step 4's table; commits; and whether main
+   was moved forward.
+
+Not in this pass: building the carry-down, the table by salience
+and the bounded request (the next pass, on step 4's result);
+reconstruction de-muxed (the pass after); the production
+configuration (its own pass: the counter of §23.6.11, which the
+lesson's configuration reproduces in minutes when it is not run
+eager).
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
@@ -23100,3 +23294,212 @@ Spot tests by the pass; both gates pass on the branch (`item17-r6d2-step4-wip`, 
   - In the trial where reading in order was learned (§23.6.4, 16 of 16 in two starts of three) each place's concept had a request of its own, a row of a learned matrix on the context (`PlaceReader`: `A @ ctx`). In the model a concept is asked through its code, and the places' codes are nearly one direction: the greatest difference between two is 1.0, .17 of it on the where and when, against norms up to 6.3. What the codes share, the query raises on all of them together.
   *The pass after the sixth:* the trial and the model compared quantity by quantity at the first two looks of one sentence, and the request bounded in a trial in tests, before anything is built. *Claude's first choice for the bound, to be tried and not yet built:* a concept is asked for to the degree its code is held by the query, by shared size, which is the one match of the model (1.8 §70.11) and is in 0 to 1 with no constant.
 - *`main`.* The pass left `main` where it was for `test_definition_integrity`, as its text said. That condition was Claude's and was wrong: `main` has failed that test since the first pass (§23.6.7's list). It does not move now for another reason: the four tests above are new failures against `main`. It moves after steps 1 and 2 of the sixth pass.
+
+### 23.6.11 Round 6d, sixth pass: "both" read across the rows the Sigma reads; four tests of the amended rule 43; what a look keeps halved; what stops a training step is a counter changed inside the compiled walk; main moved forward (Claude on Opus, standing in for Codex, 2026-11-21)
+
+The branch `item17-r6d2-step4-wip` was rebased onto `main` (1bf9875ba0, doc commits only) and six commits of this pass were put on top of it. `main` was moved forward by fast-forward twice, and now stands at **a0bcfc47e1**. The branch is removed and the checkout is on `main`. Nothing was pushed. The parent repository was not touched. Nothing under doc/ or data/ was edited. No seed was pinned, no skip or xfail was added, and no bar, count, rate or capacity of either gate was changed.
+
+#### What fails or is unfinished, first
+
+- **No training step of the production configuration finishes yet, so there is no measure for step 4.** The looks no longer run out of memory: all 32 looks of the sentence finish, at 13.65 GB. What stops the step now is older than this item. The first call of the compiled output generate walk (`Models._compiled_output_walk`, fullgraph, item 1.8 and earlier) compiles on the CPU for about 11.8 minutes. It then fails with `torch._dynamo.exc.UncapturedHigherOrderOpError`: "Encountered input mutation during higher order op tracing ... Found in cond", where the mutated input is `CompoundLayer.kernel_test_count` (bin/Language.py:3404, `self.kernel_test_count.add_((~known).sum())`, item 1.8, 2026-11-13). By the text, I returned it and did not repair it (step 3 (b) below).
+- **Step 4 was not run**, because no step finishes.
+- **`test_item18_expect.py::test_81`** still fails. It is allowed to. `test_prepared_answer_boundary[True]` passed in my run.
+- **The priming bridges stay** (step 3 (c)). They are still read, so their size is left to item 1.5.
+- **A look still keeps memory**: 0.15 GB at each of looks 2 to 14, and 0.07 GB at each of looks 15 to 32. Before this pass the figures were 0.35 GB and 0.22 GB. What is left is named under step 3 (a). A sentence of 256 looks would still not fit at 0.07 GB a look. The sentence of this benchmark has 32 looks, and it fits.
+
+#### Step 1: a concept is read "both" across the rows its Sigma reads
+
+- **`ConceptualSpace.order_zero_both`** (bin/Spaces.py) now takes a concept's rows from its entries in the order-zero Sigma (`cs.order_zero.entries(row)`), not from `order_zero_members.started()`. An entry above nothing gives its row's lanes as they are. An entry below nothing (a Not entry) gives them reversed. An entry at nothing gives nothing. The rest of the function is as it was: each lane is joined by the union over the rows, and then the lesser of the two lanes is taken. The union is not weighted by the entries (provisional, as the review said).
+- `ConceptMembers.started()` (bin/Layers.py) had no other caller, so it was removed.
+- In the grounded XOR case, concept 0's entries are `(1, +1.69)` and `(0, 0.81, Not)`. `test_word_concepts_exist_before_grounded_case_discovery` now reads "both" as [0, 1, 1, 0], with the assertion unchanged.
+- **The lines after it in `learn_grounded_xor`, old and new** (test/test_grounded_xor.py). Old:
+  ```
+  rows = cs.basic_percepts.carrying('ws', 9)
+  events = cs._percept_field.event_evidence([('bp', row) for row in rows]).amax(0)[:, 0]
+  ... located.append((events * mask[..., None]).amax(1))
+  ```
+  New: the rows are the concept's Sigma entries. The test asserts `sorted(rows) == [(0, True), (1, False)]`. Each row's byte events are read, and a Not row's events are flipped. At each byte the greatest over the two rows is taken:
+  ```
+  rows = [(percept, negated) for percept, weight, negated in cs.order_zero.entries(0) if weight > 0]
+  for percept, negated in rows:
+      events = cs._percept_field.event_evidence([('bp', percept)]).amax(0)[:, 0]
+      events = events.flip(-1) if negated else events
+      given.append((events * mask[..., None]).amax(1))
+  located.append(torch.stack(given).amax(0))
+  ```
+  The final assertion (the lesser of the union of each lane over the two bytes is [0, 1, 1, 0]) is unchanged. The probe read the row of `1` at [0,0], [0,1]→for at byte 1, [1,0]→for at byte 0, [1,1]→for at both bytes, and the row of `0` the reverse. Reversed, the row of `0` tells against where `0` is, so the case reads both on 01 and 10.
+- **The tests that read `order_zero_both` or `order_zero_both_field`** (test_concept_evidence, test_concept_memberships, test_field_binding, test_grounded_xor, test_primitive_properties, test_refine_raise), together with test_definition_integrity and test_serial_concepts: **85 passed, 13.6 s**. None needed its assertions changed. I did not compare what each one prints before and after.
+- No mixed extent was built.
+
+#### Step 2: the four tests, and each cause
+
+- **(a) `test_item55_mechanisms.py::test_nested_wholes`.**
+  - *Cause:* inside `nested_lesson(b'ed')`, `observe_nested` admits the lesson's marker `ed` as a stored form so that it has a row for the nested record. By rule 43 as amended, a stored form of two or more characters is a part of its own, carried by every form that holds it as a run. So `walked`, and only `walked`, takes `('part', 'ed')`, and its code changes. No form that is only observed is admitted (every observed word was already stored), and the record joins no codes.
+  - *Decision, provisional:* I read this as the amended rule at work on a form that the test itself names, the lesson's marker, so I **ported** the test and did not change the source.
+  - Old: `assert all(torch.equal(identity.form(word), value) for word,value in before.items())`.
+  - New: the forms whose code changed are exactly `{word for word in before if b'ed' in word} == {b'walked'}`. Each changed form's parts are its old parts plus `('part', 'ed')`, and every other form's parts are unchanged.
+  - *The alternative, for Alec:* if a lesson's marker should not become a part, the marker would need a row without being a stored form. That would be a rule apart from rule 43.
+- **(b) `test_item17_forms.py::test_a_part_once_added_is_carried_by_every_form_that_holds_it`.**
+  - *Cause:* `aa` was added by rule 56 to tell `cat` from `caat`. Now each stored form's own part tells them apart, so no `aa` is added.
+  - Ported to `at`, which is an added part now because it is a stored form. The new form admitted is `bats` (it was `baaz`). The assertion is kept: every form that holds the run carries the part, and no form that does not hold it carries it.
+- **(c) `test_item17_code_trial.py::test_3` and `::test_10`.**
+  - *Cause:* the stand-ins coded as the source did before rule 43 was amended. They gave no stored form its own part. They also counted a holder's own part (`abac` for `aba`) as against the inner form, which the source's `against_atoms` no longer does.
+  - *What I did:* the stand-ins took the amended rule in a few lines, so **neither test was retired**.
+    - `SourceCoder._own_part`: a form of two or more characters becomes an added part, carried by its holders, and the holders are settled with the new form. It is a hook in `LinkedCoder.admit` that returns nothing for the old coder.
+    - `SourceCoder._opposed` leaves out an added part that holds the inner form.
+    - `Coder` (layout `built` only) gives a form its own part.
+  - test_10: 0 of 3,000 words differ, and the added parts are the same (3,000 and 3,000). Before the change, 2,999 differed, and the stand-in had 1,153 added parts. test_3 passes.
+
+The step 1 and 2 files with both gates: **128 passed, 1 skipped, 260.6 s**. Main was then moved forward (first time) to **c69acc8ae4**.
+
+#### Step 3: the production configuration
+
+##### The first measure (on c69acc8ae4, before any repair of step 3)
+
+Command: `BENCH_OUT=… BASIC_BATCH_SIZE=4 BASIC_MAX_DOCS=60 BASIC_MAX_BATCHES=1 BASIC_NUM_EPOCHS=1 .venv/bin/python bin/bench_training_step.py data/BasicModel.xml`. It ran through a wrapper of mine that records time and memory at each look (scratchpad `r6d6/bench_probe.py`). `current` is `torch.mps.current_allocated_memory`; `driver` is `driver_allocated_memory`.
+
+| Point | Seconds | Current (GB) | Driver (GB) |
+| --- | ---: | ---: | ---: |
+| runBatch begins | 4.50 | 9.212 | 9.429 |
+| Looks.run begins | 12.18 | 9.526 | 11.637 |
+| first lookup (before the first look) | 12.28 | 10.309 | 11.645 |
+| look 1 | 12.35 | 10.401 | 11.662 |
+| look 2 | 15.47 | 10.807 | 11.748 |
+| look 8 | 19.74 | 12.944 | 13.182 |
+| look 14 | 24.39 | 14.949 | 15.783 |
+| look 20 | 26.67 | 16.246 | 16.496 |
+| look 27 | 29.48 | 17.760 | 17.995 |
+
+- Looks 2 to 14 kept about 0.35 GB each and took about 0.7 s each.
+- Looks 15 to 27 kept about 0.22 GB each and took about 0.38 s each.
+- **It stopped at the 28th look with an MPS out-of-memory error** (16.82 GiB allocated of the 16.85 GiB allowed), in `SymbolField.arrive` → `Expectation.match_symbols` (`torch.cdist`), at 30 s.
+- At this source, memory stopped the run before the CPU stall was reached.
+
+##### (a) What a look keeps
+
+I measured by the live MPS tensors and the saved values of `saved_sentence_values` that were new between looks 4 and 6, each with the source line that made it (scratchpad `r6d6/bench_kept.py`).
+
+**The protected-storage hook cloned nothing:** 0.000 GB of copies in every measurement. So the first candidate of the 1.5 plan is not what a look keeps here.
+
+Before the repairs, looks 4 to 6 kept 0.715 GB of new tensors (0.687 GB of it as saved values). The largest were these:
+
+- **The salience map's way down** (`Salience._down`): tensors `[428, 4, 256, 2]` and `[424, 4, 256, 2]` (nodes or edges × streams × readings × lanes, 3.5 MB each), saved at every one of the walk's steps at lines 71 and 74. That is about 250 MB for two looks. The per-edge factor (weight, and at a Pi row/child at the open run) was made again at every step, although it does not change within the look.
+  - *Repaired (1de1da4ff9):* the factor is made once a look, without a graph (it reads no request). The walk is linear in the request, so it is a `torch.autograd.Function` whose backward is the same walk on the transposed edges.
+  - The walk keeps only the factor, about 3.5 MB a look. `gradcheck` passes, and the result equals the old walk on random inputs.
+- **The grammar's journal at each word** (`Models.stage_cs_lang`: `current_cs_lang[19].gather(1, value_columns)`; `CaseFlow.gather`; `STMChunks.gather` in `ChunkJournal.apply`): `[4, 208, 4131]` and `[4, 208, 1032]`, 13.75 MB and 3.4 MB for each word step. `torch.gather` saves its whole source for the backward, which reads only its shape. There are four word steps for each look (one arrival for each distinct word index among the 4 streams).
+  - *Repaired (018828553a):* the reads are by index (`value[streams, columns]`), whose backward keeps only the indices and the source's size. The values are equal, and every index passed was already in range for gather.
+- **The activation predictor's keys** (`Expectation.ActivationPredictor.forward`): each key's query was gathered per key (`[B, n, 2, D]`) before an einsum.
+  - *Changed (a0bcfc47e1):* each key is read against every order's query, and then its own order's is taken. This removes the per-key copy of the query. It did not remove the saved keys themselves (`[4, 465, 1032]`, 7.7 MB at each arrival), because `_prediction_inputs` rebuilds the keys at each call: their age coordinates are taken relative to the present.
+  - I tried a cache of the normalized keys, found it useless for that reason, and removed it before committing.
+
+After the repairs, looks 4 to 6 kept 0.347 GB of new tensors (0.289 GB of it as saved values). What remains, for two looks:
+
+- the word predictor's keys `[4, 465, 1032]`: 61 MB;
+- `SymbolField.anticipate`'s keys `[4, 185, 1032]`: 24 MB;
+- `choose_operation` (Language.py:7033) `[4, 52, 2, 1032]`: 14 MB;
+- the look's expectation costs (`ConceptSpread._carry`, `union`, `look_cost`, `percept_cost`, `[160065, 4, 2]` and `[127083, 4, 2]`): about 57 MB;
+- `_tensor_record_selected_values` `[4, 19, 4131]`: 10 MB;
+- many small saved tensors `[48, 4, 256]`: 15 MB.
+
+Each of these is read by the sentence's backward. The keys are made again at each arrival because their age changes. Making them once a sentence would mean splitting the key into a part that is fixed and the four age coordinates. I did not build that.
+
+The measure after the repairs (a0bcfc47e1):
+
+| Point | Seconds | Current (GB) | Driver (GB) |
+| --- | ---: | ---: | ---: |
+| runBatch begins | 4.56 | 9.212 | 9.429 |
+| first lookup | 12.24 | 10.307 | 11.645 |
+| look 1 | 12.30 | 10.324 | 11.662 |
+| look 14 | 24.27 | 12.372 | 13.493 |
+| look 32 (the last) | 31.26 | 13.649 | 14.097 |
+| Looks.run ends | 31.57 | 13.696 | 14.114 |
+
+So a look keeps 0.15 GB (looks 2 to 14) and 0.07 GB (looks 15 to 32), where it kept 0.35 GB and 0.22 GB. All of the sentence's 32 looks finish.
+
+##### (b) What runs on the CPU after the looks
+
+- *Found by sampling the main thread's full stack every 30 s* (a thread of the wrapper; py-spy is not installed, and faulthandler cut the stack at 100 frames). From 32 s to the end, every sample is inside `torch._dynamo` or AOT tracing, under `SentenceField.reconstruct_generation` → `Models.generate` (9599) → `with_forecast` (13436) → `CompileGuard.checked` (122). That is the first compile of `_output_generate_walk`, with `fullgraph=True` and `dynamic=False`.
+- *It is not the part map:* no sample was in `WordIdentity.admit`, `_settle` or `atoms_of`.
+- *How it ends:* after about 11.8 minutes of compiling, dynamo fails with `UncapturedHigherOrderOpError` (input mutation inside `torch.cond`). The mutated input is `language_space.generate_binary_ops[11].kernel_test_count`, the counter of `CompoundLayer.select_view` (bin/Language.py:3404), item 1.8 (2026-11-13). The compiled walk is from 2026-09-12. The process exits with code 1. No training step ends.
+- *Returned, not repaired, since it is older than this item.* Two things would be needed:
+  - a counter that is not mutated inside the compiled walk (for example returned as an output, or counted outside the cond);
+  - an account of why the trace of the walk takes about 12 minutes before it reaches that error.
+
+  Whether the walk then compiles in a bounded time is not known.
+
+##### (c) The priming bridges
+
+- *Something reads them, so they stay, and are left to item 1.5.* `Models._prime_seen_step` (Models.py:6828, at every step) calls `ConceptualSpace.project_priming_to_towers`. This reads `_priming_bridge_src`, `_dst` and `_bits` to write the PartSpace and WholeSpace towers' `_expected_knowing`. The towers read that back through `relevance_weights` / `priming_weights` (Spaces.py:8090, 8106, 8123).
+- *What sets their size* (Spaces.py:13134-13155): `bridge_cap = nVectors × (ceil(PartSpace nVectors / 32) + ceil(WholeSpace nVectors / 32))`. In production this is 127,083 activated concept rows × (1,024 + 1) = **130,260,075** entries for each conceptual space. Each entry takes an int32 source, an int32 mask and an int16 block: 10 bytes, so 1.30 GB a space and 5.21 GB for the four spaces.
+- The key `ConceptualSpace/primingBridgeCapacity` bounds it, but it is unset in data/BasicModel.xml. It is 0 in model.xml, which means the whole complete bipartite reservation. data/BasicModel_corpus.xml sets it to 8,388,608. I did not change it.
+
+#### Step 4: the measure
+
+Not taken, because no step finishes (step 3 (b)).
+
+#### Step 5
+
+`test_81` is left failing, not skipped and not ported. `test_prepared_answer_boundary` passed in my step 6 run.
+
+#### Step 6: tests, with counts and seconds
+
+| Run | Result |
+| --- | --- |
+| Both gates, before any edit | 2 passed, 5.5 s |
+| test_definition_integrity alone, after the step 1 source change | 1 failed (the event lines), 13 passed, 11.5 s |
+| Step 1's readers (8 files) | 85 passed, 13.6 s |
+| test_item17_forms, test_item55_mechanisms | 15 passed, 1 skipped, 15.6 s |
+| test_3 and test_10 before the stand-in change | 2 failed, 35.4 s |
+| test_10 after `_own_part`; test_3 before `Coder` took it | 1 passed, 1 failed, 26.8 s |
+| test_3 after | 1 passed, 20.5 s |
+| Gates and the step 1 and 2 files (13 files) | 128 passed, 1 skipped, 260.6 s |
+| looks, table, loop of looks, after the salience change | 32 passed, 46.4 s |
+| The memory repairs' files (case views, chunk journal, compiled word chunk, compile guard, clause closing, compiled expectation boundary, expectation review, item18_expect, symbols, looks, loop of looks) | 1 failed (test_81), 132 passed, 13 skipped, 156.9 s |
+| **Step 6 list:** both gates; definition_integrity, refine_raise, serial_concepts, concept_memberships, grounded_xor, item55_mechanisms, item17_forms, item17_code_trial; looks, places (without the measure), table, symbols, code; loop_of_looks; concept_evidence, field_binding, primitive_properties; and the memory repairs' files; prepared_answer_boundary (28 files) | **1 failed (test_81), 287 passed, 15 skipped, 299.9 s** |
+| The lesson's script, `--runs 2` (`test/attention_thinking_certificate.py lesson`, `BASICMODEL_DEVICE=cpu`) | 54 s; each run: 16 sentences, 64 of 64 words, 64 live; in order 0 and 1 sentences (0 and 4 words); at allowance 0, 0; drawn 26, 26; known against 0, 0; known both 0, 0. On MPS the script fails in its own observer (`.numpy()` on an MPS tensor), before the model. |
+
+Benchmark runs (step 3, alone except where said):
+
+- The first measure: 30 s, out of memory at look 28.
+- Four runs of what a look keeps, each about 40 s, cut at look 6.
+- A run after the repairs, stopped by me at 3 min. It was compiling, and faulthandler's dumps were cut.
+- A final run: the looks end at 31.6 s, then the compile fails at about 12 min 18 s (exit 1, inside my limit of 20 min). During part of the compile of this run, the memory repairs' test files ran beside it.
+
+Scratch output is in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6d6/` (bench1, bench3, kept1 to kept5, lesson, list6.log).
+
+#### Commits (now on main)
+
+- f4e28868fb: a concept is read both across the rows its order-zero Sigma reads; the grounded XOR case's byte events are read on the concept's two rows; `started()` removed.
+- c69acc8ae4: rule 43 as amended in three tests (the lesson's marker carried by `walked`; `at`; the trial's stand-ins).
+- 1de1da4ff9: the salience map's way down keeps only each edge's factor, made once a look.
+- 018828553a: the grammar's journal and case reads by index, not gather.
+- a0bcfc47e1: the activation predictor reads each key against every order's query.
+
+#### Main
+
+- **First fast-forward: done**, after steps 1 and 2 (both gates and those files passed). `main` went to c69acc8ae4.
+- **Second fast-forward: done**, at the end (both gates and the step 6 files passed, but for test_81). `main` went to **a0bcfc47e1**. The branch `item17-r6d2-step4-wip` is deleted (`git branch -d`), and the checkout is on `main`.
+
+#### Decisions left for Alec
+
+1. Whether the lesson's marker should be a part of its own (step 2 (a); ported as the amended rule, provisional).
+2. The stall of step 3 (b) is item 1.8's: a counter mutated inside the compiled walk's `cond`, and a trace of about 12 minutes. Should it be repaired in item 1.7 so that a step can finish, or left to item 1.5?
+3. The priming bridges: 5.21 GB set by the complete bipartite reservation. Item 1.5's, or `primingBridgeCapacity` in data/BasicModel.xml (a key change, not made).
+
+#### Review (Claude, 2026-11-21)
+
+Spot tests by the pass; both gates pass. `main` was moved forward to `a0bcfc47e1` by the pass, as its text said. Claude's list on that commit (306 files, in a clone) was still running when this was written, at 95 in 100 with no failure; its record is in the next return's review.
+
+- *`main` has the table.* Rounds 6d's third to sixth passes are on `main` (`a0bcfc47e1`): the first Pi reads the table's wires, every percept whole is a part of its form, the `.where` is held by shared size with no weight, and the XOR case's "both" is read across the rows the Sigma reads.
+- *"Both" across the Sigma's entries is right, and was one function.* The union over the rows is not weighted by the entries (*mine, provisional*, as before the change).
+- *The lesson's marker becomes a part of its own, carried by `walked`.* That is rule 43 as amended at work on a form the lesson stores, and the port is accepted. *Alec's, if he reads it otherwise:* a marker that should be no part would need a row without being a stored form.
+- *What a look keeps is more than halved* (.35 to .15 GB at looks 2 to 14; .22 to .07 GB after), by three repairs, none of them a change of what is computed:
+  - the salience map's way down keeps one factor a look; it is now a function with a backward of its own (the same walk on the transposed edges), checked by `gradcheck` and against the old walk. It is replaced if the request goes down by the inverses (rule 79).
+  - the grammar's journal and the case reads go by index, where `gather` kept a copy of its whole source at each word;
+  - the activation predictor no longer copies a query for each key.
+  The protected-storage hook, which the 1.5 plan named, cloned nothing.
+- *A sentence of 256 looks still does not fit* (.07 GB a look is 18 GB). What is left is read by the sentence's backward; the largest part is the expectation's keys, made again at each arrival because four of their coordinates are ages. *The production pass:* the key in two parts, the fixed part made once a sentence.
+- *What stops a training step now is item 1.8's, and it is to be repaired in this item* (Alec, §19.119, 7: "no, let's debug"). The first compile of the output's generate walk (`Models._compiled_output_walk`, whole graph) traces for about 11.8 minutes and then fails: `CompoundLayer.kernel_test_count` (`bin/Language.py`, 2026-11-13) is changed inside a `torch.cond`.
+  - *The lesson's configuration has the same fault, in minutes* (Claude, at `a0bcfc47e1`): `data/MM_corpus_lessons.xml` presented as the lesson's script presents it, but not eager, fails with the same error on the same counter after 2.5 minutes on the CPU. The lesson's script passes only because it runs eager (`use_eager_reading`). So the fault can be repaired and checked on the small configuration first, and no test of the list compiles that walk on a training step, which is why the list did not show it. *The production pass:* the counter out of the compiled walk; a test that presents one lesson sentence compiled; then the benchmark.
+- *The priming bridges are 5.21 GB because `primingBridgeCapacity` is not set in `data/BasicModel.xml`* (it is 8,388,608 in `data/BasicModel_corpus.xml`). They are read at every step, so they stay. *For Alec:* the key in his production configuration.
+- *Reading in order:* the lesson's script, two runs, 0 and 1 sentences in order. Nothing was built for it; it is the matter of §19.121.
