@@ -80,7 +80,7 @@ class Trace:
             return out
 
         def walk_leaf(model, words, counts, truncated, bank, trace, **kw):
-            if any(f.name == 'reconstruct_generation' for f in traceback.extract_stack()):
+            if any(f.name == 'reconstruction' for f in traceback.extract_stack()):
                 self.add('walk leaf (OutputOccurrences.generated)', words[0, 0])
             return generated(model, words, counts, truncated, bank, trace, **kw)
 

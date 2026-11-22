@@ -224,28 +224,33 @@ def policy_charge(model, record, generation, taken, errors, active):
     return cost
 
 
-def reconstruct_generation(model, record, target, active, *, programs=None, errors=None):
-    """The idea's reconstruction: its recorded composition undone
-    (:func:`undone`), the leaves said at their own places (:func:`said`)
-    and put back through the perceptual inverse (`realize`); the walk's
-    policy is charged the recorded steps (:func:`policy_charge`)."""
+def reconstruction(model, field, *, record=None, programs=(), errors=None, active=None):
+    """The one reconstruction (§19.134): from the top the model has back
+    down to the percepts. Its upper stretch is the record's composition
+    undone (:func:`undone`), the leaves said at their own places
+    (:func:`said`), and the walk's policy charged the recorded steps
+    (:func:`policy_charge`); its lower stretch is the perceptual inverse.
+    The upper stretch is empty with no record (a model with no symbols) and
+    in a row with no rule applied: there the leaves are the basic-level
+    concepts of ``field`` themselves, and the reconstruction is the
+    perceptual inverse alone. Returns the generation (``None`` with no
+    record) and what is put back."""
     from OutputOccurrences import realize
     from dataclasses import replace
+    if record is None:
+        return None, model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
     nodes, recovered = undone(model, record, programs)
     generation, taken = said(model, record, nodes, recovered)
-    # A row with no rule applied (or no record) has nothing to undo: its
-    # leaves are its basic-level concepts, the open field itself, and its
-    # reconstruction is the perceptual inverse alone (§19.134).
     bare = torch.tensor([not any(node[0] == 'step' for node in row) for row in nodes],
                         device=record.root.device)
     if bool(bare.any()):
-        own = record.open_field
-        pick = lambda first: select_fields((first, own), bare.long())
+        pick = lambda first: select_fields((first, field), bare.long())
         generation = replace(generation, field=pick(generation.field),
                              realization_field=pick(generation.realization_field),
                              reconstruction_field=pick(generation.reconstruction_field))
     model._sentence_bare = bare
-    reverse = realize(model, generation)
+    reverse = (model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
+               if bool(bare.all()) else realize(model, generation))
     model._sentence_generation = generation
     model._sentence_undone = nodes
     model._sentence_walk_residuals.append(generation.trace[3])
@@ -337,7 +342,8 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     """A reconstruction's error (:meth:`Layers.Error.pyramid`, the spatial
     pyramid match) on the ``.what`` of the bytes put back against the
     input's bytes in its readings, the hidden ones left out where
-    ``hidden`` (a reconstruction that never saw them). Returns the input's
+    ``hidden`` (a bool, or ``[B]`` by row: a reconstruction that never saw
+    them). Returns the input's
     ``.what`` at each place of its readings, hidden bytes included."""
     from FieldReverse import byte_rows
     from Omission import target as omission_target
@@ -352,8 +358,10 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     codes = (radix._basis.lookup_rows(rows.clamp_min(0)) * (rows >= 0)[:, None]).to(amounts)    # [256, what]
     wanted = codes[raw.clamp(0, 255)] * scope[..., None].to(codes)
     asked = wanted
-    bytes_hidden = None if targets is None or not hidden else targets.get('bytes')
+    hidden = torch.as_tensor(hidden, device=raw.device).expand(len(raw))
+    bytes_hidden = None if targets is None or not bool(hidden.any()) else targets.get('bytes')
     if bytes_hidden is not None:
+        bytes_hidden = bytes_hidden & hidden[:, None]
         out = F.pad(bytes_hidden, (0, max(0, scope.shape[1] - bytes_hidden.shape[1])))[:, :scope.shape[1]]
         asked = wanted.masked_fill(out[..., None], 0)
         seen = F.pad(bytes_hidden, (0, max(0, amounts.shape[1] - bytes_hidden.shape[1])))[:, :amounts.shape[1]]
@@ -366,19 +374,13 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     return wanted
 
 
-def reconstruct(model, record, errors, active, *, programs=(), previous=None, silent=None):
-    """Input and order-zero reconstructions share exactly one reverse chain.
-    A silent sentence (``silent`` ``[B]``, rule S -> NULL) puts back NULL at
-    every place, and that is scored against the sentence."""
+def reconstruct(model, record, errors, active, *, programs=(), silent=None):
+    """The sentence's one reconstruction (:func:`reconstruction`) and its
+    error. A silent sentence (``silent`` ``[B]``, rule S -> NULL) puts back
+    NULL at every place, and that is scored against the sentence."""
     field = record.open_field
-    if previous is None:
-        first = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
-    else:
-        first, _ = previous
-    target = charge(model, errors, 'reconstruction_reverse', first, field, active)
-    model._sentence_reverse = (first, target)
-    generation, second = reconstruct_generation(model, record, target, active,
-                                                programs=programs, errors=errors)
+    generation, second = reconstruction(model, field, record=record, programs=programs,
+                                        errors=errors, active=active)
     if silent is not None and bool(silent.any()):
         from Interpret import SilenceLayer
         put = second._reconstruction_percepts
@@ -386,20 +388,21 @@ def reconstruct(model, record, errors, active, *, programs=(), previous=None, si
         second._reconstruction_percepts = torch.where(gate, SilenceLayer().reverse(put), put)
     model._sentence_order_zero_field = generation.field
     publish(model, generation.field)
-    # Reconstruction from the idea is asked for every byte, the hidden ones too.
-    charge(model, errors, 'reconstruction_order_zero', second, field, active, hidden=False,
-           silent=None if silent is None or not bool(silent.any()) else silent)
+    # Reconstruction from the idea is asked for every byte, the hidden ones
+    # too; one from the open field (no rule applied) never saw them.
+    model._sentence_target = charge(model, errors, 'reconstruction_order_zero', second, field, active,
+        hidden=model._sentence_bare, silent=None if silent is None or not bool(silent.any()) else silent)
     B, W, D = record.word_values.shape
     def rows(prefix):
         return sum(term['weight'] * term.get('multiplier', 1.) * errors._value(term)
                    for name, term in errors._terms.items() if name.startswith(prefix + '.'))
-    input_cost, zero_cost = rows('reconstruction_reverse'), rows('reconstruction_order_zero')
+    cost = rows('reconstruction_order_zero')
     # Placeless modalities participate in the field, not in the word ledger.
-    ideas = word_percepts(first, field, D)[:, :W]
+    ideas = word_percepts(second, field, D)[:, :W]
     from Omission import target as omission_target
     targets = omission_target(model)
     raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0]
-    decoded = first.materialize()[:, 0]
+    decoded = second.materialize()[:, 0]
     length = min(raw.shape[-1], decoded.shape[-1])
     positions = torch.arange(length, device=raw.device)
     scope = ((positions[None, None] >= field.where[..., :1]) &
@@ -410,7 +413,7 @@ def reconstruct(model, record, errors, active, *, programs=(), previous=None, si
     errors.error('reconstruction.free_bytes', byte_error.detach(), 1., mask=active,
         weight=model.loss.reconstruction_scale, category='reconstruction', trained=False)
     missing = (decoded[:, :length].eq(0) & scope).sum(-1)
-    errors.error('reconstruction.coverage', missing.to(input_cost).detach(), scope.sum(-1), mask=active,
+    errors.error('reconstruction.coverage', missing.to(cost).detach(), scope.sum(-1), mask=active,
         weight=model.loss.reconstruction_scale, category='reconstruction', trained=False)
     prior = record.percept_expected
     if prior is not None:
@@ -440,13 +443,10 @@ def reconstruct(model, record, errors, active, *, programs=(), previous=None, si
         trace[3], trace[0], trace[4], trace[-2], trace[-1])
     sid = int(record.sentence)
     sentence_costs = ideas.new_zeros(B, record.depths.shape[1])
-    sentence_costs[:, sid] = input_cost + zero_cost
-    input_sentence_costs = torch.zeros_like(sentence_costs)
-    input_sentence_costs[:, sid] = input_cost
-    result = (ideas, ideas.new_zeros(B), input_cost + zero_cost, truncated, sentence_costs)
-    model._input_reconstructions[sid] = InputReconstruction(ideas, first.materialize(), result[1],
-        input_cost, truncated, input_sentence_costs,
-        first._reconstruction_percepts)
+    sentence_costs[:, sid] = cost
+    result = (ideas, ideas.new_zeros(B), cost, truncated, sentence_costs)
+    model._input_reconstructions[sid] = InputReconstruction(ideas, second.materialize(), result[1],
+        cost, truncated, sentence_costs, second._reconstruction_percepts)
     return result
 
 

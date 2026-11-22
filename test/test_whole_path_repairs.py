@@ -162,7 +162,10 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
     second = NS(_reconstruction_percepts=observed, _radix_activity=nothing)
     generation = NS(field=field, trace=(torch.zeros(1, 1), None, None, torch.zeros(1, 3), None, None, None),
                     words=torch.zeros(1, 2), counts=torch.tensor([2]), truncated=torch.zeros(1, dtype=torch.bool))
-    monkeypatch.setattr(SentenceField, 'reconstruct_generation', lambda *a, **k: (generation, second))
+    def one(model, field, **kwargs):
+        model._sentence_bare = torch.zeros(1, dtype=torch.bool)
+        return generation, first
+    monkeypatch.setattr(SentenceField, 'reconstruction', one)
     monkeypatch.setattr(SentenceField, 'publish', lambda *a: None)
     model = NS(_staged_concepts_in=observed.transpose(1, 2),
         _omission_targets={'raw': observed.transpose(1, 2), 'bytes': torch.tensor([[False, True]])},
@@ -175,7 +178,7 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
     record = NS(open_field=field, word_values=observed, word_valid=torch.ones(1, 2, dtype=torch.bool),
                 percept_expected=torch.zeros_like(observed), depths=torch.ones(1, 1), sentence=0)
     errors = Error(row_mask=active)
-    SentenceField.reconstruct(model, record, errors, active, previous=(first, observed))
+    SentenceField.reconstruct(model, record, errors, active)
     value = errors._value(errors._terms['reconstruction.free_percept']).sum()
     torch.testing.assert_close(value, torch.tensor(1.))
     gradient, = torch.autograd.grad(value, predicted)

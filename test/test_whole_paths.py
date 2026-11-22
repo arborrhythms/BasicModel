@@ -220,7 +220,7 @@ def test_native_omission_keeps_targets_off_the_reading_path(tmp_path, monkeypatc
         # Ported (fifteenth pass): the input's .what that reconstruction
         # is asked for holds the hidden bytes as targets (they are off the
         # reading path only).
-        original = value[2]['reverse'][1]
+        original = value[2]['target']
         width = original.shape[1]
         hidden = torch.nn.functional.pad(targets['bytes'][:, :width],
             (0, max(0, width - targets['bytes'].shape[1])))
@@ -333,7 +333,7 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
             path = finish(*args, **kwargs)
             record['root'] = path.observation['record'].root.detach().clone()
             record['reconstructed'] = path.observation['order_zero_reverse'].materialize().detach().clone()
-            record['target'] = path.observation['reverse'][1].detach().clone()
+            record['target'] = path.observation['target'].detach().clone()
             return path
         with monkeypatch.context() as patch:
             patch.setattr(WholePaths, 'finish', observed)

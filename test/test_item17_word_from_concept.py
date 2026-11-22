@@ -1,7 +1,7 @@
 """The row at 1.00 of doc/ModelAge.md by the output walk (round 6d of item
 1.7, thirteenth pass, step 1): the simulation before the build. Each of the
 19 words is read alone with no gradient; at the walk's first generated slot
-(`OutputOccurrences.generated`, called from `reconstruct_generation`) the
+(`OutputOccurrences.generated`, called from `reconstruction`) the
 leaf's percept band is filled with a recreated `.what`, and the terminals are
 scored against it by `readback_scores`' cosine on the percept band. The
 recreated `.what` is the order-zero Sigma's way back (`SparseSigmaLDU.reverse`)
@@ -67,7 +67,7 @@ def test_the_leaf_filled_by_its_concepts_inverse(tmp_path, monkeypatch):
         leaves, fields = [], []
         generated, reconstruct = OutputOccurrences.generated, SentenceField.reconstruct
         def held_leaf(model, words, counts, truncated, bank, trace, **kw):
-            if any(f.name == 'reconstruct_generation' for f in traceback.extract_stack()):
+            if any(f.name == 'reconstruction' for f in traceback.extract_stack()):
                 leaves.append((words.detach().clone(), bank))
             return generated(model, words, counts, truncated, bank, trace, **kw)
         def held_field(model, record, errors, active, **kw):

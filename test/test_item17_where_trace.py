@@ -92,7 +92,7 @@ def test_where_of_each_reading(tmp_path, monkeypatch):
             return sentence(model, record, **kw)
 
         def walk_leaf(model, words, counts, truncated, bank, trace, **kw):
-            if any(f.name == 'reconstruct_generation' for f in traceback.extract_stack()):
+            if any(f.name == 'reconstruction' for f in traceback.extract_stack()):
                 for k in range(words.shape[1]):
                     add(f'walk leaf {k} concept wires', words[0, k, concept_where:concept_where + 4], None)
             return generated(model, words, counts, truncated, bank, trace, **kw)

@@ -510,7 +510,7 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
             return add(registry, name, value, *args, **kwargs)
         Models.Error.add = recorded
         import SentenceField
-        generated = SentenceField.reconstruct_generation
+        generated = SentenceField.reconstruction
         put = []
         def kept(*args, **kwargs):
             # The grammar's inverse puts back something at every place, so
@@ -519,7 +519,7 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
             result[1]._reconstruction_percepts = torch.ones_like(result[1]._reconstruction_percepts)
             put.append(result[1])
             return result
-        SentenceField.reconstruct_generation = kept
+        SentenceField.reconstruction = kept
         try:
             for texts, silent in ((['alpha gamma'], True), (['alpha'], False)):
                 before, entries = len(store), dict(model._concept_owner().mtm.entries)
@@ -540,7 +540,7 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
                     assert booked and float(booked[-1].sum()) == 1.
         finally:
             Models.Error.add = add
-            SentenceField.reconstruct_generation = generated
+            SentenceField.reconstruction = generated
     finally:
         model.End()
     like = torch.rand(2, 5)

@@ -134,8 +134,10 @@ def test_registry_uses_the_two_reconstructions_and_omission_target(tmp_path, mon
                        batch_override=(source, torch.empty(1, 0)))
         assert targets
         for registry in terms:
-            assert all(prefix + '.' + lane in registry for prefix in
-                ('reconstruction_reverse', 'reconstruction_order_zero') for lane in ('pyramid',))
+            # One reconstruction (sixteenth pass, item 5): the open field's
+            # own reverse is no second term.
+            assert 'reconstruction_order_zero.pyramid' in registry
+            assert not any(name.startswith('reconstruction_reverse.') for name in registry)
             for lane in ('form', 'for', 'against'):
                 term = registry['reconstruction.walk_residual.' + lane]
                 assert term['objective'] == 'reconstruction' and term['side'] == 'R'

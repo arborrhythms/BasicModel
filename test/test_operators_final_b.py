@@ -113,14 +113,13 @@ def forced_prefix_certificate():
             term=registry._terms[name]
             return registry._value(term)*term['weight']*term.get('multiplier',1.)
         content=sum(charge('reconstruction_order_zero.'+band) for band in ('pyramid',))
-        input_reverse=sum(charge('reconstruction_reverse.'+band) for band in ('pyramid',))
         percept=charge('reconstruction.free_percept')
         reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
             residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
             R=m._last_sentence_credit['components'][:,0,0].tolist(),
             content_cost=content.detach().tolist(),
             percept_cost=percept.detach().tolist(),
-            leaf_cost=(input_reverse+content+percept).detach().tolist(),
+            leaf_cost=(content+percept).detach().tolist(),
             application_cost=(charge('operator.application')+charge('compose.load')).detach().tolist(),
             byte_identity=m._last_decoder_byte_identity.detach().tolist(),
             actions=m._attention_words.actions.tolist(),

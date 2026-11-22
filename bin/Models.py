@@ -8590,8 +8590,11 @@ class BasicModel(BaseModel):
         if self.reconstruct_in_loop and self.word_brackets:
             raise RuntimeError("tied reconstruction requires an owned completed result")
         field = understanding.reconstruction_carriers.get('field')
+        from SentenceField import reconstruction
         if self.numeric_percepts is not None:
-            value = self.numeric_percepts.reverse(field)
+            # The one reconstruction with no symbols: the perceptual inverse
+            # of the basic-level concepts alone (§19.134).
+            value = reconstruction(self, field)[1].materialize()
             score = None
             if torch.is_tensor(target):
                 target = target.reshape_as(value)
@@ -8601,7 +8604,7 @@ class BasicModel(BaseModel):
             return value, score
         if field is not None:
             from SentenceField import native_target
-            rev = self.reverse(self.conceptualSpace.subspace.carrier_like(), field=field)
+            rev = reconstruction(self, field)[1]
             cost = None
             if target is not None:
                 observed = native_target(self, field)
@@ -20112,8 +20115,8 @@ class BasicModel(BaseModel):
             observation['input_reconstruction'] = self._input_reconstructions[int(sid)]
             observation['order_zero_field'] = self._sentence_order_zero_field
             observation['generation'] = self._sentence_generation
-            observation['reverse'] = self._sentence_reverse
             observation['order_zero_reverse'] = self._sentence_order_zero_reverse
+            observation['target'] = self._sentence_target
             lesson = getattr(self, '_attention_part_lesson', None)
             if lesson is not None:
                 error, baseline = lesson.cost(record, self._last_decoder_trace)

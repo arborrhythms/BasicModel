@@ -28,7 +28,7 @@ def test_input_reconstruction_reaches_perception_and_not_the_grammar(tmp_path, m
             model.perceptualSpace.subspace.what.W,
             *tuple(model.languageSpace.generate_policy.parameters()))
         terms = [errors._value(term).sum() for name, term in errors._terms.items()
-                 if name.startswith('reconstruction_reverse.')]
+                 if name.startswith('reconstruction_order_zero.')]
         gradients = torch.autograd.grad(sum(terms), parameters, retain_graph=True, allow_unused=True)
         assert all(g is not None and torch.isfinite(g).all() for g in gradients[:2]), [
             None if g is None else (tuple(g.shape), bool(torch.isfinite(g).all())) for g in gradients[:3]]

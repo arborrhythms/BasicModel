@@ -15007,12 +15007,12 @@ class Error:
     active-row mean is the same relative objective used for training.
     Summation stays chunked to respect Metal's kernel argument bound.
 
-    Sentence reconstruction books the system-1 ``reconstruction_reverse``
-    bands and the grammar-generated ``reconstruction_order_zero`` bands.
-    The grammar inverse also owns ``reconstruction.walk_residual``'s three
-    lanes and ``reconstruction.walk_credit`` on reconstruction/R; output's
-    corresponding walk terms remain output/A. The retired compose-forest
-    losses, decomposition and walk_policy are not registered.
+    Sentence reconstruction books one term, ``reconstruction_order_zero``
+    (the one reconstruction: the composition undone, then the perceptual
+    inverse), and ``reconstruction.walk_policy`` (the walk's policy charged
+    the undone steps), with ``reconstruction.walk_residual``'s three lanes,
+    on reconstruction/R; output's walk terms remain output/A. The retired
+    compose-forest losses and decomposition are not registered.
     """
 
     _CATEGORIES = (

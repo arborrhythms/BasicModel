@@ -265,13 +265,14 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
             if regeneration:
                 registry._terms = {name: term for name, term in registry._terms.items()
                     if not name.startswith(('reconstruction_order_zero.', 'reconstruction.walk_residual.',
-                                            'reconstruction_reverse.', 'reconstruction.free_', 'reconstruction.coverage'))}
+                                            'reconstruction.walk_policy', 'reconstruction.free_',
+                                            'reconstruction.coverage'))}
                 model._path_reconstruction_options = walk_options(base.observation['generation'].trace,
                                                                   draw['reconstruction_round'], reuse=(draw['walk'] >= 4) | (draw['walk'] < 0))
                 model._sentence_walk_residuals = []
                 rebuilt = reconstruct(model, observation['record'], registry, active,
-                                      previous=observation['reverse'], programs=observation['entries'])
-                observation.update(generation=model._sentence_generation,
+                                      programs=observation['entries'])
+                observation.update(generation=model._sentence_generation, target=model._sentence_target,
                     order_zero_field=model._sentence_generation.field,
                     order_zero_reverse=model._sentence_order_zero_reverse,
                     input_reconstruction=model._input_reconstructions[int(sid)])

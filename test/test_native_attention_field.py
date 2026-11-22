@@ -49,7 +49,7 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
         assert record.word_values[record.word_valid].abs().sum(-1).gt(0).all()
         terms = registries[-1]._terms
         assert not terms['reconstruction.free_bytes']['trained']
-        assert terms['reconstruction_reverse.pyramid']['trained']
+        assert 'reconstruction_reverse.pyramid' not in terms  # one reconstruction
         assert terms['reconstruction_order_zero.pyramid']['trained']
     finally:
         model.End()
