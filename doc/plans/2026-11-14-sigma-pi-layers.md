@@ -11561,8 +11561,8 @@ chooses from. The old classes are not edited.
     do not want to light up directly"). A look's request is a
     learned read, by one network every use shares, of the sentence's
     opened field, the last look's field spread once (no N:N map),
-    whether the last look found anything, and the concept of the
-    word last said. The cost is the output's alone: no reading
+    whether anything is left to find, and the concept of the word
+    last said. The cost is the output's alone: no reading
     target, no lesson to a concept, no successor over places, no
     concept lit by a switch. Tasks are taught together. The request
     of rule 79 is this read's output; its "by shared size" bound is
@@ -14336,6 +14336,16 @@ de-muxed; the production configuration.
    - each task with its first output word supplied and with nothing supplied, after both are learned together;
    - the identity curriculum's first stages (`test/attention_curriculum_gates.py`) with the looks on, once.
 7. *Tests:* spot tests while building; no assertion on a drawn outcome; no seed pinned; both gates at the end; the files touched and their users. Return `scratch-1.7/r6d_return_11.md`, what fails first. `main` moves if both gates and the files touched pass, save `test_81`.
+
+*The twelfth pass* (added 2026-11-22, after §23.6.17), on the eleventh's branch: the rows of `doc/ModelAge.md` from the bottom, one at a time, and it stops at the first that does not pass.
+
+1. *The row at 1.00, a word said back, alone.* On one word and then on the 19: the cost by presentation, the request's range, each word's share, and the gradient at the word said, at the read's units and at the request. Say which it is that keeps 304 presentations from teaching 19 words: the rate, the bound, what the read is given (does the opened field tell one word from another), or the request going to 0 and 1.
+2. *The request's form and the rule for "found", compared in tests* (patched in the test, not as options of the source), by rounds until 19 of 19 are said back, and the request's range and gradient after: (a) as built; (b) the request with a fixed total over the concepts (a softmax); (c) a word's score its concept's value with no threshold, and an occurrence's share not held at its own activity (their product, by the pooling of §19.22). Combinations where two help.
+3. *Build the one form that passes* (no option, no second path), and remove `prompt_need` and `PartLesson.need`.
+4. *The row at 1.75, two words taken in order and said back.* If every word is read once and the read stops at the end while the order is a draw, add the `.where` rung (§19.129, 3: 16 to 32 addresses, a key of `data/model.xml`) and measure again.
+5. *Then, only if both rows pass:* the lesson's sentences (2.50 to 4.00), then counting (3.00). The closing mark is counted as built until Alec says otherwise.
+6. *The measures,* three starts drawn afresh, nothing supplied: for each row, passed or not and by how much; the first row that fails is the model's age, and `doc/ModelAge.md` is not edited by the pass.
+7. *Tests:* both gates; the files touched and their users; `test/test_compiled_lesson_step.py` once. Return `scratch-1.7/r6d_return_12.md`, what fails first. `main` moves only if the rows at 1.00 and 1.75 pass in all three starts, with both gates and the files touched.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
@@ -24929,3 +24939,183 @@ Spot tests by the pass; both gates pass. Claude's list on this pass's commit (`1
 - *The trial's reads in the model score a word by a bilinear read of its `.where`,* since shared size is flat there. *Provisional, the implementer's.*
 - *The record of step 1* (`request`, `where`, `code` in `Looks.decisions`) is the pass's one change to `bin/`, and nothing reads it. Accepted.
 - *Round 7's list:* the trial file takes 23 minutes for three starts; its starts or sizes are cut once the build has its own tests.
+
+### 23.6.17 Round 6d, eleventh pass: `attend` reads the conceptual field and is taught by the output alone, built in the model; the request saturates and the model's own reading does not pass (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11` (cut from `main` at a1aebce56e). My commits: ae4cb97486 (steps 1 to 3 and the ported tests), b7542cad73 (the repair of `Places.readings`), 978094a016 (the lesson's script), 0f05c96ce4 (the trial of step 6). The coordinator's spec commits sit between them. Nothing pushed. The superproject, `suggestions.txt`, the spec and the docs are not touched.
+
+#### What fails or is unfinished, first
+
+- **The model's own reading still fails, and after the lesson it is worse.** The output's cost reaches the request (step 3), but the request goes flat again a different way. The logistic of the read saturates within a few presentations: after the lesson the request is 1.0 on some concepts and 0.0 on the rest, in all three starts, and its gradient at the first two looks is 0.0 (one look in one start: 0.375). The words the request asks at 0.0 are then not found (a word is found only where its concept's value is above nothing), so their share is nothing and no gradient can bring them back. In two starts of three, after the lesson a look finds one or two words and the walk ends: the intended word had a finite score at 1 to 3 of 7 to 17 choices, and "is" was read in 0 sentences.
+- **Neither stage passed. Both bounds were hit in all three starts.** Words said back after 16 rounds: 4, 11 and 3 of 19. Sentences after 12 rounds, with the first word supplied: reading 0 to 4 of 18, counting 0 to 2 of 18.
+- **Reading in order: 0 sentences of every set in every start**, with nothing supplied and with the first word supplied. Counting is right for 0 sentences.
+- **`main` is left where it was.** Both gates pass, and so do the files touched and their users (save `test_81` and one test that already fails on `main`). But by the measure of this pass, the model's own reading after a lesson is worse than before the pass. Before it, the looks found every word (in a drawn order); now they lose words once the read saturates. Fast-forwarding is one command (`git merge --ff-only item17-r6d11` on `main`). I leave that to you.
+- **The lesson's script does not teach the read.** The corpus lessons have supervised outputs, so no output cost is booked there (my provisional choice: the sentence is the output only in reading without comprehension). Three runs: 0, 0 and 1 of 16 sentences in order; 26 draws in each run.
+- **The identity curriculum's first stages fail, on `main` as here.** Identity permanence and identifying words gave the same result on both checkouts (passed by presentation: F, F, F, T and T, F, F).
+- **Not built:** the `.where` rung (step 5). The reading never got far enough to show whether neighbours are told apart, so I added nothing.
+- **Provisional choices, all mine:**
+  - The request is the logistic of a linear read, and it starts small (log-odds −4, `requestReadStart`).
+  - The read's "found" is whether anything is left to find, as in the toy. Rule 80 says "whether the last look found anything"; with that input the stop could not learn the end.
+  - The word said is read over the concept rows. It sees the share-weighted concept row and `.where` of the unread words.
+  - The walk obeys the stop read (it stops where the read's logit is above nothing).
+  - The closing mark is counted as a word in the counting task.
+  - The counting words are nominated by reading "1 2 3 4." and "5 6 7 8 9.".
+
+#### Questions
+
+1. **The request's form.** The logistic saturates to 0 and 1, and a concept asked at 0 cannot be found again. Should the request have a floor (a concept is always asked a little), a softmax over concepts, a slower rate for the read, or a different rule for when a look "finds" a word (today: the concept's value is above nothing)? I built none of these.
+2. **The found input.** Rule 80 says "whether the last look found anything". I built "whether anything is left", the toy's meaning. Which is wanted?
+3. **The lesson's script.** Should the corpus (which has supervised outputs) also be taught the sentence said, so that the read learns there?
+4. **The closing mark.** Is it counted in the counting task, or left out?
+5. **`main`.** Fast-forward to the branch as it stands, or wait for the request's form?
+
+#### Step 1: what `attend` reads (built)
+
+- `bin/RequestRead.py`, new. `RequestRead` is one network shared by every use:
+  - `first` reads `given = 5V + 1` numbers: two lanes of the opened field, two of the last look's field spread once, whether anything is left, and the word last said, all at the concepts' inventory rows. It has `requestReadWidth` (64) rectified units.
+  - `ask` (the request, the logistic of its read), `stop` and, through `second`, `say` (the word said, over the concept rows) sit on top.
+  - `at_rows` places a field at the inventory rows.
+  - `spread_once` is `ConceptSpread.spread` once (no N:N map), joined with the field as the product on complements.
+  - Its draw comes from its own fork, so installing it moves no other draw.
+- `SentenceLooks.attend(model, units)` is the request. `Looks.run` reads the opened field (`_sentence_open_fields`) once, and after each look the look's field spread once.
+- New keys in `data/model.xml` and `data/model.xsd`: `requestReadWidth` 64, `requestReadStart` −4, `lookSharpness` 10. No default in code.
+
+#### Step 2: what went
+
+- `bin/AttentionContext.py` is moved to `/tmp/item17-r6d-2026-11-21/AttentionContext.py.r6d11`. That removes `context`, `project`, `RequestStart`, `_heat`, `_needs` and `_fit`. `het_tolerance` moved to `RequestRead.install`.
+- Also removed:
+  - `OperationSelectionLayer.attend`, the bounded match.
+  - `model.request_start` and `model.attention_context`. Checkpoint keys under `attention_context.` and `request_start.` are now dropped as retired.
+  - `ReadingTargets`, `reading_lesson`, `GRADES`, and `teacher` in `Looks.run`, with its replay and the grammar's booked log probability.
+  - The term `grammar.compose.reading_lesson` and the `reading_policy` owner (Models, ObjectiveOwnership).
+  - `requested(model, query)`.
+- `where_match` is kept, measured: one lesson sentence, presentations 1 to 3, the request's gradient at the first look was 0.013 / 0.032 / 0.046 with it and 0.0014 / 0.0049 / 0.0079 without it, about 6 times less.
+- Added: `AttentionLesson.output_lesson` and `OutputLesson`, which give an output's words, the first `supplied` of them given at their looks.
+- Left, with no reader now: `prompt_need` and `PartLesson.need`. Their reader was `AttentionContext._needs`. Remove them, or give them to the read?
+- The surprise (`LookForecast`) is still computed. Only the assessment's record reads it.
+
+#### Step 3: the output's cost (the simulation first)
+
+**Simulation, as the source stood.** On "This is Felix." (one training read, rate 0) the output's cost did not reach the look: the gradient at the request and at the words' scores was None at all four looks. `input_reconstruction` was 0.131.
+
+**Built (the toy's form).** At each look:
+- Each unread word gets a share: the softmax of `lookSharpness` times the look's scores (`word_activity`).
+- The word said is `say` read from the units, given `x` and the share-weighted concept row and centred `.where` of the unread words.
+- The cost (`Output`, booked as `attention.output`, objective `attention`) is the cross entropy of the output's word at that look, plus the stop read's binary cost (stop at the look after the last word, not before).
+- The output is the lesson's, or, in reading without comprehension, the sentence's words in source order.
+- In a lesson the word said is the output's word.
+
+**Measured after the build:**
+- With the request's start at log-odds 0 (one half), the gradient at the request was 0.0006 to 0.009, because every occurrence's share was held at its own activity (shares up to 7.9 against an activity of 1).
+- At −4 (0.018) no share is held, and the gradient was 0.020 / 0.043 at look 1 and 0.020 / 0.060 at look 2, over presentations 1 and 2.
+- At the first presentation it is 0.0: `say` starts at nothing.
+
+#### Step 4: the two tasks, words first (§19.129, §19.130)
+
+`test/test_item17_own_reading.py`, one start for each parameter. No word names the task in the input and no concept is lit by the test.
+- **Stage 1:** each word of the lessons alone ("This.", and "1." to "6."), the word said back, a round at a time until all 19 are said back (bound 16 rounds).
+- **Stage 2:** the two-word and the lesson's 12 distinct sentences, each read once for reading (the sentence said) and once for counting (one counting word for each word, the mark counted), until both are right for all 18 with the first word supplied (bound 12 rounds).
+- Rate .01 throughout.
+
+#### Step 6: the measures (three starts drawn afresh: 201367399219238 / 31494136812702 / 116875293673824)
+
+| Measure | Start 1 | Start 2 | Start 3 |
+| --- | --- | --- | --- |
+| Words said back, by round (of 19) | 1,1,1,1,2,2,2,2,2,2,3,3,3,3,4,4 | 1,2,2,2,4,4,4,4,4,4,4,7,6,8,9,11 | 1,1,2,1,2,1,1,2,2,2,1,2,4,3,4,3 |
+| Sentences, reading / counting right by round (of 18) | 5/0, 0/0, 4/0, 2/0, 0/0, then 1/0 | 4/0, 0/0, 1/0, 5/0, 2/0, 3/0, 2/0, 6/0, 1/0, 0/0, 1/2, 0/0 | 0/0 ×4, 3/0, 0/0, 0/0, 1/0, 1/0, 0/0, 2/0, 4/0 |
+| Request before the lesson, looks 1 and 2 (greatest / least, gradient) | .018 / .018, 0.0 | the same | the same |
+| Request after the lesson | 1.0 / 0.0, 0.0 and 0.0 | 1.0 / 0.0, 0.375 and 0.0 | 1.0 / 0.0, 0.0 and 0.0 |
+
+After both stages, with nothing supplied (with the first word supplied the figures are the same, save "said right": 0 → 1 for start 1's two-word sentences, and 0 → 2, 2, 1 for start 3's two-word, lesson and held-out sentences). Each cell gives start 1 / start 2 / start 3.
+
+| Set | In order | Said right | First word first | Stopped at the end by the read | Each word once | Intended word finite | "is" read |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Two-word (6) | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 0 / 3 | 0 / 6 / 0 | 0 / 6 / 0 | 1 of 7 / 18 of 18 / 3 of 9 | 0 / 6 / 0 of 6 |
+| Lesson (12) | 0 / 0 / 0 | 0 / 0 / 0 | 2 / 0 / 2 | 0 / 8 / 0 | 0 / 8 / 0 | 2 of 17 / 40 of 44 / 10 of 24 | 0 / 12 / 0 of 12 |
+| Held out (6) | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 2 / 1 | 0 / 2 / 0 | 0 / 2 / 0 | 1 of 9 / 12 of 20 / 5 of 13 | 0 / 6 / 0 of 6 |
+| Reordered (12) | 0 / 0 / 0 | 0 / 0 / 0 | 3 / 0 / 2 | 0 / 8 / 0 | 0 / 8 / 0 | 3 of 17 / 32 of 44 / 10 of 24 | 0 / 12 / 0 of 12 |
+
+- **Counting**, right by number of words in the sentence: 3 words, 0 of 6; 4 words, 0 of 18, in every start. Each word was looked at once in 0 / 16 / 0 of 24 sentences.
+- **The longer sentence** ("Who is there is Felix.", 6 words with the mark), with counting asked: said "1 2" / "1 2 2 2 2" / "1 2 2" and a lesson word. The said values are concept rows: 62 = "1", 63 = "2".
+- **Start 2** is the one where the request did not shut out the words: every word was read once and stopped at the end by the read, in 6 of 6 two-word and 8 of 12 lesson sentences. Even there no sentence was read in order and nothing was said right after the first word.
+- A first try of the stage-free lesson (one round of both tasks together, one start) gave the same picture: the request went to 1.0 / 0.0, and no sentence of the lesson was read in order.
+
+**The identity curriculum's first stages, with the looks on, once** (`attention_curriculum_gates.run('enabled', ..., 64, through_stage=3)`):
+- Identity permanence and identifying words failed, and they fail the same way on `main`.
+- Reading two: output cost 2.76 → 0.16 to 0.19; 1 of 4 read back; orders [0], [1], [1, 0], [0, 1], so two sentences were stopped after one word.
+- Reading four: output cost 0.79 to 1.42 → 0.55 to 0.64; 0 of 4 read back; 3 of 4 words read in each.
+
+**The lesson's script** (`attention_thinking_certificate.py lesson --runs 3`): in order 0 / 0 / 1 of 16; 64 words, all 64 live words read; 26 draws in each; 22 to 36 s a run. No `attention.output` term is booked (supervised outputs).
+
+#### Tests ported or removed (each with its reason)
+
+- `test_item17_looks.py`:
+  - 31_33d: the start request is the same small value on every concept.
+  - 15: the cap now passes a gradient (asserts `> 0`; it was `== 0`).
+  - 38b: taught by the sentence said.
+  - Two others use the start request.
+  - The source-file list now names `RequestRead.py`.
+- `test_reading_curriculum.py`:
+  - The cross entropy is now `Output`'s.
+  - Named occurrences are checked through `supplied_reading` and `output_lesson`.
+  - The native lesson asserts each row reads each word once, not the order.
+  - The prompt need no longer checks `_needs`.
+- `test_native_candidate_attention.py`:
+  - The checkpoint test is ported to `request_read`, with the retired keys dropped.
+  - Removed: the `_heat` test and the two-zero-surprise-columns migration (their code is gone).
+- Removed because the context's projection is gone: `test_reading_attention.py` (two projection tests), `test_math_chain_repair.py` (`project`), `test_look_forecast.py` (projection, then the bounded match) and `test_relevance_bases.py` (`_heat`, slow).
+- `test_item4_parity.py`: no prime reaches the request (`RequestRead` reads none).
+- `test_item17_time.py`: the context's interval codes, which were asserted from `AttentionContext.py`, are removed.
+- `test_final_generation.py`: the file list now names `RequestRead.py`.
+- `test_item17_places.py`:
+  - `teach` is taught by the sentence said.
+  - The untaught-start test is taught one presentation, then read at rate 0.
+  - `looked_at` hooks `attend`.
+  - `REORDERED` moved here.
+- `test_item17_order_trial.py` (the ninth pass's query and cue) is retired to `/tmp/item17-r6d-2026-11-21/`. Its subject is gone.
+- `test_item17_tree_attend_trial.py`:
+  - Steps 3 to 5 are retired: their subject was the query, `request_start` and the lesson.
+  - Step 1 no longer prints the context's tree.
+  - The toys are kept.
+- `attention_curriculum_gates.py`, `identity_experiment.py`, `constituent_order.py`, `constituent_experiment.py`: `lesson_cross_entropy` → `output_cost`, and `reading_lesson` → `output_lesson`.
+- `test_whole_path_repairs.py`, `test_item20_round34_projection.py`: the term name is now `attention.output`.
+- `bin/Assessment.py`: `_attention_trace` now hooks `SentenceLooks.attend` (it hooked `requested`).
+- `test/attention_thinking_certificate.py`: the observer now counts `SentenceLooks.attend`.
+- New: `test/test_item17_request_read.py` (3 tests, including the simulation kept as a test) and `test/test_item17_own_reading.py`.
+- **The coordinator's fault:** `Places.readings` now reads a padded row of nothing where a reading has no occurrence, so there is no special path. `test_item18_scalar.py`: 5 passed.
+
+#### Tests run
+
+| Run | Result |
+| --- | --- |
+| Probes of the gradient (scratch, moved to /tmp) | see step 3 |
+| 18 files first broken, then ported, in three batches | all pass, save as below |
+| The files touched and their users (50 files, `-n 4`) | 447 passed, 30 skipped, 2 failed: `test_81` (known) and `test_item20_round34_projection::test_model_xml_default_projects_one_native_batch_and_steps_once` (fails on `main` at a1aebce56e too) |
+| `test_item17_places`, `tree_attend_trial`, `carry_down_trial`, `reading_curriculum`, `native_candidate_attention`, `whole_path_repairs`, `request_read` | pass after two ports (16 min) |
+| `test_item17_fragments::test_50d` | flaky on `main` in a parallel run; passes alone on both |
+| `test_item18_scalar.py` with `Places` | pass |
+| **Both gates** (with `test_item18_scalar` and `test_item17_request_read`), at the end | **10 passed, 38 s** |
+| The trial, three starts, `-n 3` | 3 passed (records), 54 min |
+| Lesson's script `--runs 3` | done, 22 to 36 s a run |
+| The curriculum's first stages, here and on `main` | the same failures on both |
+
+`test/test_compiled_lesson_step.py` was not run: nothing it compiles was changed by me beyond the look loop, which it compiles eagerly, so this is unverified. Records: `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d11/` (`own3.jsonl`, `curriculum.log`, `lesson3/`, `cur12-*.log`).
+
+#### Review (Claude, 2026-11-22)
+
+Spot tests by the pass; both gates pass on the branch (`item17-r6d11`, `0f05c96ce4`). `main` is not moved, and Claude's list is not run on this commit: the pass goes on in the twelfth on the same branch, and the list is run when `main` moves.
+
+- *The build is what the text asked, and it does not yet do what the toy did.* The output's cost now reaches the request (it reached nothing before: the gradient was None at all four looks), the reading target and the bounded match are gone, and no activation is set from outside. But no stage of teaching passes: a word alone is said back for 4, 11 and 3 of 19 words after 16 rounds, and no sentence is read in order or counted.
+- *Why, as far as this pass shows: three hard edges between the request and the choice, none of which the toy had.*
+  - The request is a logistic for each concept with nothing to hold it: within a few presentations it is 1.0 or 0.0.
+  - A word is found only where its concept's value is above nothing, so a concept asked at 0.0 has no share and no gradient, and never comes back. That is a threshold, and his rule is graded evidence.
+  - An occurrence's share is held at its own activity (the lesser of the two), which is why the request had to start at .018 to pass any gradient.
+  The toy's request was matched against the percepts and the choice was a softmax over the unread ones, with no threshold and no cap.
+- *Where the request did not shut words out* (start 2) *every word was read once and the read stopped at the end, in 6 of 6 two-word sentences, with the order wrong.* That is what the tenth pass's step 2 predicts for places coded at periods of 8192 and 256 (a margin of .004 to .02 between neighbours), and the rung was not tried.
+- *The age chart's order was not kept by the lesson's bounds:* the sentences were taught after the words had failed. The twelfth pass stops at the first row that fails.
+- *"Whether anything is left" for the read's last input is right,* and rule 80's "whether the last look found anything" was Claude's wording, not Alec's. Rule 80 amended.
+- *The where match is kept* on the measure (the request's gradient is six times less without it).
+- *`prompt_need` and `PartLesson.need` have no reader now.* They go, in the twelfth pass.
+- *`test_compiled_lesson_step.py` was not run* though the loop it compiles changed. The twelfth pass runs it once.
+- *`test_item20_round34_projection::test_model_xml_default_projects_one_native_batch_and_steps_once` fails on `main` too,* and is not in Claude's list. *Round 7's list:* the test, and the list gains its file.
+- *For Alec:* whether the closing mark is counted as a word in the counting task (the pass counted it); whether the corpus lessons, which have supervised outputs, are also taught the sentence said.

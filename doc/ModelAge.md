@@ -113,7 +113,7 @@ both measured and passed, and the next measured row fails.
 | --- | --- |
 | 0.70, object permanence | Passed in 3 of the 4 test models that have text; failed in 1 ("unknown word"). The ladder's eight higher rungs were not reached: no test model declares the vocabulary they need. |
 | 0.75, a word recognised by its form | Passed. |
-| 1.00, a word said back | Not measured. The measure is being built. |
+| 1.00, a word said back | Failed, on the branch that builds the new reading (`0f05c96ce4`): 4, 11 and 3 of 19 words said back after 16 rounds, in three starts. Not measured on `main`. |
 | 1.75, two words taken in order and said back | Failed. After the reading lesson, 0 of 6 two-word sentences are read in order in each of three starts, though the first word is taken first in 6 of 6. Every word of a sentence is found (64 of 64), but not in order, and "is" is never taken. |
 | 2.25 to 5.00, with the words handed to the model in order | The curriculum's stages `reading_two`, `reading_four`, `identities`, `noun_verb` and `relations` pass when the model does not have to take the words itself. They do not count toward the age, since taking the words in order is the row that fails. |
 | 6.00, exclusive or | Passed (the standing gate). |
