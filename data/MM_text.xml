@@ -39,8 +39,7 @@
   </InputSpace>
 
   <PartSpace>
-    <!-- This gate receives numeric XOR tensors and has no letter identity. -->
-    <identityByParts>false</identityByParts>
+    <identityByParts>true</identityByParts>
     <nInput>8</nInput>
     <nInputDim>14</nInputDim>
     <nVectors>200</nVectors>

@@ -11,7 +11,7 @@
        2048 ordinary concepts give order zero room for all 784 places;
        4096 basic percept seats accommodate distinct levels at those places. -->
   <InputSpace><nVectors>28</nVectors><nDim>36</nDim><nOutput>28</nOutput><nOutputDim>36</nOutputDim></InputSpace>
-  <PartSpace><identityByParts>false</identityByParts><nInput>8</nInput><nInputDim>36</nInputDim>
+  <PartSpace><identityByParts>true</identityByParts><nInput>8</nInput><nInputDim>36</nInputDim>
     <nVectors>1024</nVectors><basicPerceptCapacity>4096</basicPerceptCapacity>
     <nDim>14</nDim><nOutput>8</nOutput><nOutputDim>14</nOutputDim>
     <invertible>true</invertible><synthesis>meronomy</synthesis><butterfly>true</butterfly></PartSpace>

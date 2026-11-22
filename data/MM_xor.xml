@@ -26,7 +26,7 @@
     <nOutputDim>9</nOutputDim>
   </InputSpace>
   <PartSpace>
-    <identityByParts>false</identityByParts>
+    <identityByParts>true</identityByParts>
     <nInput>8</nInput>
     <nInputDim>9</nInputDim>
     <nVectors>200</nVectors>
