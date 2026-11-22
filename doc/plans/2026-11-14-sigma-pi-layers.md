@@ -22217,3 +22217,257 @@ On `43be9a866c` (the branch), in a clone, 306 files, six processes: 14 failed, 3
 
 All eleven read "both", or which rows a reading holds, and go with point 1 of the review to the fourth pass.
 
+### 23.6.9 Round 6d, fourth pass: a bare bracket tells nothing against; why places are asked alike, confirmed; three clamps; main not moved, for stores with no part map (Claude on Opus, standing in for Codex, 2026-11-21)
+
+
+Branch `item17-r6d2-step4-wip`, rebased onto `main` (2bc49d2e56; doc commits only). The third pass's ten commits are now 7ddfd4dfad to ab2d217864. This pass's five commits are on top of them, and the branch ends at **2e29cea3b2**. Nothing pushed. Superproject untouched. No doc/ or configuration edited. No skip, xfail or pinned seed.
+
+#### What fails or is unfinished, first
+
+- **Main was NOT moved forward.** The checkout is on `main` (2bc49d2e56) and the branch is kept.
+- **The eleven of step 1 still fail unported.** The bracket rule is built and is one of their two causes. The other cause is the store with no part map (see step 1). With codes of their own for the parts, all eleven pass.
+- **`test_concept_memberships::test_a_located_part...`, back on its old assertion, fails at one value.** The bracket "48 48" reads [0, 0] where [0, 1] is asserted (step 1).
+- **`test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery` fails, and it fails at d188a06133 too.** The read before cannot give it (step 1).
+- `test_word_admission::test_29_each_reading_publishes_only_its_words[MM_text.xml]` was left as it is (step 6).
+- **Reading in order is still 0 in every count of the places' measure,** and 0, 0 and 1 sentences in the lesson's script. Twenty-two of the 29 places' concepts are still asked alike, at about 2,400 to 2,600: their derived code is still the code of a what that cuts nothing, even though their row keeps a what (step 2).
+- `test_item17_symbols::test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced[0.4]` failed once in the six-process run. It passed twice when its file was run alone (35 passed each time). It draws a random start of its own (`os.urandom`), and this pass touched nothing it reads (OrderZero's sparse Sigma), so I take it as flaky.
+
+#### Step 1: the read before as the reference
+
+##### What the table's read gave that d188a06133 did not
+
+I compared the two in a clone at d188a06133, on `field_case([49, 65, 48])` and the like (probe in the scratch folder `r6d4/probe1.py`). There are two differences.
+
+1. **The bracket.** At the reading's bracket [0, 3], the table's read gave a row whose part lies in the bracket "against" (the mixed extent). The read before gave [0, 0].
+2. **A store with no part map tells no part apart.** `_cs()` has no `native.identity`. A part's code is its row of the dense, signed, learned codebook (`native._basis.W`, values in -1 to 1). The table reads codes by the least and the greatest, which needs codes on 0 to 1 with coordinates of their own. So the row ((48,), (0,)) reads for .56 to 1.0 at the event of byte 49 (the value changes with the codebook's random start). The read before matched part ids, so it read 0 there.
+   - This is the same cause that keeps MM_text from passing (§23.6.8, step 2 (d)), and it waits on the same decision.
+   - In `test_serial_concepts`, the parts 0, 1 and 2 are not told apart, so row 1 is published in a sentence that holds only parts 0 and 2.
+
+##### Built (bin/BasicPercepts.py), the text's first choice
+
+- `PerceptBank.holder` `[B, occurrences]` marks an occurrence that can tell against a row it holds:
+  - a part's event (`part_spans`);
+  - a run of a row's parts (`_form_spans`);
+  - a stored form (`_spelled_spans`, or the bracket's bytes in `identity.words`).
+- `read_bank` multiplies the against lane, and the against lane of the boundaries, by it (`told`). The for lane is unchanged.
+- A bracket or a whole's span that is none of these stays in the field and tells only for.
+
+**What an unknown word needs of its bracket.** It needs the bracket as an occurrence for three things:
+- the reading itself: the bracket gives each occurrence its `token`, and gives the reading its where and its when, which `where_match` and `word_activity` group by;
+- the for lane of a row read by the set of its parts (rules 41 and 43: (b, a) on "ab" reads 1 only at the bracket);
+- a whole that covers all of the word.
+
+It needs nothing against. Its parts' events tell against what they hold, and the reading is the greatest over its attended percepts, so the reading's value is unchanged. So I did not take the text's "is not an occurrence of the field" literally: dropping the bracket would lose the set read and the reading's token. It tells only for. Say if it should go wholly.
+
+##### The eleven, unported
+
+All eleven still fail. Run as a diagnosis and not committed, with each fixture's parts given codes of their own (`with_own_codes`, as the third pass did for the nineteen):
+- with the bracket rule: 16 of 16 pass in both files;
+- without the bracket rule: 15 pass, and `test_pure_or_unknown_scattered_reading_never_requests_a_raise` fails.
+
+So the bracket rule is right and needed, and what is left is the store with no part map. I did not build codes of their own for such stores; that is the open choice of §23.6.8 for Alec. The eleven are:
+- test_refine_raise: test_scattered_both_requires_completed_updates_before_a_raise, test_improvement_restarts_refinement_and_pure_reading_clears_it, test_convergence_state_roundtrips_with_definition_inventory, test_context_observer_cannot_bypass_refinement_before_assigning_a_kind, test_extent_containment_does_not_fill_gaps_between_part_witnesses[False] and [True], test_learned_particular_stays_at_one_scattered_kind_raises_to_two[0], [1] and [2];
+- test_serial_concepts: test_open_pass_reads_once_before_composition_and_never_mints ({0, 1, 2} where {0, 2} is asserted), test_prime_boundary_joins_lexical_and_open_field_rows_in_one_step.
+
+##### The seven, back on their old assertions
+
+`with_own_codes` was kept where the third pass added it. That is the parts' codes, not the mixed extent.
+
+| Test | Now |
+| --- | --- |
+| test_concept_evidence::test_membership_read_keeps_both_until_symbol_readout (49: [1, 0]) | passes |
+| test_concept_memberships::test_one_property_has_the_four_extent_corners (presence · lanes) | passes |
+| test_field_binding::test_observed_complement_is_pooled_inside_one_bracket (presence · at[part]) | passes |
+| test_primitive_properties::test_different_positions_in_one_extent_supply_the_two_symbols | passes |
+| test_word_admission::test_29_shared_whole_does_not_evidence_an_absent_word | passes (only its codes were changed) |
+| test_concept_memberships::test_a_located_part_need_not_pervade_but_the_whole_property_must | **fails**: see below |
+| test_grounded_xor.py, the located assertion in `learn_grounded_xor` | restored; only test_definition_integrity runs it, and that test fails earlier (below) |
+
+**test_a_located_part**, the bracket [0, 2]:
+- batch 1, "49 48": [0, 0], as before;
+- batch 2, "48 48": [0, 0], where the old assertion is [0, 1] and the read before gave [0, 1].
+
+Why: the bracket is no stored form and no row, so it tells nothing against. Each byte's event still reads against, and so does the reading. The table cannot give "the whole is witnessed outside over all of the bracket" at a bracket that is not a holder: its wholes columns hold only the degree to which the occurrence lies in a whole (the for lane). The test is left failing on its old assertion, not forced.
+
+**test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery:**
+- `order_zero_both` on 00, 01, 10, 11 is [0, 0, 0, 0], where [0, 1, 1, 0] is asserted.
+- It is [0, 0, 0, 0] at d188a06133 as well (run in the clone: it fails there).
+- In "01", the only thing that tells against whole 9 is the row of '1' (whole 9) read against at the bracket "01". "01" is not a stored form at that point.
+- So the test needs the mixed extent the text withdraws. The read before does not pass it, and under the first choice it cannot pass. This is for Claude to decide.
+
+Certificate 54 (c) (archer on reach): unchanged. reach is a stored form, so it is a holder, and the test passes (−tanh(1)).
+
+#### Step 2: why the places' concepts are asked alike
+
+##### Printed
+
+The probe and the measure print these after the lesson, in all three starts.
+
+- **Before this pass's change:** all 29 places' codes that `SentenceLooks.requested` passes to `attend` (`similarity_codebook.W[rows]`) had norm 8.0, and the greatest difference between any two was **0.0**. Each was nonzero on exactly the coordinates 64 to 127: zeros in the parts half and ones in the wholes half. This held for the 7 places with no what **and for the 22 that keep a what**.
+- **After:** norms {0.0, 8.0} and greatest difference 1.0. The 7 places with no what are at 0; the 22 that keep a what are still the one code of norm 8.
+
+##### Where the code is written
+
+- The derived placement of the similarity codebook: `MereologicalCodes.derive` calls `FeatureTable.forms`, which calls `FeatureTable.codes`.
+- `FeatureTable.codes` takes the parts half as the greatest of the row's parts' codes, starting from 0, and the wholes half as the least of its wholes' codes, starting from 1.
+- A place's row has `occurrences[row] = ((), ())` (`reserve_place`), so its code is no parts and every whole.
+- `Codebook.lookup_rows` writes the derived value back into `W`.
+- `ConceptPlacement.initialize` first seeds a random direction, which this overwrites (the probe found that `W` no longer equals the seed).
+- `FeatureTable.codes` never reads `place_rows[row][2]`, the kept what. That is why the 22 places with a kept what get the same code.
+
+##### Built (bin/FeatureTable.py)
+
+In `FeatureTable.codes`, a place's row that keeps no what has the code nothing on both halves. So the context's map asks nothing of its concept, and only its entry of the request's start does. The measure confirms it: those 7 are asked exactly 0, or 0.0599 where the start moved.
+
+##### Not built, another cause
+
+The 22 places that keep a what are given the code of a what that cuts nothing because the derivation ignores the kept what, not because they have none. The text says to build nothing for another cause, so they still share one code and are asked alike. The natural repair is that their derived code is the kept what (`bank_codes` already reads it for the first Pi). That is for Claude.
+
+#### Step 3: the conjunction with places
+
+- Decided in `FamiliarTier.observe_field`, through a new helper `FamiliarTier.is_place(owner, row)`: the row's concept has symbol type 'place'.
+- The co-occurrence loop now runs over `offered`: the witnessed rows used, less the places' concepts. A place's concept is neither a focal row nor a member of the context passed to `observe_candidate`.
+- `used`, the whole set, still feeds `observe_native_cases` and MTM's use of its entries.
+- test_epoch_history.py passes unported (it was in the final run, and passes).
+
+#### Step 4: clamps at a bound on the paths named
+
+torch's `clamp`, `clamp_min` and `relu` pass no derivative at the bound, on either side (checked: `clamp(0, 1)` gives 0 at both 0 and 1). `torch.minimum` splits the derivative of a tie.
+
+**Repaired** (each to the form `torch.where(x >= 0, x, 0.)`, or `signed_lanes`):
+1. `BasicPercepts.place_factor`: `exp(-(own - cross).clamp_min(0.))`. It bounds the divergence of a row's where and when entries from an attended percept's wires. A content row's where and when weights start at exactly 0, so the divergence is exactly 0 and its derivative by the weights was blocked: **a weight could never be taught from nothing.** It now passes.
+2. `SentenceLooks.look`: `torch.minimum(own, salient.events.clamp_min(0.))`. It bounds a look's share, which bounds the activity. At an untaught request the share is exactly 0, and the request's derivative through the activity (the what path) was blocked. It is now `share = where(e >= 0, e, 0)` and `activity = where(share < own, share, own)`. The occurrence's own activity takes the tie, so an absent or lowered occurrence (own 0) sends nothing to the request.
+3. `Salience.first_pi`: `net.clamp_min(0.)` and `(-net).clamp_min(0.)`, the Not's two lanes (for less against). At a row read alike both ways, net is exactly 0 and the derivative stopped. It is now `signed_lanes(net)`, which passes to both lanes at 0.
+
+**Listed, not repaired:**
+- `place_factor` `kept.clamp(0., 1.)`, which bounds an entry's kept value. A content row's kept values start at exactly 0, but the divergence's derivative by the kept value at 0 or 1 is infinite (`log k`). The clamp's zero derivative there also guards against 0·(−inf) = NaN while the weight is 0. Repairing it needs another form of the divergence, not a passing clamp.
+- `place_factor` `c.clamp(1e-6, 1 - 1e-6)`, which bounds the where and when wires before the log. The wires come from the constant sinusoid, detached in `lookup`. This is a log guard. It would matter only if the sinusoid were learned.
+- `place_factor` and `where_weight`: `torch.where(weight >= 0, weight, 0.)` already passes.
+- `Salience._down` `values.clamp_min(tiny)`, and `first_pi` `value_for.clamp_min(tiny)` and `value_against.clamp_min(tiny)`: these guard division, and the zero case is masked by a `where`.
+- `Salience.salience` `log(values.clamp_min(1e-30))`: the values are the open run's, detached, so there is no gradient path.
+- `attend` (`Language.attend`) uses `signed_lanes` and already passes. `RequestStart` has no clamp.
+- `BasicPercepts.bank_codes` `.clamp(0, 1)` and `against`'s `.detach().clamp(0, 1)`: detached codes.
+- The candidate matrices (`CandidateMatrix`, `CandidateGrowth.presence` `.clamp_min(0)` on a detached reading): taught on the host by hand-computed gradients (dual averaging). No autograd path, so a clamp blocks nothing.
+- `ConceptSpread` 185 (detached source), 191 and 192 (denominators), 266 (log guard): none on a taught path.
+
+#### Step 5: the measure
+
+##### The places' measure
+
+`test_item17_places.py::test_reading_in_order_before_and_after_the_lesson`, on 2e29cea3b2: 1 passed in 650.6 s. Its printout was extended (prints only) to show the request on each place's concept and the codes' norms and greatest difference.
+
+Three starts drawn afresh: 220001151893481, 215658214269245 and 184567531671280. Every value but the start, and the request's magnitudes, is the same in the three.
+
+- Places: 29, of which 7 keep no what (`pure`). The codes' norms are {0, 8}, and the greatest difference between two codes is 1.0.
+- Read in order, out of two-word 6, lesson 16 and held out 6: 0, 0, 0 before and 0, 0, 0 after, in each start.
+
+"This is Felix." after the lesson took 3 looks in starts 1 and 3, and 4 looks in start 2.
+- **The request on each place's concept:**
+  - the 7 with no what: 0.0 on six of them, 0.0599 on one (its start);
+  - the 22 that keep a what: one of two values 0.06 apart.
+
+  | Start | First look | Later looks (each the second value plus 0.06) |
+  | --- | --- | --- |
+  | 1 | 2633.75 / 2633.69 | 2467.80, 2459.79 |
+  | 2 | 2444.67 / 2444.61 | 2323.86, 2371.70, 2364.66 |
+  | 3 | 2582.66 / 2582.60 | 2377.12, 2394.75 |
+
+- **The where match** is one at one reading and 0 at the rest, in every start:
+  - first look: reading 3;
+  - then reading 2, then reading 1;
+  - start 2 has a fourth look, on reading 0.
+- **The request's start after the lesson:** 0.05985 on the concepts of places 1, 3, 6, 9, 13 and 16, and 0.0 on the other 23. 1.0 on "words" (row 142), and nothing else non-zero. The same in the three starts.
+
+##### The lesson's script, `--runs 3`
+
+CPU, 78 s in all. Output in the scratch folder `r6d4/lesson`.
+
+| Run | Start | Seconds | Words | Live | Sentences in order | Words in order | At allowance | Drawn | Known against | Known both |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 919535093 | 22.6 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 2 | 1968580369 | 24.2 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 3 | 3143422823 | 22.9 | 64 | 64 | 1 | 4 | 0 | 26 | 0 | 0 |
+
+No mechanism was added for reading in order.
+
+##### Why the three starts give one result
+
+`torch.manual_seed(start)` seeds the global generator before the model is built. Comparing the state of two models built at seeds 1 and 2 (`r6d4/probes/test_probe_seed.py`), 56 of 550 tensors differ:
+- the perceptual codebook's `W` and the byte fallback codebook;
+- the vq norms;
+- the chooser's and the grammar's small networks;
+- the symbol expectation's and the percept expectation's predictors;
+- the answer scorer.
+
+None of these reaches what the measure reads:
+- A part's code is a keyed draw of the part catalog (identity atoms), not `W`.
+- Concept placements are seeded by identity and then derived (`FeatureTable`).
+- The context's map (`attention_context`) is zero-initialised inside `fork_rng`.
+- The request's start is zeros and a one on "words".
+- The percept expectation enters the map's input times `perceptExpectationGain` = 0.
+- With interpretBias 1 the chooser is not consulted.
+- The draw in `attended()` happens only when a sentence has more than 256 occurrences, which never happens here.
+
+So what the measure reads, and the lesson that teaches it, does not depend on the start. Only the request's magnitudes differ between runs; the learned start does not. I did not trace whether the expectation prime (`_expectation_prime`, from the symbol expectation's seeded predictor) is empty here. It must contribute nothing, or very little, since the learned start is the same in all three runs.
+
+#### Tests ported (old, then new)
+
+| Test | Old (third pass) | New |
+| --- | --- | --- |
+| test_concept_evidence::test_membership_read_keeps_both... | row of 49 [1, 1] | [1, 0] (the old assertion, restored) |
+| test_concept_memberships::test_one_property_has_the_four_extent_corners | presence · max(lanes, mixed · [0, 1]) | presence · lanes (old) |
+| test_concept_memberships::test_a_located_part... | [[1,0],[0,1],[0,1]] | [[1,0],[0,0],[0,1]] (old; fails at batch 2, see step 1) |
+| test_field_binding::test_observed_complement_is_pooled_inside_one_bracket | presence · max(at, mixed) | presence · at[part] (old) |
+| test_primitive_properties::test_different_positions... | presence · max(at, mixed) | presence · at[part] (old) |
+| test_grounded_xor.py `learn_grounded_xor` | for and against across the reading's attended percepts | the located single-byte assertion (old) |
+| test_item17_places::test_reading_in_order... | printed max and min | also prints each place's request and the codes' norms and greatest difference (no assertion changed) |
+
+#### Test files run (counts, seconds)
+
+- Gates before any edit: 2 passed, 5.4 s.
+- test_refine_raise + test_serial_concepts on the branch before any edit: 11 failed, 5 passed, 6.1 s.
+- The same, with the bracket rule: 11 failed, 5 passed, 6.3 s.
+- The same with `with_own_codes`, not committed: 16 passed with the bracket rule; 15 passed and 1 failed without it.
+- The seven tests' files with test_word_admission and test_definition_integrity: 3 failed (located part, MM_text, definition_integrity), 98 passed, 17.7 s.
+- test_item17_looks, test_item20_round5_percepts, test_item17_table, test_occurrence_coordinates, test_percept_field_compaction, test_order0_attended_field, test_order0_percept_definitions, test_evidence_folds, test_field_learning, test_cs_sparse_weights, test_concept_output, test_item17_code: 110 passed, 100 s.
+- Gates + test_item17_places::test_the_request_for_a_place_at_an_untaught_start + test_epoch_history + test_item17_looks, after steps 2 to 4: 31 passed, 47 s.
+- The places' measure: 1 passed, 650.6 s.
+- The lesson's script, `--runs 3`: 78 s.
+- **Final, on 2e29cea3b2, in one run: 15 failed, 294 passed, 107 s.** The files: both gates, test_refine_raise, test_serial_concepts, test_epoch_history, test_concept_evidence, test_concept_memberships, test_field_binding, test_primitive_properties, test_grounded_xor, test_definition_integrity, test_word_admission, test_item17_looks, test_item17_places (without the measure), test_item17_table, test_item17_symbols, test_item17_code, test_item20_round5_percepts, test_percept_field_compaction, test_order0_attended_field, test_order0_percept_definitions, test_evidence_folds, test_field_learning, test_cs_sparse_weights, test_concept_output, test_occurrence_coordinates, test_item20_round6_gradients, test_attention_promotion, test_item18_completion.
+  - Both gates pass.
+  - The 15 failures: the eleven; MM_text; located part; definition_integrity; and the sparse Sigma [0.4], which then passed twice alone (35 passed, about 44 s each).
+- Not run: the certificates as a named set beyond the files above. Claude runs the list.
+
+#### Commits (on `item17-r6d2-step4-wip`, not on main)
+
+- 57e51db036: only an occurrence of its own tells against (`PerceptBank.holder`); the seven tests' old assertions.
+- 269ef153c8: a place's concept is not offered to a conjunction by co-occurrence (`FamiliarTier.is_place`).
+- 2ddff53d49: a place's row with no what derives the code nothing (`FeatureTable.codes`).
+- 0cb86650a5: three bounds that pass the derivative (`place_factor`, `SentenceLooks.look`, `Salience.first_pi`).
+- 2e29cea3b2: the measure's printout.
+
+**Main was not moved forward.** The checkout is on `main` (2bc49d2e56) and the branch is kept.
+
+#### What surprised me
+
+- **The eleven were never only the bracket.** Their fixtures are a store with no part map, the same as MM_text, so the decision §23.6.8 sends to Alec about those configurations also decides whether these tests can pass on the table.
+- **test_definition_integrity fails on the reference read too.** It passed on the third pass only because a mixed bracket told against.
+- **Even the 22 places that keep a what got the cut-nothing code.** The derived placement reads a row's occurrences, which a place does not have, and never reads its kept what. So Claude's reading was right for all 29, but for two reasons.
+- **The where and when weights of every content row could never have been taught from nothing.** A `clamp_min` blocked them at the exactly-zero divergence: a fault of the same kind as the third pass's.
+- **The measure's start changes nothing it reads.** Every quantity on the reading's path is zero-initialised or a keyed draw.
+
+#### Review (Claude, 2026-11-21)
+
+Spot tests by the pass; both gates pass on the branch (`item17-r6d2-step4-wip`, `2e29cea3b2`). `main` is not moved. No list was run on this source: the pass's own run has 15 failures in 309 tests and each is accounted for below, so a list would add nothing before Alec's answer.
+
+- *One question now decides whether `main` can move: a store with no part map.* The table's read needs codes on 0 to 1 in which each part has coordinates of its own. The three `MM` configurations do not have them, and neither do the `_cs()` fixtures of the eleven tests: with parts given codes of their own, all eleven pass with the bracket rule. So the eleven are not a fault of the read. They are ported like the nineteen of the third pass if Alec says a fixture may be given such codes, and they pass unported if a store with no part map is given a code by the source. That is his question 1 (below, and put to him today).
+- *The bracket rule is right and stays:* only a part's event, a run of a row's parts or a stored form tells against a row it holds. A bare bracket stays in the field and tells for, since an unknown word needs it for its reading, its where and when, and a row read by the set of its parts. Claude's "is not an occurrence of the field" was too much, and the pass was right not to take it literally.
+- *Two tests that the rule leaves failing, both about a whole over a bracket:*
+  - `test_a_located_part...`: over the bracket `48 48` the row's whole is witnessed outside at every byte, and the read before gave against there. The table's wholes columns hold only the degree to which an occurrence lies in a whole. *Claude's first choice:* the table has two lanes, and the against lane of the wholes half should hold the degree to which each whole is witnessed outside over the occurrence, so that a whole witnessed outside over all of a bracket tells against, and a mixed bracket tells nothing, as before. It is not built.
+  - `test_definition_integrity` (the XOR case's "both" at `01` and `10`): it has failed since the first pass, and passed in the third only by the mixed extent that is now withdrawn. What gave "both" there before the table is not yet found; the second pass's account of it and the fourth's do not agree. *It is to be found by reading the source at `f4b00524ee`, before anything is built for it.*
+- *Why places are asked alike is confirmed, and half repaired.* Every place's concept had one code, norm 8, no parts and every whole, written by the derived placement (`FeatureTable.codes`), which reads a place's empty parts and wholes and never the what its row keeps. The 7 places that keep no what now have the code nothing and are asked nothing by the map, as intended. The other 22 keep a what and still get the one code. *Next:* their derived code is the what the row keeps.
+- *Reading in order is still 0,* and after four passes the reason is no longer the presentation. The context's map takes the request on the 22 to about 2,400 in a few presentations. Even with distinct codes it may do so: the gradient at a place's entry is about 300 for a unit of request (the cone writes a where weight of 10 on each of four wires), against a lesson's rate of .01. *For Alec, not to be tuned by Claude:* whether the weight the cone writes should start small and be learned up, which is what "the basic percept can decide to include or drop the .where" (§19.115) suggests, where the pass wrote 10.
+- *Three clamps that passed no derivative at their bound are repaired,* one of which meant that no row of content could ever have learned a where or a when from nothing. The fault has now been found five times in this item (§23.6.5, §23.6.8, and these three). *Round 7's list:* the same search over the rest of the source.
+- *The three starts of the measure give one result* because the start seeds only weights the measure does not read. So the measure has had one sample, not three, since it was written; the lesson's script is the one that varies (0, 0 and 1 sentences in order).
+- `test_epoch_history` passes: a place's concept is no longer offered to a conjunction made by co-occurrence.
+
