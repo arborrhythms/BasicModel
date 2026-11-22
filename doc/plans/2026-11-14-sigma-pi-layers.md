@@ -9906,10 +9906,10 @@ Alec, while the eleventh pass was building: "Also, maybe we want to reliable tea
 I mean that before we test understanding and identity, as we are now doing, we should qualify the model that we are testing with some assessment grade. They can be numeric, in a list, maybe corresponding to the approximate age in a human child at which they are learned, in years at a few decimal digits of precision."
 
 - *Withdrawn:* Claude's check in chat.
-- *Decided:* a model is qualified by the assessment before understanding and identity are tested on it. Each sub-goal has a grade, a number, in one list; the number is about the age in years at which a child learns it, to a few decimals.
+- *Decided:* a model is qualified by the assessment before understanding and identity are tested on it. Each sub-goal has a number, in one list (he first said "assessment grade"; the word is *age*, below); the number is about the age in years at which a child learns it, to a few decimals.
 - *Mine, a first list for his correction* (the ages are from memory of the usual milestones and were not looked up; the model's "reading" is taking the words of a sentence in order, which is nearer to a child's hearing and saying back than to literacy):
 
-| Grade | Sub-goal | Measure (the assessment's) |
+| Age (years) | Sub-goal | Measure (the assessment's) |
 | ---: | --- | --- |
 | 0.70 | A word kept when it is out of the look (object permanence) | the ladder's rung "one word" |
 | 1.00 | A word said back | each word alone in, the word out |
@@ -9926,7 +9926,14 @@ I mean that before we test understanding and identity, as we are now doing, we s
 | 4.25 | An adverb | the rungs "Felix ran quickly", "the fast cat ran quickly" |
 | 4.50 | Relations | `relations` ("is on", "bigger than") |
 
-- *Mine:* a model's grade is the greatest grade with every grade below it passed, and the list of what passed is kept beside it. A test of understanding or identity names the grade it needs; on a model below it the test reports "not qualified at grade x" in place of a failure of its own. Built in the pass after the eleventh, in `bin/Assessment.py`, the two ladders made one.
+- *Mine:* a model's age is the greatest age of the list with every age below it passed, and the list of what passed is kept beside it. A test of understanding or identity names the age it needs; on a model below it the test reports "not qualified at age x" in place of a failure of its own. Built in the pass after the eleventh, in `bin/Assessment.py`, the two ladders made one.
+
+*The term, and where the number is kept* (Alec, the same day): "Terminology change: A model’s age is determined by the assessment, not "grade"
+The age can be a parameter of the model (and XML), read/written by the assessment, and which can be used by that tool to ensure that a test is qualified to run against the model (by asking for a specific mental age)."
+
+- *Decided:* the word is *age* (a model's mental age), and "grade" is not used. The list above is a list of ages.
+- *Decided:* the age is a parameter of the model and of its XML. The assessment determines it, writes it and reads it. A test asks the assessment for a mental age, and the assessment says whether the model is qualified for the test.
+- *Mine, for the build:* a key `age` with its default (0) in `data/model.xml`; the number kept with the model's saved state, so that it goes with the weights it was measured on; `Assessment.py` the only writer. A model whose weights have changed since its age was written is assessed again before a test is qualified on it.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 

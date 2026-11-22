@@ -400,3 +400,17 @@ the way down, and what drives it is conceptual attention: a request over
 concepts carried down onto the what and the where, "over both particles and
 properties" (Alec, 2026-11-19). It reads the same matrices as the way up, by
 their transposes, and has no weights of its own.
+
+## The assessment
+
+**Assessment.** The external tool that measures what a model can do
+(`bin/Assessment.py`). It reads a model and changes no weight.
+
+**Age.** A model's mental age: one number, in years, determined by the
+assessment. Each thing a model is asked to do before understanding and
+identity are tested (a word said back, a sentence read in order, its words
+counted, the grammar's rules one at a time) has an age in one list, about
+the age at which a child learns it. "A model's age is determined by the
+assessment, not "grade"" (Alec, 2026-11-22). The age is a parameter of the
+model and of its XML, read and written by the assessment; a test asks for a
+mental age, and the assessment says whether the model is qualified for it.
