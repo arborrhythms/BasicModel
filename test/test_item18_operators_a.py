@@ -31,7 +31,8 @@ def test_69_complete_inventory():
 def test_71_arithmetic_is_in_the_chart_on_each_lane(name, monkeypatch):
     from Language import GRAMMAR_LAYER_CLASSES
     from util import TheXMLConfig
-    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {'data': {'dataType': 'numeric'}})
+    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {**TheXMLConfig.data['architecture'],
+        'data': {**TheXMLConfig.data['architecture']['data'], 'dataType': 'numeric'}})
     left = torch.tensor([[.1, .9, .3, 0., .8, .6]], dtype=torch.float64)
     right = torch.tensor([[.8, .2, 0., .4, .1, .7]], dtype=torch.float64)
     a, b = left.atanh(), right.atanh()
@@ -51,9 +52,10 @@ def test_72_lift_and_lower_have_opposite_orders_and_kernels(monkeypatch):
     from Language import LiftLayer, LowerLayer, LowerUnaryLayer
     from ReferenceContext import denoted_order
     from util import TheXMLConfig
-    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {'data': {'dataType': 'embedding'}})
-    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {'nDim': 12})
-    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {'nDim': 20})
+    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {**TheXMLConfig.data['architecture'],
+        'data': {**TheXMLConfig.data['architecture']['data'], 'dataType': 'embedding'}})
+    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {**TheXMLConfig.data['PartSpace'], 'nDim': 12})
+    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {**TheXMLConfig.data['ConceptualSpace'], 'nDim': 20})
     base = LowerLayer(20, 20)
     up, down = LiftLayer(base), LowerUnaryLayer(base)
     assert up.arity == down.arity == 1
@@ -225,9 +227,10 @@ def test_69_76_78_split_keeps_the_fixed_action_and_its_reverse(monkeypatch):
     from Language import ChangeLayer, VerbLayer, PrepositionLayer, SwapLayer
     from MeaningKernels import LaneKernel
     from util import TheXMLConfig
-    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {'data': {'dataType': 'embedding'}})
-    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {'nDim': 12})
-    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {'nDim': 20})
+    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {**TheXMLConfig.data['architecture'],
+        'data': {**TheXMLConfig.data['architecture']['data'], 'dataType': 'embedding'}})
+    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {**TheXMLConfig.data['PartSpace'], 'nDim': 12})
+    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {**TheXMLConfig.data['ConceptualSpace'], 'nDim': 20})
     fixture = json.loads((Path(__file__).parent / 'fixtures/item18-change-action.json').read_text())
     change, verb, preposition = (cls(20, 20).double() for cls in (ChangeLayer, VerbLayer, PrepositionLayer))
     assert not hasattr(verb, 'meaning_kernel')
@@ -260,9 +263,10 @@ def test_69_76_78_split_keeps_the_fixed_action_and_its_reverse(monkeypatch):
 def test_77_np_and_pp_meanings_use_one_basis_reader(monkeypatch):
     from Language import ChangeLayer, VerbLayer, PrepositionLayer
     from util import TheXMLConfig
-    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {'data': {'dataType': 'embedding'}})
-    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {'nDim': 12})
-    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {'nDim': 20})
+    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {**TheXMLConfig.data['architecture'],
+        'data': {**TheXMLConfig.data['architecture']['data'], 'dataType': 'embedding'}})
+    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {**TheXMLConfig.data['PartSpace'], 'nDim': 12})
+    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {**TheXMLConfig.data['ConceptualSpace'], 'nDim': 20})
     change, verb, prep = (cls(20, 20).double() for cls in (ChangeLayer, VerbLayer, PrepositionLayer))
     change.meaning_action.bind_basis(verb.meaning_basis)
     with torch.no_grad():

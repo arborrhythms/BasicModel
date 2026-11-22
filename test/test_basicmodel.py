@@ -296,9 +296,12 @@ def _populate_test_config(*,
             "codebook": _pq,
         },
     }
+    # Nested sections (architecture.training, .data) are merged, not
+    # replaced, so that model.xml's defaults under them stay (sigma-pi 19.123).
     for section, vals in _overrides.items():
         if section in Models.TheXMLConfig._data and isinstance(Models.TheXMLConfig._data[section], dict):
-            Models.TheXMLConfig._data[section].update(vals)
+            Models.TheXMLConfig._data[section] = Models.TheXMLConfig._deep_merge(
+                Models.TheXMLConfig._data[section], vals, path=(section,))
         else:
             Models.TheXMLConfig._data[section] = vals
 

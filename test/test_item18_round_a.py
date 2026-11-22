@@ -52,9 +52,12 @@ def test_modifier_preserves_checkpoint_gain_and_pullbacks(monkeypatch):
     from util import TheXMLConfig
     assert hasattr(Language, 'ModifierLayer')
     fixture = json.loads((Path(__file__).parent/'fixtures/item18-modifier-gain.json').read_text())
-    monkeypatch.setitem(TheXMLConfig.data, 'architecture', {'data': {'dataType': 'embedding'}})
-    monkeypatch.setitem(TheXMLConfig.data, 'PartSpace', {'nDim': 12})
-    monkeypatch.setitem(TheXMLConfig.data, 'ConceptualSpace', {'nDim': 20})
+    # Over model.xml's defaults, which hold every key the layers read.
+    data = TheXMLConfig.data
+    monkeypatch.setitem(data, 'architecture', {**data['architecture'],
+        'data': {**data['architecture']['data'], 'dataType': 'embedding'}})
+    monkeypatch.setitem(data, 'PartSpace', {**data['PartSpace'], 'nDim': 12})
+    monkeypatch.setitem(data, 'ConceptualSpace', {**data['ConceptualSpace'], 'nDim': 20})
     operator = Language.ModifierLayer(20, 20).double()
     with torch.no_grad():
         for name, parameter in operator.meaning_action.named_parameters():
