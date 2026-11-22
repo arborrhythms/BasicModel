@@ -40,6 +40,10 @@ class PerceptBank:
     identity_width: int = 0         # the parts half of the what columns
     when_band: torch.Tensor = None       # [B, readings, 4]
     registry: object = None              # the where wires (``WhereRegistry``)
+    # [B, occurrences] whether an occurrence can tell against a row it
+    # holds: a part's event, a stored form, or a run of a row's parts.
+    # ``None``: every occurrence can.
+    holder: torch.Tensor = None
 
 
 @dataclass(frozen=True)
@@ -918,17 +922,30 @@ class BasicPercepts(nn.Module):
         brackets = brackets.to(device)
         forms = self._form_spans(part_ids.to(device), part_spans.to(device), keys)
         spelled = self._spelled_spans(raw, rows)
-        found = []
+        found, holders = [], []
+        identity = getattr(self.native, 'identity', None)
+        lines = (raw[:, 0] if raw.ndim == 3 else raw).tolist()
         for b in range(brackets.shape[0]):
             held = dict.fromkeys(tuple(span) for source in (part_spans[b].tolist(), forms[b], spelled[b],
                                                             whole_spans[b].tolist(), brackets[b].tolist())
                                  for span in source if span[1] > span[0])
             found.append(list(held))
+            # The occurrences that can tell against a row they hold: a part's
+            # event, a run of a row's parts, a stored form. A bracket or a
+            # whole's span that is none of these tells only for.
+            own = {tuple(span) for source in (part_spans[b].tolist(), forms[b], spelled[b])
+                   for span in source if span[1] > span[0]}
+            if identity is not None:
+                own.update(span for span in held if span not in own
+                           and bytes(v & 0xff for v in lines[b][span[0]:span[1]]) in identity.words)
+            holders.append([span in own for span in held])
         O = max(map(len, found), default=0)
         spans = torch.zeros(brackets.shape[0], O, 2, dtype=torch.long, device=device)
+        holder = torch.zeros(brackets.shape[0], O, dtype=torch.bool, device=device)
         for b, held in enumerate(found):
             if held:
                 spans[b, :len(held)] = torch.tensor(held, dtype=torch.long, device=device)
+                holder[b, :len(held)] = torch.tensor(holders[b], dtype=torch.bool, device=device)
         real = spans[..., 1] > spans[..., 0]
         holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
                  & real[:, None])
@@ -963,7 +980,7 @@ class BasicPercepts(nn.Module):
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
         return PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
-                           when_band, registry)
+                           when_band, registry, holder)
 
     def read_bank(self, bank, activity=None, look=None):
         """The basic percepts of a bank's readings over a look's table
@@ -998,7 +1015,10 @@ class BasicPercepts(nn.Module):
             part, whole, added = held_at(bank, look.table)
             factor = self.place_factor(look.table, rows)
             at = presence[None] * factor
-            lanes = list(torch.stack((part * whole * at, part * torch.maximum(1 - whole, added) * at), -1))
+            # Only an occurrence of its own tells against what it holds.
+            told = (at if bank.holder is None
+                    else at * (bank.holder.gather(1, look.index) & look.filled).to(at)[None])
+            lanes = list(torch.stack((part * whole * at, part * torch.maximum(1 - whole, added) * told), -1))
             # Members come before the conjunctions over them.
             members = [('bp', r) for r in rows]
             for n, row in enumerate(rows):
@@ -1007,7 +1027,7 @@ class BasicPercepts(nn.Module):
             events = self.held(torch.stack(lanes), rows)
             values = by_reading(events)
             boundaries = torch.stack((by_reading(torch.stack((part * at, torch.zeros_like(at)), -1)),
-                                      by_reading(torch.stack((part * whole * at, part * (1 - whole) * at), -1))))
+                                      by_reading(torch.stack((part * whole * at, part * (1 - whole) * told), -1))))
         else:
             events = look.table.new_zeros(0, B, A, 2)
             values = look.table.new_zeros(0, B, K, 2)

@@ -136,11 +136,7 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     for part in (48, 49):
         index = percepts.keys.index(('bp', basic.index[((part,), (0,))]))
         presence = float((inside == part).any())
-        # A bracket that holds both parts holds the property not over all
-        # of it: it tells against each row whose part is present.
-        mixed = torch.tensor([0., float(len(set(inside.tolist())) > 1)])
-        torch.testing.assert_close(percepts.values[index, 0, 0].detach().cpu(),
-                                   presence * torch.maximum(at[part], mixed))
+        torch.testing.assert_close(percepts.values[index, 0, 0].detach().cpu(), presence * at[part])
     torch.testing.assert_close(cs.order_zero_both(percepts, [0])[0, 0, 0], torch.tensor(min(expected)))
     # The concept is one signed number, for less against.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))

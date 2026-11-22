@@ -41,14 +41,9 @@ def test_one_property_has_the_four_extent_corners():
                     byte = [a for a, span in enumerate(field.spans[b].tolist()) if span == [j, j + 1]]
                     expected = torch.tensor(at[prop, part]) * float(raw[b, j] == part)
                     torch.testing.assert_close(field.events[index, b, byte[0]].detach().cpu(), expected)
-            # A reading is the greatest over its attended percepts: where the
-            # whole is not held over all of its bytes (48 49, 49 48), the
-            # extent holds the row's parts outside its wholes, so a row whose
-            # part is present reads against there as well.
             presence = (raw == part).any(-1).float()[:, None]
-            mixed = torch.tensor([0., 0., 1., 1.])[:, None]
-            expected = presence * torch.maximum(torch.tensor(at[prop, part]), mixed * torch.tensor([0., 1.]))
-            torch.testing.assert_close(field.values[index, :, 0].detach().cpu(), expected)
+            torch.testing.assert_close(field.values[index, :, 0].detach().cpu(),
+                                       presence * torch.tensor(at[prop, part]))
     # The four corners, true, false, both and both, are read across the
     # concept's members' rows: for where only for is given, against where
     # only against, both where each is.
@@ -84,11 +79,10 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     whole = torch.tensor([[[0, 2]]]).expand(3, -1, -1)
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
     # The part at [0,1] suffices at [0,2]; the property must hold at both
-    # positions. Where it holds at one only, the extent holds the row's
-    # parts and lies outside its whole: against.
+    # positions. A missing property adds no counterevidence to the present part.
     # Inspect this occurrence before the extent readout union.
     torch.testing.assert_close(cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((part,), (0,))]) for part in (7, 8)]).amax(0)[:, 0, -1].cpu(),
-                               torch.tensor([[1., 0.], [0., 1.], [0., 1.]]))
+                               torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)

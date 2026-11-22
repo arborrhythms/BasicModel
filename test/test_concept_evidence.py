@@ -43,10 +43,9 @@ def test_membership_read_keeps_both_until_symbol_readout():
                                torch.tensor([1., 0.]))
     # Seen true and false in the extent, it is both across the rows of the
     # basic percepts that carry it: the row of 49 reads for where it lies,
-    # the row of 48 against; the extent, which holds both parts and the
-    # property not over all of it, tells against each.
+    # the row of 48 against.
     basic = cs.basic_percepts
-    for part, expected in ((49, [1., 1.]), (48, [0., 1.])):
+    for part, expected in ((49, [1., 0.]), (48, [0., 1.])):
         index = field.keys.index(('bp', basic.index[((part,), (0,))]))
         torch.testing.assert_close(field.values[index, 0, 0].detach().cpu(), torch.tensor(expected))
     torch.testing.assert_close(cs.order_zero_both(field, [0]), torch.ones(1, 1, 1))
