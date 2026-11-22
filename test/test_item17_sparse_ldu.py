@@ -196,10 +196,13 @@ def test_d_w_at_each_stored_pair_is_the_weight_written_there():
     among them (so entries in L and products of L and U): W of the dense
     ``L D U`` at every stored pair is the weight last written there, and
     :meth:`w` reads it (ninth pass: a product that fell at a stored pair
-    changed the weight written there, sigma-pi §19.122)."""
+    changed the weight written there, sigma-pi §19.122). Read in 64 bits, as
+    the other tests of the sparse LDU: a drawn cycle can solve a diagonal near
+    nothing, and in 32 bits its rounding alone reached 3.2e-4 (start
+    1740210332; 3.6e-13 in 64 bits on the same draw)."""
     from Layers import SparseSigmaLDU
     g = _start()
-    sigma, written = SparseSigmaLDU(12, 12, 160), {}
+    sigma, written = SparseSigmaLDU(12, 12, 160).double(), {}
     for _ in range(120):
         row, input = (int(v) for v in torch.randint(0, 12, (2,), generator=g))
         weight = float(torch.rand((), generator=g)) + .1
