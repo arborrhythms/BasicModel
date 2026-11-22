@@ -184,5 +184,6 @@ def test_native_word_and_observed_promoted_part_have_the_same_byte_events():
         registry.encode('text', torch.tensor([[0]])).detach())
     activity = reverse(model, NS(carrier_like=NS), field)._radix_activity
     expected = radix._basis.lookup_rows(torch.tensor([letters]))
-    torch.testing.assert_close(activity.percepts[:, :3], expected, atol=1e-4, rtol=1e-4)
+    # The leaf is present as its row is, through the chart: tanh(1).
+    torch.testing.assert_close(activity.percepts[:, :3], expected * torch.tanh(torch.tensor(1.)), atol=1e-4, rtol=1e-4)
     assert radix.decode_activity(activity)[:, :3].tolist() == [[97, 98, 99]]
