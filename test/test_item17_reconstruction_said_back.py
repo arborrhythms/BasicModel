@@ -111,6 +111,8 @@ def test_the_row_at_one_by_the_models_reconstruction(tmp_path, monkeypatch):
             print(' row at 1.00, of', len(alone), 'words alone:', words)
             sentences = measured(model, held, ('This is Felix.',) + LESSON[1:4])
             print(' lesson sentences, of 4:', sentences)
+            pairs = measured(model, held, two)
+            print(' row at 1.75, of', len(two), 'two-word sentences:', pairs)
         assert words['reconstructed'] <= len(alone)
     finally:
         model.End()
@@ -177,7 +179,7 @@ def test_unit_the_perceptual_inverse_paste_and_the_pyramid(tmp_path, monkeypatch
                 put = out._radix_activity.amounts @ (radix._basis.lookup_rows(rows.clamp_min(0))
                                                      * (rows >= 0)[:, None]).to(wanted)
                 K, total = Error.pyramid_match(put, wanted)
-                print(f'paste, {name}: {text(out.materialize()[0, 0])!r}, pyramid error',
+                print(f'paste, {name}: {text(radix.decode_activity(out._radix_activity)[0])!r}, pyramid error',
                       round(float(1 - K[0] / total[0]), 4))
         assert held
     finally:
