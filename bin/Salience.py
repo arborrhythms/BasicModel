@@ -63,16 +63,49 @@ def _down(graph, request, values, readings, depth=8, nodes=None):
         grad = torch.where(concept, asked.index_select(0, nodes.clamp_max(graph.concepts - 1)), 0.)
         parent, child = torch.searchsorted(nodes, parent), torch.searchsorted(nodes, child)
     tiny = torch.finfo(request.dtype).tiny
-    source = grad.clone()
-    for _ in range(depth):
-        lanes = grad.index_select(0, parent)
-        lanes = torch.where(negated[:, None, None, None], lanes.flip(-1), lanes)
-        # A Pi: d child = d row * w * row / child, at the open run's values.
-        by_product = (lanes * values.index_select(0, parent)
-                      / values.index_select(0, child).clamp_min(tiny))
-        lanes = torch.where(symbol, by_product, lanes) * weight[:, None, None, None]
-        grad = source.index_add(0, child, lanes)
-    return grad
+    # Each edge's factor is the same at every step: its weight and, at a Pi,
+    # d child = d row * row / child at the open run's values. It reads no
+    # request, so it is made once.
+    with torch.no_grad():
+        ratio = values.index_select(0, parent) / values.index_select(0, child).clamp_min(tiny)
+        factor = torch.where(symbol, ratio, 1.) * weight[:, None, None, None]
+    return _Walk.apply(grad, factor, parent, child, negated, depth)
+
+
+def _step(grad, factor, parent, child, negated, source):
+    """``source`` plus each edge's parent share, carried to its child."""
+    lanes = grad.index_select(0, parent)
+    lanes = torch.where(negated[:, None, None, None], lanes.flip(-1), lanes)
+    return source.index_add(0, child, lanes * factor)
+
+
+class _Walk(torch.autograd.Function):
+    """The way down, ``depth`` steps of :func:`_step` from ``source``. It is
+    linear in ``source``, so its backward is the same walk on the transposed
+    edges, and the walk keeps for the backward only the edges' factor (no
+    step keeps a share of its own)."""
+
+    @staticmethod
+    def forward(ctx, source, factor, parent, child, negated, depth):
+        ctx.save_for_backward(factor, parent, child, negated)
+        ctx.depth = depth
+        grad = source
+        for _ in range(depth):
+            grad = _step(grad, factor, parent, child, negated, source)
+        return grad
+
+    @staticmethod
+    def backward(ctx, out):
+        factor, parent, child, negated = ctx.saved_tensors
+        # The transpose of an edge: the child's share, by the factor, flipped
+        # where the edge is a Not entry, onto the parent.
+        back = lambda h: out.index_add(0, parent, torch.where(
+            negated[:, None, None, None], (h.index_select(0, child) * factor).flip(-1),
+            h.index_select(0, child) * factor))
+        h = out
+        for _ in range(ctx.depth):
+            h = back(h)
+        return h, None, None, None, None, None
 
 
 def first_pi(bank, perception, row_grad, activity=None, basic=None):
