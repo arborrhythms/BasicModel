@@ -933,8 +933,9 @@ class BasicPercepts(nn.Module):
             away = codes.new_zeros(B, O, len(wholes))
             away = away.index_put((real.nonzero(as_tuple=True)),
                                   (evidence[..., 1] * complete[..., None]).to(codes))
-            cut = (whole_codes < 1).any(0).to(codes)                                        # [pw]
-            outside = least_of_greater(away, whole_codes.T).permute(1, 2, 0) * cut
+            # A wire is cut by a whole wherever its code is below one.
+            uncut = (whole_codes >= 1).to(codes)                                            # [W, pw]
+            outside = least_of_greater(away, uncut.T).permute(1, 2, 0) * (1 - uncut).amax(0)
         codes[..., self.identity_width:] = held
         return codes * real[..., None], outside * real[..., None]
 
