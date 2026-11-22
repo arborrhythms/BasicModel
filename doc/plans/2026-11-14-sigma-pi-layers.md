@@ -13261,6 +13261,94 @@ Not in this pass: the benchmark (its looks are item 1.5's); the
 reconstruction in passes; round 6's parts C and D.
 ~~~
 
+*The fourth pass* (added 2026-11-21, after §23.6.8):
+
+~~~
+Round 6d of item 1.7, fourth pass. Read §23.6.8 (the third pass's
+return, its review, and the list on its branch) and the third
+pass's text above. The work is on the branch
+item17-r6d2-step4-wip (43be9a866c). Check it out in this checkout,
+bring it up to main (main has gained doc commits only), work
+there, and at the end move main forward to it by a fast-forward if
+both gates pass and the files of step 7 pass but for the tests
+named in step 6; then remove the branch and leave the checkout on
+main. Otherwise leave the branch and return to main.
+
+1. The read before is the reference for "both" (§23.6.8, review,
+   point 1, and the list). Find, for the eleven tests of
+   test_refine_raise.py and test_serial_concepts.py, what the
+   table's read gives that the read at d188a06133 did not (a
+   clone at that commit shows the two side by side). First choice:
+   an occurrence tells against a row that it holds only where the
+   occurrence is a percept of its own, a stored form or a row
+   (rule 53: a nearer holder); a bracket that is neither is not an
+   occurrence of the field, and what an unknown word needs of its
+   bracket is said in the return. The eleven pass unported. The
+   seven tests whose expected values the third pass changed for "a
+   mixed extent adds against" (listed in §23.6.8 under "Tests
+   ported") go back to their old assertions and pass, with
+   test_definition_integrity.py and test_grounded_xor.py still
+   passing. Where an old value cannot be had from the table, do
+   not force it: return the test, the two values and why.
+   certificate 54 (c) (archer at reach) stays as the third pass
+   left it; it is a stored form against a stored form.
+
+2. Why the places' concepts are asked alike. Print, for the
+   places' concepts after the lesson, the codes that
+   SentenceLooks.requested passes to attend (their norms, and the
+   greatest difference between two of them), and say where each
+   is written (ConceptPlacement.initialize, the derived placement
+   of the similarity codebook, or another). Claude's reading is
+   that each is the code of a what that cuts nothing, the same for
+   every place. If so: the code that attend reads for a concept
+   whose row keeps no what is nothing, so that the context's map
+   asks nothing of it and only its entry of the request's start
+   does (provisional). If the cause is another, return it and
+   build nothing for it.
+
+3. A place's concept in a conjunction made by co-occurrence
+   (test_epoch_history: concept 113, a word's concept with two
+   places' concepts, FamiliarTier.observe_field and
+   observe_candidate). First choice: a place's concept is not
+   offered as context for such a conjunction, since it is read at
+   one wherever its place is and tells nothing of the word (rule
+   31); say where that is decided. The test passes unported.
+
+4. A clamp at a bound on a path taught from nothing. Search bin/
+   for clamp_min(0), clamp(min=0), relu and the like on the way
+   down (Salience), the request (attend, RequestStart), the where
+   and when entries and weights (PlaceEntries, place_factor), and
+   the candidate matrices' entries. List each with what it bounds
+   and whether a value can start exactly at the bound and must
+   then be taught; repair those by the form that passes the
+   derivative at the bound, as Salience._down does.
+
+5. The measure again, recorded and no bar: the places' measure
+   (three starts drawn afresh), with the request on each place's
+   concept and the where match at each look of the first sentence,
+   the request's start after the lesson, and the lesson's script
+   with --runs 3. Say also why the three starts of the last
+   measure gave the same values: what the start seeds and what
+   the measure reads that does not depend on it. Add no mechanism.
+
+6. Left failing, not skipped, not ported: test_81;
+   test_prepared_answer_boundary[True]; and
+   test_word_admission.py::test_29_each_reading_publishes_only_
+   its_words[MM_text.xml], which waits for Alec's word on the
+   configurations with no part map. Change no configuration.
+
+7. Tests: both gates before any edit and at the end; the files
+   the third pass ran, with test_refine_raise.py,
+   test_serial_concepts.py, test_epoch_history.py and the files
+   this pass touches; certificates 30 to 43, 47, 54, 61 to 63 and
+   33 (b); the lesson's script. Claude runs the list.
+
+8. Return as scratch-1.7/r6d_return_4.md, what fails or is
+   unfinished first; step 1's cause and what was restored; step
+   2's codes and what was built; step 3; step 4's list; step 5's
+   measure; ported; commits; and whether main was moved forward.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -21889,3 +21977,243 @@ On `d188a06133` (`main`, without step 4), in a clone, 306 files, six processes: 
 - `test_epoch_history.py::test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs`: new. One concept made in training (113) has no grounding in LTM, where the port of §23.6.5 excepts only a place's concept. Whether 113 is a place's concept that the exception misses, or another, is not known. Third pass, step 6.
 
 `test_prepared_answer_boundary[True]` passed in this run (it fails under some starting weights, above).
+
+### 23.6.8 Round 6d, third pass: the first Pi reads the table's wires, graded; the stored codes go; the request's gradient restored; reading in order still not learned (Claude on Opus, standing in for Codex, 2026-11-21)
+
+
+Started on the branch `item17-r6d2-step4-wip` (c0106c098a), rebased onto `main` (25d01439d2; main had gained only doc commits) as 11174d4441. All work is committed on that branch. Nothing pushed; superproject untouched; no doc/ or specification edited.
+
+#### What fails or is unfinished, first
+
+- **Main was NOT moved forward.** One test of the files of step 7 still fails on the branch: `test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]` (diagnosed under step 2 (d), not repaired). The brief allows moving main only when both gates and those files pass, so the checkout is back on `main` (25d01439d2) and the branch `item17-r6d2-step4-wip` is kept as it is, at the last commit listed below.
+- Everything else of the 27 files (and the files this pass touched) passes on the branch: 1 failed, 324 passed, 8 skipped (290 s). Both gates pass.
+- `test_epoch_history.py::test_native_train_keeps_last_grounding...` still fails (as on main); diagnosed under step 6, not repaired (it is not one of the 27 files).
+- `test_item18_expect.py::test_81` and `test_prepared_answer_boundary.py::...[True]` were not touched.
+- Reading in order is still nothing in the places' measure (0 in every count, three starts), and 0 to 2 sentences in the lesson's script (step 5).
+
+#### Step 1: graded what columns, read by the least and the greatest
+
+Built (bin/BasicPercepts.py):
+
+- `least_of_greater(x, c)`: `min_k max(x[b,a,k], c[r,k])`, `[R, B, A]`. The least wire is found without a gradient a slab of rows at a time, and its value is then taken from `x` by index, so the gradient reaches `x` at the least wire only and nothing `[R, B, A, K]` is kept for the backward.
+- `held_at(bank, table)`:
+  - part = least, over the row's parts, of the occurrence's parts wire: `least_of_greater(p, 1 - row_parts)`;
+  - whole = least, over the wires the row's wholes cut, of one less the occurrence's wholes wire: `least_of_greater(1 - h, row_wholes)`;
+  - added = greatest of the occurrence's parts wires over the parts the row's against lane names: `1 - least_of_greater(1 - p, 1 - against_parts)`.
+  - At codes of 0 and 1 this is the branch's read. Nothing is cut at .5.
+- `BasicPercepts._occurrence_what`:
+  - parts half: greatest of the atoms' codes, each present to degree one (no identity: greatest, not sum, of the part leaves' codes);
+  - wholes half: least, over the wholes the rows name, of `max(code of the whole, 1 - degree)`, where degree = the whole's for lane over the bytes spanned (`evidence_on_counts`) times "covers them all"; then the least with the tightest whole. Its gradient reaches the primitive memberships. Also through `least_of_greater` (no `[B, O, W, 64]` tensor).
+- For, against and the factor as on the branch. The way down (`Salience.first_pi`) is unchanged in form: for and against are linear in the presence, so the read's derivative by the presence times the presence is the lane itself.
+- One more thing was needed: **an occurrence is present only where every byte it spans is observed** (`raw != 0`); its activity is 0 otherwise. Without it a bracket with a missing byte read against (no degree, so no bound on the wholes wires) where the old read gave nothing (`test_concept_memberships::test_a_located_part...`, "a missing byte supplies neither pole"). This is a mechanism of mine; say if it is wrong.
+
+Values on the three graded tests (all pass as they assert):
+
+| Test | Asserted | Now |
+| --- | --- | --- |
+| `test_item20_round5_percepts::test_basic_read_ties_both_towers_and_teaches_the_properties` (row (0,)/(0,) on "a") | .4 for, .6 against; `requires_grad` | .4, .6; requires_grad true (unchanged test) |
+| `test_concept_memberships::test_fractional_feature_weights...` (rows (65,)/(0,), (65,)/(1,) on "AA") | [.25, .75], [.36, .64] | same (port: parts with codes of their own, see step 2) |
+| `test_percept_field_compaction::test_padding_reads_nothing_and_teaches_no_property` | [.3, .7] | [.3, .7] at the byte; requires_grad true (rewritten on the table, step 2) |
+
+A fourth, `test_cs_sparse_weights::test_membership_read_is_input_dependent_and_differentiable`, asserts [.2, .8] and [.7, .3] and that `primitive.members.grad` is set: passes.
+
+Differences of value the graded read gives elsewhere (none on the three):
+
+- **A bracket that holds a row's parts and holds a whole not over all of its bytes reads against.** A whole with degree 0 there sets no bound, so the row's whole cut is outside the occurrence. Old read: neither (a mixed span read [0, 0]). This is (e) 4 of §23.6.7 ("a whole witnessed false elsewhere in the reading"), now on every fixture: the row of 49 on "48 49" reads [1, 1] as a reading (for at its byte, against at the bracket). Ported so in five tests (listed under "Ported").
+- **`archer` on `reach`** (certificate 54 (c)): reach holds archer's parts and lies outside archer's tightest whole, so the row reads [0, 1] and the concept -tanh(1) = -0.762. Old: 0 (the run was not found). Ported to -tanh(1). This goes to you: is "against" right for a form of the same letters?
+
+#### What was retired
+
+1. `test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent` (XOR_symbols; four unfused ordered groups (0,0), (0,1), (1,0), (1,1)). Old assertion: `model._decode_reconstructed_inputs(reverse, []) == ['00', '01', '10', '11']`. Now every group reads by the set of its parts, so all four reconstruct as '11'. Rules 41 and 43 (an unstored run is read by the set of its parts) argue against it. Moved to `/tmp/item17-r6d-2026-11-21/test_concept_output.test_contained_ordered_group_reconstructs_at_its_extent.py`.
+2. Part of `test_occurrence_coordinates.py::test_percept_group_keeps_each_members_band_and_one_field_time` (renamed `..._keeps_no_member_band_and_one_field_time`). Old assertion: each member's where ladder in `field.percept_where` decodes to its parts' and wholes' registry addresses. Now `percept_where` is `None`: a row has no members; the where is each attended percept's. The field-time assertion is kept.
+3. From `test_item17_looks.py`: 56a's "each member of the row takes a share" (`all(salient.members[...] > 0)`); 56e's members' shares `[.4, .4, .4]`; 31c's per-member transposes. There are no members to take a share; the share lands on the attended percept.
+
+No test's only claim was "independent of codes". So no whole test was retired on that ground: every `_cs()` test was given codes and kept.
+
+#### Step 3: the stored code
+
+- **How often a row's code is read now:** once a sentence, at the lookup, for each row the lookup names (`bank_codes` → `lanes(row)` → `code(row)` and `against(row)`, which calls `code` again: so `subspace_bounds` twice a row). `lookup_rows` (`word_weights`, `collection_code`, `read_points`, `boundary_rows`) also reads `code(row)` live at each call.
+- **Readers of `BasicPercepts.codes` and `against_codes`:** none in bin/ outside BasicPercepts. They were written by `promote`, `follow` and `follow_forms` and compared only to find which rows "moved", and no caller used that return (`WordIdentity._keep` ignores it; `FamiliarTier` ignores `follow`'s).
+- **Can a whole's code change after a row is promoted?** Yes. It is the WholeSpace codebook's row (`lookup_rows`, learned or derived by its mereology), and the XOR fixture teaches whole 10 after "0" is promoted. Writing again "when it does" would be at every step that moves a whole.
+- **So the stored buffers go.** `codes` and `against_codes` are no longer buffers. `promote` marks the row. `follow` returns the promoted rows and raises `revision`. `follow_forms` still extends the parts and refreshes the Pi, and returns the promoted rows touched. A checkpoint that has `codes` is still width-checked (the old-layout refusal stands), then the keys are dropped. `self.value_codes` is used for device and dtype; so is `FeatureTable`'s `basic.value_codes`.
+
+#### Step 4: the gradient from the where match to the request
+
+- **Where it was lost:** `Salience.first_pi`. Its share on the where wires is `whole_for · dF · for · Σw`, with `dF` from `row_grad[..., 0].clamp_min(0.)`. `clamp_min` passes no derivative at exactly 0, and an untaught request on a place's concept is exactly 0.
+- At f4b00524ee the band came from `Places.down`, which took `torch.where(d >= 0, d, 0.)`, and that passes it. The first pass (b1ee0399cb) folded `Places.down` into `first_pi` and kept `first_pi`'s `clamp_min`. Neither `onto_bank`, `where_match` nor the test was at fault.
+- **Restored:** `first_pi` takes `d_for` and `d_against` by `torch.where(g >= 0, g, 0.)`, as `_down` does.
+- **Now** (`test_the_request_for_a_place_at_an_untaught_start`, -s), gradient on the places' entries of the request at the 12 looks: `[None ×4, 304.49, 152.10, 0.0562, 0.0, None ×4]`. The first four are the no-grad staged read; the last four looks are not on the loss.
+- It is larger than the 1.79, .754, .0025 of f4b00524ee because the where weight is now 10 on each wire (Σw = 40).
+- The test now asserts that the gradient is not nothing at some look. `test_15` (the request's gradient through the cap is 0) still passes.
+
+#### Step 5: the measure
+
+`test_item17_places.py::test_reading_in_order_before_and_after_the_lesson`, on 673c04b299 (steps 1, 3 and 4 in): 1 passed, 525.7 s. Three starts drawn afresh: 131788637215338, 135028286327575, 135370019290345.
+
+- **Places:** 29 in each start, 7 of them with no what (`pure`). Out of two-word 6, lesson 16 and held out 6:
+  - read in order before: 0, 0, 0 in each start;
+  - read in order after: 0, 0, 0 in each start.
+- **"This is Felix." after the lesson:** two looks in each start.
+  - The request on the places' concepts (greatest, least) was very large: start 1 [2501.96, 2501.90] then [2295.40, 2295.34]; start 2 [2557.45, 2557.39] then [2389.84, 2389.78]; start 3 [2405.62, 2405.56] then [2326.73, 2326.67].
+  - The where match was [0, 0, 1, 0, 0, 0, 0, 0] at both looks in every start: one reading (the third) holds the match, and the others are at 0.
+- **The request's start after the lesson:** 0.05985 on the concepts of places 1, 3, 6, 9, 13 and 16, and 0.0 on the other 23 places' concepts. Still 1.0 on "words" (row 142), and nothing else is non-zero. The same values in all three starts.
+- **What it learned:** with the gradient restored, the context's map now asks for places, and by far too much, about 2,300 to 2,600 on every place's concept. The start moved a little on six places.
+  - The where match is then `exp(s - max s)` of a share in the thousands, so it is one at one reading and nothing elsewhere. Each look holds one reading, and the sentence is read in two looks: no sentence is read in order.
+  - No mechanism added.
+- Every value but the starts is identical in the three runs. The starts are drawn and printed, but the measure's outcome does not depend on them here. I did not look further.
+
+The lesson's script, `--runs 3` (CPU), 90 s:
+
+| Run | Start | Seconds | Words | Live | Sentences in order | Words in order | At allowance | Draws | Known against | Known both |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 850552744 | 31.0 | 64 of 64 | 64 | 2 | 8 | 0 | 26 | 0 | 0 |
+| 2 | 1412991591 | 30.2 | 64 of 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 3 | 1646493998 | 20.4 | 64 of 64 | 64 | 1 | 4 | 0 | 26 | 0 | 0 |
+
+No error.
+
+#### Step 6: the list's failures
+
+- `test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery`: passes on the branch (confirmed, in the 27 files' run).
+- `test_epoch_history.py::test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs`:
+  - **Concept 113 is not a place's concept.** It has symbol type {'concept'}, order 0, no percepts, and its definition is `('field', 108, 1.0), ('field', 111, .9996), ('field', 112, .9996)`. 108 is the word's concept; 111 and 112 are places' concepts (type {'place'}).
+  - **Its producer** is the familiar tier. `FamiliarTier.observe_field` takes the witnessed concepts active in a reading (`used`), and each one's others are its context (`observe_candidate`). MTM then promotes the candidate to an order-zero concept whose parts are `('field', member, weight)` (FamiliarTier, the `entry.order == 0` branch of the promotion, around line 890).
+  - Since places' concepts are read at one at their places, the word's concept now has the two places as context, and a conjunction of the word with two places is minted. No sentence written to LTM names it, so it has no grounding.
+  - Not repaired. To decide: whether a place's concept may be a member of a field conjunction (the producer), or whether the test excepts a concept whose field members include a place's concept.
+
+#### Step 2: the ports
+
+##### (a) The ordered run
+
+- `test_item20_round5_percepts::test_basic_read_preserves_ordered_part_witnesses_after_native_fusion`: the parts a, b get codes of their own.
+  - Old: `values[:,0,0,0] == [1, 0, 0]` for (a, b), (b, a), (a, a) on "ab".
+  - New: `[1, 1, 1]`. The rows spell no stored form, so each is read by the set of its parts (rules 41, 43), and the test says so. Part events and the whole occurrence are as before. The receipt says `preserved_order=False`.
+- New test `test_stored_forms_of_one_set_of_characters_are_told_apart`: stores 'ab', 'ba', 'aa' (`coded` of test_item17_code). Each row reads for 1 at its own form and 0 at the other two (an identity matrix), and the three tightest wholes differ. Note that the part map also adds the pairs 'ab' and 'ba' (rule 43), so they are told apart by parts as well.
+
+##### (b) Fixtures whose codes told no part apart
+
+New helper: `test/basic_fixtures.py::with_own_codes(cs, parts)`. Each part gets a distinct set of coordinates of the parts half (one each where they fit, else the fewest that tell them apart), plus a property half (`with_property_half`). Each test's claim is asserted on the table's read; old and new under "Ported". It applies to `test_concept_memberships` (5), `test_word_admission::test_29_shared_whole...`, `test_primitive_properties::test_different_positions...`, `test_field_binding` (6), `test_concept_evidence` (1), `test_cs_sparse_weights` (1), `test_order0_percept_definitions` (2), `test_order0_attended_field` (3), `test_evidence_folds` (1) and `test_field_learning` (1).
+
+The 19 of these outside the 27 files (`test_field_binding` ... `test_field_learning`) already failed at the branch's start (11174d4441, checked in a worktree); the second pass had not run them.
+
+##### (c) Members by hand, read_occurrences, bank.members, first_pi's members
+
+`test_item17_looks` 56a, 56b, 56e, 31a, 31c; `test_item17_table::test_63`; `test_item17_places::test_a_place_is_nominated...` and the measure's `pure` count; `test_percept_field_compaction` (whole file); `test_word_admission::test_property_read_selects_rows_and_in_bracket_events`. All under "Ported".
+
+##### (d) `test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]`: diagnosed, not repaired
+
+- MM_text.xml (like MM_xor.xml and MM_image.xml) has `identityByParts` false and nDim 14. So `PartSpace` builds `BasicPercepts(percept_store, nWhat, 0, ...)`: no part map, and **a property half of width 0**.
+- A row's parts half (`subspace_bounds` → `_boundary_codes` → `native._basis.lookup_rows`) and an occurrence's parts half (`_occurrence_what`, the branch without an identity) are the codebook's learned, dense 14-wide rows.
+- No part is told apart, and no whole can be read. The row of "loving" (row 4, parts (16,), the fused leaf; wholes (0, 8)) reads [.778, 0] at every one of the 14 occurrences of "hello world". The untaught concept therefore reads tanh(.778) = .598 where its word is absent, where the test asserts 0.
+- The producer is the what of a store without a part map. The table's read cannot hold rule 43 there.
+- Not repaired: a keyed code per leaf in 14 wires would collide, and an exact read by leaf ids would be a second read beside the table. It needs a decision: a part map for those configurations, or codes of their own. **This is what keeps main from moving.**
+
+#### Removed
+
+- `BasicPercepts` buffers `codes` and `against_codes`, and their writes in `promote`, `follow` and `follow_forms` (the comparison of before and after).
+- `test_concept_output::test_contained_ordered_group_reconstructs_at_its_extent` (retired, above).
+- Two scratch test copies I made for diagnosis, `test/test_dbg_r6d3.py` and `test/test_dbg_epoch_r6d3.py`, and a worktree at 11174d4441. All moved to `/tmp/item17-r6d-2026-11-21/`; none was committed.
+
+#### Tests ported (old, then new)
+
+| Test | Old | New |
+| --- | --- | --- |
+| `test_concept_memberships::test_one_property_has_the_four_extent_corners` | reading values = presence · lanes | the same at each part's own byte event; readings: a mixed stream (48 49, 49 48) adds against to a present part |
+| `...::test_a_located_part...` | stream "49 48" at [0,2]: [0, 0] | [0, 1] (property not over all of the extent); missing-byte case unchanged (0) |
+| `...::test_unrelated...`, `test_part_containment...` ×2, `test_fractional...` | `_cs()` | `with_own_codes`; assertions unchanged |
+| `test_item20_round5::test_basic_table_is_preallocated...` | `basic.codes.data_ptr()` | `basic.promoted.data_ptr()` |
+| `test_item20_round5::...ordered_part_witnesses...` | [1, 0, 0] | [1, 1, 1], by the set; plus the new stored-forms test |
+| `test_item17_code::test_46_the_code...` | `basic.codes[row] == lanes[0]`, `against_codes[row] == lanes[1]` | `bank_codes((row,))[0] == lanes` |
+| `test_item17_code::test_46_printed`, `test_48_on_the_dictionary` | stored `codes`/`against_codes` | `code(row)` / `against(row)` |
+| `test_item17_code::test_a_checkpoint_of_the_old_layout...` | a 96+256 table's state without `against_codes` | the new state with `codes` of width 352 added; same refusal |
+| `test_item17_code::test_53_a_later_form_moves...` | stored code written again equals `code(row)` | `code(row)` differs after `admit(b'si')` and `bank_codes` equals `lanes` |
+| `test_item17_table` (cert 61 helper) | `against_codes[plain]` | `against(r)` |
+| `test_item17_code_trial` | `basic.codes[rows]` | `code(r)` stacked |
+| `test_item17_table::test_63` | `bank.members` shape `[keys, B, O, 2]` | no `members`; `bank.codes` is `[rows, 2, width]` |
+| `test_item17_places::test_a_place_is_nominated...` | `not place_rows[r][2]` (members tuple) | `is None`; a kept what holds a part |
+| `test_item17_places::test_reading_in_order...` | `pure=sum(not w ...)` | `w is None` |
+| `test_item17_places::test_the_request_for_a_place...` | printed only | also asserts the gradient is not nothing at some look |
+| `test_item17_looks` `hand_bank`, `row_values` | members by hand; product read | rows' codes and occurrences' what columns; `read_bank` of a bare `BasicPercepts` |
+| 56a | members' shares > 0; band 0 | the row has parts and wholes; occurrences of the word > 0, the other's 0; nothing below zero |
+| 56b | events [1, 0, 1] (readings 0, 0, 1) | events [1, 0, 1] (each occurrence its own reading: where b is not red, red's row reads against) |
+| 56e | row .4 (product .8·.5), members [.4, .4, .4], events [1.2, 0, 0] | degrees .8 and .6: row [.6, .4] (least, and one less), events [.2, 0, 0] (through the Not) |
+| 31a | members' shares = framework backward by members | attended percepts' shares = framework backward by the presence × presence, through the Not, each tie taking the whole share (atol 1e-6) |
+| 31c | transposes = plain gradient × values, members | row = run·min(red, round), against run·(1 − min); share = for less against |
+| `test_item17_symbols::test_54c` | archer on reach 0 | −tanh(1) |
+| `test_percept_field_compaction` ×3 | `read_occurrences` members | `basic.read` on the table: padded = unpadded exactly, (7,) at its event and the whole, [.3, .7], requires_grad; no 5-axis `(K, B)` and no `(W, W)` tensor at B 28, W 256, 2058 events; `_form_spans` finds no run across a gap and finds it without |
+| `test_word_admission::test_property_read_selects...` | `read_occurrences` of ('ws', 17) | `basic.read`: one evaluation, rows [17], one occurrence; [1, 0] |
+| `test_word_admission::test_29_shared_whole...`, `test_primitive_properties::test_different_positions...` | `_cs()` | `with_own_codes`; the mixed extent adds against to a present part |
+| `test_field_binding` (checkpoint ×4, one active percept, complement ×3) | `_cs()` | `with_own_codes`; a mixed bracket adds against |
+| `test_concept_evidence::test_membership_read_keeps_both...` | row of 49: [1, 0] | [1, 1] (the extent holds both parts) |
+| `test_cs_sparse_weights::test_membership_read_is_input_dependent...` | `with_property_half` | `with_own_codes`; [.2, .8], [.7, .3] unchanged |
+| `test_order0_percept_definitions` ×2, `test_order0_attended_field` ×3, `test_evidence_folds`, `test_field_learning` | `_cs()` | `with_own_codes`; assertions unchanged |
+| `test_occurrence_coordinates::test_percept_group...` | member ladders decode | `percept_where is None`; field time unchanged |
+
+None was skipped, marked to fail, or pinned to a seed.
+
+#### Test files run (counts, seconds)
+
+- Gates before any edit: 2 passed, 5.3 s.
+- The 27 files on the rebased branch after steps 1 and 4: 12 failed, 248 passed, 8 skipped, 1 error, 117 s.
+- test_item17_code, test_item17_table, test_item20_round5, test_item17_code_trial, test_item17_symbols: 3 failed, 85 passed, 266 s (the ordered run, test_63 and 54c, ported after).
+- **The 27 files + test_item17_symbols + test_item17_code_trial, final source of the read:** 1 failed (MM_text), 324 passed, 8 skipped, 290 s. Gates in it pass.
+- The `_cs()` fixture files (test_concept_evidence, _output, _definition_attribution, _definition_fold, _evidence_folds, _field_binding, _field_learning, _occurrence_coordinates, _order0_attended_field, _order0_percept_definitions, _cs_sparse_weights): 19 failed, 73 passed, 11 s before; after the ports each file passes (test_field_binding 14, test_concept_output 8, evidence_folds + field_learning 8, order0_attended + memberships + field_binding 34, order0_percept_definitions + occurrence_coordinates 16).
+- test_item18_completion, test_item20_round6_gradients, _round6_repair, test_generated_extension, test_definition_attribution, test_definition_fold: 65 passed, 8 s.
+- The request's gradient test: 1 passed, 10 s.
+- The lesson's script, `--runs 3`: 90 s.
+- The places' measure: 1 passed, 525.7 s (one earlier run failed on the `pure` count of a what code, 143 s; ported and run again).
+- Gates at the end, on 43be9a866c: 2 passed, 4.9 s.
+
+#### Commits (on `item17-r6d2-step4-wip`, not on main)
+
+- 11174d4441: the second pass's work in progress, rebased.
+- 025c85921e: first_pi passes the derivative at nothing; the test asserts the gradient.
+- a436cbbfe3: graded what columns, `least_of_greater`; unobserved occurrences not present; `with_own_codes`; memberships ports.
+- fc653dac62: stored codes go; tests read the lanes (also the ordered-run port).
+- 0caf161445: certificates 56 and 31 on the table; 54c.
+- ab5b8b9c27: test_63, places, compaction.
+- c5034fb410: word_admission and primitive_properties ports.
+- 673c04b299: the measure's `pure` count.
+- 6cd22ffbe0: the `_cs()` fixture ports; retirement of the ordered unfused reconstruction.
+- 43be9a866c: unused imports.
+
+**Main was not moved forward**; the checkout is on main (25d01439d2); the branch is kept.
+
+#### What surprised me
+
+- **The gradient was lost by one `clamp_min`.** It took no change of where_match or the table: torch's `clamp_min` passes nothing at exactly 0, and `torch.where(g >= 0, g, 0)` passes it.
+- **The table cannot say "unknown".** With for = part · whole and against = part · max(1 − whole, added), an occurrence whose whole is not held (degree 0, or a mixed span) reads against wherever the row's parts are held. Hence the "mixed extent tells against" changes in seven tests, and the presence gate on unobserved bytes.
+- **About twenty more tests outside the 27 files were already failing on the branch** (the `_cs()` fixtures). The second pass had not run them.
+- **Configurations without a part map** (MM_text, MM_xor, MM_image: identityByParts false) have dense learned parts codes and no property half, so the table's read there holds every row at every occurrence to a degree. The XOR gate still passes.
+- **The stored codes had no reader:** only their own change detection, whose result no caller used.
+
+#### Review (Claude, 2026-11-21)
+
+Spot tests by the pass; both gates pass on the branch (`item17-r6d2-step4-wip`, `43be9a866c`). `main` was not moved, as the text required, for one failing test.
+
+- *Rule 76 is built.* The first Pi reads the table's wires and nothing else of the percepts: a row's value at an attended percept is read from that percept's what columns by the least and the greatest, times the factor of its kept where and when. No tensor of members is left, no reader of members, and no stored copy of a code: a row's code is read once a sentence at the lookup. The three graded tests read as they asserted (.4 and .6; .25, .75, .36 and .64; .3 and .7) and the read teaches the primitive memberships again.
+- *What the table's read changes, for Alec.* None of these is on the lesson's words, where certificate 61 found the read equal.
+  1. *A part read inside a larger occurrence reads both, and this one is not accepted as built.* Where an occurrence holds a row's parts and the row's wholes do not hold the occurrence, the row is read against there; with its own occurrence beside it, the reading is both. For a known form inside a longer known form this is what rules 51 to 53 gave already (`is` in `This`). The pass's read gives it for every row at every occurrence, a bare bracket included: a part with a property, in a bracket whose other parts lack the property, where the read before gave for alone or neither. Seven tests' expected values were ported to it, and the list (below) shows what it does further on: nine tests of refinement and raising, which take "both" as their cue, and two of the open pass, which now publishes a row more. Rule 53 tells against a row only by a nearer holder, a stored form. *Decided (mine; fourth pass):* the table's read gives the values the read before gave on those tests, and the seven go back to their old assertions; a bracket that is no stored form and no row is not a percept that can tell against what lies in it (§19.117: nothing is made for a span that no known percept covers). Where the old value cannot be had from the table, the rule that requires the new one is named and it comes to Alec.
+  2. *The same letters, another word:* `archer` at `reach` now reads against (−.762), where it read nothing. `reach` holds every part of `archer` and lies outside its tightest whole. Claude leaves it as the table gives it: the parts are all there and the word is not. His to reverse.
+  3. *An occurrence that spans a byte not observed is not present* (the pass's own addition, so that a missing byte gives neither lane, as before). Accepted, provisional.
+  4. *An unstored ordered run is read by the set of its parts* (rules 41 and 43): `ab`, `ba` and `aa` are told apart when they are stored forms, by their tightest wholes, and not when they are rows over bare parts. One test of the reconstruction of four such unstored groups is retired (moved, with its old assertion above).
+- *What blocks the move of `main`: a store with no part map.* `MM_text`, `MM_xor` and `MM_image` are configured with `identityByParts` false, at a width of 14 with no wholes half. Their parts' codes are the codebook's learned rows, which tell no part apart, so the table's read holds every row at every occurrence to a degree: `loving` reads .778 at each occurrence of `hello world`, and its concept .598 where the word is absent. Before the table these configurations read a part by its identity in the lookup, with no code. *For Alec, with Claude's first choice:* these three configurations take the part map (`identityByParts` true), so that their percepts have the code the first Pi reads. `MM_xor` is the configuration of a stopping gate, so the change is his to make; the gate passes on the branch as it is. The other choice is a code of their own for stores with no part map.
+- *The gradient was lost at one clamp* (`Salience.first_pi`: `clamp_min` passes nothing at exactly zero). It is restored and asserted. That is the second time this fault has cost a pass (§23.6.5); the source is to be searched for a clamp at a bound on a path that must be taught from nothing (fourth pass).
+- *Reading in order is not learned, and what is in the way is now plain.* With the gradient back, the context's map asks for every place's concept at about 2,300 to 2,600, alike to within .06, after a lesson of a few presentations. The where match is then all on one reading, each look holds one word, and a three-word sentence is read in two looks. Two things are wrong there, and neither is the where itself:
+  - *The places' concepts cannot be told apart by what `attend` reads of them.* `attend` asks for a concept by the concept's code read against the context's query. Every place concept's code has one norm, 8.0, which is the square root of 64: the wholes half of a code that cuts nothing ("no parts and every whole", what a place with no what is given). So, as Claude reads it, every place's concept is placed at one point, by a what that it does not have, and the map can only ask for all of them or none. *To confirm first in the fourth pass.* The learned start does have an entry for each concept, and it did move (.06 on six places).
+  - *The request grows without bound.* Asked alike, the places sharpen the where match onto whichever reading their rows sum highest at, and more request sharpens it more; nothing in the lesson's cost stops at enough.
+  - *Claude's first choice (fourth pass, provisional):* a concept whose row keeps no what has no place in the space of meanings from a what: its code, as `attend` reads it, is nothing, so the map does not ask for it and only its own entry of the request's start does. That is the condition of the trial (§23.6.4), in which a constant request over places taught reading in order, held-out orders with it, in 8 of 12 starts. It adds no mechanism; it takes away a code that says nothing.
+- *The measure's three starts gave identical values* but for the starts themselves. That is not explained and is to be looked at: either nothing in the measure depends on the start, or the start is not reaching what it should.
+- *`test_epoch_history`:* the concept with no grounding is a conjunction that the familiar tier made of a word's concept with two places' concepts, since a place's concept is read at one at its place and so is always in a word's context. *Claude's first choice:* a place's concept is not offered as a member of such a conjunction by co-occurrence alone, for the reason of rule 31 (a generalization holds no place); the fourth pass says where that is decided in `FamiliarTier.observe_field`. The other choice is that the test excepts it.
+
+#### The list on the third pass's branch (Claude, 2026-11-21)
+
+On `43be9a866c` (the branch), in a clone, 306 files, six processes: 14 failed, 3,328 passed, 161 skipped, in 1,341 s. So `main` stays where it is.
+
+- Known or diagnosed above: `test_81`; `test_epoch_history` (the conjunction with places); `test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]` (no part map).
+- New, in files the pass did not run on its final source:
+  - `test_refine_raise.py`, nine tests (`test_scattered_both_requires_completed_updates_before_a_raise`, `test_improvement_restarts_refinement_and_pure_reading_clears_it`, `test_convergence_state_roundtrips_with_definition_inventory`, `test_context_observer_cannot_bypass_refinement_before_assigning_a_kind`, `test_extent_containment_does_not_fill_gaps_between_part_witnesses` in both forms, `test_learned_particular_stays_at_one_scattered_kind_raises_to_two` in three): a reading asserted both or pure is not, and a kind that should be raised is not found.
+  - `test_serial_concepts.py`, two (`test_open_pass_reads_once_before_composition_and_never_mints`, `test_prime_boundary_joins_lexical_and_open_field_rows_in_one_step`): a row more is published than the sentence holds ({0, 1, 2} where {0, 2} is asserted).
+
+All eleven read "both", or which rows a reading holds, and go with point 1 of the review to the fourth pass.
+
