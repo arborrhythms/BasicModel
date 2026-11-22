@@ -14457,6 +14457,15 @@ Return `scratch-1.7/r6d_return_14.md`, what fails first. `main` moves on the thi
 7. *The row at 1.00 by the input's reconstruction:* the 19 words and the marks, each alone, three starts. Then the row at 1.75 measured, not repaired.
 8. *Tests:* both gates; the files touched and their users (reconstruction is read by many: say which you ran); `test/test_compiled_lesson_step.py` once. Return `scratch-1.7/r6d_return_15.md`, what fails first. `main` moves only if the row at 1.00 passes in all three starts with both gates and the files touched, save the two known failures.
 
+*The fifteenth pass corrected, the same day.* Asked whether the input's reconstruction is taken leaf by leaf or generated from the sentence's root, Alec: "Reconstruction proceeds from an idea or relation between ideas, as we have been doing.
+What you started is correct, but I think the error that takes explicit account of .where and .what is probably making assumptions that we should try to get rid of (in virtue of having access to those disassembled pieces).
+Is it possible to create an error term on data that judges content in any location, and a separate error term on things in the right place (total correctness), and sum them?"
+
+- *Decided:* reconstruction starts from the idea, or the relation between ideas, as the source does it. Claude's "leaf by leaf, with no composition in it" is withdrawn, and step 2 does not replace the generation from the root.
+- *Decided ("what you started is correct"):* each leaf that generation gives goes through the perceptual inverse to a basic percept, which is taken apart; its `.what` is matched against the percept codebook and its `.where` against the grid; the percept is pasted by a graded paste.
+- *The error, two terms summed* (his question; Claude: yes). With the pieces taken apart, the pasted amount of each percept at each place is known. *Content at any place:* the amount of each percept summed over places, against the input's count of it. *Total correctness:* the amount at each place, against the input at that place. A right word at a wrong place then costs less than a wrong word and more than a right word in its place, and the first term teaches the `.what` even when every place is wrong. The two replace whatever the reconstruction cost assumes of `.what` and `.where` today; the pass says what that was.
+- *Open, from the trace:* generation from a relation gives back its operands only where the grammar's rule has an inverse that does (`part`, `preposition` and `surface` did not, §23.6.20). The pass measures which rules pass and repairs none. *For Alec.*
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
