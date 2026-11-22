@@ -216,6 +216,22 @@ def staged_forms(model, text):
     return staged(model)
 
 
+def teach(model, forms):
+    """The reading lesson, minimal sentences first: each one-word sentence
+    once, each two-word sentence and each of the lesson's twice, each read
+    with its staged ``forms`` named as the reading, at a rate of .01."""
+    from AttentionLesson import reading_lesson
+    from test_item18_expect import read
+    one, two, lesson = minimal()
+    optimizer = model.getOptimizer(lr=.01)
+    for grade, presentations in ((one, len(one)), (two, 2 * len(two)), (lesson, 2 * len(lesson))):
+        for p in range(presentations):
+            text = grade[p % len(grade)]
+            with reading_lesson(model, [forms[text]]):
+                read(model, text, training=True, optimizer=optimizer)
+            model.End()
+
+
 def looked_at(model, monkeypatch, text):
     """At each look of a reading of ``text``: the request on the place
     concepts (its for lane, greatest and least) and the where match."""
@@ -249,8 +265,6 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
     afresh, the sentences read in order with no reading supplied, before and
     after the reading lesson (minimal sentences first), on the two-word
     sentences, the lesson's and orders it never shows."""
-    from AttentionLesson import reading_lesson
-    from test_item18_expect import read
     runs = int(os.environ.get('PLACES_RUNS', '3'))
     records = []
     for run in range(runs):
@@ -267,13 +281,7 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             def count(texts):
                 return sum(in_order(model, seen, text) for text in texts)
             before = dict(two=count(two), lesson=count(lesson), held=count(HELD_OUT))
-            optimizer = model.getOptimizer(lr=.01)
-            for grade, presentations in ((one, len(one)), (two, 2 * len(two)), (lesson, 2 * len(lesson))):
-                for p in range(presentations):
-                    text = grade[p % len(grade)]
-                    with reading_lesson(model, [forms[text]]):
-                        read(model, text, training=True, optimizer=optimizer)
-                    model.End()
+            teach(model, forms)
             after = dict(two=count(two), lesson=count(lesson), held=count(HELD_OUT))
             asked = looked_at(model, monkeypatch, 'This is Felix.')
             _, concept = places_of(model)
