@@ -55,10 +55,13 @@ class FeatureTable:
             self.towers.append((indices(percepts), indices(members)))
         self.revision = revision
 
-    def codes(self, basic, percepts):
-        """Max of each percept's parts and min of its wholes, including empty wholes."""
+    def codes(self, basic, percepts, band=0):
+        """Max of each percept's parts and min of its wholes, including empty
+        wholes; a place's, the what its row keeps (nothing where it keeps
+        none). With ``band``, each row's where and when entries appended
+        (``BasicPercepts.place_code``)."""
         if not len(percepts):
-            return basic.value_codes.new_empty(0, basic.width)
+            return basic.value_codes.new_empty(0, basic.width + int(band))
         if bool(((percepts < 0) | (percepts >= len(basic.index))).any()):
             raise ValueError('unavailable basic percept reference')
         lookup = percepts.new_full((len(basic.occurrences),), -1)
@@ -78,16 +81,17 @@ class FeatureTable:
                                       reduce='amin' if side else 'amax', include_self=False)
             blocks.append(block)
         result = torch.cat(blocks, -1)
-        # A place's row that keeps no what has no parts and no wholes to be
-        # read from: its code in the space of meanings is nothing (not the
-        # code of a what that cuts nothing).
-        bare = [n for n, row in enumerate(percepts.tolist())
-                if row in basic.place_rows and basic.place_rows[row][2] is None]
-        if bare:
-            result[bare] = 0.
+        # A place's row has no parts and no wholes to be read from: its what
+        # is the what it keeps.
+        for n, row in enumerate(percepts.tolist()):
+            if row in basic.place_rows:
+                what = basic.place_rows[row][2]
+                result[n] = 0. if what is None else what.to(result)
+        if band:
+            result = torch.cat((result, basic.place_code(percepts.tolist(), band).to(result)), -1)
         return result
 
-    def forms(self, owner, record, rows, fallback):
+    def forms(self, owner, record, rows, fallback, band=0):
         basic = owner.basic_percepts
         self.refresh(record, basic, rows.device)
         lookup = rows.new_full((owner.nVectors,), -1)
@@ -105,8 +109,8 @@ class FeatureTable:
         fallback = torch.where(counts == 0, fallback, -1)
         selected = fallback >= 0
         requested, inverse = torch.unique(torch.cat((percepts, fallback[selected])), return_inverse=True)
-        codes = self.codes(basic, requested)
-        forms = basic.value_codes.new_zeros(len(rows), basic.width)
+        codes = self.codes(basic, requested, band)
+        forms = basic.value_codes.new_zeros(len(rows), basic.width + int(band))
         forms[selected] = codes[inverse[len(percepts):]]
         # Match the native sum's reduction length and order exactly. Padding
         # unequal lists or accumulating one float at a time can change the last bit.

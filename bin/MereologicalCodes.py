@@ -61,7 +61,9 @@ class MereologicalCodes(nn.Module):
         self.register_buffer('placement_keys', torch.zeros(count, 32, dtype=torch.uint8, device=initial.device))
         self.register_buffer('placement_keyed', torch.zeros(count, dtype=torch.bool, device=initial.device))
         # A cached form and two validity bits per seat replace unchanged-row scans.
-        self.register_buffer('_forms', initial.new_zeros(count, self.percept_width), persistent=False)
+        # A form is a row's what with its where and when appended (on the
+        # band between the what and the meaning).
+        self.register_buffer('_forms', initial.new_zeros(count, self.percept_event_width), persistent=False)
         self.register_buffer('_form_valid', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
         self.register_buffer('_allocated', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
         # One tenth of a meet-ratio subgradient, balanced by five unit-weight
@@ -293,8 +295,12 @@ class MereologicalCodes(nn.Module):
             native.append(None if W is None else (id(W), W._version))
         identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
         members = _concept_alloc_of(self.owner).order_zero_members
+        basic = self.owner.basic_percepts
+        # A row's where and when entries are learned in place.
+        entries = tuple((id(e), e._version) for e in (basic.where_entries, basic.when_entries)) \
+            if hasattr(basic, 'entries') else ()
         return (id(members), members.revision,
-                tuple(native), self.owner.basic_percepts.revision, None if identity is None else identity.revision)
+                tuple(native), basic.revision, None if identity is None else identity.revision, entries)
 
     def _invalidate_forms(self):
         revision = self._form_sources()
@@ -414,13 +420,14 @@ class MereologicalCodes(nn.Module):
         needed = unique[basic & ~kept & ~self._form_valid[unique]]
         if len(needed):
             self._forms[needed] = self._feature_table.forms(owner, alloc.order_zero_members,
-                                                           needed, fallback[needed])
+                                                           needed, fallback[needed],
+                                                           band=self.percept_event_width - self.percept_width)
             self.form_rows_derived += len(needed)
         self._forms[unique[~basic]] = 0
         self._form_valid[unique] = True
         out = cached.new_zeros(len(unique), self.code_width)
-        out[basic, :self.percept_width] = torch.where(kept[basic, None],
-            cached[unique[basic], :self.percept_width], self._forms[unique[basic]])
+        out[basic, :self.percept_event_width] = torch.where(kept[basic, None],
+            cached[unique[basic], :self.percept_event_width], self._forms[unique[basic]])
         from PerceptCollections import definitions, code
         collections = definitions(owner)
         if collections:
@@ -432,7 +439,7 @@ class MereologicalCodes(nn.Module):
             start, k = self.percept_event_width, self.meaning_pairs
             out[:, start:start+k] = self.positive_codes(unique)
             out[:, start+k:start+2*k] = cached[unique][:, start+k:start+2*k]
-        # Bands remain zero. Placement supplies only for evidence; written
+        # Placement supplies only for evidence; written
         # against evidence keeps its own magnitude and direction.
         result = out[inverse]
         return result.reshape(*shape, self.code_width)
