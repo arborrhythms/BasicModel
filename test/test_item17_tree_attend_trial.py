@@ -292,6 +292,177 @@ def test_the_first_and_next_concepts_a_toy():
     assert len(records) == len(cases) * runs()
 
 
+# Step 8: the pairing of §19.127: the output "first, next*, end", no
+# reading target.
+
+def with_end(toy):
+    """Gives ``toy`` an "end" concept with nothing learned: lit when it
+    reads, by learned entries, the memory and whether the look found
+    anything (``[memory, found]``); its read through a logistic is the
+    chance that the sequence stops."""
+    D = toy.what.shape[1] + toy.where.shape[1]
+    given = len(toy.what) + len(toy.where) if toy.form == 'C' else D
+    toy.end = (torch.zeros(given + 1, requires_grad=True), torch.zeros(1, requires_grad=True))
+    return toy
+
+
+def end_chance(toy, memory, found):
+    entries, bias = toy.end
+    return torch.sigmoid(torch.cat((memory, found[:, None].float()), -1) @ entries + bias)
+
+
+def produce(toy, words):
+    """The sentence produced: "first", then "next" at each later step, the
+    lit concept's request selecting among the sentence's percepts (the
+    most active unread one, a draw among equals; its word is the output),
+    and at every step "end"'s chance of stopping. Returns, for each step,
+    the output's word distribution (each percept's share of the softmax
+    of the activities, summed over the percepts that hold a word), the
+    chance of stopping, and the memory carried (from the percept selected:
+    no gradient passes through the choice itself)."""
+    B, P = words.shape
+    V = len(toy.what)
+    live = words >= 0
+    percepts = toy.table(words)
+    unread = live.clone()
+    memory = percepts.new_zeros(B, V + P if toy.form == 'C' else percepts.shape[-1])
+    outputs, stops = [], []
+    holds = F.one_hot(words.clamp_min(0), V).float() * live[..., None]           # [B, P, V]
+    for t in range(P + 1):
+        found = unread.any(-1)
+        stops.append(end_chance(toy, memory, found))
+        asked = toy.request('first' if t == 0 else 'next', memory)
+        activity = torch.where(unread, (percepts @ asked[..., None])[..., 0], -torch.inf)
+        share = torch.where(found[:, None], torch.where(unread, activity, -1e9).softmax(-1), 0.)
+        outputs.append((share[..., None] * holds).sum(1))
+        best = activity.detach().amax(-1, keepdim=True)
+        tied = unread & (activity.detach() == best)
+        place = torch.where(found, torch.rand(B, P).masked_fill(~tied, -1.).argmax(-1), -1)
+        unread = unread & ~((torch.arange(P)[None] == place[:, None]) & found[:, None])
+        if toy.form == 'B':
+            memory = percepts[torch.arange(B), place.clamp_min(0)] * found[:, None]
+        elif toy.form == 'C':
+            memory = toy.lit(words, place) * found[:, None]
+        else:
+            memory = asked
+    return torch.stack(outputs, 1), torch.stack(stops, 1)
+
+
+def toy_teach_output(toy, words, steps=600, rate=.05):
+    """The output's cost alone: at each step the sentence's word in its
+    order (the cross-entropy of the output's word distribution), and "end"
+    at the step after the last word and not before. No reading target:
+    which occurrence of a word is taken is never named. The loss before and
+    after."""
+    parameters = [*toy.parameters(), *toy.end]
+    optimizer = torch.optim.Adam(parameters, lr=rate)
+    order = source_order(words)
+    n = (words >= 0).sum(-1)
+    wanted = torch.where(order >= 0, words.gather(1, order.clamp_min(0)), -1)       # [B, P]
+    first = last = None
+    for _ in range(steps):
+        optimizer.zero_grad()
+        outputs, stops = produce(toy, words)
+        steps_ = torch.arange(outputs.shape[1])[None]
+        speaking = steps_ < n[:, None]
+        target = F.pad(wanted, (0, 1), value=-1).clamp_min(0)
+        logp = outputs.clamp_min(1e-9).log().gather(-1, target[..., None])[..., 0]
+        word_cost = -(torch.where(speaking, logp, 0.).sum() / speaking.sum())
+        ending = (steps_ == n[:, None]).float()
+        counted = steps_ <= n[:, None]
+        end_cost = torch.where(counted, F.binary_cross_entropy(stops, ending, reduction='none'), 0.).sum() / counted.sum()
+        loss = word_cost + end_cost
+        loss.backward()
+        optimizer.step()
+        last = float(loss.detach())
+        first = last if first is None else first
+    return first, last
+
+
+def toy_reading_with_end(toy, words):
+    """With no reading supplied: the reading by "first" and "next", stopped
+    where "end" is more likely than not. Returns the first word right, the
+    sentences read in order, and the sentences stopped exactly when every
+    word was read (not before, and not after nothing was left)."""
+    B, P = words.shape
+    with torch.no_grad():
+        live = words >= 0
+        percepts = toy.table(words)
+        unread = live.clone()
+        memory = percepts.new_zeros(B, len(toy.what) + P if toy.form == 'C' else percepts.shape[-1])
+        taken = torch.full((B, P), -1, dtype=torch.long)
+        stopped = torch.full((B,), -1, dtype=torch.long)
+        for t in range(P + 1):
+            found = unread.any(-1)
+            going = stopped < 0
+            stop = going & (end_chance(toy, memory, found) > .5)
+            stopped = torch.where(stop, t, stopped)
+            going = going & ~stop & found
+            if t == P or not bool(going.any()):
+                break
+            asked = toy.request('first' if t == 0 else 'next', memory)
+            activity = torch.where(unread, (percepts @ asked[..., None])[..., 0], -torch.inf)
+            tied = unread & (activity == activity.amax(-1, keepdim=True))
+            place = torch.where(going, torch.rand(B, P).masked_fill(~tied, -1.).argmax(-1), -1)
+            taken[:, t] = place
+            unread = unread & ~((torch.arange(P)[None] == place[:, None]) & going[:, None])
+            selected = percepts[torch.arange(B), place.clamp_min(0)] * going[:, None]
+            fresh = selected if toy.form == 'B' else (toy.lit(words, place) * going[:, None] if toy.form == 'C' else asked)
+            memory = torch.where(going[:, None], fresh, memory)
+    order = source_order(words)
+    n = live.sum(-1)
+    first = int((taken[:, 0] == order[:, 0]).sum())
+    whole = int(((taken == order) | (order < 0)).all(-1).sum())
+    at_end = int((stopped == n).sum())
+    early = int(((stopped >= 0) & (stopped < n)).sum())
+    return first, whole, at_end, early, B
+
+
+def test_first_next_end_on_the_output_a_toy():
+    """Step 8 (§19.127): the toy of step 7 with no reading target. The cost
+    is the output's alone: the sentence produced in its order by "first",
+    then "next", then "end" (a third concept that stops the sequence); the
+    reading uses the same "first" and "next" and is stopped by "end". Beside
+    it, step 7's lesson (reading targets, "end" taught on the output as
+    well, so that its reading stops by the same rule). Same sizes as step 7;
+    measured with no reading supplied; by drawn start. Asserted only that
+    every count was made."""
+    P, vocabulary, width = 32, 6, 8
+    taught_starts, untaught_starts = range(0, 12), range(12, 25)
+    taught_lengths, untaught_lengths = (2, 3, 4, 5), (6, 7, 8)
+    cases = [(form, read, 'output') for form in ('B', 'C') for read in ('own', 'shared')]
+    cases += [('B', 'own', 'reading targets'), ('C', 'own', 'reading targets')]
+    records = []
+    for _ in range(runs()):
+        start = fresh_start()
+        sets = dict(taught=toy_sentences(P, taught_lengths, taught_starts, vocabulary),
+                    lengths=toy_sentences(P, untaught_lengths, taught_starts, vocabulary),
+                    starts=toy_sentences(P, taught_lengths, untaught_starts, vocabulary),
+                    both=toy_sentences(P, untaught_lengths, untaught_starts, vocabulary))
+        for form, read, lesson in cases:
+            toy = with_end(Toy(P, vocabulary, width, form, read))
+            if lesson == 'output':
+                loss = toy_teach_output(toy, sets['taught'])
+            else:
+                loss = toy_teach(toy, sets['taught'])
+                # "end" alone is then taught on the output, the rest held.
+                for parameter in toy.parameters():
+                    parameter.requires_grad_(False)
+                toy_teach_output(toy, sets['taught'], steps=200)
+            measured = {name: toy_reading_with_end(toy, words) for name, words in sets.items()}
+            pairs = (toy_pairs(toy, P, taught_starts, vocabulary), toy_pairs(toy, P, untaught_starts, vocabulary))
+            records.append(dict(start=start, form=form, read=read, lesson=lesson, loss=tuple(round(v, 3) for v in loss),
+                                first={k: f'{m[0]}/{m[4]}' for k, m in measured.items()},
+                                in_order={k: f'{m[1]}/{m[4]}' for k, m in measured.items()},
+                                stopped_at_the_end={k: f'{m[2]}/{m[4]}' for k, m in measured.items()},
+                                stopped_early={k: f'{m[3]}/{m[4]}' for k, m in measured.items()},
+                                pairs=dict(taught_starts=f'{pairs[0][0]}/{pairs[0][1]}',
+                                           untaught_starts=f'{pairs[1][0]}/{pairs[1][1]}'),
+                                next_asks_p_plus_1=toy_successor(toy, set(range(0, 16)))))
+            print(records[-1])
+    assert len(records) == len(cases) * runs()
+
+
 # ---------------------------------------------------------------------------
 # Step 1: the record of each look, and what the tree holds at each look.
 
@@ -539,6 +710,7 @@ class Trial:
         self.examples, self.log = [], []
         self.start = None
         self.reads = {}
+        self.merged = self.windows = 0
 
     def install(self, monkeypatch):
         import SentenceLooks
@@ -559,6 +731,11 @@ class Trial:
             if trial.mode is None or trial.path is None:
                 return words
             trial.tree = trees[-1] if trees else None
+            window = None if trial.tree is None else trial.tree['window']
+            if window is not None:
+                # A slot of the tree that holds two words or more: composition.
+                trial.merged += int(bool((window[0].sum(-1) > 1).any()))
+                trial.windows += 1
             return trial.at_look(words, bank)
         monkeypatch.setattr(Looks, 'run', observed)
         monkeypatch.setattr(SentenceLooks, 'word_activity', word_activity)
@@ -753,10 +930,8 @@ def test_the_start_and_the_tree_presented_a_trial(tmp_path, monkeypatch):
             forms = {text: staged_forms(model, text) for text in one + two + lesson}
             trial = Trial(model)
             trial.install(monkeypatch)
-            windows = []
             for text in two + LESSON_DISTINCT():
                 reading_of(model, trial, text, 'force')
-            merged = sum(int((e['features'] is not None) and False) for e in trial.examples)
             learned = trial.learn()
             by_form = {}
             for form in FORMS:
@@ -778,6 +953,7 @@ def test_the_start_and_the_tree_presented_a_trial(tmp_path, monkeypatch):
                    for name, texts in sets.items()}
             gradient = the_request_at_the_first_two_looks(model, monkeypatch, forms)
             records.append(dict(start=start, examples=len(trial.examples), learned=learned, trial=by_form,
+                                looks_with_a_composed_slot=f'{trial.merged} of {trial.windows}',
                                 model_after_the_lesson=own, first_two_looks=gradient))
             print(records[-1])
         finally:
