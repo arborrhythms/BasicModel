@@ -25879,3 +25879,100 @@ Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-a
 - *Two starts remain in the source* (`reconstruction_reverse` from the open field's basic-level concepts, and the walk from the idea). By Alec's "(It is also possible to reconstruct from basic space, for animal cognition, but we are not doing that yet)" and "not two places to start", the first is to go. *For Alec to confirm,* since its users are many (`InputReconstruction`, `reconstruction.free_percept`, `WholePaths`).
 - *The reconstruction's cost no longer reads the meaning lanes;* it reads the `.what` of the percepts put back. A meaning that is wrong and spells the same leaf is not charged by it. Claude: that is what "measured input to output" gives, and it is left so.
 - *Not checked by Claude:* the full list was not run (`main` is not moved, and the implementer is still editing the pyramid's files). The pyramid's code was read against the published weights and agrees.
+
+### 23.6.22 Round 6d, sixteenth pass: the reconstruction undoes the recorded composition and is the only one; a word alone is said back in some starts and not in others, with one leaf of two and every place read from the record; the percept content is not built (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`, on 9d2fc4751a's source with the spec's commits to 9ec2f1a270 under it. Nothing is pushed; `main` is not moved. Commits: 4a0c2dc943 (item 1, tests only), 3e7f551795 (items 2 to 4), c605f681ca (item 5), 11b916f86c (item 6's rows). The return is `scratch-1.7/r6d_return_16.md`; it is given here in its own order, shortened.
+
+**A word alone is said back from input to output by undoing its composition in some starts and rounds and not in others, and wherever it is, one of its two leaves (the word or its mark) is read from the record of the way up, not recovered from the idea.** In the last run (three starts, taught 0 and 3 rounds): 19 of 19 in three of the six (start, round) pairs by undoing (`surface`, `part`, `verb`); 19 and 18 of 19 in two more where the reading applied no rule (put back by the perceptual inverse of the open field alone, with no idea); 0 of 19 in one, where the grammar used a rule with no inverse (`multiply`).
+
+#### What fails or is unfinished
+
+1. *No word alone comes back from the idea alone.* Every "w." is one binary rule of the word and its mark. A binary rule's inverse is given one operand from the journal's frame (the witness) and returns the other. Where the row at 1.00 passes, it passes with 19 leaves from the idea and 19 from the record.
+2. *Four rules have no inverse at all:* `add`, `subtract`, `multiply`, `divide` (inverse "search"; both children are zeros). A sentence whose grammar used one says nothing back: start 180976770061638 untaught (`ask` and `multiply`), 0 of 19 words, 0 of 4 lesson sentences, 0 of 6 two-word sentences. Not repaired, as asked.
+3. *Some rules' recovered operand is wrong.* `change` (operand 0 recovered): the idea's leaf came back at cosine .47 on average and spelled another word ("that.", "There", "Felix", "?") in place of the mark. Not repaired.
+4. *A word the reading did not take into its forest is not put back.* After teaching, a reading sometimes takes only some of a sentence's words: "This is Felix." with a record of two leaves ("Felix", ".") is put back as "Felix."; with three leaves ("This", "is", "Felix") as "This is Felix". The shorter loop had every reading of the open field; the one reconstruction has only the record's leaves. This is most of the failures of the lesson's sentences and of the two-word sentences after 3 rounds.
+5. *The place of a leaf is the reading's, not the inverse's* (item 3). The band of `.where` wires that the inverse gives a leaf (`percept_band`, 128 to 136, copied from the journal's frame) is zero for most leaves; where a witness carries it, it decoded to place 0 for words at places 5 and 8. The composition zeroes it (`content_operand`), so a composed value carries no place of its operands. Built: each leaf's place from its reading on the open field (`ConceptualField.wires` and `.where` at the leaf's word). That is the record again, in every leaf.
+6. *Item 8 is not built* (the pyramid's content as the percepts put back, with Alec's assert).
+7. *What remains of the shorter loop and of the free walk on the input's side:*
+   - `Models.reverseReconstruct`'s grammar-free and numeric branches call the one function but book under their own term name, `reconstruction_reverse` (the `MM_xor` and grounded-XOR tests read it; the gates are unchanged).
+   - `Models.reconstruct_grammar_sentence` (a reporting method used by `recon_bench.py` and five tests) still reads a sentence back through the free walk from the idea, and `reconstruct_field_sentence` through the open field's reverse. Neither is a training reconstruction.
+   - The whole path's machinery for departures of the reconstruction's walk (`WholePaths.walk_options`, the `reconstruction_round` draws, `reconstruction.walk_credit`) is still in the source. With no walk in reconstruction it never draws.
+8. *The walk's policy is charged on fewer steps than are undone.* The walk reads its menu only at a value in the cube (each lane in [0, 1]); a recorded parent outside it (a `non` value, say), or a recorded step not legal on the menu at that parent, is not charged. By reading set: from all steps charged (57 of 57) down to about a sixth (17 of 108).
+
+#### Item 1: what "undo" gives with the inverses as they are (tests only, before any source change)
+
+`test/test_item17_undo_measure.py`. Each sentence is read; on its own record `DerivationReconstruction.reconstruct` undoes the recorded forest; each leaf goes through the walk's writer and the lower stretch. Three starts drawn afresh, taught 0 and 3 rounds of the 19 words alone. No rule's inverse fails to return anything, so the pass went on. But no binary rule gives back both operands from the idea alone.
+
+"Witness" is the operand the inverse is given from the journal's frame. "Back" is the leaf's cosine to the word as read, .99 or more.
+
+| Rule | Kind | Witness (from the record) | Recovered (from the idea) | Leaves back |
+| --- | --- | --- | --- | --- |
+| `part` | binary | operand 0 | operand 1 | 19 of 19 words alone, both leaves: the word from the idea, the mark from the record |
+| `change` | binary | operand 1 | operand 0 | record leaves 26 of 26; idea leaves 0 of 24 (cosine .47 mean, .12 least); under `non`, idea 0 of 8 |
+| `surface` | binary | operand 0 | operand 1 | idea leaves 27 of 48 (cosine .94 mean): the word comes back, the mark mostly not; record leaves 16 of 48 |
+| `modifier` | binary | operand 1 | operand 0 | 56 of 56 (54 of them from the record, under `non`) |
+| `whole` | binary | operand 1 | operand 0 | the word (record) back, the mark (idea) not (one sentence) |
+| `bind` | one child | its child | none | back (504 steps, cosine 1.0 to the frame's operand) |
+| `non` | unary | its operand (retained) | none | back every time |
+| `add`, `subtract`, `multiply`, `divide` | binary | none | none: inverse "search", both children zero | 0 (one `divide` leaf of 38 reached .99) |
+| `lift`, `lower_unary`, `ask` | unary | none | operand 0 | never measured alone: always under a "search" rule |
+| no rule (the root is one leaf) | | | the root itself | 0 of 5 at .99 (cosine .82 to .87): the end slot is not the word value as read |
+
+In the build's rows three more rules were met and passed: `preposition`, `whole` and `verb` (19 of 19 words alone, the word or the mark from the record).
+
+The text put back was never the input in item 1, even where both leaves came back (`part`): the writer put "This ." for "This.", its cursor leaving a space between the leaves. That is item 3.
+
+#### Items 2 to 6: the rows, input to output, on the model as it runs
+
+`test/test_item17_reconstruction_said_back.py`, three starts drawn afresh and printed. The measure is the text the model's one reconstruction puts back, against the input. Beside each: the leaves from the idea and from the record (from no inverse where any).
+
+| Start | Taught | Rules | Words alone (row at 1.00), of 19 | Lesson sentences, of 4 | Two-word sentences (row at 1.75), of 6 |
+| --- | ---: | --- | --- | --- | --- |
+| 180976770061638 | 0 | `ask`, `multiply` | **0**; leaves: none 38 | 0; none 16 | 0; none 18 |
+| 180976770061638 | 3 | `surface` | **19**; idea 19, record 19 | 2 (both with no rule applied); idea 4, record 2 | 0; idea 6, record 6 (a word unread) |
+| 138713572332281 | 0 | `part` (and `non`, `sign`, `bind` in sentences) | **19**; idea 19, record 19 | 4; idea 3, record 13 | 6; idea 5, record 13 |
+| 138713572332281 | 3 | none on words alone; `whole` in sentences | **19**, all with no rule applied (the open field) | 2; idea 4, record 10 | 0; idea 6, record 6 (the mark unread) |
+| 45415906855584 | 0 | `verb` | **19**; idea 19, record 19 | 4; idea 4, record 12 | 6; idea 6, record 12 |
+| 45415906855584 | 3 | none on words alone (1 silent); `verb`, `multiply`, `non`, `sign` in sentences | **18**, with no rule applied | 1; idea 1, record 8, none 5 | 1 (with no rule applied); idea 6, record 5 |
+
+A first run of the same test gave: `whole`, 19 of 19 untaught, then 16 of 19 after 3 rounds (no rule applied, and `subtract` losing both leaves); `change`, 5 of 19 untaught (the idea's leaf spelled "?" or "that" for "."), then `verb`, 17 of 19; `surface`, 19 of 19 untaught, then `change`, 1 of 19 ("thatFelix": the recovered mark was another word).
+
+#### What was built, removed and ported
+
+Built:
+- `DerivationReconstruction.sources` (each child's source as `inverse_step` dispatches it: record, idea, none) and a `steps` trace in `DerivationReconstruction.reconstruct`.
+- `SentenceField.undone`: the recorded forest undone from the idea.
+- `SentenceField.said`: the leaves, in the input's order, given to the walk's writer (`OutputOccurrences.generated`) at their readings' places. The walk itself was not used (item 2's first form): its step at a node is its own inverse menu with no witness, its operators are the generate rules (other objects than the compose rules: the walk has `intersection` and `union`, the record has `swap` and `bind`), and its replay asserts each recorded action is legal at its own parent. Taking the record's steps with their witnesses would be a second inverse inside the compiled walk.
+- `SentenceField.policy_charge` (item 4): `reconstruction.walk_policy`, the policy's cross entropy of each recorded step (STOP at a leaf) on the menu the walk reads there (`Generative.inverse_menu`), over that of the uniform choice among the legal actions. An earlier decision had retired a term of this name; `test_item20_round6_loop.py` listed it as forbidden and was changed to admit it.
+- `SentenceField.reconstruction`: the one function (item 5). Its upper stretch is the record undone; it is empty with no record or in a row with no rule applied, where the reconstruction is `model.reverse` of the field alone.
+- `OutputOccurrences.generated(..., places=(where, wires))`; `said_at` keeps a field's own wires.
+
+Removed (item 5): from `SentenceField.reconstruct`, the open field's reverse and its term `reconstruction_reverse`, the `previous` argument, `model._sentence_reverse` and the observation's `reverse`. The free bytes, coverage, percept expectation and `InputReconstruction` read the one reconstruction.
+
+Shown before removing (Alec's condition), `test/test_item17_one_reconstruction.py`: on `MM_xor` (numeric, no symbols) the one reconstruction's output equals `NumericPercepts.reverse` exactly; on the small text model with a grammar of no rule, its bytes, pasted amounts and percepts equal the open field's reverse exactly. Both gates unchanged with the step.
+
+Ported, each asserting what was replaced: `test_stored_idea_generation.py`, `test_reference_reconstruction.py`, `test_free_reconstruction.py`, `test_item20_round6_loop.py`, `test_native_attention_field.py`, `test_operators_final_b.py`, `test_output_walk.py`, `test_item20_round6_gradients.py`, `test_whole_paths.py`, `test_whole_path_repairs.py`, and four of the item 1.7 records. The output walk itself is unchanged.
+
+#### Tests run
+
+- Item 1's measure: six runs (three starts twice), 1 passed each.
+- After items 2 to 4, the users of what was changed (64 files with the gates): 15 failed, of which 3 fail on the base too (`test_item20_round34_projection`, and both simulations of `test_item17_demuxed_way_back.py`, checked in a worktree of 4a0c2dc943's source); the 12 were ported, then 12 passed.
+- After item 5, the same with the new test: 13 failed (the known one, one demuxed simulation, 11 ports), then 13 passed. The gates and the new test: 4 passed.
+- The rows: twice, three starts each.
+- The final run, as it stood when this was written: **511 passed, 8 failed, 61 skipped, 7 min 29 s.** Three are the failures on the base named above. Five are not yet accounted for: `test_reading_curriculum.py::test_native_lesson_teaches_scorer_and_keeps_one_word_per_read`, three of `test_reference_reconstruction.py` (`test_bind_departure_changes_r_keep_and_the_resolvers_score_function`, `test_named_token_keeps_its_content_before_and_after_the_close`, `test_registration_averages_coverage_and_includes_zero_cost_active_rows`) and `test_item17_root_trace.py::test_the_word_from_its_look_to_the_walks_leaf`. The implementer was still at work on them, and `test/test_compiled_lesson_step.py` was still running. What they come to is added below.
+
+Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d16/`: `undo2_s1.log` to `undo2_s3.log` (item 1), `rows2_s1.log` to `rows2_s3.log` and `rows_s1.log` to `rows_s3.log` (the rows), `users1.log`, `users2.log`, `final1.log` (the test runs), `compiled1.log` (the compiled lesson step).
+
+#### Review (Claude, 2026-11-22)
+
+- *The upper stretch is built and it is the only reconstruction of a sentence.* Read in the source: `SentenceField.reconstruction` undoes the record, and with no record, or in a row where no rule was applied, it is the perceptual inverse of the basic-level concepts alone; the equality on `MM_xor` and on a grammar of no rule is Alec's condition (§19.134) shown. What remains of the shorter loop is a term's name in the numeric branch, two reporting methods and the whole path's departures that can no longer draw. They are to go in a port of their own, not kept.
+- *The row at 1.00 still fails, and the age stays 0.75.* A word alone is said back in every word in some starts and in none in others, and three rounds of teaching move the grammar from one rule to another or to none, not toward a rule that can be undone. What decides the outcome is which rule the grammar took for the word and its mark.
+- *Where it passes, the idea gives back one leaf of two.* The other leaf, and the place of both, are read from what the model kept of the way up (the journal's frame; the open field's wires). Nothing is put in from outside the model, so it is input to output on the model as it runs; but the idea alone is not shown to hold the sentence. *For Alec:* whether what the model kept of the way up is a fair source in a reconstruction, or the idea alone must give back both operands and their places.
+- *Rows with no rule applied are put back whole.* That is the case Alec's condition allows (the top the model has is the basic level). It is applied a row at a time: a row with any rule is put back from its record's leaves only, which is finding 4. Claude's first choice is to apply it a concept at a time: a basic-level concept of the open field that entered no composition is its own top, and is put back by the perceptual inverse as in the row with no rule. *For Alec.*
+- *The curriculum already says the grammar comes later.* `doc/ModelAge.md`: each word is taught alone, then sentences are read, "then the grammar is taught, one rule at a time". Today every rule is live from the first presentation, and an untaught grammar composes a word and its mark by whichever rule it drew. *For Alec:* whether a rule is live only once it is taught, so that a word alone is two basic-level concepts and is said back by the perceptual inverse, and each rule is then admitted with its undo as its measure. Whether a word said back that way is the row at 1.00 is his to say.
+- *The rules with no inverse and the wrong `change`* are left as measured. They belong with the grammar taught one rule at a time.
+- *The policy's charge reverses a recorded retirement* of `reconstruction.walk_policy`, and a test that forbade the name was changed. It stands as the provisional first choice of item 4 until Alec says; it is charged on as few as a sixth of the undone steps.
+- *The rows were measured on the reconstruction,* as item 6 says. The output walk (an answer from a thought, with no record) is unchanged, and the fifteenth pass's 0 of 19 on that walk stands.
+- *Item 8's assert has a case to settle.* When the bytes put out are the input's bytes but the forms put back are other forms than those read (two short forms for one long one), a content made of the forms put back differs, and Alec's assert (the error's inverse "identical to the input/reconstruction match") fails. Claude's reading: the content on both sides is read from the bytes by the percept store (every known form present in the bytes at a place), as in the toy; it is then a function of the bytes and the assert holds both ways. *For Alec.*
+- *Checked by Claude:* the source diff outside the tests was read; the rows' test reads the reconstruction's text and writes nothing into the model; the two `torch.manual_seed(start)` are starts drawn afresh and printed, with nothing asserted of a start; no skip or xfail is added; `data/` and the two gates' files are unchanged. The full list was not run (`main` is not moved).
