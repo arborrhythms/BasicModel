@@ -251,3 +251,29 @@ def test_e_the_longest_chain_and_the_way_back_on_the_dictionary():
         assert report[name]['error'] < 1e-4
     print(report)
 
+
+def test_the_first_pis_way_back_is_the_percept_each_row_keeps(lesson):
+    """Step 3 (rule 79; §19.121, 1): a row's way back is the percept it
+    keeps, its ``.what`` code on two lanes and its ``.where`` and ``.when``
+    entries. Read as an occurrence of its own, each nominated row holds
+    itself wholly: its read there (``held_at`` and ``place_factor``) is one,
+    to within the grading of its code."""
+    from types import SimpleNamespace
+    from BasicPercepts import held_at, field_factor, WHERE_WIRES, WHEN_WIRES
+    basic = lesson.basic_percepts
+    rows = sorted(set(lesson.order_zero.entry_input[:lesson.order_zero.nnz].tolist()))
+    what, where, when = basic.kept_percept(rows)
+    R, width = len(rows), basic.width
+    assert what.shape == (R, 2, width) and where.shape == (R, WHERE_WIRES, 2) and when.shape == (R, WHEN_WIRES, 2)
+    torch.testing.assert_close(what, basic.bank_codes(rows).to(what))
+    # Each kept percept as an occurrence of a table: the what on its lanes,
+    # then the where and the when wires.
+    table = torch.cat((what.transpose(1, 2), where, when), 1)[None]            # [1, R, columns, 2]
+    bank = SimpleNamespace(codes=what, identity_width=basic.identity_width, width=width)
+    part, whole, _added = held_at(bank, table)
+    place = field_factor(table[..., width:width + WHERE_WIRES, :], where) * \
+        field_factor(table[..., width + WHERE_WIRES:, :], when)
+    own = (part * whole * place)[torch.arange(R), 0, torch.arange(R)]
+    print(dict(rows=R, own_read=own.tolist()))
+    # A code is graded, so its own read is one to within its grading.
+    torch.testing.assert_close(own, torch.ones(R).to(own), atol=1e-3, rtol=0)

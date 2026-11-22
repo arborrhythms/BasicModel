@@ -543,6 +543,21 @@ class BasicPercepts(nn.Module):
         t = table[..., self.width + WHERE_WIRES:self.width + WHERE_WIRES + WHEN_WIRES, :]
         return field_factor(w, where) * field_factor(t, when)
 
+    def kept_percept(self, rows):
+        """The first Pi's way back (rule 79; §19.121, 1): for each row, the
+        percept it keeps, ``(what, where, when)``: its code on the ``.what``
+        on two lanes, ``[R, 2, width]`` (:meth:`bank_codes`), and its
+        entries on the ``.where`` and the ``.when`` wires, ``[R, wires, 2]``,
+        each wire on its two lanes, read at zero or above as
+        :meth:`place_factor` reads them. Matched against an occurrence of a
+        sentence's field by shared size, these are the row's own read of
+        that occurrence (:func:`held_at` and :meth:`place_factor`). Nothing
+        is stored for it."""
+        rows = list(rows)
+        what = self.bank_codes(rows)
+        where, when = self._entries(rows, what)
+        return what, where, when
+
     def where_share(self, table, rows):
         """Each row's share on the where wires of each attended percept per
         unit of its share there, ``[rows, B, A]`` (:func:`field_share`)."""
