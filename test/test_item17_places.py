@@ -218,7 +218,8 @@ def looked_at(model, monkeypatch, text):
     def requested(model, query):
         request = original_request(model, query)
         asked.append(dict(places=[round(float(request[rows, 0, 0].max()), 4),
-                                  round(float(request[rows, 0, 0].min()), 4)]))
+                                  round(float(request[rows, 0, 0].min()), 4)],
+                          each=[round(float(v), 4) for v in request[rows, 0, 0].tolist()]))
         return request
     def where_match(*args):
         match = original_match(*args)
@@ -268,8 +269,15 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             asked = looked_at(model, monkeypatch, 'This is Felix.')
             _, concept = places_of(model)
             learned = model.request_start.value.detach()
+            # The codes ``requested`` passes to ``attend`` for the places'
+            # concepts: their norms and the greatest difference between two.
+            codes = model._concept_owner().similarity_codebook.W.detach()[sorted(concept.values())]
+            spread = (codes[:, None] - codes[None]).abs().amax(-1)
+            place_codes = dict(norms=sorted(set(round(float(v), 4) for v in codes.norm(dim=-1))),
+                               greatest_difference=round(float(spread.max()), 4) if len(codes) else None)
             words = [r for r in range(len(learned)) if float(learned[r]) != 0. and r not in concept.values()]
-            records.append(dict(start=start, places=len(basic.place_rows), first_sentence=asked,
+            records.append(dict(start=start, places=len(basic.place_rows), place_codes=place_codes,
+                                first_sentence=asked,
                                 request_start=dict(places={p: round(float(learned[c]), 5) for p, c in concept.items()},
                                                    others={r: round(float(learned[r]), 5) for r in words}),
                                 pure=sum(w is None for _, _, w in basic.place_rows.values()),
