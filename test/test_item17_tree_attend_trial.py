@@ -463,6 +463,270 @@ def test_first_next_end_on_the_output_a_toy():
     assert len(records) == len(cases) * runs()
 
 
+# Step 9: no concept told what it is (§19.128); reading and counting.
+
+class Lit:
+    """The toy of step 7 with nothing named. One network, shared by every
+    task: its input is the concepts lit (one unused concept for each task,
+    ``tasks``), the memory at the first Pi (the ``.what`` and ``.where`` it
+    selected at the last look: nothing before the first look), whether the
+    last look found anything (nothing left), and the last word of the
+    output; ``hidden`` rectified units; three linear reads on top: the next
+    request, the chance of stopping, and the output word over the output's
+    vocabulary (the sentence's words, then the counting words, opaque). The
+    output word is read from the same units given the percept the look
+    selected (its share of the softmax of the activities, so the output's
+    cost reaches the look's scores). The first look, later looks and the end
+    are told apart only by what the memory holds."""
+    HIDDEN = 32
+
+    def __init__(self, places, objects, width, tasks=2, vocabulary=10):
+        self.where = toy_where(places)
+        self.what = F.normalize(torch.randn(objects, width), dim=-1)
+        self.tasks, self.vocabulary = tasks, vocabulary
+        D = width + self.where.shape[1]
+        given = tasks + D + 1 + vocabulary
+        H = self.HIDDEN
+        self.first_layer = (.1 * torch.randn(given, H)).requires_grad_()
+        self.first_bias = torch.zeros(H, requires_grad=True)
+        self.second_layer = (.1 * torch.randn(given + D, H)).requires_grad_()
+        self.second_bias = torch.zeros(H, requires_grad=True)
+        self.ask = torch.zeros(H, D, requires_grad=True)
+        self.stop = torch.zeros(H, requires_grad=True)
+        self.say = torch.zeros(H, vocabulary, requires_grad=True)
+
+    def parameters(self):
+        return [self.first_layer, self.first_bias, self.second_layer, self.second_bias, self.ask, self.stop, self.say]
+
+    def run(self, words, task, *, said=None, forced=None, free_after=0, steps=None):
+        """A sequence over ``words`` ``[B, P]`` (an object or word index at
+        each live place) with ``task``'s concept lit. ``said`` ``[B, T]``:
+        the output's words to carry in the memory (in a lesson), else the
+        sequence's own. Returns the output logits ``[B, T, V]``, the stop
+        logits ``[B, T]`` (before each look) and the places taken."""
+        B, P = words.shape
+        live = words >= 0
+        percepts = torch.cat((self.what[words.clamp_min(0)], (2 * self.where - 1)[None].expand(B, -1, -1)), -1)
+        D = percepts.shape[-1]
+        lit = F.one_hot(torch.full((B,), task), self.tasks).float()
+        unread = live.clone()
+        memory, last = percepts.new_zeros(B, D), percepts.new_zeros(B, self.vocabulary)
+        steps = P if steps is None else steps
+        outputs, stops, taken = [], [], []
+        for t in range(steps):
+            found = unread.any(-1)
+            x = torch.cat((lit, memory, found[:, None].float(), last), -1)
+            h = torch.relu(x @ self.first_layer + self.first_bias)
+            stops.append(h @ self.stop)
+            asked = h @ self.ask
+            activity = torch.where(unread, (percepts @ asked[..., None])[..., 0], -torch.inf)
+            share = torch.where(found[:, None], torch.where(unread, activity, -1e9).softmax(-1), 0.)
+            seen = (share[..., None] * percepts).sum(1)
+            g = torch.relu(torch.cat((x, seen), -1) @ self.second_layer + self.second_bias)
+            logits = g @ self.say
+            outputs.append(logits)
+            tied = unread & (activity.detach() == activity.detach().amax(-1, keepdim=True))
+            place = torch.where(found, torch.rand(B, P).masked_fill(~tied, -1.).argmax(-1), -1)
+            if forced is not None and t < free_after:
+                place = torch.where(found, forced[:, t], -1)
+            taken.append(place)
+            unread = unread & ~((torch.arange(P)[None] == place[:, None]) & found[:, None])
+            memory = percepts[torch.arange(B), place.clamp_min(0)] * found[:, None]
+            word = (said[:, t] if said is not None and t < said.shape[1] else logits.detach().argmax(-1))
+            last = F.one_hot(word.clamp_min(0), self.vocabulary).float() * (word >= 0)[:, None]
+        return torch.stack(outputs, 1), torch.stack(stops, 1), torch.stack(taken, 1)
+
+
+#: The output's vocabulary in step 9: the six words (0 to 5), then the
+#: counting words "1" to "4" (6 to 9).
+COUNTING = 6
+
+
+def reading_targets_of(words):
+    """The reading task's output: the sentence's words in their order."""
+    order = source_order(words)
+    return torch.where(order >= 0, words.gather(1, order.clamp_min(0)), -1)
+
+
+def counting_targets_of(objects):
+    """The counting task's output: "1" to "4", one for each object (none
+    beyond four)."""
+    n = (objects >= 0).sum(-1)
+    k = torch.arange(objects.shape[1])[None]
+    return torch.where((k < n[:, None]) & (k < 4), COUNTING + k, -1)
+
+
+def lit_teach(net, words, task, targets, steps=800, rate=.02, *, also=None):
+    """The output's cost alone: each step's word, and stopping before the
+    look after the last word and not before. ``also``: a second task's
+    ``(words, task, targets)`` taught at the same steps (the two costs
+    summed). The loss before and after."""
+    optimizer = torch.optim.Adam(net.parameters(), lr=rate)
+    first = last = None
+    for _ in range(steps):
+        optimizer.zero_grad()
+        loss = lit_cost(net, words, task, targets)
+        if also is not None:
+            loss = loss + lit_cost(net, *also)
+        loss.backward()
+        optimizer.step()
+        last = float(loss.detach())
+        first = last if first is None else first
+    return round(first, 3), round(last, 3)
+
+
+def lit_cost(net, words, task, targets):
+    n = (words >= 0).sum(-1)
+    T = int(n.max()) + 1
+    if True:
+        outputs, stops, _ = net.run(words, task, said=targets[:, :T], steps=T)
+        k = torch.arange(T)[None]
+        speaking = (k < n[:, None]) & (F.pad(targets, (0, max(0, T - targets.shape[1])), value=-1)[:, :T] >= 0)
+        target = F.pad(targets, (0, max(0, T - targets.shape[1])), value=-1)[:, :T].clamp_min(0)
+        word_cost = F.cross_entropy(outputs.transpose(1, 2), target, reduction='none')
+        word_cost = torch.where(speaking, word_cost, 0.).sum() / speaking.sum().clamp_min(1)
+        counted = k <= n[:, None]
+        stop_cost = F.binary_cross_entropy_with_logits(stops, (k == n[:, None]).float(), reduction='none')
+        return word_cost + torch.where(counted, stop_cost, 0.).sum() / counted.sum()
+
+
+def lit_measure(net, words, task, targets, *, forced=None, free_after=0):
+    """With nothing supplied: the sequence until it stops (stop more likely
+    than not before a look) or every place is spent. Returns, for each
+    sequence, the places looked at before the stop, the output said, and
+    the look at which it stopped (-1: never)."""
+    with torch.no_grad():
+        outputs, stops, taken = net.run(words, task, forced=forced, free_after=free_after)
+    stop = (stops > 0)
+    stopped = torch.where(stop.any(-1), stop.int().argmax(-1), -1)
+    return taken, outputs.argmax(-1), stopped
+
+
+def reading_counts(net, words):
+    taken, said, stopped = lit_measure(net, words, 0, None)
+    n = (words >= 0).sum(-1)
+    order = source_order(words)
+    looks = torch.arange(taken.shape[1])[None] < n[:, None]
+    in_order = ((taken == order) | ~looks).all(-1)
+    spoken = ((said == reading_targets_of(words)) | ~looks).all(-1)
+    return dict(first=f'{int((taken[:, 0] == order[:, 0]).sum())}/{len(words)}',
+                in_order=f'{int(in_order.sum())}/{len(words)}', said_right=f'{int(spoken.sum())}/{len(words)}',
+                stopped_at_the_end=f'{int((stopped == n).sum())}/{len(words)}',
+                stopped_early=f'{int(((stopped >= 0) & (stopped < n)).sum())}/{len(words)}')
+
+
+def counting_counts(net, objects):
+    """By number of objects: the counts said right (each step's counting
+    word up to four, stopped after the last object), each object looked at
+    once before the stop, and what was said."""
+    taken, said, stopped = lit_measure(net, objects, 1, None)
+    n = (objects >= 0).sum(-1)
+    want = counting_targets_of(objects)
+    by = {}
+    for k in sorted(set(n.tolist())):
+        rows = (n == k).nonzero().flatten()
+        right = once = 0
+        for b in rows.tolist():
+            end = int(stopped[b]) if int(stopped[b]) >= 0 else taken.shape[1]
+            looked = [p for p in taken[b, :end].tolist() if p >= 0]
+            once += sorted(looked) == sorted((objects[b] >= 0).nonzero().flatten().tolist())
+            right += end == k and all(int(said[b, i]) == int(want[b, i]) for i in range(min(k, 4)))
+        sample = said[rows[0], :int(stopped[rows[0]]) if int(stopped[rows[0]]) >= 0 else taken.shape[1]].tolist()
+        by[k] = dict(right=f'{right}/{len(rows)}', each_looked_at_once=f'{once}/{len(rows)}',
+                     said=[f'"{v - COUNTING + 1}"' if v >= COUNTING else f'word {v}' for v in sample])
+    return by
+
+
+def lit_pairs(net, P, starts, vocabulary=6):
+    rows = [s for s in starts if s + 5 <= P]
+    words = torch.full((len(rows), P), -1, dtype=torch.long)
+    for i, s in enumerate(rows):
+        a, b = torch.randperm(vocabulary)[:2].tolist()
+        words[i, s:s + 5] = torch.tensor([a, b, a, b, a])
+    s = torch.tensor(rows)
+    right = torch.ones(len(rows), dtype=torch.bool)
+    for history, wanted in (((1, 3), 4), ((3, 1), 2)):
+        forced = torch.stack((s + history[0], s + history[1], s), -1)
+        taken, _, _ = lit_measure(net, words, 0, None, forced=forced, free_after=2)
+        right &= taken[:, 2] == s + wanted
+    return f'{int(right.sum())}/{len(rows)}'
+
+
+def objects_at(P, counts, per_count):
+    """Scenes of ``counts`` objects each at places drawn without
+    replacement, the object's kind drawn of three, ``[N, P]``."""
+    rows = []
+    for k in counts:
+        for _ in range(per_count):
+            row = torch.full((P,), -1, dtype=torch.long)
+            row[torch.randperm(P)[:k]] = torch.randint(3, (k,))
+            rows.append(row)
+    return torch.stack(rows)
+
+
+def lit_shared(net):
+    """What the two lit concepts share and what differs: their rows of the
+    first layer (cosine), the hidden units each lights at the first look
+    (memory nothing), and the place each asks most at the first look over
+    all 32 places."""
+    with torch.no_grad():
+        rows = net.first_layer[:2]
+        cosine = float(F.cosine_similarity(rows[0], rows[1], dim=0))
+        units = []
+        asked = []
+        for task in range(2):
+            x = torch.zeros(1, net.first_layer.shape[0])
+            x[0, task] = 1.
+            x[0, net.tasks + net.what.shape[1] + 4] = 1.          # found: something is there
+            h = torch.relu(x @ net.first_layer + net.first_bias)[0]
+            units.append(set((h > 0).nonzero().flatten().tolist()))
+            q = h @ net.ask
+            asked.append(int(((2 * net.where - 1) @ q[net.what.shape[1]:]).argmax()))
+    return dict(first_layer_cosine=round(cosine, 3), units_lit_by_both=len(units[0] & units[1]),
+                only_reading=len(units[0] - units[1]), only_counting=len(units[1] - units[0]),
+                first_place_asked=dict(reading=asked[0], counting=asked[1]))
+
+
+def test_one_lit_concept_for_each_task_reading_and_counting_a_toy():
+    """Step 9 (§19.128), a toy recorded and not asserted. (a) Reading: one
+    unused concept lit, the output's cost alone, nothing named; taught on
+    sentences of 2 to 5 words at starts 0 to 11; measured on those, on
+    untaught lengths and starts, and on the paired histories. (b) Counting:
+    a second unused concept lit; scenes of 1 to 4 objects at drawn places
+    (5 and 6 held out); the output "1" to "4", one per object. Taught in
+    both orders (reading then counting, counting then reading), each task
+    measured after each lesson; and both taught together. By drawn start; asserted only that every
+    count was made."""
+    P, width = 32, 8
+    records = []
+    for _ in range(runs()):
+        start = fresh_start()
+        reading = dict(taught=toy_sentences(P, (2, 3, 4, 5), range(0, 12), 6),
+                       lengths=toy_sentences(P, (6, 7, 8), range(0, 12), 6),
+                       starts=toy_sentences(P, (2, 3, 4, 5), range(12, 25), 6))
+        scenes = objects_at(P, (1, 2, 3, 4), 12)
+        held = objects_at(P, (1, 2, 3, 4, 5, 6), 6)
+        for order in (('reading', 'counting'), ('counting', 'reading'), ('together',)):
+            net = Lit(P, 6, width)
+            stages = []
+            for task in order:
+                if task == 'together':
+                    loss = lit_teach(net, reading['taught'], 0, reading_targets_of(reading['taught']),
+                                     also=(scenes, 1, counting_targets_of(scenes)))
+                elif task == 'reading':
+                    loss = lit_teach(net, reading['taught'], 0, reading_targets_of(reading['taught']))
+                else:
+                    loss = lit_teach(net, scenes, 1, counting_targets_of(scenes))
+                stages.append(dict(after=task, loss=loss,
+                                   reading={k: reading_counts(net, w) for k, w in reading.items()},
+                                   pairs=dict(taught_starts=lit_pairs(net, P, range(0, 12)),
+                                              untaught_starts=lit_pairs(net, P, range(12, 25))),
+                                   counting=counting_counts(net, held)))
+            records.append(dict(start=start, order=order, stages=stages, shared=lit_shared(net)))
+            print(records[-1])
+    assert len(records) == 3 * runs()
+
+
 # ---------------------------------------------------------------------------
 # Step 1: the record of each look, and what the tree holds at each look.
 
