@@ -414,3 +414,16 @@ the age at which a child learns it. "A model's age is determined by the
 assessment, not "grade"" (Alec, 2026-11-22). The age is a parameter of the
 model and of its XML, read and written by the assessment; a test asks for a
 mental age, and the assessment says whether the model is qualified for it.
+
+## Place
+
+**Cerebellum.** The spatial parameter: the space of three dimensions, filled
+with sinusoids, in which every percept of every modality has its place. Its
+code at a place is copied into the basic percept there, beside the percept's
+`.what` and `.when`; on the way back the percept's `.where` is separated and
+matched against it, which gives the place of what the `.what` selected in the
+percept codebook (Alec, 2026-11-22). It is fixed: nothing of it is learned.
+Text lies on its first axis, with zeros on the other two; an image on two; a
+volume on three. In the source it is `WhereRegistry.code` until the pass that
+makes it three-dimensional and gives it its name.
+
