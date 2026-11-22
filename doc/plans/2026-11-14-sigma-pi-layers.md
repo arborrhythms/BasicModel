@@ -14446,6 +14446,17 @@ de-muxed; the production configuration.
 
 Return `scratch-1.7/r6d_return_14.md`, what fails first. `main` moves on the thirteenth pass's condition.
 
+*The fifteenth pass* (added 2026-11-22, after §23.6.20), on the same branch: the input's reconstruction leaf by leaf, by the perceptual inverse and the `.where` (rule 79; §19.133). *Provisional on Alec's word* that the input's reconstruction is of each leaf and not a generation from the root.
+
+1. *Simulate, on "This is Felix." and on the 19 words alone, eager:* for each leaf of the reading (each word a look took, the mark too), its own concept through the Sigma's way back and `BasicPercepts.kept_percept`, the place rows' `.what` left out; the `.what` matched against the percept codebook; the leaf's `.where` wires matched against the grid for each axis apart; the matched percept pasted at the matched place. Is the sentence the sentence? Say the numbers before building.
+2. *Build it* as the input's reconstruction (`SentenceField.reconstruct`, `FieldReverse.reverse`), in place of the generation from the root and of the integers kept on the side: the paste graded, so that the cost's gradient reaches the rows that read the `.what` and the `.where`; the grid fixed. What it replaces goes (no second path): the bracket kept from the lookup as the place, the stamp from the buffer's position, the spelling by a row's index, the skipping of a place's row. The output walk stays for answers and is not touched, save where it shares what goes.
+3. *A place row gives back no `.what`* on the way back, in the source.
+4. *The percept's own `.where` wires are what a leaf carries,* in place of the stamp from integers, where that is a change of what is read and not of a width; say what composition is then given, and change nothing of composition.
+5. *A mark is a word* (thirteenth pass, step 3), and *a tie is a draw* (step 2), if the walk is still what says an answer.
+6. *Certificates:* a percept recreated at a wrong `.where` costs more than at its own; the gradient reaches the rows that read the `.where`; a sentence reconstructed is the sentence, on the ladder's sentences and the lesson's, three starts, untaught and taught.
+7. *The row at 1.00 by the input's reconstruction:* the 19 words and the marks, each alone, three starts. Then the row at 1.75 measured, not repaired.
+8. *Tests:* both gates; the files touched and their users (reconstruction is read by many: say which you ran); `test/test_compiled_lesson_step.py` once. Return `scratch-1.7/r6d_return_15.md`, what fails first. `main` moves only if the row at 1.00 passes in all three starts with both gates and the files touched, save the two known failures.
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -25440,3 +25451,175 @@ The pass stopped at its simulation, as its text told it to, and nothing of the s
 - *The twelfth pass's "every terminal scores 0.0" was a measure of the wrong call* (the second call of `OutputOccurrences.generated`, from `reverseOutput`, whose leaf is empty and which emits nothing). The review of §23.6.18 took it over and is corrected by this one: where the root holds the word's code, the word's own terminal scores 1.0 and the word is said. The failure of the row at 1.00 stands; its cause is the root.
 - *A place row brings back a `.what` that covers "every whole"* on the way back, and two place rows (18 and 44) dominate what `stimulate` lights. By Alec's answer (§19.133) a place is not read from place concepts, and nothing of a place row belongs in a recreated `.what`. *The fourteenth pass measures it.*
 - *The first choice of the pass is right:* find why the composition and the closing make a root with no `.what`, or a dense one, before anything is carried to the leaf by name. *The fourteenth pass.*
+
+### 23.6.20 Round 6d, fourteenth pass: the trace: a word's leaf is exact, the root is a composition, and the `.where` of a concept is a stamp from integers (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`. It started at 707e2721db, and the coordinator added the spec commit 2fbe978ca1 (step 5) on top. My one commit is 1ec71d6e68, tests only:
+
+- new: `test/test_item17_root_trace.py` (step 1)
+- new: `test/test_item17_where_trace.py` (step 5, the first measure)
+- changed: `test/test_item17_word_from_concept.py` (step 3: two added columns)
+
+Nothing in `bin/` or `data/` changed. Nothing is pushed. The superproject, `suggestions.txt` (it has an edit that is not mine; I left it alone), the spec and the docs are not touched. `main` is not moved.
+
+#### What fails or is unfinished, first
+
+- **Step 5 builds nothing.** The `.where` that reaches reconstruction is not the reading's own vector's `.where`.
+  - The percept's own wires give the right address.
+  - The wires are dropped on the way up. They are put back in STM from the integer byte starts kept at the lookup.
+  - Composition keeps at most one operand's wires.
+  - Every walk leaf after the first has none.
+  - Rule 3 of the step applies: the measurements are below.
+- **Step 2 builds nothing.** The word's `.what` is lost, or made dense, by the grammar. A binary rule composes the word with the empty leaf of the closing mark. Which rule is applied decides what the root holds. That is a matter of design, so it is put to the owner (question 1).
+- **Step 4 is not started.** The root does not hold the word, so step 4's condition fails. So none of these were done: the thirteenth pass's steps 1 to 7, the draw among ties, the mark as a word, the row at 1.00 by the walk, the crash at `ClauseJournal.py:384`.
+- **The row at 1.00 by the walk was not reached in any start.** `main` does not move.
+
+#### Step 5 (the critical path): the `.where` of each reading, up and back
+
+Record: `test/test_item17_where_trace.py`. The sentence is "This is Felix.", read eager with no gradient, in 3 fresh starts (97443675489094, 232142805226542, 17366473718974).
+
+How the match works:
+- The grid (`WhereRegistry.code`) has 4370 addresses × 4 wires.
+- The 4 wires are one axis (the registry's one line of addresses) at two rungs. Wires 0:2 are the long rung; wires 2:4 are the short rung, with a period of 256 addresses.
+- Each set of wires is matched to the nearest grid row by distance. The margin is the second-nearest distance minus the nearest.
+
+The words' grid addresses are 0, 5, 8 and 13. The results, stage by stage:
+
+| Stage | What it holds | Address from its wires | Margin |
+| --- | --- | --- | --- |
+| Percept event, each part (`PartSpace._radix_code_events`, Spaces.py ~10955) | code wires, `registry.encode('text', part_offsets)` | right for every part, bytes 0 to 13 | .0123 (both rungs); long rung alone .0004; short rung alone 0 (ambiguous: 0 and 256 are the same) |
+| The look's concept event (`promote_symbol_reference`) and the word's codebook row (`word_atoms`) | nothing at [128:136] | none | — |
+| Conceptual field (`record.open_field.where`) | integers [start, end): (0,4), (5,7), (8,13), (13,14) | not wires | — |
+| STM field 11 (`chunk_where`) and concept wires [128:132] of each word's slot | code wires, written from `isp._ar_word_symbol_where = registry.encode('text', starts)` (Models.py:11486; `starts` are the integer byte starts from the lookup), at Models.py:21995-22004 | right for each word's own slot | .0123 |
+| After composition: `record.end_slots[0]` / the root | one operand's wires, or none | 8 (Felix's) in 2 starts; nothing in 1 start | .0123 |
+| The walk's leaves (`OutputOccurrences.generated`) | leaf 0 = the root's wires; leaves 1 to 15 have none | — | — |
+| The walk's field (OutputOccurrences.py:120-130) | integers: a cursor over the chosen spellings' lengths | — | — |
+| `FieldReverse.reverse` (FieldReverse.py:176-179) | places by the field's integer brackets; stamps `.where` from the buffer's position (`decoder.positions`) | — | — |
+
+Where the wires stop being the occurrence's own:
+
+1. **On the way up, through the first Pi and the Sigma.** The concept the look produces holds no `.where`. The wires in STM are not carried up. They are re-stamped from integers kept on the side.
+2. **At composition.** A binary rule's value (`choice.candidate`, written at Memory.py:305) keeps the wires of at most one operand. It is never a merged interval. In 1 of 3 starts it keeps none.
+3. **In the walk.** Only the root carries wires. A generated leaf carries none. The places come from spelling lengths.
+
+A side finding on precision: adjacent addresses differ by .0123 in wire distance, and the short rung alone cannot tell 0 from 256. So a graded paste matched on these 4 wires would need a very sharp kernel. Even then, it would separate places only for wires that are exact.
+
+#### Questions
+
+1. **What should the root of a one-word sentence hold, when the closing mark is a leaf?** "This." is read as two leaves: "This" (its exact code) and "." (an empty leaf: no concept row, presence 0, `.what` all zero). The grammar then usually applies a binary rule to the pair. What the root holds depends on the rule:
+   - `subtract`, `modifier`, `whole`, `add`: the word (cosine 1.00).
+   - `part`, `preposition`: no `.what` (shared size with nothing is nothing).
+   - `surface`: dense on all 128 wires (own .750 against "there" .755 untrained; .085 against "Ciao" .320 after 5 rounds).
+
+   So the root is the word only when a rule happens to pass it through. Once marks are made words (the thirteenth pass's step 3, "All content"), the root of "This." is by design a composition of two words. It is not the word's concept. Two possible answers:
+   - (a) The walk unfolds the root through the rule's inverse, instead of taking one STOP with the root as the leaf.
+   - (b) A closing mark composes so that its operand passes through.
+
+   Which does the owner mean?
+2. **Where does a reading's `.where` come from on the way up?** Today it is not carried through the first Pi and the Sigma. Two options:
+   - (a) Carry the percept's muxed `.where` wires up to the concept, in place of the stamp at Models.py:21995-22004.
+   - (b) Keep the stamp.
+
+   In both, composition then has to carry each operand's wires (a merged interval, or one per leaf), and the walk has to give each leaf its wires. Without that, step 5 cannot be built from the vector's own wires.
+3. **Is a 4-wire grid enough?** It is right on exact wires, with a margin of .0123. Should step 5 wait for the three-dimensional grid (§19.132 f), or for more rungs?
+
+#### Step 1: the trace of "This." from the look to the walk's leaf
+
+Record: `test/test_item17_root_trace.py`. Eager (`use_eager_reading`), no gradient, the word read alone.
+- Rounds: 0, then 5 rounds of the 19 words at rate .01.
+- Starts: 3 drawn afresh, plus 5 untrained debug starts with the same code.
+- Columns: the cosine on the `.what` (wires 0:128) to "This"'s codebook row, and to the best of the other 18 words; the count of lit `.what` wires; the 8 `.where`/`.when` wires [128:136].
+- The rows for the mark's stages are left out of the tables. In every start they are the same: a look with nothing (0 wires) and a leaf with nothing (presence 0).
+
+Stages that hold the word exactly in every start, trained or not:
+
+| Stage | cos own | best rival | lit | `.where`/`.when` |
+| --- | ---: | --- | ---: | --- |
+| look, `promote_symbol_reference` | 1.000 | is .943 | 72 | all 0 |
+| leaf, `interpret.activate` (Models.py:21945) | 1.000 | is .943 | 72 | all 0 |
+| STM slot after the push | 1.000 | is .943 | 72 | .549 .998 .5 0 / .5 1 .6-.7 .95-.99 (stamped) |
+
+Then, by start (the stage where the root changes is the binary rule on "This" and the mark's leaf):
+
+| Start | Rounds | The grammar's binary rule on (This, .) | root `.what`: cos own / rival / lit | walk leaf = root? |
+| --- | ---: | --- | --- | --- |
+| 201775112100886 | 0 | `whole` (round) | 1.000 / .943 / 72 | yes |
+| 201775112100886 | 5 | `surface` (round) | **.085 / Ciao .320 / 128** (dense) | yes |
+| 219525949473179 | 0 | `preposition` (closing) | **0 / – / 0** (lost, and `.where`/`.when` 0) | yes |
+| 219525949473179 | 5 | `part` (round) | **0 / – / 0** (lost; only the 8 `.where`/`.when` wires) | yes |
+| 215582802359121 | 0 | `subtract`, then `ask` | 1.000 / .943 / 72 | yes |
+| 215582802359121 | 5 | none: no mark leaf pushed | 1.000 / .943 / 72 | yes |
+| 139567911072351 (debug) | 0 | op 12 (`surface`) | **.750 / there .755 / 128** (dense) | yes |
+| 82784040307397 (debug) | 0 | `subtract`, then `non` | 1.000 / .943 / 72 | — |
+| 247552262099780 (debug) | 0 | `subtract` (closing) | 1.000 / .943 / 72 | yes |
+| 163103316085329 (debug) | 0 | `modifier` (closing) | 1.000 / .943 / 72 | yes |
+| 105878814492700 (debug) | 0 | transpose, then `add` | 1.000 / .943 / 72, `.where`/`.when` 0 | yes |
+| 271702668382685 (debug) | 0 | `part` (closing) | **0 / – / 0** | yes |
+
+What the trace shows:
+
+- **Where the `.what` is lost:**
+  - The composed value is made by the compose layer in `Language.choose_operation` (`_, _, route = layer(window, ...)`, Language.py:11565).
+  - It is written into STM by `STMChunks.apply_choice` (Memory.py:305: `result[BUFFER] = write(..., choice.candidate, valid)`).
+  - It is lost when the rule is `part` or `preposition`, with an operand that holds nothing: the mark's leaf. That leaf is pushed at Models.py:21979 with the word idea from `interpret.activate` on a zero row, presence 0.
+- **Where the `.what` becomes dense:** the same line, when the rule is `surface`. This happens untrained too (start 139567911072351). Training does not make the leaf dense. The leaf stays exact (cos 1.000, 72 wires) in every trained start. What changes with training is which rule is taken.
+- **Nothing after the closing changes the vector.** `record.root` = `record.end_slots[0]` = the walk's leaf, except the `.when` pair. The walk's `when=record.open_field.when` puts .5 and 1.0 there.
+- **`record.meaning_root` (the comprehension's) sometimes differs from `end_slots`.** In start 219525949473179, after 5 rounds, it holds the word while the root holds none. It is not a way out: in other starts it is the one that is empty or dense.
+
+**Why this is design and not a small fault:**
+- Each rule does what it says: `part` of a word and nothing is nothing.
+- Composing the word with the mark is what the grammar is for.
+- The empty mark leaf is the known gap of the thirteenth pass's step 3. Filling it would make the root a composition of two words, still not the word.
+- What a closed sentence's root holds, and whether the walk unfolds it, is the owner's call (question 1). So no build.
+
+#### Step 3: place rows left out of the way back (tests only)
+
+Record: `test/test_item17_word_from_concept.py`, with two added columns: (a) and (b) with the place rows' `.what` left out of the sum. It is the 19 words read alone, with no gradient, in 3 fresh starts. Each number is the count of words, out of 19, whose own terminal is strictly greatest.
+
+| Start | as built | (a) the leaf's concept | (a) no place rows | (b) the open field | **(b) no place rows** | (c) the word's concept alone |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 219100760794729 | 15 | 2 | 1 | 2 | **19** | 19 |
+| 221258503749107 | 0 | 2 | 0 | 6 | **19** | 19 |
+| 160771628398541 | 0 | 0 | 0 | 6 | **19** | 19 |
+
+- **The place rows are what spoils the open field's way back.** With their `.what` left out, the open field at the reading gives the own word on top for 19 of 19 in every start.
+  - Its margins are .019 to .232, the same values as (c). Without place rows, only the word's own row is left lit above zero.
+  - With the place rows in, the margins are −.288 to +.042.
+- (a) stays at 0 to 1 without place rows. In those readings the leaf (the root) holds no `.what` at all, as step 1 shows.
+- This supports the owner's ruling that a place is not read from place rows: a place row's `.what` (every whole) belongs in no recreated `.what`.
+
+#### What I repaired
+
+Nothing. Neither finding is a small fault of the source (reasons above).
+
+#### The row at 1.00 by the walk
+
+Not reached in any start. Step 4's condition, that the root holds the word, fails.
+
+#### Tests run
+
+| Run | Result |
+| --- | --- |
+| `test_item17_root_trace.py` alone, 3 fresh starts, ROUNDS=5 | 3 passed, about 200 s each |
+| `test_item17_root_trace.py` alone, 5 debug starts, untrained | records as above |
+| `test_item17_where_trace.py` alone, 3 fresh starts | 3 passed, 50 to 80 s |
+| `test_item17_word_from_concept.py` alone, 3 fresh starts | 3 passed, 44 to 101 s |
+| Both gates + the three files, `-n 6 --dist loadfile` | 5 passed, 142 s |
+
+No file in `bin/` changed, so no user of the source was run, and `test_compiled_lesson_step.py` was not run. No seed is pinned, nothing is asserted of a drawn outcome, and nothing was skipped or put under RUN_SLOW.
+
+Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d14/`:
+- `t1.log` to `t3.log`: the trace, trained
+- `u1.log` to `u4.log`, `dbg0.log`: untrained debug starts
+- `w1.log` to `w3.log`: the `.where` measure
+- `p1.log` to `p3.log`: place rows left out
+
+#### Review (Claude, 2026-11-22)
+
+Nothing of the source changed; `main` is not moved. Both stops are right: each is a matter of design and not a fault.
+
+- *The word is never lost at its leaf.* The grammar's leaf for the word is the word's concept exactly (cosine 1.000, 72 wires) in every start, taught or not. What the output is given is the root, and the root of "This." is a composition of two leaves, the word and an empty leaf for the mark, by whichever binary rule the grammar took. `subtract`, `modifier`, `whole` and `add` leave the word; `part` and `preposition` leave no `.what`; `surface` leaves a dense vector. Training changes which rule is taken, which is why the result swings.
+- *So the reconstruction of the input is, in the source, a generation from the composed root* (`SentenceField.reconstruct`, `reconstruct_generation`, `Models.generate`), and it can give back a word only where the rule happens to pass it through. Alec's account of reconstruction (§19.133) is of the percept: "take the input back though the perceptual inverse and to a basic percept which can be disassembled". *Claude's reading, for Alec to confirm:* the input's reconstruction is taken leaf by leaf, each word's own concept through the perceptual inverse and pasted at its own `.where`, with no composition in it; saying an idea from its root, through each rule's inverse, is the later thing (comprehension), and waits for rules that have inverses. *The fifteenth pass builds the first, provisional.*
+- *The `.where` in a concept is a stamp, not the percept's wires.* The percept's own wires match the grid at the right address for every byte. On the way up the concept's `.where` wires (and STM's field 11) are written again from the integers kept at the lookup (`Models.py:11486`, written at `21995`-`22004`); composition keeps one operand's wires at most and never an interval; the walk gives later leaves no wires and places by a cursor. A stamp of the same address is the same code, so at a leaf the wires are right; what is wrong is that nothing downstream reads them, and that the integers are what is carried. *The fifteenth pass:* the percept's own wires carried to the leaf, and the paste read from them.
+- *Place rows spoil the way back, and leaving their `.what` out mends it:* 19 of 19 words in three starts with it out, 2 to 6 with it in. A place row recognises a place and has no `.what` to give back (§19.133). *The fifteenth pass builds it.*
+- *Four wires at the model's periods tell an address from its neighbour by .0123* and are right for every byte where the wires are exact; the short rung alone cannot tell address 0 from 256. Enough to build on; the rungs are taken with the grid in three dimensions.
