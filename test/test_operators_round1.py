@@ -39,7 +39,11 @@ def test_attend_gives_a_request_over_concepts_on_two_lanes():
     torch.testing.assert_close(request[..., 0], base[:, None].expand(3, 2))
     assert not request[..., 1].any()
     asked = OperationSelectionLayer.attend(torch.tensor([[2., -1.]]), codes, base)
-    torch.testing.assert_close(asked[:, 0], torch.tensor([[2., 0.], [1., 1.], [1., 0.]]))
+    # Ported (round 6d, eighth pass, rule 79): each concept asked for as far
+    # as its code is held by the query, by shared size, and against as far
+    # as it is held by the query's lanes exchanged, in 0 to 1, the start
+    # added. The product of code and query gave [[2, 0], [1, 1], [1, 0]].
+    torch.testing.assert_close(asked[:, 0], torch.tensor([[1., 0.], [1., 1.], [.5, .5]]))
     request[..., 0].sum().backward()
     assert query.grad is not None
 
