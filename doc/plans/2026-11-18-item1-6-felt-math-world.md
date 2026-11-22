@@ -1560,3 +1560,7 @@ https://aclanthology.org/2020.findings-emnlp.117/
 - *The measure before any remote machine.* Taken as the item's record: examples and elapsed time to a declared accuracy on whole held-out spatial sets, with naming at new places, the roles exchanged on a seen scene, and inference from text alone reported apart.
 
 *Decided (Alec, 2026-11-21):* "The missing scene does not affect reconstruction cost." So `scene: null` charges nothing on the scene; an empty board is reconstructed and charged like any board. *Decided (Alec, 2026-11-21), on the unit of the count:* "Per answer, unless I hear better rationale". The gate is the accuracy per answer; the count of whole sets right is reported beside it, with which cells fail, and is not a gate.
+
+## An object counting task (Alec, 2026-11-22)
+
+Alec, while item 1.7's looks were being taught to read in order: "make sure to introduce an object counting task as 1,2,3,4 counting word on the output." The input holds objects; the output is the counting words, one for each object, in order. It uses the mechanism of sigma-pi §19.126 to §19.128 (a concept lit for the task; the memory of the last look; the output's cost alone), first tried as a toy in item 1.7 (round 6d, tenth pass, step 9). In this item it is a category of the corpus.

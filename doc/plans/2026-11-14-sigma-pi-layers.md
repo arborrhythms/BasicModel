@@ -9856,6 +9856,14 @@ Claude's reading, *mine* until he confirms it:
 
 *Decided:* tried in the toy, step 8 of the tenth pass.
 
+### 19.128 Alec: the concepts are not taught explicitly; back to reading without comprehension; an object counting task (2026-11-22)
+
+After §19.127, Alec: "We shouldn't have to teach the concepts explicitly. Let go back to reading without comprehension if the toy proves it can work, and make sure to introduce an object counting task as 1,2,3,4 counting word on the output."
+
+- *Decided:* "first", "next" and "end" are not given as named concepts with a lesson each. Claude's reading (*mine*): one unused concept is lit for a task, and what it does at the first look, at a later look and at the end is learned from the output's cost and from what the memory holds (nothing; a word; nothing left). The three names describe what is learned and are in no source.
+- *Decided:* if the toy shows it works, the item goes back to reading without comprehension (stage one: the sentence read and reproduced, no idea asked of it) with the looks on, taught by the output alone.
+- *Decided:* an object counting task. The input holds objects; the output is the counting words "1", "2", "3", "4", one for each object, in order. Numerals are opaque words and the successor is the one relation (his rule for math). It is a second task for the same mechanism, with a concept of its own lit. Tried in the toy (step 9 of the tenth pass) and entered in item 1.6's plan.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -14207,6 +14215,8 @@ de-muxed; the production configuration.
 7. *The toy of §19.126* (added the same day). Places with learned codes, a request over them, and two concepts with nothing learned at the start: "first", lit while no word has been found, and "next", lit after. Each lit concept reads the input by learned entries and gives the next request; the input holds the last look's request (form A: as given; form B: as answered, the place of the word returned). Taught by reading targets on sentences of several lengths and starting places; evaluated with no reading supplied on lengths and starting places not taught, and on Codex's paired histories. No form is given the order. Report, by drawn start: the first word right; sentences read in order; pairs right; what the "next" concept's entries hold after learning (is it one successor for every place, or a table of places). Say what the same two concepts would read in the model, in the source's names, and what is missing there.
 
 8. *The pairing of §19.127* (added the same day), in the toy of step 7. No reading target: the cost is on the output alone, which is the sentence produced in its order by "first", then "next" as often as needed, then "end" (a third concept, which stops the sequence). The reading uses the same "first" and "next". Compare with step 7's toy taught by reading targets: the first word right, sentences read in order, pairs right, and whether the reading stops at the end, by drawn start. Say what gradient reaches the reading's choice from the output's cost, and if none does, what would carry it.
+
+9. *§19.128* (added the same day), in the toy. (a) No concept is told what it is: one unused concept is lit for the reading task, the cost is the output's alone, and the first look, the later looks and the end are told apart only by what the memory holds. Does it still read in order and stop? (b) The object counting task, with a second unused concept lit: the input holds one to four objects at drawn places (and more than four, held out, to see what it does); the output is the counting words "1" to "4", one for each object, in order, the words opaque. Report by drawn start: counts right by number of objects; whether each object is looked at once; whether the reading task still holds after the counting task is learned and the other way round; what the two lit concepts share and what differs in what they learned.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
