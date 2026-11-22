@@ -9979,6 +9979,25 @@ Numbers are higher-order, so symbolic (they are pure forms, and do not have a pe
 - *Decided, and it corrects the note above:* a number is not a felt thing. It is of a higher order and symbolic: a pure form with no perceptual representation. What is felt is the intensity. "One is above two" in a test is shorthand for "the pixel value 1 (at x1, y1, z1) is above the pixel value 2 (at x2, y2, z2)", and it speaks of image data.
 - *Decided:* shapes in the space of feeling are level sets, and basic geometry is taught on them.
 
+### 19.133 Alec: the concept is the concatenation of `.what`, `.where` and `.when`; reconstruction inverts it and does not depend on attention (2026-11-22)
+
+To two sentences of Claude's reading of "The .where continues to be muxed on its way to conceptual space and demuxed to determine where percepts are located", Alec, each answer whole:
+
+1. Of "an occurrence's `.where` travels muxed with it, as wires of what is carried, all the way up into conceptual space": "just as before, the .what, .where, and .when are concatenated to form the concept from the basic level percept that contains those separately. This process is inverted to project .what onto the codebook and the .where on the cerebellum (is that where the 3D space is stored for all modalities?)"
+2. Of "the place is not decoded from which place concepts happen to be lit, and it is not something a word's row learns": "We had been stimulating concepts, finding their sensitivity on the input, and using that to select the percepts that are let in via attention. I assume that will still happen in attend(), but the conceptual activation should be driven by input or state. But the reconstruction, which does not depend on attention, will take the input back though the perceptual inverse and to a basic percept which can be disassembled and used to select the relevant mereological features over parts and wholes and the .where over the spatial parameter (are we still calling it the cerebellum?)"
+
+*Decided:*
+
+- The basic percept holds its `.what`, its `.where` and its `.when` apart. The concept is made from it by concatenating the three. Nothing new: "just as before".
+- Reconstruction is the inverse of that and does not depend on attention. The input is taken back through the perceptual inverse to a basic percept; the percept is taken apart; its `.what` selects the features of parts and wholes (the percept codebook), and its `.where` selects over the spatial parameter.
+- `attend` is a different thing and stays: concepts are stimulated, their sensitivity on the input is found, and that selects the percepts let in. The conceptual activation it starts from is driven by the input or by state, never set (§19.129).
+
+*His two questions, answered from the source* (Claude, at `b0e14a35c7`):
+
+- *"Is that where the 3D space is stored for all modalities?"* There is one store of places for every modality and every space, `WhereRegistry` (`bin/WhereRegistry.py`): one row of `.where` wires for each address (`code`), which is the spatial parameter. But it is one line of addresses cut into named ranges (the input, the parts, the wholes, the conceptual slots), and a modality is told from another by its range, not by a place in a common space. So: one store, yes; of three dimensions, no, not yet (§19.132, the twelfth pass's item f).
+- *It is not learned today.* `WhereRegistry.code` is the sinusoid's code of each address. It takes a gradient and is in no optimizer ("nothing of it is learned or written as a state", its own comment). What is learned of a place is a row's entries on the `.where` wires (`PlaceEntries`, §19.120). So a cost that finds a percept at a wrong place can teach the rows that read places and cannot move the places. *For Alec:* whether the spatial parameter itself is to be learned.
+- *"Are we still calling it the cerebellum?"* No name in the source says cerebellum; the source says `WhereRegistry`, and one sentence of `doc/BasicModel.md` says "In humans, perceptual space projects onto a 3D cerebellar subspace before symbolic encoding" (his, 2026-11-20). *For Alec:* the name. Until he says, the spec writes "the spatial parameter (`WhereRegistry.code`)".
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
