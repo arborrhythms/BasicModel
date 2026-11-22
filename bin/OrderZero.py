@@ -20,13 +20,12 @@ from Layers import EPS_LOG, membership_log
 
 
 class SparsePiLayer3(nn.Module):
-    """The sparse Pi of basic percepts and of symbols alike, stored as
-    compressed rows.
+    """The first Pi: the sparse Pi of basic percepts, stored as compressed
+    rows. It is read only by the basic percepts (a look's table); the
+    symbols' Pi is a ``Layers.SparsePiLDU``.
 
-    At order zero row ``r`` is a basic percept and its members are keys of
-    the percept tower (a part run or a whole); above it, row ``r`` is a
-    symbol and its members are the concepts it reads (``('concept', cid)``).
-    Its entries are its members, addressed by a member id that names one
+    Row ``r`` is a basic percept and its members are keys of the percept
+    tower (a part run or a whole). Its entries are its members, addressed by a member id that names one
     key. Its for entries are joined by the product; its against entries
     (the parts that the stored forms nearest to holding it add) are joined
     by the union, any one present being enough. Every row also has its own reading on the diagonal; a basic

@@ -5661,6 +5661,16 @@ class SparseLDULayer(Layer):
         self._index_entries()
         self._relevel()
 
+    @torch.no_grad()
+    def clear(self):
+        """Every entry and slot removed; the storage is kept."""
+        self.value.zero_()
+        self.entry_row.fill_(-1)
+        self.entry_input.fill_(-1)
+        self.entry_apart.zero_()
+        self.count.zero_()
+        self._index()
+
     def entries(self, row):
         """An output's entries, ``[(input read, weight, negated)]``, W at
         each, by the compressed rows."""
@@ -5749,6 +5759,93 @@ class SparseLDULayer(Layer):
                 if self._kind_of(e) != self.DIAGONAL:
                     scale = self._scale_of(e)
                     self.value[e] = w[e] / scale if scale != 0 else w[e]
+
+
+class SparsePiLDU(SparseLDULayer):
+    r"""A sparse Pi on the sparse LDU, in the log domain under
+    :class:`PiLayer2`'s law: an output's value is the product of its
+    inputs' memberships, each to the power of W's entry,
+
+        z = exp( log(m) @ L @ D @ U ),
+
+    on each lane alone (the lanes on the last axis). The law: a diagonal
+    at one or more, every other entry at zero or more, no bias, so that no
+    product of entries is below nothing and an output never exceeds the
+    reading of what it holds. An output reads nothing where an input that
+    reaches it, by an entry or a product, is absent or at the floor, or
+    where it has no entry. Its way back is exact where every slot has its
+    output: ``m = exp(back(log z))``.
+    """
+
+    @torch.no_grad()
+    def add(self, row, input, weight=1.0, *, negated=False):
+        """Write the entry at ``weight`` of W under the Pi's law (a diagonal
+        at one or more, any other at zero or more)."""
+        if negated:
+            raise ValueError('a Pi has no Not entry')
+        entry = super().add(row, input, weight)
+        kind, value = self._kind_of(entry), float(self.value[entry])
+        if (kind == self.DIAGONAL and value < 1) or value < 0:
+            raise ValueError('a Pi\'s diagonal is at one or more and its other entries at zero or more')
+        return entry
+
+    def _slots_of(self, inputs, device):
+        ordered, by = torch.sort(inputs, stable=True)
+        first = torch.ones_like(ordered, dtype=torch.bool)
+        first[1:] = ordered[1:] != ordered[:-1]
+        slot = self.input_slot.to(device).index_select(0, ordered.clamp(0, self.nInput - 1))
+        held = first & (ordered >= 0) & (ordered < self.nInput) & (slot >= 0)
+        return torch.where(held, slot, self._slots), by
+
+    def forward(self, memberships, inputs, rows):
+        """Each of ``rows``' two lanes, ``[R, ..., 2]``, from the
+        memberships ``memberships`` ``[K, ..., 2]`` of inputs ``inputs``
+        ``[K]`` (``-1`` is no input). A row of ``-1``, a row with no entry
+        and a row an absent input reaches read nothing."""
+        device = memberships.device
+        inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape(-1)
+        rows = torch.as_tensor(rows, dtype=torch.long, device=device).reshape(-1)
+        shape = (len(rows), *memberships.shape[1:])
+        if not self.nnz or not len(rows):
+            return memberships.new_zeros(shape)
+        S = self._slots
+        trailing = memberships.shape[1:]
+        at, by = self._slots_of(inputs, device)
+        logs = membership_log(memberships).index_select(0, by)
+        present = (memberships.index_select(0, by) > EPS_LOG).to(memberships.dtype)
+        x = memberships.new_zeros(S + 1, *trailing).index_add(0, at, logs)[:S]
+        given = memberships.new_zeros(S + 1, *trailing).index_add(0, at, present)[:S]
+        # Every slot holding an input is absent unless that input is given
+        # above the floor; an output that any absent slot reaches reads
+        # nothing (the entries are at zero or above, so nothing cancels).
+        holds = (self.slot_input[:S].to(device) >= 0).to(memberships.dtype)
+        holds = holds.reshape(-1, *([1] * len(trailing))).expand(S, *trailing)
+        with torch.no_grad():
+            reached = self.up(holds - given.clamp(0, 1)) > 0
+            has = self.up(holds.contiguous()) > 0
+        y = self.up(x)
+        z = torch.where(reached | ~has, torch.zeros_like(y), torch.exp(y))
+        z = torch.cat((z, z.new_zeros(1, *trailing)))
+        slot = self.output_slot.to(device).index_select(0, rows.clamp(0, self.nOutput - 1))
+        read = (rows >= 0) & (rows < self.nOutput) & (slot >= 0)
+        return z.index_select(0, torch.where(read, slot, S))
+
+    def reverse(self, z, inputs):
+        """The memberships of ``inputs`` ``[P]`` from every output's two
+        lanes ``z`` ``[nOutput, ..., 2]``: ``exp(back(log z))``, in 0 to 1;
+        an input no output reads, or one held by no slot, comes back at one,
+        the empty product's."""
+        inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1)
+        S = self._slots
+        tiny = torch.finfo(z.dtype).tiny
+        logs = torch.log(torch.where(z > tiny, z, torch.full_like(z, tiny)).clamp(max=1.))
+        at = self.output_slot.to(z.device)
+        y = logs.new_zeros(S + 1, *z.shape[1:]).index_add(0, torch.where(at >= 0, at, S), logs)[:S]
+        back = torch.exp(self.back(y)) if self.nnz else torch.ones_like(y)
+        back = torch.cat((back, back.new_ones(1, *back.shape[1:])))
+        slot = self.input_slot.to(z.device).index_select(0, inputs.clamp(0, self.nInput - 1).to(z.device))
+        held = (inputs.to(z.device) >= 0) & (slot >= 0)
+        return back.index_select(0, torch.where(held, slot, S)).clamp(0., 1.)
 
 
 class SparseSigmaLDU(SparseLDULayer):

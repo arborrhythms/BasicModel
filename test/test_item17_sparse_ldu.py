@@ -280,3 +280,39 @@ def test_the_first_pis_way_back_is_the_percept_each_row_keeps(lesson):
     print(dict(rows=R, own_read=own.tolist()))
     # A code is graded, so its own read is one to within its grading.
     torch.testing.assert_close(own, torch.ones(R).to(own), atol=1e-3, rtol=0)
+
+
+def test_the_symbols_pi_is_a_sparse_ldu_with_a_way_back():
+    """Step 2 of the eighth pass: the symbols' Pi on the sparse LDU, in the
+    log domain under PiLayer2's law. On drawn symbols (each brings its
+    first concept, and reads others besides) the way up is the product of
+    the members' memberships on each lane, as SparsePiLayer3 reads it; a
+    member absent reads the symbol at nothing; and the way back returns
+    each concept a symbol brought, exactly."""
+    from OrderZero import SparsePiLayer3
+    from Symbols import SymbolTable
+    g = _start()
+    C, N = 12, 10
+    table, old = SymbolTable(N), SparsePiLayer3(N, 8 * N)
+    for symbol in range(N):
+        others = torch.randperm(C, generator=g)[:int(torch.randint(0, 3, (1,), generator=g))].tolist()
+        concepts = tuple(dict.fromkeys([symbol] + [c for c in others if c < symbol]))
+        table._append(concepts)
+        table.handles.append(('drawn', symbol))
+        table.brought.append(symbol)
+        old.append(tuple(('concept', c) for c in concepts))
+    assert table.pi.lower_entries == 0
+    lanes = .2 + .8 * torch.rand(C, 3, 2, generator=g, dtype=torch.float64)
+    table.pi.double()
+    up = table.read(lanes, range(C))
+    want = old(lanes, list(range(N)), [('concept', c) for c in range(C)])
+    torch.testing.assert_close(up, want, atol=1e-12, rtol=0)
+    # A member absent: every symbol that reads it reads nothing.
+    gone = table.read(lanes[1:], range(1, C))
+    readers = set(table.reading(0))
+    assert all(float(gone[s].abs().max()) == 0 for s in readers)
+    assert all(torch.equal(gone[s], up[s]) for s in range(N) if s not in readers)
+    back = table.back(up, range(N))
+    error = float((back - lanes[:N]).abs().max())
+    print(dict(symbols=N, entries=table.pi.nnz, chain=table.pi.longest_chain, way_back_error=error))
+    assert error < 1e-10

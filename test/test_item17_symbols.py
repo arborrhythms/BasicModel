@@ -494,9 +494,14 @@ def test_6_a_symbol_has_its_own_index_and_no_vector_and_nothing_is_one_to_one():
     # Nothing addresses "the" symbol of a concept: the fit is the symbol
     # with the fewest constituents among those that hold it.
     assert restored.fit(41) == 1 and restored.fit(40) == 0 and restored.fit(39) is None
-    # The Pi's storage is by symbol, and its member keys name concepts.
-    assert len(restored.pi.crow) == 8 + 1
-    assert all(key[0] == 'concept' for key in restored.pi.keys)
+    # The Pi's storage is by symbol, and its members name concepts. Ported
+    # (eighth pass): the compressed rows of SparsePiLayer3 (``crow`` of 8 + 1,
+    # member keys ``('concept', cid)``) are the outputs and inputs of the LDU.
+    assert restored.pi.nOutput == 8
+    assert restored.concepts == [40, 41]
+    # The way back (rule 78): each concept from the symbol it brought.
+    back = restored.back(restored.read(lanes, [40, 41]), [40, 41])
+    print(dict(back=back.tolist()))
 
 
 # Rule 71: no symbol is made for a concept. A symbol is a row whose
@@ -722,13 +727,13 @@ def test_cert_d_green_things_collect_from_every_lower_epistemic_level():
 
 def test_cert_e_a_symbol_of_two_constituents_reads_their_product_once():
     """(e) A symbol of two constituents reads their product on each lane,
-    by the same class and fold as a basic percept (SparsePiLayer3); a kind
-    that reads the symbol reads it once."""
-    from OrderZero import SparsePiLayer3
-    from Layers import thing_lanes
+    by the Pi's fold, the product (the symbols' Pi is a SparsePiLDU since
+    the eighth pass, ported from SparsePiLayer3, the basic percepts'
+    class); a kind that reads the symbol reads it once."""
+    from Layers import SparsePiLDU, thing_lanes
     cs, store, ids, rows = _small_space()
     table = store.symbol_table
-    assert isinstance(table.pi, SparsePiLayer3)
+    assert isinstance(table.pi, SparsePiLDU)
     state = table.state()
     state['symbols'].append((('test', 'two'), ids[1], (ids[1], ids[2])))
     table.restore(state)

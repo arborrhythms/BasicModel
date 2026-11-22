@@ -15,7 +15,7 @@ is a cone over coordinates of that order's conceptual space
 (:mod:`SymbolCone`): a concept falls in it where its code holds what the
 constituents share and not what their nearest neighbours add.
 """
-from OrderZero import SparsePiLayer3
+from Layers import SparsePiLDU
 
 
 class SymbolTable:
@@ -24,8 +24,10 @@ class SymbolTable:
     ``index`` maps a symbol's handle (what nominated it) to its index;
     ``handles`` and ``brought`` are by index: the handle, and the concept
     the symbol's making brought, recorded then and never inferred. The Pi
-    is a :class:`SparsePiLayer3` whose rows are the symbols and whose members are
-    the keys ``('concept', cid)``. Room is fixed at construction.
+    is a :class:`SparsePiLDU` (rule 78) whose outputs are the symbols and
+    whose inputs are the concepts they read, each by a member id; the
+    concept a symbol brought is its slot's diagonal, so the Pi has a way
+    back (:meth:`back`). Room is fixed at construction.
     """
 
     ENTRIES_PER_ROW = 8
@@ -37,7 +39,9 @@ class SymbolTable:
         self.capacity = capacity
         self.index, self.handles, self.brought = {}, [], []
         self.revision = 0
-        self.pi = SparsePiLayer3(capacity, capacity * self.ENTRIES_PER_ROW)
+        room = capacity * self.ENTRIES_PER_ROW
+        self.pi = SparsePiLDU(room, capacity, room)
+        self.member_of, self.concepts = {}, []
 
     def __len__(self):
         return len(self.handles)
@@ -63,9 +67,7 @@ class SymbolTable:
         if len(self.handles) >= self.capacity:
             raise OverflowError('the symbol table has no room for another symbol')
         concepts = tuple(dict.fromkeys(int(c) for c in (concept, *others)))
-        symbol = self.pi.append(tuple(('concept', c) for c in concepts))
-        if symbol != len(self.handles):
-            raise RuntimeError('the symbol Pi and the symbol index disagree')
+        symbol = self._append(concepts)
         self.index[handle] = symbol
         self.handles.append(handle)
         self.brought.append(int(concept))
@@ -115,13 +117,35 @@ class SymbolTable:
         """The index of ``handle``'s symbol, or ``None``."""
         return self.index.get(handle)
 
+    def _member(self, concept):
+        """The Pi's input of ``concept``, made on first use."""
+        found = self.member_of.get(int(concept))
+        if found is None:
+            if len(self.concepts) >= self.pi.nInput:
+                raise OverflowError('the symbol Pi has no room for another member')
+            found = self.member_of[int(concept)] = len(self.concepts)
+            self.concepts.append(int(concept))
+        return found
+
+    def _append(self, concepts):
+        """The next symbol, over ``concepts`` at one; the first is the one
+        it brings, its slot's diagonal where that concept has none yet."""
+        symbol = len(self.handles)
+        for concept in concepts:
+            self.pi.add(symbol, self._member(concept), 1.)
+        return symbol
+
     def members(self, symbol):
         """The concepts the symbol's Pi row reads."""
-        return [key[1] for key in self.pi.row_members(int(symbol))]
+        return [self.concepts[i] for i, _, _ in self.pi.entries(int(symbol))]
 
     def reading(self, concept):
         """The symbols whose Pi rows read ``concept``."""
-        return self.pi.rows_reading(('concept', int(concept)))
+        member = self.member_of.get(int(concept))
+        return [] if member is None else self.pi.rows_reading(member)
+
+    def _inputs(self, concepts):
+        return [self.member_of.get(int(concept), -1) for concept in concepts]
 
     def read(self, lanes, concepts, symbols=None):
         """The two lanes of ``symbols`` (every symbol by default),
@@ -129,8 +153,17 @@ class SymbolTable:
         ``concepts[k]`` (``[len(concepts), ..., 2]``). A symbol whose member
         is not among ``concepts`` reads nothing."""
         symbols = range(len(self.handles)) if symbols is None else symbols
-        keys = [('concept', int(concept)) for concept in concepts]
-        return self.pi.forward(lanes, list(map(int, symbols)), keys)
+        return self.pi(lanes, self._inputs(concepts), list(map(int, symbols)))
+
+    def back(self, lanes, concepts):
+        """The way back (rule 78): the two lanes of ``concepts``
+        ``[len(concepts), ..., 2]`` from every symbol's, ``lanes``
+        ``[len(self), ..., 2]``; exact for a concept its symbol brought and
+        no symbol whose output is not given reaches. A concept no symbol
+        reads comes back at one, the empty product's."""
+        full = lanes.new_ones(self.pi.nOutput, *lanes.shape[1:])
+        full[:len(lanes)] = lanes
+        return self.pi.reverse(full, self._inputs(concepts))
 
     def state(self):
         """A plain record: each symbol's handle, the concept it brought and
@@ -146,9 +179,10 @@ class SymbolTable:
             raise ValueError('the checkpoint holds more symbols than the constructed room')
         self.index, self.handles, self.brought = {}, [], []
         self.pi.clear()
+        self.member_of, self.concepts = {}, []
         for handle, brought, members in symbols:
             handle = tuple(handle) if isinstance(handle, list) else handle
-            symbol = self.pi.append(tuple(('concept', int(m)) for m in members))
+            symbol = self._append(tuple(dict.fromkeys(int(m) for m in members)))
             self.index[handle] = symbol
             self.handles.append(handle)
             self.brought.append(int(brought))
