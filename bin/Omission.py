@@ -143,7 +143,8 @@ def native_values(ps, units):
                 value = store._basis.lookup_rows(torch.tensor(pid, device=like.device)).detach()
             else:
                 if byte not in unknown:
-                    value = torch.randn(store.dim, generator=generator, dtype=like.dtype)
+                    value = torch.randn(store.dim, generator=generator, dtype=like.dtype,
+                                        device=generator.device)
                     unknown[byte] = (value / value.norm().clamp_min(1e-8)).clamp(0., 1.).to(like)
                 value = unknown[byte]
             values[b, position] = value

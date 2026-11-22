@@ -281,10 +281,12 @@ class BasicPercepts(nn.Module):
         bin and none shared, so that the order of the line is read
         coordinate by coordinate. Each place has its own table of values (a
         variable of its own); a value with no place keeps the bins in order."""
+        # Drawn on the host, where the keyed generator lives, whatever the
+        # default device; the caller moves the table to its values.
         if place is None or int(place) < 0:
-            return torch.arange(width)
-        generator = torch.Generator().manual_seed(0x5ca1a7 + int(place))
-        return torch.randperm(width, generator=generator)
+            return torch.arange(width, device='cpu')
+        generator = torch.Generator(device='cpu').manual_seed(0x5ca1a7 + int(place))
+        return torch.randperm(width, generator=generator, device='cpu')
 
     def value_code(self, felt, width, place=None):
         """A value's code in a half ``width`` wide (rule 55). The catalog is
@@ -811,7 +813,8 @@ class BasicPercepts(nn.Module):
             # The greatest over its members' codes and a small draw keyed to
             # the row, so that it lies above each member and is not their sum.
             greatest = torch.stack([self.code(member) for member in members]).amax(0)
-            draw = torch.rand(greatest.shape, generator=torch.Generator().manual_seed(int(row)))
+            draw = torch.rand(greatest.shape, device='cpu',
+                              generator=torch.Generator(device='cpu').manual_seed(int(row)))
             return (greatest + self.INCREMENT * draw.to(greatest)).clamp(max=1.)
         return torch.cat(self.subspace_bounds(int(row)))
 

@@ -128,7 +128,7 @@ class MereologicalCodes(nn.Module):
         eligible = eligible[eligible != row]
         generator = torch.Generator(device='cpu')
         generator.manual_seed(int.from_bytes(hashlib.sha256(key).digest()[:8], 'little'))
-        order = torch.randperm(len(eligible), generator=generator)[:self.negative_count].to(eligible.device)
+        order = torch.randperm(len(eligible), generator=generator, device='cpu')[:self.negative_count].to(eligible.device)
         return eligible[order]
 
     @torch.no_grad()
