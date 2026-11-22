@@ -2504,7 +2504,7 @@ remains continuous (Alec, 2026-11-19). In such a map each unit is tied
 to its neighbours, and a unit that learns pulls its neighbours with it.
 Places that lie next to one another in subjective space therefore stay
 next to one another in the code however much one region grows, and the
-order of places is kept. Until then the cerebellum (the spatial parameter) stays fixed; "there is no need at this point for a cortical remapping" (Alec, 2026-11-22).
+order of places is kept. Until then the grid (the spatial parameter) stays fixed; "there is no need at this point for a cortical remapping" (Alec, 2026-11-22).
 
 To specify: what tells the map which regions matter (how often a region
 is attended, or how much error it carries); the neighbourhood and how it

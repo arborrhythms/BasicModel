@@ -417,13 +417,14 @@ mental age, and the assessment says whether the model is qualified for it.
 
 ## Place
 
-**Cerebellum.** The spatial parameter: the space of three dimensions, filled
-with sinusoids, in which every percept of every modality has its place. Its
-code at a place is copied into the basic percept there, beside the percept's
+**Grid.** The spatial parameter: the space of three dimensions, filled with
+sinusoids, in which every percept of every modality has its place. Its code
+at a place is copied into the basic percept there, beside the percept's
 `.what` and `.when`; on the way back the percept's `.where` is separated and
 matched against it, which gives the place of what the `.what` selected in the
 percept codebook (Alec, 2026-11-22). It is fixed: nothing of it is learned.
 Text lies on its first axis, with zeros on the other two; an image on two; a
-volume on three. In the source it is `WhereRegistry.code` until the pass that
-makes it three-dimensional and gives it its name.
-
+volume on three. It is named for the grid cells of the entorhinal cortex,
+which code place periodically at several scales. In the source it is
+`WhereRegistry.code` until the pass that makes it three-dimensional and gives
+it its name.
