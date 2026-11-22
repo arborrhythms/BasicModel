@@ -467,7 +467,11 @@ class BasicPercepts(nn.Module):
         own = (weight * (torch.xlogy(kept, kept) + torch.xlogy(1 - kept, 1 - kept))).sum(-1)       # [R]
         cross = (torch.einsum('bac,rc->rba', c.log(), weight * kept)
                  + torch.einsum('bac,rc->rba', (1 - c).log(), weight * (1 - kept)))
-        return torch.exp(-(own[:, None, None] - cross).clamp_min(0.))
+        # The divergence is never below zero but for rounding; at exactly
+        # zero (every weight at nothing) its derivative by the weights passes,
+        # so that an entry that starts at nothing can be taught.
+        divergence = own[:, None, None] - cross
+        return torch.exp(-torch.where(divergence >= 0, divergence, 0.))
 
     def where_weight(self, rows):
         """Each row's weights on the where wires summed, ``[rows]``: the

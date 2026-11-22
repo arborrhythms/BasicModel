@@ -49,7 +49,11 @@ def look(model, bank, request, own, perception):
     from Salience import salience
     owner = model._concept_owner()
     salient = salience(owner, bank, request, perception=perception)
-    activity = torch.minimum(own, salient.events.clamp_min(0.))
+    # A share is never below zero; at exactly zero its derivative passes, so
+    # that a request that starts at nothing is taught through the activity.
+    # It bounds the occurrence's own activity, which takes a tie.
+    share = torch.where(salient.events >= 0, salient.events, 0.)
+    activity = torch.where(share < own, share, own)
     field = perceive(model, activity)
     readings = field.evidence.shape[2]
     match = where_match(bank, salient.band, activity, readings)

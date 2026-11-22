@@ -126,10 +126,12 @@ def first_pi(bank, perception, row_grad, activity=None, basic=None):
     # Through the Not: the share a row's reading takes is what the concept
     # reads there, for less against, and nothing where the two are equal.
     # Each lane's share is scaled to it.
-    net = value_for - value_against
-    d_for = torch.where(value_for > tiny, d_for * net.clamp_min(0.) / value_for.clamp_min(tiny), 0.)
-    d_against = torch.where(value_against > tiny,
-                            d_against * (-net).clamp_min(0.) / value_against.clamp_min(tiny), 0.)
+    # The Not's two lanes are those of a signed value: at a row read alike
+    # both ways the derivative reaches both (as ``signed_lanes``).
+    from Layers import signed_lanes
+    net = signed_lanes(value_for - value_against)
+    d_for = torch.where(value_for > tiny, d_for * net[..., 0] / value_for.clamp_min(tiny), 0.)
+    d_against = torch.where(value_against > tiny, d_against * net[..., 1] / value_against.clamp_min(tiny), 0.)
     for_at, against_at = rows_at[..., 0], rows_at[..., 1]
     whole_for = greatest(for_at, value_for) * reads
     whole_against = greatest(against_at, value_against) * reads
