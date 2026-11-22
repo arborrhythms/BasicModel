@@ -153,11 +153,25 @@ def minimal_first(sentences):
     return [lengths[n] for n in sorted(lengths)]
 
 
-def in_order(reading, count):
-    """Whether a reading took the first ``count`` words, each once, in their
-    order (``reading.actions`` of one stream)."""
-    taken = [a for a in reading.actions[0].tolist() if a >= 0 and bool(reading.accepted[0, a])]
-    return taken == list(range(count))
+def live_slots(spans):
+    """Each row's live source slots, in source order: the slots of ``spans``
+    ``[B, W, 2]`` whose span is not empty. Padding, and the slots of the
+    other sentences of a packed stream, have empty spans."""
+    return [[w for w, (lo, hi) in enumerate(row) if hi > lo] for row in spans.tolist()]
+
+
+def in_order(orders, spans):
+    """For each row, whether its interpreted arrivals (``orders``, as
+    ``Looks.source_orders()`` gives them) are the row's live source slots,
+    each once, in their order."""
+    return [list(order) == slots for order, slots in zip(orders, live_slots(spans), strict=True)]
+
+
+def looks_in_order(looks):
+    """For each row present in one path's looks (a ``Looks``), whether it
+    read its sentence's words in order (``in_order``)."""
+    scored = in_order(looks.source_orders(), looks.walk.spans)
+    return [ok for ok, present in zip(scored, looks.present.tolist()) if present]
 
 
 @contextmanager

@@ -49,11 +49,12 @@ def nominate(model, texts):
 
 
 def observe_runs(monkeypatch):
+    """The paths' looks (each a ``Looks``), as each reading runs them."""
     from SentenceLooks import Looks
     run, seen = Looks.run, []
     def observed(self, arrive, **kwargs):
         result = run(self, arrive, **kwargs)
-        seen.append(result)
+        seen.append(self)
         return result
     monkeypatch.setattr(Looks, 'run', observed)
     return seen
@@ -64,13 +65,19 @@ def staged(model):
 
 
 def in_order(model, seen, text):
-    from AttentionLesson import in_order as taken_in_order
+    """Whether an unforced reading of ``text`` took its words in order: the
+    first path's interpreted arrivals against the sentence's live source
+    slots (sigma-pi §19.124, 3). No reading lesson is installed, so no
+    named target is replayed (§19.124, 2)."""
+    from AttentionLesson import looks_in_order
     from test_item18_expect import read
+    assert getattr(model, '_attention_reading_lesson', None) is None
+    assert getattr(model, '_attention_supplied_reading', None) is None
     seen.clear()
     with torch.no_grad():
         read(model, text)
     model.End()
-    return bool(taken_in_order(seen[0], len(staged(model))))
+    return all(looks_in_order(seen[0]))
 
 
 def places_of(model):

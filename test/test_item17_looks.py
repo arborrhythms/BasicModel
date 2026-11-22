@@ -382,22 +382,26 @@ def test_38b_the_reading_lesson_by_grades(tmp_path, monkeypatch):
     the sentence (a look of "words" returns every word), its words in order,
     a word's parts (certificate 56 (a)). Recorded, not repaired."""
     from SentenceLooks import Looks
-    from AttentionLesson import reading_lesson, minimal_first, in_order
+    from AttentionLesson import reading_lesson, minimal_first, looks_in_order
     from test_item18_expect import read
     texts = ('alpha gamma', 'beta delta', 'alpha delta', 'beta gamma')
     model = nominated_lesson(tmp_path, monkeypatch, texts)
-    run, seen = Looks.run, []
+    run, seen, paths = Looks.run, [], []
     def observed(self, arrive, **kwargs):
         result = run(self, arrive, **kwargs)
         seen.append(result)
+        paths.append(self)
         return result
     monkeypatch.setattr(Looks, 'run', observed)
     def count():
         found = 0
         for text in texts:
             seen.clear()
+            paths.clear()
             read(model, text)
-            found += in_order(seen[0], len(text.split()))
+            # Scored against the sentence's live source slots (sigma-pi
+            # §19.124, 3), not against range(count).
+            found += all(looks_in_order(paths[0]))
         return found
     try:
         before = count()

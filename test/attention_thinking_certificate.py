@@ -110,6 +110,9 @@ class Observer:
                 lanes = lanes_seen.pop()
             live = ((state.spans[..., 1] > state.spans[..., 0]) & path.present[:, None])
             orders = path.source_orders()
+            # The arrivals against the live source slots (sigma-pi §19.124, 3).
+            from AttentionLesson import in_order
+            ordered = in_order(orders, state.spans)
             streams = []
             for b in range(len(path.present)):
                 if not bool(path.present[b]):
@@ -119,7 +122,7 @@ class Observer:
                 known = [(w, lane) for (row, w), lane in sorted(lanes.items()) if row == b]
                 streams.append(dict(
                     words=len(order), live=count, order=order,
-                    in_order=bool(len(order) == count and order == sorted(order)),
+                    in_order=bool(ordered[b]),
                     looks=int(result.looks[b]), allowance=int(state.limit[b]),
                     at_allowance=bool(int(state.taken) >= int(state.limit[b])),
                     drawn=int(result.alternatives[b].sum()),
