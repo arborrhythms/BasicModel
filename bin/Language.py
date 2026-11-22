@@ -3378,10 +3378,6 @@ class CompoundLayer(GrammarLayer):
     lossy = True
     left_identity = 0.
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.register_buffer('kernel_test_count', torch.zeros((), dtype=torch.long), persistent=False)
-
     def compose(self, modifier, head, *, selected_cases=None, case_view=None):
         if self.meaning_layout is not None and modifier.shape[-1] == self.meaning_layout[1]:
             return self.compose_blocks(None, modifier, head, case_view=case_view)
@@ -3391,7 +3387,7 @@ class CompoundLayer(GrammarLayer):
         return fold_cases(selected_cases)
 
     def select_view(self, modifier, view):
-        """Intersect the staged case field; count an ungrounded kernel read."""
+        """Intersect the staged case field; an ungrounded row reads the kernel."""
         from IdentityRows import meet_ratios
         width = self.meaning_layout[0]
         wanted = modifier[..., width:].unflatten(-1, (2, -1))
@@ -3401,7 +3397,6 @@ class CompoundLayer(GrammarLayer):
         coverage, _ = meet_ratios(wanted.unsqueeze(-3).clamp_min(0), codes.clamp_min(0))
         known = ((view.weights > 0) & (coverage > 0)).any(-1).any(-1)
         weights = torch.minimum(view.weights, coverage)
-        self.kernel_test_count.add_((~known).sum())
         origin = view.origin(meaning_start=width)
         missing = (~known)[...,None]
         # The fixed tensor body supplies only missing-field operands to the
