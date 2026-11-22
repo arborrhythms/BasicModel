@@ -9633,6 +9633,24 @@ Claude's seven questions after the fourth pass of round 6d (§23.6.9), and his a
 6. *An unstored ordered run read by the set of its parts, so that `00`, `01`, `10` and `11` all reconstruct as `11`.* "not acceptable". *Decided.* The order of a run is kept. By 5 a row's run of parts is a percept whole with a part of its own, so `01` and `10` are told apart in the table as they were by the read before; the retired test returns, and the test of the ordered run goes back to its old assertion.
 7. *Is "no worse than item 1.8" enough before a push, the production configuration not running?* "no, let's debug." *Decided.* The production configuration is made to run in item 1.7: the looks' memory and the stall after 32 looks (§23.6.7) are found and repaired before a push.
 
+### 19.120 Alec: the sinusoid is on the unsigned range, and the where needs no weight (2026-11-21)
+
+Of the weight that the second pass of round 6d gave a row on each where wire (§23.6.7: a kept value e and a weight w for each wire, the cone writing 10), Alec asked "Where weight?", and after Claude's account of it: "Sinusoids should be shifted to unsigned range. I'm not sure you need that weight. Please recheck."
+
+Rechecked (Claude, the same day):
+
+- *The sinusoid is on the unsigned range already.* `WhereEncoding` gives (sin + 1) / 2 and (cos + 1) / 2 on each of its two periods, so each of the four wires is in 0 to 1 (.549, .998, .500 and .000 at the first place of certificate 62).
+- *The weight is not needed. It came from the form of the read, which was Claude's.* The first pass read a row's where as a product of memberships raised to learned powers, exp(E+ . log c + E- . log(1 - c)). A wire that is neither 0 nor 1 makes that product less than one on both of its lanes, so a row read 8.45e-7 at its own place (§23.6.6). The second pass patched this with a kept value and a weight (§22.6d, second pass, step 1). Neither is in his words.
+- *Decided, by his word and the recheck: a row's kept where is held as a part is held, by shared size* (the parthood of `doc/Mereology.md`; `IdentityRows.meet_ratios`). A row keeps one learned vector for its where, on two lanes for each wire: E+ against the wire c, E- against 1 - c. The row's factor at a percept is the sum over the lanes of the lesser of the percept's lane and the row's entry, over the sum of the row's entries; it is one where the row's entries sum to nothing. The when is read the same way. There is no weight, no kept value beside it, no divergence and no exponential.
+  - A place starts with the sinusoid's code of its place on both lanes (E+ = c0, E- = 1 - c0). Its factor is then exactly one at its own place, and one less the mean difference of the wires anywhere else.
+  - A row of content starts with entries at nothing: its where is dropped, and it reads one everywhere.
+  - Entries that shrink toward nothing hold a wider range of places, so the gradient can drop a where, or part of one.
+  - The way down passes the factor's derivative. At a tie the derivative passes to both sides (`torch.where`, never a bound that passes nothing at the bound).
+- *What follows from it, and is not tuned:* the difference between two places is small. In certificate 62 the row reads 1.0 at its own place and .957 at the other `alpha`, twelve letters on (it was .518 with the weight at 10). What sharpens a look is then the request alone, through the where match (rule 35).
+- *The vector of a row* (§19.119, 4) has the where appended as he said it, "the sinusoid-initialized .where buffer": the four wires of the first lane, and the four of the when likewise, on eight coordinates between the what and the meaning (128 to 135 in the default layout). The second lanes are the complements, kept for the read above, and are not appended. *Mine;* the default layout's width does not change for it.
+
+Built in the fifth pass of round 6d (§23.6.10). Rule 76 is amended.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -10686,7 +10704,11 @@ chooses from. The old classes are not edited.
     on average). Alec, §19.73: "Wholes should be able to
     discriminate"; the whole that can is one driven by the concepts
     (rule 57), which says nothing at a word's first readings, so the
-    part is needed meanwhile.
+    part is needed meanwhile. *Widened* (§23.6.10, *mine*): two
+    stored forms whose codes are one as their basic percepts keep
+    them, the classes that hold their characters cutting the wholes
+    half, are left with one code in the same sense and get the next
+    part likewise.
 57. *Withdrawn as a Sigma on the wholes half; the analysis from above
     is conceptual attention* (Alec, §19.93: "The sigma driving wholes
     (properties) was an early version of that, but we need something
@@ -11188,7 +11210,12 @@ chooses from. The old classes are not edited.
     span; the where a look is given is an extent; levels are taken
     by extent, nearest first, and a level that does not fit by the
     request's share and then a draw; a place is a row with where
-    entries and no what, read as any row.
+    entries and no what, read as any row. *No weight on the
+    where* (Alec, §19.120: "I'm not sure you need that weight"): a
+    row's kept where and its kept when are each one learned vector
+    on two lanes for each wire, held by the percept as a part is
+    held, by shared size; a place starts at the sinusoid's code of
+    its place, and a row of content at nothing.
 
 77. *Two costs, and the reconstruction in passes* (Alec, §19.116:
     "reconstruction is allowed to take multiple passes at the
@@ -13496,6 +13523,153 @@ to main.
 Not in this pass: the production configuration (the next pass,
 §19.119, 7); the trial of the reconstruction once for each look
 (§19.119, 2).
+~~~
+
+*The amendment to the fifth pass's step 4* (2026-11-21, after §19.120; sent to the pass while it ran): the where and when weights go (`PLACE_WEIGHT`, `where_weight`, and the divergence and exponential of `place_factor`). A row's kept where and kept when are each one learned vector on two lanes for each wire (`PlaceEntries`), held by shared size as §19.120 states it; a place starts at the sinusoid's code of its place on both lanes and a row of content at nothing; the way down passes the factor's derivative; the vector appended in step 4 is these entries. Certificate 62 again, with the row's value at its own place and at the other.
+
+*The sixth pass* (added 2026-11-21, after §23.6.10):
+
+~~~
+Round 6d of item 1.7, sixth pass. Read §19.119, 7 ("no, let's
+debug"), §19.120, §23.6.10 (the fifth pass's return and its
+review) and, in doc/plans/2026-11-14-item1-5.md, the section "What
+stops the production configuration after item 1.7's table". The
+work is on the branch item17-r6d2-step4-wip (5e228de21a). Check it
+out in this checkout and bring it up to main (doc commits only).
+Move main forward to it by a fast-forward twice: once after steps
+1 and 2, if both gates and the files of those two steps pass, and
+once at the end, if both gates and the files of step 6 pass but
+for test_81 and test_prepared_answer_boundary[True]. After the
+second, remove the branch and leave the checkout on main.
+Otherwise leave the branch and return to main.
+
+1. A concept is read both across the rows that its Sigma reads.
+   ConceptualSpace.order_zero_both (bin/Spaces.py) takes a
+   concept's members from the allocator's record of the rows it
+   was started from (order_zero_members.started()). That leaves
+   out a row recorded at weight zero whose entry the gradient has
+   since given a sign. Measured in the grounded XOR case
+   (test_grounded_xor.learn_grounded_xor, at 5e228de21a, after its
+   32 steps): concept 0 has the order-zero Sigma entries +1.69 on
+   the row of `1` and -0.81 on the row of `0`; the row of `0`
+   reads [for, against] = [1, 0] on 00, 01 and 10, the row of `1`
+   [1, 0] on 01, 10 and 11; and the function returns [0, 0, 0, 0]
+   on the four forms, because only the row of `1` is in the
+   record. Take the members from the concept's entries in the
+   order-zero Sigma instead: an entry above nothing gives its
+   row's lanes as they are, an entry below nothing gives them
+   reversed (only Not changes a sign; §19.90), an entry at
+   nothing gives nothing. Keep the rest of the function as it is
+   (each lane joined by the union over the rows, then the lesser
+   of the two). Then
+   test_definition_integrity.py::test_word_concepts_exist_before_
+   grounded_case_discovery reads "both" as [0, 1, 1, 0] with that
+   assertion as it is. The lines after it in learn_grounded_xor
+   (the events of the rows carrying ws 9, at each byte) assert the
+   withdrawn read, a row telling against at a byte where its part
+   is not (§23.6.10): port them to the concept's two rows, the row
+   of `0` taken reversed, and return the old lines and the new.
+   Run every test that reads order_zero_both or
+   order_zero_both_field (test_refine_raise.py among them). A test
+   that reads differently is returned with what it read before and
+   after; do not port it without saying so. No mixed extent is
+   built.
+
+2. Four tests that Claude's list found failing at 5e228de21a, in
+   files the fifth pass did not run. Each follows from rule 43 as
+   amended (a stored form is a part of its own). Find each cause
+   before changing anything, and return it.
+   (a) test_item55_mechanisms.py::test_nested_wholes: "The record
+       joins no codes: no form changes, walked included" no longer
+       holds; a form's code changes inside nested_lesson. If a
+       form that is only observed there is admitted, or a part is
+       added by the record, that is a fault of the source: repair
+       it, and the test stays as it is. If the change is the
+       amended rule at work on a form that the test itself
+       admits, port the test and return old and new.
+   (b) test_item17_forms.py::test_a_part_once_added_is_carried_by_
+       every_form_that_holds_it: `aa` is no longer among the added
+       parts of the lesson's store. Port it to a part that is
+       added now, keeping what it asserts (every form that holds
+       the run carries the part).
+   (c) test_item17_code_trial.py::test_3 and ::test_10: the
+       stand-in coder of the trial (SourceCoder) no longer codes
+       as the source does (2,999 of 3,000 words differ). If the
+       stand-in takes the amended rule in a few lines, give it
+       them. If not, the two tests are retired (mv into
+       /tmp/item17-r6d-2026-11-21/), since the source is the
+       reference and the trial has done its work; say which.
+
+3. The production configuration runs (§19.119, 7). The command, on
+   this source, in the background and with a limit of your own on
+   its time:
+   BENCH_OUT=<a new file> BASIC_BATCH_SIZE=4 BASIC_MAX_DOCS=60
+   BASIC_MAX_BATCHES=1 BASIC_NUM_EPOCHS=1 .venv/bin/python
+   bin/bench_training_step.py data/BasicModel.xml
+   First measure, and return: the seconds and the memory held
+   (torch.mps.current_allocated_memory and
+   driver_allocated_memory) at the first lookup and at each look,
+   and where it stops. Then find and repair, in this order:
+   (a) What a look keeps (about .14 GB each at d188a06133). Name
+       the tensors by their size and by what holds them. The 1.5
+       plan names two candidates: the protected-storage hook of
+       saved_sentence_values, which clones a changed parameter at
+       each save, and what each look keeps for the salience map.
+       What is copied at each look and does not change within the
+       sentence is made once a sentence; nothing of a look is kept
+       past the look unless the sentence's backward reads it.
+   (b) What runs on the CPU after about 32 looks, for more than
+       ten minutes. Find the function by a stack dump of the
+       running process (faulthandler.dump_traceback_later, or
+       py-spy if it is installed); do not guess it. The part map
+       now holds every stored form as a part of its own
+       (§23.6.10): look at WordIdentity.admit, _settle and
+       atoms_of at the production vocabulary first. Repair it if
+       it is this item's (the looks, the table, the field, the
+       part map, the salience map); return it if it is older.
+   (c) The priming bridges (_priming_bridge_src, _bits and _dst of
+       the four conceptual spaces, 5.2 GB before the first
+       lookup). Say what reads them now. If nothing does, they go
+       (a delete is a mv of the file into /tmp/item17-r6d-2026-
+       11-21/; a removed function is simply removed). If something
+       does, return what sets their size and leave them to item
+       1.5.
+   The aim is that one training step of the production
+   configuration, at a batch of 4, finishes. No width, capacity or
+   key of data/BasicModel.xml is changed for it, and no path is
+   added beside the one that tests run. If a step cannot finish
+   without such a change, return what the change would be and why,
+   and build nothing for it.
+
+4. The measure, once a step finishes, alone on the machine (no
+   other test run of yours at the same time; Claude runs no list
+   while you work): the seconds of the first step and of a later
+   one, sentences a second, and the greatest memory held; in 32
+   bits, and by the whole-model switch MODEL_AMP at BF16 and at
+   FP16 (no narrower type is added anywhere). Recorded, no bar.
+
+5. Left failing, not skipped, not ported: test_81 and
+   test_prepared_answer_boundary[True].
+
+6. Tests: both gates before any edit and at the end; the files
+   this pass touches; test_definition_integrity.py,
+   test_refine_raise.py, test_serial_concepts.py,
+   test_concept_memberships.py, test_grounded_xor.py,
+   test_item55_mechanisms.py, test_item17_forms.py,
+   test_item17_code_trial.py; the files of
+   the looks, the places (not the measure of reading in order),
+   the table, the symbols and the code; the lesson's script with
+   --runs 2. Claude runs the list.
+
+7. Return as scratch-1.7/r6d_return_6.md, what fails or is
+   unfinished first; step 1's old and new lines and any test that
+   read differently; step 2's four causes; step 3's first measure,
+   then (a), (b) and (c) each with its cause, what was repaired
+   and the figures before and after; step 4's measure; commits; and whether main was
+   moved forward, each time.
+
+Not in this pass: reading in order (the next pass); the trial of
+the reconstruction once for each look (§19.119, 2).
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
@@ -22620,3 +22794,309 @@ Spot tests by the pass; both gates pass on the branch (`item17-r6d2-step4-wip`, 
 - *The three starts of the measure give one result* because the start seeds only weights the measure does not read. So the measure has had one sample, not three, since it was written; the lesson's script is the one that varies (0, 0 and 1 sentences in order).
 - `test_epoch_history` passes: a place's concept is no longer offered to a conjunction made by co-occurrence.
 
+### 23.6.10 Round 6d, fifth pass: every percept whole a part of its form; a part map for every store; a whole witnessed outside over a bracket; the where held by shared size, with no weight; reading in order still not learned (Claude on Opus, standing in for Codex, 2026-11-21)
+
+Branch `item17-r6d2-step4-wip`, rebased onto `main` (70423063f3; doc commits only), then twelve commits of this pass on top; the branch ends at **5e228de21a** (listed under Commits). Nothing pushed. Superproject untouched. No doc/ edited. Of data/, only the three MM files, one line each. No skip, xfail or pinned seed added. No bar, count or rate of either gate changed.
+
+#### What fails or is unfinished, first
+
+- **Main was NOT moved forward.** The checkout is back on `main` (70423063f3) and the branch is kept. The reason is one test of the step 7 files, below; both gates pass.
+- **`test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery` still fails** at its "both" assertion (`order_zero_both` on 00, 01, 10, 11 is [0, 0, 0, 0]; [0, 1, 1, 0] is asserted). Step 3 (b) found what gave "both" at f4b00524ee, and it is the mixed extent in another form, so nothing was built for it (as the text says). It is not one of the two tests the merge may leave failing, so main stays.
+- **The MM_xor and MM_image flag is inert.** Both are numeric configurations (`dataType numeric`). They build no percept store (`RadixLayer`) and no `WordIdentity`, so `identityByParts` true changes nothing in them: their widths before and after are the same. The XOR gate passes at its bar, unchanged.
+- **Reading in order is still 0** in every count of the places' measure and of the lesson's script. No mechanism was added.
+- **Two flaky failures in the step 7 runs, not touched by this pass:**
+  - `test_prepared_answer_boundary` ([True] and [False]) failed in the first list run and passed in the later ones.
+  - `test_item17_symbols::test_the_order_zero_word_read_passes_its_gradient_to_the_wholes_content` failed in the final list run and passed in three runs of its file alone (35 passed each time). It draws `torch.rand` with no start of its own and reads only `ConceptualSpace.percept_code_evidence`, which this pass did not change.
+
+#### Step 1: a part map for every store
+
+##### The configuration files, line by line
+
+- `data/MM_text.xml`, `<PartSpace>`: the two lines
+  `<!-- This gate receives numeric XOR tensors and has no letter identity. -->` and `<identityByParts>false</identityByParts>`
+  become the one line `<identityByParts>true</identityByParts>`. I removed the comment because it is no longer true.
+- `data/MM_xor.xml`, `<PartSpace>`: `<identityByParts>false</identityByParts>` becomes `<identityByParts>true</identityByParts>`.
+- `data/MM_image.xml`, `<PartSpace>`: `<identityByParts>false</identityByParts>` becomes `<identityByParts>true</identityByParts>`.
+
+##### The widths now
+
+- **MM_text** (embedding): `resolve_identity_layout` now sets the layout. Before: InputSpace 6, ConceptualSpace 14, WholeSpace 6, no identity. After: InputSpace and WholeSpace 128, ConceptualSpace 136, a `WordIdentity` of 64 parts and 64 wholes, and PartSpace `muxedSize` 136 (64 + 64 + 4 + 4). No width was chosen by hand. This is the default layout, which the flag brings with it.
+- **MM_xor, MM_image** (numeric): no change, as said above (MM_xor: InputSpace 1, ConceptualSpace 14, WholeSpace 6; MM_image: InputSpace 28, ConceptualSpace 14, WholeSpace 6).
+- Did any width fail to tell forms apart? No: on MM_text the default 64 + 64 applies, and on the dictionary no two words share a code (certificate 46, step 2).
+
+##### The fixtures
+
+- `test/definition_fixtures.py::with_definitions`, the store behind `_cs()` and its like, now has a part map: a `RadixLayer(64)` with a `WordIdentity`. Each byte's part is admitted in order, so the part of byte `v` is store row `v`, and a fixture's part ids are its bytes. `BasicPercepts(native, 64, 0, ...)`.
+- `with_own_codes` (codes by hand) **stays**, as a part map by id, for the fixtures whose part ids are not the bytes they read. For example, part 7 is read in the text `A`. Under a part map of characters, such a fixture reads nothing. So `with_own_codes` swaps in a store with no character map (the old `RadixLayer(cs.nDim)`) and gives each named part a code of its own, as before. Where a fixture's part ids are its bytes (field_case with 48, 49 and 65; the extent-containment test with bytes 1 to 4), the part map replaces codes by hand. Those tests do not call `with_own_codes`.
+- Three fixtures whose ids were not their bytes were given matching bytes, with no assertion changed:
+  - `test_serial_concepts.fixture`: parts 0, 1 and 2 become the bytes `x`, `y` and `c` of its staged text `x c y c`, and the native indices are `[x, c, y, c]`.
+  - `test_field_binding::test_native_learning_updates_one_definition_for_both_modes`: part 7 becomes 65 (it reads `A`).
+  - `test_word_interpretation` (the later definition read through the parallel field): the read bytes become `[7, 8]`, the parts' own bytes.
+- **Unported and passing:** `test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]`, the nine of `test_refine_raise.py`, and the two of `test_serial_concepts.py` (the latter on the fixture change just described).
+- **Both gates pass:** 2 passed, about 4.9 s, every time I ran them.
+
+##### One source change that the part map on MM_text needed
+
+`test_what_training::test_past_and_future_text_answers_are_scored_in_input_space` failed (7 == 5). Encoding answer texts, which is meant to be read-only (`_embed_answer_texts`, learning frozen), admitted the target's forms (`zebra`, `quokka`) into the part map: `identity.admit` was not gated by `_online_learning_frozen`. The comment beside that code already says "nothing is admitted while online learning is frozen". So in `Spaces` (the lexing of units), a frozen read of a form that is not stored now takes its parts' rows (`identity._atom` for each of `atoms_of`) and does not admit the form. The test passes unported.
+
+#### Step 2: every percept whole inside a form is a part of it
+
+##### The parts, by function
+
+- **`WordIdentity.admit`:** a stored form of two or more characters becomes an added part of its own (`added[text] = None`). Every stored form that already holds it as a run (`holders`) takes that part, and their codes are packed again and settled. Forms admitted later take it through `atoms_of`, as any added part. So `reach` does not hold `archer`'s part, and `archery` does.
+- **`WordIdentity.atoms_of`:** with about 20,000 added parts, the old scan over every added part was too slow. Where a form has fewer runs than there are added parts, its runs are now looked up in `added` instead. The order (base characters, then added parts in the order they were added) is unchanged, kept by `_added_rank`.
+- **`WordIdentity.against_atoms`:** an added part whose run holds the form itself (a nearer holder's own part, such as `archery` for `archer`) is not an against entry. It is found only where the characters that the holder adds are found, so it adds nothing to them. Certificate 47's entries stay `archer: ['y']` and `is: ['h']`.
+- **`WordIdentity._settle` with `_twin` and `_seen`, `_separate(read=True)`:** this was not in the text, but certificate 46 needed it. With the own parts, the parts half filled up for a few long forms, and two pairs (`amarin`/`amarine` and `barnstorm`/`barnstormer`) got the same basic percept code while their identity codes still differed. They differed only in a wholes coordinate that the classes holding their characters cut (`_kept`). Rule 56 now also tells apart two stored forms whose codes are the same as their basic percepts keep them. It compares within the forms of the same parts half (`by_parts`), and applies its next part, or the fallback of more bits, until those kept codes differ.
+- **`BasicPercepts._run_of` (from `form_of`):** a row of two or more parts, in order, that spells no stored form. The run of its parts' characters (`_part_text`: a part's character, a stored form's bytes, or a raw row's bytes, the last read once and kept) becomes a part of its own in the map (`identity.admit_part`), and its characters' parts are admitted. The run is kept in `BasicPercepts.runs`.
+- **`BasicPercepts.subspace_bounds`:** a run row's parts half is the map's code of its run (`identity.form(run)`: the run's own part, its characters, and every part inside it). Its tightest whole is the OR of the catalog codes of those parts (`_run_tightest`).
+- **`BasicPercepts._form_spans`:** the run of an ordered row is now found as an occurrence, even when every part in it is a part of the map. (A stored form's parts are a set and are still skipped; a row's run is in order.)
+- **`_occurrence_what`:** unchanged. An occurrence's parts half already took every added part inside its bytes (`atoms_of`), so the own part of a stored form or a row's run is in it wherever that run lies.
+
+##### (a) to (d)
+
+- **(a)** Certificate 54 (c), `archer` on `reach`, reads **0.0**, its assertion before the third pass, which is restored (`test_54c...`). The others are unchanged: archer on archer and is on is read tanh(1), and archer on archery and is on this read 0.
+- **(b)** `test_basic_read_preserves_ordered_part_witnesses_after_native_fusion` reads **[1, 0, 0]** again. Its fixture is given a part map: a `RadixLayer(64)` with a `WordIdentity` and `BasicPercepts(native, 64, 0, 4)`, in place of codes by hand on a 3-wide store. Its receipt again records `preserved_order=True` and `preserved_multiplicity=True`.
+- **(c)** `test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent` is brought back from `/tmp/item17-r6d-2026-11-21/` with its two imports, and **passes**: 00, 01, 10 and 11 reconstruct as themselves.
+- **(d)** Certificates 46, 47 and 48 pass. Their printed counts on the dictionary (19,821 words), before (the branch at 230f17aa1d) and after:
+
+| Count | Before | After |
+| --- | ---: | ---: |
+| words that share a code, for lane | 0 | 0 |
+| words that share a code, both lanes | 0 | 0 |
+| words that share the parts half | 117 | 102 |
+| codes inside another's by accident, for lane (sample of every 40th) | 33 | 43 |
+| codes inside as a run (same sample) | 852 | 852 |
+| added parts | 6,291 | 19,824 |
+| parts of a form, greatest | 27 | 25 |
+| parts of a form, mean | 13.52 | 11.03 |
+| ones of the parts half, mean / greatest (every 10th) | 31.05 / 47 | 26.76 / 43 |
+| certificate 48: holders by kind, run / parts / accident | 852 / 0 / 1,780 | 852 / 0 / 1,918 |
+| certificate 48: against entries per row, min / mean / max | 0 / 0.83 / 45 | 0 / 0.48 / 27 |
+| certificate 48: rows over 16 entries | 85 | 14 |
+| certificate 53: forms given a coordinate | 6,138 | 1,475 |
+| certificate 53: accidents, parts outside, failures | 0, 0, 0 | 0, 0, 0 |
+| certificate 53: seconds to admit all | 38.9 | 25.5 |
+| certificate 53: ms near 19,000 forms, mean / greatest | 1.28 / 33.1 | 3.06 / 115.9 |
+
+- Accidental containment on the for lane **rose**, from 33 to 43 in the sample of every 40th, and certificate 48's accidents rose from 1,780 to 1,918. As the text says, I widened nothing.
+- Forms have fewer parts and fewer ones, not more. Fewer parts are added to tell two forms apart, because each stored form's own part already does it.
+- Before the `_twin` repair, the dictionary had 4 words sharing a for-lane code and 2 sharing both lanes (2 pairs), with accidents at 28. After it, 0 and 0, with accidents at 43.
+
+#### Step 3: a whole over a bracket
+
+##### (a) `test_a_located_part_need_not_pervade_but_the_whole_property_must`
+
+(Final form, as of 5e228de21a.)
+
+It passes on its old assertion ([[1, 0], [0, 0], [0, 1]]).
+
+- **In the table (`BasicPercepts._occurrence_what`, `lookup`):** the wholes columns on the against lane now hold how far each whole is witnessed outside over the occurrence. That is `evidence_on_counts`'s against lane, over all its bytes and complete. A wire there holds the least degree over the wholes of the bank that cut it, where a whole cuts a wire wherever its code there is below one. It used to hold one less the for lane.
+- **In the read (`BasicPercepts.outside`):** for each of a row's own wholes, the greatest of its own cut wires on that lane; for the row, the greatest over its wholes. A place or a conjunction has no whole of its own and reads nothing here.
+- **In `read_bank`:** against = part · max((1 − whole) · told, outside · at, added · told). Any occurrence that holds the row's parts, a bare bracket included, tells against to the degree its wholes are witnessed outside. A mixed bracket tells nothing.
+- **Two earlier forms were wrong**, and each was repaired in its own commit:
+  - *Each wire holding the greatest degree, read over a row's cut wires* (b1565f4407). It leaked. Real whole codes cut most of the 64 wires, so a whole witnessed outside (for example `is 1` at the byte `0`) put its degree on most of another whole's wires. In the grounded XOR model, the row of `0` then read both at `00`.
+  - *The least per wire, with each whole's own code as the bound* (5014d4725a). A graded whole code (below one but above zero) put its grade on the lane. Certificate 48 on the lesson then told 1 of 5 concepts apart, with every row read both on its own form, and the lesson's script found 56 of 64 words.
+  - *The final form* takes a whole's cut wires as those where its code is below one, with no grade (5e228de21a). Certificate 48 tells 5 of 5 apart again, and the script finds 64 of 64.
+
+##### (b) What gave "both" at 01 and 10 at f4b00524ee
+
+I read it in a clone at f4b00524ee and probed the test there.
+
+- The rows are `bp0 = ((part 0,), (1, 10))` (the class of `0`) and `bp1 = ((part 1,), (1, 9))`.
+- In `BasicPercepts.read_bank` at that commit, `lies` is the presence of a row's run at each event. The run's member (`native.events` of the key `('ps', (1,))`) "happened" at every event of the reading. For "01" the presence of part `0` was [1, 1, 1, 1] over the events [0,1], [1,2], [0,1], [1,2].
+- `_row_lanes` then read the row's wholes at each event: for at the byte `0`, and **against at the byte `1`**, where whole 10 is witnessed outside and part `0` is not present.
+- So bp0's events on "01" were [1,0], [0,1], [1,0], [0,1], its reading [1, 1] (both), and likewise bp1 on "10".
+
+That is the mixed extent in another form: the run's presence is taken over the whole reading, and the wholes are read at a byte where the part is not. The table cannot give it by (a), because at the byte `1` the row's part is not held, and over the bracket "01" whole 10 is not witnessed outside at every byte. **Nothing was built.** The test fails at the "both" assertion (it now reaches that line again, after the repair to (a) above).
+
+#### Step 4, as amended: a row's vector is its what with its where and when appended
+
+##### The amendment (the weight form withdrawn)
+
+- **`PlaceEntries`:** `where_entries` `[capacity, 2 · 4]` and `when_entries` `[capacity, 2 · 4]` are each one learned vector on two lanes: the first four against the wire `c`, the next four against `1 − c`. They are read at zero or above by `torch.where(e >= 0, e, 0)` (`held_entries`).
+  - A content row starts at nothing (its field dropped).
+  - A place starts at the cone's code (`reserve_place`: `cat(plus, minus)`, the least of each lane over the occurrences met).
+  - `PLACE_WEIGHT`, `where_weight`, the kept-value-and-weight pair, the divergence and the `exp` are gone.
+- **`place_factor`:** the product over the where and the when of `field_factor` = Σ min(lane, entry) / Σ entry, and 1 where a field's entries sum to nothing. The min is `lesser`: `torch.where`, with the derivative passed to both sides at a tie.
+- **`where_share`** (`field_share`): Σ lane · [lane ≤ entry] / Σ entry, the factor's derivative by the percept's lanes times the lanes, and nothing on a dropped field.
+- **`Salience.first_pi`:** the share on the where wires is now the row's share at the percept times `where_share` read on the look's table (gathered from the bank by the field's `index`). It is no longer times the sum of weights.
+
+##### Certificate 62 again, on "alpha gamma alpha"
+
+`test_item17_table::test_62_33b_what_is_where`, ported: the entry is `cat(c, 1 − c)` where it was `cat(c, PLACE_WEIGHT)`.
+
+| | First (own place) | Second |
+| --- | --- | --- |
+| where wires | .549, .998, .500, .000 | .554, .997, .355, .022 |
+| the row's value (for, against) | 0.99999976, 0 (before the entry: 1, 0) | **0.95707**, 0 |
+| the request's share | 0.99999976 | 0.95707 |
+| the where share | 0.75 | 0.66441 |
+| 33 (b): gradient on `WhereRegistry.code` at the place / elsewhere | 0.25 / 0.0 | 1.0 / 0.0 |
+
+- These are the values you expected: 1.0 at its own place, about .957 at the other.
+- The where share is .75 and not 1 at its own place because the test clamps `c` to [1e-6, 1 − 1e-6] before writing the entry. The wire at 0 then has `1 − c = 1 > E− = 1 − 1e-6` on its second lane, and that lane drops out of the share.
+- The gradient at the first is no longer exactly 0: at a tie the derivative passes on that lane. The assertions (`grads['second'][0] > 0`, nothing elsewhere, first < second) hold, and I changed only their comment.
+
+##### The appended vector (`FeatureTable.codes`, `MereologicalCodes.derive`, `BasicPercepts.place_code`)
+
+- **What `FeatureTable.codes(basic, percepts, band)` returns:** each percept's what (the greatest of its parts' codes, the least of its wholes'), then `band` coordinates from `place_code`. `place_code` takes the where entries' first lane, the when entries' first lane, then the second lanes of each, as many as the band holds (padded with nothing if it holds more).
+- **A place's what** is the what its row keeps (`place_rows[row][2]`), and nothing where it keeps none. This replaces the fourth pass's special code of nothing (`bare`).
+- **`MereologicalCodes`:** `_forms` is now `percept_event_width` wide, and `derive` writes `[:percept_event_width]`. A kept row's band is read from the codebook as before. `_form_sources` includes the entries' `_version`, so the forms are derived again when the entries learn.
+- **Where the coordinates are in the codebook's width:** the band between the what and the meaning, `[percept_width : percept_event_width]`. Under the default layout and MM_text that is `[128 : 136]`:
+  - 128 to 131: the where entries' first lane (against `c`);
+  - 132 to 135: the when entries' first lane.
+  The second lanes (against `1 − c`) do not fit in an 8-wide band and are not written.
+- **What a narrower configuration does:** the lanes are written in that order until the band is full. A configuration whose band is 0 (`percept_event_width == percept_width`) appends nothing: what stands for a row is its what alone. Nothing is resized. **For Alec:** whether the band should be 16 wide so that both lanes are appended. That would be a width change of the default layout.
+- **What `attend` now reads for two places:**
+  - `SentenceLooks.requested` passes `similarity_codebook.W` (all 136 coordinates) for the 31 places' concepts.
+  - Their codes now have 30 distinct norms, from 1.209 to 6.289. The greatest difference between two of them is 1.0 over the whole code and **0.1684 on the where and when coordinates alone**.
+  - In the fourth pass, 22 of them were the one code of norm 8, and the request on them was about 2,400 each, two values 0.06 apart. Now, at the first look of "This is Felix." the request on the places' concepts ranges from 71.9 to 1,529, with 23 distinct values.
+
+#### Step 5: the measure, recorded, no bar (on the final source, 5e228de21a)
+
+##### The places' measure
+
+`test_reading_in_order_before_and_after_the_lesson`: 1 passed, 417 s. Three starts drawn afresh: 49806190772811, 165509182181792 and 38057675340917. It now prints that these are one sample ("the starts seed nothing the measure reads"), and the values agree but for the request's magnitudes.
+
+- **Places:** 31, of which 7 keep no what. Their codes have 30 distinct norms, from 1.2089 to 6.2886. The greatest difference between two is 1.0, and 0.1684 on the where and when coordinates.
+- **Read in order** (of two-word 6, lesson 16, held out 6): 0, 0, 0 before and 0, 0, 0 after, in each start.
+- **"This is Felix." after the lesson** took two looks in each start.
+
+| Start | Look | Request on the places' concepts, greatest / least | Distinct values (of 31) | Where match |
+| --- | --- | --- | ---: | --- |
+| 1 | 1 | 1,531.95 / 72.03 | 23 | reading 1 |
+| 1 | 2 | 1,441.76 / 67.79 | 23 | reading 1 |
+| 2 | 1 | 1,535.30 / 72.19 | 23 | reading 1 |
+| 2 | 2 | 1,436.52 / 67.54 | 23 | reading 1 |
+| 3 | 1 | 1,681.13 / 79.04 | 23 | reading 1 |
+| 3 | 2 | 1,586.15 / 74.58 | 23 | reading 1 |
+
+- **The where match** is 1 on reading 1 and 0 on the other seven, at both looks, in every start.
+- **The request's start after the lesson:** 0.05985 on the concepts of places 3, 6, 9, 11, 13, 15 and 18, and 0 on the other 24. 1.0 on "words" (row 142). The same in the three starts.
+- **Earlier runs of this measure** (on 0d3c8808ab and 5014d4725a) gave the same places, codes, counts and where match. Their output is in `/tmp/item17-r6d-2026-11-21/r6d5-first/` and `r6d5-second/`.
+
+##### The lesson's script, `--runs 6` (CPU, 149 s)
+
+Output in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6d5/lesson/`.
+
+| Run | Start | Seconds | Words | Live | Sentences in order | Words in order | At allowance | Drawn | Known against | Known both |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 796523170 | 18.2 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 2 | 2158574423 | 20.1 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 3 | 3017446238 | 15.6 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 4 | 389062505 | 29.0 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 5 | 3382946462 | 32.9 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+| 6 | 1889641475 | 16.4 | 64 | 64 | 0 | 0 | 0 | 26 | 0 | 0 |
+
+On 5014d4725a (the graded leak), six runs found 56 or 57 words each, with 0 in order; a two-run check there found 1 sentence in order once. No mechanism was added, and no weight or rate was tuned.
+
+#### Tests ported or restored, each with old and new assertion
+
+| Test | Old | New |
+| --- | --- | --- |
+| test_item17_symbols::test_54c | archer on reach == −tanh(1) | == 0. (restored, as before the third pass) |
+| test_item20_round5_percepts::test_basic_read_preserves_ordered_part_witnesses_after_native_fusion | [1, 1, 1], receipt preserved_order False; codes by hand on a 3-wide store | [1, 0, 0] (restored), receipt True; the store has a part map |
+| test_concept_output::test_contained_ordered_group_reconstructs_at_its_extent | retired | restored unchanged, with its two imports |
+| test_item17_code::test_53_a_later_form_moves_an_earlier_forms_row_and_lane_and_not_its_concept | `admit(b'si')` changes `is`; `row_members == member_keys != members` (parts gained) | `si` no longer shares `is`'s code (each has its own part), so no later form can change `is` by collision. The change is now rule 56's other path: `is`'s own part is given one more bit and its holders are settled. `row_members == member_keys` (no part is gained by a bit change) |
+| test_operators_round3a::test_mint_rekeys_existing_word... | added == {'bal': …, 'calaba': …}; bal in cabala | added == {'calaba': None, 'cabala': None}; each holds its own part and not the other's; neither form lies inside the other |
+| test_operators_round3a::test_masked_part_extends_bits_or_the_next_part_tells_them_apart | `list(added)[0] == 'bal'`; len(added) > 1 | `bit_stream` of the two own parts controlled so that the two have one code; `list(added)[:3] == ['calaba', 'cabala', 'bal']`; len(added) > 3 |
+| test_operators_round3a::test_numeric_mm_keeps_its_original_geometry | muxedSize 14, identity None | muxedSize 64 + 64 + 4 + 4, identity a WordIdentity |
+| test_item17_table::test_62_33b_what_is_where | entry `cat(c, PLACE_WEIGHT)`; comment "at the first it is nothing" | entry `cat(c, 1 − c)`; assertions unchanged; comment on the tie |
+| test_item17_places::test_reading_in_order... | prints | also prints the where-and-when difference and "one sample" (no assertion) |
+| test_serial_concepts.fixture, test_field_binding::test_native_learning..., test_word_interpretation (parallel read) | part ids not the bytes read | the parts' own bytes; no assertion changed |
+
+#### Test files run (counts, seconds)
+
+| Run | Result |
+| --- | --- |
+| Gates before any edit | 2 passed, 4.9 s |
+| Gates in later spot runs | 2 passed each time, about 4.9 s |
+| Code and percept certificates after the first step 2 commit | 5 of 6 passed (54c failed until its assertion was restored) |
+| test_item17_code.py, whole | 13 passed, 1 failed (test_53 c, then ported), 76.7 s |
+| Dictionary certificates, before / after | 3 passed, 48.5 s / 1 failed (46, sharing 4) and 2 passed, 37.2 s, then all pass after `_twin` |
+| The fixture files after the definitions fixture got a part map | 16 failed, 158 passed, 24.9 s; then 3 failed, 117 passed after `with_own_codes` became a map by id; then all passed |
+| Every test file that uses `_cs` or `with_definitions` (134 files) | 3 failed (located part, definition_integrity, word_interpretation, then ported), 1,546 passed, 30 skipped, 287.5 s |
+| looks, places, memberships, table | 39 passed, 86.6 s |
+| Step 7 first list (gates, the fourth pass's files, every file that loads an MM configuration, and the certificate files; 120 files) | 9 failed, 1,210 passed, 53 skipped, 1 xfailed, 728 s |
+| The six files of those failures, again | 6 failed, 27 passed, 136 s; then ported or repaired, 94 passed, 2 failed (definition_integrity, test_81), 116 s |
+| Final spot run, 16 files (at 5014d4725a) | 183 passed, 4 skipped, 83.2 s |
+| Step 7 list again at 5014d4725a | 3 failed (definition_integrity; test_item17_code::test_48_the_lessons_concepts_told_apart, 1 of 5, the graded leak, then repaired; test_81), 1,216 passed, 820 s |
+| After the repair (5e228de21a): gates, memberships, definition_integrity, looks, places, table, symbols, field_binding, grounded_xor, refine_raise, word_admission | 1 failed (definition_integrity), 153 passed, 84.6 s |
+| Places' measure, final | 1 passed, 417 s |
+| Lesson's script `--runs 6`, final | 149 s |
+
+The nine failures of the first step 7 list were:
+- test_operators_round3a: 4, ported;
+- test_what_training: 1, repaired in the source;
+- test_definition_integrity: step 3 (b);
+- test_prepared_answer_boundary: 2, flaky;
+- test_item18_expect::test_81: allowed.
+
+**The final step 7 list, on 5e228de21a** (both gates, the 121 files, the places' measure excluded since it was run on its own): **3 failed, 1,216 passed, 53 skipped, 1 xfailed, 823 s.**
+- test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery: step 3 (b).
+- test_item18_expect::test_81: allowed.
+- test_item17_symbols::test_the_order_zero_word_read_passes_its_gradient_to_the_wholes_content: flaky, passed 3 of 3 alone.
+
+Both gates passed in that run. The certificate files (test_item17_code with 46 to 49 and 53, test_item17_symbols with 54, test_item17_table with 61 to 63 and 33 (b), test_item17_looks, test_definition_rows, test_item18_extend, test_item18_reduction, test_word_admission) are all in it.
+
+#### Commits (on `item17-r6d2-step4-wip`, not on main)
+
+- 230f17aa1d: MM_text, MM_xor and MM_image take the part map.
+- 422743b7b5: a stored form is a part of its own; archer at reach reads 0 again.
+- d523fb6984: a row's ordered run is a part of its own; the ordered group's reconstruction returns; [1, 0, 0].
+- 7c910ac482: rule 56 also tells apart codes that are one as their basic percepts keep them; test_53 (c) ported.
+- 1c85e0b081: the definitions fixture has a part map; `with_own_codes` is a map by id; a row's run is found in order.
+- b1565f4407: the wholes columns' against lane holds the degree witnessed outside; any occurrence that holds a row's parts tells against to that degree.
+- bb8443b170: where and when as learned vectors on two lanes, held by shared size; no weight; the share on the where; outside read per own whole.
+- 5a11a33b0e: what stands for a row is its what with its where and when entries appended.
+- 0d3c8808ab: the places' measure prints.
+- 24404cf37e: nothing is admitted to the part map while learning is frozen; test_operators_round3a ported.
+- 5014d4725a: the against lane of a wire is the least over the wholes that cut it; a whole's degree is the greatest over its own wires.
+- 5e228de21a: a whole cuts a wire wherever its code is below one, so that a graded code puts no grade on the lane.
+
+**Main was not moved forward**, for test_definition_integrity (step 3 (b)). The checkout is on `main` (70423063f3) and the branch is kept.
+
+#### What surprised me
+
+- **The own part of every stored form removed most of rule 56's work.** Only 1,475 forms needed a coordinate, against 6,138. Forms have fewer parts and fewer ones on average, not more. But two pairs then shared a basic percept code because their difference lay where a class cuts, which needed rule 56 to compare codes as the percepts keep them.
+- **"Witnessed outside" on wires was hard to get right.** It took three forms: real whole codes cut most of the 64 wires, and some are graded. The lesson's certificate 48 and the count of words found were what caught the second form, not the targeted tests.
+- **The two numeric configurations have no percept store, so the part map is a no-op there.** The XOR gate is untouched by it.
+- **What gave "both" at f4b00524ee was a run's presence spread over every event of its reading.** It was not a bracket rule.
+- **A frozen read admitted forms** under the part map (`_embed_answer_texts`). No test caught it until MM_text had a part map.
+
+#### Review (Claude, 2026-11-21)
+
+Spot tests by the pass; both gates pass on the branch (`item17-r6d2-step4-wip`, `5e228de21a`). Claude's list on that commit, in a clone (306 files, `-n 6`, compiling as tests do): **6 failed, 3,337 passed, 161 skipped, 1 xfailed, 1 xpassed, 1,297 s.** `main`'s source (`d188a06133`) had 3 failed and 3,339 passed (§23.6.7).
+
+- `test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery`: the XOR case's "both", below. It fails on `main` too.
+- `test_item18_expect.py::test_81`: a learning certificate, left as it is.
+- *Four that the pass's own files did not include,* each from rule 43 as amended:
+  - `test_item55_mechanisms.py::test_nested_wholes`: a form's code changes inside `nested_lesson`, where the test asserts that the record joins no codes.
+  - `test_item17_forms.py::test_a_part_once_added_is_carried_by_every_form_that_holds_it`: `aa` is no longer among the lesson's added parts.
+  - `test_item17_code_trial.py::test_3` and `::test_10`: the trial's stand-in coder no longer codes as the source does (2,999 of 3,000 words differ).
+  The first may be a fault of the source and is looked at before it is ported. *The sixth pass, step 2.*
+- `test_epoch_history` passes, and so do the eleven of §23.6.8 and `test_29[MM_text.xml]`. The flaky `test_item17_symbols` test and `test_prepared_answer_boundary` passed in this run.
+
+
+- *Rule 43 as amended is built, and it removed work instead of adding it.* Every stored form, and every ordered run of a row's parts, is a part of its own, carried by every form that holds that run. `archer` is read as nothing at `reach` again; `00`, `01`, `10` and `11` reconstruct as themselves, and the retired test is back unchanged. On the dictionary no two words share a code, 1,475 forms need a coordinate of rule 56 where 6,138 did, and a form has 11 parts on average where it had 13.5.
+- *Rule 56 is widened, and the widening is accepted* (rule 56 amended): two stored forms whose codes are one *as their basic percepts keep them* (the classes that hold their characters cut the wholes half) are also given the next part. Two pairs were so (`amarin` and `amarine`, `barnstorm` and `barnstormer`).
+- *Codes that lie inside another's by accident rose,* from 33 to 43 in the sample of every 40th word, and from 1,780 to 1,918 among certificate 48's holders. They are told apart on the against lane as before (certificate 53: no failure), and nothing was widened for them, as the text said. *Round 7's list:* the count is looked at once more on the finished source, since his rule is that no code lies inside another by accident (§19.85).
+- *"Configure with a part map" changes one configuration, not three.* `MM_text` takes the default layout (64 and 64; a concept is 136 wide where it was 14). `MM_xor` and `MM_image` are numeric and make no percept store, so the flag does nothing there and the XOR gate is as it was. The eleven tests and `test_29[MM_text.xml]` pass with their assertions as they were.
+  - `test_operators_round3a.py::test_numeric_mm_keeps_its_original_geometry` now asserts the new geometry of `MM_text`; its name says the opposite. *Round 7's list:* the name.
+  - `with_own_codes` stays, as a part map by id, for fixtures whose part ids are not the bytes they read. Three such fixtures were moved onto their bytes with no assertion changed. *Round 7's list:* the rest follow, and the helper goes.
+- *A read that learns nothing no longer adds a form to the part map* (`_embed_answer_texts`). It was a fault that no test could show until `MM_text` had a part map; the repair is right, and the comment beside it already said so.
+- *A whole witnessed outside over a bracket tells against* (step 3 a), by the against lane of the table's wholes columns. It took three forms. The second passed every targeted test and was caught only by the lesson's certificate 48 (1 of 5 concepts told apart) and by the count of words found (56 of 64): a graded whole code put its grade on the lane. The form kept takes a wire as cut by a whole wherever the whole's code there is below one.
+- *The XOR case's "both" is not a mixed extent, and it is not lost: the function that reads it looks in the wrong record* (Claude's probe at `5e228de21a`, the test's own steps up to the assertion). At `f4b00524ee` the row of `0` told against at the byte `1`, where its part is not, because a run's presence was spread over every event of its reading; that read is withdrawn and stays withdrawn. But the evidence both ways is in the model as his rules put it, in the order-zero Sigma: concept 0 has the entry +1.69 on the row of `1` and -0.81 on the row of `0` (a Not entry, taught by the 32 steps). The row of `0` reads for on `00`, `01` and `10`, the row of `1` on `01`, `10` and `11`. So across the rows its Sigma reads, the concept is for and against on `01` and `10` and on no other form. `ConceptualSpace.order_zero_both` returns [0, 0, 0, 0] because it takes a concept's rows from the allocator's record of the rows it was started from, which leaves out a row recorded at weight zero that the gradient has since given a sign. *The sixth pass, step 1:* it reads the Sigma's entries. *Mine, provisional:* the union over the rows is not weighted by the entries, as it is not today.
+- *The where weight is gone and the read is as §19.120 predicted:* 1.0 at the row's own place and .957 at the other. Nothing of the weight is left in the source (`test/looks_round2.py`, the prototype of §20, has a `where_weight` of its own and is not the model's).
+- *The second lanes of the where and the when are not appended to a row's vector, and that is as he said it* (§19.120): the vector takes the sinusoid's buffer, four wires, and the when's four. No width changes. The pass asked; this answers it.
+- *Places' concepts are no longer asked alike:* 30 distinct codes, and 23 distinct values of the request among 31 places.
+- *Reading in order is still 0, and now nothing of the presentation is left to blame.* The lesson's script found every word (64 of 64) and no sentence in order in six runs. What the measure shows after the lesson, at "This is Felix.":
+  - The request is 72 to 1,532 on every place's concept at once. A request is a mask (rule 35), and nothing bounds it.
+  - The second look's request is the first's times .94 on every place (1,531.95 and 1,441.76 at the greatest; 72.03 and 67.79 at the least). So what was read at the first look moves the request toward no place.
+  - The where match is 1 on the same reading of eight at both looks, and the sentence ends after two looks.
+  So the looks do not move along the sentence. Read in the source (Claude):
+  - `OperationSelectionLayer.attend` (`bin/Language.py`) gives each concept the product of its code and the context's query, on two lanes, and nothing bounds it. Its own text calls the request "a mask over concepts", and so does rule 35; a mask is in 0 to 1. A place's code has a norm of 1.2 to 6.3, and the request follows the norm.
+  - `SentenceLooks.where_match` refers each reading's share on the where wires to the greatest through the exponential, exp(share - greatest). With shares in the hundreds that is one reading at 1 and every other at 0, which is a choice of one and not a graded match.
+  - In the trial where reading in order was learned (§23.6.4, 16 of 16 in two starts of three) each place's concept had a request of its own, a row of a learned matrix on the context (`PlaceReader`: `A @ ctx`). In the model a concept is asked through its code, and the places' codes are nearly one direction: the greatest difference between two is 1.0, .17 of it on the where and when, against norms up to 6.3. What the codes share, the query raises on all of them together.
+  *The pass after the sixth:* the trial and the model compared quantity by quantity at the first two looks of one sentence, and the request bounded in a trial in tests, before anything is built. *Claude's first choice for the bound, to be tried and not yet built:* a concept is asked for to the degree its code is held by the query, by shared size, which is the one match of the model (1.8 §70.11) and is in 0 to 1 with no constant.
+- *`main`.* The pass left `main` where it was for `test_definition_integrity`, as its text said. That condition was Claude's and was wrong: `main` has failed that test since the first pass (§23.6.7's list). It does not move now for another reason: the four tests above are new failures against `main`. It moves after steps 1 and 2 of the sixth pass.
