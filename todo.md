@@ -1908,6 +1908,8 @@ generation is expected at this stage and is recorded, not tuned away.
    the same way. Also here until it reads sentences: the fast
    word evaluator's `score` command lists every item as silent
    and is kept out of every gate and run.
+   See [suggestions for item 1.6](suggestions.txt) for a first spatial
+   milestone, corpus changes, and measures of learning on the local machine.
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
