@@ -9884,6 +9884,13 @@ Claude's reading, each part *mine* until he confirms it:
 - *"Finish"* (6): counting is finished in this item and in the model, with counting words past "4". How far the lesson's counting words go is Claude's (to "9"); what the model says past the last word taught is reported and nothing is built for it.
 - *The rung* (3) is added only if the model's reading cannot tell neighbours without it, and then as a key of `data/model.xml`.
 
+*His correction of that reading, the same day:* "I just mean we should not be setting the activation of concepts directly; they should always come from input and output. Its bad enough that we are creating some at init. as for META concepts. So teach reading and counting over words, as separate output tasks, over the same input sentences on the same model and weights: lets see if that is sufficient."
+
+- *Decided:* the rule is only that no activation of a concept is set directly; every activation comes from the input or from the output. (Concepts made at the start, as the meta concepts are, he counts as a cost already paid and not as a model to follow.)
+- *Decided:* counting is over the words of a sentence, not over a row of objects. The two tasks have the same input sentences, the same model and the same weights, and differ only in the output asked: the sentence itself, or one counting word for each of its words. No word is added to the input to name the task (Claude's "a word of the input that comes with the task" is withdrawn).
+- *Decided:* it is a trial of sufficiency ("lets see if that is sufficient"): nothing more is built to tell the tasks apart until this has been measured.
+- *Mine:* since the inputs are the same, at evaluation a task can only be given by the output: its first word supplied. What the model says with nothing supplied is reported too.
+
 Rule 80 (§21). *The eleventh pass* (§22.6d) builds it.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
@@ -14265,14 +14272,14 @@ de-muxed; the production configuration.
    The read is one network shared by every use, with a linear read on top for the request (the toy's form: one layer of rectified units; its width a key of `data/model.xml`). The request stays a mask in 0 to 1 by a form that does not go flat (say which; the tenth pass's bilinear read was provisional).
 2. *What goes* (no second path): the bounded match in `OperationSelectionLayer.attend` and the query of `AttentionContext` (`context`, `project`) as the source of the request; `model.request_start`; `SentenceLooks.where_match` if the request is taught without it (say what was measured); the reading lesson's targets and their replay (`ReadingTargets`, `reading_lesson`, `teacher` in `Looks.run`) and what only they used. Deleted files go to `/tmp/item17-r6d-2026-11-21/`. A test that asserted any of these is ported to what replaces it, or removed with its reason in the return.
 3. *The cost is the output's alone* (§19.127). In reading without comprehension the output is the sentence in its order. At each step the word said is read through each unread word's share of the look (the softmax of the look's scores of the words, as the toy's), so the output's cost reaches the look's scores and the request. Which occurrence a look takes is never named. The end is learned as stopping after the last word. If the source's output walk cannot carry this as it stands, build the least that does and say what it is.
-4. *A task is given by the input or by the output, never by a switch* (§19.129, 1 and 5). Two lessons, taught together in one run: reading (a sentence in, the sentence out) and counting (a row of objects in, one counting word for each out, "1" to "9"). Each is given both ways and both are measured: by a word of the input that comes with the task (the word is data of the lesson and no name in the source), and by the first word of the output supplied. No concept is lit by the test or the lesson.
+4. *No activation of a concept is set directly; the two tasks are two outputs over the same input* (§19.129, his correction). Reading and counting are taught together in one run, on the same input sentences, the same model and the same weights: reading asks the sentence as the output; counting asks one counting word for each word of the sentence, in order ("1" to "9"; the counting words opaque). Nothing is added to the input to name the task, and no concept is lit by the test or the lesson. At evaluation each task is measured with the first word of its output supplied, and with nothing supplied.
 5. *The `.where` rung* (§19.129, 3): first without. If the reading cannot tell neighbours (step 2 of the tenth pass: a margin of .004 to .02), add one rung of 16 to 32 addresses as a key of `data/model.xml` with its default there, and say what it changed.
 6. *The measures,* three starts drawn afresh and printed, nothing supplied but the task's signal, by `AttentionLesson`'s measure against the live source slots:
    - sentences read in order: two-word, the lesson's, held out, the lesson's words in other orders; the first word at the first look; the reading stopped at the end;
    - whether `is` is taken, and for every choice whether the intended word had a finite score;
    - the request and its gradient at the first two looks;
-   - counting: right by number of objects, 1 to 9; each object looked at once; what is said for 10 and 11 objects;
-   - each task given by the input and given by the output, and each task after both are learned;
+   - counting: right by number of words in the sentence; each word looked at once; what is said for a sentence longer than any taught;
+   - each task with its first output word supplied and with nothing supplied, after both are learned together;
    - the identity curriculum's first stages (`test/attention_curriculum_gates.py`) with the looks on, once.
 7. *Tests:* spot tests while building; no assertion on a drawn outcome; no seed pinned; both gates at the end; the files touched and their users. Return `scratch-1.7/r6d_return_11.md`, what fails first. `main` moves if both gates and the files touched pass, save `test_81`.
 
