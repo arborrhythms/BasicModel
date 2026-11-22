@@ -22087,11 +22087,14 @@ class BasicModel(BaseModel):
             if case_enabled and sentence_transactions:
                 case_state = CaseFlow.local(case_state, journal_columns)
             if sentence_transactions:
+                # Read by index, not gather: the backward keeps the columns
+                # and not a copy of the whole journal at every word.
                 value_columns = journal_columns[..., None].expand(-1, -1, current_cs_lang[19].shape[-1])
                 ref_columns = journal_columns[..., None].expand(-1, -1, 2)
-                operation_values = current_cs_lang[19].gather(1, value_columns)
+                streams = torch.arange(B, device=journal_columns.device)[:, None]
+                operation_values = current_cs_lang[19][streams, journal_columns]
                 operation_refs = current_cs_lang[20]
-                reference_relations = current_cs_lang[21].gather(1, ref_columns)
+                reference_relations = current_cs_lang[21][streams, journal_columns]
             else:
                 operation_values, operation_refs, reference_relations = current_cs_lang[19:22]
             unary_history = language.push_unary_history(current_cs_lang[22], commit)

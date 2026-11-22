@@ -75,8 +75,10 @@ class STMChunks:
 
     @staticmethod
     def gather(value, indices):
-        index = indices.reshape(*indices.shape, *([1] * (value.ndim-2)))
-        return value.gather(1, index.expand(*indices.shape, *value.shape[2:]))
+        # By index, not gather: the backward keeps the indices and not a
+        # copy of ``value``.
+        streams = torch.arange(value.shape[0], device=indices.device)
+        return value[streams.reshape(-1, *([1] * (indices.ndim - 1))), indices]
 
 
     @staticmethod

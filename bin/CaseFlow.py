@@ -20,8 +20,10 @@ def empty(like, *, cases, journal):
 
 
 def gather(value, positions):
-    index = positions.reshape(*positions.shape, *([1] * (value.ndim-2)))
-    return value.gather(1, index.expand(*positions.shape, *value.shape[2:]))
+    # By index, not gather: the backward keeps the positions and not a copy
+    # of ``value``.
+    streams = torch.arange(value.shape[0], device=positions.device)
+    return value[streams.reshape(-1, *([1] * (positions.ndim - 1))), positions]
 
 
 def view(state, bank, positions):
