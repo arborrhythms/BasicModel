@@ -1,10 +1,10 @@
 """Lexical form admission and constructed byte capacity for surface tables."""
-import unicodedata
 import torch
 
 
 def is_lexical_form(value):
-    """Known text needs a character other than whitespace or punctuation.
+    """Known text needs a character other than whitespace: all content of
+    the input is a word, marks included.
 
     Bytes use the definition index's decoding. An opaque native part key
     carries no text to classify and retains its existing identity contract.
@@ -14,8 +14,7 @@ def is_lexical_form(value):
     if isinstance(value, str) and '\0' in value:
         # Zero content is the out-of-band omission, never an admitted word.
         return False
-    return not isinstance(value, str) or any(
-        not c.isspace() and not unicodedata.category(c).startswith('P') for c in value)
+    return not isinstance(value, str) or any(not c.isspace() for c in value)
 
 
 def capacity(value):
