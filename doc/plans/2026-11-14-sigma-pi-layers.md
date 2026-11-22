@@ -9967,6 +9967,18 @@ I would like to see .where as a 3D space for all models, it simplifies things. I
 - *The type:* the elements are of the model's type and are BF16 when the whole model is (`MODEL_AMP`); no narrower type of their own.
 - *Mine, for the build:* the place code and its match are kept for each axis apart (one table for an axis, a place the three results together), so that three dimensions cost three matches; the number of axes a key of `data/model.xml`.
 
+*What lies on which axes, and what a number is* (Alec, the same day): "Text will be 1D: zeros for dim 2 and 3.
+The perception of intensity (feelings) can be 1,2, or 3D.
+Images will generally be intensity, so zeros for dim 3. The can in principle be 1D
+Volumes will be no different than 3D images.
+
+Numbers are higher-order, so symbolic (they are pure forms, and do not have a perceptual representation). So in the tests where we had been talking about "one is above two", it should be seen as a shorthand for "the pixel value 1 (at x1,y1,z1) is above the pixel value 2 (at x2,y2,z2)": we are referring to image data. We can continue to refer to shapes in feeling space as level sets to teach basic geometry."
+
+- *Decided:* text is on one axis, with zeros on the second and third (Claude's "at one point" is zeros).
+- *Decided:* intensity, which is feeling, is perceived on one, two or three axes. An image is intensity, generally on two axes with zeros on the third, and may be on one. A volume is an image on three.
+- *Decided, and it corrects the note above:* a number is not a felt thing. It is of a higher order and symbolic: a pure form with no perceptual representation. What is felt is the intensity. "One is above two" in a test is shorthand for "the pixel value 1 (at x1, y1, z1) is above the pixel value 2 (at x2, y2, z2)", and it speaks of image data.
+- *Decided:* shapes in the space of feeling are level sets, and basic geometry is taught on them.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -14375,7 +14387,7 @@ de-muxed; the production configuration.
    - c. *The cost can find a wrong place, and teaches it.* The match is graded where the cost reads it (a percept is pasted to the degree its `.where` matches each place, so that the gradient passes; say the form). Certificates, in tests: a recreated percept at a wrong `.where` costs more than at its own; the cost's gradient on the `.where` parameter and on what makes the `.when` is not nothing; a sentence reconstructed after the change is the sentence, at the ladder's sentences and at the lesson's.
    - d. *How exact a recreated `.where` must be:* measured, at the periods the model has (8192 and 256 addresses). If a recreated `.where` cannot be told from its neighbour's, the rung of §19.129, 3 is added (16 to 32 addresses, a key of `data/model.xml`) and the measure repeated.
    - e. *One output.* With the way back de-muxed, say whether the walk's own cost now reaches the looks, and what becomes of the `say` read; if `say` is no longer needed it goes.
-   - f. *The `.where` in three dimensions for every model* (§19.132, decided). The way back's match of the `.where` is built for each axis apart from the start (a to c), so that this step is a change of width and not of design. After the certificates of c pass: the `.where` has three axes in every configuration (the number of axes a key of `data/model.xml` and the schema; no key in `data/BasicModel.xml`), text lies on the first, and the other two are at one point for it. In d, measure also the margin between neighbours with three elements for an axis against four (his doubt), in the forms that fit, and say which; an axis keeps four until he chooses. Say every width that changed and every test ported for it; nothing of the two gates changes but the width they are given.
+   - f. *The `.where` in three dimensions for every model* (§19.132, decided). The way back's match of the `.where` is built for each axis apart from the start (a to c), so that this step is a change of width and not of design. After the certificates of c pass: the `.where` has three axes in every configuration (the number of axes a key of `data/model.xml` and the schema; no key in `data/BasicModel.xml`), text lies on the first, with zeros on the second and third. In d, measure also the margin between neighbours with three elements for an axis against four (his doubt), in the forms that fit, and say which; an axis keeps four until he chooses. Say every width that changed and every test ported for it; nothing of the two gates changes but the width they are given.
    Then steps 1 to 5 are taken again on the model's own output.
 7. *Tests:* both gates; the files touched and their users; `test/test_compiled_lesson_step.py` once. Return `scratch-1.7/r6d_return_12.md`, what fails first. `main` moves only if the rows at 1.00 and 1.75 pass in all three starts, with both gates and the files touched.
 

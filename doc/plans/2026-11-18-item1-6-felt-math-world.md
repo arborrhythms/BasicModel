@@ -1568,3 +1568,20 @@ Alec, while item 1.7's looks were being taught to read in order: "make sure to i
 ## A common perceptual space (Alec, 2026-11-22, a possibility)
 
 "By the way, .what and .where might be muxed together at the basic percept just as different modalities (such as words and numbers) mux together. That would cause all percepts to live in a common (3d) perceptual space, even if some were of reduced rank (e.g., the location of smell might be considered as a point at the nose)." Decided the same day for the `.where`: "NB: we are treating numbers as felt things. I would like to see .where as a 3D space for all models, it simplifies things." So the numbers of this item are felt things, and they and the words have their places in one space of three dimensions (sigma-pi §19.132; built in item 1.7, round 6d, twelfth pass, f). Whether `.what` is muxed as a modality is stays a possibility.
+
+## What is felt and what a number is (Alec, 2026-11-22)
+
+"Text will be 1D: zeros for dim 2 and 3.
+The perception of intensity (feelings) can be 1,2, or 3D.
+Images will generally be intensity, so zeros for dim 3. The can in principle be 1D
+Volumes will be no different than 3D images.
+
+Numbers are higher-order, so symbolic (they are pure forms, and do not have a perceptual representation). So in the tests where we had been talking about "one is above two", it should be seen as a shorthand for "the pixel value 1 (at x1,y1,z1) is above the pixel value 2 (at x2,y2,z2)": we are referring to image data. We can continue to refer to shapes in feeling space as level sets to teach basic geometry."
+
+For this item:
+
+- The felt world is image data: intensities at places of the one space of three dimensions. Text is on the first axis; an image on two, or one; a volume on three.
+- A number has no percept. It is a symbol of a higher order. The corpus's sentences about numbers ("one is above two") are sentences about pixel values at places, and are written and tested as such.
+- This corrects the section above, where the numbers were called felt things: the intensities are felt, and the numbers are symbolic.
+- Shapes are level sets of the intensity, and the geometry lessons are taught on them.
+
