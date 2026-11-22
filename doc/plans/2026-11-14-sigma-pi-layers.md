@@ -9864,6 +9864,28 @@ After §19.127, Alec: "We shouldn't have to teach the concepts explicitly. Let g
 - *Decided:* if the toy shows it works, the item goes back to reading without comprehension (stage one: the sentence read and reproduced, no idea asked of it) with the looks on, taught by the output alone.
 - *Decided:* an object counting task. The input holds objects; the output is the counting words "1", "2", "3", "4", one for each object, in order. Numerals are opaque words and the successor is the one relation (his rule for math). It is a second task for the same mechanism, with a concept of its own lit. Tried in the toy (step 9 of the tenth pass) and entered in item 1.6's plan.
 
+### 19.129 Alec's answers to the tenth pass: build it in the model; a concept is lit by the input or by the output, never directly (2026-11-22)
+
+Of the priming, which is written once when a sentence opens and not inside the looks (§23.6.16): "I think we can and do want to spread activation for the look, but we do not want to do the big N:N step". *Decided:* at each look the look's field spreads activation (`ConceptSpread.spread`), and the next `attend` reads the field so spread. The N:N map of the expectation is not run for it.
+
+To Claude's six questions (§23.6.16), each answer whole:
+
+1. *Build it in the model?* "yes, build it, but lets generalize the "lighting the concept" idea, and somehow bake it into the model such that it can be done via input or output. You say that "the models own reading" still fails, and that is ultimately what we want to fix."
+2. *The memory is the last look's conceptual field by wire?* "Agreed."
+3. *A short `.where` rung of 16 to 32 addresses?* "If necessary"
+4. *A successor over places?* "OK, just one concept. This is not something that we want to dictate, in general, it is too model-intrusive."
+5. *Two tasks together, or in the curriculum's order?* "I think multiple external tasks would have a bearing on, and perhaps triangulate, the internal conceptual solution that we do not want to light up directly."
+6. *Past "4", left to item 1.6?* "No, finish."
+
+Claude's reading, each part *mine* until he confirms it:
+
+- *No concept is lit by a switch.* The toy lit an unused concept by hand for each task. In the model nothing does that. A concept is lit by the model's own paths: by the input (a word of the input lights its concept by the ordinary read, and the sentence's opened field holds it for every look), or by the output (the word last said lights its concept, which the next `attend` reads). So a task is given from outside in one of two ways: a word in the input, or the beginning of the output. What `attend` reads is the conceptual field, whatever lit it.
+- *The inner solution is not named and not lit.* How to look (take the leftmost unread, stop when nothing is left) is learned inside the one network every task shares, and the tasks, taught together, are what shape it (the toy: taught together, the two concepts' rows come out alike and light the same units). No lesson is given to a concept, no reading target, no reading from a drawn word, and no successor over places (4).
+- *"Finish"* (6): counting is finished in this item and in the model, with counting words past "4". How far the lesson's counting words go is Claude's (to "9"); what the model says past the last word taught is reported and nothing is built for it.
+- *The rung* (3) is added only if the model's reading cannot tell neighbours without it, and then as a key of `data/model.xml`.
+
+Rule 80 (§21). *The eleventh pass* (§22.6d) builds it.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -11469,6 +11491,21 @@ chooses from. The old classes are not edited.
     `.when`; each is matched against its codebook or parameter, and
     the matched percept is pasted at the matched place, so that the
     cost can find a percept at a wrong place or time.
+
+80. *`attend` reads the conceptual field, and a concept is lit only
+    by the input or by the output* (Alec, §19.126 to §19.129: "one
+    concept held lit"; "We shouldn't have to teach the concepts
+    explicitly"; "bake it into the model such that it can be done
+    via input or output"; "the internal conceptual solution that we
+    do not want to light up directly"). A look's request is a
+    learned read, by one network every use shares, of the sentence's
+    opened field, the last look's field spread once (no N:N map),
+    whether the last look found anything, and the concept of the
+    word last said. The cost is the output's alone: no reading
+    target, no lesson to a concept, no successor over places, no
+    concept lit by a switch. Tasks are taught together. The request
+    of rule 79 is this read's output; its "by shared size" bound is
+    withdrawn where it goes flat (§19.124, 1).
 
 67. *A sparse Sigma grows and is pruned by the penalty* (*mine, from
     Alec's question of §19.95; tried in tests before anything is
@@ -14217,6 +14254,27 @@ de-muxed; the production configuration.
 8. *The pairing of §19.127* (added the same day), in the toy of step 7. No reading target: the cost is on the output alone, which is the sentence produced in its order by "first", then "next" as often as needed, then "end" (a third concept, which stops the sequence). The reading uses the same "first" and "next". Compare with step 7's toy taught by reading targets: the first word right, sentences read in order, pairs right, and whether the reading stops at the end, by drawn start. Say what gradient reaches the reading's choice from the output's cost, and if none does, what would carry it.
 
 9. *§19.128* (added the same day), in the toy. (a) No concept is told what it is: one unused concept is lit for the reading task, the cost is the output's alone, and the first look, the later looks and the end are told apart only by what the memory holds. Does it still read in order and stop? (b) The object counting task, with a second unused concept lit: the input holds one to four objects at drawn places (and more than four, held out, to see what it does); the output is the counting words "1" to "4", one for each object, in order, the words opaque. Report by drawn start: counts right by number of objects; whether each object is looked at once; whether the reading task still holds after the counting task is learned and the other way round; what the two lit concepts share and what differs in what they learned.
+
+*The eleventh pass* (added 2026-11-22, after §19.129 and §23.6.16): the tenth pass's toy built in the model, for reading without comprehension and for counting. It changes the source. A question is not a stop: the first choice is built, marked provisional, and put at the head of the return. Where a name below is not the source's, the source's is used and said.
+
+1. *What `attend` reads* (§19.129, 2, and the priming). The request of each look is a learned read of the conceptual field, by wire, with its gradient:
+   - the sentence's opened field (`_sentence_open_fields`), which holds whatever the input lit and is the same at every look;
+   - the last look's field (`Looks.fields`), spread once (`ConceptSpread.spread`) and not passed through the expectation's N:N map; nothing before the first look;
+   - whether the last look found anything;
+   - the concept of the word last said on the output, where the output has begun.
+   The read is one network shared by every use, with a linear read on top for the request (the toy's form: one layer of rectified units; its width a key of `data/model.xml`). The request stays a mask in 0 to 1 by a form that does not go flat (say which; the tenth pass's bilinear read was provisional).
+2. *What goes* (no second path): the bounded match in `OperationSelectionLayer.attend` and the query of `AttentionContext` (`context`, `project`) as the source of the request; `model.request_start`; `SentenceLooks.where_match` if the request is taught without it (say what was measured); the reading lesson's targets and their replay (`ReadingTargets`, `reading_lesson`, `teacher` in `Looks.run`) and what only they used. Deleted files go to `/tmp/item17-r6d-2026-11-21/`. A test that asserted any of these is ported to what replaces it, or removed with its reason in the return.
+3. *The cost is the output's alone* (§19.127). In reading without comprehension the output is the sentence in its order. At each step the word said is read through each unread word's share of the look (the softmax of the look's scores of the words, as the toy's), so the output's cost reaches the look's scores and the request. Which occurrence a look takes is never named. The end is learned as stopping after the last word. If the source's output walk cannot carry this as it stands, build the least that does and say what it is.
+4. *A task is given by the input or by the output, never by a switch* (§19.129, 1 and 5). Two lessons, taught together in one run: reading (a sentence in, the sentence out) and counting (a row of objects in, one counting word for each out, "1" to "9"). Each is given both ways and both are measured: by a word of the input that comes with the task (the word is data of the lesson and no name in the source), and by the first word of the output supplied. No concept is lit by the test or the lesson.
+5. *The `.where` rung* (§19.129, 3): first without. If the reading cannot tell neighbours (step 2 of the tenth pass: a margin of .004 to .02), add one rung of 16 to 32 addresses as a key of `data/model.xml` with its default there, and say what it changed.
+6. *The measures,* three starts drawn afresh and printed, nothing supplied but the task's signal, by `AttentionLesson`'s measure against the live source slots:
+   - sentences read in order: two-word, the lesson's, held out, the lesson's words in other orders; the first word at the first look; the reading stopped at the end;
+   - whether `is` is taken, and for every choice whether the intended word had a finite score;
+   - the request and its gradient at the first two looks;
+   - counting: right by number of objects, 1 to 9; each object looked at once; what is said for 10 and 11 objects;
+   - each task given by the input and given by the output, and each task after both are learned;
+   - the identity curriculum's first stages (`test/attention_curriculum_gates.py`) with the looks on, once.
+7. *Tests:* spot tests while building; no assertion on a drawn outcome; no seed pinned; both gates at the end; the files touched and their users. Return `scratch-1.7/r6d_return_11.md`, what fails first. `main` moves if both gates and the files touched pass, save `test_81`.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
