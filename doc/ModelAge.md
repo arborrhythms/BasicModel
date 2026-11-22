@@ -90,6 +90,43 @@ when a later task has to be broken down.
 | 5.00 | Counting on request with nothing to count: "Please count from one to 15" | estimate | none yet |
 | 5.00 | What comes after a counting word, asked anywhere in the list | estimate | none yet |
 
+### Forms and logic
+
+These rows are things the model does today that the other groups do not
+cover. Their ages are estimates.
+
+| Age | Task that must be learned | Basis | Measured by |
+| ---: | --- | --- | --- |
+| 0.75 | A known word is recognised by its form, and is not seen inside a longer word that only shares its letters | estimate: familiar word forms are recognised before the first word is said | `test/test_item17_forms.py` |
+| 2.25 | "Not": what is absent is told from what is present | estimate | the and, or, not certificates of the Sigma and Pi layers |
+| 3.00 | "And" and "or" over two properties | estimate | the same certificates |
+| 6.00 | One or the other but not both (exclusive or) | estimate: a rule over two features at once is late in children | `test/test_mm_xor.py`, the standing gate |
+
+## Metal Baby's age today
+
+The model is named Metal Baby. Measured on 2026-11-22, at `1f48e6c2a3`:
+
+**Its age is 0.70.** Object permanence is the only row of the ladder that is
+both measured and passed, and the next measured row fails.
+
+| Row | Result today |
+| --- | --- |
+| 0.70, object permanence | Passed in 3 of the 4 test models that have text; failed in 1 ("unknown word"). The ladder's eight higher rungs were not reached: no test model declares the vocabulary they need. |
+| 0.75, a word recognised by its form | Passed. |
+| 1.00, a word said back | Not measured. The measure is being built. |
+| 1.75, two words taken in order and said back | Failed. After the reading lesson, 0 of 6 two-word sentences are read in order in each of three starts, though the first word is taken first in 6 of 6. Every word of a sentence is found (64 of 64), but not in order, and "is" is never taken. |
+| 2.25 to 5.00, with the words handed to the model in order | The curriculum's stages `reading_two`, `reading_four`, `identities`, `noun_verb` and `relations` pass when the model does not have to take the words itself. They do not count toward the age, since taking the words in order is the row that fails. |
+| 6.00, exclusive or | Passed (the standing gate). |
+
+So the model is uneven: it has learned things a child learns late (exclusive
+or, relations between named things) while failing one a child learns before
+two, taking two words in order. The age reports the first failure, not the
+best result.
+
+In a toy outside the model, the method now being built reads untaught
+lengths in order, stops at the end and counts to "4" exactly. That is the
+toy's result and not the model's.
+
 ## How the tasks are taught
 
 The tasks are taught in the chart's order. Each word is taught alone until
@@ -109,10 +146,12 @@ recalled from it: a loop of several steps that runs in long-term memory.
 ## Status
 
 The chart was checked against published sources on 2026-11-22. Rows marked
-*estimate* were not confirmed. The assessment today measures the nine rungs
-from "one word" to "the fast cat ran quickly"; the rows for a word said back,
-reading in order and counting are being built in item 1.7, and the `age`
-parameter is not yet in the model or its XML.
+*estimate* were not confirmed. The assessment today has the nine rungs from
+"one word" to "the fast cat ran quickly", and reaches only the first, because
+no test model declares the vocabulary the others need. The rows for a word
+said back, reading in order and counting are being built in item 1.7. The
+`age` parameter is not yet in the model or its XML: the age above was worked
+out by hand from the results named beside it.
 
 ## Sources
 
