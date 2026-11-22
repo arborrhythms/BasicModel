@@ -35,7 +35,7 @@ def run(args):
     stages = order_report.get('stages', ())
     order_gate = dict(passed=bool(order_report.get('passed')),
         free_source_order_passed=bool(stages) and all(row['final']['read_gate_passed'] for row in stages),
-        last_training_ce={row['name']: row['training'][-1]['lesson_cross_entropy'] for row in stages})
+        last_training_ce={row['name']: row['training'][-1]['output_cost'] for row in stages})
     del stages, order_report  # Keep the large native diagnostics out of training memory.
     if not order_gate['free_source_order_passed']:
         raise ValueError('stage 4e requires the stage-3 reader to read freely in source order')

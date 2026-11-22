@@ -2,29 +2,43 @@
 from types import SimpleNamespace
 import pytest
 import torch
-from AttentionLesson import reading_lesson
+from AttentionLesson import output_lesson, supplied_reading
 from DerivationReconstruction import reconstruct
 
 
-def test_lesson_cross_entropy_teaches_named_support_without_a_choice_derivative():
-    from AttentionLesson import ReadingTargets
+def test_the_output_cost_teaches_the_word_said():
+    """Ported (eleventh pass) from the reading lesson's cross entropy: the
+    output's cost (``SentenceLooks.Output``) books the word said against the
+    output's word, and is the mean of what it booked."""
+    from SentenceLooks import Output
     logits = torch.tensor([[0., 4.]], requires_grad=True)
-    lesson = ReadingTargets.__new__(ReadingTargets)
-    lesson.loss, lesson.count = torch.zeros(1), torch.zeros(1,dtype=torch.long)
-    lesson.book(logits.log_softmax(-1)[:,0], torch.tensor([True]))
-    lesson.cost().sum().backward()
+    output = Output([[0]], [0], torch.zeros(1))
+    target, length, given = output.target(0, logits.device)
+    assert target.tolist() == [0] and length.tolist() == [1] and given.tolist() == [False]
+    output.book(torch.nn.functional.cross_entropy(logits, target, reduction='none'), torch.tensor([True]))
+    output.book(torch.ones(1), torch.tensor([False]))
+    output.cost().sum().backward()
     assert logits.grad[0, 0] < 0 < logits.grad[0, 1]
+    assert Output([[0, 1]], [1], torch.zeros(1)).target(0, 'cpu')[2].tolist() == [True]
 
 
-def test_reading_lesson_resolves_named_occurrences_and_restores_after_exception():
+def test_supplied_reading_resolves_named_occurrences_and_restores_after_exception():
+    """Ported (eleventh pass) from the reading lesson, whose resolution of
+    named occurrences the supplied reading shares."""
     model = SimpleNamespace()
     prior = object()
-    model._attention_reading_lesson = prior
+    model._attention_supplied_reading = prior
     with pytest.raises(RuntimeError, match='end lesson'):
-        with reading_lesson(model, [[('red', 1), 'blue', ('red', 0)]]) as lesson:
+        with supplied_reading(model, [[('red', 1), 'blue', ('red', 0)]]) as lesson:
             assert lesson.positions([['red','blue','red']], torch.tensor([[[0,3],[4,8],[9,12]]])) == [[2,1,0]]
             raise RuntimeError('end lesson')
-    assert model._attention_reading_lesson is prior
+    assert model._attention_supplied_reading is prior
+    model._attention_output_lesson = prior
+    with pytest.raises(RuntimeError, match='end lesson'):
+        with output_lesson(model, [['1', '2']], supplied=[1]) as lesson:
+            assert lesson.words == (('1', '2'),) and lesson.supplied == (1,)
+            raise RuntimeError('end lesson')
+    assert model._attention_output_lesson is prior
 
 
 def test_derivation_inverse_recovers_composed_children_and_depends_on_the_root():
@@ -71,24 +85,27 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
         attention = next(o for o in optimizer.optimizers if getattr(o,'objective_owner',None)=='attention')
         assert isinstance(attention.inner,torch.optim.Adam)
         assert all(group['lr']==.01 for group in attention.param_groups)
-        with reading_lesson(model,[['red','blue'],['blue','red']]):
+        # Ported (eleventh pass): the reading lesson named the order read;
+        # the output (the sentence said, rule 80) names no order.
+        with output_lesson(model,[['red','blue'],['blue','red']]):
             model.runBatch(train=True,optimizer=optimizer,batchSize=2,batch_override=(inputs,torch.empty(2,0)))
         field = model._last_sentence_field
         assert field['iterations'].tolist() == [2,2]
-        assert field['trials'][0]['lesson_cross_entropy'].gt(0).all()
-        assert [int(read['index']) for read in field['trials'][0]['reads']] == [0, 1]
-        assert all(read['rows'].all() for read in field['trials'][0]['reads'])
+        assert field['trials'][0]['output_cost'].gt(0).all()
+        for b in range(2):
+            assert sorted(int(read['index']) for read in field['trials'][0]['reads'] if bool(read['rows'][b])) == [0, 1]
+        # Each read is of the rows that took that word at that look; with no
+        # order named, the two rows may take different words at one look.
+        assert all(read['rows'].any() for read in field['trials'][0]['reads'])
         owned = model._last_understanding.input_reconstruction
         assert torch.isfinite(owned.percepts).all()
         assert not owned.truncated.any()
-        # The request's map is attention's own; through the cap of a look
-        # (an event's share capped at its own activity) "words" asked at one
-        # passes it no gradient: printed, not repaired (§21, rule 36).
+        # The request's read is attention's own (rule 80).
         owners = model.ownership_gradient_diagnostics(optimizer)['parameters']
         writers = [row['writers'] for row in owners if row['owner']=='attention']
         print(dict(attention_writers=writers,
                    chooser_moved=not torch.equal(model._stm_reducer().chooser.tool_embedding,before)))
-        assert model._attention_reading_lesson is None
+        assert model._attention_output_lesson is None
     finally:model.End()
 
 
@@ -243,18 +260,15 @@ def test_order_lesson_gate_reports_list_inverse_separately(tmp_path,monkeypatch)
 def test_prompt_need_reaches_existing_input_without_an_answer_or_action_target(tmp_path,monkeypatch):
     from test_native_attention_field import _model
     from AttentionLesson import prompt_need
-    from AttentionContext import _needs
     model = _model(tmp_path,monkeypatch)
     width = model.conceptualSpace.stm.concept_dim
     like = model.conceptualSpace.stm._buffer
     try:
+        # Ported (eleventh pass): the context that read the need is gone
+        # (rule 80); the need is encoded from the question's words alone.
         with prompt_need(model,['the second word','the middle phrase']) as need:
-            first = _needs(model,2,width,like)
-            torch.testing.assert_close(first[:,:width],need)
+            assert need.shape[-1] == width and need.dtype == like.dtype
             assert not torch.equal(need[0],need[1])
-            model.inputSpace.data.text_answers = {'train':['a different answer','another']}
-            torch.testing.assert_close(_needs(model,2,width,like),first,rtol=0,atol=0)
             assert getattr(model,'_attention_part_lesson',None) is None
-            assert getattr(model,'_attention_reading_lesson',None) is None
         assert model._attention_prompt_need is None
     finally:model.End()

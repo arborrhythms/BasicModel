@@ -321,12 +321,12 @@ def warmup(folder, order_steps, sentence_steps):
                 with (folder/(stage['name']+'.jsonl')).open('w') as log:
                     for step in range(count):
                         report=present(model,stage,train=True,optimizer=optimizer)
-                        ce.append(report.get('lesson_cross_entropy'))
+                        ce.append(report.get('output_cost'))
                         log.write(json.dumps(dict(step=step+1,**report))+'\n');log.flush()
                         save(folder/'progress.json',dict(stage=stage['name'],step=step+1,budget=count))
                 final=present(model,stage)
                 reports.append(dict(stage=stage['stage'],name=stage['name'],initial=initial,final=final,
-                                    presentations=count,lesson_cross_entropy=ce))
+                                    presentations=count,output_cost=ce))
                 save(folder/'results.json',reports)
                 model.save_weights(str(folder/'last-completed.ckpt'))
                 print(json.dumps(dict(stage=stage['name'],done=count,readback=final['exact_readbacks'],ce=ce[-1])),flush=True)

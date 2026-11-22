@@ -1,8 +1,6 @@
 """The sole §9.1 parity configuration does not disable prediction."""
 import json
 from pathlib import Path
-from dataclasses import replace
-from types import SimpleNamespace
 import xml.etree.ElementTree as ET
 
 import torch
@@ -25,8 +23,6 @@ def test_shipped_defaults_and_declared_parity_configuration():
 def test_parity_configuration_removes_selection_prime_without_muting_the_predictor(tmp_path, monkeypatch):
     from test_compiled_word_chunk import _tiny_canonical_model, _stage_fullgraph_tensor_peer
     from ModelAttention import stage_symbol_bank
-    from AttentionContext import context
-    from meaning_fixtures import symbol_prediction
     parity = json.loads((ROOT/'test/fixtures/item4-parity.json').read_text())['training']
     model = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets='8',
         stm_capacity=3, chooser_depth=1, training_overrides=parity)
@@ -38,30 +34,10 @@ def test_parity_configuration_removes_selection_prime_without_muting_the_predict
         assert head.expectation_enabled and 'word' in head.enabled_levels
         assert not model.expectation_prime_enabled
         assert model._stm_reducer().exploration_fraction == 1.
-        predicted = replace(symbol_prediction(head._bank_keys, torch.ones(len(head._bank_keys), 2)),
-                            symbol_ids=head._bank_ids)
-        head._inter_last_meaning = [SimpleNamespace(prediction=predicted) for _ in range(2)]
-        # Observe the actual inputs to the zero-initialized projection. A stale
-        # discourse prediction is not this sentence's active order prime.
-        # Since the forecast of a look the context applies the projection's
-        # weights in AttentionContext.project (with the look's surprise
-        # pairs), not through the layer's forward, so its inputs are read there.
-        import AttentionContext
-        inputs = []
-        project = AttentionContext.project
-        def observed(mapping, values, surprise=None):
-            assert mapping is model.attention_context
-            inputs.append(values.detach().clone())
-            return project(mapping, values, surprise)
-        monkeypatch.setattr(AttentionContext, 'project', observed)
-        stm = model.conceptualSpace.CSLang.state
-        context(model, stm, None)
-        model.expectation_prime_enabled = True
-        context(model, stm, None)
-        before, after = inputs
-        start = sum(model._attention_geometry[0])
-        stop = start + len(model._concept_owner()._order_caps())*model.conceptualSpace.stm.concept_dim
-        assert not before[:,start:stop].any() and not after[:,start:stop].any()
-        torch.testing.assert_close(before, after, rtol=0, atol=0)
+        # Ported (eleventh pass): the context's projection that read the
+        # order prime is gone; attend reads the conceptual field (rule 80),
+        # so no prime reaches the request.
+        import RequestRead
+        assert 'prime' not in Path(RequestRead.__file__).read_text()
     finally:
         model.End(); model.symbolSpace.soft_reset()

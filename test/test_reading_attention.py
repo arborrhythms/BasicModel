@@ -1,4 +1,4 @@
-"""6.8 §7 ports: the surprise projection and word distribution supervision.
+"""6.8 §7 ports: word distribution supervision.
 
 The prior producer's learned next-word objective belongs to expectation;
 which word is read belongs to the looks (test_item17_looks).
@@ -35,37 +35,6 @@ def _distribution(percept,spans,*,training=True):
     def read():
         return owner.expect('word',keys,keys,valid,targets,active=valid)
     return owner,read
-
-
-def test_projection_reads_the_two_bracket_surprise_components():
-    from AttentionContext import project
-    B,K,w,D=1,5,6,8
-    spans=_contiguous_spans(B,K,w)
-    torch.manual_seed(1)
-    percept=torch.randn(B,K*w,D)
-    keys=BracketKeys._span_keys(percept,spans)
-    mapping=torch.nn.Linear(D+2,1,bias=False)
-    with torch.no_grad():
-        mapping.weight.zero_()
-        mapping.weight[0,-2]=1
-    surprise=torch.ones(B,K,2)
-    surprise[:,3,0]=5
-    scores=project(mapping,keys.mean(1),surprise).squeeze(-1)
-    assert scores.shape==(B,K) and int(scores[0].argmax())==3
-
-
-def test_bracket_surprise_preserves_gradient_boundary():
-    from AttentionContext import project
-    spans,percept,cq,_=_module_inputs()
-    W=torch.randn(32,16,requires_grad=True)
-    cq.requires_grad_();percept.requires_grad_()
-    keys=BracketKeys._span_keys(percept,spans)
-    # These inputs stand in for observed and forecast evidence, kept detached.
-    pair=(keys @ W.T)[..., :2]
-    projection=torch.nn.Linear(cq.shape[-1]+2,cq.shape[-1],bias=False)
-    project(projection,cq,pair).sum().backward()
-    assert W.grad is None and cq.grad is None and percept.grad is None
-    assert projection.weight.grad is not None
 
 
 def test_next_word_activation_error_matches_both_native_lanes():

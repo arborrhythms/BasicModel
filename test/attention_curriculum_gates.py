@@ -8,7 +8,7 @@ import traceback
 import pytest
 import torch
 import util
-from AttentionLesson import reading_lesson, prompt_need
+from AttentionLesson import output_lesson, prompt_need
 from attention_field_gates import observation, serial, words_from_leaves
 from bounded_tests import source_snapshot
 from test_compiled_word_chunk import _tiny_canonical_model
@@ -52,7 +52,7 @@ def present(model, stage, *, train=False, optimizer=None):
         factory=What.supervised if train else What.inference
         kwargs=dict(questions=tuple(factory(b,split='train',prompt=stage['prompts'][b]) for b in range(B)),source_rows=list(range(B)))
     inputs=model.inputSpace.prepInput(fields)
-    lesson=reading_lesson(model,[text.split() for text in fields]) if train and stage.get('lesson') else nullcontext()
+    lesson=output_lesson(model,[text.split() for text in fields]) if train and stage.get('lesson') else nullcontext()
     need=prompt_need(model,stage['prompts']) if supervised else nullcontext()
     with torch.set_grad_enabled(train),lesson,need:
         model.runBatch(train=train,optimizer=optimizer,batchSize=B,split='train',
@@ -74,7 +74,7 @@ def present(model, stage, *, train=False, optimizer=None):
             free_readbacks=free_text,free_exact=sum(a==b for a,b in zip(free_text,fields)),
             inverse_unavailable=serial(bad),orders=orders,
             word_rows=serial(record.word_rows),word_ids=serial(model.inputSpace._ar_word_concept_ids),
-            lesson_cross_entropy=serial(trials[0]['lesson_cross_entropy']))
+            output_cost=serial(trials[0]['output_cost']))
         single_reads=all(n==int(active) for trial in result['trials'] for read in trial['reads']
                     for n,active in zip(read['supported_words'],read['active'],strict=True))
         complete=counts==[len(text.split()) for text in fields]
@@ -138,7 +138,7 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
                     finite=bool(torch.isfinite(_payload_row(model._concept_owner(),_existing_row(model._concept_owner(),('sym',cid)))).all())) for cid in refs])
             passed=same and all(refs for refs in original) and all(r['finite'] for row in recalled for r in row) and all(presentations[i]['report']['passed'] for i in [0,1,3])
             results.append(dict(name='identity_permanence',stage=1,presentations=presentations,recall=recalled,
-                same_rows=same,passed=passed,interpretable=control_passed('identity_permanence'),departures_attempted=0,departures_kept=0,lesson_cross_entropy=None));save()
+                same_rows=same,passed=passed,interpretable=control_passed('identity_permanence'),departures_attempted=0,departures_kept=0,output_cost=None));save()
             prior=identities(model,NOVEL);presentations=[]
             for label,fields in [('known',PERCEPTS),('novel_first',NOVEL),('novel_second',NOVEL)]:
                 report=present(model,dict(fields=fields));report['identities']=identities(model,fields)
@@ -146,7 +146,7 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
             minted=all(not row for row in prior) and presentations[1]['report']['identities']==presentations[2]['report']['identities']
             passed=minted and all(p['report']['passed'] for p in presentations)
             results.append(dict(name='identifying_words',stage=2,presentations=presentations,novel_before=prior,
-                minted_once=minted,passed=passed,interpretable=control_passed('identifying_words'),departures_attempted=0,departures_kept=0,lesson_cross_entropy=None));save()
+                minted_once=minted,passed=passed,interpretable=control_passed('identifying_words'),departures_attempted=0,departures_kept=0,output_cost=None));save()
             pending=[stage for stage in STAGES if stage['stage']<=through_stage]
             while pending:
                 stage=pending.pop(0);name=stage['name'];start=time.monotonic()
@@ -158,14 +158,14 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
                         backup=report['backup']
                         if backup is not None:
                             attempted+=sum(backup['rows']);kept+=sum(a and b for a,b in zip(backup['rows'],report['wins']))
-                        if report['lesson_cross_entropy'] is not None:ce.append(report['lesson_cross_entropy'])
+                        if report['output_cost'] is not None:ce.append(report['output_cost'])
                         log.write(json.dumps(dict(epoch=epoch+1,**report))+'\n');log.flush()
                 final=present(model,stage)
                 ce_passed=(bool(ce) and max(ce[-1])<=ORDER_CE_MAX
                            and sum(ce[-1])<sum(ce[0])) if stage.get('lesson') and mode=='enabled' else None
                 row=dict(name=name,stage=stage['stage'],corpus=stage,initial=initial,final=final,passed=final['passed'],
                     interpretable=control_passed(name),departures_attempted=attempted,departures_kept=kept,
-                    lesson_cross_entropy=ce,elapsed_seconds=time.monotonic()-start)
+                    output_cost=ce,elapsed_seconds=time.monotonic()-start)
                 row['lesson_ce_passed']=ce_passed
                 if ce_passed is not None:row['passed'] &= ce_passed
                 results.append(row);save()

@@ -58,7 +58,7 @@ def test_registry_routes_all_declared_sides_without_changing_values():
         'reconstruction_reverse.what': ('reconstruction', 'R'),
         'reconstruction_order_zero.what': ('reconstruction', 'R'),
         'expectation.predictor': ('expectation', 'R'),
-        'attention.reading_lesson': ('attention', 'R'),
+        'attention.output': ('attention', 'R'),
         'attention.candidate_ce': ('attention', 'R'),
         'output.answer': ('output', 'A'),
         'output.walk_residual.form': ('output', 'A'),

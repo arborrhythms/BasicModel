@@ -49,7 +49,7 @@ def run(args):
                         row = present(model, stage, train=True, optimizer=optimizer)
                         rows.append(row)
                         progress.append(dict(lesson=stage['name'], batch=batch+1,
-                            ce=row['lesson_cross_entropy'], updates=dict(updates),
+                            ce=row['output_cost'], updates=dict(updates),
                             elapsed_seconds=time.monotonic()-started))
                         save(args.out/'progress.json', progress)
                         print(json.dumps(progress[-1]), flush=True)
@@ -59,7 +59,7 @@ def run(args):
                 # lesson cannot silently erase the earlier order skill.
                 for stage, row in zip([s for s in STAGES if s['stage'] == 3], stages):
                     final = present(model, stage)
-                    ce = row['training'][-1]['lesson_cross_entropy']
+                    ce = row['training'][-1]['output_cost']
                     row.update(final=final, passed=final['read_gate_passed'] and max(ce) <= ORDER_CE_MAX)
                 save(args.out/'stages.json', stages)
                 assert updates['paired'] == protocol['paired_optimizer_steps']

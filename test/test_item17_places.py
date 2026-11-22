@@ -14,6 +14,9 @@ LESSON = ('This is Felix.', 'What is this?', 'That is Ciao.', 'What is that?',
 #: The same words in orders the lesson never shows.
 HELD_OUT = ('is This Felix?', 'Felix is here.', 'Ciao is that.', 'is that Ciao?', 'here is Felix.',
             'Felix is there.')
+#: The lesson's sentences with their words in the opposite order, the
+#: closing mark kept last: the same words in orders the lesson never shows.
+REORDERED = tuple(dict.fromkeys(' '.join(reversed(t[:-1].split())) + t[-1] for t in LESSON))
 
 
 def words_of(texts):
@@ -71,7 +74,7 @@ def in_order(model, seen, text):
     named target is replayed (§19.124, 2)."""
     from AttentionLesson import looks_in_order
     from test_item18_expect import read
-    assert getattr(model, '_attention_reading_lesson', None) is None
+    assert getattr(model, '_attention_output_lesson', None) is None
     assert getattr(model, '_attention_supplied_reading', None) is None
     seen.clear()
     with torch.no_grad():
@@ -168,30 +171,34 @@ def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatc
 
 def test_the_request_for_a_place_at_an_untaught_start(tmp_path, monkeypatch):
     """What ``attend`` asks of each place's concept at an untaught start
-    (nothing), and the gradient one presentation of the lesson gives it
-    (printed; not nothing at some look)."""
+    (the same on every one), and the gradient the output's cost gives it
+    after one presentation (printed; not nothing at some look). Ported
+    (eleventh pass): the request started at nothing on the places and was
+    taught by the reading lesson; it is now the read of rule 80, taught by
+    the sentence said. At the first presentation the word said is read at
+    nothing, so no gradient reaches the look; one presentation is taught
+    first."""
     import SentenceLooks
-    from AttentionLesson import reading_lesson
     from test_item18_expect import read
     model = model_for(tmp_path, monkeypatch)
     try:
         nominate(model, ('This is Felix.', 'That is Ciao.', 'Here is Felix.', 'Who is there?'))
         basic, concept = places_of(model)
         asked = []
-        original = SentenceLooks.requested
-        def requested(model, query):
-            request = original(model, query)
+        read(model, 'This is Felix.', training=True, optimizer=model.getOptimizer(lr=.01))
+        model.End()
+        original = SentenceLooks.attend
+        def requested(model, units):
+            request = original(model, units)
             if request.requires_grad:
                 request.retain_grad()
             asked.append(request)
             return request
-        monkeypatch.setattr(SentenceLooks, 'requested', requested)
-        optimizer = model.getOptimizer(lr=0.)
-        with reading_lesson(model, [staged_forms(model, 'This is Felix.')]):
-            read(model, 'This is Felix.', training=True, optimizer=optimizer)
+        monkeypatch.setattr(SentenceLooks, 'attend', requested)
+        read(model, 'This is Felix.', training=True, optimizer=model.getOptimizer(lr=0.))
         model.End()
         rows = torch.tensor(sorted(concept.values()))
-        values = [request[rows, 0].detach() for request in asked]
+        values = [request[rows, 0, 0].detach() for request in asked]
         grads = [request.grad[rows, 0] if request.grad is not None else None for request in asked]
         codes = model._concept_owner().similarity_codebook.W.detach()[rows]
         print(dict(looks=len(asked), asked=[v.tolist() for v in values],
@@ -199,7 +206,7 @@ def test_the_request_for_a_place_at_an_untaught_start(tmp_path, monkeypatch):
                    requires_grad=[request.requires_grad for request in asked],
                    whole_gradient=[None if r.grad is None else r.grad.abs().sum().item() for r in asked],
                    codes_norm=codes.norm(dim=-1).tolist()))
-        assert asked and all(float(v.abs().max()) == 0. for v in values)
+        assert asked and float(values[0].max() - values[0].min()) < 1e-3
         # The where match passes a gradient onto a place's concept in the
         # request at some look, so that the request can learn to ask for it.
         assert any(g is not None and float(g.abs().sum()) > 0. for g in grads)
@@ -217,18 +224,17 @@ def staged_forms(model, text):
 
 
 def teach(model, forms):
-    """The reading lesson, minimal sentences first: each one-word sentence
-    once, each two-word sentence and each of the lesson's twice, each read
-    with its staged ``forms`` named as the reading, at a rate of .01."""
-    from AttentionLesson import reading_lesson
+    """The reading taught by the sentence said (rule 80; the reading
+    lesson's targets are gone, eleventh pass), minimal sentences first:
+    each one-word sentence once, each two-word sentence and each of the
+    lesson's twice, at a rate of .01. ``forms`` is kept for its callers."""
     from test_item18_expect import read
     one, two, lesson = minimal()
     optimizer = model.getOptimizer(lr=.01)
     for grade, presentations in ((one, len(one)), (two, 2 * len(two)), (lesson, 2 * len(lesson))):
         for p in range(presentations):
             text = grade[p % len(grade)]
-            with reading_lesson(model, [forms[text]]):
-                read(model, text, training=True, optimizer=optimizer)
+            read(model, text, training=True, optimizer=optimizer)
             model.End()
 
 
@@ -239,9 +245,9 @@ def looked_at(model, monkeypatch, text):
     from test_item18_expect import read
     _, concept = places_of(model)
     rows = torch.tensor(sorted(concept.values()))
-    asked, original_request, original_match = [], SentenceLooks.requested, SentenceLooks.where_match
-    def requested(model, query):
-        request = original_request(model, query)
+    asked, original_request, original_match = [], SentenceLooks.attend, SentenceLooks.where_match
+    def requested(model, units):
+        request = original_request(model, units)
         asked.append(dict(places=[round(float(request[rows, 0, 0].max()), 4),
                                   round(float(request[rows, 0, 0].min()), 4)],
                           each=[round(float(v), 4) for v in request[rows, 0, 0].tolist()]))
@@ -250,12 +256,12 @@ def looked_at(model, monkeypatch, text):
         match = original_match(*args)
         asked[-1]['match'] = [round(v, 4) for v in match[0].tolist()]
         return match
-    monkeypatch.setattr(SentenceLooks, 'requested', requested)
+    monkeypatch.setattr(SentenceLooks, 'attend', requested)
     monkeypatch.setattr(SentenceLooks, 'where_match', where_match)
     with torch.no_grad():
         read(model, text)
     model.End()
-    monkeypatch.setattr(SentenceLooks, 'requested', original_request)
+    monkeypatch.setattr(SentenceLooks, 'attend', original_request)
     monkeypatch.setattr(SentenceLooks, 'where_match', original_match)
     return asked
 
@@ -285,9 +291,8 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             after = dict(two=count(two), lesson=count(lesson), held=count(HELD_OUT))
             asked = looked_at(model, monkeypatch, 'This is Felix.')
             _, concept = places_of(model)
-            learned = model.request_start.value.detach()
-            # The codes ``requested`` passes to ``attend`` for the places'
-            # concepts: their norms and the greatest difference between two.
+            # The places' concepts' codes: their norms and the greatest
+            # difference between two.
             codes = model._concept_owner().similarity_codebook.W.detach()[sorted(concept.values())]
             spread = (codes[:, None] - codes[None]).abs().amax(-1)
             band = codes[:, basic.width:basic.width + 8]
@@ -295,11 +300,8 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
                                greatest_difference=round(float(spread.max()), 4) if len(codes) else None,
                                greatest_difference_of_where_and_when=round(float(
                                    (band[:, None] - band[None]).abs().amax(-1).max()), 4) if len(codes) else None)
-            words = [r for r in range(len(learned)) if float(learned[r]) != 0. and r not in concept.values()]
             records.append(dict(start=start, places=len(basic.place_rows), place_codes=place_codes,
                                 first_sentence=asked,
-                                request_start=dict(places={p: round(float(learned[c]), 5) for p, c in concept.items()},
-                                                   others={r: round(float(learned[r]), 5) for r in words}),
                                 pure=sum(w is None for _, _, w in basic.place_rows.values()),
                                 before=before, after=after))
             print(records[-1])

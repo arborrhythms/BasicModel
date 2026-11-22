@@ -115,6 +115,15 @@
     <attentionBudget>32</attentionBudget>
     <!-- Retain both overlapping meaning lanes at the mask input. -->
     <hetTolerance>1</hetTolerance>
+    <!-- attend's read of the conceptual field (rule 80): its rectified
+         units, shared by the request, the stop and the word said; and the
+         sharpness of a look's softmax share over the unread words. -->
+    <requestReadWidth>64</requestReadWidth>
+    <!-- The request's start on every concept, as log-odds: small, so that
+         no occurrence's share is held at its own activity and the request
+         is taught from the first look. -->
+    <requestReadStart>-4</requestReadStart>
+    <lookSharpness>10</lookSharpness>
     <thoughtSearchExhaustion>1</thoughtSearchExhaustion>
 
     <!-- Reverse from the idea rather than replaying the forward grammar trace.

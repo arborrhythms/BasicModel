@@ -2489,8 +2489,8 @@ class BaseModel(Mereology, nn.Module):
         # entire preallocated reserve. Future masked checkpoints overwrite it
         # with their persisted active prefix.
         self._configure_aligned_active_codebooks()
-        from AttentionContext import install as install_attention_context
-        install_attention_context(self)
+        from RequestRead import install as install_request_read
+        install_request_read(self)
 
         _autoload_env = os.environ.get("BASIC_AUTOLOAD")
         _autoload = bool(_t("autoload"))
@@ -2574,7 +2574,7 @@ class BaseModel(Mereology, nn.Module):
              *getattr(language, '_generate_unary_ops', ()))])
         output.difference_update(decoder - generate)
         output.update(generate)
-        attention = parameters([getattr(self, 'attention_context', None), getattr(self, 'request_start', None)])
+        attention = parameters([getattr(self, 'request_read', None)])
         reconstruction = set(available) - expectation - output - attention
         from DefinitionFold import category as definition_category
         sigma_owner = definition_category(self)
@@ -2589,7 +2589,6 @@ class BaseModel(Mereology, nn.Module):
                 (('reconstruction', reconstruction), ('expectation', expectation), ('output', output),
                  ('attention', attention),
                  ('compose_lesson', compose), ('generate_lesson', generate), ('chooser', reconstruction),
-                 ('reading_policy', compose_policy),
                  ('compose_policy', compose_policy), ('generate_policy', generate))}
 
     def _adopt_fresh_parameters(self, optimizer):
@@ -2704,7 +2703,7 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        for _att_name in ("answer_attention", "attention_context", "request_start", "percept_expectation"):
+        for _att_name in ("answer_attention", "request_read", "percept_expectation"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -4523,19 +4522,13 @@ class BaseModel(Mereology, nn.Module):
         if hasattr(self, 'omission'):
             for key, value in self.omission.state_dict().items():
                 state.setdefault('omission.' + key, value.clone())
-        if getattr(self, 'request_start', None) is not None:
-            state.setdefault('request_start.value', self.request_start.value.detach().clone())
+        if getattr(self, 'request_read', None) is not None:
+            for name, value in self.request_read.state_dict().items():
+                state.setdefault('request_read.' + name, value.clone())
 
-        retired_attention = [key for key in state if key.startswith('candidate_attention.')]
+        retired_attention = [key for key in state if key.startswith(
+            ('candidate_attention.', 'attention_context.', 'request_start.'))]
         attention_transforms = {}
-        key = 'attention_context.weight'
-        if getattr(self, 'attention_context', None) is not None and key in state:
-            previous = state[key]
-            width = self.attention_context.in_features
-            if previous.shape == (self.attention_context.out_features, width - 2):
-                state[key] = torch.nn.functional.pad(previous, (0, 2))
-                attention_transforms[key] = (key, 1, (*range(width - 2), -1, -1))
-                warnings.warn('Extended the saved attention projection with two zero surprise columns')
         for key in retired_attention:
             state.pop(key)
             attention_transforms[key] = None
@@ -21108,8 +21101,7 @@ class BasicModel(BaseModel):
                     looks = Looks(self,reading_walk,sid,present,
                         prior=None if exploit is None else look_trials[0],
                         draw=None if exploit is None else draw,kept=kept)
-                    from AttentionContext import context
-                    reading = looks.run(arrival, context=lambda surprise: context(self, current_stm, field, surprise))
+                    reading = looks.run(arrival)
                     if exploit is None:
                         greedy_attention = reading
                         self._attention_greedy = reading
@@ -21263,20 +21255,15 @@ class BasicModel(BaseModel):
                             candidate.registry.add('output.interpret_score_function',policy,
                                 category='output',objective=policy_objective(self,'compose','chooser'),side='A')
                         path_credit(self, complete_paths[0], candidate, present)
-                    taught = None if look_trials[0] is None else look_trials[0].lesson_cost()
+                    taught = None if look_trials[0] is None else look_trials[0].output_cost()
                     single_costs, weights = path_objectives(complete_paths, parts, present, draws)
                     if taught is not None:
-                        # The reading lesson is observed once on the exploit,
-                        # outside the costs exposed on every complete path.
-                        lesson = Error(row_mask=present)
-                        lesson.add('attention.reading_lesson', taught,
-                            category='other', objective='attention')
-                        if separate(self):
-                            # The map has its own optimizer. The shared attention
-                            # and grammar logits belong to the compose optimizer.
-                            lesson.add('grammar.compose.reading_lesson', taught,
-                                category='other', objective='reading_policy')
-                        combine(single_costs, current_costs(self, lesson, sentence=True))
+                        # The output's cost of the looks (rule 80) is observed
+                        # once on the exploit, outside the costs exposed on
+                        # every complete path.
+                        said = Error(row_mask=present)
+                        said.add('attention.output', taught, category='other', objective='attention')
+                        combine(single_costs, current_costs(self, said, sentence=True))
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
                         p.registry.total(objective='output') is not None for p in complete_paths))
@@ -21322,9 +21309,8 @@ class BasicModel(BaseModel):
                 iterations = choose_tensors([field.iterations for field in field_trials])
                 reports = [field.report() for field in field_trials]
                 for report, looks in zip(reports, look_trials, strict=True):
-                    cost = None if looks is None else looks.lesson_cost()
-                    report['lesson_cross_entropy'] = None if cost is None else cost.detach()
-                    report['skipped_both_lanes'] = [] if looks is None or looks.teacher is None else looks.teacher.skipped
+                    cost = None if looks is None else looks.output_cost()
+                    report['output_cost'] = None if cost is None else cost.detach()
                 self._last_sentence_field = dict(trials=reports,
                     wins=wins.detach(),selected=selected.detach(),iterations=iterations.detach())
             if look_trials[0] is not None:

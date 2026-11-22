@@ -248,10 +248,10 @@ def _attention_trace(model):
     import SentenceLooks
     from SentenceLooks import Looks
     walks, current = [], []
-    run, requested = Looks.run, SentenceLooks.requested
+    run, requested = Looks.run, SentenceLooks.attend
 
-    def observed_request(model_, query):
-        result = requested(model_, query)
+    def observed_request(model_, units):
+        result = requested(model_, units)
         if current and model_ is model:
             asked = (result[..., 0] > 0).nonzero().tolist()
             current[-1]['requests'].append([[row, stream] for row, stream in asked])
@@ -277,11 +277,11 @@ def _attention_trace(model):
         finally:
             current.pop()
 
-    Looks.run, SentenceLooks.requested = observed_run, observed_request
+    Looks.run, SentenceLooks.attend = observed_run, observed_request
     try:
         yield walks
     finally:
-        Looks.run, SentenceLooks.requested = run, requested
+        Looks.run, SentenceLooks.attend = run, requested
 
 
 def _references(meaning):

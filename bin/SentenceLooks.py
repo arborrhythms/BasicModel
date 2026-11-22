@@ -1,16 +1,22 @@
 """A sentence's looks: each a request carried down onto the sentence's
 percept bank, read up again, and what it returns handed to the grammar.
 
-A look (§21, rules 34, 37, 39 and 79): an occurrence's activity is its
-salience, the request carried down by the ways back, capped at its own
+A look (§21, rules 34, 37, 39, 79 and 80): the request is ``attend``'s read
+of the conceptual field (:mod:`RequestRead`); an occurrence's activity is
+its salience, the request carried down by the ways back, capped at its own
 activity; a reading's where match is ``exp(s - max s)`` of the salience of
-what it holds, applied once to the reading's values; the way up again on a table of the bank's most salient
-occurrences gives the returned set. ``interpret`` takes the most active word, and a word
-interpreted is lowered in the bank's own activity over its extent.
+what it holds, applied once to the reading's values; the way up again on a
+table of the bank's most salient occurrences gives the returned set. The
+most active word is taken (a draw among equals), and a word interpreted is
+lowered in the bank's own activity over its extent. The word said is read
+through each unread word's softmax share of the look, so the output's cost
+reaches the look and the request.
 """
 from dataclasses import fields
 import torch
 from torch.nn import functional as F
+
+from RequestRead import at_rows, spread_once
 
 
 def perceive(model, activity):
@@ -110,20 +116,10 @@ def lower(own, bank, index, rows):
     return torch.where(gone[..., None], 0., own)
 
 
-def requested(model, query):
-    """``attend``'s request ``[V, B, 2]`` from the context's ``query``
-    ``[B, D]``: the learned start (``model.request_start``), and each concept
-    as its code reads the query."""
-    owner = model._concept_owner()
-    # The codes of the rows that hold a concept: the read of the query keeps
-    # them for its backward at every look, and a row with no concept is
-    # asked by the start alone.
-    from Spaces import _concept_alloc_of
-    held = sorted(set(_concept_alloc_of(owner).layer(0)._tensor_rows.values()))
-    V = int(owner.nVectors)
-    rows = torch.tensor([row for row in held if 0 <= row < V], dtype=torch.long, device=query.device)
-    codes = owner.similarity_codebook.W.detach().index_select(0, rows.to(owner.similarity_codebook.W.device))
-    return model._stm_reducer().attend(query, codes, model.request_start.value, rows)
+def attend(model, units):
+    """``attend``'s request ``[V, B, 2]``: the read of the conceptual field
+    (``model.request_read``, rule 80) from its ``units``."""
+    return model.request_read.request(units)
 
 
 def word_request(model, concepts, index):
@@ -205,18 +201,55 @@ class WordForecast:
         self.model.conceptualSpace._word_column = self.expected.content
 
 
+def said_rows(model, forms):
+    """Each output word's concept row (``-1`` where the form has no word
+    concept), by the word of its form."""
+    owner = model._concept_owner()
+    rows = []
+    for form in forms:
+        form = form.decode() if isinstance(form, bytes) else form
+        cid = owner.interpret.word_for_form(form)
+        row = None if cid is None or int(cid) < 0 else owner._concept_row_of(int(cid))
+        rows.append(-1 if row is None else int(row))
+    return rows
+
+
+class Output:
+    """A path's output while its looks run: the words the task's output
+    holds (each a concept row, ``-1`` where none), one for each look, the
+    first ``supplied`` of them given as the word said at those looks, and
+    the cost of what was said against them: at each look the word said (its
+    cross entropy) and, before each look, the chance of stopping (stop after
+    the last word and not before)."""
+    def __init__(self, targets, supplied, like):
+        self.targets, self.supplied = targets, supplied
+        self.loss = like.new_zeros(len(targets))
+        self.count = like.new_zeros(len(targets))
+
+    def target(self, step, device):
+        """The word the output holds at look ``step``, ``[B]`` (-1 where
+        none), how many words it holds, and whether the word at ``step`` is
+        supplied."""
+        at = [row[step] if step < len(row) else -1 for row in self.targets]
+        return (torch.tensor(at, device=device), torch.tensor([len(row) for row in self.targets], device=device),
+                torch.tensor([step < s for s in self.supplied], device=device))
+
+    def book(self, cost, active):
+        self.loss = self.loss + torch.where(active, cost, 0.)
+        self.count = self.count + active.to(self.count)
+
+    def cost(self):
+        return self.loss / self.count.clamp_min(1)
+
+
 class Looks:
     """One path's looks and grammar decisions; words arrive on demand."""
     def __init__(self, model, walk, sid, present, *, prior=None, draw=None, kept=None):
         self.model, self.walk, self.sid, self.present = model, walk, sid, present
         self.prior, self.draw, self.kept = prior, draw, kept
-        self.decisions, self.fields = [], []
-        self.teacher = None
-        lesson = getattr(model, '_attention_reading_lesson', None)
-        if lesson is not None and model.training and model._sentence_training:
-            from AttentionLesson import ReadingTargets
-            self.teacher = ReadingTargets(lesson, model._attention_forms[0], walk)
+        self.decisions, self.fields, self.stops = [], [], []
         self.supplied = getattr(model, '_attention_supplied_reading', None)
+        self.output, self.teaching = None, False
 
     def source_orders(self):
         """Original word positions in each row's interpretation order."""
@@ -226,8 +259,8 @@ class Looks:
                                 for turn in self.decisions], dim=1)
         return tuple([word for word in row if word >= 0] for row in arrivals.tolist())
 
-    def lesson_cost(self):
-        return None if self.teacher is None else self.teacher.cost()
+    def output_cost(self):
+        return None if self.output is None or not self.teaching else self.output.cost()
 
     def reading(self):
         return self.walk.reading()
@@ -238,13 +271,28 @@ class Looks:
         return state.spans.new_tensor([next((w for w in row if not bool(state.accepted[b, w])), -1)
                                        for b, row in enumerate(order)])
 
-    def run(self, arrive, *, context=None):
+    def _output(self, concepts, live, rows_of):
+        """The output a path is taught by: the lesson's, or, in reading
+        without comprehension, the sentence in its order (its live words'
+        concept rows)."""
+        model = self.model
+        lesson = getattr(model, '_attention_output_lesson', None)
+        if lesson is not None:
+            targets = [said_rows(model, words) for words in lesson.words]
+            return Output(targets, list(lesson.supplied), concepts.new_zeros(len(targets), dtype=torch.float32))
+        if model.inputSpace.data.has_supervised_outputs:
+            return None
+        targets = [[int(rows_of[b, w]) for w in range(live.shape[1]) if bool(live[b, w])]
+                   for b in range(len(live))]
+        return Output(targets, [0] * len(targets), concepts.new_zeros(len(targets), dtype=torch.float32))
+
+    def run(self, arrive):
         model, state = self.model, self.walk
         owner = model._concept_owner()
         opened = model._sentence_open_fields[self.sid]
         bank = model._sentence_bank = model.__dict__.get('_sentence_banks', {}).get(self.sid)
         concepts = model._attention_word_concepts[:, :state.known.shape[1]]
-        W = state.known.shape[1]
+        B, W = state.known.shape
         live = (state.spans[..., 1] > state.spans[..., 0]) & self.present[:, None]
         from LookForecast import LookForecast
         forecasts = LookForecast(owner, opened, state.spans) if opened is not None else None
@@ -255,27 +303,62 @@ class Looks:
         from CandidateGrowth import at_look
         at_look(model, field, extent)
         self.fields.append(dict(field=field, extent=extent.clone(), active=rows.clone(), surprise=surprise))
-        if bank is not None:
-            # A record that nothing reads (§19.125): each reading's .where
-            # wires and code on the .what, at its bracket in the bank.
-            from Places import readings
-            found_where, _, found_code = readings(bank)
-        while bank is not None:
+        if bank is None:
+            return state.reading()
+        # A record that nothing reads (§19.125): each reading's .where
+        # wires and code on the .what columns, at its bracket in the bank.
+        from Places import readings
+        found_where, _, found_code = readings(bank)
+        read = model.request_read
+        V = int(owner.nVectors)
+        # Each word's concept row, and the word each slot offers the say read:
+        # its row and its centred .where wires.
+        ids = sorted(set(int(c) for c in concepts.flatten().tolist() if c >= 0))
+        lookup = {c: owner._concept_row_of(c) for c in ids}
+        rows_of = torch.tensor([[-1 if c < 0 or lookup.get(c) is None else int(lookup[c]) for c in row]
+                                for row in concepts.tolist()], dtype=torch.long, device=concepts.device)
+        K = min(W, found_where.shape[1])
+        wires = F.pad(2 * found_where[:, :K].float() - 1, (0, 0, 0, W - K))
+        offered = torch.cat((F.one_hot(rows_of.clamp_min(0), V).float() * (rows_of >= 0)[..., None], wires), -1)
+        from SentenceField import inventory
+        known_rows = {}
+        def located(field):
+            # A field's concepts at their inventory rows, the rows found once
+            # for each set of the field's concept ids.
+            key = tuple(field.concept_ids.reshape(-1).tolist())
+            if key not in known_rows:
+                known_rows[key] = inventory(owner, field)
+            return at_rows(known_rows[key], field, V, B)
+        held = located(opened) if opened is not None else wires.new_zeros(B, V, 2)
+        memory = held.new_zeros(B, V, 2)
+        said = held.new_zeros(B, V)
+        self.output = self._output(concepts, live, rows_of)
+        self.teaching = self.output is not None and model.training and model._sentence_training
+        while True:
             turn = state.taken
-            rows = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
+            step = len(self.decisions)
+            left = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
+            # Whether anything is left to find (the toy's "found": nothing
+            # left is what the stop is read from).
+            x = read.given(held, memory, left.to(held), said)
+            units = read.units(x)
+            stop = read.stopping(units)
+            self.stops.append(stop.detach())
+            if self.teaching:
+                _, length, _ = self.output.target(step, stop.device)
+                ending = self.present & (step <= length)
+                self.output.book(F.binary_cross_entropy_with_logits(
+                    stop, (step == length).to(stop), reduction='none'), ending)
+            # The walk ends where nothing is left, or where the read stops it.
+            rows = left & ~(stop.detach() > 0)
             if not bool(rows.any()):
                 break
             target = None
-            if self.teacher is not None:
-                target = self.teacher.next(state)
-            elif self.supplied is not None:
+            if self.supplied is not None:
                 target = self._supplied(state)
-            if self.supplied is not None and self.teacher is None:
                 request = word_request(model, concepts, target)
             else:
-                query = (context(surprise[:, None])[:, 0] if context is not None and surprise is not None
-                         else owner.similarity_codebook.getW().new_zeros(len(rows), int(model._stm_reducer().d_model)))
-                request = requested(model, query)
+                request = attend(model, units)
             prediction = None
             look_field, activity = look(model, bank, request, own)
             extent = extent_of(bank, activity, W) & rows[:, None]
@@ -298,8 +381,23 @@ class Looks:
             words = word_activity(look_field, concepts, state.known, extent, own, bank)
             unread = live & ~state.accepted & rows[:, None]
             words = torch.where(unread, words, -torch.inf)
-            if self.teacher is not None:
-                self.teacher.book_look(words, target, unread)
+            # The word said is read through each unread word's softmax share
+            # of the look, so that the output's cost reaches the look's
+            # scores and the request; which occurrence is taken is not named.
+            scores = torch.where(torch.isfinite(words), model.look_sharpness * words, -torch.inf)
+            some = torch.isfinite(scores).any(-1, keepdim=True)
+            share = torch.where(some, torch.where(some, scores, 0.).softmax(-1), 0.).nan_to_num(0.)
+            logits = read.said(x, torch.einsum('bw,bwd->bd', share, offered.to(share)))
+            spoken = logits.detach().argmax(-1)
+            if self.output is not None:
+                # In a lesson the word said is the output's (its cost is
+                # booked); a word supplied is said, and not booked.
+                target_word, _, given = self.output.target(step, logits.device)
+                if self.teaching:
+                    speaking = rows & (target_word >= 0) & ~given
+                    self.output.book(F.cross_entropy(logits, target_word.clamp_min(0), reduction='none'), speaking)
+                forced = (target_word >= 0) & (given | self.teaching)
+                spoken = torch.where(forced, target_word, spoken)
             replay = masked = None
             exploit = state.exploit
             if exploit is not None and turn < exploit.actions.shape[1]:
@@ -338,37 +436,30 @@ class Looks:
                 options['replay_action'] = torch.where(replay_grammar, old['action'], -1)
                 replay_branch = replay_grammar | (options.get('masked_action', -1) != -1)
                 options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
-            if self.teacher is not None:
-                options['replay_action'] = allowed.long()
-                options.pop('masked_action', None)
             choice = state.chooser.interpret_at_look(state.keys[torch.arange(len(word), device=word.device), word],
                                                      allowed, **options)
-            if self.teacher is not None:
-                logp = choice['logits'].log_softmax(-1).gather(1, choice['action'][:, None])[:, 0]
-                self.teacher.book(logp, choice['eligible'] & rows)
-                choice['eligible'] = torch.zeros_like(allowed)
             choice.update(index=index, slot=index.clamp_min(0))
             # The record of the look (§19.125): the request it was given, and
-            # the .where and the code of the word it took (nothing where none).
+            # the .where and the code of the word it took (nothing where none);
+            # the word said, and the chance of stopping read before the look.
             taken = index.clamp(0, found_where.shape[1] - 1)
             stream = torch.arange(len(index), device=index.device)
             choice.update(request=request.detach(),
                           where=torch.where(found[:, None], found_where[stream, taken].detach(), 0.),
-                          code=torch.where(found[:, None], found_code[stream, taken].detach(), 0.))
+                          code=torch.where(found[:, None], found_code[stream, taken].detach(), 0.),
+                          said=torch.where(rows, spoken, -1), stop=stop.detach(), scores=words.detach())
             self.decisions.append(choice)
             interpreted = choice['interpreted'] & found
-            fragment = None
-            if self.teacher is None:
-                # The grammar's option to take the basic level's read of the
-                # run of words that begins here as one constituent.
-                from FragmentRead import take
-                replayed = None
-                if self.prior is not None and decision < len(self.prior.decisions):
-                    replayed = self.prior.decisions[decision].get('fragment_taking')
-                fragment = take(model, state, bank, extent, index, interpreted, prior=replayed)
-                if fragment is not None:
-                    choice['fragment_taking'] = fragment['taking']
-                    choice['fragment'] = fragment['run']
+            # The grammar's option to take the basic level's read of the
+            # run of words that begins here as one constituent.
+            from FragmentRead import take
+            replayed = None
+            if self.prior is not None and decision < len(self.prior.decisions):
+                replayed = self.prior.decisions[decision].get('fragment_taking')
+            fragment = take(model, state, bank, extent, index, interpreted, prior=replayed)
+            if fragment is not None:
+                choice['fragment_taking'] = fragment['taking']
+                choice['fragment'] = fragment['run']
             state.record(word, interpreted)
             own = lower(own, bank, index, interpreted)
             if fragment is not None and fragment['idea'] is not None:
@@ -380,6 +471,11 @@ class Looks:
                     own = lower(own, bank, at, with_it)
                 model._fragment_leaf = dict(index=index, taking=fragment['taking'],
                                             idea=fragment['idea'], classes=fragment['classes'])
+            # What the next look reads: this look's field spread once, and
+            # the word said.
+            memory = torch.where(rows[:, None, None], spread_once(owner, located(look_field)), memory)
+            said = torch.where(rows[:, None], F.one_hot(spoken.clamp_min(0), V).to(said)
+                               * (spoken >= 0)[:, None], said)
             handoff_reading(model, state)
             model._sentence_look_fields = dict(getattr(model, '_sentence_look_fields', {}))
             model._sentence_look_fields[self.sid] = tuple(self.fields)

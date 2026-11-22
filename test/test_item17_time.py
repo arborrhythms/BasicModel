@@ -99,10 +99,6 @@ def test_55d_the_comparator_gives_how_far_back_exactly_as_a_code(present):
 
 def test_55d_no_learned_reader_is_given_a_count_of_ticks():
     texts = _source()
-    # The attention context gives each end of a slot's interval as a code.
-    context = texts['AttentionContext.py']
-    assert 'how_far_back(model.present_code(), encoder().encode(placements' in context
-    assert '/ registry.capacity' not in context
     # The reference policy reads how far back a mention lies as a code, and
     # no rank of recency.
     close = texts['ReferenceClose.py']

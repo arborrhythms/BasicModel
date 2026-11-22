@@ -54,23 +54,6 @@ def test_excess_and_omission_keep_independent_lanes_and_magnitudes():
     torch.testing.assert_close(LookForecast.surprise(read, forecast, look), torch.tensor([[.5, .5]]))
 
 
-def test_zero_started_projection_leaves_the_request_at_words_and_can_learn():
-    from AttentionContext import project
-    from Language import OperationSelectionLayer
-    codes = torch.eye(3)
-    base = torch.tensor([1., 0., 0.])
-    prefix = torch.ones(1, 3, requires_grad=True)
-    surprise = torch.tensor([[[1., 0.]]], requires_grad=True)
-    mapping = torch.nn.Linear(5, 3, bias=False)
-    torch.nn.init.zeros_(mapping.weight)
-    def request(context):
-        return OperationSelectionLayer.attend(context[:, 0], codes, base)
-    torch.testing.assert_close(request(project(mapping, prefix, surprise))[..., 0], base[:, None])
-    request(project(mapping, prefix, surprise))[1, 0, 0].backward()
-    assert mapping.weight.grad[:, -2:].count_nonzero()
-    assert prefix.grad is None and surprise.grad is None
-
-
 def test_glance_predicts_each_stream_in_one_batch(tmp_path, monkeypatch):
     import ConceptSpread
     from LookForecast import LookForecast

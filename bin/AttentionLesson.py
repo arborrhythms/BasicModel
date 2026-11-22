@@ -1,4 +1,5 @@
-"""Named input parts teach reconstruction and, by the looks, reading order."""
+"""Named input parts teach reconstruction; an output taught to the looks;
+a reading supplied."""
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -80,50 +81,13 @@ class ReadingLesson:
         return result
 
 
-class ReadingTargets:
-    """The reading lesson at each look: the request is taught by what its
-    look returned, against the next word the lesson names; the grammar's
-    option at the look by its own choice. The word taken at a look is the
-    one the lesson names."""
-    #: The sharpness of the look's choice among a sentence's unread words.
-    SHARPNESS = 10.
-
-    def __init__(self, lesson, forms, state):
-        self.order = lesson.positions(forms, state.spans)
-        self.skipped = [[] for _ in self.order]
-        self.loss = state.keys.new_zeros(len(forms))
-        self.count = state.spans.new_zeros(len(forms))
-
-    def next(self, state):
-        pairs = state.poles
-        both = (torch.zeros_like(state.known) if pairs is None else (pairs > 0).all(-1))
-        pending = ~state.accepted & ~both
-        target = []
-        for b, order in enumerate(self.order):
-            self.skipped[b] = [i for i in order if bool(both[b,i])]
-            target.append(next((i for i in order if bool(pending[b,i])), -1))
-        return state.spans.new_tensor(target)
-
-    def book_look(self, words, target, unread):
-        """The look's cost: the next word against the sentence's other unread
-        words (``unread`` ``[B, W]``), by what the look returned of each
-        (``words`` ``[B, W]``; ``-inf``, nothing returned, is zero)."""
-        live = unread.any(-1) & (target >= 0)
-        if not bool(live.any()):
-            return
-        returned = torch.where(torch.isfinite(words), words, 0.).clamp_min(0.)
-        score = torch.where(unread, self.SHARPNESS * returned, -torch.inf)
-        logp = score.log_softmax(-1).gather(1, target.clamp_min(0)[:, None])[:, 0]
-        live = live & torch.isfinite(logp)
-        self.loss = self.loss - torch.where(live, logp, 0.)
-        self.count = self.count + live.long()
-
-    def book(self, log_probability, active):
-        self.loss = self.loss - torch.where(active, log_probability, 0.)
-        self.count = self.count + active.long()
-
-    def cost(self):
-        return self.loss / self.count.clamp_min(1)
+@dataclass(frozen=True)
+class OutputLesson:
+    """Each stream's output: its words (forms), one for each look, of which
+    the first ``supplied`` are given as the word said at those looks. The
+    rest are what the looks' word said is taught by."""
+    words: tuple
+    supplied: tuple
 
 
 def _reading(parts):
@@ -135,12 +99,6 @@ def _reading(parts):
             return (word.encode('utf8') if isinstance(word, str) else word, occurrence)
         return part.encode('utf8') if isinstance(part, str) else part
     return ReadingLesson(tuple(tuple(encode(part) for part in row) for row in parts))
-
-
-#: The grades of the reading lesson, each given only when the one before
-#: it is passed (successive approximation): the sentence read whole, its
-#: words in order, a word's parts.
-GRADES = ('sentence', 'words', 'parts')
 
 
 def minimal_first(sentences):
@@ -175,15 +133,18 @@ def looks_in_order(looks):
 
 
 @contextmanager
-def reading_lesson(model, parts):
-    """Teach the supplied part sequence during this training invocation only."""
-    lesson = _reading(parts)
-    old = getattr(model, '_attention_reading_lesson', None)
-    model._attention_reading_lesson = lesson
+def output_lesson(model, outputs, supplied=None):
+    """For this invocation only, each stream's output words ``outputs`` (a
+    sequence of words for each stream), the first ``supplied[b]`` of them
+    given as the output's beginning (none where not given)."""
+    words = tuple(tuple(w.decode() if isinstance(w, bytes) else w for w in row) for row in outputs)
+    lesson = OutputLesson(words, tuple(supplied) if supplied is not None else (0,) * len(words))
+    old = getattr(model, '_attention_output_lesson', None)
+    model._attention_output_lesson = lesson
     try:
         yield lesson
     finally:
-        model._attention_reading_lesson = old
+        model._attention_output_lesson = old
 
 
 @contextmanager

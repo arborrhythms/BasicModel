@@ -93,8 +93,8 @@ def test_no_departure_does_not_share_later_registry_writes():
     registry.add('reconstruction', torch.tensor([2.]), objective='reconstruction')
     base = Path((), (), {}, registry, torch.tensor([[2., 0., 0.]]), Thinking(), None, None)
     other = finish(None, (), 0, active, base=base, draw={'walk': torch.tensor([-1])}, trust=1.)
-    registry.add('attention.reading_lesson', torch.tensor([3.]), objective='attention')
-    assert 'attention.reading_lesson' not in other.registry._terms
+    registry.add('attention.output', torch.tensor([3.]), objective='attention')
+    assert 'attention.output' not in other.registry._terms
     assert other.registry.total(objective='reconstruction') == 2
 
 

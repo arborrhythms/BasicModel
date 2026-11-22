@@ -14,7 +14,7 @@ def policy_objective(model, policy, default):
 def term_owner(name, category, objective):
     if category == 'grammar':
         return 'generate_lesson' if 'generate.' in name else 'compose_lesson'
-    if objective in ('chooser', 'attention', 'reading_policy', 'compose_lesson', 'generate_lesson', 'compose_policy', 'generate_policy'):
+    if objective in ('chooser', 'attention', 'compose_lesson', 'generate_lesson', 'compose_policy', 'generate_policy'):
         return objective
     if objective in ('expectation', 'intra', 'inter'):
         return 'expectation'
@@ -81,7 +81,7 @@ def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
         parameters = tuple(owners.get(key, ()))
         if not parameters:
             continue
-        objective = ('reconstruction' if key in ('compose_lesson', 'compose_policy', 'reading_policy', 'chooser') else
+        objective = ('reconstruction' if key in ('compose_lesson', 'compose_policy', 'chooser') else
                      'output' if key in ('generate_lesson', 'generate_policy') else key)
         value = cost * scale
         gradients = (pullback.gradients(value, parameters)

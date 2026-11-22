@@ -259,10 +259,24 @@ def test_34_the_where_match_multiplies_a_reading_once_at_its_start():
     assert lowered[0, :, 0].tolist() == [1., 1., 0., 0.]
 
 
+def start_request(model, B=1):
+    """``attend``'s request as the read starts (rule 80): its tops at
+    nothing, so it is the request's start on every concept whatever it
+    reads."""
+    import SentenceLooks
+    read = model.request_read
+    V = read.rows
+    x = read.given(torch.zeros(B, V, 2), torch.zeros(B, V, 2), torch.zeros(B), torch.zeros(B, V))
+    return SentenceLooks.attend(model, read.units(x))
+
+
 def test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word(tmp_path, monkeypatch):
-    """A request for one word's concept returns that word alone; "words"
-    returns both, with no reading lowered by the where (certificate 33 (d));
-    the request starts at "words" alone (rule 35)."""
+    """A request for one word's concept returns that word alone; the
+    request at its start returns both, with no reading lowered by the where
+    (certificate 33 (d)). Ported (eleventh pass): the request started at
+    "words" alone (rule 35, ``request_start``); it is now the read of rule
+    80, which starts at one small value on every concept and nothing
+    against."""
     import SentenceLooks
     from test_item18_expect import read
     model = nominated_lesson(tmp_path, monkeypatch)
@@ -274,10 +288,9 @@ def test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word(tmp_
         perception = owner.basic_percepts.read_bank(bank)
         alpha, gamma = word_rows(model, 'alpha', 'gamma')
         concepts = model._attention_word_concepts[:, :2]
-        query = torch.zeros(1, int(model._stm_reducer().d_model))
-        words = SentenceLooks.requested(model, query)
-        asked = (words[..., 0] > 0).nonzero()[:, 0].tolist()
-        assert len(asked) == 1 and not words[..., 1].any()
+        words = start_request(model)
+        assert bool((words[..., 0] > 0).all()) and bool((words[..., 0] < 1).all())
+        assert float(words[..., 0].max() - words[..., 0].min()) == 0. and not words[..., 1].any()
         found = {}
         for name, request in (('words', words), ('alpha', SentenceLooks.word_request(model, concepts, torch.tensor([0])))):
             field, activity = SentenceLooks.look(model, bank, request, bank.activity)
@@ -329,7 +342,7 @@ def test_39_one_gain_field_gives_the_surprise_attend_reads():
     from LookForecast import LookForecast
     from Expectation import gain_field
     root = Path(__file__).resolve().parents[1] / 'bin'
-    for name in ('LookForecast.py', 'SentenceLooks.py', 'AttentionContext.py', 'Salience.py'):
+    for name in ('LookForecast.py', 'SentenceLooks.py', 'RequestRead.py', 'Salience.py'):
         source = (root / name).read_text()
         assert 'def difference' not in source and 'attentionFloor' not in source
     actual = torch.tensor([[[.9, 0.], [0., 0.], [.2, .1]]])
@@ -343,8 +356,11 @@ def test_39_one_gain_field_gives_the_surprise_attend_reads():
 
 def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp_path, monkeypatch):
     """Observed, not repaired (step 15): the gradient the look passes to the
-    request through the cap when "words" is asked at one, and what a word
-    whose events are present at .3 comes back as."""
+    request through the cap, and what a word whose events are present at .3
+    comes back as. Ported (eleventh pass): "words" asked at one passed
+    nothing through the cap; the read's request at its start (rule 80) is
+    below every occurrence's own activity, so the look passes it a
+    gradient."""
     import SentenceLooks
     from test_item18_expect import read
     model = nominated_lesson(tmp_path, monkeypatch)
@@ -355,9 +371,8 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
         model._sentence_bank = bank   # the look reads the bank it is given
         perception = owner.basic_percepts.read_bank(bank)
         concepts = model._attention_word_concepts[:, :2]
-        query = torch.zeros(1, int(model._stm_reducer().d_model))
-        # The request's start is a parameter: the request is taken as a leaf.
-        request = SentenceLooks.requested(model, query).detach().requires_grad_()
+        # The request is taken as a leaf.
+        request = start_request(model).detach().requires_grad_()
         field, activity = SentenceLooks.look(model, bank, request, bank.activity)
         extent = SentenceLooks.extent_of(bank, activity, 2)
         value = SentenceLooks.word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool), extent, bank.activity, bank)
@@ -370,19 +385,21 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
         degree = SentenceLooks.word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool), extent, weak, bank)
         print(dict(gradient_on_the_request=through_cap, words_at_full=value.detach()[0].tolist(),
                    second_word_at_point_three=degree[0].tolist()))
-        assert through_cap == 0.
+        assert through_cap > 0.
     finally:
         model.End()
 
 
 def test_38b_the_reading_lesson_by_grades(tmp_path, monkeypatch):
-    """Certificate 38 (b), a learning certificate: the reading lesson teaches
-    the request, minimal sentences first; printed, before and after, are the
-    sentences read in order with no reading supplied. The grades of rule 70:
-    the sentence (a look of "words" returns every word), its words in order,
-    a word's parts (certificate 56 (a)). Recorded, not repaired."""
+    """Certificate 38 (b), a learning certificate: the output's cost (the
+    sentence said, rule 80) teaches the request, minimal sentences first;
+    printed, before and after, are the sentences read in order with no
+    reading supplied. The grades of rule 70: the sentence, its words in
+    order, a word's parts (certificate 56 (a)). Recorded, not repaired.
+    Ported (eleventh pass): the reading lesson's targets are gone; reading
+    without comprehension teaches the looks by the sentence said."""
     from SentenceLooks import Looks
-    from AttentionLesson import reading_lesson, minimal_first, looks_in_order
+    from AttentionLesson import minimal_first, looks_in_order
     from test_item18_expect import read
     texts = ('alpha gamma', 'beta delta', 'alpha delta', 'beta gamma')
     model = nominated_lesson(tmp_path, monkeypatch, texts)
@@ -411,10 +428,9 @@ def test_38b_the_reading_lesson_by_grades(tmp_path, monkeypatch):
         for grade in grades:
             for presentation in range(8):
                 text = grade[presentation % len(grade)]
-                with reading_lesson(model, [text.split()]):
-                    seen.clear()
-                    read(model, text, training=True, optimizer=optimizer)
-                    costs.append(float(seen[0].looks.sum()))
+                seen.clear()
+                read(model, text, training=True, optimizer=optimizer)
+                costs.append(float(seen[0].looks.sum()))
         after = count()
         print(dict(grades=grades, in_order_before=before, in_order_after=after, of=len(texts),
                    looks_taught=sum(costs)))
@@ -588,7 +604,7 @@ def test_30_33a_35_36_42_the_bank_the_where_wires_garbage_the_same_look_and_an_u
         perception = owner.basic_percepts.read_bank(bank)
         concepts = model._attention_word_concepts[:, :3]
         known = concepts >= 0
-        words = SentenceLooks.requested(model, torch.zeros(1, int(model._stm_reducer().d_model)))
+        words = start_request(model)
         def found(request, own):
             field, activity = SentenceLooks.look(model, bank, request, own)
             extent = SentenceLooks.extent_of(bank, activity, 3)
@@ -713,7 +729,7 @@ def test_31a_the_transposes_give_the_frameworks_backward_in_the_model(tmp_path, 
         values = torch.where(is_symbol[:, None, None, None], product, values)
         alpha, gamma = word_rows(model, 'alpha', 'gamma')
         concepts = model._attention_word_concepts[:, :2]
-        words = SentenceLooks.requested(model, torch.zeros(1, int(model._stm_reducer().d_model)))
+        words = start_request(model)
         depth = 2 * (len(owner._order_caps()) + 1)
         compared = {}
         for name, request in (('words', words),

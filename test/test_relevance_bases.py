@@ -112,29 +112,6 @@ def test_unconditional_integration_end_to_end(monkeypatch):
             _ws._desire.zero_()
 
 
-@pytest.mark.slow
-def test_native_attention_reads_canonical_whole_heat_by_stream():
-    """The native attention reader sees canonical whole heat per stream."""
-    from AttentionContext import _heat
-    m = _build("data/MM_20M_xor.xml")
-    ws0 = m.wholeSpace
-    ws_c = m.wholeSpace
-    assert ws0._priming_target() is ws_c, "per-stage WS must delegate"
-    V = ws0._priming_dim()                 # canonical dim via delegation
-    assert V > 0, "WS must carry a codebook surface"
-    idx = torch.tensor([[2, 5], [2, 5]]).clamp(max=V - 1)
-    ws_c._desire.zero_()  # fresh surface
-    ws0.prime_desire(idx.gather(1, torch.tensor([[1], [0]])), valence=3.0)
-    before = ws_c._desire.clone()
-    try:
-        heat = _heat(ws0, 2, V, before)
-        assert heat.gather(1, idx).argmax(-1).tolist() == [1, 0]
-        torch.testing.assert_close(heat, ws_c.relevance_weights(batch=2), atol=0, rtol=0)
-        torch.testing.assert_close(ws_c._desire, before, atol=0, rtol=0)
-    finally:
-        ws_c._desire.zero_()
-
-
 def _minted_cs():
     """A sparse-active CS with two competing order-1 rows (fixture style
     from test_cs_sparse_weights: nVectors=16, K=1 -> caps (8, 4))."""

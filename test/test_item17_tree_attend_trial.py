@@ -3,7 +3,11 @@ trial in tests only. Nothing here is wired into the model; every learned
 read below is the trial's own and provisional. No form is given the order
 of a sentence, a preference for earlier places or a first-found rule: an
 order is learned or it is absent. A tie is a draw. Records, not repairs:
-no assertion is made on the outcome of a draw or of learning."""
+no assertion is made on the outcome of a draw or of learning. Steps 3 to 5
+(the trial's reads of the record, the start, and the model's reading after
+the reading lesson) were retired in the eleventh pass: the context's query,
+the request's start and the reading lesson they read are gone (rule 80);
+the model's own reading is measured in ``test_item17_own_reading``."""
 import os
 
 import torch
@@ -730,30 +734,13 @@ def test_one_lit_concept_for_each_task_reading_and_counting_a_toy():
 # ---------------------------------------------------------------------------
 # Step 1: the record of each look, and what the tree holds at each look.
 
-def hold_the_tree(monkeypatch, into):
-    """At each call of ``AttentionContext.context`` (once a look, before its
-    request): the STM it is given and the sentence's field
-    (``SentenceField``), as the context reads them."""
-    import AttentionContext
-    original = AttentionContext.context
-    def context(model, stm, field, surprise=None):
-        into.append(dict(stm=tuple(t.detach().clone() if torch.is_tensor(t) else t for t in stm),
-                         window=None if field is None else field.support_window.detach().clone(),
-                         positions=None if field is None else field.positions.clone(),
-                         placements=None if field is None else {k: v.detach().clone()
-                                                                for k, v in field.placements().items()}))
-        return original(model, stm, field, surprise)
-    monkeypatch.setattr(AttentionContext, 'context', context)
-
-
 def test_each_look_records_its_request_and_the_where_and_code_of_its_word(tmp_path, monkeypatch):
     """Step 1: each look's decision (``Looks.decisions``) keeps the request
     it was given and the ``.where`` and the code of the word it took, read
     from the sentence's bank at that word's reading (``Places.readings``).
-    Printed, at each look: what the tree being built holds (the walk's
-    ``accepted``; the STM the context reads: occupied slots, reference rows,
-    ``.where`` of each slot (STM field 11); the field's ``support_window``
-    and ``placements``)."""
+    Printed, at each look: the word taken and the request. Ported (eleventh
+    pass): the STM and the field the context read at each look are no
+    longer read by ``attend`` (rule 80), so they are not printed here."""
     from Places import readings
     from test_item17_places import model_for, nominate, observe_runs
     from test_item18_expect import read
@@ -771,8 +758,6 @@ def test_each_look_records_its_request_and_the_where_and_code_of_its_word(tmp_pa
             finally:
                 banks.append(model._sentence_bank)
         monkeypatch.setattr(Looks, 'run', kept)
-        tree = []
-        hold_the_tree(monkeypatch, tree)
         with torch.no_grad():
             read(model, text)
         model.End()
@@ -781,23 +766,15 @@ def test_each_look_records_its_request_and_the_where_and_code_of_its_word(tmp_pa
         V = int(model._concept_owner().nVectors)
         for t, decision in enumerate(path.decisions):
             index = int(decision['index'][0])
-            held = tree[t] if t < len(tree) else None
             print(dict(look=t, index=index, interpreted=bool(decision['interpreted'][0]),
                        where=[round(v, 4) for v in decision['where'][0].tolist()],
                        code_columns=decision['code'][0].nonzero().flatten().tolist(),
-                       request_rows_asked=decision['request'][:, 0, 0].nonzero().flatten().tolist(),
-                       stm_occupied=None if held is None else held['stm'][0][0].ne(0).any(-1).int().tolist(),
-                       stm_reference_rows=None if held is None else held['stm'][4][0].tolist(),
-                       stm_where_wires=None if held is None else [[round(v, 4) for v in row]
-                                                                  for row in held['stm'][11][0].tolist()],
-                       window=None if held is None or held['window'] is None else held['window'][0].int().tolist(),
-                       placements_where=None if held is None or held['placements'] is None
-                       else held['placements']['where'][0].tolist()))
+                       request_rows_asked=decision['request'][:, 0, 0].nonzero().flatten().tolist()))
             assert decision['request'].shape == (V, 1, 2)
             if index >= 0:
                 assert torch.equal(decision['where'][0], wires[0, index])
                 assert torch.equal(decision['code'][0], code[0, index])
-        print(dict(accepted=path.walk.accepted.int().tolist(), looks=len(path.decisions), contexts=len(tree),
+        print(dict(accepted=path.walk.accepted.int().tolist(), looks=len(path.decisions),
                    interpret_bias=getattr(path.walk.chooser, 'interpret_bias', None)))
         assert path.decisions
     finally:
@@ -934,298 +911,3 @@ def test_a_request_for_a_place_against_its_neighbours(tmp_path, monkeypatch):
         assert any('share' in r for r in rows)
     finally:
         model.End()
-
-
-# ---------------------------------------------------------------------------
-# Steps 3 to 5: the start, the tree presented, and the measures.
-
-#: The four reads of the record compared (step 4): (a) the last word's code
-#: and ``.where``; (b) every word found, summed (no order); (c) every word at
-#: its place in the tree being built (the field's ``support_window``, newest
-#: slot first); and Codex's first scorer, the STM the context reads (each
-#: slot's contents, ``.where`` (field 11), ``.when`` (field 12) and
-#: occupancy) and no ``.where`` of a look.
-FORMS = ('last', 'every', 'tree', 'stm')
-#: Codex's paired histories: (A, B) repeated as "A B A B A", after a prefix
-#: of 0, 1 or 2 words (the starting place varied).
-PAIR_WORDS = (('Felix', 'is'), ('Who', 'There'), ('Ciao', 'this'), ('Here', 'is'))
-PREFIXES = ('', 'Who ', 'That is ')
-
-
-def centred(wires):
-    """The ``.where`` wires about zero: each rung's sine and cosine."""
-    return 2 * wires - 1
-
-
-class Trial:
-    """The trial's reads, held by the test and not by the model. At a look
-    in ``force`` mode the word taken is the next in source order (or the
-    ``script``'s), a reading given, and what the look offers is kept as a
-    lesson example; in ``free`` mode each unread word the look found is
-    scored by the read of the record, the scores against its ``.where``
-    wires (a bilinear read: ``centred(.where) . (entries @ record +
-    bias)``); the first look, with nothing found, by a learned ``start`` on
-    the ``.where`` wires alone. The look's own request is "words" (the
-    model's ``request_start``; the context's map is at nothing before the
-    lesson)."""
-    def __init__(self, model):
-        self.model, self.mode, self.form, self.path, self.tree = model, None, None, None, None
-        self.script = self.wanted = None
-        self.examples, self.log = [], []
-        self.start = None
-        self.reads = {}
-        self.merged = self.windows = 0
-
-    def install(self, monkeypatch):
-        import SentenceLooks
-        from SentenceLooks import Looks
-        trial, run, original = self, Looks.run, SentenceLooks.word_activity
-        trees = []
-        hold_the_tree(monkeypatch, trees)
-        def observed(path, arrive, **kwargs):
-            trial.path = path
-            trees.clear()
-            try:
-                return run(path, arrive, **kwargs)
-            finally:
-                trial.last = path
-                trial.path = None
-        def word_activity(field, concepts, known, extent, own, bank):
-            words = original(field, concepts, known, extent, own, bank)
-            if trial.mode is None or trial.path is None:
-                return words
-            trial.tree = trees[-1] if trees else None
-            window = None if trial.tree is None else trial.tree['window']
-            if window is not None:
-                # A slot of the tree that holds two words or more: composition.
-                trial.merged += int(bool((window[0].sum(-1) > 1).any()))
-                trial.windows += 1
-            return trial.at_look(words, bank)
-        monkeypatch.setattr(Looks, 'run', observed)
-        monkeypatch.setattr(SentenceLooks, 'word_activity', word_activity)
-
-    def found(self):
-        return [(int(d['index'][0]), d['code'][0].float(), d['where'][0].float()) for d in self.path.decisions
-                if bool(d['interpreted'][0]) and int(d['index'][0]) >= 0]
-
-    def features(self, form, found):
-        if form == 'last':
-            _, code, where = found[-1]
-            return torch.cat((code, centred(where)))
-        if form == 'every':
-            return torch.stack([torch.cat((code, centred(where))) for _, code, where in found]).sum(0)
-        if form == 'tree':
-            by = {w: torch.cat((code, centred(where))) for w, code, where in found}
-            width = len(found[0][1]) + 4
-            window, positions = self.tree['window'][0], self.tree['positions'].tolist()
-            places = []
-            for k in range(window.shape[0]):
-                held = [by[positions[c]] for c in window[k].nonzero().flatten().tolist() if positions[c] in by]
-                places.append(torch.stack(held).amax(0) if held else torch.zeros(width))
-            return torch.cat(places)
-        stm = self.tree['stm']
-        contents = stm[0][0].float()
-        occupied = contents.ne(0).any(-1, keepdim=True).float()
-        return torch.cat((contents * occupied, stm[11][0].float(), stm[12][0].float(), occupied), -1).flatten()
-
-    def query(self, form, x):
-        entries, bias = self.reads[form]
-        return entries @ x + bias
-
-    def at_look(self, words, bank):
-        from Places import readings
-        state = self.path.walk
-        W = words.shape[1]
-        live = (state.spans[..., 1] > state.spans[..., 0])[0, :W]
-        unread = live & ~state.accepted[0, :W]
-        slots = [w for w in range(W) if bool(live[w])]
-        t = len(self.path.decisions)
-        candidates = [w for w in slots if bool(unread[w])]
-        if self.wanted is not None and t == len(self.script):
-            intended = slots[self.wanted]
-        elif self.script is not None and t < len(self.script):
-            intended = slots[self.script[t]]
-        else:
-            intended = candidates[0] if candidates else -1
-        finite = intended >= 0 and bool(torch.isfinite(words[0, intended]))
-        forced = self.mode == 'force' or (self.script is not None and t < len(self.script))
-        self.log.append(dict(look=t, intended=intended, finite=finite, forced=forced))
-        if self.mode == 'observe' or intended < 0 and forced:
-            return words
-        wires = readings(bank)[0][0, :W].float()
-        found = self.found()
-        if forced:
-            if self.mode == 'force' and candidates:
-                self.examples.append(dict(look=t, wires=wires[candidates], target=candidates.index(intended),
-                                          features=None if not found else
-                                          {form: self.features(form, found) for form in FORMS}))
-            return torch.where(torch.arange(W) == intended, 1., -torch.inf)[None].to(words)
-        with torch.no_grad():
-            q = self.start if not found else self.query(self.form, self.features(self.form, found))
-            scores = centred(wires) @ q
-        return torch.where(torch.isfinite(words[0]) & unread, scores.to(words), -torch.inf)[None]
-
-    def learn(self, steps=500, rate=.05):
-        """Each read learned by its examples (the next word against the
-        unread ones), from a start drawn afresh; the loss before and after
-        and the share of examples whose target scores highest."""
-        report = {}
-        firsts = [e for e in self.examples if e['features'] is None]
-        laters = [e for e in self.examples if e['features'] is not None]
-        self.start = (.01 * torch.randn(4)).requires_grad_()
-        jobs = [('start', [self.start], firsts, lambda e: self.start)]
-        for form in FORMS:
-            dim = len(laters[0]['features'][form])
-            self.reads[form] = ((.01 * torch.randn(4, dim)).requires_grad_(), (.01 * torch.randn(4)).requires_grad_())
-            jobs.append((form, list(self.reads[form]), laters,
-                         lambda e, form=form: self.query(form, e['features'][form])))
-        for name, parameters, examples, asked in jobs:
-            optimizer = torch.optim.Adam(parameters, lr=rate)
-            def loss():
-                return torch.stack([-(centred(e['wires']) @ asked(e)).log_softmax(-1)[e['target']]
-                                    for e in examples]).mean()
-            before = float(loss().detach())
-            for _ in range(steps):
-                optimizer.zero_grad()
-                value = loss()
-                value.backward()
-                optimizer.step()
-            with torch.no_grad():
-                right = sum(int((centred(e['wires']) @ asked(e)).argmax()) == e['target'] for e in examples)
-                scale = max(float(asked(e).abs().max()) for e in examples)
-            report[name] = dict(examples=len(examples), loss=(round(before, 4), round(float(value.detach()), 4)),
-                                taught_right=right, query_greatest=round(scale, 3))
-        for parameter in [self.start, *(p for r in self.reads.values() for p in r)]:
-            parameter.requires_grad_(False)
-        return report
-
-
-def reading_of(model, trial, text, mode, *, form=None, script=None, wanted=None):
-    from AttentionLesson import live_slots, looks_in_order
-    from test_item17_places import staged
-    from test_item18_expect import read
-    trial.mode, trial.form, trial.script, trial.wanted = mode, form, script, wanted
-    trial.log.clear()
-    try:
-        with torch.no_grad():
-            read(model, text)
-        model.End()
-    finally:
-        trial.mode = trial.script = trial.wanted = None
-    path = trial.last
-    slots = live_slots(path.walk.spans)[0]
-    orders = path.source_orders()[0]
-    forms = staged(model)
-    return dict(in_order=all(looks_in_order(path)), slots=slots, orders=orders,
-                first=bool(orders) and bool(slots) and orders[0] == slots[0],
-                draws=int(sum(int(a.sum()) for a in path.walk.alternatives)),
-                finite=[e['finite'] for e in trial.log if not e['forced']],
-                taken=[int(d['index'][0]) for d in path.decisions],
-                is_read=[w in orders for w in slots if forms[w] == 'is'])
-
-
-def counts(readings):
-    finite = [f for r in readings for f in r['finite']]
-    is_read = [f for r in readings for f in r['is_read']]
-    return dict(of=len(readings), in_order=sum(r['in_order'] for r in readings),
-                first_word_first=sum(r['first'] for r in readings),
-                intended_finite=f'{sum(finite)} of {len(finite)}', draws=sum(r['draws'] for r in readings),
-                is_read=f'{sum(is_read)} of {len(is_read)}')
-
-
-def pair_sentences():
-    return [(prefix + ' '.join((a, b, a, b, a)) + '.', len(prefix.split()))
-            for a, b in PAIR_WORDS for prefix in PREFIXES]
-
-
-def the_request_at_the_first_two_looks(model, monkeypatch, forms):
-    """§19.124, 1, as the ninth pass measured it: the query's greatest
-    coordinate against the codes', and the gradient at the query and at the
-    request, at the first two looks of "This is Felix." read with its
-    reading named at rate nothing."""
-    import SentenceLooks
-    from AttentionLesson import reading_lesson
-    from test_item18_expect import read
-    asked, original = [], SentenceLooks.requested
-    def requested(model, query):
-        if query.requires_grad:
-            query.retain_grad()
-        request = original(model, query)
-        if request.requires_grad:
-            request.retain_grad()
-        asked.append((query, request))
-        return request
-    monkeypatch.setattr(SentenceLooks, 'requested', requested)
-    try:
-        with reading_lesson(model, [forms['This is Felix.']]):
-            read(model, 'This is Felix.', training=True, optimizer=model.getOptimizer(lr=0.))
-        model.End()
-    finally:
-        monkeypatch.setattr(SentenceLooks, 'requested', original)
-    codes = model._concept_owner().similarity_codebook.W.detach()
-    grad = lambda t: None if t.grad is None else round(float(t.grad.abs().sum()), 6)
-    return [dict(query_greatest=round(float(q.detach().abs().max()), 3),
-                 codes_greatest=round(float(codes.abs().max()), 3),
-                 query_gradient=grad(q), request_gradient=grad(r)) for q, r in asked[:2]]
-
-
-def test_the_start_and_the_tree_presented_a_trial(tmp_path, monkeypatch):
-    """Steps 3 to 5, recorded and not asserted. By start drawn afresh: the
-    trial's reads learned from readings given in source order (the two-word
-    and the lesson's sentences); then, with no reading supplied, each read
-    on the two-word, the lesson's, the held-out and the reordered sentences
-    and on Codex's paired histories. Then the reading lesson (``teach``) and
-    the model's own reading, with ``request_start`` as built: the first word
-    at the first look, the sentences in order, whether the intended word had
-    a finite score at each choice, whether "is" is read, and the request and
-    its gradient at the first two looks. Asserted only that every count was
-    made."""
-    from test_item17_order_trial import REORDERED
-    from test_item17_places import HELD_OUT, minimal, model_for, nominate, staged_forms, teach
-    one, two, lesson = minimal()
-    sets = dict(two=two, lesson=LESSON_DISTINCT(), held=HELD_OUT, reordered=REORDERED)
-    records = []
-    for run in range(runs()):
-        start = fresh_start()
-        (tmp_path / str(run)).mkdir()
-        model = model_for(tmp_path / str(run), monkeypatch)
-        try:
-            nominate(model, one + two + lesson + HELD_OUT + REORDERED)
-            forms = {text: staged_forms(model, text) for text in one + two + lesson}
-            trial = Trial(model)
-            trial.install(monkeypatch)
-            for text in two + LESSON_DISTINCT():
-                reading_of(model, trial, text, 'force')
-            learned = trial.learn()
-            by_form = {}
-            for form in FORMS:
-                found = {name: counts([reading_of(model, trial, text, 'free', form=form) for text in texts])
-                         for name, texts in sets.items()}
-                pairs = {}
-                for text, k in pair_sentences():
-                    both = []
-                    for history, wanted in (((k + 1, k + 3), k + 4), ((k + 3, k + 1), k + 2)):
-                        r = reading_of(model, trial, text, 'free', form=form, script=history, wanted=wanted)
-                        both.append(len(r['taken']) > 2 and r['taken'][2] == r['slots'][wanted])
-                    pairs.setdefault(k, []).append(all(both))
-                found['pairs_by_prefix'] = {k: f'{sum(v)} of {len(v)}' for k, v in pairs.items()}
-                by_form[form] = found
-            # The model's own reading after the reading lesson.
-            trial.mode = None
-            teach(model, forms)
-            own = {name: counts([reading_of(model, trial, text, 'observe') for text in texts])
-                   for name, texts in sets.items()}
-            gradient = the_request_at_the_first_two_looks(model, monkeypatch, forms)
-            records.append(dict(start=start, examples=len(trial.examples), learned=learned, trial=by_form,
-                                looks_with_a_composed_slot=f'{trial.merged} of {trial.windows}',
-                                model_after_the_lesson=own, first_two_looks=gradient))
-            print(records[-1])
-        finally:
-            model.End()
-            monkeypatch.undo()
-    assert len(records) == runs()
-
-
-def LESSON_DISTINCT():
-    from test_item17_places import LESSON
-    return tuple(dict.fromkeys(LESSON))
