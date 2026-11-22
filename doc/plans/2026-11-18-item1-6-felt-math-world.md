@@ -1467,3 +1467,96 @@ are and were. The cast, the images and the events are unchanged; only the
 words of the frames are. *To settle when the generator is next run:* whether
 its frozen examples hold frames 16 and 20 as first written, and if so they
 are generated again.
+
+## Suggestions for the item, from `suggestions.txt` (GitHub main, 6eebcc29ff, 2026-11-21): relevant, and taken in
+
+~~~
+Item 1.6 suggestions — Grounding grammar in the felt world
+
+First milestone — “Three is above four”
+
+This one sentence exercises object recognition, word-to-object binding, and
+argument order on a scene small enough to inspect on the M2. Keep all 26
+constructions in the corpus, and use this one to see where learning succeeds
+or fails before moving to more expensive training.
+
+1. Give the chooser two interpretations with different consequences
+
+   Place three and four in the same column. Ask both questions of both scenes.
+
+                           Three above four     Four above three
+   Is three above four?           yes                  no
+   Is four above three?            no                 yes
+
+   “Is four below three?” should give the same answers as the first row.
+   Translate both objects together, vary their intensities within their
+   bands, and repeat on digit pairs held out of this construction. Count a
+   set as correct when all its answers are correct. This makes it possible
+   to distinguish reliance on wording, argument order, or absolute position.
+
+   Where the explore and exploit paths bind the two roles in opposite ways,
+   compare their completed reconstruction-plus-answer costs on both scenes.
+   With the wording fixed, does exchanging the objects reverse which binding
+   has lower cost? If the answers change correctly but the path costs tie,
+   the answer alone does not show that the chooser received a learning signal
+   from that comparison.
+
+2. Distinguish an unavailable observation from an observed empty board
+
+   An empty board is visual evidence against “three is here.” Hearing a
+   premise without seeing a board supplies no visual evidence either way.
+   Represent the first as scene: [] and the second as scene: null. Carry
+   scene availability through the reader and reconstruction loss. This
+   matters for text-only inference and for the model's for/against lanes.
+
+3. Establish object identity before introducing its word
+
+   Each digit has seven possible intensity values. Reserve an interior
+   value and several locations for each digit. During object-only learning,
+   present the other values without words. Then examine whether the held-out
+   value at a new location activates the same object. Introduce the name
+   afterwards. The generator knows the intensity bands. The learner sees
+   only the observations. This separates a perceptual failure from a later
+   failure to bind a word or compose a sentence.
+
+4. Make event comparison and inference depend on the example
+
+   Category 20. “Which was faster, the walk or the run?” always has the
+   answer “run.” Keep that wording for vocabulary. To measure comparison,
+   describe the movements neutrally and ask “Which was faster, the first
+   movement or the second?” Exchange the speeds while keeping the question
+   and event order fixed. The answer should change.
+
+   Category 24. The written inference frame always answers “yes,” while
+   the split calls for both “yes” and “no.” For example, teach either
+   “If three moves, four moves” or “If three moves, four stays still.”
+   In both cases supply “Three moved” and ask whether four moved during
+   that step. Each answer follows from its premise and rule. An omitted
+   premise would leave the answer unknown.
+
+Local decision before remote compute
+
+Record the number of teaching examples and elapsed training time to reach
+a declared accuracy on complete held-out spatial sets. Report naming at new
+positions, role reversal on observed scenes, and inference from text alone
+separately. Each result points to a different part of the model to improve.
+
+References
+
+Item 1.6 felt-world design, especially §§6, 13.1, and 14.1–14.6
+https://github.com/arborrhythms/BasicModel/blob/b3d2e3ae899ac6eef9a184398d7f8c37b31fac17/doc/plans/2026-11-18-item1-6-felt-math-world.md
+
+Gardner et al., “Evaluating Models’ Local Decision Boundaries via Contrast Sets”
+https://aclanthology.org/2020.findings-emnlp.117/
+~~~
+
+*Claude's evaluation.* All of it bears on this item, and none of it on item 1.7.
+
+- *The first milestone, "Three is above four".* Taken as the item's first gate before any costlier training: one sentence that needs object recognition, the tie of a word to its object, and the order of the arguments, on a scene small enough to inspect.
+- *1, two interpretations with different consequences.* Taken: the four-way set (both scenes, both questions, and "below" for the same answers), both objects moved together, intensities varied within their bands, digit pairs held out, a set counted correct only when every answer in it is. Its second half is a measure and not a test of answers: where the explore and the exploit paths bind the two roles in opposite ways, whether exchanging the objects reverses which binding costs less. It belongs with the chooser's moves of item 1.5 (item 1.5 plan, "Codex's four moves for the chooser", moves 1 and 2).
+- *2, a scene that is not available against a board that is seen empty.* Taken, and it corrects §14.1, which writes "a sentence with nothing felt" as an empty list, the same as a board seen with nothing on it. They are two of the four corners (the tetralemma's two lanes): an empty board is evidence against, a missing scene is no evidence. `scene: []` for the first and `scene: null` for the second, carried through the reader and the reconstruction cost. It is needed by the inference split of §14.5, whose premises are heard with nothing felt.
+- *3, the object before its word.* Taken; it agrees with the order of learning already decided (words, objects, then meta concepts; sigma-pi plan §19.25) and adds what that order lacked, a held-out intensity and held-out places for each digit, so that a failure of perception can be told from a failure to tie a word.
+- *4, categories 20 and 24.* Taken. Category 20's question always has one answer; the restated frame of this plan ("which move was faster, the first or the second ?") already describes the movements neutrally, and the suggestion adds the part that matters: exchange the speeds with the question and the order of events fixed. Category 24's inference frame always answers "yes"; it gets a rule for each answer ("if three moves, four moves" and "if three moves, four stays still"), and a case with the premise left out, whose answer is not known.
+- *The measure before any remote machine.* Taken as the item's record: examples and elapsed time to a declared accuracy on whole held-out spatial sets, with naming at new places, the roles exchanged on a seen scene, and inference from text alone reported apart.
+
+*Decided (Alec, 2026-11-21):* "The missing scene does not affect reconstruction cost." So `scene: null` charges nothing on the scene; an empty board is reconstructed and charged like any board. *Decided (Alec, 2026-11-21), on the unit of the count:* "Per answer, unless I hear better rationale". The gate is the accuracy per answer; the count of whole sets right is reported beside it, with which cells fail, and is not a gate.

@@ -9721,6 +9721,86 @@ Asked whether `primingBridgeCapacity` should be set in the production configurat
 
 *Mine:* `ConceptualSpace/primingBridgeCapacity` becomes 8,388,608 in `model.xml` (the value of `data/BasicModel_corpus.xml`; it was 0, the whole reservation). The code takes the lesser of the key and the full reservation, so only a configuration whose full reservation is larger is bound by it.
 
+### 19.124 Codex's diagnosis of reading in order, and Alec on what the query is (2026-11-21)
+
+Codex, in `suggestions.txt` (GitHub main, `2109a42a5d`), traced on the eighth pass's working tree. Its text, whole:
+
+> Reading words left to right with attend()
+> 2026-11-21
+>
+> I traced the sentence reader on the item17-r6d8 working tree, based on
+> cf1ea4e0e9 with local salience and sentence-look changes. In one unforced
+> reading of "What is this?", the grammar received "this", "What", "is", "?".
+> The first divergence was in the choice of the word handed to the grammar.
+>
+> 1. The context changes, but the request for a place can stay fixed.
+>
+>    OperationSelectionLayer.attend in bin/Language.py asks how much of each
+>    concept code the context query covers. ConceptualMatch.match sums the
+>    coordinatewise minimum of query and code and divides by the size of the
+>    code. Once a query coordinate exceeds the code coordinate, increasing
+>    it further contributes nothing to either the match or its gradient.
+>
+>    In a CPU probe of "This is Felix." at the reading lesson's learning
+>    rate of 0.01, the first optimizer step was enough to reach this flat
+>    region. Reading "This" changed the next query by as much as 3.10 on one
+>    coordinate. The largest change across all place requests was exactly
+>    zero. At the second look the sum of absolute gradients at the request
+>    was 0.00659, and every gradient at the query was zero. In an isolated
+>    backward pass, scaling that query to 2% of its magnitude and applying
+>    the same incoming gradient gave a nonzero query gradient. That isolates
+>    the loss of sensitivity to the match. The scale was a diagnostic probe.
+>
+> 2. The ordinary corpus run does not teach the next-word request.
+>
+>    The 16-sentence corpus run through MathChainTraining.present supplied
+>    no ReadingTargets on any of the 25 reading paths observed. The context
+>    projection stayed exactly zero. On a subsequent reading of "This is
+>    Felix.", all four looks asked only for the starting concept "words".
+>    SentenceLooks.Looks.run lowers the activity of a word after it is
+>    interpreted. Attention.draw_among selects the strongest remaining word
+>    and draws randomly among exact ties. This can recover every word while
+>    visiting the words out of order. The explicit reading_lesson path
+>    supplies the next-word loss and replays the named target during training.
+>    Its learned order must therefore be measured with that target removed.
+>
+> 3. The places test marks some correct readings as failures.
+>
+>    test/test_item17_places.py passes the length of the padded forms array
+>    to AttentionLesson.in_order. That helper expects the accepted positions
+>    to equal range(count). In the corpus fixture the live source positions
+>    of "This is Felix." were [0, 2, 4, 5] in a 32-slot array. Reading those
+>    four positions in precisely that order still fails this comparison.
+>
+>    I rescored an explicitly trained places fixture using interpreted
+>    arrivals from Looks.source_orders() and the ordered source slots with
+>    live spans. After training, one unforced evaluation gave 4 of 6
+>    two-word sentences, 0 of 16 lesson sentences and 1 of 6 held-out
+>    sentences in order. The existing helper scored zero in all three sets.
+>    The corrected counts still show a failure to learn reliable order.
+>
+> Suggested next experiment
+>
+> Score interpreted arrivals against the live source slots for each sentence
+> and batch row. Include a correct reading with gaps and padding, plus a
+> reading of the same words with two arrivals swapped. With that measure in
+> place, test the scale of the context query relative to the concept codes.
+> Track the request and its gradient on the first two looks, then evaluate
+> without a supplied reading on sentences containing the same words in
+> different orders. This checks whether the location request can move after
+> the first word and whether that movement predicts the next word in text.
+
+*Checked by Claude:* point 3 is true in the source (`test_item17_places.in_order` passes the length of the padded forms to `AttentionLesson.in_order`, which wants the positions taken to equal `range(count)`). So every "0, 0, 0" that §23.6.6 to §23.6.12 report from the places' measure is in part this fault, and the counts of the lesson's script (0 to 2 sentences in order) measured a draw, since by point 2 that path teaches no next-word request. Points 1 and 2 are not reproduced by Claude. The bound of point 1 was Claude's first choice (§19.121), built in the eighth pass (§23.6.13).
+
+Alec, asked whether the request should use the match both ways or the query be scaled: "I was thinking that the query would be activation of the concept \"words\" and an empty concept which could learn \"next\" over trained data." Then: "\"Next \" is not clear in my mind. But since we highlight \"words\" which will cause the salience to focus on the words we have learned, we might also have a cur for the .when focus, which we should be able to derive from a lit neuron and knowledge of the last attend .where. It would also help to have some memory of the full percept bank in order to know where to point the .where window of attention."
+
+*What follows* (Claude; nothing is decided beyond his words):
+
+- The query is a set of lit concepts, "words" among them, and not a free vector matched against every concept's code. So neither "the match both ways" nor "the query scaled" is built.
+- Beside "words" there is a cue for the focus, derived from a lit concept and the `.where` of the last look. Today the last look's `.where` does not reach the next request (the context is given the surprise alone).
+- The memory of the full percept bank exists: the sentence's field of percepts is made once and held (`PerceptBank`), and a word read is lowered in it.
+- *To be tried in tests before anything is built* (the ninth pass): the cue as a concept that carries the `.where` of the word just read, each unread word scored by how near its `.where` is to it, with what is learned being the offset; the first word, which has no last look, by the learned start or a draw.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -13999,6 +14079,60 @@ lesson_entries_probe.py in scratch-1.7.
 
 5. Tests: both gates; the files touched; the new compiled lesson
    test. Return as scratch-1.7/r6d_return_p.md.
+~~~
+
+*The ninth pass* (added 2026-11-21, after §19.124 and §23.6.13):
+
+~~~
+Round 6d of item 1.7, ninth pass: the measure of reading in
+order made right, and two trials. It is short, and it changes no
+source under bin/ but for a fault it finds in a measure. Read
+§19.124 (Codex's diagnosis and Alec's words) and §23.6.13's
+review. Work on a branch item17-r6d9 cut from main; move main
+forward at the end if both gates and this pass's files pass.
+
+1. The measure (Codex, §19.124, 3 and its last paragraph). Score
+   the interpreted arrivals (Looks.source_orders()) against the
+   live source slots of each sentence and batch row, not against
+   range(count) over the padded forms. Tests of the scorer: a
+   correct reading whose slots have gaps and padding is in order;
+   the same words with two arrivals exchanged is not. Then
+   test_item17_places' measure and the lesson's script score by
+   it. Where a reading is taught by reading_lesson, measure with
+   the named target removed (§19.124, 2). Return the counts
+   again: two-word, lesson, held out, three starts.
+
+2. The request and its gradient at the first two looks of "This
+   is Felix." after the reading lesson (Codex, 1): the query's
+   greatest coordinate against the codes', each place concept's
+   request, the gradient at the request and at the query. A
+   record; repair nothing.
+
+3. A trial in tests only (§19.124, Alec's cue): the request is
+   "words" and one cue concept; the cue carries the .where of the
+   word just read; each unread word is scored by how near its
+   .where is to the cue's (shared size, as place_factor reads);
+   what is learned is an offset on the .where; the first look has
+   no cue and takes the learned start or a draw. No context map.
+   Count sentences in order by step 1's scorer on the two-word,
+   lesson and held-out sentences, and on sentences with the same
+   words in other orders, before and after training the offset.
+   Say what the cue cannot do.
+
+4. The identity curriculum, once, as a record:
+   test/attention_curriculum_gates.py (its stages
+   identity_permanence, identifying_words, reading_two,
+   reading_four, identities, noun_phrase, noun_verb, relations).
+   Return each stage's result, and whether the script still runs
+   on this source; if it does not, say what stops it and repair
+   only what is a fault of the script.
+
+5. Tests: both gates; this pass's files. Return as
+   scratch-1.7/r6d_return_9.md.
+
+Not in this pass: any change to attend, to where_match or to the
+salience map; the kinds' Sigma on the LDU; reconstruction
+de-muxed; the production configuration.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
@@ -23760,3 +23894,187 @@ Claude's list on the sixth pass's commit (`a0bcfc47e1`): **1 failed (`test_81`),
 - *The trial says nothing of the bound or of the places:* after the lesson the query is nothing, so only the start is asked. The request of 72 to 1,532 was in the places' measure, which the eighth pass runs again.
 - *Not done:* the symbols' Pi and the kinds' Sigma are not on the LDU yet; (b) was run at 95 occurrences with a table of 23, since the lesson's configuration holds 32 readings a sentence.
 - The lesson's script: 0 sentences in order in both runs.
+
+### 23.6.13 Round 6d, eighth pass: the sparse LDU's factors learned, the symbols' Pi on the LDU, the request a mask, the request carried down by the ways back (Claude on Opus, standing in for Codex, 2026-11-21)
+
+The branch `item17-r6d8` was cut from `main` (0d5b03bfb9) in this checkout. Four commits were put on it. Both gates and the step 7 list passed except `test_81`, so `main` was moved forward to it by fast-forward and now stands at **0e20b251c8**. The branch is deleted and the checkout is on `main`. Nothing was pushed, the parent repository was not touched, and nothing under doc/ or data/ was edited. No seed was pinned, no skip or xfail was added, and no bar, count, rate or capacity of either gate was changed. An untracked file `suggestions.txt` is in the checkout; it is not mine and I left it alone.
+
+#### What fails or is unfinished, first
+
+- **The kinds' Sigma is not on the sparse LDU (step 2, half done).** `ConceptualAttentionLayer` (about 600 lines, with role blocks, Hebbian updates and many readers) left no room in this pass. Only the symbols' Pi was moved. So above order zero there is still no full way back, and **the request still reaches the order-zero concepts by the transposes of the structure above them** (`Salience._down`, kept for that part alone). Below order zero the transposes are gone. This is provisional, and it is not the "nothing kept beside" that step 4 asks for.
+- **`where_match` is kept (step 4's other branch).** Without it the request gets no gradient at all. The places' untaught-start test, `test_the_request_for_a_place_at_an_untaught_start`, read a whole-request gradient of 0.0 at every look, and the lesson's script put 0 of 96 sentences in order. With it, the gradient was 15.2 and 7.6 at two looks, and 15 of 96 sentences were in order. The match now reads the salience given by the ways back (summed over the two lanes), because those ways give no share of the `.where` apart from the `.what`. **This is a decision for Alec**, since §19.121 answer 3 withdrew it "unless the trial shows the look needs it". The figures both ways are under step 5.
+- **A symbol's pass above order zero.** When no open-run values are given, a symbol is now passed by its weights. Before this pass, all its values were zero; each one-member symbol then had a ratio of about 8.5e7, which is where the seventh pass's "salience about 8.5e7 on every word" came from. This is mine and provisional.
+- **Products of an L entry with U entries are not seen by the structure's readers.** `ConceptSpread.structure`, `StructureRead`, `entries()` and `rows_reading()` read W only at each stored pair (`w()`). No L entry appeared in any Sigma read during the gates, the order-zero tests, the symbols tests, growth or spread (census in step 1). They appear only in drawn tests.
+- **A diagonal through zero.** Because the factors are learned, W = d·U. If a concept's own diagonal `d` is taught through zero, every other concept's reading of that row flips option. No negative diagonal appeared in the census except two one-entry Not tests.
+- **`rows_read` reads the host twice per call** (in `BasicPercepts.outside`, the way up's own code). Test 56a was ported to count host reads only in `rows_asked` and `through_the_not`, where there are 0. The 2 reads are printed.
+- `test_81` fails, as allowed. `test_prepared_answer_boundary[True]` passed; it is in `test_generation_catalog`, which is in the list.
+
+#### Step 1: the factors are the learned numbers (`bin/Layers.py`, cc4691715c)
+
+- `SparseLDULayer.value` now holds one factor per entry: `d` for a diagonal entry, `U_ab` for an entry of U, and `L_ab` for an entry of L. A slot that holds only an input or only an output has `d` fixed at one (the padding). W is L·D·U: at an entry of U it is `d_a U_ab`, at an entry of L it is `L_ab d_b`, and an L entry from a to b with a U entry from b to c gives W the product `L_ab d_b U_bc` at the pair (a, c).
+- **A cycle goes in L.** An entry whose U entry would close a cycle goes in L, and no output leaves its slot. L stays acyclic while entries are only added, because each L entry goes down U's order. An entry that would close a cycle of both triangles (possible only after a removal) raises a ValueError; this is provisional. Each triangle keeps its own levels and longest chain (`longest_chain`, `longest_chain_lower`).
+- **An entry at nothing makes no diagonal.** Otherwise D would be zero and would pass nothing through its slot. The input and output then take slots of their own, and a persistent buffer `entry_apart` records this so that a reload places the slots as they were.
+- **The way up is L, then D, then U, all by scatters. The way back is U undone, then D divided out (nothing where d is nothing), then L undone. It refuses nothing.** A slot with no output is given at nothing, which is the pseudoinverse the padded D gives. `returned()` now names the inputs returned exactly and is used only for reporting.
+- `add`, `set_w` and the Not's `make` write W's value: the factor is the weight over the `d` that scales it. Rewriting a diagonal rescales the U entries leaving its slot and the L entries entering it, so W stays the same at those entries.
+- **Readers** now read W through `w()` (differentiable, `[capacity]`): `entries`, `entry`, `weight`, `NotLayer3.entries` and `make`, `ConceptSpread.structure`, `StructureRead.readers`, and `Spaces._start_order_zero_entry`. The optimizer and the frozen-entry hook still act on `value`, which now holds the factors.
+- **Old checkpoints.** A checkpoint without the `factored` key holds W's entries. It loads by placing the slots again from the entries (none marked apart), then writing each non-diagonal factor as W over its `d`. On a synthetic old checkpoint (30 × 34, 28 L entries), W at every entry matched exactly (difference 0.0), and the dense W differed by 6.0e-8. A real old checkpoint that had a cycle (where the seventh pass moved the output out of its slot) now gets an L entry instead, so W gains products at other pairs. No checkpoint file on disk was tried; none was found under data/.
+- **How far the way up moves.** The way up at each entry equals W as written, so it moves only through L products or through learning, where a U factor's gradient is scaled by `d`. Census of every `SparseSigmaLDU` read during the gates and 9 files (scratch `ldu_census.py`):
+  - The XOR gate (`test_mm_xor`) reads no order-zero Sigma.
+  - The item 2.5 gate reads one with 3 entries, all diagonal.
+  - No Sigma in those runs had an L entry.
+  - The largest had 27 entries (14 diagonal, 13 U) in a model test. The dictionary trial had 79,492 entries (19,821 diagonal, 59,671 U, chain 6).
+  - The lesson's Sigma had all entries on the diagonal, as in the seventh pass, so its way up is unchanged by construction.
+  - In the drawn test of `test_item17_symbols` (500 random additions over 40 × 30), there were 55 to 73 L entries, U chains of 19 to 24 and L chains of 5 to 8.
+- **Both gates passed at their bars**: 2 passed in 6.00 s before any edit, and 2 passed in 3.64 s at the end. They print no counts or rates.
+- **Ported tests (old, then new):**
+  - `test_d_a_cycle_keeps_the_entries_and_gives_up_a_row`: concept 0 left its slot, there were 5 slots and a chain of 2, rows 0 and 1 were refused, and rows 2 and 3 returned. It is now `test_d_a_cycle_goes_in_l_and_every_row_is_returned`: 4 slots, 1 L entry, a product of −0.25 at concept 1 on row 1, and all 4 rows returned exactly.
+  - `test_the_way_back_as_far_as_it_goes`: the narrow case raised ValueError. Now nothing is refused: rows 1 to 4 return exactly, and row 5 (no concept of its own) returns at nothing.
+  - `test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced`: the reference read each learned number as W's entry. It now reads the dense L·D·U of the factors (`sparse_ldu.dense_w`) in 64 bits. In 32 bits the dense and scatter reads rounded apart by up to 3e-5 on gradients in the tens.
+  - The `_dense_read` helper in `test_item17_sparse_ldu` and the dense matrix in `test_item17_order_zero` now read W, not the factors.
+
+#### Step 2: the symbols' Pi on the sparse LDU (cd5f63ec4d)
+
+- **`SparsePiLDU(SparseLDULayer)`** is the Pi in the log domain under `PiLayer2`'s law: a diagonal at one or more, every other entry at zero or more, checked when an entry is written, and no bias. An output reads nothing where an input that reaches it (by an entry or a product) is absent or at the floor, or where it has no entry. The way back is `exp(back(log z))`, in 0 to 1. The values of the symbols' Pi are written at one and are not learned, as before.
+- **`SymbolTable`** now uses it. Each concept read has a member id (an input). The concept a symbol brought is its slot's diagonal. `SymbolTable.back(lanes, concepts)` is the new way back.
+- **New test** `test_the_symbols_pi_is_a_sparse_ldu_with_a_way_back`, on 10 drawn symbols with 15 entries and a chain of 2:
+  - The way up equals `SparsePiLayer3`'s to 1e-12.
+  - An absent member puts every symbol that reads it at nothing.
+  - The way back error is 1.1e-16.
+- **`SparsePiLayer3`** is now read only by the first Pi (`BasicPercepts.pi`, which `NumericPercepts` also reaches through `basic.pi`). Nothing else reads it.
+- **Ported:** `test_item17_symbols`. It asserted the compressed rows (`pi.crow` of 8 + 1, member keys `('concept', cid)`), and now asserts `pi.nOutput == 8` and the concept list. Certificate (e) asserted `isinstance(table.pi, SparsePiLayer3)` and now asserts `SparsePiLDU`.
+- **Not moved:** the kinds' Sigma (see the first section).
+
+#### Step 3: the request is a mask (cf1ea4e0e9)
+
+- `OperationSelectionLayer.attend` now asks each concept for as far as its code, on two lanes (`signed_lanes`), is held by the query's lanes by shared size. It asks against as far as the code is held by the query's lanes exchanged. Both use `ConceptualMatch.match`, which fits: there is no codebook, both lanes are flattened, and the coverage is overlap over the code's own size. Each value is in 0 to 1, and the start is added to the for lane.
+- The query keeps its gradient; at zero, `match`'s minimum passes the derivative to the query.
+- It materialises `[B, concepts held, 2D]` once. At production sizes that could be hundreds of MB; this was not measured.
+- **Ported:** `test_attend_gives_a_request_over_concepts_on_two_lanes` gave [[2, 0], [1, 1], [1, 0]] before and gives [[1, 0], [1, 1], [.5, .5]] now. `test_look_forecast` passes unchanged.
+
+#### Step 4: the request goes down by the ways back (0e20b251c8)
+
+- **`Salience.salience(owner, bank, request)`** works in four stages:
+  - `concepts_asked`: the transposes above order zero only, provisional.
+  - `rows_asked`: the order-zero Sigma's way back of each lane, where a lane below nothing asks the row's other lane.
+  - `rows_read`: each row's own read of **every occurrence** of the sentence, as `read_bank` reads it at full presence (`held_at`, `place_factor`, `outside`, the holder).
+  - `through_the_not`: each read taken back through the reading (the greatest of its occurrences) and the Not (for less against), to the occurrences that hold the greatest.
+  - An occurrence's salience is the sum over rows of the ask times that read, on each lane.
+- Without the last stage, a word's row lit the run inside a longer word: `is` at the run `is` of `This` gave inner concept 0.7616, and `test_32` failed. With it, that run reads 0.
+- **Removed:** `Salience.first_pi`, `onto_bank` and `SalienceMap.band`, along with `BasicPercepts._dense_rank` and the order by extent in `attended`.
+- **`BasicPercepts.attended(bank, share, capacity)`** now takes the `capacity` most salient occurrences, with a random draw among equals.
+- **`SentenceLooks.look(model, bank, request, own)`** now returns `(field, activity)`. The activity is the salience capped at the occurrence's own activity, as built. The field is multiplied once by `where_match` on the salience (kept; see the first section).
+- I also tried presence = own × salience / greatest (the seventh pass's provisional rule). It still left a request gradient of 0.0 in training, because the loss's gradient reaches the field only where it does not depend on the activity. I withdrew it.
+- **Ported tests (old, then new):**
+  - 56a: counted `first_pi`'s host reads (0). It now counts `rows_asked` and `through_the_not` (0), prints `rows_read`'s 2, and drops the `band` assertion.
+  - 56b: by `first_pi` it gave [1, 0, 1]; `rows_read` gives the same.
+  - 56e: by `first_pi` it gave [.2, 0, 0] through the Not. `rows_read` alone gives [.6, 0, 0]; the Not is now in `through_the_not` and the Sigma's way back.
+  - 56d: kept, and it now also checks the order-zero Not through `rows_asked`, which gives 1/.7 on the lane the entry reads, where the transposes gave .7.
+  - 31a: the `first_pi` half against the framework's backward is removed; the `_down` half is kept.
+  - 31c: the transposes' share was |for − against|. The way back's two lanes are now min(red, round) and 1 − min(red, round).
+  - 31/33d: the where match of each reading ([1, 1]) is no longer asserted, because `look` no longer returns it.
+  - Table 62 (c): `band` was greater at the first occurrence; it is dropped, and the share is still greater at the first.
+  - Table 63: the largest occurrences came first. Now the table is full at `capacity` distinct occurrences, with no order by extent.
+  - Places, "lights its own reading's band": now reads the salience.
+  - `test_item17_carry_down_trial` (b) and (c): ported from comparing the transposes and the ways back to measuring the look as built. (a), the toy, is unchanged.
+  - Tests 34 and 37 (`where_match`) and the places' `looked_at`: ported in an intermediate state, then restored unchanged when `where_match` was kept.
+
+#### Step 5: measures (recorded; nothing tuned)
+
+- **The 304 requests** (the toy, as in the seventh pass): returned exactly 304 of 304 and missed 0, both ways, as asked and bounded.
+- **(b), 95 occurrences with a table of 23 and the request on `is` (5 occurrences):**
+  - 5 of 5 are in the table.
+  - 5 occurrences are salient. The greatest salience on an asked occurrence is 0.9986; the greatest elsewhere is 0.0.
+  - The seventh pass had the table by extent with 3 of 5.
+- **Certificate 62, after the change:**
+  - Row read at the first occurrence: 0.99999976 (was 1.0 with the entry at nothing).
+  - Row read at the second occurrence: 0.957.
+  - Salience: 0.99999976 at the first and 0.957 at the second.
+- **Certificate 33 (b):** the gradient at the place's row was 0.25 at the first occurrence and 1.0 at the second, and 0.0 elsewhere both times.
+- **(c), the first two looks of "This is Felix." after the lesson, as built:**
+  - The request asks 1 concept, with a greatest value of 1.0.
+  - The place request is 0.0 and 0.0.
+  - Word salience is 0.9994, 0.9986 and 0.9633 on This, is and Felix.
+  - Look 1 took word 0 (This). Look 2 took word 2 (`is`).
+- **The places' measure of reading in order, once** (`PLACES_RUNS=1`; 31 places; first sentence "This is Felix."):
+
+| | Looks | Request on the place concepts, for lane (greatest, least), at each look | Where match at each look (by reading) | In order before / after (two, lesson, held) | Untaught start: whole-request gradient at the looks |
+| --- | ---: | --- | --- | --- | --- |
+| with `where_match` (built) | 3 | 1.0949, 0.6343 (all three looks) | [.0003, 1, .108, .0529], [0, 1, .108, .0529], [0, 1, .108, 0] | 0, 0, 0 / 0, 0, 0 | 15.23, 7.61, 0, 0 (test passes) |
+| without `where_match` | 2 | 1.0554, 0.3644 (both looks) | ones | 0, 0, 0 / 0, 0, 0 | 0, 0, 0, 0 (test fails) |
+
+  These values include the learned start (−0.178 to 0.095 on the place concepts with the match; 0 to 0.055 without). Above 1, a place request is attend's mask plus the start.
+- **The lesson's script, `--runs 6`** (`BASICMODEL_DEVICE=cpu`, each run a fresh process with its start drawn and printed):
+
+| | In order, sentences (each run) | Total | Words in order | Words, live | Drawn | Known against / both | Seconds, mean (whole) |
+| --- | --- | ---: | ---: | --- | --- | --- | --- |
+| with `where_match` (built) | 1, 2, 3, 2, 3, 4 | 15 of 96 | 60 | 64 of 64 each | 26 each | 0 / 0 | 24.7 (164 s) |
+| without `where_match` | 0, 0, 0, 0, 0, 0 | 0 of 96 | 0 | 64 of 64 each | 27, 27, 26, 26, 26, 26 | 0 / 0 | 26.8 (177 s) |
+
+  The seventh pass had 0 and 0 in its 2 runs.
+
+#### Step 6
+
+`test_81` fails and `test_prepared_answer_boundary[True]` passes; neither was skipped or ported. The tests that asserted the transposes' form are ported as listed under steps 1, 2 and 4.
+
+#### Step 7: test runs, with counts and seconds
+
+| Run | Result |
+| --- | --- |
+| Both gates, before any edit | 2 passed, 6.00 s |
+| sparse_ldu, order_zero, symbols, concept_memberships, grounded_xor, after step 1's source and before the ports | 5 failed (the old forms), 75 passed, 91.8 s |
+| the sparse Sigma read test, ported in 32 bits | 2 failed, 28 passed, 69.4 s; then failed in 2 of 7 single runs (rounding) |
+| the same in 64 bits, 6 runs | 2 passed each, 3.3 to 3.9 s |
+| gates and 9 files (sparse_ldu, order_zero, symbols, concept_memberships, grounded_xor, live_concepts, sparse_growth, spread, definition_integrity), with census | 129 passed, 79.0 s |
+| symbols after step 2 | 35 passed, 68.2 s |
+| symbols' Pi test | 1 passed, 2.8 s |
+| structural_checkpoint, item17_growth, item18_expect, item18_operators_a, thought_infer, item6_2_thinking, accessible_mind, spread, sparse_ldu | 1 failed (test_81), 113 passed, 178.6 s |
+| operators_round1, look_forecast (step 3) | 21 passed, 6.6 s |
+| looks, places, table, carry_down_trial, code (step 3) | killed after 15 min: the step 4 source was being edited under it, so no result |
+| looks unit subset (step 4) | 1 failed (a float of a tensor that required grad), 8 passed, 3.3 s |
+| looks, table, places, loop_of_looks, carry_down_trial, first build | 4 failed (test_32, test_63, untaught start, `where_match` gone), 35 passed, 266.7 s |
+| the same, `where_match` restored | 1 failed (test_32), 38 passed, 703.9 s |
+| looks subset after the read as the way up reads it | 2 failed (56a host reads, test_32), 8 passed, 8.8 s |
+| the same 5 files, after `through_the_not` | **39 passed, 725.0 s** |
+| measures: trial and table 62 (`-s`) | 4 passed, 37.1 s |
+| places with `where_match` / without | 2 passed, 202.5 s / 1 failed (untaught start), 1 passed, 241.8 s |
+| **Step 7 list**: both gates, the seventh pass's 27 files, and operators_round1, look_forecast, loop_of_looks, structural_checkpoint, item17_growth (32 files) | **1 failed (test_81), 304 passed, 2 skipped, 698.5 s** |
+| Both gates at the end | 2 passed, 3.64 s |
+
+Scratch: `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6d8/` contains:
+- `ldu_census.py`, `census1.txt`, `old_ckpt.py`
+- `Salience_before.py`, `Layers_before.py`
+- `m_trial.txt`, `m_places.txt`, `m_places_nowm.txt`
+- `lesson/`, `lesson_nowm/`, `list7.txt`
+- `no_where_match.py`, `nowm/sitecustomize.py`
+- `probe2.py`
+
+#### Commits
+
+- cc4691715c: the factors are the learned numbers; a cycle goes in L; the way back refuses nothing; `w()` and its readers; old checkpoints; ports.
+- cd5f63ec4d: `SparsePiLDU`, the symbols' Pi on it, `SymbolTable.back`; ports.
+- cf1ea4e0e9: attend's request is a mask by shared size; port.
+- 0e20b251c8: the request carried down by the ways back; `first_pi` removed; the table is the most salient; `where_match` kept on the salience; ports.
+
+#### Main
+
+Moved by fast-forward from 0d5b03bfb9 to **0e20b251c8**. The branch `item17-r6d8` is deleted and the checkout is on `main`. Nothing was pushed.
+
+#### Decisions left for Alec
+
+1. **`where_match`.** Without it the request is taught nothing (gradient 0.0) and no sentence is read in order (0 of 96). With it, 15 of 96 are in order. It is kept, reading the salience. Should it stay, or should another cost teach the request?
+2. **The kinds' Sigma** is not yet on the LDU, so above order zero the request goes by the transposes. It is next for this layer.
+3. **A diagonal through zero** flips what other concepts read of that row (W = d·U). Accept it as the LDU's nature, or keep the Not's sign off D?
+4. **Old checkpoints with a cycle** gain L products at other pairs when loaded. None is known to exist.
+
+#### Review (Claude, 2026-11-21)
+
+Claude's list on the seventh pass's commit (`c2f3d1000d`): **1 failed (`test_81`), 3,342 passed, 161 skipped, 1,394 s.** The list on this pass's commit (`0e20b251c8`), with the two new test files added to it, was running when this was written. GitHub main's three commits (`suggestions.txt`, two lines of `todo.md`) are merged into local `main` (`8ae7505039`).
+
+- *The sparse LDU is as Alec asked for it:* the factors are the learned numbers, a cycle's entry goes in L, the way back refuses nothing and gives the padded pseudoinverse, and the symbols' Pi is on it. On the lesson and on both gates the way up did not move, since no Sigma there has an entry off its diagonal.
+- *Left:* the kinds' Sigma (`ConceptualAttentionLayer`) is not on the LDU, so above order zero the request still goes down by the transposes. It is taken with reconstruction, which needs that way back.
+- *Two things of the factored form that are Alec's to know, and not changed here:* a concept's own diagonal taught through zero turns every other concept's read of that row to its other option; and an old checkpoint with a cycle would gain products on loading (none is known).
+- *The request by the ways back reads as well or better than the transposes:* 304 of 304; with a table of 23 over 95 occurrences all 5 asked occurrences are in it and nothing else is salient.
+- *`where_match` was kept, against the text, and rightly reported:* without it the request has no gradient at all. That is not a reason to keep it for good. It shows that the request has no other path to the cost, which is the matter of §19.124: by Alec's words the query is a set of lit concepts with a cue from the last look's `.where`, and the context's map with its match is not his design.
+- *The bound built in step 3 goes flat* (Codex, §19.124, 1): once the query exceeds a code the match and its gradient do not move. It is left as built until the ninth pass's trial, and nothing is built on it.
+- *The counts of reading in order in this return are not to be read:* the places' measure scores correct readings as failures and the lesson's script teaches no order (§19.124, 2 and 3). The ninth pass makes the measure right first.
+- *One rule the pass added and that stands:* a row's read is taken back through its reading and the Not, without which `is` lit the run inside `This`.
