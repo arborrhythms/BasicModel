@@ -360,15 +360,24 @@ def symbol_activations(keys, values, occupied, lanes=None, *, identities=None, b
         1, indices[..., None].expand(-1, -1, 2), source, reduce='amax', include_self=True)
 
 
+# The nearest keys by the product form at which the direct distance is taken.
+MATCH_CANDIDATES = 8
+
+
 def match_symbols(keys, values, *, identities=None, bank_ids=None, key_valid=None,
                   key_orders=None, value_orders=None):
     """Native handles identify activated codes; unhandled values require exact keys.
 
     A missing named handle is unknown, never its nearest neighbour. Direct
     distances avoid cancellation in the 1e-5 fallback for composed values.
+    They are taken only at the few nearest keys by the product form: the
+    direct form over the whole bank holds every value, key and coordinate at
+    once on Metal ([B, N, K, D]: 62.5 GiB for the production generate walk).
+    A key within 1e-5 is among the nearest by either form, so the match and
+    its index are the direct form's.
     """
-    distances = torch.cdist(values.detach(), keys.detach(),
-        compute_mode='donot_use_mm_for_euclid_dist')
+    values, keys = values.detach(), keys.detach()
+    distances = torch.cdist(values, keys, compute_mode='use_mm_for_euclid_dist')
     if key_valid is not None:
         distances = distances.masked_fill(~key_valid[:, None, :], torch.inf)
     if key_orders is not None:
@@ -376,7 +385,14 @@ def match_symbols(keys, values, *, identities=None, bank_ids=None, key_valid=Non
         same = ((orders == orders[:, :1]).all(-1)[:, None, None].expand_as(distances) if value_orders is None else
                 (value_orders[..., None] == orders[:, None]) & (value_orders[..., None] >= 0))
         distances = distances.masked_fill(~same, torch.inf)
-    distance, index = distances.min(-1)
+    near = distances.topk(min(MATCH_CANDIDATES, distances.shape[-1]), -1, largest=False).indices
+    D = keys.shape[-1]
+    chosen = keys.expand(near.shape[0], -1, -1).gather(
+        1, near.flatten(1)[..., None].expand(-1, -1, D)).reshape(*near.shape, D)
+    direct = (values[..., None, :] - chosen).square().sum(-1).sqrt()
+    direct = torch.where(torch.isinf(distances.gather(-1, near)), torch.inf, direct)
+    distance, position = direct.min(-1)
+    index = near.gather(-1, position[..., None])[..., 0]
     matched = distance <= 1e-5
     if identities is not None:
         if bank_ids is None:
