@@ -255,6 +255,11 @@ class Looks:
         from CandidateGrowth import at_look
         at_look(model, field, extent)
         self.fields.append(dict(field=field, extent=extent.clone(), active=rows.clone(), surprise=surprise))
+        if bank is not None:
+            # A record that nothing reads (§19.125): each reading's .where
+            # wires and code on the .what, at its bracket in the bank.
+            from Places import readings
+            found_where, _, found_code = readings(bank)
         while bank is not None:
             turn = state.taken
             rows = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
@@ -343,6 +348,13 @@ class Looks:
                 self.teacher.book(logp, choice['eligible'] & rows)
                 choice['eligible'] = torch.zeros_like(allowed)
             choice.update(index=index, slot=index.clamp_min(0))
+            # The record of the look (§19.125): the request it was given, and
+            # the .where and the code of the word it took (nothing where none).
+            taken = index.clamp(0, found_where.shape[1] - 1)
+            stream = torch.arange(len(index), device=index.device)
+            choice.update(request=request.detach(),
+                          where=torch.where(found[:, None], found_where[stream, taken].detach(), 0.),
+                          code=torch.where(found[:, None], found_code[stream, taken].detach(), 0.))
             self.decisions.append(choice)
             interpreted = choice['interpreted'] & found
             fragment = None
