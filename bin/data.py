@@ -1289,7 +1289,7 @@ class Data():
         import json
         from pathlib import Path
         filename = util.TheXMLConfig.get(
-            "architecture.data.grammarLessons", default="grammar_wording.json")
+            "architecture.data.grammarLessons")
         path = Path(filename)
         if not path.is_absolute():
             path = Path(__file__).resolve().parents[1] / "data" / path

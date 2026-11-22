@@ -827,22 +827,9 @@ class Mereology:
         if in_boxes is None:
             return 0.0
 
-        # Read knobs from config (with sensible defaults).
-        try:
-            ratio_target = float(TheXMLConfig.get(
-                "architecture.continuityRatioTarget", default=1.0) or 1.0)
-        except (KeyError, TypeError, ValueError):
-            ratio_target = 1.0
-        try:
-            sharpness = float(TheXMLConfig.get(
-                "architecture.continuitySharpness", default=1.0) or 1.0)
-        except (KeyError, TypeError, ValueError):
-            sharpness = 1.0
-        try:
-            norm_kind = str(TheXMLConfig.get(
-                "architecture.continuityNorm", default='inf') or 'inf')
-        except (KeyError, TypeError, ValueError):
-            norm_kind = 'inf'
+        ratio_target = float(TheXMLConfig.get("architecture.continuityRatioTarget"))
+        sharpness = float(TheXMLConfig.get("architecture.continuitySharpness"))
+        norm_kind = str(TheXMLConfig.get("architecture.continuityNorm"))
         if norm_kind not in ('inf', 'l2'):
             norm_kind = 'inf'
 

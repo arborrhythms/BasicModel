@@ -75,13 +75,13 @@ def install_where_registry(model):
     # neither vocabulary promotion nor a batch may resize this address space.
     input_extent = max(int(model.inputSpace.outputShape[0]),
                        int(getattr(model.inputSpace.data, 'inputLength', 0) or 0))
-    if model.word_brackets and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+    if model.word_brackets and not bool(TheXMLConfig.get('architecture.serialObjectMeta')):
         # A mixing serial InputSpace declares word slots, whereas occurrence
         # coordinates are byte starts. Convert the existing unit/atom bounds
         # to byte addresses; do not compare a byte offset with a word count.
         # The fixed residual-byte layout supplies the per-word bound.
         word_capacity = int(model.perceptualSpace.outputShape[0])
-        part_capacity = int(TheXMLConfig.get('architecture.serialResidualPartCapacity', default=16))
+        part_capacity = int(TheXMLConfig.get('architecture.serialResidualPartCapacity'))
         input_extent = max(input_extent, word_capacity * part_capacity)
     from math import prod
     numeric_extent = prod(model.inputSpace.inputShape) if model.inputSpace.model_type == 'numeric' else 0

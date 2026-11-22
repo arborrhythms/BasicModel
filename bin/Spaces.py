@@ -8906,10 +8906,7 @@ class InputSpace(Space):
         data = TheData
         self.data = data
         self.model_type = model_type
-        try:
-            self.demuxed = TheXMLConfig.space(section, "demuxed")
-        except KeyError:
-            self.demuxed = False
+        self.demuxed = TheXMLConfig.space(section, "demuxed")
         self.lexer = lexer  # "word", "sentence", "byte", or "raw"
         # ``raw`` keeps the word-level codebook (unlike ``byte``); it only
         # changes the ANALYZE surface to the unanalyzed [B,1,N] byte buffer
@@ -10450,7 +10447,7 @@ class PartSpace(Space):
         # Legacy alias: hasAttention is parsed but no longer builds QKV attention.
         self.hasAttention = hasAttention
         # Reverse-retrieval attention mode: off|primer|second-order|low-rank.
-        _attn = str(TheXMLConfig.space(section, "attention", default="off"))
+        _attn = str(TheXMLConfig.space(section, "attention"))
         if _attn not in _VALID_ATTENTION_MODES:
             raise ValueError(
                 f"{section} <attention> got {_attn!r}; expected one of "
@@ -10519,18 +10516,10 @@ class PartSpace(Space):
         self.synthesis_mode = "meronomy"
         self._meronomy = self._mereological = self._meronomy_words = True
         # Radix promotion defaults; ignored unless radix/meronomy builds a store.
-        try:
-            self.chunk_promotion_threshold = int(
-                TheXMLConfig.space(section, "chunkPromotionThreshold")
-                or 4)
-        except (KeyError, TypeError, ValueError):
-            self.chunk_promotion_threshold = 4
-        try:
-            self.chunk_promotion_min_length = int(
-                TheXMLConfig.space(section, "chunkPromotionMinLength")
-                or 2)
-        except (KeyError, TypeError, ValueError):
-            self.chunk_promotion_min_length = 2
+        self.chunk_promotion_threshold = int(
+            TheXMLConfig.space(section, "chunkPromotionThreshold"))
+        self.chunk_promotion_min_length = int(
+            TheXMLConfig.space(section, "chunkPromotionMinLength"))
         if isinstance(lexical_basis, Embedding):
             lexical_basis.synthesis_mode = self.synthesis_mode
             lexical_basis.lexer_mode = self.lexer
@@ -12796,11 +12785,11 @@ class ConceptualSpace(Space):
                           if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
         self._order_limit = (max(1, int(TheXMLConfig.get(
-            'architecture.conceptLayers', default=2))-1)
+            'architecture.conceptLayers'))-1)
             if order_limit is None else int(order_limit))
         self._order_reservations = tuple(int(value) for value in order_reservations)
         self._order_allocation = str(TheXMLConfig.space(
-            section, 'orderAllocation', 'geometric')).strip()
+            section, 'orderAllocation')).strip()
         self.object_start_neighbours = int(TheXMLConfig.space(section, 'objectStartNeighbours', 3))
         if self.object_start_neighbours < 1:
             raise ValueError('objectStartNeighbours must be positive')
@@ -12829,7 +12818,7 @@ class ConceptualSpace(Space):
         # §Handoff addendum). off|primer|second-order|low-rank. Default off
         # preserves current reverse behavior. Consumed by the reverse-retrieval
         # path, not here.
-        _attn = str(TheXMLConfig.space(section, "attention", default="off"))
+        _attn = str(TheXMLConfig.space(section, "attention"))
         if _attn not in _VALID_ATTENTION_MODES:
             raise ValueError(
                 f"{section} <attention> got {_attn!r}; expected one of "
@@ -12894,8 +12883,8 @@ class ConceptualSpace(Space):
         # intuit's own map, outside the architecture: a free Pi, the Not and
         # a Sigma from the observed concepts of order zero to the same
         # concepts. Each of its rows starts on a few concepts.
-        intuit_hidden = int(TheXMLConfig.space(section, 'intuitHidden', 64))
-        intuit_pairs = int(TheXMLConfig.space(section, 'intuitLayers', 1))
+        intuit_hidden = int(TheXMLConfig.space(section, 'intuitHidden'))
+        intuit_pairs = int(TheXMLConfig.space(section, 'intuitLayers'))
         self.intuit_map = (SigmaPiStack(self._order_caps()[0], self._order_caps()[0],
             hidden=intuit_hidden, pairs=intuit_pairs, few=self.INTUIT_ROW_START)
             if owns_concepts and intuit_hidden else None)
@@ -12913,13 +12902,7 @@ class ConceptualSpace(Space):
         # stack depth (default 8), never the sentence-word limit: licensed
         # grammar reductions free slots while the independent outer word loop
         # continues (e.g. 64 surface words through STM8).
-        try:
-            stm_capacity_xml = TheXMLConfig.space(section, "stmCapacity")
-            stm_capacity = int(stm_capacity_xml) if stm_capacity_xml else None
-        except (KeyError, TypeError, ValueError):
-            stm_capacity = None
-        if stm_capacity is None:
-            stm_capacity = 8
+        stm_capacity = int(TheXMLConfig.space(section, "stmCapacity"))
         # The STM buffer width is the full CS output width ``outputShape[1]``
         # so the forward<->reverse roundtrip is loss-free even when the CS
         # carries positional/temporal columns (nWhere/nWhen > 0, e.g.
@@ -12943,8 +12926,8 @@ class ConceptualSpace(Space):
             batch=self.nStreams, capacity=stm_capacity, concept_dim=concept_dim)
         from Memory import MediumTermMemory
         self.mtm = MediumTermMemory(int(TheXMLConfig.space(
-            section, "mtmCapacity", default=64)), horizon=int(TheXMLConfig.space(
-            section, "mtmHorizon", default=16)), n_vectors=self.nVectors, field_width=int(self.outputShape[0]))
+            section, "mtmCapacity")), horizon=int(TheXMLConfig.space(
+            section, "mtmHorizon")), n_vectors=self.nVectors, field_width=int(self.outputShape[0]))
         import weakref
         self.mtm._owner = weakref.ref(self)
         owner_ref = weakref.ref(self)
@@ -12961,8 +12944,7 @@ class ConceptualSpace(Space):
         # = 2); the rank-ordered L0 penalty (definition_sparsity_loss) pulls
         # only the surplus ranks past this toward zero. Pairs with stmCapacity
         # (the hard ceiling, enforced by the decode peel).
-        _dfs = TheXMLConfig.space(section, "definitionFreeSize", default=None)
-        self.definition_free_size = int(_dfs) if _dfs else 2
+        self.definition_free_size = int(TheXMLConfig.space(section, "definitionFreeSize"))
 
         # 2026-06-04 parallel-symbolic-substrate refactor: the per-stage
         # ConceptualSpace ``sigma_in`` / ``sigma_cs`` SigmaLayers are
@@ -12979,7 +12961,7 @@ class ConceptualSpace(Space):
         # Parts use presence charts. Discovery is a finite pool of rows;
         # its gate is measured use, independent of sentence truth learning.
         self._mereology_raise = bool(TheXMLConfig.get(
-            "architecture.mereologyRaise", default=False))
+            "architecture.mereologyRaise"))
         self.mereology_refine_patience = int(TheXMLConfig.get(
             "architecture.mereologyRefinePatience", default=3))
         if self.mereology_refine_patience < 1:
@@ -13137,7 +13119,7 @@ class ConceptualSpace(Space):
         # Each concept can reach every block in both constructed towers, so
         # this fixed capacity represents the same complete bipartite relation.
         bridge_cap = int(self.nVectors) * ((part_cap + 31)//32 + (whole_cap + 31)//32)
-        declared_bridge = int(TheXMLConfig.space(section, 'primingBridgeCapacity', default=0) or 0)
+        declared_bridge = int(TheXMLConfig.space(section, 'primingBridgeCapacity'))
         if declared_bridge < 0:
             raise ValueError('primingBridgeCapacity must be nonnegative')
         if declared_bridge:
@@ -13191,22 +13173,18 @@ class ConceptualSpace(Space):
         # before a candidate is admissible, and the structural prior logit of
         # ``chunk`` on a same-whole pair (learned; zero at init).
         self.utility_smoothing = float(TheXMLConfig.space(
-            section, "utilitySmoothing", default=1.0) or 1.0)
+            section, "utilitySmoothing"))
         self.utility_min_count = int(TheXMLConfig.space(
-            section, "utilityMinCount", default=4) or 4)
+            section, "utilityMinCount"))
         self.admission_count = int(TheXMLConfig.space(
-            section, "admissionCount", default=2) or 2)
+            section, "admissionCount"))
         self.utility_prior_rate = float(TheXMLConfig.space(
-            section, "utilityPriorRate", default=1.0) or 0.0)
+            section, "utilityPriorRate"))
         # The identity radius is defined from the division threshold (one
         # geometry setting): the standard deviation along the split axis.
-        try:
-            _lbg_t = float(TheXMLConfig.space("WholeSpace", "lbgThreshold") or 0.5)
-        except (KeyError, TypeError, ValueError):
-            _lbg_t = 0.5
-        _radius = TheXMLConfig.space(section, "admissionRadius", default=None)
-        self.admission_radius = (float(_radius) if _radius not in (None, "", 0)
-                                 else float(_lbg_t) ** 0.5)
+        _radius = float(TheXMLConfig.space(section, "admissionRadius"))
+        self.admission_radius = (_radius if _radius else
+            float(TheXMLConfig.space("WholeSpace", "lbgThreshold")) ** 0.5)
         # ``chunk_prior`` is built lazily by ``ensure_chunk_prior`` (only a
         # grammar with a ``chunk`` reduce candidate needs it), so configs
         # without one keep their state_dict keys.
@@ -19462,7 +19440,7 @@ class WholeSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
         self.perceptualSpace_ref = None
         self.nonlinear = nonlinear
-        _attn = str(TheXMLConfig.space(section, "attention", default="off"))
+        _attn = str(TheXMLConfig.space(section, "attention"))
         if _attn not in _VALID_ATTENTION_MODES:
             raise ValueError(
                 f"{section} <attention> got {_attn!r}; expected one of "
@@ -19476,59 +19454,27 @@ class WholeSpace(Space):
         self.analysis_mode = str(analysis or "meronomy").strip().lower()
         if self.analysis_mode != "meronomy":
             raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
-        try:
-            _dww = TheXMLConfig.space(section, "divideWithinWhole")
-        except KeyError:
-            _dww = None
-        if _dww is None:
-            self.divide_within_whole = True
-        elif isinstance(_dww, bool):
+        _dww = TheXMLConfig.space(section, "divideWithinWhole")
+        if isinstance(_dww, bool):
             self.divide_within_whole = _dww
         else:
             self.divide_within_whole = (
                 str(_dww).strip().lower() not in ("false", "0", "no", "off"))
-        try:
-            _dw = TheXMLConfig.space(section, "digitWholes")
-        except KeyError:
-            _dw = None
-        if _dw is None:
-            self.digit_wholes = False
-        elif isinstance(_dw, bool):
+        _dw = TheXMLConfig.space(section, "digitWholes")
+        if isinstance(_dw, bool):
             self.digit_wholes = _dw
         else:
             self.digit_wholes = (
                 str(_dw).strip().lower() in ("true", "1", "yes", "on"))
-        try:
-            _bt = TheXMLConfig.space(section, "boundaryTypes")
-        except KeyError:
-            _bt = None
-        self.boundary_types = str(_bt or "canonical").strip().lower()
-        try:
-            _wu = TheXMLConfig.space(section, "whitespaceUnits")
-        except KeyError:
-            _wu = None
+        _bt = TheXMLConfig.space(section, "boundaryTypes")
+        self.boundary_types = str(_bt).strip().lower()
+        _wu = TheXMLConfig.space(section, "whitespaceUnits")
         self.whitespace_units = (bool(_wu) if isinstance(_wu, bool)
-                                 else str(_wu or "").strip().lower() in ("true", "1", "yes", "on"))
-        try:
-            self.boundary_learning_rate = float(
-                TheXMLConfig.space(section, "boundaryLearningRate") or 0.0)
-        except (KeyError, TypeError, ValueError):
-            self.boundary_learning_rate = 0.0
-        try:
-            self.boundary_density_weight = float(
-                TheXMLConfig.space(section, "boundaryDensityWeight") or 0.05)
-        except (KeyError, TypeError, ValueError):
-            self.boundary_density_weight = 0.05
-        try:
-            self.boundary_update_every = int(
-                TheXMLConfig.space(section, "boundaryUpdateEvery") or 32)
-        except (KeyError, TypeError, ValueError):
-            self.boundary_update_every = 32
-        try:
-            self.boundary_type_weight = float(
-                TheXMLConfig.space(section, "boundaryTypeWeight") or 0.25)
-        except (KeyError, TypeError, ValueError):
-            self.boundary_type_weight = 0.25
+                                 else str(_wu).strip().lower() in ("true", "1", "yes", "on"))
+        self.boundary_learning_rate = float(TheXMLConfig.space(section, "boundaryLearningRate"))
+        self.boundary_density_weight = float(TheXMLConfig.space(section, "boundaryDensityWeight"))
+        self.boundary_update_every = int(TheXMLConfig.space(section, "boundaryUpdateEvery"))
+        self.boundary_type_weight = float(TheXMLConfig.space(section, "boundaryTypeWeight"))
         if self.boundary_types not in ("canonical", "none"):
             raise ValueError(
                 f"WholeSpace.boundaryTypes must be canonical|none; got {_bt!r}")
@@ -20191,11 +20137,8 @@ class WholeSpace(Space):
         """``<initScale>`` for this space (fidelity leg, 2026-07-06): the
         per-row seed magnitude for this space's codebooks. ``None`` when the
         knob is unset / 0 (the legacy unit / [-1, 1] prefill)."""
-        try:
-            raw = TheXMLConfig.space(self.config_section, "initScale")
-        except KeyError:
-            return None
-        if raw in (None, "", 0, "0", 0.0):
+        raw = TheXMLConfig.space(self.config_section, "initScale")
+        if raw in ("", 0, "0", 0.0):
             return None
         return float(raw)
 

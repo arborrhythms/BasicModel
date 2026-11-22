@@ -77,7 +77,7 @@
          grammar-derived default: 1 when the XML enables a non-substrate rule
          (useGrammar != 'none'), else 0. Concrete configs should set this
          explicitly when they need a symbolic loop limit. -->
-    <!-- <conceptLayers>1</conceptLayers> -->
+    <conceptLayers>2</conceptLayers>
 
     <!-- Concept rows compose by union. Pool participation is an EWMA of use. -->
     <attentionPromotion>false</attentionPromotion>
@@ -226,6 +226,37 @@
       <enabled>false</enabled>
     </symbolLearning>
 
+    <!-- How a concept row is bound (mixing | aligned), and whether a
+         concept is read by its index. -->
+    <conceptBinding>mixing</conceptBinding>
+    <conceptIndexRead>false</conceptIndexRead>
+    <!-- The continuity cost of a whole's parts: its norm, the ratio it
+         aims at, and its sharpness. -->
+    <continuityNorm>inf</continuityNorm>
+    <continuityRatioTarget>1.0</continuityRatioTarget>
+    <continuitySharpness>1.0</continuitySharpness>
+    <mereologyRaise>false</mereologyRaise>
+    <modifierEigEdit>false</modifierEigEdit>
+    <verbSpectrum>false</verbSpectrum>
+    <predictionTrialRatio>0.0</predictionTrialRatio>
+    <primingDecay>0.9</primingDecay>
+    <queryReasoning>false</queryReasoning>
+    <radialStmReduce>false</radialStmReduce>
+    <serialObjectMeta>false</serialObjectMeta>
+    <serialResidualPartCapacity>16</serialResidualPartCapacity>
+    <!-- Empty: one bucket of serialWordCapacity words. -->
+    <serialWordBuckets></serialWordBuckets>
+    <sigmaPi>butterfly</sigmaPi>
+    <stateless>true</stateless>
+    <!-- Parse-tree depth cap of the serial reduction; 0 = unbounded. -->
+    <syntacticOrder>0</syntacticOrder>
+    <writeSyntax>false</writeSyntax>
+    <syntaxOutPath>output/syntax.xml</syntaxOutPath>
+    <whatThinkingDetach>slot</whatThinkingDetach>
+    <whatThinkingIterations>1</whatThinkingIterations>
+    <whatThinkingPressure>linear</whatThinkingPressure>
+    <!-- Ratio between the two rungs of the .where code. -->
+    <whereRungRatio>32</whereRungRatio>
 
     <data>
       <dataType>numeric</dataType>
@@ -245,6 +276,11 @@
       <!-- Optional bounds for classification-accuracy reporting. -->
       <classificationMin></classificationMin>
       <classificationMax></classificationMax>
+      <!-- Empty: the context whole is named from the dataset. -->
+      <contextWhole></contextWhole>
+      <grammarLessons>grammar_wording.json</grammarLessons>
+      <!-- 0: no bound on a sentence's words. -->
+      <maxSentenceWords>0</maxSentenceWords>
     </data>
 
     <training>
@@ -329,6 +365,27 @@
       <!-- Shared bank-activation predictor: sources and targets are detached;
            the local residual alone trains its weights. -->
       <symbolFieldLossWeight>0.1</symbolFieldLossWeight>
+      <wordExpectation>true</wordExpectation>
+      <wordExpectationLossWeight>0.1</wordExpectationLossWeight>
+      <reconstructionBasisLimit>16</reconstructionBasisLimit>
+      <!-- graph | compiled | eager. -->
+      <reconstructionPlacement>graph</reconstructionPlacement>
+      <reconstructInLoop>false</reconstructInLoop>
+      <outputInLoop>false</outputInLoop>
+      <packSentences>false</packSentences>
+      <equalityLossWeight>0.0</equalityLossWeight>
+      <thinkingLossWeight>0.0</thinkingLossWeight>
+      <whatThinkingPolicyWeight>0.0</whatThinkingPolicyWeight>
+      <leafDistillWeight>0.0</leafDistillWeight>
+      <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
+      <conceptualContextNegatives>0</conceptualContextNegatives>
+      <!-- 0 disables the diagnostics and the interval log. -->
+      <branchDiagnosticsEvery>0</branchDiagnosticsEvery>
+      <intervalLogEveryBatches>0</intervalLogEveryBatches>
+      <!-- Empty: output/intervals.jsonl. -->
+      <intervalLogFile></intervalLogFile>
+      <!-- Empty: the random streams are not seeded. -->
+      <seed></seed>
       <!-- Hard normal grammatical-thought choices use their own explicit
            REINFORCE credit; zero preserves the deterministic safe baseline. -->
     </training>
@@ -379,6 +436,7 @@
     <downwardGeneration>false</downwardGeneration>
 
     <language>
+      <start>S</start>
       <grammar>
         <!-- Default grammar: trivial unary pi / sigma folds at every
              tier.  PiLayer and SigmaLayer are first-class arity=1
@@ -457,6 +515,7 @@
     <nVectors>0</nVectors>
     <!-- Discrete (codebook) input values. -->
     <codebook>none</codebook>
+    <demuxed>false</demuxed>
     <!-- Tokenization for text inputs: word | sentence | byte. -->
     <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
          meronymic analyzer (chunking=analyse, the default) owns all
@@ -496,6 +555,12 @@
     <synthesis>meronomy</synthesis>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
+    <!-- Radix promotion: the count and the least length of a chunk. -->
+    <chunkPromotionThreshold>4</chunkPromotionThreshold>
+    <chunkPromotionMinLength>2</chunkPromotionMinLength>
+    <!-- Reverse-retrieval attention: off | primer | second-order | low-rank. -->
+    <attention>off</attention>
+    <codebookGrowthEpsilon>0.0</codebookGrowthEpsilon>
   </PartSpace>
 
   <ModalSpace>
@@ -525,8 +590,9 @@
     <placementNegatives>5</placementNegatives>
     <placementNegativeWeight>1.0</placementNegativeWeight>
     <!-- Zero retains the complete bridge reservation; a positive capacity
-         bounds the sparse 32-destination blocks and raises on exhaustion. -->
-    <primingBridgeCapacity>0</primingBridgeCapacity>
+         bounds the sparse 32-destination blocks and raises on exhaustion.
+         The lesser of this and the complete reservation is held. -->
+    <primingBridgeCapacity>8388608</primingBridgeCapacity>
     <raiseEvidence>0</raiseEvidence>
     <raiseCount>3</raiseCount>
     <trustViews>3</trustViews>
@@ -551,6 +617,30 @@
     <nonlinear>true</nonlinear>
     <!-- Codebook quantization of concept directions. -->
     <codebook>none</codebook>
+    <!-- 0: every allocated concept row is active. -->
+    <activeVectors>0</activeVectors>
+    <!-- The live depth of the reducing STM, not a sentence-length limit. -->
+    <stmCapacity>8</stmCapacity>
+    <mtmCapacity>64</mtmCapacity>
+    <mtmHorizon>16</mtmHorizon>
+    <orderAllocation>geometric</orderAllocation>
+    <intuitHidden>64</intuitHidden>
+    <intuitLayers>1</intuitLayers>
+    <markerKernels>8</markerKernels>
+    <markerHidden>64</markerHidden>
+    <markerLayers>2</markerLayers>
+    <verbGroups>24</verbGroups>
+    <verbBasisReflections>4</verbBasisReflections>
+    <verbGroupFit>0.1</verbGroupFit>
+    <definitionFreeSize>2</definitionFreeSize>
+    <utilitySmoothing>1.0</utilitySmoothing>
+    <utilityMinCount>4</utilityMinCount>
+    <utilityPriorRate>1.0</utilityPriorRate>
+    <admissionCount>2</admissionCount>
+    <!-- 0: the square root of WholeSpace.lbgThreshold. -->
+    <admissionRadius>0</admissionRadius>
+    <attention>off</attention>
+    <codebookGrowthEpsilon>0.0</codebookGrowthEpsilon>
   </ConceptualSpace>
 
   <WholeSpace>
@@ -588,6 +678,21 @@
          flatness on codebook rows).  0 disables. -->
     <decorrelationWeight>0.0</decorrelationWeight>
     <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
+    <invertible>false</invertible>
+    <butterfly>false</butterfly>
+    <lbgThreshold>0.5</lbgThreshold>
+    <divideWithinWhole>true</divideWithinWhole>
+    <digitWholes>false</digitWholes>
+    <boundaryTypes>canonical</boundaryTypes>
+    <whitespaceUnits>false</whitespaceUnits>
+    <boundaryLearningRate>0.0</boundaryLearningRate>
+    <boundaryDensityWeight>0.05</boundaryDensityWeight>
+    <boundaryUpdateEvery>32</boundaryUpdateEvery>
+    <boundaryTypeWeight>0.25</boundaryTypeWeight>
+    <!-- 0: the unit seed of the codebooks. -->
+    <initScale>0</initScale>
+    <attention>off</attention>
+    <codebookGrowthEpsilon>0.0</codebookGrowthEpsilon>
   </WholeSpace>
 
   <OutputSpace>
@@ -604,6 +709,7 @@
     <codebook>none</codebook>
     <!-- Linear (no tanh) output; OutputSpace rescales via Data.denormalize. -->
     <nonlinear>false</nonlinear>
+    <lrScale>1.0</lrScale>
   </OutputSpace>
 
 </model>

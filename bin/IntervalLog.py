@@ -53,7 +53,7 @@ def captured_metrics(model):
 
 def append_report(report):
     from util import TheXMLConfig
-    path = Path(TheXMLConfig.training('intervalLogFile', None) or ROOT/'output/intervals.jsonl')
+    path = Path(TheXMLConfig.training('intervalLogFile') or ROOT/'output/intervals.jsonl')
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('a') as stream:
         stream.write(json.dumps(report, allow_nan=False, sort_keys=True)+'\n')
@@ -62,7 +62,7 @@ def append_report(report):
 def observe_forgetting(model, report):
     """Capture each completed forgetting pass, before another can replace it."""
     from util import TheXMLConfig
-    if not int(TheXMLConfig.training('intervalLogEveryBatches', 0) or 0):
+    if not int(TheXMLConfig.training('intervalLogEveryBatches')):
         return None
     started = time.perf_counter()
     result = dict(schema=1, event='forgetting',
@@ -77,7 +77,7 @@ def observe_forgetting(model, report):
 def observe_interval(model, *, training, split):
     """One outer-loop call, after compaction and before periodic checkpointing."""
     from util import TheXMLConfig
-    interval = int(TheXMLConfig.training('intervalLogEveryBatches', 0) or 0)
+    interval = int(TheXMLConfig.training('intervalLogEveryBatches'))
     step = int(getattr(model, '_train_batches_seen', 0))
     if not training or split != 'train' or interval <= 0 or step % interval:
         return None

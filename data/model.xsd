@@ -148,6 +148,13 @@
            ramsification table; its depth is not the mereological rank. Default
            false: no lattice raising (the provenance table still exists). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <!-- The continuity cost of a whole's parts (Mereology.py). -->
+      <xs:element name="continuityNorm" type="xs:string" minOccurs="0"/>
+      <xs:element name="continuityRatioTarget" type="xs:double" minOccurs="0"/>
+      <xs:element name="continuitySharpness" type="xs:double" minOccurs="0"/>
+      <xs:element name="verbSpectrum" type="xs:boolean" minOccurs="0"/>
+      <!-- Ratio between the two rungs of the .where code. -->
+      <xs:element name="whereRungRatio" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Radial STM idea folds (Alec 2026-07-13): the bounded reducer's
            conjunction/disjunction hosts use radmin/radmax and the radial
@@ -737,7 +744,8 @@
       <xs:element name="maxDocs" type="xs:positiveInteger"/>
       <!-- Whole-sentence admission ceiling. Records above the limit are
            excluded intact; they are never truncated into partial examples. -->
-      <xs:element name="maxSentenceWords" type="xs:positiveInteger"/>
+      <!-- 0: no bound on a sentence's words. -->
+      <xs:element name="maxSentenceWords" type="xs:nonNegativeInteger"/>
       <xs:element name="maxSentenceUnits" type="xs:positiveInteger"/>
       <xs:element name="shardDir" type="xs:string"/>
       <xs:element name="grammarLessons" type="xs:string"/>
@@ -799,7 +807,14 @@
            construction-time init and data order so single CLI runs are
            reproducible; the XOR_exact gates rely on this. Env override:
            BASIC_SEED. -->
-      <xs:element name="seed" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Empty: the random streams are not seeded. -->
+      <xs:element name="seed" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]*"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Pack consecutive complete sentences independently within each
            contiguous batch row up to serialWordCapacity. The compiled brick
@@ -958,6 +973,7 @@
 
   <xs:complexType name="inputSpaceType">
     <xs:all>
+      <xs:element name="demuxed" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -1172,7 +1188,8 @@
            nVectors inventory. Runtime growth activates more prefix rows in
            place, preserving Parameter and optimizer identity. VQ computation
            specializes once at each newly activated prefix width. -->
-      <xs:element name="activeVectors" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- 0: every allocated concept row is active. -->
+      <xs:element name="activeVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
       <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
@@ -1253,6 +1270,7 @@
            uniform per-row scale leaves dot-product argmax selection
            unchanged. -->
       <xs:element name="initScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="lbgThreshold" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
            WholeSpace owns the top-down ANALYSIS knobs.
            <lexer> (moved here from InputSpace): the intake granularity

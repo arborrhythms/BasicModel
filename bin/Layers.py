@@ -2680,14 +2680,14 @@ class GrammarLayer(Layer):
                 if self.rule_name in ('change', 'modifier'):
                     from MeaningKernels import MeaningAction
                     self.meaning_action = MeaningAction(width,
-                        capacity=int(TheXMLConfig.space('ConceptualSpace', 'verbGroups', 24)),
-                        reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections', 4)),
-                        fit=float(TheXMLConfig.space('ConceptualSpace', 'verbGroupFit', .1)),
+                        capacity=int(TheXMLConfig.space('ConceptualSpace', 'verbGroups')),
+                        reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections')),
+                        fit=float(TheXMLConfig.space('ConceptualSpace', 'verbGroupFit')),
                         modifier=self.rule_name == 'modifier')
                 elif self.rule_name == 'verb':
                     from MeaningKernels import MeaningBasis
                     self.meaning_basis = MeaningBasis(width,
-                        reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections', 4)))
+                        reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections')))
                 elif (self.rule_name and self.meaning_rule is None and
                       self.rule_name not in ('interpret', 'bind', 'swap', 'focus',
                                              'and', 'or', 'marker')):

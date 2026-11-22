@@ -1981,28 +1981,22 @@ class Grammar:
         # <start>...</start> in SymbolSpace.language: accepted completed
         # derivation shapes. The primary single-category start is kept
         # in ``start_symbol`` for legacy identity/reset code.
-        try:
-            start_raw = TheXMLConfig.get("SymbolSpace.language.start")
-            self.start_patterns = _start_patterns_from_raw(
-                start_raw, default="S")
-            self.start_symbol = _primary_start_symbol(
-                self.start_patterns, default="S")
-            # The inline-XML grammar has no PS/WS sections; its start is
-            # the symbolic start (mirror into the ws_* alias). A later
-            # load_from_grammar_file (the <grammar>NAME.grammar</grammar>
-            # dispatch) overrides this with the file's space-scoped starts.
-            self.ws_start_patterns = self.start_patterns
-            self.ws_start_symbol = self.start_symbol
-            names = _starts_by_name(start_raw)
-            self.ws_relative_starts = frozenset(
-                s for s, n in names.items() if n == 'relative_truth')
-            self.ws_absolute_starts = frozenset(
-                s for s, n in names.items() if n == 'absolute_truth')
-        except (KeyError, AttributeError):
-            self.start_symbol = "S"
-            self.start_patterns = (("S",),)
-            self.ws_start_symbol = "S"
-            self.ws_start_patterns = (("S",),)
+        start_raw = TheXMLConfig.get("SymbolSpace.language.start")
+        self.start_patterns = _start_patterns_from_raw(
+            start_raw, default="S")
+        self.start_symbol = _primary_start_symbol(
+            self.start_patterns, default="S")
+        # The inline-XML grammar has no PS/WS sections; its start is
+        # the symbolic start (mirror into the ws_* alias). A later
+        # load_from_grammar_file (the <grammar>NAME.grammar</grammar>
+        # dispatch) overrides this with the file's space-scoped starts.
+        self.ws_start_patterns = self.start_patterns
+        self.ws_start_symbol = self.start_symbol
+        names = _starts_by_name(start_raw)
+        self.ws_relative_starts = frozenset(
+            s for s, n in names.items() if n == 'relative_truth')
+        self.ws_absolute_starts = frozenset(
+            s for s, n in names.items() if n == 'absolute_truth')
 
         # Defensive: warn loudly if a deprecated <useGrammar> tag still
         # sits in the XML (the knob was retired 2026-05-13 but configs
@@ -3079,7 +3073,7 @@ class ChangeLayer(GrammarLayer):
             self._modifier_eig_edit = (
                 bool(force_modifier_eig_edit)
                 or bool(TheXMLConfig.get(
-                    "architecture.modifierEigEdit", default=False)))
+                    "architecture.modifierEigEdit")))
             if self._modifier_eig_edit:
                 self._modifier_edit = _make_lex_gate(
                     int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
@@ -3105,7 +3099,7 @@ class ChangeLayer(GrammarLayer):
             self._verb_spectrum = (
                 bool(force_verb_spectrum)
                 or bool(TheXMLConfig.get(
-                    "architecture.verbSpectrum", default=False)))
+                    "architecture.verbSpectrum")))
             if self._verb_spectrum:
                 self._verb_spec = _make_lex_gate(
                     int(nInput), int(nOutput), seed=0x5B17, bias=0.0)
@@ -3846,9 +3840,9 @@ class MarkerLayer(GrammarLayer):
         super().__init__()
         if self.meaning_layout is None:
             raise ValueError('marker requires declared form and meaning blocks')
-        count = int(TheXMLConfig.space('ConceptualSpace', 'markerKernels', 8))
-        hidden = int(TheXMLConfig.space('ConceptualSpace', 'markerHidden', 64))
-        pairs = int(TheXMLConfig.space('ConceptualSpace', 'markerLayers', 2))
+        count = int(TheXMLConfig.space('ConceptualSpace', 'markerKernels'))
+        hidden = int(TheXMLConfig.space('ConceptualSpace', 'markerHidden'))
+        pairs = int(TheXMLConfig.space('ConceptualSpace', 'markerLayers'))
         if count <= 0:
             raise ValueError('markerKernels must be positive')
         self.candidates = nn.ModuleList(_MarkerKernel(self.meaning_layout, index, hidden, pairs)
@@ -3989,7 +3983,7 @@ class _SearchedBinaryLayer(GrammarLayer):
             return mask.scatter(0, rows.to(W.device), True)[None].expand_as(valid)
         def weights(value):
             return None if value is None else value.reshape(1, -1).expand_as(valid)
-        limit = int(TheXMLConfig.get('training.reconstructionBasisLimit', default=16))
+        limit = int(TheXMLConfig.training('reconstructionBasisLimit'))
         left, right, available = LanguageSpace._bounded_binary_reconstruction(
             self, flat, torch.zeros_like(flat), torch.zeros_like(flat[:, 0], dtype=torch.bool),
             torch.zeros_like(flat[:, 0], dtype=torch.bool), candidates, valid, limit,
@@ -8671,7 +8665,7 @@ class SymbolSubSpace(SubSpace):
             relation_capacity=int(TheXMLConfig.space("SymbolSpace","relationCapacity",8192)),
             percept_width=getattr(_paired, 'percept_event_width', muxed))
         self.truth_layer.attach_ltm(self.ltm_store)
-        self._stateless = bool(TheXMLConfig.get("architecture.stateless", default=True))
+        self._stateless = bool(TheXMLConfig.get("architecture.stateless"))
         self.register_load_state_dict_post_hook(self._revive_ltm_post_load)
 
         # 6b. Category codebook -- learned embedding per derivation label.
@@ -8802,7 +8796,7 @@ class SymbolSubSpace(SubSpace):
             concept_dim=int(concept_dim),
             ltm_capacity=int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024),
         ) if n_sym_rows > 0 and muxed > 0 else None)
-        if (bool(TheXMLConfig.training("sentenceExpectation", True)) or bool(TheXMLConfig.training("wordExpectation", True))) and self._expectation_options:
+        if (bool(TheXMLConfig.training("sentenceExpectation", True)) or bool(TheXMLConfig.training("wordExpectation"))) and self._expectation_options:
             self.ensure_sentence_expectation()
 
         # -- pipeline-carried per-batch state -----------------------------
@@ -11085,14 +11079,14 @@ class LanguageSpace(nn.Module):
         self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
         from ChunkJournal import ChunkJournal
         self.chunk_journal = ChunkJournal(self._compose_binary_rules, self._compose_unary_rules,
-            pool_capacity=int(TheXMLConfig.space('ConceptualSpace','mtmCapacity',default=64)),
+            pool_capacity=int(TheXMLConfig.space('ConceptualSpace','mtmCapacity')),
             percept_band=next((getattr(getattr(op,'gl',op),'percept_band',None)
                 for op in self.language_layer.operation_layer.ops
                 if getattr(getattr(op,'gl',op),'percept_band',None) is not None),None))
         # One immutable reservation candidate per constructed MTM pool seat;
         # trial assignments themselves live only in chunks and their journal.
         self.register_buffer('_free_transient_ids', torch.full((int(TheXMLConfig.space(
-            'ConceptualSpace', 'mtmCapacity', default=64)),), -1, dtype=torch.long), persistent=False)
+            'ConceptualSpace', 'mtmCapacity')),), -1, dtype=torch.long), persistent=False)
         from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
         self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
         self._occupation_binary_flow = tuple(flow_mask(rule) for rule in self._compose_binary_rules)

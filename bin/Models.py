@@ -104,7 +104,6 @@ from dataclasses import dataclass, field, replace
 from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
-from Spaces import _WHERE_RUNG_RATIO
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import (SubSpace, SubSpaceView, guard_peer_views, Space, InputSpace,
                     PartSpace, ModalSpace, ConceptualSpace, WholeSpace,
@@ -1676,7 +1675,7 @@ class BaseModel(Mereology, nn.Module):
         (``ConceptualSpace.inventory_rows``). Declared shares
         (``orderAllocation``) count the free rows of every order, with the
         seats of order zero among them and those above on top."""
-        allocation = str(TheXMLConfig.space('ConceptualSpace', 'orderAllocation', 'geometric')).strip()
+        allocation = str(TheXMLConfig.space('ConceptualSpace', 'orderAllocation')).strip()
         if allocation != 'geometric':
             return int(configured) + sum(reservations[1:])
         from Spaces import ConceptualSpace
@@ -1823,7 +1822,7 @@ class BaseModel(Mereology, nn.Module):
         TheGrammar._ensure_configured()
 
         _binding = str(TheXMLConfig.get(
-            "architecture.conceptBinding", default="mixing")
+            "architecture.conceptBinding")
         ).strip().lower()
         if _binding not in ("mixing", "aligned"):
             raise ValueError(
@@ -1955,9 +1954,9 @@ class BaseModel(Mereology, nn.Module):
         # (a reduce micro-step no-ops once a row's depth reaches 1). Inert in
         # parallel mode (no per-sentence parse tree to bound).
         _syn_raw = TheXMLConfig.get(
-            "architecture.syntacticOrder", default=None)
+            "architecture.syntacticOrder")
         try:
-            _syn = int(_syn_raw) if _syn_raw is not None else 0
+            _syn = int(_syn_raw)
         except (TypeError, ValueError):
             raise ValueError(
                 f"<architecture><syntacticOrder> must be a non-negative "
@@ -2012,7 +2011,7 @@ class BaseModel(Mereology, nn.Module):
         # only affects ordinary ChangeLayer instances and is mirrored here for
         # introspection. Default off -> plain ChangeLayer sigma fold unchanged.
         self.modifier_eig_edit = bool(TheXMLConfig.get(
-            "architecture.modifierEigEdit", default=False))
+            "architecture.modifierEigEdit"))
 
         # Mereological order-raising (doc/specs/mereological-order-raising.md).
         # When on, perception's autobind hook builds a meronymic lattice and
@@ -2022,14 +2021,14 @@ class BaseModel(Mereology, nn.Module):
         # only -- gating reads the live configuration at build).
         # Default off -> no table, no raising (byte-identical).
         self.mereology_raise = bool(TheXMLConfig.get(
-            "architecture.mereologyRaise", default=False))
+            "architecture.mereologyRaise"))
         # The learned reader belongs to the answer. Its zero gate preserves
         # the initial answer; the keys and all source dictionaries are detached.
         with torch.random.fork_rng(devices=[]):
             self.answer_attention = PrimedSymbolReader()
 
         # Relevance integration gate (Architecture sec C); default false.
-        self.priming_decay = float(TheXMLConfig.get("architecture.primingDecay", default=0.9))
+        self.priming_decay = float(TheXMLConfig.get("architecture.primingDecay"))
         if not math.isfinite(self.priming_decay) or not 0 <= self.priming_decay <= 1:
             raise ValueError('primingDecay must be finite and in [0, 1]')
         # Base grammar-confidence threshold for online STM reduction.  The
@@ -2075,7 +2074,7 @@ class BaseModel(Mereology, nn.Module):
         # at append, the established behaviour; "episode" = slots appended
         # inside begin/end_what_episode stay live until the episode ends).
         self.what_thinking_detach = str(TheXMLConfig.get(
-            "architecture.whatThinkingDetach", default="slot") or "slot").lower()
+            "architecture.whatThinkingDetach")).lower()
         if self.what_thinking_detach not in ("slot", "episode"):
             raise ValueError(
                 "<whatThinkingDetach> must be 'slot' or 'episode', got "
@@ -2085,11 +2084,11 @@ class BaseModel(Mereology, nn.Module):
         # and the monotone closure-pressure schedule.  Default off.
         try:
             self.what_thinking_iterations = max(1, int(TheXMLConfig.get(
-                "architecture.whatThinkingIterations", default=1) or 1))
+                "architecture.whatThinkingIterations")))
         except (TypeError, ValueError):
             self.what_thinking_iterations = 1
         self.what_thinking_pressure = str(TheXMLConfig.get(
-            "architecture.whatThinkingPressure", default="linear") or "linear").lower()
+            "architecture.whatThinkingPressure")).lower()
         if self.what_thinking_pressure not in ("linear", "quadratic", "step"):
             raise ValueError(
                 "<whatThinkingPressure> must be linear, quadratic or step, got "
@@ -2111,11 +2110,8 @@ class BaseModel(Mereology, nn.Module):
         # batches, sample gradient norms / cosine of the two primary costs at
         # the conceptual and symbolic branch points before backward.  A read,
         # never an update.  0 (default) disables the sampling.
-        try:
-            self.branch_diagnostics_every = int(
-                TheXMLConfig.training("branchDiagnosticsEvery", 0) or 0)
-        except (KeyError, TypeError, ValueError):
-            self.branch_diagnostics_every = 0
+        self.branch_diagnostics_every = int(
+            TheXMLConfig.training("branchDiagnosticsEvery"))
 
         # Concept index-read (snap design doc §ontology, Alec 2026-07-15):
         # when on, the serial per-word idea READS THROUGH THE INDEX to the
@@ -2125,15 +2121,14 @@ class BaseModel(Mereology, nn.Module):
         # the computed ideas collapse; the concept row is the separable
         # substrate SGNS (step (a)) shapes. Default off -> byte-identical.
         self.concept_index_read = bool(TheXMLConfig.get(
-            "architecture.conceptIndexRead", default=False))
+            "architecture.conceptIndexRead"))
 
         # Historical configuration metadata, retained for old checkpoints.
         # Every current thought entry uses attention_budget below.
         _ri = TheXMLConfig.get("architecture.reasoningIterations", default=None)
         if _ri is None:
             self.reasoning_iterations = (
-                10 if bool(TheXMLConfig.get("architecture.queryReasoning",
-                                            default=False)) else 1)
+                10 if bool(TheXMLConfig.get("architecture.queryReasoning")) else 1)
         else:
             self.reasoning_iterations = max(0, int(_ri))
         # Back-compat: code/tests that gate on the boolean still work.
@@ -2158,7 +2153,7 @@ class BaseModel(Mereology, nn.Module):
         # instantaneous perceptual field, not a raw-character limit, and
         # stmCapacity is not a sentence-length limit.
         self.serial_object_meta = bool(TheXMLConfig.get(
-            "architecture.serialObjectMeta", default=False))
+            "architecture.serialObjectMeta"))
         _word_cap = TheXMLConfig.get(
             "architecture.serialWordCapacity", default=None)
         if _word_cap in (None, ""):
@@ -2175,7 +2170,7 @@ class BaseModel(Mereology, nn.Module):
         self.word_surface_capacity = surface_capacity(
             TheXMLConfig.get('architecture.wordSurfaceCapacity', default=64))
         _residual_cap = TheXMLConfig.get(
-            "architecture.serialResidualPartCapacity", default=16)
+            "architecture.serialResidualPartCapacity")
         try:
             self.serial_residual_part_capacity = int(_residual_cap)
         except (TypeError, ValueError):
@@ -2187,7 +2182,7 @@ class BaseModel(Mereology, nn.Module):
                 "<serialResidualPartCapacity> must be >= 3; got "
                 f"{self.serial_residual_part_capacity}")
         _bucket_raw = TheXMLConfig.get(
-            "architecture.serialWordBuckets", default=None)
+            "architecture.serialWordBuckets")
         if _bucket_raw in (None, ""):
             self.serial_word_buckets = (
                 (int(self.serial_word_capacity),)
@@ -2231,7 +2226,7 @@ class BaseModel(Mereology, nn.Module):
         # Serving lifecycle preference. Checkpoint restoration preserves
         # every retained claim; it withdraws no previously supplied truths.
         self.stateless = bool(TheXMLConfig.get(
-            "architecture.stateless", default=True))
+            "architecture.stateless"))
 
         # Step 1 (2026-06-10 symbolic-iteration plan): mirror the symbolic
         # order and the independent serial mode onto each WholeSpace. The
@@ -2403,11 +2398,11 @@ class BaseModel(Mereology, nn.Module):
         self._recon_completed = False
         self._reconstruction_product = None
         self.reconstruction_placement = str(
-            TheXMLConfig.training("reconstructionPlacement", "graph")).strip().lower()
+            TheXMLConfig.training("reconstructionPlacement")).strip().lower()
         if self.reconstruction_placement not in ("graph", "compiled", "eager"):
             raise ValueError("reconstructionPlacement must be graph, compiled or eager")
         self.reconstruction_basis_limit = int(
-            TheXMLConfig.training("reconstructionBasisLimit", 16))
+            TheXMLConfig.training("reconstructionBasisLimit"))
         if self.reconstruction_basis_limit < 1:
             raise ValueError("reconstructionBasisLimit must be positive")
         self.action_rate_ratio = float(TheXMLConfig.training('actionRateRatio', 1.))
@@ -2416,7 +2411,7 @@ class BaseModel(Mereology, nn.Module):
         # Slice 3: the answer realisation's generate walk as the second
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
-            TheXMLConfig.training("outputInLoop", False))
+            TheXMLConfig.training("outputInLoop"))
         # The global projection is retired. Reject stale configuration rather
         # than silently promising a training policy that no longer exists.
         for retired in ("reconstructionPriority", "outputGradientRatio",
@@ -2429,7 +2424,7 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError("grammarLessonWeight must be finite and nonnegative")
         _pack_env = os.environ.get("BASIC_PACK_SENTENCES")
         self.pack_sentences = bool(
-            TheXMLConfig.training("packSentences", False))
+            TheXMLConfig.training("packSentences"))
         if _pack_env is not None:
             self.pack_sentences = _pack_env.strip().lower() in (
                 "1", "true", "yes", "on")
@@ -2437,8 +2432,7 @@ class BaseModel(Mereology, nn.Module):
         # PURE next-idea prediction (recon terms zeroed). 0.0 -> every trial is
         # reconstruct -> byte-identical.
         self.prediction_trial_ratio = float(
-            TheXMLConfig.get("architecture.predictionTrialRatio",
-                             default=0.0) or 0.0)
+            TheXMLConfig.get("architecture.predictionTrialRatio"))
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -2472,7 +2466,7 @@ class BaseModel(Mereology, nn.Module):
         self.loss.conceptual_similarity_scale = float(
             _t("conceptualSimilarityScale", 0.0) or 0.0)
         # §20: codes have one unconstrained gradient owner, reconstruction.
-        if float(_t("conceptualContextLearningRate", 0.0) or 0.0) != 0.0:
+        if float(_t("conceptualContextLearningRate")) != 0.0:
             raise ValueError("contextual code rotation is retired; conceptualContextLearningRate must be 0")
         # <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
         # for the rank-ordered soft-L0 that keeps concept definitions compact.
@@ -2795,11 +2789,7 @@ class BaseModel(Mereology, nn.Module):
         # near the feature mean ~0.5 despite the features being separable).
         # <OutputSpace><lrScale> puts the OutputSpace params in their own Adam
         # group at lr*scale; default 1.0 => one group, byte-identical.
-        try:
-            out_lr_scale = float(
-                TheXMLConfig.space("OutputSpace", "lrScale", default=1.0))
-        except Exception:
-            out_lr_scale = 1.0
+        out_lr_scale = float(TheXMLConfig.space("OutputSpace", "lrScale"))
         output_ptrs = set()
         if out_lr_scale != 1.0 and hasattr(self, "outputSpace"):
             output_ptrs = {p.data_ptr()
@@ -3032,7 +3022,7 @@ class BaseModel(Mereology, nn.Module):
         if capacity is None:
             return None
         cs_active = int(TheXMLConfig.space(
-            "ConceptualSpace", "activeVectors", default=capacity) or capacity)
+            "ConceptualSpace", "activeVectors") or capacity)
         if not (1 <= cs_active <= capacity):
             raise ValueError(
                 "ConceptualSpace.activeVectors must be within physical "
@@ -6685,10 +6675,7 @@ class BasicModel(BaseModel):
         return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
 
     def _make_perceptual_space(self, inputShape, spaceShape, outputShape):
-        try:
-            demuxed = TheXMLConfig.space("InputSpace", "demuxed")
-        except KeyError:
-            demuxed = False
+        demuxed = TheXMLConfig.space("InputSpace", "demuxed")
         if demuxed:
             return ModalSpace(inputShape, spaceShape, outputShape)
         return PartSpace(inputShape, spaceShape, outputShape)
@@ -10130,7 +10117,7 @@ class BasicModel(BaseModel):
             encoder = WhereEncoding(
                 extent, 4, 0,
                 rung_ratio=int(TheXMLConfig.get(
-                    "architecture.whereRungRatio", _WHERE_RUNG_RATIO)))
+                    "architecture.whereRungRatio")))
             cache[str(split)] = encoder
         elif int(encoder.maxVal) != extent:
             encoder.set_period(extent)
@@ -16300,7 +16287,7 @@ class BasicModel(BaseModel):
         self.bindingDepth = bindingDepth
         self.attention_budget = int(TheXMLConfig.get('architecture.attentionBudget',default=32))
         if self.attention_budget < 0:raise ValueError('attentionBudget must be nonnegative')
-        self.concept_order_limit = max(0,int(TheXMLConfig.get('architecture.conceptLayers',default=2))-1)
+        self.concept_order_limit = max(0,int(TheXMLConfig.get('architecture.conceptLayers'))-1)
 
         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
         # flag; when True, invertible SigmaLayers use NonNegativeInvertibleLinearLayer.
@@ -16342,21 +16329,21 @@ class BasicModel(BaseModel):
         self.allow_contradiction = int(
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
-        self.equality_loss_weight = float(TheXMLConfig.training("equalityLossWeight", default=0.0) or 0.0)
+        self.equality_loss_weight = float(TheXMLConfig.training("equalityLossWeight"))
         if float(TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0):
             raise ValueError("answerLossWeight is retired; use the paired grammar cost")
         if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
             raise ValueError("predictNextLossWeight is retired; use the normal thought policy")
         # Legacy loss knobs migrate into the one hard-choice contract.
-        self.thinking_loss_weight = float(TheXMLConfig.training("thinkingLossWeight", default=0.0) or 0.0)
-        self.what_thinking_policy_weight = float(TheXMLConfig.training("whatThinkingPolicyWeight", default=0.0) or 0.0)
+        self.thinking_loss_weight = float(TheXMLConfig.training("thinkingLossWeight"))
+        self.what_thinking_policy_weight = float(TheXMLConfig.training("whatThinkingPolicyWeight"))
         # No independent thought policy or enabling weight: the ordinary
         # grammar's paired-cost credit owns every thought choice.
         self.selected_thought_policy_weight = 0.0
         # Method-1 -> Method-2 leaf distillation weight (root separability;
         # snap design doc step 3). 0.0 -> no term -> byte-identical.
         self.leaf_distill_weight = float(
-            TheXMLConfig.training("leafDistillWeight", default=0.0) or 0.0)
+            TheXMLConfig.training("leafDistillWeight"))
 
         # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
         # set in the model XML (under <architecture>), BasicModel.forward
@@ -16364,10 +16351,9 @@ class BasicModel(BaseModel):
         # at the end of each forward pass. See doc/Language.md
         # "POS side-channel" for the format.
         self._write_syntax = bool(TheXMLConfig.get(
-            "architecture.writeSyntax", default=False) or False)
+            "architecture.writeSyntax"))
         self._syntax_out_path = TheXMLConfig.get(
-            "architecture.syntaxOutPath",
-            default="output/syntax.xml") or "output/syntax.xml"
+            "architecture.syntaxOutPath")
         self._syntax_truncated = False
 
         # --- Dimensional-governance knobs (A1/A2, 2026-06-06) ---
@@ -16388,8 +16374,7 @@ class BasicModel(BaseModel):
         # PartSpace and WholeSpace so the canonical mode string is
         # identical wherever it is read.
         self.sigma_pi_mode = Space.sigma_pi_mode(
-            TheXMLConfig.get("architecture.sigmaPi", default="butterfly")
-            or "butterfly")
+            TheXMLConfig.get("architecture.sigmaPi"))
 
         teacher_data = data if data is not None else TheData
         self.teacher = Teacher(
@@ -16397,7 +16382,7 @@ class BasicModel(BaseModel):
             enabled=bool(TheXMLConfig.training(
                 "teacherReconstruction", default=False)),
             context_name=TheXMLConfig.get(
-                "architecture.data.contextWhole", default=None),
+                "architecture.data.contextWhole"),
             errors=TheError,
             loss_kwargs={
                 "reconstruction_scale": reconstruction_scale,
@@ -16558,7 +16543,7 @@ class BasicModel(BaseModel):
         _share_concept_dictionary = (
             getattr(self, "concept_binding", "mixing") == "aligned")
         _serial_meta_raw = TheXMLConfig.get(
-            "architecture.serialObjectMeta", default=False)
+            "architecture.serialObjectMeta")
         _serial_meta = (
             _serial_meta_raw if isinstance(_serial_meta_raw, bool)
             else str(_serial_meta_raw or "").strip().lower()
@@ -16672,7 +16657,7 @@ class BasicModel(BaseModel):
                 _explicit_word_traversal = TheXMLConfig.get(
                     "architecture.serialWordCapacity", default=None)
                 if (_serial_requested or bool(TheXMLConfig.get(
-                        "architecture.conceptIndexRead", default=False))
+                        "architecture.conceptIndexRead"))
                         or _explicit_word_traversal not in (None, "")):
                     _nv_cs = self._nvec("ConceptualSpace", 0)
                     if _nv_cs > 0:
@@ -16789,10 +16774,7 @@ class BasicModel(BaseModel):
                                       default=None)
             if _thr is not None:
                 _vq.threshold_ema_dead_code = int(_thr)
-            _eps = TheXMLConfig.space(_sect, "codebookGrowthEpsilon",
-                                      default=None)
-            _vq.growth_epsilon = (float(_eps) if _eps is not None
-                                  else 0.0)
+            _vq.growth_epsilon = float(TheXMLConfig.space(_sect, "codebookGrowthEpsilon"))
 
         # Whole-property VQ training: the canonical property-basis mode has
         # exactly one WS dictionary (``subspace.what``). It drops EMA and
@@ -16871,7 +16853,7 @@ class BasicModel(BaseModel):
             # construction, before self.serial_object_meta is parsed (same
             # order-safety idiom as the mereologyRaise request below).
             object.__setattr__(cs, '_serial_object_meta', bool(
-                TheXMLConfig.get("architecture.serialObjectMeta", default=False)))
+                TheXMLConfig.get("architecture.serialObjectMeta")))
             # Model-level incoming assertion trust reaches CS here too for
             # probes/tests that need the architecture value during construction.
             object.__setattr__(cs, '_trust', self._unit_interval(
@@ -16998,7 +16980,7 @@ class BasicModel(BaseModel):
         # gates ONLY the lattice behaviors (word-whole autobind, order
         # raising, the top-down handoff).
         _mereology_raise = bool(TheXMLConfig.get(
-            "architecture.mereologyRaise", default=False))
+            "architecture.mereologyRaise"))
         if _mereology_raise and terminal_ss is not None:
             object.__setattr__(terminal_ss, '_mereology_raise', True)
             object.__setattr__(self.perceptualSpace, '_mereology_raise', True)
@@ -17009,8 +16991,7 @@ class BasicModel(BaseModel):
         # the bounded reducer adapts; identical to the lattice pair on the
         # non-negative SS activations, signed-safe on CS ideas. Default
         # off = byte-identical.
-        if bool(TheXMLConfig.get("architecture.radialStmReduce",
-                                 default=False)) and terminal_ss is not None:
+        if bool(TheXMLConfig.get("architecture.radialStmReduce")) and terminal_ss is not None:
             _sl = getattr(terminal_ss, 'syntacticLayer', None)
             for _h in (getattr(_sl, '_by_name', {}) or {}).values():
                 if getattr(_h, 'uses_operand_activation', False):
@@ -17161,7 +17142,7 @@ class BasicModel(BaseModel):
                            self._empty_seed_ss)
 
         from Expectation import unit, positive
-        self.word_expectation_weight = float(TheXMLConfig.training('wordExpectationLossWeight', .1))
+        self.word_expectation_weight = float(TheXMLConfig.training('wordExpectationLossWeight'))
         self.expectation_prime_enabled = bool(TheXMLConfig.training('expectationPrime', True))
         self.percept_expectation_gain = unit(TheXMLConfig.training('perceptExpectationGain', 0.), 'perceptExpectationGain')
         self.word_expectation_gain = unit(TheXMLConfig.training('symbolExpectationGain', 0.), 'symbolExpectationGain')
@@ -17306,7 +17287,7 @@ class BasicModel(BaseModel):
         # like every other Space layer.
         _combine_naive = bool(TheXMLConfig.get("architecture.naive", False))
         _combine_binding = str(TheXMLConfig.get(
-            "architecture.conceptBinding", default="mixing")
+            "architecture.conceptBinding")
         ).strip().lower()
         for t in range(T):
             cs = self.conceptualSpaces[t]
@@ -24695,11 +24676,9 @@ class ModelFactory:
         if str(arch.get("conceptBinding", "mixing")).strip().lower() == "aligned":
             try:
                 _cs_codes = int(gsp(cfg, "ConceptualSpace", "nVectors"))
-                try:
-                    _cs_active = int(gsp(
-                        cfg, "ConceptualSpace", "activeVectors"))
-                except KeyError:
-                    _cs_active = _cs_codes
+                # 0 (the default): every allocated concept row is active.
+                _cs_active = int(gsp(
+                    cfg, "ConceptualSpace", "activeVectors")) or _cs_codes
                 if not (0 < _cs_active <= _cs_codes):
                     errors.append(
                         "ConceptualSpace.activeVectors must be positive and "
@@ -24946,10 +24925,7 @@ class ModelFactory:
             # <serialWordCapacity>.  PS/CS remain the canonical instantaneous
             # field and STM workspace, so their slot counts stay aligned with
             # STM capacity rather than expanding to the surface-word cap.
-            try:
-                _stm_cap = int(gsp(cfg, "ConceptualSpace", "stmCapacity"))
-            except (KeyError, TypeError, ValueError):
-                _stm_cap = 8
+            _stm_cap = int(gsp(cfg, "ConceptualSpace", "stmCapacity"))
             if ps_n != _stm_cap or cs_n != _stm_cap:
                 errors.append(
                     "serialObjectMeta field/workspace mismatch: "
@@ -25237,8 +25213,8 @@ class ModelFactory:
         # the whole run (construction init + data order + training).
         # The XOR_exact gates are read as single CLI runs; unseeded,
         # their recon column is run-to-run flaky (predictions stable).
-        seed = os.environ.get("BASIC_SEED", trn.get("seed"))
-        if seed is not None:
+        seed = os.environ.get("BASIC_SEED", trn["seed"])
+        if seed != "":
             torch.manual_seed(int(seed))
             random.seed(int(seed))
             np.random.seed(int(seed))
@@ -25274,7 +25250,7 @@ class ModelFactory:
         max_sentence_words = int(
             max_sentence_words_env
             if max_sentence_words_env is not None
-            else dat.get("maxSentenceWords", 0) or 0) or None
+            else dat["maxSentenceWords"]) or None
         random_shards = os.environ.get("BASIC_RANDOM_SHARDS", "0") == "1"
 
         TheData.load(dataset,

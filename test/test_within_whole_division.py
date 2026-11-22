@@ -174,7 +174,9 @@ def test_xsd_accepts_divide_within_whole():
     doc = ET.parse(os.path.join(data_dir, "model.xml"))
     ws = doc.find(".//WholeSpace")
     assert ws is not None
-    el = ET.SubElement(ws, "divideWithinWhole")
+    # model.xml holds the default (true); a config states false.
+    el = ws.find("divideWithinWhole")
+    assert el is not None and el.text == "true"
     el.text = "false"
     assert schema.validate(doc), "\n".join(
         str(e.message) for e in schema.error_log)
