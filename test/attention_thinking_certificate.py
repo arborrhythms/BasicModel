@@ -135,7 +135,7 @@ class Observer:
                                          words=arrivals, streams=streams))
             return result
         patch.setattr(Looks, 'run', measured_path)
-        attend = Language.OperationSelectionLayer.attend
+        attend = SentenceLooks.attend
         def attending(*args, **kwargs):
             self.attend_count += 1
             self.in_attention += 1
@@ -143,7 +143,7 @@ class Observer:
                 return attend(*args, **kwargs)
             finally:
                 self.in_attention -= 1
-        patch.setattr(Language.OperationSelectionLayer, 'attend', staticmethod(attending))
+        patch.setattr(SentenceLooks, 'attend', attending)
         select = Language.OperationSelectionLayer.select_logits
         def selecting(chooser, *args, **kwargs):
             result = select(chooser, *args, **kwargs)
