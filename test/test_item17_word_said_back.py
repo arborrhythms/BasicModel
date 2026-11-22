@@ -55,6 +55,19 @@ class Probe:
                                       walk=text(model._sentence_order_zero_reverse.materialize()[0, 0])))
             return result
         monkeypatch.setattr(SentenceField, 'reconstruct', rebuilt)
+        # The output walk's choice of its terminal: each bank row's readback
+        # score at the first generated slot (the walk takes the greatest).
+        import OutputOccurrences, SentenceUnderstanding
+        scores_of = SentenceUnderstanding.readback_scores
+        self.walk_scores = []
+        def generated(model, words, counts, truncated, bank, trace, **kw):
+            score = scores_of(words[:, 0], bank.codes, torch.ones_like(bank.weights),
+                              percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+            score = score.masked_fill(~bank.terminal_valid, -torch.inf)[0]
+            probe.walk_scores.append((score.detach(), bank.rows[0].detach()))
+            return original_generated(model, words, counts, truncated, bank, trace, **kw)
+        original_generated = OutputOccurrences.generated
+        monkeypatch.setattr(OutputOccurrences, 'generated', generated)
         monkeypatch.setattr(SentenceLooks, 'attend', requested)
         monkeypatch.setattr(RequestRead, 'said', spoken)
 
@@ -120,16 +133,29 @@ def test_one_word_and_then_the_nineteen(tmp_path, monkeypatch):
         def measured(k):
             said = walk = whole = 0
             missed = []
+            owner = model._concept_owner()
+            margins = []
             for w in WORDS:
-                probe.rebuilt.clear()
+                probe.rebuilt.clear(); probe.walk_scores.clear()
                 said += reading_of(model, paths, w + '.')['said_right']
+                if probe.walk_scores:
+                    score, rows = probe.walk_scores[-1]
+                    cid = owner.interpret.word_for_form(w)
+                    row = None if cid is None else owner._concept_row_of(int(cid))
+                    own = (rows == row) & torch.isfinite(score)
+                    if bool(own.any()):
+                        mine = float(score[own].max())
+                        rival = float(torch.where(own, -torch.inf, score).max())
+                        margins.append((round(mine - rival, 4), round(mine, 4), int(torch.isfinite(score).sum())))
+                    else:
+                        margins.append(None)
                 r = probe.rebuilt[-1]
                 walk += r['walk'] == w
                 whole += r['walk'] == r['raw']
                 if r['walk'] != w:
                     missed.append((w, r['walk']))
             print('round', k, 'say read right', said, 'walk gives the word', walk, 'walk gives word and mark', whole,
-                  'missed', missed[:6])
+                  'missed', missed[:6], 'walk score margin of the word over its best rival', margins)
         for mark in ('.', '?'):
             try:
                 probe.rebuilt.clear()
@@ -139,9 +165,24 @@ def test_one_word_and_then_the_nineteen(tmp_path, monkeypatch):
                 model.End()
                 print('mark alone', repr(mark), 'raised', type(error).__name__, str(error)[:200])
         measured(-1)
+        batch = int(os.environ.get('WORD_BATCH', '1'))
+        import time
+        began = time.time()
         for k in range(rounds):
-            costs = [presentation(model, paths, optimizer, w, probe)['cost'] for w in WORDS]
-            print('costs', k, costs)
-            measured(k)
+            if batch > 1:
+                # Several words alone in one batch: one step for the batch.
+                for i in range(0, len(WORDS), batch):
+                    texts = [w + '.' for w in WORDS[i:i + batch]]
+                    source = model.inputSpace.prepInput(texts)
+                    model.runBatch(train=True, optimizer=optimizer, batchSize=len(texts),
+                                   batch_override=(source, torch.empty(len(texts), 0)))
+                    model.End()
+                print('batch round', k)
+            else:
+                costs = [presentation(model, paths, optimizer, w, probe)['cost'] for w in WORDS]
+                print('costs', k, costs)
+            if k < 4 or k % int(os.environ.get('MEASURE_EVERY', '1')) == 0 or k == rounds - 1:
+                measured(k)
+                print('seconds', round(time.time() - began))
     finally:
         model.End()
