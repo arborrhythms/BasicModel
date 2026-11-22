@@ -113,7 +113,7 @@ def readers(owner, percept, *, work=None):
     for concept in sigma.rows_reading(int(percept)):
         cid = owner.concept_id_at_row(concept)
         entry = sigma.find(concept, int(percept))
-        value = float(sigma.value[entry])
+        value = float(sigma.w()[entry])
         if abs(value) < threshold() or cid is None or not _charge(work):
             continue
         reference = ('sym', int(cid))

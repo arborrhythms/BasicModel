@@ -5087,7 +5087,7 @@ class NotLayer3(Layer):
     @staticmethod
     def entries(sigma):
         """Which of ``sigma``'s entries are Not entries (read the not-value)."""
-        return sigma.value.detach()[:sigma.nnz] < 0
+        return sigma.w().detach()[:sigma.nnz] < 0
 
     @torch.no_grad()
     def make(self, sigma, concept, row, weight=None):
@@ -5097,8 +5097,8 @@ class NotLayer3(Layer):
         entry = sigma.find(concept, row)
         if entry is None:
             return sigma.add(concept, row, 1. if weight is None else float(weight), negated=True)
-        size = float(sigma.value[entry].abs()) if weight is None else float(weight)
-        sigma.value[entry] = -size
+        size = abs(float(sigma.w()[entry])) if weight is None else float(weight)
+        sigma.set_w(entry, -size)
         return entry
 
 
@@ -5192,53 +5192,52 @@ def unit_solve(y, source, target, value, steps):
 class SparseLDULayer(Layer):
     r"""A sparse LDU (rule 78, §19.122): ``W = L D U`` in
     :class:`InvertibleLinearLayer`'s row-vector form, ``x @ L @ D @ U``, with
-    the strict triangle of U stored as entries and D a full vector. L is
-    the identity: no entry is placed in it (see *a cycle*, below).
+    the strict triangles of L and U stored as entries and D a full vector.
+    The learned numbers are the factors: D's diagonal and the entries of the
+    two triangles, not the entries of W.
 
     *Slots.* The layer's own index is a slot. A slot holds at most one input
     and at most one output, and its diagonal is D's: an entry of output
     ``row`` on ``input`` whose two are held by one slot is that slot's
-    diagonal; every other entry is an entry of U from the input's slot to
-    the output's slot. An entry is placed when it is added: an input and an
-    output with no slot take a new slot together (the entry is its
+    diagonal; every other entry is an entry of U, or of L, from the input's
+    slot to the output's slot. An entry is placed when it is added: an input
+    and an output with no slot take a new slot together (the entry is its
     diagonal); one with no slot joins the other's slot where the other's
     slot has room for it (the entry is again its diagonal), or else takes a
     new slot of its own; two in different slots are joined by an entry of U.
-    An input held by no slot is read by nothing; an output held by no slot
-    reads nothing. So W has exactly the entries written, and the slots are
-    at most ``nInput + nOutput``: D is padded by the slots that hold only an
-    input or only an output.
+    An entry at nothing makes no diagonal (D at nothing would pass nothing
+    on through its slot): its input and its output take slots of their own.
+    The slots are at most ``nInput + nOutput``: a slot that holds only an
+    input or only an output has D at one and is the padding.
 
-    *The order by level.* No slot is numbered by level. U's entries make no
-    cycle, so they are a strict triangle in the order of their levels (the
-    slots ordered so that every entry goes from a lower level to a higher),
-    and the way back needs only that and the longest chain. The layer keeps
-    each slot's level (the longest chain of entries that ends at it) on the
-    host, raised along the chains below a new entry when it is added, and
-    the longest chain with it. An entry removed sets the levels again from
-    the entries left.
+    *The triangles.* U's entries make no cycle, so they are a strict
+    triangle in the order of their levels; the way back needs only that and
+    the longest chain. An entry whose U entry would close a cycle (an output
+    that reads, through other outputs' rows, the row of its own slot) goes
+    in L: no output leaves its slot. Since an entry of L goes from a slot
+    above to a slot below in U's order, L's entries make no cycle either
+    (while entries are only added; an entry that would close a cycle of
+    both after a removal is refused). The layer keeps each slot's level in
+    each triangle on the host, raised along the chains below a new entry
+    when it is added, and each triangle's longest chain with it.
 
-    *A cycle.* An entry whose U entry would close a cycle (an output that
-    reads, through other outputs' rows, the row of its own slot) moves its
-    output out of its slot to a new slot of its own, with the entries that
-    reach it; its diagonal becomes an entry of U from the slot it leaves.
-    The new slot has no input, so nothing leaves it and no cycle is closed.
-    W keeps exactly its entries; what is given up is that the input left
-    behind has no output of its own, so the way back does not return it.
+    *The values.* Each entry is one learned number, ``value``: a diagonal is
+    its slot's ``d``, an entry of U from slot ``a`` to ``b`` is ``U_ab``, an
+    entry of L ``L_ab``. W is their product: at an entry of U it is
+    ``d_a U_ab``, at an entry of L ``L_ab d_b``, and an entry of L from
+    ``a`` to ``b`` with an entry of U from ``b`` to ``c`` gives W an entry
+    ``L_ab d_b U_bc`` at the pair ``(a, c)``, as a full LDU has.
+    :meth:`w` is W at each stored entry's own pair. An entry is written at
+    a weight of W (:meth:`add`, :meth:`set_w`): its factor is that weight
+    over its slot's ``d``, and a ``d`` written again keeps W at the entries
+    of U and L that it scales.
 
-    *The values.* Each entry is one learned number, ``value``, the entry of
-    W itself: a diagonal is D's, and an entry of U from slot ``a`` is
-    ``d_a`` times U's. So the factors are read from the entries, and
-    nothing is factored again when an entry is added, removed or taught. A
-    slot with no diagonal entry has ``d`` one. A diagonal at nothing passes
-    nothing back (the pseudoinverse's convention).
-
-    *The way up* (:meth:`up`) is scatters, with no division: ``x d`` plus
-    each entry's input times its value. *The way back* (:meth:`back`) is
-    exact: U undone by :func:`unit_solve` as many times as U's longest
-    chain, then D divided out. Where an output's value is not given (a slot
-    with no output) it is taken at nothing, which is the pseudoinverse the
-    padding gives.
+    *The way up* (:meth:`up`) is scatters: L, then D, then U. *The way back*
+    (:meth:`back`) is exact where every slot has its output: U undone by
+    :func:`unit_solve` as many times as U's longest chain, D divided out, L
+    undone in its longest chain. It refuses nothing: an output not given (a
+    slot with no output) is taken at nothing, and a ``d`` at nothing passes
+    nothing back, which is the pseudoinverse that the padded D gives.
 
     Storage is allocated at construction and grown into: ``entries``
     entries and ``nInput + nOutput`` slots. The slots are not saved; they
@@ -5246,7 +5245,7 @@ class SparseLDULayer(Layer):
     loaded.
     """
 
-    DIAGONAL, UPPER = 0, 1
+    DIAGONAL, UPPER, LOWER = 0, 1, 2
 
     def __init__(self, nInput, nOutput, entries):
         super().__init__(int(nInput), int(nOutput))
@@ -5257,6 +5256,12 @@ class SparseLDULayer(Layer):
         self.register_buffer('entry_row', torch.full((entries,), -1, dtype=torch.long))
         self.register_buffer('entry_input', torch.full((entries,), -1, dtype=torch.long))
         self.register_buffer('count', torch.zeros((), dtype=torch.long))
+        # The learned numbers are the factors (a checkpoint without this
+        # key holds W's entries, and is read as such when it is loaded).
+        self.register_buffer('factored', torch.ones((), dtype=torch.long))
+        # Each entry added at nothing, which made no diagonal; kept so that
+        # the slots are placed again as they were.
+        self.register_buffer('entry_apart', torch.zeros(entries, dtype=torch.bool))
         slots = self.nInput + self.nOutput
         for name, size in (('entry_source', entries), ('entry_target', entries), ('entry_kind', entries),
                            ('input_slot', self.nInput), ('output_slot', self.nOutput),
@@ -5273,9 +5278,12 @@ class SparseLDULayer(Layer):
         self._slots = 0
         self._in_slot, self._out_slot = {}, {}
         self._slot_in, self._slot_out, self._diagonal = [], [], []
-        self._edges = {}
-        self._succ, self._level, self._depth = {}, {}, 0
+        self._tri = {self.UPPER: self._triangle(), self.LOWER: self._triangle()}
         self._returned = None
+
+    @staticmethod
+    def _triangle():
+        return {'edges': {}, 'succ': {}, 'level': {}, 'depth': 0}
 
     def _apply(self, fn, *args, **kwargs):
         result = super()._apply(fn, *args, **kwargs)
@@ -5285,8 +5293,8 @@ class SparseLDULayer(Layer):
 
     @property
     def weight(self):
-        """Each entry's weight, its size, at zero or above."""
-        return self.value.abs()
+        """Each entry's weight, the size of W at it, at zero or above."""
+        return self.w().abs()
 
     @property
     def capacity(self):
@@ -5303,8 +5311,18 @@ class SparseLDULayer(Layer):
 
     @property
     def longest_chain(self):
-        """The longest chain of U's entries: the steps of the way back."""
-        return self._depth
+        """The longest chain of U's entries: the steps of U's way back."""
+        return self._tri[self.UPPER]['depth']
+
+    @property
+    def longest_chain_lower(self):
+        """The longest chain of L's entries: the steps of L's way back."""
+        return self._tri[self.LOWER]['depth']
+
+    @property
+    def lower_entries(self):
+        """How many entries are in L."""
+        return len(self._tri[self.LOWER]['edges'])
 
     def _index_entries(self):
         n = self._n = int(self.count)
@@ -5321,8 +5339,9 @@ class SparseLDULayer(Layer):
         entries in their order."""
         rows, inputs = self._index_entries()
         self._reset_slots()
+        apart = self.entry_apart[:self._n].tolist()
         for e, (r, i) in enumerate(zip(rows, inputs)):
-            self._place(e, r, i, write=False)
+            self._place(e, r, i, write=False, zero=apart[e])
         self._write_slots()
 
     def _write_slots(self):
@@ -5332,11 +5351,13 @@ class SparseLDULayer(Layer):
         for name in ('entry_source', 'entry_target', 'entry_kind', 'input_slot', 'output_slot',
                      'slot_input', 'slot_output', 'slot_diagonal'):
             getattr(self, name).fill_(-1)
-        if self._edges:
-            entries = torch.tensor(list(self._edges), **long)
-            self.entry_kind[entries] = self.UPPER
-            self.entry_source[entries] = torch.tensor([a for a, _ in self._edges.values()], **long)
-            self.entry_target[entries] = torch.tensor([b for _, b in self._edges.values()], **long)
+        for kind in (self.UPPER, self.LOWER):
+            edges = self._tri[kind]['edges']
+            if edges:
+                entries = torch.tensor(list(edges), **long)
+                self.entry_kind[entries] = kind
+                self.entry_source[entries] = torch.tensor([a for a, _ in edges.values()], **long)
+                self.entry_target[entries] = torch.tensor([b for _, b in edges.values()], **long)
         for buffer, held in ((self.input_slot, self._in_slot), (self.output_slot, self._out_slot)):
             if held:
                 buffer[torch.tensor(list(held), **long)] = torch.tensor(list(held.values()), **long)
@@ -5380,8 +5401,9 @@ class SparseLDULayer(Layer):
         if write:
             self.entry_kind[entry], self.entry_source[entry], self.entry_target[entry] = kind, source, target
 
-    def _reaches(self, start, goal):
-        """Whether ``goal`` lies on a chain of U's entries from ``start``."""
+    def _reaches(self, kind, start, goal):
+        """Whether ``goal`` lies on a chain of the triangle's entries from ``start``."""
+        succ = self._tri[kind]['succ']
         seen, stack = set(), [start]
         while stack:
             node = stack.pop()
@@ -5389,81 +5411,79 @@ class SparseLDULayer(Layer):
                 return True
             if node not in seen:
                 seen.add(node)
-                stack.extend(self._succ.get(node, ()))
+                stack.extend(succ.get(node, ()))
         return False
 
-    def _link(self, entry, a, b, write):
-        """The entry of U from slot ``a`` to slot ``b``: each slot's level
-        (the longest chain ending at it) raised along the chains from ``b``."""
-        self._edges[entry] = (a, b)
-        self._write_entry(entry, self.UPPER, a, b, write)
-        self._succ.setdefault(a, set()).add(b)
-        stack = [(b, self._level.get(a, 0) + 1)]
+    def _link(self, kind, entry, a, b, write):
+        """The entry of the triangle from slot ``a`` to slot ``b``: each
+        slot's level (the longest chain ending at it) raised along the
+        chains from ``b``."""
+        tri = self._tri[kind]
+        tri['edges'][entry] = (a, b)
+        self._write_entry(entry, kind, a, b, write)
+        tri['succ'].setdefault(a, set()).add(b)
+        level = tri['level']
+        stack = [(b, level.get(a, 0) + 1)]
         while stack:
             node, height = stack.pop()
-            if height <= self._level.get(node, 0):
+            if height <= level.get(node, 0):
                 continue
-            self._level[node] = height
-            self._depth = max(self._depth, height)
-            stack.extend((after, height + 1) for after in self._succ.get(node, ()))
+            level[node] = height
+            tri['depth'] = max(tri['depth'], height)
+            stack.extend((after, height + 1) for after in tri['succ'].get(node, ()))
 
     def _relevel(self):
-        """The levels and the longest chain set again from the entries."""
-        edges = self._edges
-        self._edges, self._succ, self._level, self._depth = {}, {}, {}, 0
-        for entry, (a, b) in edges.items():
-            self._link(entry, a, b, False)
+        """The levels and the longest chains set again from the entries."""
+        for kind in (self.UPPER, self.LOWER):
+            edges = self._tri[kind]['edges']
+            self._tri[kind] = self._triangle()
+            for entry, (a, b) in edges.items():
+                self._link(kind, entry, a, b, False)
 
-    def _move_output(self, k, write):
-        """The output of slot ``k`` moved to a new slot of its own, with the
-        entries that reach it; its diagonal, if any, becomes an entry of U
-        from ``k``. Returns the new slot."""
-        output, diagonal = self._slot_out[k], self._diagonal[k]
-        m = self._new_slot(-1, -1, write)
-        self._slot_out[k], self._diagonal[k] = -1, -1
-        if write:
-            self.slot_output[k], self.slot_diagonal[k] = -1, -1
-        self._hold_output(m, output, write)
-        for e, (a, b) in list(self._edges.items()):
-            if b == k:
-                self._edges[e] = (a, m)
-                self._write_entry(e, self.UPPER, a, m, write)
-        self._relevel()
-        if diagonal >= 0:
-            self._link(diagonal, k, m, write)
-        return m
+    def _kind_of(self, entry):
+        for kind in (self.UPPER, self.LOWER):
+            if entry in self._tri[kind]['edges']:
+                return kind
+        return self.DIAGONAL
 
     def returned(self):
         """The inputs the way back returns exactly: each held by a slot with
-        its own output (a diagonal) and reached by no chain from a slot
-        whose input has no output, whose value no output gives. Kept on the
-        host, and found again after an entry is added or removed."""
+        its own output, and reached by no chain of U and then of L from a
+        slot whose output is not given. Kept on the host, and found again
+        after an entry is added or removed."""
         if self._returned is None:
-            lost = [k for k in range(self._slots) if self._slot_in[k] >= 0 and self._slot_out[k] < 0]
-            seen = set()
-            while lost:
-                k = lost.pop()
-                if k not in seen:
-                    seen.add(k)
-                    lost.extend(self._succ.get(k, ()))
+            lost = {k for k in range(self._slots) if self._slot_out[k] < 0}
+            for kind in (self.UPPER, self.LOWER):
+                succ, stack = self._tri[kind]['succ'], list(lost)
+                while stack:
+                    k = stack.pop()
+                    for after in succ.get(k, ()):
+                        if after not in lost:
+                            lost.add(after)
+                            stack.append(after)
             self._returned = {self._slot_in[k] for k in range(self._slots)
-                              if self._diagonal[k] >= 0 and k not in seen}
+                              if self._slot_in[k] >= 0 and k not in lost}
         return self._returned
 
-    def _place(self, entry, row, input, write=True):
-        """The entry's slots: its slot's diagonal, or an entry of U."""
+    def _place(self, entry, row, input, write=True, zero=False):
+        """The entry's slots: its slot's diagonal, or an entry of U, or of L
+        where U would close a cycle. An entry at nothing (``zero``) makes no
+        diagonal."""
         self._returned = None
         k, m = self._in_slot.get(input), self._out_slot.get(row)
         if k is None and m is None:
-            k = m = self._new_slot(input, row, write)
+            if zero:
+                k, m = self._new_slot(input, -1, write), self._new_slot(-1, row, write)
+            else:
+                k = m = self._new_slot(input, row, write)
         elif k is None:
-            if self._slot_in[m] < 0:
+            if self._slot_in[m] < 0 and not zero:
                 self._hold_input(m, input, write)
                 k = m
             else:
                 k = self._new_slot(input, -1, write)
         elif m is None:
-            if self._slot_out[k] < 0:
+            if self._slot_out[k] < 0 and not zero:
                 self._hold_output(k, row, write)
                 m = k
             else:
@@ -5475,10 +5495,75 @@ class SparseLDULayer(Layer):
             if write:
                 self.slot_diagonal[k] = entry
             self._write_entry(entry, self.DIAGONAL, k, k, write)
+            return self.DIAGONAL
+        for kind in (self.UPPER, self.LOWER):
+            if not self._reaches(kind, m, k):
+                self._link(kind, entry, k, m, write)
+                return kind
+        raise ValueError('the entry would close a cycle of U and of L')
+
+    # --- the factors and W ----------------------------------------------
+
+    def _slot_d(self, value=None):
+        """D over the slots: each slot's diagonal, one where it has none."""
+        value = self.value if value is None else value
+        diagonal = self.slot_diagonal[:self._slots].to(value.device)
+        return torch.where(diagonal >= 0, value.index_select(0, diagonal.clamp_min(0)), value.new_ones(()))
+
+    def w(self):
+        """W at each entry's own pair, ``[capacity]``: a diagonal's ``d``,
+        an entry of U from ``a`` ``d_a U``, an entry of L to ``b`` ``L d_b``
+        (zero past the entries). Products of an entry of L with entries of
+        U fall at other pairs (:meth:`up` has them)."""
+        value = self.value
+        if not self._n:
+            return value * 0
+        d = torch.cat((self._slot_d(), value.new_ones(1)))
+        kind = self.entry_kind.to(value.device)
+        S = self._slots
+        source = torch.where(self.entry_source >= 0, self.entry_source, S).to(value.device)
+        target = torch.where(self.entry_target >= 0, self.entry_target, S).to(value.device)
+        scale = torch.where(kind == self.UPPER, d.index_select(0, source),
+                            torch.where(kind == self.LOWER, d.index_select(0, target), value.new_ones(())))
+        return torch.where(kind >= 0, value * scale, value.new_zeros(()))
+
+    def _scale_of(self, entry):
+        """The ``d`` that the entry's factor is multiplied by in W."""
+        kind = self._kind_of(entry)
+        if kind == self.DIAGONAL:
+            return 1.
+        a, b = self._tri[kind]['edges'][entry]
+        slot = a if kind == self.UPPER else b
+        diagonal = self._diagonal[slot]
+        return 1. if diagonal < 0 else float(self.value[diagonal])
+
+    @torch.no_grad()
+    def set_w(self, entry, weight):
+        """Write W at the entry to ``weight``: its factor is the weight over
+        the ``d`` that scales it. A diagonal written again rescales the
+        entries of U from its slot and of L into it, so that W at them is
+        kept (where the old and the new ``d`` are not nothing)."""
+        entry, weight = int(entry), float(weight)
+        kind = self._kind_of(entry)
+        if kind != self.DIAGONAL:
+            scale = self._scale_of(entry)
+            self.value[entry] = weight / scale if scale != 0 else weight
             return
-        if self._reaches(m, k):
-            m = self._move_output(m, write)
-        self._link(entry, k, m, write)
+        slot = self._diagonal.index(entry)
+        old = float(self.value[entry])
+        self.value[entry] = weight
+        self._rescale(slot, old, weight)
+
+    def _rescale(self, slot, old, new):
+        """The entries scaled by slot ``slot``'s ``d`` kept at their W when
+        that ``d`` goes from ``old`` to ``new``."""
+        if old == new or old == 0 or new == 0:
+            return
+        scaled = [e for e, (a, _) in self._tri[self.UPPER]['edges'].items() if a == slot]
+        scaled += [e for e, (_, b) in self._tri[self.LOWER]['edges'].items() if b == slot]
+        if scaled:
+            index = torch.tensor(scaled, dtype=torch.long, device=self.value.device)
+            self.value[index] *= old / new
 
     # --- entries ---------------------------------------------------------
 
@@ -5488,11 +5573,11 @@ class SparseLDULayer(Layer):
 
     @torch.no_grad()
     def add(self, row, input, weight=1.0, *, negated=False):
-        """Write the entry of output ``row`` on ``input`` at ``weight`` (zero
-        or above), below nothing where ``negated`` (the Not's, through
-        :meth:`NotLayer3.make`), and place it; on an entry already written,
-        its weight is raised by ``weight`` and its sign kept. Returns the
-        entry's index."""
+        """Write the entry of output ``row`` on ``input`` with W at
+        ``weight`` (zero or above), below nothing where ``negated`` (the
+        Not's, through :meth:`NotLayer3.make`), and place it; on an entry
+        already written, W's size there is raised by ``weight`` and its sign
+        kept. Returns the entry's index."""
         row, input, weight = int(row), int(input), float(weight)
         if not (0 <= row < self.nOutput and 0 <= input < self.nInput):
             raise ValueError('a sparse LDU entry lies outside its outputs or its inputs')
@@ -5503,57 +5588,83 @@ class SparseLDULayer(Layer):
             entry = self._n
             if entry >= self.capacity:
                 raise OverflowError('the sparse LDU has no room for another entry')
-            self._place(entry, row, input)
+            kind = self._place(entry, row, input, zero=weight == 0)
             self.entry_row[entry], self.entry_input[entry] = row, input
-            self.value[entry] = -weight if negated else weight
+            self.entry_apart[entry] = weight == 0
             self._n = entry + 1
             self.count.fill_(self._n)
             self._entry_of[(row, input)] = entry
             self._rows.add(row, entry, self.entry_row)
             self._columns.add(input, entry, self.entry_input)
+            signed = -weight if negated else weight
+            if kind == self.DIAGONAL:
+                # A slot that held only one of the two had ``d`` at one.
+                self.value[entry] = signed
+                self._rescale(self._diagonal.index(entry), 1., signed)
+            else:
+                self.value[entry] = 0.
+                self.set_w(entry, signed)
             return entry
-        sign = -1. if float(self.value[entry]) < 0 else 1.
-        self.value[entry] = sign * (abs(float(self.value[entry])) + weight)
+        current = float(self.w()[entry])
+        sign = -1. if current < 0 else 1.
+        self.set_w(entry, sign * (abs(current) + weight))
         return entry
 
     @torch.no_grad()
     def remove(self, row, input):
         """Remove the entry of output ``row`` on ``input``; the last entry
         takes its index. A diagonal removed leaves its input in its slot
-        and moves its output to a new slot, with the entries that reach it.
-        Nothing is factored again."""
+        and moves its output to a new slot, with the entries that reach it;
+        W at every other entry is kept. Nothing is factored again."""
         self._returned = None
         entry = self._entry_of[(int(row), int(input))]
-        if entry in self._edges:
-            del self._edges[entry]
+        kind = self._kind_of(entry)
+        if kind != self.DIAGONAL:
+            del self._tri[kind]['edges'][entry]
         else:
             k = self._diagonal.index(entry)
+            old = float(self.value[entry])
+            self._rescale(k, old, 1.)
             self._diagonal[k] = -1
             self.slot_diagonal[k] = -1
-            self._move_output(k, True)
+            output = self._slot_out[k]
+            m = self._new_slot(-1, -1, True)
+            self._slot_out[k] = -1
+            self.slot_output[k] = -1
+            self._hold_output(m, output, True)
+            for tri_kind in (self.UPPER, self.LOWER):
+                edges = self._tri[tri_kind]['edges']
+                for e, (a, b) in list(edges.items()):
+                    if b == k:
+                        edges[e] = (a, m)
+                        self._write_entry(e, tri_kind, a, m, True)
         last = self._n - 1
-        buffers = (self.entry_row, self.entry_input, self.entry_source, self.entry_target, self.entry_kind)
+        buffers = (self.entry_row, self.entry_input, self.entry_source, self.entry_target, self.entry_kind,
+                   self.entry_apart)
         if entry != last:
             for buffer in buffers:
                 buffer[entry] = buffer[last]
             self.value[entry] = self.value[last]
-            if last in self._edges:
-                self._edges[entry] = self._edges.pop(last)
+            moved = self._kind_of(last)
+            if moved != self.DIAGONAL:
+                edges = self._tri[moved]['edges']
+                edges[entry] = edges.pop(last)
             else:
                 slot = self._diagonal.index(last)
                 self._diagonal[slot] = entry
                 self.slot_diagonal[slot] = entry
-        for buffer in buffers:
+        for buffer in buffers[:-1]:
             buffer[last] = -1
+        self.entry_apart[last] = False
         self.value[last] = 0.
         self.count.fill_(last)
         self._index_entries()
         self._relevel()
 
     def entries(self, row):
-        """An output's entries, ``[(input read, weight, negated)]``, by the
-        compressed rows."""
-        value = self.value.detach()
+        """An output's entries, ``[(input read, weight, negated)]``, W at
+        each, by the compressed rows."""
+        value = self.w().detach()
         return [(int(self.entry_input[e]), float(value[e].abs()), bool(value[e] < 0))
                 for e in self._rows.of(row)]
 
@@ -5562,54 +5673,54 @@ class SparseLDULayer(Layer):
         return sorted(int(self.entry_row[e]) for e in self._columns.of(input))
 
     def entry(self, rows, inputs):
-        """The learned number of the entry of each ``rows[k]`` on
-        ``inputs[k]`` (its size the weight, its side of zero the option);
-        zero where there is none."""
+        """W at the entry of each ``rows[k]`` on ``inputs[k]`` (its size the
+        weight, its side of zero the option); zero where there is none."""
         rows = torch.as_tensor(rows, dtype=torch.long)
         inputs = torch.as_tensor(inputs, dtype=torch.long)
         found = [self._entry_of.get(key, -1) for key in zip(rows.flatten().tolist(), inputs.flatten().tolist())]
         index = torch.tensor(found, dtype=torch.long, device=self.value.device)
-        value = self.value.index_select(0, index.clamp_min(0)) * (index >= 0).to(self.value)
+        w = self.w()
+        value = w.index_select(0, index.clamp_min(0)) * (index >= 0).to(w)
         return value.reshape(rows.shape)
 
     # --- the way up and the way back, over the slots ---------------------
 
     def _factors(self, dtype, device):
-        """U's entries (every entry read, at nothing where it is a
-        diagonal, so no size depends on the data) and D, over the slots."""
-        n, S = self._n, self._slots
+        """L's and U's entries (every entry read, at nothing where it is of
+        the other kind, so no size depends on the data) and D, over the slots."""
+        n = self._n
         value = self.value[:n].to(device=device, dtype=dtype)
-        upper = torch.where(self.entry_kind[:n].to(device) == self.UPPER, value, value.new_zeros(()))
+        kind = self.entry_kind[:n].to(device)
+        upper = torch.where(kind == self.UPPER, value, value.new_zeros(()))
+        lower = torch.where(kind == self.LOWER, value, value.new_zeros(()))
         source = self.entry_source[:n].clamp_min(0).to(device)
         target = self.entry_target[:n].clamp_min(0).to(device)
-        diagonal = self.slot_diagonal[:S].to(device)
-        d = torch.where(diagonal >= 0, value.index_select(0, diagonal.clamp_min(0)), value.new_ones(()))
-        return source, target, upper, d
+        d = self._slot_d(self.value.to(device=device, dtype=dtype))
+        return source, target, lower, upper, d
 
     def up(self, x):
-        """``x @ W``, ``x`` ``[slots, ...]`` held by slot: ``x d`` and each
-        entry of U's input times its value, by scatters and no division."""
+        """``x @ L @ D @ U``, ``x`` ``[slots, ...]`` held by slot, by
+        scatters and no division."""
         if not self._n:
             return torch.zeros_like(x)
-        source, target, upper, d = self._factors(x.dtype, x.device)
+        source, target, lower, upper, d = self._factors(x.dtype, x.device)
         shape = (-1,) + (1,) * (x.ndim - 1)
-        return (x * d.reshape(shape)).index_add(0, target, x.index_select(0, source) * upper.reshape(shape))
+        z = unit_apply(x, source, target, lower) if self.lower_entries else x
+        return unit_apply(z * d.reshape(shape), source, target, upper)
 
     def back(self, y):
-        """The exact way back, ``y`` ``[slots, ...]`` held by slot: U undone
-        in its longest chain of steps, ``x <- y - x @ N`` with ``N`` each
-        entry over its source's ``d``, then D divided out (nothing where D is
-        nothing, as the pseudoinverse has it). A slot with no output is
-        given at nothing."""
+        """The way back, ``y`` ``[slots, ...]`` held by slot: U undone in its
+        longest chain of steps (``x <- y - x @ N``), D divided out (nothing
+        where D is nothing, as the pseudoinverse has it), then L undone in
+        its longest chain. A slot with no output is given at nothing."""
         if not self._n:
             return torch.zeros_like(y)
-        source, target, upper, d = self._factors(y.dtype, y.device)
+        source, target, lower, upper, d = self._factors(y.dtype, y.device)
         shape = (-1,) + (1,) * (y.ndim - 1)
-        by = d.index_select(0, source)
-        factor = torch.where(by != 0, upper / torch.where(by != 0, by, 1.), 0.)
-        x = unit_solve(y, source, target, factor, self._depth)
+        z = unit_solve(y, source, target, upper, self.longest_chain)
         d = d.reshape(shape)
-        return torch.where(d != 0, x / torch.where(d != 0, d, 1.), 0.)
+        z = torch.where(d != 0, z / torch.where(d != 0, d, 1.), 0.)
+        return unit_solve(z, source, target, lower, self.longest_chain_lower)
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -5619,26 +5730,40 @@ class SparseLDULayer(Layer):
                 'by the concepts): what its columns learned has no reading on the rows of the first Pi, '
                 'which are all a concept reads now; the members each concept was started from are in the '
                 'allocator\'s record, from which a new model starts each concept on its own row')
+        old = prefix + 'factored' not in state_dict
+        if old:
+            # A checkpoint of W's entries: each is read as W and written as
+            # its factor once the slots are placed; none was placed apart.
+            state_dict = dict(state_dict)
+            state_dict[prefix + 'factored'] = torch.ones((), dtype=torch.long)
+            state_dict[prefix + 'entry_apart'] = torch.zeros_like(self.entry_apart)
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
-        self._index()
+        if not old:
+            self._index()
+            return
+        with torch.no_grad():
+            w = self.value.detach().clone()
+            self._index()
+            for e in range(self._n):
+                if self._kind_of(e) != self.DIAGONAL:
+                    scale = self._scale_of(e)
+                    self.value[e] = w[e] / scale if scale != 0 else w[e]
 
 
 class SparseSigmaLDU(SparseLDULayer):
     r"""The Sigma of order zero on the sparse LDU: concepts (the outputs)
     over the rows of the first Pi (the inputs), through the Not,
 
-        y_c = tanh( sum_{(c, i)} v_ci s_i ),
+        y_c = tanh( sum_i W_ic s_i ),     W = L D U,
 
-    ``s_i`` the row's value (for less against) and ``v_ci`` the entry's one
-    learned number: at or above zero the entry reads the row's value, below
-    zero its not-value (a Not entry), and its size is the weight
-    (:attr:`weight`). So with no Not entry raising any row never lowers a
-    concept. Any number of concepts may read a row, and a concept any
-    number of rows; a concept reads no row it has no entry on. There is no
-    bias. The row a concept was brought by is its slot's diagonal, so the
-    way back returns each row from its own concept: the chart undone
-    (``atanh``), then :meth:`SparseLDULayer.back`.
+    ``s_i`` the row's value (for less against). W at an entry at or above
+    zero reads the row's value, below zero its not-value (a Not entry), and
+    its size is the weight (:attr:`weight`). A concept reads the rows it
+    has an entry on and, where an entry is in L, the rows its products
+    reach. There is no bias. The row a concept was brought by is its slot's
+    diagonal, so the way back returns each row from its own concept: the
+    chart undone (``atanh``), then :meth:`SparseLDULayer.back`.
     """
 
     def forward(self, options, inputs, rows):
@@ -5670,24 +5795,20 @@ class SparseSigmaLDU(SparseLDULayer):
 
     def reverse(self, y, inputs):
         """The signed values of rows ``inputs`` ``[P, ...]`` from every
-        concept's value ``y`` ``[nOutput, ...]``: exact for a row that
-        brought a concept and reads none that is not returned
-        (:meth:`SparseLDULayer.returned`), at nothing for a row no concept
-        reads. Refused for any other row: a concept reads it and no concept
-        gives its value."""
-        inputs = [int(i) for i in (inputs.tolist() if torch.is_tensor(inputs) else inputs)]
-        # A row is held by a slot once a concept reads it (the host's record).
-        returned = self.returned()
-        if any(i in self._in_slot and i not in returned for i in inputs):
-            raise ValueError('too few concepts to return the input')
+        concept's value ``y`` ``[nOutput, ...]``: the pseudoinverse the
+        padded D gives. Exact for every row of :meth:`returned`; a row no
+        concept reads comes back at nothing. Nothing is refused."""
+        inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1)
         S = self._slots
         bound = 1.0 - EPS_LOG
         a = torch.atanh(y.clamp(-bound, bound))
+        if not self.nnz:
+            return a.new_zeros(len(inputs), *a.shape[1:])
         at = self.output_slot.to(a.device)
         x = a.new_zeros(S + 1, *a.shape[1:]).index_add(0, torch.where(at >= 0, at, S), a)
         back = self.back(x[:S])
         back = torch.cat((back, back.new_zeros(1, *back.shape[1:])))
-        slot = self.input_slot.to(a.device).index_select(0, torch.tensor(inputs, dtype=torch.long, device=a.device))
+        slot = self.input_slot.to(a.device).index_select(0, inputs.to(a.device))
         return back.index_select(0, torch.where(slot >= 0, slot, S))
 
 

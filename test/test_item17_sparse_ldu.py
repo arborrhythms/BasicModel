@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from Layers import InvertibleLinearLayer
-from sparse_ldu import unit_apply, unit_solve, longest_chain, ldu_up, ldu_back
+from sparse_ldu import unit_apply, unit_solve, longest_chain, ldu_up, ldu_back, dense_w
 
 
 def _start():
@@ -107,11 +107,9 @@ def test_c_an_entry_added_or_removed_leaves_it_invertible_with_nothing_factored_
 
 def _dense_read(sigma, lanes, inputs):
     """What the Sigma of order zero reads by its definition, over every
-    concept: ``tanh`` of each concept's entries times its rows' values
-    (for less against), from a dense matrix of the entries."""
-    n = sigma.nnz
-    dense = torch.zeros(sigma.nInput, sigma.nOutput)
-    dense[sigma.entry_input[:n], sigma.entry_row[:n]] = sigma.value[:n].detach()
+    concept: ``tanh`` of each concept's column of W times its rows' values
+    (for less against), W the dense ``L D U`` of the layer's factors."""
+    dense = dense_w(sigma).detach()
     signed = torch.zeros(sigma.nInput, *lanes.shape[1:-1])
     signed[inputs] = lanes[..., 0] - lanes[..., 1]
     return torch.tanh(torch.einsum('i...,ic->c...', signed, dense))
@@ -153,34 +151,39 @@ def test_d_the_lessons_sigma_reads_its_entries_and_returns_its_rows(lesson):
     assert error < 1e-5
 
 
-def test_d_a_cycle_keeps_the_entries_and_gives_up_a_row():
+def test_d_a_cycle_goes_in_l_and_every_row_is_returned():
     """(d) A concept that reads, through another concept's row, the row of
-    its own slot would close a cycle: it leaves its slot. The way up keeps
-    exactly the entries; the row it left has no concept of its own and is
-    not returned; every other row is."""
+    its own slot would close a cycle of U: the entry goes in L, and no
+    concept leaves its slot (rule 78, decided at §23.6.12's review). The
+    way up is the dense ``L D U``, which has a product of entries; the way
+    back returns every row exactly.
+
+    Ported (eighth pass): the seventh pass's test asserted that the concept
+    left its slot (5 slots, a chain of 2), that rows 0 and 1 were refused
+    and rows 2 and 3 returned."""
     from Layers import NotLayer3, SparseSigmaLDU
     g = _start()
     sigma, not_ = SparseSigmaLDU(4, 4, 16), NotLayer3(4)
     for r in range(4):
         sigma.add(r, r, 1.)
     sigma.add(1, 0, .5)                        # concept 1 reads row 0
-    sigma.add(0, 1, .5, negated=True)          # concept 0 reads row 1: a cycle
-    # Concept 0 leaves slot 0 for slot 4; its diagonal is an entry of U from
-    # slot 0: the chain is slot 0, slot 1 (concept 1), slot 4.
-    assert sigma.longest_chain == 2 and sigma.slots == 5
+    sigma.add(0, 1, .5, negated=True)          # concept 0 reads row 1: a cycle of U
+    assert sigma.slots == 4 and sigma.lower_entries == 1
+    assert sigma.longest_chain == 1 and sigma.longest_chain_lower == 1
+    dense = dense_w(sigma).detach()
+    # W at the two entries is as written; the product L d U is W's entry of
+    # concept 1 on row 1 (row 1 to slot 0 by L, then slot 0 to concept 1 by U).
+    assert sigma.w()[:6].detach().tolist() == [1., 1., 1., 1., .5, -.5]
+    product = float(dense[1, 1]) - 1.
     lanes = torch.rand(4, 2, 2, generator=g) * .5
     up = sigma(not_(lanes), range(4), range(4)).detach()
     torch.testing.assert_close(up, _dense_read(sigma, lanes, list(range(4))), atol=1e-6, rtol=0)
-    with pytest.raises(ValueError):
-        sigma.reverse(up, range(4))
-    kept = sorted(sigma.returned())
+    assert sorted(sigma.returned()) == [0, 1, 2, 3]
     truth = lanes[..., 0] - lanes[..., 1]
-    back = sigma.reverse(up, kept).detach()
-    print(dict(kept=kept, error=float((back - truth[kept]).abs().max())))
-    # Row 0 has no concept of its own now, and concept 1 reads it: rows 0
-    # and 1 are not returned; rows 2 and 3 are, exactly.
-    assert kept == [2, 3]
-    torch.testing.assert_close(back, truth[kept], atol=1e-5, rtol=0)
+    back = sigma.reverse(up, range(4)).detach()
+    print(dict(product=product, error=float((back - truth).abs().max())))
+    assert abs(product + .25) < 1e-6
+    torch.testing.assert_close(back, truth, atol=1e-5, rtol=0)
 
 
 def test_d_an_entry_added_or_removed_needs_nothing_factored_again():

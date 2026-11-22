@@ -128,7 +128,7 @@ def structure(owner, device=None):
     if sigma is not None and sigma.nnz:
         R = int(sigma.nInput)
         n = sigma.nnz
-        value = sigma.value[:n].to(device)
+        value = sigma.w()[:n].to(device)
         rows = sigma.entry_row[:n].to(device)
         inputs = sigma.entry_input[:n].to(device)
         keep = value != 0

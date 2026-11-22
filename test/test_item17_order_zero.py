@@ -101,7 +101,7 @@ def test_the_sigma_reads_each_rows_signed_value_and_an_absent_row_changes_nothin
     y = order(lanes, inputs, [0, 1, 2, 3, -1])
     dense = torch.zeros(6, 4)
     for e in range(sigma.nnz):
-        dense[int(sigma.entry_input[e]), int(sigma.entry_row[e])] = sigma.value[e].detach()
+        dense[int(sigma.entry_input[e]), int(sigma.entry_row[e])] = sigma.w()[e].detach()
     signed = torch.zeros(6, 3)
     signed[inputs] = lanes[..., 0] - lanes[..., 1]
     expected = torch.tanh(signed.t() @ dense).t()
@@ -203,9 +203,17 @@ def test_the_way_back_as_far_as_it_goes():
     error = float((back - (lanes[..., 0] - lanes[..., 1])).abs().max())
     print(dict(rows=rows, error=error))
     assert error < 1e-4
+    # Ported (eighth pass): with fewer concepts than rows the way back
+    # refused (a ValueError). It refuses nothing now: it gives the
+    # pseudoinverse the padded D gives, exact on every row it returns
+    # exactly, at nothing for the row with no concept of its own.
     narrow = Order0(rows, rows - 1, [(r, r, 1) for r in range(rows - 1)] + [(0, rows - 1, 1)])
-    with pytest.raises(ValueError):
-        narrow.sigma.reverse(torch.zeros(rows - 1, 1), list(range(rows)))
+    y = narrow(lanes, list(range(rows)), list(range(rows - 1)))
+    back = narrow.sigma.reverse(y, list(range(rows))).detach()
+    truth = lanes[..., 0] - lanes[..., 1]
+    assert sorted(narrow.sigma.returned()) == list(range(1, rows - 1))
+    torch.testing.assert_close(back[1:rows - 1], truth[1:rows - 1], atol=1e-4, rtol=0)
+    assert float(back[rows - 1].abs().max()) == 0.
 
 
 def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):

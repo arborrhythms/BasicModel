@@ -14889,7 +14889,7 @@ class ConceptualSpace(Space):
 
     def order_zero_reading(self, rows, percepts):
         """Each word's entry of the order-zero Sigma on its basic percept's
-        row, ``[..., 1]``: its learned number, whose size is the Sigma's
+        row, ``[..., 1]``: W at it, whose size is the Sigma's
         weight and whose sign is the Not's; zero where either is absent or
         there is no such entry."""
         sigma = self.order_zero
@@ -14994,9 +14994,9 @@ class ConceptualSpace(Space):
                 self.order_zero_not.make(sigma, row, percept, weight=1.)
             else:
                 sigma.add(row, percept, abs(float(sign)))
-        elif sign > 0 and float(sigma.value[entry]) >= 0:
+        elif sign > 0 and float(sigma.w()[entry]) >= 0:
             sigma.add(row, percept, 1.)
-        elif sign < 0 and float(sigma.value[entry]) == 0:
+        elif sign < 0 and float(sigma.w()[entry]) == 0:
             self.order_zero_not.make(sigma, row, percept, weight=1.)
 
     def concept_of_basic_percept(self, percept):

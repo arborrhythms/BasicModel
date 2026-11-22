@@ -333,44 +333,25 @@ def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_
 # values and gradients as the read it replaced, which passed over every
 # written entry with an index as long as the inputs' capacity.
 
-class _PresentEntryRead(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, value, signed):
-        ctx.save_for_backward(value, signed)
-        return torch.where(value < 0, -signed, signed) * value.abs()
-
-    @staticmethod
-    def backward(ctx, gradient):
-        value, signed = ctx.saved_tensors
-        return gradient * signed, gradient * value
-
-
 def _present_forward(sigma, signed, inputs, rows):
-    """The read of 1f58fe1511, over every written entry."""
+    """The read over every written entry: ``tanh`` of each concept's column
+    of W times its rows' signed values. Ported (eighth pass): it read each
+    entry's learned number as W's entry (the read of 1f58fe1511); the learned numbers are the factors now, so W is
+    the dense ``L D U`` of them (``sparse_ldu.dense_w``), products
+    included, differentiable in the factors."""
+    from sparse_ldu import dense_w
     inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1)
     rows = torch.as_tensor(rows, dtype=torch.long).reshape(-1)
     shape = (len(rows), *signed.shape[1:])
-    n = sigma.nnz
-    if not n or not len(rows) or not len(inputs):
+    if not sigma.nnz or not len(rows) or not len(inputs):
         return signed.new_zeros(shape)
-    position = torch.full((sigma.nInput,), -1, dtype=torch.long)
+    w = dense_w(sigma).to(signed)
     known = (inputs >= 0) & (inputs < sigma.nInput)
-    position[inputs.clamp(0, sigma.nInput - 1)[known]] = torch.arange(len(inputs))[known]
+    x = signed.new_zeros(sigma.nInput, *signed.shape[1:]).index_add(0, inputs[known], signed[known])
+    y = torch.tanh(torch.einsum('i...,ic->c...', x, w))
     valid = (rows >= 0) & (rows < sigma.nOutput)
-    wanted = torch.unique(rows[valid])
-    slot = torch.full((sigma.nOutput,), -1, dtype=torch.long)
-    slot[wanted] = torch.arange(len(wanted))
-    at = slot[sigma.entry_row[:n]]
-    read = position[sigma.entry_input[:n]]
-    keep = ((at >= 0) & (read >= 0)).to(signed.dtype)
-    value = (sigma.value[:n].to(signed) * keep).reshape(n, *([1] * (signed.ndim - 1)))
-    terms = _PresentEntryRead.apply(value.expand(n, *signed.shape[1:]), signed.index_select(0, read.clamp_min(0)))
-    total = signed.new_zeros(max(len(wanted), 1), *shape[1:]).index_add(0, at.clamp_min(0), terms)
-    y = torch.tanh(total)
-    index = slot[rows.clamp(0, sigma.nOutput - 1)]
-    held = valid & (index >= 0)
-    y = y.index_select(0, index.clamp_min(0))
-    return y * held.reshape(-1, *([1] * (y.ndim - 1))).to(y)
+    y = y.index_select(0, rows.clamp(0, sigma.nOutput - 1))
+    return y * valid.reshape(-1, *([1] * (y.ndim - 1))).to(y)
 
 
 @pytest.mark.parametrize('nots', (0, .4))
@@ -390,10 +371,13 @@ def test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced(nots):
             not_.make(sigma, c, r, float(torch.rand(())))
         else:
             sigma.add(c, r, float(torch.rand(())) * (float(torch.rand(())) > .1))
+    # In 64 bits: the factors' gradients carry products of entries, some
+    # in the tens, which the dense read and the scatters round apart in 32.
+    sigma.double()
     for _ in range(5):
         inputs = torch.randperm(P)[:int(torch.randint(1, P, ()))]
         rows = torch.cat((torch.randint(-1, C, (12,)), torch.randperm(C)[:5]))
-        lanes = torch.rand(len(inputs), 3, 2, requires_grad=True)
+        lanes = torch.rand(len(inputs), 3, 2, dtype=torch.float64, requires_grad=True)
         y = sigma(not_(lanes), inputs, rows)
         g = torch.randn_like(y)
         got = torch.autograd.grad(y, (sigma.value, lanes), g)
@@ -402,7 +386,8 @@ def test_the_sparse_sigma_reads_and_learns_as_the_read_it_replaced(nots):
         torch.testing.assert_close(y, y0, atol=1e-6, rtol=0)
         for a, b in zip(got, want):
             torch.testing.assert_close(a, b, atol=1e-6, rtol=0)
-    print(dict(entries=sigma.nnz, not_entries=int(NotLayer3.entries(sigma).sum())))
+    print(dict(entries=sigma.nnz, not_entries=int(NotLayer3.entries(sigma).sum()),
+               lower=sigma.lower_entries, chains=(sigma.longest_chain, sigma.longest_chain_lower)))
 
 
 # Rule 9, in part (certificate 6's first clause is not yet met: the store's

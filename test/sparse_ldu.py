@@ -67,3 +67,24 @@ def ldu_back(y, d, lower, upper, n_input, depth_lower, depth_upper):
     if n_input > rank:
         z = torch.cat((z, z.new_zeros(n_input - rank, *z.shape[1:])))
     return unit_solve(z, lower, depth_lower)
+
+
+def dense_w(layer):
+    """The dense W ``[nInput, nOutput]`` of a :class:`Layers.SparseLDULayer`
+    from its factors, ``L D U`` over its slots, differentiable in its
+    learned numbers: the definition the scatters of its way up must give."""
+    S, n = layer.slots, layer.nnz
+    value = layer.value[:n]
+    kind, source, target = layer.entry_kind[:n], layer.entry_source[:n], layer.entry_target[:n]
+    eye = torch.eye(S, dtype=value.dtype)
+
+    def triangle(k):
+        keep = kind == k
+        return eye.index_put((source[keep], target[keep]), value[keep], accumulate=True)
+
+    diagonal = kind == layer.DIAGONAL
+    d = torch.ones(S, dtype=value.dtype).index_put((source[diagonal],), value[diagonal])
+    slots = triangle(layer.LOWER) @ torch.diag(d) @ triangle(layer.UPPER)
+    ins, outs = layer.input_slot, layer.output_slot
+    w = slots.index_select(0, ins.clamp_min(0)).index_select(1, outs.clamp_min(0))
+    return w * ((ins >= 0)[:, None] & (outs >= 0)[None, :]).to(w)
