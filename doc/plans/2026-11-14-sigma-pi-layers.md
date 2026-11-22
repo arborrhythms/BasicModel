@@ -9711,6 +9711,16 @@ Alec: "inverses: We want for the sigma and pi to have pseudoinverses computed by
 
 *Not an LDU:* the first Pi reads a look's table, not a vector of rows; its way back is the percept its row keeps (§19.121, 1). *To be said in the return:* the order-zero Sigma is 4,096 rows by 4,108 concepts in the lesson's configuration, so it is not square, and its D is padded.
 
+### 19.123 Alec: all defaults go in `data/model.xml` (2026-11-21)
+
+Asked whether `primingBridgeCapacity` should be set in the production configuration (it is unset there, and the priming bridges take 5.21 GB, §23.6.11), Alec: "Basicmodel.xml needs defaults for everything." Told that the defaults file is `data/model.xml` (its header: "canonical defaults for BasicModel. Every parameter that create_from_config() reads must appear here"; `create_from_config` lays it under every configuration) and that `data/BasicModel.xml` is the model the tools run when none is named: "I thought BasicModel.xml is the defaults file?" Then: "Keep model.xml. But to correct my earlier sentence, then, that is where all defaults should go." And of putting the bridge capacity in `data/BasicModel.xml` as an override: "Not basicmodel.xml".
+
+*Decided.* `data/model.xml` is the one defaults file and holds a default for every key the code reads. `data/BasicModel.xml` overrides only what differs and gains no key for this.
+
+*The census at `58075fe697`* (`scratch-1.7/config_census.py`): `model.xml` has 221 leaf keys; `BasicModel.xml` states 100 and states 28 that `model.xml` lacks; of the keys the code reads by a literal name, 17 read by `TheXMLConfig.get` and 31 by `TheXMLConfig.space` are in no section of `model.xml`, their defaults living only in the code.
+
+*Mine:* `ConceptualSpace/primingBridgeCapacity` becomes 8,388,608 in `model.xml` (the value of `data/BasicModel_corpus.xml`; it was 0, the whole reservation). The code takes the lesser of the key and the full reservation, so only a configuration whose full reservation is larger is bound by it.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -13864,6 +13874,131 @@ reconstruction de-muxed (the pass after); the production
 configuration (its own pass: the counter of §23.6.11, which the
 lesson's configuration reproduces in minutes when it is not run
 eager).
+~~~
+
+*The eighth pass* (added 2026-11-21, after §23.6.12):
+
+~~~
+Round 6d of item 1.7, eighth pass: the sparse LDU as Alec asked
+for it, and the request carried down by the ways back. Read
+§19.121, §19.122, rules 78 and 79, and §23.6.12 (the seventh
+pass's return and its review, which decides its three questions).
+Work on a branch item17-r6d8 cut from main in this checkout; move
+main forward to it by a fast-forward at the end if both gates and
+the files of step 7 pass but for test_81 and
+test_prepared_answer_boundary[True]; then remove the branch.
+Otherwise leave the branch and return to main.
+
+1. The factors are the learned numbers (Alec, §19.122: "just
+   adjustible LDUs for an invertible matrix"). SparseLDULayer's
+   parameters are d and the entries of the two triangles, not the
+   entries of W. An entry that would close a cycle of U goes in L
+   (§19.122); no concept leaves its slot, and every row is
+   returned by the way back. W then has products of entries in
+   it, as a full LDU has: return how far the way up moves on the
+   lesson and on both gates (the lesson makes no cycle today).
+   The way back refuses nothing: where the matrix is not square
+   or a row has no concept of its own, it returns what the padded
+   D gives, the pseudoinverse of InvertibleLinearLayer (Alec:
+   "pseudoinverses computed by the LDU when full"). Old
+   checkpoints: say what loads. Both gates at their bars, counts
+   and rates.
+
+2. The symbols' Pi and the kinds' Sigma on the sparse LDU (the Pi
+   in the log domain under PiLayer2's law), so that there is a
+   way back above order zero. SparsePiLayer3 stays for the first
+   Pi only, which reads a look's table; if nothing else reads it
+   after this, say so.
+
+3. The request is a mask. OperationSelectionLayer.attend gives
+   each concept the degree to which its code is held by the
+   query, by shared size, on each lane, in 0 to 1
+   (ConceptualMatch.match if it fits; say if it does not), in
+   place of the product of code and query. The start stays.
+
+4. The request goes down by the ways back (rule 79): the layers'
+   reverse from the asked concepts to the rows of the first Pi,
+   then each row's salience at an occurrence is what it is asked
+   times its own read of that occurrence (held_at, place_factor;
+   BasicPercepts.kept_percept), over every occurrence of the
+   sentence's field. Salience._down and first_pi by the
+   transposes go; nothing is kept beside. A look's table is the
+   attendedPercepts most salient occurrences, a draw among
+   equals, no order by extent (BasicPercepts.attended).
+   SentenceLooks.where_match goes if the looks of step 5 read as
+   well without it; if they do not, keep it and return the
+   figures both ways.
+
+5. Measure, recorded and no bar: the 304 requests; certificate 62
+   and 33 (b); the places' measure of reading in order once (the
+   request on each place's concept at each look of the first
+   sentence, and its range); the lesson's script with --runs 6.
+   Tune nothing.
+
+6. Left failing, not skipped, not ported: test_81 and
+   test_prepared_answer_boundary[True]. A test that asserted the
+   transposes' form is ported, old and new returned.
+
+7. Tests: both gates before any edit and at the end; the files
+   this pass touches; the seventh pass's 27 files. Claude runs
+   the list.
+
+8. Return as scratch-1.7/r6d_return_8.md, what fails or is
+   unfinished first; each step's figures; ported tests; commits;
+   whether main was moved. If steps 1 and 2 leave no room, stop
+   after 3, say so first, and move main if the gates pass.
+
+Not in this pass: reconstruction de-muxed; the production
+configuration.
+~~~
+
+*The production pass* (added 2026-11-21; it follows the eighth or runs before it, as the checkout is free):
+
+~~~
+Round 6d of item 1.7, the production pass. Read §19.119, 7,
+§19.123 and §23.6.11's review. Scratch: config_census.py,
+lesson_entries_probe.py in scratch-1.7.
+
+1. The counter out of the compiled walk.
+   CompoundLayer.kernel_test_count (bin/Language.py, item 1.8) is
+   changed inside a torch.cond of Models._compiled_output_walk.
+   Reproduce on data/MM_corpus_lessons.xml presented as the
+   lesson's script presents it but not eager
+   (lesson_entries_probe.py without its use_eager_reading lines:
+   UncapturedHigherOrderOpError on that counter after about 2.5
+   minutes on the CPU). Repair it. Add a test that presents one
+   lesson sentence compiled, so that the list compiles this walk
+   on a training step. Return the seconds of the walk's first
+   compile on the lesson, and why its trace took 11.8 minutes on
+   the production configuration.
+
+2. All defaults in data/model.xml (§19.123). Every key the code
+   reads whose default lives only in the code gets its element in
+   data/model.xsd and data/model.xml at that default, and the
+   code's own fallback for it goes. The 28 keys that
+   data/BasicModel.xml states and model.xml lacks get a default
+   in model.xml. ConceptualSpace/primingBridgeCapacity becomes
+   8388608 in model.xml. data/BasicModel.xml gains no key. A
+   test: every key the code reads by a literal name is in
+   model.xml. Return each configuration of data/ that the new
+   bridge default binds, whether a rebuild's preflight ever
+   refuses under it, and any key a test configuration now reads
+   at another value.
+
+3. The expectation's keys in two parts (§23.6.11): the fixed part
+   made once a sentence, the four age coordinates at each
+   arrival, so that a sentence of 256 looks fits.
+
+4. The benchmark: BENCH_OUT=<new> BASIC_BATCH_SIZE=4
+   BASIC_MAX_DOCS=60 BASIC_MAX_BATCHES=1 BASIC_NUM_EPOCHS=1
+   .venv/bin/python bin/bench_training_step.py
+   data/BasicModel.xml, until a step finishes. Then the measure,
+   alone on the machine: the seconds of the first step and of a
+   later one, sentences a second, the greatest memory held; in 32
+   bits, and by MODEL_AMP at BF16 and at FP16.
+
+5. Tests: both gates; the files touched; the new compiled lesson
+   test. Return as scratch-1.7/r6d_return_p.md.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
@@ -23503,3 +23638,125 @@ Spot tests by the pass; both gates pass. `main` was moved forward to `a0bcfc47e1
   - *The lesson's configuration has the same fault, in minutes* (Claude, at `a0bcfc47e1`): `data/MM_corpus_lessons.xml` presented as the lesson's script presents it, but not eager, fails with the same error on the same counter after 2.5 minutes on the CPU. The lesson's script passes only because it runs eager (`use_eager_reading`). So the fault can be repaired and checked on the small configuration first, and no test of the list compiles that walk on a training step, which is why the list did not show it. *The production pass:* the counter out of the compiled walk; a test that presents one lesson sentence compiled; then the benchmark.
 - *The priming bridges are 5.21 GB because `primingBridgeCapacity` is not set in `data/BasicModel.xml`* (it is 8,388,608 in `data/BasicModel_corpus.xml`). They are read at every step, so they stay. *For Alec:* the key in his production configuration.
 - *Reading in order:* the lesson's script, two runs, 0 and 1 sentences in order. Nothing was built for it; it is the matter of §19.121.
+
+### 23.6.12 Round 6d, seventh pass: the order-zero Sigma is a sparse LDU; the first Pi's way back; the trial of the carry-down (Claude on Opus, standing in for Codex, 2026-11-21)
+
+The branch `item17-r6d7` was cut from `main` (58075fe697) in this checkout. Four commits were put on it. `main` was then moved forward to it by fast-forward, and now stands at **c2f3d1000d**; the branch is removed and the checkout is on `main`. Nothing was pushed. The parent repository was not touched. Nothing under doc/ or data/ was edited. No seed was pinned (every start is drawn and printed), no skip or xfail was added, and no bar, count, rate or capacity of either gate was changed.
+
+#### What fails or is unfinished, first
+
+- **Nothing in the list fails but `test_81`**, which is allowed to. Both gates pass.
+- **A cycle costs the way back rows** (provisional, mine; decision 1 below). Where an entry would close a cycle of U, the concept leaves its row's slot. The way up then keeps exactly the entries, but the row it left has no concept of its own, and every row whose concept reads that row (or reads, by a chain, one that does) is not returned; the way back refuses them. On a dense random trial (each of the lesson's 15 concepts also reading two drawn rows), only 1 of the 15 rows was returned exactly. The other rule, the one §19.122 names (the entry goes in L), keeps the way back exact for every row but changes the way up: W gets products of entries, and the greatest difference from the entries' own read was 0.090 on that trial. Neither the lesson nor any test of the list makes a cycle.
+- **The symbols' Pi and the kinds' Sigma were not moved** onto the sparse LDU. No room was left in this pass. So above order zero there is still no way back, and in step 4 a request above order zero reaches the order-zero concepts by the transposes as built.
+- **Step 4 (b) could not be run on a sentence of more than 256 occurrences.** In the lesson's configuration a sentence holds 32 readings at most (the serial word bucket; 288 and 188 readings were refused with a ValueError), and the longest that fits has 95 occurrences. I made the table a quarter of the sentence (23 rows), as certificate 63 makes it half, and ran it so. The 1,861-occurrence figure of §19.121 is not reproduced here.
+- **Step 4 (c) shows nothing of the bound and nothing of the places**: after the lesson the query is zero at both looks, so attend asks one concept (the start, at 1.0) and the bounded request is the same request; no place concept is asked (greatest and least 0.0).
+- `test_81` and `test_prepared_answer_boundary[True]`: `test_81` still fails, as allowed; `test_prepared_answer_boundary` passed (it is in test_generation_catalog, in the list).
+
+#### Step 1: the sparse LDU in tests (`test/test_item17_sparse_ldu.py`, `test/sparse_ldu.py`)
+
+`test/sparse_ldu.py` holds the general form with both triangles (`ldu_up`, `ldu_back`, `longest_chain`), on `Layers.unit_apply` and `Layers.unit_solve`. All figures are in 64 bits on the CPU unless said.
+
+- **(a) Equal to `InvertibleLinearLayer`.** On drawn entries (2 a row in each triangle) at 12 × 12, 9 × 14 and 14 × 9, the way up and the way back equal the full layer's (raw_L, raw_U and d set from the same entries; stable off, no bias) to 1e-12. Where there are as many outputs as inputs or more, the way back returns the input to 1e-12.
+- **(b) Exact after as many steps as the longest chain.** n = 64, 176 entries of U (values of size .75 to 1.25), longest chain 14: error 2.7e-15. One step short: error 0.97. (A first version drew values of exactly ±1, whose chains could cancel exactly; it failed 3 times in 12 runs. It draws sizes now and passed 15 of 15.)
+- **(c) An entry added or removed.** n = 32: as drawn 2.2e-16; an entry added to U 2.2e-16; an entry removed from L 2.2e-16. Nothing is factored again (the entry lists are the factors).
+- **(d) On the lesson's order-zero Sigma after its sixteen sentences** (4,096 rows by 4,108 concepts; 15 entries, all on the diagonal; 15 slots; longest chain 0):
+  - Way up: against `SparseSigmaLayer3` on the same entries, before it was removed (scratchpad `r6d7/step1d.py`), the greatest difference over 12,324 values was **0.0**. In the test now, against the Sigma's definition (a dense matrix of the entries, `tanh(s W)`), within 1e-6.
+  - Way back: every row that brought a concept, all at once, greatest error **3.0e-8** (32 bits), in 0.1 to 0.2 ms on the CPU. `SparseSigmaLayer3.reverse` gave the same on all 15 rows (3.0e-8).
+  - Where the old way back was least squares: with two more drawn entries a concept (39 entries), asking half the rows, the old way back's greatest error was **0.27**. The new one, on the rows it returns, was exact on the lesson's own entries; on that dense trial it refuses most rows (above).
+  - Where the old one refused: it refused rows with fewer concepts reading them than rows asked. The new one returns a row no concept reads at nothing, and refuses a row that a concept reads and that no concept gives (the test of certificate 19's "narrow" case passes unchanged).
+- **(e) The longest chain and the seconds of a way back** (CPU, 32 bits, 8 readings each):
+
+| On | Entries | Longest chain | Seconds to add | Way back | Greatest error |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| the lesson (16 sentences) | 15 | 0 | — | 0.13 to 0.20 ms (3 readings) | 3.0e-8 |
+| the dictionary, one concept a row (19,821 forms) | 19,821 | 0 | 0.19 s | 2.5 ms | 3.0e-8 |
+| the dictionary, and each concept reads the rows of the stored forms it holds as runs (provisional trial) | 79,492 | 6 | 0.64 s | 7.4 ms | 2.1e-7 |
+
+  The dictionary is `code_trial.dictionary()` (the first 20,000 words, 19,821) in the order certificate 46 admits them, each its own row; the codes are not built for this, since the Sigma reads rows. The chain of the whole structure above order zero on the lesson (from `ConceptSpread.structure`, the coordinator's probe) is 6; the order-zero Sigma's own chain is 0.
+
+#### Step 2: the layer (`bin/Layers.py`)
+
+- **`SparseLDULayer`**: W = L D U in `InvertibleLinearLayer`'s row-vector form, the strict triangle of U as entries, D a full vector, **L the identity** (see the cycle rule). Storage at construction: `entries` entries and `nInput + nOutput` slots, grown into. `unit_apply` and `unit_solve` are module functions (scatters, `index_select` and `index_add`).
+  - *Slots.* A slot holds at most one input and one output, and its diagonal is D's. An input and an output with no slot take a new slot together (the entry is its diagonal). One with no slot joins the other's slot if that slot has room (again the diagonal), or takes a new slot of its own. Two in different slots are joined by an entry of U. So the row that brought a concept is its slot's diagonal, and D is padded by the slots that hold only a row or only a concept.
+  - *The values* are the entries of W, one learned number each, as before: a diagonal is D's, and an entry of U from slot a is d_a times U's. So every reader, the gradient and the Not are as they were, and nothing is factored again when an entry is added, removed or taught. A slot with no diagonal has d one; a diagonal at nothing passes nothing back (the pseudoinverse's convention).
+  - *The way up* is `x d` plus each entry's input times its value, by scatters, with no division. *The way back* is `unit_solve` (x <- y - x N, N each entry over its source's d) as many times as the longest chain, then D divided out. Nothing is read on the host in either; the host's slot record is kept where entries are added.
+- **How a level is kept.** No slot is numbered by level: U's entries make no cycle, so they are a triangle in the order of their levels, and the way back needs only that and the longest chain. Each slot's level (the longest chain ending at it) is kept on the host and raised along the chains below a new entry when it is added; the longest chain with it. An entry removed sets the levels again from the entries left.
+- **What a cycle does** (mine, provisional): an entry whose U entry would close a cycle moves its concept out of its slot to a new slot of its own, with the entries that reach it; its diagonal becomes an entry of U from the slot it leaves. The new slot has no row, so no cycle can close, and W keeps exactly its entries. The cost is the way back of the rows that depend on the row left behind (`SparseLDULayer.returned()` names the rows returned exactly; `reverse` refuses the others).
+- **`SparseSigmaLDU`** is the Sigma on it: `tanh` after the LDU; a signed entry, a Not entry below nothing; the row's value read from the Not's first option (the second is its negation, so the gradient reaching the rows' lanes is the same as before). `reverse(y, inputs)` is `atanh`, then the way back.
+- **Moved:** the order-zero Sigma (`ConceptualSpace.install_order_zero`). **Removed:** `SparseSigmaLayer3`; its `fold`, which the kinds' store also read (`sigma_read`, `FieldProjection.close`), is the function `sigma_fold`. Every reader of `order_zero` reads the new layer with the same names (`entries`, `find`, `add`, `rows_reading`, `entry`, `value`, `entry_row`, `entry_input`, `count`, `nnz`, `weight`; the Not's `make` and `entries`; `order_zero_both`; the salience map through `ConceptSpread.structure`; `StructureRead.readers`). The saved keys are the old ones; the slots are not saved but placed again from the entries in their order when the layer is loaded, so an old checkpoint loads with no migration. `remove(row, input)` is new.
+- **Not moved:** the symbols' Pi (`SparsePiLayer3`) and the kinds' Sigma.
+- **Ports of tests** (no assertion changed): `SparseSigmaLayer3` renamed to `SparseSigmaLDU` in test_item17_order_zero, test_item17_symbols (certificate 54's list of readers names `SparseLDULayer` and `SparseSigmaLDU`), test_item17_code, test_live_concepts_from_percepts and the docstring of sparse_growth_trial.
+- Both gates passed before any edit (2 passed, 5.7 s) and after the move (in the 8-file run below).
+
+#### Step 3: the first Pi's way back (`BasicPercepts.kept_percept`)
+
+`kept_percept(rows)` returns, for each row, `(what, where, when)`: its `.what` code on two lanes `[R, 2, width]` (`bank_codes`) and its `.where` and `.when` entries `[R, 4, 2]`, read at zero or above as `place_factor` reads them. No new storage. Tested on the lesson: each nominated row, read as an occurrence of its own through `held_at` and `field_factor`, reads one, to within the grading of its code (15 rows; least 0.99997).
+
+#### Step 4: the trial of the carry-down (`test/test_item17_carry_down_trial.py`; no source changed)
+
+The ways back: what each concept is asked, with what reaches it from above order zero by the transposes as built (the structure without the order-zero Sigma's and the first Pi's edges, `Salience._down`); the order-zero Sigma's way back of each lane (`SparseLDULayer.back`); then each row's read of every occurrence of the bank (`held_at` and `place_factor`, for and against), summed over the rows. A look's table is the most salient occurrences, a draw among equals. For the word taken by the ways back, each occurrence is present at its own activity times its salience over the greatest (mine, provisional). Bounded: each concept asked for as far as its code, on two lanes, is held by the query's by shared size (`ConceptualMatch.match`, which fits), asked against by the query's lanes exchanged, the learned start kept.
+
+| | Transposes, as asked | Transposes, bounded | Ways back, as asked | Ways back, bounded |
+| --- | --- | --- | --- | --- |
+| (a) 304 requests: returned exactly / missed a present word | 304 / 0 | 304 / 0 | 304 / 0 | 304 / 0 |
+| (b) 95 occurrences, table of 23, request on `is` (5 occurrences): asked in the table | 3 of 5 | 3 of 5 (a mask is its own bound) | 5 of 5 (only those 5 salient; greatest elsewhere 0.0) | 5 of 5 |
+| (c) look 1 of "This is Felix.": word salience This, is, Felix (×1e7) | 8.51, 8.54, 8.51 | same | 8.51, 8.48, 8.50 | same |
+| (c) look 1: word taken | `is` (values .7615, .7631, .7618) | same | `is` (.7615, .7616, .7615) | same |
+| (c) look 2 (`is` read): word taken | `Felix` (.7615, —, .7618) | same | `This` (.7615, —, .7615) | same |
+
+- (a) is the toy of `way_back_check.py` ported into the test: the transposes as built pass each Sigma by its weights; the ways back are the word Sigma's diagonal inverse and the meta concept's pseudoinverse, then each row's own entries. All four return exactly the asked words present.
+- (b) The as-built table is filled by extent first and the share orders only the level that does not fit; it held 3 of the 5 occurrences of `is`. By the ways back the 5 are the only salient occurrences, all in the table. The row of `is` does not light `This` (the run inside it): its read there is nothing.
+- (c) With and without `where_match` the transposes give the same values and the same word: no place is asked, so the where match is one everywhere. The salience is about 8.5e7 on every word by both ways: the request (1.0, on the start alone) reaches the word concepts through the structure above order zero, the same walk in both. At look 2 the two ways take different words from values equal to four places; that is a draw, not a difference the trial can read.
+- Nothing was built from it.
+
+#### Step 5
+
+`test_81` and `test_prepared_answer_boundary[True]` are left as they are, not skipped and not ported.
+
+#### Step 6: tests, with counts and seconds
+
+| Run | Result |
+| --- | --- |
+| Both gates, before any edit | 2 passed, 5.74 s |
+| test_item17_sparse_ldu (a to c), first run | 1 failed (b: values of ±1 cancelled), 4 passed, 2.50 s |
+| the same, after the draw of sizes, 15 runs | 5 passed each, 2.48 to 2.50 s |
+| Gates, order_zero, symbols, live_concepts, sparse_growth, grounded_xor, definition_integrity (8 files), after the move | 94 passed, 55.4 s |
+| 22 files: the seven named, looks, places, table, symbols, code, order_zero, live_concepts, sparse_ldu (a to e), sparse_growth, spread, evidence_folds, item18_fields, conceptual_match, field_key_bounds, generated_extension | 250 passed, 574.9 s |
+| sparse_ldu with order_zero (after `returned()`) | 27 passed, 38.6 s |
+| the trial, (a) alone; (b) and (c) (three runs while repairing the trial: 32 and 188 readings refused, a recursion of my patch) | 1 passed 2.7 s; then 1 failed 1 passed 26.3 s; 3 passed 24.2 s |
+| **Step 6 list**: both gates; sparse_ldu, carry_down_trial, order_zero, live_concepts, sparse_growth; definition_integrity, grounded_xor, concept_memberships, refine_raise, serial_concepts, concept_evidence, field_binding; looks, places, table, symbols, code, spread; evidence_folds, item18_fields, conceptual_match, field_key_bounds, generated_extension; item18_expect, generation_catalog (27 files) | **1 failed (test_81), 263 passed, 2 skipped, 670.7 s** |
+| The lesson's script, `--runs 2` (`test/attention_thinking_certificate.py lesson`, `BASICMODEL_DEVICE=cpu`, run beside the list) | 72 s; each run: 16 sentences, 64 of 64 words, 64 live; in order 0 and 0 sentences (0 and 0 words); at allowance 0, 0; drawn 26, 26; known against 0, 0; known both 0, 0. The last pass had 0 and 1 in order. |
+
+Scratch output is in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6d7/` (step1d.py and step1d.txt, trial.txt, list6.txt, lesson.log, lesson/, old_SparseSigmaLayer3.py).
+
+#### Commits
+
+- 8a6f5e4ce3: the sparse LDU in tests (step 1, a to c).
+- f69e5dc916: the order-zero Sigma is a sparse LDU; `SparseSigmaLayer3` removed, its fold a function; tests (d) and (e); the ports.
+- be0bc5659a: the first Pi's way back, `BasicPercepts.kept_percept`, and its test.
+- c2f3d1000d: the trial of the carry-down, in tests only.
+
+#### Main
+
+- Moved forward by fast-forward at the end (both gates and the step 6 files passed but for test_81): `main` went from 58075fe697 to **c2f3d1000d**. The branch `item17-r6d7` is deleted (`git branch -d`) and the checkout is on `main`. Nothing was pushed.
+
+#### Decisions left for Alec
+
+1. **What a cycle does.** Two concepts that read each other's rows (directly or by a chain) cannot both keep their rows in a triangle. Built (provisional): the concept that closes the cycle leaves its row's slot, so W keeps exactly its entries and a concept still reads no row it has no entry on, and the rows that depend on the row it left are not returned by the way back. The other rule (§19.122's): the entry goes in L, the way back stays exact for every row, and W gains products of entries (0.090 on the dense trial). Neither the lesson nor any test makes a cycle.
+2. **The learned numbers are W's entries**, not the factors (provisional). D and U are read from them (d is the diagonal entry, U's entry is the entry over its source's d), so the gradient and every reader are as before. Learning the factors themselves (d and U as the parameters) would change how an off-diagonal entry learns (scaled by its row's d) and was not tried.
+3. **The way back refuses** a row that a concept reads and no concept gives, as `SparseSigmaLayer3.reverse` refused rows with too few concepts; a row no concept reads comes back at nothing. Whether the way back should instead return the padded pseudoinverse for every row and never refuse.
+4. **Step 4 (b) needs a sentence longer than the lesson's configuration allows** (32 readings): to measure at 256 the trial needs the production configuration or a larger serial word bucket in a test configuration.
+
+#### Review (Claude, 2026-11-21)
+
+Claude's list on the sixth pass's commit (`a0bcfc47e1`): **1 failed (`test_81`), 3,342 passed, 161 skipped, 1,388 s**, the cleanest of the round. The list on this pass's commit (`c2f3d1000d`) was running when this was written.
+
+- *The sparse LDU is exact and cheap on the model's entries:* equal to the full LDU to 1e-12, the way back exact after as many steps as the longest chain, 2.5 ms for the dictionary's 19,821 entries and 7.4 ms with a chain of 6. The old least-squares way back was wrong by .27 where it was asked for half the rows.
+- *Its three questions are decided by Alec's words* (§19.122), and the eighth pass builds them:
+  - *A cycle's entry goes in L.* A concept that leaves its slot costs the way back most of its rows (1 of 15 on a dense trial), and the invertible matrix is what he asked for; the way up then has products of entries, as his full LDUs have.
+  - *The factors are the learned numbers* ("adjustible LDUs"), not the entries of W.
+  - *The way back refuses nothing* and gives the padded pseudoinverse ("pseudoinverses computed by the LDU when full").
+- *The trial of the carry-down favours the ways back where the two differ:* 304 of 304 both ways; with a table too small for the sentence, 5 of 5 asked occurrences in the table by the ways back against 3 of 5 by the transposes, and nothing else salient. So rule 79 is built (the eighth pass).
+- *The trial says nothing of the bound or of the places:* after the lesson the query is nothing, so only the start is asked. The request of 72 to 1,532 was in the places' measure, which the eighth pass runs again.
+- *Not done:* the symbols' Pi and the kinds' Sigma are not on the LDU yet; (b) was run at 95 occurrences with a table of 23, since the lesson's configuration holds 32 readings a sentence.
+- The lesson's script: 0 sentences in order in both runs.
