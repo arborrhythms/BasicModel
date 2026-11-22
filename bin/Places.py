@@ -26,11 +26,14 @@ def readings(bank):
     same = ((span[:, None, :, 0] == bank.where[..., :1]) & (span[:, None, :, 1] == bank.where[..., 1:])
             & (span[:, None, :, 1] > span[:, None, :, 0]))                       # [B, K, O]
     has = same.any(-1)
-    at = same.int().argmax(-1)
+    # A reading with no occurrence (and a bank with none) reads a row of
+    # nothing, one past the occurrences.
+    O = same.shape[-1]
+    at = torch.where(has, torch.nn.functional.pad(same, (0, 1)).int().argmax(-1), O)
     from BasicPercepts import WHERE_WIRES
-    columns = bank.table[..., bank.width:bank.width + WHERE_WIRES, 0]           # [B, O, w]
+    columns = torch.nn.functional.pad(bank.table[..., bank.width:bank.width + WHERE_WIRES, 0], (0, 0, 0, 1))
     wires = columns.gather(1, at[..., None].expand(-1, -1, columns.shape[-1]))
-    what = bank.table[..., :bank.width, 0]
+    what = torch.nn.functional.pad(bank.table[..., :bank.width, 0], (0, 0, 0, 1))
     what = what.gather(1, at[..., None].expand(-1, -1, what.shape[-1]))
     return wires, has, what
 
