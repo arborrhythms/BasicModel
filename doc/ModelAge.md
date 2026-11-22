@@ -21,14 +21,13 @@ A model here takes the words of a sentence in order and says them back. That
 is nearer to a child hearing and repeating than to a child reading print, and
 the ages are set accordingly.
 
-Two kinds of task are in the chart. Saying words back and reading them in
-order is mostly animal cognition: knowing goes up to the basic level and
-comes back out. Understanding of a higher order is human cognition: knowing
-goes on up to symbols, and comes back down through them before it comes out
-(Alec, 2026-11-22). So the rows for words said back, read in order and
-counted are measured on the way back from the basic level alone, and the rows
-that need the grammar (a noun and a verb, a question answered, a relation)
-are measured on the whole way back, from the idea.
+Every row is measured the same way: an input is given to the model and its
+own output is read. There is input, there is reconstruction, and there is
+output; nothing reaches into the model to set or to read what is inside it in
+order to decide a row (Alec, 2026-11-22). Saying words back and reading them
+in order is mostly animal cognition, and understanding of a higher order is
+human cognition, but that is a description of the tasks and not two ways of
+measuring them.
 
 The column "Basis" says where the age comes from:
 
