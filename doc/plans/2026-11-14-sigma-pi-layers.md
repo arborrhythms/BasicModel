@@ -14479,7 +14479,8 @@ Is it possible to create an error term on data that judges content in any locati
     - The halving pyramid is this with `M` the dyadic ranges (its weights are Lazebnik's doubled at every level but the top, which changes nothing of the order of costs). A whole of one place weighs most and the sentence least, as before. The error is nothing exactly when every byte is in its place, whatever the other rows are, because the rows of one place are always present.
     - *Measured on a toy* (`the cat saw the dog.`, one wire a character, halving against the sentence's words, phrases and whole; scratch, not in the repository): two letters of a word exchanged cost .051 to .076 by where the cut falls under the halving, and .069 wherever they are under the wholes; a letter wrong .050 against .051 to .056; two words exchanged .295 against .315; a word moved to the end .429 against .429; the right letters at any place .78 against .79 (mean of 20 draws); nothing right 1 in both. So the order of costs is the same, and what the wholes remove is the dependence on where a power of two falls: "slightly better", as he said. It also removes the padding of an axis to a power of two and the argument of axes: a whole is a row over places in one dimension or three.
     - *For the build:* `Error.pyramid_match` takes the memberships in place of the axes. The rows are made where the reconstruction is charged (`SentenceField.charge`) from what the model read of the input, and take no gradient from the error (a whole is not to be moved in order to cost less). The tests judge as before, by the words given and the words put out; the wholes weigh the error and decide no test.
-    - *Open, for Alec:* whether the halvings of the grid stay among the rows beside the input's own wholes. Claude's first choice, built provisionally: they stay. They are wholes of place that exist before any form is known, so that an input in which nothing is yet recognised (and an image) still has something between "the right content anywhere" and "every byte in its place"; the input's wholes join them as they are found.
+    - *An edge of a whole is still an edge* (measured after the pass's return, §23.6.21, which found the halving's edges large). One byte moved one place over, on the toy: .51 to .98 with the halvings; .51 to .67 with the halvings and the same shifted by half a cell; .62 to .97 with the sentence's own wholes alone (to leave a word costs much, which is meant, but nearly all is too much); .55 to .74 with all three, and two letters exchanged then cost .053 to .065. The shifted halvings are further rows, wholes of place that overlap, and not a second pyramid.
+    - *Open, for Alec:* whether the halvings of the grid, and the same shifted, stay among the rows beside the input's own wholes. Claude's first choice, built provisionally: they stay. They are wholes of place that exist before any form is known, so that an input in which nothing is yet recognised (and an image) still has something between "the right content anywhere" and "every byte in its place"; the input's wholes join them as they are found.
 - *Open, from the trace:* generation from a relation gives back its operands only where the grammar's rule has an inverse that does (`part`, `preposition` and `surface` did not, §23.6.20). The pass measures which rules pass and repairs none. *For Alec.*
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
@@ -25648,3 +25649,193 @@ Nothing of the source changed; `main` is not moved. Both stops are right: each i
 - *The `.where` in a concept is a stamp, not the percept's wires.* The percept's own wires match the grid at the right address for every byte. On the way up the concept's `.where` wires (and STM's field 11) are written again from the integers kept at the lookup (`Models.py:11486`, written at `21995`-`22004`); composition keeps one operand's wires at most and never an interval; the walk gives later leaves no wires and places by a cursor. A stamp of the same address is the same code, so at a leaf the wires are right; what is wrong is that nothing downstream reads them, and that the integers are what is carried. *The fifteenth pass:* the percept's own wires carried to the leaf, and the paste read from them.
 - *Place rows spoil the way back, and leaving their `.what` out mends it:* 19 of 19 words in three starts with it out, 2 to 6 with it in. A place row recognises a place and has no `.what` to give back (§19.133). *The fifteenth pass builds it.*
 - *Four wires at the model's periods tell an address from its neighbour by .0123* and are right for every byte where the wires are exact; the short rung alone cannot tell address 0 from 256. Enough to build on; the rungs are taken with the grid in three dimensions.
+
+### 23.6.21 Round 6d, fifteenth pass: the way back's lower stretch by the perceptual inverse, its error as a spatial pyramid; the walk gives one leaf and never unfolds a relation, so a word is not said back (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`, from a3fb0bcaf7; the coordinator's spec commits (d7b6dcfc0c to c28bade4b6) sit on it. My commits:
+
+- cc109f4f6e: `test/test_item17_leaf_reconstruction.py`, the step-1 diagnostic of the perceptual inverse alone.
+- 2e73d15cbe: a mark is a word (`bin/WordSurfaces.py`).
+- 74647584bf: the lower stretch and the pyramid error (`bin/FieldReverse.py`, `SentenceField.py`, `Layers.py`, `BasicPercepts.py`, `OutputOccurrences.py`, `Understanding.py`, `Spaces.py`, `SentenceLooks.py`, `WalkTrials.py`, `WhereRegistry.py`, `Omission.py`, `data/model.xml`, `data/model.xsd`), with the ported tests.
+- fd71e71d32: each lane of a concept goes back apart; a leaf's presence through the chart; the Sigma's chart passes its derivative at the bound; the mark tests ported.
+- db860b5be2: `test/test_item17_reconstruction_said_back.py`, the rows by the model's own reconstruction, and a unit test of the paste.
+- 9d2fc4751a: one ported reverse test reads the leaf's presence through the chart.
+
+The base worktree I used to compare failures (a3fb0bcaf7's source) was moved to `/tmp/item17-r6d-2026-11-21/base-worktree-r6d15`, and the repository's worktree list was pruned.
+
+Nothing is pushed. The superproject, `suggestions.txt` (it holds an edit that is not mine), the spec and the docs are not touched. **`main` is not moved**: the row at 1.00 fails in all three starts.
+
+#### What fails or is unfinished, first
+
+1. **The row at 1.00 fails, 0 of 19, in every start and every round (0 to 3 rounds of the 19 words taught).** The cause is the upper stretch, not the perceptual inverse. **The generate walk always takes one leaf.** For "w." the grammar composes the word and the mark with one binary rule. The walk then makes one exact STOP and gives back one leaf: one operand of the rule, or nothing. No walk in any start unfolded a root into two leaves. Whatever leaf the walk gives, the lower stretch says it right: in every reading, the reconstruction's text was the leaf's word or mark exactly.
+
+   The 19 words alone, by start and round. Each row gives the rule the grammar applied to (word, mark), and what the walk's one leaf gave back:
+
+   | Start | Round | Rule on (word, mark) | What the one leaf gave back |
+   | --- | ---: | --- | --- |
+   | 199223276439040 | 0 | `preposition` (17), `part` (2) | the word (19 of 19); the mark is lost |
+   | 199223276439040 | 1, 2, 3 | `implies` (18), none (1) | the mark (19 of 19); the word is lost |
+   | 127952823386452 | 0 | `whole` (19) | the mark (19) |
+   | 127952823386452 | 1, 2, 3 | `add` (18), none (1) | another word (15), the word (2), the mark (2) |
+   | 213099226233293 | 0 | `change` (19) | the mark (12), the word (5), another word (2) |
+   | 213099226233293 | 1 | `change` (18), none (1) | another word (12), the mark (7) |
+   | 213099226233293 | 2, 3 | `whole` (18 and 17), `change` (1) | the mark (19) |
+   | 212205130125210 | 0 | `implies` (17), (`-`, `implies`) (2) | the word (19) |
+   | 212205130125210 | 1 | `non` then `multiply` (19) | nothing (19) |
+
+   - "none" is "What." or a word read with no rule applied. There the root is one leaf, and the walk gives the mark.
+   - The lesson's four-word sentences: the walk gives one leaf. It is the first word ("This") untaught, and "." or a lone word after training. That is 0 of 4 in every start.
+   - **Which rules pass: none, as a relation.** Every rule seen (`preposition`, `part`, `implies`, `whole`, `add`, `change`, `non` and `multiply`) leaves a root the walk does not unfold. Each gives back at most one of its two operands. This is the owner's question (below), not repaired. The fourteenth pass's table (`part`, `preposition`, `surface` lose the word) is a special case: here even the rules that "pass the word through" lose the mark.
+2. **The row at 1.75: 0 of 6 two-word sentences, untaught and after one round** (start 212205130125210). The cause is the same: one leaf.
+3. **The rows that read the `.where` get no gradient from the reconstruction.** In the read of "This is Felix." (3 starts):
+   - `where_entries`: 0.0 from the open field's term, and none at all from the walk's term.
+   - The grid takes a gradient (.0002 to .0009) and is in no optimizer.
+   - The Sigma takes .11 to .13 from the walk's term and 1e-8 from the open field's term.
+
+   So the certificate "the gradient reaches the rows that read the `.where`" fails. The leaf's `.where` comes from the percept's own wires (the input), and nothing learned lies between those wires and the paste. The rows' `.where` entries reach the reconstruction only through the evidence, and its derivative there is nothing.
+4. **The pyramid has strong cell edges.**
+   - One byte moved by one place costs .5 inside a pair of places, but .75, .875, .94 and .97 across the edges of the cells of 4, 8, 16 and 32 places (`test_pyramid_match.py`).
+   - A second pyramid, shifted by half a cell, would mend it. It is not built: the owner's published form has one pyramid, and the coordinator said to build it only if the measure needs it. The measure says it is large.
+5. **A right word far from its place costs more than a wrong word at its place.** "This" moved by k places costs .174 (k = 1), .205 (2), .250 (4), .268 (8), .277 (16) and .281 (32). "This" put back as "Here" at its place costs .230. So the right word costs less than the wrong word only up to about 2 places, with sparse codes of 8 wires in 64 that share about one wire between bytes. The identity problem is moved, not removed: content that shares wires matches partly anywhere.
+6. **The open field's own reverse is a second start in the source.** `SentenceField.reconstruct` books two terms:
+   - `reconstruction_reverse`: the open field's basic-level concepts, sent through the lower stretch. It was there before this pass; I changed only its inverse and its error.
+   - `reconstruction_order_zero`: the walk, from the idea.
+
+   By the owner's "one way, two stretches, not two places to start", the first may be a second place to start. I did not remove it. Its user list is long (`InputReconstruction`, `reconstruction.free_percept`, `WholePaths`). It is reported here, not counted as a row. Question 3.
+7. **Step 4 (the percept's own wires carried on the way up) is built only as far as the field.** Each reading carries its percept's wires (`ConceptualField.wires`, from `Places.readings` of the bank). STM's field 11 and a concept's `.where` wires are still stamped from the lookup's integers (`Models.py:11486`, `21995` to `22004`), and composition is not changed. Composition is therefore given the same wires as before, and the walk's leaves still carry none: `OutputOccurrences.said_at` places a generated field at the walk's cursor, encoded on the grid (step 5 of the correction). For the walk's leaves to carry their own `.where`, a relation's operands would have to keep their own wires through composition, and the walk's leaves would have to take them back from the rule's inverse. That waits on the rules' inverses (point 1), so it is not built.
+8. **`test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution` fails now and then, on the base too.** On the base it failed in 2 of 5 runs, the same assertion ("Tensor-likes are not equal"); here it failed in 2 of 5. It is not mine. Its result depends on a draw it does not fix.
+
+#### Questions (provisional choices built)
+
+1. **The upper stretch (the owner's).** No grammar rule's inverse gives back its operands to the walk: it takes one STOP at the root. Should the walk unfold a relation into its operands, through each rule's inverse? Today that is `reverse_binary_step`, which the walk reaches only through the policy. Or is the one-leaf walk what is meant until the rules have inverses? Until that is decided, the row at 1.00 cannot pass by the model's reconstruction, since "w." is always a relation of the word and its mark.
+2. **The cell edges.** Is a second pyramid, shifted by half a cell, wanted (point 4)?
+3. **Two starts.** Should the open field's reverse (`reconstruction_reverse`) be removed, so that reconstruction has one start, the idea?
+4. **Meaning lanes.** Neither reconstruction cost reads them any more; both read the `.what` of the percepts put back. `test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf` still passes, because an erased meaning puts nothing back. A meaning that is wrong but spells the same leaf is not charged.
+
+#### What would change if the owner says reconstruction is not of each leaf
+
+Nothing. By his correction it starts from the idea (the walk), and the build runs every leaf the walk gives through the lower stretch. The open field's reverse is the only start of basic-level concepts. If he removes it (question 3), `SentenceField.reconstruct` loses its first term and the users listed in point 6 are ported.
+
+#### Step 1: the simulation (a diagnostic of the perceptual inverse alone)
+
+`test/test_item17_leaf_reconstruction.py`, before the build, start 194978847719675, eager, no gradient.
+
+- Each reading of the open field: its concept value goes back through `SparseSigmaLDU.reverse` and `kept_percept`, with place rows left out.
+- The `.what` is matched to the percept codebook by cosine; the reading's `.where` wires are matched to the grid by distance.
+- The spelling is pasted at the matched place.
+
+| | Words right | Places right | Marks | Sentences whole |
+| --- | ---: | ---: | ---: | ---: |
+| marks not words (the source as it was) | 19 of 19 | 19 of 19 | 0 of 19 | 0 of 23 |
+| marks admitted as words (probe, then built) | 19 of 19 | 19 of 19 | 19 of 19 | 23 of 23 |
+
+- `.what` margins (best cosine less the second): .17 ("here", "there") to .83 ("1"). The mark: .76 for ".", .67 for "?".
+- `.where` margin: .0123 in distance at every place.
+- "This is Felix." came back whole, as did the three other lesson sentences.
+
+#### What was built
+
+- **The lower stretch (`FieldReverse.reverse`):**
+  - Each leaf of a field: each lane apart (for, and against negated) goes through the order-zero Sigma's way back (`SparseSigmaLDU.reverse`, its chart now `bounded_atanh`) and the first Pi's (`BasicPercepts.kept_percept`). A place row gives back no `.what`.
+  - The recreated `.what` is matched against the percept codebook (`codebook`: every spelled basic percept, by its code) by a softmax of the cosine. `reconstructionWhatSharpness` is 50.
+  - The leaf's own `.where` wires (`field.wires`) are matched against the grid, each axis apart (`WhereRegistry.axes`, one today), by a softmax of the distance. `reconstructionWhereSharpness` is 1000.
+  - Each byte of the percept is pasted, graded, at its place plus its offset. The result is `NativeActivity.amounts`, `[B, places, 256]`.
+  - The leaf's presence is the tanh of its greatest row.
+  - The decoded bytes are the greatest of each match, with a draw among equals (`drawn`).
+  - The buffer holds the sentence's extent and anything pasted beyond it.
+- **The error (`Error.pyramid` and `Error.pyramid_match` in `bin/Layers.py`, the class that holds the model's error terms):**
+  - The spatial pyramid match of Lazebnik, Schmid and Ponce, written from the published formula.
+  - Levels are made by summing pairs, on each axis in turn. The match at each level is the histogram intersection, the least summed over cells and channels. The weights are 1/2 at L, halving to 1/2^L at levels 1 and 0.
+  - The error is 1 − K / total. It is read on the `.what` of the bytes put back (amounts times the byte codes) against the input's `.what` at each place of its readings.
+  - The open field's term leaves hidden bytes out. The walk's term asks for them (`charge(..., hidden=False)`).
+  - It compiles with `fullgraph=True` and takes a gradient through the least.
+- **Places carried on the field:** `ConceptualField.wires`. It is published by `cs_read_bank` as `_cs_field_wires` (`Places.readings` of the bank), kept by `open_field`, `descended`, `SentenceLooks.perceive` and `_cs_open_field`, and selected by `WalkTrials`.
+- **The walk's generated fields** are placed at the output's cursor, encoded on the grid (`OutputOccurrences.said_at`).
+- **A tie among the walk's terminals is a draw** (`OutputOccurrences.generated`). Priming stays as graded evidence among the best.
+- **A mark is a word:** `is_lexical_form` refuses only whitespace and NUL.
+- **Two defaults, in `data/model.xml` and `data/model.xsd`:** `reconstructionWhatSharpness`, `reconstructionWhereSharpness`.
+
+#### What was removed
+
+- From `FieldReverse.reverse`:
+  - the bracket kept from the lookup as the place;
+  - the stamp of `.where` from the buffer's position (a byte's `.where` is now the grid's row at the place it was pasted, times its pasted amount);
+  - the spelling by a row's index and `cs_percept_attribution`;
+  - the attribution of properties for gaps;
+  - the skipping of a place's row.
+- The band-weighted event cost of both reconstructions (`_reverse_event_loss` with `native_target`). It assumed that the reconstruction and the input are aligned place by place, and that `.what`, `.where` and `.when` are compared at fixed scales (.7, .2 and .1). It remains only on the non-tied numeric path (`Models.py:8603`).
+- `Omission.visible_events`, which had no caller left.
+
+#### What was ported, and why (each asserted what the owner replaced)
+
+- `test_item20_round6_reverse.py`, two tests: they stubbed the old reverse's internals (`cs_percept_attribution`, `_tensor_row_keys`). They now stub the parts the new reverse reads (an identity Sigma, `kept_percept`, a real `WhereRegistry`) and keep their properties: no tensor of places by the inventory at 8192 places; a word's bytes are its letters' events (to 1e-4, the graded paste).
+- `test_item20_round6_gradients.py`, two tests: a real grid and the reading's wires.
+- `test_item20_round6_loop.py`, `test_free_reconstruction.py`, `test_native_attention_field.py`, `test_operators_final_b.py`: the terms' names `.what`/`.where`/`.when` became `.pyramid`. The field built by hand takes its wires.
+- `test_stored_idea_generation.py`: the stub reverse gives amounts. The dropped word's cost by the pyramid is .5 (it was .5), and .5 − 5e-7 for the near case (it was .5 − 1e-6).
+- `test_whole_paths.py`, two tests: the target is the input's `.what` that the error reads, not the event target. The hidden word is kept as a target (only off the reading path).
+- `test_whole_path_repairs.py`: the stubs carry amounts and a byte codebook.
+- `test_grammar_separator.py`: it watches `SentenceField.charge` instead of `native_target`. A separator is outside what the error reads.
+- `test_word_admission.py`, five tests, and `test_trust_round1.py`, two: a mark is a word; whitespace is not.
+
+#### The certificates
+
+| Certificate | Result |
+| --- | --- |
+| A percept at a wrong `.where` costs more than at its own | yes. The paste: "This is Felix." as read, .238; "Felix"'s wires moved by 4, .479 to .483 (decoded 'This is     F.lix'). The pyramid on the input's own codes: the sentence moved by 1, 4 and 32 places costs .600, .727 and .984; "Felix" moved, .208, .306 and .352. |
+| A right word at a wrong place costs less than a wrong word | only up to about 2 places (point 5) |
+| Level 0 has a gradient when every word is misplaced | yes: gradient norm 41.4, every word moved by 32 and one word wrong |
+| The pyramid against a plain reference with loops | equal to 1e-6 on 20 drawn cases (start 176801083982777) |
+| The gradient reaches the rows that read the `.what` | yes from the walk's term (Sigma .11 to .13); 1e-8 from the open field's term |
+| The gradient reaches the rows that read the `.where` | **no** (point 3); the grid takes a gradient and is in no optimizer |
+| A sentence reconstructed is the sentence, by the model | **no**: 0 of 19 words and 0 of 4 lesson sentences, three starts, untaught and taught (point 1) |
+| The time of one call of the pyramid (CPU) | 0.06 ms at the lesson's size (64 places × 128 channels); 1.6 ms at production's (8192 × 128) |
+
+#### The row at 1.00, by the model's own reconstruction (each word alone, input to output)
+
+`test_item17_reconstruction_said_back.py`, ROUNDS=3, run alone:
+
+| Start | Round 0 | Round 1 | Round 2 | Round 3 |
+| --- | ---: | ---: | ---: | ---: |
+| 199223276439040 | 0 of 19 | 0 | 0 | 0 |
+| 127952823386452 | 0 of 19 | 0 | 0 | 0 |
+| 213099226233293 | 0 of 19 | 0 | 0 | 0 |
+
+The cause is in point 1. Metal Baby's age stays where `doc/ModelAge.md` puts it.
+
+#### The row at 1.75 (measured, not repaired)
+
+0 of 6 two-word sentences, untaught and after one round (start 212205130125210). The walk gives one leaf.
+
+#### Tests run
+
+- First pass on the reverse, 30 files, `-n 6`: 22 failed. On the base worktree (a3fb0bcaf7's source), the same 22 tests had 1 failure, the known `test_item20_round34` one. Each failure was then ported or repaired, as above.
+- After the pyramid, the same 30 files plus `test_pyramid_match.py` and both gates: 3 failed, then repaired (`test_whole_paths`, `test_whole_path_repairs`) and the known one.
+- Users of marks and of the walk, 20 files: 14 failed. They were ported (marks, 10), repaired (`test_prepared_answer_boundary`, 3: presence through the chart, the lanes apart), and the known `test_81`.
+- The final run, 54 files (the reconstruction's users, the marks' users, the walk's users, the item 1.7 records) and both gates, `-n 6 --dist loadfile`: **562 passed, 3 failed, 38 skipped, 17 min.**
+  - Both gates passed.
+  - `test_item20_round34_projection` failed; it fails on main.
+  - `test_prepared_answer_boundary::test_realization_uses_a_held_derivation_without_running_resolution[True]` failed: the flaky test of point 8, which fails on the base too.
+  - `test_item20_round6_reverse::test_native_word_and_observed_promoted_part_have_the_same_byte_events` failed. My port did not allow for the presence through the chart (tanh(1)); I fixed it in 9d2fc4751a, and the file now passes, 8 of 8.
+  - `test_item18_expect.py::test_81`, which fails on main, passed in this run.
+- `test/test_compiled_lesson_step.py`, once: 1 passed, 25 min 38 s.
+- `test_pyramid_match.py` alone: 3 passed. `Error.pyramid_match` under `torch.compile(fullgraph=True)`: equal to the eager result, and it takes a gradient.
+
+No seed is pinned for an assertion, nothing is asserted of a drawn outcome, and nothing is skipped or put under RUN_SLOW.
+
+Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d15/`:
+- `sim1.log`: the simulation
+- `broad1.log`, `base1.log`, `broad2.log`, `second1.log`, `final1.log`: the test runs
+- `row1_1.log` to `row1_3.log`, `row175.log`: the rows
+- `pyramid1.log`: the pyramid
+- `compiled1.log`: the compiled lesson step
+
+#### Review (Claude, 2026-11-22)
+
+- *The lower stretch works and the upper does not exist.* Whatever leaf the walk gives, the perceptual inverse spells it exactly and puts it at its place (19 of 19 words, 23 of 23 sentences with marks as words, in the diagnostic of the open field). But from input to output a word alone is said back in 0 of 19, three starts, taught or not, because the walk makes one STOP at the root and gives one leaf; "w." is a relation of the word and its mark, and no walk in any start unfolded a root into two leaves. The fourteenth pass's "some rules pass the word through" is the same finding seen from the word's side. *The age stays 0.75.*
+- *So the next thing to build is the upper stretch:* the root taken apart by the inverse of what composed it, down to the basic level (Alec, §22.6d, "reconstruction involves doing the inverse to get to basic level"). `reverse_binary_step` is in the source and the walk reaches it only when its policy chooses to. *For Alec:* whether a reconstruction undoes the composition that was made of this input, rule by rule (Claude's first choice: it is the inverse of a known composition, and nothing has to be chosen), or the walk's policy is left to learn when to unfold. Whether each rule's inverse then gives back its operands is measured in that pass; it is not known from this one, since no rule's inverse was reached.
+- *The pyramid's cell edges are large* (one byte one place over: .5 inside a pair, .97 across the edge of 32), and Alec's question of the same hour answers it: the cells become wholes (§22.6d, "The cells are the wholes"), and the halvings shifted by half a cell are further rows of the same membership. On Claude's toy the one-byte move costs .51 to .98 with the halvings, .51 to .67 with the shifted added, .62 to .97 with the sentence's wholes alone, .55 to .74 with all three. Sent to the implementer as an addition to this pass; its return is added below when it comes.
+- *A right word far from its place costs more than a wrong word in its place* beyond about 2 places, because byte codes share wires (the wholes half's upper bounds are shared by every character). To be measured again with the rows of wholes; if it stands, it is a question of which wires are compared, not of the pyramid.
+- *The rows that read the `.where` get no gradient from the reconstruction.* That follows from what was built: a leaf's `.where` is the percept's own wires, and nothing learned lies between them and the paste. It becomes a live question when the walk's leaves take their places back from a rule's inverse (the return's point 7), not before.
+- *Two starts remain in the source* (`reconstruction_reverse` from the open field's basic-level concepts, and the walk from the idea). By Alec's "(It is also possible to reconstruct from basic space, for animal cognition, but we are not doing that yet)" and "not two places to start", the first is to go. *For Alec to confirm,* since its users are many (`InputReconstruction`, `reconstruction.free_percept`, `WholePaths`).
+- *The reconstruction's cost no longer reads the meaning lanes;* it reads the `.what` of the percepts put back. A meaning that is wrong and spells the same leaf is not charged by it. Claude: that is what "measured input to output" gives, and it is left so.
+- *Not checked by Claude:* the full list was not run (`main` is not moved, and the implementer is still editing the pyramid's files). The pyramid's code was read against the published weights and agrees.
