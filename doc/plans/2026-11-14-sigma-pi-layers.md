@@ -9801,6 +9801,19 @@ Alec, asked whether the request should use the match both ways or the query be s
 - The memory of the full percept bank exists: the sentence's field of percepts is made once and held (`PerceptBank`), and a word read is lowered in it.
 - *To be tried in tests before anything is built* (the ninth pass): the cue as a concept that carries the `.where` of the word just read, each unread word scored by how near its `.where` is to it, with what is learned being the offset; the first word, which has no last look, by the learned start or a draw.
 
+### 19.125 Alec: the tree being built is presented to `attend`, with the code and the `.where` of each word found (2026-11-22)
+
+To Claude's question how attention should find the first word and move on (a learned start place on the `.where` as the next small trial), Alec: "A small trial on .where sounds appropriate. Codex has written diagnostic steps to suggestions.txt
+My architectural idea would be to present the tree structure that we are building to the attend mechanism and perhaps the chooser in general, which stores the codes and .where of previous words as found (I don't think we are saving that information right now, just the stored words, so we would need to save  the .where that we provided for each look)."
+
+Checked at `5364c905bc` (Claude):
+
+- *He is right that it is not saved.* A look's decision keeps the index of the word taken (`Looks.decisions`: `index`, `slot`) and the walk keeps each taken word's key (`state.record`: `values` from `keys`). The `.where` of the word a look took is in the sentence's bank at the occurrences of its reading and is copied nowhere. The look's own request is not kept either.
+- *What `attend` is given today:* the context's map of the last look's surprise (`context(surprise)`), and the learned start over concepts (`model.request_start`). Nothing of the tree, and nothing of the words found.
+- *`suggestions.txt` on GitHub is as it was at `2109a42a5d`.* Its "Suggested next experiment" has five steps. The first two (score arrivals against the live source slots; a correct reading with gaps and one with two arrivals swapped) are built (ninth pass). The other three are taken into the trial below: the scale of the query against the codes; the request and its gradient at the first two looks; evaluation with no supplied reading on sentences that hold the same words in other orders.
+
+*Decided:* a trial in tests only, the tenth pass of round 6d (§22.6d). *Mine, to be shown by the trial and not assumed:* whether a request for one place tells the word at that place from its neighbours at all, since the `.where` codes of neighbouring words differ by about .01 on a wire (§19.121, 4; the cue's trial, §23.6.14).
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -14134,6 +14147,18 @@ Not in this pass: any change to attend, to where_match or to the
 salience map; the kinds' Sigma on the LDU; reconstruction
 de-muxed; the production configuration.
 ~~~
+
+*The tenth pass* (added 2026-11-22, after §19.125): a trial in tests only. No file of `bin/` changes, except that step 1's record may be added to the source if it is a record and nothing reads it. A question is not a stop: the first choice is built, marked provisional, and the question is put at the head of the return.
+
+1. *The record.* For each look, keep the code and the `.where` of the word it took, and the request it was given (`Looks.decisions`), read from the sentence's bank at the occurrences of the word's reading. Say in the return what the tree being built holds at each look today (`state` of `Attention.py`, the grammar's walk, the chooser's `interpret_at_look` and its `keys`), in the source's names, and in what form the chooser already reads it.
+2. *Does a place tell a word from its neighbours?* On the lesson's sentences, a request for the place of word p alone, carried down as the source carries it (`Salience.salience`, `SentenceLooks.look`): the share and the returned activity at word p and at each other word, for every p. Then the same with the request on the word's `.where` wires directly. The margin between the word and its nearest neighbour, in both. If the margin is nothing, say at which period of the `.where` code it would not be, measured and not built.
+3. *The start.* The first look's request when no word is found, learned (`model.request_start` as built; and one learned vector on the `.where` wires, for comparison). Taught by the reading lesson's targets. Is the first word taken at the first look, with no reading supplied?
+4. *The tree presented.* For each later look the query is a learned read of the record of step 1. Three forms, compared: (a) the last word's code and `.where`; (b) every word found, each with its code and `.where`; (c) as (b), each word with its place in the tree being built, in the form found at step 1. The read is the smallest learned one that fits (name it). No form may be given the order of the sentence, a preference for earlier places, or a first-found rule: an order is learned or it is absent.
+5. *The measures,* three starts drawn afresh and printed, with no reading supplied at evaluation, by `AttentionLesson`'s measure of arrivals against the live source slots:
+   - sentences read in order: two-word, the lesson's 16, the 6 held out, and sentences that hold the lesson's words in other orders;
+   - the request and its gradient at the first two looks, and the scale of the query against the codes it is read by (the flat part of §19.124, 1);
+   - whether `is` is taken by a look after the lesson.
+6. Tests in `test/test_item17_tree_attend_trial.py`; no assertion on a drawn outcome; both gates run once at the end. Return `scratch-1.7/r6d_return_10.md`, what fails first.
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
