@@ -61,7 +61,9 @@ class Held:
                 said.append(None if raw is None else raw.decode('latin1'))
             sources = [node[2] for node in model._sentence_undone[0] if node[0] == 'leaf']
             policy = model.__dict__.pop('_last_walk_policy', None) or dict(charged=0, unheld=0)
+            silent = kw.get('silent')
             self.rows.append(dict(said=said, count=int(generation.counts[0]), sources=sources, policy=policy,
+                                  silent=silent is not None and bool(silent[0]),
                                   bare=bool(model._sentence_bare[0]),
                                   joined=text(model._sentence_order_zero_reverse.materialize()[0, 0])))
             return result
@@ -82,7 +84,9 @@ def measured(model, held, sentences):
         row = held.rows[0]
         words = sentence[:-1].split() + [sentence[-1]]
         upper = [w for w in row['said'] if w is not None] == words
-        tally['reconstructed'] += row['joined'] == sentence
+        # A silent sentence puts back NULL at every place (it is scored so).
+        tally['reconstructed'] += row['joined'] == sentence and not row['silent']
+        tally['silent'] = tally.get('silent', 0) + row['silent']
         tally['leaves said the words'] += upper
         tally['no rule applied'] += row['bare']
         tally['policy: steps charged'] = tally.get('policy: steps charged', 0) + row['policy']['charged']
@@ -90,7 +94,8 @@ def measured(model, held, sentences):
         for source in row['sources']:
             tally['leaves from no inverse' if source == 'none' else f'leaves from the {source}'] += 1
         print(f'  {sentence!r}: reconstruction {row["joined"]!r} | leaves {row["count"]} said {row["said"]} '
-              f'sources {row["sources"]}{" (no rule: the open field)" if row["bare"] else ""} | rules {held.rules}')
+              f'sources {row["sources"]}{" (no rule: the open field)" if row["bare"] else ""}'
+              f'{" (silent)" if row["silent"] else ""} | rules {held.rules}')
     return tally
 
 
