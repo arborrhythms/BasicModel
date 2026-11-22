@@ -24369,3 +24369,156 @@ Claude's list on the eighth pass's commit (`0e20b251c8`, 308 files): **4 failed,
 - *Codex's first point is confirmed:* after the lesson the query's greatest coordinate is 50 to 60 against codes of 1.0; 1,217 of 1,354 lanes are in the flat part; the gradient at the query is 0.0 at both looks.
 - *The cue as Claude drew it does not teach an order.* Once the first word is right it reads the rest in order, but it cannot choose the first word and its offset has no gradient: the `.where` codes of one sentence differ by about .01 and every unread word lies on one side of the cue. It is not Alec's idea refuted; it is the simplest form of it, and it needs what he named and the trial lacked, a memory of the whole bank to point the `.where` into.
 - *The curriculum* (run for the first time in this item): with the looks off, reading two and four words, identities, noun and verb, and relations pass; with the looks on, no stage passes. The two identity stages expect an identity at the first presentation, where the source names a word after several readings (rule 20).
+
+### 23.6.15 Round 6d, the production pass: the walk compiles and runs on both configurations; a production step still does not finish, for memory, at the explore path's walk (Claude on Opus, standing in for Codex, 2026-11-22)
+
+#### What fails or is unfinished, first
+
+- **No production training step finishes.** All four faults that stopped the step before memory are repaired (the counter, Inductor's recursion on the CPU, two Metal allocations in the walk, a host generator on Metal). The step now runs the sentence's 32 looks, compiles and runs the greedy walk, runs the explore path's 32 more looks, and compiles the explore path's walk. It then stops at that walk's first run, with Metal out of memory: 15.34 GiB allocated of 16.85 GiB allowed, 1.97 GiB asked.
+  - Where: `Models._output_generate_walk` (Models.py:13089), inside its `while_loop`, at `torch.cdist` in the product form of `Expectation.match_symbols`. That `[B, N, K]` read is the one I made cheap (below), but nothing else is left to make room for it.
+  - Stack, outermost first: `present` → `runBatch` → `_run_sentence_batch` → `_run_batch_once` → `_what_or_think` → `ask` → `_execute_input_sentence` → `forward` → `_forward_per_stage` → `_forward_body` → `_forward_body_per_word` → `_run_tensor_peer_word_pipeline` → `_run_sentence_word_bricks` (21222, the explore path) → `score` → `MemoryActivity.run` → `WholePaths.finish` → `_sentence_path_cost` → `SentenceField.reconstruct` → `reconstruct_generation` → `sentence_generated` → `Models.generate` (9586) → `with_forecast` → `CompileGuard.checked` → the compiled walk → `cdist`.
+  - Figures (bench4, MPS): the explore path's looks end at 14.86 GB current and 15.86 GB at the driver. The second walk begins at 15.06 GB.
+  - The cause: what the looks keep for the sentence's backward. A step holds two compositions of 32 looks each, the sentence and its explore path. Each look keeps about .12 to .17 GB (step 3).
+  - What the repair would be: a new census of what a look keeps at the current source. The census of §23.6.11 is stale: since `a0bcfc47e1` a look has grown from .15/.07 GB to .21/.13 GB before this pass. Then, either keep less per look, or release the first composition's look graph before the explore path, if its credit allows. I changed no width or capacity.
+- **The departure route compiles a second whole graph.** The explore path's walk is a second phase of `output_walk_phase` (`departure` against `greedy`). So the first production step pays two traces: 791.9 s and 805.9 s in bench4.
+- **Not measured:** step 4's seconds a step, sentences a second, and 32-bit, BF16 and FP16 figures. No step finishes.
+- **The sparse LDU test (the coordinator's added item): rounding, not a lost weight.**
+  - At start 1740210332, in 32 bits, the worst stored pair is (9, 10), off by 3.19e-4 (85 entries, 29 in L). `w()` reads 3.9e-4 off.
+  - On the same draw in 64 bits, every stored pair holds its weight to 3.6e-13, and `w()` to 5.3e-13.
+  - The amplification is the same in both widths: about 5,300 times eps in 32 bits and 3,300 times eps in 64 bits. That is a draw whose cycles solve a diagonal near nothing.
+  - SparseLDULayer is not at fault. The test now builds the layer in 64 bits (`.double()`), as the other sparse LDU tests do. The bar of 1e-4 is unchanged. Commit 7adf69356a.
+- **Not made:**
+  - `architecture/training/outputPolicyWeight` is stated in data/BasicModel.xml and read by no code. It has no code default to take, so model.xml has no element for it.
+  - `MemoryActivity` (`'architecture.activity' + name`) and `Forgetting` read keys by a built name. Their defaults stay in the code, outside the literal-read test.
+
+#### Step 1: the counter out of the compiled walk
+
+- **The repair (4aba5c0c57).** Nothing in bin/ or test/ read `CompoundLayer.kernel_test_count`; only item 1.8's measure scripts under doc/benchmarks did. The buffer and its `add_` are removed.
+- **Reproduced first.** With `lesson_entries_probe.py`'s presentation, not eager, on the CPU, the lesson failed with `UncapturedHigherOrderOpError` on `generate_binary_ops[11].kernel_test_count` after about 2.5 minutes.
+- **The next fault on the lesson.** With the counter gone, the CPU walk (Inductor) traced for about 19 minutes and then stopped in Inductor's scheduler with `RecursionError`. `Scheduler.can_fuse` → `found_path` recurses once per node on a fused node's ancestor path.
+  - Repair, *provisional* (4f7fc2051b): `CompileGuard.checked` raises the recursion limit to 20,000 for the compiled call and restores it afterwards. The other choice is a smaller graph.
+- **The new test.** `test/test_compiled_lesson_step.py` presents the lesson's first sentence compiled (the tests' default backend). It asserts that the walk was compiled (not the eager function) and that the step changed a parameter. 1 passed, 1,833 s, beside other runs.
+- **Seconds of the walk's first compile on the lesson** (CPU, Inductor, beside other runs): **1,625.1 s**.
+  - Dynamo's bytecode tracing took 107.9 s.
+  - The backend took 1,512.6 s: `aot_trace_joint_graph` 249.3 s, `aot_collect_metadata` 57.1 s, and the rest Inductor's lowering and scheduling.
+  - Later walk calls took 0.1 s each. Batch 1 took 1,837.4 s and batch 2 took 1.8 s.
+- **On production** (MPS, where the default backend is `eager`, so there is no Inductor): **757.3 s** for the greedy walk (bench2). bench4 measured 791.9 s for the greedy walk and 805.9 s for the departure walk.
+- **Why the production trace was long (measured).** Nearly all of it is Dynamo interpreting the walk's Python:
+  - `bytecode_tracing` took 740.3 s, of which `get_fake_value` was 63.2 s and `create_proxy` 48.0 s.
+  - `call_user_compiler` took 0.02 s.
+  - The graph Dynamo emits is about 481,000 lines (the run's traceback is at line 480,989 of `eval_with_key.833`).
+  - The trace is 6.9 times the lesson's, 740 s against 108 s.
+  - It failed at 11.8 minutes because the counter's `torch.cond` is reached near the end of that trace.
+- **Why production's trace is so much longer (my reading, not measured).** The walk's body unrolls loops whose count is a size of the configuration: the activation predictor reads its bank in chunks of 1,024 keys (16 chunks for the production bank of about 15,900 keys, 1 for the lesson), and some loops run once per stream (4 against 1).
+
+#### Step 2: all defaults in data/model.xml (7d2e4c6434, 5364c905bc)
+
+- **Census.** An AST census of bin/ (`TheXMLConfig.get`, `.space`, `.training`, `.data_param`, with a literal key) found 95 keys read with no element in model.xml. The coordinator's regex census found 17 + 31, because it reads one line only.
+- **Moved into model.xml at the code's default** (and into data/model.xsd where the schema lacked them):
+  - architecture: conceptBinding, conceptIndexRead, conceptLayers (2), continuityNorm, continuityRatioTarget, continuitySharpness, mereologyRaise, modifierEigEdit, verbSpectrum, predictionTrialRatio, primingDecay, queryReasoning, radialStmReduce, serialObjectMeta, serialResidualPartCapacity, serialWordBuckets (empty), sigmaPi, stateless, syntacticOrder (0), writeSyntax, syntaxOutPath, whatThinkingDetach, whatThinkingIterations, whatThinkingPressure, whereRungRatio (32).
+  - data: contextWhole (empty), grammarLessons, maxSentenceWords (0).
+  - training: wordExpectation, wordExpectationLossWeight, reconstructionBasisLimit, reconstructionPlacement, reconstructInLoop, outputInLoop, packSentences, equalityLossWeight, thinkingLossWeight, whatThinkingPolicyWeight, leafDistillWeight, conceptualContextLearningRate, conceptualContextNegatives, branchDiagnosticsEvery, intervalLogEveryBatches, intervalLogFile (empty), seed (empty means unseeded).
+  - SymbolSpace/language/start (S).
+  - InputSpace/demuxed.
+  - PartSpace: chunkPromotionThreshold (4), chunkPromotionMinLength (2), attention, codebookGrowthEpsilon.
+  - ConceptualSpace: activeVectors (0 means every row), stmCapacity (8), mtmCapacity, mtmHorizon, orderAllocation, intuitHidden, intuitLayers, markerKernels, markerHidden, markerLayers, verbGroups, verbBasisReflections, verbGroupFit, definitionFreeSize (2), utilitySmoothing, utilityMinCount, utilityPriorRate, admissionCount, admissionRadius (0 means from lbgThreshold), attention, codebookGrowthEpsilon.
+  - WholeSpace: invertible, butterfly, lbgThreshold (0.5), divideWithinWhole, digitWholes, boundaryTypes, whitespaceUnits, boundaryLearningRate, boundaryDensityWeight, boundaryUpdateEvery, boundaryTypeWeight, initScale (0), attention, codebookGrowthEpsilon.
+  - OutputSpace/lrScale.
+  - The schema gained continuity*, verbSpectrum, whereRungRatio, InputSpace demuxed and WholeSpace lbgThreshold. activeVectors and maxSentenceWords are now nonNegativeInteger. seed is digits or empty.
+- **The fallbacks removed:** the default arguments, the `or X` tails, and the `try/except KeyError` blocks (Mereology, Spaces' boundary and stm reads, demuxed, initScale, chunk promotion, lrScale, the language start, branchDiagnosticsEvery), together with the two validators' fallbacks for activeVectors and stmCapacity.
+- **Exceptions, named in the test:**
+  - Reads that only refuse a retired key: prediction, sparseReplace, whatThinkingPrimitives, useGrammar, answerLossWeight, predictNextLossWeight, conceptIds, InputSpace lexer, chunking.
+  - Keys whose absence means a derived value (*provisional*): sentenceProtocol (from word_brackets), reasoningIterations (from queryReasoning), truthSet (an optional block), commitmentDecay and codebookEmaDeadThreshold (the codebook as built).
+- **A fault found.** Language.py:3997 read `'training.reconstructionBasisLimit'`, a path that never exists, so it was always 16. It reads `architecture.training` now; it is 16 in every configuration that sets it.
+- **The 28 keys of data/BasicModel.xml.** All now have defaults, except three: the grammar block (a subtree model.xml has), sentenceProtocol (derived), and outputPolicyWeight (read by nothing). Three of the 28 are read by no code: WholeSpace/butterfly, conceptualContextNegatives and reconstructInLoop. They were given "off" defaults.
+- **The bridge default.** `primingBridgeCapacity` is 8,388,608.
+  - It binds data/BasicModel.xml and data/BasicModel_answers_tied_benchmark.xml: 127,083 rows × 1,025 blocks = 130,260,075 entries a space, now 8,388,608.
+  - data/BasicModel_corpus.xml already set it (its full reservation is 16.6e9).
+  - Every other configuration of data/ has a full reservation below the default, from 90 to 2,055,680 entries, so it is unchanged.
+  - Production's `runBatch` now begins at 4.29 GB, where it began at 9.25 GB.
+  - A rebuild's preflight refuses only if the distinct (row, 32-block) pairs exceed 8,388,608, that is more than 66 a row on 127,083 rows. It did not refuse in four production runs. By construction it is not ruled out.
+- **Keys a test configuration now reads at another value.**
+  - primingBridgeCapacity: 0 → 8,388,608, which binds only the two configurations above.
+  - Every other key resolves to the value the code's fallback gave before, checked for every literal read on every configuration of data/ (scratch `compare2.py`).
+  - Three test fixtures had dropped model.xml's defaults and leaned on the code's fallbacks: `_populate_test_config` replaced `architecture.training` and `.data` wholesale, and test_item18_round_a and test_item18_operators_a replaced whole sections. They now lay their keys over the defaults (5364c905bc).
+- **Tests.** `test/test_model_defaults.py` checks that every literal read has its default in model.xml, and that every listed exception is still read. `test_within_whole_division`'s schema check now sets model.xml's own element.
+
+#### Step 3: the expectation's keys in two parts (78d49c2209, and 882f68be97)
+
+- **The split.** The predictor's keys are now the bank as it is held, made once a sentence. Only the four age coordinates are made at each arrival, `[B, n, 4]`. The score is the bank's product with the query, corrected on the age coordinates, over the norm of the key with its ages in place.
+  - The backward keeps the bank once, by reference (checked on MPS: the saved tensor shares the bank's storage), plus the ages and a `[B, n]` norm per arrival.
+  - Equal to the old read: 4e-16 on the scores and 2e-13 on the gradients, in 64 bits.
+- **Memory per look on production.** Before is 4aba5c0c57, the counter only; after is the current source.
+
+| | Looks 2 to 14 | Looks 14 to 32 | Looks 2 to 32 in all |
+| --- | ---: | ---: | ---: |
+| Before | .212 GB a look | .132 GB a look | 4.93 GB |
+| After | .174 GB a look | .121 GB a look | 4.26 GB |
+
+- The split saves about .022 GB a look. The figures at `a0bcfc47e1` (.15 and .07) were lower: the passes since then added to what a look keeps.
+- **Would 256 looks fit? No.** At about .12 GB a look, 256 looks need about 31 GB beyond the first lookup (5.46 GB), against 16.85 GiB allowed. Even one sentence and its explore path, 64 looks, reach 14.86 GB.
+
+#### Step 4: the benchmark
+
+- **A step does not finish.** Four runs, each until the fault it met:
+  - bench1: the walk compiled in 751 s, then `cdist` asked 62.54 GiB. This is match_symbols' direct form, which holds `[B, N, K, D]` on Metal (measured: 2.11 GB for 256 × 2,000 × 1,032).
+    - Repaired (99310a65ec): direct distances are taken only at the 8 nearest keys by the product form. This is equal to the old match and index on 800 drawn cases.
+  - bench2: the predictor's field einsum `'bnl,bnd,on->bold'` asked 3.94 GiB, holding `[B, orders, keys, lanes, D]`.
+    - Repaired (882f68be97): the shares first, then one product with the keys. Equal to 4e-16.
+  - bench3: the greedy walk compiled (755 s) and ran. Then `BasicPercepts.value_coordinates` drew with a host generator under the Metal default device.
+    - Repaired (993a05ea5a): the keyed host draws name the host. Two other draws with the same pattern were fixed too. The values drawn are unchanged.
+  - bench4: as in the first section, out of memory at the explore path's walk.
+- **Greatest memory held.** 15.34 GiB allocated at the failure, and 17.03 GB at the driver after the first walk.
+- **Not measured:** seconds of a step, sentences a second, BF16 and FP16.
+- **The runs' conditions.** All production runs were beside my own CPU runs (the lesson compile and tests), so their seconds are rough. None was the measure that step 4 asks to take alone.
+
+#### Tests
+
+| Run | Result |
+| --- | --- |
+| Both gates, after step 2 | 2 passed, 6.4 s |
+| Targeted list after steps 1 to 3 (36 files: defaults, config, expectation, looks, walk, compile guard, gates and others) | 1 failed (test_within_whole_division, then ported), 379 passed, 23 skipped, 100 s |
+| test_item17_sparse_ldu, after the 64-bit port | 12 passed, 38.5 s |
+| match and expectation files after match_symbols | 52 passed, 2 skipped, 10.1 s |
+| BasicPercepts users (12 files) after the host draws | 155 passed, 502 s |
+| test_compiled_lesson_step | 1 passed, 1,833 s |
+| The fixture's users (68 files) and test_forgetting | 1 failed (test_item18_round_a, then ported), 985 passed, 17 skipped, 86 s |
+| **Final list: both gates, every file touched, the fixture's users, the section-replacing tests (115 files)** | **1 failed (test_81, known before this pass), 1,519 passed, 40 skipped, 1 xpassed, 285 s** |
+
+The compiled lesson test ran before the last three commits, the host draws and the test ports. Those commits do not touch its CPU path.
+
+#### Commits (now on main)
+
+- 4aba5c0c57: the counter out of the compiled walk.
+- 78d49c2209: the expectation's keys in two parts.
+- 7d2e4c6434: every default in data/model.xml; the bridge default; the test of literal reads.
+- 7adf69356a: the sparse LDU stored-weight test in 64 bits.
+- 4f7fc2051b: recursion room for Inductor in compiled entries (provisional).
+- 99310a65ec: match_symbols' direct distances only at the nearest keys.
+- 882f68be97: the predictor's field as one product.
+- 993a05ea5a: keyed host draws name the host.
+- e35392bb4f: the compiled lesson test.
+- 5364c905bc: test configurations lay their keys over model.xml's defaults.
+
+#### Main
+
+**Moved.** Both gates and the files touched passed, except test_81, which failed before this pass. `main` was fast-forwarded to 5364c905bc. The branch item17-r6dp is deleted, and the checkout is on main. The scratch worktree at 4aba5c0c57 was moved to /tmp/item17-r6d-2026-11-21/ and pruned.
+
+Scratch output is in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6dp/`: repro_before.log, repro_after1.log and repro_after3.log; bench1 to bench4 and bench_before; the bridge census; list_final.log.
+
+#### Review (Claude, 2026-11-22)
+
+Claude's list on the ninth pass's commit (`3f2d83a131`, 309 files): **2 failed, 3,360 passed**: `test_81`, and the ninth pass's drawn test of the sparse LDU's stored weights at one drawn start, sent to this pass. Claude's list on this pass's commit (`5364c905bc`, 311 files with `test_model_defaults.py` and `test_compiled_lesson_step.py`, `-n 6`, compiling as tests do): **2 failed, 3,363 passed, 161 skipped, 1 xfailed, 1 xpassed, 2,624 s.**
+
+- `test_item18_expect.py::test_81`: left as it is.
+- `test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]`: the seed dependence already on round 7's list. No new failure.
+
+- *The drawn LDU test was rounding, and the port is right:* the same draw holds every stored weight to 3.6e-13 in 64 bits, the bar is as it was, and the other sparse LDU tests already build in 64 bits.
+- *The counter is removed, not moved,* since nothing of `bin/` or `test/` read it. Accepted.
+- *The recursion limit for compiled calls is accepted as provisional.* It is raised for the call and restored. The other choice, a smaller graph, is the better end, since the lesson's first compile is 1,625 s on the CPU and production traces two graphs of about 800 s each. *Round 7's list:* why the departure walk is a second whole graph, and the unrolled loops (16 chunks of keys, 4 streams) as the implementer reads them, measured.
+- *`match_symbols` at the eight nearest keys* computes the same match (a key within 1e-5 is among the nearest by either form) and removes a 62.5 GiB read. `MATCH_CANDIDATES` is a constant of the code and no default of the model. Accepted.
+- *Every default is in `data/model.xml`* (§19.123), with a test that every literal read has one. The exceptions are named in the test. *For Alec, provisional:* five keys whose absence means a value derived from another (`sentenceProtocol`, `reasoningIterations`, `truthSet`, `commitmentDecay`, `codebookEmaDeadThreshold`) keep no default; `outputPolicyWeight` is stated in `data/BasicModel.xml` and read by nothing, and three more of its keys are read by nothing (`WholeSpace/butterfly`, `conceptualContextNegatives`, `reconstructInLoop`). *Round 7's list:* the keys read by nothing go.
+- *A fault found by the census:* `reconstructionBasisLimit` was read at a path that never exists. The value did not change.
+- *`primingBridgeCapacity` at 8,388,608 (Claude's number) halves the start of a production batch* (9.25 to 4.29 GB), and the preflight refused in none of four runs.
+- *A production step still does not finish, and now for one reason only: what the looks keep.* A step holds 64 looks (the sentence and its explore path) at .12 to .17 GB each, 14.86 GB before the second walk. The expectation's keys in two parts saved .022 GB a look, which is not the matter. What a look keeps has grown since the sixth pass (.15 and .07 GB then). *The next production pass:* the census of what a look keeps at this source, and whether the first composition's looks can be released before the explore path. No width or capacity is changed for it.
+- *Not measured:* seconds a step, sentences a second, 32 bits against BF16 and FP16. They wait for a step that finishes.
