@@ -5227,10 +5227,17 @@ class SparseLDULayer(Layer):
     ``d_a U_ab``, at an entry of L ``L_ab d_b``, and an entry of L from
     ``a`` to ``b`` with an entry of U from ``b`` to ``c`` gives W an entry
     ``L_ab d_b U_bc`` at the pair ``(a, c)``, as a full LDU has.
-    :meth:`w` is W at each stored entry's own pair. An entry is written at
-    a weight of W (:meth:`add`, :meth:`set_w`): its factor is that weight
-    over its slot's ``d``, and a ``d`` written again keeps W at the entries
-    of U and L that it scales.
+    :meth:`w` is W at each stored entry's own pair, the products that fall
+    there included. An entry is written at a weight of W (:meth:`add`,
+    :meth:`set_w`): its factor is that weight, less the products at its
+    pair, over the ``d`` that scales it; and W at every other stored pair
+    that the write changes (through a ``d`` that scales it or a product
+    that falls there) is kept as it was, its factor solved again. So W at
+    each stored pair is the weight written there, and a product of L and U
+    adds to W only at a pair that holds no entry. Where the weights written
+    make W singular on its slots, a ``d`` solves to nothing (the way back
+    is then the pseudoinverse), and an entry that ``d`` scales can no
+    longer be written exactly.
 
     *The way up* (:meth:`up`) is scatters: L, then D, then U. *The way back*
     (:meth:`back`) is exact where every slot has its output: U undone by
@@ -5279,7 +5286,17 @@ class SparseLDULayer(Layer):
         self._in_slot, self._out_slot = {}, {}
         self._slot_in, self._slot_out, self._diagonal = [], [], []
         self._tri = {self.UPPER: self._triangle(), self.LOWER: self._triangle()}
+        self._reset_products()
         self._returned = None
+
+    def _reset_products(self):
+        """The host's record of the products of L and U: for each slot, the
+        entries of U that leave it and of L that enter it (``_from``,
+        ``_into``), and each pair ``(l, u)`` of an entry of L into a slot
+        and an entry of U out of it (``_triples``)."""
+        self._from, self._into, self._triples = {}, {}, []
+        self._version = getattr(self, '_version', 0) + 1
+        self._product_cache = None
 
     @staticmethod
     def _triangle():
@@ -5332,6 +5349,7 @@ class SparseLDULayer(Layer):
         self._columns.rebuild(self.entry_input, n)
         rows, inputs = self.entry_row[:n].tolist(), self.entry_input[:n].tolist()
         self._entry_of = {(r, i): e for e, (r, i) in enumerate(zip(rows, inputs))}
+        self._product_cache = None
         return rows, inputs
 
     def _index(self):
@@ -5421,6 +5439,14 @@ class SparseLDULayer(Layer):
         tri = self._tri[kind]
         tri['edges'][entry] = (a, b)
         self._write_entry(entry, kind, a, b, write)
+        if kind == self.UPPER:
+            self._from.setdefault(a, []).append(entry)
+            self._triples += [(l, entry) for l in self._into.get(a, ())]
+        else:
+            self._into.setdefault(b, []).append(entry)
+            self._triples += [(entry, u) for u in self._from.get(b, ())]
+        self._version += 1
+        self._product_cache = None
         tri['succ'].setdefault(a, set()).add(b)
         level = tri['level']
         stack = [(b, level.get(a, 0) + 1)]
@@ -5434,10 +5460,11 @@ class SparseLDULayer(Layer):
 
     def _relevel(self):
         """The levels and the longest chains set again from the entries."""
+        edges = {kind: self._tri[kind]['edges'] for kind in (self.UPPER, self.LOWER)}
+        self._reset_products()
         for kind in (self.UPPER, self.LOWER):
-            edges = self._tri[kind]['edges']
             self._tri[kind] = self._triangle()
-            for entry, (a, b) in edges.items():
+            for entry, (a, b) in edges[kind].items():
                 self._link(kind, entry, a, b, False)
 
     def _kind_of(self, entry):
@@ -5525,7 +5552,56 @@ class SparseLDULayer(Layer):
         target = torch.where(self.entry_target >= 0, self.entry_target, S).to(value.device)
         scale = torch.where(kind == self.UPPER, d.index_select(0, source),
                             torch.where(kind == self.LOWER, d.index_select(0, target), value.new_ones(())))
-        return torch.where(kind >= 0, value * scale, value.new_zeros(()))
+        w = torch.where(kind >= 0, value * scale, value.new_zeros(()))
+        products = self._products_at_entries(value.device)
+        if products is not None:
+            l, u, j, at = products
+            w = w.index_add(0, at, value.index_select(0, l) * d.index_select(0, j) * value.index_select(0, u))
+        return w
+
+    def _product_pairs(self):
+        """Each product of an entry ``l`` of L into slot ``j`` and an entry
+        ``u`` of U out of it, ``(l, u, j, a, c)``: it falls at the pair of
+        slot ``a``'s input and slot ``c``'s output."""
+        lower, upper = self._tri[self.LOWER]['edges'], self._tri[self.UPPER]['edges']
+        for l, u in self._triples:
+            a, j = lower[l]
+            _, c = upper[u]
+            yield l, u, j, a, c
+
+    def _stored_products(self):
+        """The products that fall at a stored entry's pair, ``{entry: [(l,
+        u, j)]}``, and for each factor (an entry, or the slot ``j`` of a
+        ``d``) the entries whose W such a product of it changes."""
+        if self._product_cache is not None:
+            return self._product_cache
+        at, through = {}, {}
+        for l, u, j, a, c in self._product_pairs():
+            row, input = self._slot_out[c], self._slot_in[a]
+            target = self._entry_of.get((row, input)) if row >= 0 and input >= 0 else None
+            if target is None:
+                continue
+            at.setdefault(target, []).append((l, u, j))
+            for factor in (('entry', l), ('entry', u), ('slot', j)):
+                through.setdefault(factor, set()).add(target)
+        self._product_cache = (at, through, None)
+        return self._product_cache
+
+    def _products_at_entries(self, device):
+        """The products at stored pairs as tensors ``(l, u, j, entry)`` on
+        ``device``, or None where there are none."""
+        at, through, tensors = self._stored_products()
+        if not at:
+            return None
+        if tensors is None or tensors[0].device != torch.device(device):
+            rows = [(l, u, j, e) for e, items in at.items() for l, u, j in items]
+            tensors = tuple(torch.tensor(column, dtype=torch.long, device=device) for column in zip(*rows))
+            self._product_cache = (at, through, tensors)
+        return tensors
+
+    def _host_d(self, slot):
+        diagonal = self._diagonal[slot]
+        return 1. if diagonal < 0 else float(self.value[diagonal])
 
     def _scale_of(self, entry):
         """The ``d`` that the entry's factor is multiplied by in W."""
@@ -5533,37 +5609,61 @@ class SparseLDULayer(Layer):
         if kind == self.DIAGONAL:
             return 1.
         a, b = self._tri[kind]['edges'][entry]
-        slot = a if kind == self.UPPER else b
-        diagonal = self._diagonal[slot]
-        return 1. if diagonal < 0 else float(self.value[diagonal])
+        return self._host_d(a if kind == self.UPPER else b)
+
+    def _host_products(self, entry):
+        """The products at the entry's pair, on the host."""
+        at = self._stored_products()[0]
+        return sum(float(self.value[l]) * self._host_d(j) * float(self.value[u]) for l, u, j in at.get(entry, ()))
+
+    def _host_w(self, entry):
+        return float(self.value[entry]) * self._scale_of(entry) + self._host_products(entry)
+
+    def _changed_by(self, entry):
+        """The entries whose W the factor of ``entry`` enters, other than
+        its own: those its ``d`` scales (a diagonal) and those at whose
+        pairs a product of it falls."""
+        through = self._stored_products()[1]
+        changed = set(through.get(('entry', entry), ()))
+        if self._kind_of(entry) == self.DIAGONAL:
+            slot = self._diagonal.index(entry)
+            changed |= set(self._from.get(slot, ())) | set(self._into.get(slot, ()))
+            changed |= through.get(('slot', slot), set())
+        changed.discard(entry)
+        return changed
+
+    @torch.no_grad()
+    def _write(self, wanted):
+        """Write W at each entry of ``wanted`` (``{entry: weight}``) and
+        keep it at every stored pair the writes change: the factors of all
+        of them solved together (each factor is its W, less the products at
+        its pair, over its scale), until none moves."""
+        wanted = dict(wanted)
+        stack = list(wanted)
+        while stack:
+            for other in self._changed_by(stack.pop()):
+                if other not in wanted:
+                    wanted[other] = self._host_w(other)
+                    stack.append(other)
+        # A diagonal first: the entries it scales are solved on its new d.
+        order = sorted(wanted, key=lambda e: self._kind_of(e) != self.DIAGONAL)
+        for _ in range(64):
+            moved = 0.
+            for e in order:
+                scale = self._scale_of(e)
+                if scale == 0:
+                    continue
+                factor = (wanted[e] - self._host_products(e)) / scale
+                moved = max(moved, abs(factor - float(self.value[e])))
+                self.value[e] = factor
+            if moved <= 1e-7 * max(1., max(abs(v) for v in wanted.values())):
+                break
 
     @torch.no_grad()
     def set_w(self, entry, weight):
-        """Write W at the entry to ``weight``: its factor is the weight over
-        the ``d`` that scales it. A diagonal written again rescales the
-        entries of U from its slot and of L into it, so that W at them is
-        kept (where the old and the new ``d`` are not nothing)."""
-        entry, weight = int(entry), float(weight)
-        kind = self._kind_of(entry)
-        if kind != self.DIAGONAL:
-            scale = self._scale_of(entry)
-            self.value[entry] = weight / scale if scale != 0 else weight
-            return
-        slot = self._diagonal.index(entry)
-        old = float(self.value[entry])
-        self.value[entry] = weight
-        self._rescale(slot, old, weight)
-
-    def _rescale(self, slot, old, new):
-        """The entries scaled by slot ``slot``'s ``d`` kept at their W when
-        that ``d`` goes from ``old`` to ``new``."""
-        if old == new or old == 0 or new == 0:
-            return
-        scaled = [e for e, (a, _) in self._tri[self.UPPER]['edges'].items() if a == slot]
-        scaled += [e for e, (_, b) in self._tri[self.LOWER]['edges'].items() if b == slot]
-        if scaled:
-            index = torch.tensor(scaled, dtype=torch.long, device=self.value.device)
-            self.value[index] *= old / new
+        """Write W at the entry to ``weight``, the products at its pair
+        included, keeping W at every other stored pair (:meth:`_write`)."""
+        self._write({int(entry): float(weight)})
 
     # --- entries ---------------------------------------------------------
 
@@ -5597,13 +5697,12 @@ class SparseLDULayer(Layer):
             self._rows.add(row, entry, self.entry_row)
             self._columns.add(input, entry, self.entry_input)
             signed = -weight if negated else weight
-            if kind == self.DIAGONAL:
-                # A slot that held only one of the two had ``d`` at one.
-                self.value[entry] = signed
-                self._rescale(self._diagonal.index(entry), 1., signed)
-            else:
-                self.value[entry] = 0.
-                self.set_w(entry, signed)
+            # Started where it changes nothing (a slot that held only one of
+            # the two had ``d`` at one; an entry of U or L at nothing adds
+            # nothing), then written, every other stored W kept.
+            self.value[entry] = 1. if kind == self.DIAGONAL else 0.
+            self._product_cache = None
+            self.set_w(entry, signed)
             return entry
         current = float(self.w()[entry])
         sign = -1. if current < 0 else 1.
@@ -5624,7 +5723,9 @@ class SparseLDULayer(Layer):
         else:
             k = self._diagonal.index(entry)
             old = float(self.value[entry])
-            self._rescale(k, old, 1.)
+            if old != 0:
+                for e in set(self._from.get(k, ())) | set(self._into.get(k, ())):
+                    self.value[e] *= old
             self._diagonal[k] = -1
             self.slot_diagonal[k] = -1
             output = self._slot_out[k]
@@ -5755,10 +5856,7 @@ class SparseLDULayer(Layer):
         with torch.no_grad():
             w = self.value.detach().clone()
             self._index()
-            for e in range(self._n):
-                if self._kind_of(e) != self.DIAGONAL:
-                    scale = self._scale_of(e)
-                    self.value[e] = w[e] / scale if scale != 0 else w[e]
+            self._write({e: float(w[e]) for e in range(self._n)})
 
 
 class SparsePiLDU(SparseLDULayer):

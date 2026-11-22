@@ -160,7 +160,10 @@ def test_d_a_cycle_goes_in_l_and_every_row_is_returned():
 
     Ported (eighth pass): the seventh pass's test asserted that the concept
     left its slot (5 slots, a chain of 2), that rows 0 and 1 were refused
-    and rows 2 and 3 returned."""
+    and rows 2 and 3 returned. Ported (ninth pass): the product falls at
+    concept 1 on row 1, a stored pair (its diagonal), and the eighth pass
+    read W there at .75 where 1 was written; W at a stored pair is now the
+    weight written there, the product included (``d`` of slot 1 is 1.25)."""
     from Layers import NotLayer3, SparseSigmaLDU
     g = _start()
     sigma, not_ = SparseSigmaLDU(4, 4, 16), NotLayer3(4)
@@ -174,7 +177,9 @@ def test_d_a_cycle_goes_in_l_and_every_row_is_returned():
     # W at the two entries is as written; the product L d U is W's entry of
     # concept 1 on row 1 (row 1 to slot 0 by L, then slot 0 to concept 1 by U).
     assert sigma.w()[:6].detach().tolist() == [1., 1., 1., 1., .5, -.5]
-    product = float(dense[1, 1]) - 1.
+    d = float(sigma.value[1])
+    product = float(dense[1, 1]) - d
+    assert abs(float(dense[1, 1]) - 1.) < 1e-6 and abs(d - 1.25) < 1e-6
     lanes = torch.rand(4, 2, 2, generator=g) * .5
     up = sigma(not_(lanes), range(4), range(4)).detach()
     torch.testing.assert_close(up, _dense_read(sigma, lanes, list(range(4))), atol=1e-6, rtol=0)
@@ -184,6 +189,35 @@ def test_d_a_cycle_goes_in_l_and_every_row_is_returned():
     print(dict(product=product, error=float((back - truth).abs().max())))
     assert abs(product + .25) < 1e-6
     torch.testing.assert_close(back, truth, atol=1e-5, rtol=0)
+
+
+def test_d_w_at_each_stored_pair_is_the_weight_written_there():
+    """(d) Entries drawn at random over 12 concepts and 12 rows, cycles
+    among them (so entries in L and products of L and U): W of the dense
+    ``L D U`` at every stored pair is the weight last written there, and
+    :meth:`w` reads it (ninth pass: a product that fell at a stored pair
+    changed the weight written there, sigma-pi §19.122)."""
+    from Layers import SparseSigmaLDU
+    g = _start()
+    sigma, written = SparseSigmaLDU(12, 12, 160), {}
+    for _ in range(120):
+        row, input = (int(v) for v in torch.randint(0, 12, (2,), generator=g))
+        weight = float(torch.rand((), generator=g)) + .1
+        negated = bool(torch.rand((), generator=g) < .3)
+        entry = sigma.add(row, input, weight, negated=negated)
+        if (row, input) in written:
+            old = written[(row, input)]
+            written[(row, input)] = (abs(old) + weight) * (-1. if old < 0 else 1.)
+        else:
+            written[(row, input)] = -weight if negated else weight
+    dense = dense_w(sigma).detach()
+    w = sigma.w().detach()
+    held = [(r, i) for (r, i) in written]
+    error = max(abs(float(dense[i, r]) - written[(r, i)]) for r, i in held)
+    read = max(abs(float(w[sigma.find(r, i)]) - written[(r, i)]) for r, i in held)
+    print(dict(entries=sigma.nnz, lower=sigma.lower_entries, error=error, read=read))
+    assert sigma.lower_entries > 0
+    assert error < 1e-4 and read < 1e-4
 
 
 def test_d_an_entry_added_or_removed_needs_nothing_factored_again():
