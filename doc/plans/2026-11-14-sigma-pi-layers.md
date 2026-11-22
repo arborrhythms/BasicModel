@@ -24078,3 +24078,235 @@ Claude's list on the seventh pass's commit (`c2f3d1000d`): **1 failed (`test_81`
 - *The bound built in step 3 goes flat* (Codex, §19.124, 1): once the query exceeds a code the match and its gradient do not move. It is left as built until the ninth pass's trial, and nothing is built on it.
 - *The counts of reading in order in this return are not to be read:* the places' measure scores correct readings as failures and the lesson's script teaches no order (§19.124, 2 and 3). The ninth pass makes the measure right first.
 - *One rule the pass added and that stands:* a row's read is taken back through its reading and the Not, without which `is` lit the run inside `This`.
+
+### 23.6.14 Round 6d, ninth pass: reading in order measured against the live slots, the request's flat gradient recorded, the cue tried, the curriculum run once, and the LDU's stored weights kept as written (Claude on Opus, standing in for Codex, 2026-11-22)
+
+I cut the branch `item17-r6d9` from `main` (a461a6d4f8) in this checkout and put three commits on it. Both gates and this pass's files passed, so I fast-forwarded `main` to **3f2d83a131** and deleted the branch. Nothing was pushed, and the parent repository was not touched. Nothing under doc/ or data/ was edited. No seed was pinned for an assertion, and no skip or xfail was added. No bar, count, rate or capacity of either gate was changed. `suggestions.txt` was left alone.
+
+A full test list of yours was running in another clone, and part of the time my own background runs shared the CPU as well. So every figure in seconds is rough.
+
+#### What fails or is unfinished, first
+
+- **(a) `test_order0_unions_alternative_percept_conjunctions[False]` and `[True]`: a fault of the source, now repaired in `bin/Layers.py` (3f2d83a131).**
+  - *The entries.* The fixture writes two concepts over the same four rows with opposite signs:
+    - concept 0 = +r0 +r1 −r2 −r3;
+    - concept 1 = −r0 −r1 +r2 +r3.
+  - *How they were placed.* Slot 0 holds row 0 and concept 0, and slot 2 holds row 2 and concept 1. Concept 0's Not entry on row 2 went into U, from slot 2 to slot 0. Concept 1's Not entry on row 0 would have closed a cycle, so it went into L, from slot 0 to slot 2 (L = −1).
+  - *The cause.* The product L·d₂·U₂₀ = (−1)(1)(−1) = +1 falls at the pair (row 0, concept 0). That pair is a stored entry: slot 0's diagonal, written at 1. The way up therefore read 2 there.
+    - This was not a diagonal scaling a U entry, and not a weight written at the wrong factor. It was an L product landing on a stored pair.
+    - `w()` and `entries()` still said 1, because they read W without the products. So the readers and the way up disagreed.
+    - Concept 0 read tanh(−1.88) = −0.954 where its entries give tanh(−1.38) = −0.881. That is the 0.0735 on the against lane.
+  - *Two corrections to the eighth pass.*
+    - Its claim that the way up did not move on any model read was wrong for this fixture, which has an L entry.
+    - Its own ported test `test_d_a_cycle_goes_in_l_and_every_row_is_returned` asserted this same fault: W at concept 1 on row 1, a stored diagonal written at 1, read 0.75.
+  - *The repair.*
+    - `w()` now adds the products that fall at stored pairs.
+    - `add` and `set_w` write through a new `_write`. It solves the factor of the entry written, and the factors of every stored entry whose W the write changes (through a `d` that scales it, or a product that falls on it), so that W at each of those pairs is the weight written. The factor is (weight − products at the pair) / scale, solved jointly.
+    - So a product of L and U still adds to W, as §19.122 has it, but only at a pair that holds no entry.
+    - In this fixture W is singular on its slots (concept 0 = −concept 1), so d of slot 0 solves to 0. W is exact, and the way back gives the pseudoinverse there. This is provisional: an entry written later that this `d` scales cannot be written exactly. Removing entries keeps the old behaviour and does not re-solve.
+  - *Tests.* The order-zero test itself is unchanged and now passes. `test_d_a_cycle…` is ported:
+    - Old: W(1,1) = 0.75, product −0.25.
+    - New: W(1,1) = 1.0, d₁ = 1.25, product −0.25, and the way back is still exact (error 3e-8).
+  - *A new drawn test,* `test_d_w_at_each_stored_pair_is_the_weight_written_there` (120 random entries over 12 × 12, 10 to 20 L entries). It checks that the dense L·D·U at every stored pair equals the weight written:
+    - Before the repair, on the 0e20b251c8 source: error 2.6, 4.3 and 3.8 in three runs (it fails).
+    - After the repair: 3e-7 to 5e-6 in seven runs.
+  - *One correction to my commit message:* it says the product "always" falls on the diagonal of the slot the L entry leaves. It does so only when U has a direct entry back into that slot. Through a longer chain it falls at another pair, which may or may not hold an entry.
+
+- **(b) `test_forced_ordinary_pending_premise_in_both_orders[False]`: not a fault, and none of the eighth pass's four commits changed it.**
+  - The assertion wants departures drawn at more than one compose round. Those rounds are random draws.
+  - Without a fixed start, I could not reproduce the failure: 27 of 27 runs passed (9 on an archive of 0e20b251c8, 18 on this branch).
+  - With a fixed start set before the test:
+    - this source failed 3 of 24 starts (9, 11 and 20; e.g. `len({27})`, `len({48})`);
+    - the seventh pass's source, c2f3d1000d, also failed 3 of the same 24.
+  - So the test fails on some draws on both sources at the same rate. Your full list most likely drew one of those starts, or inherited one from an earlier file in the same worker. No source was changed.
+  - **This is a decision for you:** the test asserts the outcome of a draw.
+
+- **After the reading lesson, the places' model stops finding "is".** In a traced run (start 79273265282498), every unforced reading after `teach()` had no look that found "is":
+  - "This is." gave arrivals [0, 2] and "That is Ciao." gave [2, 0, 3]. No look took slot 1.
+  - This was not a fragment, and not a declined interpretation: `word_activity` is −inf there.
+  - Before the lesson, every word arrived.
+  - So the 0 of 28 after the lesson (step 1) is in large part words lost, not words out of order. I recorded this and did not repair it.
+
+- **The curriculum (step 4).** Its two identity stages fail in both modes, and its enabled mode passes no stage. The run was also split in two because my own one-hour cap stopped the first run. See step 4.
+
+- **The cue (step 3) learns nothing.** The cost and its gradient are flat from the start. Every difference between "before" and "after" is the draw at the first look.
+
+- **A rule slip:** I deleted one scratch copy of a test file inside the scratch directory with `rm` instead of moving it to /tmp/item17-r6d-2026-11-21/. Nothing in the repository was deleted.
+
+#### Step 1: the scorer, its two proving tests, and the counts again (7f5a2b65bf)
+
+**The scorer.** `bin/AttentionLesson.py` now has:
+- `live_slots(spans)`: each row's slots with a non-empty span, in source order.
+- `in_order(orders, spans)`: for each row, whether the interpreted arrivals (`Looks.source_orders()`) equal that row's live slots, each once, in order.
+- `looks_in_order(looks)`: the same over one path, for the rows present.
+
+The old `in_order(reading, count)` compared the arrivals with `range(count)`. It was removed, and every caller now scores by the new one:
+- `test_item17_places`: it observes the `Looks`, and asserts that no reading lesson and no supplied reading is installed while it measures (§19.124, 2).
+- `test_item17_looks`: its lesson count. That count passed `len(text.split())` and had the same fault.
+- `test/attention_thinking_certificate.py`.
+
+`AssessmentProbe`'s own `in_order` check (sorted, with as many arrivals as words) is equivalent and was left as it is.
+
+**The two proving tests**, in a new file, `test/test_item17_in_order.py`:
+- *A reading with gaps and padding.* Row 0 holds its words at slots 0, 2, 4 and 5 of 32 (Codex's case); row 1 at slots 3 and 6. Read in source order, both rows score in order. With two arrivals exchanged, neither does. With a word not interpreted, or a word read twice, the row does not.
+- *A supplied reading on the places' model.* "This is Felix." is staged as 8 forms, of which 4 are live. Read in order, it scores [True]. With its first two words exchanged ([1, 0, 2, 3]), it scores [False]. The old measure scored both False.
+
+**The places' measure, 3 drawn starts, on the 7f5a2b65bf source.** Sentences in order, new scorer (old scorer):
+
+| Start | Before the lesson: two-word of 6, lesson of 16, held out of 6 | After the lesson: two-word, lesson, held out |
+| --- | --- | --- |
+| 64894343210502 | 2 (0), 0 (0), 0 (0) | 0 (0), 0 (0), 0 (0) |
+| 69500002770481 | 2 (0), 4 (0), 0 (0) | 0 (0), 0 (0), 0 (0) |
+| 224195537066561 | 6 (0), 4 (0), 3 (0) | 0 (0), 0 (0), 0 (0) |
+
+- The old scorer gives 0 by construction: the staged forms are always 8, and no sentence has more than 4 live words.
+- Before the lesson, a reading in order is a draw among equally lit words.
+- After the lesson, "is" is not found (see the first section).
+- The run took 759 s.
+
+**The lesson's script, `--runs 6`.** Sentences in order, new scorer (the script's old measure):
+
+| | Each run | Total |
+| --- | --- | --- |
+| Sentences in order | 3 (3), 4 (4), 0 (0), 4 (4), 3 (3), 0 (0) | 14 (14) of 96 |
+| Words in order | 12, 16, 0, 16, 12, 0 | 56 of 384 |
+
+- The script's old measure (as many arrivals as live words, ascending) already agreed with the live slots, so old and new are equal.
+- Every run read 64 of 64 live words. Draws among equals: 26 in each run. Known against: 0; known both: 0. Mean 35.0 s per run.
+- This path teaches no order (§19.124, 2: `MathChainTraining.present` names no reading). These counts measure draws during the training read; chance for 4 words is about 4 of 96.
+
+#### Step 2: the request and its gradient at the first two looks after the reading lesson (a record)
+
+`test_the_request_and_its_gradient_at_the_first_two_looks_after_the_lesson`, in `test/test_item17_order_trial.py`. After `teach()`, "This is Felix." was read with its reading named, at rate 0. Two runs:
+
+| | Run 1 (start 63858141791794) | Run 2 (start 93827107908801) |
+| --- | --- | --- |
+| Query's greatest coordinate, look 1 / look 2 | 49.44 / 48.40 | 61.97 / 60.77 |
+| Codes' greatest coordinate | 1.0 | 1.0 |
+| Query lanes above a code's held lane (where the match is flat) | 1217 of 1354 | 1218 of 1354 |
+| Gradient at the query, both looks | 0.0 | 0.0 |
+| Gradient at the whole request, both looks | 0.191 | 0.00068 |
+| Gradient at the place concepts' rows | 0.166 | 0.00049 |
+| Query moved from look 1 to look 2 | 1.04 | 1.20 |
+| Place request moved | 0.0025 | 0.0034 |
+
+- The place requests' for lane is about 0.76 to 1.18, mostly attend's mask plus the learned start. The against lane is 0 except at 2 to 3 places (0.24, 0.29, 0.086).
+- This reproduces Codex's point 1: the query is 50 to 60 times the codes, so the match is flat in 90% of its lanes. The request moves by less than 0.004 while the query moves by more than 1, and nothing reaches the query.
+
+#### Step 3: the cue (a trial in tests only), with its counts and what it cannot do
+
+**How it is built** (`Cue` in `test/test_item17_order_trial.py`; provisional in every choice):
+- The request is "words" alone: `requested` is given a zero query, so there is no context map. The cue is held by the trial, not as a row of the model.
+- After a word is read, each unread word the look found is scored by `field_factor` (shared size on two lanes, as `place_factor` reads it) between its `.where` and the cue's. The cue is the `.where` wires of the word just read, plus a learned offset of 4.
+- The first look has no cue. It takes what "words" lights, which is a draw among equals; I did not train the request's start.
+- The offset is learned by Adam (rate 0.01, 200 steps), with no tuning. The cost is the next slot against the unread slots, at sharpness 10, over the two-word and lesson sentences read in order.
+
+**Counts.** Reordered = the lesson's 12 distinct sentences with their words reversed, the closing mark kept last.
+
+| Set (of) | Before: in order, first word first, next to the right | After: in order, first word first, next to the right |
+| --- | --- | --- |
+| Two-word (6) | 4, 4, 10 of 12 / 5, 5, 11 of 12 | 4, 4, 10 of 12 / 3, 3, 9 of 12 |
+| Lesson (16) | 4, 4, 30 of 48 / 3, 3, 24 of 48 | 3, 3, 28 of 48 / 6, 6, 34 of 48 |
+| Held out (6) | 4, 4, 15 of 18 / 1, 1, 10 of 18 | 1, 1, 11 of 18 / 1, 1, 11 of 18 |
+| Reordered (12) | 2, 2, 20 of 36 / 5, 5, 24 of 36 | 3, 3, 22 of 36 / 4, 4, 23 of 36 |
+
+Each cell gives the first run (start 95785183130694) / the second run (start 131363171964037).
+
+- **In every set and every run, "in order" equals "first word first".** Once the first look takes the first word, the cue reads the rest in order. When it does not, nothing recovers.
+- **Nothing was learned.**
+  - The cost was 0.48975 before and after, in both runs.
+  - The offset's gradient at the start was 2.1e-7.
+  - The offset moved to [−0.056, 0.043, 0.029, −0.028], the same in both runs. That movement is Adam's normalisation of a near-zero gradient, not learning.
+- **Why the offset has nothing to learn:**
+  - A sentence's `.where` codes differ very little: wire 0 by 0.005 (0.549 to 0.554), wire 1 by 0.001, wire 2 by 0.17 (0.33 to 0.50), wire 3 by 0.03.
+  - Shared size on (c, 1 − c) is 1 − mean|x − c|. A cue at the last word read, with every earlier word already read, has all candidates on one side on every wire. Moving it changes every candidate's score by the same amount, so the softmax does not change.
+  - At sharpness 10 the scores differ by about 0.01, so the cost cannot fall.
+  - With the cue at the word just read, the nearest unread word is already the next one, provided the reading started at the first word.
+
+**What the cue cannot do:**
+- It cannot choose the first word, so a sentence is in order only when the first draw is right: about 1 in 2 for two-word sentences and 1 in 3 for the lesson's.
+- It cannot recover from a start in the middle. The offset could prefer the right neighbour, but the trained data (read in order from the start) never shows that case.
+- A fixed offset on the sinusoidal `.where` code is not a fixed step in address, and words differ in length. So "next" is reached only because the nearest unread word is chosen.
+- It does not read in any order other than left to right by position.
+- It has no memory of the whole percept bank, so it cannot say where the window should go when no word is near (Alec's third point).
+- It is not a concept of the model, and it gives the request no gradient.
+
+#### Step 4: the identity curriculum, stage by stage
+
+`test/attention_curriculum_gates.py` runs on this source without error.
+- My first run, under my own 3,500 s cap, was stopped during the disabled mode's `relations_asked_parts`, so its results and source check are partial.
+- I then ran the enabled mode alone on an archive of b46276141b (the same source, `enabled_only.py`), with the disabled results as its control: 0 errors, `source_matched: true`.
+- Seconds are per stage, at 64 presentations, on a shared CPU.
+
+| Stage | Disabled (source order): passed, readbacks of 4, orders | Enabled: passed, readbacks of 4, orders, lesson CE |
+| --- | --- | --- |
+| identity_permanence | no: "first", "repeat" and "interruption" have no identities (readbacks are null bytes); "after_gap" has 112, 114, 116, 118 | no, the same |
+| identifying_words | no: "known" passes; the novel words have no identity on their 1st and 2nd presentations | no, the same |
+| reading_two | yes, 2, in order (117 s) | no, 1, [[0,1],[1,0],[0],[1]]; last CE 0.0, CE gate passed (149 s) |
+| reading_four | yes, 0, in order (229 s) | no, 0, [[0,2,1],[3,1,2],[2,0,3],[1,3,0]]; CE 0.0 but the CE gate failed (289 s) |
+| identities | yes, 4 (249 s) | no, 0, out of order (304 s) |
+| identities_asked_parts / supplied_answer | no / no (4 readbacks; answers 0) | not run (reconstruction failed) |
+| noun_phrase | no, 3 (232 s) | no, 0 (263 s) |
+| noun_verb | yes, 4 (252 s) | no, 0 (304 s) |
+| noun_verb_asked_parts / supplied_answer | no / no (answers 0) | not run |
+| relations | yes, 4 (418 s) | no, 0 (415 s) |
+
+- **The two identity stages** expect an identity at the first presentation. The source nominates a form only at its count-th reading (§21, rule 20). This is a stage behind the source, not a fault of the script, so it was not repaired.
+- **In the enabled mode,** the lesson's cross-entropy reaches 0.0 while the free reading is out of order and drops words. The CE is taken with the named target replayed (§19.124, 2), so it says nothing about free order.
+
+#### Tests run, with counts and seconds
+
+| Run | Result |
+| --- | --- |
+| `test_item17_in_order` (step 1) | 2 passed, 7.5 s |
+| Places' measure, 3 starts, old scorer beside new (scratch `places_both.py`) | completed, 759 s |
+| Lesson script, `--runs 6` | completed, 35.0 s mean per run |
+| Cue trial, first build | 1 passed, 129 s |
+| Step 2 record, first run | 1 passed, 176 s |
+| Trace of the missing "is" (scratch `why_missing.py`) | completed |
+| (b) unseeded, alone: 0e20b251c8 archive / this branch | 9 of 9 passed / 18 of 18 passed |
+| (b) with a fixed start, 24 starts: c2f3d1000d / this branch | 3 failed each |
+| Layers repair, in a scratch copy: both gates, order0_percept_definitions, sparse_ldu, symbols, order_zero, concept_memberships, definition_integrity, grounded_xor, sparse_growth, spread, live_concepts_from_percepts, structural_checkpoint | 141 passed, 68.6 s |
+| New drawn LDU test: on 0e20b251c8 / after the repair | 3 of 3 failed / 7 of 7 passed |
+| `test_item17_order_trial`, `-s`, final source | 2 passed, 287 s |
+| **Final list**: both gates, `test_order0_percept_definitions`, `test_math_chain_section14`, `test_item17_in_order`, `test_item17_order_trial`, `test_item17_places`, `test_item17_looks`, `test_item17_sparse_ldu`, `test_item17_symbols`, `test_item17_order_zero`, `test_concept_memberships`, `test_definition_integrity`, `test_grounded_xor`, `test_item17_sparse_growth`, `test_item17_spread`, `test_live_concepts_from_percepts`, `test_structural_checkpoint` (`-n 6 --dist loadfile`) | **182 passed, 4 skipped, 801.9 s** |
+| Curriculum, disabled mode (stopped at my cap) / enabled mode alone | partial, 3,500 s / completed, about 29 min |
+
+Scratch files are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/586ca512-2321-46ec-830f-d7dd4047cf0a/scratchpad/r6d9/`:
+- `places_both.py` and `.txt`
+- `lesson/`
+- `step2.txt`, `cue1.txt`, `trial_final.txt`
+- `why_missing.py` and `.txt`
+- `order0_diag.py`
+- `seeded.py`, `seeded2.sh`
+- `curriculum/`, `curriculum_enabled/`, `enabled_only.py`
+- `final.txt`
+- `src/` (archives of five commits), `dev/` (where the repair was built)
+
+#### Commits
+
+- 7f5a2b65bf: the scorer against the live slots (`live_slots`, `in_order`, `looks_in_order`); the places' measure, the looks' lesson count and the lesson's script score by it; `test_item17_in_order`.
+- b46276141b: steps 2 and 3 as records in `test_item17_order_trial`; the places' lesson factored into `teach()`.
+- 3f2d83a131: the sparse LDU keeps W at each stored pair as written (products at stored pairs read by `w()`, factors solved by `_write`); `test_d_a_cycle…` ported; the new drawn test.
+
+#### Main
+
+Fast-forwarded from a461a6d4f8 to **3f2d83a131**. The branch `item17-r6d9` is deleted, and the checkout is on `main`. Nothing was pushed.
+
+#### Decisions left for Alec
+
+1. **A singular W on the LDU's slots** (two concepts that are each other's negation over the same rows) now leaves a `d` at 0, and the way back gives the pseudoinverse there. Accept this, or place such an entry apart?
+2. **Test (b)** asserts the outcome of a draw: about 1 start in 8 fails, before and after the eighth pass.
+3. **The cue as built cannot learn "next"** from readings that start at the first word, and it cannot choose the first word. Should the next trial give the first look a learned start on the `.where`, or train from readings that start elsewhere?
+
+#### Review (Claude, 2026-11-22)
+
+Claude's list on the eighth pass's commit (`0e20b251c8`, 308 files): **4 failed, 3,353 passed, 161 skipped, 1,607 s**: `test_81`, and three that the eighth pass's own run did not cover, sent to this pass. The list on this pass's commit (`3f2d83a131`) was running when this was written.
+
+- *The eighth pass's "the way up did not move" was wrong, and the fault is repaired.* Where an L entry's product with a U entry fell on a stored pair, the way up read the product added to the weight written there (2 where 1 was written) while `w()` and `entries()` still said 1. Now the weight at every stored pair is exactly what was written, and products add only at pairs that hold no entry. The eighth pass had ported a test to the fault; it is ported back.
+- *`test_forced_ordinary_pending_premise_in_both_orders[False]` asserts the outcome of a draw:* it fails for 3 of 24 fixed starts on this source and on the seventh pass's alike. No source fault. *Round 7's list:* the test asserts what a draw cannot promise.
+- *The measure of reading in order is right now, and proved on a correct reading and a wrong one.* What it shows, three starts: before the reading lesson 2 to 6 of 6 two-word sentences, 0 to 4 of 16 lesson sentences and 0 to 3 of 6 held out are read in order; after the lesson none are. So the reading lesson makes reading worse, not better.
+- *Why, in part:* after the lesson no look takes `is`, so most of the readings counted out of order have lost a word. Recorded and not repaired.
+- *Codex's first point is confirmed:* after the lesson the query's greatest coordinate is 50 to 60 against codes of 1.0; 1,217 of 1,354 lanes are in the flat part; the gradient at the query is 0.0 at both looks.
+- *The cue as Claude drew it does not teach an order.* Once the first word is right it reads the rest in order, but it cannot choose the first word and its offset has no gradient: the `.where` codes of one sentence differ by about .01 and every unread word lies on one side of the cue. It is not Alec's idea refuted; it is the simplest form of it, and it needs what he named and the trial lacked, a memory of the whole bank to point the `.where` into.
+- *The curriculum* (run for the first time in this item): with the looks off, reading two and four words, identities, noun and verb, and relations pass; with the looks on, no stage passes. The two identity stages expect an identity at the first presentation, where the source names a word after several readings (rule 20).
