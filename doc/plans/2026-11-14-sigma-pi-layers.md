@@ -14435,6 +14435,15 @@ de-muxed; the production configuration.
 6. *Then, only if the row at 1.00 passes in all three starts:* the row at 1.75 by the walk, measured and not repaired.
 7. *Tests:* both gates; the files touched and their users. Return `scratch-1.7/r6d_return_13.md`, what fails first. `main` moves only if the row at 1.00 passes by the walk in all three starts, with both gates and the files touched (save the two known failures).
 
+*The fourteenth pass* (added 2026-11-22, after §23.6.19), on the same branch: a trace, then the repair at the cause.
+
+1. *The trace.* One word alone ("This."), eager, three starts drawn afresh, untrained and after 5 rounds of the 19 words. Follow the word's concept from the look that takes it to the output's leaf, and at each stage say what the vector holds: the look's field, the grammar's leaf for the word, each composition, the closing, STM's slot, the record's root (`record.end_slots`), the walk's leaf. At each: the cosine on the `.what` to the word's own code and to its best rival, how many `.what` wires are lit, and the `.where` and `.when` wires. Name the stage where the word's `.what` is lost (the starts where the root holds none) and the stage where it becomes dense (after training), with the function and the line.
+2. *The repair, at that stage,* if it is a fault of the source and small. If it is a matter of design (what a closed sentence's root should hold; what training is doing to it), build nothing and put it at the head of the return with the measurements.
+3. *A place row on the way back:* measure the recreated `.what` with the place rows' `.what` left out of the way back (their `.where` and `.when` kept), by the simulation of the thirteenth pass. In tests only.
+4. *Then the thirteenth pass's steps 1 to 7,* as far as the row at 1.00, with its stop rule.
+
+Return `scratch-1.7/r6d_return_14.md`, what fails first. `main` moves on the thirteenth pass's condition.
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -25349,3 +25358,83 @@ Nothing of `bin/` or `data/` changed; `main` is not moved; Claude's list is not 
 - *`say` is a second output* and is not the cause of the failure (`main` swings the same way). It stays on the branch until the walk's own cost reaches the looks, and then goes. *For Alec, if he would have it go now.*
 - *Batches of more than one* stop at the test model's one stream; *a crash* (`ClauseJournal.py:384`) in one start is not diagnosed. *The thirteenth pass.*
 - *Item f (three axes)* would touch 13 files of `bin/` and 76 of `test/`. It waits, as the text said, and is a pass of its own.
+
+### 23.6.19 Round 6d, thirteenth pass: the way back gives a word from its own concept; the output's root does not hold the word (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`, from b0e14a35c7 (the spec commit 9a1ed09374 sits on it). My one commit: 557a72886e (`test/test_item17_word_from_concept.py`, a record). Nothing in `bin/` or `data/` is changed. Nothing pushed. The superproject, `suggestions.txt`, the spec and the docs are not touched. `main` is not moved.
+
+#### What fails or is unfinished, first
+
+- **Step 1's simulation fails, so nothing is built.** The text said to stop there and report why. With the leaf filled by the inverse of *the leaf's concept* (`SparseSigmaLDU.reverse`, then `BasicPercepts.kept_percept`), the word's own terminal scores greatest for **1 of 19** words, in each of 3 fresh starts.
+- **The inverse itself is sound.** With the word's own concept given alone (its row at tanh(1)), the same way back gives the own terminal greatest for **19 of 19**, in 3 of 3 starts. What fails is the concept the leaf carries, not the way back.
+- **Why the leaf's concept fails** (measured below):
+  1. The leaf is the composed sentence's root (STM's end slot, `record.end_slots`). The walk only takes one action, an exact STOP, so the leaf equals the root.
+  2. In some starts, the root holds no `.what` at all. It holds only the 8 `.where`/`.when` wires at [128:136], the same values for every word (0.549, 0.998, 0.5, 0, 0.5, 1, 0.5, 1). This happens untrained (start 67626839076515: 16 of 19 words) and comes and goes with training (start 109523265243324: roots holding a `.what` were 0, 19, 19, 0, 7 of 19 over rounds −1 to 3).
+  3. After training, where the root holds a `.what`, it is dense (all 128 wires) and close to every word. For example, round 0 of start 109523265243324: cosine to the own word .75 to .80, to the best rival .80 to .88. So the walk says the nearest wrong word.
+  4. The leaf's concept as the model's match reads it (`FieldProjection.stimulate`) lights many order-zero concepts at nearly equal evidence (.3 to .5). The Sigma's way back of that sum is dominated by place rows: row 18 at 7.25 and row 44 at 4.00, the same rows for every word. A place row's kept `.what` is "every whole" (`bank_codes`). So the recreated `.what` is nearly the same vector for every word.
+- **Correction to the twelfth pass's diagnosis.** Its "every terminal scores 0.0 at the walk's first slot" read the wrong call. `OutputOccurrences.generated` runs twice per reading. The first call is the reconstruction walk (`reconstruct_generation` → `sentence_generated`). The second is `reverseOutput` (via `masked`), which has a count of 0 and an empty leaf. The twelfth probe kept `walk_scores[-1]`, which is the second call. In the walk's own call, the leaf held the word's code (in 18 or 19 of 19 words) in 4 of the 6 starts I measured untrained (in the other two it held it for 3 and for 0 words); there the own terminal scores 1.0 (the cosine on the percept band) and the walk says the word. The failure is real, but its cause is the root (point 2 and 3 above), not an empty leaf in every case.
+- **Steps 2 to 7 are not started**, by the stop. That means no draw among ties, no mark admitted as a word, no row at 1.00 by the walk, no `.where` measures (step 5 (f)), and no row at 1.75.
+- **The coordinator's message on step 5** (Alec: the `.where` stays muxed on the way up and is demuxed on the way back; measure (f) first) is read and noted. It was not reached.
+
+#### Questions
+
+1. **Which concept is the leaf's?** The design says "the inverse of the leaf's concept". The leaf is the composed root. Its concept, read by the model's one match (`stimulate`), is not the word: it is a spread over many concepts. Three readings are possible:
+   - (a) The leaf's field by the match, as measured. It fails.
+   - (b) The open field at the word's reading. It fails the same way: 1 of 19 in each start, because place rows and other words are lit at .762.
+   - (c) A concept named by the thought, as a reference carried with the slot. The walk has `stack_refs` and `emitted_refs` for this, but they are 0 for an ordinary word. With the concept named, the inverse passes 19 of 19.
+
+   Is (c), the word's concept carried to the leaf as an identity, what he means by "the output follows from the thought"? Or should the root itself keep the word's `.what` (which turns the question into why the composition and closing make a root with no `.what`, or a dense one)? My first choice would be the second: find why the end slot loses the word. I have not traced that.
+2. **The place rows in the way back.** A place row's kept `.what` is "every whole" (`bank_codes`), and on the Sigma's way back place rows get the largest values (7.25, 4.00). Should a place row bring back no `.what` (only its `.where`/`.when`), so that the `.what` of a reading comes only from its word rows? That fits Alec's new answer (the `.where` is carried muxed and demuxed, not read from place concepts). I measured this only as (b) and (a), not with place rows removed.
+
+#### Step 1: the simulation, by start
+
+`test/test_item17_word_from_concept.py`. Each word is read alone ("w."), with no gradient, after the minimal sentences, the lesson and the counting sentences are nominated. The scores are the cosine on the percept band (`readback_scores`' measure, the first 128 wires), the own terminal against the best other terminal. Rows with the same surface count as the own word. The numbers are how many words, of 19, have the own terminal strictly greatest.
+
+| Start | As built (the leaf untouched) | (a) the leaf's concept, by `stimulate` | (b) the open field at the reading | (c) the word's concept alone |
+| --- | ---: | ---: | ---: | ---: |
+| 192261742819831 | 19 | 1 | 1 | 19 |
+| 81550583909094 | 18 | 1 | 1 | 19 |
+| 111002276520121 | 19 | 1 | 1 | 19 |
+| 222080418112681 (probe) | 19 | 1 | 1 | 19 |
+| 67626839076515 (probe) | 3 (16 leaves hold no `.what`) | 2 | 6 | 19 |
+
+- In (a), for every word, the top rows of the Sigma's way back are place rows 18 (7.25) and 44 (4.00). The best rival is usually "is", at .90 against the own word's .86 to .89. The digits score .61 against .90.
+- In (c), the own word scores .46 to .67 against the best rival's .23 to .57. The margins run from .02 ("here" against "There") to .23 (the digits). The kept `.what` of a word's first-Pi row is not the bank's code of the word: the cosine of the two is .46 to .67, not 1.
+- In the untrained runs where the leaf holds the word, the own word scores 1.0 against .89 to .97.
+
+**Over training, by the walk** (a probe, not committed; it is a copy of the twelfth pass's loop that reads the walk's own call):
+
+| Start | Round | Walk says the word | Leaves holding a `.what` | Own terminal > rival |
+| --- | ---: | ---: | ---: | ---: |
+| 67626839076515 | −1, 0, 1, 2 | 3, 2, 0, 0 | 3, 2, 0, 0 | 3, 2, 0, 0 |
+| 109523265243324 | −1, 0, 1, 2, 3 | 0, 8, 6, 0, 6 | 0, 19, 19, 0, 7 | 0, 8, 5, 0, 6 |
+
+A round is the 19 words, each presented once, at rate .01. It takes about 45 s.
+
+#### The row at 1.00 by the walk
+
+Not reached in any start: step 4 waits on step 1. Metal Baby's age stays where `doc/ModelAge.md` puts it.
+
+#### Removed or ported
+
+Nothing removed and nothing ported. The probes `test_zz_probe13.py`, `test_zz_probe13b.py` and `test_zz_probe13c.py` were moved to `/tmp/item17-r6d-2026-11-21/`.
+
+#### Tests run
+
+| Run | Result |
+| --- | --- |
+| `test_item17_word_from_concept.py`, alone, 3 fresh starts | 3 passed (records), 40 to 85 s each |
+| Probes: walk calls and leaves, 2 starts; trained, 2 starts (3 and 4 rounds) | as above |
+| Both gates and the new file, `-n 6` | 3 passed, 110 s |
+
+No file of `bin/` changed, so no user of the output walk was run. `test_compiled_lesson_step.py` was not run, since nothing it compiles changed. Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d13/` (`sim_1.log` to `sim_3.log`, `probe1.log`, `trained_2.log`).
+
+#### Review (Claude, 2026-11-22)
+
+The pass stopped at its simulation, as its text told it to, and nothing of the source changed. `main` is not moved.
+
+- *The way back itself is sound.* Given a word's own concept, the Sigma's way back and `BasicPercepts.kept_percept` put the word's own terminal on top for 19 of 19 words in every start (by .02 to .23 of cosine). So the first half of rule 79 can be built on the layers as they are.
+- *What fails is what the output is given to say.* The walk's leaf is the composed sentence's root (`record.end_slots`). For a sentence of one word that root should be the word's concept, and it is not: in some starts it holds no `.what` at all (only the eight `.where` and `.when` wires, alike for every word), and after training it is dense on all 128 `.what` wires and nearer to a rival (.86) than to the word (.75). So the word said is the nearest wrong word.
+- *The twelfth pass's "every terminal scores 0.0" was a measure of the wrong call* (the second call of `OutputOccurrences.generated`, from `reverseOutput`, whose leaf is empty and which emits nothing). The review of §23.6.18 took it over and is corrected by this one: where the root holds the word's code, the word's own terminal scores 1.0 and the word is said. The failure of the row at 1.00 stands; its cause is the root.
+- *A place row brings back a `.what` that covers "every whole"* on the way back, and two place rows (18 and 44) dominate what `stimulate` lights. By Alec's answer (§19.133) a place is not read from place concepts, and nothing of a place row belongs in a recreated `.what`. *The fourteenth pass measures it.*
+- *The first choice of the pass is right:* find why the composition and the closing make a root with no `.what`, or a dense one, before anything is carried to the leaf by name. *The fourteenth pass.*
