@@ -77,7 +77,15 @@ class FeatureTable:
                 block.scatter_reduce_(0, target[selected, None].expand_as(codes), codes,
                                       reduce='amin' if side else 'amax', include_self=False)
             blocks.append(block)
-        return torch.cat(blocks, -1)
+        result = torch.cat(blocks, -1)
+        # A place's row that keeps no what has no parts and no wholes to be
+        # read from: its code in the space of meanings is nothing (not the
+        # code of a what that cuts nothing).
+        bare = [n for n, row in enumerate(percepts.tolist())
+                if row in basic.place_rows and basic.place_rows[row][2] is None]
+        if bare:
+            result[bare] = 0.
+        return result
 
     def forms(self, owner, record, rows, fallback):
         basic = owner.basic_percepts
