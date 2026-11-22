@@ -5,9 +5,11 @@ training/evaluation, autograd, or decoder phase may specialize its graph. That
 is initial compilation, not permission to resize tensors during the run.
 Subsequent guard failures in that phase raise with Dynamo's original reason.
 """
+from contextlib import contextmanager
 from functools import wraps
 import inspect
 import re
+import sys
 
 import torch
 from torch._dynamo import config
@@ -84,6 +86,25 @@ def _owner(function):
     return None
 
 
+# Inductor's scheduler walks a fused node's ancestors by recursion
+# (Scheduler.can_fuse -> found_path), one Python frame for each node on the
+# path. The output's generate walk, compiled whole, has paths longer than the
+# interpreter's default limit of 1,000 frames: its first compile on the
+# reading lesson stopped there with RecursionError. A compiled entry runs
+# with room for such paths; the limit is restored when the call returns.
+COMPILE_RECURSION_LIMIT = 20000
+
+
+@contextmanager
+def compile_recursion_room():
+    before = sys.getrecursionlimit()
+    sys.setrecursionlimit(max(before, COMPILE_RECURSION_LIMIT))
+    try:
+        yield
+    finally:
+        sys.setrecursionlimit(before)
+
+
 def guarded_compile(function, *, initial_phase=None, **options):
     """Compile a model entry with per-callable, explicitly bounded warmup phases.
 
@@ -118,7 +139,8 @@ def guarded_compile(function, *, initial_phase=None, **options):
         hash(phase)
         try:
             with config.patch(error_on_recompile=phase in admitted,
-                              suppress_errors=False, fail_on_recompile_limit_hit=True):
+                              suppress_errors=False, fail_on_recompile_limit_hit=True), \
+                    compile_recursion_room():
                 result = invoke(*args, **kwargs)
         except FailOnRecompileLimitHit as error:
             raise RuntimeError(f'Model compilation cache limit {_cache_limit_description(error)} in {name}; '
