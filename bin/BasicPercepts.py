@@ -927,11 +927,14 @@ class BasicPercepts(nn.Module):
             bound = least_of_greater(1 - degree, whole_codes.T).permute(1, 2, 0)             # [B, O, pw]
             held = torch.minimum(held, bound)
             # A whole witnessed outside to the degree ``g`` over every byte
-            # spanned puts ``g`` on the against lane of each wire it cuts.
+            # spanned bounds the against lane of each wire it cuts by ``g``:
+            # a wire holds the least over the wholes that cut it, so that a
+            # whole's own wires do not take another whole's degree.
             away = codes.new_zeros(B, O, len(wholes))
             away = away.index_put((real.nonzero(as_tuple=True)),
                                   (evidence[..., 1] * complete[..., None]).to(codes))
-            outside = 1 - least_of_greater(1 - away, whole_codes.T).permute(1, 2, 0)
+            cut = (whole_codes < 1).any(0).to(codes)                                        # [pw]
+            outside = least_of_greater(away, whole_codes.T).permute(1, 2, 0) * cut
         codes[..., self.identity_width:] = held
         return codes * real[..., None], outside * real[..., None]
 
@@ -1180,9 +1183,10 @@ class BasicPercepts(nn.Module):
     def outside(self, table, rows, width):
         """How far each row's own wholes are witnessed outside over each
         attended percept of ``table``, ``[rows, B, A]``: for each whole, the
-        least over the wires it cuts of the percept's wholes wire on the
-        against lane; for a row, the greatest over its wholes. Nothing for a
-        row with no whole of its own (a place, a conjunction)."""
+        greatest over the wires it cuts of the percept's wholes wire on the
+        against lane (each wire the least over the wholes that cut it); for a
+        row, the greatest over its wholes. Nothing for a row with no whole of
+        its own (a place, a conjunction)."""
         B, A = table.shape[:2]
         named = [() if row in self.place_rows or row in self.conjunctions or self.occurrences[row] is None
                  else tuple(w for w in self.occurrences[row][1] if w >= -self.identity_width) for row in rows]
@@ -1190,10 +1194,9 @@ class BasicPercepts(nn.Module):
         out = table.new_zeros(len(rows), B, A)
         if not wholes or not self.property_width:
             return out
-        codes = self.whole_codes(wholes).detach().to(table)                            # [W, pw]
-        cuts = (codes < 1).any(-1)
+        kept = (self.whole_codes(wholes).detach() >= 1).to(table)                     # [W, pw]
         away = table[..., self.identity_width:width, 1]                                # [B, A, pw]
-        degree = least_of_greater(away, codes) * cuts[:, None, None].to(table)         # [W, B, A]
+        degree = 1 - least_of_greater(1 - away, kept)                                  # [W, B, A]
         position = {w: n for n, w in enumerate(wholes)}
         for r, ws in enumerate(named):
             if ws:
