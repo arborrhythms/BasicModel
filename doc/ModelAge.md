@@ -135,7 +135,8 @@ words are counted. Then the grammar is taught, one rule at a time. A stage is
 left when its measure passes, not after a fixed number of presentations.
 
 Reading and counting are two outputs over the same input sentences, on the
-same model and the same weights. No concept's activation is set from outside
+same model and the same weights. All content of the input is a word for both:
+a closing mark is read, said back and counted as a word is. No concept's activation is set from outside
 to choose a task: every activation comes from the input or from the output.
 
 Counting on request differs from both. The input does not change while the
