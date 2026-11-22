@@ -340,12 +340,16 @@ def word_percepts(reverse, field, width):
 
 def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=True):
     """A reconstruction's error (:meth:`Layers.Error.pyramid`, the spatial
-    pyramid match) on the ``.what`` of the bytes put back against the
+    pyramid match) on the content of the bytes put back against that of the
     input's bytes in its readings, the hidden ones left out where
     ``hidden`` (a bool, or ``[B]`` by row: a reconstruction that never saw
-    them). Returns the input's
-    ``.what`` at each place of its readings, hidden bytes included."""
-    from FieldReverse import byte_rows
+    them). The content is read from the bytes on both sides alike
+    (:func:`FieldReverse.content`, §19.135, 4): at a place, the ``.what``
+    of the byte there and of each form of the percept store present in the
+    bytes there; the forms are those present in the input's bytes
+    (:func:`FieldReverse.forms_in`). Returns the input's bytes' ``.what``
+    at each place of its readings, hidden bytes included."""
+    from FieldReverse import byte_rows, content, forms_in
     from Omission import target as omission_target
     targets = omission_target(model)
     raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0].long()
@@ -357,19 +361,23 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     amounts = carrier._radix_activity.amounts
     codes = (radix._basis.lookup_rows(rows.clamp_min(0)) * (rows >= 0)[:, None]).to(amounts)    # [256, what]
     wanted = codes[raw.clamp(0, 255)] * scope[..., None].to(codes)
-    asked = wanted
+    asked = scope
     hidden = torch.as_tensor(hidden, device=raw.device).expand(len(raw))
     bytes_hidden = None if targets is None or not bool(hidden.any()) else targets.get('bytes')
     if bytes_hidden is not None:
         bytes_hidden = bytes_hidden & hidden[:, None]
         out = F.pad(bytes_hidden, (0, max(0, scope.shape[1] - bytes_hidden.shape[1])))[:, :scope.shape[1]]
-        asked = wanted.masked_fill(out[..., None], 0)
+        asked = scope & ~out
         seen = F.pad(bytes_hidden, (0, max(0, amounts.shape[1] - bytes_hidden.shape[1])))[:, :amounts.shape[1]]
         amounts = amounts.masked_fill(seen[..., None], 0)
     if silent is not None:
         # Silence puts back NULL at every place.
         amounts = torch.where(silent.to(amounts.device)[:, None, None], 0., amounts)
-    errors.pyramid(name + '.pyramid', amounts @ codes, asked, mask=active,
+    rows_of, spellings = forms_in(radix, raw.clamp(0, 255), asked)
+    form_codes = radix._basis.lookup_rows(rows_of).to(amounts)
+    read = F.one_hot(raw.clamp(0, 255), 256).to(amounts) * asked[..., None].to(amounts)
+    errors.pyramid(name + '.pyramid', content(amounts, codes, spellings, form_codes),
+                   content(read, codes, spellings, form_codes), mask=active,
                    weight=model.loss.reconstruction_scale, category='reconstruction')
     return wanted
 

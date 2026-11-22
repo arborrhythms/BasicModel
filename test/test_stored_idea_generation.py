@@ -452,7 +452,9 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         return result.permute(1, 0, 2).flatten(1)[:, None].expand(1, 2, 4)
     observed = events(field)
     # Each of the two bytes has its own .what (a and b, one wire each).
+    # Its forms are the two bytes alone: the content is the bytes' (§19.135, 4).
     native = SimpleNamespace(bytes_for=lambda row: bytes([97 + row]), get_id=lambda raw: raw[0] - 97,
+        inverse_table=[b'a', b'b'],
         _basis=SimpleNamespace(lookup_rows=lambda rows: torch.eye(3)[rows.clamp(0, 2)][:, :2]))
     model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=available, _sentence_training=False,
         loss=ModelLoss(reconstruction_scale=1., what_scale=1., where_scale=0., when_scale=0.),

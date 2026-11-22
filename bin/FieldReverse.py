@@ -110,6 +110,110 @@ def byte_rows(radix):
     return torch.tensor([-1 if (row := radix.get_id(bytes([v]))) is None else row for v in range(256)])
 
 
+#: The window hash of :func:`forms_in`: a polynomial in the bytes, modulo a
+#: number small enough that ``h * base`` stays inside an int64.
+HASH_BASE, HASH_MODULUS = 257, (1 << 53) - 111
+
+
+def store_forms(radix):
+    """The percept store's forms of two bytes or more: their rows ``[F]``,
+    spellings ``[F, L]`` (``-1`` past a form's length), and for each length
+    the forms of that length ``(length, window hashes sorted, their
+    forms)``. Kept until a form is added."""
+    key = len(radix.inverse_table)
+    held = radix.__dict__.get('_multi_byte_forms')
+    if held is not None and held[0] == key:
+        return held[1]
+    found = [(row, raw) for row, raw in enumerate(radix.inverse_table) if len(raw) > 1]
+    length = max([len(raw) for _, raw in found] + [1])
+    spellings = torch.full((len(found), length), -1, dtype=torch.long)
+    hashes = []
+    for n, (_, raw) in enumerate(found):
+        spellings[n, :len(raw)] = torch.tensor(list(raw))
+        h = 0
+        for byte in raw:
+            h = (h * HASH_BASE + byte + 1) % HASH_MODULUS
+        hashes.append(h)
+    hashes = torch.tensor(hashes, dtype=torch.long)
+    lengths = (spellings >= 0).sum(-1)
+    groups = []
+    for size in sorted({len(raw) for _, raw in found}):
+        of = (lengths == size).nonzero()[:, 0]
+        keys, order = hashes[of].sort()
+        groups.append((size, keys, of[order]))
+    forms = (torch.tensor([row for row, _ in found], dtype=torch.long), spellings, groups)
+    radix.__dict__['_multi_byte_forms'] = (key, forms)
+    return forms
+
+
+def forms_in(radix, raw, valid):
+    """The store's forms of two bytes or more present in the bytes ``raw``
+    ``[B, P]`` where ``valid``, anywhere in the batch: their rows ``[F]`` and
+    spellings ``[F, L]`` (``-1`` past a form's length). Each window of each
+    form length is hashed and looked up among the forms of that length; a
+    hit is checked byte by byte."""
+    rows, spellings, groups = store_forms(radix)
+    device = raw.device
+    if not len(rows):
+        return rows.to(device), spellings[:, :0].to(device)
+    spellings = spellings.to(device)
+    B, P = raw.shape
+    L = spellings.shape[1]
+    padded = F.pad(raw.long(), (0, L), value=-1)
+    ok_at = F.pad(valid, (0, L))
+    h = torch.zeros(B, P, dtype=torch.long, device=device)
+    ok = torch.ones(B, P, dtype=torch.bool, device=device)
+    present = torch.zeros(len(rows), dtype=torch.bool, device=device)
+    done = 0
+    for size, keys, of in groups:
+        for length in range(done + 1, size + 1):
+            h = (h * HASH_BASE + padded[:, length - 1:length - 1 + P] + 1) % HASH_MODULUS
+            ok = ok & ok_at[:, length - 1:length - 1 + P]
+        done = size
+        keys, of = keys.to(device), of.to(device)
+        at = torch.searchsorted(keys, h).clamp_max(len(keys) - 1)
+        hit = (ok & (keys[at] == h)).nonzero()
+        if not len(hit):
+            continue
+        b, s = hit.unbind(-1)
+        form = of[at[b, s]]
+        window = padded[b[:, None], s[:, None] + torch.arange(size, device=device)]
+        present[form[(window == spellings[form, :size]).all(-1)]] = True
+    kept = present.nonzero()[:, 0]
+    spelled = spellings[kept]
+    width = int((spelled >= 0).sum(-1).max()) if len(kept) else 0
+    return rows.to(device)[kept], spelled[:, :width]
+
+
+def content(amounts, byte_codes, spellings, form_codes):
+    """The content at each place of graded bytes ``amounts`` ``[B, P, 256]``
+    (§19.135, 4): the ``.what`` codes ``byte_codes`` ``[256, what]`` of the
+    bytes there, and the code ``form_codes`` ``[F, what]`` of each form
+    ``spellings`` ``[F, L]`` present there, at each place of its extent. A
+    form's presence at a start is the product of the amounts of its bytes at
+    their places, so it is graded and takes a gradient; on bytes read
+    (amounts of zero and one) it is one where the form is spelled and zero
+    elsewhere. Returns ``[B, P, what]``."""
+    out = amounts @ byte_codes
+    Fn, L = spellings.shape
+    if not Fn:
+        return out
+    B, P, _ = amounts.shape
+    # Places last, so that each form's byte at each offset is one row.
+    padded = F.pad(amounts, (0, 0, 0, L)).transpose(1, 2).contiguous()     # [B, 256, P + L]
+    spelled = (spellings >= 0).T[:, :, None]                                # [L, F, 1]
+    taken = padded.index_select(1, spellings.clamp_min(0).T.reshape(-1)).reshape(B, L, Fn, P + L)
+    taken = torch.where(spelled, taken, 1.)
+    presence = taken[:, 0, :, :P]
+    for i in range(1, L):
+        presence = presence * taken[:, i, :, i:i + P]                     # [B, F, P]
+    # A form present at a start is present at each place of its extent.
+    cover = presence.clone()
+    for i in range(1, L):
+        cover[..., i:] += presence[..., :P - i] * spelled[i]
+    return out + cover.transpose(1, 2) @ form_codes
+
+
 def where_match(wires, grid, axes, sharpness):
     """Each leaf's match ``[..., addresses]`` of its ``.where`` wires against
     the grid's rows, axis by axis (each a slice of the wires), by distance:
