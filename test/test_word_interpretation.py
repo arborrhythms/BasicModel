@@ -336,8 +336,10 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     cs._serial = False
     spans = torch.tensor([[[0, 1], [1, 2]]])
     bracket = torch.tensor([[[0, 2]]])
+    # The store's part map names a part by its byte, so the bytes read are
+    # the parts' own.
     read = cs.cs_read_memberships((torch.tensor([[7, 8]]), spans, None,
-                                  torch.tensor([[65, 65]]), spans), bracket)
+                                  torch.tensor([[7, 8]]), spans), bracket)
     field = cs.cs_forward_content(read)
     slot = (cs._cs_field_concept_ids == obj).nonzero().flatten().item()
     assert field[slot, 0, 0, 0] > 0

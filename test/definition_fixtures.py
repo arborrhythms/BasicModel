@@ -7,8 +7,15 @@ def with_definitions(cs):
     from types import SimpleNamespace
     from BasicPercepts import BasicPercepts
     from Layers import RadixLayer
-    native = RadixLayer(cs.nDim, initial_cap=16384)
-    basic = BasicPercepts(native, cs.nDim, 0, 16384)
+    # The store has a part map (rule 43): the parts half is 64 wide, and
+    # each byte's part is admitted in order, so that the part of byte ``v``
+    # is the store's row ``v`` and a fixture's part ids are its bytes.
+    from WordIdentity import WordIdentity
+    native = RadixLayer(64, initial_cap=16384)
+    native.identity = WordIdentity(native, basic_capacity=16)
+    for value in range(256):
+        assert native.identity._atom(('part', bytes([value]).decode('utf8', 'surrogateescape'))) == value
+    basic = BasicPercepts(native, 64, 0, 16384)
     object.__setattr__(cs, '_fixture_percepts', native)
     cs._fixture_basic_percepts = basic
     object.__setattr__(cs, '_basic_percepts', basic)

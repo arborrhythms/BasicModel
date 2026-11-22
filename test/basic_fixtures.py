@@ -73,6 +73,17 @@ def with_own_codes(cs, parts, width=8):
     the table's what columns tell the parts and the wholes apart. Done at
     construction, before any row."""
     from itertools import combinations
+    # Codes by hand are a part map by id, for a fixture whose part ids are
+    # not the bytes it reads: the store keeps no part map of characters.
+    from Layers import RadixLayer
+    from BasicPercepts import BasicPercepts
+    old = cs.basic_percepts
+    if getattr(old.native, 'identity', None) is not None:
+        native = RadixLayer(cs.nDim, initial_cap=old.capacity)
+        basic = BasicPercepts(native, cs.nDim, 0, old.capacity)
+        object.__setattr__(cs, '_fixture_percepts', native)
+        cs._fixture_basic_percepts = basic
+        object.__setattr__(cs, '_basic_percepts', basic)
     with_property_half(cs, width)
     basis = cs.basic_percepts.native._basis
     parts = sorted(dict.fromkeys(map(int, parts)))

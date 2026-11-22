@@ -12,11 +12,14 @@ from test_attention_promotion import _fixture, _candidates
 def fixture():
     cs, rows = _fixture()
     cs._serial = True
-    for index, (_cid, row) in enumerate(rows[:3]):
-        basic_feature(cs, row, 'ps', index, 1.)
+    # The store's part map names each part by its byte: x, y and c, the
+    # words of the staged text.
+    x, y, c = b'xyc'
+    for part, (_cid, row) in zip((x, y, c), rows[:3]):
+        basic_feature(cs, row, 'ps', part, 1.)
     # Two packed sentences, each with one alternative and the common context.
     spans = torch.tensor([[[0, 1], [2, 3], [4, 5], [6, 7]]])
-    native = dict(indices=torch.tensor([[0, 2, 1, 2]]), part_spans=spans)
+    native = dict(indices=torch.tensor([[x, c, y, c]]), part_spans=spans)
     model = SimpleNamespace(training=True, _concept_owner=lambda: cs,
         conceptualSpace=cs, conceptualSpaces=[cs], _sentence_open_fields={},
         symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(episodic_capacity=4, episodic_orders=len(cs._order_caps()))),

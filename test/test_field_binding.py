@@ -163,14 +163,15 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     cid = cs.new_concept()
     force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
-    basic_feature(cs, row, 'ws', 0, 1., parts=(7,))
+    # The store's part map names a part by its byte: the part of A.
+    basic_feature(cs, row, 'ws', 0, 1., parts=(65,))
     primitive = PrimitiveProperties(1)
     # A membership of .5 makes the row read [.5, .5] (rule 6): its combined
     # for and against vectors are equal and the column reads nothing to
     # learn from. The property is held at .8, so the row reads [.8, .2].
     primitive.teach(0, [65], [.8])
     spans = torch.tensor([[[0, 1]]])
-    native = (torch.tensor([[7]]), spans, primitive, torch.tensor([[65]]), spans)
+    native = (torch.tensor([[65]]), spans, primitive, torch.tensor([[65]]), spans)
     store = Spaces._concept_alloc_of(cs).layer()
     # The concept reads its column of the order-zero Sigma.
     parameter = cs.order_zero.value

@@ -310,12 +310,13 @@ class BasicPercepts(nn.Module):
             return None
         stamp = (len(identity.atoms), len(identity.word_rows))
         if self.__dict__.get('_text_stamp') != stamp:
-            texts = {row: identity.PREFIX for row in identity.atoms.values()}
+            from WordIdentity import bytes_of
+            texts = {row: bytes_of(atom[1]) for atom, row in identity.atoms.items()}
             texts.update({row: raw for raw, row in identity.word_rows.items()})
             self.__dict__['_texts'], self.__dict__['_text_stamp'] = texts, stamp
         held = self._texts.get(int(part))
         if held is not None:
-            return None if held is identity.PREFIX else held
+            return held
         # A row's bytes are read once, when it is first read as a part, so
         # that its code does not move as the store grows.
         known = self.__dict__.setdefault('_raw_texts', {})
@@ -904,10 +905,12 @@ class BasicPercepts(nn.Module):
         valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
         found = [[] for _ in range(part_ids.shape[0])]
         starts, ends = [], []
+        # A stored form's parts are a set; a row's run is in order.
+        ordered = {tuple(self.occurrences[row][0]) for row in self.runs}
         for key in keys:
             run = key[1] if key[0] == 'ps' and isinstance(key[1], tuple) else ()
             count = part_ids.shape[1] - len(run) + 1
-            if len(run) < 2 or count < 1 or set(run) <= atoms:
+            if len(run) < 2 or count < 1 or (set(run) <= atoms and run not in ordered):
                 continue
             match = valid[:, :count].clone()
             for offset, pid in enumerate(run):
