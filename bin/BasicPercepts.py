@@ -220,6 +220,9 @@ class BasicPercepts(nn.Module):
         # The stored form each row of a form spells, and the rows of each
         # form; each row's key in ``index``.
         self.forms, self.form_rows, self._keys = {}, {}, {}
+        # The run of characters of each row that spells no stored form and
+        # whose parts are in order (:meth:`_run_of`).
+        self.runs = {}
         # A place's row: its kept where wires (on their two lanes) and the
         # what it keeps (:mod:`Places`); the cones met at each band.
         self.place_rows, self.place_cones = {}, {}
@@ -294,6 +297,35 @@ class BasicPercepts(nn.Module):
             result[~values] = (native[..., self.identity_width:self.width] if whole
                                else native[..., :self.identity_width])
         return result
+
+    def _identity(self):
+        return getattr(self.native, 'identity', None) if self.native is not None else None
+
+    def _part_text(self, part):
+        """The characters a store row stands for in the part map: a part's
+        run, a stored form, or the row's own bytes; ``None`` where it has
+        none (no part map, or a row with no bytes)."""
+        identity = self._identity()
+        if identity is None or int(part) < 0:
+            return None
+        stamp = (len(identity.atoms), len(identity.word_rows))
+        if self.__dict__.get('_text_stamp') != stamp:
+            texts = {row: identity.PREFIX for row in identity.atoms.values()}
+            texts.update({row: raw for raw, row in identity.word_rows.items()})
+            self.__dict__['_texts'], self.__dict__['_text_stamp'] = texts, stamp
+        held = self._texts.get(int(part))
+        if held is not None:
+            return None if held is identity.PREFIX else held
+        # A row's bytes are read once, when it is first read as a part, so
+        # that its code does not move as the store grows.
+        known = self.__dict__.setdefault('_raw_texts', {})
+        if int(part) not in known:
+            try:
+                raw = self.native.bytes_for(int(part))
+            except (IndexError, KeyError, AttributeError):
+                raw = None
+            known[int(part)] = bytes(raw) if raw and not raw.startswith(identity.PREFIX[:1]) else None
+        return known[int(part)]
 
     def felt_of(self, references):
         """The exact felt value in the table of each value reference."""
@@ -504,6 +536,15 @@ class BasicPercepts(nn.Module):
             return None
         return identity.tightest(parts)
 
+    def _run_tightest(self, run):
+        """The tightest whole of a run of characters: the OR of the catalog
+        codes of its parts, as an occurrence of the run reads it."""
+        identity = self._identity()
+        if not identity.property_width:
+            return None
+        atoms = identity.words.get(run) or identity.atoms_of(run)
+        return torch.stack([identity.catalog_code(atom) for atom in atoms]).amax(0)
+
     def subspace_bounds(self, row):
         """The parts half, the greatest of its parts' codes; the wholes half,
         the least of its wholes' codes: the class of all characters (all
@@ -514,6 +555,11 @@ class BasicPercepts(nn.Module):
         # A value's catalog is its place's (rule 55).
         place = int(self.places[int(row)])
         identity = self._boundary_codes(ids, whole=False, place=place).amax(0)
+        run = self.runs.get(int(row))
+        if run is not None:
+            # In the part map: the run's own part, its characters and every
+            # part found in it.
+            identity = self._identity().form(run).to(identity)
         if not self.property_width:
             return identity, identity.new_empty(0)
         if wholes:
@@ -523,7 +569,7 @@ class BasicPercepts(nn.Module):
             properties = self._boundary_codes(ids, whole=True, place=place).amin(0)
         else:
             properties = identity.new_ones(self.property_width)
-        tightest = self._tightest(parts)
+        tightest = self._tightest(parts) if run is None else self._run_tightest(run)
         if tightest is not None:
             properties = torch.minimum(properties, tightest.to(properties))
         return identity, properties
@@ -547,7 +593,34 @@ class BasicPercepts(nn.Module):
         self.forms[row] = raw
         if raw is not None:
             self.form_rows.setdefault(raw, []).append(row)
+        elif row not in self.conjunctions:
+            self._run_of(row)
         return raw
+
+    def _run_of(self, row):
+        """A row of two or more parts in order that spells no stored form:
+        the run of their characters is a part of its own in the part map
+        (``WordIdentity.admit_part``), carried by every stored form and every
+        occurrence that holds that run, so that the order of the parts is
+        kept in the code."""
+        identity = self._identity()
+        parts = self.occurrences[row][0]
+        if identity is None or len(parts) < 2 or min(parts) < -self.identity_width:
+            return None
+        texts = [self._part_text(part) for part in parts]
+        if any(text is None for text in texts):
+            return None
+        from WordIdentity import text_of
+        run = b''.join(texts)
+        if len(text_of(run)) < 2:
+            return None
+        self.runs[row] = run
+        from WordIdentity import base_atoms
+        for atom in base_atoms(run):
+            identity._atom(atom)
+        if text_of(run) not in identity.added:
+            identity.admit_part(run)
+        return run
 
     def _extend(self, row, parts):
         """A row of a form takes the parts its form has gained, after its
@@ -1131,6 +1204,7 @@ class BasicPercepts(nn.Module):
         self._pi_stamp = None
         self.conjunctions = {}
         self.forms, self.form_rows, self._keys = {}, {}, {}
+        self.runs = {}
         for row, raw in state.get('forms', ()):
             self.forms[int(row)] = bytes(raw)
             self.form_rows.setdefault(bytes(raw), []).append(int(row))

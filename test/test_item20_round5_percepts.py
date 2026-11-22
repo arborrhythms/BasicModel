@@ -68,29 +68,27 @@ def test_basic_read_ties_both_towers_and_teaches_the_properties():
 
 def test_basic_read_preserves_ordered_part_witnesses_after_native_fusion():
     from Layers import RadixLayer
-    basic, _, whole = percepts()
-    native = RadixLayer(3, initial_cap=8)
+    from WordIdentity import WordIdentity
+    _, _, whole = percepts()
+    # The store has a part map: each character a part of its own, and the
+    # run of a row's parts that spells no stored form a part of its own.
+    native = RadixLayer(64, initial_cap=16)
+    native.identity = WordIdentity(native)
     a, b, ab = [native.insert(value) for value in (b'a', b'b', b'ab')]
     native.part_groups[ab] = (a, b)
-    # Each part has a code of its own.
-    with torch.no_grad():
-        native._basis.W.zero_()
-        native._basis.W[a, 0] = native._basis.W[b, 1] = 1.
-    object.__setattr__(basic, 'native', native)
+    basic = BasicPercepts(native, 64, 0, 4)
     forward, reverse, repeat = [basic.reserve(parts, ()) for parts in ((a, b), (b, a), (a, a))]
     spans = torch.tensor([[[0, 2]]])
     field = basic.read((torch.tensor([[ab]]), spans, whole.primitive_properties,
         torch.tensor([[97, 98]]), spans), spans, (forward, reverse, repeat))
-    # The rows spell no stored form, so each is read by the set of its parts
-    # (rules 41 and 43): all three are held at the occurrence [0, 2].
-    assert field.values[:, 0, 0, 0].tolist() == [1., 1., 1.]
+    assert field.values[:, 0, 0, 0].tolist() == [1., 0., 0.]
     # The fused part is descended to its two part events, and the forward
-    # row is read at the occurrence that holds its parts.
+    # row is read at the occurrence that holds its run in order.
     assert field.spans[0, :2].tolist() == [[0, 1], [1, 2]]
     whole = [a for a, span in enumerate(field.spans[0].tolist()) if span == [0, 2]]
     assert whole and float(field.events[0, 0, whole[0], 0]) == 1.
     receipt('basic-native-descent', dict(fused_rows=1, part_events=2,
-        preserved_order=False, preserved_multiplicity=False, byte_retiling=False))
+        preserved_order=True, preserved_multiplicity=True, byte_retiling=False))
 
 
 def test_stored_forms_of_one_set_of_characters_are_told_apart():

@@ -1,4 +1,6 @@
 """Native concept identity, learned output, and its independent ordered inverse."""
+from basic_fixtures import feature as basic_feature
+from order_fixtures import force_order
 from pathlib import Path
 from types import SimpleNamespace
 from dataclasses import replace
@@ -112,6 +114,33 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
     affine = design @ torch.linalg.lstsq(design,target).solution
     assert abs(float((affine-target).square().mean())-.25) < 1e-6
     print(dict(trial=trial,mse=error,without_intersection=without_intersection))
+
+
+def test_contained_ordered_group_reconstructs_at_its_extent():
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_symbols.xml'))
+    # This probe exercises an ordered *unfused* group. The XOR curriculum
+    # now teaches fused parts, so seed only the atomic native percepts here.
+    model.perceptualSpace.percept_store.promotion_threshold = 100000
+    model.perceptualSpace.percept_store.ensure_atomic_bytes([b'0', b'1'])
+    texts = ['00', '01', '10', '11']
+    cs = model.conceptualSpaces[0]
+    radix = model.perceptualSpace.percept_store
+    for index, text in enumerate(texts):
+        force_order(cs, 30000 + index, 0)
+        row = cs._csw_concept_row(0, 30000 + index)
+        group = tuple(radix.get_id(bytes([value])) for value in text.encode())
+        basic_feature(cs, row, 'ps', group, 1.)
+        assert radix.get_id(text.encode()) is None
+    understanding = model.understand(_bytes(texts))
+    # Isolate PartSpace attribution. Its group spans the word extent even
+    # when WholeSpace divides it into single-position property runs.
+    record = cs._concept_allocator.order_zero_members
+    for key in tuple(record):
+        if cs.basic_percepts.occurrences[key[1]][1]:
+            record[key] = 0.
+    reverse, _ = model.reverseReconstruct(understanding)
+    assert model._decode_reconstructed_inputs(reverse, []) == texts
+    model.End()
 
 
 def test_property_reverse_attributes_only_written_members():
