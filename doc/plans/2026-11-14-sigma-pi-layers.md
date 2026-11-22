@@ -9836,6 +9836,12 @@ Claude's reading, each part *mine* until he confirms it:
 
 *His correction, the same day:* ""Unused node one" meaning our current architecture, augmented with first/next and a memory of the what/where at the pi closest to the input that did the previous filtering." So Claude's first point was wrong: nothing is a separate empty concept. It is the architecture as it stands, with three additions: the "first" concept, the "next" concept, and a memory, at the first Pi (the Pi nearest the input), of the `.what` and the `.where` it selected at the previous look. That memory is the request "in the input": form B below (as answered), held where the filtering was done, and not the request as given over concepts. Form A stays in the toy only as the comparison.
 
+*And then:* "A memory at the first Pi might be replaced with just the primed conceptual field which will carry that activity by wire (is that updated every attend?). Would it make sense for a chooser network to provide MLP input to each operator, such that they can have access to calculation on that surface but share a single network to do so? Or maybe they each share a linear layer on top of such?"
+
+- *Is it updated every attend?* (Claude, at `5364c905bc`.) The conceptual field is: every look reads the sentence's bank anew through the first Pi and the Sigma (`SentenceLooks.perceive`), and the look's field is kept (`Looks.fields`). The next `attend` does not read it: its query is the context's map of the last surprise alone. The priming heat (`prime_seen`) has no call inside the looks; whether it moves at each `attend` is not verified and is asked of the tenth pass.
+- *The toy gains form C:* the memory is the previous look's conceptual field, by wire, and nothing is kept at the first Pi. Compared with form B.
+- *The chooser's network* (Claude's opinion, *for Alec*): his second form, one network shared by every operator over that surface with one linear read for each operator on top. The operators then learn one description of the surface and differ only in what they read from it, and an operator added later costs one linear read. The toy compares it with a read of its own for each concept.
+
 *Decided:* a toy, in tests only, step 7 of the tenth pass.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
