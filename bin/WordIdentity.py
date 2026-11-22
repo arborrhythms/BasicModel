@@ -501,7 +501,28 @@ class WordIdentity(nn.Module):
         atoms = set(atoms)
         return [word for word, parts in self.words.items() if atoms.intersection(parts)]
 
-    def _separate(self, left, right):
+    def _seen(self, word, *, override=None):
+        """A stored form's code as its basic percept keeps it: the wholes
+        half within the classes that hold every one of its characters
+        (:meth:`_kept`)."""
+        code = self.code(word, override=override)
+        return code * self._kept(word).to(code)
+
+    def _twin(self, word, code):
+        """A stored form with the same parts half whose code, as its basic
+        percept keeps it, is the same as ``word``'s, or ``None``."""
+        if not self.property_width:
+            return None
+        held = self.by_parts.get(self.key(code[:self.width]), ())
+        if not held:
+            return None
+        mine = self.key(self._seen(word))
+        for other in sorted(held, key=self.order.__getitem__):
+            if other != word and self.key(self._seen(other)) == mine:
+                return other
+        return None
+
+    def _separate(self, left, right, *, read=False):
         """Tell two forms with one code apart (rule 56); return the forms
         whose code changed, or ``None`` where no part tells them apart.
 
@@ -511,7 +532,8 @@ class WordIdentity(nn.Module):
         more bits, the part held by the fewest forms first.
         """
         changed = []
-        alike = lambda: self.key(self.code(left)) == self.key(self.code(right))
+        seen = self._seen if read else (lambda word, **kw: self.code(word, **kw))
+        alike = lambda: self.key(seen(left)) == self.key(seen(right))
         while alike():
             run = self._next_part(left, right)
             if run is None:
@@ -525,8 +547,8 @@ class WordIdentity(nn.Module):
                             key=lambda atom: (held[atom], -len(atom[1]), atom[1]))
         for atom in candidates:
             for bits in range(self.bits.get(atom, self.ones)+1, self.pair_dim+1):
-                if not torch.equal(self.code(left, override=(atom, bits)),
-                                   self.code(right, override=(atom, bits))):
+                if not torch.equal(seen(left, override=(atom, bits)),
+                                   seen(right, override=(atom, bits))):
                     self._atom(atom, bits)
                     changed.append(atom)
                     self.revision += 1
@@ -544,8 +566,13 @@ class WordIdentity(nn.Module):
             code = self.code(word)
             key = self.key(code)
             other = self.forms.get(key)
+            read = False
+            if other is None or other == word:
+                # Two codes that differ only where a class that holds both
+                # forms cuts the wholes half are one code to their percepts.
+                other, read = self._twin(word, code), True
             if other is not None and other != word:
-                touched = self._separate(other, word)
+                touched = self._separate(other, word, read=read)
                 if touched is None:
                     raise RuntimeError(f'no part tells {text_of(other)!r} from {text_of(word)!r}')
                 self._unkey(other)

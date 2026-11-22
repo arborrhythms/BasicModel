@@ -483,10 +483,12 @@ def test_53_a_forms_links_are_its_runs():
 def test_53_a_later_form_moves_an_earlier_forms_row_and_lane_and_not_its_concept():
     """(c) In the lesson's model, after its first four sentences (``is`` is
     nominated: a basic percept row with a concept), a form admitted later
-    that changes the code of ``is`` (``si``: one code until a part tells
-    them apart) changes the store row of ``is``, its basic percept's stored
-    code and against lane, and its row of the first Pi; the concept's
-    entries, which read the row and not its code, do not move (rule 62)."""
+    that changes the code of ``is`` changes the store row of ``is``, its
+    basic percept's stored code and against lane, and its row of the first
+    Pi; the concept's entries, which read the row and not its code, do not
+    move (rule 62). The change is the one rule 56 makes when no run tells
+    two forms apart: a part of ``is`` (its own) is given more bits, and
+    every form that holds it is settled again."""
     from test_item17_order_zero import _read_lesson
     model, patch = _read_lesson(4)
     try:
@@ -502,14 +504,18 @@ def test_53_a_later_form_moves_an_earlier_forms_row_and_lane_and_not_its_concept
         code, against = basic.code(row).detach().clone(), basic.against(row).detach().clone()
         members = basic.pi.row_members(row)
         entries = sigma.entries(concept)
-        identity.admit(b'si')
+        # Two forms of one set of characters (``si``) are told apart by their
+        # own parts (rule 43), so no later form collides with ``is``.
+        own = ('part', 'is')
+        identity._atom(own, identity.bits.get(own, identity.ones) + 1)
+        identity._keep(identity._settle(identity._holders([own])))
         assert b'is' in identity.last_changed
         now = identity.store._basis.fixed_row_codes[store_row]
         assert not torch.equal(now, fixed) and torch.equal(now[:identity.width], identity.form(b'is'))
         # The row's code is read again from its form's new code.
         assert not torch.equal(basic.code(row).detach(), code)
         torch.testing.assert_close(basic.bank_codes((row,))[0], basic.lanes(row).detach().clamp(0, 1))
-        assert basic.pi.row_members(row) == basic.member_keys(row) != members
+        assert basic.pi.row_members(row) == basic.member_keys(row)
         assert sorted(basic.pi.row_against(row)) == sorted(basic.against_keys(row))
         # The concept reads the row, not its code: its entries do not move.
         assert sigma.entries(concept) == entries and (row, ) == tuple(i for i, _, _ in entries if i == row)
