@@ -88,9 +88,9 @@ def first_pi(bank, perception, row_grad, activity=None, basic=None):
     reaches the attended percepts at that greatest, each taking the whole of
     it; there the share on the what columns is the gradient of the row's lane
     by the percept's presence times that presence, which is the row's lane
-    itself, and the share on the where wires is that times the row's weights
-    on them (the derivative of the factor by each wire's two lanes, times
-    the lanes). A conjunction passes nothing further down. Returns each
+    itself, and the share on the where wires is that times the derivative
+    of the row's factor on the where by each wire's two lanes, times the
+    lanes (:meth:`BasicPercepts.BasicPercepts.where_share`). A conjunction passes nothing further down. Returns each
     attended percept's share ``[B, A, 2]`` (on the for lane; nothing reads a
     percept's against lane) and the share on its where wires ``[B, A]``."""
     token = perception.reading
@@ -106,8 +106,12 @@ def first_pi(bank, perception, row_grad, activity=None, basic=None):
     tiny = 1e-12
     conjunctions = getattr(basic, 'conjunctions', {}) if basic is not None else {}
     reads = torch.tensor([row not in conjunctions for row in bank.rows], device=rows.device)[:, None, None]
-    wires = (basic.where_weight(bank.rows).detach().to(rows)[:, None, None] if basic is not None
-             else rows.new_zeros(R, 1, 1))
+    if basic is not None and perception.index is not None:
+        index = perception.index.clamp_min(0)
+        table = bank.table.gather(1, index[..., None, None].expand(-1, -1, *bank.table.shape[2:]))
+        wires = basic.where_share(table.detach(), bank.rows).detach().to(rows)
+    else:
+        wires = rows.new_zeros(R, 1, 1)
 
     def at_reading(x):
         """``[R, B, K]`` read at each attended percept's reading, ``[R, B, A]``."""

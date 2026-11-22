@@ -150,13 +150,13 @@ def test_62_33b_what_is_where(tmp_path, monkeypatch):
                    where_first=where[first].tolist(), where_second=where[second].tolist()))
         assert torch.equal(what[first], what[second])
         assert not torch.equal(where[first], where[second])
-        # (a) An entry on the where wires of the first.
+        # (a) Entries on the where wires of the first: each wire's two lanes.
         c = where[first].clamp(1e-6, 1 - 1e-6)
         before = perception.events[r, 0]
         slot = {int(o): a for a, o in enumerate(perception.index[0].tolist())}
         assert torch.allclose(before[slot[first]], before[slot[second]])
         with torch.no_grad():
-            basic.where_entries[row] = torch.cat((c, torch.full_like(c, basic.PLACE_WEIGHT)))
+            basic.where_entries[row] = torch.cat((c, 1 - c))
         try:
             look = attended(bank)
             perception = basic.read_bank(bank, look=look)
@@ -167,9 +167,9 @@ def test_62_33b_what_is_where(tmp_path, monkeypatch):
             assert torch.allclose(kept[slot[first]], before[slot[first]], atol=1e-5)
             assert float(kept[slot[first], 0]) > float(kept[slot[second], 0])
             # (33 (b)) The gradient from the row's value at an attended
-            # percept reaches the where wires' row at its place. At the first
-            # it is nothing: the value is at its greatest where the wires are
-            # what the row keeps. At the second it is not.
+            # percept reaches the where wires' row at its place, at the first
+            # less than at the second: where a wire's lane equals the row's
+            # entry the derivative passes on the lane at the tie alone.
             code = bank.registry.code
             grads = {}
             for name, at in (('first', first), ('second', second)):

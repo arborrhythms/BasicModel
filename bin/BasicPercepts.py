@@ -114,6 +114,48 @@ def attended(bank, where=None, share=None, capacity=None):
     return Attended(index, filled, table, chosen, token, bank.time.gather(1, index))
 
 
+def held_entries(entries):
+    """Entries read at zero or above, the derivative passing at zero."""
+    return torch.where(entries >= 0, entries, 0.)
+
+
+def lesser(a, b):
+    """The lesser of ``a`` and ``b``; at a tie the derivative reaches both."""
+    return torch.where(a < b, a, b) + torch.where(a == b, a - a.detach(), 0.)
+
+
+def field_factor(lanes, entries):
+    """How far an attended percept holds a row's entries on one field (its
+    where, or its when), by shared size: ``sum min(lane, entry) / sum
+    entry`` over the wires' two lanes, ``[R, B, A]``, for ``lanes`` ``[B,
+    A, wires, 2]`` and ``entries`` ``[R, wires, 2]`` (at zero or above). One
+    where a row's entries sum to nothing."""
+    total = entries.sum((-1, -2))                                              # [R]
+    R = entries.shape[0]
+    out = lanes.new_ones(R, *lanes.shape[:2])
+    live = (total > 0).nonzero().flatten()
+    if len(live):
+        e = entries.index_select(0, live)
+        shared = lesser(lanes[None], e[:, None, None]).sum((-1, -2))          # [L, B, A]
+        out = out.index_copy(0, live, shared / total.index_select(0, live)[:, None, None])
+    return out
+
+
+def field_share(lanes, entries):
+    """The derivative of :func:`field_factor` by each of the percept's lanes
+    times the lane, summed, ``[R, B, A]``: ``sum lane . [lane <= entry] /
+    sum entry``; nothing where a row's entries sum to nothing."""
+    total = entries.sum((-1, -2))
+    out = lanes.new_zeros(entries.shape[0], *lanes.shape[:2])
+    live = (total > 0).nonzero().flatten()
+    if len(live):
+        e = entries.index_select(0, live)
+        x = lanes[None]
+        held = (x <= e[:, None, None]).to(x)
+        out = out.index_copy(0, live, (x * held).sum((-1, -2)) / total.index_select(0, live)[:, None, None])
+    return out
+
+
 def least_of_greater(x, c, chunk=1 << 24):
     """``min_k max(x[b, a, k], c[r, k])``, ``[R, B, A]``, for wires ``x``
     ``[B, A, K]`` and a constant ``c`` ``[R, K]``. The least is found
@@ -143,10 +185,7 @@ def held_at(bank, table, codes=None):
     parts wires over the row's parts; ``whole``, the least, over the wires
     the row's wholes cut, of one less the percept's wholes wire; ``added``,
     the greatest of the percept's parts wires over the parts the row's
-    against lane names (a part its nearer holders add); ``outside``, the
-    greatest, over the wires the row's wholes cut, of the percept's wholes
-    wire on the against lane (the degree to which a whole that cuts it is
-    witnessed outside over the percept). A row's own code
+    against lane names (a part its nearer holders add). A row's own code
     is graded too: ``max(wire, 1 - code)`` stands for a part it holds to the
     degree ``code``. At codes of 0 and 1 these are the read of
     :meth:`BasicPercepts.read_points`."""
@@ -157,16 +196,17 @@ def held_at(bank, table, codes=None):
     part = least_of_greater(point[..., :iw], 1 - row[:, :iw])
     whole = least_of_greater(1 - point[..., iw:], row[:, iw:])
     added = 1 - least_of_greater(1 - point[..., :iw], 1 - against[:, :iw])
-    outside = 1 - least_of_greater(1 - table[..., iw:width, 1].to(codes), row[:, iw:])
-    return part, whole, added, outside
+    return part, whole, added
 
 
 class PlaceEntries(nn.Module):
     """Each row's entries on the where wires and on the when wires of an
     attended percept: ``where_entries`` ``[capacity, 2 * WHERE_WIRES]`` and
-    ``when_entries`` ``[capacity, 2 * WHEN_WIRES]``, each the kept value of every wire, then
-    its weight. Learned; a weight is read at zero or above, and a row whose
-    weights are at nothing reads one at every place (rule 31)."""
+    ``when_entries`` ``[capacity, 2 * WHEN_WIRES]``, each the row's value on
+    every wire's first lane (against the wire ``c``) and then on its second
+    (against ``1 - c``). Learned and read at zero or above; a row whose
+    entries on a field are all at nothing reads one at every place on it
+    (the field is dropped)."""
     def __init__(self, capacity):
         super().__init__()
         self.where_entries = nn.Parameter(torch.zeros(int(capacity), 2 * WHERE_WIRES))
@@ -183,9 +223,6 @@ class BasicPercepts(nn.Module):
     ENTRIES_PER_ROW = 16
     #: The size of the keyed draw that raises a conjunction above its members.
     INCREMENT = .1
-    #: The weight the cone of a place writes on each of its where wires.
-    PLACE_WEIGHT = 10.
-
     def __init__(self, native, identity_width, property_width, capacity):
         super().__init__()
         from OrderZero import SparsePiLayer3
@@ -457,11 +494,11 @@ class BasicPercepts(nn.Module):
         return row
 
     def reserve_place(self, plus, minus, what=None):
-        """A row of the first Pi whose entries are on the where wires: the
-        kept value ``plus`` of each wire (its least for lane over the
-        occurrences met, ``minus`` the least of its against lane), each at
-        :attr:`PLACE_WEIGHT`; and the what it keeps, a code of the what
-        columns (``None`` for a place that keeps none)."""
+        """A row of the first Pi whose entries are on the where wires: on
+        each wire's first lane ``plus`` (its least for lane over the
+        occurrences met), on its second ``minus`` (the least of its against
+        lane); and the what it keeps, a code of the what columns (``None``
+        for a place that keeps none)."""
         plus = torch.as_tensor(plus, dtype=torch.float32).detach().cpu()
         minus = torch.as_tensor(minus, dtype=torch.float32).detach().cpu()
         what = None if what is None else torch.as_tensor(what, dtype=torch.float32).detach().cpu()
@@ -480,44 +517,52 @@ class BasicPercepts(nn.Module):
             self.forms[row] = None
             if self.pi.append(self.member_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
+            # The place's where entries start at the cone's code: the least
+            # of each wire's two lanes over the occurrences met.
             with torch.no_grad():
-                self.where_entries[row] = torch.cat((plus, torch.full_like(plus, self.PLACE_WEIGHT))).to(
-                    self.where_entries)
+                self.where_entries[row] = torch.cat((plus, minus)).to(self.where_entries)
             self.revision += 1
         return row
 
+    def _entries(self, rows, like):
+        """Each row's where and when entries, each ``[R, wires, 2]``, read at
+        zero or above."""
+        index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
+        lanes = lambda e, n: held_entries(e.index_select(0, index)).to(like).reshape(-1, 2, n).transpose(1, 2)
+        return lanes(self.where_entries, WHERE_WIRES), lanes(self.when_entries, WHEN_WIRES)
+
     def place_factor(self, table, rows):
         """Each row's entries on the where and the when wires read at each
-        attended percept, ``[rows, B, A]``: ``exp(- sum w . (e . log(e / c)
-        + (1 - e) . log((1 - e) / (1 - c))))`` over the wires ``c`` of
-        ``table`` ``[B, A, columns, 2]``, ``e`` the row's kept value and
-        ``w`` its weight on each. One where the wires are what the row
-        keeps, falling as they differ, and one everywhere where every
-        weight is at nothing."""
-        index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
-        where = self.where_entries.index_select(0, index).to(table)
-        when = self.when_entries.index_select(0, index).to(table)
-        kept = torch.cat((where[:, :WHERE_WIRES], when[:, :WHEN_WIRES]), -1).clamp(0., 1.)       # [R, n]
-        weight = torch.cat((where[:, WHERE_WIRES:], when[:, WHEN_WIRES:]), -1)
-        weight = torch.where(weight >= 0, weight, 0.)
-        c = table[..., self.width:self.width + WHERE_WIRES + WHEN_WIRES, 0].clamp(1e-6, 1 - 1e-6)  # [B, A, n]
-        own = (weight * (torch.xlogy(kept, kept) + torch.xlogy(1 - kept, 1 - kept))).sum(-1)       # [R]
-        cross = (torch.einsum('bac,rc->rba', c.log(), weight * kept)
-                 + torch.einsum('bac,rc->rba', (1 - c).log(), weight * (1 - kept)))
-        # The divergence is never below zero but for rounding; at exactly
-        # zero (every weight at nothing) its derivative by the weights passes,
-        # so that an entry that starts at nothing can be taught.
-        divergence = own[:, None, None] - cross
-        return torch.exp(-torch.where(divergence >= 0, divergence, 0.))
+        attended percept of ``table`` ``[B, A, columns, 2]``, ``[rows, B,
+        A]``: the product of :func:`field_factor` on the where and on the
+        when. One at the place whose wires are the row's entries, falling as
+        they differ, and one everywhere on a field whose entries are at
+        nothing."""
+        where, when = self._entries(rows, table)
+        w = table[..., self.width:self.width + WHERE_WIRES, :]
+        t = table[..., self.width + WHERE_WIRES:self.width + WHERE_WIRES + WHEN_WIRES, :]
+        return field_factor(w, where) * field_factor(t, when)
 
-    def where_weight(self, rows):
-        """Each row's weights on the where wires summed, ``[rows]``: the
-        share on the where wires of an attended percept is the row's share
-        there times its value times this (the derivative of the factor by
-        each wire's two lanes, times the lanes)."""
+    def where_share(self, table, rows):
+        """Each row's share on the where wires of each attended percept per
+        unit of its share there, ``[rows, B, A]`` (:func:`field_share`)."""
+        where, _when = self._entries(rows, table)
+        return field_share(table[..., self.width:self.width + WHERE_WIRES, :], where)
+
+    def place_code(self, rows, columns):
+        """The coordinates appended to each row's what in the space of
+        meanings, ``[rows, columns]``: its where entries' first lane, its
+        when entries' first lane, then their second lanes, as many as
+        ``columns`` holds (none where it holds none)."""
         index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
-        weight = self.where_entries.index_select(0, index)[:, WHERE_WIRES:]
-        return torch.where(weight >= 0, weight, 0.).sum(-1)
+        where = held_entries(self.where_entries.detach().index_select(0, index))
+        when = held_entries(self.when_entries.detach().index_select(0, index))
+        full = torch.cat((where[:, :WHERE_WIRES], when[:, :WHEN_WIRES],
+                          where[:, WHERE_WIRES:], when[:, WHEN_WIRES:]), -1)
+        columns = int(columns)
+        if columns > full.shape[-1]:
+            full = F.pad(full, (0, columns - full.shape[-1]))
+        return full[:, :columns].to(self.value_codes)
 
     def carrying(self, tower, features):
         features = tuple(features if isinstance(features, (tuple, list)) else (int(features),))
@@ -1105,7 +1150,8 @@ class BasicPercepts(nn.Module):
             return out.scatter_reduce(2, slot[None, ..., None].expand_as(x), x, 'amax')[:, :, :K]
         B, A = presence.shape
         if rows:
-            part, whole, added, outside = held_at(bank, look.table)
+            part, whole, added = held_at(bank, look.table)
+            outside = self.outside(look.table, rows, bank.width)
             factor = self.place_factor(look.table, rows)
             at = presence[None] * factor
             # Only an occurrence of its own tells against what it holds by
@@ -1130,6 +1176,29 @@ class BasicPercepts(nn.Module):
             boundaries = values.new_zeros(2, *values.shape)
         return PerceptField(tuple(('bp', row) for row in rows), values, events, look.span,
             bank.where, bank.when, None, bank.when_band, boundaries, None, look.token, look.index)
+
+    def outside(self, table, rows, width):
+        """How far each row's own wholes are witnessed outside over each
+        attended percept of ``table``, ``[rows, B, A]``: for each whole, the
+        least over the wires it cuts of the percept's wholes wire on the
+        against lane; for a row, the greatest over its wholes. Nothing for a
+        row with no whole of its own (a place, a conjunction)."""
+        B, A = table.shape[:2]
+        named = [() if row in self.place_rows or row in self.conjunctions or self.occurrences[row] is None
+                 else tuple(w for w in self.occurrences[row][1] if w >= -self.identity_width) for row in rows]
+        wholes = sorted({w for ws in named for w in ws})
+        out = table.new_zeros(len(rows), B, A)
+        if not wholes or not self.property_width:
+            return out
+        codes = self.whole_codes(wholes).detach().to(table)                            # [W, pw]
+        cuts = (codes < 1).any(-1)
+        away = table[..., self.identity_width:width, 1]                                # [B, A, pw]
+        degree = least_of_greater(away, codes) * cuts[:, None, None].to(table)         # [W, B, A]
+        position = {w: n for n, w in enumerate(wholes)}
+        for r, ws in enumerate(named):
+            if ws:
+                out[r] = degree[[position[w] for w in ws]].amax(0)
+        return out
 
     def held(self, lanes, rows):
         """Each row's lanes ``[K, ..., 2]`` with what its conjunctions add:
