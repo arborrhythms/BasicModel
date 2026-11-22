@@ -10503,7 +10503,10 @@ class SymbolExpectation(Layer):
                 how_far_back(now, value[..., start:start+4]), value[..., start+4:]), -1)
         recent_age = how_far_back(now, context[..., self.concept_dim+start:self.concept_dim+start+4])
         context = relative(context.reshape(*context.shape[:-1], 2, self.concept_dim)).flatten(-2)
-        return relative(keys), context, activation, recent_age, orders
+        # The keys stay the bank as it is held (made once a sentence); only
+        # their four age coordinates are made at each arrival.
+        key_age = how_far_back(now, keys[..., start:start+4])
+        return keys, context, activation, recent_age, orders, key_age, start
 
 
     def migrate_expectation_checkpoint(self, state_dict, prefix=''):

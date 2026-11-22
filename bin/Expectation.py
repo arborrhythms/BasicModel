@@ -226,12 +226,29 @@ class ActivationPredictor(nn.Module):
                                      nn.Linear(hidden, 2 * self.width))
         self.local = nn.Linear(4, 2)
 
-    def forward(self, keys, context, activation=None, now=None, key_orders=None):
+    def forward(self, keys, context, activation=None, now=None, key_orders=None,
+                key_age=None, age_start=None):
+        """``keys`` are the bank as it is held, made once a sentence. Where
+        ``key_age`` is given, it stands for the four coordinates of each key
+        from ``age_start`` (their stamps in the bank), so that only those are
+        made at each arrival; the key read is the whole key, normalized."""
         keys, context = keys.detach(), context.detach()
         if (keys.shape[-1] != self.width or context.shape[0] != keys.shape[0]
                 or context.shape[-1] != 2 * self.width or context.ndim not in (2, 3)):
             raise ValueError('activation predictor requires native keys and field/STM context')
-        keys = F.normalize(keys, dim=-1)
+        if key_age is None:
+            stamp = key_age = keys[..., :0]
+            age_start = 0
+        else:
+            key_age = key_age.detach().to(keys)
+            stamp = keys[..., age_start:age_start + key_age.shape[-1]]
+            if key_age.shape != stamp.shape:
+                raise ValueError('key ages must match the stamps they stand for')
+        # The norm of each key with its age in place of its stamp (as
+        # F.normalize takes it); no copy of the bank is made or kept.
+        norm = (keys.square().sum(-1) - stamp.square().sum(-1)
+                + key_age.square().sum(-1)).clamp_min(0.).sqrt().clamp_min(1e-12)
+        span = slice(age_start, age_start + key_age.shape[-1])
         activation = (keys.new_zeros(*keys.shape[:2], 2) if activation is None else activation.detach())
         if activation.shape != (*keys.shape[:2], 2):
             raise ValueError('symbol activation must retain both evidence lanes')
@@ -247,7 +264,10 @@ class ActivationPredictor(nn.Module):
             key_orders = torch.zeros(keys.shape[1], device=keys.device, dtype=torch.long)
         key_orders = key_orders.to(device=keys.device, dtype=torch.long)
         same = torch.arange(count, device=keys.device)[:, None] == key_orders[None]
-        field = torch.einsum('bnl,bnd,on->bold', activation, keys, same.to(keys))
+        weight = activation / norm[..., None]
+        field = torch.einsum('bnl,bnd,on->bold', weight, keys, same.to(keys))
+        field = torch.cat((field[..., :span.start], field[..., span] + torch.einsum(
+            'bnl,bnk,on->bolk', weight, key_age - stamp, same.to(keys)), field[..., span.stop:]), -1)
         mass = torch.einsum('bnl,on->bol', activation, same.to(keys))
         field = field / mass.clamp_min(1.)[..., None]
         now = self._empty_now.to(context).expand(keys.shape[0], -1) if now is None else now.detach().to(context)
@@ -261,9 +281,12 @@ class ActivationPredictor(nn.Module):
             key = keys[:, start:start + 1024]
             orders = key_orders[start:start + 1024]
             # Each key against every order's query, then its own order's:
-            # the backward keeps the keys as they are, not a copy for each
-            # key's query.
-            every = torch.einsum('bnd,bcld->bncl', key, query)
+            # the backward keeps the bank as it is held, not a copy for each
+            # key's query or each arrival; the ages are read on their own.
+            every = (torch.einsum('bnd,bcld->bncl', key, query)
+                + torch.einsum('bnk,bclk->bncl', key_age[:, start:start + 1024]
+                               - stamp[:, start:start + 1024], query[..., span]))
+            every = every / norm[:, start:start + 1024, None, None]
             similarity = every[:, torch.arange(len(orders), device=orders.device), orders.clamp(0, count-1)]
             similarity = similarity * ((orders >= 0) & (orders < count))[None, :, None]
             local = self.local(torch.cat((activation[:, start:start + 1024], similarity), -1))
