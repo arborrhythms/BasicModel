@@ -23,16 +23,19 @@ from test_item17_places import LESSON, minimal, model_for, nominate, words_of
 WORDS = words_of(LESSON) + COUNTING[:6]
 
 
-def recreated_what(owner, value):
+def recreated_what(owner, value, *, places=True):
     """``value`` ``[order-zero concepts]`` -> the Sigma's way back -> each
     first-Pi row's kept `.what` (its for lane), weighted by the row's value
     above zero and summed. Returns the `.what` and the four greatest rows
-    ``(value, row, is a place row)``."""
+    ``(value, row, is a place row)``. With ``places`` false the place rows'
+    `.what` is left out of the sum (fourteenth pass, step 3)."""
     sigma = owner.install_order_zero()
     basic = owner.basic_percepts
     rows = list(range(len(basic.index)))
     values = sigma.reverse(value, rows)
     what = basic.kept_percept(rows)[0][:, 0]
+    if not places:
+        what = what * torch.tensor([r not in basic.place_rows for r in rows], dtype=what.dtype)[:, None]
     top = sorted(((round(float(v), 3), r, r in basic.place_rows)
                   for r, v in enumerate(values.tolist()) if v), reverse=True)[:4]
     return (values.clamp_min(0)[:, None] * what).sum(0), top
@@ -75,7 +78,7 @@ def test_the_leaf_filled_by_its_concepts_inverse(tmp_path, monkeypatch):
         from test_item18_expect import read
         owner = model._concept_owner()
         sigma = owner.install_order_zero()
-        greatest = dict(built=0, a=0, b=0, c=0)
+        greatest = dict(built=0, a=0, b=0, c=0, a_no_places=0, b_no_places=0)
         for w in WORDS:
             leaves.clear(); fields.clear()
             with torch.no_grad():
@@ -99,7 +102,9 @@ def test_the_leaf_filled_by_its_concepts_inverse(tmp_path, monkeypatch):
                 rows = dict(built=(leaf, None),
                             a=recreated_what(owner, concept_values(owner, stimulate(owner, leaf[None, None]), 0)),
                             b=recreated_what(owner, concept_values(owner, f, reading)),
-                            c=recreated_what(owner, alone))
+                            c=recreated_what(owner, alone),
+                            a_no_places=recreated_what(owner, concept_values(owner, stimulate(owner, leaf[None, None]), 0), places=False),
+                            b_no_places=recreated_what(owner, concept_values(owner, f, reading), places=False))
                 line = [w, 'leaf .what wires held', int(leaf[:width].ne(0).sum())]
                 for key, (band, top) in rows.items():
                     mine, rival, name = scored(band)
