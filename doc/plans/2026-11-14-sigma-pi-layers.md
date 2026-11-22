@@ -9621,6 +9621,18 @@ We need to fix this in 1.7, even if it takes a few more rounds.
 - *Why not the whole field.* A sentence of 256 words has about 1,500 occurrences (§19.117, an estimate). Presenting them all is six times the read for parts of words that no look has asked for, and it is what "it can't present all" (§19.116) rules out.
 - It stays a key. If certificate 63's memory says the production batch has room, it can be raised without a change of source.
 
+### 19.119 Alec: seven answers on the table (2026-11-21)
+
+Claude's seven questions after the fourth pass of round 6d (§23.6.9), and his answers, each whole:
+
+1. *A store with no part map (`MM_text`, `MM_xor`, `MM_image`): the part map, or a code of its own?* "configure with a part map". *Decided.* The three configurations take the part map, the stopping gate's with them, and a test's fixture that has none is given one. No bar, count or rate of a gate changes with it.
+2. *The reconstruction in passes (Claude's reading: the way back once for each look, each writing its table).* "this sounds excessive, but let's test it since it will get good salience mapping. I meant multiple expect() calls for each word." *Decided.* What he meant by an expectation loss for each look is that `expect` is called at each word, which is rule 66 as built. Claude's reading of rule 77 is not his, and is tried in tests before anything is built on it, for what it does to the salience map.
+3. *The where's two periods, the finer at 256 places, or finer ones.* "let's run it this way, if was fine for reconstruction previously." *Decided:* the two periods stay.
+4. *A place's concept and `attend` (Claude: a concept whose row keeps no what has no code for `attend` to read).* "? Place (.where) should be initialized with the sinusoid-initialized .where buffer , and those should be appended to copies of the basic percept codebook vectors." *Decided, and it replaces Claude's fix.* A percept's vector is a copy of its codebook vector with its where appended, the where taken from the sinusoid's buffer. So what stands for a row, wherever a code of it is read, `attend` included, is that whole vector, what and where; a place is told from another place by its where, which is in its vector. *Mine:* the when is appended likewise; a row's kept where starts as the sinusoid's code at the place it was met.
+5. *`archer` at `reach` reads against.* "reach does not halls all of archers parts, "her" is a part. We need a powerset of percept wholes to differentiate." *Decided* (rule 43 amended). The parts of a form are its characters and every percept whole that lies inside it: `her` is a part of `archer`, and `reach` does not hold it, so `archer` is read as nothing at `reach`, as before the table. *Mine:* a percept whole here is a stored form, or the run of parts of a row; each has a part of its own in the map, carried by every form that holds that run in order (rule 43's "a part once added is carried by every form that holds that run"). Where two forms are still such that one holds every part of the other without holding it as a run, each gets a run the other does not hold (rule 56, now both ways).
+6. *An unstored ordered run read by the set of its parts, so that `00`, `01`, `10` and `11` all reconstruct as `11`.* "not acceptable". *Decided.* The order of a run is kept. By 5 a row's run of parts is a percept whole with a part of its own, so `01` and `10` are told apart in the table as they were by the read before; the retired test returns, and the test of the ordered run goes back to its old assertion.
+7. *Is "no worse than item 1.8" enough before a push, the production configuration not running?* "no, let's debug." *Decided.* The production configuration is made to run in item 1.7: the looks' memory and the stall after 32 looks (§23.6.7) are found and repaired before a push.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -9893,6 +9905,16 @@ chooses from. The old classes are not edited.
       run,* the forms admitted before it and those admitted after.
       Otherwise a form with the part would stop reading as inside a
       longer form that holds it.
+    - *Every percept whole inside a form is a part of it* (Alec,
+      §19.119: "reach does not halls all of archers parts, "her" is
+      a part. We need a powerset of percept wholes to
+      differentiate"). A stored form that lies inside a form as a
+      run is one of its parts, with a part of its own in the map;
+      so is the run of parts of a row. Two forms of the same
+      characters are then told apart by the wholes they hold, and
+      the order of a run is kept (§19.119, 6). *Mine:* where one
+      form still holds every part of another without holding it as
+      a run, each gets a run the other does not hold.
     - So parthood is read from the codes: a form found inside a form
       lies wholly inside its code. What makes something a word is no
       longer in the code; it is the level a request asks for (rule
@@ -13347,6 +13369,133 @@ main. Otherwise leave the branch and return to main.
    unfinished first; step 1's cause and what was restored; step
    2's codes and what was built; step 3; step 4's list; step 5's
    measure; ported; commits; and whether main was moved forward.
+~~~
+
+*The fifth pass* (added 2026-11-21, after §19.119):
+
+~~~
+Round 6d of item 1.7, fifth pass. Read §19.119 (Alec's seven
+answers, which decide this pass), rule 43 as amended, and §23.6.9
+(the fourth pass's return and its review). The work is on the
+branch item17-r6d2-step4-wip (2e29cea3b2). Check it out in this
+checkout, bring it up to main (doc commits only), work there, and
+at the end move main forward to it by a fast-forward if both gates
+pass and the files of step 7 pass but for test_81 and
+test_prepared_answer_boundary[True]; then remove the branch and
+leave the checkout on main. Otherwise leave the branch and return
+to main.
+
+1. A part map for every store (§19.119, 1). data/MM_text.xml,
+   data/MM_xor.xml and data/MM_image.xml take identityByParts
+   true. A test's fixture whose store has no part map (_cs() and
+   its like) is given one; where the third pass gave a fixture
+   codes by hand (with_own_codes), say whether the part map
+   replaces that or it stays, and why. Then, unported:
+   test_word_admission.py::test_29_each_reading_publishes_only_
+   its_words[MM_text.xml], the nine of test_refine_raise.py and
+   the two of test_serial_concepts.py pass, and both gates pass at
+   their bars, counts and rates as they are. Return what changed
+   in each configuration file, line by line. If a configuration's
+   width cannot hold codes that tell its forms apart, do not hide
+   it: return how many forms share a code or lie inside another
+   by accident, make the least change of widths that tells them
+   apart, and say exactly what it was (rule 43: "no configuration
+   is resized" was written for the default layout; this is Alec's
+   word for these three).
+
+2. Every percept whole inside a form is a part of it (§19.119, 5
+   and 6; rule 43 as amended). In the part map
+   (WordIdentity: words, atoms, atom_code, inside, tightest,
+   against_atoms; BasicPercepts._occurrence_what, _form_spans,
+   _spelled_spans), a stored form that lies inside a form as a
+   run is one of that form's parts, with a part of its own; so is
+   the run of parts of a row that spells no stored form. An
+   occurrence's parts half holds the part of every such whole
+   found in it, in order. Where one stored form still holds every
+   part of another without holding it as a run, each gets a run
+   the other does not hold. Then:
+   (a) certificate 54 (c): archer at reach reads nothing (0), its
+   assertion before the third pass;
+   (b) test_item20_round5_percepts.py::test_basic_read_preserves_
+   ordered_part_witnesses_after_native_fusion goes back to
+   [1, 0, 0];
+   (c) the retired test_concept_output.py::test_contained_ordered_
+   group_reconstructs_at_its_extent returns from
+   /tmp/item17-r6d-2026-11-21/ and passes: 00, 01, 10 and 11
+   reconstruct as themselves;
+   (d) certificates 46, 47 and 48 again, with their printed counts
+   on the dictionary (words that share a code; codes inside
+   another's by accident on the for lane; the count of parts of a
+   form, greatest and mean) before and after. More parts for a
+   form fill a half of 64 wires sooner: if accidental containment
+   rises, return the numbers and do not widen anything.
+
+3. A whole over a bracket.
+   (a) test_concept_memberships.py::test_a_located_part_need_not_
+   pervade_but_the_whole_property_must: over the bracket 48 48 the
+   row's whole is witnessed outside at every byte and the read
+   before gave against. The table's wholes columns have two lanes:
+   the against lane holds the degree to which each whole is
+   witnessed outside over the occurrence (as the for lane holds
+   the degree it holds), and a row reads against at an occurrence
+   that holds its parts to the degree its own wholes are so
+   witnessed there, bare bracket or not. A mixed bracket still
+   tells nothing. The test passes on its old assertion.
+   (b) test_definition_integrity.py::test_word_concepts_exist_
+   before_grounded_case_discovery asserts "both" at 01 and 10.
+   It passed at f4b00524ee and has failed since the first pass.
+   Read the source at f4b00524ee (a clone) and find what gave
+   both there, by its function and its values on 01; then give it
+   from the table, by (a) if that is what it was. If it cannot be
+   had without the mixed extent, return what you found and build
+   nothing for it.
+
+4. A row's vector is its what with its where and when appended
+   (§19.119, 4). What stands for a row wherever a code of it is
+   read is the whole vector: its what, and beside it, on
+   coordinates of their own, its kept where and its kept when
+   (PlaceEntries: the kept values, where the row's weight on that
+   wire is above nothing; nothing where it is dropped). A row's
+   kept where starts as the sinusoid's code at the place it was
+   met (WhereRegistry.code), as the cone writes it for a place.
+   The derived code of the similarity codebook
+   (FeatureTable.codes, MereologicalCodes.derive) is that vector,
+   so SentenceLooks.requested passes it to attend: a place's
+   concept is told from another's by its where. A place's what is
+   the what its row keeps (the 22 of §23.6.9), and nothing where
+   it keeps none; the fourth pass's code of nothing for a place
+   with no what is this rule's case and no rule of its own. Say
+   where the coordinates for the where and the when are in the
+   codebook's width, and what a configuration too narrow for them
+   does.
+
+5. The measure, recorded and no bar: the places' measure once
+   (its three starts are one sample: say so in what it prints);
+   the request on each place's concept and the where match at
+   each look of the first sentence; the codes' greatest
+   difference between two places; the lesson's script with
+   --runs 6. Add no mechanism, and tune no weight or rate.
+
+6. Left failing, not skipped, not ported: test_81 and
+   test_prepared_answer_boundary[True].
+
+7. Tests: both gates before any edit and at the end; the files
+   the fourth pass ran, with the files this pass touches and
+   every test file that loads an MM configuration (grep test/
+   for MM_text, MM_xor, MM_image); certificates 30 to 43, 46 to
+   48, 54, 61 to 63 and 33 (b); the lesson's script. Claude runs
+   the list.
+
+8. Return as scratch-1.7/r6d_return_5.md, what fails or is
+   unfinished first; step 1's changes to the configurations and
+   the fixtures; step 2's parts and certificate 46's counts
+   before and after; step 3 (b)'s finding; step 4's coordinates;
+   step 5's measure; ported and restored; commits; and whether
+   main was moved forward.
+
+Not in this pass: the production configuration (the next pass,
+§19.119, 7); the trial of the reconstruction once for each look
+(§19.119, 2).
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
