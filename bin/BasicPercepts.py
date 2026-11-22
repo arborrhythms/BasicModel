@@ -143,7 +143,10 @@ def held_at(bank, table, codes=None):
     parts wires over the row's parts; ``whole``, the least, over the wires
     the row's wholes cut, of one less the percept's wholes wire; ``added``,
     the greatest of the percept's parts wires over the parts the row's
-    against lane names (a part its nearer holders add). A row's own code
+    against lane names (a part its nearer holders add); ``outside``, the
+    greatest, over the wires the row's wholes cut, of the percept's wholes
+    wire on the against lane (the degree to which a whole that cuts it is
+    witnessed outside over the percept). A row's own code
     is graded too: ``max(wire, 1 - code)`` stands for a part it holds to the
     degree ``code``. At codes of 0 and 1 these are the read of
     :meth:`BasicPercepts.read_points`."""
@@ -154,7 +157,8 @@ def held_at(bank, table, codes=None):
     part = least_of_greater(point[..., :iw], 1 - row[:, :iw])
     whole = least_of_greater(1 - point[..., iw:], row[:, iw:])
     added = 1 - least_of_greater(1 - point[..., :iw], 1 - against[:, :iw])
-    return part, whole, added
+    outside = 1 - least_of_greater(1 - table[..., iw:width, 1].to(codes), row[:, iw:])
+    return part, whole, added, outside
 
 
 class PlaceEntries(nn.Module):
@@ -830,6 +834,7 @@ class BasicPercepts(nn.Module):
         real = spans[..., 1] > spans[..., 0]
         codes = self.value_codes.new_zeros(B, O, self.width)
         held = codes.new_ones(B, O, self.property_width)
+        outside = codes.new_zeros(B, O, self.property_width)
         identity = getattr(self.native, 'identity', None)
         if identity is not None and O:
             text = raw.tolist()
@@ -876,8 +881,14 @@ class BasicPercepts(nn.Module):
             whole_codes = self.whole_codes(list(wholes)).to(codes)                          # [W, pw]
             bound = least_of_greater(1 - degree, whole_codes.T).permute(1, 2, 0)             # [B, O, pw]
             held = torch.minimum(held, bound)
+            # A whole witnessed outside to the degree ``g`` over every byte
+            # spanned puts ``g`` on the against lane of each wire it cuts.
+            away = codes.new_zeros(B, O, len(wholes))
+            away = away.index_put((real.nonzero(as_tuple=True)),
+                                  (evidence[..., 1] * complete[..., None]).to(codes))
+            outside = 1 - least_of_greater(1 - away, whole_codes.T).permute(1, 2, 0)
         codes[..., self.identity_width:] = held
-        return codes * real[..., None]
+        return codes * real[..., None], outside * real[..., None]
 
     def bank_codes(self, rows):
         """Each row's code on two lanes ``[rows, 2, width]``, read from the
@@ -1038,10 +1049,12 @@ class BasicPercepts(nn.Module):
         wholes = tuple(dict.fromkeys(whole for row in rows if row not in self.place_rows
                                      and row not in self.conjunctions for whole in self.occurrences[row][1]
                                      if whole >= -self.identity_width))
-        what = self._occurrence_what(percepts, spans, wholes)
+        what, outside = self._occurrence_what(percepts, spans, wholes)
         dtype = options.get('dtype') or what.dtype
+        # The against lane: nothing on the parts half; on the wholes half, the
+        # degree to which each whole is witnessed outside over the occurrence.
         what = torch.stack((what, torch.cat((torch.zeros_like(what[..., :self.identity_width]),
-                                             1 - what[..., self.identity_width:]), -1)), -1)
+                                             outside), -1)), -1)
         registry, when_encoding = options.get('registry'), options.get('when_encoding')
         place = torch.where(real, spans[..., 0], -1)
         wires = (registry.encode('text', place).detach().to(what) if registry is not None
@@ -1092,13 +1105,16 @@ class BasicPercepts(nn.Module):
             return out.scatter_reduce(2, slot[None, ..., None].expand_as(x), x, 'amax')[:, :, :K]
         B, A = presence.shape
         if rows:
-            part, whole, added = held_at(bank, look.table)
+            part, whole, added, outside = held_at(bank, look.table)
             factor = self.place_factor(look.table, rows)
             at = presence[None] * factor
-            # Only an occurrence of its own tells against what it holds.
+            # Only an occurrence of its own tells against what it holds by
+            # what it lacks; any occurrence that holds a row's parts tells
+            # against it to the degree its wholes are witnessed outside there.
             told = (at if bank.holder is None
                     else at * (bank.holder.gather(1, look.index) & look.filled).to(at)[None])
-            lanes = list(torch.stack((part * whole * at, part * torch.maximum(1 - whole, added) * told), -1))
+            unheld = torch.maximum((1 - whole) * told, outside * at)
+            lanes = list(torch.stack((part * whole * at, part * torch.maximum(unheld, added * told)), -1))
             # Members come before the conjunctions over them.
             members = [('bp', r) for r in rows]
             for n, row in enumerate(rows):
@@ -1107,7 +1123,7 @@ class BasicPercepts(nn.Module):
             events = self.held(torch.stack(lanes), rows)
             values = by_reading(events)
             boundaries = torch.stack((by_reading(torch.stack((part * at, torch.zeros_like(at)), -1)),
-                                      by_reading(torch.stack((part * whole * at, part * (1 - whole) * told), -1))))
+                                      by_reading(torch.stack((part * whole * at, part * unheld), -1))))
         else:
             events = look.table.new_zeros(0, B, A, 2)
             values = look.table.new_zeros(0, B, K, 2)
