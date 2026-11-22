@@ -260,8 +260,11 @@ class ActivationPredictor(nn.Module):
         for start in range(0, keys.shape[1], 1024):
             key = keys[:, start:start + 1024]
             orders = key_orders[start:start + 1024]
-            selected = query[:, orders.clamp(0, count-1)]
-            similarity = torch.einsum('bnd,bnld->bnl', key, selected)
+            # Each key against every order's query, then its own order's:
+            # the backward keeps the keys as they are, not a copy for each
+            # key's query.
+            every = torch.einsum('bnd,bcld->bncl', key, query)
+            similarity = every[:, torch.arange(len(orders), device=orders.device), orders.clamp(0, count-1)]
             similarity = similarity * ((orders >= 0) & (orders < count))[None, :, None]
             local = self.local(torch.cat((activation[:, start:start + 1024], similarity), -1))
             scores.append(local)
