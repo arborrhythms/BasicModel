@@ -529,6 +529,7 @@ def test_nested_wholes():
         identity.observe_nested(word)
     assert not identity.nested
     before = {word: identity.form(word).clone() for word in vocabulary+words}
+    held = {word: identity.words[word] for word in vocabulary+words}
     with identity.nested_lesson(b'ed'):
         for word in vocabulary+words:
             identity.observe_nested(word)
@@ -538,8 +539,13 @@ def test_nested_wholes():
                 pass
     assert set(identity.nested) == {b'walked'}
     assert identity._marker_pattern is None
-    # The record joins no codes: no form changes, walked included.
-    assert all(torch.equal(identity.form(word), value) for word,value in before.items())
+    # The record joins no codes. The marker the lesson names is admitted,
+    # and a stored form is a part of its own (rule 43): a form that holds
+    # it as a run takes that one part, and nothing else of any form changes.
+    changed = {word for word,value in before.items() if not torch.equal(identity.form(word), value)}
+    assert changed == {word for word in before if b'ed' in word} == {b'walked'}
+    assert all(identity.words[word] == held[word] + (('part', 'ed'),) for word in changed)
+    assert all(identity.words[word] == held[word] for word in before if word not in changed)
     # Merely allocating a stem is not witnessing it in a lesson's input.
     late = WordIdentity(RadixLayer(64))
     late.admit(b'walk')

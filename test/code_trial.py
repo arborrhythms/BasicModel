@@ -199,7 +199,12 @@ class Coder:
             if atom in self.added:
                 self.held[atom] += 1
         self.whole_of[form] = self.wholes_for(form)
-        self._settle([form])
+        carriers = []
+        if self.layout == 'built' and len(form) > 1 and form not in self.added:
+            # As built, rule 43 as amended: a stored form of several
+            # characters is a part of its own, carried by its holders.
+            carriers = [w for w in self._add_part(form, ('own', form)) if w != form]
+        self._settle(carriers + [form])
 
     def admit_all(self, forms):
         for form in forms:
@@ -1049,6 +1054,11 @@ class LinkedCoder:
                 self.keys[word] = key
         return affected
 
+    def _own_part(self, form):
+        """The stored forms that take ``form``'s own part as it is admitted:
+        none here (the source before rule 43 was amended)."""
+        return []
+
     def admit(self, form, index=None):
         if form in self.order:
             return
@@ -1057,11 +1067,12 @@ class LinkedCoder:
         self.words.append(form)
         if len(self.words) > len(self.codes):
             self.codes = np.concatenate((self.codes, np.zeros((max(1024, len(self.codes)), self.limbs), dtype=np.uint64)))
+        carriers = self._own_part(form)
         self.parts[form] = self.atoms_of(form)
         for atom in self.parts[form]:
             if atom not in self.atoms:
                 self.atoms[atom] = self.drawn(atom, self.ones)
-        affected = self._settle([form])
+        affected = self._settle(carriers + [form])
         for w in affected | {form}:
             self._write(w)
         if self.repair:
@@ -1235,7 +1246,8 @@ class LinkedCoder:
 class SourceCoder(LinkedCoder):
     """The stand-in brought to the source's repair (rule 61, as round 3d
     built it in ``WordIdentity._separate_inner``): ``ch``, with three
-    things the trial's ``ch`` lacks.
+    things the trial's ``ch`` lacks, and rule 43 as amended (every stored
+    form a part of its own).
 
     - Its keys are kept fresh after a repair, so rule 56's next part sees
       the codes as they are.
@@ -1259,12 +1271,26 @@ class SourceCoder(LinkedCoder):
             self.keys[form] = new
             self.forms[new] = form
 
+    def _own_part(self, form):
+        # Rule 43 as amended: a stored form of several characters is a part
+        # of its own, carried by every stored form that holds it as a run.
+        if len(form) < 2 or form in self.added:
+            return []
+        self.added[form] = ('own', form)
+        carriers = sorted((h for h in self._holders_of_run(form) if h != form), key=self.order.__getitem__)
+        for h in carriers:
+            self.parts[h] = self.parts[h] | {form}
+        return carriers
+
     def _opposed(self, inner):
         holders = [h for h in self._holders_of_run(inner) if h != inner]
         if not holders:
             return 0
         least = min(map(len, holders))
-        added = set().union(*(self.parts[h] for h in holders if len(h) == least)) - self.parts[inner]
+        # A holder's part that holds the inner form itself (its own part) is
+        # found only where the characters it adds are: it opposes nothing.
+        added = {a for a in set().union(*(self.parts[h] for h in holders if len(h) == least)) - self.parts[inner]
+                 if inner not in a}
         mask = 0
         for atom in added:
             mask |= self.atom_mask(atom)

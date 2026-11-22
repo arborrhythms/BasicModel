@@ -103,11 +103,12 @@ def test_a_string_that_is_no_form():
 
 def test_a_part_once_added_is_carried_by_every_form_that_holds_it():
     store, identity = lesson_store()
-    assert 'aa' in identity.added
-    later = identity.admit(b'baaz')
-    assert identity.atoms[('part', 'aa')] in later
+    # A stored form is a part of its own (rule 43): `at` is an added part.
+    assert 'at' in identity.added
+    later = identity.admit(b'bats')
+    assert identity.atoms[('part', 'at')] in later
     for word, parts in identity.words.items():
-        assert (('part', 'aa') in parts) == ('aa' in word.decode())
+        assert (('part', 'at') in parts) == ('at' in word.decode())
     # No stale key or trie entry: every held key names its own row.
     for word, key in identity.word_keys.items():
         row = identity.word_rows[word]
