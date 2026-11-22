@@ -9834,6 +9834,8 @@ Claude's reading, each part *mine* until he confirms it:
 - *"Stored across LTM references":* a successor learned once and kept by the references of LTM1 (`ref()`) would chain into a sequence. Not in the toy.
 - *Open in the reading:* whether the request in the input is the request as given (over concepts) or as answered (the `.where` and code of the word the look returned, §19.125). The toy tries both.
 
+*His correction, the same day:* ""Unused node one" meaning our current architecture, augmented with first/next and a memory of the what/where at the pi closest to the input that did the previous filtering." So Claude's first point was wrong: nothing is a separate empty concept. It is the architecture as it stands, with three additions: the "first" concept, the "next" concept, and a memory, at the first Pi (the Pi nearest the input), of the `.what` and the `.where` it selected at the previous look. That memory is the request "in the input": form B below (as answered), held where the filtering was done, and not the request as given over concepts. Form A stays in the toy only as the comparison.
+
 *Decided:* a toy, in tests only, step 7 of the tenth pass.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
