@@ -357,9 +357,18 @@ def _policy_training_probe(m, opt, questions):
     path_cost = m._sentence_path_cost
     def reconstruction_probe(*args, **kwargs):
         value = path_cost(*args, **kwargs)
-        loss = m._sentence_cost_registry.total(objective='reconstruction')
+        # The reconstruction teaches the policy only by its charge of the
+        # undone steps (sixteenth pass, item 4); nothing else in it does.
+        from Layers import Error
+        registry = m._sentence_cost_registry
+        rest = Error(row_mask=registry.row_mask)
+        rest._terms = {name: term for name, term in registry._terms.items()
+                       if name != 'reconstruction.walk_policy'}
+        rest._disabled = set(registry._disabled)
+        loss = rest.total(objective='reconstruction')
         observed['reconstruction'].append(torch.autograd.grad(
-            loss.sum(), params, allow_unused=True, retain_graph=True))
+            loss.sum(), params, allow_unused=True, retain_graph=True) if loss is not None and loss.requires_grad
+            else (None,) * len(params))
         return value
     m._sentence_path_cost = reconstruction_probe
     def probe(*args,**kwargs):

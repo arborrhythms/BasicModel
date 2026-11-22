@@ -75,15 +75,183 @@ def sentence_generated(model, record, **walk_options):
                           when=record.open_field.when[:, :1])
 
 
-def reconstruct_generation(model, record, target, active):
-    """One grammar inverse; only the whole path chooses or credits a departure."""
+def walk_action(language, kind, operation):
+    """The walk's action for a recorded step, by its rule's name; ``None``
+    where the walk has no such rule (a bind, a rule the walk lacks)."""
+    if kind == 1:
+        name = language._compose_binary_rules[operation].method_name
+        names = [rule.method_name for rule in language._generate_binary_rules]
+        return names.index(name) if name in names else None
+    name = language._compose_unary_rules[operation].method_name
+    names = [rule.method_name for rule in language._generate_unary_rules]
+    return len(language._generate_binary_ops) + names.index(name) if name in names else None
+
+
+def undone(model, record, programs):
+    """The idea taken apart (§19.134, 1): the recorded forest undone from
+    its roots, each step by its rule's inverse
+    (:func:`DerivationReconstruction.reconstruct`), in the reverse of the
+    order of composition, down to the leaves. Returns, per row, the nodes in
+    the walk's order (``('step', kind, operation, action, parent)`` and
+    ``('leaf', position, source, value)``) and the leaves ``[B, W, D]``."""
+    from DerivationReconstruction import reconstruct as undo
+    language = model.languageSpace
+    steps = []
+    recovered, _, _ = undo(language, record, programs,
+                           lambda b: model._sentence_leaf_positions(record, b), steps=steps)
+    nodes = [[] for _ in range(len(record.root))]
+    for entry in steps:
+        if entry[0] == 'step':
+            _, b, kind, operation, parent = entry
+            nodes[b].append(('step', kind, operation, walk_action(language, kind, operation), parent))
+        else:
+            _, b, position, source = entry
+            nodes[b].append(('leaf', position, source, recovered[b, position]))
+    return nodes, recovered
+
+
+def said(model, record, nodes, like):
+    """The leaves of :func:`undone` said by the walk's writer
+    (:func:`OutputOccurrences.generated`), each at its own reading's place
+    (the open field's ``.where`` and wires at the leaf's word). The trace
+    is the walk's: the undone steps as its actions, leaves as STOP, in its
+    order (roots newest first, the right child first); a step the walk has
+    no action for (a bind) is passed through."""
+    from Generative import walk_bank, WALK_FEATURE_WIDTH
+    from OutputOccurrences import generated
+    language = model.languageSpace
+    B, D = len(nodes), like.shape[-1]
+    stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
+    field = record.open_field
+    # The leaves in the input's order (the trace keeps the walk's order; the
+    # extension read from it is not this reconstruction's).
+    leaves = [sorted((node for node in row if node[0] == 'leaf'), key=lambda node: node[1]) for row in nodes]
+    W = max([len(row) for row in leaves] + [1])
+    words = like.new_zeros(B, W, D)
+    where = field.where.new_zeros(B, W, 2)
+    wires = None if field.wires is None else field.wires.new_zeros(B, W, field.wires.shape[-1])
+    for b, row in enumerate(leaves):
+        for w, (_, position, _, value) in enumerate(row):
+            words[b, w] = value
+            where[b, w] = field.where[b, position]
+            if wires is not None:
+                wires[b, w] = field.wires[b, position]
+    counts = torch.tensor([len(row) for row in leaves], device=like.device)
+    # A binary step the walk has no rule for leaves its row as leaves alone.
+    whole = [all(node[0] == 'leaf' or node[3] is not None or
+                 node[1] == 2 or
+                 language._compose_binary_rules[node[2]].method_name == 'bind' for node in row) for row in nodes]
+    taken = [[node for node in row if node[0] == 'leaf' or node[3] is not None] if ok else
+             [node for node in row if node[0] == 'leaf'] for row, ok in zip(nodes, whole)]
+    T = max([len(row) for row in taken] + [1])
+    actions = torch.full((B, T), -1, dtype=torch.long, device=like.device)
+    for b, row in enumerate(taken):
+        for t, node in enumerate(row):
+            actions[b, t] = stop if node[0] == 'leaf' else node[3]
+    depths = torch.tensor([int(record.end_depth[b]) if ok and any(node[0] == 'step' for node in row) else
+                           len(leaves[b]) for b, (row, ok) in enumerate(zip(taken, whole))],
+                          device=like.device).clamp_min(0)
+    cw = int(getattr(language, '_generate_policy_width', D))
+    flag = torch.ones(B, dtype=torch.bool, device=like.device)
+    trace = (actions, torch.zeros_like(actions, dtype=torch.bool), ~flag, like.new_zeros(B, 3), flag, None,
+             like.new_zeros(B, T, stop + 1, WALK_FEATURE_WIDTH), like.new_zeros(B, T, cw))
+    bank = walk_bank(model, record.end_slots, record.primed)
+    generation = generated(model, words, counts, ~flag, bank, trace, when=field.when[:, :1],
+                           depths=depths, places=(where, wires))
+    return generation, taken
+
+
+def policy_charge(model, record, generation, taken, errors, active):
+    """The walk's policy taught by reconstruction (§19.134; Claude's first
+    choice, provisional on Alec): at each undone node, the policy's
+    probability of the recorded step (STOP at a leaf), on the menu the walk
+    reads there (:func:`Generative.inverse_menu`), charged as its cross
+    entropy over that of the uniform choice among the legal actions. A
+    recorded step not legal on that menu is not charged, and counted."""
+    from Generative import inverse_menu, propose_actions, in_cube
+    from FormCentroids import prepare_inverse
+    from ObjectiveOwnership import policy_objective
+    language = model.languageSpace
+    T = max([len(row) for row in taken] + [0])
+    if not T or language.generate_policy is None:
+        return None
+    bank = generation.bank
+    require = (not model._aligned_serial_word_mode()
+               or (bank.meaning_start is not None and bank.meaning_start < bank.codes.shape[-1]))
+    whole = prepare_inverse(bank.form_wholes)
+    with torch.no_grad():
+        proposed = propose_actions(language, bank.codes.detach(), bank.valid, groups=bank.verb_groups,
+            terminal_valid=bank.terminal_valid, constituents=record.constituents,
+            constituent_valid=record.constituent_valid, limit=model.reconstruction_basis_limit,
+            whole_bank=whole) if require else None
+    D = bank.codes.shape[-1]
+    cost = bank.codes.new_zeros(len(taken))
+    uniform = torch.zeros_like(cost)
+    stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
+    unheld = charged = 0
+    for t in range(T):
+        live = torch.tensor([t < len(row) for row in taken], device=cost.device)
+        parent = torch.stack([(row[t][4] if row[t][0] == 'step' else row[t][3]).reshape(-1)[:D].detach()
+                              if t < len(row) else cost.new_zeros(D) for row in taken])
+        action = torch.tensor([(stop if row[t][0] == 'leaf' else row[t][3]) if t < len(row) else stop
+                               for row in taken], device=cost.device)
+        # The walk reads its menu only at a value in the cube (each lane in
+        # [0, 1]); a recorded node outside it is not charged, and counted.
+        outside = live & ~in_cube(parent)
+        unheld += int(outside.sum())
+        live = live & ~outside
+        parent = torch.where(live[:, None], parent, 0.)
+        with torch.no_grad():
+            menu = inverse_menu(language, parent, live, basis=bank.codes.detach(), basis_valid=bank.valid,
+                priming=bank.weights, limit=model.reconstruction_basis_limit,
+                case_bank=None if bank.case_bank is None else bank.case_bank.detached(),
+                constituents=record.constituents, constituent_valid=record.constituent_valid,
+                constituent_families=record.constituent_families, require_symbols=require,
+                terminal_valid=bank.terminal_valid, whole_bank=whole, action_candidates=proposed)
+        legal = menu.admissible
+        logits = language.generate_policy_logits(parent, menu.features).masked_fill(~legal, -torch.inf)
+        _, logits = language.choose_generate(torch.where(legal.any(-1, keepdim=True), logits, 0.),
+                                             return_logits=True)
+        held = live & legal.gather(1, action[:, None])[:, 0]
+        unheld += int((live & ~held).sum())
+        charged += int(held.sum())
+        chosen = torch.log_softmax(logits, -1).gather(1, action[:, None])[:, 0]
+        cost = cost + torch.where(held, -chosen, 0.)
+        uniform = uniform + torch.where(held, legal.sum(-1).clamp_min(1).to(cost).log(), 0.)
+    model._last_walk_policy = dict(charged=charged, unheld=unheld)
+    errors.error('reconstruction.walk_policy', cost, uniform, mask=active, category='reconstruction',
+                 objective=policy_objective(model, 'generate', 'reconstruction'), side='R')
+    return cost
+
+
+def reconstruct_generation(model, record, target, active, *, programs=None, errors=None):
+    """The idea's reconstruction: its recorded composition undone
+    (:func:`undone`), the leaves said at their own places (:func:`said`)
+    and put back through the perceptual inverse (`realize`); the walk's
+    policy is charged the recorded steps (:func:`policy_charge`)."""
     from OutputOccurrences import realize
-    options = getattr(model, '_path_reconstruction_options', None)
-    generation = sentence_generated(model, record, **dict(options or {}, return_candidates=True))
+    from dataclasses import replace
+    nodes, recovered = undone(model, record, programs)
+    generation, taken = said(model, record, nodes, recovered)
+    # A row with no rule applied (or no record) has nothing to undo: its
+    # leaves are its basic-level concepts, the open field itself, and its
+    # reconstruction is the perceptual inverse alone (§19.134).
+    bare = torch.tensor([not any(node[0] == 'step' for node in row) for row in nodes],
+                        device=record.root.device)
+    if bool(bare.any()):
+        own = record.open_field
+        pick = lambda first: select_fields((first, own), bare.long())
+        generation = replace(generation, field=pick(generation.field),
+                             realization_field=pick(generation.realization_field),
+                             reconstruction_field=pick(generation.reconstruction_field))
+    model._sentence_bare = bare
     reverse = realize(model, generation)
     model._sentence_generation = generation
+    model._sentence_undone = nodes
     model._sentence_walk_residuals.append(generation.trace[3])
     model._last_decoder_comparison = None
+    if errors is not None:
+        policy_charge(model, record, generation, taken, errors, active)
     return generation, reverse
 
 
@@ -98,7 +266,8 @@ def select_fields(fields, winners):
     ids = sorted({int(cid) for b, field in enumerate(picked) for cid in
         (field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b])})
     width = max(field.evidence.shape[2] for field in picked)
-    evidence, where, when = [], [], []
+    evidence, where, when, wires = [], [], [], []
+    placed = all(field.wires is not None for field in picked)
     for b, field in enumerate(picked):
         column = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b]
         lookup = {int(cid): i for i, cid in enumerate(column)}
@@ -108,8 +277,11 @@ def select_fields(fields, winners):
         evidence.append(F.pad(values[indices], (0, 0, 0, width - values.shape[1])))
         where.append(F.pad(field.where[b], (0, 0, 0, width - field.where.shape[1])))
         when.append(F.pad(field.when[b], (0, 0, 0, width - field.when.shape[1])))
+        if placed:
+            wires.append(F.pad(field.wires[b], (0, 0, 0, width - field.wires.shape[1])))
     return ConceptualField(fields[0].concept_ids.new_tensor(ids), torch.stack(evidence, 1),
-                           torch.stack(where), torch.stack(when), None)
+                           torch.stack(where), torch.stack(when), None,
+                           torch.stack(wires) if placed else None)
 
 
 def native_target(model, field):
@@ -194,7 +366,7 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     return wanted
 
 
-def reconstruct(model, record, errors, active, *, previous=None, silent=None):
+def reconstruct(model, record, errors, active, *, programs=(), previous=None, silent=None):
     """Input and order-zero reconstructions share exactly one reverse chain.
     A silent sentence (``silent`` ``[B]``, rule S -> NULL) puts back NULL at
     every place, and that is scored against the sentence."""
@@ -205,7 +377,8 @@ def reconstruct(model, record, errors, active, *, previous=None, silent=None):
         first, _ = previous
     target = charge(model, errors, 'reconstruction_reverse', first, field, active)
     model._sentence_reverse = (first, target)
-    generation, second = reconstruct_generation(model, record, target, active)
+    generation, second = reconstruct_generation(model, record, target, active,
+                                                programs=programs, errors=errors)
     if silent is not None and bool(silent.any()):
         from Interpret import SilenceLayer
         put = second._reconstruction_percepts

@@ -486,12 +486,16 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     trace = (torch.zeros(1, returned.shape[1], dtype=torch.long), torch.zeros(1, returned.shape[1], dtype=torch.bool),
         torch.tensor([False]), words.new_zeros(1, 3), torch.tensor([True]),
         words.new_zeros(1, 1, 1, 9), words[:, :1])
-    def proposal(model, record, **options):
+    # The undone composition's leaves are ``returned`` (sixteenth pass:
+    # reconstruction undoes the composition; one recorded step here).
+    def undone(model, record, programs):
+        return [[('step', 1, 0, None, root)]], returned
+    def said(model, record, nodes, like):
         return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
-                         when=record.open_field.when[:, :1], depths=record.end_depth)
+                         when=record.open_field.when[:, :1], depths=record.end_depth), [[]]
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
-    with patch('SentenceField.sentence_generated', proposal):
+    with patch('SentenceField.undone', undone), patch('SentenceField.said', said):
         cost, *_ = BasicModel._sentence_path_cost(model, ((end,), lang, None), 0, torch.tensor([True]))
     return cost, model._sentence_cost_registry.breakdown()
 

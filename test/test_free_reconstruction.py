@@ -59,7 +59,9 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert calls
         terms = {name:term for registry in registries for name,term in registry._terms.items()}
         reconstruction = {name for name in terms if name.startswith('reconstruction.')}
-        assert reconstruction - {'reconstruction.walk_credit'} == {'reconstruction.free_bytes', 'reconstruction.coverage',
+        # The walk's policy is charged the undone steps (sixteenth pass, item 4).
+        assert reconstruction - {'reconstruction.walk_credit', 'reconstruction.walk_policy'} == {
+            'reconstruction.free_bytes', 'reconstruction.coverage',
             'reconstruction.free_percept', 'reconstruction.definition_fold',
             'reconstruction.walk_residual.form', 'reconstruction.walk_residual.for',
             'reconstruction.walk_residual.against'}

@@ -50,7 +50,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True):
         _sentence_order_zero_field=None, _sentence_generation=None,
         _sentence_reverse=None, _sentence_order_zero_reverse=None,
         _sentence_observation=lambda *args, record, incoming_trust: dict(observation, record=record),
-        _reconstruct_trial=lambda *args, silent=None: (root[:, None], root[:, 0], root[:, 0],
+        _reconstruct_trial=lambda *args, silent=None, programs=(): (root[:, None], root[:, 0], root[:, 0],
                                          active, root[:, 0]))
     lang = [None]*12
     lang[6], lang[10], lang[11] = root[:, None], root.repeat(1, 3)[:, None], active[:, None]

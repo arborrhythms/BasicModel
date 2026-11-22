@@ -270,7 +270,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
                                                                   draw['reconstruction_round'], reuse=(draw['walk'] >= 4) | (draw['walk'] < 0))
                 model._sentence_walk_residuals = []
                 rebuilt = reconstruct(model, observation['record'], registry, active,
-                                      previous=observation['reverse'])
+                                      previous=observation['reverse'], programs=observation['entries'])
                 observation.update(generation=model._sentence_generation,
                     order_zero_field=model._sentence_generation.field,
                     order_zero_reverse=model._sentence_order_zero_reverse,

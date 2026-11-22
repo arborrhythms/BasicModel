@@ -142,7 +142,39 @@ def _transport_reread(value, operand, published, domain, layout):
     return torch.cat((form, evidence), -1)
 
 
-def reconstruct(language, record, programs, positions, stm=None):
+def sources(language, kind, operation):
+    """Where each child of one step comes from, as :func:`inverse_step`
+    dispatches: ``'record'`` (the journal's frame, the witness it is given),
+    ``'idea'`` (recovered from the parent) or ``'none'`` (no inverse: a
+    zero)."""
+    if kind == 2:
+        op = language._tree_layer(1).unary_ops[operation]
+        op = getattr(op, 'gl', op)
+        return ('record',) if getattr(op, 'retains_operand', False) else ('idea',)
+    op = language._tree_layer(2).ops[operation]
+    op = getattr(op, 'gl', op)
+    if getattr(op, 'field_operand', None) == 2:
+        return ('record',)
+    if getattr(op, 'meaning_layout', None) is not None and callable(getattr(op, 'compose_case_meaning', None)):
+        return ('record', 'idea')
+    if getattr(op, 'meaning_layout', None) is not None and (
+            getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None or
+            getattr(op, 'meaning_basis', None) is not None or op.meaning_rule == 'sum'):
+        right = getattr(op, 'meaning_action', None) is not None or op.meaning_head_role == 0
+        return ('idea', 'record') if right else ('record', 'idea')
+    inverse = getattr(op, 'inverse_kind', None)
+    if inverse == 'search':
+        return ('none', 'none')
+    return ('record', 'idea') if inverse in ('right', 'surface') else ('idea', 'record')
+
+
+def reconstruct(language, record, programs, positions, stm=None, steps=None):
+    """The recorded forest undone from its roots, each step by its rule's
+    inverse. ``steps`` (a list), where given, receives each node as it is
+    undone, roots first: ``('step', row, kind, operation, parent)`` and
+    ``('leaf', row, position, source)``, a leaf's source being the record
+    where a step on its path gave it as the witness, none where a step had
+    no inverse, else the idea."""
     B, W, D = record.word_values.shape
     recovered = torch.zeros_like(record.word_values)
     defined = torch.zeros_like(recovered, dtype=torch.bool)
@@ -188,13 +220,15 @@ def reconstruct(language, record, programs, positions, stm=None):
             raise ValueError('the recorded derivation must have the actual forest depth')
         # The compose forest is oldest first; STM's occupied slots are newest first.
         pending = [(node, values[depth-1-i:depth-i],
-                    torch.ones_like(values[depth-1-i:depth-i], dtype=torch.bool), True)
+                    torch.ones_like(values[depth-1-i:depth-i], dtype=torch.bool), True, 'idea')
                    for i, node in enumerate(forest)]
         while pending:
-            node, parent, coordinates, exact_path = pending.pop()
+            node, parent, coordinates, exact_path, origin = pending.pop()
             coordinates = coordinates & torch.isfinite(parent)
             if node[0] == 0:
                 position = source[node[1]]
+                if steps is not None:
+                    steps.append(('leaf', b, int(position), origin))
                 recovered[b, position] = parent[0]
                 defined[b, position] = coordinates[0]
                 # A learned map can approach a numerical rail: no exact
@@ -229,11 +263,14 @@ def reconstruct(language, record, programs, positions, stm=None):
             else:
                 band = None
             from ChunkJournal import action_context
+            if steps is not None:
+                steps.append(('step', b, kind, operation, parent))
             children = inverse_step(language, kind, operation, parent,
                 frame, coordinates=coordinates,
                 case_bank=None if bank is None else bank.for_stream(b), live_witness=native_exact,
                 action_context=action_context(program, index),
                 **inverse_context(program, index))
+            given = sources(language, kind, operation)
             for role, (child, (value, domain)) in enumerate(zip(node[3:], children, strict=True)):
                 operand = frame[role:role+1]
                 if band is not None:
@@ -252,7 +289,8 @@ def reconstruct(language, record, programs, positions, stm=None):
                                  program.operation_values[child[2], 2:3])
                     value = _transport_reread(value, operand, published, domain,
                                               getattr(face, 'meaning_layout', None))
-                pending.append((child, value, domain, exact_path and native_exact))
+                pending.append((child, value, domain, exact_path and native_exact,
+                                origin if given[role] == 'idea' else given[role]))
     language._last_derivation_certified = certified
     unavailable = record.word_valid & ~defined.all(-1)
     return recovered, unavailable, defined

@@ -20107,7 +20107,8 @@ class BasicModel(BaseModel):
         reconstruct = getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop)
         if reconstruct:
             from SentenceField import reconstruct as reconstruct_field
-            reconstruction = reconstruct_field(self, record, errors, active, silent=silent)
+            reconstruction = reconstruct_field(self, record, errors, active, silent=silent,
+                                               programs=observation['entries'])
             observation['input_reconstruction'] = self._input_reconstructions[int(sid)]
             observation['order_zero_field'] = self._sentence_order_zero_field
             observation['generation'] = self._sentence_generation

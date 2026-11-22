@@ -142,7 +142,7 @@ def test_registry_uses_the_two_reconstructions_and_omission_target(tmp_path, mon
             assert all(not registry[name]['trained'] for name in
                        ('reconstruction.free_bytes', 'reconstruction.coverage'))
             assert not any(name.startswith(('reconstruction.field', 'reconstruction.iterations',
-                'reconstruction.forward_discard', 'reconstruction.content', 'reconstruction.walk_policy',
+                'reconstruction.forward_discard', 'reconstruction.content',
                 'reconstruction.decomposition', 'reconstruction.compose_score_function')) for name in registry)
     finally:
         model.End(); model.symbolSpace.soft_reset()
