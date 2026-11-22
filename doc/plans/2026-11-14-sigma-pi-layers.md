@@ -9933,6 +9933,7 @@ The age can be a parameter of the model (and XML), read/written by the assessmen
 
 - *Decided:* the word is *age* (a model's mental age), and "grade" is not used. The list above is a list of ages.
 - *Decided:* the age is a parameter of the model and of its XML. The assessment determines it, writes it and reads it. A test asks the assessment for a mental age, and the assessment says whether the model is qualified for the test.
+- *The chart:* "This mandates a chart called ModelAge somewhere in the doc/*.md that says what tasks have to be learned in order to qualify a certain mental age." (Alec, the same day.) It is `doc/ModelAge.md`, and the list above is its first form; the chart is kept there from now on, and the assessment's list is made to agree with it.
 - *Mine, for the build:* a key `age` with its default (0) in `data/model.xml`; the number kept with the model's saved state, so that it goes with the weights it was measured on; `Assessment.py` the only writer. A model whose weights have changed since its age was written is assessed again before a test is qualified on it.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)

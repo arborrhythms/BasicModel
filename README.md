@@ -40,6 +40,7 @@ the XML knobs, and Testing for how changes are tested.
 | [Gradient flow](doc/GradientFlow.md) | Which objective trains which parameters |
 | [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
 | [Testing](doc/Testing.md) | The bounded test runner, test tiers, and the rules for tests and measurements |
+| [ModelAge](doc/ModelAge.md) | The chart of tasks a model must learn to qualify for a mental age |
 | [Params](doc/Params.md) | XML configuration reference and migration notes |
 | [LLM equivalence](doc/LLMEquivalence.md) | The sense in which a sentence-level model is equivalent to an LLM |
 | [Philosophy](doc/Philosophy.md) | Kant's analysis/synthesis, Ramsey's theoretical roles, Buddhist epistemology (pramana, tetralemma) |
