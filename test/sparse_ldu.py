@@ -1,0 +1,73 @@
+"""A sparse LDU, in tests (item 1.7, round 6d, seventh pass, step 1).
+
+W = L D U in :class:`Layers.InvertibleLinearLayer`'s row-vector form
+(``x @ L @ D @ U``) and with its padding: L unit lower over the inputs, D a
+full vector of the rank, U unit upper over the outputs. The strict triangles
+are entries, each an index pair and a value. The slot axis is the first.
+
+* The way up is scatters: ``x @ (I + N)`` adds ``x[i] * v`` into ``j`` for
+  each entry ``(i, j, v)``.
+* The way back is exact: ``(I + N)^-1 = I - N + N^2 - ...`` ends after as
+  many terms as the longest chain of entries in N, so ``x <- y - x @ N``,
+  started at ``x = y``, that many times, undoes ``I + N``.
+"""
+import torch
+
+
+def unit_apply(x, entries):
+    """``x @ (I + N)``, ``N`` the entries ``(source, target, value)``."""
+    source, target, value = entries
+    shape = (-1,) + (1,) * (x.ndim - 1)
+    return x.index_add(0, target, x.index_select(0, source) * value.reshape(shape))
+
+
+def unit_solve(y, entries, steps):
+    """``x`` with ``x @ (I + N) = y``: ``x <- y - x @ N``, ``steps`` times."""
+    source, target, value = entries
+    shape = (-1,) + (1,) * (y.ndim - 1)
+    x = y
+    for _ in range(int(steps)):
+        x = y.index_add(0, target, -(x.index_select(0, source) * value.reshape(shape)))
+    return x
+
+
+def longest_chain(source, target):
+    """The longest chain of entries (edges) from a source to a target; raises
+    on a cycle, where no number of steps would end the series."""
+    succ = {}
+    for s, t in zip(torch.as_tensor(source).tolist(), torch.as_tensor(target).tolist()):
+        succ.setdefault(s, []).append(t)
+    memo, state = {}, {}
+
+    def down(node):
+        if node in memo:
+            return memo[node]
+        if state.get(node) == 'open':
+            raise ValueError('a cycle of entries')
+        state[node] = 'open'
+        result = 1 + max((down(t) for t in succ.get(node, ())), default=-1)
+        state[node] = 'done'
+        memo[node] = result
+        return result
+
+    return max((down(s) for s in list(succ)), default=0)
+
+
+def ldu_up(x, d, lower, upper, n_output):
+    """``x @ L @ D @ U``, ``x`` ``[nInput, ...]``, padded as InvertibleLinearLayer pads."""
+    rank = len(d)
+    shape = (-1,) + (1,) * (x.ndim - 1)
+    z = unit_apply(x, lower)[:rank] * d.reshape(shape)
+    if n_output > rank:
+        z = torch.cat((z, z.new_zeros(n_output - rank, *z.shape[1:])))
+    return unit_apply(z, upper)
+
+
+def ldu_back(y, d, lower, upper, n_input, depth_lower, depth_upper):
+    """The exact way back, the pseudoinverse that the padding gives."""
+    rank = len(d)
+    shape = (-1,) + (1,) * (y.ndim - 1)
+    z = unit_solve(y, upper, depth_upper)[:rank] / d.reshape(shape)
+    if n_input > rank:
+        z = torch.cat((z, z.new_zeros(n_input - rank, *z.shape[1:])))
+    return unit_solve(z, lower, depth_lower)
