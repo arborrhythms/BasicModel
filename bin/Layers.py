@@ -6385,10 +6385,6 @@ class ConceptMembers(dict):
     def rows(self):
         return sorted({r for (r, _, _) in self})
 
-    def started(self):
-        """The members that were written as entries, of positive weight."""
-        return {key: weight for key, weight in self.items() if weight > 0}
-
     def net(self, row, percept):
         """The member's weight for less its weight as a Not member."""
         return (self.get((int(row), int(percept), False), 0.)

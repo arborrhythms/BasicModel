@@ -15282,11 +15282,11 @@ class ConceptualSpace(Space):
         with ``batch``, of that stream alone (``B`` is one).
 
         A concept's single signed value is never both; it is read both
-        across its members' rows, the basic percepts it was started
-        from (the allocator's record of its members): the least of what they give for
-        and what they give against, each joined by the union. A member gives
-        its for lane as for and its against lane as against; a Not member
-        the reverse.
+        across the rows its order-zero Sigma reads (its entries there): the
+        least of what they give for and what they give against, each joined
+        by the union. An entry above nothing gives its row's for lane as for
+        and its against lane as against; an entry below nothing (a Not
+        entry) the reverse; an entry at nothing gives nothing.
         """
         rows = torch.as_tensor(rows, dtype=torch.long).tolist()
         shape = perception.values.shape[1:3]
@@ -15298,15 +15298,14 @@ class ConceptualSpace(Space):
             lanes = lanes[:, batch:batch + 1]
             result = result[:, batch:batch + 1]
         index = {key: i for i, key in enumerate(perception.keys)}
-        members = {}
-        # A member recorded at weight zero did not enter the column.
-        for target, percept, negated in _concept_alloc_of(self).order_zero_members.started():
-            found = index.get(('bp', percept))
-            if found is not None:
-                members.setdefault(target, set()).add((found, int(negated)))
+        sigma = getattr(self, 'order_zero', None)
         n0 = self._order_caps()[0]
         for slot, row in enumerate(rows):
-            held = sorted(members.get(row, ())) if 0 <= row < n0 else ()
+            held = ()
+            if sigma is not None and 0 <= row < min(n0, sigma.nOutput):
+                held = sorted((index[('bp', percept)], int(negated))
+                              for percept, weight, negated in sigma.entries(row)
+                              if weight > 0 and ('bp', percept) in index)
             if held:
                 given = torch.stack([lanes[found].flip(-1) if negated else lanes[found]
                                      for found, negated in held])
