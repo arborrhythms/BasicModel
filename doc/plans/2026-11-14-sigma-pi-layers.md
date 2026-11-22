@@ -9899,7 +9899,34 @@ Alec, while the eleventh pass was building: "Also, maybe we want to reliable tea
 
 - *What exists* (Claude): the external tool is the assessment (`bin/Assessment.py`, `bin/AssessmentProbe.py`, `data/assessment/known_probe.json`; `doc/plans/2026-11-15-assessment.md`). It is read-only, has a ladder of nine rungs from one word to "the fast cat ran quickly", and a test may name its rung and report "not ready". Its first rung's lesson, reading every word in order, was decided then ("Teach it first") and is what the eleventh pass rebuilds. `test/attention_curriculum_gates.py` holds a second ladder (reading two, reading four, identities, noun phrase, noun and verb, relations).
 - *The order of teaching* (taken into the eleventh pass, step 4): each word alone until every word is said back; then sentences read over those words, with counting; a stage is left when its measure passes and not after a count of presentations. The grammar, one rule at a time, follows in the pass after.
-- *Proposed, mine, for the pass after the eleventh:* the assessment's ladder gains rungs below its first, one for each sub-goal enumerated here, each with its own measure and each gating the next: (1) a word said back; (2) a sentence read in order and stopped; (3) its words counted; then (4 on) the grammar's rules one at a time, a rung for each rule, on the nine sentences it has. The two ladders become one. In chat, before a question is answered, the assessment is asked which rungs the question's words and rules need and whether each passes, and the answer says what is not ready. It stays outside the model: it reads, and it changes no weight.
+- *Proposed, mine, for the pass after the eleventh:* the assessment's ladder gains rungs below its first, one for each sub-goal enumerated here, each with its own measure and each gating the next: (1) a word said back; (2) a sentence read in order and stopped; (3) its words counted; then (4 on) the grammar's rules one at a time, a rung for each rule, on the nine sentences it has. The two ladders become one. (A check in chat, proposed here, is withdrawn below.) It stays outside the model: it reads, and it changes no weight.
+
+*His correction, the same day:* "I don't mean "in the context of a chat", that is too late for learning.
+
+I mean that before we test understanding and identity, as we are now doing, we should qualify the model that we are testing with some assessment grade. They can be numeric, in a list, maybe corresponding to the approximate age in a human child at which they are learned, in years at a few decimal digits of precision."
+
+- *Withdrawn:* Claude's check in chat.
+- *Decided:* a model is qualified by the assessment before understanding and identity are tested on it. Each sub-goal has a grade, a number, in one list; the number is about the age in years at which a child learns it, to a few decimals.
+- *Mine, a first list for his correction* (the ages are from memory of the usual milestones and were not looked up; the model's "reading" is taking the words of a sentence in order, which is nearer to a child's hearing and saying back than to literacy):
+
+| Grade | Sub-goal | Measure (the assessment's) |
+| ---: | --- | --- |
+| 0.70 | A word kept when it is out of the look (object permanence) | the ladder's rung "one word" |
+| 1.00 | A word said back | each word alone in, the word out |
+| 1.50 | Twenty words said back | the rung "twenty words" |
+| 1.75 | Two words taken in order and said back | two-word sentences read in order and stopped |
+| 2.00 | A thing named | "This is Felix."; the rung "Felix" |
+| 2.25 | A noun and a verb | the rung "Felix ran" |
+| 2.50 | A sentence of three to five words taken in order and stopped | the lesson's sentences, and held out |
+| 2.75 | A determiner | the rung "the cat ran" |
+| 3.00 | The counting words said in order, to "4" | counting over the words of a sentence |
+| 3.25 | An adjective; a "what" question answered | the rung "the fast cat ran"; `identities` |
+| 3.50 | A pronoun | the rung "he ran" |
+| 4.00 | Each thing counted once, to "9" | counting, each word looked at once |
+| 4.25 | An adverb | the rungs "Felix ran quickly", "the fast cat ran quickly" |
+| 4.50 | Relations | `relations` ("is on", "bigger than") |
+
+- *Mine:* a model's grade is the greatest grade with every grade below it passed, and the list of what passed is kept beside it. A test of understanding or identity names the grade it needs; on a model below it the test reports "not qualified at grade x" in place of a failure of its own. Built in the pass after the eleventh, in `bin/Assessment.py`, the two ladders made one.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
