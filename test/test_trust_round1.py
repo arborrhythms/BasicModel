@@ -287,7 +287,7 @@ def test_invalid_trust_configuration_fails_at_construction(monkeypatch, key, val
 
 
 @pytest.mark.parametrize('whitespace', [False, True])
-def test_aligned_serial_sentence_has_no_space_or_punctuation_identity(monkeypatch, whitespace):
+def test_aligned_serial_sentence_has_no_space_identity_and_a_mark_is_a_word(monkeypatch, whitespace):
     from Models import BasicModel
     from test_cs_sparse_weights import _cs
     owner = _cs(nS=512)
@@ -309,8 +309,9 @@ def test_aligned_serial_sentence_has_no_space_or_punctuation_identity(monkeypatc
         BasicModel._stage_serial_concept_rows(model)
     for word in set(words):
         identity = owner.interpret.word_for_form(word)
-        assert (identity is not None) == (word not in (' ', '.'))
-    assert all(int(isp._ar_word_concept_ids[0,i]) == -1 for i,w in enumerate(words) if w in (' ', '.'))
+        # A mark is a word (fifteenth pass); whitespace is not.
+        assert (identity is not None) == (word != ' ')
+    assert all(int(isp._ar_word_concept_ids[0,i]) == -1 for i,w in enumerate(words) if w == ' ')
 
 
 def test_views_cost_no_rows_and_relations_do_not_count_as_views():

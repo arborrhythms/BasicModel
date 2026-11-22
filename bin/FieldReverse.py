@@ -141,11 +141,12 @@ def reverse(model, sub, field):
     basic, radix, registry = cs.basic_percepts, ps.percept_store, model.where_registry
     decoder = radix.activity_decoder
     B, E = field.where.shape[:2]
-    # Each leaf's concepts, signed, on the order-zero Sigma's outputs.
+    # Each leaf's concepts on the order-zero Sigma's outputs, each lane
+    # apart (a sign is two lanes, up and back): for, and against negated.
     sigma = cs.install_order_zero()
     ids = field.concept_ids
-    value = (field.evidence[..., 0] - field.evidence[..., 1])
-    concepts = value.new_zeros(sigma.nOutput, B, E)
+    value = torch.stack((field.evidence[..., 0], -field.evidence[..., 1]), -1)
+    concepts = value.new_zeros(sigma.nOutput, B, E, 2)
     for b in range(B):
         column = ids if ids.ndim == 1 else ids[:, b]
         found = [(n, row) for n, cid in enumerate(column.tolist()) if int(cid) >= 0
@@ -156,10 +157,12 @@ def reverse(model, sub, field):
             concepts[:, b] = concepts[:, b].index_add(0, to, value.index_select(0, at)[:, b])
     # The Sigma's way back, then the first Pi's: the recreated .what.
     rows = list(range(len(basic.index)))
-    held = sigma.reverse(concepts, rows).clamp_min(0)                        # [R, B, E]
+    held = sigma.reverse(concepts, rows).clamp_min(0).sum(-1)                # [R, B, E]
     kept = basic.kept_percept(rows)[0][:, 0].to(held)                        # [R, width]
     what = torch.einsum('rbe,rw->bew', held, kept)
-    presence = held.amax(0).clamp_max(1) if len(rows) else value.new_zeros(B, E)
+    # A leaf is present as its greatest row is, through the chart (tanh).
+    presence = torch.tanh(held.amax(0)) if len(rows) else value.new_zeros(B, E)
+    value = value[..., 0]
     # The .what against the percept codebook: each leaf's graded amount of
     # each byte at each offset of the percept it recreates.
     spelled, table = codebook(basic)

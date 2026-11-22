@@ -5995,8 +5995,8 @@ class SparseSigmaLDU(SparseLDULayer):
         concept reads comes back at nothing. Nothing is refused."""
         inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1)
         S = self._slots
-        bound = 1.0 - EPS_LOG
-        a = torch.atanh(y.clamp(-bound, bound))
+        # The chart undone; a value at the bound still passes its derivative.
+        a = bounded_atanh(y, EPS_LOG)
         if not self.nnz:
             return a.new_zeros(len(inputs), *a.shape[1:])
         at = self.output_slot.to(a.device)

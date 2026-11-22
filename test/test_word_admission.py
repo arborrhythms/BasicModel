@@ -209,7 +209,8 @@ def test_33_grounded_xor_with_word_boundary(tmp_path, trial, pool):
     test_native_unseeded_xor(tmp_path,pool,trial)
 
 
-def test_training_admission_keeps_period_percept_without_lexical_identity(monkeypatch):
+def test_training_admission_admits_the_period_as_a_word(monkeypatch):
+    """Ported (fifteenth pass): a mark is a word (Alec, "All content")."""
     from Corpus import admit_training_forms
     from Models import BaseModel
     from data import TheData
@@ -222,9 +223,10 @@ def test_training_admission_keeps_period_percept_without_lexical_identity(monkey
         owner = model._concept_owner()
         percepts = model.perceptualSpace.percept_store
         admitted = nominated_forms(model, ['alpha.'])
-        assert len(admitted) == 1 and admitted[0][0] == b'alpha'
-        assert owner.interpret.word_for_form('alpha') == admitted[0][1]
-        assert owner.interpret.word_for_form('.') is None
+        forms = dict(admitted)
+        assert set(forms) == {b'alpha', b'.'}
+        assert owner.interpret.word_for_form('alpha') == forms[b'alpha']
+        assert owner.interpret.word_for_form('.') == forms[b'.']
         assert b'.' in percepts.identity.words
         assert percepts.bytes_for(percepts.identity.word_rows[b'.']) == b'.'
         from Meronomy import percept_spans
@@ -233,7 +235,7 @@ def test_training_admission_keeps_period_percept_without_lexical_identity(monkey
         model.End()
 
 
-@pytest.mark.parametrize('surface', ['', ' ', '.', ' \u2014\u3002 ', b'\xe2\x80\x94'])
+@pytest.mark.parametrize('surface', ['', ' ', ' \t\n'])
 def test_eager_admission_never_looks_up_nonlexical_forms(monkeypatch, surface):
     from test_concept_capacity_policy import _cs, _property_ws, _D
     cs = _cs(32)
@@ -276,14 +278,15 @@ def test_grammar_word_admission_keeps_nonlexical_percept_extent(monkeypatch):
     import Meronomy
     lookups = []
     owner = SimpleNamespace(interpret=SimpleNamespace(lookup_word=lambda *a, **kw: lookups.append(kw)))
-    raw = torch.tensor([[46]])
+    raw = torch.tensor([[32]])
     ids, spans = torch.tensor([[0]]), torch.tensor([[[0, 1]]])
     # Exercise the lexical guard independently of the current word-span
-    # splitter: even a supplied grammar-word span cannot admit punctuation.
+    # splitter: even a supplied grammar-word span cannot admit whitespace
+    # (ported, fifteenth pass: a mark is a word; whitespace is not).
     monkeypatch.setattr(Meronomy, 'word_spans', lambda data: [(0, 1)])
     monkeypatch.setattr(Meronomy, 'percept_spans', lambda data: [(0, 1)])
     captured = []
-    model = SimpleNamespace(inputSpace=SimpleNamespace(_last_sentences=['.']),
+    model = SimpleNamespace(inputSpace=SimpleNamespace(_last_sentences=[' ']),
         perceptualSpace=SimpleNamespace(_forward_input={'native_indices':ids,'native_part_spans':spans}),
         wholeSpace=SimpleNamespace(inputShape=(1,), property_rows_for_bytes=lambda raw: (),
             concept_evidence_layout=lambda raw, width: (spans,None), subspace=SimpleNamespace(what=None)),
@@ -296,7 +299,7 @@ def test_grammar_word_admission_keeps_nonlexical_percept_extent(monkeypatch):
 
 
 @pytest.mark.parametrize('surface, expected', [('', False), (b'', False), (' \t', False),
-    ('\u2014\u3002', False), (' \u2014 ', False), (b'\xe2\x80\x94', False),
+    ('\u2014\u3002', True), (' \u2014 ', True), (b'\xe2\x80\x94', True),
     ('alpha', True), ('alpha.', True), ('2', True), ('+', True)])
 def test_lexical_form_predicate_uses_unicode_categories(surface, expected):
     from WordSurfaces import is_lexical_form
