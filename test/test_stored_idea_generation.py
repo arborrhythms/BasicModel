@@ -6,6 +6,8 @@ import torch
 import pytest
 
 from DecompositionChooser import DecompositionChooser
+from FieldReverse import NativeActivity
+from WhereRegistry import WhereRegistry
 from Language import LanguageSpace
 
 
@@ -449,7 +451,9 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         result[field.concept_ids] = field.evidence.sum(2)
         return result.permute(1, 0, 2).flatten(1)[:, None].expand(1, 2, 4)
     observed = events(field)
-    native = SimpleNamespace(bytes_for=lambda row: bytes([97 + row]), get_id=lambda raw: raw[0] - 97)
+    # Each of the two bytes has its own .what (a and b, one wire each).
+    native = SimpleNamespace(bytes_for=lambda row: bytes([97 + row]), get_id=lambda raw: raw[0] - 97,
+        _basis=SimpleNamespace(lookup_rows=lambda rows: torch.eye(3)[rows.clamp(0, 2)][:, :2]))
     model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=available, _sentence_training=False,
         loss=ModelLoss(reconstruction_scale=1., what_scale=1., where_scale=0., when_scale=0.),
         conceptualSpace=owner, conceptualSpaces=(owner,), _concept_owner=lambda: owner,
@@ -461,14 +465,21 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
             _generate_binary_rules=(), _generate_unary_rules=(),
             _generate_binary_ops=(), _generate_unary_ops=()), _synthesis_guard=nullcontext,
         symbol_field_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
-        _staged_concepts_in=torch.ones(1, 1, 2, dtype=torch.long), _input_reconstructions={},
+        _staged_concepts_in=torch.tensor([[[97, 98]]]), _input_reconstructions={},
+        where_registry=WhereRegistry((('text', 8),)),
         _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *args: record,
         _tensor_pushed_ideas=words, _sentence_field=None,
         _sentence_observation=lambda *args, record, incoming_trust: dict(record=record,
             entries=(None,), clauses=(None,), meanings=(None,), reference_plans=()))
     def reverse(carrier, *, field):
         percepts = events(field)
+        # Each concept's retained support is its byte's pasted amount at its
+        # own place (concept c spells the byte 97 + c at place c).
+        amounts = words.new_zeros(1, 2, 256)
+        support = words.new_zeros(2).index_add(0, field.concept_ids, field.evidence[:, 0, :, 0].sum(1))
+        amounts[0, torch.arange(2), 97 + torch.arange(2)] = support
         return SimpleNamespace(_reconstruction_percepts=percepts,
+            _radix_activity=NativeActivity(None, None, percepts, None, amounts),
             materialize=lambda: percepts[..., ::2].sum(-1).gt(0).long()[:, None])
     model.reverse = reverse
     model._reverse_event_loss = MethodType(BasicModel._reverse_event_loss, model)
@@ -524,8 +535,10 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
     cost, terms = _field_trial(words, root[:, None])
     # The native field preserves the tiny residual in the near projection;
     # its linear decoder credits that support without declaring completion.
-    assert cost.item() == pytest.approx(.5 - (1e-6 if near else 0.))
-    assert terms['reconstruction_order_zero.what']['trained']
+    # The spatial pyramid match (fifteenth pass): the lost word is half the
+    # content in every cell that holds it, at each level.
+    assert cost.item() == pytest.approx(.5 - (5e-7 if near else 0.), abs=1e-7)
+    assert terms['reconstruction_order_zero.pyramid']['trained']
     assert not terms['reconstruction.coverage']['trained']
     assert not terms['reconstruction.free_bytes']['trained']
 

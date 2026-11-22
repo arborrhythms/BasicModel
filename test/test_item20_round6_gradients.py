@@ -77,12 +77,15 @@ def test_knowing_deposit_keeps_the_selected_intuition_weights_live():
     native = radix.insert(b'a')
     radix.activity_decoder = NativeDecode(radix.capacity, 8, 8)
     feature(owner, row, 'ps', native, 1.)
+    from WhereRegistry import WhereRegistry
+    grid = WhereRegistry((('text', 8),))
     decoder_model = NS(_concept_owner=lambda: owner,
-        where_registry=NS(slices={'text': (0, 8)}),
+        where_registry=grid,
         perceptualSpace=NS(percept_store=radix, subspace=NS(nWhat=radix.dim, nWhere=0, nWhen=0), _radix_where_indices=[]),
         wholeSpace=NS(subspace=NS(what=NS(primitive_properties=PrimitiveProperties(0)))))
     field = ConceptualField(torch.tensor([refs[1][1]]), carrier._concept_activations,
-        carrier._concept_where, torch.tensor([[[1, 2], [0, 0]]]), None)
+        carrier._concept_where, torch.tensor([[[1, 2], [0, 0]]]), None,
+        grid.encode('text', torch.tensor([[0, -1]])))
     loss = reverse(decoder_model, NS(carrier_like=NS), field)._radix_activity.percepts.square().sum()
     gradient, = torch.autograd.grad(loss, owner.intuition.sigma)
     assert gradient.coalesce().values().abs().sum() > 0
@@ -161,8 +164,10 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
     bank = PrimedSymbols(torch.tensor([rows]), codes, torch.ones(1, 2), torch.ones(1, 2, dtype=torch.bool),
         torch.tensor([[[97], [98]]]), torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=4)
+    from WhereRegistry import WhereRegistry
+    grid = WhereRegistry((('text', 8),))
     model = NS(_concept_owner=lambda: cs, conceptualSpace=cs, languageSpace=language, _synthesis_guard=nullcontext,
-        where_registry=NS(slices={'text': (0, 8)}),
+        where_registry=grid,
         perceptualSpace=NS(percept_store=radix, subspace=NS(nWhat=12, nWhere=0, nWhen=0), _radix_where_indices=[]),
         wholeSpace=NS(subspace=NS(what=NS(primitive_properties=PrimitiveProperties(0)))))
     def native_reverse(carrier, *, field):
@@ -178,7 +183,8 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     decoded = realize(model, proposal)._reconstruction_percepts
     field = ConceptualField(torch.tensor(ids),
         torch.stack((torch.eye(2), torch.zeros(2, 2)), -1)[:, None],
-        torch.tensor([[[0, 1], [2, 3]]]), torch.tensor([[[1, 2], [1, 2]]]), None)
+        torch.tensor([[[0, 1], [2, 3]]]), torch.tensor([[[1, 2], [1, 2]]]), None,
+        grid.encode('text', torch.tensor([[0, 2]])))
     observed = model.reverse(None, field=field)._radix_activity.percepts
     # Both terms use the native per-byte target. The observed-field route
     # cannot reach the inverse, while its generated field carries that pullback.

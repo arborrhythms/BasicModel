@@ -69,7 +69,7 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert not terms['reconstruction.coverage']['trained']
         assert terms['reconstruction.free_percept']['trained']
         for prefix in ('reconstruction_reverse', 'reconstruction_order_zero'):
-            assert terms[prefix + '.what']['trained']
+            assert terms[prefix + '.pyramid']['trained']
         credit = getattr(model, '_last_compose_score_function', None)
         if credit is not None and credit['advantage'].ne(0).any():
             assert 'output.compose_score_function' in terms

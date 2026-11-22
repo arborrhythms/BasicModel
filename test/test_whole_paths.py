@@ -217,15 +217,15 @@ def test_native_omission_keeps_targets_off_the_reading_path(tmp_path, monkeypatc
         assert not bool(model._staged_concepts_in[:, 0][hidden].any())
         assert bool(targets['raw'][:, 0][hidden].any())
         value = score(*args, **kwargs)
+        # Ported (fifteenth pass): the input's .what that reconstruction
+        # is asked for holds the hidden bytes as targets (they are off the
+        # reading path only).
         original = value[2]['reverse'][1]
         width = original.shape[1]
         hidden = torch.nn.functional.pad(targets['bytes'][:, :width],
             (0, max(0, width - targets['bytes'].shape[1])))
-        erased = original.masked_fill(hidden[..., None], 0)
-        assert model._reverse_event_loss(original, original) == 0
-        assert model._reverse_event_loss(erased, original) > 0
-        from Omission import visible_events
-        assert model._reverse_event_loss(*visible_events(model, erased, original)) == 0
+        assert bool(original[hidden].any())
+        assert bool(original[~hidden].any())
         captured.append(value)
         return value
     monkeypatch.setattr(model, '_sentence_path_cost', inspect)
@@ -353,7 +353,10 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
             concept=model._concept_prediction,
             context=model.symbolSpace.expectation._inter_context))
         if captures:
-            assert model._reverse_event_loss(captures[0]['target'], record['target']) > 0
+            first = captures[0]['target']
+            width = max(first.shape[1], record['target'].shape[1])
+            pad = lambda t: torch.nn.functional.pad(t, (0, 0, 0, width - t.shape[1]))
+            assert not torch.equal(pad(first), pad(record['target']))
         captures.append(record)
         model.End()
         model.symbolSpace.soft_reset()

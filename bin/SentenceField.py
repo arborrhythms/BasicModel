@@ -31,7 +31,7 @@ def descended(model, field):
                          for row in addresses.reshape(-1).tolist()],
                         device=addresses.device).reshape(addresses.shape)
     zero = zero[:, None, None, None] if zero.ndim == 1 else zero[..., None, None]
-    return ConceptualField(field.concept_ids, evidence * zero, field.where, field.when, None)
+    return ConceptualField(field.concept_ids, evidence * zero, field.where, field.when, None, field.wires)
 
 
 def knowing(model):
@@ -49,6 +49,11 @@ def open_field(model, sid, a0):
     field = join(model,sid,field)
     from IntuitionField import open_field as intuit
     field = intuit(model, field)
+    wires = getattr(owner, '_cs_field_wires', None)
+    if wires is not None:
+        # A reading the bank has no occurrence for (a joined scalar) has none.
+        from dataclasses import replace
+        field = replace(field, wires=F.pad(wires, (0, 0, 0, field.where.shape[1] - wires.shape[1])))
     model._sentence_open_fields[int(sid)] = field
     publish(model, field)
     return field
@@ -156,6 +161,39 @@ def word_percepts(reverse, field, width):
     return F.pad(result, (0, width - result.shape[-1])) if result.shape[-1] < width else result[..., :width]
 
 
+def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=True):
+    """A reconstruction's error (:meth:`Layers.Error.pyramid`, the spatial
+    pyramid match) on the ``.what`` of the bytes put back against the
+    input's bytes in its readings, the hidden ones left out where
+    ``hidden`` (a reconstruction that never saw them). Returns the input's
+    ``.what`` at each place of its readings, hidden bytes included."""
+    from FieldReverse import byte_rows
+    from Omission import target as omission_target
+    targets = omission_target(model)
+    raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0].long()
+    positions = torch.arange(raw.shape[1], device=raw.device)
+    scope = ((positions[None, None] >= field.where[..., :1]) &
+             (positions[None, None] < field.where[..., 1:])).any(1)
+    radix = model.perceptualSpace.percept_store
+    rows = byte_rows(radix).to(raw.device)
+    amounts = carrier._radix_activity.amounts
+    codes = (radix._basis.lookup_rows(rows.clamp_min(0)) * (rows >= 0)[:, None]).to(amounts)    # [256, what]
+    wanted = codes[raw.clamp(0, 255)] * scope[..., None].to(codes)
+    asked = wanted
+    bytes_hidden = None if targets is None or not hidden else targets.get('bytes')
+    if bytes_hidden is not None:
+        out = F.pad(bytes_hidden, (0, max(0, scope.shape[1] - bytes_hidden.shape[1])))[:, :scope.shape[1]]
+        asked = wanted.masked_fill(out[..., None], 0)
+        seen = F.pad(bytes_hidden, (0, max(0, amounts.shape[1] - bytes_hidden.shape[1])))[:, :amounts.shape[1]]
+        amounts = amounts.masked_fill(seen[..., None], 0)
+    if silent is not None:
+        # Silence puts back NULL at every place.
+        amounts = torch.where(silent.to(amounts.device)[:, None, None], 0., amounts)
+    errors.pyramid(name + '.pyramid', amounts @ codes, asked, mask=active,
+                   weight=model.loss.reconstruction_scale, category='reconstruction')
+    return wanted
+
+
 def reconstruct(model, record, errors, active, *, previous=None, silent=None):
     """Input and order-zero reconstructions share exactly one reverse chain.
     A silent sentence (``silent`` ``[B]``, rule S -> NULL) puts back NULL at
@@ -163,14 +201,10 @@ def reconstruct(model, record, errors, active, *, previous=None, silent=None):
     field = record.open_field
     if previous is None:
         first = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
-        target = native_target(model, field)
     else:
-        first, target = previous
+        first, _ = previous
+    target = charge(model, errors, 'reconstruction_reverse', first, field, active)
     model._sentence_reverse = (first, target)
-    from Omission import visible_events
-    visible, observed = visible_events(model, first._reconstruction_percepts, target)
-    model._reverse_event_loss(visible, observed,
-        registry=errors, name='reconstruction_reverse', weight=model.loss.reconstruction_scale)
     generation, second = reconstruct_generation(model, record, target, active)
     if silent is not None and bool(silent.any()):
         from Interpret import SilenceLayer
@@ -179,8 +213,9 @@ def reconstruct(model, record, errors, active, *, previous=None, silent=None):
         second._reconstruction_percepts = torch.where(gate, SilenceLayer().reverse(put), put)
     model._sentence_order_zero_field = generation.field
     publish(model, generation.field)
-    model._reverse_event_loss(second._reconstruction_percepts, target,
-        registry=errors, name='reconstruction_order_zero', weight=model.loss.reconstruction_scale)
+    # Reconstruction from the idea is asked for every byte, the hidden ones too.
+    charge(model, errors, 'reconstruction_order_zero', second, field, active, hidden=False,
+           silent=None if silent is None or not bool(silent.any()) else silent)
     B, W, D = record.word_values.shape
     def rows(prefix):
         return sum(term['weight'] * term.get('multiplier', 1.) * errors._value(term)
@@ -260,6 +295,11 @@ def selected(first, second, wins):
     def choose(a, b):
         if a is None and b is None:
             return None
+        if a.shape != b.shape:
+            # Two trials may paste over buffers of different extents.
+            shape = [max(x, y) for x, y in zip(a.shape, b.shape)]
+            pad = lambda t: F.pad(t, [n for d in reversed(range(t.ndim)) for n in (0, shape[d] - t.shape[d])])
+            a, b = pad(a), pad(b)
         return torch.where(wins.reshape((-1,) + (1,) * (a.ndim - 1)), b, a)
     return InputReconstruction(**{item.name: choose(getattr(first, item.name), getattr(second, item.name))
                                  for item in fields(InputReconstruction)})

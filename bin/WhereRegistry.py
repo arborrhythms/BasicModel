@@ -29,6 +29,9 @@ class WhereRegistry:
         with torch.no_grad():
             code = self.encoding.encode(torch.arange(max(1, end), dtype=torch.long)).float()
         self.code = torch.nn.Parameter(code.to(TheDevice.get()), requires_grad=True)
+        # The axes of the space, each a slice of the wires, matched apart on
+        # the way back: one today, on which text lies.
+        self.axes = ((0, int(code.shape[-1])),)
 
     def band(self, addresses):
         """The rows of the where wires at registry ``addresses`` (any shape);

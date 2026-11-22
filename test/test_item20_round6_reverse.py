@@ -81,24 +81,37 @@ def test_reverse_is_grammar_free_and_missing_field_raises():
         BasicModel.reverse(model, sentinel, field=sentinel)
 
 
+def leaf_model(radix, raw, nWhat, extent):
+    """The parts the leaf-by-leaf reverse reads, for one concept (id 41)
+    whose order-zero row recreates one basic percept spelling ``raw``: an
+    identity Sigma, the percept's kept ``.what``, and the grid."""
+    from WhereRegistry import WhereRegistry
+    sigma = NS(nOutput=1, reverse=lambda y, rows: y[:len(rows)])
+    basic = NS(index={0: 0}, revision=0, place_rows={}, conjunctions={}, is_value=lambda _row: False,
+               form_of=lambda _row: raw, runs={},
+               kept_percept=lambda rows: (torch.ones(len(rows), 2, 2), None, None))
+    cs = NS(install_order_zero=lambda: sigma, _concept_row_of=lambda cid: 0 if cid == 41 else None,
+            basic_percepts=basic)
+    ps = NS(percept_store=radix, subspace=NS(nWhat=nWhat, nWhere=0, nWhen=0), _radix_where_indices=[])
+    registry = WhereRegistry((('text', extent),))
+    return NS(_concept_owner=lambda: cs, perceptualSpace=ps, where_registry=registry), registry
+
+
 def test_sparse_activity_at_8192_positions_never_crosses_the_native_inventory():
+    """Ported (fifteenth pass): the reverse reads the leaf's own .where wires
+    and matches its recreated .what, in place of a bracket and a row's
+    spelling by index; the property kept is that no tensor is position by
+    the native inventory."""
     from FieldReverse import reverse
-    from PerceptProperties import PrimitiveProperties
     from torch.utils._python_dispatch import TorchDispatchMode
     radix = RadixLayer(3, initial_cap=8)
     a, b = radix.insert(b'a'), radix.insert(b'b')
     radix.activity_decoder = NativeDecode(8, 8192, 4)
-    primitive = PrimitiveProperties(0)
+    model, registry = leaf_model(radix, b'a', 3, 8192)
     evidence = torch.tensor([[[[.7, 0.]]]], requires_grad=True)
     field = ConceptualField(torch.tensor([41]), evidence,
-        torch.tensor([[[8191, 8192]]]), torch.tensor([[[1, 2]]]), None)
-    cs = NS(_concept_allocator=NS(layer=lambda _: NS(_tensor_row_keys={0: 41})),
-        cs_percept_attribution=lambda field, **kw: (torch.tensor([0]), field[..., :1], None),
-        basic_percepts=NS(is_value=lambda _row: False, occurrences=[((a,), ())]))
-    ps = NS(percept_store=radix, subspace=NS(nWhat=3, nWhere=0, nWhen=0), _radix_where_indices=[])
-    model = NS(_concept_owner=lambda: cs, perceptualSpace=ps,
-               where_registry=NS(slices={'text': (0, 8192)}),
-               wholeSpace=NS(subspace=NS(what=NS(primitive_properties=primitive))))
+        torch.tensor([[[8191, 8192]]]), torch.tensor([[[1, 2]]]), None,
+        registry.encode('text', torch.tensor([[8191]])).detach())
     shapes = set()
     class Allocations(TorchDispatchMode):
         def __torch_dispatch__(self, func, types, args=(), kwargs=None):
@@ -158,26 +171,18 @@ def test_admitted_word_identity_survives_an_empty_feature_gate(monkeypatch):
 
 
 def test_native_word_and_observed_promoted_part_have_the_same_byte_events():
+    """Ported (fifteenth pass): the recreated word is pasted byte by byte at
+    the place its wires match, each byte its own row's event."""
     from FieldReverse import reverse
-    from PerceptProperties import PrimitiveProperties
-    from SentenceField import native_target
     radix = RadixLayer(4, initial_cap=16)
     letters = [radix.insert(bytes([byte])) for byte in b'abc']
-    word = radix.insert(b'abc')
+    radix.insert(b'abc')
     radix.activity_decoder = NativeDecode(16, 8, 8)
+    model, registry = leaf_model(radix, b'abc', 4, 8)
     field = ConceptualField(torch.tensor([41]), torch.tensor([[[[1., 0.]]]]),
-        torch.tensor([[[0, 3]]]), torch.tensor([[[1, 2]]]), None)
-    cs = NS(_concept_allocator=NS(layer=lambda _: NS(_tensor_row_keys={0: 41})),
-        cs_percept_attribution=lambda evidence, **kw: (torch.tensor([0]), evidence[..., :1], None),
-        basic_percepts=NS(is_value=lambda _row: False, occurrences=[((word,), ())]))
-    ps = NS(percept_store=radix, subspace=NS(nWhat=4, nWhere=0, nWhen=0), _radix_where_indices=[],
-        _forward_input={'native_indices': torch.tensor([[word]]), 'native_part_spans': field.where},
-        _radix_part_events=lambda ids, offsets: radix._basis.lookup_rows(ids))
-    model = NS(_concept_owner=lambda: cs, perceptualSpace=ps,
-        where_registry=NS(slices={'text': (0, 8)}),
-        wholeSpace=NS(subspace=NS(what=NS(primitive_properties=PrimitiveProperties(0)))))
+        torch.tensor([[[0, 3]]]), torch.tensor([[[1, 2]]]), None,
+        registry.encode('text', torch.tensor([[0]])).detach())
     activity = reverse(model, NS(carrier_like=NS), field)._radix_activity
     expected = radix._basis.lookup_rows(torch.tensor([letters]))
-    torch.testing.assert_close(activity.percepts, expected)
-    torch.testing.assert_close(native_target(model, field), expected.detach())
-    assert radix.decode_activity(activity).tolist() == [[97, 98, 99]]
+    torch.testing.assert_close(activity.percepts[:, :3], expected, atol=1e-4, rtol=1e-4)
+    assert radix.decode_activity(activity)[:, :3].tolist() == [[97, 98, 99]]

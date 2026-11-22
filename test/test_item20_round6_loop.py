@@ -92,7 +92,7 @@ def test_emptying_memory_before_the_open_does_not_change_input_reconstruction(tm
                 a0 = original(percepts, brackets)
                 return ConceptualField(owner._cs_field_concept_ids,
                     F.pad(a0, (0, 0, 0, 0, 0, 0, 0, sum(owner._field_caps()) - len(a0))),
-                    owner._cs_field_where, owner._cs_field_when, None)
+                    owner._cs_field_where, owner._cs_field_when, None, owner._cs_field_wires)
             before_field = opened()
             before = model.reverse(owner.subspace.carrier_like(), field=before_field)
             owner.stm.clear()
@@ -135,7 +135,7 @@ def test_registry_uses_the_two_reconstructions_and_omission_target(tmp_path, mon
         assert targets
         for registry in terms:
             assert all(prefix + '.' + lane in registry for prefix in
-                ('reconstruction_reverse', 'reconstruction_order_zero') for lane in ('what', 'where', 'when'))
+                ('reconstruction_reverse', 'reconstruction_order_zero') for lane in ('pyramid',))
             for lane in ('form', 'for', 'against'):
                 term = registry['reconstruction.walk_residual.' + lane]
                 assert term['objective'] == 'reconstruction' and term['side'] == 'R'

@@ -112,8 +112,8 @@ def forced_prefix_certificate():
         def charge(name):
             term=registry._terms[name]
             return registry._value(term)*term['weight']*term.get('multiplier',1.)
-        content=sum(charge('reconstruction_order_zero.'+band) for band in ('what','where','when'))
-        input_reverse=sum(charge('reconstruction_reverse.'+band) for band in ('what','where','when'))
+        content=sum(charge('reconstruction_order_zero.'+band) for band in ('pyramid',))
+        input_reverse=sum(charge('reconstruction_reverse.'+band) for band in ('pyramid',))
         percept=charge('reconstruction.free_percept')
         reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
             residual=(op.compose(left,right)-root).square().sum(-1).tolist(),

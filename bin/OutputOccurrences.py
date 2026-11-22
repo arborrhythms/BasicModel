@@ -24,15 +24,25 @@ class Generated:
                      for row, extents in zip(decoded, spans))
 
 
+def said_at(model, field):
+    """A generated field at the places the walk says its words: the grid's
+    row at each word's start in the output buffer."""
+    from dataclasses import replace
+    starts = torch.where(field.where[..., 1] > field.where[..., 0], field.where[..., 0], -1)
+    return replace(field, wires=model.where_registry.encode('text', starts))
+
+
 def realize(model, generation):
     """Read spelling and the generated meaning through the common inverse."""
     with model.languageSpace.generation_scope(), model._synthesis_guard():
         result = model.reverse(model.conceptualSpace.subspace.carrier_like(),
-            field=generation.field if generation.realization_field is None else generation.realization_field)
+            field=said_at(model, generation.field if generation.realization_field is None else generation.realization_field))
         if generation.reconstruction_field is not None:
             scored = model.reverse(model.conceptualSpace.subspace.carrier_like(),
-                                   field=generation.reconstruction_field)
+                                   field=said_at(model, generation.reconstruction_field))
             result._reconstruction_percepts = scored._reconstruction_percepts
+            from dataclasses import replace
+            result._radix_activity = replace(result._radix_activity, amounts=scored._radix_activity.amounts)
         return result
 
 
@@ -68,7 +78,9 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
         percept_width=bank.percept_width, meaning_start=bank.meaning_start) for w in range(W)], 1)
     scores = scores.masked_fill(~bank.terminal_valid[:, None], -torch.inf)
     best = bank.terminal_valid[:, None] & scores.eq(scores.amax(-1, keepdim=True))
-    chosen = bank.weights[:, None].expand_as(scores).masked_fill(~best, -torch.inf).argmax(-1)
+    # Priming adds graded evidence among the best; what is still equal is a draw.
+    from FieldReverse import drawn
+    chosen = drawn(bank.weights[:, None].expand_as(scores).masked_fill(~best, -torch.inf))
     selected = bank.rows.gather(1, chosen)
     active = (torch.arange(W, device=words.device)[None] < counts[:, None]) & bank.terminal_valid.any(-1)[:, None]
     selected = torch.where(active, selected, -1)

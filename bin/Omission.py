@@ -208,19 +208,6 @@ def target(model):
     return getattr(model, '_omission_targets', None)
 
 
-def visible_events(model, predicted, original):
-    """Exclude hidden bytes from the grammar-free reconstruction on both sides."""
-    targets = target(model)
-    hidden = None if targets is None else targets.get('bytes')
-    if hidden is None:
-        return predicted, original
-    def mask(value):
-        width = value.shape[1]
-        gate = torch.nn.functional.pad(hidden[:, :width], (0, max(0, width-hidden.shape[1])))
-        return value.masked_fill(gate[..., None], 0)
-    return mask(predicted), mask(original)
-
-
 def observe(model, sid, reverse, *, active=None):
     targets = target(model)
     if targets is None or not model.training:

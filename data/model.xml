@@ -36,6 +36,11 @@
     <structureReadThreshold>0.001</structureReadThreshold>
     <!-- The rows of the table a look presents: the attended percepts. -->
     <attendedPercepts>256</attendedPercepts>
+    <!-- The input's reconstruction, leaf by leaf: the sharpness of the match
+         of a recreated .what against the percept codebook (on the cosine),
+         and of a leaf's .where wires against the grid (on the distance). -->
+    <reconstructionWhatSharpness>50</reconstructionWhatSharpness>
+    <reconstructionWhereSharpness>1000</reconstructionWhereSharpness>
     <omissionTarget>0.9</omissionTarget>
     <omissionLimit>0.5</omissionLimit>
     <omissionHorizon>1024</omissionHorizon>

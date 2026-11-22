@@ -15134,6 +15134,43 @@ class Error:
             if not torch.compiler.is_compiling():
                 rec["count"] += 1
 
+    @staticmethod
+    def pyramid_match(put, wanted, axes=(1,)):
+        """The spatial pyramid match (Lazebnik, Schmid and Ponce, 2006,
+        after Grauman and Darrell) of the content ``put`` and ``wanted``
+        ``[B, places..., channels]``, unsigned: each axis of places is padded
+        to a power of two; level ``L`` has one place a cell, and each level
+        above sums pairs of cells on every axis, up to level 0, one cell.
+        At each level the match is the shared size (the least) of the two
+        sums in each cell, summed over cells and channels; the levels are
+        weighed ``1/2`` at ``L``, halving up to ``1/2^L`` at levels 1 and 0.
+        Returns the match ``K`` and the input's total amount, ``[B]``."""
+        put, wanted = put.clamp_min(0), wanted.clamp_min(0)
+        for axis in axes:
+            size = 1 << max(0, (max(put.shape[axis], wanted.shape[axis]) - 1).bit_length())
+            pads = lambda t: [0, 0] * (t.ndim - 1 - axis) + [0, size - t.shape[axis]]
+            put, wanted = F.pad(put, pads(put)), F.pad(wanted, pads(wanted))
+        total = wanted.flatten(1).sum(-1)
+        levels = max(put.shape[axis].bit_length() - 1 for axis in axes)
+        match = lambda: torch.minimum(put, wanted).flatten(1).sum(-1)
+        K = match() / 2
+        for level in range(levels - 1, -1, -1):
+            for axis in axes:
+                if put.shape[axis] > 1:
+                    shape = list(put.shape)
+                    shape[axis:axis + 1] = [shape[axis] // 2, 2]
+                    put, wanted = put.reshape(shape).sum(axis + 1), wanted.reshape(shape).sum(axis + 1)
+            K = K + match() / (1 << (levels - level + 1 if level else levels))
+        return K, total
+
+    def pyramid(self, name, put, wanted, *, axes=(1,), **options):
+        """Register the error of a content put back against the input's as
+        one less their pyramid match over the input's total
+        (:meth:`pyramid_match`): nothing when the output is the input, one
+        when they share nothing."""
+        K, total = self.pyramid_match(put, wanted, axes)
+        self.error(name, total - K, total, **options)
+
     def error(self, name, error, baseline, *, mask=None, weight=1.,
               space=None, category='other', objective=None, trained=True, row=None,
               entry_weight=None, side=None):

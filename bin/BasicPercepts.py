@@ -530,9 +530,12 @@ class BasicPercepts(nn.Module):
         :meth:`place_factor` reads them. Matched against an occurrence of a
         sentence's field by shared size, these are the row's own read of
         that occurrence (:func:`held_at` and :meth:`place_factor`). Nothing
-        is stored for it."""
+        is stored for it. A place's row recognises a place and gives back no
+        ``.what`` (§19.133)."""
         rows = list(rows)
         what = self.bank_codes(rows)
+        place = torch.tensor([row in self.place_rows for row in rows], dtype=torch.bool, device=what.device)
+        what = torch.where(place[:, None, None], 0., what)
         where, when = self._entries(rows, what)
         return what, where, when
 

@@ -13697,6 +13697,7 @@ class ConceptualSpace(Space):
         self._clear_percept_field()
         self._cs_field_where = None
         self._cs_field_when = None
+        self._cs_field_wires = None
 
     # -- category utility and chunk admission (fold-ladder plan, contract 4 / 7)
 
@@ -15215,7 +15216,12 @@ class ConceptualSpace(Space):
         """The order-zero concepts of a bank's readings, each event present
         to the degree of ``activity`` ``[B, events, 2]`` (all of them where
         it is not given)."""
-        return self.cs_read_percept_field(self.basic_percepts.read_bank(bank, activity), publish=publish)
+        field = self.cs_read_percept_field(self.basic_percepts.read_bank(bank, activity), publish=publish)
+        if publish:
+            # Each reading's own .where wires, from its percept's muxed row.
+            from Places import readings
+            object.__setattr__(self, '_cs_field_wires', readings(bank)[0])
+        return field
 
     def cs_read_percept_field(self, perception, *, publish=True):
         """The order-zero concepts of the current open-attention percept field.
@@ -15228,6 +15234,7 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_percept_field', perception)
             object.__setattr__(self, '_cs_field_where', perception.where)
             object.__setattr__(self, '_cs_field_when', perception.when)
+            object.__setattr__(self, '_cs_field_wires', None)
             # A recorded member that this read does not hold is absent.
             read = set(perception.keys)
             held = [i for i, (_, percept, _) in enumerate(members) if ('bp', percept) in read]
@@ -16051,7 +16058,7 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_open_field', ConceptualField(
             self._cs_field_concept_ids,
             torch.nn.functional.pad(a_0, (0, 0, 0, 0, 0, 0, 0, sum(self._field_caps()) - len(a_0))),
-            self._cs_field_where, self._cs_field_when, None))
+            self._cs_field_where, self._cs_field_when, None, getattr(self, '_cs_field_wires', None)))
         acts = self.cs_forward_content(a_0)
         # Stage the pyramid's per-order winners on the subspace index so a
         # generic materialize() pulls exactly the selected codes (rev 2 #6).

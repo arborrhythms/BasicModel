@@ -138,7 +138,7 @@ class ThoughtTrialState:
         self.field_owner = conceptual
         if conceptual is not None:
             owners.append((conceptual, ('_percept_field', '_cs_field_where', '_cs_field_when',
-                                       '_cs_field_concept_ids')))
+                                       '_cs_field_wires', '_cs_field_concept_ids')))
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -222,7 +222,7 @@ class ThoughtTrialState:
                 return first.new_tensor(sorted({int(cid)
                     for row, index in enumerate(indices)
                     for cid in (values[index] if values[index].ndim == 1 else values[index][:, row])}))
-            if name in ('_cs_field_where', '_cs_field_when') and torch.is_tensor(first):
+            if name in ('_cs_field_where', '_cs_field_when', '_cs_field_wires') and torch.is_tensor(first):
                 width = max(value.shape[1] for value in values)
                 return torch.stack([torch.nn.functional.pad(values[index][row],
                     (0, 0, 0, width - values[index].shape[1]))

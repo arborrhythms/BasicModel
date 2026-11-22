@@ -83,12 +83,12 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         return commit(state, sid, active, *rest)
     monkeypatch.setattr(model, '_commit_sentence', observed_commit)
     import SentenceField
-    native_target = SentenceField.native_target
-    def observed_target(owner, field):
-        value = native_target(owner, field)
-        targets.append((field.where.detach().clone(), value.detach().clone()))
-        return value
-    monkeypatch.setattr(SentenceField, 'native_target', observed_target)
+    charge = SentenceField.charge
+    def observed_charge(model, errors, name, carrier, field, active, **kw):
+        wanted = charge(model, errors, name, carrier, field, active, **kw)
+        targets.append((field.where.detach().clone(), wanted.detach().ne(0).any(-1)))
+        return wanted
+    monkeypatch.setattr(SentenceField, 'charge', observed_charge)
     try:
         texts = ['hello world', 'hello there', 'loving world', 'loving there']
         if trailing:
@@ -113,12 +113,12 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
             extents = brackets[b][brackets[b, :, 1] > brackets[b, :, 0]]
             source = texts[b].encode()
             assert [source[int(lo):int(hi)] for lo, hi in extents] == source.split()
-            # A separator remains perceived, but the native reconstruction
-            # target owns only the admitted word brackets.
+            # A separator remains perceived, but the reconstruction's
+            # error reads the input only in the admitted word brackets.
             native_spans = model.perceptualSpace._forward_input['native_part_spans'][b]
-            separator = torch.tensor([source[int(lo):int(hi)].isspace()
-                                      for lo, hi in native_spans])
-            assert not native[b, separator].any()
+            for lo, hi in native_spans.tolist():
+                if source[int(lo):int(hi)].isspace():
+                    assert not native[b, int(lo):int(hi)].any()
         # Since the loop of looks a position reaches the word brick only
         # when it is looked at as a word, so the separator is never pushed,
         # not even with a closed gate. The sentence then closes with its own

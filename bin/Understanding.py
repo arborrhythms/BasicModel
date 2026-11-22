@@ -349,6 +349,9 @@ class ConceptualField:
     where: Any
     when: Any
     percepts: Any
+    # Each reading's own .where wires ``[B, readings, wires]``: its
+    # percept's, muxed in at the lookup; read on the way back (FieldReverse).
+    wires: Any = None
 
     def __post_init__(self) -> None:
         for name in self.__dataclass_fields__:

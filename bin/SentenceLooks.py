@@ -31,7 +31,7 @@ def perceive(model, activity):
     from Understanding import ConceptualField
     return ConceptualField(owner._cs_field_concept_ids,
         F.pad(knowing, (0, 0, 0, 0, 0, 0, 0, sum(owner._field_caps())-len(knowing))),
-        owner._cs_field_where, owner._cs_field_when, None)
+        owner._cs_field_where, owner._cs_field_when, None, getattr(owner, '_cs_field_wires', None))
 
 
 def where_match(bank, band_share, activity, readings):

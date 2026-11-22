@@ -156,15 +156,19 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
     observed = torch.tensor([[[1.], [9.]]])
     field = ConceptualField(torch.tensor([0]), torch.ones(1, 1, 2, 2),
         torch.tensor([[[0., 1.], [1., 2.]]]), torch.ones(1, 2, 2), None)
-    first = NS(_reconstruction_percepts=predicted, materialize=lambda: predicted.transpose(1, 2))
-    second = NS(_reconstruction_percepts=observed)
+    nothing = NS(amounts=torch.zeros(1, 2, 256))
+    first = NS(_reconstruction_percepts=predicted, materialize=lambda: predicted.transpose(1, 2),
+               _radix_activity=nothing)
+    second = NS(_reconstruction_percepts=observed, _radix_activity=nothing)
     generation = NS(field=field, trace=(torch.zeros(1, 1), None, None, torch.zeros(1, 3), None, None, None),
                     words=torch.zeros(1, 2), counts=torch.tensor([2]), truncated=torch.zeros(1, dtype=torch.bool))
     monkeypatch.setattr(SentenceField, 'reconstruct_generation', lambda *a, **k: (generation, second))
     monkeypatch.setattr(SentenceField, 'publish', lambda *a: None)
     model = NS(_staged_concepts_in=observed.transpose(1, 2),
         _omission_targets={'raw': observed.transpose(1, 2), 'bytes': torch.tensor([[False, True]])},
-        loss=NS(reconstruction_scale=1.), _input_reconstructions={})
+        loss=NS(reconstruction_scale=1.), _input_reconstructions={},
+        perceptualSpace=NS(percept_store=NS(get_id=lambda raw: raw[0] if raw[0] < 16 else None,
+                                            _basis=NS(lookup_rows=lambda rows: torch.eye(16)[rows]))))
     def loss(value, target, *, registry, name, weight):
         registry.add(name + '.what', (value - target).square().sum((1, 2)), objective='reconstruction')
     model._reverse_event_loss = loss

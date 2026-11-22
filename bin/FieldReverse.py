@@ -14,6 +14,9 @@ class NativeActivity:
     strength: torch.Tensor
     percepts: torch.Tensor
     separators: torch.Tensor | None = None
+    # The pasted amount of each byte at each place ``[B, position, 256]``,
+    # graded: what the reconstruction's two costs read (:func:`cost`).
+    amounts: torch.Tensor | None = None
 
 
 class NativeDecode(nn.Module):
@@ -66,130 +69,170 @@ class NativeDecode(nn.Module):
         return torch.where(valid, self.spellings[selected, offset.clamp_max(self.spellings.shape[1] - 1)], 0).long()
 
 
-def reverse(model, sub, field):
-    """A basic percept puts its parts at its own field bracket, never an input trace."""
-    from dataclasses import replace
-    cs, ps = model._concept_owner(), model.perceptualSpace
-    # Each modality owns a distinct address range. Only text brackets can
-    # produce bytes; a colocated scalar is reconstructed by its value read.
-    start, end = model.where_registry.slices['text']
-    text = ((field.where[..., 0] >= start) & (field.where[..., 1] <= end)
-            & (field.where[..., 1] > field.where[..., 0]))
-    field = replace(field, evidence=field.evidence * text[None, ..., None],
-                    where=torch.where(text[..., None], field.where - start, 0))
-    radix, primitive = ps.percept_store, model.wholeSpace.subspace.what.primitive_properties
-    decoder = radix.activity_decoder
-    ids = field.concept_ids
-    store = cs._concept_allocator.layer(0)
-    by_id = {(key[1] if isinstance(key, tuple) else key): row for row, key in store._tensor_row_keys.items()}
-    rows = torch.tensor([by_id.get(int(cid), -1) for cid in ids.reshape(-1).tolist()],
-                        device=ids.device, dtype=torch.long).reshape(ids.shape)
-    columns, attributed, _ = cs.cs_percept_attribution(field.evidence,
-        observed=field.evidence, inventory_rows=rows)
-    B, E = field.where.shape[:2]
-    width = max(1, int(field.where[..., 1].max()))
-    if width >= len(decoder.positions):
-        raise OverflowError('field bracket exceeds decoder position capacity')
-    extents = (field.where[..., 1] - field.where[..., 0]).clamp_min(0)
-    span = int(extents.max()) if E else 0
-    offsets = decoder.positions[:span]
-    positions = field.where[..., :1] + offsets
-    valid = offsets < extents[..., None]
-    indices = positions.clamp(0, width - 1).reshape(B, -1)
+def spelling(basic, row):
+    """The bytes a basic percept spells: its stored form, its run, or its
+    parts' own texts in order; ``None`` where it spells none."""
+    raw = basic.form_of(row)
+    if raw is None:
+        raw = basic.runs.get(int(row))
+    if raw is None:
+        texts = [basic._part_text(part) for part in basic.occurrences[int(row)][0]]
+        raw = None if not texts or any(text is None for text in texts) else b''.join(texts)
+    return raw
 
-    def place(values, *, shift=None):
-        if shift is not None:
-            at = (field.where[..., 0] + shift).clamp(0, width - 1)
-            return values.new_zeros(B, width).scatter_reduce(1, at, values, reduce='amax', include_self=True)
-        values = (values[..., None] * valid).reshape(B, -1)
-        return values.new_zeros(B, width).scatter_reduce(1, indices, values, reduce='amax', include_self=True)
 
-    properties = [[attributed.new_zeros(B, width) for _ in range(2)] for _ in primitive.members]
-    parts = {}
-    # identityByParts is optional on native PartSpace configurations.
-    identity = getattr(radix, 'identity', None)
-    atoms = set(identity.atoms.values()) if identity is not None else set()
-    supports = {}
-    for edge, col in enumerate(columns.tolist()):
-        found = supports.get(col)
-        supports[col] = attributed[edge, ..., 0] if found is None else torch.maximum(found, attributed[edge, ..., 0])
-    for col, support in supports.items():
-        if cs.basic_percepts.is_value(col // 2) or col // 2 in getattr(cs.basic_percepts, 'place_rows', {}):
-            # Values have no byte locations (the value inverse reads their
-            # percepts); a place has no part and puts back no byte.
+def codebook(basic):
+    """The percept codebook's spelled rows: each basic percept that spells
+    bytes (no place, no conjunction, no value), with each of its bytes
+    ``[P, L]`` (``-1`` past its length). Kept until a row is added."""
+    key = (basic.revision, len(basic.index))
+    held = basic.__dict__.get('_reconstruction_codebook')
+    if held is not None and held[0] == key:
+        return held[1]
+    rows, spelled = [], []
+    for row in range(len(basic.index)):
+        if row in basic.place_rows or row in basic.conjunctions or basic.is_value(row):
             continue
-        group, wholes = cs.basic_percepts.occurrences[col // 2]
-        for whole in wholes:
-            properties[whole][col % 2] = torch.maximum(properties[whole][col % 2], place(support))
-        if col % 2 == 0:
-            if group and any(pid in atoms for pid in group):
-                # Part atoms name an admitted native word; their own
-                # spellings are not surface bytes.
-                raw = identity.spelling(group)
-                if raw is None:
-                    raise ValueError('a code that is no stored form has no spelling')
-                group = (identity.word_rows[raw],)
-            length = sum(len(radix.bytes_for(pid)) for pid in group)
-            fitted = support * (extents == length)
-            shift = 0
-            for pid in group:
-                for byte in radix.bytes_for(pid):
-                    row = radix.get_id(bytes([byte]))
-                    if row is None:
-                        raise ValueError('an admitted native form has an unadmitted byte')
-                    parts.setdefault(row, []).append((fitted, shift))
-                    shift += 1
-    properties = (torch.stack([torch.stack(p, -1) for p in properties], -2) if properties else
-                  attributed.new_zeros(B, width, 0, 2))
-    # Compute one primitive column at a time. Even a full 8192-position field
-    # never allocates an activity axis of len(radix) (or a dense byte alphabet).
-    weights = primitive.coefficients()
-    known = primitive.observed | (primitive.members.detach() != 0)
-    pairs = torch.stack((weights, (1 - weights) * known), -1).clamp_min(0)
-    pairs = pairs / pairs.sum(1, keepdim=True).clamp_min(1e-12)
-    byte_rows = {pid: byte for byte in range(256) if (pid := radix.get_id(bytes([byte]))) is not None}
-    strength = attributed.new_zeros(B, width)
-    selected = torch.zeros(B, width, device=strength.device, dtype=torch.long)
-    code = attributed.new_zeros(B, width, radix.dim)
-    for pid in sorted(parts):
-        value = attributed.new_zeros(B, width)
-        for support, shift in parts.get(pid, ()):
-            value = torch.maximum(value, place(support, shift=shift))
-        prototype = radix._basis.lookup_rows(torch.tensor([pid], device=value.device))[0].to(value)
-        code = code + value[..., None] * prototype
-        selected = torch.where(value > strength, pid, selected)
-        strength = torch.maximum(strength, value)
-    # A basic percept's ordered identity and property extension are two
-    # descriptions of the same support. Property attribution supplies gaps;
-    # summing it into competing identities loses order and counts support
-    # repeatedly when several properties describe the same part.
-    identity_present = strength > 0
-    for pid, byte in sorted(byte_rows.items()):
-        value = (properties * pairs[:, byte][None, None]).sum((-1, -2))
-        value = torch.where(identity_present, 0., value)
-        prototype = radix._basis.lookup_rows(torch.tensor([pid], device=value.device))[0].to(value)
-        code = code + value[..., None] * prototype
-        selected = torch.where(value > strength, pid, selected)
-        strength = torch.maximum(strength, value)
+        raw = spelling(basic, row)
+        if raw:
+            rows.append(row)
+            spelled.append(list(raw))
+    length = max([len(raw) for raw in spelled] + [1])
+    table = torch.full((len(spelled), length), -1, dtype=torch.long)
+    for n, raw in enumerate(spelled):
+        table[n, :len(raw)] = torch.tensor(raw)
+    basic.__dict__['_reconstruction_codebook'] = (key, (rows, table))
+    return rows, table
+
+
+def byte_rows(radix):
+    """Each byte's row of the percept store ``[256]`` (``-1`` where none)."""
+    return torch.tensor([-1 if (row := radix.get_id(bytes([v]))) is None else row for v in range(256)])
+
+
+def where_match(wires, grid, axes, sharpness):
+    """Each leaf's match ``[..., addresses]`` of its ``.where`` wires against
+    the grid's rows, axis by axis (each a slice of the wires), by distance:
+    a softmax of the summed distances. One axis today."""
+    distance = sum((wires[..., None, lo:hi] - grid[:, lo:hi]).norm(dim=-1) for lo, hi in axes)
+    return torch.softmax(-sharpness * distance, -1)
+
+
+def drawn(score):
+    """The index of the greatest of ``score`` on its last axis, a draw among
+    equals."""
+    tied = score == score.amax(-1, keepdim=True)
+    return (tied * torch.rand(score.shape, device=score.device)).argmax(-1)
+
+
+def reverse(model, sub, field):
+    """The input's reconstruction leaf by leaf (rule 79; §19.133): each
+    reading's own concept goes back through the order-zero Sigma and the
+    first Pi to the basic percept it recreates; the percept is taken apart;
+    its ``.what`` is matched against the percept codebook and its ``.where``
+    wires against the grid; the matched percept is pasted at the matched
+    place. Both matches are graded, so the cost's gradient reaches what
+    reads them; the decoded bytes are the greatest of each, a draw among
+    equals."""
+    from util import TheXMLConfig
+    if field.wires is None:
+        raise ValueError("a field is reconstructed from its readings' own .where wires")
+    cs, ps = model._concept_owner(), model.perceptualSpace
+    basic, radix, registry = cs.basic_percepts, ps.percept_store, model.where_registry
+    decoder = radix.activity_decoder
+    B, E = field.where.shape[:2]
+    # Each leaf's concepts, signed, on the order-zero Sigma's outputs.
+    sigma = cs.install_order_zero()
+    ids = field.concept_ids
+    value = (field.evidence[..., 0] - field.evidence[..., 1])
+    concepts = value.new_zeros(sigma.nOutput, B, E)
+    for b in range(B):
+        column = ids if ids.ndim == 1 else ids[:, b]
+        found = [(n, row) for n, cid in enumerate(column.tolist()) if int(cid) >= 0
+                 for row in (cs._concept_row_of(int(cid)),) if row is not None and 0 <= row < sigma.nOutput]
+        if found:
+            at = torch.tensor([n for n, _ in found], device=value.device)
+            to = torch.tensor([row for _, row in found], device=value.device)
+            concepts[:, b] = concepts[:, b].index_add(0, to, value.index_select(0, at)[:, b])
+    # The Sigma's way back, then the first Pi's: the recreated .what.
+    rows = list(range(len(basic.index)))
+    held = sigma.reverse(concepts, rows).clamp_min(0)                        # [R, B, E]
+    kept = basic.kept_percept(rows)[0][:, 0].to(held)                        # [R, width]
+    what = torch.einsum('rbe,rw->bew', held, kept)
+    presence = held.amax(0).clamp_max(1) if len(rows) else value.new_zeros(B, E)
+    # The .what against the percept codebook: each leaf's graded amount of
+    # each byte at each offset of the percept it recreates.
+    spelled, table = codebook(basic)
+    table = table.to(value.device)
+    P, L = table.shape
+    position = torch.arange(L, device=value.device)
+    if P:
+        codes = kept.index_select(0, torch.tensor(spelled, device=kept.device))
+        score = F.cosine_similarity(what[..., None, :], codes, dim=-1)        # [B, E, P]
+        w = torch.softmax(float(TheXMLConfig.get('architecture.reconstructionWhatSharpness')) * score, -1)
+        spelt = F.one_hot(table.clamp_min(0), 256).to(w) * (table >= 0)[..., None].to(w)   # [P, L, 256]
+        offsets = torch.einsum('bep,plv->belv', w * presence[..., None], spelt)
+        choice = drawn(score.detach())
+    else:
+        offsets = value.new_zeros(B, E, L, 256)
+        choice = torch.zeros(B, E, dtype=torch.long, device=value.device)
+    # The .where wires against the grid; a reading with no wires has no place.
+    t0, t1 = registry.slices['text']
+    grid = registry.code.to(value.device).float()
+    wires = field.wires.to(value.device).float()
+    q = where_match(wires, grid, registry.axes, float(TheXMLConfig.get('architecture.reconstructionWhereSharpness')))
+    q = (q[..., t0:t1] * wires.ne(0).any(-1)[..., None]).to(value)          # [B, E, A]
+    place = drawn(q.detach())
+    A = t1 - t0
+    # Paste: byte i of a leaf's percept at its place plus i.
+    width = A + L
+    amounts = value.new_zeros(B, width, 256)
+    when_code = ps.subspace.whenEncoding.encode(field.when[..., 0].long()).to(value) if ps.subspace.nWhen else None
+    when = None if when_code is None else value.new_zeros(B, width, when_code.shape[-1])
+    for i in range(L):
+        amounts[:, i:i + A] += torch.einsum('bea,bev->bav', q, offsets[:, :, i])
+        if when is not None:
+            when[:, i:i + A] += torch.einsum('bea,be,bed->bad', q, offsets[:, :, i].sum(-1), when_code)
+    # The decoded bytes: each leaf's greatest percept at its greatest place.
+    rows_of = byte_rows(radix).to(value.device)
+    with torch.no_grad():
+        bytes_at = (table.index_select(0, choice.reshape(-1)).reshape(B, E, L) if P else
+                    table.new_full((B, E, L), -1))
+        ids_at = torch.where(bytes_at >= 0, rows_of[bytes_at.clamp_min(0)], -1)
+        values = (presence * w.gather(-1, choice[..., None])[..., 0] if P else presence) * q.gather(-1, place[..., None])[..., 0]
+        values = values[..., None] * (ids_at >= 0)
+        at = (place[..., None] + position).reshape(B, -1)
+        strength = values.new_zeros(B, width).scatter_reduce(1, at, values.reshape(B, -1), 'amax', include_self=True)
+        best = values.reshape(B, -1) == strength.gather(1, at)
+        live = best & (values.reshape(B, -1) > 0)
+        selected = torch.zeros(B, width, dtype=torch.long, device=value.device).scatter(
+            1, torch.where(live, at, width - 1), torch.where(live, ids_at.reshape(B, -1).clamp_min(0), 0))
+        used = (strength > 0).any(0).nonzero()
+        # The buffer holds the sentence's extent, so that a percept not put
+        # back is missing at its places, and whatever is pasted beyond it.
+        ends = torch.where((field.where[..., 0] >= t0) & (field.where[..., 1] <= t1), field.where[..., 1] - t0, 0)
+        span = max(int(used.max()) + 1 if len(used) else 1, int(ends.max()) if ends.numel() else 0)
+    if span >= len(decoder.positions):
+        raise OverflowError('a reconstructed sentence exceeds decoder position capacity')
+    amounts, strength, selected = amounts[:, :span], strength[:, :span], selected[:, :span]
+    # The pasted code: each byte's prototype by its amount.
+    prototypes = radix._basis.lookup_rows(rows_of.clamp_min(0)).to(value) * (rows_of >= 0)[:, None].to(value)
+    code = amounts @ prototypes
     muxed = int(ps.subspace.nWhat + ps.subspace.nWhere + ps.subspace.nWhen)
     code = F.pad(code, (0, muxed - code.shape[-1]))
     where_indices = ps._radix_where_indices
     if where_indices and where_indices[0] >= radix.dim:
-        locations = decoder.positions[:width].expand(B, -1)
-        stamp = model.where_registry.encode('text', locations)
-        code[..., where_indices] = stamp.to(code) * strength[..., None]
-    if ps.subspace.nWhen:
-        times = place(field.when[..., 0].to(device=code.device, dtype=torch.long))
-        code[..., -ps.subspace.nWhen:] = ps.subspace.whenEncoding.encode(times).to(code) * strength[..., None]
+        # A byte pasted at a place is at that place: the grid's row there.
+        code[..., where_indices] = grid[t0:t0 + span].to(code) * amounts.sum(-1)[..., None]
+    if when is not None:
+        code[..., -ps.subspace.nWhen:] = when[:, :span]
     recovered = sub.carrier_like()
-    covered = torch.zeros(B, width, device=code.device, dtype=torch.long).scatter_add(
-        1, indices, valid.reshape(B, -1).long()).bool()
-    begin = torch.where(extents > 0, field.where[..., 0], width).amin(-1)
-    end = field.where[..., 1].amax(-1)
-    positions = decoder.positions[:width][None]
-    separators = ((positions >= begin[:, None]) & (positions < end[:, None]) &
-                  ~covered & (strength > 0).any(-1)[:, None])
-    recovered._radix_activity = NativeActivity(selected, strength, code, separators)
+    positions = decoder.positions[:span][None]
+    lit = strength > 0
+    first = torch.where(lit, positions, span).amin(-1)
+    last = torch.where(lit, positions, -1).amax(-1)
+    separators = (positions > first[:, None]) & (positions < last[:, None]) & ~lit
+    recovered._radix_activity = NativeActivity(selected, strength, code, separators, amounts)
     return recovered
 
 
