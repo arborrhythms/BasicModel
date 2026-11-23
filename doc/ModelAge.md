@@ -60,6 +60,12 @@ when a later task has to be broken down.
 | 0.70 | A thing is kept when it is out of the look (object permanence). Peekaboo: a thing that goes away and comes back is one identity, made when it was first there and reactivated when it returns | sourced: search for a fully hidden object at 8 to 12 months (Piaget); looking-time evidence from 3.5 months (Baillargeon) | the ladder's rung "one word"; the peekaboo itself (the thing, a gap, the thing again, one identity) is not yet a test. For a model that takes images: the thing is hidden behind one of several objects and the model chooses where it is |
 | 0.75 | A heard form is said back as a form, with no meaning asked | estimate | none yet |
 
+### Things that go on existing
+
+| Age | Task that must be learned | Basis | Measured by |
+| ---: | --- | --- | --- |
+| 1.75 | A thing that is moved while out of the look is expected where it was taken (invisible displacement). Two stories with the same last question: Felix goes into a box and the box is moved; Felix leaves the box and then the box is moved | sourced: Piaget's sixth stage, 18 to 24 months | none yet. It needs a world in which a thing keeps a place while unseen, which the model does not have (Alec, 2026-11-22); in words it also needs "where" answered |
+
 ### Single words
 
 | Age | Task that must be learned | Basis | Measured by |
@@ -124,10 +130,14 @@ cover. Their ages are estimates.
 
 ## Metal Baby's age today
 
-The model is named Metal Baby. Measured on 2026-11-22, at `1f48e6c2a3`:
+The model is named Metal Baby. Measured on 2026-11-22, on the branch
+`item17-r6d11` at `49fe80b064`:
 
-**Its age is 0.75.** Object permanence and recognising a word by its form
-pass, and the next row, a word said back, fails.
+**Its age is 1.00.** A word is said back by the answer the model returns.
+Alec, 2026-11-22: "thats reasonable; if the assessment changes to be more
+accurate, the age is adjusted." The two rows below 1.00 were measured inside
+the model and not through its answer, and the next row, a thing named by one
+word, is not yet measured through the answer.
 
 | Row | Result today |
 | --- | --- |
@@ -139,9 +149,14 @@ pass, and the next row, a word said back, fails.
 | 6.00, exclusive or | Passed (the standing gate). |
 
 So the model is uneven: it has learned things a child learns late (exclusive
-or, relations between named things) while failing one a child learns before
-two: saying one word back. The age reports the first failure, not the best
-result.
+or, relations between named things) while it cannot yet say back what it
+read as a sentence it understood. The age reports the first row not passed,
+not the best result.
+
+What the echo shows and does not show: the model answers with the words its
+reader recognized, in order, and spells them by its own way back. The words
+were learned when they were named; the echo's own teaching adds nothing, and
+a model with no thought rule says back whatever it reads.
 
 In a toy outside the model, the method now being built reads untaught
 lengths in order, stops at the end and counts to "4" exactly. That is the
@@ -206,6 +221,9 @@ out by hand from the results named beside it.
   <https://www.healthlinkbc.ca/healthwise/speech-and-language-milestones-ages-3-5-years>
 - Object permanence: <https://www.simplypsychology.org/object-permanence.html>,
   <https://britannica.com/science/object-permanence>
+- Invisible displacement (Piaget, *La construction du réel chez l'enfant*,
+  chapter 1; the link is Codex's, 2026-11-22, and was not opened in a check):
+  <https://www.fondationjeanpiaget.ch/fjp/site/textes/VE/JP37_CdR_Intro_Chap1.pdf>
 - The order of question words: <https://core.ac.uk/download/210883054.pdf>
   (reviewing Bloom, Merkin and Wootten 1982, and Wong and Ingram 2003)
 - Number-knower levels (Wynn 1990, 1992):
