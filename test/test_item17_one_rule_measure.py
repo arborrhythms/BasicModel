@@ -14,7 +14,7 @@ mark: whether the rule is on the walk's menu (`Generative.inverse_menu`) and,
 where it is not, which of the menu's tests refuses it
 (`LanguageSpace.decoder_eligibility`'s admissibility, read again here). A
 round runs until every word is said back in two rounds running, or for
-``ROUNDS`` (30) rounds: the measure's patience, no bar. A record: a start
+``ROUNDS`` rounds (3 in the suite; the pass measured 30): the measure's patience, no bar. A record: a start
 drawn afresh and printed; nothing is asserted of what a start gives."""
 import os
 from collections import Counter
@@ -167,7 +167,7 @@ def test_one_rule_taught_to_be_undone(tmp_path, monkeypatch, rule):
         said = Said(model, monkeypatch)
         alone = tuple(w + '.' for w in WORDS)
         optimizer = model.getOptimizer(lr=.01)
-        rounds = int(os.environ.get('ROUNDS', '30')) if rule in TAUGHT else 0
+        rounds = int(os.environ.get('ROUNDS', '3')) if rule in TAUGHT else 0
         running, curve = 0, []
         for r in range(rounds + 1):
             if r:
