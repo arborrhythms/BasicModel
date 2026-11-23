@@ -41,3 +41,20 @@ def test_retired_chooser_saved_optimizer_state_is_dropped_by_name():
     assert chooser not in live.state
     torch.testing.assert_close(live.state[reader]['exp_avg'], old.state[reader]['exp_avg'], rtol=0, atol=0)
     torch.testing.assert_close(live.state[reader]['exp_avg_sq'], old.state[reader]['exp_avg_sq'], rtol=0, atol=0)
+
+
+def test_optimizer_uses_its_models_rate_after_another_model_is_built(tmp_path, monkeypatch):
+    from test_compiled_word_chunk import _tiny_canonical_model
+    rates = (.002, .007)
+    models = []
+    try:
+        for index, rate in enumerate(rates):
+            directory = tmp_path / str(index)
+            directory.mkdir()
+            models.append(_tiny_canonical_model(directory, monkeypatch, training_overrides={'learningRate': rate}))
+        for model, rate in zip(models, rates, strict=True):
+            assert {group['lr'] for group in model.getOptimizer().param_groups} == {rate}
+            assert {group['lr'] for group in model.getOptimizer(lr=0.).param_groups} == {0.}
+    finally:
+        for model in models:
+            model.End()

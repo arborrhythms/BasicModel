@@ -19,9 +19,7 @@ class Generated:
 
     def texts(self, surface):
         decoded = surface[:, 0].detach().long().cpu().tolist()
-        spans = (self.field if self.realization_field is None else self.realization_field).where.cpu().tolist()
-        return tuple(b' '.join(bytes(row[lo:hi]) for lo, hi in extents if hi > lo).decode('utf8', 'replace')
-                     for row, extents in zip(decoded, spans))
+        return tuple(bytes(row).rstrip(b'\0').decode('utf8', 'replace') for row in decoded)
 
 
 def said_at(model, field):

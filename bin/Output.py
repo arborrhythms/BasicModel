@@ -27,29 +27,19 @@ def no_thought_rules(model):
     return registry is not None and getattr(registry, 'operations', None) == ()
 
 
-def witness(model, meaning, record, row, sid):
-    """Close a perception with its identified lexical occurrences in native position order."""
+def witness(model, meaning, reading):
+    """The lexical occurrences retained by this reading, in native position order."""
     from dataclasses import replace
     from ThoughtReferences import bindings
-    if record is None or not (no_thought_rules(model) and getattr(model, 'answer_synthesis', False)):
+    if not (no_thought_rules(model) and getattr(model, 'answer_synthesis', False)):
         return meaning
-    # The percept reader has already resolved these occurrences against its
-    # inventory. A grammar push names just the operand taken by that look.
-    spans = getattr(model, '_attention_spans', None)
-    recognized = getattr(model, '_attention_word_concepts', None)
-    field = record.open_field
-    if spans is None or recognized is None or field is None:
+    if reading is None or reading.word_ids is None or reading.word_extents is None:
         return meaning
-    # The opening names the word. A later interpretation can name its
-    # referent at the same place, which need not have that word's percept.
-    places, ids = spans[row], recognized[row]
-    in_field = (places[:, None] == field.where[row, None]).all(-1).any(-1)
-    live = (ids >= 0) & (places[:, 1] > places[:, 0]) & in_field
-    live &= model.inputSpace._packed_sentence_ids[row, :len(ids)] == sid
+    ids, places = reading.word_ids, reading.word_extents
+    live = (ids >= 0) & (places[:, 1] > places[:, 0])
     if not bool(live.any()):
         return meaning
     starts, witnesses = places[live, 0], ids[live]
-    # Equal places leave no evidence for either order.
     if len(starts.unique()) < len(starts):
         draw = torch.randperm(len(starts), device=starts.device)
         starts, witnesses = starts[draw], witnesses[draw]

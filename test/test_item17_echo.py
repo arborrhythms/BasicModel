@@ -35,7 +35,7 @@ from test_item17_places import LESSON, model_for, nominate, words_of
 WORDS = words_of(LESSON) + COUNTING[:6]
 
 
-def echo_model(tmp_path, monkeypatch):
+def echo_model(tmp_path, monkeypatch, *, architecture_overrides=None):
     """Keep the lesson comprehension grammar and a noun/verb output curriculum."""
     from pathlib import Path
     from xml.etree import ElementTree
@@ -52,7 +52,7 @@ def echo_model(tmp_path, monkeypatch):
                 section.remove(rule)
     path = tmp_path / 'echo.grammar'
     grammar.write(path)
-    model = model_for(tmp_path, monkeypatch, grammar=path)
+    model = model_for(tmp_path, monkeypatch, grammar=path, architecture_overrides=architecture_overrides)
     assert not model.grammatical_thoughts.operations
     return model
 
@@ -182,6 +182,8 @@ def cell(tmp_path, monkeypatch, *, mark, grammar):
                 observed.row.clear()
                 with torch.no_grad():
                     answer = read_once(model, index, word, answered=grammar, train=False, optimizer=optimizer)
+                if grammar:
+                    assert observed.row['walk emitted'][-1][1] == (answer,)
                 said = answer if grammar else observed.row.get('reconstruction')
                 echoed += said == word
                 if 'R, A' in observed.row:
@@ -196,6 +198,25 @@ def cell(tmp_path, monkeypatch, *, mark, grammar):
                 break
         print('curve (round, echoed, mean R, mean A):', start, curve)
         assert echoed == len(texts), f'{echoed} of {len(texts)} echoed; curve {curve}'
+    finally:
+        model.End()
+
+
+def test_one_look_says_only_the_word_it_read(tmp_path, monkeypatch, eager_reading):
+    model = echo_model(tmp_path, monkeypatch, architecture_overrides={'attentionBudget': 1})
+    words = ('This', 'is', 'Felix', '.')
+    sentence = 'This is Felix.'
+    try:
+        nominate(model, ('This', 'is', 'Felix', 'Felix.', sentence))
+        data = model.inputSpace.data
+        monkeypatch.setattr(data, 'has_supervised_outputs', True)
+        monkeypatch.setattr(data, 'text_answers', {'train': [sentence], 'validation': []})
+        observed = Observed(model, monkeypatch)
+        answer = read_once(model, 0, sentence, answered=True, train=False, optimizer=model.getOptimizer())
+        (look,) = observed.row['looks']
+        assert 0 <= look[0] < len(words)
+        assert answer == words[look[0]]
+        assert observed.row['answer meanings'] == [1]
     finally:
         model.End()
 

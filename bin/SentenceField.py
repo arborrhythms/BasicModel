@@ -456,7 +456,7 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     form_codes = radix._basis.lookup_rows(rows_of).to(amounts)
     read = F.one_hot(raw.clamp(0, 255), 256).to(amounts) * asked[..., None].to(amounts)
     errors.pyramid(name + '.pyramid', content(amounts, codes, spellings, form_codes),
-                   content(read, codes, spellings, form_codes), mask=active,
+                   content(read, codes, spellings, form_codes).detach(), mask=active,
                    weight=model.loss.reconstruction_scale, category='reconstruction')
     return wanted
 

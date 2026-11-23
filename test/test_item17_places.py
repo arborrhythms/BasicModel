@@ -29,7 +29,7 @@ def minimal():
     return one, two, LESSON
 
 
-def model_for(tmp_path, monkeypatch, rules=None, *, grammar=None):
+def model_for(tmp_path, monkeypatch, rules=None, *, grammar=None, architecture_overrides=None):
     """The small model of the looks' tests, with room for the lesson's words
     and its places. ``rules``: the grammar's rules available at the start
     (the key ``rulesAvailable``: names separated by spaces, empty for none);
@@ -38,7 +38,8 @@ def model_for(tmp_path, monkeypatch, rules=None, *, grammar=None):
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', input_width=32,
-        concept_rows=64, grammar=grammar, training_overrides={'reconstructionPlacement': 'eager'},
+        concept_rows=64, grammar=grammar, architecture_overrides=architecture_overrides,
+        training_overrides={'reconstructionPlacement': 'eager'},
         language_overrides=None if rules is None else {'rulesAvailable': rules})
     model._tensor_peer_while_eager = True
     model.inputSpace.data.has_supervised_outputs = False

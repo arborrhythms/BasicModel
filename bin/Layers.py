@@ -15159,6 +15159,8 @@ class Error:
         total = wanted.flatten(1).sum(-1)
         levels = max(put.shape[axis].bit_length() - 1 for axis in axes)
         match = lambda: torch.minimum(put, wanted).flatten(1).sum(-1)
+        if levels == 0:
+            return match(), total
         K = match() / 2
         for level in range(levels - 1, -1, -1):
             for axis in axes:

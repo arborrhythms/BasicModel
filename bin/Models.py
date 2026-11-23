@@ -1801,7 +1801,6 @@ class BaseModel(Mereology, nn.Module):
         cfg = TheXMLConfig.data
         from WordIdentity import resolve_identity_layout
         resolve_identity_layout(cfg)
-        self.cfg = cfg
 
         arch = cfg["architecture"]
         self._configure_generate_budget(arch.get('generateBudget', 32))
@@ -2698,7 +2697,7 @@ class BaseModel(Mereology, nn.Module):
         are excluded from the optimizer.
         """
         if lr is None:
-            lr = float(TheXMLConfig.training("learningRate"))
+            lr = float(self.cfg["architecture"]["training"]["learningRate"])
         params = []
         seen = set()
         for s in self.spaces:
@@ -6663,6 +6662,7 @@ class BasicModel(BaseModel):
         """
         if self._answer_silence_mask is not None:
             raise RuntimeError('answer silence capacity is already constructed')
+        self.cfg = TheXMLConfig.data
         result = self._create_per_stage(
             nInput, nPercepts, nConcepts, nSymbols, nWords=nWords,
             nOutput=nOutput, bindingDepth=bindingDepth,
@@ -20641,7 +20641,7 @@ class BasicModel(BaseModel):
             query = closing_question(meaning, clause, parsed, entries[b],
                                      store=store, written_rows=written_clauses[b])
             from Output import witness
-            meaning = witness(self, meaning, chosen[b].get('record'), b, sid)
+            meaning = witness(self, meaning, entries[b])
             fields.append(SentenceEndState(meaning, refs, row_addresses[b], clause.where, clause.when, query,
                 clause.order if index is None else retained['order'],
                 clause.evidence if index is None else retained['evidence'],
@@ -25368,7 +25368,7 @@ class ModelFactory:
         # brick body still issues host syncs. CUDA-only no-op elsewhere.
         # The rate is the model's configured one (data/model.xml gives
         # the default); no number is written here.
-        rate = float(TheXMLConfig.training("learningRate"))
+        rate = float(m.cfg["architecture"]["training"]["learningRate"])
         ModelFactory._brick_preflight(m, batch_size, rate)
 
         do_profile = os.environ.get("BASIC_PROFILE", "").lower() in ("1", "true") or _t("profile", False)

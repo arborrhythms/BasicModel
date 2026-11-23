@@ -117,7 +117,7 @@ def fields(model, observation, sid, *, trust):
                 query = phase_request(query, clause.identity['case_value'])
         when = model.when_encoding.encode(model._sentence_ticks[int(sid)]).to(meaning.roles)
         from Output import witness
-        meaning = witness(model, meaning, observation.get('record'), row, sid)
+        meaning = witness(model, meaning, program)
         result.append(SentenceEndState(meaning, where=clause.where, when=when, query=query,
             order=clause.order, evidence=clause.evidence,
             trust=trust))

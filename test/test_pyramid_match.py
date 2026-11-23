@@ -61,6 +61,14 @@ def test_against_the_reference_on_drawn_cases():
         assert abs(float(total[0]) - float(t)) <= 1e-6 * max(1., float(t))
 
 
+def test_a_single_cell_receives_the_full_weight():
+    wanted = torch.tensor([[[1., 2.]]])
+    for put in (wanted, wanted / 2):
+        match, total = Error.pyramid_match(put, wanted)
+        torch.testing.assert_close(match, put.sum().reshape(1))
+        torch.testing.assert_close(total, wanted.sum().reshape(1))
+
+
 def test_the_error_on_a_sentence():
     own = words('This is Felix.')
     assert error(own, own) == 0.

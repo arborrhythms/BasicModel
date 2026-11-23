@@ -179,6 +179,13 @@ def test_measured_the_charge_in_a_training_step(tmp_path, monkeypatch):
     model = lesson_model(tmp_path, monkeypatch)
     charge, spent = SentenceField.charge, []
 
+    pyramid = Error.pyramid
+    def checked_pyramid(errors, name, put, wanted, **options):
+        assert not wanted.requires_grad
+        return pyramid(errors, name, put, wanted, **options)
+
+    monkeypatch.setattr(Error, 'pyramid', checked_pyramid)
+
     def timed(*args, **kw):
         t = time.perf_counter()
         result = charge(*args, **kw)
