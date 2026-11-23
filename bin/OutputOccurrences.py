@@ -146,6 +146,11 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
             raw = owner.word_surface_for_row(int(selected[b, w]))
             if raw is None:
                 raise ValueError('a generated terminal has no owned native surface')
+            # One space after a word, none before a mark (a form whose first
+            # byte is no letter or digit). Provisional (seventeenth pass,
+            # item 5): the idea's root carries one place, not its span.
+            if cursor and not raw[:1].isalnum():
+                cursor -= 1
             where[b, w] = where.new_tensor((cursor, cursor + len(raw)))
             cursor += len(raw) + 1
     wires = None
