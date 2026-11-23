@@ -344,8 +344,8 @@ event, a word, a known form of several parts, a whole that covers them. One
 percept may occur at several places; each is an occurrence of its own.
 
 **Field of percepts.** Every occurrence of a sentence, at every level of the
-percept tower, each as one row: its code, the where wires of its place and
-the when wires of its time. It is made once, before the sentence is read,
+percept tower, has one row holding its code and the values of `.where` and
+`.when` for that occurrence. The field is made once, before the sentence is read,
 and it is the domain of the first Pi. A reference into the percept codebook
 would not do in its place, "because each percept needs an associated
 location".
@@ -358,6 +358,11 @@ and wholes covered by and covering that location, if possible, but perhaps
 only a few layers in each direction". Within one attended
 percept a row of the first Pi joins its entries on the what, the where and
 the when by the product, so a what is read at its own where.
+
+**Wire.** A connection with fixed endpoints. Its signal is the value carried
+on that connection. Two occurrences of the same word at different places
+use the same `.where` wires. Each occurrence carries the grid values read
+at its own place. STM can retain those values with the occurrence.
 
 **Where, when.** The place and the time of a percept, carried on wires of
 their own beside its what, from one fixed sinusoid for each. A row of a Pi
