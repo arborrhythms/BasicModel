@@ -122,6 +122,14 @@ def test_the_stm_head_names_the_operators_and_their_operands(tmp_path, monkeypat
                 expected[at] = name, sequence([expected[child] for child in index.operands[at]])
                 applications.append(name)
         assert read_pair(head) == sequence([expected[root] for root in index.roots])
+        owner = model._concept_owner()
+        held = list(owner.mtm.read_occurrences(store, head))
+        assert len(held) == len(concepts)
+        assert Counter(cid for _, cid, _ in held) == Counter(concepts)
+        for row, cid, address in held:
+            if cid is not None:
+                assert store.referent_of(row) == ('sym', cid)
+                assert owner.concept_id_at_row(address) == cid
         return result
 
     try:
