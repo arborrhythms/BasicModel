@@ -14696,7 +14696,7 @@ The tasks, in this order. Each is a commit of its own.
    test/test_item17_reconstruction_said_back.py at start 80356908385858
    and test/test_item17_root_trace.py at start 251890637530950 (a start
    is printed by each test; they are drawn afresh, so run each test
-   several times). It was not seen one pass earlier (commit 9d2fc4751a).
+   several times). It was not seen one pass earlier (commit 985d03959c).
    Find what spends the relation rows during nomination, whether it is
    this branch's, and repair it where it is made. Do not raise a
    capacity to pass, and add no forgetting.
