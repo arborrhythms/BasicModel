@@ -14593,7 +14593,7 @@ What the seventeenth pass found, and why this pass is next: from the idea alone 
    - `test_explicit_dimensions.py::TestXorGrammarReconstruction` errors in its fixture since the reconstruction runs the output walk inside the sentence's path (`WalkTrials.keep`, a path state whose `_concept_ids` is None). Find the state and repair the defect where it is made; the test is not changed.
    - `test_native_attention_field.py::test_reversed_candidate_reads_keep_native_field_order_without_teacher`: say whether it fails on the base; if it is this branch's, repair it.
    - `test_reading_curriculum.py`'s two tests of a whole reconstruction stay as they are; say how many of their readings are put back whole after item 3.
-   - "LTM1 capacity exhausted" stopped three of the seventeenth pass's runs during the nomination of the lesson's words: say whether it comes on the base (efb5be3c7b), and if it is this branch's, where the rows are spent.
+   - ("LTM1 capacity exhausted" is given to Codex, below; it is not this pass's.)
 6. *The gradient that is not a number* (the `divide` rule's forward on a divisor near zero, seventeenth pass, item 7) is not guarded. With rules available only as taught it cannot be drawn before `divide` is taught; say whether it was seen in this pass.
 7. *Not in this pass:* the span of a composed value (§19.135, 5), which needs the band widened and a question answered first; a second rule; reading in order.
 9. *A model that reads takes more than one look* (added the same day; Alec, on §23.6.23's "Why a model that reads puts back one word a reading": "If it's asked to reproduce a word, let it at least have a second look."), after items 1 to 6, as a commit of its own. In a model with no grammar the whole input is one reading: the open field has one slot, and the way down gives one percept for a slot. Build: the reading of a model with no grammar takes looks as the sentence's path does (`SentenceLooks.Looks`: the same `attend`, the same record of each look), with no decision of the grammar between them. Each look gives the open field a slot with its own `.where` and its own wires, and a form that is looked at gets its row as it does with the grammar (so that a mark and a counting word can be spelled). The reconstruction of that model does not change: it is the perceptual inverse of the field, and with a slot for each look it puts back a percept for each look.
@@ -14607,6 +14607,9 @@ What the seventeenth pass found, and why this pass is next: from the idea alone 
    - *Build, Claude's first choice, provisional:* a reading of one word closes as an idea whose meaning is that word's own concept, so that the answer has it to say, by the same way a sentence's concluded meaning reaches the answer; nothing is added to the answer path for a word. No activation is set directly, nothing is fed into the answer from the input's bytes, and the supplied answer enters only the cost, after the response is fixed. If a word alone cannot conclude a meaning without a new kind of thought, do not build it: report what the smallest change would be.
    - *The row at 1.00, input to output:* of 19, the words whose returned answer spells the word, three starts, taught until every word is echoed in two rounds running or 30 rounds (the patience of the measure, no bar of a gate); with R and A by round.
    - *Both ways, to gather information* (Alec, asked whether the echo test has the closing mark: "If we put the mark in the input, we should expect it at the output. you can run it both ways, with one or two looks, to gather information about what it can do."). So the mark is not left out by rule: whatever is in the input is expected in the answer. Run the measure in four cells and report all four: the word with no mark ("Felix") and with its mark ("Felix."), each read with one look and with two looks. For each cell: the answer returned, the reconstruction's text, R and A, the looks taken and their extents, and the answer's meanings. Where the number of looks is the model's own to take (the sentence's path with a grammar), say how many it took and what each took, and give the other count only if the model can be made to take it without a new mechanism (in the model with no grammar the second look is item 9's; that model has no answer in words, so its cells are read by the reconstruction alone). Nothing is repaired for a cell that fails: the four cells are the information.
+   - *In the test suite* (Alec, the same day: "just add them to the test suite."): the cells are tests of the suite and not a measure kept apart, in `test/test_item17_echo.py`, each asserting that the answer returned spells its input (the word, or the word and its mark). A start is drawn afresh and printed; a cell that does not pass is a failing test and is reported as one, with no skip and no xfail.
+11. *A sentence of two words, after the echo* (Alec: "We should be able to read multiple words, lets try a two word sentence after that. if it fails, we verify that we have enough state."), in the same file and the same way: the lesson's two-word sentences, each as the input and as the supplied answer, the answer returned read against the input.
+   - *If it fails, a test that the state is enough,* counted on the model as it runs for those sentences, each against what two words need: the looks taken and what each took; the slots of the open field; the rows held in STM and their capacity (`stmCapacity`); the leaves under the idea; the meanings and roles in the answer (`derivation.answer_meanings`); the slots and the budget of the output walk; the places of the output buffer. The test says which of these is short of two words, or that none is, in which case what is missing is not state and is named.
 8. *Standing terms,* as the sixteenth pass's item 7. No rule's inverse is given a witness or a place from the reading. No rule is special-cased in the source by its name: the first rule is named by the curriculum's stage and by the key, and nowhere else. The two gates and `test/test_compiled_lesson_step.py` run once at the end; do not end the pass while a run of yours is still going.
 
 *For Codex: why a model with no grammar puts back one word a reading* (added 2026-11-22, at Alec's word, after §23.6.23's "A model that reads"). A diagnosis; nothing is repaired.
@@ -14661,6 +14664,95 @@ the file and function where each word is lost, and what you would
 change, as a proposal and not a change. Add no rule that forbids a walk
 or prefers the start of a sentence, pin no seed for an assertion, and
 set no concept's activation directly.
+~~~
+
+*For Codex: work beside the eighteenth pass, toward finishing item 1.7* (added 2026-11-22, at Alec's word: "If there is something that codex can work on so that we can finish 1.7 tonight, please give me some text to paste to a session working in this same repo.").
+
+~~~
+Item 1.7 of BasicModel, work beside the running pass. Repository
+/Users/arogers/github/WikiOracle/basicmodel, branch item17-r6d11.
+
+An implementer is editing that checkout now (the echo test: a word given
+as the input and as the supplied answer, the answer returned read; then a
+sentence of two words). Do not edit or commit in that checkout. Make a git
+worktree of your own from the tip of item17-r6d11 on a new branch
+item17-codex, work and commit there, and push nothing. Keep out of the
+files that pass is in: bin/Language.py, bin/Generative.py,
+bin/SentenceField.py, bin/SentenceLooks.py, bin/OutputOccurrences.py,
+bin/FieldReverse.py, bin/WalkTrials.py, the answer path of bin/Models.py
+(_resolve_answer, _answer_occupancy, reverseOutput), and
+test/test_item17_echo.py. Where a task below needs one of them, stop that
+task and say what it needs.
+
+Read first, in doc/plans/2026-11-14-sigma-pi-layers.md: sections 19.135
+and 19.136 (the owner's decisions of today), section 23.6.23 (the last
+return, with its review), and doc/ModelAge.md.
+
+The tasks, in this order. Each is a commit of its own.
+
+1. "LTM1 capacity exhausted; forgetting is required" (bin/Memory.py,
+   near line 2478) stops runs while the lesson's words are being
+   nominated: three runs of the last pass, for example
+   test/test_item17_reconstruction_said_back.py at start 80356908385858
+   and test/test_item17_root_trace.py at start 251890637530950 (a start
+   is printed by each test; they are drawn afresh, so run each test
+   several times). It was not seen one pass earlier (commit 9d2fc4751a).
+   Find what spends the relation rows during nomination, whether it is
+   this branch's, and repair it where it is made. Do not raise a
+   capacity to pass, and add no forgetting.
+
+2. What is left of the reconstruction's own walk departures. The
+   sentence's reconstruction is now the output walk made to take the
+   recorded steps (SentenceField.reconstruction), so no departure of a
+   reconstruction walk is ever drawn. Still in the source and drawing
+   nothing: WholePaths.walk_options for reconstruction, the
+   reconstruction_round draws, the term reconstruction.walk_credit, and
+   'reconstruction' in SentenceCredit.WALKS. Remove them and port their
+   tests, each port asserting what replaced what it tested. A delete is
+   a mv into /tmp/item17-r6d-2026-11-21/. The output walk's departures
+   (output.walk_credit) stay.
+
+3. The age as a parameter of the model. doc/ModelAge.md says a model has
+   a mental age that only the assessment (bin/Assessment.py) writes; it
+   is not built ("Status", last sentence). Build it: a parameter of the
+   model saved and loaded with it, its default in data/model.xml and
+   data/model.xsd (no key in data/BasicModel.xml, no default in code);
+   the assessment measures the chart's rows that have a measure, input
+   to output on the model as it runs, and writes the greatest age with
+   every measured row at or below it passed; a test that asks for an age
+   the model does not have reports "not qualified at that age" and is
+   not a failure of what it set out to measure. The row at 1.00 is the
+   echo test: each word alone as the input and as the supplied answer,
+   the answer returned (BatchResult.outputPred) spelling the word. Call
+   it by the name the running pass gives it in test/test_item17_echo.py
+   when that file is committed on item17-r6d11; until then leave that
+   row's measure as a named place to fill and say so. Never write
+   "grade" for the age.
+
+4. A list, with no removal: what item 1.7's rules replaced that is
+   still in the source. A key that no reader reads, a function that no
+   caller calls, a second path beside the one that replaced it (section
+   22.7, step 2). For each: the file, the name, what replaced it, and
+   who still refers to it.
+
+Terms for all four. Measure input to output on the model as it runs;
+feed nothing into the middle of the model to fix or to measure. Pin no
+seed for an assertion; add no skip and no xfail; nothing under RUN_SLOW.
+Set no concept's activation directly. Add no rule that forbids a walk
+or prefers the start of a sentence; a tie is a draw. Change nothing of
+the two gates: test/test_mm_xor.py::TestMMXorConvergence::test_convergence
+and test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class.
+Run tests with
+  env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest <files> -q -p no:cacheprovider -n 6 --dist loadfile
+(the .venv is the main checkout's; test/test_item17_own_reading.py
+trains for more than forty minutes and is left out). Known failures
+that are not yours are listed in section 23.6.23, "Tests run".
+
+Do not wait on a question: build your first choice, say it is
+provisional, and list the question. Return, for each task, what you
+found with its numbers, what you changed (file and function), the tests
+run with their counts, the commits on item17-codex, and whatever you
+did not finish, first. Write it to suggestions.txt as before.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
