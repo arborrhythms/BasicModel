@@ -1237,7 +1237,7 @@ class MediumTermMemory(MemoryStore):
                     and proportions(entry.support) == wanted):
                 return key
         # Otherwise the same collection by parthood both ways: each holds the
-        # other's size by at least the bar. A tie at the greatest is a draw.
+        # other's size by at least the bar. A tie at the greatest identifies neither.
         from FamiliarTier import shared_part
         keys = [key for key, entry in self.entries.items() if entry.order == order
                 and support_order(owner, entry.support, entry.order) == value_order

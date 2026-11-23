@@ -23948,18 +23948,6 @@ class BasicModel(BaseModel):
         return num / (mask.sum() * float(width))
 
 
-    def _nearest_word(self, node, basis, word_rows):
-        """Nearest store word row to ``node`` (``[d_what]``) by cosine, and
-        that cosine. The leaf test of the trace-free derivation: a node that
-        already IS a store row (cos ~1) is a word, not a composite to
-        un-fold further."""
-        import torch.nn.functional as _F
-        W = basis.getW()
-        Wr = W.index_select(0, word_rows.to(W.device))
-        sims = _F.cosine_similarity(node.reshape(1, -1), Wr, dim=-1)
-        j = int(sims.argmax())
-        return Wr[j], float(sims[j])
-
     def _stamp_unfold_where(self, out, d_what, basis, word_rows):
         """Write sequential word offsets into the un-fold output's ``.where``
         band. Each emitted slot is matched to its word row (the recommender
