@@ -2670,3 +2670,10 @@ To specify: the neighbourhood over the percept graph (by `.where`, by
 the part map, or both); how a centre of salience is read from it and
 how it moves a look; and how this lies with the draw among equals
 (sigma-pi plan, §19.121).
+
+## The grid in three dimensions (decided, not built)
+
+The grid ([Glossary](Glossary.md)) is to be a space of three dimensions for
+every modality: text on its first axis, with zeros on the other two; an image
+on two; a volume on three. Today it has one axis (`WhereRegistry.axes`), and
+the source calls it `WhereRegistry.code`.
