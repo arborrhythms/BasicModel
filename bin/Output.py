@@ -18,7 +18,65 @@ import torch
 from Meaning import ConceptualMeaning
 
 
-def concluded_meanings(meaning):
+def no_thought_rules(model):
+    """A grammar with no thought rule: nothing is concluded at a closing, so
+    the answer can only say the sentence's own meaning (the echo, 19.137)."""
+    registry = getattr(model, 'grammatical_thoughts', None)
+    if registry is None:
+        registry = getattr(getattr(model, 'symbolSpace', None), 'grammatical_thoughts', None)
+    return registry is not None and getattr(registry, 'operations', None) == ()
+
+
+def witness(model, meaning, record, row, sid):
+    """Close a perception with its identified lexical occurrences in native position order."""
+    from dataclasses import replace
+    from ThoughtReferences import bindings
+    if record is None or not (no_thought_rules(model) and getattr(model, 'answer_synthesis', False)):
+        return meaning
+    # The percept reader has already resolved these occurrences against its
+    # inventory. A grammar push names just the operand taken by that look.
+    spans = getattr(model, '_attention_spans', None)
+    recognized = getattr(model, '_attention_word_concepts', None)
+    field = record.open_field
+    if spans is None or recognized is None or field is None:
+        return meaning
+    # The opening names the word. A later interpretation can name its
+    # referent at the same place, which need not have that word's percept.
+    places, ids = spans[row], recognized[row]
+    in_field = (places[:, None] == field.where[row, None]).all(-1).any(-1)
+    live = (ids >= 0) & (places[:, 1] > places[:, 0]) & in_field
+    live &= model.inputSpace._packed_sentence_ids[row, :len(ids)] == sid
+    if not bool(live.any()):
+        return meaning
+    starts, witnesses = places[live, 0], ids[live]
+    # Equal places leave no evidence for either order.
+    if len(starts.unique()) < len(starts):
+        draw = torch.randperm(len(starts), device=starts.device)
+        starts, witnesses = starts[draw], witnesses[draw]
+    words = tuple(witnesses[starts.argsort(stable=True)].tolist())
+    return replace(meaning, bindings=dict(bindings(meaning), _perceived_words=words))
+
+
+def perceived_meanings(owner, meaning, words, row):
+    """Each heard occurrence names an existing concept; its dictionary owns its form."""
+    from dataclasses import replace
+    addresses = [(cid, owner._concept_row_of(cid)) for cid in words]
+    known = [(cid, address) for cid, address in addresses if address is not None]
+    if not known:
+        return ()
+    ids, rows = zip(*known)
+    rows = torch.tensor(rows, device=meaning.roles.device)
+    with torch.no_grad():
+        codes = owner.similarity_codebook.lookup_rows(rows, stream=row)
+        codes = owner.interpret.lexical_atoms(rows, codes, stream=row)
+    width = meaning.roles.shape[-1]
+    points = torch.nn.functional.pad(codes[:, :width], (0, max(0, width - codes.shape[-1])))
+    return tuple(replace(ConceptualMeaning.from_description(point),
+                         role_refs=(('sym', cid), None, None), bindings={'_evidence_kind': 'perception'})
+                 for cid, point in zip(ids, points, strict=True))
+
+
+def concluded_meanings(meaning, *, perception_owner=None, row=0):
     """Realize filled variables, or the complete proposition when none was asked.
 
     The question's fixed operands remain in its proof. They are not extra
@@ -27,6 +85,13 @@ def concluded_meanings(meaning):
     from dataclasses import replace
     from ThoughtReferences import bindings, open_slots
     from BindingAnswers import references
+    words = bindings(meaning).get('_perceived_words', ())
+    if perception_owner is not None and words:
+        # Perceiving the terms of a question witnesses those lexical ideas
+        # even while the question's referent remains open.
+        witnessed = perceived_meanings(perception_owner, meaning, words, row)
+        if witnessed:
+            return witnessed
     if open_slots(meaning):
         return ()
     values = references(meaning)

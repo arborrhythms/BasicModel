@@ -143,6 +143,10 @@ def close(model, fields, *, sentence, ready, images=None, pending=None):
     results = []
     for row in ready:
         field = fields[row]
+        from Output import no_thought_rules
+        if no_thought_rules(model):
+            fields[row] = replace(field, thought_completed=True)
+            continue
         if not has_open_slots(field.query if field.query is not None else field.meaning):
             absence(model, row, field.meaning, None if images is None else images.get(row),
                     pending=None if pending is None else pending[row])

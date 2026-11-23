@@ -6587,7 +6587,8 @@ class BasicModel(BaseModel):
     def _run_selected_sentence_thoughts(self, fields, *, work_budget=None):
         """Every completed field is offered to the ordinary chooser."""
         registry = _boundary_registry(self)
-        if registry is None:
+        from Output import no_thought_rules
+        if registry is None or no_thought_rules(self):
             return ()
         budget = self.attention_budget if work_budget is None else work_budget
         results = []
@@ -8773,6 +8774,13 @@ class BasicModel(BaseModel):
                     for row in range(len(fields))):
                 selected_thoughts = self._run_selected_sentence_thoughts(
                     tuple(fields), work_budget=selected_budget)
+        registry = getattr(self, "grammatical_thoughts", None)
+        from Output import no_thought_rules
+        without_thought = no_thought_rules(self)
+        if without_thought:
+            # A closing may offer a row and return without selecting any action.
+            selected_thoughts = tuple((row, result) for row, result in selected_thoughts
+                                      if result.records or result.result is not None)
         selected_rows = tuple(row for row, _result in selected_thoughts)
         # All checked result kinds have an explicit target-free adapter.
         # Sets preserve every member as separate role triples; no averaging,
@@ -8785,16 +8793,19 @@ class BasicModel(BaseModel):
         # Recover only its actual selected completed field; this performs no
         # extra parse, learned classification, thought execution or LTM write.
         language = getattr(self, "languageSpace", None)
-        registry = getattr(self, "grammatical_thoughts", None)
-        if choose_thoughts and language is not None and registry is not None:
+        if language is not None and registry is not None and (choose_thoughts or without_thought):
             for row, entry in enumerate(fields):
-                if entry is None:
+                if row in selected_rows or entry is None:
                     continue
                 meaning = entry.meaning
                 if meaning is None:
                     continue
                 from Output import concluded_meanings
-                items = concluded_meanings(meaning)
+                items = concluded_meanings(meaning, perception_owner=self._concept_owner() if without_thought else None,
+                                           row=row)
+                from ThoughtReferences import bindings as meaning_bindings
+                if without_thought and items and meaning_bindings(items[0]).get('_evidence_kind') == 'perception':
+                    row_sources[row] = 'perception'
                 answer_meanings[row] = items
                 selected_answer_rows[row] = (torch.cat(tuple(item.roles.to(answer) for item in items))
                     if items else torch.zeros_like(selected_answer_rows[row]))
@@ -9558,7 +9569,7 @@ class BasicModel(BaseModel):
             idea = self._generation_read(idea, record=structure,
                 charge=walk_options is None)
         from RowTime import compared
-        idea = compared(self, idea)
+        idea = compared(self, idea, tick=self.__dict__.get('_produced_when'))
         # A prepared answer may be trained after a no-grad capture,
         # without entering forward/runBatch's anchor setup first.
         _ensure_grad_anchors(idea.device, (idea.dtype,))
@@ -20576,6 +20587,8 @@ class BasicModel(BaseModel):
             parsed = clause.meaning
             query = closing_question(meaning, clause, parsed, entries[b],
                                      store=store, written_rows=written_clauses[b])
+            from Output import witness
+            meaning = witness(self, meaning, chosen[b].get('record'), b, sid)
             fields.append(SentenceEndState(meaning, refs, row_addresses[b], clause.where, clause.when, query,
                 clause.order if index is None else retained['order'],
                 clause.evidence if index is None else retained['evidence'],

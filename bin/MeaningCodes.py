@@ -5,6 +5,7 @@ Concept definedness scales the unit direction before each independent
 evidence pole is applied. Neither quantity normalizes the form block.
 """
 import hashlib
+import math
 from functools import lru_cache
 
 import numpy as np
@@ -161,7 +162,13 @@ def compose(name, left, right=None):
         elif name == 'multiply':
             result = a * b
         else:
-            result = torch.where(b != 0, a / torch.where(b != 0, b, 1.), 0.)
+            # Past this ratio tanh is 1 to the float's precision, so the value
+            # is given without the quotient: a quotient that overflows gives a
+            # gradient that is not a number, even where it earns no credit.
+            rail = -math.log(torch.finfo(a.dtype).eps)
+            interior = (b != 0) & (a.abs() <= b.abs() * rail)
+            ratio = torch.where(interior, a, 0.) / torch.where(interior, b, 1.)
+            return torch.where(interior, ratio.tanh(), a.sign() * b.sign())
         return result.tanh()
     positive, negative = left.chunk(2, -1)
     other_positive, other_negative = right.chunk(2, -1)

@@ -69,14 +69,15 @@ def how_far_back(present, stamp):
     return torch.where(stamp.ne(0).any(-1, keepdim=True), code, 0.)
 
 
-def compared(model, idea):
+def compared(model, idea, *, tick=None):
     """A reader's full-width idea, its stamp read through the comparator
     against the present on the model."""
     store = model.symbolSpace.ltm_store
     start = None if store is None else store.when_start
     if start is None or idea.shape[-1] <= start:
         return idea
-    return torch.cat((idea[..., :start], how_far_back(model.present_code(), idea[..., start:start+4]),
+    present = model.present_code() if tick is None else encoder().encode(tick).to(idea)
+    return torch.cat((idea[..., :start], how_far_back(present, idea[..., start:start+4]),
                       idea[..., start+4:]), -1)
 
 

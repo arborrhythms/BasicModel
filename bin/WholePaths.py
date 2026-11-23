@@ -116,6 +116,8 @@ def fields(model, observation, sid, *, trust):
             if clause.identity.get('case_value') is not None:
                 query = phase_request(query, clause.identity['case_value'])
         when = model.when_encoding.encode(model._sentence_ticks[int(sid)]).to(meaning.roles)
+        from Output import witness
+        meaning = witness(model, meaning, observation.get('record'), row, sid)
         result.append(SentenceEndState(meaning, where=clause.where, when=when, query=query,
             order=clause.order, evidence=clause.evidence,
             trust=trust))
@@ -448,7 +450,12 @@ def keep_output(model, paths, selected, sid):
         for name in ('conceptual_answer', 'conditioning_context', 'answer_symbol'):
             values = [getattr(item, name) for item in derivations]
             if all(torch.is_tensor(value) for value in values):
-                fields[name] = torch.cat([value[row:row+1] for row, value in enumerate(values)], 0)
+                rows_to_keep = [value[row:row+1] for row, value in enumerate(values)]
+                if name == 'conceptual_answer':
+                    slots = max(value.shape[1] for value in rows_to_keep)
+                    rows_to_keep = [torch.nn.functional.pad(value, (0, 0, 0, slots - value.shape[1]))
+                                    for value in rows_to_keep]
+                fields[name] = torch.cat(rows_to_keep, 0)
         derivation = replace(derivation, **fields, selected_thoughts=thoughts)
     result = AnswerConstruction(actual=stack('actual'), derivation=derivation,
         concepts=stack('concepts'), percepts=stack('percepts'), surface=stack('surface'),

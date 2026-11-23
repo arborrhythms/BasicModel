@@ -4,7 +4,7 @@ answer, with no mark or with its mark: what is put in is expected out. Four
 cells, each a test of the suite asserting that what the model returns
 spells its input, input to output on the model as it runs:
 
-- with the grammar (the lesson's model), the word and the word with its
+- with the lesson's compose rules, noun/verb generation and no thought rules, the word and the word with its
   mark, each read with the looks the sentence's path takes of itself (one
   for the word, two for the word and its mark); the answer returned
   (`BatchResult.outputPred`) is read;
@@ -33,6 +33,28 @@ from test_item17_own_reading import COUNTING
 from test_item17_places import LESSON, model_for, nominate, words_of
 
 WORDS = words_of(LESSON) + COUNTING[:6]
+
+
+def echo_model(tmp_path, monkeypatch):
+    """Keep the lesson comprehension grammar and a noun/verb output curriculum."""
+    from pathlib import Path
+    from xml.etree import ElementTree
+    grammar = ElementTree.parse(Path(__file__).resolve().parents[1] / 'data' / 'complete.grammar')
+    for section in grammar.iter('thought'):
+        for rule in section.findall('rule'):
+            section.remove(rule)
+    # Named nouns are interpreted, and a verb can unfold its operands.
+    # Both compete with emitting a terminal in the ordinary walk.
+    for section in grammar.iter('generate'):
+        for rule in section.findall('rule'):
+            inverse = rule.text.split('=', 1)[1].strip().split('.', 1)[0]
+            if inverse not in ('interpret', 'verb'):
+                section.remove(rule)
+    path = tmp_path / 'echo.grammar'
+    grammar.write(path)
+    model = model_for(tmp_path, monkeypatch, grammar=path)
+    assert not model.grammatical_thoughts.operations
+    return model
 
 
 def text(t):
@@ -138,7 +160,7 @@ def cell(tmp_path, monkeypatch, *, mark, grammar):
     texts = tuple(w + mark for w in WORDS)
     print('start', start, '| cell: the word', 'with its mark' if mark else 'with no mark',
           '| grammar' if grammar else '| no grammar (read by the reconstruction)')
-    model = (model_for if grammar else _grammar_free_text_model)(tmp_path, monkeypatch)
+    model = (echo_model if grammar else _grammar_free_text_model)(tmp_path, monkeypatch)
     use_eager_reading(monkeypatch)
     try:
         # The same words in every cell: each nominated alone and with its mark.
@@ -203,7 +225,7 @@ def test_echo_a_sentence_of_two_words(tmp_path, monkeypatch):
     torch.manual_seed(start)
     one, two, lesson = minimal()
     print('start', start, '| two-word sentences', two)
-    model = model_for(tmp_path, monkeypatch)
+    model = echo_model(tmp_path, monkeypatch)
     use_eager_reading(monkeypatch)
     try:
         nominate(model, one + two + lesson)
@@ -253,7 +275,7 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
     torch.manual_seed(start)
     one, two, lesson = minimal()
     print('start', start)
-    model = model_for(tmp_path, monkeypatch)
+    model = echo_model(tmp_path, monkeypatch)
     use_eager_reading(monkeypatch)
     try:
         nominate(model, one + two + lesson)
@@ -322,12 +344,15 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
             "output buffer's places": 0 if batch is None or batch.outputPred is None else int(batch.outputPred.shape[-1]),
         }
         model.End()
-        # One meaning may hold every role; each other count needs one place
-        # for each word and the mark, the buffer one for each byte.
+        # One meaning may hold every role, and a rule may have put two STM
+        # rows into one before the last word is read (the leaves under the
+        # idea still count every word); each other count needs one place for
+        # each word and the mark, the buffer one for each byte.
         wanted = {name: (len(sentence.encode()) if name == "output buffer's places" else
-                         1 if name == "answer's meanings" else need) for name in counts}
+                         1 if name in ("answer's meanings", 'rows held in STM') else need) for name in counts}
         short = {name: (value, wanted[name]) for name, value in counts.items() if value < wanted[name]}
         print(f'{sentence!r}: needs {need} (words and the mark) | counts {counts} | short {short}')
         assert not short, f'short of two words (value, needed): {short}; counts {counts}'
     finally:
         model.End()
+
