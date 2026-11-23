@@ -10226,6 +10226,28 @@ Asked "Shall the reconstruction be moved after the thought within item 1.7?" (it
 
 So the order of §19.142 is the one to build: percepts, the basic field, an optional thought, then the one field the thought leaves for both the reconstruction and the output. The line "Reconstruction has its own operated field" (`WholePaths.py`) goes. Still open with Alec when this was written, and so not decided by it: where a thought's light is placed (`intuit` deposits it at every occupied place today), whether System 2's teaching reaches the basic Pi-Not-Sigma itself, whether a thought may only re-read a place in another sense of the same word, and whether the answer and the reconstruction name a word by one concept. The text for Codex is above §22.7.
 
+### 19.145 Alec's answers to the nine open questions (2026-11-23)
+
+Each question as Claude put it, shortened, and Alec's answer in his words.
+
+1. *Reconstruction after the thought, in item 1.7 or later?* "asked and answered." (§19.144: in 1.7.)
+2. *Should a thought's light arrive as activity with no `.where`?* "the .where is baked into the concept (its subspace is appended to the percept codebook before they get multiplied elementwise by the Basic-level PI). so its wrong to say that there is no where, but it is not explicit except at the perceptual or symbolic levels."
+3. *Should the field a thought leaves also teach the basic Pi-Not-Sigma itself?* "We already have higher order thought teaching basic level, that is sufficient for now (thinking need not do so), please doc this as something to consider again with Codex."
+4. *May a thought re-read a place only in another sense of the same word?* "I think this goes away when we consider that words should be processed one at a time, and they will produce a WFF at some point, at which point we can reconstruct and train, and optionally produce output based on that comprehension (). So from that point of view, "put another concept there" does not make sense to me; we have an expectation on it, but we are not doing reconstruction at that point, we are creating an activation trace for later comprehension (which is currently a bit explicit, and we are building a tree in STM)."
+5. *Should the answer and the reconstruction name a word by one concept?* "I don't understand, are you just talking about the perceptual and conceptual representations of a word? what are you asking about them?"
+6. *Shall the failing gradient test be changed to what the analysis says?* "we want to treat parts and wholes on a much more equal footing then we do today. We had a proposal to let wholes determine the saliency map to guide attention, perhaps that turned the system into top-down where and bottom-up what. please document for concversation with codex."
+7. *What should carry "say X"?* "Codex can explore this question; it is a good test of architecture completeness to reason over words, and we should not add any special cases to get it done."
+8. *Should the looks' own cost be charged where an answer is supplied?* "minimally the looking will teach expectation. Perhaps, as I was saying before, we want each look to be a complete system1 loop (where attend() does percepts→basic→inverse(percepts) ) and we can treat System2 as a parallel loop that integrates with at at the basic level."
+9. *Is word-by-word reading inside item 1.7, and is one attention event one `LTM0` entry a look?* "I am not saying that we should do a word-by-word read; there is good optimization in reading a sentence of percepts at a time. but perhaps each look needs more of a round-trip (see 8)."
+
+What follows (Claude):
+
+- *Withdrawn.* Claude's "symbols carry activity and no `.where`", "the field read by place and by light" and "a thought may re-read a place" (`doc/GradientFlow.md`, §19.142) are wrong or without meaning in Alec's picture and are taken out of the doc. A concept holds its `.where` inside it; the `.where` is explicit only at the perceptual and the symbolic levels. A look does not reconstruct: the looks lay down an activation trace (today explicit, the tree in the STM), each look with an expectation on it; when the trace gives a well-formed formula the reconstruction is computed and taught, and an output may follow from that comprehension.
+- *§19.143 corrected.* The reading of a sentence of percepts at a time stays. What is to work is the analysis over a series of events reached by their links, since it is the mechanism of the STM; and each look may need more of a round trip (answers 8 and 9). Claude's item "reading word by word, each look's event is kept as an entry of `LTM0`" asked for more than Alec said; the text for Codex is amended.
+- *Question 5 was badly put, and is not Alec's to answer.* Both names are concepts; nothing in it is about percepts. The answer of a model with no thought rule names each word by the concept the opening gave it (`Output.witness`, `_attention_word_concepts`). The reconstruction names it by the concept its STM row holds, which is the word's own concept where it has one, and otherwise the concept the comprehension resolved the word to, its referent (`Comprehension.Evaluation.finish`). Where the second is used, the two teach two different concepts to be spelled as the same letters. Whether that ever happens is a count to make, not a decision; it goes to Codex as a check.
+- *Not changed:* the failing test `test_input_reconstruction_reaches_perception_and_not_the_grammar` stays as it is until parts and wholes are talked through (answer 6).
+- *For Codex:* answers 3, 6, 7 and 8 are points to explore or to talk through; their text is above §22.7.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -15314,11 +15336,16 @@ retrieval)."
    output cost), and what is missing for one look to be closed as an
    event of its own.
 
-3. The series. Reading word by word, each look's event is kept as an
-   entry of LTM0 (what the look took, with its .where and .when), and
-   each event is linked to the next by a pair of LTM1, written by the
-   store's own parts.add. If what exists cannot hold this, do not add a
-   store: say what is short.
+3. The series. Corrected 2026-11-23 (19.145, answer 9): Alec is not
+   asking for a sentence to be read word by word; a sentence of percepts
+   read at a time stays, and "perhaps each look needs more of a
+   round-trip". So do not change how a sentence is read. What is to work
+   is the analysis of item 4 over a series of events that memory holds
+   and links. Use whatever series the reading already leaves (the trace
+   of item 1); only if it leaves none, say what the least addition would
+   be (an entry of LTM0 for what a look took, a pair of LTM1 from one
+   event to the next, by the store's own parts.add) and wait for Alec's
+   word before building it.
 
 4. The analysis from the series. Bring the events onto the STM one at a
    time, each reached from the one before by its link, and run the
@@ -15372,14 +15399,17 @@ model returns).
    and whatever only served the old order go (a delete is a mv into
    /tmp/item17-r6d-2026-11-21/).
 
-3. Not decided, so do not build them; report what you see of each:
-   where a thought's light is placed (intuit deposits it at every
-   occupied place of the field today, so a reconstruction after the
-   thought meets it there); whether a thought may put another word's
-   concept at a place of the input; whether the answer and the
-   reconstruction name a word by the same concept. If the order cannot
-   be built without settling one of these, take the choice that changes
-   least, say which, and say what it costs.
+3. Alec's picture of the timing (19.145, answers 2 and 4): a look does
+   not reconstruct. The looks lay down an activation trace (today
+   explicit, the tree in the STM), each with an expectation on it; when
+   the trace gives a well-formed formula the reconstruction is computed
+   and taught, and an output may follow from that comprehension. A
+   concept holds its .where inside it (its subspace is appended to the
+   percept codebook before the basic level's Pi); the .where is explicit
+   only at the perceptual and the symbolic levels. Report, and do not
+   change: where intuit deposits what it lights (every occupied place of
+   the field today) and whether a reconstruction after the thought puts
+   any of it back as letters.
 
 4. Measured, input to output: the reconstruction's text for the 19 words
    with their marks, the six two-word sentences and the lesson's
@@ -15389,6 +15419,63 @@ model returns).
    readings where a thought changed what was put back, and whether any
    letters were put back that the input does not hold; the echo's three
    passing tests; both gates.
+~~~
+
+*For Codex: Alec's answers of 2026-11-23, one question to explore and four points to talk through* (added 2026-11-23, §19.145)
+
+~~~
+Item 1.7, your branch item17-codex-open. The spec's section 19.145 has
+Alec's answers to nine questions, in his words; read it first. Two
+earlier texts are amended by it: "a sentence as a series of attention
+events" (its item 3) and "the reconstruction is computed after the
+thought" (its item 3). The standing rules of the list hold.
+
+To explore, and to build what it needs if it needs nothing new:
+
+A. "say X" is answered "X", and "X" alone is met with silence (19.141).
+   Alec: "Codex can explore this question; it is a good test of
+   architecture completeness to reason over words, and we should not add
+   any special cases to get it done." The word "say" is data of a test
+   and is never in the source. No thought rule made for it, no layer, no
+   key. Say in the return what in the architecture as it stands can
+   carry it, what cannot, and what was measured from the input to the
+   returned answer.
+
+To talk through with Alec: write your view of each into the return,
+with what it would add, and build none of them.
+
+B. Each look as a whole System 1 loop. Alec: "minimally the looking will
+   teach expectation. Perhaps, as I was saying before, we want each look
+   to be a complete system1 loop (where attend() does
+   percepts->basic->inverse(percepts) ) and we can treat System2 as a
+   parallel loop that integrates with at at the basic level." And of
+   reading: "I am not saying that we should do a word-by-word read;
+   there is good optimization in reading a sentence of percepts at a
+   time. but perhaps each look needs more of a round-trip". Your own
+   measurement of the looks' costs where an answer is supplied (list,
+   item 6) bears on this.
+
+C. Parts and wholes. Alec: "we want to treat parts and wholes on a much
+   more equal footing then we do today. We had a proposal to let wholes
+   determine the saliency map to guide attention, perhaps that turned
+   the system into top-down where and bottom-up what." The test
+   test_item20_round6_gradients.py::test_input_reconstruction_reaches_perception_and_not_the_grammar
+   fails because saying the input back no longer reaches the wholes'
+   members (23.6.31); it is left failing until this is talked through.
+
+D. What teaches the basic level. Alec: "We already have higher order
+   thought teaching basic level, that is sufficient for now (thinking
+   need not do so)". doc/GradientFlow.md, "System 2 teaching System 1 on
+   the shared map", writes the other possibility (the way up taught
+   toward the field a thought leaves). It is not asked for now.
+
+E. A count, not a decision. In the echo's model the answer names each
+   word by the concept the opening gave it (Output.witness,
+   _attention_word_concepts); the reconstruction names it by the concept
+   its STM row holds, the word's own concept or else the concept the
+   comprehension resolved it to (Comprehension.Evaluation.finish). Count,
+   over the 19 words with their marks and the six two-word sentences,
+   the words for which the two are different concepts.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
