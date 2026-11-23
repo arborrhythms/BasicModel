@@ -165,12 +165,15 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     model.answer_synthesis = True
     def generate(idea, **kwargs):
         model._adapter_words = idea
+        # The generated field as the realization reads it: its evidence, and
+        # wires of its own, so that no place is looked up for it.
+        generated = SimpleNamespace(evidence=idea, wires=idea.new_zeros(*idea.shape[:-1], 1))
         return SimpleNamespace(words=idea, truncated=torch.zeros(len(idea), dtype=torch.bool),
-            field=idea, realization_field=None, reconstruction_field=None,
+            field=generated, realization_field=None, reconstruction_field=None,
             texts=lambda surface: ())
     model.generate = generate
     model.reverse = lambda carrier, *, field: SimpleNamespace(
-        materialize=lambda: field, _reconstruction_percepts=field)
+        materialize=lambda: field.evidence, _reconstruction_percepts=field.evidence)
     from Understanding import SentenceEndState
     from Meaning import ConceptualMeaning
     field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)

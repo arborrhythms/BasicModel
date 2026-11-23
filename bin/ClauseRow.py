@@ -675,6 +675,19 @@ class ClauseRows:
             retained = tuple(use for use in uses if use not in excluded)
             if uses and not retained:
                 point = None
+            if point is not None and token is not None and entry.native is None:
+                member_rows = [row for use in retained if isinstance(row := self.location(use), int)]
+                if kind is None and member_rows and len(member_rows) == len(retained) and not entry.events and all(
+                        any(name == _name for _, name in dict(self.raw_meaning_of(row).bindings)
+                            .get('_forward_references', ())) for row in member_rows):
+                    # Repeated requests can promote a naming symbol without
+                    # supplying a value for any of those requests.
+                    point = None
+                elif (kind is not None and entry.symbol is None and ('sym', kind) not in retained
+                      and not any(self.referent_of(row) == ('sym', kind) for row in member_rows)):
+                    # An anonymous token can acquire a kind from a mention.
+                    # Only an independently denoted kind supplies a named slot.
+                    point = None
             uses = retained
             # The retained parent already points at its anonymous child. That
             # structural pointer is not the pending role's bound content.

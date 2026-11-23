@@ -422,12 +422,8 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         model.End()
 
 
-class UnsupportedReversePremiseBinding(AssertionError):
-    """The reverse-order bind consumed a kind with no supplied antecedent."""
-
-
 @pytest.mark.parametrize('reverse', [False, True])
-def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager_reading, request):
+def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager_reading):
     """Certificate e: live bind choices may close correctly or remain pending."""
     import json
     from forced_math_grammar import ForcedGrammar
@@ -453,30 +449,6 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     batches = 0
 
     def check(store, index, names):
-        # Classify the input to the working read, before asking it to resolve
-        # the slot. The ordinary live chooser does not visit this branch on
-        # every run. A correct read on this input is a strict XPASS.
-        raw = store.raw_meaning_of(index)
-        site = store.occurrence_of(index)
-        entry = owner.mtm.entries.get(site) if reverse else None
-        unsupported_arrival = False
-        from Memory import NULL_CONCEPT
-        raw_ref = raw.role_refs[0]
-        open_word = raw_ref is not None and raw_ref[0] == 'sym' and owner.interpret.no_object(raw_ref[1])
-        if (entry is not None and not entry.pending and entry.native is None and entry.symbol is None
-                and entry.kind is not None and entry.kind != NULL_CONCEPT and entry.kind not in names
-                and not open_word and any(event.role == 0 for event in entry.events)
-                and any(name in names for _, name in bindings(raw).get('_forward_references', ()))):
-            kind = replace(ConceptualMeaning.from_description(raw.roles[0]),
-                           role_refs=(('sym', entry.kind), None, None),
-                           bindings={'_bound_roles': (('referent', 0),)})
-            unsupported_arrival = not matches(model, kind, 'three')
-            if unsupported_arrival:
-                request.node.add_marker(pytest.mark.xfail(strict=True, raises=UnsupportedReversePremiseBinding,
-                    reason='The reverse premise can select a fresh MTM kind that does not supply three and close x to that kind instead of preserving its open address.'))
-                (tmp_path/'unsupported-arrival.json').write_text(json.dumps(
-                    dict(site=site, kind=entry.kind, events=[e.occurrence for e in entry.events],
-                         target=owner.word_concepts('three'))) + '\n')
         value = store.meaning_of(index)
         correct = matches(model, value, 'three')
         slots = open_slots(value)
@@ -487,11 +459,8 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
         if correct:
             assert not slots and not bindings(value).get('_pending')
         else:
-            if not any(identity in names and ('referent', role) in slots for role, identity in forwards):
-                message = 'x must bind to three or retain its named open referent'
-                if unsupported_arrival:
-                    raise UnsupportedReversePremiseBinding(message)
-                raise AssertionError(message)
+            assert any(identity in names and ('referent', role) in slots for role, identity in forwards), (
+                'x must bind to three or retain its named open referent')
             assert not any(kind == 'referent' and role in {r for r, name in
                 bindings(store.raw_meaning_of(index)).get('_forward_references', ()) if name in names}
                 for kind, role in bindings(value).get('_bound_roles', ())), 'x bound to a wrong antecedent'

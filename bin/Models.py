@@ -2307,8 +2307,13 @@ class BaseModel(Mereology, nn.Module):
             from FieldReverse import NativeDecode
             _radix = self.perceptualSpace.percept_store
             if hasattr(_radix, 'bytes_for'):
+                # A word is pasted at an address of the text slice and runs
+                # its spelling's length past it, so the decoder holds the
+                # slice and one spelling beyond its last address.
+                from WhereRegistry import text_extent
                 _byte_bound = max(int(self.inputSpace.outputShape[0]),
-                                  2 * _stage_words * (self.word_surface_capacity + 1))
+                                  2 * _stage_words * (self.word_surface_capacity + 1),
+                                  text_extent(self) + self.word_surface_capacity)
                 _radix.activity_decoder = NativeDecode(_radix.capacity, _byte_bound,
                                                        self.word_surface_capacity)
             from SentenceStrata import SentenceStrata

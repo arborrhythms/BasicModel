@@ -64,13 +64,8 @@ class WhereRegistry:
         result = torch.stack((positions, positions + 1), -1)
         return torch.where(valid[..., None], result, -1)
 
-def install_where_registry(model):
-    parts = model.perceptualSpace.subspace.what
-    whole = model.wholeSpace.subspace.what
-
-    def capacity(basis):
-        return int(getattr(basis, 'lexicon_capacity', getattr(basis, 'nVectors', 0)))
-
+def text_extent(model):
+    """How many byte addresses the text slice holds."""
     from util import TheXMLConfig
     # The lexer retains raw byte coordinates even when its downstream event
     # has fewer token/percept slots. Promotion lets a later slot begin much
@@ -86,6 +81,17 @@ def install_where_registry(model):
         word_capacity = int(model.perceptualSpace.outputShape[0])
         part_capacity = int(TheXMLConfig.get('architecture.serialResidualPartCapacity'))
         input_extent = max(input_extent, word_capacity * part_capacity)
+    return input_extent
+
+
+def install_where_registry(model):
+    parts = model.perceptualSpace.subspace.what
+    whole = model.wholeSpace.subspace.what
+
+    def capacity(basis):
+        return int(getattr(basis, 'lexicon_capacity', getattr(basis, 'nVectors', 0)))
+
+    input_extent = text_extent(model)
     from math import prod
     numeric_extent = prod(model.inputSpace.inputShape) if model.inputSpace.model_type == 'numeric' else 0
     registry = WhereRegistry((

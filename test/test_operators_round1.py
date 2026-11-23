@@ -30,22 +30,33 @@ def test_attention_score_function_has_greedy_baseline_and_uniform_counts(advanta
 
 
 def test_attend_gives_a_request_over_concepts_on_two_lanes():
-    from Language import OperationSelectionLayer
-    codes = torch.tensor([[1., 0.], [0., 1.], [1., 1.]])
-    base = torch.tensor([0., 1., 0.])
-    query = torch.zeros(2, 2, requires_grad=True)
-    request = OperationSelectionLayer.attend(query, codes, base)
-    assert request.shape == (3, 2, 2)
-    torch.testing.assert_close(request[..., 0], base[:, None].expand(3, 2))
+    """``attend``'s request is the read of the conceptual field
+    (``RequestRead.request``, rule 80): for each concept row and stream, how
+    far it is asked for, in 0 to 1, and asked against by nothing."""
+    from RequestRead import RequestRead
+    from SentenceLooks import attend
+    rows, streams = 3, 2
+    read = RequestRead(rows, 4, 4)
+    model = SimpleNamespace(request_read=read)
+    x = read.given(torch.rand(streams, rows, 2), torch.rand(streams, rows, 2),
+                   torch.ones(streams), torch.zeros(streams, rows))
+    request = attend(model, read.units(x))
+    assert request.shape == (rows, streams, 2)
+    # The tops start at nothing: every concept is asked for by one half.
+    torch.testing.assert_close(request[..., 0], torch.full_like(request[..., 0], .5))
     assert not request[..., 1].any()
-    asked = OperationSelectionLayer.attend(torch.tensor([[2., -1.]]), codes, base)
-    # Ported (round 6d, eighth pass, rule 79): each concept asked for as far
-    # as its code is held by the query, by shared size, and against as far
-    # as it is held by the query's lanes exchanged, in 0 to 1, the start
-    # added. The product of code and query gave [[2, 0], [1, 1], [1, 0]].
-    torch.testing.assert_close(asked[:, 0], torch.tensor([[1., 0.], [1., 1.], [.5, .5]]))
+    # A read with weights asks by the logistic of its read, and the request's
+    # gradient reaches the read's own weights.
+    with torch.no_grad():
+        read.ask.weight.normal_()
+        read.ask.bias.normal_()
+    units = read.units(x)
+    request = attend(model, units)
+    torch.testing.assert_close(request[..., 0], torch.sigmoid(read.ask(units)).transpose(0, 1))
+    assert not request[..., 1].any()
     request[..., 0].sum().backward()
-    assert query.grad is not None
+    assert bool(read.ask.weight.grad.abs().sum() > 0)
+    assert bool(read.first.weight.grad.abs().sum() > 0)
 
 
 def test_saved_review22_roots_recover_multisets_and_recompose_exactly():
