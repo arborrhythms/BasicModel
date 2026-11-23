@@ -26633,6 +26633,7 @@ Not taken, for Alec to decide:
 #### Tests run by Claude
 
 - Codex's tip, `test/test_item17_echo.py`: the word, the word with its mark, the two-word sentence, the state and the silence test pass; the two cells of a model with no grammar fail as before (13 and 0 of 19).
+- The work branch's version, the three echo tests five more times (six runs in all): the word alone and the two-word sentence passed every run; the word with its mark failed two runs of six, once on the lost letters described above and once on a gradient that is not a number in the teaching step (`conceptualSpaces.0.order_zero.value` and `wholeSpace`'s `primitive_properties.members`), which is a second source beside `divide` and is not found yet.
 - The work branch's version, 15 files and both gates: 147 passed, 7 failed, 30 skipped. Both gates passed. `test_item17_root_trace` passes (it failed on `divide`). The seven: the two cells with no grammar; the word with its mark, on the start described above (it passed on the first run); three of `test_thought_answer_adapters` (known, on the base); and `test_reading_curriculum.py::test_curriculum_gate_counts_one_word_only_for_active_rows`, which fails the same way on the work branch before this change (two runs each).
 
 #### Review (Claude, 2026-11-22)
