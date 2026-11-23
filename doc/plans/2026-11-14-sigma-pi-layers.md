@@ -27421,3 +27421,35 @@ Alec: "After codex returns, I would like you to finish up by integrating and com
 5. Round 7 (§22.7), the full list of tests when `main` moves, and the landing.
 
 *Left to Claude:* when Codex returns, to read its return, integrate its branch into `item17-r6d11` and commit.
+
+### 23.6.33 Codex's return on the list of open issues, and how it was taken in (Codex, 2026-11-23; integration and review by Claude)
+
+Codex's return is `suggestions.txt` in its worktree `/private/tmp/basicmodel-item17-open` (branch `item17-codex-open`, eight commits from 9369662d41, ending at 03f395d1cf). Its branch is not merged. Alec: "retype the changes, which provides some measure of independent verification. compare what you did afterward to what codex did, and take the better of the two." So for each item that changes the source or a test, Claude wrote its own change from the issue before reading Codex's diff for it, then compared. The work branch's source now differs from Codex's only where the table says Claude's was kept.
+
+| Item | What Codex did | Claude's own, and the comparison | Kept | Commit |
+| --- | --- | --- | --- | --- |
+| 1. Rates | Every rate read from `data/model.xml`; eleven keys for the routines with a rate of their own | The same for the model's rate. An optimizer takes its rate from its caller (Codex read the model's rate inside `_RowLocalAdam`); `Codebook.learn`, which nothing calls, takes its rate as an argument and gets no key | Claude's for those two; Codex's for the rest (the connective lesson's steps and seed beside its rate, `embed`, `Legacy`, `etc`, `recon_bench`) | cf27ac04e3 |
+| 2. The attend test | Observes `SentenceLooks.attend` inside a teaching read of the lesson's model | The request read made directly: its two lanes, its start at one half, its gradient to its own weights; under 3 seconds | Claude's | 59b0de7729 |
+| 2. The adapter tests (three) | The stand-in field given evidence and wires | The same, but for the wires' width | Claude's | 59b0de7729 |
+| 2. The decoder's capacity (two simulations) | `WhereRegistry.text_extent` factored out; the decoder sized for the text slice plus a spelling | The same design, one position looser | Claude's | 59b0de7729 |
+| 2. The reverse-order binding | `ClauseRow.read_reference_bindings` no longer fills a named slot from a token whose kind no antecedent denotes, or from a symbol promoted by repeated requests; the test no longer excuses the fault as an expected failure | Not written again; measured: the test failed in 1 run of 12 before, 0 of 12 after (Codex: 0 of 16) | Codex's | 59b0de7729 |
+| 3. Divide | Two tiny operands are lifted by one power of two before the quotient | A lift by a larger power of two. Claude's own check, 4,000 random tiny pairs on the processor: with the old code a credit of zero gave gradients that are not finite; with either fix none, the forward value the same to the bit | Codex's (shorter, the same result) | ae38eb8417 |
+| 8. Speed | W read at the held entries only, with no gradient; a stored run's bounds read from its own form | The same two changes, with a method of its own for the held entries | Codex's (smaller) | 12f6d9bafb |
+
+*What Codex measured and did not build* (taken as reported; not measured again by Claude):
+
+- *Item 3, the cause.* The gradient that is not a number was the divide's denominator derivative for two equal operands near 1e-40: the derivative overflowed and was multiplied by a credit of zero. It was met at a rate of .01 on teaching update 18 ("5."). On the MPS device Claude's check met no fault with the old code; it was met on the processor.
+- *Item 4, the start that loses two words (1686171118491).* "That." is lost at update 347 and "is." at 365. In both, putting back `conceptualSpaces.0.order_zero.value` alone brings the word back. At 347 the step's own gradient on it is small (0.0023) and leaving it out still loses the word: the optimizer's carried state does it. At 365 the choices' credit gives a gradient of norm 105 on it, and leaving that out keeps the word. Codex's two proposals, not built: no momentum for the reconstruction on the order-zero values; the choices' credit not to move the percepts' weights.
+- *Item 5, `Tree.edge`.* Nothing the store holds tells the tree's pair from a closing's on a shared head. Proposal, not built: `Tree.write_edges` passes the relation handle of each composed root to `SentenceField.said_words` (one handle a root, no new row).
+- *Item 6, the looks where an answer is supplied.* Confirmed over all 44 teaching reads of one round of each echo cell: no cost gives `request_read` any gradient. It agrees with §23.6.31.
+- *Item 7, a model with no grammar.* No look is taken (zero calls of `Looks.run` in 38 readings); one slot and one address for the whole input, and one percept chosen at it. Digits and marks get no identity because the staging of word concepts takes letter runs only. Proposal, not built: lexical admission apart from the letters-only test, then the look loop collecting accepted places on the path with no grammar. The two tests stay failing.
+- *Item 8, where the time goes.* The own-reading test took 71 minutes for 2,053 presentations; the said-back measure 19 minutes 29 seconds. The largest shares are `ReferenceClose.preview`, `WholePaths.finish` and `SentenceLooks.Looks.run`. After the two changes the weights computed in an untaught assessment fell from 670 million to 116 million.
+
+*Tests on the integrated branch* (Claude, 59b0de7729): the three files that held the six failures, the arithmetic and binding files, the echo's tests, the configuration tests and both gates: 170 passed, 14 skipped, 3 failed. The three are the echo's two tests of a model with no grammar and `test_input_reconstruction_reaches_perception_and_not_the_grammar`, which waits on the talk about parts and wholes (§19.145, answer 6).
+
+*Found on the way, not mended:*
+
+- `test_item17_sparse_ldu.py::test_the_first_pis_way_back_is_the_percept_each_row_keeps` fails (249 of 4,352 values differ). It fails at 8cd569afbb and on Codex's branch as well, so none of this caused it; it was in no list.
+- `test_item17_places.py::test_the_request_for_a_place_at_an_untaught_start` failed once in a run of 40 and passed when run again, with and without the speed change.
+
+*For Alec to decide, from Codex's proposals:* the two on item 4, the handle on item 5, and the path with no grammar on item 7. Eleven keys were added to `data/model.xml`, eight of them for side tools (`embed`, `Legacy`, `etc`).
