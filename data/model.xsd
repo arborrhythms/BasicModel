@@ -45,6 +45,7 @@
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="architectureType">
     <xs:all>
+      <xs:element name="voiceLogit" type="xs:float" minOccurs="0"/>
       <xs:element name="separateChooser" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstructionJitter" type="unitInterval" minOccurs="0"/>
       <xs:element name="explorePaths" type="xs:nonNegativeInteger" minOccurs="0"/>

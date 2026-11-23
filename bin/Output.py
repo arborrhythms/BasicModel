@@ -302,6 +302,7 @@ class AnswerConstruction:
     surface: Any = None          # input-event realization for text scoring
     trace: Tuple[Any, ...] = field(default_factory=tuple)
     texts: Tuple[Optional[str], ...] = field(default_factory=tuple)
+    voice_logits: Any = None       # the read that decided speech or silence, a row each
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "trace", tuple(self.trace))

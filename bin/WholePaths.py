@@ -167,6 +167,9 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
                else tuple(WhatAnswer.silence(question) for question in questions))
     model._set_answer_silence_mask(answers)
     values = [answer.what if answer.available else '' for answer in answers]
+    if getattr(construction, 'voice_logits', None) is not None:
+        # No answer supplied teaches neither speech nor silence.
+        values = [value if answer.available else None for value, answer in zip(values, answers)]
     cost = model._output_target_cost(construction, values)
     from BindingAnswers import cost as binding_cost
     from ThoughtAnswer import accepted
