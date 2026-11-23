@@ -14,7 +14,6 @@
     <serialWordBuckets>256</serialWordBuckets>
     <serialResidualPartCapacity>64</serialResidualPartCapacity>
     <sigmaPi>butterfly</sigmaPi>
-    <l1Lambda>0.01</l1Lambda>
     <transformChooserHidden>0</transformChooserHidden>
     <transformChooserDepth>1</transformChooserDepth>
     <whatThinkingHidden>16</whatThinkingHidden>
@@ -44,7 +43,6 @@
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
       <conceptualContextLearningRate>0</conceptualContextLearningRate>
-      <conceptualContextNegatives>4</conceptualContextNegatives>
       <reconstructionScale>0.5</reconstructionScale>
       <teacherReconstruction>true</teacherReconstruction>
       <leafDistillWeight>0.0</leafDistillWeight>

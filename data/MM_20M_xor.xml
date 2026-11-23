@@ -25,7 +25,6 @@
     <conceptLayers>1</conceptLayers>
 
     <bindingDepth>3</bindingDepth>
-    <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <!-- mereologyRaise: mint the order-0 word-whole binding so word-granularity
          concepts (hello/world) exist as parts at their .where. Without this the

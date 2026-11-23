@@ -8679,19 +8679,14 @@ class BasicModel(BaseModel):
                 cost = self._reverse_event_loss(score_event, fwd_ev,
                     score_when=not (self.word_brackets and getattr(self.inputSpace, '_per_word_enabled', False)),
                 registry=registry, name='reconstruction_reverse')
-                # Spec section 11: an EXACT, unmasked inverse identity has zero
-                # error and therefore no learning signal.  Flag it rather than
-                # let a perfect round trip pass as reconstruction learning.
+                # Only the scored bands enter this cost. A zero here does
+                # not establish equality of the decoded surface bytes.
                 masked = understanding.reconstruction_carriers.get(
                     "ir_mask_positions") is not None
-                identity = bool(float(cost.detach()) == 0.0) and not masked
-                self._reconstruction_identity_flag = identity
-                if identity:
+                if not masked and float(cost.detach()) == 0.0:
                     self._warn_zeroed_channel(
                         "reconstruction_identity",
-                        "input reconstruction is an exact unmasked identity: "
-                        "zero cost carries no learning signal (mask or "
-                        "degrade the input to create one)")
+                        "unmasked input reconstruction has zero cost on the scored bands")
         return rev_ev, cost
 
     def resolveAnswer(self, understanding, question):
@@ -23729,25 +23724,7 @@ class BasicModel(BaseModel):
         return reverse(self, sub, field)
 
     def _reverse_body(self, sub, *, field=None):
-        """Native field attribution, or the serial/dense numerical inverse.
-
-        Native aligned perception inverts its explicitly supplied forward
-        evidence by concept id. It never reads stage events or a saved stack.
-
-        Inverts the primary IS→PS→CS→OS path's body: walk stages in
-        reverse, undo the optional N-halving ``merge`` then
-        ``ConceptualSpace.reverse`` (C → percept space_role). WholeSpace is
-        the symbolic recurrent loop leg, off the OS→CS→PS→IS
-        reconstruction path; its loop contribution was averaged into C
-        in the forward and cannot be decomposed by a single-input
-        reverse (round-trip holds for the local per-space inverse).
-        B-shaped throughout (the legacy K-axis flatten/restore was
-        retired with the AR cursor unfold).
-
-        Each stage decodes its recorded forward carrier. Decoder and shape
-        errors propagate to the caller; a broken inverse cannot silently
-        become an approximate reconstruction or a zero training loss.
-        """
+        """Decode aligned input from its field or undo the dense body stages."""
         if field is not None:
             return self._reverse_field(sub, field)
         if self.concept_binding == 'aligned':
@@ -23756,52 +23733,8 @@ class BasicModel(BaseModel):
         _concepts_recon = None
         for t in reversed(range(len(self.body_stages))):
             stage = self.body_stages[t]
-            # A4 (2026-06-06 parallel-conceptual-recurrence): invert the
-            # per-stage ConceptualCombine before the CS bookkeeping reverse
-            # -- exact mirror of the forward order ``cs.forward -> combine``.
-            #
-            # The combine reverse is driven by the EXACT forward carrier
-            # ``carriers[t]`` (the stage-t combine output, threaded as a
-            # forward-local), NOT by ``sub``'s content. Reason: the STM push
-            # happens INSIDE ``cs.forward`` -- BEFORE the combine writes the
-            # advanced carrier via ``set_event`` -- so the STM (and therefore
-            # ``sub``, which the reconstruction path sources from the STM
-            # snapshot) holds the PRE-combine perception event, not the combine
-            # output ``next_cs`` that ``aug_t`` is paired with. Feeding ``sub``
-            # into ``combine.reverse`` would break the exact ``next_cs <-> aug``
-            # pairing. CONSEQUENCE (a deliberate deviation from design sec
-            # 3.2/3.3): this is NOT a propagated reverse walk -- each stage
-            # re-inverts against the stashed forward carrier rather than a
-            # carrier propagated from the next stage's reverse. Acceptable
-            # near-term (the STM is the only state the production reverse path
-            # can source); because the round-trip's exactness comes from the
-            # stashing rather than a true chained walk,
-            # ``test_mm5m_combine_carrier_roundtrip`` asserts the chained
-            # consistency (``cs_rec[t] == carriers[t-1]``) so a future break of
-            # the forward ``prev_cs`` threading is still caught.
-            # ``combine.reverse`` recovers the three input
-            # streams ``(PS_t, WS_t, CS_t)``:
-            #
-            #   * t > 0: the prior carrier is just ``carriers[t-1]`` (already
-            #     threaded), so the per-stage reverse only needs to surface
-            #     the recovered slab for ``cs.reverse``'s bookkeeping.
-            #   * t == 0 (FINAL reverse stage): the PS-stream output PS_0 is
-            #     the pi-ENCODED input content (alpha_ps live only at t=0) --
-            #     the slab the downstream ``cs.reverse`` / ``_reverse_perceptual``
-            #     (pi.reverse) decode back to the input. Surfacing PS_0 here
-            #     closes the input-reconstruction round-trip (e.g. XOR_exact).
-            #
-            # The combine ALWAYS ran on the forward (the ``reconstruct=perfect``
-            # skip-combine mode was retired with the enum, A1), so the reverse
-            # is UNCONDITIONALLY the dropped reverse: the structured zero-pad
-            # inverts the same square map (exact only on the rank-D subspace
-            # that survived). Gated to the plain (non-grammar) parallel path,
-            # matching the forward gate. Falls back to ``sub``'s own content
-            # when the forward carrier is unavailable (e.g. a reverse not
-            # preceded by a body forward in this object).
-            # The combine-reverse demuxes ``sub``, recovers the content, and
-            # writes it back via ``set_event`` so the downstream ``cs.reverse``
-            # reads the canonical event.
+            # The mixing path first reads the binding on the stage's own
+            # subspace. Its recorded forward carrier is the fallback.
             if (self.concept_binding == "mixing" and self.bindingDepth >= 1
                     and "merge" not in stage):
                 combine = getattr(stage["cs"], "combine", None)

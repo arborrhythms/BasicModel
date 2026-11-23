@@ -85,7 +85,6 @@
          contracts without changing this compiler shape. -->
     <serialResidualPartCapacity>64</serialResidualPartCapacity>
     <sigmaPi>butterfly</sigmaPi>
-    <l1Lambda>0.01</l1Lambda>
 
     <!-- Allocate explicit capacity to contextual grammar routing. -->
     <!-- Capacity is explicit without changing the existing architecture:
@@ -137,7 +136,6 @@
       <!-- The shared concept dictionary is an unconstrained parameter,
            trained only by reconstruction; contextual rotation is retired. -->
       <conceptualContextLearningRate>0</conceptualContextLearningRate>
-      <conceptualContextNegatives>4</conceptualContextNegatives>
 
       <!-- FineWeb is unlabeled. Completed input sentences reconstruct once
            through the identified compose derivation and shared transforms.

@@ -85,7 +85,6 @@ def test_symbolic_space_reads_discontinuity_lambda_from_config():
 <model>
   <architecture>
     <bindingDepth>1</bindingDepth>
-    <l1Lambda>0.01</l1Lambda>
     <discontinuityLambda>0.25</discontinuityLambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>

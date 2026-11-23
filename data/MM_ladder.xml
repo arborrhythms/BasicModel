@@ -85,7 +85,6 @@
          contracts without changing this compiler shape. -->
     <serialResidualPartCapacity>64</serialResidualPartCapacity>
     <sigmaPi>butterfly</sigmaPi>
-    <l1Lambda>0.01</l1Lambda>
 
     <!-- Allocate explicit capacity to contextual grammar routing. -->
     <!-- What spec Step 9 cutover (2026-09-09): the canonical model answers
@@ -122,7 +121,6 @@
       <!-- Concept codes are unconstrained parameters owned only by
            reconstruction (§20.1). Contextual rotation is retired. -->
       <conceptualContextLearningRate>0</conceptualContextLearningRate>
-      <conceptualContextNegatives>4</conceptualContextNegatives>
 
       <!-- Unlabeled reading trains witnessed and free byte reconstruction
            through the understanding. No fabricated answer labels are used. -->

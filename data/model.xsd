@@ -492,7 +492,6 @@
            ``<tetralemmaOverride enabled="true">`` plus its own nested
            <TetralemmaPolicy>. -->
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
-      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
@@ -599,13 +598,6 @@
       <xs:enumeration value="project"/>
       <xs:enumeration value="true"/>
       <xs:enumeration value="false"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="chartCollapseEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="root"/>
-      <xs:enumeration value="broadcast"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -760,8 +752,6 @@
            subjective .where/.when event bands. -->
       <xs:element name="contextWhole" type="xs:string"/>
       <xs:element name="minFrequency" type="nonNegativeFloat"/>
-      <xs:element name="classificationMin" type="xs:string"/>
-      <xs:element name="classificationMax" type="xs:string"/>
       <!-- <dataset>math</dataset> generator parameters (mathematical
            thinking spec 4): integer range R (answers are one-hot over
            [0, R) so OutputSpace.nOutput must equal it), the trained
@@ -918,12 +908,6 @@
            and rotate the initially unit-norm atoms once per completed
            sentence. Mutually exclusive with conceptualSimilarityScale. -->
       <xs:element name="conceptualContextLearningRate" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Number of deterministic detached negative prototype rows used by
-           the contextual rotation reducer. Default 4 when omitted. -->
-      <xs:element name="conceptualContextNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="conceptualContextSituationWeight" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptualContextSituationAnchors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="conceptualContextExpectationWeight" type="unitInterval" minOccurs="0"/>
       <!-- <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
            for the rank-ordered soft-L0 that keeps concept definitions compact
            (shrinks the surplus concept->symbol in-edges past definitionFreeSize).
@@ -1367,12 +1351,8 @@
            -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
-      <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>
       <!-- VQ-VAE EMA decay (``VectorQuantize.decay``).  Higher = slower
            adaptation, more stable assignment across time; lower =
@@ -1394,8 +1374,6 @@
            live codebook exceeds this value.  0 disables (use
            dead-code retire above, or fixed-size codebook). -->
       <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="decorrelationWeight" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="impenetrableAntisymmetry" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="impenetrableTransitivity" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="impenetrableOverlap" type="nonNegativeFloat" minOccurs="0"/>
@@ -1455,16 +1433,7 @@
            canonical parser. The retired elements raise loud
            ValueError at config load time; see
            Language._assert_retired_chart_knobs_absent. -->
-      <!-- Soft-superposition output collapse mode; preserved for the
-           signal router's root-state writeback contract. -->
-      <xs:element name="chartCollapse" type="chartCollapseEnum" minOccurs="0"/>
-      <!-- Per-word stem is the only path. Each word does an individual
-           P->C->S->C round trip in the stem, ideas accumulate on
-           ConceptualSpace.stm, and the chart fires at C over STM in the
-           body. ``perWordStem`` knob removed 2026-05-12; legacy chart-
-           at-stem launch retired in the same pass. -->
-      <!-- Number of P->C iterations per word in the per-word stem path. -->
-      <xs:element name="iterationsPerWord" type="xs:positiveInteger" minOccurs="0"/>
+
       <!-- Downward generation: when true, MentalModel.forward() emits a
            codebook head via SymbolSpace.reconstruct() and stashes it on
            self._predicted_head for downstream (e.g. loss) consumption. -->

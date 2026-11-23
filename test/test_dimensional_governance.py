@@ -230,7 +230,6 @@ _DEEP_CS_SERIAL_XML = """<?xml version="1.0" ?>
   <architecture>
     <conceptLayers>2</conceptLayers>
     <bindingDepth>3</bindingDepth>
-    <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <data>
       <dataType>embedding</dataType>

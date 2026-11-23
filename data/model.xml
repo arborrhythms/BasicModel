@@ -213,9 +213,7 @@
          signal-router rule load-balancing. -->
     <loadBalanceWeight>0.0</loadBalanceWeight>
 
-    <!-- Architecture-wide L1 / discontinuity penalties (legacy hooks).
-         Most configs leave these at 0 and use WholeSpace.l1Lambda. -->
-    <l1Lambda>0.0</l1Lambda>
+    <!-- Read by the configuration diagnostic for discontinuity. -->
     <discontinuityLambda>0.0</discontinuityLambda>
 
     <!-- Passes allowed to retarget perception: all, off, or indices 1..T-1. -->
@@ -288,9 +286,6 @@
       <!-- Vocabulary admission threshold (fraction of corpus).
            0.0 admits all words immediately. -->
       <minFrequency>0.0</minFrequency>
-      <!-- Optional bounds for classification-accuracy reporting. -->
-      <classificationMin></classificationMin>
-      <classificationMax></classificationMax>
       <!-- Empty: the context whole is named from the dataset. -->
       <contextWhole></contextWhole>
       <grammarLessons>grammar_wording.json</grammarLessons>
@@ -354,12 +349,6 @@
       <trainEmbedding>NONE</trainEmbedding>
       <!-- Embedding co-occurrence loss weight λ in JOINT mode. -->
       <embeddingScale>0.25</embeddingScale>
-      <!-- Inactive settings of the retired contextual rotation. The
-           reconstruction-only law uses neither situation nor expectation
-           to update dictionary rows outside its gradient. -->
-      <conceptualContextSituationWeight>0</conceptualContextSituationWeight>
-      <conceptualContextSituationAnchors>8</conceptualContextSituationAnchors>
-      <conceptualContextExpectationWeight>0</conceptualContextExpectationWeight>
 
       <!-- Load weights from weightsPath at construction. Training configs
            default to true so runs resume from existing checkpoints; stale
@@ -404,7 +393,6 @@
       <whatThinkingPolicyWeight>0.0</whatThinkingPolicyWeight>
       <leafDistillWeight>0.0</leafDistillWeight>
       <conceptualContextLearningRate>0.0</conceptualContextLearningRate>
-      <conceptualContextNegatives>0</conceptualContextNegatives>
       <!-- 0 disables the diagnostics and the interval log. -->
       <branchDiagnosticsEvery>0</branchDiagnosticsEvery>
       <intervalLogEveryBatches>0</intervalLogEveryBatches>
@@ -449,13 +437,6 @@
          chartTopK, chartNoiseEps) raise a loud ValueError at
          config load time. See
          Language._assert_retired_chart_knobs_absent. -->
-
-    <!-- Soft-superposition output collapse mode; preserved for the
-         signal router's root-state writeback contract. -->
-    <chartCollapse>root</chartCollapse>
-
-    <!-- Per-word P->C loop count before parser/body composition. -->
-    <iterationsPerWord>1</iterationsPerWord>
 
     <!-- Phase D: emit a codebook head via SymbolSpace.reconstruct().
          false = forward() does not populate ``_predicted_head``. -->
@@ -696,21 +677,10 @@
          pipeline). Mandatory in the converged modality architecture
          (WholeSpace is a MANDATORY_CODEBOOK_TIER). -->
     <codebook>quantize</codebook>
-    <!-- Bitonic-sort regularizer on the codebook ordering. -->
-    <sortNetwork>false</sortNetwork>
-    <!-- Sort-network depth; 0 disables. -->
-    <sortPasses>0</sortPasses>
     <!-- L1 sparsity penalty on the symbolic activation. -->
     <l1Lambda>0.01</l1Lambda>
-    <!-- Symbol-residual injection scales (legacy mereology hooks). -->
-    <symbolResidualScale>1.0</symbolResidualScale>
-    <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
     <commitmentBeta>0.25</commitmentBeta>
     <!-- Enable VQ-VAE-style quantization rather than EMA codebook. -->
-    <!-- ImpenetrableLayer regularizers (decorrelation / spectral
-         flatness on codebook rows).  0 disables. -->
-    <decorrelationWeight>0.0</decorrelationWeight>
-    <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
     <invertible>false</invertible>
     <butterfly>false</butterfly>
     <lbgThreshold>0.5</lbgThreshold>

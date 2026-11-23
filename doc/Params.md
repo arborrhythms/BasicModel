@@ -111,8 +111,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `allowContradiction` | int | `0` | Catuskoti policy: `0` forbids BOTH (non-contradiction), `1` permits paraconsistent BOTH. |
 | `gateL1Lambda` | float | `0.0` | L1 sparsity penalty on lift / lower gates. `0` disables. |
 | `loadBalanceWeight` | float | `0.0` | Unread in effect: the value is parsed and nothing consumes it. |
-| `l1Lambda` | decimal | `0.0` | Unread; declared in `data/model.xml`. Configurations set `WholeSpace.l1Lambda`, which is unread too. |
-| `discontinuityLambda` | decimal | `0.0` | Unread; declared in `data/model.xml`. |
+| `discontinuityLambda` | decimal | `0.0` | Read by the configuration diagnostic in `test_smoothing_regularizer.py`. |
 | `maxActivePerLayer` | int | `8` | Maximum active nodes per layer for reverse / mereological walks. |
 | `codebookRetire` | bool | `false` | Retire codebook path where supported. Mostly a migration hook. |
 | `symbolLearning.enabled` | bool | `false` | Enables runtime symbol-learning hooks. Disabled by default. |
@@ -151,7 +150,6 @@ Data loading and filtering.
 | `shardDir` | string | (empty) | Text shard directory (e.g. `data/fineweb`). Only used when `dataset=text`. |
 | `minFrequency` | float | `0.0` | Vocabulary admission threshold (fraction of corpus). Words below it are held in a pending buffer until they accumulate enough occurrences. `0.0` admits everything. |
 | `contextWhole` | string | (none) | Stable name of the corpus, book or conversation whole that scopes the Teacher's objective addresses. It is not written into the model's `.where` and `.when` bands. |
-| `classificationMin`, `classificationMax` | float | -- | Unread; declared in `data/model.xml`. |
 
 Inline-mode configs additionally accept `<input use="train|test|validation">...|...|...</input>`
 and matching `<output>` elements directly inside `<data>`.
@@ -172,7 +170,6 @@ Training loop and I/O.
 | `learningRate` | float | `0.001` | Adam learning rate. |
 | `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  |
 | `conceptualContextLearningRate` | float | `0.0` | Unread except to reject a nonzero value at construction; configurations still declare `0`. |
-| `conceptualContextSituationWeight`, `conceptualContextSituationAnchors`, `conceptualContextExpectationWeight`, `conceptualContextNegatives` | -- | -- | Unread; still declared in `data/model.xml` or in configurations. |
 | `reconstructInLoop` | bool | -- | Unread; four configurations still declare it. Word-major sentence training always runs the one tied reconstruction traversal. |
 | `reconstructionBasisLimit` | positive int | `16` | Maximum candidate prototypes per side for approximate reconstruction through the selected compose operator: at most `K*K` pairs. Independent of word, STM and field capacity. The invocation owns detached values and masks; missing candidates or inverses report incompleteness ([Language.py](../bin/Language.py)). It also bounds the lexical shortlist obtained once per generate walk from the admitted training forms; structural candidates remain separate. |
 | `reconstructionPlacement` | `graph` / `compiled` / `eager` | `graph`; BasicModel `compiled` | Run the traversal inside the forward graph, as a separate fullgraph call, or eagerly. The separate call promotes the `eager` backend to `aot_eager` to cache backward too. The `auto` policy resolves to its first configured backend before PyTorch lookup. `BASICMODEL_RECON_PLACEMENT` remains a diagnostic override. Placement changes execution, not the tied objective or 21-value forward state ([Models.py](../bin/Models.py)). |
@@ -402,7 +399,7 @@ Grammatical lift/lower own their chart maps.
 | `verbGroups` | positive int | `24` | Maximum learned intransitive bases on paired meaning configurations. A third distinct failed-fit occurrence joins the best fitting group or opens one; capacity is reported. |
 | `verbBasisReflections` | positive even int | `4` | Householder reflections per object/group basis. Identical initial pairs give the identity. |
 | `verbGroupFit` | nonnegative float | `0.1` | Maximum mean squared chart residual for admitting a verb to an existing basis. |
-| `latticeMargin` | decimal | `0` | Unread; declared in `data/model.xml`. |
+| `latticeMargin` | decimal | `0` | Read by the operator audit in `test/operators_run_audit.py`. |
 | `meaningWidth` | nonnegative int | computed | Width of the meaning band of a concept's code; unset, it is the code width less the percept event width. `data/model.xml` ships 128. At 0 a paired chart supplies only form: membership records remain possible, but there are no class directions or conceptual views, and hierarchical conditioning needs a meaning band. |
 | `placementRate` | nonnegative float | `0.1` | Step size of the one meet-ratio subgradient step that places a concept's meaning at each kept close. The context of placement is the field at every order, a present token's types among it, read before any weighting by likeness of places; a place moves relative to rows of its own order only, and a class is placed by its context like any concept. A row above the basic percept carries no perceptual form. |
 | `placementNegatives` | nonnegative int | `5` | Placed rows with zero seen excess drawn as negatives by a generator seeded from the sentence's key; fewer eligible rows give fewer negatives, never repeats. |
@@ -494,7 +491,7 @@ META, taxonomy, or symbol-prototype inventory. See
 | `analysis` | string | `"meronomy"` | Top-down division over the unity view. `meronomy` is the only value a WholeSpace accepts: any other value raises (`byte`, `raw`, `sentence`, `word` and `grammatical` among them), and the spelling `analyse` is not accepted by the schema. |
 | `analyzer`, `lexer` | string | -- | Deprecated spellings of the intake cut: the reader prefers `<analyzer>` and falls back to `<lexer>`, and `<analysis>` supersedes both. An InputSpace-side `<lexer>` is rejected. |
 | `nonlinear` | bool | `true` | Tanh-bound the activation. |
-| `sortNetwork`, `sortPasses`, `l1Lambda`, `symbolResidualScale`, `outputSymbolResidualScale`, `commitmentBeta`, `decorrelationWeight`, `spectralFlatnessWeight` | -- | -- | Unread; declared in `data/model.xml`. |
+| `l1Lambda`, `commitmentBeta` | -- | -- | Declared in WholeSpace. |
 
 WholeSpace owns primitive property memberships and the native analysis
 policy. It allows primitives by max and computes pervasion by min over
@@ -537,7 +534,6 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | `episodicConcepts` | nonnegative int | `4` | Number of an LTM0 row's slots beside its idea: concepts of the sentence's field of understanding, over all orders, each with its value, in one flat list with no order axis (`episodic_concepts`, `episodic_values`). A value's sign is its lane, and contradictory lanes occupy separate slots. `0` stores none. Recall matches a question against the slots order by order, never reducing across orders, ranks positive relevance with newer rows first among equals, and pushes the best row onto the STM stack. |
 | `relationCapacity` | positive int | `8192` | Fixed `SymbolSpace` shared-ID `LTM1` reservation, wired through both `ConceptAllocator` and `LTM0`. It must cover the highest handle, not only occupied membership records. Construction and strict checkpoint restore check this shape; exhaustion raises before allocation. |
 | `equalityWitnessCapacity` | positive int | `8192` | Fixed `SymbolSpace` first-equality-witness row reservation in `ConceptAllocator.singleton_values`; independent of relation storage. Snapshots use the actual conceptual width. No live resizing. |
-| `chartCollapse`, `iterationsPerWord` | -- | -- | Unread; declared in `data/model.xml`. |
 | `downwardGeneration` | bool | `false` | Emit a codebook head via `SymbolSpace.reconstruct()` and stash on `self._predicted_head`. |
 | `language.interpretation` | float | `0.5` | Soft-interpolation weight between forward and generation directions. |
 

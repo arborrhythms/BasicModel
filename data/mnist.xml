@@ -11,8 +11,6 @@
     <data>
       <dataType>numeric</dataType>
       <dataset>mnist</dataset>
-      <classificationMin>0</classificationMin>
-      <classificationMax>9</classificationMax>
     </data>
 
     <training>

@@ -28,7 +28,6 @@
     <!-- parallel mereology: per-stage forward, no serial grammar loop. -->
     <conceptLayers>1</conceptLayers>
     <bindingDepth>3</bindingDepth>
-    <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <!-- The mereologyRaise handoff CONSUMES the reading scope (the 4-case
          WS to PS pass-back; the "scoped" case focuses PartSpace to the produced
