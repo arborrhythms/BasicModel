@@ -7105,7 +7105,8 @@ class BasicModel(BaseModel):
         identity_owner = self._concept_owner()
         caller_pool = identity_owner.mtm
         identity_owner.mtm = MediumTermMemory(caller_pool.capacity, horizon=caller_pool.horizon,
-            n_vectors=identity_owner.nVectors, field_width=caller_pool.field_width)
+            n_vectors=identity_owner.nVectors, field_width=caller_pool.field_width,
+            match_part=caller_pool.match_part)
         import weakref
         identity_owner.mtm._owner = weakref.ref(identity_owner)
         try:
@@ -23972,54 +23973,6 @@ class BasicModel(BaseModel):
         num = (mask * (pred[..., :width] - target[..., :width]) ** 2).sum()
         return num / (mask.sum() * float(width))
 
-
-    def _nearest_word(self, node, basis, word_rows):
-        """Nearest store word row to ``node`` (``[d_what]``) by cosine, and
-        that cosine. The leaf test of the trace-free derivation: a node that
-        already IS a store row (cos ~1) is a word, not a composite to
-        un-fold further."""
-        import torch.nn.functional as _F
-        W = basis.getW()
-        Wr = W.index_select(0, word_rows.to(W.device))
-        sims = _F.cosine_similarity(node.reshape(1, -1), Wr, dim=-1)
-        j = int(sims.argmax())
-        return Wr[j], float(sims[j])
-
-    def _reverse_derive_words(self, S, d_what, basis, word_rows, reverse_ops):
-        """Trace-free reverse derivation (Alec 2026-07-14): un-fold each root
-        into word leaves by CHOOSING the reverse op per step
-        (``_reverse_choose_op`` — round-trip fit over the grammar's
-        ``<generate>`` ops), with NO forward record. The chosen op's snap
-        returns store word rows, so a node that snaps to a row (cos ~1) is a
-        leaf; the flat/2-word corpus bottoms out in one un-fold. Deeper trees
-        recurse (bounded by the STM cap) but the collapsed root cannot yet
-        yield separable composite children — gated on root separability
-        (step 3). Returns ``[[word_vec, …], …]`` per batch row."""
-        B = S.shape[0]
-        cap = int(getattr(self.conceptualSpace.stm, "capacity", 8) or 8)
-        LEAF = 0.999
-        words_per_row = [[] for _ in range(B)]
-        for b in range(B):
-            leaves, frontier, steps = [], [S[b, :d_what]], 0
-            while frontier and len(leaves) < cap and steps < 2 * cap:
-                steps += 1
-                node = frontier.pop(0)          # FIFO -> left-first reading
-                if float(node.abs().sum()) == 0.0:
-                    continue
-                w, wf = self._nearest_word(node, basis, word_rows)
-                if wf > LEAF:
-                    leaves.append(w)             # node IS a word: leaf
-                    continue
-                choice = self._reverse_choose_op(
-                    node, reverse_ops, basis, word_rows)
-                if choice is None:
-                    leaves.append(w)             # no op inverts: snap + stop
-                    continue
-                (_name, _host), (x1, x2), _fit = choice
-                frontier.append(x1.reshape(-1)[:d_what])
-                frontier.append(x2.reshape(-1)[:d_what])
-            words_per_row[b] = leaves
-        return words_per_row
 
     def _stamp_unfold_where(self, out, d_what, basis, word_rows):
         """Write sequential word offsets into the un-fold output's ``.where``

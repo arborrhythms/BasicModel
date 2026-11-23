@@ -44,10 +44,10 @@ Higher kinds can occupy further orders. Formation and testimony supply
 these concepts; lexical resolution never invents a missing one. Grounding is
 textual: a new word's object starts nearly empty and learns its parts and
 kinds from what the text states
-([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)).
+([Language](Language.md#interpret-word-concept-to-object-concept)).
 
 The operator that performs this resolution is `interpret`
-([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)),
+([Language](Language.md#interpret-word-concept-to-object-concept)),
 the per-word step, forced in reading mode under every binding, from the
 word-concept PartSpace looked up to its associated object-concept. An
 existing association wins at its existing order, including a kind. A word
@@ -88,7 +88,7 @@ binds is the run-time choice of `mint` or `bind`, with the word as cue. No
 operand is named as a kind of word (pronoun, particular, kind), and there is
 no name-to-order table or maximum order: the requested order is what the
 composition denotes (`ReferenceContext.binding_spec`, `denoted_order`;
-[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
+[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower)).
 Which words fill which position is learned by participation, so proper-name
 and generic readings resolve through the selected grammar, without
 capitalization rules or word lists. Inner reference phrases retain their

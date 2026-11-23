@@ -64,7 +64,7 @@ def test_promotion_uses_a_row_that_became_witnessed_after_open():
     assert cs.mtm.entries[key].symbol == cid and cs._concept_allocator.next_id == before
 
 
-def test_support_reuse_requires_order_and_cosine_and_singleton_opens_nothing():
+def test_support_reuse_requires_order_and_parthood_and_singleton_opens_nothing():
     from FamiliarTier import cover_members, remember_candidate
     from order_fixtures import force_order
     cs, rows = _fixture()

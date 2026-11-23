@@ -8,7 +8,7 @@ training runs (corpora, lessons, the loop) is in [Training](Training.md).
 ## Current gradient boundaries and loss normalization
 
 Gradient ownership and the numerical definition of a loss are separate choices.
-Alec's direction is to avoid balancing terms where possible. No term is
+The direction is to avoid balancing terms where possible. No term is
 balanced adaptively by running losses or gradient norms; each relative term is
 normalized by its own detached uninformed baseline (below), which fixes the
 units in which terms add. Whether that normalization suits a loss is judged
@@ -37,7 +37,7 @@ considered and not adopted; the conceptual residual split remains
 Both settings compare completed paths by detached `R + A` in
 `SentenceCredit.comparison`: each stream keeps its strictly cheapest path, a
 tie keeps the greedy one, and the difference supplies chooser credit
-([whole paths](#whole-path-credit-and-concept-episodes-2026-11-11)).
+([whole paths](#whole-path-credit-and-concept-episodes)).
 Expectation's error enters neither the keep nor the credit: a departure judged
 by its own surprise would teach the chooser to make the input predictable
 rather than to explain or answer it. Even with disjoint parameter owners,
@@ -47,7 +47,7 @@ particular normalization formula.
 
 ### The normalization contract and the generation exception
 
-The general rule (2026-10-01) is implemented by `Layers.Error.error`: register raw errors and a **detached**
+The general rule is implemented by `Layers.Error.error`: register raw errors and a **detached**
 uninformed baseline, sum contributions over the same active entries of a named
 term, then divide once. For squared error this is
 `sum((prediction - target)^2) / stop_gradient(sum(target^2))` when the baseline
@@ -101,7 +101,7 @@ is projected against R. With `separateChooser=true` the owner decides:
 `ObjectiveOwnership.backward_owned` calls `torch.autograd.grad` once per owner,
 only with respect to that owner's parameters, so an error can be
 differentiable through a parameter without training it, and an audit fails if
-any parameter receives a second writer (Alec, 2026-10-02: "the gradients
+any parameter receives a second writer ("the gradients
 separate over the weights"). Either way each sentence makes one optimizer step.
 
 **Who owns what** (`Models.objective_parameter_groups`):
@@ -119,7 +119,7 @@ chooser, side A; the chooser's parameter set is the reconstruction set. The
 output walk's departure credit is owner chooser, side A; its residual lanes
 are side A and, since their objective is reconstruction, owner
 reconstruction. The reconstruction walk keeps its residual and departure
-credit under owner reconstruction, side R (Alec, 2026-11-10). The bind
+credit under owner reconstruction, side R. The bind
 departure's reward is expectation/A (`expectation.bind_score_function`); a
 departure among attention's looks is credited as
 `output.interpret_score_function`, owner chooser (`compose_policy` with a
@@ -135,7 +135,7 @@ coverage are value-only audits; the compose-forest inverse remains a System 2
 report and tool. `reconstruction.free_percept` keeps its forecast residual,
 with context read from the parallel field rather than the sentence's end slots.
 
-**Expectation and reconstruction (decided 2026-10-29).** Percept
+**Expectation and reconstruction.** Percept
 expectation predicts each arrival from prior context; its context and moments
 update at that arrival, and its predictor's parameters receive the accumulated
 local arrival error once, in the sentence's update (`PerceptExpectation`). The
@@ -161,12 +161,11 @@ leaves, with the output's cost. The
 conceptual split and the correction-output form
 are [future work](FutureWork.md#the-residual-split-a-stopped-subtraction-or-the-correction-alec-2026-10-29).
 
-**How output reaches the understanding (decided 2026-10-29; projected since
-2026-11-09).** Attention and expectation are each isolated by a stop-gradient
+**How output reaches the understanding.** Attention and expectation are each isolated by a stop-gradient
 at the place where their output is consumed. Reconstruction and output are
 not isolated from each other by default: both write the understanding's
 parameters, because a strongly partitioned syntax and semantics is doubtful
-as a psychological model (Alec, 2026-10-29). The choosers' log-probabilities
+as a psychological model. The choosers' log-probabilities
 enter the same objective as the costs, so the sentence's one update carries
 both the pathwise gradient through the values the choices produced and the
 score-function gradient of the choices themselves
@@ -179,7 +178,7 @@ its target: a zero-mean perturbation of a target leaves the expected gradient
 unchanged, while a weaker reconstruction term lets output move the shared
 parameters.
 
-## Whole-path credit and concept episodes (2026-11-11)
+## Whole-path credit and concept episodes
 
 A sentence is costed over whole paths: one greedy path and `explorePaths`
 explore paths, each departing once from the greedy one. At the opening,
@@ -194,7 +193,7 @@ so a path that speaks where nothing was asked pays for it, and silence takes
 part in which path is kept. The direct field reconstruction remains
 grammar-free. The numeric modality uses the path's composed state through one
 affine head. The path and its two costs are drawn in
-[Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11).
+[Architecture](Architecture.md#whole-paths-and-concept-episodes).
 
 A single departure is drawn over attention, compose, bind, thought or output (`SentenceCredit.WALKS`). Every departure receives its whole-path change in R + A with the proposal correction of that draw, reading its own path's compose departure mask and attention state. Each stream receives the opening reconstruction gradient once through its admitted trial. The other trials reuse that forward value. The existing factor 2/(1+K) still applies to expectation, compose and generate lessons, attention and their all-path regularizers. The answer trains on the union of the kept path, explore paths departing in compose, and the greedy path when that set includes a compose departure; weights sum to one per stream. Both compositions train the reader because a reader trained only on what is kept reads the kept composition better because it is kept, which biases the comparison toward the incumbent; with one reader the bias returns unless the reader sees both. A departure in attention or in a bind is another reading of the input, to which the supplied answer does not apply, and a path that departed in the thought or a read-out is not asked to answer from a conclusion it did not keep. The rule's known cost is that the rejected composition's share does not decay as the chooser commits. Answer costs and `penalty.output` already carry those reader weights; chooser and `.A` departure costs are booked once and receive no additional all-path multiplier. The exploit's one reading lesson is added once outside the path sum. A no-departure path has an independent registry container, so subsequent bookings cannot leak between paths. The input inverse receives its field before the grammar chooses any steps. Only the output walk draws generation departures and receives their credit on side A. Default gradient projection and optional separate owner pullbacks each make one sentence update. There are no `thought_comparison` terms or separately trained comparison-reader parameters.
 
@@ -298,8 +297,7 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   score-function term, even when the compared costs tie. The handoff is
   therefore detached, and an attention choice learns by the score-function
   term of its own departure.
-- **A chooser's gradient is the score-function estimator (decided
-  2026-10-05).** The chooser's
+- **A chooser's gradient is the score-function estimator.** The chooser's
   parameters enter the path only through which operation is chosen, so the
   exact gradient of the expected cost with respect to them is the
   score-function term at the sampled departure, with the exploit path's cost
@@ -374,13 +372,13 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   weights of its own and no second backward pass is made inside the forward.
   It lands on each event's activity, the what, and on each event's band of
   where wires ([Architecture](Architecture.md#one-attention)).
-- **What a look teaches (Alec, 2026-11-18).** The gradient of a look's
+- **What a look teaches.** The gradient of a look's
   selection lands on the request, on which concepts are asked for and on what
   produces that asking, and `attend` exposes to the error the network's
   weights that read the where. The mereology's entries of the first Pi and
   the weights that read the what take none of it, so that perception keeps
   its one teacher, reconstruction.
-- **The where parameter is fixed (Alec, 2026-11-19).** The `.where` stamped
+- **The where parameter is fixed.** The `.where` stamped
   onto percepts flows from one parameter that holds the constant sinusoid, a
   row for each address of the registry (`WhereRegistry`), written from
   `WhereEncoding.encode`: "The parameter itself must stay fixed if the
@@ -485,7 +483,7 @@ memory is System 1's content and trains nothing. A stamp is never rewritten
 as an age: the chooser and the operators read the present on the model and
 compare a concept's `.when` with it by the comparator, which gives how far
 back the concept is. See
-[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems).
 
 Output is `generate -> occurrence writer -> reverse`. Generate infers binary
 undo, unary undo or STOP over its bounded bank. The existing legal-action and
@@ -536,7 +534,7 @@ System 1's basic level (Pi, Not, Sigma, with the percept codes) is one set of
 parameters used in two directions: up, from percepts to the basic field, and
 back, from the basic field to percepts. The way back has two users, the
 reconstruction and the output. This section is an analysis of what a cost can
-teach such a map (Alec, 2026-11-23: "Since reconstruction and output share
+teach such a map ("Since reconstruction and output share
 the same mechanism (inversion), if it is taught by either, then there is also
 a conflict in moving the combined forwards and reverse parameters"). It is
 reasoning from the structure; the few measured numbers are marked.
@@ -585,9 +583,9 @@ was given, a thought. Write `B` for that step. What it teaches depends on how
 Most steps between the legs of this architecture are replacements. So the
 reconstruction is mostly a first-order teacher of the dictionary below the
 names: a named concept is spelled as the letters that named it, and by the
-tie those letters come to light that concept. As built at item 1.7 this is
+tie those letters come to light that concept. As built this is
 its whole reach: each word is said from the code of the concept its STM row
-names (`SentenceField.said_words`), and measured (sigma-pi §23.6.31) its
+names (`SentenceField.said_words`), and its
 gradient reaches the percept codes and the order-zero values, and no look
 and no rule.
 
@@ -599,8 +597,7 @@ Two things a replacement leaves untaught.
   the same parameters. A value near the edge between two choices can cross
   it, and the word is then read as something else or not read. This is the
   one instability the tie brings, and it grows with the size of a step
-  (sigma-pi §23.6.29 measured words lost this way at ten times the model's
-  rate).
+  (words are lost this way at ten times the model's rate).
 
 "The reconstruction is the inverse of the construction" is the limit of
 this. If every step up is undone exactly, by an inverse or by a pointer to
@@ -639,8 +636,7 @@ Letting the two fight would let the answer bend the dictionary.
 
 One prediction to check. In the echo the texts are the same, so the two sides
 should agree on the order-zero values; measured, the answer's cost alone
-opposed the reconstruction there in 19 steps of 50 for single words (sigma-pi
-§19.142). By this analysis the cause is the last case: the answer says the
+opposes the reconstruction there in 19 steps of 50 for single words. By this analysis the cause is the last case: the answer says the
 words witnessed in the open field and the reconstruction says the concepts
 the STM's rows name, and where those are not the same concept for the same
 word the two pull the way up apart.
@@ -650,7 +646,7 @@ word the two pull the way up apart.
 A look does not reconstruct. The looks lay down an activation trace (today
 explicit: the tree in the STM), each with an expectation on it. When the
 trace gives a well-formed formula, the reconstruction is computed and
-taught, and an output may follow from that comprehension (Alec, 2026-11-23).
+taught, and an output may follow from that comprehension.
 A thought, where there is one, comes before both: the one field it leaves
 does the reconstruction and the output.
 
@@ -658,18 +654,17 @@ A concept holds its `.where` inside it: the `.where` subspace is appended to
 the percept code before the basic level's Pi multiplies them. It is explicit
 only at the perceptual and the symbolic levels. So what a thought lights is
 not without a place, and nothing in this analysis may assume that it is.
-Whether light a thought adds shows in what is put back is to be measured
-when the reconstruction is moved after the thought (sigma-pi §19.144); as
-built `intuit` deposits what it lights at every occupied place of the field
+Whether light a thought adds shows in what is put back is not settled by
+reasoning; as built `intuit` deposits what it lights at every occupied place of the field
 (`IntuitionField.read`).
 
-As built at item 1.7 the reconstruction is computed before the thought
+As built the reconstruction is computed before the thought
 ("Reconstruction has its own operated field"), so nothing conflicts and the
 reconstruction teaches a thought nothing.
 
 ### System 2 teaching System 1 on the shared map
 
-Alec: System 2 "trains system one in its operation: the basic pi-not-sigma
+System 2 "trains system one in its operation: the basic pi-not-sigma
 should be learned over the operation of system 2 as well as reconstruction".
 Higher-order thought already teaches the basic level, and that is held
 sufficient for now: "thinking need not do so". What follows is the other
@@ -690,8 +685,8 @@ nothing.
 The reconstruction asks `U(x) = c_R`, and this teaching would ask
 `U(x) = z_A`.
 
-- If the reconstruction reads the field the thought leaves (Alec's order,
-  decided for item 1.7), `c_R` is taken from `z_A`, and the two ask the same
+- If the reconstruction reads the field the thought leaves (the order
+  above), `c_R` is taken from `z_A`, and the two ask the same
   thing. The reconstruction, the answer and this teaching have one end
   point, and nothing is left to project.
 - If the reconstruction reads the field before the thought (as built), the
@@ -699,7 +694,7 @@ The reconstruction asks `U(x) = c_R`, and this teaching would ask
 
 ### The two loops
 
-Alec: "there is a system one loop, and a system 2 loop, and they are meeting
+"there is a system one loop, and a system 2 loop, and they are meeting
 at the basic level." System 1's loop is input, percepts, basic field, and
 back to the reconstruction and the output. System 2's loop is basic field,
 higher orders, an optional thought, and back to the basic field.
@@ -712,9 +707,9 @@ changes in the field, judged by the costs that read the field afterwards.
 A rule's way up loses: a parent is as wide as one of its two operands. So its
 way back needs one of two things.
 
-- *Memory of what was composed* (the STM tree's edges, sigma-pi §19.140). The
+- *Memory of what was composed* (the STM tree's edges). The
   return is then exact. It teaches the rules nothing, and nothing conflicts.
-  This is the build at item 1.7, and the measurement agrees: the
+  This is the build, and the measurement agrees: the
   reconstruction reaches no rule, and two trees over the same words are put
   back the same.
 - *A learned inverse from the parent alone.* The return is then inexact, so
@@ -722,7 +717,7 @@ way back needs one of two things.
   general, and the rules then share the blame for a misspelling with the
   dictionary below them, on one cost.
 
-With the first, System 2 is what Alec calls it, an executive controller on
+With the first, System 2 is an executive controller on
 System 1: taught by what its control achieves at the output, and passed down
 to System 1 by the teaching above.
 
@@ -733,7 +728,7 @@ to System 1 by the teaching above.
 | Up against back, one cost, an exact round trip | Always | The two cancel; nothing is taught |
 | Up against back, a replacement between the legs | Never: one step serves both legs | The choice itself is untaught and can turn over; small steps |
 | Reconstruction against output on the shared map | One concept asked for two texts, or one text named by two concepts | The difference belongs in the field; one concept for a word, whoever reads it; the projection removes the rest |
-| Reconstruction against a thought | Where the reconstruction reads a field a thought has changed | Not settled by reasoning: to be measured when the reconstruction is moved after the thought |
+| Reconstruction against a thought | Where the reconstruction reads a field a thought has changed | Not settled by reasoning: to be measured |
 | Reconstruction against System 2 teaching System 1 (not built) | Where the reconstruction reads the field before the thought | The reconstruction reads the field the thought leaves; then all three have one end point |
 | Reconstruction against the rules | Only with a learned inverse from the parent alone | A return by the STM tree's edges |
 
@@ -831,9 +826,9 @@ reporting-only entries. Standalone embedding pretraining is separate from
 these costs.
 
 <a id="terms-on-internals"></a>
-### Terms evaluated on the model's own internals (Alec, 2026-11-03)
+### Terms evaluated on the model's own internals
 
-Rule (Alec, 2026-11-03): a teacher does not reach into the model's internals.
+Rule: a teacher does not reach into the model's internals.
 No term takes its target from the model's own derivation to force a choice.
 Every chooser (compose, attention, bind, thought and both generate walks)
 learns only from its own comparisons, by the proposal-corrected score
@@ -901,7 +896,7 @@ residual. It is used four ways:
    through the chosen recomposition (`Generative.selected_residual`), so its
    gradient trains the grammar operators and their inverses.
 
-**The measure (decided 2026-10-30; Alec: no ratios of error terms).** The
+**The measure (no ratios of error terms).** The
 residual is an absolute error in the code's own chart, in all four uses:
 
 - *Symbolic codes* are membership vectors in the unit cube (every admissible
@@ -973,7 +968,7 @@ form coordinates. The placement of meanings at kept closes
 (`MereologicalCodes.place_rows`), each row against rows of its own order in
 the context of the sentence's field at every order, is likewise a detached
 index computation with no optimizer owner.
-[Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08)
+[Architecture](Architecture.md#hierarchical-conceptual-context)
 specifies the chart and membership rules.
 
 **The derivation inverse.** The compose-forest inverse

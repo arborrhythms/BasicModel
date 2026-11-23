@@ -59,7 +59,7 @@ ramsified is the symbol tree and its orders: an order-$n$ concept is defined
 over order-$(n-1)$ symbols, so what a concept *is* is exhausted by its position
 in that structure, not by an intrinsic label, and the same structural theory
 is instantiated at each order. The conceptual space itself is one
-([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
+([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower)).
 
 > Scholarship hedge (recorded deliberately): this section states the
 > project's working usage. Verify the mapping against Ramsey's "Theories"
@@ -1064,7 +1064,7 @@ what is learned at the choice is the surprise, the difference between what was
 expected and what turned out better. Nothing in this is sampling for its own
 sake. A departure is the model's own expectation being contradicted. A
 sentence puts `explorePaths` such questions to its greedy path, each departing
-once ([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)).
+once ([Architecture](Architecture.md#whole-paths-and-concept-episodes)).
 
 The same reading runs through every level. Each level has its own predictor
 and a local error against that level's own observation; the difference is
@@ -1095,7 +1095,7 @@ structure of thought is never a mixture; only the gradient is.
 > reflects previous embeddings). (Alec, 2026-09-22)
 
 The rule, from
-[Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21):
+[Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi):
 a percept has a `.where`, its span in the input; a concept has none, and its
 where is its **context**, what else is present when it is. Then one rule has
 two consequences. Things present at the *same time in different wheres* are
@@ -1168,7 +1168,7 @@ All concepts are read in one attentive field. Occurrence brackets locate
 that field, not individual concept identities. Precision belongs to location.
 Symbolization retains an identity and pools its occurrences; union commutes
 with pooling and intersection does not. This is why symbols can combine but
-cannot be cut, as derived in [Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21).
+cannot be cut, as derived in [Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi).
 Division returns to order 0; a higher kind unions symbolized cases.
 
 
@@ -1347,7 +1347,7 @@ counterpart in the psychology of memory, language and belief. This section
 records the counterparts that support the design, and then the places where
 the design departs from what is known about people, so that each departure
 is a stated choice or a stated gap rather than an accident.
-[Architecture.md](Architecture.md#cognitive-grounding-dense-perceptual-vs-sparse-symbolic-2026-07-02)
+[Architecture.md](Architecture.md#cognitive-grounding-dense-perceptual-vs-sparse-symbolic)
 grounds the perceptual/symbolic split (complementary learning systems,
 dual process, systematicity, grounded cognition, basic level); this section
 covers memory, the two truths, expectation, testimony and feeling.
@@ -1371,7 +1371,7 @@ covers memory, the two truths, expectation, testimony and feeling.
   brings the best row back onto the STM stack. The slots belong to an idea: a sentence that only
   states a relation leaves the relation, the fact without the dated occasion
   of learning it, which is the difference Tulving (1972) draws. See
-  [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+  [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems).
 
 - **Gist survives, form fades; meaning is stored fused.** Recognition
   memory for a sentence's wording is lost within a few seconds of hearing
@@ -2042,7 +2042,7 @@ In engineering terms, regions are derived, never stored: membership is
 invariance under the operator (a thing is a gun if `gun(x) = x`) and
 subsumption is absorption (cats are animals if `animal(cat) = cat`, Boole's
 `y = xy`), so `part`, `whole` and `equal` are tests on one algebra
-([Architecture](Architecture.md#words-are-a-formula-for-narrowing-attention-2026-09-28)).
+([Architecture](Architecture.md#words-are-a-formula-for-narrowing-attention)).
 
 ## The Sign in Two Spaces: Genera Are Not Located (2026-10-04)
 
@@ -2229,7 +2229,7 @@ disagree, both fill, and that corner is the prompt to refine. Neither
 overrides the other, and the lanes are never netted. Implicit learning
 finds classes; explicit learning names them; a word learned for a class
 already found is where they meet. The mechanism is
-[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21).
+[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower).
 
 Vocabulary (Alec, 2026-10-28): a word's implicit definition, its definition
 over its use, is its *extension*; its explicit definition is its *intension*.
@@ -2293,7 +2293,7 @@ is still reconstruction and not re-perception: what returns is a few stored
 concepts with their idea, it carries the stamp it was stored with and not the
 present one, and recalling it observes nothing new. `.when` is model time in
 every store, semantic memory included. See
-[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems).
 
 ### Dual process and the reference file (2026-11-09)
 
@@ -2310,7 +2310,7 @@ System 2 holds the explicit structure: the grammar, and the relations of
 long-term memory it writes and reads, where a stored implication is applied
 by `infer` ([Reasoning](Reasoning.md)).
 
-Alec, 2026-11-10: "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." Speech therefore passes through perception's own inverse: grammar decides which order-zero concepts are to be shown, and the one decoder shows them. Episodic memory divides between the systems in the same way: a moment keeps the strongest concepts of the field it left, and returning to that moment is an act of thought, a recall by content, which restores them as System 1's attended field ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)). *Claude's reading:* what is remembered lies on the side of perception and the remembering on the side of determination. A mind that attends and does not compose, whose grammar declares attention's acts and no vector operator, still keeps each glance's idea and its entry.
+Alec, 2026-11-10: "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." Speech therefore passes through perception's own inverse: grammar decides which order-zero concepts are to be shown, and the one decoder shows them. Episodic memory divides between the systems in the same way: a moment keeps the strongest concepts of the field it left, and returning to that moment is an act of thought, a recall by content, which restores them as System 1's attended field ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems)). *Claude's reading:* what is remembered lies on the side of perception and the remembering on the side of determination. A mind that attends and does not compose, whose grammar declares attention's acts and no vector operator, still keeps each glance's idea and its entry.
 
 ## The Afflicted Mind and the Transformation of the Basis: Two Configurations of MTM (Alec's question, 2026-10-23)
 
@@ -2427,7 +2427,7 @@ worldline we do not want to conceptualize, or conceive of only in the
 maximally generic way. It cannot be interpreted by linking it to a known
 object; it is merely witnessed. What conceptual stand-in does the model give
 witnessed suchness, and what would Dharmakirti or Nagarjuna say? The design is
-in [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts-alec-2026-10-31); this section is Claude's reading of the question.
+in [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts); this section is Claude's reading of the question.
 
 **Three readings of a word (Alec, 2026-11-01).** After Peirce, a word may be
 read in three ways, and the reading is two decisions, one above the other.

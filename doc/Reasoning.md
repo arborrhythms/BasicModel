@@ -52,13 +52,13 @@ copula can bind directly to that row's addressed column and fill it.
 | `isPart(a,b)`: LTM and taxonomy parthood | `part(a,b)`: containment content and pair |
 | `isWhole(a,b)`: `isPart(b,a)` | `whole(a,b)`: `part(b,a)` |
 | `isEqual(a,b)`: LTM1 equality relations (membership in a singleton) and references | none: an identity is `part` each way, which `define(a,b)` writes as two relations |
-| `infer(premise, rule)`: the rule chunk's consequent from the premise chunk by identity, membership, equality or instantiation, with the path-minimum pair, or its antecedent opened as a subgoal (2026-10-29) | `implies(P,Q)`: containment of regions and pair |
+| `infer(premise, rule)`: the rule chunk's consequent from the premise chunk by identity, membership, equality or instantiation, with the path-minimum pair, or its antecedent opened as a subgoal | `implies(P,Q)`: containment of regions and pair |
 
 `bind` (a selected reference site, evidence `reference`), `inferBackward`
 (`infer`'s converse spelling, the subgoal face) and `non` (both lanes
 withheld) complete the catalogue with `intuit`, which writes the intuited
 field of its own map into knowing and carries it up the orders
-([Intuition, understanding and thought](#intuition-understanding-and-thought-alec-2026-10-30)),
+([Intuition, understanding and thought](#intuition-understanding-and-thought)),
 with the evidence kind `intuition`.
 
 `infer(premise, rule)` reads two held chunks: a premise and a recalled rule (an
@@ -77,7 +77,7 @@ referent, pair $(0, 0)$ and evidence kind `subgoal`; `query` or `ask` fills it,
 and a forward `infer` over the filled chunk concludes with its pair. A question
 claims nothing. `ThoughtInference.replay_pair` recomputes the pair from the
 recorded supports. A stored implication is applied the same way: its firing
-over the knowing ([below](#intuition-understanding-and-thought-alec-2026-10-30))
+over the knowing ([below](#intuition-understanding-and-thought))
 is one firing of a rule, which `infer` takes (`ThoughtInference.derive`) with
 the evidence kind `inference`.
 
@@ -123,7 +123,7 @@ explicit route is the chain: `query` recalls rows from LTM1 and the taxonomy,
 proposition by the per-lane maximum: agreement fills one lane, and disagreement
 fills both, the corner that prompts refinement.
 
-**What a deduction may take (Alec, 2026-11-13).** Both routes are pervasion,
+**What a deduction may take.** Both routes are pervasion,
 which "is just coverage from a higher order": the subject's region lies wholly
 within the property's by a relation between the two kinds. A remembered
 statement that is only like the claim gives an instance, and "analogy is not
@@ -131,7 +131,7 @@ deductively true": it is reported with an answer and is no premise. A
 conclusion is trusted at what its premises give, the least on each lane, since
 "object concept truth is established by reasoning from existing trusted
 premises (in LTM or conceptual space)"
-([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13),
+([Logic](Logic.md#existence-and-pervasion),
 [Philosophy](Philosophy.md#the-three-sources-of-trust-in-the-model-alec-2026-11-13)).
 
 A question with no open operand is read on its region, its field of
@@ -150,10 +150,9 @@ lower relevance is carried with the answer as its analogy.
 extension ([Extend](Extend.md#what-the-field-of-understanding-is-for)).
 `ask(row)` attempts to fill an open reference, using queries and nested
 questions. `not` exchanges poles of a pair or meaning; `non`, in compose and in
-thought, withholds both (Alec, 2026-11-12: "non- removes both positive and
+thought, withholds both ("non- removes both positive and
 negative evidence, while not swaps the two types of evidence."). The strength
-of expectation is a setting of the model, not a thought operation (Alec,
-2026-11-13: "drop gain, we can set that as expectationGain on the model"). No
+of expectation is a setting of the model, not a thought operation ("drop gain, we can set that as expectationGain on the model"). No
 thought operation returns a scalar. Neither trust nor lack of support is
 silently substituted for an evidence pole.
 
@@ -173,7 +172,7 @@ symbol exceeds `expectationOmissionThreshold` (0.5), it writes `not X`, an
 absence inference with that confidence against (`ThoughtClosing.absence`).
 
 The grammar's chooser makes the choices. Thinking is part of each whole path
-([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)):
+([Architecture](Architecture.md#whole-paths-and-concept-episodes)):
 a departure at a thought decision is credited by the proposal-corrected score
 function $p(a)\,\Delta C$ on its complete path's change in reconstruction plus
 supplied-answer cost (R + A); exact ties move no policy weight. Work bounds the
@@ -193,23 +192,23 @@ Forgetting does not reason. It drops the rows of least activity, a number
 each row of either store carries: set at its write from the sentence's
 surprise, raised each time the row is read, decayed by each pass, and never
 lowered or dropped at one. No pass checks whether a row is deducible from
-others (Alec, 2026-11-01: "Forgetting had been checking if rows were easily
+others ("Forgetting had been checking if rows were easily
 deductible; let's delete that requirement."). No pass changes a stored trust.
 Live thought results and pending expectation sources protect the rows they
 address throughout a pass. The pass itself is described in [STM](STM.md).
 
-## Intuition, understanding and thought (Alec, 2026-10-30)
+## Intuition, understanding and thought
 
-In the dual-process terms of 2026-11-09, expectation and intuition's map are System 1,
+In dual-process terms, expectation and intuition's map are System 1,
 and `infer`'s selection in the serial workspace, with `query`'s recall, is
 System 2
 ([Architecture](Architecture.md#dual-process-theory-as-a-design-consideration)).
 A `query` matches the top of the STM stack against the rows' slots and pushes
 the best row onto the stack (`EntryRead.push_recalled`), so thought can reason
 over a past sentence from the top of its own stack
-([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
+([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems)).
 
-Alec: "Intuition is beyond understanding, it is conditioned by desired
+"Intuition is beyond understanding, it is conditioned by desired
 output, and thoughts are a distillation of intuition."
 
 - *Understanding* is the conceptual definitions, trained by
@@ -237,8 +236,7 @@ In one line: understanding explains the input, intuition is understanding
 put to use, and thought is intuition that has been checked.
 
 *Stored rules, fired.* A stored implication is applied to the knowing by
-firing it, and `infer` takes each firing as a candidate (Alec, 2026-11-14:
-"the existing logic can be introduced as implication"). The knowing $K$ is
+firing it, and `infer` takes each firing as a candidate ("the existing logic can be introduced as implication"). The knowing $K$ is
 the question's order-zero content, the working values MTM prepends for the
 stream and, within a third of the remaining work, the order-zero concepts
 active in the last observed knowing field. The rules are the LTM1 rows that
@@ -304,7 +302,7 @@ take it, and as forgetting removes it when it goes unused.
   spreading activation (Collins & Loftus 1975). It is not prediction in the
   sense of predictive processing (Clark 2013; Friston 2010): the model
   learns by reconstructing its input, and expectation fills in what is
-  missing and answers nothing about the next state (Alec, 2026-11-17).
+  missing and answers nothing about the next state.
 - *Intuition beyond understanding, shaped by goals.* Expert intuition is
   recognition of what to do (Simon 1992; Klein 1998, recognition-primed
   decisions),
@@ -347,10 +345,10 @@ take it, and as forgetting removes it when it goes unused.
 
 ## System 1: two networks and a read to a point
 
-On 2026-11-12 Alec set out two networks of System 1, "one that learns the
+System 1 has two networks, "one that learns the
 input based on missing information, and one that learns from conceptualizing
 or thinking about the input". They are expectation and intuition's map, with
-expectation now the architecture's (Alec, 2026-11-19: "if expectation comes
+expectation the architecture's ("if expectation comes
 from the arch, please let intuit have the pi-not-sigma that exists outside of
 the architecture"). Beside them is a read from a field to a point.
 
@@ -361,7 +359,7 @@ the architecture"). Beside them is a read from a field to a point.
 - *Intuition's map* is a Pi, Not and Sigma of its own, from the observed
   concepts of order zero to the same concepts, which the operator `intuit`
   calls. It is taught by the field that thought leaves, with the output's
-  cost (Alec, 2026-11-20).
+  cost.
 - *The read to a point* takes a field to one point, many concepts to one:
   "The N:1 read can be taught with System 2's idea as its target". Where
   sentences are comprehended it is a stacked sigma-pi of its own, taught by
@@ -376,7 +374,7 @@ System 2 content, for the read to a point. The mechanism is in
 ### Symbols, the field and the spaces of the orders
 
 The two maps work over a vertical structure and a horizontal one,
-which Alec set out as follows.
+as follows.
 
 - *Vertical.* "A sigma-pi graph that collects symbols (percepts are not
   0-d, so cant be collected)." The parts and the wholes of perception
@@ -394,14 +392,13 @@ which Alec set out as follows.
   [extend](Extend.md) is what applies a sentence's operators to it. It was
   described before as the order-zero concepts only.
 - *Horizontal.* Each order's concepts are placed in a space of their own
-  (Alec, 2026-11-20: "it is not clear that the space of nouns, for example,
+  ("it is not clear that the space of nouns, for example,
   should be constrained by the space of events"). A concept is placed by
   its context, and its
   context is the field: "the symbolic activation determines placement
   within conceptual space, but again, only relative to other concepts
   within the same order". A class is placed in this way like any other
-  concept. The concepts of each order lie in a geometry of their own (Alec,
-  2026-11-20: "the concepts at every order live in spaces with different
+  concept. The concepts of each order lie in a geometry of their own ("the concepts at every order live in spaces with different
   geometries"), so a symbol's cone is tested against one order's concepts
   alone. A type acts on its tokens through the field, up and then down
   to the related tokens, and not by a pull across orders: "this is system2
@@ -417,11 +414,11 @@ what is present and what the folds give from it, a token's types among them
 moves a row relative to rows of its own order only. A class is placed by its
 context like any concept, not at the centroid of its members. A row above the
 basic percept carries no perceptual form of its own: a reader that needs a
-form takes the word's, through the mapping. Alec, 2026-11-12: "symbols should
+form takes the word's, through the mapping. "symbols should
 not take the centroid of the percepts that they collect; they are epistemic
 points."
 
-### The split of sigma and pi (Alec, 2026-11-13)
+### The split of sigma and pi
 
 "So we need to split the sigmaPi. based on the discussion, I see boxes
 applying to percepts (since they live in a positive hypercube) and cones
@@ -432,7 +429,7 @@ SIGMA(basic percepts)."
 - **A Sigma gives one signed value for each concept**, $\tanh(\sum_i
   w_{ci} s_i)$ in $[-1, 1]$, over the signed values $s_i$ the Not gives, whose size is its certainty, stored as two unsigned lanes: its
   positive part on the lane for and its negative part on the lane against
-  (Alec, 2026-11-17: "Signed sigma; good, this is knowing in the signed
+  ("Signed sigma; good, this is knowing in the signed
   hyperball"). A **Pi gives unsigned rows**, each a product of its members'
   memberships, between zero and one; a percept's opposite is zero, not
   minus one.
@@ -445,9 +442,9 @@ SIGMA(basic percepts)."
   the next order by a Sigma. A symbol's constituents are coordinates of
   conceptual space, and its cone lies in "a subspace of that space (thus
   irrelevant details of members are removed by their variation in that
-  subspace)" (Alec, 2026-11-20). "system 2 creates a symbolic vertical structure
+  subspace)". "system 2 creates a symbolic vertical structure
   on top of that, which is used by all higher-order concepts."
-- **One structure at every order** (Alec, 2026-11-17): a Pi, a Not and a
+- **One structure at every order**: a Pi, a Not and a
   Sigma. The Not is a layer of options, the value or the not-value of each
   row, and the Sigma's weights are at zero or above
   ([Architecture](Architecture.md#sigma-and-pi-layers)). A Sigma at order
@@ -458,20 +455,20 @@ SIGMA(basic percepts)."
   for part inclusion instead, which is a much faster operation". What falls
   in a symbol's cone is that thing; that one kind lies within another is
   read from the rows a kind is made of, and is the pervasion of
-  [Logic](Logic.md#existence-and-pervasion-alec-2026-11-13).
+  [Logic](Logic.md#existence-and-pervasion).
 - **A symbol is a pair of rows.** A symbol is two unsigned rows of the Pi,
   one for each lane, since a Pi has unsigned weights and cannot change a
   sign. It is a region of sameness and may hold one concept or several:
-  "my dog" and "Voyager" are two concepts and one symbol (Alec, 2026-11-20),
+  "my dog" and "Voyager" are two concepts and one symbol,
   and there is no symbol of a concept. The Not offers the pair as one signed
   value, the value or the not-value, and a concept above reads the one its
-  entry chooses with a weight at zero or above (Alec, 2026-11-19: "its two lanes get passed
+  entry chooses with a weight at zero or above ("its two lanes get passed
   to Not, and those are combined into on signed lane for processing by
   sigma"). A concept stays one signed value; "both" is two concepts, one for
   presence and one for absence, the second reading through an entry of the
   Not.
 
-### The layers (Alec, 2026-11-14 to 2026-11-19)
+### The layers
 
 "We are basically just updating the algorithms used for the existing
 SigmaLayer and PiLayer. We are also creating a fast SigmaPi layer that
@@ -533,9 +530,9 @@ and sigma, respectively."
   where the parts are had again.
 - **Every order is made this way.** The structure repeats above order zero
   for a mind that has symbols; what tells a human mind from an animal's is
-  this recursion, which symbols enable, and not the Not (Alec, 2026-11-17).
+  this recursion, which symbols enable, and not the Not.
 
-### Implicit and explicit: what each system holds (Alec, 2026-11-13)
+### Implicit and explicit: what each system holds
 
 "I guess we still need both, as implicit and explicit: system 1 and system 2,
 system 1 still knows in virtue of spatial reasoning, but system 2 has explicit
@@ -573,7 +570,7 @@ taught."
   (token) and output (type) provided as the teaching example for order."
 - **The explicit side.** Edges are the promotion of relations of long-term
   memory. Thought reads them: `query` recalls them and `infer` applies them
-  ([above](#intuition-understanding-and-thought-alec-2026-10-30)).
+  ([above](#intuition-understanding-and-thought)).
 - **Symbols have no space.** "symbols are not related as siblings, as they do
   not live in a space of their own; they exist as participants in the vertical
   structure. concepts live in a conceptual space with a distance metric, in
@@ -609,13 +606,12 @@ strict (felix is a cat) but neighbor relations are not (Felix is like Ciao).
 So perhaps expectation is nonlinear in virtue of vertical propagation."
 
 Expectation has no map beside the structure. It is made at each look on the
-structure's own Pi, Not and Sigma (Alec, 2026-11-19: "using the existing
+structure's own Pi, Not and Sigma ("using the existing
 architecture will allow us to to sparse in interconnection, which should
-help amplify the salience"; 2026-11-20: "at each attend(), we want to expect
+help amplify the salience"; "at each attend(), we want to expect
 perceptual and symbolic activation and then learn that stage by stage as we
 move over the orders"). What is expected is what the vertical
-spread gives, once up and then down, on the matrices of every order
-(Alec, 2026-11-17):
+spread gives, once up and then down, on the matrices of every order:
 
 - *Up, by fan.* A concept's or a symbol's value is split among the rows that
   read it, each by its weight's share of all the weights it is read with.
@@ -635,7 +631,7 @@ spread gives, once up and then down, on the matrices of every order
   percepts, and a row still requires its members.
 
 Its stages are the basic percepts, the concepts and the symbols, and not
-the output (Alec, 2026-11-20). At each look what was expected at a stage is
+the output. At each look what was expected at a stage is
 compared with what the look brings there, and that cost teaches its own stage
 alone; nothing of it is carried through the way up and the way down again.
 The top-down reconstruction is a different thing: what an input is missing
@@ -652,7 +648,7 @@ retrieval and the order of stored rules (`ConceptSpread.rule_order`), reads
 it detached, and the guard of [Architecture](Architecture.md) stands: codes
 never read a value computed from codes. It "is not counted as evidence, it
 is just removing some of the burden from later layers. it should be used
-only to guess at network activation" (Alec, 2026-11-19); it joins the signal
+only to guess at network activation"; it joins the signal
 as a gain with its gradient stopped and as a prime of selection. What
 teaches it is the reconstruction's error, omission among it
 ([Training](Training.md), "Adaptive omission"): where units of the sentence
@@ -692,7 +688,7 @@ point and for each kernel of `marker`.
   stack reads concepts, each one signed value held as its two lanes. A
   symbol's two rows are joined by the Not into one signed value, for less
   against, before the Sigma reads it
-  ([above](#the-split-of-sigma-and-pi-alec-2026-11-13)).
+  ([above](#the-split-of-sigma-and-pi)).
 - *Nothing at the start.* The last sigma's weights start at zero, so a new
   stack gives zero and adds nothing. Its first weights come from a
   generator of its own, so building a stack changes no other random number
@@ -701,10 +697,10 @@ point and for each kernel of `marker`.
 ### Intuition, on a map of its own
 
 `intuit` is an operator of thought, and it has a Pi, Not and Sigma of its
-own that stands outside the architecture (Alec, 2026-11-19: "We should not
+own that stands outside the architecture ("We should not
 call it "the expected field", since it is called from an operator, whereas
 expect is built in to a model parameter"). Its map is a stack with one
-moderate hidden layer (Alec, 2026-11-14: "stack a sigmaPi with only a
+moderate hidden layer ("stack a sigmaPi with only a
 moderate hidden layer (full input, full output, so it resembles only few
 percepts)"), from the observed concepts of order zero, both lanes, to the
 same concepts. When thought calls `intuit`, the map gives the *intuited
@@ -712,12 +708,10 @@ field*; the operator joins it into the stream's knowing at the places the
 sentence observed, marked as intuition, and carries it up the orders, so
 that thought, the answer and the output read it: "insights that trigger
 knowing as a result of observation directly". Nothing reads it as expected.
-Its teacher is the field that thought leaves, with the cost of the output
-(Alec, 2026-11-20: "I approve your choice: restore what you approved on
-2026-11-12, the field that thought leaves, with the output's cost");
+Its teacher is the field that thought leaves, with the cost of the output;
 omission teaches expectation alone. The firing of stored rules is not
 `intuit`'s: it is how `infer` applies a stored implication
-([above](#intuition-understanding-and-thought-alec-2026-10-30)).
+([above](#intuition-understanding-and-thought)).
 
 ### The read to a point, taught by System 2
 
@@ -733,13 +727,13 @@ expected field; nothing reads it yet. Why a point is kept, as a key and not
 as what is reasoned on, is in
 [Philosophy](Philosophy.md#expectation-as-a-gain-attention-as-exclusion).
 
-### The tools of thought (Alec, 2026-11-13)
+### The tools of thought
 
 "For thought, we are giving tools to the model so that it can change its
 structures". The operators of [Language](Language.md) compose and
 generate; these act at a completed boundary.
 
-| Tool | Alec's note |
+| Tool | Note |
 |---|---|
 | `ask` | "as before" |
 | `query` | "over memory" |
@@ -754,7 +748,7 @@ generate; these act at a completed boundary.
 
 `define` is how an identity is written: two relations, `part` each way.
 
-**Thought reads the structure** (Alec, 2026-11-17). `parts(c)` gives the
+**Thought reads the structure**. `parts(c)` gives the
 entries of c's row of the Pi, the symbols below c at every lower order,
 each with its weight; `wholes(c)` gives the rows of the Pi above c that
 have c as an entry, each with its weight. Of the Sigma, thought can read

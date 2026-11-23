@@ -57,7 +57,7 @@ inverses those stages need are the prerequisite for the whole curriculum.
 |---|---|---|---|
 | 1 | reconstruct, **keep syntax**, fill the missing **words** | the lexical/leaf inverse and the codebook (word to slot and back) | exposure |
 | 2 | reconstruct with **no syntax / no words** (from the idea alone) | the full generative inverse and abstraction | mixed |
-| 3 | withdrawn: predict the **next sentence** (Alec, 2026-11-17: "we are not doing predictive processing, we are doing input reconstruction") | nothing; no sentence is estimated | none |
+| 3 | withdrawn: predict the **next sentence** ("we are not doing predictive processing, we are doing input reconstruction") | nothing; no sentence is estimated | none |
 | 4 | answer a question by **reasoning** (no search) | relations, modus ponens (`consequents()`), the tetralemma and trust | gradient |
 | 5 | answer a question by **LTM search** | global attention (the typed `.where`), the read fed back, and exploration | gradient |
 
@@ -72,9 +72,9 @@ These two rules are not System 1 and System 2. System 1 is everything the
 loop needs to close without thinking and System 2 is the higher-order logic
 that symbols allow, which the three grammars carry out, and both are trained
 by gradient
-([Architecture](Architecture.md#dual-process-system-1-knowing-and-system-2-2026-11-09)).
+([Architecture](Architecture.md#dual-process-system-1-knowing-and-system-2)).
 
-## The generated supervised curriculum, in order (Alec, 2026-10-09)
+## The generated supervised curriculum, in order
 
 The objectives above are what is trained; this is the order in which the
 model is taught, by **generated corpora** whose targets name parts of the
@@ -87,9 +87,9 @@ model against its disabled control, one fresh unseeded run per mode, no
 retries, the corpus generated from a small declared vocabulary. A stage is
 read as a result only when its control passes it.
 
-What the curriculum orders is the operations learned (Alec, 2026-11-07). The
+What the curriculum orders is the operations learned. The
 order in force is the ten lessons of
-[Concept hierarchy learning and curriculum order](#concept-hierarchy-learning-and-curriculum-order-alec-2026-11-08):
+[Concept hierarchy learning and curriculum order](#concept-hierarchy-learning-and-curriculum-order):
 clauses and questions come before determiners and modifiers, so stage 4b's NP
 lessons follow 4c and 4d. The stages below keep their corpora and gates.
 
@@ -110,7 +110,7 @@ lessons follow 4c and 4d. The stages below keep their corpora and gates.
 | 9 | **The age-appropriate corpus** | Wordbank → `interpret` → AO-CHILDES by age band ([FutureWork, gradual training](FutureWork.md)) | text; supplied answers where the corpus has them | the stall diagnostic flat per level | everything above, at scale |
 | 10 | **The full train** | [the staged training corpus](#the-staged-training-corpus) | — | the standing gates unchanged or better | — |
 
-**Word classes in order (Alec, 2026-10-21).** Parts of
+**Word classes in order.** Parts of
 speech are learned "in virtue of learning certain words first (proper
 nouns, then nouns (mass and non-count), then count nouns (for languages
 that have them)". Proper nouns come from demonstratives, which point at
@@ -118,11 +118,11 @@ events: "this is Felix, that is Felix" makes Felix the class of two
 events, an individual at order 1. Count nouns come from definitions over
 individuals: "Felix is a cat, Ciao is a cat" makes cat a kind at order 2.
 This refines stages 4a and 4b; the mechanism, a raise by equivalence
-class, is [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21).
+class, is [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower).
 Until a part of speech is learned, unit tests force it
 ([Testing](Testing.md#rules-for-tests-and-measurements)).
 
-**Identity from data (Alec, 2026-10-10).** Identity is learned from the data
+**Identity from data.** Identity is learned from the data
 wherever the data can teach it, and a rule is kept only where a lesson shows
 it is needed. This lesson design governs the stage 1 and stage 5 identity
 lessons: vary object, property and verb factors independently; grow support
@@ -166,11 +166,9 @@ in turn, so that each look must return one word and the request move; then the
 sentence under the time budget. Stage 4b's asked parts are the fourth such
 lesson. Stage 3 is the lesson that failed when reading order was left to
 sparse credit alone: the scorer learned content, not position. It gates on
-reads and the lesson's cross-entropy instead of list reconstruction (Alec,
-2026-10-10).
+reads and the lesson's cross-entropy instead of list reconstruction.
 
-**Attention is taught by successive approximation** (Alec, 2026-11-20:
-"Animals are taught via successive approximation under behavioral
+**Attention is taught by successive approximation** ("Animals are taught via successive approximation under behavioral
 conditioning paradigms, I imagine the same might work here; we can't teach
 focus directly, but we can reward behaviors that require a successively
 narrow focus"). No rule says where to look, no rule forbids a walk an act,
@@ -180,7 +178,7 @@ then its words in order, then a word's parts. What is rewarded is the
 behaviour, by its outcome.
 
 **A sequence is sung over the output.** A test of sequence learning is
-"singing a song over the output" (Alec, 2026-11-20): a learned sequence is
+"singing a song over the output": a learned sequence is
 produced over the output, each item from the one before, with no input
 between. The first song is counting, which "might be simpler than moving
 focus reliably over words".
@@ -212,9 +210,9 @@ departures are credited against untrained suffixes. The stall diagnostic reads
 this per level: an explore-win rate at zero while the level's surprise stays
 high says the data step is too steep there. A shuffled order is the control.
 
-### The generated math suite: what it exercises and what it cannot (2026-10-20)
+### The generated math suite: what it exercises and what it cannot
 
-Alec: "mathematical equations written as English sentences offer one of
+"mathematical equations written as English sentences offer one of
 the best automatically-generated testbeds for helping a model learn stage
 by stage." Every sentence has a checkable meaning, the difficulty is a
 dial, and the corpus is free — which is what the Viterbi order needs. It
@@ -249,7 +247,7 @@ developmental corpus rather than run alone; and since
 numerals are opaque words it tests the mechanisms, never arithmetic
 competence, which is what it is for.
 
-**Mathematics enters only as language** (Alec, 2026-09-09). The runtime has
+**Mathematics enters only as language**. The runtime has
 no arithmetic primitive, lookup or substitution operation: numerals are
 opaque number words with arbitrary concept addresses, `plus` and `minus` are
 ordinary transitive verbs, and addition is iterated succession. The counting
@@ -335,7 +333,7 @@ row is written at the kept close. The lesson's CE teaches the waits
 as well as the folds; it never replaces the student's kept program.
 Adjective descriptions use `intersection`; this corpus contains no
 noun–noun `compound` and requires no case lesson.
-The gate (Alec, 2026-10-17) is free
+The gate is free
 reading on held-out sentences of the trained kinds: **≥90% exact brackets**,
 **one occurrence for ≥95% of singular NPs with zero duplicate writes**, and
 **one order-1 occurrence at every lowered NP**. Mint and bind construct an
@@ -421,13 +419,13 @@ successor is a verb, numerals stay opaque words.
 
 ---
 
-## Concept hierarchy learning and curriculum order (Alec, 2026-11-08)
+## Concept hierarchy learning and curriculum order
 
 The architecture groups words and their classes through `ConceptHierarchy`, each in its own order's space: a word draws its classes together, a class its words. Kept grammar applications supply members to prebuilt formal-argument concepts, using this general mechanism. Each argument starts at zero radius and learns confidence by the ordinary views-and-agreement rule. Part-of-speech learning has no special centroid, count distribution or feedback rule. No position crosses an order, and no grouping changes a perceptual form or a trust radius.
 
-What the curriculum orders is the operations the model learns (Alec, 2026-11-07); the parts of speech follow from the operations, as the occupant classes of their formal arguments. An operation's arguments presuppose what earlier operations produce: an object before a predicate over objects, a clause before a question about it, a predicate before its modifiers. Once word concepts are stable, object concepts are learned through `interpret`; every word then occupies `interpret`'s one input, so all words share one class, and the clause and verb operations' arguments divide them into noun and verb classes. Questions come early, because testing comprehension teaches syntactic category: the answer to "who ran?" is a subject noun. Intransitive comes before transitive, and simple before complex as far as possible. Nouns and verbs are therefore learned first by the curriculum, not by a grammatical-class prerequisite in the learning algorithm. The architecture enforces no order: every operator a grammar file declares is open from the first sentence, and no operator is gated inside the model (Alec, 2026-11-13: "Operators are "a priori" concepts that we are using for the control of the architecture itself. Lets not do that; the gating of those operators might be able to be done *in the tests*, which would act like piagetian stages signalling that the test suite can move on to the next stage."). The order is the corpus presentation's, which models child development and the Piagetian stages: each lesson is such a stage, and a later lesson waits for the artifact of the one before it. A kept application records members whatever its operator's definiteness, and incidental learning from an example met before its lesson is never suppressed. The mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
+What the curriculum orders is the operations the model learns; the parts of speech follow from the operations, as the occupant classes of their formal arguments. An operation's arguments presuppose what earlier operations produce: an object before a predicate over objects, a clause before a question about it, a predicate before its modifiers. Once word concepts are stable, object concepts are learned through `interpret`; every word then occupies `interpret`'s one input, so all words share one class, and the clause and verb operations' arguments divide them into noun and verb classes. Questions come early, because testing comprehension teaches syntactic category: the answer to "who ran?" is a subject noun. Intransitive comes before transitive, and simple before complex as far as possible. Nouns and verbs are therefore learned first by the curriculum, not by a grammatical-class prerequisite in the learning algorithm. The architecture enforces no order: every operator a grammar file declares is open from the first sentence, and no operator is gated inside the model ("Operators are "a priori" concepts that we are using for the control of the architecture itself. Lets not do that; the gating of those operators might be able to be done *in the tests*, which would act like piagetian stages signalling that the test suite can move on to the next stage."). The order is the corpus presentation's, which models child development and the Piagetian stages: each lesson is such a stage, and a later lesson waits for the artifact of the one before it. A kept application records members whatever its operator's definiteness, and incidental learning from an example met before its lesson is never suppressed. The mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
 
-**Words, objects, then their meta concepts (Alec, 2026-11-18).** A word
+**Words, objects, then their meta concepts.** A word
 generalization and an object generalization are each learned from their own
 occurrences, each a row that MTM nominates on recurrence with its concept;
 the object may be of another modality than the word. An occurrence keeps its
@@ -465,9 +463,9 @@ The ten lessons of `data/lessons/parts-of-speech.json`:
 
 The verb lessons use names and bare plurals as subjects and objects, so that no untaught operation is needed; an article met before its lesson is a form that occupies no argument yet. A class is definite when its members fit it strictly better than the other populated arguments and it has enough views: definiteness is separability times view evidence, and an operation's definiteness, the minimum definiteness of its inputs, is reported and gates nothing ([Architecture](Architecture.md), "Argument fit, separability and boundary conditioning").
 
-**Readiness is a measurement.** Each lesson ends on a measurement, never on an age or a sentence count, and its threshold is data beside the corpus: the `criterion` of each stage in `data/lessons/parts-of-speech.json`, declared by Alec (null until he sets it). `ConceptualSpace.trust_measurements()` supplies the values to the lesson runner (`bin/corpus_lessons.py`). Each lesson's budget is declared before it runs, and no lesson extends its budget to pass. A lesson produces an artifact that the next lesson restores as its fixture.
+**Readiness is a measurement.** Each lesson ends on a measurement, never on an age or a sentence count, and its threshold is data beside the corpus: the `criterion` of each stage in `data/lessons/parts-of-speech.json`, declared in that file (null until it is set). `ConceptualSpace.trust_measurements()` supplies the values to the lesson runner (`bin/corpus_lessons.py`). Each lesson's budget is declared before it runs, and no lesson extends its budget to pass. A lesson produces an artifact that the next lesson restores as its fixture.
 
-**Gates are behaviors (Alec, 2026-10-18).** "In writing a UG [a universal grammar], we do not demand which operators must be chosen, only which behaviors must be exhibited." No lesson gate names an operator. A lesson's gates are the behaviors its sentences exhibit: the held-out constituents, the answers to its questions, one individual per singular noun phrase with no duplicate or colliding occurrence, and the measurements its manifest declares. The kept operators, order stamps, unexpected occurrences and meaning norms are reported beside the gates, never required; whether a bare description licenses a later reference is measured by a later sentence, not demanded of a reading.
+**Gates are behaviors.** "In writing a UG [a universal grammar], we do not demand which operators must be chosen, only which behaviors must be exhibited." No lesson gate names an operator. A lesson's gates are the behaviors its sentences exhibit: the held-out constituents, the answers to its questions, one individual per singular noun phrase with no duplicate or colliding occurrence, and the measurements its manifest declares. The kept operators, order stamps, unexpected occurrences and meaning norms are reported beside the gates, never required; whether a bare description licenses a later reference is measured by a later sentence, not demanded of a reading.
 
 ---
 
@@ -538,8 +536,7 @@ a timeout or non-memory error stops that search as inconclusive or failed. A
 constructor-only result never establishes a fit. The selected full-prefix run
 uses stage boundaries, ordinary checkpoint continuation and the same guard.
 The B28/W256 capacity search and the selected corpus prefix belong to the
-`RUN_SLOW` run registered in `test/test_corpus_large_slow.py` (Alec,
-2026-10-29); partial capacity measurements do not select a production size.
+`RUN_SLOW` run registered in `test/test_corpus_large_slow.py`; partial capacity measurements do not select a production size.
 
 ### The staged training corpus
 
@@ -554,9 +551,7 @@ test and transfer splits, the math validation, test and beyond splits, the
 next-word gate and the held-out cost set. Part A's files: the ten lesson
 stages in `data/lessons/parts-of-speech.json`, the games under
 `data/games/` and the graded math rows under `data/math/`, each with its
-manifest, generator command and seed. The design is the
-[test development plan](plans/2026-11-09-item0-5-test-development.md) §6 to §9 and
-§17.
+manifest, generator command and seed.
 
 Separate image evaluation data lives under `data/images/`: 28 by 28 binary
 shapes, with integer labels 0–9 for a horizontal bar, vertical bar, falling
@@ -598,7 +593,7 @@ parameter-only readings after failed validation are explicitly incomplete.
 The 31 game variants are frozen under `data/games/`, with coverage in
 `inventory.json`. Their intended rules are diagnostic labels, never required
 learner choices. Game training remains stopped at the two whole-sentence
-signal nulls recorded in the [item 0.5 return](plans/2026-11-09-item0-5-test-development.md#19-item-05-return-codex-2026-11-12).
+signal nulls.
 
 The H9/H10 task recipe, files and protocol live in `data/eval/studies/`.
 `bin/study_corpus.py` reproduces their recorded hashes. Small diagnostics use
@@ -610,7 +605,7 @@ answer together. Recorded query-work charges include discarded trials but are
 not total compute. These small diagnostics do not satisfy the million-sentence
 qualification, three-seed comparisons, or undeclared acceptance bars.
 
-### The corpus lessons: ideas before relations (Alec, 2026-10-28)
+### The corpus lessons: ideas before relations
 
 The version-2 `data/corpus-lessons.json` has two curriculum phases. Four distinct
 idea documents name both measured objects with demonstratives and supplied-answer
@@ -783,7 +778,7 @@ contributes no reconstruction term and increments
 spellings or reconstructed ideas. [Architecture](Architecture.md), "The three
 stages: input, thinking, output", gives the loop.
 
-**The reconstruction teaches location (Alec, 2026-11-19).** "Reading in order
+**The reconstruction teaches location.** "Reading in order
 will create location concepts as long as we are teaching location." The bytes
 put back are built through a conjunction of the what pathway and the where
 pathway: on the way back each percept recreated is given a band of where
@@ -824,10 +819,10 @@ does not manufacture answer labels.
 
 Reconstruction is unconditional and is seeded from the understanding: the open
 attention pass's field and the sentence's end slots. There is no knob for a
-target space role (the `<reconstruct>` element was retired on 2026-06-09); the
+target space role; the
 terms are weighted by `reconstructionScale`.
 
-**Percept expectation and residual reconstruction (Alec, 2026-10-29).** Each
+**Percept expectation and residual reconstruction.** Each
 learner has one teacher. `PerceptExpectation` predicts each word's percept
 form from the prior percept context at its arrival and learns only from its
 own local arrival error. The forecast made before arrival is frozen for every
@@ -873,10 +868,10 @@ teaches expectation alone
 | Knob | Effect |
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
-| `reconstructionScale` | Independent priority of each relative reconstruction term. It no longer subtracts from the answer's weight. |
+| `reconstructionScale` | Independent priority of each relative reconstruction term. It does not subtract from the answer's weight. |
 | `reconstructInLoop` | Historical fixture opt-in; retained meronomy grammar readings always reconstruct their understanding. Training/evaluation use the owned byte objective once. |
 | `reconstructionBasisLimit` | Positive count, default 16: the sentence bank adds up to this many most-primed other symbols to its own rows. It also bounds free-inverse candidates per side (at most its square in pairs). Independent of word, STM and field capacity. Missing candidates/inverses report incompleteness. |
-| `grammarLessonWeight` | Priority for explicit compose/generate lessons; each lesson updates only its own chooser. `forwardGrammarWeight` is retired and rejected. |
+| `grammarLessonWeight` | Priority for explicit compose/generate lessons; each lesson updates only its own chooser. `forwardGrammarWeight` is rejected. |
 
 ### Construction trace and derivation pressure
 
@@ -1150,7 +1145,7 @@ positions, are audits with `trained=False`.
 Generation's walk residual is the one exception to a target baseline: three
 absolute chart errors (form, for and against), each registered with baseline
 one ([GradientFlow](GradientFlow.md#the-generation-residual)). Term balancing
-is avoided where possible (Alec): the projection protects reconstruction from
+is avoided where possible: the projection protects reconstruction from
 the answer side without a scale balance, and both ownership settings compare
 paths by $R + A$.
 
@@ -1367,8 +1362,7 @@ what stays live and what is detached.
   input, and the truth store supplies only its trust: a row keeps no origin
   and no source text.
   Provisioning therefore waits for training: an untrained chooser cannot be
-  expected to read a given truth in the right form. Who sets the trust
-  (Alec, 2026-11-13): "this should be something that wiki oracle sets when
+  expected to read a given truth in the right form. Who sets the trust: "this should be something that wiki oracle sets when
   training, and users set in the truth store. Conversations go in at zero,
   so truth statements have their trust evaluated." A value from the truth
   store is written as given. A sentence read in training is written at the

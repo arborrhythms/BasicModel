@@ -229,7 +229,7 @@ not a separate planner stack.
 
 The grammar's operation scorer, the one compose uses, makes every thought
 choice. Thinking is part of each whole path
-([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)):
+([Architecture](Architecture.md#whole-paths-and-concept-episodes)):
 a departure at a thought decision is credited by the proposal-corrected score
 function $p(a)\,\Delta C$ on its complete path's change in reconstruction plus
 supplied-answer cost (R + A), and exact ties contribute no policy term. Work

@@ -25,7 +25,7 @@ Makefile targets invoke the project virtual environment (`.venv/bin/python` on
 Unix, `.venv/Scripts/python.exe` on Windows), so no manual activation is
 required.
 
-**Tested build (Alec, 2026-11-01): the latest stable releases, unpinned.**
+**Tested build: the latest stable releases, unpinned.**
 `requirements.txt` names packages without versions, and `make install`
 takes whatever PyPI serves as stable; what an upgrade breaks is fixed in
 the code rather than pinned around. The suite is the criterion, and it
@@ -47,7 +47,7 @@ raw `max-autotune`, differentiated backward, and runtime word counts
 through the configured sentence capacity without recompilation. That
 measurement has not been repeated on the stable builds.
 
-**MLX export on this stack (2026-11-01).** With torch 2.15.0 and executorch
+**MLX export on this stack.** With torch 2.15.0 and executorch
 1.5.1, `RUN_SLOW=1 pytest test/test_mlx_export.py` reports 3 passed and 2
 xfailed, but the two xfails (D2, the `.pte` lowering; D3, runtime parity)
 no longer fail for the recorded reason, the dedup'd constant shared across

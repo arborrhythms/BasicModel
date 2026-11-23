@@ -21,7 +21,7 @@ into long-term memory.
 
 ![Memory: in focus, familiar, known, and the long-term strata](diagrams/memory_strata.svg)
 
-The stores are named by stratum (Alec, 2026-10-21). `LTM0` is the occurrence
+The stores are named by stratum. `LTM0` is the occurrence
 store, one idea per entry; `LTM1` is its relation stratum, one pair of
 references per row; and `LTM2` names relations over relations, an `LTM1` row
 that references another row. `STM0` and `STM1` are their short-lived
@@ -144,7 +144,7 @@ containment, not distance
 
 **The tree, the concepts held and the idea.** A concept is a part of a
 sentence, and an idea is the vector in conceptual space that corresponds to a
-whole sentence (Alec, 2026-11-17). A sentence's tree is the trace of its read:
+whole sentence. A sentence's tree is the trace of its read:
 the actions the grammar took, each operation's operands and result
 (`operation_values`) and the leaves, kept by `SentenceStrata.Trace` and
 indexed once for a path by `ReadingIndex`, which gives each action its
@@ -158,7 +158,7 @@ stack, shifting and reducing as the tree has them, on the words' objects.
 What it gives is staged beside the tree in the path's `IdeaStack`, an `STM0`,
 so the sentence's idea has the layout of an `LTM0` row, and each row is named
 by the address of the tree node it comes from (`IdeaStack.name_for`): the
-idea and its tree share one index (Alec, 2026-11-17). The concepts held in
+idea and its tree share one index. The concepts held in
 STM, MTM's identities put off the stack at the sentence's start and what the
 sentence says of them, are read and written by comprehension as the read did.
 It starts from a copy of them taken when the sentence begins
@@ -194,12 +194,12 @@ runtime working state, not learned weights. `concept_dim` is the full CS output
 width reserved for the event payload; positional/temporal columns are preserved
 when a config gives CS nonzero `nWhere` / `nWhen`. Each entry is thus one wide
 concept vector, the full concept-space width of the composed value, held
-beside the symbol activation field (Alec, 2026-10-20). The open sentence's
+beside the symbol activation field. The open sentence's
 temporary identity is that vector, computed in STM and open to
 reinterpretation; what persists is what the kept close writes. The
 intersection that `bind` needs is computed on read, never stored.
 
-**Spatial index (Alec, 2026-10-09).** The current conceptual eight-space
+**Spatial index.** The current conceptual eight-space
 has its own range in the model's shared `.where` allocation.
 `ConceptualSpace.where` exposes the slots' sinusoidal indices, using the
 same encoding as the perceptual codebooks. A slot keeps its location when
@@ -228,7 +228,7 @@ Interpretation supplies one word to the grammar. Whole-path comparison
 credits departures in these choices. During the reading lesson each taught
 request and grammar decision contributes its cross entropy.
 
-**The walk's log in episodic memory** (Alec, 2026-11-20: "make the log
+**The walk's log in episodic memory** ("make the log
 conceptual activation stored in episodic memory, so that you are not just
 bolting on memory and structures to the algorithm"). What a walk did at a
 step is held as the activation of concepts in the episodic slots of that
@@ -238,8 +238,7 @@ exist, and concepts are declared for what has none; the log is no structure
 of its own. The slots of the walk's last chunks are among what the chooser
 reads, and what it does with them is learned by the gradient; nothing
 forbids an act because of them. A behaviour that lasts is a chain of acts,
-replayed from STM or LTM, and in the end held as concepts (Alec, 2026-11-20:
-"I would expect long-term behaviors to be learned as behavior chains that
+replayed from STM or LTM, and in the end held as concepts ("I would expect long-term behaviors to be learned as behavior chains that
 can be replayed in STM or LTM , and eventually in concepts").
 
 No region boundary is learned. A look's extent is the activity the salience
@@ -340,7 +339,7 @@ does the STM bookkeeping ([Spaces.py](../bin/Spaces.py)):
    chooser and its training are in
    [Language](Language.md#one-operation-per-round), and the whole
    paths a sentence is read along in
-   [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11).
+   [Architecture](Architecture.md#whole-paths-and-concept-episodes).
 
 > **Convention pin — newest-at-slot-0, shift-RIGHT.** The **free / newest**
 > slot is **slot $0$** and the rolling window shifts **right**, dropping
@@ -589,7 +588,7 @@ optional reference to a concept or to another row by its time, written from
 the reference the close selected and by a promotion, and empty for most
 sentences; the slots are what the idea extends to (below); and the
 activity decides whether the row stays (below). The idea is semantic memory
-and the slots episodic memory (Alec, 2026-11-19: "Entry should be slot in
+and the slots episodic memory ("Entry should be slot in
 episodic memory ( the idea is semantic memory)"). An idea is an intension and
 its slots its extension, and two ideas can have one extension: a kind of one
 member and that member leave equal slots, and the referent tells them
@@ -658,7 +657,7 @@ the same number on the lane of its sign.
 **Time.** The model has one integer clock, and the clock's sinusoidal code
 is made in one place and held on the model beside it, where every reader
 reads it. A stamp is the clock of the moment it records. A concept is opaque
-and keeps its `.where` and its `.when` (Alec, 2026-11-19), so a question
+and keeps its `.where` and its `.when`, so a question
 about *when* reads the stamp. The chooser and the operators are given the
 present in the same code and a comparator that tells how far back a stamp
 is; a stamp is never rewritten as an age. A row is named by
@@ -722,7 +721,7 @@ sentence they are taken from its field of understanding, whatever their
 orders; for a kept thought, from its idea's extension, taken from its kept
 tree or, where it has none, from its generate walk (`EpisodicMemory.select`,
 `for_meaning`). Which concepts of the moment fill the slots is not settled:
-not the most active (Alec, 2026-11-19: "Most active is clearly not useful;
+not the most active ("Most active is clearly not useful;
 perhaps least expected, or sentence dominant such as np, vp, ?"). Zero
 readings are absent. No place or pole pair is stored; the row's time
 supplies time. A close that writes only an `LTM1` relation writes no slot,
@@ -738,14 +737,14 @@ rows. The slots are
 the reading of their moment, not perceptual memory: a percept that had no concept
 when it was seen leaves nothing, where a word stood is not kept, and `reverse`
 returns the percepts that the concepts' definitions give at the recall. See
-[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems).
 
 **Definitions.** `interpret` writes a new word's definition as one `LTM1` row
 of two `SYMBOL` references, `(object, word)`
 (`Interpret.define`): a new word costs one inventory row, which becomes the
 object's, and this one row. The definition has no time, like every relation,
 and is dropped by forgetting like any row. A word read as its object is
-mapped at trust one, and so is the object it reaches (Alec, 2026-11-14: "At
+mapped at trust one, and so is the object it reaches ("At
 one for now"); a definition that a sentence states takes that sentence's
 trust, which is zero in a conversation. Its two references name identities, never
 content, so what a concept's code becomes in training cannot redirect a
@@ -838,7 +837,7 @@ activation alone cannot establish a degree. See
 ## 11. The recent situation
 
 No sentence is estimated from the sentences before it, and no close is
-taken as a target (Alec, 2026-11-17). The shared `ActivationPredictor` of
+taken as a target. The shared `ActivationPredictor` of
 `SymbolExpectation` is read only within a sentence, by the word read and the
 field read during the read. What carries from one sentence to the next is
 each stream's recent situation. At a kept close each row the close wrote is
@@ -1041,7 +1040,7 @@ stream and path (each path's `IdeaStack`, beside its tree), by stream (the
 recent store) or by stream and chunk (thought stores).
 
 A new thought idea takes a tick of the one model clock that sentences use
-(Alec, 2026-11-10: "One clock"), on the same ladder; reads and updates keep
+("One clock"), on the same ladder; reads and updates keep
 its stamp, and trial rollback puts the clock back. Nothing else puts it back:
 each tick also passes the last row's time in `LTM0`, so a stamp is unique
 across epochs as well as within one. Clearing STM at the epoch reset still
@@ -1054,7 +1053,7 @@ whats".
 
 The number of focus chunks stays fixed. A chunk's shared STM0/STM1 content
 store begins with `4 * stmCapacity` rows and grows only when its full typed
-meaning needs more (2026-11-11). The exact row requirement is the sum of one
+meaning needs more. The exact row requirement is the sum of one
 head plus the occupied roles of each constituent; its pair links need one
 fewer seat. The maximum, fixed at model construction, is `4 * (W + O)`, using
 the sentence's existing W leaves and O operator seats; overflow beyond that

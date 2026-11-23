@@ -7,7 +7,7 @@ model-specific configs. The schema is in `data/model.xsd`.
 This document is the human-facing reference for common knobs and migrations.
 `data/model.xsd` is authoritative for the complete accepted element set.
 
-**Sizes (Alec, 2026-11-04).** Every constant set by hand that is a size (a
+**Sizes.** Every constant set by hand that is a size (a
 capacity, horizon, budget, cap, cadence or width) is a power of two, for example
 `PartSpace.basicPerceptCapacity` $2^{18}$. A width made by adding such constants
 stays a sum: an event is its content plus the fixed eight-coordinate band (four
@@ -38,7 +38,7 @@ Note on naming: the schema and the XML configs use `nInput` / `nOutput`
 LiftingLayer). Older docs sometimes call `nOutput` / `nInput` `nActive`;
 treat that as the same thing as `nOutput`.
 
-> 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
+> `<nWhere>` / `<nWhen>` are not set in per-file configs.
 > The band widths are architectural (`canonical_shape` in `bin/architecture.py`).
 > Input, part, whole and symbol events use two quadrature pairs for `.where`
 > and two for `.when`; conceptual codes and final outputs have no local band.
@@ -52,8 +52,8 @@ treat that as the same thing as `nOutput`.
 > modality; a place on two axes, such as a pixel, is one row-major address in
 > its modality's range, decoded by the declared shape. Everything observed in one
 > field shares its time; the exact clock side-band stays. Span endpoints are
-> separate extent metadata. The old `wherePeriod`,
-> `whenPeriod` and `whenRungRatio` XML knobs are retired.
+> separate extent metadata. There are no `wherePeriod`,
+> `whenPeriod` or `whenRungRatio` XML keys.
 
 ---
 
@@ -75,20 +75,20 @@ sub-elements `<training>` and `<data>` (see below).
 | `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. Exactly one WholeSpace is shared by these stages; its property inventory and where slice do not multiply with this depth. |
 | `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. `data/model.xml` declares 1; where no file declares it, two read sites (the concept order limit and the serial word-major path) fall back to 2 and two others to 1. |
 | `composeTemperature` | finite float $\ge 0$ | `0` | Sampling temperature of the hard choices in training. Zero selects the greatest logit, with the structural rule on exact ties. Positive values sample `softmax(logits / temperature)` during training. Evaluation always uses argmax. Straight-through credit always uses the untempered model softmax; this parameter never scales its gradients. |
-| `reductionCost` | finite float $\ge 0$ | `1.0` | Scale of the cost of working-memory load left during compose (`WholePaths.load_cost`). Each composed program is replayed on its stack depth, and at every recorded step the depth held, as a fraction of the allowance, is charged; the sum is linear in what is left and in the steps it is left for. No learned number multiplies a count: the chooser is instead shown how much of its budget is left as a sinusoidal code among its inputs (`Language.budget_code`), so that it can learn to reduce before the cost falls (Alec, 2026-11-20: "it should be a cost, as long as the network is exposed to a temporal signal that will allow it to learn that cost"). Deadline masking is unchanged: when the rounds left do not exceed the excess depth, only binary operations are eligible. See [Language](Language.md#one-operation-per-round). |
+| `reductionCost` | finite float $\ge 0$ | `1.0` | Scale of the cost of working-memory load left during compose (`WholePaths.load_cost`). Each composed program is replayed on its stack depth, and at every recorded step the depth held, as a fraction of the allowance, is charged; the sum is linear in what is left and in the steps it is left for. No learned number multiplies a count: the chooser is instead shown how much of its budget is left as a sinusoidal code among its inputs (`Language.budget_code`), so that it can learn to reduce before the cost falls ("it should be a cost, as long as the network is exposed to a temporal signal that will allow it to learn that cost"). Deadline masking is unchanged: when the rounds left do not exceed the excess depth, only binary operations are eligible. See [Language](Language.md#one-operation-per-round). |
 | `attentionPromotion` | bool | `false` | Enable familiar candidates in MTM. The open sentence field observes them; the kept close promotes them. Explicit clause admission is independent of this switch. |
 | `conceptMintCount` | positive int | `3` | Readings within `mtmHorizon` after which MTM nominates a row of a Pi: a basic percept at order zero, a symbol at every order above. Each nominated row brings one concept, and nothing becomes a row on its first reading. A reading is one sentence of one stream, so a form that stands twice in a sentence is counted once, and every reader of a form adds to the one count MTM keeps under it. A candidate whose horizon reading is both refines and waits. A kept defining clause also promotes its pending subject. |
-| `conceptUseFloor` | decimal | `0.5` | Field activation must exceed this floor to count as an MTM access. |
-| `conceptMatchCos` | decimal | `0.8` | Minimum cosine for a same-order MTM candidate match, using conceptual-width centroids. Located conjunctions retain the complete native literal identity. |
+| `conceptUseFloor` | decimal | `0.5` | Field activation must exceed this floor to count as an MTM access; an MTM entry is counted as used when the lesser of its two coverages with the field's used rows exceeds it. |
+| `conceptMatchPart` | decimal in (0, 1] | `0.7` | Least share of size by which two same-order collections are the same when their member sets or proportions are not exactly equal: each must hold at least this share of the other, both ways (the lesser of `ConceptualMatch.match`'s two coverages of their centroids). Read by the MTM candidate match (a tie at the greatest is a draw), by the match of a witnessed concept with equal members, and by the remembered context that raises an order. Located conjunctions retain the complete native literal identity. |
 | `conceptPartFloor` | decimal | `0.001` | Drop support below this magnitude when a candidate is promoted; retained definition edges merge by maximum. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
-| `whatThinkingHidden`, `whatThinkingDepth` | int | `16`, `1` | Unread in effect: both are parsed and validated, but the selected-thought chooser they sized is no longer built (thought is scored by `OperationSelectionLayer.thought_logits`). |
+| `whatThinkingHidden`, `whatThinkingDepth` | int | `16`, `1` | Unread in effect: both are parsed and validated, but nothing they size is built (thought is scored by `OperationSelectionLayer.thought_logits`). |
 | `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank of the conceptual space's `IntuitionLayer`, which applies stored implications when thought calls `infer`. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. `intuit` has no stack of its own: it deposits `expect`'s field and closes it upward. |
 | `separateChooser` | bool | `false` | False retains live compose features and projects the answer gradient against reconstruction per optimizer unit before one shared step. True is the optional per-owner backward: each cost trains its declared owner, independently of its R/A side. Thought and generate features remain detached. |
 | `reconstructionJitter` | real in `[0,1]` | `0` | Draw one strength `s ~ U[1-j,1]` per sentence and apply it to reconstruction alone, shared by all of the sentence's paths. Zero draws no random number. Output, expectation, attention and chooser credit retain scale 1.0. |
-| `explorePaths` | nonnegative int | `1` | Number of distinct one-departure complete paths beside the greedy path in training. Departures draw over attention, compose, bind, thought and output; each stream keeps its strictly cheapest path on R + A, ties to the greedy path, and a departure reuses the prefix before it. Evaluation runs the greedy path alone. See [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11). |
+| `explorePaths` | nonnegative int | `1` | Number of distinct one-departure complete paths beside the greedy path in training. Departures draw over attention, compose, bind, thought and output; each stream keeps its strictly cheapest path on R + A, ties to the greedy path, and a departure reuses the prefix before it. Evaluation runs the greedy path alone. See [Architecture](Architecture.md#whole-paths-and-concept-episodes). |
 | `omissionTarget` | float in `[0,1]` | `0.9` | Desired long-term reconstruction accuracy over visible and omitted input. `1` disables omission and its random draws; XOR proofs declare this override. |
 | `omissionLimit` | float in `[0,1]` | `0.5` | Maximum independent word and within-kept-word percept-slot omission rates. One word stays whole. Omission never runs in evaluation. |
 | `omissionHorizon` | positive int | `1024` | Sentence horizon for the visible/omitted accuracy averages at both omission sizes. Both rates and all four averages travel in checkpoints. |
@@ -297,8 +297,7 @@ Every space block uses the same sentinel convention:
 - `nOutput = 0` --- same as `nInput` for this space (passthrough count).
 - `nVectors = 0` --- same as `nOutput` (used for non-codebook spaces).
 
-Per-Space `<nWhere>` / `<nWhen>` declarations were retired on
-2026-05-28 (see top-of-file note); the per-Space defaults live in
+Per-Space `<nWhere>` / `<nWhen>` are not declared (see top-of-file note); the per-Space defaults live in
 `data/model.xml` and don't need re-declaration in per-experiment configs.
 
 ### `<InputSpace>`
@@ -313,7 +312,7 @@ Lifts raw data into the model's internal representation.
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
 
-> **`<lexer>` moved to `<WholeSpace>`** (2026-06-09): lexing is analytic
+> **`<lexer>` moved to `<WholeSpace>`**: lexing is analytic
 > CUTTING, owned by the analysis side. An InputSpace-side `<lexer>` now
 > fails schema validation and the runtime reader. InputSpace emits the
 > dual view — `forward(x) -> (percepts_in, concepts_in)`: the atom view
@@ -357,8 +356,8 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
 | `identityPairDim` | positive int | `64` | Width $D$ of the parts half of a percept's code. The parts are spread over all $D$ coordinates. |
 | `identityOnes` | positive int | `3` | Coordinates $s$ each part takes in the parts half, $0 < s \le D$; a form's half is the join of its parts'. |
 
-`identityLengthDim` is retired: a form's code holds no length, and a
-configuration that declares it raises.
+A form's code holds no length; a configuration that declares
+`identityLengthDim` raises.
 
 In an embedding configuration with `identityByParts` (the default),
 `WordIdentity.resolve_identity_layout` rewrites the declared widths before any
@@ -491,7 +490,7 @@ META, taxonomy, or symbol-prototype inventory. See
 | `nDim` | int | `0` | Width of one whole-percept/property vector. `0` inherits the preceding compatible event width. |
 | `nVectors` | int | sentinel | Fixed physical whole-percept/property capacity. BasicModel starts with eight ASCII-class properties; further admission uses unused rows inside the declared nVectors and is independent of both `ConceptualSpace.nVectors` and live `nOutput`. |
 | `codebook` | mode | `quantize` | `none`, `quantize`, or `project` for the property-percept basis. It never selects a concept or symbol codebook. |
-| `analysis` | string | `"meronomy"` | Top-down division over the unity view. `meronomy` is the only value a WholeSpace accepts: the older cuts (`byte`, `raw`, `sentence`, `word`, `grammatical`) are retired, and any other value raises. The old `analyse` spelling is not accepted by the schema. |
+| `analysis` | string | `"meronomy"` | Top-down division over the unity view. `meronomy` is the only value a WholeSpace accepts: any other value raises (`byte`, `raw`, `sentence`, `word` and `grammatical` among them), and the spelling `analyse` is not accepted by the schema. |
 | `analyzer`, `lexer` | string | -- | Deprecated spellings of the intake cut: the reader prefers `<analyzer>` and falls back to `<lexer>`, and `<analysis>` supersedes both. An InputSpace-side `<lexer>` is rejected. |
 | `nonlinear` | bool | `true` | Tanh-bound the activation. |
 | `sortNetwork`, `sortPasses`, `l1Lambda`, `symbolResidualScale`, `outputSymbolResidualScale`, `commitmentBeta`, `decorrelationWeight`, `spectralFlatnessWeight` | -- | -- | Unread; declared in `data/model.xml`. |
@@ -563,7 +562,7 @@ configuration and is set only by a runtime override.
 | Knob | Where read | Default | Purpose |
 |------|-----------|---------|---------|
 | `meronomy` (attr `dMaxStable`) | `Layers.py` (`meronomy_enabled` / `meronomy_d_max_stable`) | code `off`; `data/model.xml` ships `on` with `dMaxStable="4.0"` $\Rightarrow$ effectively **ON** | Binds the meronymic slots (PS.sigma / WS.pi) directly to `[0,1]` membership kernels; `dMaxStable` bounds the complete learned fold's inverse gain. |
-| `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`. The per-space `<butterfly>` boolean is no longer read. |
+| `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`. The per-space `<butterfly>` boolean is not read. |
 | `syntacticOrder` | `Models.py` (BaseModel init) | `0` | Parse-tree depth cap for the serial reduce sweep; `0` = unbounded. Inert in parallel mode. |
 | `sentenceProtocol` | `Models.py` (BaseModel init) | follows the word-bracket mode | Accepted for compatibility: the open run, which reads the whole sentence at once, is unconditional, and this flag schedules no perception or second forward pass. |
 | `truthSet` (`<truth>` rows: text, `trust` attrs) | `Models.py` (`provision_ltm`) | (none) | Configured truths run through the sentence driver and the shared grammatical clause closing. Each `trust` attribute, in $[-1, 1]$, is written at face value on the truth's outer clause, independently of `architecture.trust`. |
@@ -588,7 +587,7 @@ configuration and is set only by a runtime override.
 | `radialStmReduce` | `Models.py` (`_create_per_stage`) | `false` | STM idea folds use the radial (signed-safe) radmin/radmax kernels. |
 | `serialObjectMeta` | `Models.py` (BaseModel init) | `false` | Serial word-loop mereology path: InputSpace presents every residual constituent of word $w$, PartSpace sigma-synthesizes it inside iteration $w$, all configured PS/WS folds bind by location in CS, and exactly one actual-order word concept commits to STM. Legacy non-word-major inputs retain the hard same-word-span fallback. |
 | `conceptIndexRead` | `Models.py` (BaseModel init) | `false` | Serial per-word idea reads through the index to the concept's `similarity_codebook` row instead of the computed percept-binding event. |
-| `verbSpectrum` | `Language.py` (`LiftLayer` init; forced on by `VerbLayer`) | `false` | Verb eig-spectrum operator on the composed VP, the verb's mechanism (2026-10-19). Not in the schema. |
+| `verbSpectrum` | `Language.py` (`LiftLayer` init; forced on by `VerbLayer`) | `false` | Verb eig-spectrum operator on the composed VP, the verb's mechanism. Not in the schema. |
 | `predictionTrialRatio` | `Models.py` (ModelLoss wiring) | `0.0` | Fraction of training batches run as pure next-idea prediction (recon terms zeroed). |
 | `continuityNorm` | `Mereology.py` (contemplative mixin) | `'inf'` | Norm for the continuity measure (`'l2'` available). Not in the schema, like the two knobs below. |
 | `continuityRatioTarget` | `Mereology.py` | `1.0` | Target ratio for the continuity measure. |

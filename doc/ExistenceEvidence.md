@@ -19,7 +19,7 @@ content matches the description exactly; the lane against takes pervasion
 against or any row in the region held against it. A row that is only like the
 description is analogy, reported beside the answer and never taken as proof,
 and a row of zero trust never answers. The two readings of a region are in
-[Logic](Logic.md#existence-and-pervasion-alec-2026-11-13). Neither face brings
+[Logic](Logic.md#existence-and-pervasion). Neither face brings
 a frame into STM; `query` does that. See
 [AccessibleMind](AccessibleMind.md) and [QueryContracts](QueryContracts.md).
 

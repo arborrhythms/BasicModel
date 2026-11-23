@@ -219,7 +219,9 @@ def test_unplaced_candidate_recurrence_uses_its_own_reference_support():
     from Memory import MediumTermMemory
     codes = torch.zeros(3,4)
     owner = NS(_row_order=lambda row:1,similarity_codebook=NS(W=codes,lookup_rows=lambda rows:codes[rows]))
-    pool = MediumTermMemory(4,n_vectors=8,field_width=2)
+    from util import TheXMLConfig
+    pool = MediumTermMemory(4,n_vectors=8,field_width=2,
+        match_part=TheXMLConfig.space('ConceptualSpace','conceptMatchPart'))
     pool._owner = lambda:owner
     own = pool.open_candidate(order=2,when=0,value=codes[0],support={0:2.,1:1.})
     assert pool.match_candidate(2,codes[0],value_order=1,support={0:4.,1:2.}) == own

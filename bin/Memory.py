@@ -1044,7 +1044,7 @@ class MediumTermMemory(MemoryStore):
     """
 
     def __init__(self, capacity=64, horizon=16, *, n_vectors=1,
-                 field_width=None, match_cos=.8, mint_count=3):
+                 field_width=None, match_part=None, mint_count=3):
         if capacity < 1:
             raise ValueError('mtmCapacity must be positive')
         if type(horizon) is not int or horizon < 1:
@@ -1057,10 +1057,15 @@ class MediumTermMemory(MemoryStore):
         self.pending = {}
         self.pending_step = 0
         self.field_width = min(256, int(n_vectors)) if field_width is None else int(field_width)
-        self.match_cos, self.mint_count = float(match_cos), int(mint_count)
+        # The parthood bar (conceptMatchPart) is set by the owner from the
+        # model's configuration; a pool without one matches only by the
+        # exact proportions of its support and raises where it needs the bar.
+        self.match_part = None if match_part is None else float(match_part)
+        self.mint_count = int(mint_count)
         # The readings of each form not yet nominated, by reading.
         self.sightings = {}
-        if self.field_width < 1 or not 0 < self.match_cos <= 1 or self.mint_count < 1:
+        if (self.field_width < 1 or self.mint_count < 1
+                or (self.match_part is not None and not 0 < self.match_part <= 1)):
             raise ValueError('invalid familiar-tier construction bounds')
         self.candidate_counter = 0
         # One reserved id for each possible unpromoted MTM token. These lie
@@ -1247,12 +1252,22 @@ class MediumTermMemory(MemoryStore):
                     and 'promoted_percept' not in entry.refinement
                     and proportions(entry.support) == wanted):
                 return key
-        scored = [(float(torch.nn.functional.cosine_similarity(self.value_of(key).to(value), value, dim=0)), key)
-                  for key, entry in self.entries.items() if entry.order == order
-                  and support_order(owner, entry.support, entry.order) == value_order
-                  and entry.symbol is None and 'promoted_percept' not in entry.refinement]
-        score, key = max(scored, key=lambda item: item[0], default=(-1., None))
-        return key if score >= self.match_cos else None
+        # Otherwise the same collection by parthood both ways: each holds the
+        # other's size by at least the bar. A tie at the greatest identifies neither.
+        from FamiliarTier import shared_part
+        keys = [key for key, entry in self.entries.items() if entry.order == order
+                and support_order(owner, entry.support, entry.order) == value_order
+                and entry.symbol is None and 'promoted_percept' not in entry.refinement]
+        if not keys:
+            return None
+        if self.match_part is None:
+            raise ValueError('a candidate match by parthood requires conceptMatchPart')
+        scored = [(shared_part(owner, value, self.value_of(key)), key) for key in keys]
+        best = max(score for score, _ in scored)
+        if best < self.match_part:
+            return None
+        keys = [key for score, key in scored if score == best]
+        return keys[0] if len(keys) == 1 else None
 
     def update_candidate(self, key, *, when, value, support):
         entry = self.entries[key]

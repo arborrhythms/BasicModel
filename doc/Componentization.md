@@ -1,6 +1,6 @@
 # Runtime Architecture and Componentization
 
-## Peer-pipelined space execution (2026-07-22)
+## Peer-pipelined space execution
 
 Runtime carriers have an ownership boundary. A space owns its mutable
 `SubSpace`; peers receive a zero-copy `SubSpaceView`, which exposes only
@@ -59,7 +59,7 @@ LS choose Unary  -> CS apply
 
 The Binary is the construction operation that reduces two constituents to
 their grammatical parent. No Binary is evaluated before the deposit
-(2026-07-26): the post-deposit Binary is already a hard grammatical demand when
+: the post-deposit Binary is already a hard grammatical demand when
 a push reaches STM capacity, so the next word begins below capacity, and the
 pre-deposit position of the reconstruction trace is an explicit inactive
 sentinel. Binary then Unary are dependency-ordered because the Unary chooser

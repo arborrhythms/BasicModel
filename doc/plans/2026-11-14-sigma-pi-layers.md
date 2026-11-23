@@ -15699,6 +15699,20 @@ and 44. It is the round that may be pushed; the push is Alec's word.
    source snapshot (test/bounded_tests.source_snapshot).
 ~~~
 
+*Round 7, step 1, taken in Claude's worktree: the three readers by parthood both ways, and the dead readers out* (Claude, 2026-11-23, after §23.6.34; for an Opus implementer. Alec: "Fix things on your own work tree, and then a message to codex about what you did")
+
+Work in the worktree `.worktrees/item17-audit`, on the branch `item17-audit`. Codex works on `main` at the same time, on the operator tree and conditional speech: stay out of `bin/SentenceStrata.py`, `bin/SentenceLooks.py`, `bin/SentenceField.py`, `bin/Output.py` and `bin/WholePaths.py`. Commit locally, push nothing.
+
+1. *The trial first; change nothing for it.* Three readers decide by the cosine of two codes: `MediumTermMemory.match_candidate` (`bin/Memory.py`, the fallback after the exact test of proportions), `FamiliarTier.witnessed_match` (after equal member sets) and `FamiliarTier.observe_field` (the remembered context that raises an order; the key counted as used). In a probe that watches and changes nothing, during both stopping gates and `test/test_familiar_tier.py`, `test/test_medium_term_memory.py`, `test/test_mtm_reference_values.py`, `test/test_mtm_referents.py` and `test/test_reading_curriculum.py`: at each comparison record the cosine, the two coverages `ConceptualMatch.match` gives for the same two values (called as `Memory.bind_menu` calls it, with the owner's codebook), whether the two member sets and the two sets of proportions are equal where the reader knows them, and what was decided. Report, for each reader: how many comparisons, how many joined; the least of the two coverages among those joined and among those not; and for a bar of .5, .6, .7, .8, .9 and 1 on the lesser coverage, how many decisions differ from today's.
+2. *The bar.* Parthood is shared size, so a pair of the same direction and different size is not the same thing, as a cosine says it is. Choose the bar on the lesser of the two coverages by the trial: the least bar at which no pair with unequal member sets or unequal proportions is joined that the exact tests would refuse, and say what it costs in pairs that are no longer joined. Say the number and why in the return.
+3. *Build.* Each of the three decides by parthood both ways: the lesser of the two coverages at or above the bar. The bar is `conceptMatchPart` in `data/model.xml` and `data/model.xsd`, in place of `conceptMatchCos`, which goes with its readers and the `match_cos` argument of `MediumTermMemory` (renamed); no default in code. The key counted as used is by the lesser coverage above `conceptUseFloor`, which stays (it has other readers). No cosine is left in these three. Nothing else of the promotion changes: the exact tests stay first.
+4. *The dead readers go:* `BracketKeys._cos` (`bin/Attention.py`), `_context_cosine` (`bin/Spaces.py`), `_reverse_derive_words` (`bin/Models.py`). Each has its definition and no caller; a delete is a `mv` of nothing here, so say in the return what each was.
+5. *Left alone, on purpose:* `Models.reverseReconstruct`'s flag that a cost of zero is an exact identity (it warns, and says what `doc/GradientFlow.md` says of an exact round trip); the comments of `Models._reverse_body`, unless one is false of the code it stands by, in which case say which; `ReferenceClose.individuals`; `IndependentComponents`; the seventeen unread keys of §23.6.34; the assessment.
+6. *Tests and docs.* The tests of the four files of item 1 that assert the cosine's behaviour are ported to the parthood's, by what they mean; none is weakened, skipped or marked to fail. `doc/Params.md`'s row for the key says what exists, with no date and no history. Targeted run: the five files of item 1, `test/test_modal_timelines.py`, the echo's three passing tests (`test/test_item17_echo.py`: a word with its own look, a word and its mark, a sentence of two words) and both gates (`test/test_mm_xor.py::TestMMXorConvergence::test_convergence`, `test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`). The second gate raises an order through `observe_field`: if it fails at the chosen bar, do not lower the bar to pass; report what it compared.
+7. *Return* in `/Users/arogers/.claude/projects/-Users-arogers-github-WikiOracle/scratch-1.7/r7_step1_return.md`: the trial's table, the bar and its reason, what was built, what each test gave, and what you would not decide yourself.
+
+Standing rules: no seed pinned for an assertion; no skip or xfail added; nothing under `RUN_SLOW`; compiling stays the tests' default; no default in code; no language named in the source; nothing set inside the model to measure it; a tie is a draw; `suggestions.txt` is not edited. A question is not a stop: take the first choice that adds nothing and say which it was. Run tests with `env -u RUN_TRAINED -u RUN_SLOW /Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python -m pytest <files> -q -p no:cacheprovider -n 6 --dist loadfile` from the worktree.
+
 ## 23. Item 1.7: the returns of the rounds
 
 Each round's return is a section here, §23.1 to §23.7, written by its
@@ -27637,3 +27651,152 @@ Codex's return is `suggestions.txt` in its worktree `/private/tmp/basicmodel-ite
 - `test_item17_places.py::test_the_request_for_a_place_at_an_untaught_start` failed once in a run of 40 and passed when run again, with and without the speed change.
 
 *For Alec to decide, from Codex's proposals:* the two on item 4, the handle on item 5, and the path with no grammar on item 7. Eleven keys were added to `data/model.xml`, eight of them for side tools (`embed`, `Legacy`, `etc`).
+
+### 23.6.34 Round 7, step 1 audited on main: concept matching, the way back, and the assessment (Claude, 2026-11-23; at Codex's suggestion, relayed by Alec)
+
+Codex, relayed by Alec: "Claude could help independently with the §22.7 audit of concept matching, the way back, and the assessment. If you ask Claude to take that in its own worktree, I can focus on the operator tree, conditional speech, and their tests on local main."
+
+Audited on `main` at 9015df927f, in the worktree `.worktrees/item17-audit` (branch `item17-audit`). Nothing in the source is changed by this section. The readers were read by two read-only agents; Claude read again the lines marked *checked*. Only the likeness and way-back rows of §19.4 and of §19.21's table were audited; that table's other rows were not.
+
+**List 1: likeness that decides membership (rule 16).** Three of the five readers are as they were.
+
+| Reader | Today | State |
+| --- | --- | --- |
+| `MediumTermMemory.match_candidate` (`bin/Memory.py`) | exact support proportions first; then the greatest cosine, taken if it is at least `match_cos` (*checked*) | as it was |
+| `FamiliarTier.witnessed_match` | equal member sets, then equal proportions or a cosine of at least `concept_match_cos` (*checked*) | as it was |
+| `FamiliarTier.observe_field`, raising an order | a remembered context whose centroid has a cosine of at least `concept_match_cos` with the present value (*checked*) | as it was |
+| `FamiliarTier.observe_field`, a key counted as used | a cosine above `concept_use_floor` (*checked*) | as it was |
+| `ReferenceClose.individuals` | each member goes to the anchor with the greatest `ConceptualMatch.match` coverage, with one more for an equal predicate; no bar; two groups are joined only at a coverage of one | changed to parthood; the greatest is still taken with no bar |
+| `IndependentComponents.SparseDictionary.observe` | a residual direction within `1 - mint_threshold` joins | unchanged, as the list says: reported |
+
+- `ConceptualMatch.match` is called by binding, linking, merging, the reference close and the field's stimulus (`Memory.bind_menu`, `Memory.merge`, `MemoryLink.menu` and `link`, `ReferenceClose`, `FieldProjection.stimulate`, `Ops._part_kernel`). Where it decides, the bar is the literal 1. None of the three readers above calls it.
+- `conceptMatchCos` (0.8) and `conceptUseFloor` (0.5) are still in `data/model.xml` and read (`bin/Spaces.py`, passed to MTM as `match_cos`).
+- The likeness readers with no caller: `priming_prior` is gone; `BracketKeys._cos` (`bin/Attention.py`), `_context_cosine` (`bin/Spaces.py`) and `_reverse_derive_words` (`bin/Models.py`) are still there, each with its definition and no other use in `bin` or `test` (*checked*).
+- Elsewhere a threshold on likeness joins rows in `bin/semantic_categories.py` (no caller in `bin`, tests only) and in `TruthLayer.query`, which §19.4 leaves.
+- *Owed by step 1:* the three readers by parthood both ways, "with the bar set by a trial that is reported". No trial has been run.
+
+**List 2: the way back (rule 17).** The rule's wording is older than the way back that was built, so the rows are read against §19.123 onwards (the sparse LDU, an exact way back) as well.
+
+| Reader | Today | State |
+| --- | --- | --- |
+| `FieldReverse.reverse` | the for lane and the negated against lane go to the Sigma's rows; `sigma.reverse`; each lane floored at zero and the two summed; each row's kept percept code weighted by that amount. No edge's exponent is undone | changed |
+| the order-zero Sigma's `reverse` (`SparseSigmaLDU`, `bin/Layers.py`) | the chart undone, then triangular solves for U and L and D divided out: exact on the held slots, not least squares (`SigmaLayer3.reverse` is the one that uses a pseudo-inverse) | by the later decision, not by rule 17's words |
+| `cs_reverse_presence`, `cs_percept_attribution` (`bin/Spaces.py`) | the Sigma's transpose applied until nothing changes, the greatest kept; then split over the recorded members by weight | not an inverse; `SparseLayer.attribute_presence` is gone |
+| `CaseSelection.stage_case_bank`, `refine_over_collected` | read the two above | follow them; `Models._passback_scope_ps` is gone |
+| `Models.reverseReconstruct`'s test that a cost of zero is an exact identity | still there: it sets `_reconstruction_identity_flag` and warns ("zero cost carries no learning signal"); it does not raise (*checked*) | as it was. Claude's view: it says what `doc/GradientFlow.md` now says of an exact round trip, and is worth keeping as a warning; the list says it goes |
+| the comments of `Models._reverse_body` | still say "exact mirror", "the round-trip's exactness", "2-stream EXACT inverse" | as they were |
+| a signed value split into two lanes on the way back | `signed_lanes` (`bin/Layers.py`) in `SigmaLayer3.reverse`; in `FieldReverse.reverse` by negating the against lane and flooring at zero | done |
+
+**What the item's rules replaced and is still there (step 2, in part).** By a search of names, not of meaning:
+
+- Seventeen leaf keys of `data/model.xml` are named by no file under `bin`: `chartCollapse`, `iterationsPerWord` (SymbolSpace); `classificationMax`, `classificationMin` (data); `conceptualContextExpectationWeight`, `conceptualContextNegatives`, `conceptualContextSituationAnchors`, `conceptualContextSituationWeight` (training); `decorrelationWeight`, `outputSymbolResidualScale`, `sortNetwork`, `sortPasses`, `spectralFlatnessWeight`, `symbolResidualScale` (WholeSpace); `discontinuityLambda`, `l1Lambda` (architecture); `latticeMargin` (ConceptualSpace). Three of them are named in tests. Most are older than item 1.7. None was removed.
+- Functions of the item's modules named nowhere else in `bin`, only in tests: `AttentionLesson.minimal_first`, `looks_in_order`, `supplied_reading`, `prompt_need` and `part_lesson`; `IdeaRead.expected_point`; `BasicPercepts.where_share`; `AssessmentProbe.format_table`.
+
+**The assessment** (`bin/Assessment.py`, `bin/AssessmentProbe.py`, `data/assessment/known_probe.json`), against `doc/ModelAge.md` and the standing rules.
+
+- *Its rows are not the chart's.* The tool has nine rungs, from "one word" to an adverb; the chart has about 45 rows. Five of the chart's rows are met by seven rungs. The row at 1.00 (a word said back), which gives the model its age, has no rung; neither have the rows for counting, questions, forms, not, and, or.
+- *One check of ten reads what the model returns,* and that answer is made again by the tool (`model.resolveAnswer`, then `model.reverseOutput`), not taken from `BatchResult.outputPred`. The other checks read the reading from inside: the tree made again from the journal, whether a word is known, the order of the looks, what a look accepted, a definition's evidence, a word's objects, a meaning's references.
+- *While it reads, the tool replaces four things in the model and its modules* (`owner.cs_read_memberships`, `ModelAttention.native_word_poles`, `Looks.run` and `SentenceLooks.attend`, `model._sentence_observation`) and makes a reading of its own (`model._trial_understanding`); all are put back afterwards. Nothing is forced.
+- *No age is written.* There is no `assess_age`, no key for an age in `data/model.xml` or `data/model.xsd`, and no age saved with a model. `doc/ModelAge.md` says the age "was worked out by hand"; its 1.00 comes from `test/test_item17_echo.py`.
+- *Its tests assert the inside.* `test/test_assessment.py` replaces `read_sentence` with a stand-in or asserts on lanes and on the state being put back; none asserts on a returned text. The rung reports attached to other tests do not decide them.
+- *Met:* no seed and no word of a language in the two source files; the words are in the data file.
+- So the tool does not meet "every measure from the input to what the model returns" (§19.139, and Alec, 2026-11-22: no reaching into the head), does not agree with the chart, and writes no age. The age Codex built on `item17-codex` (§23.6.24) was not brought over.
+
+**For Alec to say:** whether Claude mends what this found (the three readers by parthood with a reported trial; the three dead helpers removed; the comments of `_reverse_body`), by an implementer in this worktree, or hands the list to Codex; and whether the assessment is rebuilt on the chart's rows from returned answers, which is more than an audit.
+
+### 23.6.35 Round 7, step 1 in Claude's worktree: the three readers decide by parthood both ways; the dead readers are out (Claude on Opus, 2026-11-23; review by Claude)
+
+Alec: "Fix things on your own work tree, and then a message to codex about what you did". Built by an Opus implementer on the branch `item17-audit` to the text above §23; its return is `scratch-1.7/r7_step1_return.md`. Commits 731777a7b1, 7f3892f6c1, f3c302cac3, 85e4cb4fbc. `main` (Codex's work to 75388306a2) is merged into the branch at 58679ccc78 with no conflict.
+
+**The trial** (a probe that watched and changed nothing; not committed). In both gates and the five files named, a cosine was reached 13 times; with four more files that call the readers directly, 45 times.
+
+| Reader | Comparisons | Joined by the cosine | Lesser coverage of those joined | Lesser coverage of those refused |
+| --- | --- | --- | --- | --- |
+| `match_candidate`, after the exact test | 18 | 0 | none | 0 to 0.5 |
+| `witnessed_match` | 1 | 0 (cosine .781; equal members, proportions 9 to 1 against 1 to 1) | none | 0.6 |
+| `observe_field`, raising an order | 5 | 1 (members and proportions equal) | 1.0 | 0.5 |
+| `observe_field`, a key counted as used | 21 | 19 | 0.667 at the least | 0.333 |
+
+- *The bar is 0.7* (`conceptMatchPart`): the least on the grid at which no pair of unequal members or proportions is joined. At 0.6 the 9-to-1 pair would be joined, and its test asserts that it is refused. No pair the cosine joined is lost at 0.7.
+- *The evidence is thin:* one pair separates 0.6 from 0.7, and a bar of 1 would cost nothing in these runs. The number is a first setting, not a finding.
+- *The second gate does not test this.* `test_a_previously_named_shared_concept_denotes_its_raised_class` raises through `symbol_equality` and calls none of the three readers; the text above was wrong to say it raises through `observe_field`.
+
+**Built.**
+
+- `FamiliarTier.shared_part(owner, value, other)`: the lesser of the two coverages `ConceptualMatch.match` gives, with the owner's codebook.
+- `MediumTermMemory.match_candidate`: the exact test of proportions first, as before; then the greatest `shared_part` among the candidates of the order, taken at or above the bar. A tie at the greatest identifies neither (before, the first was taken).
+- `FamiliarTier.witnessed_match` and `observe_field`'s raise: `shared_part` at or above the bar. The key counted as used: `shared_part` above `conceptUseFloor`, which stays.
+- `conceptMatchPart` (0.7) is in `data/model.xml` and `data/model.xsd` in place of `conceptMatchCos`; `bin/Spaces.py` reads it with no default; `MediumTermMemory`'s `match_cos` is `match_part`, and a pool with no bar raises where it needs one. The pool rebuilt in `bin/Models.py` now takes its parent's bar, where it took the code's default before.
+- Removed, each with no caller: `BracketKeys._cos`, `ConceptualSpace._context_cosine`, `Models._reverse_derive_words`, and `Models._nearest_word`, which only that one called.
+- `doc/Params.md` and `doc/FutureWork.md` say the new key.
+
+**Tests.** Ported by what they mean, none weakened: `test_modal_timelines.py`, `test_reading_round.py`, and one test of `test_item18_space_boundaries.py` (its bare pool takes the bar from the configuration). Claude's own run on the branch with `main` merged: the nine files of the readers and the reading, `test_config_scoping.py`, `test_word_store.py`, the echo's three passing tests and both gates: 192 passed, 10 skipped, none failed.
+
+**Left as it was, on purpose:** the flag in `Models.reverseReconstruct` that a cost of zero is an exact identity (a warning; it says what the gradient doc says of an exact round trip); the comments of `Models._reverse_body` (read; none false of the code beside it); `ReferenceClose.individuals` (parthood already; the greatest with no bar); `IndependentComponents`; the seventeen unread keys; the assessment.
+
+**For Alec:** that a tie now identifies neither. The bar of 0.7 against 1 was put to him; he said "Perhaps a note in their spec", so it is passed to Codex as open (the message below, point 2).
+
+*For Codex: what Claude did on round 7's step 1, and what is yours* (2026-11-23)
+
+~~~
+Item 1.7, round 7, step 1. Claude took the audit you suggested, in its
+own worktree: basicmodel/.worktrees/item17-audit, branch item17-audit.
+The audit is the spec's section 23.6.34 and what was changed is 23.6.35.
+main (to 75388306a2) is already merged into that branch at 58679ccc78,
+with no conflict, so main can take the branch by a fast-forward if you
+have not committed since; otherwise merge it. Nothing is pushed.
+
+What changed (source):
+- MediumTermMemory.match_candidate, FamiliarTier.witnessed_match and
+  the two places in FamiliarTier.observe_field decide by parthood both
+  ways (FamiliarTier.shared_part: the lesser of ConceptualMatch.match's
+  two coverages) and no longer by a cosine. The exact tests stay first.
+- The bar is conceptMatchPart = 0.7 in data/model.xml and model.xsd, in
+  place of conceptMatchCos, which is gone; MediumTermMemory's match_cos
+  argument is match_part; a pool with no bar raises where it needs one.
+- A tie at the greatest in match_candidate identifies neither.
+- Removed, no caller: BracketKeys._cos, ConceptualSpace._context_cosine,
+  Models._reverse_derive_words, Models._nearest_word.
+- Not touched: SentenceStrata, SentenceLooks, SentenceField, Output,
+  WholePaths.
+
+What changed (docs, three earlier commits carried on the branch):
+- make doc leaves out doc/FutureWork.md and doc/DevelopmentHistory.md.
+- Alec: the standing docs "present what actually exists, not historical
+  development". Dates, "Alec" as a source, and item, pass and spec
+  references are out of the 19 chapters; when you edit doc/*.md, write
+  what the code does now. Plans go to FutureWork, history to
+  DevelopmentHistory, decisions to the spec.
+
+Tested on the merged branch: the readers' and the reading's files, the
+echo's three tests and both gates: 192 passed, 10 skipped, none failed.
+
+Yours, from the audit:
+1. The assessment. bin/Assessment.py and AssessmentProbe.py have nine
+   rungs against about 45 rows of doc/ModelAge.md; one check of ten
+   reads an answer, and makes it again itself; the others read the
+   reading from inside, and four things are replaced in the model while
+   it reads; no age is written. Your own commit 3415d7e879 on
+   item17-codex (AgeChart.py, Assessment.assess_age from
+   BatchResult.outputPred, the age key, test_mental_age.py) answers
+   most of this and was never brought to main. Bring it, with the point
+   of 23.6.24 settled: an age is earned at a row that was measured and
+   passed.
+2. The bar is open, and it is yours to settle. conceptMatchPart = 0.7
+   is a first setting: the trial behind it had 45 comparisons, one pair
+   separates 0.6 from 0.7, and a bar of 1 would have cost nothing in
+   those runs. Alec was asked "0.7 for now, or 1 until there is more
+   evidence?" and said: "Perhaps a note in their spec." So this is the
+   note. The second gate does not test the readers (it raises through
+   symbol_equality), so nothing under a gate tests the bar: give it a
+   test of its own, on more comparisons than these (a corpus read, not
+   the unit tests), and set the number by what that shows. Say in your
+   return what you chose and what it joins and refuses.
+3. Seventeen leaf keys of data/model.xml are named by no file under bin
+   (listed in 23.6.34). Most are older than this item. Remove with the
+   schema and docs, or say which have a reader the search missed.
+4. Models._reverse_body's comments and reverseReconstruct's zero-cost
+   flag were left: say if you read them differently.
+5. Round 7's steps 3 to 5 (the measurements, the one sweep, the return
+   as 23.7) are still yours, on the finished source.
+~~~

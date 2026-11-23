@@ -194,7 +194,7 @@
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptMintCount" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMatchPart" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptPartFloor" type="unitInterval" minOccurs="0"/>
 
       <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
@@ -1244,7 +1244,7 @@
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptMintCount" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMatchPart" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptPartFloor" type="unitInterval" minOccurs="0"/>
 
       <!-- META taxonomy seed/advisory text. The runtime parent/child and

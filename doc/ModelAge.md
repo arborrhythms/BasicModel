@@ -24,7 +24,7 @@ the ages are set accordingly.
 Every row is measured the same way: an input is given to the model and its
 own output is read. There is input, there is reconstruction, and there is
 output; nothing reaches into the model to set or to read what is inside it in
-order to decide a row (Alec, 2026-11-22). Saying words back and reading them
+order to decide a row. Saying words back and reading them
 in order is mostly animal cognition, and understanding of a higher order is
 human cognition, but that is a description of the tasks and not two ways of
 measuring them.
@@ -44,7 +44,7 @@ The column "Basis" says where the age comes from:
 - *sourced*: a published norm or study, listed under Sources. Published ages
   are ranges and differ between sources; the chart takes a point inside the
   range.
-- *estimate*: no source was found in the check of 2026-11-22; the age is a
+- *estimate*: no source was found in the check; the age is a
   judgement and may move.
 
 The column "Measured by" names what the assessment measures. "None yet" means
@@ -64,7 +64,7 @@ when a later task has to be broken down.
 
 | Age | Task that must be learned | Basis | Measured by |
 | ---: | --- | --- | --- |
-| 1.75 | A thing that is moved while out of the look is expected where it was taken (invisible displacement). Two stories with the same last question: Felix goes into a box and the box is moved; Felix leaves the box and then the box is moved | sourced: Piaget's sixth stage, 18 to 24 months | none yet. It needs a world in which a thing keeps a place while unseen, which the model does not have (Alec, 2026-11-22); in words it also needs "where" answered |
+| 1.75 | A thing that is moved while out of the look is expected where it was taken (invisible displacement). Two stories with the same last question: Felix goes into a box and the box is moved; Felix leaves the box and then the box is moved | sourced: Piaget's sixth stage, 18 to 24 months | none yet. It needs a world in which a thing keeps a place while unseen, which the model does not have; in words it also needs "where" answered |
 
 ### Single words
 
@@ -110,7 +110,7 @@ when a later task has to be broken down.
 | 2.75 | "One" is told from more than one | estimate: the one-knower of Wynn's levels; the levels are sourced, their ages were not found | none yet |
 | 3.00 | The counting words are said in order, to "4" | estimate | one counting word for each word of a sentence |
 | 3.25 | "Two" and "three", each learned in turn | estimate: two-knower and three-knower | none yet |
-| 3.50 | Singing: a counted sequence with a number left out is said whole | estimate; the task is still to be talked through (Alec, 2026-11-22) | none yet |
+| 3.50 | Singing: a counted sequence with a number left out is said whole | estimate; the task is still to be talked through | none yet |
 | 3.75 | Each thing is counted once, and the last word said is how many | estimate: the cardinal-principle knower | counting, with each word looked at once |
 | 4.50 | The counting words are said in order, to "10" | estimate: "counts to 10" is on the CDC's list for 5 years as recalled; the page's wording was not confirmed in the check | counting, to "9" |
 | 5.00 | Counting on request with nothing to count: "Please count from one to 15" | estimate | none yet |
@@ -134,7 +134,7 @@ The model is named Metal Baby. Measured on 2026-11-22, on the branch
 `item17-r6d11` at `49fe80b064`:
 
 **Its age is 1.00.** A word is said back by the answer the model returns.
-Alec, 2026-11-22: "thats reasonable; if the assessment changes to be more
+"thats reasonable; if the assessment changes to be more
 accurate, the age is adjusted." The two rows below 1.00 were measured inside
 the model and not through its answer, and the next row, a thing named by one
 word, is not yet measured through the answer.
@@ -143,7 +143,7 @@ word, is not yet measured through the answer.
 | --- | --- |
 | 0.70, object permanence | Passed in 3 of the 4 test models that have text; failed in 1 ("unknown word"). The ladder's eight higher rungs were not reached: no test model declares the vocabulary they need. |
 | 0.75, a word recognised by its form | Passed. |
-| 1.00, a word said back | **Failed**, by the model's own output, on `main`. Each of 19 words presented alone for 30 rounds, three starts: 0 of 19 in every round; 19 of 19 in every round; 19 then 0. The word's own concept is exact where the word is read. But the input is reproduced from the sentence's composed root, and "This." is a composition of the word and its mark by whichever rule the grammar took; some rules pass the word through and others do not. Given the word's own concept, the way back does give the word (19 of 19). A closing mark is never said back, since it is never made a word. Measured again on the branch `item17-r6d11` at `9d2fc4751a`, with a mark made a word and each leaf put back through the perceptual inverse: 0 of 19 in three starts, taught or not. Whatever leaf the output is given is spelled exactly and at its place, but the walk stops at the root and gives one leaf (the word, the mark, another word or nothing), and "This." is the word and its mark together. The root has to be taken apart by the inverse of what composed it; that is not yet built. Measured again at `11b916f86c`, with the root taken apart by the inverse of each rule that composed it, and that the only reconstruction: every word in some starts and none in others (19, 19, 19, 19, 18 and 0 of 19 over three starts, untaught and after 3 rounds; in an earlier run 19, 16, 5, 17, 19 and 1). Which rule the grammar took for the word and its mark decides it: some rules give the word back, four have no inverse and give nothing, and one gives back another word. Where a word is said back, the idea gives one of the two leaves; the other, and the place of both, are read from what the model kept of the way up. Where the reading applied no rule, the word is put back from its own basic-level concept. Measured again at `f396314f9e`, with nothing read from what was kept of the way up (Alec: "The idea is what does the reconstruction"): 0 of 19 in every start and round. The best case, the rule `part`, gives back the word and not its mark ("This." is put back as "This"); the other rules give nothing. No rule gives back both of its operands from the idea alone, and an untaught grammar draws any rule. The grammar's rules are next made available one at a time, each taught until it can be undone. *By the answer the model returns,* which is this row's measure: empty. In Codex's trial at `23a594e537` (the lesson model given only "Felix", with no mark, and taught the pair Felix, Felix three times) the returned answer was the empty string before and after, 0 of 4, with no meaning in the answer and no word from the output walk, while the reading's own reconstruction said "Felix". The echo test is now in the suite (`test/test_item17_echo.py`) and agrees: at `10d4810cb7` the answer is empty for every one of the 19 words, with no mark and with its mark, in three starts, untaught and after 30 rounds. The reading holds the word and gives the sentence a meaning; the sentence's closing does not hand that meaning to the answer. On `item17-r6d11` at `49fe80b064`, with a grammar of no thought rule (the answer says the words the model perceived): **passed**. Each of 19 words alone is returned exactly before any teaching and after three rounds, in 5 runs of 5; the six two-word sentences with their marks likewise, 6 of 6 in 5 runs of 5. The word with its mark is 19 of 19 before teaching in 6 runs of 6, and after teaching failed 2 runs of 6: once one word lost its letters, once the teaching step gave a gradient that is not a number. At `b2d42ea39b`, taught at the model's own rate (`learningRate` in `data/model.xml`, 0.001; the test had taught at .01): the word alone, the word with its mark and the two-word sentences each passed 6 runs of 6. |
+| 1.00, a word said back | **Failed**, by the model's own output, on `main`. Each of 19 words presented alone for 30 rounds, three starts: 0 of 19 in every round; 19 of 19 in every round; 19 then 0. The word's own concept is exact where the word is read. But the input is reproduced from the sentence's composed root, and "This." is a composition of the word and its mark by whichever rule the grammar took; some rules pass the word through and others do not. Given the word's own concept, the way back does give the word (19 of 19). A closing mark is never said back, since it is never made a word. Measured again on the branch `item17-r6d11` at `9d2fc4751a`, with a mark made a word and each leaf put back through the perceptual inverse: 0 of 19 in three starts, taught or not. Whatever leaf the output is given is spelled exactly and at its place, but the walk stops at the root and gives one leaf (the word, the mark, another word or nothing), and "This." is the word and its mark together. The root has to be taken apart by the inverse of what composed it; that is not yet built. Measured again at `11b916f86c`, with the root taken apart by the inverse of each rule that composed it, and that the only reconstruction: every word in some starts and none in others (19, 19, 19, 19, 18 and 0 of 19 over three starts, untaught and after 3 rounds; in an earlier run 19, 16, 5, 17, 19 and 1). Which rule the grammar took for the word and its mark decides it: some rules give the word back, four have no inverse and give nothing, and one gives back another word. Where a word is said back, the idea gives one of the two leaves; the other, and the place of both, are read from what the model kept of the way up. Where the reading applied no rule, the word is put back from its own basic-level concept. Measured again at `f396314f9e`, with nothing read from what was kept of the way up ("The idea is what does the reconstruction"): 0 of 19 in every start and round. The best case, the rule `part`, gives back the word and not its mark ("This." is put back as "This"); the other rules give nothing. No rule gives back both of its operands from the idea alone, and an untaught grammar draws any rule. The grammar's rules are next made available one at a time, each taught until it can be undone. *By the answer the model returns,* which is this row's measure: empty. In Codex's trial at `23a594e537` (the lesson model given only "Felix", with no mark, and taught the pair Felix, Felix three times) the returned answer was the empty string before and after, 0 of 4, with no meaning in the answer and no word from the output walk, while the reading's own reconstruction said "Felix". The echo test is now in the suite (`test/test_item17_echo.py`) and agrees: at `10d4810cb7` the answer is empty for every one of the 19 words, with no mark and with its mark, in three starts, untaught and after 30 rounds. The reading holds the word and gives the sentence a meaning; the sentence's closing does not hand that meaning to the answer. On `item17-r6d11` at `49fe80b064`, with a grammar of no thought rule (the answer says the words the model perceived): **passed**. Each of 19 words alone is returned exactly before any teaching and after three rounds, in 5 runs of 5; the six two-word sentences with their marks likewise, 6 of 6 in 5 runs of 5. The word with its mark is 19 of 19 before teaching in 6 runs of 6, and after teaching failed 2 runs of 6: once one word lost its letters, once the teaching step gave a gradient that is not a number. At `b2d42ea39b`, taught at the model's own rate (`learningRate` in `data/model.xml`, 0.001; the test had taught at .01): the word alone, the word with its mark and the two-word sentences each passed 6 runs of 6. |
 | 1.75, two words taken in order and said back | Failed. After the reading lesson, 0 of 6 two-word sentences are read in order in each of three starts, though the first word is taken first in 6 of 6. Every word of a sentence is found (64 of 64), but not in order, and "is" is never taken. At `11b916f86c`, by the one reconstruction: 0, 6 and 6 of 6 untaught, and 0, 0 and 1 of 6 after 3 rounds of the words alone, when a reading leaves a word or the mark out of what it composes, and what is left out is not put back. |
 | 2.25 to 5.00, with the words handed to the model in order | The curriculum's stages `reading_two`, `reading_four`, `identities`, `noun_verb` and `relations` pass when the model does not have to take the words itself. They do not count toward the age, since taking the words in order is the row that fails. |
 | 6.00, exclusive or | Passed (the standing gate). |
@@ -164,8 +164,7 @@ toy's result and not the model's.
 
 ## How the tasks are taught
 
-The tasks are taught in the chart's order, in these stages (Alec,
-2026-11-22). A stage is left when its measure passes, not after a fixed
+The tasks are taught in the chart's order, in these stages. A stage is left when its measure passes, not after a fixed
 number of presentations.
 
 1. *The echo test* (age 1.00): a word is given, and the same word is the
@@ -199,7 +198,7 @@ recalled from it: a loop of several steps that runs in long-term memory.
 
 ## Status
 
-The chart was checked against published sources on 2026-11-22. Rows marked
+The chart was checked against published sources. Rows marked
 *estimate* were not confirmed. The assessment today has the nine rungs from
 "one word" to "the fast cat ran quickly", and reaches only the first, because
 no test model declares the vocabulary the others need. The rows for a word
@@ -222,7 +221,7 @@ out by hand from the results named beside it.
 - Object permanence: <https://www.simplypsychology.org/object-permanence.html>,
   <https://britannica.com/science/object-permanence>
 - Invisible displacement (Piaget, *La construction du réel chez l'enfant*,
-  chapter 1; the link is Codex's, 2026-11-22, and was not opened in a check):
+  chapter 1; the link was not opened in a check):
   <https://www.fondationjeanpiaget.ch/fjp/site/textes/VE/JP37_CdR_Intro_Chap1.pdf>
 - The order of question words: <https://core.ac.uk/download/210883054.pdf>
   (reviewing Bloom, Merkin and Wootten 1982, and Wong and Ingram 2003)

@@ -100,7 +100,7 @@ its least active rows to `forgetLowWater` once a table reaches
 `forgetHighWater` ([Params](Params.md#ltm-forgetting-architecture)). The
 thought content store is the one principled exception: it
 may grow to its exact size within a declared bound (Alec, 2026-11-11; see
-[Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)).
+[Architecture](Architecture.md#whole-paths-and-concept-episodes)).
 
 **Writing a test.** An expected value is computed in the test from its stated
 formula, never obtained by calling the code under test and never pinned to a
@@ -131,7 +131,7 @@ producer, never by a default that serves a fixture, and its whole test file is
 rerun together with every test file that imports the changed module. Nothing is
 retired without a record of what it did. A rule that a learned mechanism may
 replace is retired only when the lesson that teaches the replacement passes
-without it ([Training, identity from data](Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)).
+without it ([Training, identity from data](Training.md#the-generated-supervised-curriculum-in-order)).
 
 **Strict xfail for an unresolved deviation (Alec, 2026-11-01).** "You can
 implement everything and xfail what tests you need to, let's lock down what is
@@ -250,7 +250,7 @@ compiler test at scale:** compiled and eager execution of the identical
 corpus, seed and budget must agree in actions, probabilities, costs and
 parameter updates, which no fixture-sized check can show. Coverage, and what
 the suite cannot reach, is in
-[Training, "The generated math suite"](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
+[Training, "The generated math suite"](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot).
 
 Long full-model work runs under the slow gate: repeated corpus-learning
 experiments, multi-batch and checkpoint training, multi-step optimizer checks,
