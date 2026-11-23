@@ -2678,8 +2678,11 @@ class BaseModel(Mereology, nn.Module):
         backward_owned(costs, owners, scale=scale, audit=writers,
             pullback=getattr(self, '_sentence_pullback', None) if sentence else None)
 
-    def getOptimizer(self, lr=0.01):
+    def getOptimizer(self, lr=None):
         """Reconstruction uses momentum descent; predictors and readers use Adam.
+
+        ``lr``: the rate; with none given, the model's configured
+        ``architecture.training.learningRate``.
 
         Walks ``self.spaces`` collecting params via each space's
         ``getParameters()`` (which excludes alpha-managed params).
@@ -2689,6 +2692,8 @@ class BaseModel(Mereology, nn.Module):
         When ``trainEmbedding`` is NONE or AR, embedding parameters
         are excluded from the optimizer.
         """
+        if lr is None:
+            lr = float(TheXMLConfig.training("learningRate"))
         params = []
         seen = set()
         for s in self.spaces:

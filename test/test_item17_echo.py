@@ -170,7 +170,7 @@ def cell(tmp_path, monkeypatch, *, mark, grammar):
             monkeypatch.setattr(data, 'has_supervised_outputs', True)
             monkeypatch.setattr(data, 'text_answers', {'train': list(texts), 'validation': []})
         observed = Observed(model, monkeypatch)
-        optimizer = model.getOptimizer(lr=.01)
+        optimizer = model.getOptimizer()
         rounds = int(os.environ.get('ROUNDS', '3'))
         running, curve, echoed = 0, [], 0
         for r in range(rounds + 1):
@@ -233,7 +233,7 @@ def test_echo_a_sentence_of_two_words(tmp_path, monkeypatch):
         monkeypatch.setattr(data, 'has_supervised_outputs', True)
         monkeypatch.setattr(data, 'text_answers', {'train': list(two), 'validation': []})
         observed = Observed(model, monkeypatch)
-        optimizer = model.getOptimizer(lr=.01)
+        optimizer = model.getOptimizer()
         rounds = int(os.environ.get('ROUNDS', '3'))
         running, curve, echoed = 0, [], 0
         for r in range(rounds + 1):
@@ -328,7 +328,7 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
         sentence = two[0]
         observed.row.clear()
         with torch.no_grad():
-            batch = echo(model, 0, sentence, train=False, optimizer=model.getOptimizer(lr=.01))
+            batch = echo(model, 0, sentence, train=False, optimizer=model.getOptimizer())
         emitted = observed.row.get('walk emitted', [])
         need = len(sentence[:-1].split()) + 1      # the words and the mark
         counts = {

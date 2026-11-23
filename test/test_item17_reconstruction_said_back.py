@@ -10,7 +10,9 @@ the place the row holds. Beside each, as diagnostics only: the words the
 walk's leaves say, the grammar's applied rules, and what the walk met
 (roots composed and alone, binds passed, rules the walk lacks, words
 followed and words whose row names no concept, steps off the walk's menu). A record: a start drawn afresh and
-printed, nothing asserted of what a start gives. Then a unit test of the
+printed, nothing asserted of what a start gives. Taught at the model's own
+rate on the words, the two-word sentences and the lesson's sentences, ten
+rounds by default (`ROUNDS`). Then a unit test of the
 perceptual inverse's paste (`FieldReverse.reverse`) and its error."""
 import os
 
@@ -116,15 +118,19 @@ def test_the_row_at_one_by_the_models_reconstruction(tmp_path, monkeypatch):
         nominate(model, one + two + lesson + (' '.join(COUNTING[:4]) + '.', ' '.join(COUNTING[4:]) + '.'))
         held = Held(model, monkeypatch)
         alone = tuple(w + '.' for w in WORDS)
-        optimizer = model.getOptimizer(lr=.01)
-        rounds = int(os.environ.get('ROUNDS', '3'))
+        optimizer = model.getOptimizer()
+        # Taught at the model's own rate (fourth part of the nineteenth
+        # pass), on what is measured: the words alone, the two-word
+        # sentences and the lesson's sentences.
+        taught = alone + two + tuple(dict.fromkeys(lesson))
+        rounds = int(os.environ.get('ROUNDS', '10'))
         for r in sorted({0, rounds}):
             if r:
                 for _ in range(rounds):
-                    for w in alone:
-                        read(model, w, training=True, optimizer=optimizer)
+                    for text in taught:
+                        read(model, text, training=True, optimizer=optimizer)
                         model.End()
-            print('taught', r, 'rounds of the 19 words alone')
+            print('taught', r, 'rounds of the 19 words alone, the two-word sentences and the lesson\'s sentences')
             words = measured(model, held, alone)
             print(' row at 1.00, of', len(alone), 'words alone:', words)
             sentences = measured(model, held, ('This is Felix.',) + LESSON[1:4])
@@ -180,7 +186,7 @@ def test_unit_the_perceptual_inverse_paste_and_the_pyramid(tmp_path, monkeypatch
         model.End()
         monkeypatch.setattr(SentenceField, 'charge', charge)
         field, wanted = held['field'], held['wanted']
-        print('grid in an optimizer:', any(p is registry.code for g in model.getOptimizer(lr=.01).param_groups
+        print('grid in an optimizer:', any(p is registry.code for g in model.getOptimizer().param_groups
                                             for p in g['params']))
         # The paste: one word's wires moved.
         radix = model.perceptualSpace.percept_store
