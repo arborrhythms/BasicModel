@@ -10131,6 +10131,15 @@ To Claude's proposal that the echo become one thought rule, Alec: "no new though
 - *Not a way:* the strength of the composition itself. The reconstruction shares it and wants every sentence put back whole, a statement too (`doc/Architecture.md`: "Silence is an empty operand, not a walk taught to stop").
 - *Claude's proposal, not traced and not decided:* this is the design of 2026-11-11 with nothing added. Output is what a thought concludes, and a statement concludes nothing. "say" would be learned as a word that takes an existing rule, `ask`, which has a compose face, a thought face and an inverse already; "say foobar" is then a question whose answer is the foobar just perceived, and perception is already admitted as evidence for an answer (`ThoughtAnswer.accepted`). The thought rules come back as they are, none new. To be traced before anything is built: what `ask`'s existing thought concludes when its operand is given whole in the same sentence.
 
+#### The trial of "say" on the existing rules (Claude, 2026-11-22, at Alec's "Yes, try it"; scratch, nothing kept)
+
+Six words; "say X" given with the answer "X" and "X" alone given with silence; five words taught and one held out; the returned answer read each round. The lesson's small model with every rule of `data/complete.grammar` as it is.
+
+- *It does not come out.* Three starts of 30 rounds with one explored path, and two starts of 20 rounds with eight (`explorePaths`): in every round "say X" is answered with nothing (0 of 5) and "X" alone is met with silence (5 of 5). The model is silent on everything, before teaching and after.
+- *Why, as far as it was read:* for "say Felix" and for "Felix" alike the thought takes `not` eleven times until its work budget cuts it off, and concludes nothing (`value` none, `incomplete` `work_budget`). It never takes `ask`. Teaching by the answer's cost does not move that choice. This is the fault Codex named in §19.139: whether the chooser can learn what it needs to do next when a first step earns nothing by itself.
+- *With the echo's grammar* (no thought rule), for comparison: "say Felix" is returned as "say Felix" and "Felix" as "Felix", in every round; 30 rounds of teaching change nothing. As §19.141 says, that model has nothing that can tell the two apart.
+- *Not known yet:* whether any order of the existing thoughts answers "say X" with "X" at all, or whether no existing rule concludes its own operand from what was just perceived. The next step is that check: `ask` taken once, by a test's choice, on "say X", and the returned answer read. It tells a fault of choosing from a missing ability.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
