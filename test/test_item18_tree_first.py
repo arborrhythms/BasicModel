@@ -372,7 +372,7 @@ def test_relative_comprehension_holds_two_ideas_and_the_native_pair():
     clause = Clause(meaning, relation='part', refs=(('clause', 0), predicate, ('clause', 1)),
                     children=children, composition=composition, evidence=(.7, .2))
     stack = IdeaStack(source.nDim, source.capacity, relation_capacity=source.parts.capacity)
-    tree = SimpleNamespace(roots=(100,), semantic_start=101)
+    tree = SimpleNamespace(roots=(100,), semantic_start=101, write_edges=lambda parts: None)
     stack.prepare(source, tree, {id(left): 90, id(right): 91, id(composition): 100})
     before = {name: value.clone() for name, value in source.state_dict().items()}
     next_id = int(owner._concept_allocator.next_id)
@@ -411,7 +411,7 @@ def test_consumed_arrival_is_held_for_the_trial_without_writing_live_mtm():
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     order=1, composition=root, evidence=(.7, 0.))
     stack = IdeaStack(source.nDim, source.capacity, relation_capacity=source.parts.capacity)
-    tree = SimpleNamespace(roots=(100,), semantic_start=101)
+    tree = SimpleNamespace(roots=(100,), semantic_start=101, write_edges=lambda parts: None)
     stack.prepare(source, tree, {id(leaf): 98, id(raised): 99, id(root): 100})
     before = owner.mtm.state()
     closing = PartClosing(owner, source, working=stack)
@@ -446,7 +446,7 @@ def test_working_relation_reads_the_existing_pair_without_reasserting_it():
         torch.ones(3, dtype=torch.bool)), relation='part', refs=(ids[0], predicate, ids[1]),
         composition=Composition(right.point, (left, right), operation='part'), evidence=(.3, 0.))
     stack = IdeaStack(source.nDim, source.capacity, relation_capacity=source.parts.capacity)
-    tree = SimpleNamespace(roots=(100,), semantic_start=101)
+    tree = SimpleNamespace(roots=(100,), semantic_start=101, write_edges=lambda parts: None)
     stack.prepare(source, tree, {})
     root, _ = PartClosing(owner, source, working=stack).stage(clause)
     assert root == (RELATION, row) and len(stack) == 0

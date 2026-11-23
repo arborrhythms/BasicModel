@@ -81,7 +81,7 @@ def test_consumed_surface_relation_is_admitted_without_a_prediction_observation(
     clause = Clause(ConceptualMeaning(torch.stack((left.point, predicate.point, right.point)),
         torch.ones(3, dtype=torch.bool)), relation='part', refs=(ids[1], predicate, ids[3]), composition=root)
     stack = IdeaStack(store.nDim, store.capacity, relation_capacity=store.parts.capacity)
-    tree = NS(roots=((OCCURRENCE, 100),), semantic_start=101)
+    tree = NS(roots=((OCCURRENCE, 100),), semantic_start=101, write_edges=lambda parts: None)
     stack.prepare(store, tree, {id(node): i+50 for i, node in enumerate([*leaves, left, right, root])})
     closing = PartClosing(owner, store, working=stack)
     closing.stage(clause)

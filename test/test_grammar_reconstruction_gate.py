@@ -43,20 +43,31 @@ def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(
             assert 'reference_side' not in kwargs
         return inverse(parent, *args, **kwargs)
     monkeypatch.setattr(model.languageSpace, 'reverse_binary_step', reverse)
+    import SentenceField
+    steps, followed = SentenceField.taken_steps, []
+    def taken(model_, record, programs):
+        result = steps(model_, record, programs)
+        followed.append(int(result[4][1].sum()))
+        return result
+    monkeypatch.setattr(SentenceField, 'taken_steps', taken)
     def observe(state, sid, active, *args):
         nonlocal readback
         readback = True
         texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
         assert len(texts) == 4 and unavailable.shape == (4,)
-        assert parents, 'the reading must traverse the grammar inverse'
-        before = parents[0]
-        changed = list(state[1])
-        changed[6], changed[10] = (changed[6] + .5) / 2, (changed[10] + .5) / 2
-        current = list(state[0])
-        current[0] = (current[0] + .5) / 2
-        parents.clear()
-        model.reconstruct_grammar_sentence((tuple(current), tuple(changed), state[2]), sid, active)
-        assert parents and not torch.equal(parents[0], before)
+        # Ported (nineteenth pass, sigma-pi 19.140): a step whose operands
+        # the STM tree's edge points at is followed, and no pair is searched
+        # for there; a step with no edge is still the grammar's inverse.
+        assert parents or followed[-1], 'the reading must traverse the grammar inverse or its edges'
+        if parents:
+            before = parents[0]
+            changed = list(state[1])
+            changed[6], changed[10] = (changed[6] + .5) / 2, (changed[10] + .5) / 2
+            current = list(state[0])
+            current[0] = (current[0] + .5) / 2
+            parents.clear()
+            model.reconstruct_grammar_sentence((tuple(current), tuple(changed), state[2]), sid, active)
+            assert parents and not torch.equal(parents[0], before)
         from PrependedSymbols import word_view
         torch.testing.assert_close(model._word_symbol_concept_ids(),
                                    word_view(model.inputSpace, 'concept_ids'))
