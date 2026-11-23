@@ -581,8 +581,8 @@ other levers remain candidates for the optimization pass.
 2. A content lookup is one product of a cue against a content matrix, as the
    `LTM0` cued read (`EntryRead.cued_rows`) already is.
    `MediumTermMemory.match_candidate` and `FamiliarTier.witnessed_match`
-   become one cosine of the support centroid against the masked codebook
-   rows of the same order, top-1 over `conceptMatchCos`, with support-set
+   become one parthood read of the support centroid against the masked
+   codebook rows of the same order, top-1 at `conceptMatchPart`, with support-set
    equality as a mask and only the literal key matched exactly. `LTM1`'s
    index is maintained on `add`, not rebuilt.
 3. The percept pass runs once per sentence over $[B, W, P]$ with gradients,
