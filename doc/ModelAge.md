@@ -57,7 +57,7 @@ when a later task has to be broken down.
 
 | Age | Task that must be learned | Basis | Measured by |
 | ---: | --- | --- | --- |
-| 0.70 | A thing is kept when it is out of the look (object permanence) | sourced: search for a fully hidden object at 8 to 12 months (Piaget); looking-time evidence from 3.5 months (Baillargeon) | the ladder's rung "one word" |
+| 0.70 | A thing is kept when it is out of the look (object permanence). Peekaboo: a thing that goes away and comes back is one identity, made when it was first there and reactivated when it returns | sourced: search for a fully hidden object at 8 to 12 months (Piaget); looking-time evidence from 3.5 months (Baillargeon) | the ladder's rung "one word"; the peekaboo itself (the thing, a gap, the thing again, one identity) is not yet a test |
 | 0.75 | A heard form is said back as a form, with no meaning asked | estimate | none yet |
 
 ### Single words
