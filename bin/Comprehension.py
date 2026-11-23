@@ -371,8 +371,10 @@ class Evaluation:
             # The tree into the trial's STM before the closing stages into
             # it: each word a row naming its concept, each step its edge.
             def concept(word):
-                for cid in (int(self.ids[word]), -1 if self.program.word_ids is None
-                            else int(self.program.word_ids[word])):
+                # The word's own concept (the word read, which a writer can
+                # spell), else the identity the comprehension resolved.
+                for cid in (-1 if self.program.word_ids is None else int(self.program.word_ids[word]),
+                            int(self.ids[word])):
                     if cid > 0 and self.owner._concept_row_of(cid) is not None:
                         return cid
                 return None
