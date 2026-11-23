@@ -1,7 +1,6 @@
 """Located ideas from attention, committed as one sequence in the ordinary pair store."""
 import torch
 from Memory import OCCURRENCE, SYMBOL, RELATION
-from Understanding import ConceptualField
 
 
 def brackets(model, percepts):
@@ -81,39 +80,6 @@ def commit(stores, heads, durable):
                 truth_minus=float(store.parts.truth_minus[name]))
         committed.append(translated.get(head))
     return tuple(committed)
-
-
-def field_of(model, store, heads):
-    """Recover the observed concept, evidence and place by traversing each durable head."""
-    from FieldReverse import drawn
-    from RowTime import encoder
-    owner = model._concept_owner()
-    rows = [[store.index_of_row(name) for kind, name in store.parts.leaves(head)
-             if kind == OCCURRENCE] for head in heads]
-    width = max(1, max(map(len, rows), default=0))
-    B = len(rows)
-    ids = store.row_names.new_full((width, B), -1)
-    evidence = store.slots.new_zeros(width, B, width, 2)
-    wires = store.slots.new_zeros(B, width, 4)
-    where = ids.new_zeros(B, width, 2)
-    when = torch.zeros_like(where)
-    lo, hi = model.where_registry.slices['text']
-    grid = model.where_registry.code[lo:hi].to(wires)
-    for b, slots in enumerate(rows):
-        for w, slot in enumerate(slots):
-            ref = store.referent_of(slot)
-            if ref is None:
-                continue
-            cid = ref[1]
-            ids[w, b] = cid
-            evidence[w, b, w, 0] = store.trust[slot].clamp_min(0)
-            wires[b, w] = store.slots[slot, store.when_start-4:store.when_start]
-            place = drawn(-(grid-wires[b, w]).square().sum(-1)) + lo
-            form = owner.interpret.lexical_form(cid)
-            where[b, w, 0], where[b, w, 1] = place, place + (len(form) if form else 1)
-            when[b, w, 0] = encoder().decode_index(store.time[slot])
-            when[b, w, 1] = when[b, w, 0] + 1
-    return ConceptualField(ids, evidence, where, when, None, wires)
 
 
 def read(model, bank, concepts):

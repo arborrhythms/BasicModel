@@ -108,6 +108,7 @@ def teach_concept_lessons(model):
     # The cases are unlabelled training inputs. Observe their located field,
     # then advance the same kept-close clock and recurrence mint rule.
     inputs = model.inputSpace.data.train_input
+    witnessed_cases = set()
     with torch.no_grad():
         for _ in range(int(lesson['witness_updates'])):
             for start in range(0, len(inputs), 64):
@@ -115,15 +116,25 @@ def teach_concept_lessons(model):
                          bytes(x.reshape(-1).tolist()).rstrip(b'\0').decode('utf8')
                          for x in inputs[start:start + 64]]
                 model.forward(encode(texts))
-                cs.observe_open_field()
-                for stream in range(len(texts)):
+                active = cs.observe_open_field()
+                for stream, text in enumerate(texts):
+                    # A recurring native conjunction can already have a word
+                    # concept. Count it when its own row is read at this input.
+                    raw = text.encode('utf8')
+                    if len(raw) > 1:
+                        word = cs.interpret.word_for_form(raw)
+                        if word is not None:
+                            row = cs._concept_row_of(word)
+                            if row in active.get(stream, ()):
+                                witnessed_cases.add(row)
                     cs.mtm.close(None, stream=stream, references=
                         getattr(cs, '_field_activated_references', {}).get(stream, ()))
                 cs._field_activated_references = {}
                 cs.mtm.promote_candidates(cs)
                 model.End()
-    cases = sorted({r for r in alloc.order_zero_members.rows()
-                    if cs._order0_inventory_row(r) and cs.concept_id_at_row(r) in alloc.raised})
+    witnessed_cases.update(r for r in alloc.order_zero_members.rows()
+                          if cs._order0_inventory_row(r) and cs.concept_id_at_row(r) in alloc.raised)
+    cases = sorted(witnessed_cases)
     if not cases:
         raise ValueError('concept lessons did not witness any located field conjunctions')
     orders = [alloc.order_of(cs.concept_id_at_row(row)) for row in cases]

@@ -118,6 +118,18 @@ def test_large_registry_addresses_roundtrip_through_both_phases():
     assert not torch.equal(bands[-1], bands[-2])
 
 
+def test_where_wires_first_used_in_inference_still_receive_training_gradients():
+    from WhereRegistry import WhereRegistry
+    registry = WhereRegistry([('text', 32)])
+    address = torch.tensor([7])
+    with torch.inference_mode():
+        first = registry.band(address)
+    training = registry.band(address)
+    torch.testing.assert_close(first, training)
+    grad, = torch.autograd.grad(training.sum(), registry.code)
+    assert grad.nonzero()[:, 0].unique().tolist() == [7]
+
+
 def test_copy_preserves_the_single_registry_ladder():
     import copy
     from WhereRegistry import WhereRegistry

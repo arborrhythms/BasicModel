@@ -3,6 +3,7 @@
 These addresses are coordinates, never keys into a content codebook. The
 registry is model-local so constructing another model cannot move a slice.
 """
+from functools import cached_property
 from types import MappingProxyType
 
 import torch
@@ -21,17 +22,20 @@ class WhereRegistry:
         self.capacity = end
         from Spaces import WhereEncoding
         self.encoding = WhereEncoding(nWhere=4, nWhen=4).set_capacity(end)
-        # The where wires: one row for each address, the encoding's code of
-        # that address. It takes a gradient, so a salience carried down onto a
-        # percept's band reaches its row, and it belongs to no module and so
-        # to no optimizer: nothing of it is learned or written as a state.
+        self.axes = ((0, self.encoding.nDim),)
+
+    @cached_property
+    def code(self):
+        """Build the fixed differentiable wire table on its first reader.
+
+        Pure address arithmetic uses only the quadrature encoding. A model
+        reading the wires shares one gradient leaf outside its optimizer.
+        """
         from util import TheDevice
-        with torch.no_grad():
-            code = self.encoding.encode(torch.arange(max(1, end), dtype=torch.long)).float()
-        self.code = torch.nn.Parameter(code.to(TheDevice.get()), requires_grad=True)
-        # The axes of the space, each a slice of the wires, matched apart on
-        # the way back: one today, on which text lies.
-        self.axes = ((0, int(code.shape[-1])),)
+        with torch.inference_mode(False), torch.no_grad():
+            addresses = torch.arange(max(1, self.capacity), dtype=torch.long)
+            code = self.encoding.encode(addresses).float()
+            return torch.nn.Parameter(code.to(TheDevice.get()), requires_grad=True)
 
     def band(self, addresses):
         """The rows of the where wires at registry ``addresses`` (any shape);

@@ -8514,9 +8514,6 @@ class BasicModel(BaseModel):
         elif self.concept_binding == 'aligned' and not self.grammar_phases.vector:
             carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
                 self._concept_owner()._cs_open_field}
-            heads = getattr(self, '_reading_heads', None)
-            if heads is not None:
-                carriers['reading_heads'] = heads
         # The answer path's seed (spec 5.3) is the terminal idea: the
         # symbols' lanes carry no code, so no answer is read from them.
         answer_seed = (conceptual if torch.is_tensor(conceptual)
