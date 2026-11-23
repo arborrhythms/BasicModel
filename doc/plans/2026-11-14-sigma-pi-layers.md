@@ -27623,3 +27623,55 @@ Codex's return is `suggestions.txt` in its worktree `/private/tmp/basicmodel-ite
 - `test_item17_places.py::test_the_request_for_a_place_at_an_untaught_start` failed once in a run of 40 and passed when run again, with and without the speed change.
 
 *For Alec to decide, from Codex's proposals:* the two on item 4, the handle on item 5, and the path with no grammar on item 7. Eleven keys were added to `data/model.xml`, eight of them for side tools (`embed`, `Legacy`, `etc`).
+
+### 23.6.34 Round 7, step 1 audited on main: concept matching, the way back, and the assessment (Claude, 2026-11-23; at Codex's suggestion, relayed by Alec)
+
+Codex, relayed by Alec: "Claude could help independently with the §22.7 audit of concept matching, the way back, and the assessment. If you ask Claude to take that in its own worktree, I can focus on the operator tree, conditional speech, and their tests on local main."
+
+Audited on `main` at 9015df927f, in the worktree `.worktrees/item17-audit` (branch `item17-audit`). Nothing in the source is changed by this section. The readers were read by two read-only agents; Claude read again the lines marked *checked*. Only the likeness and way-back rows of §19.4 and of §19.21's table were audited; that table's other rows were not.
+
+**List 1: likeness that decides membership (rule 16).** Three of the five readers are as they were.
+
+| Reader | Today | State |
+| --- | --- | --- |
+| `MediumTermMemory.match_candidate` (`bin/Memory.py`) | exact support proportions first; then the greatest cosine, taken if it is at least `match_cos` (*checked*) | as it was |
+| `FamiliarTier.witnessed_match` | equal member sets, then equal proportions or a cosine of at least `concept_match_cos` (*checked*) | as it was |
+| `FamiliarTier.observe_field`, raising an order | a remembered context whose centroid has a cosine of at least `concept_match_cos` with the present value (*checked*) | as it was |
+| `FamiliarTier.observe_field`, a key counted as used | a cosine above `concept_use_floor` (*checked*) | as it was |
+| `ReferenceClose.individuals` | each member goes to the anchor with the greatest `ConceptualMatch.match` coverage, with one more for an equal predicate; no bar; two groups are joined only at a coverage of one | changed to parthood; the greatest is still taken with no bar |
+| `IndependentComponents.SparseDictionary.observe` | a residual direction within `1 - mint_threshold` joins | unchanged, as the list says: reported |
+
+- `ConceptualMatch.match` is called by binding, linking, merging, the reference close and the field's stimulus (`Memory.bind_menu`, `Memory.merge`, `MemoryLink.menu` and `link`, `ReferenceClose`, `FieldProjection.stimulate`, `Ops._part_kernel`). Where it decides, the bar is the literal 1. None of the three readers above calls it.
+- `conceptMatchCos` (0.8) and `conceptUseFloor` (0.5) are still in `data/model.xml` and read (`bin/Spaces.py`, passed to MTM as `match_cos`).
+- The likeness readers with no caller: `priming_prior` is gone; `BracketKeys._cos` (`bin/Attention.py`), `_context_cosine` (`bin/Spaces.py`) and `_reverse_derive_words` (`bin/Models.py`) are still there, each with its definition and no other use in `bin` or `test` (*checked*).
+- Elsewhere a threshold on likeness joins rows in `bin/semantic_categories.py` (no caller in `bin`, tests only) and in `TruthLayer.query`, which §19.4 leaves.
+- *Owed by step 1:* the three readers by parthood both ways, "with the bar set by a trial that is reported". No trial has been run.
+
+**List 2: the way back (rule 17).** The rule's wording is older than the way back that was built, so the rows are read against §19.123 onwards (the sparse LDU, an exact way back) as well.
+
+| Reader | Today | State |
+| --- | --- | --- |
+| `FieldReverse.reverse` | the for lane and the negated against lane go to the Sigma's rows; `sigma.reverse`; each lane floored at zero and the two summed; each row's kept percept code weighted by that amount. No edge's exponent is undone | changed |
+| the order-zero Sigma's `reverse` (`SparseSigmaLDU`, `bin/Layers.py`) | the chart undone, then triangular solves for U and L and D divided out: exact on the held slots, not least squares (`SigmaLayer3.reverse` is the one that uses a pseudo-inverse) | by the later decision, not by rule 17's words |
+| `cs_reverse_presence`, `cs_percept_attribution` (`bin/Spaces.py`) | the Sigma's transpose applied until nothing changes, the greatest kept; then split over the recorded members by weight | not an inverse; `SparseLayer.attribute_presence` is gone |
+| `CaseSelection.stage_case_bank`, `refine_over_collected` | read the two above | follow them; `Models._passback_scope_ps` is gone |
+| `Models.reverseReconstruct`'s test that a cost of zero is an exact identity | still there: it sets `_reconstruction_identity_flag` and warns ("zero cost carries no learning signal"); it does not raise (*checked*) | as it was. Claude's view: it says what `doc/GradientFlow.md` now says of an exact round trip, and is worth keeping as a warning; the list says it goes |
+| the comments of `Models._reverse_body` | still say "exact mirror", "the round-trip's exactness", "2-stream EXACT inverse" | as they were |
+| a signed value split into two lanes on the way back | `signed_lanes` (`bin/Layers.py`) in `SigmaLayer3.reverse`; in `FieldReverse.reverse` by negating the against lane and flooring at zero | done |
+
+**What the item's rules replaced and is still there (step 2, in part).** By a search of names, not of meaning:
+
+- Seventeen leaf keys of `data/model.xml` are named by no file under `bin`: `chartCollapse`, `iterationsPerWord` (SymbolSpace); `classificationMax`, `classificationMin` (data); `conceptualContextExpectationWeight`, `conceptualContextNegatives`, `conceptualContextSituationAnchors`, `conceptualContextSituationWeight` (training); `decorrelationWeight`, `outputSymbolResidualScale`, `sortNetwork`, `sortPasses`, `spectralFlatnessWeight`, `symbolResidualScale` (WholeSpace); `discontinuityLambda`, `l1Lambda` (architecture); `latticeMargin` (ConceptualSpace). Three of them are named in tests. Most are older than item 1.7. None was removed.
+- Functions of the item's modules named nowhere else in `bin`, only in tests: `AttentionLesson.minimal_first`, `looks_in_order`, `supplied_reading`, `prompt_need` and `part_lesson`; `IdeaRead.expected_point`; `BasicPercepts.where_share`; `AssessmentProbe.format_table`.
+
+**The assessment** (`bin/Assessment.py`, `bin/AssessmentProbe.py`, `data/assessment/known_probe.json`), against `doc/ModelAge.md` and the standing rules.
+
+- *Its rows are not the chart's.* The tool has nine rungs, from "one word" to an adverb; the chart has about 45 rows. Five of the chart's rows are met by seven rungs. The row at 1.00 (a word said back), which gives the model its age, has no rung; neither have the rows for counting, questions, forms, not, and, or.
+- *One check of ten reads what the model returns,* and that answer is made again by the tool (`model.resolveAnswer`, then `model.reverseOutput`), not taken from `BatchResult.outputPred`. The other checks read the reading from inside: the tree made again from the journal, whether a word is known, the order of the looks, what a look accepted, a definition's evidence, a word's objects, a meaning's references.
+- *While it reads, the tool replaces four things in the model and its modules* (`owner.cs_read_memberships`, `ModelAttention.native_word_poles`, `Looks.run` and `SentenceLooks.attend`, `model._sentence_observation`) and makes a reading of its own (`model._trial_understanding`); all are put back afterwards. Nothing is forced.
+- *No age is written.* There is no `assess_age`, no key for an age in `data/model.xml` or `data/model.xsd`, and no age saved with a model. `doc/ModelAge.md` says the age "was worked out by hand"; its 1.00 comes from `test/test_item17_echo.py`.
+- *Its tests assert the inside.* `test/test_assessment.py` replaces `read_sentence` with a stand-in or asserts on lanes and on the state being put back; none asserts on a returned text. The rung reports attached to other tests do not decide them.
+- *Met:* no seed and no word of a language in the two source files; the words are in the data file.
+- So the tool does not meet "every measure from the input to what the model returns" (§19.139, and Alec, 2026-11-22: no reaching into the head), does not agree with the chart, and writes no age. The age Codex built on `item17-codex` (§23.6.24) was not brought over.
+
+**For Alec to say:** whether Claude mends what this found (the three readers by parthood with a reported trial; the three dead helpers removed; the comments of `_reverse_body`), by an implementer in this worktree, or hands the list to Codex; and whether the assessment is rebuilt on the chart's rows from returned answers, which is more than an audit.
