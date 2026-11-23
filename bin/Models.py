@@ -13266,6 +13266,8 @@ class BasicModel(BaseModel):
                     meaning_residual=torch.cat((menu.meaning_residual[:, :-1],
                         torch.where(named[:, None], 0., menu.meaning_residual[:, -1])[:, None]), 1))
                 options,others,legal=menu.left,menu.right,menu.admissible
+                # A row not searched has no menu: nothing on it is legal.
+                legal = legal & ~followed[:, None]
             logits=language.generate_policy_logits(parent,menu.features)
             is_binary = torch.arange(stop + 1, device=event.device) < R2
             legal = legal & (~is_binary[None] | (depth < N)[:, None])
