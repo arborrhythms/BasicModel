@@ -316,6 +316,38 @@ The failure report gives the source and observed words for each mismatched
 row. The default suite retains the historical selector
 `TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`.
 
+The configured verbal XOR run first measures free reading and, when needed,
+teaches it from `data/lessons/reading-order.json`. Training takes its own
+looks. After each sentence, the next source occurrence supplies a
+cross-entropy target for decisions on the learner's actual prefix. Only the
+attention request receives that update. A fresh grammar run advances after
+sampled and evaluation reading each reach the lesson's validation threshold.
+
+To produce a reusable reader and an independent test report, run
+`.venv/bin/python bin/pretrain_reading.py --output output/reader` in a fresh
+output directory. The lesson has 72 training, 58 validation and 122 test
+sequences of two or three familiar words. The members of a reversal pair stay
+in one split. A sentence counts only if every occurrence was taken and
+accepted exactly once in source order. The harness saves the model with
+its assessed age, restores it, and requires at least 99% exact test sequences
+in each mode plus all four verbal XOR pairs. A passing directory contains
+`reader.ckpt` and `results.json`. Load the checkpoint with the same model
+configuration before loading the next corpus into its data owner. The
+optimizer restores its recorded state by parameter name. For example:
+
+```python
+from Models import BaseModel
+from data import Data
+
+data = Data()
+model, _ = BaseModel.from_config("data/XOR_grammar.xml", data=data)
+assert model.load_weights("output/reader/reader.ckpt", require_match=True)
+data.load("xor")
+model.runTrial(numEpochs=1, batchSize=4)
+```
+
+The report identifies the configuration, lesson and checkpoint by SHA-256.
+
 Before starting syntax work, repeat this selector in fresh pytest processes.
 Record both counts for every start, including failures. Each start must
 reach 4/4 at both boundaries.

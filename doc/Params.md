@@ -64,6 +64,7 @@ sub-elements `<training>` and `<data>` (see below).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `data/readingOrderLesson` | file | empty | Ordered-reading curriculum under `data/`. A fresh training run with this key qualifies the reader on the lesson's validation split before the ordinary epochs begin. |
 | `data/dataType` | string | `"numeric"` | The data space-role, set under `<data>`: `embedding` (language modelling and chat with sequence processing; PartSpace owns the byte and word lexicon) or `numeric` (a dense slab, e.g. MNIST pixels). |
 | `conceptBinding` | string | `"mixing"`; BasicModel `aligned` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers, without allocating `ConceptualCombine`; exact ordered paths ride on the concept, and its order is read from the block its row lies in. `mixing` keeps the learned `ConceptualCombine` matrix as the parallel-path alternative. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |

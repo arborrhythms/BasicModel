@@ -486,6 +486,9 @@ def _attained_age(rows):
     return max((years for years in measured if years < first_unmet), default=0.)
 
 
+# The chart presents its own batch sizes on a model whose training bricks
+# may already have a fixed compiled width.
+@torch.compiler.set_stance('force_eager')
 def assess_age(model, *, all_rows=True):
     """Assess this instance without training. Only this function awards an age.
 
@@ -517,11 +520,33 @@ def assess_age(model, *, all_rows=True):
     return dict(age=earned, rows=rows)
 
 
-def at_age(model, years, measure):
-    """Run the requested measurement only when its prerequisite is met."""
+def qualification(age, years):
+    """Check an assessed age on the same numeric scale as its stored tensor."""
     import math
     if not math.isfinite(years) or years < 0:
-        raise ValueError('requested mental age must be finite and nonnegative')
-    if bool(model.age < years):
-        return dict(status='not qualified at that age', required=years, age=float(model.age))
-    return dict(status='qualified', required=years, age=float(model.age), result=measure())
+        raise ValueError('required age must be finite and nonnegative')
+    if age is None:
+        raise ValueError('checkpoint has no assessed age')
+    if not torch.is_tensor(age) or age.ndim != 0 or not age.is_floating_point():
+        raise ValueError('assessed age must be a floating-point scalar')
+    if not math.isfinite(float(age)) or float(age) < 0:
+        raise ValueError('assessed age must be finite and nonnegative')
+    status = 'not qualified at that age' if bool(age < years) else 'qualified'
+    return dict(status=status, required=years, age=float(age))
+
+
+def checkpoint_qualification(path, task):
+    """Check an authenticated native checkpoint against a named row of the age chart."""
+    from AgeChart import chart
+    ages = {name: age for age, name, _ in chart()}
+    if task not in ages:
+        raise ValueError(f'unknown age-chart task {task!r}')
+    saved = torch.load(path, map_location='cpu', weights_only=False, mmap=True)
+    return qualification(saved['state_dict'].get('age'), ages[task])
+
+
+def at_age(model, years, measure):
+    result = qualification(model.age, years)
+    if result['status'] == 'qualified':
+        result['result'] = measure()
+    return result

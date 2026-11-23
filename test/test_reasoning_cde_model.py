@@ -45,6 +45,7 @@ class TestReasoningCDEModel(unittest.TestCase):
             self.assertFalse(any('intra' in key for key in cs.state_dict()))
 
     @pytest.mark.phase("fineweb")
+    @pytest.mark.requires_mental_age("what is cat ?")
     def test_truthset_provisions_source_rows(self):
         store = self.m.symbolSpace.ltm_store
         # This is a learning assertion, with no supplied relation annotation.

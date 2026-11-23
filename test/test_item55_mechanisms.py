@@ -582,6 +582,7 @@ def test_nested_wholes():
 
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.phase('stage3')
+@pytest.mark.requires_mental_age("reading_two")
 def test_nested_wholes_from_stage3_artifact(tmp_path, monkeypatch, restore_phase):
     # This phase's certificate restores the preceding phase's trained artifact.
     from constituent_corpus import corpus

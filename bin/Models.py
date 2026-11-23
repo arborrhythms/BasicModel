@@ -6689,7 +6689,7 @@ class BasicModel(BaseModel):
         return result
 
     def _make_input_space(self, rawInputShape, spaceShape, inputShape, model_type):
-        return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
+        return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type, data=self.data)
 
     def _make_perceptual_space(self, inputShape, spaceShape, outputShape):
         demuxed = TheXMLConfig.space("InputSpace", "demuxed")
@@ -10633,6 +10633,16 @@ class BasicModel(BaseModel):
         from ConceptLessons import teach_concept_lessons
         teach_concept_lessons(self)
         self._optimizer   = self.getOptimizer(lr=lr)
+        lesson = self.cfg['architecture']['data']['readingOrderLesson']
+        if lesson and not self._training_step_count and not getattr(self, '_resume_corpus_cursor', None):
+            from pretrain_reading import load_lesson, measure, qualifies, train_reader
+            spec = load_lesson(os.path.join(ProjectPaths.DATA_DIR, lesson))
+            readiness = measure(self, spec['validation'], spec['batch_size'])
+            if not qualifies(readiness, (), spec['minimum_accuracy']):
+                readiness = train_reader(self, spec, self._optimizer)[-1]
+                if not qualifies(readiness, (), spec['minimum_accuracy']):
+                    raise RuntimeError('reading-order prerequisite unmet: ' + str(readiness))
+
 
         # Test gating from BASIC_RUN_TEST. Tri-state: None (skip),
         # 0 (uncapped run), positive int (cap each pass at that many
@@ -17037,7 +17047,7 @@ class BasicModel(BaseModel):
         outputInputShape = [output_n, int(_term_cs_shape[1])]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
                                        vectors=self.perceptualSpace.vocabulary,
-                                       field_capacity=self.conceptualSpaces[0].nVectors)
+                                       field_capacity=self.conceptualSpaces[0].nVectors, data=self.data)
 
         self._symbol_shape = [nPercepts, percept_dim + obj_percept]
 

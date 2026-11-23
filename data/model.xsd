@@ -735,6 +735,7 @@
            (dense slab, e.g. MNIST). Was the architecture-level <modelType>. -->
       <xs:element name="dataType" type="dataTypeEnum"/>
       <xs:element name="conceptLessons" type="xs:string"/>
+      <xs:element name="readingOrderLesson" type="xs:string"/>
       <xs:element name="dataset" type="datasetEnum"/>
       <xs:element name="imageCorpus" type="xs:string" default="shapes" minOccurs="0"/>
       <xs:element name="numShards" type="xs:positiveInteger"/>

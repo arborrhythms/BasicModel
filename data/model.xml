@@ -278,6 +278,7 @@
       <dataset>xor</dataset>
       <!-- Optional primitive/name teaching examples for concept-id outputs. -->
       <conceptLessons></conceptLessons>
+      <readingOrderLesson></readingOrderLesson>
       <!-- Shard count and per-shard document cap (streaming datasets). -->
       <numShards>1</numShards>
       <maxDocs>10000</maxDocs>

@@ -191,6 +191,7 @@ def assert_selected_wording(model, curriculum):
 @pytest.mark.learning_certificate
 @pytest.mark.artifact_eval
 @pytest.mark.phase("fineweb")
+@pytest.mark.requires_mental_age("what is cat ?")
 def test_real_text_has_a_complete_selected_meaning(fineweb_trained_model):
     import json
     from pathlib import Path

@@ -8897,7 +8897,7 @@ class InputSpace(Space):
     _ar_concept_lookup_atoms = _symbol_property('lookup_atoms')
     _ar_concept_lookup_sentence_ids = _symbol_property('lookup_sentence_ids')
 
-    def __init__(self, inputShape, spaceShape, outputShape, model_type="numeric"):
+    def __init__(self, inputShape, spaceShape, outputShape, model_type="numeric", *, data=None):
 
         """Initialize InputSpace; allocate state for the class contract.
 
@@ -8909,7 +8909,7 @@ class InputSpace(Space):
         min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
         neg_samples = int(TheXMLConfig.training("negSamples", 64))
         embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
-        data = TheData
+        data = TheData if data is None else data
         self.data = data
         self.model_type = model_type
         self.demuxed = TheXMLConfig.space(section, "demuxed")
@@ -20585,7 +20585,7 @@ class OutputSpace(Space):
         )
         return basis
 
-    def __init__(self, inputShape, spaceShape, outputShape, vectors=None, *, field_capacity=None):
+    def __init__(self, inputShape, spaceShape, outputShape, vectors=None, *, field_capacity=None, data=None):
         """Initialize OutputSpace; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -20602,7 +20602,7 @@ class OutputSpace(Space):
         # Vector regression uses a linear map and learned intercept.
         # Named concept evidence already has the target's [0,1] range.
         super().__init__(inputShape, spaceShape, outputShape)
-        self.data = TheData
+        self.data = TheData if data is None else data
         self._vocabulary = getattr(self, '_vocabulary', None)
         self.text_mode = isinstance(self._vocabulary, Embedding)
 

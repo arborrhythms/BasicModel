@@ -25,6 +25,7 @@
          position copies via its own nonlinearity. -->
     <data>
       <dataType>embedding</dataType>
+      <readingOrderLesson>lessons/reading-order.json</readingOrderLesson>
     </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->

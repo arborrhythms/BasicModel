@@ -125,3 +125,39 @@ def test_unknown():
                          ('test_missing','artifact absent'), ('test_unknown','unknown certificate phase')]:
         assert reports[case]['phase'] == 'setup' and reports[case]['outcome'] == 'failed'
         assert reason in reports[case]['message']
+
+
+def test_saved_age_is_checked_before_the_comprehension_body(tmp_path, monkeypatch):
+    """A registered reader may have an age below a later test's prerequisite."""
+    import os
+    import subprocess
+    import sys
+    import torch
+    phases = {}
+    receipt = tmp_path / 'receipt.txt'
+    receipt.write_text('Age qualification fixture.')
+    for name, age in [('reader', 0.), ('qualified', 2.25)]:
+        file = tmp_path / (name + '.ckpt')
+        torch.save({'state_dict': {'age': torch.tensor(age)}}, file)
+        phases[name] = PhaseArtifact(str(file), hashlib.sha256(file.read_bytes()).hexdigest(), str(receipt))
+    registry = tmp_path / 'registry.json'
+    PhaseRegistry(phases).write(registry)
+    monkeypatch.setenv('BASICMODEL_PHASE_ARTIFACTS', str(registry))
+    root = Path(__file__).resolve().parents[1]
+    monkeypatch.setenv('PYTHONPATH', os.pathsep.join(map(str, (root / 'bin', root / 'test'))))
+    (tmp_path / 'conftest.py').write_text('pytest_plugins = ["phase_artifacts", "assessment_support"]\n')
+    (tmp_path / 'test_age.py').write_text('''from pathlib import Path
+import pytest
+
+@pytest.mark.requires_mental_age("what is cat ?")
+@pytest.mark.parametrize("name", [pytest.param("reader", marks=pytest.mark.phase("reader")),
+                                  pytest.param("qualified", marks=pytest.mark.phase("qualified"))])
+def test_comprehension(name):
+    Path(name + ".entered").touch()
+''')
+    result = subprocess.run([sys.executable, '-m', 'pytest', '-q', '-p', 'no:cacheprovider', 'test_age.py'],
+                            cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 1 and 'not qualified at that age' in result.stdout, result.stdout
+    assert '1 passed' in result.stdout and '1 error' in result.stdout
+    assert (tmp_path / 'qualified.entered').exists()
+    assert not (tmp_path / 'reader.entered').exists()

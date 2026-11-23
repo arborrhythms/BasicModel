@@ -139,7 +139,7 @@ def _read(model, bank, concepts):
             break
         field, _, scores = narrow(model, bank, attend(model, units), own, concepts,
                                   known, left & active[:, None])
-        probabilities = occurrence_probabilities(scores)
+        probabilities = occurrence_probabilities(reader(units, scores, bank.where))
         index = select_occurrence(probabilities, sample=model.training)
         index = torch.where(active, index, -1)
         observation.observe(bank.where, index)

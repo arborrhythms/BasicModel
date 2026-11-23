@@ -206,6 +206,17 @@ unavailable measure. Passing through 3.25 and failing at 3.75 earns 3.25.
 An age group with no measurement awards no age. Use `all_rows=False` to stop
 after the first unmet age group.
 
+Reading pretraining measures the chronological order of the occurrences that
+reach grammar. The trainer then asks `Assessment.assess_age` to assign the
+age from answers before writing a reader checkpoint. A reader can attain
+perfect order and receive age zero. Saved-model comprehension tests declare
+their prerequisite with `requires_mental_age` and the name of a chart row.
+During setup Assessment compares the authenticated checkpoint's stored age
+with that row's age. An unmet prerequisite is reported at setup, before the
+behavioral assertion. A checkpoint with a missing or invalid age cannot
+qualify. Producers of these checkpoints must run the assessment before save,
+since the XML supplies a fresh model's initial age.
+
 The presentations in `bin/AgeChart.py` include asking which name was present
 after the input has gone, distinguishing familiar and unfamiliar forms, and
 answering truth tables. The 1.00 row presents the 19 unmarked words to the

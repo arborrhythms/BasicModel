@@ -1,4 +1,4 @@
-"""Proposed rung reports accompany operator assertions; they do not gate them."""
+"""Saved-age prerequisites and independent reports on the proposed operator rungs."""
 from contextvars import ContextVar
 import json
 import os
@@ -47,11 +47,33 @@ def _assessment_report(request):
                     stream.write(json.dumps(report)+'\n')
 
 
+def pytest_configure(config):
+    config.addinivalue_line('markers', 'requires_mental_age(task): check the saved model against this age-chart row before the test')
+
+
+@pytest.fixture(autouse=True)
+def _check_saved_age(request):
+    mark = request.node.get_closest_marker('requires_mental_age')
+    if mark is None:
+        return
+    from Assessment import checkpoint_qualification
+    artifact = request.getfixturevalue('phase_artifact')
+    path = request.getfixturevalue('phase_registry').resolve(artifact.path)
+    result = checkpoint_qualification(path, *mark.args)
+    request.node.user_properties.append(('assessed_age', result['age']))
+    if result['status'] != 'qualified':
+        pytest.fail(f"{result['status']} for {mark.args[0]!r}: checkpoint age {result['age']:.2f}, "
+                    f"requires {result['required']:.2f}", pytrace=False)
+
+
 @pytest.fixture
 def at_mental_age(request):
     """Record an unmet prerequisite as its own pytest outcome, also under xdist."""
-    from Assessment import at_age
+    from Assessment import assess_age, at_age
     def run(model, years, measure):
+        # This fixture receives a live subject. Its current training may have
+        # changed its capability since construction or restoration.
+        assess_age(model, all_rows=False)
         result = at_age(model, years, measure)
         if result['status'] == 'not qualified at that age':
             request.node.user_properties.append(('mental_age_qualification', result['status']))

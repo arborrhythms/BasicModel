@@ -8,9 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.parametrize('phase', [
-    pytest.param('stage_words', marks=pytest.mark.trained('stage_words')),
-    pytest.param('stage_sentences', marks=pytest.mark.trained('stage_sentences')),
-    pytest.param('stage_math', marks=pytest.mark.trained('stage_math')),
+    pytest.param('stage_words', marks=[pytest.mark.trained('stage_words'),
+        pytest.mark.requires_mental_age('recognise a form')]),
+    pytest.param('stage_sentences', marks=[pytest.mark.trained('stage_sentences'),
+        pytest.mark.requires_mental_age('test_echo_a_sentence_of_two_words')]),
+    pytest.param('stage_math', marks=[pytest.mark.trained('stage_math'),
+        pytest.mark.requires_mental_age('what is cat ?')]),
 ])
 @pytest.mark.artifact_eval
 def test_saved_stage_reproduces_criteria_and_operator_column(phase, phase_registry):

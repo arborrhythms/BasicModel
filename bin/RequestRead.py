@@ -17,7 +17,8 @@ class RequestRead(nn.Module):
         from BasicPercepts import WHERE_WIRES, WHEN_WIRES
         # Two native place codes and the present.
         self.state_weight = nn.Parameter(self.first.weight.new_zeros(int(width), 2 * WHERE_WIRES + WHEN_WIRES))
-        for top in (self.ask, self.stop):
+        self.place = nn.Linear(int(width), 2, device=device)
+        for top in (self.ask, self.stop, self.place):
             nn.init.zeros_(top.weight)
             nn.init.zeros_(top.bias)
 
@@ -35,6 +36,15 @@ class RequestRead(nn.Module):
         asked against by nothing."""
         asked = torch.sigmoid(self.ask(h)).transpose(0, 1)
         return torch.stack((asked, torch.zeros_like(asked)), -1)
+
+    def forward(self, units, evidence, spans):
+        """Score each witnessed occurrence by its evidence and native interval.
+
+        The request learns the coefficients of the two endpoints. At
+        initialization every location contributes equally.
+        """
+        direction = self.place(units).to(evidence)
+        return evidence + (spans.to(evidence) * direction[:, None]).sum(-1)
 
     def stopping(self, h):
         return self.stop(h)[:, 0]

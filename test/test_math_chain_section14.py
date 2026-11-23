@@ -246,6 +246,7 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
 
 
 @pytest.mark.phase("copular_identity")
+@pytest.mark.requires_mental_age("what is cat ?")
 def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode(tmp_path, eager_reading, restore_phase):
     """Certificate c, FORCED operation/binding; actual paired suffix and costs."""
     import json
@@ -502,6 +503,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
 
 
 @pytest.mark.phase('pending_premise_learning')
+@pytest.mark.requires_mental_age("what is cat ?")
 @pytest.mark.parametrize('reverse', [False, True])
 def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_reading, restore_phase):
     """Item 0 learning evidence: live closure with the strict arrival assertions."""

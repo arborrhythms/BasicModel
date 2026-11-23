@@ -319,7 +319,8 @@ class Looks:
             if target is not None:
                 replay = torch.where(target >= 0, target, -1 if replay is None else replay)
             from Attention import occurrence_probabilities, select_occurrence
-            probabilities = occurrence_probabilities(words)
+            logits = read(units, words, bank.where[:, :W])
+            probabilities = occurrence_probabilities(logits)
             index = select_occurrence(probabilities, sample=model.training, replay=replay, masked=masked)
             others = (probabilities.detach().gt(0).sum(-1) - 1).clamp_min(0)
             probability = probabilities.gather(1, index.clamp_min(0)[:, None])[:, 0]

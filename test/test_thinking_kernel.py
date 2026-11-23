@@ -8,6 +8,7 @@ from fineweb_artifacts import fineweb_checkpoint, fineweb_trained_model
 
 
 @pytest.mark.phase("fineweb")
+@pytest.mark.requires_mental_age("what is cat ?")
 class TestDepth3RelativeEndState(unittest.TestCase):
     """Learning campaign over a mature checkpoint, never an untrained grammar.
 
