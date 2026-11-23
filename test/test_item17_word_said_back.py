@@ -32,7 +32,7 @@ def test_space_is_a_native_percept(tmp_path, monkeypatch, eager_reading):
         model.End()
 
 
-def command_trial(model, pairs, rounds):
+def command_trial(model, pairs, rounds, *, probes=None):
     """Teach paired texts and evaluate with one common, target-free inference question."""
     data = model.inputSpace.data
     data.has_supervised_outputs = True
@@ -58,7 +58,7 @@ def command_trial(model, pairs, rounds):
         if epoch in (0, rounds):
             answers = []
             data.text_answers['train'] = []
-            for text, _ in pairs:
+            for text, _ in (pairs if probes is None else probes):
                 batch = present(text, question, False)
                 answer = answer_text(batch.outputPred)
                 derivation = model._last_answer_construction.derivation
