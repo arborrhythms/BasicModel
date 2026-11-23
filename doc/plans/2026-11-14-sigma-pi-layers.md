@@ -10160,6 +10160,32 @@ Against the build at 9369662d41 (Claude; the first is read from the code, the re
 - *The looks: differ.* As built the looks run in the reading, on the path a grammar opens, before any thought; in the review they belong to thought, which is optional and internal.
 - *The tree.* The review names no tree: both ways out read the field. Claude's reading, not confirmed by Alec: the question about two trees falls away, and what remains is whether the field the thought leaves is the one both ways out read.
 
+*The check finished (Claude, 2026-11-23, at 8cd569afbb's source).* The order was traced in the code by a read-only agent; the first point below Claude read again in `WholePaths.py`; the others are the agent's, with its lines, and are not read again.
+
+| Alec's step | As built | Same or different |
+| --- | --- | --- |
+| The percepts run; basic percepts form | Each word is perceived (`Models.py`, `perceive`), and `open_sentence` builds the open field (`FamiliarTier.py`, `cs_forward_content` then `open_field`) | Same |
+| The field is propagated over all orders | Not established by the trace | Open |
+| A thought, with looks, changes the basic field | The looks are taken in the reading, each followed by a compose step (`SentenceLooks.run`, then `word_step`), before any thought. No thought operation takes a look or reads the input again. Two change the published field: `intuit` ("Deposit the intuited field in the open basic field", `IntuitionField.read`) and `infer` in its search form (`AccessibleMind.write_knowing`) | Different: the looks belong to the reading, not to the thought |
+| That field does the reconstruction | The reconstruction is computed first (`WholePaths.py`: `_sentence_path_cost`, then `close`, then `output`; its comment: "Reconstruction has its own operated field. Questions and the answer reader start from what this sentence understood."). It reads the STM tree's rows and the reading's record. No thought's result reaches it | Different |
+| That field does the output | The answer is computed after the thought: from the thought's result where a thought answered, else from the words witnessed in the open field (the echo) | Different source from the reconstruction's |
+
+In a model with no grammar no look is taken and the reconstruction is `BasicModel.reverse` of the open field, from order zero down.
+
+*The two gradients, measured* (a scratch probe, read only; the echo's model with the answer supplied, three rounds at the model's rate, one start a cell; the two sides differentiated by the module's own `sides`, `metric` and `project`, over a whole tensor at a time, which is coarser than the build where it projects by row). Echoed after the rounds: 19 of 19 words with marks, 6 of 6 two-word sentences.
+
+| Parameter | Cell | Steps both sides reach | Steps they oppose | Mean part of the answer side removed | Mean size, R | Mean size, the answer's cost alone |
+| --- | --- | --- | --- | --- | --- | --- |
+| `conceptualSpaces.0.order_zero.value` | words | 50 of 57 | 21 | 0.25 | 0.35 | 0.065 |
+| the same | two words | 17 of 18 | 3 | 0.08 | 0.27 | 0.029 |
+| `perceptualSpace._owned_bases.what.W` | words | 57 of 57 | 8 | 0.01 | 1.23 | 0.0035 |
+| the same | two words | 18 of 18 | 0 | 0.00 | 0.48 | 0.0028 |
+
+- *The projection is not what holds the answer back.* It removes a quarter of the answer side or less. The answer's own gradient is small beside the reconstruction's (a fifth to a ninth on the order-zero values, a hundredth or less on the percept codebook) and reaches no look and no rule (§23.6.31). So letting the two fight would change little here, and no balance is proposed.
+- *Not read:* the model's own record of what it removed by row (`GradientProjection.receipt`); the run that would have printed it was stopped for a restart.
+
+*Alec, the same day, to be explored next:* "Also, we had previously proposed that the reconstruction could just be the inverse of construction, to avoid a conflict. Since reconstruction and output share the same mechanism (inversion), if it is taught by either, then there is also a conflict in moving the combined forwards and reverse parameters. Please explore that." What is measured so far that bears on it: the order-zero values and the percept codebook serve the way up and both ways back, and on the order-zero values the two sides oppose in 21 steps of 50 (words) and 3 of 17 (two words). Not measured: for one cost, whether the part of its gradient that arrives through a parameter's use on the way up opposes the part that arrives through its use on the way back.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
