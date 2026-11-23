@@ -14572,6 +14572,7 @@ What the seventeenth pass found, and why this pass is next: from the idea alone 
 1. *A rule is available once it is taught* (§19.135, 6). Each rule of the grammar has an availability. A rule that is not available is not on the menu of the compose chooser (`Language.choose_operation`) and not on the walk's menu (`Generative.inverse_menu`), for reading and for output alike. The availabilities are the model's own and are saved and loaded with it. They are raised by the curriculum, one rule at a time, and never lowered. Claude's first choice of form, provisional: one value for each rule held on the language space, and a key in `data/model.xml` and `data/model.xsd` that names the rules available at the start, whose default is every rule, so that every model and test that does not teach the grammar is unchanged. The lesson's test model starts with none. Say what was built.
    - With no rule available a model with a grammar composes nothing and, by §19.135 (3), puts nothing back: measure it once (the reconstruction's error is then the whole input) and say so.
 2. *Measure first, tests only: which rule can be taught to be undone from the idea alone.* On the 19 words alone (each with its mark), three starts drawn afresh and printed, with one rule available and no other: each of `surface`, `change`, `verb`, `modifier` in turn (the rules with parameters), and `part`, `whole` and `implies` untaught (no parameters; their result at round 0 is their result). Teach the words alone by the model's own training step (the reconstruction's error and `reconstruction.walk_policy`, nothing else added), and after each round measure, input to output: of 19, the words said back with their marks; and for the rule, the cosine of each operand given back to the operand as read. Run each until every word is said back in two rounds running, or for 30 rounds, and give the curve. The 30 is the measure's patience and no bar of a gate.
+   - For each rule tried, say whether it is on the walk's menu at the root of a word and its mark, and if it is not, the test of the menu that refuses it (`Generative.inverse_menu`'s admissibility): a step off the menu takes no gradient (seventeenth pass, item 3), so a rule that is never legal there cannot be taught by the reconstruction.
    - If no rule reaches it, say for the nearest rule what is missing, in the rule's own terms (what its inverse of a parent alone computes, which of its two operands it gives, where the other is taken from), and stop before item 3: that is then a question of the rule's form, for Alec.
 3. *Build: the first stage of the curriculum.* The words alone are taught with the first rule available. Claude's first choice of the first rule, provisional: `surface` (a word and its mark are a word and a marker; its inverse has parameters and a learned marker), replaced by whichever rule item 2 shows learns if `surface` does not. The stage is left when its measure passes (every word alone said back, input to output, from the idea alone), not after a number of presentations (§19.130).
 4. *The rows, input to output, on the model as it runs,* three starts, by the text the reconstruction puts back: the row at 1.00 after the first stage; then, with still only the first rule available, the row at 1.75 and the lesson's sentences, measured and not repaired (what a second rule would have to join is reported: which pairs the reading left uncomposed).
@@ -14579,6 +14580,7 @@ What the seventeenth pass found, and why this pass is next: from the idea alone 
    - `test_explicit_dimensions.py::TestXorGrammarReconstruction` errors in its fixture since the reconstruction runs the output walk inside the sentence's path (`WalkTrials.keep`, a path state whose `_concept_ids` is None). Find the state and repair the defect where it is made; the test is not changed.
    - `test_native_attention_field.py::test_reversed_candidate_reads_keep_native_field_order_without_teacher`: say whether it fails on the base; if it is this branch's, repair it.
    - `test_reading_curriculum.py`'s two tests of a whole reconstruction stay as they are; say how many of their readings are put back whole after item 3.
+   - "LTM1 capacity exhausted" stopped three of the seventeenth pass's runs during the nomination of the lesson's words: say whether it comes on the base (efb5be3c7b), and if it is this branch's, where the rows are spent.
 6. *The gradient that is not a number* (the `divide` rule's forward on a divisor near zero, seventeenth pass, item 7) is not guarded. With rules available only as taught it cannot be drawn before `divide` is taught; say whether it was seen in this pass.
 7. *Not in this pass:* the span of a composed value (§19.135, 5), which needs the band widened and a question answered first; a second rule; reading in order.
 8. *Standing terms,* as the sixteenth pass's item 7. No rule's inverse is given a witness or a place from the reading. No rule is special-cased in the source by its name: the first rule is named by the curriculum's stage and by the key, and nowhere else. The two gates and `test/test_compiled_lesson_step.py` run once at the end; do not end the pass while a run of yours is still going.
@@ -26042,4 +26044,110 @@ Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-a
 - *Item 8's assert has a case to settle.* When the bytes put out are the input's bytes but the forms put back are other forms than those read (two short forms for one long one), a content made of the forms put back differs, and Alec's assert (the error's inverse "identical to the input/reconstruction match") fails. Claude's reading: the content on both sides is read from the bytes by the percept store (every known form present in the bytes at a place), as in the toy; it is then a function of the bytes and the assert holds both ways. *For Alec.*
 - *One assertion was weakened, and Claude does not accept it as a port.* `test_reading_curriculum.py` asserted that the native lesson's reconstruction is whole; it now asserts a shape. What it guarded is lost with the shorter loop: a lesson's sentence whose grammar took a rule with no inverse is now put back with bytes missing. That is a loss of this pass, to be measured and restored (by the answers to the points above), and the assertion goes back with it.
 - *One gradient that was not a number* was seen once in eight runs and is not explained. It is to be run down before this branch is landed.
-- *Checked by Claude:* the source diff outside the tests was read; the rows' test reads the reconstruction's text and writes nothing into the model; the two `torch.manual_seed(start)` are starts drawn afresh and printed, with nothing asserted of a start; no skip or xfail is added; `data/` and the two gates' files are unchanged. The full list was not run (`main` is not moved).
+- *Checked by Claude (sixteenth pass):* the source diff outside the tests was read; the rows' test reads the reconstruction's text and writes nothing into the model; the two `torch.manual_seed(start)` are starts drawn afresh and printed, with nothing asserted of a start; no skip or xfail is added; `data/` and the two gates' files are unchanged. The full list was not run (`main` is not moved).
+
+### 23.6.23 Round 6d, seventeenth pass: the reconstruction from the idea alone is the walk made to take the recorded steps; no word is said back; the pyramid's content is read from the bytes; the gradient that was not a number is the `divide` rule's (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`, from efb5be3c7b. Nothing is pushed; `main` is not moved. Commits: 09f6391f60 (item 1), 91e674cdf0 (item 2, tests only), 9c32c40305 (items 3 and 4), 555fc588de (item 5's fallback), 2d87be9f70 (item 8, in part), f396314f9e (item 9's count). The return is `scratch-1.7/r6d_return_17.md`; it is given here shortened.
+
+**No word alone is said back from input to output from the idea alone, in any start or round measured.** The row at 1.00 is 0 of 19 in all five (start, round) pairs that ran; the lesson's sentences 0 of 4; the two-word sentences 0 of 6. The best case was the rule `part`: "This." came back as "This" (19 of 19 words, 0 of 19 marks). After teaching, words read with no rule are not put back at all (§19.135, 3).
+
+#### Item 1: the pyramid's content read from the bytes (§19.135, 4)
+
+Built: `FieldReverse.content` (at each place the `.what` of the byte there and of each form present there, over the form's extent; a form's presence is the product of the amounts of its bytes, so it takes a gradient), `FieldReverse.forms_in` (the percept store's forms of two bytes or more present in the input's bytes), and `SentenceField.charge` giving `Error.pyramid` that content on both sides alike. `Error.pyramid_match` is unchanged. The forms taken are those present in the input's bytes: a form put back that the input does not hold counts only by its bytes.
+
+Alec's assert, `test/test_item17_pyramid_content.py`, on the lesson model's own store:
+- The content of a byte string taken back to bytes is that string ("This is Felix.", "Here is Ciao.", "is This Felix?").
+- The error: the input itself 0 of 235.5; the same bytes cut into other forms 0; one byte changed 3.39; two words exchanged 135.3. Exactly 0 in both cases of nothing.
+
+Measured in the model (error over total, "This is Felix.", 32 places):
+
+| Content | "Here" for "This" in its place | "This" moved 1 | moved 2 | moved 4 |
+| --- | ---: | ---: | ---: | ---: |
+| bytes alone | .1745 | .1512 | .1946 | .2462 |
+| bytes and forms | .3619 | .1237 | .2181 | .3471 |
+
+Speed (CPU, one call of the content on both sides and the pyramid):
+
+| Size | pyramid alone | bytes' content | forms present in the input | every known form |
+| --- | ---: | ---: | ---: | ---: |
+| lesson model, 64 places (6 forms present) | .12 ms | .13 ms | .64 ms | 1.1 ms |
+| production, 8192 places (341 forms of two bytes or more; 94 present) | 2.1 ms | 2.2 ms | 8.7 ms | 18.6 ms |
+
+In a training step of the lesson model the charge took 4.2 ms with the forms against 2.1 ms with the bytes' content, in a step of about 1 to 1.5 s.
+
+#### Item 2: what the idea alone gives back, before the build (tests only)
+
+`test/test_item17_free_undo_measure.py`: the recorded forest undone from its roots, each step by the walk's own inverse of its parent alone (`Generative.inverse_menu`, taken at the recorded rule's action); no frame of the journal, no constituent of the reading, no `.where` or wires of the open field. Three starts, taught 0 and 3 rounds.
+
+**No binary rule gives back an operand from its parent alone at cosine .99 or more, in any start, round or rule.**
+
+| Rule | Steps | Legal on the walk's menu | Operand 0 back (≥ .99) | Operand 1 back | Mean cosine 0 / 1 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `implies` | 65 | 65 | 0 | 0 | .76 / .78 |
+| `whole` | 43 | 0 | 0 | 0 | .68 / 0 |
+| `verb` | 34 | 0 | 0 | 0 | 0 / 0 |
+| `preposition` | 9 | 0 | 0 | 0 | 0 / .29 |
+| `part` | 4 | 0 | 0 | 0 | 0 / .36 |
+| `add` | 34 | 0 | 0 | 0 | 0 / 0 |
+| `ask` (unary) | 31 | 20 | 0 | | .63 |
+| `non` (unary) | 376 | 0 | 0 | | .23 |
+| `bind` (passed through) | 135 | | | | |
+
+With `implies`, "This." comes back as "This This": the inverse splits the root into two halves that both read as the word (cosines .97 and .88). With `whole`, the mark comes back at cosine 1.0 and the word is zero.
+
+The root's place: its band (`percept_band`, 8 wires) holds four `.where` wires, the grid's code of one place, stamped on publication, and four `.when` wires. It is nearly the same for every word alone and for "This is Felix.". The root carries one place, not its span.
+
+#### Items 3 and 4: the build
+
+- `SentenceField.reconstruction` in a model with a grammar is the output walk (`Models.generate` through `SentenceField.sentence_generated`) from the idea, with `kept_actions` the recorded steps (`SentenceField.taken_steps`) and a new option of the walk, `kept_taken`: each recorded step is taken whether or not it is legal on the menu at its parent. A step off the menu keeps the children the menu's inverse gave; it has no gradient and is counted. No second walk was built. `SentenceField.undone`, `said`, `bare` and the sixteenth pass's trace in `DerivationReconstruction.reconstruct` are removed.
+- The record's rules are mapped to the walk's by name. A recorded `bind` passes its parent to its one child. A recorded rule the walk has no rule for (`sign`) is taken as STOP and counted.
+- `reconstruction.walk_policy` is the charge of each step the walk was made to take, where it was legal; a step off the menu has no probability and is counted.
+- *The gradient:* the reconstruction's error reaches a rule's parameters only where a rule with parameters is taken on its menu. Of the walk's rules only `change`, `verb`, `modifier` and `surface` have parameters. Measured once: `surface`'s were reached in the one reading that took it.
+- Item 4: a root that is one concept outside every composition is not put back; a grammar of no rule, or no record, keeps the perceptual inverse of the field. `test/test_item17_one_reconstruction.py`: 3 passed.
+
+#### Item 5: the places (decided by Alec; not built as decided)
+
+A span needs a second place in the band (8 wires to 12, or `.when` gives up its wires), and every writer and reader of the band changes (`percept_band`, `content_operand`, the stamps in `ChunkJournal`, `HeldConcepts`, `Comprehension`, `PrependedSymbols`, `EntryRead`, `MemoryStore._where`, `DerivationReconstruction`). And an inner leaf's place is not given by the decision: a composed first operand gets the span's start, and the end of its own last operand is not said. Built for this pass, and stated: the writer (`OutputOccurrences.generated`) places the walk's leaves by its cursor, one space after a word and none before a form whose first byte is no letter or digit.
+
+#### Item 6: the rows
+
+| Start | Taught | Rules applied | Words alone, of 19 | Lesson sentences, of 4 | Two-word sentences, of 6 | What is put back |
+| --- | ---: | --- | ---: | ---: | ---: | --- |
+| 39713956698122 | 0 | `part`; `part`, `lift` in sentences | 0 | 0 | 0 | "This." → "This"; "This is Felix." → "This" |
+| 39713956698122 | 3 | none on words alone; `subtract`, `multiply`, `modifier`, `sign`, `preposition`, `non`, `bind` in sentences | 0 | 0 | 0 | "" |
+| 56454743098803 | 0 | `ask`, `divide`; `sign`, `bind` | 0 | 0 | 0 | "" |
+| 56454743098803 | 3 | `non`, `subtract` | 0 | 0 | 0 | "" |
+| 18130961829786 | 0 | `ask`, `multiply` | 0 | 0 | 0 | "" |
+| 18130961829786 | 3 | stopped: a gradient that was not a number while teaching (item 7) | | | | |
+| 80356908385858 | 0 | stopped during the nomination: "LTM1 capacity exhausted" | | | | |
+
+#### Item 7: the gradient that was not a number
+
+Not reproduced at the sixteenth pass's start (the source differs). It came again in item 6's rows (start 18130961829786), on the same two parameters. With autograd's anomaly detection it was named: `DivBackward0`, in the forward composition of the `divide` rule (`MeaningCodes.compose`, `a / b` where `b` is not zero but tiny, then `tanh`), reached from the reading's compose and not from the reconstruction. The division overflows, `tanh` of it has a zero derivative, and the backward of the division multiplies that zero by an infinite value. The same line is in the base source. No guard was added.
+
+#### Items 8 and 9
+
+- `Models.reconstruct_grammar_sentence` reports the one reconstruction (`SentenceField.put_back`); `Models.reconstruct_field_sentence` is removed. The whole path's departures of the reconstruction's walk are still in the source and draw nothing.
+- `test_reading_curriculum.py`'s lesson, eight runs: 6 of 16 readings put back whole. The assertion is not restored.
+
+#### Tests run
+
+- The users' run of items 3 and 4 did not end, and was stopped. A rerun that dumps a long test's stack found the worker in `test/test_item17_own_reading.py`, which trains words and sentences over many rounds; on the base source that file was also not done in 40 minutes. It was left out of the final run. No loop without end was found in the new code.
+- Final, once (120 files, both gates): **1093 passed, 8 failed, 1 error, 100 skipped, 21 min 29 s.** Both gates passed.
+  - Fail on the base too: `test_testpoint` (blind spot), `test_operators_round1` (attend), three of `test_thought_answer_adapters`, both simulations of `test_item17_demuxed_way_back`.
+  - This pass's: `test_reading_curriculum.py::test_curriculum_gate_counts_one_word_only_for_active_rows` ("blue green" is put back as "blue"; left failing, not weakened), and the error of `test_explicit_dimensions.py::TestXorGrammarReconstruction` (in `WalkTrials.keep`, one path's saved state has `_concept_ids` None; the cause was not found).
+- `test/test_compiled_lesson_step.py`, once: 1 passed, 51 min 45 s (run beside the final run).
+- "LTM1 capacity exhausted" stopped three runs during the nomination of the lesson's words. It was not seen in the sixteenth pass; whether this pass causes it is not known.
+
+Logs are in `/private/tmp/claude-501/-Users-arogers-github-WikiOracle/240ab80f-ac8a-4e06-aac3-f673b50a790a/scratchpad/r6d17/`.
+
+#### Review (Claude, 2026-11-22)
+
+- *The reconstruction is now what Alec said it is,* and it says nothing back. That is the honest baseline: the sixteenth pass's words said back all leaned on what was kept of the way up. The age stays 0.75.
+- *Why nothing comes back is in three facts of item 2 and item 3.* An untaught grammar joins a word and its mark by whichever rule it draws. Most rules, taken at a parent the walk reached by its own inverse, are not on the walk's menu there, and a step off the menu takes no gradient, so the reconstruction's error cannot teach it. And of the walk's rules only four have parameters. So teaching as it stands cannot move these numbers; the grammar's rules made available one at a time, each taught until its undo gives back its operands (§19.135, 6; the eighteenth pass), is what can. The eighteenth pass's measure must say, for each rule tried alone, whether it is on the walk's menu at the root and why not, since a rule that is never legal there cannot be taught by the reconstruction.
+- *The percept content does what Alec asked it for:* nothing exactly when the bytes are the input's, and a wrong word in its place now costs more than the right word moved by 1, 2 or 4 places (.36 against .12, .22 and .35), where with the bytes alone the moved word cost more. Four times the bytes' cost at production's size (8.7 ms a call) is accepted by Claude as within the pass's terms; *Alec may say otherwise.*
+- *The gradient that was not a number is explained,* and is the `divide` rule's own, in the base source. It is left unguarded; with rules available only as taught it is not drawn until `divide` is taught, and it is then that rule's to settle.
+- *The span is decided and not built.* It is a change to the band and to nine readers and writers of it, and it has a question in it: the place of an inner leaf. *For Alec,* with Claude's reading: the leaves are placed in order from the root's start, each by its own form's length, and the span's end fixes only the last; what lies between is the writer's (one space after a word). If that is right, the only thing the root must carry beyond what it carries now is its end. Until then the writer's cursor stands, and its test of a mark by its first byte is a rule about a surface written into the source: it goes when the span is built.
+- *Two failures are this pass's and are not accepted as left:* the fixture error of `test_explicit_dimensions.py` and the whole reconstruction that `test_reading_curriculum.py` asserts. The first is a defect to find; the second passes again when a taught rule gives its operands back. Both are in the eighteenth pass's text. "LTM1 capacity exhausted" is to be traced there too.
+- *Checked by Claude:* the changed files were listed and the return read against them; the three `torch.manual_seed(start)` added are starts drawn afresh and printed; no skip or xfail is added; `data/` and the two gates' files are unchanged. The full list was not run (`main` is not moved).
