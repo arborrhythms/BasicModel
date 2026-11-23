@@ -212,7 +212,6 @@ def said_words(model, program, stream, met):
     if tree is None:
         return None
     store = tree.ideas
-    parts = store.parts
     try:
         head = tree.trace.head
     except ValueError:
@@ -229,16 +228,7 @@ def said_words(model, program, stream, met):
     wires = registry.code[lo:hi]
     start = store.when_start
     words = []
-    for kind, name in parts.leaves(head):
-        if kind != OCCURRENCE:
-            raise ValueError('a reading leaf must name an occurrence')
-        row = store.index_of_row(name)
-        reference = store.referent_of(row)
-        if reference is None or reference[0] != 'sym':
-            met['words_unnamed'] += 1
-            continue
-        concept = int(reference[1])
-        address = owner._concept_row_of(concept)
+    for row, concept, address in owner.mtm.read_occurrences(store, head):
         if address is None:
             met['words_unnamed'] += 1
             continue

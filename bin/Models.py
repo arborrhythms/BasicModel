@@ -6008,7 +6008,7 @@ class BasicModel(BaseModel):
     @_trial_activity(commit=True)
     @_read_stream('row')
     def run_selected_thought(self, meaning, *, row=0, work_budget=32,
-                             registry=None, work=None):
+                             registry=None, work=None, operands=()):
         """One completed field, one grammar chooser and shared bounded work."""
         from ThoughtStream import commit
         self._last_thought_comparison = None
@@ -6026,7 +6026,7 @@ class BasicModel(BaseModel):
                 work = fork['work']
         try:
             result = self._run_selected_thought_once(meaning, row=row,
-                work_budget=work_budget, registry=registry, work=work, fork=fork)
+                work_budget=work_budget, registry=registry, work=work, fork=fork, operands=operands)
         except Exception:
             before.restore()
             raise
@@ -6039,7 +6039,7 @@ class BasicModel(BaseModel):
         return result
 
     def _run_selected_thought_once(self, meaning, *, row=0, work_budget=32,
-                                  registry=None, work=None, fork=None):
+                                  registry=None, work=None, fork=None, operands=()):
         """Execute one completed grammatical question as an ordinary episode.
 
         Composition only supplies ``meaning``.  This method is deliberately
@@ -6077,12 +6077,13 @@ class BasicModel(BaseModel):
         registry._thought_row = row
 
         meter = QueryWorkBudget(work_budget) if work is None else work
+        reading_options = {'operands': operands} if operands else {}
         opening_choice = None
         if not has_open_slots(meaning) and (fork is None or fork.get('opening')):
             # A closed field's first decision precedes all episode effects.
             # The ordinary walk can fork here just as at any later decision.
             actions = tuple(stream_candidates(registry, meaning, meaning, meaning, (),
-                stm=self.conceptualSpace.stm)) + (None,)
+                stm=self.conceptualSpace.stm, **reading_options)) + (None,)
             action = self._choose_selected_thought_action(meaning, meaning, actions,
                 row=row, level=0, pressure=0., work=meter)
             walk = getattr(self, '_thought_walk', None)
@@ -6240,7 +6241,7 @@ class BasicModel(BaseModel):
                             if record.episode == episode and record.level == state.level)
             return stream_candidates(registry, state.contexts[-1].initial, state.contexts[-1].meaning,
                 current, history, descriptions=((state.contexts[-1].initial, reference(initiating)),),
-                stm=self.conceptualSpace.stm)
+                stm=self.conceptualSpace.stm, **reading_options)
 
         unselected = object()
 
@@ -8802,6 +8803,7 @@ class BasicModel(BaseModel):
         registry = getattr(self, "grammatical_thoughts", None)
         from Output import no_thought_rules
         without_thought = no_thought_rules(self)
+        explicit_output = 'output' in getattr(registry, 'executable_operation_ids', ())
         if without_thought:
             # A closing may offer a row and return without selecting any action.
             selected_thoughts = tuple((row, result) for row, result in selected_thoughts
@@ -8810,15 +8812,15 @@ class BasicModel(BaseModel):
         # All checked result kinds have an explicit target-free adapter.
         # Sets preserve every member as separate role triples; no averaging,
         # first-member shortcut or post-execution codebook read is allowed.
-        selected_answer_rows = list((answer if choose_thoughts else torch.zeros_like(answer)).unbind(0))
+        selected_answer_rows = list((answer if choose_thoughts and not explicit_output else torch.zeros_like(answer)).unbind(0))
         answer_meanings = [() for _ in range(B)]
-        selected_answer_applied = not choose_thoughts
+        selected_answer_applied = explicit_output or not choose_thoughts
         # Each completed field supplies its full semantic operands as the
         # answer seed; its numerical root alone loses those operands.
         # Recover only its actual selected completed field; this performs no
         # extra parse, learned classification, thought execution or LTM write.
         language = getattr(self, "languageSpace", None)
-        if language is not None and registry is not None and (choose_thoughts or without_thought):
+        if language is not None and registry is not None and (choose_thoughts or without_thought) and not explicit_output:
             for row, entry in enumerate(fields):
                 if row in selected_rows or entry is None:
                     continue
@@ -8836,6 +8838,20 @@ class BasicModel(BaseModel):
                     if items else torch.zeros_like(selected_answer_rows[row]))
                 selected_answer_applied = True
         for row, selected in selected_thoughts:
+            if explicit_output:
+                from Output import emitted_meanings
+                items = emitted_meanings(selected)
+                answer_meanings[row] = items
+                if items:
+                    selected_answer_rows[row] = torch.cat(tuple(item.roles.to(answer) for item in items))
+                    row_sources[row] = 'output'
+                else:
+                    resolved_all = False
+                    checked = getattr(selected, 'result', None)
+                    if isinstance(checked, ThoughtResult):
+                        row_sources[row] = ('thought' if checked.result_kind == 'truth'
+                                            else 'thought-' + checked.result_kind)
+                continue
             checked = getattr(selected, "result", None)
             if not isinstance(checked, ThoughtResult):
                 answer_meanings[row] = ()
@@ -17545,9 +17561,10 @@ class BasicModel(BaseModel):
         percepts = (part_ids, part_spans, primitive, raw, positions)
         self._perceptual_reading = None
         self._reading_heads = None
+        native = getattr(self.perceptualSpace, '_forward_input', None)
         if (self.numeric_percepts is None and not self.grammar_phases.vector
                 and self.request_read is not None and pass_idx == len(self.body_stages) - 1
-                and self.perceptualSpace._forward_input.get('word_intervals') is not None):
+                and native is not None and native.get('word_intervals') is not None):
             from ReadingMemory import brackets
             reading = brackets(self, percepts)
             if reading is None:
@@ -20587,7 +20604,7 @@ class BasicModel(BaseModel):
                 ids = [None if cid <= 0 else cid for cid in concepts.tolist()]
                 ideas.to(device=partial.leaves.device, dtype=partial.leaves.dtype)
                 ideas.prepare(store, partial.tree, {})
-                partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when)
+                partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when, self.languageSpace)
                 head, = commit([ideas], [partial.tree.trace.head], store)
                 row_addresses[b] = head[1]
                 self._concept_owner().mtm.close(store, stream=b)
@@ -21393,7 +21410,7 @@ class BasicModel(BaseModel):
                             candidate.registry.add('output.interpret_score_function',policy,
                                 category='output',objective=policy_objective(self,'compose','chooser'),side='A')
                         path_credit(self, complete_paths[0], candidate, present)
-                    single_costs, weights = path_objectives(complete_paths, parts, present, draws)
+                    single_costs, weights = path_objectives(complete_paths, parts, present, draws, selected=selected)
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
                         p.registry.total(objective='output') is not None for p in complete_paths))

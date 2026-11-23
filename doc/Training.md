@@ -1187,10 +1187,13 @@ independently normalized primary costs recorded before `backward()`:
 The desired answer enters loss preparation only after the model response is
 fixed.
 
-**Answers, silence and referents.** Output is never a direct consequence of
-understanding the question; it is the answer that thinking produced. The
-answer is resolved only from a concluded, accepted thought; with no conclusion
-the output role is empty and the model is silent. `Data.what` distinguishes
+**Answers, silence and referents.** In the complete grammar, each executed
+`output(meaning)` contributes its operand to the answer in execution order.
+The writer realizes the resulting sequence. A closing with no emission
+returns silence. An operand may be a witnessed symbol held in STM or a
+conclusion the thought reached. A thought grammar without the production
+operator retains the accepted-conclusion rule. The perception-only echo
+curriculum reads the sentence's own concluded meaning. `Data.what` distinguishes
 three cases. A split that supplies no outputs, or an inference presentation,
 has no desired answer and is masked out, so text that supervises no output
 trains through reconstruction only. A row with a supplied answer is scored

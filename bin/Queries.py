@@ -1765,7 +1765,7 @@ class ThoughtExecutorDescriptor:
                 if open_roles and self.open_operands else self.argument_kinds)
 
 
-from ThoughtFaces import (part as _conceptual_part, is_part as _symbolic_part,
+from ThoughtFaces import (output as _output, part as _conceptual_part, is_part as _symbolic_part,
     equal as _conceptual_equal, is_equal as _symbolic_equal, implies as _implies,
     infer as _infer, intuit as _intuit, is_true as _is_true, exist as _exist,
     query as _query, ask as _ask, negate as _negate, gain as _gain, bind as _bind,
@@ -1773,6 +1773,9 @@ from ThoughtFaces import (part as _conceptual_part, is_part as _symbolic_part,
 
 
 _thought_executors = (
+    ThoughtExecutorDescriptor('output', 'production', ('meaning',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.BUDGET), (Mind.SERIAL,), 'unverified', _output,
+        effect_kind='production', content_kind='concept'),
     ThoughtExecutorDescriptor('bind', 'situated-reference', ('meaning',), Mind.SERIAL,
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.EXPECTATION, Mind.LTM, Mind.BUDGET),
         (Mind.SERIAL,), 'reference', _bind, evidence_pair=True,
@@ -2645,7 +2648,7 @@ class GrammaticalThoughtRegistry:
             key = (operation.semantic_id, tuple(open_roles))
             if key in seen:
                 return
-            if operation.semantic_id in ('bind', 'infer'):
+            if operation.semantic_id in ('bind', 'infer', 'output'):
                 # The serial owner offers one full-meaning request per site.
                 return
             if descriptor.continues:
@@ -2692,7 +2695,7 @@ class GrammaticalThoughtRegistry:
             for semantic_id in self.executable_operation_ids:
                 operation = self._operations_by_id[semantic_id]
                 descriptor = self.descriptors[semantic_id]
-                if descriptor.continues or semantic_id in ('bind', 'infer'):
+                if descriptor.continues or semantic_id in ('bind', 'infer', 'output'):
                     continue
                 bound = {role: self._candidate_operand((source,), role, kind)
                          for role, kind in zip(operation.operand_roles, descriptor.kinds_for(()))}

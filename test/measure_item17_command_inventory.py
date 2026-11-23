@@ -21,3 +21,21 @@ def test_inventory(tmp_path, monkeypatch, eager_reading, factory, words):
         assert len(answers) == 2 * len(words)
     finally:
         model.End()
+
+
+
+def test_transfer_to_a_word_heard_but_never_requested(tmp_path, monkeypatch, eager_reading):
+    model = model_for(tmp_path, monkeypatch)
+    words = ('Felix', 'Ciao', 'This', 'That', 'Here', 'There')
+    try:
+        nominate(model, ('say', *words))
+        pairs = [(text, expected) for word in words[:-1]
+                 for text, expected in [('say ' + word, word), (word, '')]]
+        probes = [*pairs, ('say ' + words[-1], words[-1]), (words[-1], '')]
+        returned = command_trial(model, pairs, 6, probes=probes)
+        print('taught pairs', sum(answer == target for answer, (_, target)
+              in zip(returned[:-2], pairs, strict=True)), '/', len(pairs),
+              'untaught pair', returned[-2:], flush=True)
+        assert returned == [target for _, target in probes]
+    finally:
+        model.End()

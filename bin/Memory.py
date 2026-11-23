@@ -1074,6 +1074,22 @@ class MediumTermMemory(MemoryStore):
         self.transient_ids = torch.arange(int(n_vectors), int(n_vectors)+self.capacity, dtype=torch.long, device='cpu')
         self.transient_used = torch.zeros(self.capacity, dtype=torch.bool, device='cpu')
 
+    def read_occurrences(self, store, head):
+        """Read live occurrences under one head and resolve their concept in the hierarchy."""
+        owner = self._owner()
+        for kind, name in store.parts.leaves(head):
+            if kind == SYMBOL:
+                continue
+            if kind != OCCURRENCE:
+                raise ValueError('a memory leaf must name a symbol or an occurrence')
+            row = store.index_of_row(name)
+            if row is None:
+                raise ValueError('memory head names an expired occurrence')
+            ref = store.referent_of(row)
+            concept = ref[1] if ref is not None and ref[0] == 'sym' else None
+            address = None if concept is None else owner._concept_row_of(concept)
+            yield row, concept, address
+
     def hold_pending(self,reference,meaning):
         marks=dict(meaning.bindings)
         if not (marks.get('_open_references') or marks.get('_forward_references')

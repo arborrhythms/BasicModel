@@ -5,7 +5,7 @@ import weakref
 import torch
 from torch import nn
 
-from Memory import STM0, OCCURRENCE, RELATION
+from Memory import STM0, OCCURRENCE, SYMBOL, RELATION
 from Meaning import ConceptualMeaning
 from ReadingIndex import ReadingIndex
 
@@ -111,7 +111,7 @@ class Tree:
     def point(self, address):
         return self.trace.point(address - self.trace.first)
 
-    def write_edges(self, store, concepts, where, when):
+    def write_edges(self, store, concepts, where, when, language):
         """Write the located leaves and reduce ordered operands to a single typed head."""
         trace = self.trace
         index = trace.index
@@ -129,9 +129,13 @@ class Tree:
                               role_refs=(None if concept is None else ('sym', int(concept)), None, None))
             row = store.append_meaning(meaning)
             heads[at] = OCCURRENCE, store.row_name(row)
-        for at, (kind, _, _) in enumerate(index.steps):
+        from PartsOfSpeech import operation_name
+        for at, (kind, local, _) in enumerate(index.steps):
             if kind in (1, 2):
-                heads[at] = store.parts.sequence([heads[child] for child in index.operands[at]])
+                rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+                operator = language.parts_of_speech.seats[operation_name(rules[local])].concept
+                operands = store.parts.sequence([heads[child] for child in index.operands[at]])
+                heads[at] = RELATION, store.parts.add((SYMBOL, operator), operands, truth_plus=1.)
         trace.head = store.parts.sequence([heads[root] for root in index.roots])
         return unnamed
 

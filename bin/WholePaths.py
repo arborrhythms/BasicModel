@@ -293,7 +293,8 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
                 reducer._expectation_prime = None
                 reducer._symbol_expectation_read = None
             with model._committed_thought_scope(sid, ready):
-                thoughts = close(model, preview, sentence=sid, ready=ready, images=images)
+                thoughts = close(model, preview, sentence=sid, ready=ready, images=images,
+                                readings=observation['entries'])
             if base is not None:
                 thoughts = tuple(sorted((*thoughts, *(item for item in base.observation['thoughts']
                     if not bool(rethink_rows[item[0]]))), key=lambda item: item[0]))
@@ -364,26 +365,37 @@ def credit(model, exploit, path, active):
             category='output', objective=policy_objective(model, 'compose', 'chooser') if category == 'reconstruction' else category, side='A')
 
 
-def objectives(paths, parts, active, draws):
-    """Two reconstruction/expectation exposures and one answer exposure total."""
-    from SentenceCredit import reader_weights
+def objectives(paths, parts, active, draws, *, selected=None):
+    """Train the sentence inverse on its admitted reading in each stream."""
+    from SentenceCredit import comparison, reader_weights
     from ObjectiveOwnership import registry_costs
     from SentenceTraining import combine
-    weights = reader_weights(parts, active, draws)
+    if selected is None:
+        selected = comparison(parts, active)['winner']
+    weights = reader_weights(parts, active, draws, winner=selected)
     result = {}
     scale = 2. / len(paths)
     for index, path in enumerate(paths):
         registry = Error(row_mask=path.registry.row_mask)
         registry._terms = dict(path.registry._terms)
+        final = Error(row_mask=path.registry.row_mask)
+        final._disabled = set(path.registry._disabled)
+        registry._disabled = set(path.registry._disabled)
+        kept = active & (selected == index)
         for name, term in tuple(registry._terms.items()):
-            if name.startswith('output.walk_residual.'):
+            if term['category'] == 'reconstruction' and term['side'] == 'R':
+                del registry._terms[name]
+                if bool(kept.any()):
+                    final._terms[name] = dict(term, multiplier=term.get('multiplier', 1.) * kept)
+            elif name.startswith('output.walk_residual.'):
                 if not bool(weights[:, index].any()):
                     del registry._terms[name]
                 else:
                     registry._terms[name] = dict(term,
                         multiplier=term.get('multiplier', 1.) * weights[:, index])
+        combine(result, registry_costs(final))
         costs = registry_costs(registry, reader_rows=weights[:, index])
-        # Every ordinary path cost has the same exposure, including lessons,
+        # Every other ordinary path cost has the same exposure, including lessons,
         # attention and regularizers. Answer costs already carry reader rows;
         # answer-side departure credits occur once at their selected walk.
         combine(result, {name: value * (1. if name in ('output', 'chooser', 'penalty.output')
@@ -408,7 +420,7 @@ def think_kept(model, paths, selected, sid, active):
         try:
             with model._committed_thought_scope(sid, ready):
                 results = close(model, preview, sentence=sid, ready=ready,
-                    images=model._sentence_closing_images(path.observation, active))
+                    images=model._sentence_closing_images(path.observation, active), readings=path.observation['entries'])
             path.observation.update(thoughts=results, thought_fields=tuple(preview),
                                     thought_absences=path.thinking.absences, thought_inputs=inputs)
         finally:

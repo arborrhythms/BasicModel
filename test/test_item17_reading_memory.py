@@ -80,3 +80,65 @@ def test_looks_extend_one_head_and_commit_it_once(tmp_path, monkeypatch, eager_r
             print('durable head', saved, 'look order', names)
     finally:
         model.End()
+
+
+def test_the_stm_head_names_the_operators_and_their_operands(tmp_path, monkeypatch, eager_reading):
+    from Memory import OCCURRENCE, RELATION, SYMBOL
+    from PartsOfSpeech import operation_name
+    from SentenceStrata import Tree
+    from test_item17_places import model_for
+    from test_item18_expect import read
+
+    model = model_for(tmp_path, monkeypatch, rules='surface')
+    original = Tree.write_edges
+    applications = []
+
+    def observed(tree, store, concepts, where, when, language):
+        result = original(tree, store, concepts, where, when, language)
+        head = tree.trace.head
+
+        def read_pair(ref):
+            kind, name = ref
+            if kind == OCCURRENCE:
+                return store.referent_of(store.index_of_row(name))
+            if kind == SYMBOL:
+                return language.parts_of_speech.seats[name].name
+            assert kind == RELATION
+            return tuple(read_pair(child) for child in store.parts.references(name))
+
+        # Compare a read from the single head with the operations the model
+        # actually took, including their scope and the order of the operands.
+        index = tree.trace.index
+        expected = {}
+        def sequence(values):
+            first, *rest = values
+            return (first, sequence(rest)) if rest else first
+        for at, (kind, local, word) in enumerate(index.steps):
+            if kind == 0:
+                expected[at] = None if concepts[word] is None else ('sym', concepts[word])
+            elif kind in (1, 2):
+                rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+                name = operation_name(rules[local])
+                expected[at] = name, sequence([expected[child] for child in index.operands[at]])
+                applications.append(name)
+        assert read_pair(head) == sequence([expected[root] for root in index.roots])
+        owner = model._concept_owner()
+        held = list(owner.mtm.read_occurrences(store, head))
+        assert len(held) == len(concepts)
+        assert Counter(cid for _, cid, _ in held) == Counter(concepts)
+        for row, cid, address in held:
+            if cid is not None:
+                assert store.referent_of(row) == ('sym', cid)
+                assert owner.concept_id_at_row(address) == cid
+        return result
+
+    try:
+        nominate(model, ('This is Felix.',))
+        monkeypatch.setattr(Tree, 'write_edges', observed)
+        with torch.no_grad():
+            for text in ('Felix.', 'This is Felix.', 'Felix Felix.'):
+                read(model, text)
+                model.End()
+        assert 'surface' in applications
+    finally:
+        model.End()

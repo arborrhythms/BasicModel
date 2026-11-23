@@ -96,6 +96,13 @@ def concluded_meanings(meaning, *, perception_owner=None, row=0):
         for reference, value in values)
 
 
+def emitted_meanings(episode):
+    """Each executed production contributes its operand once, in execution order."""
+    return tuple(record.result.evidence['emission'] for record in getattr(episode, 'records', ())
+                 if record.kind == 'thought' and record.result is not None
+                 and record.result.semantic_id == 'output' and 'emission' in record.result.evidence)
+
+
 def thought_answer_meanings(selected):
     """Adapt owned checked results without a reader or another execution.
 
