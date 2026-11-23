@@ -2835,7 +2835,7 @@ class BaseModel(Mereology, nn.Module):
         if sparse_adaptive:
             # SparseAdam rejects a zero rate. Keep these parameters visible
             # to zero_grad and the finite preflight in a zero-rate SGD group.
-            optimizers.append(SGD(sparse_adaptive, lr=0., momentum=0.) if lr == 0 else SparseAdam(sparse_adaptive, lr=lr))
+            optimizers.append(SGD(sparse_adaptive, lr=lr, momentum=0.) if lr == 0 else SparseAdam(sparse_adaptive, lr=lr))
         # Momentum .9 retains the existing first-moment time constant. The
         # learning rate stays configured; there is no variance normalization.
         dense_reconstruction = [p for p in reconstruction if p.data_ptr() not in row_local_ptrs]
@@ -3525,7 +3525,7 @@ class BaseModel(Mereology, nn.Module):
                     f"entries are nan/inf."
                 )
 
-    def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001, profile=None):
+    def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=None, profile=None):
         """Run multiple independent trials, recreating the model each time.
 
         Each trial calls create_from_config() to rebuild from scratch so
@@ -10560,7 +10560,7 @@ class BasicModel(BaseModel):
         self._record_thinking(result)
         return result
 
-    def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
+    def runTrial(self, numEpochs=1, batchSize=10, lr=None, profile=None):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
 
         Alpha (exploration temperature) anneals from 1.0 (full exploration)
@@ -25361,8 +25361,10 @@ class ModelFactory:
         # profiled path and the normal path) for every model run via
         # train.py. Hard-aborts before substantial training if the
         # brick body still issues host syncs. CUDA-only no-op elsewhere.
-        ModelFactory._brick_preflight(
-            m, batch_size, _t("learningRate", 0.01))
+        # The rate is the model's configured one (data/model.xml gives
+        # the default); no number is written here.
+        rate = float(TheXMLConfig.training("learningRate"))
+        ModelFactory._brick_preflight(m, batch_size, rate)
 
         do_profile = os.environ.get("BASIC_PROFILE", "").lower() in ("1", "true") or _t("profile", False)
         if do_profile:
@@ -25376,7 +25378,7 @@ class ModelFactory:
                 m.run(_t("numTrials", 1),
                             num_epochs,
                             batch_size,
-                            lr=_t("learningRate", 0.01), profile=prof)
+                            lr=rate, profile=prof)
 
             # Print summary table
             TheMessage(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
@@ -25390,7 +25392,7 @@ class ModelFactory:
         m.run(_t("numTrials", 1),
                     num_epochs,
                     batch_size,
-                    lr=_t("learningRate", 0.01))
+                    lr=rate)
 
         _autosave_env = os.environ.get("BASIC_AUTOSAVE")
         _autosave = bool(_t("autosave", False))

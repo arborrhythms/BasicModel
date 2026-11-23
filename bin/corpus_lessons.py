@@ -242,7 +242,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
     model._lexical_admission_sink = record_admission
     if model.inputSpace.data is not data:
         raise RuntimeError('lesson data differs from the native input owner')
-    optimizer = model.getOptimizer(lr=.001)
+    optimizer = model.getOptimizer()
     model._measure_sentence_gradients = bool(gradient_report)
     model._observe_lesson_sides = True
     records, phases = [], []

@@ -3492,7 +3492,7 @@ class SigmaLayer(GrammarLayer):
         # callers; keep the dep local to this smoke-test path to avoid
         # any import-order surprise during module load.
         from Optimizer import Adam
-        optimizer = Adam(layer.getParameters(), lr=0.01)
+        optimizer = Adam(layer.getParameters(), lr=float(TheXMLConfig.training("learningRate")))
         optimizer.zero_grad()
         y = layer(x)
         loss = criterion(y, y)

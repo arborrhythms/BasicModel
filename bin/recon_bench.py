@@ -128,7 +128,7 @@ def _build_model(config_path):
     model, _ = BaseModel.from_config(config_path, data=TheData)
     dev = TheDevice.get()
     model = model.to(dev)
-    lr = float(trn.get("learningRate", 1e-4))
+    lr = float(TheXMLConfig.training("learningRate"))
     batch_size = int(trn.get("batchSize", 10))
     return model, dev, lr, batch_size
 

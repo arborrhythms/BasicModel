@@ -4148,7 +4148,7 @@ class Codebook(Tensor):
             object.__setattr__(self, '_row_remap_observers', live)
         return self.getW()
 
-    def learn(self, x, target_idx, lr=0.01):
+    def learn(self, x, target_idx, lr):
         """Learn.
 
         See class docstring for the operation contract.
@@ -4720,7 +4720,7 @@ class Embedding(Basis):
         return [[text for text, _ in self._token_stream(item)] for item in data]
 
     def create(self, nInput=None, nVectors=None, nDim=None,
-               wv=None, embedding_path=None, source=None, learning_rate=0.001,
+               wv=None, embedding_path=None, source=None, learning_rate=None,
                min_frequency=0.0, neg_samples=64, byte_mode=False):
         """Initialise from WordVectors or load from embedding_path.
 
@@ -4782,6 +4782,8 @@ class Embedding(Basis):
             wv._vectors = nn.Parameter(data, requires_grad=True)
         wv._fixed_capacity = reserve
 
+        if learning_rate is None:
+            learning_rate = float(TheXMLConfig.training("embeddingLearningRate"))
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
         self.wv = wv  # register as submodule for .to(device) and state_dict
         self.min_frequency = float(min_frequency)

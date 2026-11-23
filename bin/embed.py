@@ -1486,7 +1486,7 @@ class PretrainModel:
     nn.Parameter -- no separate nn.Embedding.
     """
 
-    def __init__(self, wv: WordVectors, learning_rate=0.01, neg_samples=64):
+    def __init__(self, wv: WordVectors, learning_rate=None, neg_samples=64):
         """Initialise from an existing WordVectors.
 
         Uses negative sampling instead of a full-softmax linear head,
@@ -1498,6 +1498,8 @@ class PretrainModel:
         self.key_to_index = wv.key_to_index
         self.neg_samples = neg_samples
 
+        if learning_rate is None:
+            learning_rate = float(util.TheXMLConfig.training("wordPretrainLearningRate"))
         self.optimizer = Adam(
             [wv._vectors],
             lr=learning_rate,
@@ -1825,7 +1827,7 @@ class StreamingSBOWTrainer:
     the 2x memory overhead of Adam's momentum buffers.
     """
 
-    def __init__(self, vector_size=100, min_count=5, learning_rate=0.001,
+    def __init__(self, vector_size=100, min_count=5, learning_rate=None,
                  sigma=5.0, normalize=True):
         """Initialize the streaming SBOW trainer state.
 
@@ -1836,7 +1838,8 @@ class StreamingSBOWTrainer:
         """
         self.vector_size = vector_size
         self.min_count = min_count
-        self.learning_rate = learning_rate
+        self.learning_rate = (float(util.TheXMLConfig.training("embeddingLearningRate"))
+                              if learning_rate is None else learning_rate)
         # Inner Gaussian / random-out-group SBOW knobs.
         # ``sigma`` is the position-distance scale of the inner kernel
         # (Mikolov-style local window). Sentences shorter than ``2σ``
@@ -2158,9 +2161,6 @@ def project_codebook(wv: "WordVectors", target_dim: int) -> "WordVectors":
     return WordVectors(scaled.numpy(), list(wv.index_to_key))
 
 
-DEFAULT_LEARNING_RATE = 0.01
-
-
 def _mphf_reserved_keys() -> List[str]:
     """Rows that must exist before corpus words in an MPHF lexicon."""
     from Spaces import PartSpace
@@ -2347,7 +2347,7 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
                 print(f"Using saved learning_rate={learning_rate} "
                       f"from {latent_path} metadata")
         if learning_rate is None:
-            learning_rate = DEFAULT_LEARNING_RATE
+            learning_rate = float(util.TheXMLConfig.training("sbowLearningRate"))
 
     trainer = StreamingSBOWTrainer(
         vector_size=latent_vector_size,
@@ -2570,7 +2570,7 @@ class StreamingChunkSBOWTrainer:
 
     def __init__(self, chunk_layer, *,
                  vector_size: int = 100,
-                 learning_rate: float = 0.001,
+                 learning_rate: float | None = None,
                  max_seq: int = 2048,
                  neg_samples: int = 64):
         """Allocate the BPE-vocab embedding model and freeze the codebook.
@@ -2581,7 +2581,8 @@ class StreamingChunkSBOWTrainer:
         """
         self.chunk_layer = chunk_layer
         self.vector_size = vector_size
-        self.learning_rate = learning_rate
+        self.learning_rate = (float(util.TheXMLConfig.training("embeddingLearningRate"))
+                              if learning_rate is None else learning_rate)
         self.max_seq = max_seq
 
         # Freeze the codebook for the duration of Phase B.
@@ -2684,7 +2685,7 @@ class StreamingChunkSBOWTrainer:
 def embed_bpe(shard_paths, artifact_path, *,
               output_path=None, max_docs=10000,
               vector_size=100, epochs=10, max_seq=2048,
-              learning_rate=0.001):
+              learning_rate=None):
     """Phase B: train SBOW vectors over a frozen BPE codebook.
 
     Loads the codebook from ``artifact_path`` (must be ``kind`` in
@@ -2795,7 +2796,7 @@ def embed_bpe(shard_paths, artifact_path, *,
 def train_bpe(shard_paths, output_path, *,
               max_docs=10000, n_vectors=4096,
               word_learning=2, vector_size=100, epochs=10,
-              batch_size=32, max_seq=2048, learning_rate=0.001):
+              batch_size=32, max_seq=2048, learning_rate=None):
     """Convenience: Phase A then Phase B in one invocation.
 
     Runs ``discover_bpe`` (codebook discovery) followed by ``embed_bpe``
@@ -2922,7 +2923,7 @@ def embed_pretrain(config_path, shard_paths, num_epochs: int = 1,
                    out: str = "output/embed_pretrain.ckpt",
                    max_docs: int = 200,
                    window: int = 5,
-                   learning_rate: float = 0.001):
+                   learning_rate: float | None = None):
     """Pretrain a model's BPE codebook + lexicon + C-space_role transform
     weights through the per-word stem with a CBOW-over-STM loss.
 
@@ -2955,6 +2956,8 @@ def embed_pretrain(config_path, shard_paths, num_epochs: int = 1,
     cfg_window = int(window)
     model.loss_head = CBOWLossHead(window=cfg_window)
 
+    if learning_rate is None:
+        learning_rate = float(TheXMLConfig.training("learningRate"))
     optimizer = Adam(model.parameters(), lr=learning_rate)
 
     def _iter_docs(paths):
@@ -3056,7 +3059,7 @@ if __name__ == '__main__':
                          help='SGD learning rate for SBOW training. '
                               'When omitted, falls back to the value '
                               'stamped in the existing .kv metadata '
-                              '(if resuming) or 0.01 (fresh run). For '
+                              '(if resuming) or the configured rate (fresh run). For '
                               'manual annealing, pass a smaller rate on '
                               'each successive resume; it overrides the '
                               'saved value and gets persisted for the '
@@ -3133,7 +3136,7 @@ if __name__ == '__main__':
     bpe_emb_p.add_argument('--vector-size', type=int, default=100)
     bpe_emb_p.add_argument('--epochs', type=int, default=10)
     bpe_emb_p.add_argument('--max-seq', type=int, default=2048)
-    bpe_emb_p.add_argument('--learning-rate', type=float, default=0.001)
+    bpe_emb_p.add_argument('--learning-rate', type=float, default=None)
     bpe_emb_p.add_argument('--random-shards', action='store_true')
 
     # Convenience: A then B in one go
@@ -3150,7 +3153,7 @@ if __name__ == '__main__':
     bpe_train_p.add_argument('--epochs', type=int, default=10)
     bpe_train_p.add_argument('--batch-size', type=int, default=32)
     bpe_train_p.add_argument('--max-seq', type=int, default=2048)
-    bpe_train_p.add_argument('--learning-rate', type=float, default=0.001)
+    bpe_train_p.add_argument('--learning-rate', type=float, default=None)
     bpe_train_p.add_argument('--random-shards', action='store_true')
 
     # --- prune subcommand ---
@@ -3177,7 +3180,7 @@ if __name__ == '__main__':
     pretrain_p.add_argument('--max-docs', type=int, default=200)
     pretrain_p.add_argument('--window', type=int, default=5,
                             help='CBOW context window size.')
-    pretrain_p.add_argument('--learning-rate', type=float, default=0.001)
+    pretrain_p.add_argument('--learning-rate', type=float, default=None)
 
     # --- explore subcommand ---
     explore_p = sub.add_parser("explore", help="Explore trained embeddings")

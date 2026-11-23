@@ -317,13 +317,14 @@ class DecisionBoundaryLayer(Layer):
     update() nudges the weight toward or away from an observation depending
     on which side it falls.
     """
-    def __init__(self, nInput, nOutput, learning_rate=0.01):
+    def __init__(self, nInput, nOutput, learning_rate=None):
         """Initialize DecisionBoundaryLayer; allocate state for the class contract.
         
         See class docstring for invariants.
         """
         super(DecisionBoundaryLayer, self).__init__(nInput, nOutput)
-        self.learning_rate = learning_rate
+        self.learning_rate = (float(TheXMLConfig.training("decisionBoundaryLearningRate"))
+                              if learning_rate is None else learning_rate)
         self.weight        = nn.Parameter(torch.zeros(nInput, nOutput))
         self.register_buffer('noise', torch.randn(nInput, nOutput))
 
@@ -365,7 +366,7 @@ class DecisionBoundaryLayer(Layer):
         data = torch.randn(n_points, 2, device=TheDevice.get())
         data[:, 0] *= 1.5
 
-        layer = DecisionBoundaryLayer(nInput=2, nOutput=1, learning_rate=0.01)
+        layer = DecisionBoundaryLayer(nInput=2, nOutput=1)
         for _ in range(1000):
             idx = torch.randint(0, n_points, (1,))
             x = data[idx].squeeze()
@@ -593,7 +594,7 @@ class Mem:
         
         See class docstring for invariants.
         """
-        self.lr = 0.01
+        self.lr = float(TheXMLConfig.training("memLearningRate"))
         self.nTrials = 0
         self.output = None
         self.reset(sz)

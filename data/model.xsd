@@ -833,6 +833,17 @@
            batch assembly. -->
       <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="learningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="connectiveLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="connectiveFitSteps" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="connectiveFitSeed" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="wordPretrainLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="embeddingLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sbowLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="decisionBoundaryLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="memLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="symPerceptLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="spnnLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sigmaPiLearningRate" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Independent priority of normalized reconstruction terms;
            it does not subtract from the answer's priority. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>

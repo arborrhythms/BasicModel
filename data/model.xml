@@ -314,6 +314,17 @@
       <actionRateRatio>1</actionRateRatio>
       <!-- Adam learning rate. -->
       <learningRate>0.001</learningRate>
+      <connectiveLearningRate>.1</connectiveLearningRate>
+      <connectiveFitSteps>500</connectiveFitSteps>
+      <connectiveFitSeed>0</connectiveFitSeed>
+      <wordPretrainLearningRate>.01</wordPretrainLearningRate>
+      <embeddingLearningRate>.001</embeddingLearningRate>
+      <sbowLearningRate>.01</sbowLearningRate>
+      <decisionBoundaryLearningRate>.01</decisionBoundaryLearningRate>
+      <memLearningRate>.01</memLearningRate>
+      <symPerceptLearningRate>.001</symPerceptLearningRate>
+      <spnnLearningRate>.05</spnnLearningRate>
+      <sigmaPiLearningRate>.01</sigmaPiLearningRate>
       <!-- Teacher owns clean reconstruction lessons when enabled. -->
       <teacherReconstruction>false</teacherReconstruction>
       <!-- Supplied grammar annotations train the existing grammar MLPs.

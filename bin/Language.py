@@ -4679,7 +4679,7 @@ def connective_truth_loss(logits, a, b, y, op_names, classes=None):
 
 def learn_connective_distribution(a, b, y,
                                   op_names=("conjunction", "disjunction"),
-                                  steps=500, lr=0.1, seed=0, classes=None):
+                                  steps=None, lr=None, seed=None, classes=None):
     """Fit the slot-0 operator superposition to a truth/consequence corpus.
 
     Minimizes :func:`connective_truth_loss` over ``steps`` Adam updates on
@@ -4687,6 +4687,12 @@ def learn_connective_distribution(a, b, y,
     ``{op_name: weight}``. The operands ``a`` / ``b`` are the surface (the
     same for AND and OR); ``y`` is the consequence that discriminates them.
     """
+    if steps is None:
+        steps = int(TheXMLConfig.training("connectiveFitSteps"))
+    if lr is None:
+        lr = float(TheXMLConfig.training("connectiveLearningRate"))
+    if seed is None:
+        seed = int(TheXMLConfig.training("connectiveFitSeed"))
     torch.manual_seed(int(seed))
     logits = torch.zeros(len(op_names), requires_grad=True)
     opt = Adam([logits], lr=lr)

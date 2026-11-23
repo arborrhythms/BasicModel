@@ -211,7 +211,7 @@ def logic(X_train, Y_train):
     model.hidden.set_sigma(0.0001)
     model.output.set_sigma(0.0001)
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=float(util.TheXMLConfig.training("sigmaPiLearningRate")))
 
     epochs      = 1000
     mse_history = []

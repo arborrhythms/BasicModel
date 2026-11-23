@@ -46,7 +46,7 @@ class SPNN:
         # Epoch, learning rate (eta), and momentum values
         self.nEpoch  = 1000
         self.batch   = 100
-        self.lr      = 0.05
+        self.lr = float(util.TheXMLConfig.training("spnnLearningRate"))
         self.mom     = 0.1
         self.regular = 0.0001
 

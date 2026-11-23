@@ -315,7 +315,7 @@ class _RowLocalAdam(_optim.Optimizer):
 
     row_local_state = True
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
+    def __init__(self, params, lr, betas=(0.9, 0.999), eps=1e-8,
                  weight_decay=0.0, maximize=False,
                  moment_dtype=torch.float32):
         if not 0.0 <= float(lr):

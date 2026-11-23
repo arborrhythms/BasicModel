@@ -186,9 +186,9 @@ class NumpySGD:
     A simple SGD optimizer using analytic gradients.
     """
 
-    def __init__(self, model, lr=0.001):
+    def __init__(self, model, lr=None):
         self.model = model
-        self.lr = lr
+        self.lr = float(util.TheXMLConfig.training("symPerceptLearningRate")) if lr is None else lr
 
     def step(self, grads):
         grad_theta1, grad_theta2, grad_diag, _, _ = grads
@@ -197,7 +197,7 @@ class NumpySGD:
         # Keeping the diagonal explicit makes it easy to inspect whether the
         # model is learning scaling versus rotation.
         self.model.diag -= self.lr * grad_diag
-def get_optimizer(model, lr=0.001):
+def get_optimizer(model, lr=None):
     """
     Exposes the optimizer as a simple Python module function.
     Returns an instance of NumpySGD for the given model.
@@ -206,7 +206,7 @@ def get_optimizer(model, lr=0.001):
 # -------------------------------
 # Training Function
 # -------------------------------
-def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
+def train_bidirectional_model(num_epochs=100, lr=None, num_samples=128):
     """
     Trains the BidirectionalLinearNumpy model on dummy data.
 
@@ -281,7 +281,7 @@ def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
 # -------------------------------
 __all__ = ['BidirectionalLinearNumpy', 'get_optimizer', 'train_bidirectional_model', 'NumpySGD']
 if __name__ == "__main__" and "--demo" in sys.argv:
-    train_bidirectional_model(num_epochs=10000, lr=0.001, num_samples=128)
+    train_bidirectional_model(num_epochs=10000, num_samples=128)
 
 
 if __name__ == "__main__" and "--demo" not in sys.argv:
