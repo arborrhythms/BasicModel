@@ -5085,9 +5085,10 @@ class NotLayer3(Layer):
         return torch.where(value < 0, options[..., 1], options[..., 0])
 
     @staticmethod
+    @torch.no_grad()
     def entries(sigma):
         """Which of ``sigma``'s entries are Not entries (read the not-value)."""
-        return sigma.w().detach()[:sigma.nnz] < 0
+        return sigma.w(occupied_only=True) < 0
 
     @torch.no_grad()
     def make(self, sigma, concept, row, weight=None):
@@ -5537,19 +5538,20 @@ class SparseLDULayer(Layer):
         diagonal = self.slot_diagonal[:self._slots].to(value.device)
         return torch.where(diagonal >= 0, value.index_select(0, diagonal.clamp_min(0)), value.new_ones(()))
 
-    def w(self):
+    def w(self, *, occupied_only=False):
         """W at each entry's own pair, ``[capacity]``: a diagonal's ``d``,
         an entry of U from ``a`` ``d_a U``, an entry of L to ``b`` ``L d_b``
         (zero past the entries). Products of an entry of L with entries of
         U fall at other pairs (:meth:`up` has them)."""
-        value = self.value
+        n = self._n if occupied_only else self.value.numel()
+        value = self.value[:n]
         if not self._n:
             return value * 0
         d = torch.cat((self._slot_d(), value.new_ones(1)))
-        kind = self.entry_kind.to(value.device)
+        kind = self.entry_kind[:n].to(value.device)
         S = self._slots
-        source = torch.where(self.entry_source >= 0, self.entry_source, S).to(value.device)
-        target = torch.where(self.entry_target >= 0, self.entry_target, S).to(value.device)
+        source = torch.where(self.entry_source[:n] >= 0, self.entry_source[:n], S).to(value.device)
+        target = torch.where(self.entry_target[:n] >= 0, self.entry_target[:n], S).to(value.device)
         scale = torch.where(kind == self.UPPER, d.index_select(0, source),
                             torch.where(kind == self.LOWER, d.index_select(0, target), value.new_ones(())))
         w = torch.where(kind >= 0, value * scale, value.new_zeros(()))
@@ -5772,12 +5774,16 @@ class SparseLDULayer(Layer):
         self.count.zero_()
         self._index()
 
+    @torch.no_grad()
     def entries(self, row):
         """An output's entries, ``[(input read, weight, negated)]``, W at
         each, by the compressed rows."""
-        value = self.w().detach()
+        entries = self._rows.of(row)
+        if not entries:
+            return []
+        value = self.w(occupied_only=True)
         return [(int(self.entry_input[e]), float(value[e].abs()), bool(value[e] < 0))
-                for e in self._rows.of(row)]
+                for e in entries]
 
     def rows_reading(self, input):
         """The outputs with an entry on ``input``, by the index of columns."""

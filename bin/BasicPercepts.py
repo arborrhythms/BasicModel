@@ -597,15 +597,13 @@ class BasicPercepts(nn.Module):
         ones), the classes it lies in, and the form itself as its tightest
         whole."""
         parts, wholes = self.occurrences[int(row)]
-        ids = torch.tensor(parts, device=self.value_codes.device, dtype=torch.long)
-        # A value's catalog is its place's (rule 55).
         place = int(self.places[int(row)])
-        identity = self._boundary_codes(ids, whole=False, place=place).amax(0)
         run = self.runs.get(int(row))
-        if run is not None:
-            # In the part map: the run's own part, its characters and every
-            # part found in it.
-            identity = self._identity().form(run).to(identity)
+        if run is None:
+            ids = torch.tensor(parts, device=self.value_codes.device, dtype=torch.long)
+            identity = self._boundary_codes(ids, whole=False, place=place).amax(0)
+        else:
+            identity = self._identity().form(run).to(self.value_codes)
         if not self.property_width:
             return identity, identity.new_empty(0)
         if wholes:
