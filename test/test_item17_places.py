@@ -78,7 +78,6 @@ def in_order(model, seen, text):
     named target is replayed (§19.124, 2)."""
     from AttentionLesson import looks_in_order
     from test_item18_expect import read
-    assert getattr(model, '_attention_output_lesson', None) is None
     assert getattr(model, '_attention_supplied_reading', None) is None
     seen.clear()
     with torch.no_grad():
@@ -174,14 +173,7 @@ def test_a_place_concept_asked_lights_its_own_readings_band(tmp_path, monkeypatc
 
 
 def test_the_request_for_a_place_at_an_untaught_start(tmp_path, monkeypatch):
-    """What ``attend`` asks of each place's concept at an untaught start
-    (the same on every one), and the gradient the output's cost gives it
-    after one presentation (printed; not nothing at some look). Ported
-    (eleventh pass): the request started at nothing on the places and was
-    taught by the reading lesson; it is now the read of rule 80, taught by
-    the sentence said. At the first presentation the word said is read at
-    nothing, so no gradient reaches the look; one presentation is taught
-    first."""
+    """Measure the request and its gradient over place concepts after one training presentation."""
     import SentenceLooks
     from test_item18_expect import read
     model = model_for(tmp_path, monkeypatch)
@@ -228,8 +220,7 @@ def staged_forms(model, text):
 
 
 def teach(model, forms):
-    """The reading taught by the sentence said (rule 80; the reading
-    lesson's targets are gone, eleventh pass), minimal sentences first:
+    """Ordinary sentence training, minimal sentences first:
     each one-word sentence once, each two-word sentence and each of the
     lesson's twice, at a rate of .01. ``forms`` is kept for its callers."""
     from test_item18_expect import read

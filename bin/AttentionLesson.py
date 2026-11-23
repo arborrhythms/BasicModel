@@ -1,5 +1,4 @@
-"""Named input parts teach reconstruction; an output taught to the looks;
-a reading supplied."""
+"""Named input parts, supplied readings and question prompts for lessons."""
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -81,15 +80,6 @@ class ReadingLesson:
         return result
 
 
-@dataclass(frozen=True)
-class OutputLesson:
-    """Each stream's output: its words (forms), one for each look, of which
-    the first ``supplied`` are given as the word said at those looks. The
-    rest are what the looks' word said is taught by."""
-    words: tuple
-    supplied: tuple
-
-
 def _reading(parts):
     def encode(part):
         if isinstance(part, tuple):
@@ -130,21 +120,6 @@ def looks_in_order(looks):
     read its sentence's words in order (``in_order``)."""
     scored = in_order(looks.source_orders(), looks.walk.spans)
     return [ok for ok, present in zip(scored, looks.present.tolist()) if present]
-
-
-@contextmanager
-def output_lesson(model, outputs, supplied=None):
-    """For this invocation only, each stream's output words ``outputs`` (a
-    sequence of words for each stream), the first ``supplied[b]`` of them
-    given as the output's beginning (none where not given)."""
-    words = tuple(tuple(w.decode() if isinstance(w, bytes) else w for w in row) for row in outputs)
-    lesson = OutputLesson(words, tuple(supplied) if supplied is not None else (0,) * len(words))
-    old = getattr(model, '_attention_output_lesson', None)
-    model._attention_output_lesson = lesson
-    try:
-        yield lesson
-    finally:
-        model._attention_output_lesson = old
 
 
 @contextmanager

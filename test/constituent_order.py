@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 import torch
 
-from attention_curriculum_gates import STAGES, ORDER_CE_MAX, present
+from attention_curriculum_gates import STAGES, present
 from constituent_budget import paired_updates_only
 from identity_experiment import make_model, restore_warmup, save
 
@@ -29,7 +29,7 @@ def run(args):
         training_presentations=2*BATCHES*4, paired_optimizer_steps=2*BATCHES*2,
         evaluation_presentations=16, learning_rate=RATE, warmup=str(args.warmup),
         candidate=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-        gate='both lessons: exact free source order on every row and final per-row CE <= .01 nats/read',
+        gate='both lessons: exact free source order and returned text on every row',
         batch_end_optimizer='disabled', no_retries=True)
     save(args.out/'protocol.json', protocol)
     progress, stages = [], []
@@ -49,7 +49,7 @@ def run(args):
                         row = present(model, stage, train=True, optimizer=optimizer)
                         rows.append(row)
                         progress.append(dict(lesson=stage['name'], batch=batch+1,
-                            ce=row['output_cost'], updates=dict(updates),
+                            updates=dict(updates),
                             elapsed_seconds=time.monotonic()-started))
                         save(args.out/'progress.json', progress)
                         print(json.dumps(progress[-1]), flush=True)
@@ -59,8 +59,7 @@ def run(args):
                 # lesson cannot silently erase the earlier order skill.
                 for stage, row in zip([s for s in STAGES if s['stage'] == 3], stages):
                     final = present(model, stage)
-                    ce = row['training'][-1]['output_cost']
-                    row.update(final=final, passed=final['read_gate_passed'] and max(ce) <= ORDER_CE_MAX)
+                    row.update(final=final, passed=final['passed'])
                 save(args.out/'stages.json', stages)
                 assert updates['paired'] == protocol['paired_optimizer_steps']
                 result = dict(protocol=protocol, stages=stages, updates=dict(updates),

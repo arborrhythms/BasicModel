@@ -91,3 +91,37 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
     fresh.End();fresh.symbolSpace.soft_reset()
 
 
+
+
+def test_resume_attention_from_a_checkpoint_with_word_feedback(tmp_path):
+    from test_grounded_xor import grounded_model
+    from torch import nn
+
+    model, _ = grounded_model(tmp_path)
+    restored = None
+    try:
+        reader = model.request_read
+        width, units = reader.first.in_features, reader.first.out_features
+        options = dict(device=reader.first.weight.device, dtype=reader.first.weight.dtype)
+        reader.first = nn.Linear(width + reader.rows, units, **options)
+        reader.second = nn.Linear(width + 2 * reader.rows + 4, units, **options)
+        reader.say = nn.Linear(units, reader.rows, **options)
+        model._optimizer = optimizer = model.getOptimizer()
+
+        def step(net, opt):
+            opt.zero_grad()
+            net.first.weight[:, :width].square().sum().backward()
+            opt.step()
+
+        step(reader, optimizer)
+        path = tmp_path / 'reader.ckpt'
+        model.save_weights(path)
+        restored, _ = grounded_model(tmp_path)
+        assert restored.load_weights(path, require_match=True)
+        step(reader, optimizer)
+        step(restored.request_read, restored.getOptimizer())
+        torch.testing.assert_close(restored.request_read.first.weight, reader.first.weight[:, :width], rtol=0, atol=0)
+    finally:
+        model.End()
+        if restored is not None:
+            restored.End()

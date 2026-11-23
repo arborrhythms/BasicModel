@@ -266,7 +266,7 @@ def start_request(model, B=1):
     import SentenceLooks
     read = model.request_read
     V = read.rows
-    x = read.given(torch.zeros(B, V, 2), torch.zeros(B, V, 2), torch.zeros(B), torch.zeros(B, V))
+    x = read.given(torch.zeros(B, V, 2), torch.zeros(B, V, 2), torch.zeros(B))
     return SentenceLooks.attend(model, read.units(x))
 
 
@@ -391,13 +391,7 @@ def test_15_what_the_request_learns_of_the_what_and_a_word_present_by_degree(tmp
 
 
 def test_38b_the_reading_lesson_by_grades(tmp_path, monkeypatch):
-    """Certificate 38 (b), a learning certificate: the output's cost (the
-    sentence said, rule 80) teaches the request, minimal sentences first;
-    printed, before and after, are the sentences read in order with no
-    reading supplied. The grades of rule 70: the sentence, its words in
-    order, a word's parts (certificate 56 (a)). Recorded, not repaired.
-    Ported (eleventh pass): the reading lesson's targets are gone; reading
-    without comprehension teaches the looks by the sentence said."""
+    """Measure free reading order before and after ordinary training, minimal sentences first."""
     from SentenceLooks import Looks
     from AttentionLesson import minimal_first, looks_in_order
     from test_item18_expect import read

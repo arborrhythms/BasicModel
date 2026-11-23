@@ -1,188 +1,78 @@
-"""The row at 1.00 of doc/ModelAge.md: a word said back, alone (round 6d of
-item 1.7, twelfth pass, steps 1 and 2). Records, not repairs: a start drawn
-afresh and printed; no assertion on the outcome of a draw or of learning."""
-import os
+"""Conditional speech through the public answer of the lesson model with its full grammar."""
 
 import torch
 
-from test_item17_own_reading import Paths, fresh_start, reading_of, taught
-from test_item17_places import LESSON, minimal, model_for, nominate, words_of
-from test_item17_own_reading import COUNTING
+from test_item17_echo import answer_text
+from What import What
+from test_item17_places import model_for, nominate
 
-WORDS = words_of(LESSON) + COUNTING[:6]
-
-
-class Probe:
-    """At each look of a presentation: the request's range, each unread
-    word's share, the cost of the word said, and the gradient reaching the
-    word said (at the say read's units) and the request."""
-    def __init__(self, monkeypatch):
-        import SentenceLooks
-        from RequestRead import RequestRead
-        self.looks, self.inputs = [], []
-        attend, said = SentenceLooks.attend, RequestRead.said
-        probe = self
-        def requested(model, units):
-            request = attend(model, units)
-            if request.requires_grad:
-                request.retain_grad()
-            probe.looks.append(dict(request=request))
-            return request
-        def spoken(read, x, seen):
-            probe.inputs.append((x.detach().clone(), seen.detach().clone()))
-            hidden = torch.relu(read.second(torch.cat((x, seen.to(x)), -1)))
-            if hidden.requires_grad:
-                hidden.retain_grad()
-            if probe.looks:
-                V = read.rows
-                probe.looks[-1].update(units=hidden, seen=seen.detach(),
-                                       seen_row=int(seen[0, :V].argmax()), seen_mass=round(float(seen[0, :V].sum()), 3),
-                                       opened_row=int(x[0, 0:2 * V:2].argmax()), opened_max=round(float(x[0, 0:2 * V:2].max()), 3))
-            logits = read.say(hidden)
-            if probe.looks:
-                probe.looks[-1].update(raw=int(logits[0].argmax()), raw_top=round(float(logits[0].max()), 3))
-            return logits
-        import SentenceField
-        reconstruct = SentenceField.reconstruct
-        self.rebuilt = []
-        def rebuilt(model, record, errors, active, **kw):
-            result = reconstruct(model, record, errors, active, **kw)
-            from Omission import target as omission_target
-            targets = omission_target(model)
-            raw = (model._staged_concepts_in if targets is None else targets['raw'])[0, 0]
-            text = lambda t: bytes(int(v) for v in t.detach().reshape(-1).tolist() if 0 < int(v) < 256).decode('latin1')
-            probe.rebuilt.append(dict(raw=text(raw), input=text(model._input_reconstructions[int(record.sentence)].event[0, 0]),
-                                      walk=text(model._sentence_order_zero_reverse.materialize()[0, 0])))
-            return result
-        monkeypatch.setattr(SentenceField, 'reconstruct', rebuilt)
-        # The output walk's choice of its terminal: each bank row's readback
-        # score at the first generated slot (the walk takes the greatest).
-        import OutputOccurrences, SentenceUnderstanding
-        scores_of = SentenceUnderstanding.readback_scores
-        self.walk_scores = []
-        def generated(model, words, counts, truncated, bank, trace, **kw):
-            score = scores_of(words[:, 0], bank.codes, torch.ones_like(bank.weights),
-                              percept_width=bank.percept_width, meaning_start=bank.meaning_start)
-            score = score.masked_fill(~bank.terminal_valid, -torch.inf)[0]
-            probe.walk_scores.append((score.detach(), bank.rows[0].detach()))
-            return original_generated(model, words, counts, truncated, bank, trace, **kw)
-        original_generated = OutputOccurrences.generated
-        monkeypatch.setattr(OutputOccurrences, 'generated', generated)
-        monkeypatch.setattr(SentenceLooks, 'attend', requested)
-        monkeypatch.setattr(RequestRead, 'said', spoken)
-
-    def summary(self):
-        grad = lambda t: None if t is None or t.grad is None else round(float(t.grad.abs().sum()), 6)
-        rows = []
-        for look in self.looks:
-            r = look['request'].detach()[..., 0]
-            rows.append(dict(asked=(round(float(r.min()), 4), round(float(r.max()), 4)),
-                             request_grad=grad(look['request']), units_grad=grad(look.get('units')),
-                             **{k: look[k] for k in ('seen_row', 'seen_mass', 'opened_row', 'opened_max', 'raw', 'raw_top') if k in look}))
-        return rows
+PAIRS = (('say Felix', 'Felix'), ('Ciao', ''), ('Felix', ''), ('say Ciao', 'Ciao'))
 
 
-def presentation(model, paths, optimizer, word, probe):
-    paths.seen.clear()
-    probe.looks.clear()
-    taught(model, optimizer, word + '.')
-    path = paths.seen[0]
-    out = path.output
-    cost = None if out is None else round(float(out.cost()[0]), 4)
-    shares = [d['scores'][0].tolist() for d in path.decisions]
-    return dict(cost=cost, looks=probe.summary(), scores=shares)
+def test_space_is_a_native_percept(tmp_path, monkeypatch, eager_reading):
+    from SentenceLooks import Looks
+    from test_item18_expect import read
+    model = model_for(tmp_path, monkeypatch)
+    spaces = []
+    run = Looks.run
+
+    def observed(path, arrive):
+        field = model.perceptualSpace._forward_input
+        ids, spans = field['native_indices'][0], field['native_part_spans'][0]
+        store = field['percept_store']
+        spaces.append([(lo, hi) for pid, (lo, hi) in zip(ids.tolist(), spans.tolist(), strict=True)
+                       if pid >= 0 and store.bytes_for(pid) == b' '])
+        return run(path, arrive)
+
+    monkeypatch.setattr(Looks, 'run', observed)
+    try:
+        read(model, 'say  Felix')
+        assert spaces and all(row == [(3, 4), (4, 5)] for row in spaces), spaces
+    finally:
+        model.End()
 
 
-def test_one_word_and_then_the_nineteen(tmp_path, monkeypatch):
-    """Step 1: one word taught alone, then the 19; printed by presentation."""
-    start = fresh_start()
+def command_trial(model, pairs, rounds):
+    """Teach paired texts and evaluate with one common, target-free inference question."""
+    data = model.inputSpace.data
+    data.has_supervised_outputs = True
+    data.text_answers = {'train': [], 'validation': []}
+    optimizer = model.getOptimizer()
+    source = model.inputSpace
+    question = What.inference(0)
+    teacher = What.supervised(0)
+
+    def present(text, question, train):
+        with torch.set_grad_enabled(train):
+            batch, _ = model.runBatch(train=train, optimizer=optimizer, batchSize=1, split='train',
+                questions=(question,), batch_override=(source.prepInput([text]), torch.empty(1, 0)))
+        return batch
+
+    answers = []
+    for epoch in range(rounds + 1):
+        if epoch:
+            for text, target in pairs:
+                data.text_answers['train'] = [target]
+                present(text, teacher, True)
+                model.End()
+        if epoch in (0, rounds):
+            answers = []
+            data.text_answers['train'] = []
+            for text, _ in pairs:
+                batch = present(text, question, False)
+                answer = answer_text(batch.outputPred)
+                derivation = model._last_answer_construction.derivation
+                print(epoch, repr(text), repr(answer), derivation.row_sources,
+                      [len(row) for row in derivation.answer_meanings], flush=True)
+                answers.append(answer)
+                model.End()
+    return answers
+
+
+def test_the_answer_depends_on_the_spoken_request(tmp_path, monkeypatch, eager_reading):
     model = model_for(tmp_path, monkeypatch)
     try:
-        one, two, lesson = minimal()
-        nominate(model, one + two + lesson + (' '.join(COUNTING[:4]) + '.', ' '.join(COUNTING[4:]) + '.'))
-        paths = Paths(monkeypatch)
-        probe = Probe(monkeypatch)
-        if os.environ.get('NO_SAY_COST'):
-            # Compared in the test: the looks with no output cost of the say read.
-            from SentenceLooks import Looks
-            run = Looks.run
-            def quiet(path, arrive, **kw):
-                result = run(path, arrive, **kw)
-                path.teaching = False
-                return result
-            monkeypatch.setattr(Looks, 'run', quiet)
-        optimizer = model.getOptimizer(lr=.01)
-        print('start', start)
-        for k in range(int(os.environ.get('ONE_WORD_PRESENTATIONS', '12'))):
-            print('one', k, presentation(model, paths, optimizer, 'Felix', probe))
-            probe.looks.clear(); probe.rebuilt.clear()
-            r = reading_of(model, paths, 'Felix.')
-            print('  rebuilt', probe.rebuilt[-1:])
-            print('  teaching', paths.seen[0].teaching, 'said', r['said'], 'targets', r['targets'], 'right', r['said_right'], probe.summary())
-        rounds = int(os.environ.get('NINETEEN_ROUNDS', '0'))
-        dump = os.environ.get('SAID_DUMP')
-        if dump:
-            # The say read's inputs at the first look of each word, read at
-            # rate nothing, and its targets: to fit the read alone.
-            rows = []
-            for w in WORDS:
-                probe.inputs.clear()
-                r = reading_of(model, paths, w + '.')
-                rows.append((probe.inputs[0][0], probe.inputs[0][1], r['targets'][0]))
-            torch.save(rows, dump)
-        def measured(k):
-            said = walk = whole = 0
-            missed = []
-            owner = model._concept_owner()
-            margins = []
-            for w in WORDS:
-                probe.rebuilt.clear(); probe.walk_scores.clear()
-                said += reading_of(model, paths, w + '.')['said_right']
-                if probe.walk_scores:
-                    score, rows = probe.walk_scores[-1]
-                    cid = owner.interpret.word_for_form(w)
-                    row = None if cid is None else owner._concept_row_of(int(cid))
-                    own = (rows == row) & torch.isfinite(score)
-                    if bool(own.any()):
-                        mine = float(score[own].max())
-                        rival = float(torch.where(own, -torch.inf, score).max())
-                        margins.append((round(mine - rival, 4), round(mine, 4), int(torch.isfinite(score).sum())))
-                    else:
-                        margins.append(None)
-                r = probe.rebuilt[-1]
-                walk += r['walk'] == w
-                whole += r['walk'] == r['raw']
-                if r['walk'] != w:
-                    missed.append((w, r['walk']))
-            print('round', k, 'say read right', said, 'walk gives the word', walk, 'walk gives word and mark', whole,
-                  'missed', missed[:6], 'walk score margin of the word over its best rival', margins)
-        for mark in ('.', '?'):
-            try:
-                probe.rebuilt.clear()
-                r = reading_of(model, paths, mark)
-                print('mark alone', repr(mark), probe.rebuilt[-1:], 'looks', r['looks'], 'words', r['words'])
-            except Exception as error:
-                model.End()
-                print('mark alone', repr(mark), 'raised', type(error).__name__, str(error)[:200])
-        measured(-1)
-        batch = int(os.environ.get('WORD_BATCH', '1'))
-        import time
-        began = time.time()
-        for k in range(rounds):
-            if batch > 1:
-                # Several words alone in one batch: one step for the batch.
-                for i in range(0, len(WORDS), batch):
-                    texts = [w + '.' for w in WORDS[i:i + batch]]
-                    source = model.inputSpace.prepInput(texts)
-                    model.runBatch(train=True, optimizer=optimizer, batchSize=len(texts),
-                                   batch_override=(source, torch.empty(len(texts), 0)))
-                    model.End()
-                print('batch round', k)
-            else:
-                costs = [presentation(model, paths, optimizer, w, probe)['cost'] for w in WORDS]
-                print('costs', k, costs)
-            if k < 4 or k % int(os.environ.get('MEASURE_EVERY', '1')) == 0 or k == rounds - 1:
-                measured(k)
-                print('seconds', round(time.time() - began))
+        nominate(model, ('say', 'Felix', 'Ciao') + tuple(text for text, _ in PAIRS))
+        assert command_trial(model, PAIRS, 6) == [target for _, target in PAIRS]
     finally:
         model.End()

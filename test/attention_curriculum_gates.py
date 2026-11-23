@@ -8,7 +8,7 @@ import traceback
 import pytest
 import torch
 import util
-from AttentionLesson import output_lesson, prompt_need
+from AttentionLesson import prompt_need
 from attention_field_gates import observation, serial, words_from_leaves
 from bounded_tests import source_snapshot
 from test_compiled_word_chunk import _tiny_canonical_model
@@ -16,7 +16,6 @@ from test_compiled_word_chunk import _tiny_canonical_model
 PERCEPTS = ['luma', 'nemi', 'tavo', 'suri']
 INTERRUPTION = ['pako', 'feni', 'balo', 'runi']
 NOVEL = ['dax', 'wug', 'nep', 'zot']
-ORDER_CE_MAX = .01  # nats per read, on every row at presentation 64
 STAGES = [
  dict(name='reading_two', stage=3, lesson=True, fields=['red blue','blue red','green gold','gold green']),
  dict(name='reading_four', stage=3, lesson=True, fields=['red blue green gold','gold green blue red','blue gold red green','green red gold blue']),
@@ -41,21 +40,22 @@ def present(model, stage, *, train=False, optimizer=None):
     from What import What
     fields = stage['fields']; B=len(fields)
     data=model.inputSpace.data
-    supervised='targets' in stage
+    targets = fields if stage.get('lesson') else stage.get('targets')
+    supervised = targets is not None
+    prompts = stage.get('prompts', [None] * B)
     data.has_supervised_outputs=supervised
     kwargs={}
     if supervised:
         data.train_input=fields
         data.train_output=[torch.zeros(1) for _ in fields]
-        data.text_answers={'train':stage['targets']}
+        data.text_answers={'train':targets}
         data.source_addresses={'train':[dict(document=b, sentence=0, document_key=f'curriculum:{b}',sentence_index=0,split='train') for b in range(B)]}
         factory=What.supervised if train else What.inference
-        kwargs=dict(questions=tuple(factory(b,split='train',prompt=stage['prompts'][b]) for b in range(B)),source_rows=list(range(B)))
+        kwargs=dict(questions=tuple(factory(b,split='train',prompt=prompts[b]) for b in range(B)),source_rows=list(range(B)))
     inputs=model.inputSpace.prepInput(fields)
-    lesson=output_lesson(model,[text.split() for text in fields]) if train and stage.get('lesson') else nullcontext()
-    need=prompt_need(model,stage['prompts']) if supervised else nullcontext()
-    with torch.set_grad_enabled(train),lesson,need:
-        model.runBatch(train=train,optimizer=optimizer,batchSize=B,split='train',
+    need=prompt_need(model,prompts) if 'prompts' in stage else nullcontext()
+    with torch.set_grad_enabled(train),need:
+        batch, _ = model.runBatch(train=train,optimizer=optimizer,batchSize=B,split='train',
             batch_override=(inputs,torch.zeros(B,1) if supervised else torch.empty(B,0)),**kwargs)
         result=observation(model)
         raw=model._last_sentence_field
@@ -73,8 +73,7 @@ def present(model, stage, *, train=False, optimizer=None):
         result.update(readbacks=readbacks,exact_readbacks=sum(a==b for a,b in zip(readbacks,fields)),
             free_readbacks=free_text,free_exact=sum(a==b for a,b in zip(free_text,fields)),
             inverse_unavailable=serial(bad),orders=orders,
-            word_rows=serial(record.word_rows),word_ids=serial(model.inputSpace._ar_word_concept_ids),
-            output_cost=serial(trials[0]['output_cost']))
+            word_rows=serial(record.word_rows),word_ids=serial(model.inputSpace._ar_word_concept_ids))
         single_reads=all(n==int(active) for trial in result['trials'] for read in trial['reads']
                     for n,active in zip(read['supported_words'],read['active'],strict=True))
         complete=counts==[len(text.split()) for text in fields]
@@ -89,12 +88,11 @@ def present(model, stage, *, train=False, optimizer=None):
             construction=getattr(model,'_last_answer_construction',None)
             answer=list(getattr(construction,'texts',()) or ())
             result['answer_values']=serial([getattr(value,'what',None) for value in actual])
-            # The output adapter is numeric even for a text lesson. Use the
-            # existing lexical inverse's text report, never the target or
-            # input reconstruction, for an answer readback. Training omits
-            # that no-grad report; the final free evaluation supplies it.
+            if batch is not None and batch.outputPred is not None and not batch.outputPred.is_floating_point():
+                answer = [bytes(row.reshape(-1).tolist()).rstrip(b'\0').decode('utf8', 'replace')
+                          for row in batch.outputPred]
             result['answer_readbacks']=answer if answer else None
-            result['answer_exact']=(sum(a==b for a,b in zip(answer,stage['targets']))
+            result['answer_exact']=(sum(a==b for a,b in zip(answer,targets))
                                     if answer else None)
             result['passed'] &= result['answer_exact']==B
     model.flush_word_buffers();model.dispatch_soft_reset()
@@ -138,7 +136,7 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
                     finite=bool(torch.isfinite(_payload_row(model._concept_owner(),_existing_row(model._concept_owner(),('sym',cid)))).all())) for cid in refs])
             passed=same and all(refs for refs in original) and all(r['finite'] for row in recalled for r in row) and all(presentations[i]['report']['passed'] for i in [0,1,3])
             results.append(dict(name='identity_permanence',stage=1,presentations=presentations,recall=recalled,
-                same_rows=same,passed=passed,interpretable=control_passed('identity_permanence'),departures_attempted=0,departures_kept=0,output_cost=None));save()
+                same_rows=same,passed=passed,interpretable=control_passed('identity_permanence'),departures_attempted=0,departures_kept=0));save()
             prior=identities(model,NOVEL);presentations=[]
             for label,fields in [('known',PERCEPTS),('novel_first',NOVEL),('novel_second',NOVEL)]:
                 report=present(model,dict(fields=fields));report['identities']=identities(model,fields)
@@ -146,11 +144,11 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
             minted=all(not row for row in prior) and presentations[1]['report']['identities']==presentations[2]['report']['identities']
             passed=minted and all(p['report']['passed'] for p in presentations)
             results.append(dict(name='identifying_words',stage=2,presentations=presentations,novel_before=prior,
-                minted_once=minted,passed=passed,interpretable=control_passed('identifying_words'),departures_attempted=0,departures_kept=0,output_cost=None));save()
+                minted_once=minted,passed=passed,interpretable=control_passed('identifying_words'),departures_attempted=0,departures_kept=0));save()
             pending=[stage for stage in STAGES if stage['stage']<=through_stage]
             while pending:
                 stage=pending.pop(0);name=stage['name'];start=time.monotonic()
-                initial=present(model,stage);attempted=kept=0;ce=[]
+                initial=present(model,stage);attempted=kept=0
                 with (folder/(name+'.jsonl')).open('w') as log:
                     for epoch in range(epochs):
                         model.begin_presentation()
@@ -158,16 +156,11 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
                         backup=report['backup']
                         if backup is not None:
                             attempted+=sum(backup['rows']);kept+=sum(a and b for a,b in zip(backup['rows'],report['wins']))
-                        if report['output_cost'] is not None:ce.append(report['output_cost'])
                         log.write(json.dumps(dict(epoch=epoch+1,**report))+'\n');log.flush()
                 final=present(model,stage)
-                ce_passed=(bool(ce) and max(ce[-1])<=ORDER_CE_MAX
-                           and sum(ce[-1])<sum(ce[0])) if stage.get('lesson') and mode=='enabled' else None
                 row=dict(name=name,stage=stage['stage'],corpus=stage,initial=initial,final=final,passed=final['passed'],
                     interpretable=control_passed(name),departures_attempted=attempted,departures_kept=kept,
-                    output_cost=ce,elapsed_seconds=time.monotonic()-start)
-                row['lesson_ce_passed']=ce_passed
-                if ce_passed is not None:row['passed'] &= ce_passed
+                    elapsed_seconds=time.monotonic()-start)
                 results.append(row);save()
                 print(mode,name,final['exact_readbacks'],'/4', 'answers',final.get('answer_exact'), 'departures',attempted,kept,flush=True)
                 if stage['stage']==4 and 'questions' in stage:
@@ -196,11 +189,11 @@ def main():
     root=Path(__file__).resolve().parents[1];folder=args.destination.resolve();folder.mkdir(parents=True,exist_ok=False)
     source=source_snapshot(root)
     plan=dict(source=source,epochs=args.epochs,seed=None,retries=0,modes=['disabled','enabled'],fresh_models=2,
-        learning_rate=.01,attention_optimizer='Adam',order_ce_max=ORDER_CE_MAX,
+        learning_rate=.01,attention_optimizer='Adam',
         through_stage=args.through_stage,percepts=PERCEPTS,interruption=INTERRUPTION,novel=NOVEL,
         stages=[stage for stage in STAGES if stage['stage']<=args.through_stage],
-        selection='Only stage 3 training names and teacher-forces each word; every measurement is a hard free read. Disabled is source order.',
-        reconstruction='The common decoder reads the owned parallel field. Native word reconstruction and byte identity remain separate from the stage 3 reads-and-CE gate.',
+        selection='Stage 3 teaches the ordinary answer and measures its text and the order of the looks. Disabled is source order.',
+        reconstruction='The common decoder reads the owned parallel field. Native word reconstruction and byte identity remain separate from the stage 3 source-order gate.',
         answers='Asked parts and supplied answers use the existing output-owned supervised answer path. Targets do not enter the scorer.',
         protocol='Each mode proceeds once through the declared corpus. Failed controls make the corresponding results uninterpretable; asked output gates require sentence reconstruction to pass in both modes.')
     (folder/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')

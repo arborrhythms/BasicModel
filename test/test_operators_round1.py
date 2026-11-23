@@ -36,10 +36,10 @@ def test_attend_gives_a_request_over_concepts_on_two_lanes():
     from RequestRead import RequestRead
     from SentenceLooks import attend
     rows, streams = 3, 2
-    read = RequestRead(rows, 4, 4)
+    read = RequestRead(rows, 4)
     model = SimpleNamespace(request_read=read)
     x = read.given(torch.rand(streams, rows, 2), torch.rand(streams, rows, 2),
-                   torch.ones(streams), torch.zeros(streams, rows))
+                   torch.ones(streams))
     request = attend(model, read.units(x))
     assert request.shape == (rows, streams, 2)
     # The tops start at nothing: every concept is asked for by one half.

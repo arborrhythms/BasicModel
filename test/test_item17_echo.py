@@ -17,8 +17,8 @@ The pair is supplied as a supervised question is: the data's answers table
 `has_supervised_outputs` true and the question `What.supervised(i)`. The
 supplied answer enters only the cost (A); a measure takes no step
 (`train=False`). Beside each reading, read only: the reconstruction's text,
-R and A (the exploit path's `parts`), the looks (the input's word each took
-and the row said) and the extents of the last look's slots, whether the
+R and A (the exploit path's `parts`), the input word each look took,
+the extents of the last look's slots, whether the
 sentence's state has a meaning (`entry.meaning`), the answer's meanings and
 its source (`derivation`), and what the output walk emitted. Taught by the
 model's own training step on the same pairs, round by round, until every
@@ -115,11 +115,9 @@ class Observed:
         def looked(path, *args, **kw):
             result = run(path, *args, **kw)
             # The first path's looks: the input's word each look took
-            # (its index, -1 none) and the row said (-1 none); and the
-            # extents (start, end) of the slots of the last look's field.
+            # (its index, -1 for none) and the extents of the last look's slots.
             if 'looks' not in self.row:
-                self.row['looks'] = [(int(d['index'].reshape(-1)[0]), int(d['said'].reshape(-1)[0]))
-                                     for d in path.decisions]
+                self.row['looks'] = [int(d['index'].reshape(-1)[0]) for d in path.decisions]
                 where = getattr(path.fields[-1]['field'], 'where', None) if path.fields else None
                 self.row['extents'] = None if where is None else [
                     tuple(int(v) for v in pair) for pair in where[0].reshape(-1, 2).tolist() if pair[1] > pair[0]]
@@ -214,8 +212,8 @@ def test_one_look_says_only_the_word_it_read(tmp_path, monkeypatch, eager_readin
         observed = Observed(model, monkeypatch)
         answer = read_once(model, 0, sentence, answered=True, train=False, optimizer=model.getOptimizer())
         (look,) = observed.row['looks']
-        assert 0 <= look[0] < len(words)
-        assert answer == words[look[0]]
+        assert 0 <= look < len(words)
+        assert answer == words[look]
         assert observed.row['answer meanings'] == [1]
     finally:
         model.End()
@@ -353,7 +351,7 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
         emitted = observed.row.get('walk emitted', [])
         need = len(sentence[:-1].split()) + 1      # the words and the mark
         counts = {
-            'looks taken': sum(1 for index, _ in observed.row.get('looks', ()) if index >= 0),
+            'looks taken': sum(1 for index in observed.row.get('looks', ()) if index >= 0),
             "open field's slots": held.get('slots', 0),
             'rows held in STM': held.get('stm', 0),
             'stmCapacity': int(TheXMLConfig.space('ConceptualSpace', 'stmCapacity')),

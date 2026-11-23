@@ -1,22 +1,22 @@
 """``attend``'s read of the conceptual field (sigma-pi §21, rule 80; round
 6d, eleventh pass): one network every use shares, its request a mask in 0
-to 1 at the concepts' rows, the stop and the word said read on top; the
+to 1 at the concepts' rows, the stopping decision; the
 field placed at the concepts' rows and the last look's field spread once."""
 import torch
 
 
 def test_the_request_starts_small_on_every_concept_and_is_taught_from_its_read():
     from RequestRead import RequestRead
-    read = RequestRead(6, 8, 4)
+    read = RequestRead(6, 8)
     with torch.no_grad():
         read.ask.bias.fill_(-4.)
-    x = read.given(torch.rand(2, 6, 2), torch.rand(2, 6, 2), torch.ones(2), torch.zeros(2, 6))
-    assert x.shape == (2, 5 * 6 + 1)
+    x = read.given(torch.rand(2, 6, 2), torch.rand(2, 6, 2), torch.ones(2))
+    assert x.shape == (2, 4 * 6 + 1)
     units = read.units(x)
     request = read.request(units)
     assert request.shape == (6, 2, 2) and not request[..., 1].any()
     torch.testing.assert_close(request[..., 0], torch.full((6, 2), torch.sigmoid(torch.tensor(-4.)).item()))
-    assert not read.stopping(units).any() and not read.said(x, torch.rand(2, 6 + 4)).any()
+    assert not read.stopping(units).any()
     # The request is a logistic of a linear read: a cost on it reaches the
     # read's top and, once the top is not nothing, the units below it.
     request[3, 0, 0].backward()
@@ -39,13 +39,8 @@ def test_a_field_is_placed_at_its_concepts_rows_and_spread_once():
     assert not held[0, [0, 2, 3]].any()
 
 
-def test_the_output_cost_reaches_the_request_in_the_model(tmp_path, monkeypatch):
-    """The simulation of the eleventh pass, kept: on one lesson sentence,
-    the output's cost (the sentence said) reaches the look's scores and the
-    request. At the first presentation the word said is read by nothing (its
-    top at nothing), so nothing reaches the look; the second and third
-    presentations are measured. Printed: the gradient at the request and at
-    the words' scores at each look."""
+def test_sentence_training_reaches_the_request_in_the_model(tmp_path, monkeypatch):
+    """Measure whether ordinary sentence training reaches the attention request."""
     import SentenceLooks
     from test_item17_places import minimal, model_for, nominate
     from test_item18_expect import read

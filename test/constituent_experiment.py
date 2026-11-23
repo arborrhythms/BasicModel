@@ -34,8 +34,7 @@ def run(args):
     order_report = json.loads((args.warmup.parent/'results.json').read_text())
     stages = order_report.get('stages', ())
     order_gate = dict(passed=bool(order_report.get('passed')),
-        free_source_order_passed=bool(stages) and all(row['final']['read_gate_passed'] for row in stages),
-        last_training_ce={row['name']: row['training'][-1]['output_cost'] for row in stages})
+        free_source_order_passed=bool(stages) and all(row['final']['read_gate_passed'] for row in stages))
     del stages, order_report  # Keep the large native diagnostics out of training memory.
     if not order_gate['free_source_order_passed']:
         raise ValueError('stage 4e requires the stage-3 reader to read freely in source order')

@@ -317,19 +317,18 @@ def warmup(folder, order_steps, sentence_steps):
             model.save_weights(str(folder/'last-completed.ckpt'))
             for stage in STAGES:
                 count=order_steps if stage['stage']==3 else sentence_steps
-                initial=present(model,stage); ce=[]
+                initial=present(model,stage)
                 with (folder/(stage['name']+'.jsonl')).open('w') as log:
                     for step in range(count):
                         report=present(model,stage,train=True,optimizer=optimizer)
-                        ce.append(report.get('output_cost'))
                         log.write(json.dumps(dict(step=step+1,**report))+'\n');log.flush()
                         save(folder/'progress.json',dict(stage=stage['name'],step=step+1,budget=count))
                 final=present(model,stage)
                 reports.append(dict(stage=stage['stage'],name=stage['name'],initial=initial,final=final,
-                                    presentations=count,output_cost=ce))
+                                    presentations=count))
                 save(folder/'results.json',reports)
                 model.save_weights(str(folder/'last-completed.ckpt'))
-                print(json.dumps(dict(stage=stage['name'],done=count,readback=final['exact_readbacks'],ce=ce[-1])),flush=True)
+                print(json.dumps(dict(stage=stage['name'],done=count,readback=final['exact_readbacks'])),flush=True)
                 if stage['stage']==4:
                     # Supplied answers name ordinary output words, never an
                     # operator or an attention action. Failed prerequisites

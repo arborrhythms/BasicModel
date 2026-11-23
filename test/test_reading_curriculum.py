@@ -2,24 +2,8 @@
 from types import SimpleNamespace
 import pytest
 import torch
-from AttentionLesson import output_lesson, supplied_reading
+from AttentionLesson import supplied_reading
 from DerivationReconstruction import reconstruct
-
-
-def test_the_output_cost_teaches_the_word_said():
-    """Ported (eleventh pass) from the reading lesson's cross entropy: the
-    output's cost (``SentenceLooks.Output``) books the word said against the
-    output's word, and is the mean of what it booked."""
-    from SentenceLooks import Output
-    logits = torch.tensor([[0., 4.]], requires_grad=True)
-    output = Output([[0]], [0], torch.zeros(1))
-    target, length, given = output.target(0, logits.device)
-    assert target.tolist() == [0] and length.tolist() == [1] and given.tolist() == [False]
-    output.book(torch.nn.functional.cross_entropy(logits, target, reduction='none'), torch.tensor([True]))
-    output.book(torch.ones(1), torch.tensor([False]))
-    output.cost().sum().backward()
-    assert logits.grad[0, 0] < 0 < logits.grad[0, 1]
-    assert Output([[0, 1]], [1], torch.zeros(1)).target(0, 'cpu')[2].tolist() == [True]
 
 
 def test_supplied_reading_resolves_named_occurrences_and_restores_after_exception():
@@ -33,12 +17,6 @@ def test_supplied_reading_resolves_named_occurrences_and_restores_after_exceptio
             assert lesson.positions([['red','blue','red']], torch.tensor([[[0,3],[4,8],[9,12]]])) == [[2,1,0]]
             raise RuntimeError('end lesson')
     assert model._attention_supplied_reading is prior
-    model._attention_output_lesson = prior
-    with pytest.raises(RuntimeError, match='end lesson'):
-        with output_lesson(model, [['1', '2']], supplied=[1]) as lesson:
-            assert lesson.words == (('1', '2'),) and lesson.supplied == (1,)
-            raise RuntimeError('end lesson')
-    assert model._attention_output_lesson is prior
 
 
 def test_derivation_inverse_recovers_composed_children_and_depends_on_the_root():
@@ -72,7 +50,7 @@ def test_derivation_inverse_recovers_composed_children_and_depends_on_the_root()
     assert not torch.equal(changed,leaves)
 
 
-def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monkeypatch):
+def test_native_training_keeps_one_word_per_read(tmp_path,monkeypatch):
     from test_native_attention_field import _model
     model = _model(tmp_path,monkeypatch)
     try:
@@ -85,13 +63,9 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
         attention = next(o for o in optimizer.optimizers if getattr(o,'objective_owner',None)=='attention')
         assert isinstance(attention.inner,torch.optim.Adam)
         assert all(group['lr']==.01 for group in attention.param_groups)
-        # Ported (eleventh pass): the reading lesson named the order read;
-        # the output (the sentence said, rule 80) names no order.
-        with output_lesson(model,[['red','blue'],['blue','red']]):
-            model.runBatch(train=True,optimizer=optimizer,batchSize=2,batch_override=(inputs,torch.empty(2,0)))
+        model.runBatch(train=True,optimizer=optimizer,batchSize=2,batch_override=(inputs,torch.empty(2,0)))
         field = model._last_sentence_field
         assert field['iterations'].tolist() == [2,2]
-        assert field['trials'][0]['output_cost'].gt(0).all()
         for b in range(2):
             assert sorted(int(read['index']) for read in field['trials'][0]['reads'] if bool(read['rows'][b])) == [0, 1]
         # Each read is of the rows that took that word at that look; with no
@@ -108,7 +82,6 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
         writers = [row['writers'] for row in owners if row['owner']=='attention']
         print(dict(attention_writers=writers,
                    chooser_moved=not torch.equal(model._stm_reducer().chooser.tool_embedding,before)))
-        assert model._attention_output_lesson is None
     finally:model.End()
 
 
@@ -255,7 +228,8 @@ def test_order_lesson_gate_reports_list_inverse_separately(tmp_path,monkeypatch)
         from nomination_fixtures import nominated_sentences; nominated_sentences(model, ['red blue','blue red'])
         result=curriculum.present(model,dict(fields=['red blue','blue red'],lesson=True))
         assert result['orders']==[[0,1],[0,1]]
-        assert result['passed'] and result['read_gate_passed']
+        assert result['read_gate_passed']
+        assert result['passed'] == (result['answer_exact'] == len(result['orders']))
         assert not result['reconstruction_passed'] and result['exact_readbacks']==0
     finally:model.End()
 

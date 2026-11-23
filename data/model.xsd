@@ -283,11 +283,6 @@
       </xs:element>
       <xs:element name="requestReadWidth" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="requestReadStart" type="xs:double" minOccurs="0"/>
-      <xs:element name="lookSharpness" minOccurs="0">
-        <xs:simpleType><xs:restriction base="xs:double">
-          <xs:minExclusive value="0"/>
-        </xs:restriction></xs:simpleType>
-      </xs:element>
       <xs:element name="thoughtSearchExhaustion" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
            do not enable episodes, memory, or policy training. -->

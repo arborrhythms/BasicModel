@@ -4536,8 +4536,17 @@ class BaseModel(Mereology, nn.Module):
                 state.setdefault('request_read.' + name, value.clone())
 
         retired_attention = [key for key in state if key.startswith(
-            ('candidate_attention.', 'attention_context.', 'request_start.'))]
+            ('candidate_attention.', 'attention_context.', 'request_start.',
+             'request_read.say.', 'request_read.second.'))]
         attention_transforms = {}
+        # Earlier checkpoints appended the previously predicted word to this input.
+        first_key = 'request_read.first.weight'
+        reader = getattr(self, 'request_read', None)
+        if reader is not None and first_key in state:
+            width = reader.first.in_features
+            if state[first_key].shape[1] == width + reader.rows:
+                state[first_key] = state[first_key][:, :width].clone()
+                attention_transforms[first_key] = (first_key, 1, tuple(range(width)))
         for key in retired_attention:
             state.pop(key)
             attention_transforms[key] = None
@@ -20967,7 +20976,7 @@ class BasicModel(BaseModel):
             self.languageSpace.stage_verb_groups(resolver, self.inputSpace._ar_word_concept_ids, stm[0])
             lang = lang[:26]
             before = self._snapshot_sentence_state((stm, lang, feedback))
-            from SentenceTraining import separate, strength, current_costs, combine
+            from SentenceTraining import separate, strength, combine
             single = self._sentence_training and torch.is_grad_enabled()
             self._sentence_reconstruction_strength = (strength(self, words)
                 if self._sentence_training and torch.is_grad_enabled() else words.new_ones(()))
@@ -21334,15 +21343,7 @@ class BasicModel(BaseModel):
                             candidate.registry.add('output.interpret_score_function',policy,
                                 category='output',objective=policy_objective(self,'compose','chooser'),side='A')
                         path_credit(self, complete_paths[0], candidate, present)
-                    taught = None if look_trials[0] is None else look_trials[0].output_cost()
                     single_costs, weights = path_objectives(complete_paths, parts, present, draws)
-                    if taught is not None:
-                        # The output's cost of the looks (rule 80) is observed
-                        # once on the exploit, outside the costs exposed on
-                        # every complete path.
-                        said = Error(row_mask=present)
-                        said.add('attention.output', taught, category='other', objective='attention')
-                        combine(single_costs, current_costs(self, said, sentence=True))
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
                         p.registry.total(objective='output') is not None for p in complete_paths))
@@ -21387,9 +21388,6 @@ class BasicModel(BaseModel):
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
                 reports = [field.report() for field in field_trials]
-                for report, looks in zip(reports, look_trials, strict=True):
-                    cost = None if looks is None else looks.output_cost()
-                    report['output_cost'] = None if cost is None else cost.detach()
                 self._last_sentence_field = dict(trials=reports,
                     wins=wins.detach(),selected=selected.detach(),iterations=iterations.detach())
             if look_trials[0] is not None:
