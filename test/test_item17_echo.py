@@ -192,3 +192,142 @@ def test_echo_a_word_read_whole_by_a_model_that_reads(tmp_path, monkeypatch):
 
 def test_echo_a_word_and_its_mark_read_whole_by_a_model_that_reads(tmp_path, monkeypatch):
     cell(tmp_path, monkeypatch, mark='.', grammar=False)
+
+
+def test_echo_a_sentence_of_two_words(tmp_path, monkeypatch):
+    """Item 11: each of the lesson's two-word sentences as the input and as
+    the supplied answer; the answer returned is read against the input."""
+    from reading_fixtures import use_eager_reading
+    from test_item17_places import minimal
+    start = int.from_bytes(os.urandom(6), 'little')
+    torch.manual_seed(start)
+    one, two, lesson = minimal()
+    print('start', start, '| two-word sentences', two)
+    model = model_for(tmp_path, monkeypatch)
+    use_eager_reading(monkeypatch)
+    try:
+        nominate(model, one + two + lesson)
+        data = model.inputSpace.data
+        monkeypatch.setattr(data, 'has_supervised_outputs', True)
+        monkeypatch.setattr(data, 'text_answers', {'train': list(two), 'validation': []})
+        observed = Observed(model, monkeypatch)
+        optimizer = model.getOptimizer(lr=.01)
+        rounds = int(os.environ.get('ROUNDS', '3'))
+        running, curve, echoed = 0, [], 0
+        for r in range(rounds + 1):
+            if r:
+                for index, sentence in enumerate(two):
+                    read_once(model, index, sentence, answered=True, train=True, optimizer=optimizer)
+            echoed = 0
+            for index, sentence in enumerate(two):
+                observed.row.clear()
+                with torch.no_grad():
+                    answer = read_once(model, index, sentence, answered=True, train=False, optimizer=optimizer)
+                echoed += answer == sentence
+                print(f'   {sentence!r}: answer {answer!r} | '
+                      + ' | '.join(f'{k} {v}' for k, v in observed.row.items()))
+            curve.append((r, echoed))
+            print(f' round {r}, start {start}: echoed {echoed} of {len(two)}', flush=True)
+            running = running + 1 if echoed == len(two) else 0
+            if running == 2:
+                break
+        assert echoed == len(two), f'{echoed} of {len(two)} echoed; curve {curve}'
+    finally:
+        model.End()
+
+
+def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
+    """Item 11: the state a two-word sentence leaves, counted on the model
+    as it runs, against what two words need: the looks taken, the open
+    field's slots, the rows held in STM at a compose round (against `stmCapacity`), the leaves
+    under the idea, the answer's meanings and their roles, the output
+    walk's slots and budget, and the output buffer's places. Read only;
+    asserts that none is short of two words (two words and the mark: the
+    buffer, the bytes of the sentence), and says which is."""
+    import SentenceField
+    from util import TheXMLConfig
+    from reading_fixtures import use_eager_reading
+    from test_item17_places import minimal
+    from test_item17_undo_measure import forest_of
+    start = int.from_bytes(os.urandom(6), 'little')
+    torch.manual_seed(start)
+    one, two, lesson = minimal()
+    print('start', start)
+    model = model_for(tmp_path, monkeypatch)
+    use_eager_reading(monkeypatch)
+    try:
+        nominate(model, one + two + lesson)
+        data = model.inputSpace.data
+        monkeypatch.setattr(data, 'has_supervised_outputs', True)
+        monkeypatch.setattr(data, 'text_answers', {'train': list(two), 'validation': []})
+        observed = Observed(model, monkeypatch)
+        held = {}
+        observe, one_reconstruction, resolve = (model._sentence_observation, SentenceField.reconstruction,
+                                                model._resolve_answer)
+
+        def observation(*args, **kw):
+            result = observe(*args, **kw)
+            held.setdefault('entries', result['entries'])
+            return result
+
+        def reconstruction(model_, field, **kw):
+            where = field.where[0].reshape(-1, 2)
+            held.setdefault('slots', int((where[:, 1] > where[:, 0]).sum()))
+            program = (held.get('entries') or [None])[0]
+            if program is not None and 'leaves' not in held:
+                # The recorded forest, read while the sentence is live.
+                leaves, stack = 0, list(forest_of(model_.languageSpace, program))
+                while stack:
+                    node = stack.pop()
+                    if node[0] == 0:
+                        leaves += 1
+                    else:
+                        stack.extend(child for child in node[3:] if isinstance(child, tuple))
+                held['leaves'] = leaves
+            return one_reconstruction(model_, field, **kw)
+
+        def resolved(understanding, question, **kw):
+            result = resolve(understanding, question, **kw)
+            derivation = result[0] if isinstance(result, tuple) else result
+            meanings = derivation.answer_meanings[0] if derivation.answer_meanings else ()
+            held['meanings'] = len(meanings)
+            held['roles'] = sum(int(m.role_mask.sum()) for m in meanings)
+            return result
+        choose = model.languageSpace.choose_operation
+
+        def chosen(state, row_gate, **kw):
+            # The STM's depth at each compose round of the reading.
+            held['stm'] = max(held.get('stm', 0), int(state[1].max()))
+            return choose(state, row_gate, **kw)
+        monkeypatch.setattr(model.languageSpace, 'choose_operation', chosen)
+        monkeypatch.setattr(model, '_sentence_observation', observation)
+        monkeypatch.setattr(SentenceField, 'reconstruction', reconstruction)
+        monkeypatch.setattr(model, '_resolve_answer', resolved)
+        sentence = two[0]
+        observed.row.clear()
+        with torch.no_grad():
+            batch = echo(model, 0, sentence, train=False, optimizer=model.getOptimizer(lr=.01))
+        emitted = observed.row.get('walk emitted', [])
+        need = len(sentence[:-1].split()) + 1      # the words and the mark
+        counts = {
+            'looks taken': sum(1 for index, _ in observed.row.get('looks', ()) if index >= 0),
+            "open field's slots": held.get('slots', 0),
+            'rows held in STM': held.get('stm', 0),
+            'stmCapacity': int(TheXMLConfig.space('ConceptualSpace', 'stmCapacity')),
+            'leaves under the idea': held.get('leaves', 0),
+            "answer's meanings": held.get('meanings', 0),
+            "answer's roles": held.get('roles', 0),
+            "output walk's slots": max((sum(c) for c, _ in emitted), default=0),
+            "output walk's budget": int(model._walk_budget()),
+            "output buffer's places": 0 if batch is None or batch.outputPred is None else int(batch.outputPred.shape[-1]),
+        }
+        model.End()
+        # One meaning may hold every role; each other count needs one place
+        # for each word and the mark, the buffer one for each byte.
+        wanted = {name: (len(sentence.encode()) if name == "output buffer's places" else
+                         1 if name == "answer's meanings" else need) for name in counts}
+        short = {name: (value, wanted[name]) for name, value in counts.items() if value < wanted[name]}
+        print(f'{sentence!r}: needs {need} (words and the mark) | counts {counts} | short {short}')
+        assert not short, f'short of two words (value, needed): {short}; counts {counts}'
+    finally:
+        model.End()
