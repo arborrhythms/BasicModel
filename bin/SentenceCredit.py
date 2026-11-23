@@ -50,11 +50,11 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
 
 
 
-WALKS = ('attention', 'compose', 'bind', 'reconstruction', 'thought', 'output')
+WALKS = ('attention', 'compose', 'bind', 'thought', 'output')
 
 
 def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
-              compose_round=None, interpretations=None, binds=None, reconstruction=None,
+              compose_round=None, interpretations=None, binds=None,
               thought=None, output=None, used=()):
     """Draw a distinct walk/round, uniformly at each level of the remaining menu."""
     from WalkTrials import departure_at
@@ -68,7 +68,7 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
         if interpretation.shape[1]:
             at = prior.get('interpret_round', torch.full_like(active, -1, dtype=torch.long))
             interpretation &= torch.arange(interpretation.shape[1], device=active.device)[None] != at[:, None]
-    menus = [attention, compose, binds, reconstruction, thought, output]
+    menus = [attention, compose, binds, thought, output]
     menus = [empty if menu is None else menu.clone().bool() for menu in menus]
     for prior in used:
         for name, menu in zip(WALKS, menus):

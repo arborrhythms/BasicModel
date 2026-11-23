@@ -20097,7 +20097,6 @@ class BasicModel(BaseModel):
 
     def _sentence_path_cost(self, state, sid, active, *, incoming_trust=1.):
         """Both trials use the registry's named, relative objectives."""
-        self._sentence_decoder_walk_credits = []
         self._sentence_walk_residuals = []
         self._sentence_output_walk_credits = []
         self._sentence_output_walk_residuals = []
@@ -20226,12 +20225,9 @@ class BasicModel(BaseModel):
                                  side='R' if owner == 'reconstruction' else 'A')
             setattr(self, attr, None)
         observation['walk_credit'] = {}
-        for owner in ('decoder', 'output'):
-            attr = '_sentence_' + owner + '_walk_credits'
-            held = getattr(self, attr)
-            if held:
-                observation['walk_credit'][owner] = torch.stack(held).sum(0)
-            setattr(self, attr, None)
+        if self._sentence_output_walk_credits:
+            observation['walk_credit']['output'] = torch.stack(self._sentence_output_walk_credits).sum(0)
+        self._sentence_output_walk_credits = None
         self._sentence_cost_registry = errors
         self._sentence_gradient_objectives = {name: errors.total(objective=name)
             for name in ('reconstruction', 'expectation', 'output')}
@@ -21202,12 +21198,10 @@ class BasicModel(BaseModel):
                     for index, decision in enumerate(menu):
                         bind_rounds[b, index] = len(decision['candidates']) > 1
                 from SentenceCredit import departure
-                generation = observations[0].get('generation')
                 output = complete_paths[0].output_trace
                 return departure(greedy_attention, eligible, active=present,
                     sentence_ids=sentence_ids, sentence=sid, compose_round=fork.choose(draws),
                     interpretations=interpretations, binds=bind_rounds,
-                    reconstruction=None if generation is None else generation.trace[1],
                     thought=complete_paths[0].thinking.eligible(present),
                     output=None if output is None else output[1], used=draws)
 

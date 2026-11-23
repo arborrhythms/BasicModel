@@ -105,16 +105,17 @@ def test_departures_are_distinct_and_correct_remaining_proposal():
     eligible = active[:, None].expand(-1, 3)
     draws = []
     for count in range(6):
-        draw = departure(None, empty, active=active, reconstruction=eligible,
+        draw = departure(None, empty, active=active, thought=eligible,
                          output=eligible, used=draws)
+        assert 'reconstruction_round' not in draw and 'reconstruction' not in WALKS
         for previous in draws:
             assert not bool(((previous['walk'] == draw['walk']) &
-                ((previous['reconstruction_round'] == draw['reconstruction_round']) &
+                ((previous['thought_round'] == draw['thought_round']) &
                  (previous['output_round'] == draw['output_round']))).any())
         assert draw['rounds'].tolist() == [6-count] * len(active)
         assert bool((draw['walk_rounds'] > 0).all())
         draws.append(draw)
-    exhausted = departure(None, empty, active=active, reconstruction=eligible,
+    exhausted = departure(None, empty, active=active, thought=eligible,
                           output=eligible, used=draws)
     assert exhausted['walk'].tolist() == [-1] * len(active)
 
@@ -398,6 +399,7 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     from types import SimpleNamespace as NS
     from Layers import Error
     from WalkTrials import ThoughtTrialState
+    from SentenceCredit import WALKS
     from WholePaths import Path, Thinking, finish
     import WholePaths
     active = torch.tensor([True])
@@ -426,7 +428,7 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     # No program was composed, so the working-memory load is nothing.
     monkeypatch.setattr(WholePaths, 'load_cost',
         lambda model, observation, like: like.new_zeros(len(like)))
-    draw = dict(walk=torch.tensor([6]), reconstruction_round=torch.tensor([-1]),
+    draw = dict(walk=torch.tensor([WALKS.index('output')]),
                 thought_round=torch.tensor([-1]), output_round=torch.tensor([0]))
     path = finish(model, (), 0, active, base=base, draw=draw, trust=1.)
     assert len(calls) == 1 and path.observation['record'] is base.observation['record']

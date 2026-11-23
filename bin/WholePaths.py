@@ -236,13 +236,12 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         registry._terms = _copy_containers(base.registry._terms)
         registry._disabled = set(base.registry._disabled)
         return replace(base, registry=registry, draw=draw)
-    from SentenceField import publish, reconstruct
+    from SentenceField import publish
     from WalkTrials import ThoughtTrialState
-    from SentenceCredit import components
+    from SentenceCredit import WALKS, components
     from ThoughtClosing import close
     reading = base is None or bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
-    regeneration = base is None or reading or bool((draw['reconstruction_round'] >= 0).any())
-    rethink_rows = active if base is None else active & (draw['walk'] >= 0) & (draw['walk'] < 5)
+    rethink_rows = active if base is None else active & (draw['walk'] >= 0) & (draw['walk'] <= WALKS.index('thought'))
     rethink = bool(rethink_rows.any())
     before = ThoughtTrialState(model)
     original_errors = getattr(model, '_sentence_close_errors', None)
@@ -250,9 +249,6 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
     old_thinking = getattr(model, '_path_thinking', None)
     try:
         if reading:
-            model._path_reconstruction_options = (None if base is None or not model._sentence_reconstruction else
-                walk_options(base.observation['generation'].trace, draw['reconstruction_round'],
-                             reuse=(draw['walk'] >= 4) | (draw['walk'] < 0)))
             _, rebuilt, observation = model._sentence_path_cost(state, sid, active, incoming_trust=trust)
             registry = model._sentence_cost_registry
             expectation = model._sentence_expectation_comparison
@@ -262,25 +258,10 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
             registry._terms = {name: dict(term) for name, term in base.registry._terms.items()
                 if term.get('objective') != 'output' and not name.startswith('output.')}
             expectation = base.parts[:, 1]
-            if regeneration:
-                registry._terms = {name: term for name, term in registry._terms.items()
-                    if not name.startswith(('reconstruction_order_zero.', 'reconstruction.walk_residual.',
-                                            'reconstruction.walk_policy', 'reconstruction.free_',
-                                            'reconstruction.coverage'))}
-                model._path_reconstruction_options = walk_options(base.observation['generation'].trace,
-                                                                  draw['reconstruction_round'], reuse=(draw['walk'] >= 4) | (draw['walk'] < 0))
-                model._sentence_walk_residuals = []
-                rebuilt = reconstruct(model, observation['record'], registry, active,
-                                      programs=observation['entries'])
-                observation.update(generation=model._sentence_generation, target=model._sentence_target,
-                    order_zero_field=model._sentence_generation.field,
-                    order_zero_reverse=model._sentence_order_zero_reverse,
-                    input_reconstruction=model._input_reconstructions[int(sid)])
-                residual(registry, model._sentence_generation.trace, active, 'reconstruction')
         observation['incoming_trust'] = float(trust)
         # Reconstruction has its own operated field. Questions and the
         # answer reader start from what this sentence understood.
-        if reading or regeneration:
+        if reading:
             publish(model, observation['record'].understanding_field)
         model._sentence_close_errors = registry
         supervised = model.inputSpace.data.has_supervised_outputs
@@ -350,7 +331,6 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         model._sentence_fields = original_fields
         model._sentence_close_errors = original_errors
         model._path_thinking = old_thinking
-        model._path_reconstruction_options = None
 
 
 def credit(model, exploit, path, active):
@@ -361,18 +341,13 @@ def credit(model, exploit, path, active):
     draw = path.draw
     costs = torch.stack((exploit.parts[:, 0] + exploit.parts[:, 2],
                          path.parts[:, 0] + path.parts[:, 2]), -1)
-    for name, first, other, owner in (
-            ('reconstruction', exploit.observation.get('generation'), path.observation.get('generation'), 'reconstruction'),
-            ('output', exploit.output_trace, path.output_trace, 'output')):
-        first = first.trace if name == 'reconstruction' and first is not None else first
-        other = other.trace if name == 'reconstruction' and other is not None else other
-        if first is None or other is None or not bool((draw[name + '_round'] >= 0).any()):
-            continue
-        audit = dict(departure=draw[name + '_round'], greedy=first[0], explore=other[0],
+    first, other = exploit.output_trace, path.output_trace
+    if first is not None and other is not None and bool((draw['output_round'] >= 0).any()):
+        audit = dict(departure=draw['output_round'], greedy=first[0], explore=other[0],
             eligible=first[1], costs=costs, proposal_rounds=draw['walk_count'] * draw['walk_rounds'])
         value = generate_credit(model.languageSpace, audit, other[-1], other[-2])
-        path.registry.add(owner + '.walk_credit', value, category=owner,
-            objective=policy_objective(model, 'generate', 'chooser' if owner == 'output' else 'reconstruction'), side='A' if owner == 'output' else 'R')
+        path.registry.add('output.walk_credit', value, category='output',
+            objective=policy_objective(model, 'generate', 'chooser'), side='A')
     for row, at in enumerate(draw['thought_round'].tolist()):
         if at < 0:
             continue

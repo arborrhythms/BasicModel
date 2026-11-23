@@ -195,7 +195,7 @@ grammar-free. The numeric modality uses the path's composed state through one
 affine head. The path and its two costs are drawn in
 [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11).
 
-A single departure is drawn over attention, compose, bind, reconstruction, thought or output (`SentenceCredit.WALKS`). Every departure receives its whole-path change in R + A with the proposal correction of that draw, reading its own path's compose departure mask and attention state. Every ordinary cost trained on every path is scaled by 2/(1+K): reconstruction, expectation, compose and generate lessons, attention and their regularizers. The answer trains on the union of the kept path, explore paths departing in compose, and the greedy path when that set includes a compose departure; weights sum to one per stream. Both compositions train the reader because a reader trained only on what is kept reads the kept composition better because it is kept, which biases the comparison toward the incumbent; with one reader the bias returns unless the reader sees both. A departure in attention or in a bind is another reading of the input, to which the supplied answer does not apply, and a path that departed in the thought or a read-out is not asked to answer from a conclusion it did not keep. The rule's known cost is that the rejected composition's share does not decay as the chooser commits. Answer costs and `penalty.output` already carry those reader weights; chooser and `.A` departure costs are booked once and receive no additional all-path multiplier. The exploit's one reading lesson is added once outside the path sum. A no-departure path has an independent registry container, so subsequent bookings cannot leak between paths. The reconstruction/output walk residuals and credits retain their declared owners and R/A sides. Default gradient projection and optional separate owner pullbacks each make one sentence update. There are no `thought_comparison` terms or separately trained comparison-reader parameters.
+A single departure is drawn over attention, compose, bind, thought or output (`SentenceCredit.WALKS`). Every departure receives its whole-path change in R + A with the proposal correction of that draw, reading its own path's compose departure mask and attention state. Every ordinary cost trained on every path is scaled by 2/(1+K): reconstruction, expectation, compose and generate lessons, attention and their regularizers. The answer trains on the union of the kept path, explore paths departing in compose, and the greedy path when that set includes a compose departure; weights sum to one per stream. Both compositions train the reader because a reader trained only on what is kept reads the kept composition better because it is kept, which biases the comparison toward the incumbent; with one reader the bias returns unless the reader sees both. A departure in attention or in a bind is another reading of the input, to which the supplied answer does not apply, and a path that departed in the thought or a read-out is not asked to answer from a conclusion it did not keep. The rule's known cost is that the rejected composition's share does not decay as the chooser commits. Answer costs and `penalty.output` already carry those reader weights; chooser and `.A` departure costs are booked once and receive no additional all-path multiplier. The exploit's one reading lesson is added once outside the path sum. A no-departure path has an independent registry container, so subsequent bookings cannot leak between paths. Reconstruction charges the recorded steps on side R. Only the output walk draws generation departures and receives their credit on side A. Default gradient projection and optional separate owner pullbacks each make one sentence update. There are no `thought_comparison` terms or separately trained comparison-reader parameters.
 
 Hard derivations train only what they select: a path's costs reach the operators it applied, and an operator that no path selects receives no gradient beyond the negligible derivative through its candidate score. Its route to credit is a departure, an explore path that selects it, trains it with that path's costs and is compared with the exploit on R + A. The proposal's uniform floor (`explorationUniformFraction`) gives every eligible alternative a positive probability at each departure, and `explorePaths` sets how many explore paths a sentence draws; the two set how quickly an unused operator is tried.
 
@@ -314,7 +314,7 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   $W \cdot R_{walk} \cdot K$ when the draw is uniform over $K$ alternatives.
   No differentiable decoder is needed; a tie teaches nothing and the greedy
   argmax supplies no chooser gradient. The choice itself is a hard argmax
-  with no straight-through estimator. The six walks of
+  with no straight-through estimator. The five walks of
   `SentenceCredit.WALKS`, attention, compose, bind, thought and the two
   generate walks (reconstruction and output), are all credited this way.
 - **Why reconstruction alone cannot judge a choice.** Operators with exact
@@ -494,11 +494,10 @@ break exact identity ties; their independent for/against
 activations and new output brackets become the field. Input spans and desired
 answers do not choose these rows. The output comparison gives the departure
 its detached cost advantage through score-function credit, owner output/A.
-Its three residual lanes are side A (owner reconstruction, by their objective). The reconstruction walk uses
-the same generate, writer and reverse implementation, and compares its native
-reconstruction loss plus its selected residual. Its `reconstruction.walk_residual`
-lanes and `reconstruction.walk_credit` belong to reconstruction/R. No
-compose-tree teacher trains the generate policy. Shared numerical inverse operators retain their ownership;
+Its three residual lanes are side A (owner reconstruction, by their objective). The reconstruction takes the recorded steps through the
+shared generate, writer and reverse implementation. Its native loss,
+`reconstruction.walk_residual` lanes and recorded-step policy charge
+teach the inverse on side R. Shared numerical inverse operators retain their ownership;
 `separateChooser=true` still restricts parameter writes by owner.
 
 Expectation is taught stage by stage at each look, and `intuit`'s map by the
@@ -643,7 +642,7 @@ the kept terms follow. What remains to revisit is in
 | Term | What it constrains | Weight, owner and side |
 |---|---|---|
 | `reconstruction.walk_residual.{form,for,against}` | Reconstruction walk's selected inverse recomposition and unresolved frontier | Weight 1, baseline 1; reconstruction/R, whole rows |
-| `reconstruction.walk_credit` | Reconstruction departure's proposal-corrected score function on its complete native loss and residual | Weight 1; reconstruction/R, whole rows; exact ties have no graph |
+| `reconstruction.walk_policy` | Cross entropy of legal recorded steps under the generate policy | Side R, recorded steps only |
 | `output.walk_residual.{form,for,against}` | Output walk's selected inverse recomposition and unresolved frontier | Weight 1, baseline 1; side A, owner reconstruction (its objective), whole rows |
 | `<category>.definition_fold` | Witnessed member evidence against the class's sparse definition | Weight 1; existing category owner and side |
 | `memory.link_coverage` | Coverage of the selected retained reference's link | Weight 1; detached value in choice comparisons, live derivative in reconstruction/R |

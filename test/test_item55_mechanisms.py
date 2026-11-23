@@ -427,7 +427,7 @@ def _native_step_comparison(tmp_path, monkeypatch):
             departure = SentenceCredit.departure
             def replay(*a,**k):
                 draw = departure(*a,**k)
-                for key in ('bind_round', 'reconstruction_round', 'thought_round', 'output_round'):
+                for key in ('bind_round', 'thought_round', 'output_round'):
                     draw[key] = torch.full_like(draw[key], -1)
                 draw.update(walk=torch.zeros_like(draw['walk']),
                     narrowing=torch.ones_like(draw['narrowing']),

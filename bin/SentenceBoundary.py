@@ -33,7 +33,7 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             '_sentence_open_fields', '_sentence_look_fields', '_sentence_fields',
             '_input_reconstructions', '_sentence_generation',
             '_sentence_order_zero_reverse', '_sentence_target', '_last_sentence_credit',
-            '_sentence_credit_audits', '_sentence_walk_residuals', '_sentence_decoder_walk_credits',
+            '_sentence_credit_audits', '_sentence_walk_residuals',
             '_sentence_output_walk_credits', '_sentence_order_zero_field', '_last_answer_construction',
             '_last_closing_thoughts', '_intuition_bracket',
             '_concept_prediction'))):

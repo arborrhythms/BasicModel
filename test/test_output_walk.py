@@ -450,13 +450,9 @@ def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading)
         m.answer_synthesis=False
         m.inputSpace.data.has_supervised_outputs=False
         got=_policy_training_probe(m,opt,(What.inference(0, split='train'),What.inference(1, split='train')))
-        # Answer availability cannot reassign the decoder. Its restored
-        # reconstruction/R walk credit can still train the shared policy.
         assert got['mask'] == [False, False] and not got['departure_won']
-        assert set(got['walk_routes']) <= {('reconstruction.walk_credit', 'reconstruction', 'R')}
-        if any(bool((draw['reconstruction_round'] >= 0).any())
-               for draw in m._last_sentence_credit['departures']):
-            assert got['walk_routes']
+        assert got['walk_routes'] == []
+        assert all('reconstruction_round' not in draw for draw in m._last_sentence_credit['departures'])
         groups = m.objective_parameter_groups(opt)
         assert not any(any(p is q for q in groups['reconstruction'])
                        for p in m.languageSpace.generate_policy.parameters())

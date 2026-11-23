@@ -93,8 +93,8 @@ def test_free_inverse_cannot_erase_both_named_operands_to_fit_an_empty_meaning(m
             torch.testing.assert_close(operation.compose(a, b), parent)
             assert a[:, 4:].any() and b[:, 4:].any()
 
-@pytest.mark.parametrize('walk', ('reconstruction', 'output'))
-def test_separate_walk_credit_updates_only_the_policy_that_drew_it(walk):
+@pytest.mark.parametrize('output_round', (-1, 0))
+def test_only_an_output_departure_credits_the_walk_policy(output_round):
     from types import SimpleNamespace
     from torch import nn
     from Models import BaseModel
@@ -109,8 +109,7 @@ def test_separate_walk_credit_updates_only_the_policy_that_drew_it(walk):
     tops = model.reconstruction_parameter.reshape(1, 1, 2)
     first = (torch.zeros(1, 1, dtype=torch.long), active[:, None], features, tops)
     other = (torch.ones(1, 1, dtype=torch.long), active[:, None], features, tops)
-    draw = {name + '_round': torch.tensor([0 if name == walk else -1])
-            for name in ('reconstruction', 'output', 'thought')}
+    draw = dict(output_round=torch.tensor([output_round]), thought_round=torch.tensor([-1]))
     draw.update(walk_count=torch.ones(1), walk_rounds=torch.ones(1))
     exploit = SimpleNamespace(parts=torch.tensor([[3., 0., 1.]]),
         observation={'generation': SimpleNamespace(trace=first)}, output_trace=first)
@@ -120,6 +119,11 @@ def test_separate_walk_credit_updates_only_the_policy_that_drew_it(walk):
     optimizer = torch.optim.SGD(model.parameters(), lr=.1)
     old = {name: p.detach().clone() for name, p in model.named_parameters()}
     credit(model, exploit, path, active)
+    if output_round < 0:
+        # Even two different reconstruction traces cannot start a departure.
+        assert not path.registry._terms
+        return
+    assert set(path.registry._terms) == {'output.walk_credit'}
     owners = model.objective_parameter_groups(optimizer)
     backward_owned(registry_costs(path.registry), owners)
     optimizer.step()
@@ -192,7 +196,7 @@ def test_separate_selection_credit_cannot_train_its_input_or_decoder(departure):
         state[15], state[24] = torch.zeros(1, 1, dtype=torch.long), probability.log().reshape(1, 1)
         BasicModel._compose_score_function_loss(model, ((), state, ()), costs)
     else:
-        draw = dict(reconstruction_round=torch.tensor([-1]), output_round=torch.tensor([-1]),
+        draw = dict(output_round=torch.tensor([-1]),
             thought_round=torch.tensor([0]), walk_count=torch.ones(1), walk_rounds=torch.ones(1))
         first = SimpleNamespace(parts=torch.tensor([[3., 0., 1.]]), observation={}, output_trace=None)
         other = SimpleNamespace(parts=torch.tensor([[1., 0., 1.]]), observation={}, output_trace=None,

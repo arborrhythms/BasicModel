@@ -216,8 +216,8 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     audit = dict(departure=torch.tensor([0]), greedy=torch.tensor([[0]]), explore=torch.tensor([[1]]),
         eligible=torch.tensor([[True]]), costs=torch.tensor([[.5, 1.5]]))
     credit = generate_credit(model.languageSpace, audit, parent[:, None], torch.ones(1, 1, 2, 9))
-    errors.add('reconstruction.walk_credit', credit, category='reconstruction', objective='reconstruction', side='R')
-    assert any(g is not None and bool(g.abs().any()) for g in gradient('reconstruction.walk_credit', tuple(policy.parameters())))
+    errors.add('output.walk_credit', credit, category='output', objective='output', side='A')
+    assert any(g is not None and bool(g.abs().any()) for g in gradient('output.walk_credit', tuple(policy.parameters())))
     assert proposal.realization_field.where[0].tolist() == [[0, 1], [2, 3]]
 
 
