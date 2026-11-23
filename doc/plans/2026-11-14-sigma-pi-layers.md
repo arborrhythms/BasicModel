@@ -26946,3 +26946,41 @@ The tests teach at a rate of .01, written in each test (`model.getOptimizer(lr=.
 - *What is changed* (the fourth part, text above §22.7): the rate comes from the model, with no default in code; the echo's tests and the said-back measure use it; the measure teaches the sentences it measures.
 - *Not taken:* a rule that leaves a parameter unmoved at a step with no gradient changes how the optimizers work and is not needed at the model's rate; teaching the stop read is a cost and Alec's to allow, and is not needed here either.
 - *Left as it is:* `Tree.edge`'s reliance on the order of writing, until the roots can be read from the store.
+
+### 23.6.30 Round 6d, nineteenth pass, fourth part: teaching at the model's own rate, the echo's three tests pass in every run; the said-back measure keeps every word and sentence in two starts of three, and in the third two words are no longer read (Claude on Opus, standing in for Codex, 2026-11-23; review by Claude)
+
+The implementer's return is the "Fourth part" of `r6d_return_19.md`. Commit b2d42ea39b on `item17-r6d11`.
+
+#### What was built
+
+- `BasicModel.getOptimizer(lr=None)`: with no rate given it takes the configured `architecture.training.learningRate` (`TheXMLConfig.training("learningRate")`; 0.001 in `data/model.xml`). No number for it is in the source.
+- `test_item17_echo.py` (three calls) and `test_item17_reconstruction_said_back.py` (one) call it with no rate. No other test's rate changed.
+- The said-back measure's teaching reads the 19 words with their marks, the six two-word sentences and the lesson's four sentences, ten rounds by default.
+- *A rate still held as a fallback in code, listed and not changed:* `_t("learningRate", 0.01)` three times, `run(lr=0.001)` and `runTrial(lr=0.01)` in `bin/Models.py`; `bin/corpus_lessons.py` (`getOptimizer(lr=.001)`); the `Adam` class's `lr=1e-3` in `bin/Optimizer.py`; `bin/Layers.py` (`lr=0.01`); `bin/Language.py` (`lr=0.1`); `bin/Spaces.py` (`lr=0.01`, `learning_rate=0.001`); `bin/embed.py`; `bin/Legacy.py`.
+
+#### Measured
+
+| Said-back start | Words of 19 (untaught / taught 10 rounds) | Lesson sentences of 4 | Two-word sentences of 6 |
+| --- | --- | --- | --- |
+| 98136587649208 | 19 / 19 | 4 / 4 | 6 / 6 |
+| 147288161866577 | 19 / 19 | 4 / 4 | 6 / 6 |
+| 1686171118491 | 19 / 17 | 4 / 0 | 6 / 0 |
+
+- In the third start two words, "is" and "That", are read nowhere after teaching: "is." and "That." are put back as nothing, and each sentence comes back without them ("This is." as "This" and the mark; "This is Felix." as "This", "Felix" and the mark). Every other word is whole. With Claude's three starts of §23.6.29 (same rate, rounds and teaching), that is five starts of six that keep everything.
+
+| Echo test, 6 runs each | Runs failed | Lost |
+| --- | --- | --- |
+| A word with its own look | 0 | nothing |
+| A word and its mark with its own looks | 0 | nothing |
+| A sentence of two words | 0 | nothing |
+| A word read whole by a model that reads (known) | 6 | 13 of 19: the six counting words come back as other words |
+| A word and its mark read whole by a model that reads (known) | 6 | 0 of 19: every word comes back without its mark |
+
+No run lost a word's letters and none met a gradient that is not a number. Both gates passed, and the two tests that already called `getOptimizer()` with no rate.
+
+#### Review (Claude, 2026-11-23)
+
+- *Accepted.* Claude's own run on b2d42ea39b (the echo's tests, the gate test, the curriculum test and both gates): 21 passed, 2 failed, the two being the known echo cells read whole.
+- *The loss of a word's letters after teaching* (the second fault of the Codex text above §22.7) has not been seen at the model's rate: 0 runs of 18 over the three tests here, and 0 of 8 in §23.6.29's trial, against 4 of 24 at .01. The gradient that is not a number (its first fault) was not met in these runs either; it was rare before (about 1 run in 15 to 20), so that is not yet shown gone.
+- *Not finished:* one start of six stops reading two words after teaching. It is a word that no look takes any more, the third part's kind of loss (a value at a threshold), now rarer. It is not diagnosed.
+- *The other fallbacks of a rate in code* are a standing-rule matter (every default in `data/model.xml`) outside this round; they are listed for round 7's inventory.
