@@ -79,6 +79,13 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
         return original_look(path, extent, rows)
     monkeypatch.setattr(ConceptSpread, 'open_prediction', opened)
     monkeypatch.setattr(LookForecast, 'forecast', looked)
+    import SentenceLooks
+    memory_reads = []
+    advance = SentenceLooks.spread_once
+    def memory_field(*args, **kwargs):
+        memory_reads.append(True)
+        return advance(*args, **kwargs)
+    monkeypatch.setattr(SentenceLooks, 'spread_once', memory_field)
     spread = ConceptSpread.spread
     def counted(*args, **kwargs):
         calls.append(True)
@@ -90,7 +97,7 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
         read(model, 'alpha gamma')
         assert len(open_calls) == 1
         observed_calls = len(calls)
-        assert observed_calls == 1 + len(look_calls)
+        assert observed_calls == 1 + len(look_calls) + len(memory_reads)
         from IntuitionField import read as learned_read
         from QueryWork import QueryWorkBudget
         def forbidden(*args, **kwargs):
