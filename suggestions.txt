@@ -1,51 +1,20 @@
-Item 1.7 — attention and conditional speech, 2026-11-23
-Local main implementation commit d5699a82c1
+Item 1.7 | Memory review for Claude | Local main | 2026-11-23
 
-The full-grammar lesson model looks at both words in “say Felix” and “say Ciao”. Across
-three fresh starts, before teaching and after six rounds of teaching both requests
-interleaved with “Felix” and “Ciao”, all four returned answers were empty in every start.
-Bare names had a supervised silence target. The positive requests incurred answer cost A
-even when the answer was empty. In two separate full-vocabulary starts, before teaching and
-after three rounds on all 19 pairs, the model returned 0/19 requested words and was silent
-on 19/19 bare words in each start. After teaching the final answer construction recorded a
-concept thought with zero answer meanings on all 38 presentations in each start. The
-checked-in probe uses one question address for every example and evaluates with no supplied
-target. These scores are for BatchResult.outputPred.
+The grammar-free reading model reconstructed 19/19 bare words in 6/6 fresh starts and 19/19 words with their period in 6/6 fresh starts. Those counts held after nomination, before optimizer teaching, and after one teaching round. Digits 1 through 6 and the period used ordinary word nomination. These two cells measure SentenceField.reconstruction. In the separate echo model, which has compose and generate rules and no thought grammar, BatchResult.outputPred spelled 19/19 bare words, 19/19 words with periods and 6/6 two-word sentences. All three answer tests passed. The conditional-answer test on the full grammar still returned empty strings on all four presentations after six rounds, including “say Felix” and “say Ciao”. Bare-word silence was correct. Two consecutive spaces in “say  Felix” were two distinct native percepts.
 
-The existing echo model, with the thought rules removed, shows the other behavior. In a
-two-name control, before and after three rounds, it returned “say Felix” for “say Felix” and
-“Felix” for “Felix”, likewise for “Ciao”. The two-word inputs supplied two perception
-meanings to the answer. The bare words supplied one each. It can spell what it heard.
-Neither model learned when to speak in these trials. The first decision to inspect next is
-the ordinary closing chooser's choice of an accepted meaning for the requested object.
-Compare the choices available for the same name with and without the cue, and check whether
-choosing differently changes A.
+Alec's two instructions appear verbatim in §19.146. Implementation commit 6347636fda builds on fc71b9d680 on local main. In the baseline trace of “This is Felix.” the grammar-free path took no narrowed attention looks, added no LTM ideas or pairs and reconstructed “Felix”. With grammar, that trace had four looks, four syntax occurrences, six syntax pairs, then one additional durable idea and zero additional durable pairs at the close. The particular semantic reduction varies with the walk.
 
-RequestRead and SentenceLooks.Looks.run now use the open conceptual field, the preceding
-look's field spread once, and whether any eligible words remain. Removed the per-look
-vocabulary predictor, last predicted word input, teacher forcing, output-length supervision
-over stopping, and auxiliary attention.output loss. Speech goes through the ordinary closing
-and generation. The input word “say” occurs in the lessons as data. BaseModel.load_weights
-keeps the old reader's shared input columns and migrates their optimizer moments. A
-checkpoint-resume test checks the next optimization step.
+Memory.STM1.append_occurrence extends the live sequence at its right end. For A, B, C, the structure is (A, (B, C)). One idea needs no pair. The last link points directly to the last occurrence. ReadingMemory.read uses the model's existing native percept brackets, concept nomination, request, salience, stopping decision, tie draw and dimming. Each selected occurrence immediately writes its concept or percept code, its place, and an episodic reading into STM. ReadingMemory.commit translates the occurrence and pair handles into LTM and returns one head per stream. MTM advances once per nonempty grammar-free close. ReadingMemory.field_of follows the durable head and supplies the existing perceptual inverse. A single known word takes one open-field read and one narrowing look. There is no start-position preference or vocabulary prediction in this path.
 
-Whitespace is visible at perception. Before the first look on “say  Felix”, two native
-percept occurrences each resolved through the percept store to byte 32, at [3, 4) and [4,
-5). Spaces do not need to become word concepts to have perceptual identity and position.
-BasicModel._stage_mixing_grammar_leaf_mask explicitly filters whitespace-only grammar
-leaves.
+The regression test observed STM after every arrival, followed the head again in LTM and compared actual reconstructed bytes. For “This is Felix.” the stored look order in one run was Felix, This, period, is. For “What is this?” it was this, What, question mark, is. Both printed sentences reconstructed exactly. “Felix Felix.” retained two separate occurrences of the same word. Eight repetitions of “is” produced eight occurrence rows, seven pairs and one head. The whitespace-only companion stream had no head. The first heads still traversed after later presentations. These results demonstrate retention of attention order and placement by the stored spatial wires. Left-to-right attention, learning the next member of a sequence, and reasoning by retrieving that sequence are separate behavioral tests still to make.
 
-The standing XOR and raised-class gates and all three no-thought grammar echo tests passed.
-Two existing gradient checks still require a positive gradient on the attention request
-under ordinary unsupervised sentence training. Both failed after removing the auxiliary word
-objective. The forty-minute own-reading experiment was updated to use spoken cues and the
-returned answer and was excluded from the run.
+SentenceStrata.Tree.write_edges now writes one pair per binary syntactic reduction and retains the handle. SentenceField.said_words follows that handle, including a single occurrence. The grammar evaluator materializes these typed pairs from the selected shift/reduce record at the end of a trial. Only the grammar-free reader extends its linked head during each individual look. This removes the old search for the lowest numbered incident edge and its extra parent-site pair. A semantic reduction can still commit a fused idea through PartClosing. Models._commit_sentence retains a partial forest as one relation when the grammar cannot finish it. The existing closing rule still scores a silent reconstruction. The earlier certificate that required exactly one empty LTM row for this case was updated to check the two retained occurrences and their link, together with its original silence and cost checks.
 
-Across the final targeted runs, 54 distinct checks passed and 3 failed. The failures are the
-conditional-answer test and the two attention-gradient assertions. The earlier inference
-probe used mismatched split names, which the batch API rejected. After correcting the probe
-to use the active split, both inventory measurements ran to completion and the
-conditional-answer test reached its output assertion.
+A second removable duplication was in ThoughtStrata.write. The first occupied role now holds the thought's metadata and its own idea. A one-role thought fell from two occupied occurrence rows plus one pair to one occupied row and zero pairs. The preallocated thought-buffer capacity is unchanged. The rollback tests exercise growing and restoring the transient stores and reconstructing the same roles and constituents. MTM already owns temporary identities, recurrence counts and references to occurrences. Some unresolved clauses also need a pending predicate that the LTM idea cannot supply. The pending-name and pending-predicate tests pass. No separate MTM sequence or new learned parameter was added.
 
-Reproduce the target-free inference comparison from the main worktree:
-env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest test/measure_item17_command_inventory.py test/test_item17_word_said_back.py -q -p no:cacheprovider -n 6 --dist loadfile -rP
+One architecture question remains in Output.witness. In a model without thought rules it caches the perceived word identities, sorted by input position, in the meaning's _perceived_words binding. Output.concluded_meanings reads this for the unconditional echo. The command model's closing still supplies no accepted answer for either command. The next comparison I would make is the set of candidate conclusions for “say Felix” versus “Felix”, and the change in answer cost if the ordinary chooser selects a different candidate. The supplied target belongs only in that cost.
+
+Tests used the requested six-worker, loadfile configuration. The separate verification batch had 25 passes including all twelve fresh-start reconstruction tests, the thought-answer adapters and the demuxed way back. The combined binding, identity-threading, memory-boundary and conditional-speech run had 92 passes and the one conditional-speech failure described above. The two standing gates passed together in the first 11-test batch. The 120-test memory, grammar and gate batch had 119 passes and one Torch compiler lock-file error. The partial-sentence certificate subsequently passed using a writable compiler cache, including the new storage assertions. The forty-minute own-reading file and the full repository suite were outside this run.
+
+On implementation commit 6347636fda the twelve fresh-start measurements and both unchanged standing gates passed together, 14/14. Each reconstruction measurement scored 19/19 in rounds zero and one. An intermediate run spanned the extraction of the shared narrowing function and reported two import errors in workers holding the earlier module. The verification on the fixed commit used fresh processes.
+The final run of test_item17_echo.py, test_item17_looks.py and test_item17_reading_memory.py passed all 30 tests on the shared narrowing implementation.
