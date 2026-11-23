@@ -1489,6 +1489,7 @@
       <xs:element name="start" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="grammar" type="grammarType" minOccurs="0"/>
       <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
+      <xs:element name="rulesAvailable" type="xs:string" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 

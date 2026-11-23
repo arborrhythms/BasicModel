@@ -710,6 +710,12 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
         lefts.append(value); rights.append(parent); missing.append(unavailable)
     lefts.append(parent); rights.append(parent); missing.append(torch.zeros_like(live))
     available = ~torch.stack(missing, 1)
+    if hasattr(language, 'available_rules'):
+        # A rule not yet taught is on no menu (§19.135, 6); STOP always is.
+        taught = torch.cat((language.available_rules('generate_binary'),
+                            language.available_rules('generate_unary'),
+                            torch.ones(1, dtype=torch.bool, device=available.device)))
+        available = available & taught[None]
     # Priming can name an unspelled structural whole. Keep it in the
     # forward search while restricting only STOP to lexical realizations.
     options = ({} if constituents is None and terminal_valid is None else

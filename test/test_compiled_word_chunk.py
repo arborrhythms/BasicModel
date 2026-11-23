@@ -300,7 +300,7 @@ def _tiny_canonical_model(
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
         concept_rows=64, dimension=16, concept_meaning_width=0,
         chooser_depth=None, training_overrides=None, architecture_overrides=None,
-        conceptual_overrides=None,
+        conceptual_overrides=None, language_overrides=None,
         part_rows=256, stm_capacity=None, ltm_capacity=None, grammar=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
@@ -383,7 +383,8 @@ def _tiny_canonical_model(
             _set('./SymbolSpace/language/grammar', grammar_path)
     for path, values in (("./ConceptualSpace", conceptual_overrides),
                          ("./architecture/training", training_overrides),
-                         ("./architecture", architecture_overrides)):
+                         ("./architecture", architecture_overrides),
+                         ("./SymbolSpace/language", language_overrides)):
         for tag, value in (values or {}).items():
             node = root.find(f"{path}/{tag}")
             if node is None:

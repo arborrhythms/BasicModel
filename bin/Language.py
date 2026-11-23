@@ -6852,6 +6852,14 @@ class OperationSelectionLayer(nn.Module):
             if dummy is not None:
                 fixed = torch.tensor(dummy, device=x.device, dtype=torch.bool)[None, None]
                 unary_scores = torch.where(fixed & reference_data['unary_valid'] & torch.isfinite(unary_scores), 0., unary_scores)
+        owner = getattr(self, '_rule_owner', None)
+        if owner is not None and len(owner._compose_binary_rules) == self.r_reduce \
+                and len(owner._compose_unary_rules) == self.r_apply:
+            # A rule not yet taught is on no menu (§19.135, 6).
+            binary_scores = binary_scores.masked_fill(
+                ~owner.available_rules('compose_binary').index_select(0, bi)[None, None], -torch.inf)
+            unary_scores = unary_scores.masked_fill(
+                ~owner.available_rules('compose_unary').index_select(0, ui)[None, None], -torch.inf)
         binary_scores = binary_scores.masked_fill(~torch.where(binds[None,None],live.any(-1)[:,None,None],live[:,1:,None]),-torch.inf)
         binary_scores = binary_scores.masked_fill(binds[None,None] & deadline[:,None,None],-torch.inf)
         if closing and rounds_left is not None:
@@ -11198,6 +11206,47 @@ class LanguageSpace(nn.Module):
                 # output loop then emits the idea's slots as they are, and
                 # reconstruction learns the expansions.
                 self.generate_policy.bias[-1] = 2.0
+        self._configure_rule_availability()
+
+    def _configure_rule_availability(self):
+        """One availability for each rule of the grammar, by its name, over
+        the compose rules and the walk's generate rules alike (§19.135, 6).
+        A rule that is not available is on neither the compose chooser's
+        menu nor the walk's. The key ``SymbolSpace.language.rulesAvailable``
+        names the rules available at the start (``*``: every rule; empty:
+        none). The values are a persistent buffer, saved and loaded with the
+        model; :meth:`make_available` raises one, and nothing lowers it."""
+        groups = (self._compose_binary_rules, self._compose_unary_rules,
+                  getattr(self, '_generate_binary_rules', ()), getattr(self, '_generate_unary_rules', ()))
+        names = tuple(dict.fromkeys(rule.method_name for rules in groups for rule in rules))
+        self.rule_names = names
+        raw = TheXMLConfig.get('SymbolSpace.language.rulesAvailable')
+        listed = () if raw is None else tuple(str(raw).split())
+        unknown = [name for name in listed if name != '*' and name not in names]
+        if unknown:
+            raise ValueError(f'rulesAvailable names rules the grammar does not have: {unknown}')
+        every = '*' in listed
+        self.register_buffer('rule_available', torch.tensor(
+            [every or name in listed for name in names], dtype=torch.bool))
+        for label, rules in zip(('compose_binary', 'compose_unary', 'generate_binary', 'generate_unary'), groups):
+            self.register_buffer(f'_{label}_availability', torch.tensor(
+                [names.index(rule.method_name) for rule in rules], dtype=torch.long), persistent=False)
+        operations = getattr(self.language_layer, 'operation_layer', None)
+        if operations is not None:
+            # A reference, not a submodule: the buffer stays the language
+            # space's alone in the state dict.
+            object.__setattr__(operations, '_rule_owner', self)
+
+    def make_available(self, name):
+        """Raise one rule's availability (the curriculum's step); a rule
+        once available stays so."""
+        self.rule_available[self.rule_names.index(name)] = True
+
+    def available_rules(self, label):
+        """``[R]`` bool: which of ``label``'s rules (``compose_binary``,
+        ``compose_unary``, ``generate_binary``, ``generate_unary``, in that
+        list's order) are available."""
+        return self.rule_available.index_select(0, getattr(self, f'_{label}_availability'))
 
     @contextmanager
     def generation_scope(self):

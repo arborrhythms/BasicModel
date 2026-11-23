@@ -509,6 +509,13 @@
       </grammar>
       <!-- Soft-interpolation weight between forward and generation. -->
       <interpretation>0.5</interpretation>
+      <!-- The grammar's rules available at the start, by name, separated
+           by spaces: "*" is every rule, empty is none. A rule that is not
+           available is on neither the compose chooser's menu nor the
+           walk's; the curriculum makes the rules available one at a time
+           as they are taught (LanguageSpace.make_available), and the
+           availabilities are saved with the model. -->
+      <rulesAvailable>*</rulesAvailable>
     </language>
   </SymbolSpace>
 
