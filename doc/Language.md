@@ -345,9 +345,8 @@ with the same request gives the same result whatever was looked at before
 it. A walk has one act of attention, `attend` ("you can
 just use attend() , I don't see a need for explicit focus and unfocus
 operators"): moving on to the next word is a request, and so is returning
-to the whole sentence. There is no focus and no unfocus, and no rule forbids
-a walk an act; a focused state is context, from which focus moves on to the
-right, word by word, to the sentence's end. `attend` and the field operators
+to the whole sentence. The current focus supplies context for the next request, which can move
+to an occurrence in either direction. `attend` and the field operators
 `intersection`, `union` and `not` act on the request's two lanes; none of
 them acts on an interval of the input. Attention has no act that accepts a
 word. What the walk has done is kept as concepts in the slots of episodic
@@ -356,13 +355,11 @@ memory, which the chooser reads ([STM](STM.md#1-stm-data-model)).
 Every look is perceived and conceptualized, whether or not it returns a
 word: the concepts of every order are given from its activity, and its field
 is kept beside the sentence's own. Then, before `attend` acts again, the
-grammar has its option. `interpret` takes the most active word concept of
-the returned set, exactly: a selection, with no degree. Of forms that begin
-at one place the largest is the word, so `is` is not taken at the token of
-`This`. Where several are still equally the most active, the request has
-identified no word, and one is taken by a draw that the outcome of its path
-credits, as an explore path's departure is credited. Where the set holds no
-word concept, nothing is interpreted. `architecture.interpretBias` (0 to 1, default 1) is
+grammar has its option. The attention MLP requests concepts, and their
+evidence at the eligible occurrences supplies the scores for a softmax.
+Training samples one occurrence from those probabilities. Evaluation takes
+the most probable occurrence, drawing fairly between exact ties. The grammar
+may interpret the selected word. `architecture.interpretBias` (0 to 1, default 1) is
 the probability that the call is made without asking the chooser; in the
 remaining share the grammar's chooser decides it as it decides its other
 one-operand rules (`OperationSelectionLayer.choose_interpret`, `interpret`
@@ -1176,7 +1173,7 @@ and has the rest commented out.
   successor ([Training](Training.md)).
 - **Attention finds a word for grammar.** `attend` asks for concepts, and
   the look returns a set of concepts at their tokens. Where that set holds
-  a word concept the grammar may call `interpret` on the most active one,
+  a word concept the grammar may call `interpret` on the selected occurrence,
   with probability `interpretBias` and otherwise by its chooser
   ([The looks](#the-looks)).
 

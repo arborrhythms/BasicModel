@@ -7,7 +7,7 @@ its salience, the request carried down by the ways back, capped at its own
 activity; a reading's where match is ``exp(s - max s)`` of the salience of
 what it holds, applied once to the reading's values; the way up again on a
 table of the bank's most salient occurrences gives the returned set. The
-most active word is taken (a draw among equals), and a word interpreted is
+request assigns selection probabilities to the eligible words, and a word interpreted is
 lowered in the bank's own activity over its extent.
 """
 from dataclasses import fields
@@ -212,6 +212,7 @@ class Looks:
         self.model, self.walk, self.sid, self.present = model, walk, sid, present
         self.prior, self.draw, self.kept = prior, draw, kept
         self.decisions, self.fields, self.stops = [], [], []
+        self.look_credit = None
         self.supplied = getattr(model, '_attention_supplied_reading', None)
 
     def source_orders(self):
@@ -269,6 +270,9 @@ class Looks:
             return at_rows(known_rows[key], field, V, B)
         held = located(opened) if opened is not None else own.new_zeros((B, V, 2))
         memory = torch.zeros_like(held)
+        if model.training and torch.is_grad_enabled() and self.supplied is None and self.prior is None:
+            from LookForecast import OccurrenceCredit
+            self.look_credit = OccurrenceCredit(owner)
         while True:
             turn = state.taken
             left = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
@@ -314,17 +318,22 @@ class Looks:
                 masked = torch.where(state.departure == turn, exploit.actions[:, turn], -1)
             if target is not None:
                 replay = torch.where(target >= 0, target, -1 if replay is None else replay)
-            from Attention import draw_among
-            index, drawn, probability, others = draw_among(words, replay=replay, masked=masked)
+            from Attention import occurrence_probabilities, select_occurrence
+            probabilities = occurrence_probabilities(words)
+            index = select_occurrence(probabilities, sample=model.training, replay=replay, masked=masked)
+            others = (probabilities.detach().gt(0).sum(-1) - 1).clamp_min(0)
+            probability = probabilities.gather(1, index.clamp_min(0)[:, None])[:, 0]
             index = torch.where(rows, index, -1)
             observation.observe(bank.where, index)
             state.actions.append(index)
-            state.alternatives.append(drawn & rows & (index >= 0))
+            state.alternatives.append((others > 0) & rows & (index >= 0) & (self.supplied is None))
             state.probabilities.append(probability)
             state.counts.append(torch.where(rows, others, 0))
             found = index >= 0
             if not bool(found.any()):
                 break
+            if self.look_credit is not None:
+                self.look_credit.observe(look_field, probabilities, index)
             word = index.clamp_min(0)
             allowed = found & (state.known.gather(1, word[:, None])[:, 0]
                                | torch.isfinite(words.gather(1, word[:, None])[:, 0]))

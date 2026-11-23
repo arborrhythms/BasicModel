@@ -227,21 +227,22 @@ def word_rows(model, *words):
     return [owner._concept_row_of(owner.interpret.word_for_form(word)) for word in words]
 
 
-def test_37_interpret_takes_the_most_active_and_draws_among_equals():
-    """The most active word, exactly; equals are a draw, marked as one, with
-    a departure taking another of them; nothing found takes nothing."""
-    from Attention import draw_among
-    inf = torch.inf
-    index, drawn, probability, others = draw_among(torch.tensor([[.2, .7, -inf]]))
-    assert index.tolist() == [1] and not drawn.any() and probability.tolist() == [1.]
-    tied = torch.tensor([[.5, -inf, .5]])
-    taken = {int(draw_among(tied)[0]) for _ in range(64)}
-    assert taken == {0, 2}
-    index, drawn, probability, others = draw_among(tied)
-    assert drawn.all() and probability.tolist() == [.5] and others.tolist() == [1]
-    assert draw_among(tied, masked=torch.tensor([0]))[0].tolist() == [2]
-    assert draw_among(tied, replay=torch.tensor([0]))[0].tolist() == [0]
-    assert draw_among(torch.full((1, 3), -inf))[0].tolist() == [-1]
+def test_37_occurrence_policy_uses_graded_scores_and_masks_unavailable_words():
+    from Attention import occurrence_probabilities, select_occurrence
+    scores = torch.tensor([[.2, .7, -torch.inf]], requires_grad=True)
+    probabilities = occurrence_probabilities(scores)
+    torch.testing.assert_close(probabilities[:, :2], scores[:, :2].softmax(-1))
+    assert probabilities[0, 2] == 0
+    assert select_occurrence(probabilities, sample=False).tolist() == [1]
+    probabilities[0, 1].backward()
+    assert scores.grad[0, 0] < 0 < scores.grad[0, 1] and scores.grad[0, 2] == 0
+    tied = occurrence_probabilities(torch.tensor([[.5, -torch.inf, .5]]))
+    torch.testing.assert_close(tied, torch.tensor([[.5, 0., .5]]))
+    assert set(select_occurrence(tied.expand(64, -1), sample=False).tolist()) == {0, 2}
+    assert select_occurrence(tied, sample=True, masked=torch.tensor([0])).tolist() == [2]
+    assert select_occurrence(tied, sample=True, replay=torch.tensor([0])).tolist() == [0]
+    empty = occurrence_probabilities(torch.full((1, 3), -torch.inf))
+    assert select_occurrence(empty, sample=True).tolist() == [-1]
 
 
 def test_34_the_where_match_multiplies_a_reading_once_at_its_start():
@@ -655,7 +656,7 @@ def test_43_a_word_read_at_for_one_and_against_a_trace_is_interpreted():
     0.0002 is one signed number just under one, the most active, and taken."""
     from types import SimpleNamespace
     from SentenceLooks import word_activity
-    from Attention import draw_among
+    from Attention import occurrence_probabilities, select_occurrence
     evidence = torch.tensor([[[[1., .0002], [.4, 0.]]]])                    # [S, B, W, 2]
     field = SimpleNamespace(concept_ids=torch.tensor([7]), evidence=evidence)
     concepts = torch.tensor([[7, 7]])
@@ -664,7 +665,7 @@ def test_43_a_word_read_at_for_one_and_against_a_trace_is_interpreted():
     value = word_activity(field, concepts, torch.ones(1, 2, dtype=torch.bool),
                           torch.ones(1, 2, dtype=torch.bool), own, bank)
     assert float(value[0, 0]) == pytest.approx(.9998)
-    assert draw_among(value)[0].tolist() == [0]
+    assert select_occurrence(occurrence_probabilities(value), sample=False).tolist() == [0]
 
 
 # --- The salience map against the framework's backward (certificate 31) -----
@@ -798,16 +799,17 @@ def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkey
             extent = SentenceLooks.extent_of(bank, activity, count)
             value = SentenceLooks.word_activity(field, concepts, torch.ones(1, count, dtype=torch.bool),
                                                 extent, bank.activity, bank)
-            from Attention import draw_among
-            index, drawn, _, _ = draw_among(value)
+            from Attention import occurrence_probabilities, select_occurrence
+            probabilities = occurrence_probabilities(value)
+            index = select_occurrence(probabilities, sample=False)
             found[(text, word)] = dict(inner_concept_by_reading=[round(v, 4) for v in inner],
                                        returned=[round(float(v), 4) for v in value[0]],
-                                       taken=int(index[0]), drawn=bool(drawn[0]))
+                                       taken=int(index[0]), probabilities=probabilities[0].tolist())
             assert abs(inner[longer]) < 1e-6 and inner[at] > 0, found[(text, word)]
             assert torch.isfinite(value[0, at])
             assert not torch.isfinite(value[0, longer]) or float(value[0, longer]) < float(value[0, at]), \
                 found[(text, word)]
-            assert int(index[0]) == at and not bool(drawn[0]), found[(text, word)]
+            assert int(index[0]) == at and (probabilities[0] == probabilities[0, at]).sum() == 1, found[(text, word)]
         print(found)
     finally:
         model.End()

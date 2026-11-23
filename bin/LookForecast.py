@@ -163,3 +163,52 @@ class LookForecast:
             F.pad(extent, (0, max(0, evidence.shape[1] - extent.shape[1])))[:, :evidence.shape[1], None, None],
             evidence[:, :, :self.basic_count], 0.)), 1)
         return pair
+
+
+class OccurrenceCredit:
+    """Credit a sampled look for the change it made to the next observation's forecast."""
+
+    def __init__(self, owner):
+        self.owner = owner
+        self.history = self.prediction = self.previous = None
+        self.terms = []
+
+    @torch.no_grad()
+    def observed(self, field, index):
+        rows = field_rows(self.owner, field)
+        if rows.ndim == 1:
+            rows = rows[:, None].expand(-1, len(index))
+        evidence = field.evidence[:, torch.arange(len(index), device=index.device), index.clamp_min(0)]
+        values = evidence.clamp(0., 1.) * (index >= 0)[None, :, None]
+        V = self.owner.nVectors
+        at = torch.where(rows >= 0, rows, V)[..., None].expand_as(values)
+        return values.new_zeros(V + 1, len(index), 2).scatter_reduce(0, at, values, 'amax')[:V]
+
+    def forecast(self, observations):
+        expected, _ = ConceptSpread.spread(self.owner, observations)
+        return expected[:self.owner.nVectors]
+
+    def observe(self, field, probabilities, index):
+        actual = self.observed(field, index)
+        if self.previous is not None:
+            chosen, eligible, log_probability, before = self.previous
+            # Both forecasts preceded this observation. Only the second had
+            # the preceding look's evidence. Equal errors supply no credit.
+            change = ((self.prediction - actual).square() - (before - actual).square()).mean((0, 2))
+            valid = eligible & (index >= 0) & (chosen != index)
+            if (valid & change.ne(0)).any():
+                self.terms.append((log_probability * change, valid))
+        if self.history is None:
+            self.history = torch.zeros_like(actual)
+            self.prediction = self.forecast(self.history)
+        before = self.prediction
+        self.history = torch.maximum(self.history, actual)
+        self.prediction = self.forecast(self.history)
+        p = probabilities.gather(1, index.clamp_min(0)[:, None])[:, 0]
+        eligible = (index >= 0) & ((probabilities.detach() > 0).sum(-1) > 1)
+        self.previous = index, eligible, torch.where(eligible, p, 1.).log(), before
+
+    def register(self, registry):
+        for term, valid in self.terms:
+            registry.error('attention.next_observation', term, 1., mask=valid,
+                           category='expectation', objective='attention')

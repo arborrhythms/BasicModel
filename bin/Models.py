@@ -19936,17 +19936,6 @@ class BasicModel(BaseModel):
         scale = scale.detach().to(probabilities)
         actions = path[1][15].detach()
         walks = torch.ones_like(actions)
-        draw = getattr(self, '_sentence_departure', None)
-        reading = getattr(self, '_attention_words', None)
-        if draw is not None and reading is not None and bool((draw['attention_round'] >= 0).any()):
-            attention_mask = (torch.arange(reading.actions.shape[1],device=costs.device)[None]
-                              == draw['attention_round'][:,None])
-            mask = torch.cat((attention_mask,mask),-1)
-            probabilities = torch.cat((reading.probabilities,probabilities),-1)
-            scale = torch.cat((reading.alternative_counts *
-                (draw['walk_count'] * draw['walk_rounds'])[:,None],scale),-1)
-            actions = torch.cat((reading.actions.detach(),actions),-1)
-            walks = torch.cat((torch.zeros_like(reading.actions),walks),-1)
         from SentenceCredit import score_function
         surrogate, record = score_function(probabilities, scale, mask, costs)
         self._last_compose_score_function = dict(record, actions=actions, walk=walks,
@@ -19954,9 +19943,8 @@ class BasicModel(BaseModel):
             compose_exposures=(mask & advantage.ne(0)[:, None] & walks.eq(1)).sum(-1))
         if not surrogate.requires_grad:
             return probabilities.new_zeros(())
-        # Bracket narrowing and compose share this grammar chooser. Their
-        # credit remains one policy term at scale one; candidate attention
-        # has its separate local departure/lesson terms.
+        # This departure trains the compose chooser. A sampled occurrence
+        # receives its own credit from the next observation.
         from ObjectiveOwnership import policy_objective
         self._sentence_cost_registry.add('output.compose_score_function', surrogate,
             category='output', objective=policy_objective(self, 'compose', 'chooser'), side='A')
@@ -21554,6 +21542,8 @@ class BasicModel(BaseModel):
                 chosen = self._commit_sentence(chosen, sid, present, observations, selected)
                 from ConceptSpread import complete
                 complete(self, present, close_errors)
+                if look_trials[0] is not None and look_trials[0].look_credit is not None:
+                    look_trials[0].look_credit.register(close_errors)
                 from IntuitionField import complete as complete_intuition
                 complete_intuition(self, present, close_errors)
                 from IdeaRead import complete as complete_idea

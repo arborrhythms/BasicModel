@@ -230,8 +230,8 @@ excess and the omission of the one gain field (`Expectation.gain_field`) with
 the look's activity as its attention and the look's forecast as its expected.
 A form that was interpreted is lowered in the sentence's percept bank over its
 extent, so a request that did not change finds the next word. Where the
-returned set holds a word concept, the grammar may interpret the most active
-one: the call is made with probability `architecture.interpretBias` (1 by
+returned set holds a word concept, the grammar may interpret the occurrence
+selected by the attention request: the call is made with probability `architecture.interpretBias` (1 by
 default), and the chooser decides the rest, interpret or abstain.
 Interpretation supplies one word to the grammar. Whole-path comparison
 credits departures in these choices. During the reading lesson each taught

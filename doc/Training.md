@@ -1213,8 +1213,13 @@ then in successively wider adjacent intervals. If their shared mass is
 `K` and their combined mass is `M`, the row costs `(M - 2K) / (1 + M)`.
 A substitution, a displacement, and a missing or extra mark can each cost
 the answer. Both sides empty costs zero. Target encoding admits no percept.
-Input reconstruction keeps its own pyramid at the open field. Individual
-looks train through expectation.
+Input reconstruction keeps its own pyramid at the open field. A sampled look receives credit when a subsequent
+distinct occurrence arrives. The model forecasts that same observation using
+the evidence before and after the sampled look. The change in squared error
+multiplies the log probability of the occurrence that was sampled. Lower
+error increases its probability under gradient descent. Both forecasts and
+the arrived observation are detached. Singleton choices, equal errors and
+the final look with no following observation supply no policy gradient.
 When the supplied answer names a referent (`ReferentTarget`) rather than a
 sentence, the answer cost adds a binding term to the surface comparison
 (`BindingAnswers.cost`): the exact identity costs 0; an unbound answer, a

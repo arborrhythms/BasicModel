@@ -139,7 +139,7 @@ def test_unknown_repeated_word_is_read_whole_once_at_each_place():
     takes the other."""
     from types import SimpleNamespace
     from SentenceLooks import word_activity, lower
-    from Attention import draw_among
+    from Attention import occurrence_probabilities, select_occurrence
     bank=SimpleNamespace(token=torch.tensor([[0,0,0,1,1,1]]))
     own=torch.ones(1,6,2)
     field=SimpleNamespace(concept_ids=torch.tensor([5]),evidence=torch.zeros(1,1,2,2))
@@ -148,7 +148,7 @@ def test_unknown_repeated_word_is_read_whole_once_at_each_place():
     for _ in range(2):
         extent=torch.stack([(own[0,:3,0]>0).any(),(own[0,3:,0]>0).any()])[None]
         words=word_activity(field,concepts,known,extent,own,bank)
-        index,drawn,_,_=draw_among(words)
+        index = select_occurrence(occurrence_probabilities(words), sample=False)
         read.append(int(index)); own=lower(own,bank,index,torch.tensor([True]))
     assert sorted(read) == [0,1]
     assert not own.any()

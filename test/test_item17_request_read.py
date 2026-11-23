@@ -2,6 +2,7 @@
 6d, eleventh pass): one network every use shares, its request a mask in 0
 to 1 at the concepts' rows, the stopping decision; the
 field placed at the concepts' rows and the last look's field spread once."""
+import pytest
 import torch
 
 
@@ -75,5 +76,33 @@ def test_sentence_training_reaches_the_request_in_the_model(tmp_path, monkeypatc
             if presentation:
                 reached.append(max(grad(t) for t in asked[:2]))
         assert max(reached) > 0.
+    finally:
+        model.End()
+
+
+@pytest.mark.parametrize('grammar', (True, False), ids=('sentence', 'grammar-free'))
+def test_two_words_train_the_sampled_request_from_the_following_observation(tmp_path, monkeypatch, eager_reading, grammar):
+    from LookForecast import OccurrenceCredit
+    from test_item17_places import model_for, nominate
+    from test_item18_expect import read
+    from test_item17_one_reconstruction import _grammar_free_text_model
+    build = model_for if grammar else _grammar_free_text_model
+    model = build(tmp_path, monkeypatch)
+    try:
+        nominate(model, ('This', 'is', 'This is'))
+        recorded = []
+        register = OccurrenceCredit.register
+
+        def capture(credit, registry):
+            register(credit, registry)
+            if 'attention.next_observation' in registry._terms:
+                recorded.append(len(credit.terms))
+
+        monkeypatch.setattr(OccurrenceCredit, 'register', capture)
+        before = model.request_read.ask.weight.detach().clone()
+        optimizer = model.getOptimizer(lr=.01)
+        read(model, 'This is', training=True, optimizer=optimizer)
+        assert recorded == [1]
+        assert not torch.equal(model.request_read.ask.weight.detach(), before)
     finally:
         model.End()

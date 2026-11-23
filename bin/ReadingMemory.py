@@ -104,7 +104,8 @@ def read(model, bank, concepts):
 def _read(model, bank, concepts):
     """Narrow until the request stops, STM fills or nothing is found."""
     from Places import readings
-    from Attention import draw_among
+    from Attention import occurrence_probabilities, select_occurrence
+    from LookForecast import OccurrenceCredit
     from SentenceLooks import attend, narrow, lower
     from dataclasses import replace
     from EpisodicMemory import select, unkept, uncertain
@@ -128,6 +129,7 @@ def _read(model, bank, concepts):
     _, _, percept_codes = readings(bank)
     observation = model.conceptualSpace.stm.model_state
     observation.begin_looks(bank.where, left.any(-1))
+    credit = OccurrenceCredit(owner) if model.training and torch.is_grad_enabled() else None
     excluded, ambiguous = unkept(owner), uncertain(owner)
     for _ in range(min(model.attention_budget, model.conceptualSpace.stm.capacity)):
         units = reader.units(reader.given(opened, memory, left.any(-1)),
@@ -137,12 +139,15 @@ def _read(model, bank, concepts):
             break
         field, _, scores = narrow(model, bank, attend(model, units), own, concepts,
                                   known, left & active[:, None])
-        index = draw_among(scores)[0]
+        probabilities = occurrence_probabilities(scores)
+        index = select_occurrence(probabilities, sample=model.training)
         index = torch.where(active, index, -1)
         observation.observe(bank.where, index)
         found = index >= 0
         if not found.any():
             break
+        if credit is not None:
+            credit.observe(field, probabilities, index)
         batch = torch.arange(B, device=index.device)
         evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
         episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,
@@ -163,6 +168,8 @@ def _read(model, bank, concepts):
             left[b, w] = False
         memory = torch.where(found[:, None, None], spread_once(owner, located(field)), memory)
         own = lower(own, bank, index, found)
+    if credit is not None:
+        credit.register(model.errors)
     durable = model.symbolSpace.ltm_store
     committed = commit(stores, heads, durable)
     for b, head in enumerate(committed):

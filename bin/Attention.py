@@ -1,10 +1,10 @@
 """A sentence's reading: the words its looks interpreted, look by look, and
-the draw that takes one of several equally active words.
+the occurrence policy that selects each word.
 
 A look is a request over concepts carried down onto the sentence's percept
 bank (:mod:`Salience`, :mod:`SentenceLooks`); what it returns is read by
 ``interpret``. The record here is what the readers of a reading read: which
-words were interpreted and with what key, which looks drew among equals, and
+words were interpreted and with what key, which looks had alternatives, and
 how many looks were taken.
 """
 from typing import NamedTuple
@@ -17,14 +17,14 @@ import torch.nn.functional as F
 class Reading(NamedTuple):
     """A sentence's reading. ``actions`` holds the word each look took (-1
     where it took none); ``alternatives`` marks a look whose word was drawn
-    among equally active words, a departure's menu."""
+    from several eligible words, a departure's menu."""
     values: torch.Tensor              # [B, W, D] each interpreted word's key
     accepted: torch.Tensor            # [B, W] interpreted
     descended: torch.Tensor           # [B, W] read whole with no word concept
     actions: torch.Tensor             # [B, looks] the word each look took
-    alternatives: torch.Tensor        # [B, looks] taken by a draw among equals
+    alternatives: torch.Tensor        # [B, looks] had multiple eligible occurrences
     probabilities: torch.Tensor       # [B, looks] the draw's probability
-    alternative_counts: torch.Tensor  # [B, looks] the other equals of the draw
+    alternative_counts: torch.Tensor  # [B, looks] number of other eligible occurrences
     poles: torch.Tensor               # [B, W, 2] each word's evidence
     looks: torch.Tensor               # [B] looks taken
 
@@ -91,28 +91,31 @@ class SentenceReading:
             poles=F.pad(reading.poles, (0, 0, 0, pad)))
 
 
-def draw_among(activity, *, replay=None, masked=None):
-    """The most active of ``activity`` ``[B, W]`` (``-inf`` where nothing is
-    found), exactly; where several are equally the most active, one is taken
-    by a draw. ``replay`` ``[B]`` takes a given word where it is not -1;
-    ``masked`` ``[B]`` departs from the given word to another of its equals.
-    Returns the word ``[B]`` (-1 where nothing is found), whether it was
-    drawn among equals, the draw's probability and the count of the other
-    equals."""
-    found = torch.isfinite(activity)
-    best = torch.where(found, activity, -torch.inf).amax(-1, keepdim=True)
-    tied = found & (activity == best)
-    count = tied.sum(-1)
-    chosen = tied
+def occurrence_probabilities(scores):
+    """The request's categorical distribution over this look's live occurrences."""
+    live = torch.isfinite(scores)
+    logits = scores.masked_fill(~live, -torch.inf)
+    logits = torch.where(live.any(-1, keepdim=True), logits, 0.)
+    return logits.softmax(-1) * live
+
+
+def select_occurrence(probabilities, *, sample, replay=None, masked=None):
+    """Sample the policy in training, take its mode in evaluation, and draw equal modes fairly."""
+    weights = probabilities.detach()
     if masked is not None:
-        other = tied & (torch.arange(tied.shape[1], device=tied.device)[None] != masked[:, None])
-        chosen = torch.where(((masked >= 0) & other.any(-1))[:, None], other, tied)
-    draw = torch.rand(tied.shape, device=tied.device).masked_fill(~chosen, -1.)
-    index = torch.where(chosen.any(-1), draw.argmax(-1), -1)
+        eligible = torch.arange(weights.shape[1], device=weights.device) != masked[:, None]
+        alternatives = weights * eligible
+        weights = torch.where(alternatives.any(-1, keepdim=True), alternatives, weights)
+    live = weights.any(-1, keepdim=True)
+    if not sample:
+        weights = (weights == weights.amax(-1, keepdim=True)).to(weights) * live
+    # An empty row has no draw. A temporary unit mass keeps the batched sampler defined.
+    index = torch.multinomial(torch.where(live, weights, 1.), 1).squeeze(1)
+    index = torch.where(live[:, 0], index, -1)
     if replay is not None:
+        # A supplied reading may explicitly request a word absent from the policy.
         index = torch.where(replay >= 0, replay, index)
-    probability = torch.where(count > 0, 1. / count.clamp_min(1).to(activity.dtype), 0.)
-    return index, count > 1, probability, (count - 1).clamp_min(0)
+    return index
 
 
 def read_code_field(codes, valid=None):
