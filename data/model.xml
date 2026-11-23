@@ -15,8 +15,6 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <!-- Where a model with no thought rule starts between speech (above 0) and silence (below 0). -->
-    <voiceLogit>0.01</voiceLogit>
     <separateChooser>false</separateChooser>
     <reconstructionJitter>0</reconstructionJitter>
     <explorePaths>1</explorePaths>

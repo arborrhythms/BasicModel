@@ -2043,16 +2043,6 @@ class BaseModel(Mereology, nn.Module):
         # temporal/supervised curriculum trains the synthesis adapter.
         self.answer_synthesis = self.grammar_phases.vector and bool(TheXMLConfig.get(
             "architecture.answerSynthesis", default=False))
-        if self.answer_synthesis and model_type == 'embedding' and not self.grammatical_thoughts.operations:
-            # A model with no thought rule says what it perceived. Whether it
-            # speaks at all is a linear read of what it would say, taught by
-            # the answer's cost: a supplied answer teaches speech, a supplied
-            # silence teaches silence (Alec, 19.139).
-            voice = nn.Linear(self.conceptualSpace.stm.concept_dim, 1)
-            nn.init.zeros_(voice.weight)
-            nn.init.constant_(voice.bias, float(TheXMLConfig.get('architecture.voiceLogit')))
-            self.outputSpace.voice = voice
-            self.outputSpace.params.extend(voice.parameters())
         # <synthesisBindings>: how many perceptual context slots a derivation
         # may NAME as bindings for output synthesis (spec 5.3: context reaches
         # the answer only through named, replayable bindings). 0 = none.
@@ -9707,15 +9697,6 @@ class BasicModel(BaseModel):
             object.__setattr__(self, "_output_idea_resolved", idea_resolved)
             if torch.is_tensor(idea):
                 occupied = self._answer_occupancy(derivation, idea)
-                voice = getattr(self.outputSpace, 'voice', None)
-                voice_logits = None
-                if voice is not None:
-                    witnessed = torch.tensor([s == 'perception' for s in derivation.row_sources], device=idea.device)
-                    summary = (idea * occupied[..., None]).sum(1) / occupied.sum(1, keepdim=True).clamp_min(1)
-                    voice_logits = voice(summary.detach()).squeeze(-1)
-                    # An even read is a draw.
-                    voiced = (voice_logits > 0) | ((voice_logits == 0) & (torch.rand_like(voice_logits) < .5))
-                    occupied = occupied & (~witnessed | voiced)[:, None]
                 structure = understanding.sentence_records[-1] if understanding.sentence_records else None
                 generated = self.generate(idea, structure=structure, occupied=occupied,
                     infix_rows=tuple(bool(items) for items in derivation.answer_meanings),
@@ -9739,7 +9720,7 @@ class BasicModel(BaseModel):
             actual = surface
             texts = generated.texts(surface)
             construction = AnswerConstruction(actual=actual, derivation=derivation,
-                concepts=walked, percepts=percepts, surface=surface, voice_logits=voice_logits,
+                concepts=walked, percepts=percepts, surface=surface,
                 trace=derivation.grammar_trace + ({'operation': 'generate:grammar'},
                     {'operation': 'generate:occurrences'}, {'operation': 'reverse:order_zero'}), texts=texts)
         self._last_answer_construction = construction
@@ -9755,11 +9736,7 @@ class BasicModel(BaseModel):
             elif isinstance(value,str):
                 target=self._embed_answer_texts([value]).detach()
                 surface=construction.percepts[row:row+1]
-                cost = self._reverse_event_loss(surface,target)
-                if getattr(construction, 'voice_logits', None) is not None and construction.derivation.row_sources[row] == 'perception':
-                    logit = construction.voice_logits[row]
-                    cost = cost + F.binary_cross_entropy_with_logits(logit, logit.new_tensor(float(bool(value))))
-                costs.append(cost)
+                costs.append(self._reverse_event_loss(surface,target))
             else:
                 target=self.outputSpace.prepOutput([value])
                 pred=self._align_output_pred(actual,target)

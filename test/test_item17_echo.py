@@ -356,34 +356,3 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
     finally:
         model.End()
 
-
-
-def test_the_same_reading_can_learn_silence_then_speech(tmp_path, monkeypatch):
-    """Changing the supplied answer affects the next response only through teaching."""
-    from reading_fixtures import use_eager_reading
-    model = echo_model(tmp_path, monkeypatch)
-    use_eager_reading(monkeypatch)
-    try:
-        word = 'Felix'
-        nominate(model, (word,))
-        data = model.inputSpace.data
-        monkeypatch.setattr(data, 'has_supervised_outputs', True)
-        answers = [word]
-        monkeypatch.setattr(data, 'text_answers', {'train': answers})
-        optimizer = model.getOptimizer(lr=.01)
-
-        def respond(train=False):
-            return read_once(model, 0, word, answered=True, train=train, optimizer=optimizer)
-
-        for target in (word, None, word):
-            previous = respond()
-            answers[0] = target
-            assert respond() == previous
-            expected = target or ''
-            for _ in range(64):
-                if respond() == expected:
-                    break
-                respond(train=True)
-            assert respond() == expected
-    finally:
-        model.End()
