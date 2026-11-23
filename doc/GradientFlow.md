@@ -529,6 +529,217 @@ weight about one learning rate per step in a random direction, and the
 derivation and the roots would drift under the reader; a step proportional to
 the gradient leaves a weight whose objective is at its floor where it is.
 
+## One map used both ways: what its gradient can teach
+
+System 1's basic level (Pi, Not, Sigma, with the percept codes) is one set of
+parameters used in two directions: up, from percepts to the basic field, and
+back, from the basic field to percepts. The way back has two users, the
+reconstruction and the output. This section is an analysis of what a cost can
+teach such a map (Alec, 2026-11-23: "Since reconstruction and output share
+the same mechanism (inversion), if it is taught by either, then there is also
+a conflict in moving the combined forwards and reverse parameters"). It is
+reasoning from the structure; the few measured numbers are marked.
+
+Write `U` for the way up and `D` for the way back, with the same parameters
+`p`, and `D = U^-1` exactly.
+
+### Up against back, inside one cost
+
+A round trip with nothing between its two legs returns its input for every
+value of the parameters:
+
+```text
+D_p(U_p(x)) = x        for all p
+dD/dp (at z = U(x))  +  J_D * dU/dp  =  0
+```
+
+So for any cost on what is put back, the gradient that arrives through the
+parameters' use on the way back and the gradient that arrives through their
+use on the way up are equal and opposite. They do not fight; they cancel. An
+exact round trip teaches the map nothing.
+
+A reconstruction therefore teaches only where a step between the two legs
+changes the field: a code chosen for a percept, a look that left a place
+unread, a concept named in place of a value, a fold that kept less than it
+was given, a thought. Write `B` for that step. What it teaches depends on how
+`B` passes a small change of its input on.
+
+- *`B` adds to the field* (it passes a change on whole). With `d` the amount
+  added, the error is `J_D * d`: the addition seen through the way back. Each
+  leg's gradient is of the size of `d`, the two are still nearly opposite,
+  and their sum is of the size of `d` squared. What survives asks the map
+  only to be even where the addition falls. It does not ask the basic level
+  to represent anything in particular.
+- *`B` replaces the field's value by a chosen one* (it passes no change on):
+  a code for a percept, a concept's code for a word as read. Nothing
+  differentiable then joins the way up to what is put back, so the step cuts
+  the way up by itself. The cost is `D(c) = x`, with `c` the chosen code: a
+  plain cost on the way back, of first order. Because `U` is the inverse of
+  `D`, its end point is also `U(x) = c`: the input comes to land on its own
+  code. The shared parameters are not pulled two ways here. One step serves
+  both legs.
+- *`B` is soft* (between the two). The way up is taught as well, toward
+  where `B` changes the field least.
+
+Most steps between the legs of this architecture are replacements. So the
+reconstruction is mostly a first-order teacher of the dictionary below the
+names: a named concept is spelled as the letters that named it, and by the
+tie those letters come to light that concept. As built at item 1.7 this is
+its whole reach: each word is said from the code of the concept its STM row
+names (`SentenceField.said_words`), and measured (sigma-pi §23.6.31) its
+gradient reaches the percept codes and the order-zero values, and no look
+and no rule.
+
+Two things a replacement leaves untaught.
+
+- *The choice.* Which code, which concept, which look: a choice has no
+  gradient. It moves by credit or by a cost of its own.
+- *The choice can turn over.* `c` is chosen from `U(x)`, which moves with
+  the same parameters. A value near the edge between two choices can cross
+  it, and the word is then read as something else or not read. This is the
+  one instability the tie brings, and it grows with the size of a step
+  (sigma-pi §23.6.29 measured words lost this way at ten times the model's
+  rate).
+
+"The reconstruction is the inverse of the construction" is the limit of
+this. If every step up is undone exactly, by an inverse or by a pointer to
+what was composed, the reconstruction's error is zero for every value of the
+parameters there. The conflict is avoided because the teacher is gone. What
+is left of the cost measures only the steps that are not undone: whether the
+looks took every place, and whether a concept's code spells its word.
+
+### Two users of one way back
+
+The way back is a dictionary: a concept lit at a place is said as its
+letters. The reconstruction asks `D(c_R) = x`, the input, of the concepts
+the reading named. The output asks `D(c_A) = y`, the answer, of the concepts
+the output is given.
+
+- Where the concepts differ and the texts differ, these are two entries of
+  one dictionary, like two training sentences. Nothing conflicts.
+- Where the concepts are the same and the texts are the same (an echo), the
+  two ask the same thing twice.
+- Where the concepts are the same and the texts differ, no dictionary
+  satisfies both. The difference between an input and its answer is not a
+  matter of spelling: it belongs in which concepts are lit and where, which
+  is System 2's to change.
+- Where the texts are the same and the concepts differ, the tie turns it
+  into a conflict on the way up: `U(x) = c_R` and `U(x) = c_A` cannot both
+  hold.
+
+So the two users need never disagree about the shared map, on one condition:
+that a word is named by one concept whoever reads it. Where their gradients
+on the map oppose, either one of them is asked to mend in the dictionary what
+should be mended in the field, or the two name one word by two concepts. The
+default projection (the reconstruction's gradient whole, the answer's
+opposing part removed) is the right rule under this reading: what it removes
+is the answer's pull to spell a field as something the field does not hold.
+Letting the two fight would let the answer bend the dictionary.
+
+One prediction to check. In the echo the texts are the same, so the two sides
+should agree on the order-zero values; measured, the answer's cost alone
+opposed the reconstruction there in 19 steps of 50 for single words (sigma-pi
+§19.142). By this analysis the cause is the last case: the answer says the
+words witnessed in the open field and the reconstruction says the concepts
+the STM's rows name, and where those are not the same concept for the same
+word the two pull the way up apart.
+
+### A field the thought has changed
+
+A thought's change is of the first kind: it adds to the field, or of the
+second: it puts one concept where another was. Either way, an exact way back
+has no direction it cannot see. What a thought changes in the basic field at
+a place of the input shows in what is put back from that field. If the
+reconstruction reads the field after the thought, its cost charges the
+thought for every such change. There are three ways to stand.
+
+1. *The reconstruction reads the field before the thought* (as built:
+   "Reconstruction has its own operated field"). Nothing conflicts, and the
+   reconstruction teaches the thought nothing; the thought is taught by the
+   answer alone.
+2. *The reconstruction reads the field after the thought, and what the
+   thought lights holds no place in the input.* The way back says a concept
+   at its place, so a concept with no place in the input is silent in the
+   reconstruction and still there for the output. The reconstruction then
+   asks one thing of a thought: keep what was perceived where it was
+   perceived.
+3. *System 1 learns what System 2 did*, so that the change is no longer made
+   by a thought (the next part).
+
+The second and third belong together, and are Alec's order: percepts, basic
+field, an optional thought, then one field for both the reconstruction and
+the output.
+
+### System 2 teaching System 1 on the shared map
+
+Alec: System 2 "trains system one in its operation: the basic pi-not-sigma
+should be learned over the operation of system 2 as well as reconstruction".
+As a cost this is the way up taught toward the field the thought leaves,
+read without gradient:
+
+```text
+U_p(x)  ->  z_A
+```
+
+It arrives on one leg and is of first order. By the tie the same step moves
+the way back toward `D(z_A) = x`: the field the thought left comes to be
+spelled as the input. At its end point `U(x) = z_A`: the input lights
+directly what the thought used to add, the thought changes nothing, and the
+reconstruction from the changed field is exact.
+
+The reconstruction asks `U(x) = c_R`, and this teaching asks `U(x) = z_A`.
+They agree exactly when the thought keeps, at the places of the input, the
+concepts the reading named there. That is the condition of the second way
+above, so one condition settles both: what a thought adds holds no place in
+the input, and what was perceived stays where it was. Under it the
+reconstruction, the answer and this teaching have one end point, and nothing
+is left to project. Without it they pull the way up apart at every place the
+thought rewrote.
+
+The same condition keeps System 1 honest. If it learned to light an inferred
+concept as though it were perceived at a place of the input, the
+reconstruction would put back letters that were not there.
+
+### The two loops
+
+Alec: "there is a system one loop, and a system 2 loop, and they are meeting
+at the basic level." System 1's loop is input, percepts, basic field, and
+back to the reconstruction and the output. System 2's loop is basic field,
+higher orders, an optional thought, and back to the basic field.
+
+The first part of this section holds for System 2's loop as well. If its way
+back exactly undoes its way up, it returns the basic field unchanged, and no
+cost in System 1's loop can teach it. System 2 is taught only by what it
+changes in the field, judged by the costs that read the field afterwards.
+
+A rule's way up loses: a parent is as wide as one of its two operands. So its
+way back needs one of two things.
+
+- *Memory of what was composed* (the STM tree's edges, sigma-pi §19.140). The
+  return is then exact. It teaches the rules nothing, and nothing conflicts.
+  This is the build at item 1.7, and the measurement agrees: the
+  reconstruction reaches no rule, and two trees over the same words are put
+  back the same.
+- *A learned inverse from the parent alone.* The return is then inexact, so
+  the reconstruction does teach the rules. But its error cannot reach zero in
+  general, and the rules then share the blame for a misspelling with the
+  dictionary below them, on one cost.
+
+With the first, System 2 is what Alec calls it, an executive controller on
+System 1: taught by what its control achieves at the output, and passed down
+to System 1 by the teaching above.
+
+### Summary
+
+| Pull | When it is there | What settles it |
+|---|---|---|
+| Up against back, one cost, an exact round trip | Always | The two cancel; nothing is taught |
+| Up against back, a replacement between the legs | Never: one step serves both legs | The choice itself is untaught and can turn over; small steps |
+| Reconstruction against output on the shared map | One concept asked for two texts, or one text named by two concepts | The difference belongs in the field; one concept for a word, whoever reads it; the projection removes the rest |
+| Reconstruction against a thought | Where the reconstruction reads the changed field at the input's places | What a thought lights holds no place in the input |
+| Reconstruction against System 2 teaching System 1 | Where a thought rewrote what was perceived | The same condition; then all three have one end point |
+| Reconstruction against the rules | Only with a learned inverse from the parent alone | A return by the STM tree's edges |
+
 ## Trained total and diagnostic objectives
 
 `Layers.Error` owns the trained sum and applies

@@ -10186,6 +10186,20 @@ In a model with no grammar no look is taken and the reconstruction is `BasicMode
 
 *Alec, the same day, to be explored next:* "Also, we had previously proposed that the reconstruction could just be the inverse of construction, to avoid a conflict. Since reconstruction and output share the same mechanism (inversion), if it is taught by either, then there is also a conflict in moving the combined forwards and reverse parameters. Please explore that." What is measured so far that bears on it: the order-zero values and the percept codebook serve the way up and both ways back, and on the order-zero values the two sides oppose in 21 steps of 50 (words) and 3 of 17 (two words). Not measured: for one cost, whether the part of its gradient that arrives through a parameter's use on the way up opposes the part that arrives through its use on the way back.
 
+*Alec, the same day, after the check:* "Don't measure the conflict, Im looking for your theoretical analysis. It should be captured in the learning or gradient doc." And:
+
+> "Reconstruction has its own operated field" is possibly wrong, but maybe that was done when the system1 reconstruction part (from basic downwards) began being shared between output and reconstruction? System 1 should be shared, system 2 is an executive controller on top of that (which is why it trains system one in its operation: the basic pi-not-sigma should be learned over the operation of system 2 as well as reconstruction).
+>
+> So there is a system one loop, and a system 2 loop, and they are meeting at the basic level. The system one loop is well defined, input to basic to reconstruction and output. The system two loop is perhaps less well defined: basic to higher order and back, with optional processing that is designed to provide illumination to unlit areas of conceptual space by structured reasoning.
+
+The analysis is `doc/GradientFlow.md`, "One map used both ways: what its gradient can teach" (Claude, 2026-11-23; reasoning, not measurement). Its conclusions, for a decision:
+
+- An exact round trip teaches the shared map nothing: the gradients through its two uses cancel. A reconstruction teaches only at the steps between the legs, and where such a step is a replacement (a named concept for a value) the cost is a plain one on the way back that serves both legs. So the tie of up and back is not itself a conflict.
+- The reconstruction and the output need never disagree about the shared map if a word is named by one concept whoever reads it, and if the difference between an input and its answer is made in the field. The projection is the right default; no balance is proposed.
+- The reconstruction can read the field the thought leaves (Alec's order) on one condition: what a thought lights holds no place in the input, and what was perceived stays where it was. The same condition makes System 2's teaching of System 1 agree with the reconstruction.
+- A return by the STM tree's edges (§19.140) teaches the rules nothing by the reconstruction; System 2 is then taught by the output and passed down to System 1. This answers the question that began §19.142: the reconstruction does not tell two trees apart, and under this analysis it need not.
+- Not built, and not proposed here as a pass: the reconstruction after the thought; a cost teaching the way up toward the field the thought leaves on the basic Pi-Not-Sigma itself (as built `intuit`'s map is taught so, a map of its own); a check that the answer and the reconstruction name a word by the same concept.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
