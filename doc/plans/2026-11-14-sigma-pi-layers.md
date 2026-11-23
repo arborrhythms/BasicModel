@@ -15579,6 +15579,75 @@ model returns, with nothing set inside it.
    the return and change nothing.
 ~~~
 
+*For Codex: review the work branch before anything else; then it goes to main and the new work begins* (added 2026-11-23, at Alec's word; this text comes first, before the others above)
+
+Alec: "ask codex to do a code review before anything else, and when it and I approve, we can commit in that conversation and begin the new work. After getting everything working on 1.7, we will ask you for a code review and commit, then we can push 1.7". ("You" is Claude.)
+
+~~~
+Item 1.7. Before any new work: a code review of the branch
+item17-r6d11 against main. Repository basicmodel. Everything on the
+branch is committed (the only modified file in that checkout is
+suggestions.txt, which is yours); main is at a1aebce56e and has no
+commit the branch lacks. Review `git diff main..item17-r6d11`, the
+source and tests first: 41 files under bin (the largest:
+SentenceField.py, FieldReverse.py, Models.py, SentenceLooks.py,
+RequestRead.py, SentenceStrata.py, Layers.py, Output.py) and 61 under
+test. The spec's sections 23.6.20 to 23.6.33 say what each pass built
+and measured; 19.129 to 19.146 are Alec's decisions since main.
+
+1. Review for faults, not for style: a wrong result, a gradient that
+   reaches what it should not or misses what it should, a test that no
+   longer tests what its name says, a default written in code, a second
+   path beside the one that should be used, a seed pinned for an
+   assertion, a skip or xfail added, something set inside the model to
+   measure it. Give each finding its file and line, what input shows
+   it, and what you would change. Rank them.
+
+2. Look hardest at four places.
+   a. Where Claude's change was kept over yours (23.6.33): the
+      optimizer's rate as a required argument, Codebook.learn, the
+      attend test as a direct test of RequestRead, the adapter test's
+      stand-in, the decoder's bound. Say where yours was the better.
+   b. The reconstruction that says each word from the concept its STM
+      row names (SentenceField.said_words, taken_steps;
+      SentenceStrata.Tree.write_edges, edge, words_of;
+      Comprehension.Evaluation.finish), and what is still read from the
+      record of the reading.
+   c. Teaching at the model's own rate (Models.getOptimizer with no
+      rate; the echo's tests and the said-back measure).
+   d. doc/GradientFlow.md, "One map used both ways": it is reasoning,
+      not measurement. Say where it is wrong.
+
+3. Known to fail at the branch's tip, so not findings: the echo's two
+   tests of a model with no grammar; test_item20_round6_gradients.py::
+   test_input_reconstruction_reaches_perception_and_not_the_grammar
+   (waits on the talk about parts and wholes, 19.145); test_item17_
+   sparse_ldu.py::test_the_first_pis_way_back_is_the_percept_each_row_
+   keeps (fails on main's line since 8cd569afbb or earlier; say where it
+   began). test_item17_places.py::test_the_request_for_a_place_at_an_
+   untaught_start failed once in forty and passed when run again.
+
+4. Change nothing during the review. Write it into suggestions.txt in
+   your worktree and tell Alec. When you and Alec approve, in that
+   conversation: mend what the review found, as commits on the branch;
+   then move main to the branch's tip by a fast-forward (git merge
+   --ff-only, no merge commit) and work on main from there. Push
+   nothing.
+
+5. Then the new work, in this order, each by its own text above this
+   one: "the chain in STM and LTM with a single head, and the looks of a
+   model with no grammar" (19.146); "the reconstruction is computed
+   after the thought" (19.144); "a sentence as a series of attention
+   events" (19.143, as amended); "Alec's answers of 2026-11-23, one
+   question to explore and four points to talk through" (19.145). What
+   else is yours in item 1.7 is in section 23.6.32: the age written by
+   the assessment, round 7 (22.7) and the full list of tests.
+
+6. When everything in item 1.7 works, Alec asks Claude for a code
+   review of your work and a commit; item 1.7 is pushed after that, on
+   Alec's word.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -27521,7 +27590,7 @@ Alec: "After codex returns, I would like you to finish up by integrating and com
 4. The reconstruction after the thought, decided for item 1.7 (§19.144; its text for Codex is above §22.7). The rest of what §19.142 names and nothing builds is still open with Alec: System 2's teaching on the basic Pi-Not-Sigma itself, one concept for a word whoever reads it, and where `intuit` places its light.
 5. Round 7 (§22.7), the full list of tests when `main` moves, and the landing.
 
-*Left to Claude:* when Codex returns, to read its return, integrate its branch into `item17-r6d11` and commit.
+*Left to Claude:* when Codex returns, to read its return, integrate its branch into `item17-r6d11` and commit. Done for its first return (§23.6.33). Since then (Alec, 2026-11-23): Codex reviews the work branch first; when it and Alec approve, the branch goes to `main` in that conversation and Codex works there; when item 1.7 works, Claude is asked for a code review and a commit, and item 1.7 is pushed after that.
 
 ### 23.6.33 Codex's return on the list of open issues, and how it was taken in (Codex, 2026-11-23; integration and review by Claude)
 
