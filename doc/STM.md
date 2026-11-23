@@ -64,6 +64,15 @@ and FineWeb data.
 
 ---
 
+The terminal conceptual STM owns one `ModelState`. It holds the model's
+present tick and its encoded value, shared by reading, thought and production.
+During a reading it also holds the last selected native interval per stream.
+The next request reads the location values at the first and last occupied
+addresses of that interval, together with the present and the existing
+concept activity. A fresh reading starts with an empty interval. Alternative
+readings restore and select this state with their STM. Only the tick is
+saved in a checkpoint, under its existing name `when_time`.
+
 ## 1. STM data model
 
 `ShortTermMemory` ([Memory.py](../bin/Memory.py)) is a `Layer`

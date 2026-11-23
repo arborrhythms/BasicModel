@@ -214,6 +214,36 @@ def content(amounts, byte_codes, spellings, form_codes):
     return out + cover.transpose(1, 2) @ form_codes
 
 
+def answer_pyramid_cost(radix, amounts, emitted, text):
+    """Compare the realized and requested percepts at their native byte places."""
+    from Layers import Error
+    target = emitted.new_tensor(list(text.encode('utf8')), dtype=torch.long)[None]
+    width = max(amounts.shape[1], emitted.shape[1], target.shape[1], 1)
+    target_places = torch.arange(width, device=emitted.device)[None] < target.shape[1]
+    target = F.pad(target, (0, width - target.shape[1]))
+    emitted = F.pad(emitted.long(), (0, width - emitted.shape[1]))
+    rows, forms = forms_in(radix, torch.cat((emitted, target)),
+                           torch.cat((emitted != 0, target_places)))
+    byte_ids = byte_rows(radix).to(emitted.device)
+    codes = radix._basis.lookup_rows(byte_ids.clamp_min(0)).detach().to(amounts)
+    codes = codes * (byte_ids >= 0)[:, None]
+    form_codes = radix._basis.lookup_rows(rows).detach().to(amounts)
+    emitted_amounts = F.pad(amounts, (0, 0, 0, width - amounts.shape[1]))
+    wanted_amounts = F.one_hot(target, 256).to(amounts) * target_places[..., None]
+    put = content(emitted_amounts, codes, forms, form_codes)
+    wanted = content(wanted_amounts, codes, forms, form_codes)
+    # A previously unseen byte still occupies a place in the target. Its
+    # primitive identity can be compared without admitting it to the store.
+    missing = byte_ids < 0
+    put = torch.cat((put, emitted_amounts[..., missing]), -1)
+    wanted = torch.cat((wanted, wanted_amounts[..., missing]), -1)
+    shared, wanted_mass = Error.pyramid_match(put, wanted)
+    mass = put.clamp_min(0).flatten(1).sum(-1) + wanted_mass
+    # Both extra and missing percepts cost. One unit of smoothing keeps
+    # silence defined and gives unwanted speech a gradient toward silence.
+    return (mass - 2 * shared).clamp_min(0) / (1 + mass)
+
+
 def where_match(wires, grid, axes, sharpness):
     """Each leaf's match ``[..., addresses]`` of its ``.where`` wires against
     the grid's rows, axis by axis (each a slice of the wires), by distance:

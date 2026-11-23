@@ -1199,12 +1199,22 @@ has no desired answer and is masked out, so text that supervises no output
 trains through reconstruction only. A row with a supplied answer is scored
 against it. A row of a supervised split with no supplied answer, or a sentence
 for which no question is supplied, has `WhatAnswer.silence`: an available
-target whose text is the empty surface (the end marker alone, through the same
-embedding as text targets) and whose tensor value is the zero vector.
+target whose text is the empty surface and whose tensor value is the zero vector.
 Producing words where nothing was asked therefore costs A, and an empty
 construction against silence costs zero, which teaches both answering and not
 talking. A loss-side `_answer_silence_mask`, one flag per stream and sized at
 construction, records which rows carry silence; it never enters model context.
+For a text answer, the writer retains graded byte activity at native output
+places, including the spaces it inserts. After production, both this activity
+and the target bytes are encoded through the same percept store. Each place
+carries its byte's content and the content of the stored forms covering it.
+A one-dimensional pyramid compares those channels at individual places and
+then in successively wider adjacent intervals. If their shared mass is
+`K` and their combined mass is `M`, the row costs `(M - 2K) / (1 + M)`.
+A substitution, a displacement, and a missing or extra mark can each cost
+the answer. Both sides empty costs zero. Target encoding admits no percept.
+Input reconstruction keeps its own pyramid at the open field. Individual
+looks train through expectation.
 When the supplied answer names a referent (`ReferentTarget`) rather than a
 sentence, the answer cost adds a binding term to the surface comparison
 (`BindingAnswers.cost`): the exact identity costs 0; an unbound answer, a

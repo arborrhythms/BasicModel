@@ -131,6 +131,8 @@ class ThoughtTrialState:
                         '_sentence_answer_cost', '_sentence_answer_predictions',
                         '_sentence_answer_raw_cost'))]
         if stm is not None:
+            if hasattr(stm, 'model_state'):
+                owners.append((stm.model_state, ('last_where',)))
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
                            ('_thought_contents', '_active_batch', '_max_depth_host')))
         conceptual = (model._concept_owner() if hasattr(model, '_concept_owner') else
@@ -214,6 +216,12 @@ class ThoughtTrialState:
         indices = winners.tolist()
         def rows(values, name=None):
             first = values[0]
+            if name == 'last_where' and any(value is None for value in values):
+                extent = next((value for value in values if value is not None), None)
+                if extent is None:
+                    return None
+                return torch.stack([extent.new_full((2,), -1) if values[index] is None else
+                                    values[index][row] for row, index in enumerate(indices)])
             if name == '_thought_next_id':
                 # Histories are selected per stream; their shared allocator
                 # must remain beyond every selected history's frontier.

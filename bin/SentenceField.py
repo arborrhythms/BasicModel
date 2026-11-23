@@ -365,7 +365,7 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
              (positions[None, None] < field.where[..., 1:])).any(1)
     radix = model.perceptualSpace.percept_store
     rows = byte_rows(radix).to(raw.device)
-    amounts = carrier._radix_activity.amounts
+    amounts = getattr(carrier, '_reconstruction_amounts', carrier._radix_activity.amounts)
     codes = (radix._basis.lookup_rows(rows.clamp_min(0)) * (rows >= 0)[:, None]).to(amounts)    # [256, what]
     wanted = codes[raw.clamp(0, 255)] * scope[..., None].to(codes)
     asked = scope

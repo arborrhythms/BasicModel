@@ -6,8 +6,13 @@ from types import MethodType
 def install(model, tick=0):
     from Models import BasicModel
     from RowTime import encoder
-    model.when_time = torch.tensor(tick, dtype=torch.long)
-    model.when_code = encoder().encode(model.when_time).float()
+    if isinstance(model, BasicModel):
+        from Memory import ModelState
+        model.conceptualSpace.stm.model_state = ModelState()
+        model.set_present(tick)
+    else:
+        model.when_time = torch.tensor(tick, dtype=torch.long)
+        model.when_code = encoder().encode(model.when_time).float()
     model.when_encoding = encoder()
     for name in ('present', '_advance_when_time', 'set_present', '_encode_present', 'present_code'):
         setattr(model, name, MethodType(getattr(BasicModel, name), model))

@@ -126,15 +126,20 @@ def _read(model, bank, concepts):
     left = bank.where[..., 1] > bank.where[..., 0]
     known = concepts >= 0
     _, _, percept_codes = readings(bank)
+    observation = model.conceptualSpace.stm.model_state
+    observation.begin_looks(bank.where, left.any(-1))
     excluded, ambiguous = unkept(owner), uncertain(owner)
     for _ in range(min(model.attention_budget, model.conceptualSpace.stm.capacity)):
-        units = reader.units(reader.given(opened, memory, left.any(-1)))
+        units = reader.units(reader.given(opened, memory, left.any(-1)),
+                             observation.request_state(model.where_registry))
         active = left.any(-1) & (reader.stopping(units).detach() <= 0)
         if not active.any():
             break
         field, _, scores = narrow(model, bank, attend(model, units), own, concepts,
                                   known, left & active[:, None])
         index = draw_among(scores)[0]
+        index = torch.where(active, index, -1)
+        observation.observe(bank.where, index)
         found = index >= 0
         if not found.any():
             break

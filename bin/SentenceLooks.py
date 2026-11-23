@@ -242,6 +242,8 @@ class Looks:
         from LookForecast import LookForecast
         forecasts = LookForecast(owner, opened, state.spans) if opened is not None else None
         own = bank.activity.clone() if bank is not None else None
+        observation = model.conceptualSpace.stm.model_state
+        observation.begin_looks(state.spans, self.present)
         field, rows = opened, self.present
         extent = live
         surprise = forecasts.latest if forecasts is not None else None
@@ -273,7 +275,7 @@ class Looks:
             # Whether anything is left to find (the toy's "found": nothing
             # left is what the stop is read from).
             x = read.given(held, memory, left)
-            units = read.units(x)
+            units = read.units(x, observation.request_state(model.where_registry))
             stop = read.stopping(units)
             self.stops.append(stop.detach())
             # The walk ends where nothing is left, or where the read stops it.
@@ -315,6 +317,7 @@ class Looks:
             from Attention import draw_among
             index, drawn, probability, others = draw_among(words, replay=replay, masked=masked)
             index = torch.where(rows, index, -1)
+            observation.observe(bank.where, index)
             state.actions.append(index)
             state.alternatives.append(drawn & rows & (index >= 0))
             state.probabilities.append(probability)

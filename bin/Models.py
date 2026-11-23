@@ -9769,7 +9769,13 @@ class BasicModel(BaseModel):
             # the bytes and differentiable percepts of this same reverse.
             actual = surface
             texts = generated.texts(surface)
-            construction = AnswerConstruction(actual=actual, derivation=derivation,
+            activity = realized._radix_activity
+            amounts = activity.amounts
+            if activity.separators is not None:
+                # The native writer puts a space in each interior separator.
+                space = F.one_hot(surface.new_tensor(32).long(), 256).to(amounts)
+                amounts = torch.where(activity.separators[..., None], space, amounts)
+            construction = AnswerConstruction(actual=actual, derivation=derivation, byte_amounts=amounts,
                 concepts=walked, percepts=percepts, surface=surface,
                 trace=derivation.grammar_trace + ({'operation': 'generate:grammar'},
                     {'operation': 'generate:occurrences'}, {'operation': 'reverse:order_zero'}), texts=texts)
@@ -9782,11 +9788,11 @@ class BasicModel(BaseModel):
         for row,value in enumerate(values):
             actual=construction.actual[row:row+1]
             if value is None:
-                costs.append(actual.sum()*0)
+                costs.append(torch.zeros((), device=actual.device))
             elif isinstance(value,str):
-                target=self._embed_answer_texts([value]).detach()
-                surface=construction.percepts[row:row+1]
-                costs.append(self._reverse_event_loss(surface,target))
+                from FieldReverse import answer_pyramid_cost
+                costs.append(answer_pyramid_cost(self.perceptualSpace.percept_store,
+                    construction.byte_amounts[row:row+1], actual[:, 0], value).squeeze(0))
             else:
                 target=self.outputSpace.prepOutput([value])
                 pred=self._align_output_pred(actual,target)
@@ -9920,6 +9926,7 @@ class BasicModel(BaseModel):
         fixed and never enter any model-visible context.
         """
         self._answer_surface_target = None
+        self._answer_target_texts = None
         desired = tuple((getattr(self, "_last_what_desired", ()) if desired is None else desired) or ())
         BasicModel._set_answer_silence_mask(self, desired)
         if not desired or output_tensor is None or not torch.is_tensor(output_tensor):
@@ -9960,25 +9967,17 @@ class BasicModel(BaseModel):
                                                 "shape": tuple(surface.shape)},))
                 self._last_answer_construction = construction
         if torch.is_tensor(surface) and any(t is not None for t in texts):
-            # Text answers are scored in input-event
-            # space against the constructed surface; rows without a text
-            # answer are masked.  Fill the masked rows with any available
-            # text so the stem batch is well-formed.
-            filler = next(t for t in texts if t is not None)
+            # Keep the historic native target view available to diagnostics.
+            # The output cost itself reads the text only after the writer returns.
+            self._answer_target_texts = texts
+            mask_t = torch.tensor([t is not None for t in texts], dtype=torch.bool, device=surface.device)
             try:
-                embedded = self._embed_answer_texts(
-                    [t if t is not None else filler for t in texts])
+                embedded = self._embed_answer_texts([t if t is not None else '' for t in texts])
             except (RuntimeError, ValueError, TypeError) as exc:
-                self._warn_zeroed_channel(
-                    "answer_text_target",
-                    f"text answer target unavailable: {exc}")
-                embedded = None
-            if (torch.is_tensor(embedded) and embedded.dim() == 3
-                    and embedded.shape[0] == surface.shape[0]):
-                mask_t = torch.tensor([t is not None for t in texts],
-                                      dtype=torch.bool, device=surface.device)
-                self._answer_surface_target = embedded.to(surface.device)
-                return embedded.to(surface.device), mask_t
+                self._warn_zeroed_channel("answer_text_target", f"diagnostic embedding unavailable: {exc}")
+                return None, mask_t
+            self._answer_surface_target = embedded.to(surface.device)
+            return self._answer_surface_target, mask_t
         for value, quiet in zip(values, silence):
             if quiet:
                 rows.append(None)  # shape from a supplied numeric row below
@@ -13844,6 +13843,35 @@ class BasicModel(BaseModel):
 
 
 
+    @property
+    def when_time(self):
+        return self.conceptualSpace.stm.model_state.when_time
+
+    @property
+    def when_code(self):
+        return self.conceptualSpace.stm.model_state.when_code
+
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        tick = getattr(self, 'when_time', None)
+        if tick is not None:
+            destination[prefix + 'when_time'] = tick if keep_vars else tick.detach()
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        key = prefix + 'when_time'
+        if getattr(self, 'when_time', None) is not None:
+            self.conceptualSpace.stm.model_state.last_where = None
+            tick = state_dict.pop(key, None)
+            if tick is None:
+                self.set_present(0)
+            elif tick.shape != self.when_time.shape or tick.dtype != torch.long:
+                error_msgs.append(f'Invalid model clock in {key}')
+            else:
+                self.set_present(int(tick))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
+
     def present(self) -> int:
         """The one sentence/thought clock carried in each idea's .when band."""
         return int(self.when_time)
@@ -13854,7 +13882,7 @@ class BasicModel(BaseModel):
 
     def set_present(self, tick):
         """Set the one clock and make the code of the present beside it."""
-        from RowTime import HORIZON, encoder
+        from RowTime import HORIZON
         tick = int(tick)
         if not 0 <= tick <= HORIZON:
             raise OverflowError('model time exceeds the declared row-time ladder horizon')
@@ -14762,17 +14790,12 @@ class BasicModel(BaseModel):
             _answer_authority = _answer_target is not None
             _scored_target = _answer_target if _answer_authority else (
                 None if _answer_mask is not None else outputTensor)
-            _surface_target = getattr(self, "_answer_surface_target", None)
-            _surface = getattr(getattr(self, "_last_answer_construction", None),
-                               "surface", None)
             try:
-                if (_surface_target is not None and torch.is_tensor(_surface)
-                        and _answer_mask is not None and bool(_answer_mask.any())):
-                    # Text answer: constructed surface vs embedded
-                    # target sentence, band-aware, masked to answerable rows.
-                    lossOut = self._reverse_event_loss(
-                        _surface[_answer_mask], _surface_target[_answer_mask],
-                        registry=output_errors, name='answer', objective='output')
+                if self._answer_target_texts is not None and _answer_mask.any():
+                    costs = self._output_target_cost(self._last_answer_construction, self._answer_target_texts)
+                    lossOut = costs[_answer_mask].mean()
+                    output_errors.error('answer.pyramid', costs, 1., mask=_answer_mask,
+                        category='prediction', objective='output')
                     output_weight = 1.0
                 elif (getattr(self.inputSpace.data,
                             "has_supervised_outputs", True)
@@ -16338,22 +16361,6 @@ class BasicModel(BaseModel):
         # It intentionally does not ride in state_dict: no carrier or replica
         # survives a model rebuild/checkpoint load.
         self._parameter_epoch = 0
-        # One serialized sentence/thought clock. Sentence slots advance it
-        # before perception, new thoughts and produced sentences take their
-        # own ticks, and epoch reset restores the presentation's baseline.
-        # Live event bands and stored ideas use the same RowTime ladder.
-        # Guarded so a re-entrant build does not re-register the buffer.
-        if "when_time" not in self._buffers:
-            self.register_buffer(
-                "when_time", torch.zeros((), dtype=torch.long))
-        if "when_code" not in self._buffers:
-            # The present's code, made by the one encoder whenever the clock
-            # is set; every reader of the present reads it here.
-            from RowTime import encoder
-            self.register_buffer("when_code", encoder().encode(
-                torch.zeros((), dtype=torch.long)).float().cpu(), persistent=False)
-            self.register_load_state_dict_post_hook(
-                lambda module, keys: module._encode_present())
         self.symbolSpace = None  # wired below once the home spaces exist
         self.reversible = True
         self.nInput = nInput
@@ -16826,6 +16833,8 @@ class BasicModel(BaseModel):
         # Terminal convenience aliases are routing references; the ModuleLists
         # above are the sole structural owners.
         object.__setattr__(self, 'conceptualSpace', self.conceptualSpaces[-1])
+        from Memory import ModelState
+        self.conceptualSpace.stm.model_state = ModelState()
 
         # §6d reference-partitioned codebook update law (GrammarOpsPass;
         # author 2026-06-11): percepts are shaped by the parallel pass,

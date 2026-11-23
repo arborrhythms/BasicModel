@@ -142,3 +142,36 @@ def test_the_stm_head_names_the_operators_and_their_operands(tmp_path, monkeypat
         assert 'surface' in applications
     finally:
         model.End()
+
+
+def test_identical_words_carry_distinct_locations_between_looks(tmp_path, monkeypatch, eager_reading):
+    from test_item18_expect import read
+    model = _grammar_free_text_model(tmp_path, monkeypatch)
+    try:
+        nominate(model, ('Felix', 'Felix Felix.'))
+        state = model.conceptualSpace.stm.model_state
+        observed, requested = [], []
+        observe, units = state.observe, model.request_read.units
+
+        def selected(spans, index):
+            observe(spans, index)
+            if index[0] >= 0:
+                observed.append(tuple(state.last_where[0].tolist()))
+
+        def requested_at(x, state_values):
+            if observed:
+                wanted = state.last_where[0].clone()
+                wanted[1] -= 1
+                torch.testing.assert_close(state_values[0, :-4], model.where_registry.band(wanted).flatten())
+                requested.append(tuple(state.last_where[0].tolist()))
+            return units(x, state_values)
+
+        monkeypatch.setattr(state, 'observe', selected)
+        monkeypatch.setattr(model.request_read, 'units', requested_at)
+        read(model, 'Felix Felix.')
+        start, _ = model.where_registry.slices['text']
+        words = {(start, start + 5), (start + 6, start + 11)}
+        assert words.issubset(observed)
+        assert words.intersection(requested)
+    finally:
+        model.End()

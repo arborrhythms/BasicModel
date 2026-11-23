@@ -173,7 +173,9 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
             texts=lambda surface: ())
     model.generate = generate
     model.reverse = lambda carrier, *, field: SimpleNamespace(
-        materialize=lambda: field.evidence, _reconstruction_percepts=field.evidence)
+        materialize=lambda: field.evidence, _reconstruction_percepts=field.evidence,
+        _radix_activity=SimpleNamespace(amounts=field.evidence.new_zeros(len(field.evidence), 1, 256),
+                                        separators=None))
     from Understanding import SentenceEndState
     from Meaning import ConceptualMeaning
     field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)

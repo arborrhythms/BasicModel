@@ -383,6 +383,37 @@ class MemoryStore:
         self.clear_caches()
 
 
+class ModelState(torch.nn.Module):
+    """STM owns the model clock and each stream's last attended native extent."""
+    def __init__(self):
+        super().__init__()
+        from RowTime import encoder
+        tick = torch.zeros((), dtype=torch.long)
+        # BasicModel serializes the tick under the existing checkpoint key.
+        self.register_buffer('when_time', tick, persistent=False)
+        self.register_buffer('when_code', encoder().encode(tick).float(), persistent=False)
+        self.last_where = None
+
+    def begin_looks(self, spans, present):
+        empty = spans.new_full((len(spans), 2), -1)
+        if self.last_where is None or self.last_where.shape != empty.shape:
+            self.last_where = empty
+        else:
+            self.last_where = torch.where(present[:, None], empty, self.last_where.to(empty))
+
+    def observe(self, spans, index):
+        stream = torch.arange(len(index), device=index.device)
+        selected = spans[stream, index.clamp_min(0)]
+        self.last_where = torch.where(index[:, None] >= 0, selected, self.last_where)
+
+    def request_state(self, registry):
+        # The two occupied endpoints locate even a multi-byte percept.
+        start, end = self.last_where.unbind(-1)
+        endpoints = torch.stack((start, end - 1), -1)
+        location = registry.band(endpoints).detach().flatten(1)
+        return torch.cat((location, self.when_code.expand(len(start), -1).to(location)), -1)
+
+
 class ShortTermMemory(MemoryStore, Layer):
     """Runtime idea stack plus shift/reduce scorer for ConceptualSpace.
 

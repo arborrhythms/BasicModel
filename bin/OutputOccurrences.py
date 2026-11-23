@@ -42,8 +42,7 @@ def realize(model, generation):
             scored = model.reverse(model.conceptualSpace.subspace.carrier_like(),
                                    field=said_at(model, generation.reconstruction_field))
             result._reconstruction_percepts = scored._reconstruction_percepts
-            from dataclasses import replace
-            result._radix_activity = replace(result._radix_activity, amounts=scored._radix_activity.amounts)
+            result._reconstruction_amounts = scored._radix_activity.amounts
         return result
 
 

@@ -299,6 +299,7 @@ class AnswerConstruction:
     surface: Any = None          # input-event realization for text scoring
     trace: Tuple[Any, ...] = field(default_factory=tuple)
     texts: Tuple[Optional[str], ...] = field(default_factory=tuple)
+    byte_amounts: Any = None         # graded writer output [batch, place, byte]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "trace", tuple(self.trace))

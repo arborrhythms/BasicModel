@@ -14,6 +14,9 @@ class RequestRead(nn.Module):
         self.first = nn.Linear(given, int(width), device=device)
         self.ask = nn.Linear(int(width), self.rows, device=device)
         self.stop = nn.Linear(int(width), 1, device=device)
+        from BasicPercepts import WHERE_WIRES, WHEN_WIRES
+        # Two native place codes and the present.
+        self.state_weight = nn.Parameter(self.first.weight.new_zeros(int(width), 2 * WHERE_WIRES + WHEN_WIRES))
         for top in (self.ask, self.stop):
             nn.init.zeros_(top.weight)
             nn.init.zeros_(top.bias)
@@ -21,8 +24,11 @@ class RequestRead(nn.Module):
     def given(self, opened, memory, found):
         return torch.cat((opened.flatten(1), memory.flatten(1), found[:, None].to(opened)), -1)
 
-    def units(self, x):
-        return F.relu(self.first(x))
+    def units(self, x, state=None):
+        hidden = self.first(x)
+        if state is not None:
+            hidden = hidden + F.linear(state.to(hidden), self.state_weight)
+        return F.relu(hidden)
 
     def request(self, h):
         """The request ``[V, B, 2]``: asked for by the logistic of its read,

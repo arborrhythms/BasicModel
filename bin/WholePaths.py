@@ -166,7 +166,8 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
     answers = (tuple(model.inputSpace.data.what(question) for question in questions) if supplied
                else tuple(WhatAnswer.silence(question) for question in questions))
     model._set_answer_silence_mask(answers)
-    values = [answer.what if answer.available else '' for answer in answers]
+    values = [answer.what if answer.available else None for answer in answers]
+    active = active & active.new_tensor([answer.available for answer in answers])
     cost = model._output_target_cost(construction, values)
     from BindingAnswers import cost as binding_cost
     from ThoughtAnswer import accepted
@@ -468,6 +469,7 @@ def keep_output(model, paths, selected, sid):
         derivation = replace(derivation, **fields, selected_thoughts=thoughts)
     result = AnswerConstruction(actual=stack('actual'), derivation=derivation,
         concepts=stack('concepts'), percepts=stack('percepts'), surface=stack('surface'),
+        byte_amounts=stack('byte_amounts') if rows[0].byte_amounts is not None else None,
         trace=rows[0].trace, texts=tuple(value.texts[row] for row, value in enumerate(rows)))
     model._kept_path_output = detached(result)
     old_actions = getattr(model, '_kept_path_output_actions', None)
