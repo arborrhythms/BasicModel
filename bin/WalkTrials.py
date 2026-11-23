@@ -306,6 +306,15 @@ class ThoughtTrialState:
             fields = [ConceptualField(saved[position][1]['_concept_ids'],
                 saved[position][1]['_concept_activations'], saved[position][1]['_concept_where'],
                 saved[position][1]['_concept_when'], None) for saved in (state.saved for state in states)]
+            # A state taken before its sentence's field was published (a
+            # path's start, after the conceptual forward cleared the
+            # carrier) holds no field: its rows keep no concept.
+            held = [field for field in fields if field.concept_ids is not None]
+            if not held:
+                continue
+            fields = [field if field.concept_ids is not None else ConceptualField(
+                held[0].concept_ids[:0], held[0].evidence[:0], torch.zeros_like(held[0].where),
+                torch.zeros_like(held[0].when), None) for field in fields]
             publish(chosen.model, select_fields(fields, winners))
 
 
