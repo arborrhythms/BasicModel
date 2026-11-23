@@ -167,7 +167,14 @@ def compose(name, left, right=None):
             # gradient that is not a number, even where it earns no credit.
             rail = -math.log(torch.finfo(a.dtype).eps)
             interior = (b != 0) & (a.abs() <= b.abs() * rail)
-            ratio = torch.where(interior, a, 0.) / torch.where(interior, b, 1.)
+            numerator = torch.where(interior, a, 0.)
+            denominator = torch.where(interior, b, 1.)
+            # For two tiny operands the quotient can be ordinary while its
+            # local denominator derivative overflows before it sees zero
+            # credit. Shift both operands by the same exact power of two.
+            cutoff = math.sqrt(torch.finfo(b.dtype).tiny)
+            scale = torch.where(denominator.abs() < cutoff, denominator.new_tensor(1. / cutoff), 1.)
+            ratio = (numerator * scale) / (denominator * scale)
             return torch.where(interior, ratio.tanh(), a.sign() * b.sign())
         return result.tanh()
     positive, negative = left.chunk(2, -1)
