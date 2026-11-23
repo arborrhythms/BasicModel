@@ -136,7 +136,10 @@ def write(store, meaning, *, key):
         operands = [append(value.roles[role], {}) for role in value.role_mask.nonzero().flatten().tolist()]
         root = head
         for child in (*operands, *children):
-            root = RELATION, store.parts.add(root, child, truth_plus=1.)
+            # The pair store was emptied above (store.expire), so the tree's
+            # own next handle is free. The free list is not searched: there
+            # an episodic concept's number reserves the row of that number.
+            root = RELATION, store.parts.add(root, child, symbol=len(store.parts) + 1, truth_plus=1.)
         return root
     return View(store, retain(meaning), store.generation)
 
