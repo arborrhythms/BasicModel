@@ -47,7 +47,7 @@ def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(
     steps, followed = SentenceField.taken_steps, []
     def taken(model_, record, programs):
         result = steps(model_, record, programs)
-        followed.append(int(result[4][1].sum()))
+        followed.append(result[4][1].any(-1).tolist())
         return result
     monkeypatch.setattr(SentenceField, 'taken_steps', taken)
     def observe(state, sid, active, *args):
@@ -55,18 +55,24 @@ def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(
         readback = True
         texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
         assert len(texts) == 4 and unavailable.shape == (4,)
-        # Ported (nineteenth pass, sigma-pi 19.140): a step whose operands
-        # the STM tree's edge points at is followed, and no pair is searched
-        # for there; a step with no edge is still the grammar's inverse.
-        assert parents or followed[-1], 'the reading must traverse the grammar inverse or its edges'
-        if parents:
-            before = parents[0]
-            changed = list(state[1])
-            changed[6], changed[10] = (changed[6] + .5) / 2, (changed[10] + .5) / 2
-            current = list(state[0])
-            current[0] = (current[0] + .5) / 2
-            parents.clear()
-            model.reconstruct_grammar_sentence((tuple(current), tuple(changed), state[2]), sid, active)
+        # Ported (nineteenth pass, sigma-pi 19.140): a reading whose tree is
+        # in the trial's STM is put back by following its edges there, each
+        # word said by the concept its row names, with no inverse searched; a
+        # reading with no edges is still the grammar's inverse of its state.
+        rows = followed[-1]
+        assert parents or any(rows), 'the reading must traverse the grammar inverse or its edges'
+        before = parents[0] if parents else None
+        changed = list(state[1])
+        changed[6], changed[10] = (changed[6] + .5) / 2, (changed[10] + .5) / 2
+        current = list(state[0])
+        current[0] = (current[0] + .5) / 2
+        parents.clear()
+        again, _ = model.reconstruct_grammar_sentence((tuple(current), tuple(changed), state[2]), sid, active)
+        # What the STM's tree holds does not follow the state's values: a
+        # followed reading is put back the same from a changed state.
+        assert all(again[b] == texts[b] for b, row in enumerate(rows) if row)
+        if before is not None:
+            # A searched reading's inverse follows the changed state.
             assert parents and not torch.equal(parents[0], before)
         from PrependedSymbols import word_view
         torch.testing.assert_close(model._word_symbol_concept_ids(),
