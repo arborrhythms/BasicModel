@@ -10220,6 +10220,12 @@ In the names of the code (Claude's reading, to be corrected by Alec):
 
 What the standing docs say today, which this meets (`doc/STM.md`): `LTM0` holds one idea an entry, each with its own time; `LTM1` holds one pair of references a row; memory is read by content or by the `LTM1` rows that reference a symbol, an addressed row is read directly (`EntryRead.cued_rows`), and "There is no recall by time". Following a link from one event to the next is a read by reference, not by time. Not established here: what a look writes to memory today, and whether any pair links one look's entry to the next. The text for Codex is above §22.7.
 
+### 19.144 Alec: the reconstruction is computed after the thought, in item 1.7 (2026-11-23)
+
+Asked "Shall the reconstruction be moved after the thought within item 1.7?" (it is computed before the thought today, §19.142), Alec: "Yes, in 1.7".
+
+So the order of §19.142 is the one to build: percepts, the basic field, an optional thought, then the one field the thought leaves for both the reconstruction and the output. The line "Reconstruction has its own operated field" (`WholePaths.py`) goes. Still open with Alec when this was written, and so not decided by it: where a thought's light is placed (`intuit` deposits it at every occupied place today), whether System 2's teaching reaches the basic Pi-Not-Sigma itself, whether a thought may only re-read a place in another sense of the same word, and whether the answer and the reconstruction name a word by one concept. The text for Codex is above §22.7.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -15332,6 +15338,57 @@ retrieval)."
 
 Say in the return what you built, what you only traced, and what each
 thing added.
+~~~
+
+*For Codex: the reconstruction is computed after the thought* (added 2026-11-23, at Alec's word, §19.144; in item 1.7, after the list)
+
+~~~
+Item 1.7, your branch item17-codex-open. Read the spec's sections 19.142
+and 19.144 and doc/GradientFlow.md, "One map used both ways". Alec's
+order of a reading: the percepts run; basic percepts form; the field is
+propagated over the orders; an optional thought changes the basic field;
+then that one field does both the reconstruction and the output. Asked
+whether the reconstruction moves after the thought within item 1.7, he
+said: "Yes, in 1.7". The standing rules of the list hold (commit
+locally, push nothing, return in suggestions.txt; no new store, layer,
+parameter, key, cost or thought rule; no seed pinned; no skip or xfail;
+nothing under RUN_SLOW; every claim measured from the input to what the
+model returns).
+
+1. Trace first, in the return. Today a path's reconstruction is computed
+   before its thought (WholePaths.py: _sentence_path_cost, then
+   ThoughtClosing.close, then output; its comment: "Reconstruction has
+   its own operated field"). It says each word from the concept its STM
+   row names (SentenceField.said_words). Say what a thought writes
+   (IntuitionField.read, AccessibleMind.write_knowing, the STM's put),
+   which of that the reconstruction would read if it ran afterwards, and
+   what in the paths' bookkeeping assumes the present order (a
+   thought-only departure reuses base.reconstruction; think_kept and the
+   commit come after the reconstruction is fixed).
+
+2. Build the order. The reconstruction of a path is computed after that
+   path's thought, from what the thought leaves, the same thing the
+   output is given. Where no thought runs, nothing changes. The comment
+   and whatever only served the old order go (a delete is a mv into
+   /tmp/item17-r6d-2026-11-21/).
+
+3. Not decided, so do not build them; report what you see of each:
+   where a thought's light is placed (intuit deposits it at every
+   occupied place of the field today, so a reconstruction after the
+   thought meets it there); whether a thought may put another word's
+   concept at a place of the input; whether the answer and the
+   reconstruction name a word by the same concept. If the order cannot
+   be built without settling one of these, take the choice that changes
+   least, say which, and say what it costs.
+
+4. Measured, input to output: the reconstruction's text for the 19 words
+   with their marks, the six two-word sentences and the lesson's
+   sentences, untaught and after ten rounds at the model's rate, before
+   and after this change, in the echo's model (no thought rule) and in
+   the lesson's model (its thought rules); in the lesson's model, the
+   readings where a thought changed what was put back, and whether any
+   letters were put back that the input does not hold; the echo's three
+   passing tests; both gates.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
@@ -27273,7 +27330,7 @@ Alec: "After codex returns, I would like you to finish up by integrating and com
 1. The age written by the assessment (`Assessment.assess_age`, on `item17-codex`), which the list told Codex to leave for Claude. It is Codex's to bring over.
 2. "say X" answered "X", and "X" alone met with silence (§19.141): no mechanism is chosen; the echo's test and the 1.00 row of `doc/ModelAge.md` change to the pair when one is.
 3. `test_item20_round6_gradients.py::test_input_reconstruction_reaches_perception_and_not_the_grammar`. By §19.142's analysis the reconstruction need not tell two trees apart, and a return by the STM tree's edges teaches the rules nothing; whether the test is changed to say so is Alec's word to give.
-4. What §19.142 names and nothing builds: the reconstruction after the thought, System 2's teaching on the basic Pi-Not-Sigma itself, one concept for a word whoever reads it, and where `intuit` places its light. These are not passes until Alec says so.
+4. The reconstruction after the thought, decided for item 1.7 (§19.144; its text for Codex is above §22.7). The rest of what §19.142 names and nothing builds is still open with Alec: System 2's teaching on the basic Pi-Not-Sigma itself, one concept for a word whoever reads it, and where `intuit` places its light.
 5. Round 7 (§22.7), the full list of tests when `main` moves, and the landing.
 
 *Left to Claude:* when Codex returns, to read its return, integrate its branch into `item17-r6d11` and commit.
