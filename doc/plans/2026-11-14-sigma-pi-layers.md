@@ -26606,3 +26606,38 @@ Only the looks each model takes of itself could be measured. *The trace:* a word
 - *Four failures that are on the base and on the branch are new to the record* (`round34_repair`, `symbols::test_54bd`, `sparse_growth::test_58`, the first Pi's test of `sparse_ldu`). They were not in the lists of known failures before, so they came in somewhere between `main` and efb5be3c7b. They have to be run down before the branch is landed.
 - *The availability's default is every rule,* so nothing but this pass's own tests starts with none. That is right for now: until a rule can be taught to be undone, a model that starts with none composes nothing and says nothing.
 - *Checked by Claude:* the return was read against the commits; the echo's cells assert the returned answer and have no skip; `data/BasicModel.xml` gains no key. The full list was not run (`main` is not moved).
+
+### 23.6.26 Codex's second return: the echo through the answer passes, and one rule undone from its parent alone, in a test (Codex, 2026-11-22, branch `item17-codex` at df690d4a3e; made by Claude on the work branch at 49fe80b064; review by Claude)
+
+Codex's own text is in `suggestions.txt` of its worktree. Its commits: c6574411f8, 1dad626869, d20c178b6a (the echo), 8982c3e184 (`divide`), ea1d8a6b9c (the echo's fixture), 5c33225e55 (one rule, tests only).
+
+#### What Codex found and built
+
+- *Closing.* As Claude's trial had found, the sentence's path passes an empty selection and `_resolve_answer` reads the field's meaning only when none is passed. With that mended, a second fault: the field's meaning for "Felix." held only the word, though the open field held both extents, `[0,5)` and `[5,6)`.
+- *What the answer is given.* In a model whose grammar has no thought rule (`Output.no_thought_rules`), the closing names the words the reader recognized at the field's extents (`Output.witness`, from `_attention_spans` and `_attention_word_concepts`), in order of place, a draw between equal places. Each named word becomes one occupied role whose value is that word's own concept code (`Output.perceived_meanings`); the row's source is `'perception'`. No byte of the input and no supplied answer is kept.
+- *The grammar that says it.* With every generate rule, "This is." had three right meanings and the walk emitted 17 terminals. With the noun and verb rules only (Alec's suggestion, §19.137) the sentences come back exactly.
+- *Two further things Codex added,* which Claude has not taken (below): a perceived word spelled from its dictionary entry by name (`FieldReverse.reverse`, `OutputOccurrences.realize`), and a learned decision to speak or stay silent (a linear read of the occupied roles, key `architecture.voiceLogit`).
+- *`divide`.* Past the ratio at which tanh is 1 to the float's precision, `MeaningCodes.compose` gives the value without the quotient. The value is unchanged; the gradient that was not a number is gone.
+- *One rule undone from its parent alone* (`test/test_item17_parent_product.py`, tests only). A `surface` rule whose parent holds both operands as two blocks, each with its value, the name of its word and its place. Its inverse takes one argument, the parent. 19 of 19 words with their marks came back exactly in 19 models nominated apart, and in one model nominated on the whole lesson; both operands recovered in every case (least cosine 0.999996). Codex's own limits: the packing is eight bits a membership, which has no gradient to learn by and cannot hold two free values; nested rules, the other rules and a walk that chooses for itself are not shown. No rule of the model was changed.
+- *The age by returned answers.* `Assessment.assess_age` wrote 0.00: the echo's rows scored 19 of 19 and 6 of 6, and the row at 0.70, asked as "What was there?", scored 0 of 2.
+
+#### What Claude made on the work branch (49fe80b064), and why
+
+Each hunk was read and the change made by hand (Alec, §19.137). Taken: the closing with no thought rule, the words named at the closing and said by the answer, rows of different numbers of roles kept together, the tick of a prepared answer, `divide`, and the echo's fixture. The five places that asked "has this grammar no thought rule" now ask one named function. The test of the state no longer asks for three STM rows at once: a rule may put two rows into one before the last word is read.
+
+Not taken, for Alec to decide:
+
+- *A perceived word spelled from the dictionary by name.* Claude's trial with it turned off: the echo still passes before any teaching (19 of 19, 19 of 19 with the mark, 6 of 6 two-word sentences, every start seen). So the model's own way back spells a nominated word. What the shortcut covers is what teaching then does: in one start of two, after one round of the echo's teaching, "this." came back as four empty bytes and its mark (18 of 19), and stayed so. The reconstruction's cost rose in the same round (mean R 2.39 to 3.27) and the reconstruction put back "." or another word for most rows. Claude's reading, not yet measured: the reconstruction from the idea alone is wrong, its cost is still stepped on, and the step moves the way back that the answer shares. The shortcut would hide that, and it is a second way to spell that applies only to rows whose source is perception.
+- *The learned decision to speak.* Without it a model with no thought rule says back every sentence it reads. The echo does not need it. Whether such a model should learn when to be silent, and by what, is Alec's.
+
+#### Tests run by Claude
+
+- Codex's tip, `test/test_item17_echo.py`: the word, the word with its mark, the two-word sentence, the state and the silence test pass; the two cells of a model with no grammar fail as before (13 and 0 of 19).
+- The work branch's version, 15 files and both gates: 147 passed, 7 failed, 30 skipped. Both gates passed. `test_item17_root_trace` passes (it failed on `divide`). The seven: the two cells with no grammar; the word with its mark, on the start described above (it passed on the first run); three of `test_thought_answer_adapters` (known, on the base); and `test_reading_curriculum.py::test_curriculum_gate_counts_one_word_only_for_active_rows`, which fails the same way on the work branch before this change (two runs each).
+
+#### Review (Claude, 2026-11-22)
+
+- *The echo is said back by the model as it runs, input to output, and nothing in it is learned by the echo's own teaching.* What was learned is the word, at nomination: its percept, its concept and the tie between them. The answer is given the list of words recognized, by name; the walk says them in order; the model's own way back spells them. That is what §19.137 describes ("that's basically echoing"). It should be said plainly that the words reach the answer as a list beside the idea and are not read out of the idea's value.
+- *It passes before teaching and can fail after it.* That is the wrong way round for a lesson, and it points at the reconstruction's cost, not at the answer. It is the next thing to measure: the same cell with the reconstruction's cost left out of the step.
+- *The parent that holds both operands is the form §19.135's "span of operands" was pointing at.* Codex's proposal for the model: the parent of a binary rule has typed fields for each operand's value, its reference and its present place. That is a change of the rules' form and is Alec's to decide; the eight-bit packing is a proof that the route is exact, not the form to build.
+- *The row at 0.70 is not asked as "What was there?"* (Alec, §19.138). With that row read from identities and reported beside the age, the chart's first failing row is no longer the echo.
