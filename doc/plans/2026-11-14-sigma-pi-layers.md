@@ -27726,7 +27726,7 @@ Alec: "Fix things on your own work tree, and then a message to codex about what 
 
 **Left as it was, on purpose:** the flag in `Models.reverseReconstruct` that a cost of zero is an exact identity (a warning; it says what the gradient doc says of an exact round trip); the comments of `Models._reverse_body` (read; none false of the code beside it); `ReferenceClose.individuals` (parthood already; the greatest with no bar); `IndependentComponents`; the seventeen unread keys; the assessment.
 
-**For Alec:** the bar of 0.7 against 1; and that a tie now identifies neither.
+**For Alec:** that a tie now identifies neither. The bar of 0.7 against 1 was put to him; he said "Perhaps a note in their spec", so it is passed to Codex as open (the message below, point 2).
 
 *For Codex: what Claude did on round 7's step 1, and what is yours* (2026-11-23)
 
@@ -27774,10 +27774,16 @@ Yours, from the audit:
    most of this and was never brought to main. Bring it, with the point
    of 23.6.24 settled: an age is earned at a row that was measured and
    passed.
-2. The second gate does not test the readers (it raises through
-   symbol_equality). If round 7 wants the parthood bar under a gate, it
-   needs a test of its own; the trial behind 0.7 had 45 comparisons and
-   one pair that decides it.
+2. The bar is open, and it is yours to settle. conceptMatchPart = 0.7
+   is a first setting: the trial behind it had 45 comparisons, one pair
+   separates 0.6 from 0.7, and a bar of 1 would have cost nothing in
+   those runs. Alec was asked "0.7 for now, or 1 until there is more
+   evidence?" and said: "Perhaps a note in their spec." So this is the
+   note. The second gate does not test the readers (it raises through
+   symbol_equality), so nothing under a gate tests the bar: give it a
+   test of its own, on more comparisons than these (a corpus read, not
+   the unit tests), and set the number by what that shows. Say in your
+   return what you chose and what it joins and refuses.
 3. Seventeen leaf keys of data/model.xml are named by no file under bin
    (listed in 23.6.34). Most are older than this item. Remove with the
    schema and docs, or say which have a reader the search missed.
