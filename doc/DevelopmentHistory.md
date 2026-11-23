@@ -939,7 +939,7 @@ $$
 $$
 
 the masked-LM information-reconstruction term at the subsymbolic (PS) (see
-[Spaces.md](Spaces.md#within-sentence-ar-retirement-2026-05-14)) plus the
+[Spaces.md](Spaces.md#within-sentence-ar-retirement)) plus the
 in-STM next-idea term ([Section 6](#6-intrasentencelayer)) plus the
 inter-sentence next-end-state term ([Section 11](STM.md#11-the-recent-situation))
 plus the discourse ARMA($p$, $q$) term (`BasicModel._discourse_arma_loss`,
@@ -1091,7 +1091,7 @@ Production compose uses the hard derivations described below.
 > now decided in direction: a noun is the same kind of function as an
 > adjective, already mapped over the top domain, and that top domain is the
 > domain of discourse at its widest
-> ([above](Language.md#words-narrow-the-domain-of-discourse-2026-09-28)). The
+> ([above](Language.md#words-narrow-the-domain-of-discourse)). The
 > conjecture that follows it — concrete nouns sourced from PartSpace and
 > adjectives from WholeSpace, so that part of speech falls out of the pole a
 > symbol is pre-applied to — is "an old conjecture, mostly undone by the
@@ -4668,7 +4668,7 @@ MM trajectories were identical to the landing. The landing is `73cd7b71b`.
 ## The target scheme (October 6; decided)
 
 Decided, with the architecture statement in
-[Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture).
+[Architecture](Architecture.md#expectation-and-surprise-through-the-architecture).
 The sections above describe what is implemented; this one what each step
 changes in the gradient's ownership and path.
 
@@ -6168,7 +6168,7 @@ not by a passing identity lesson.
      become objects at their determination, "so we can bind those to help
      Modality": a verb's event, determined by its tense, aspect or modal
      operation, would be an MTM object bindable like a noun phrase.
-   - *Direction (Alec, 2026-10-22, [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)):*
+   - *Direction (Alec, 2026-10-22, [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower)):*
      modals are of the same order as verbs and nouns; "MPs are differences
      of VPs just as VPs are differences of NPs (not really differences, but
      diagonals within quadratics)"; "running and walking are both
@@ -6459,7 +6459,7 @@ not by a passing identity lesson.
      live caller today and must wait for that second row. This creates
      individuals ("this is Felix, that is Felix": 0 to 1) and kinds
      ("Felix is a cat, Ciao is a cat": 1 to 2).
-   - **Return to S0 by lowering** (amended 2026-10-22, [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
+   - **Return to S0 by lowering** (amended 2026-10-22, [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower)).
      One composition lowers one order: NP + VP, predication. The modal
      does not (Alec, 2026-10-23, reversing 2026-10-22): it withholds the
      lowering, so a modal clause stays above order 0 as an abstraction on
@@ -6667,7 +6667,7 @@ not by a passing identity lesson.
      Mass nouns are types at order 0. Count nouns are kinds at order 2, which
      a determiner lowers. Each stage therefore gives the parse one new order
      class to infer. Stages 4a and 4b of the
-     [curriculum](Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)
+     [curriculum](Training.md#the-generated-supervised-curriculum-in-order)
      are where this order would go. Until parts of speech are learned, unit
      tests force them. Alec: "Unit tests can force parts of speech; they may
      take a while to learn, and we need to test without that."
@@ -6866,12 +6866,12 @@ not by a passing identity lesson.
    with the registered context, lower it against negatives; the collapse
    diagnostic as the gate); one metric for SBOW, diffusion and `bind`
    ([FutureWork](FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
-   *Reversed 2026-10-22 (Alec; [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)): one conceptual
+   *Reversed 2026-10-22 (Alec; [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower)): one conceptual
    space, concrete and abstract intermingled; the per-order spaces and the
    stratified surface read below are withdrawn, while the symbol tree, the
    Part edges as membership, membership by edge and the cross-order
    diffusion stand. The record:*
-   *Added 2026-10-20 (Alec; [Orders §9](Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided)):*
+   *Added 2026-10-20 (Alec; [Orders §9](Orders.md#9-all-symbols-in-one-mereological-tree)):*
    **per-order conceptual spaces, ramsified over the one symbol tree** —
    order *n*'s space is the cube over the order-(*n−1*) symbol index, its
    concepts characteristic vectors realized by LTM2's Part edges, similarity
@@ -6900,7 +6900,7 @@ not by a passing identity lesson.
    conditionals and counterfactuals, ellipsis, generics, attribution,
    the inverse verb and the verb groups' exact bases, the carrier
    variants) — [Testing](Testing.md#fast-regression-and-slow-experiments),
-   coverage in [Training](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
+   coverage in [Training](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot).
    The same run is the compiler work's parity test at scale (compiled and
    eager agree in actions, probabilities, costs, updates). Built from the
    `MM_math_chain` generator in the Viterbi order; throughput recorded,

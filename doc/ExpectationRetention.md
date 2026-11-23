@@ -284,7 +284,7 @@ non-greedy alternatives and the rest from the policy at
 `explorationTemperature`, so each keeps probability at least
 $\varphi / (K - 1)$ among $K$ eligible actions whatever the policy has learned;
 credit uses the actual mixture probability. The paths themselves are described
-in [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11).
+in [Architecture](Architecture.md#whole-paths-and-concept-episodes).
 
 Each forecast is staged before its target arrives; every path of the sentence
 reads that snapshot, and the recent situation takes the kept external

@@ -37,7 +37,7 @@ The pervasion of a question with no open operand is read here
 property's raised class, and `part_of` from the subject to that class gives
 each lane's support. It is a relation between the two kinds, read from the
 order above, and never a count of the kind's known members
-([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
+([Logic](Logic.md#existence-and-pervasion)).
 
 The public legacy `QuerySpec` aliases `PartOf`, `part`, `queryPart` and
 `isPart` select conceptual-taxonomy evidence. `whole` / `isWhole` reverse

@@ -74,7 +74,7 @@ states that a signed value would confuse.
   $(c^+, c^-) \to (c^-, c^+)$, and is its own inverse.
 - **`non`** (`NonLayer`) removes both the positive and the negative
   evidence, $(c^+, c^-) \to (0, 0)$, asserting nothing in their place.
-  Alec, 2026-11-12: "non- removes both positive and negative evidence,
+  "non- removes both positive and negative evidence,
   while not swaps the two types of evidence." The operand survives as an
   explicit witness in the clause journal, so reconstruction and expectation
   can read what was removed; a removed dimension receives no expected prime
@@ -98,7 +98,7 @@ read from the pair is scaled by the least radius of its two ends. No operator
 scales or gates it. A stored value otherwise changes only when its row is
 forgotten.
 
-Operators over the lanes fall into two algebras (2026-10-19). A selection,
+Operators over the lanes fall into two algebras. A selection,
 which tense, aspect and the preposition are, is an idempotent meet with no
 inverse: on the mat twice is on the mat. A verb is a group element acting on
 its identity, invertible and not idempotent: ran twice is more than ran
@@ -106,13 +106,13 @@ once. A state ("the box contains apples") is a relation. The modal is the
 second difference, over an identity's alternative timelines: possible holds
 on some timeline, necessary on every one, the actual included, and the two
 are duals in the lanes, necessity being possibility with the complement
-withheld ([Language](Language.md#words-narrow-the-domain-of-discourse-2026-09-28)).
+withheld ([Language](Language.md#words-narrow-the-domain-of-discourse)).
 
 ### And, or and not in the layers
 
 The layers have one structure at every order, a Pi, a Not and a Sigma
 ([Architecture](Architecture.md#sigma-and-pi-layers)), and it says the
-three connectives without a grammar operator (Alec, 2026-11-17: "Please also
+three connectives without a grammar operator ("Please also
 verify that the SigmaPi stack can do And, Or, and Not ... I want to make
 sure that what we are doing is interpretable in those terms").
 
@@ -121,15 +121,15 @@ sure that what we are doing is interpretable in those terms").
 - **Or** is a Sigma: a weighted sum of signed values squashed by tanh, its
   weights at zero or above, any one term being enough.
 - **Not** is the Not between the Pi and the Sigma, the only place a sign is
-  changed (Alec, 2026-11-19: "that would give it the ability to change sign,
+  changed ("that would give it the ability to change sign,
   which should be restricted to not"). It is a layer of options: from each
   row's two unsigned values it offers two signed values, the value, for less
   against, and the not-value, the pair exchanged, "so that concepts can
   choose value or not-value (since we want to allow concepts of absence as
-  well as concepts of presence)" (Alec, 2026-11-19). A Not entry is a
+  well as concepts of presence)". A Not entry is a
   concept's entry that reads the not-value; the size of an entry is the
   Sigma's weight and the choice of option is the Not's. On percepts the opposite of one is zero, not minus one
-  (Alec, 2026-11-17: "Omission teaches not: yes, for percepts, the opposite
+  ("Omission teaches not: yes, for percepts, the opposite
   of 1 is 0, not -1, as in Boole"): a Not entry at the basic level records
   that something expected is absent. It is made implicitly by the gradient,
   where teaching carries an entry through zero, which is how an omission
@@ -138,11 +138,11 @@ sure that what we are doing is interpretable in those terms").
 
 These are conjunction and disjunction, the symbolic level's two; the least
 and the greatest of graded values, intersection and union, are the basic
-level's, and there is no third pair (Alec, 2026-11-19: "I like the
+level's, and there is no third pair ("I like the
 intersection/union operations as subsymbolic (basic level) and
 conjunction/disjunction at the symbolic level"). And and or are monotone:
 their weights are zero or above, so raising an input never lowers the
-answer, and Not carries all negation (Alec, 2026-11-17: "the removal of the
+answer, and Not carries all negation ("the removal of the
 NOT is exactly what is necessary to speak only of the good in Augustine's
 sense"). With no Not entry read, a mind speaks only of what is
 ([Philosophy](Philosophy.md)).
@@ -152,7 +152,7 @@ needs no omission to teach it.
 
 A concept's value is one signed number in $[-1, 1]$, stored as two unsigned
 lanes, its positive part on the lane for and its negative part on the lane
-against; one reading of one concept is never both (Alec, 2026-11-19: "The
+against; one reading of one concept is never both ("The
 concept remains a signed fuzzy keen on certainty, but we can represent
 "both" with two concepts"). Both is two concepts, one for presence and one
 for absence, or, at the percepts, a basic percept whose two lanes are both
@@ -181,7 +181,7 @@ the literals of each connective.
 > without crossing — applied only where `non` is chosen, never
 > spontaneous. RadMin/RadMax below
 > remain signed-scalar kernels at their own space-role; the odds embedding
-> is retired from the meronymic path (legacy `PiLayer` keeps it for
+> is not on the meronymic path (legacy `PiLayer` keeps it for
 > non-meronymic consumers).
 - **Parthood** (fundamental): `Basis.part()` / `Ops.part`. The default
   (vector) form is the elementwise projection of $x$ into $y$'s unit
@@ -209,9 +209,7 @@ $\operatorname{part}(x, -x) = 0$. The full suite
 
 ---
 
-*Section 2, the norm-projection reading of symbolization, is retired: a
-symbol is emitted by the codebook lookup that names a prototype row
-([DevelopmentHistory](DevelopmentHistory.md#2-symbolization)).*
+*A symbol is emitted by the codebook lookup that names a prototype row.*
 
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
@@ -400,7 +398,7 @@ Together they define a partial order over symbolic activations.
 A stated parthood, subsumption or kind relation ("cats are animals") is one
 relation, $\mathrm{Part}(x, y)$: two references with the truth pair, read by
 the types of its arguments, with no relation code stored in a row; equality
-is membership in a singleton (Alec, 2026-10-20/21). An identity sentence
+is membership in a singleton. An identity sentence
 composes as `part`, and `define` in thought writes two relations, `part` each
 way. No relation carries an operator. `part` and `isPart` read
 the conceptual taxonomy these relations build, never vector containment
@@ -618,7 +616,7 @@ in `bin/Language.py`.
 - **Derive**: pairwise mereological inference via `part()`; generalized by
   `extrapolate()` to all two-argument methods.
 
-### Existence and pervasion (Alec, 2026-11-13)
+### Existence and pervasion
 
 A question with no open operand asks about a region of order-zero
 conceptual space, and its truth is read from how that region is lit. "A

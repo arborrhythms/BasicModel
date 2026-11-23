@@ -67,7 +67,7 @@ argmax. `architecture.reducePressure` defaults to `1` and initializes the
 learned gain that raises binary logits as occupancy and deadline urgency grow.
 Hard deadlines reserve a slot for the next word and finish each sentence within
 its one-slot absolute or three-slot relative end state. See
-[Architecture](doc/Architecture.md#whole-paths-and-concept-episodes-2026-11-11)
+[Architecture](doc/Architecture.md#whole-paths-and-concept-episodes)
 and [Language](doc/Language.md#one-operation-per-round).
 
 ## Files

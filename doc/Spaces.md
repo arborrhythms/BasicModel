@@ -138,7 +138,7 @@ path's one departure. Reconstruction keeps the kept path's gradient live;
 targets and durable memory are detached. After the paths of a sentence are
 compared, only the kept end state is committed and the operation record is
 cleared
-([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)).
+([Architecture](Architecture.md#whole-paths-and-concept-episodes)).
 The LTM entry and the completed `Understanding` contain no reading program,
 leaves or spelling snapshot; output generates from the occupied state and
 the model's current grammar.
@@ -257,7 +257,7 @@ inside a tower. There is no perceptual layer stack kept beside this route.
   not duplicated Space state. Where sentences end,
   `_run_sentence_word_bricks` drives these stages one sentence at a time,
   perceiving the sentence once and then reading it along whole paths
-  ([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11));
+  ([Architecture](Architecture.md#whole-paths-and-concept-episodes));
   otherwise the three stages run through one tensor `while_loop`, in which W
   is a storage capacity.
 
@@ -380,7 +380,7 @@ see an identical muxed tensor via `materialize()`.
 > percept's code holds two such vectors, its for lane and its against lane;
 > what perception calls a negative number is evidence on the against lane,
 > never a stored negative. For a percept the opposite of 1 is 0, as in
-> Boole (Alec, 2026-11-17).
+> Boole.
 
 The percept hypercube is the grounded extent side of the architecture. An LLM
 usually learns such grounding indirectly through token statistics; BasicModel
@@ -437,18 +437,17 @@ so it stays in the projective unit-ball geometry described under
 
 ### Level Sets: an Intensity Is a Kind {#percept-level-sets}
 
-Every input intensity is categorized. Alec, 2026-11-13: "all input
+Every input intensity is categorized. "all input
 intensities are tuned into level-sets of percepts", and in the codebook
 "percept activations have a kind there but no magnitude". A letter is the
 plain case, present or absent. A number is treated the same way.
 
-- **A level is bounded by a part and a whole.** Alec, 2026-11-12: "Each
+- **A level is bounded by a part and a whole.** "Each
   percept is categorized against perceptual parts and wholes, whose codes
   are the values. So the order zero concept is a generalization over
   basic percepts." A felt value's percept knits a bound it contains, its
   part, with a bound that contains it, its whole.
-- **A value is its place in one sorted table of values** (Alec,
-  2026-11-19: "we are enclosing the scalar by a lessthan sort"). The
+- **A value is its place in one sorted table of values** ("we are enclosing the scalar by a lessthan sort"). The
   code's coordinates are bins of the felt value, 64 of them: the parts
   half holds the bins at or below the value, the wholes half is all ones
   with the bins above it cut away, and the against lane holds the bins
@@ -474,7 +473,7 @@ plain case, present or absent. A number is treated the same way.
 **The number modality.** A row of numbers of any shape is read this way:
 a level percept at each place. The XOR proofs are two places on one axis,
 and a 28 by 28 image (`data/MM_image.xml`) is 784 places on two axes, "the
-only different being the percept dims" (Alec, 2026-11-13). One reader,
+only different being the percept dims". One reader,
 `NumericPercepts`, serves any number of places.
 
 - **The feeling.** A number $n$ from zero to infinity is felt as
@@ -497,12 +496,12 @@ only different being the percept dims" (Alec, 2026-11-13). One reader,
 - **The scalar beside the words** is the case with no place, and is
   perceived, collected and read by the same functions.
 
-That intensity is a code and never an amplitude was decided for images on
-2026-10-25 ([FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided)).
+For images, intensity as a code and never an amplitude is in
+[FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided).
 
 ### Modalities: One Perceptual Space Each {#percept-modalities}
 
-Alec, 2026-11-13: "the .where for imagery has to be 2D." He weighed one
+"the .where for imagery has to be 2D." He weighed one
 shared space for all the senses and chose otherwise: "perhaps the
 integration path is leave each modality in its own perceptual space with
 varying .where, and integrate only at the level of zero-order concepts by
@@ -536,7 +535,7 @@ modal basis."
   space of places lies below it. Text's `.where` is an order in a sequence
   and an image's is a place on a surface, so one space for both would give
   them distances that mean nothing.
-- **Modality and order are read from the place.** Alec: "the .where that
+- **Modality and order are read from the place.** "the .where that
   is baked into all concepts in virtue of muxing the .where of a percept
   will include a .where in a range that can uniquely identify the modality
   and order of a percept." The model's places are one address space,
@@ -550,7 +549,7 @@ modal basis."
   modality's input has a range of its own, so the range gives the modality
   too. Neither is stored beside the vector. The number of place axes would
   not tell text from XOR, which both have one; the range does.
-- **The where is one fixed parameter** (Alec, 2026-11-19: "a pytorch param
+- **The where is one fixed parameter** ("a pytorch param
   with the sinusoid written to it"). The `.where` stamped onto percepts
   flows from one tensor that holds the constant sinusoid, a row for each
   address of the registry, written from `WhereEncoding.encode`. "The
@@ -562,7 +561,7 @@ modal basis."
   ([Architecture](Architecture.md#one-attention)). Each percept has its own
   band, the wires of the parameter's row at its place. A reading's
   `.where` is its own, the band of the event at its start, and is not
-  combined over its percepts (Alec, 2026-11-19: "It's own, flowing from
+  combined over its percepts ("It's own, flowing from
   the fixed .where parameter"). Only the first Pi reads the where, as a
   look's match of place; no concept has a weight on a where wire.
 
@@ -605,10 +604,9 @@ one place a sign is changed is the Not, a layer that offers each row's value
 and its not-value; a Not entry, a concept's entry that reads a row's
 not-value, at the basic level records that something expected is absent. It
 is made by the gradient, which an omission teaches, or by a declared Not
-member (Alec, 2026-11-17 and 2026-11-19). The operator `not` swaps the two lanes of what
+member. The operator `not` swaps the two lanes of what
 it is put on, which is its own inverse, and `non` removes both, keeping the
-operand as a marked witness, which cannot be undone (Alec, 2026-11-12:
-"non- removes both positive and negative evidence, while not swaps the two
+operand as a marked witness, which cannot be undone ("non- removes both positive and negative evidence, while not swaps the two
 types of evidence."; `NonLayer`; [Logic](Logic.md#evidence-lanes)). Neither
 negates a coordinate, so sensation is never subtracted from. Only what is
 conceptualized can be
@@ -666,8 +664,7 @@ different places are the same percept twice.
 
 **The rows' signed values.** For one reading, the first Pi gives each basic
 percept present two values, for and against, from its parts, its properties
-and its against entries; it is the only reader of the perceptual code (Alec,
-2026-11-19: "the perceptual code is used exclusively to distribute codes in
+and its against entries; it is the only reader of the perceptual code ("the perceptual code is used exclusively to distribute codes in
 the hypercube, and the only thing touching that is the pi"). The Not
 (`NotLayer3`, `order_zero_not`) joins each row's two values into one signed
 value, for less against, $s_i = f_i - g_i$ in $[-1, 1]$; an entry of the Not
@@ -745,7 +742,7 @@ The implementation keeps percept and concept/symbol carriers distinct:
 | space | code `[form \| meaning]` in the unit cube: the form in the percept cube, the meaning in two nonnegative lanes |
 | coordinate | form presence; meaning as a placement direction scaled by trust |
 | opposite | `not` exchanges the two evidence lanes; no coordinate is negated |
-| sides | a concept's value is one signed number whose size is its certainty, stored as two unsigned lanes, its positive part for and its negative part against; "both" is two concepts, one for presence and one for absence (Alec, 2026-11-19) |
+| sides | a concept's value is one signed number whose size is its certainty, stored as two unsigned lanes, its positive part for and its negative part against; "both" is two concepts, one for presence and one for absence |
 | metric | parthood both ways. One function, `ConceptualMatch.match`, compares a content with conceptual space for the reference and field readers and returns how much of each candidate lies in the content and how much of the content lies in each candidate, on the meaning lanes where the code has them. The other parthood reads (the hierarchy, the basic percepts, case selection) call the same measure directly (`IdentityRows.meet_ratios`). The measure is provisional ([Mereology](Mereology.md#parthood-as-shared-size)) |
 | magnitude | the for lane's radius is the concept's trust |
 
@@ -770,7 +767,7 @@ the conceptual space of one order, made implicitly by the Pi or nominated by
 MTM when its constituents always occur together. There is no symbol of a
 concept: a symbol is a region of sameness that may hold one concept or
 several ("my dog" and "Voyager" are two concepts and one symbol), and none is
-made for a concept as a rule (Alec, 2026-11-20).
+made for a concept as a rule.
 
 ### SBOW Situates Concepts, Not Percepts {#percept-sbow}
 
@@ -838,11 +835,9 @@ directions by a normalized product, a binding in the vector-symbolic sense
 whose sign would be a phase, so it cannot carry negation; the lattice pair is
 offered to grammars as `intersection` and `union`.
 
-One percept vector of `percept_width` coordinates serves every tower (Alec,
-2026-10-26). At text-model construction it splits into a parts half
+One percept vector of `percept_width` coordinates serves every tower. At text-model construction it splits into a parts half
 `[0, identity_width)` of `identityPairDim` coordinates and a wholes half
-`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64
-(Alec, 2026-11-19), each part or whole drawn on `identityOnes` and
+`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64, each part or whole drawn on `identityOnes` and
 `propertyOnes` coordinates, 3 by default (`resolve_identity_layout`). Each
 half holds two lanes, for and against (`BasicPercepts.codes` and
 `against_codes`). The `.where`/`.when` band follows `percept_width`. Numeric
@@ -1242,7 +1237,7 @@ exhaustion of that row's contiguous corpus stream.
 `_end_of_stream` is a host-side `list[bool]` diagnostic only; the canonical
 hard-reset signal is the cursor's `hard_eos`.
 
-### Within-sentence AR retirement (2026-05-14)
+### Within-sentence AR retirement
 
 There is no next-token objective within a sentence, and no next-sentence
 objective either: nothing estimates a sentence, and what carries from one
@@ -1416,7 +1411,7 @@ own reading. A Sigma's weights are at zero or above and it has no bias, so
 it is monotone; the size of an entry is the Sigma's and its sign is the
 Not's. A Not entry is made implicitly, where the gradient carries an entry
 through zero, and explicitly, by a declared Not member. The types of the
-three steps (Alec, 2026-11-20): the Pi has unsigned weights on signed
+three steps: the Pi has unsigned weights on signed
 concepts, "so it must allocate two lanes in order to operate on a given
 concept"; the Not takes a thing's two unsigned lanes and gives one signed
 value, possibly negated; the Sigma has unsigned weights on those signed
@@ -1428,7 +1423,7 @@ exist; the Sigma of order zero is sparse and is not penalized.
 
 `_order_caps()` gives the room of each order. Order zero has as many
 concepts as there are basic percepts, and each order above has half the
-units of the one below (Alec, 2026-11-19: "Geometric taper is not a bad
+units of the one below ("Geometric taper is not a bad
 rule"), connected to the two rows beneath it, its own order's symbols and
 the concepts of the order below; this is storage allocated
 beforehand, not a number of entries expected. A concept's order is read
@@ -1442,7 +1437,7 @@ checkpoint and whose two poles travel through thought effects and the SS
 leg. Serial idea vectors and the sentence close have their own contracts
 ([STM.md](STM.md)); neither is a substitute for this paired field.
 
-**Shared conceptual hierarchy** (Alec, 2026-11-08). `ConceptualSpace` owns one
+**Shared conceptual hierarchy**. `ConceptualSpace` owns one
 native hierarchy for word meanings, classes and classes of classes. A class
 is placed by its context like any concept; at kept closes a word draws its
 classes together among classes and a class its words together among words,
@@ -1454,7 +1449,7 @@ conceptual space or category codebook. The fixed declaration reservation is
 included at initial model construction; codebooks and trust columns do not
 resize during use. Form and meaning retain their separate coordinates and
 learning paths. See
-[Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08).
+[Architecture](Architecture.md#hierarchical-conceptual-context).
 
 ### Eager word interpretation (fullgraph forward)
 
@@ -1531,8 +1526,7 @@ tensor sized like the conceptual inventory merely because aligned binding is
 enabled.
 
 **Whole-percept presence.** Each whole records graded presence in `[0, 1]`
-on two lanes, and may hold by degree, such as a distance on a ratio scale
-(Alec, 2026-11-19). A whole is a row of the table of wholes defined by what
+on two lanes, and may hold by degree, such as a distance on a ratio scale. A whole is a row of the table of wholes defined by what
 belongs to it: the catalog parts it holds, or other wholes it is given by
 (`PrimitiveProperties.define_by_rows`). Its code is the OR of its parts'
 catalog codes or the AND of those wholes' codes, and the class of all
@@ -1682,7 +1676,7 @@ read once); nothing becomes a row on its first reading, and a new word is
 perceived at once but `interpret` cannot find it until its row is
 nominated. A basic percept is an occurrence: the word over its occurrences
 is its concept of order zero, and the word as a thing is a symbol over that
-concept (Alec, 2026-11-20). Each nominated row brings one concept of order
+concept. Each nominated row brings one concept of order
 zero to start with, whose column
 of the Sigma starts from the row's own read pair
 (`BasicPercepts.column`). The first Pi holds only the mereology's entries;
@@ -1717,7 +1711,7 @@ way back reads the expected ones in their place
 percepts at the covered positions. `NativeDecode` uses preallocated spelling,
 length and position buffers, and vectorized traversal. A form is put back
 from the form alone, its stored characters in order. Its place is recreated
-with it (Alec, 2026-11-19: "recreated percepts have recreated locations that
+with it ("recreated percepts have recreated locations that
 place them in the out buffer"): a concept gives each percept it recreates a
 band of where wires, through the same weights by which it reads the where;
 the band is matched against the code of every place by a softmax over the

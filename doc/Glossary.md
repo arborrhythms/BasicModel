@@ -3,18 +3,18 @@
 *The terms of the model, each with one meaning. Where a term names something
 in the source, the source's name follows in backticks. A term used in another
 definition is in italics the first time it appears there. Where a definition
-rests on a decision, the decision is quoted (Alec, with its date).*
+rests on a decision, the decision is quoted.*
 
 ## The layers
 
 **Pi.** A matrix whose rows are products. A row's value in a reading is the
 product of its members' values, each a number from 0 to 1, so a row is present
 only as far as every member is. Its entries are zero or above; it has no
-negative entry. A Pi *selects for and against* (Alec: "Pi should
+negative entry. A Pi *selects for and against* ("Pi should
 select both strong for and strong against"): a row has members whose presence
 tells for it, and members whose presence tells against it, and any one of the
 second kind is enough. A row is a hypercone of the space beneath it: the Pi is
-"identity/generalization on a hypercone" (Alec), and what falls
+"identity/generalization on a hypercone", and what falls
 inside the cone is the same thing. A Pi makes what needs all of its members: the *basic
 percepts* at order zero, and the *symbols* above it. Nothing is one to one: a
 row may be read by any number of concepts, and a concept may read any number
@@ -22,13 +22,13 @@ of rows. It builds upward, from
 *parts*. In the source: `PiLayer3`, and the first one `PerceptPi`.
 
 **Not.** The layer between a Pi and a Sigma. It "provides options, so that
-concepts can choose value or not-value" (Alec). From the two
+concepts can choose value or not-value". From the two
 values of each row of the Pi, evidence for and evidence against, it offers two
 signed values from -1 to 1: the *value*, for less against, and the
 *not-value*, the pair exchanged, against less for. A concept's entry chooses
 one of the two; an entry that reads the not-value is a *Not entry*. A concept
 of presence reads a row's value and a concept of absence its not-value. The
-Not is the only place where a sign is changed (Alec: "that would
+Not is the only place where a sign is changed ("that would
 give it the ability to change sign, which should be restricted to not"). In
 the source: `NotLayer3`.
 
@@ -39,7 +39,7 @@ bias, so it is monotone: raising an input never lowers a column. A value below
 zero comes to it from evidence against or from an entry of the Not, and it
 makes none itself. A Sigma makes *concepts*: what any one of its members can
 be enough for. A column divides the space beneath it by a hyperplane: the
-Sigma is "set creation / bifurcation on a hyperplane" (Alec), and
+Sigma is "set creation / bifurcation on a hyperplane", and
 what lies on one side is the set. In the source: `SparseSigmaLayer3`.
 
 **Thing, kind.** What the two epistemic levels of an order make. A Pi makes a
@@ -48,7 +48,7 @@ makes a *kind*, a concept: which belong together, by a list. A kind collects
 any number of things, from every lower order and from none at or above its
 own: `green things` collects Felix and it collects cats.
 
-**Epistemic level.** One Pi or one Sigma (Alec: "My nomenclature
+**Epistemic level.** One Pi or one Sigma ("My nomenclature
 is *epistemic levels* as opposed to orders (which are half as many)"). Every
 *order* has two epistemic levels, its Pi and its Sigma, so there are half as
 many orders as epistemic levels. The source calls the matrix of a level a
@@ -57,7 +57,7 @@ layer (`PiLayer3`, `SigmaLayer3`); a layer is never an order.
 **Pi, Not, Sigma.** The one structure that is repeated at every order, order zero among them: "Pi reads perceptual space, its two lanes
 get passed to Not, and those are combined into on signed lane for processing
 by sigma (which may process an arbitrary number of those signed values)"
-(Alec). The Pi and the Sigma are its two *epistemic levels*.
+. The Pi and the Sigma are its two *epistemic levels*.
 What each takes and gives: the Pi has unsigned weights and
 cannot change a sign, so it reads each signed concept as two unsigned lanes
 and gives a thing on two unsigned lanes; the Not takes a thing's two unsigned
@@ -74,12 +74,12 @@ Sigma on one input, or an entry of the Not.
 its time. A percept is a discriminant, a thing that is found or not found. It
 bears no meaning. Its *code* lies in *perceptual space*. Percepts are "the
 perceived positive and negative aspects" of concepts, "or more precisely,
-hyperconic regions of them" (Alec).
+hyperconic regions of them".
 
 **Basic.** Of order zero. A *basic percept* is one row of the first Pi over
 its *parts* and its *properties*. It is an occurrence, an event: "all of
 their constituent percepts occur at the same time, so there is no basis for
-abstraction into a noun" (Alec). The word over its occurrences is
+abstraction into a noun". The word over its occurrences is
 its concept of order zero; the word as a thing is a symbol over that concept;
 a kind of words, such as noun, collects those symbols. It becomes a row only when MTM nominates it
 on recurrence, never on a first reading. The *basic level* is the basic
@@ -88,10 +88,10 @@ no symbols.
 
 **Concept.** What bears meaning. In a reading a concept is one signed value:
 positive for present, negative for absent, and its size is its certainty
-(Alec: "The concept remains a signed fuzzy keen on certainty").
+("The concept remains a signed fuzzy keen on certainty").
 Its meaning is a point of *conceptual space*. A concept is a kind of objects:
 it "is created implicitly by Sigma or when nominated by MTM when recognizing
-that the objects form a kind" (Alec). What its Sigma reads are
+that the objects form a kind". What its Sigma reads are
 rows of a Pi, basic percepts and symbols. From a statement such as "Felix is
 a cat" MTM makes a link of part to whole or of member to kind, depending on
 the orders of the two.
@@ -100,17 +100,17 @@ the orders of the two.
 over concepts of lower orders. "My dog" and "Voyager" are two concepts and one
 symbol: "we don't want to represent both with one vector, we want a region in
 semantic space. So the region specification for similarity is defined with
-the pi" (Alec). It is "a neighborhood of identity", and it is
+the pi". It is "a neighborhood of identity", and it is
 what lets a concept be reasoned over with other concepts. Its fold is the fold
 of a basic percept, the plain product over its constituents, and its
 constituents are coordinates of conceptual space, as a basic percept's are
 coordinates of perceptual space. The concepts that are the same thing are what
 falls in its region; a coordinate on which they differ has no weight, so the
 region is a cone in the subspace of what they share. A symbol has no dimensions and "does not live in any space,
-which is what makes its collection by sigma so set-like" (Alec).
+which is what makes its collection by sigma so set-like".
 It is its constituents occurring together: "a basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their
-constituents always occur together" (Alec). There is no symbol
+constituents always occur together". There is no symbol
 *of* a concept: nothing makes a symbol for a concept, one for one. MTM also
 makes a symbol from a statement such as "Felix is my cat", which says that
 two are the same. "Since implicit generally precedes explicit, MTM should
@@ -118,7 +118,7 @@ check for an existing fit first."
 
 **Order.** How far a concept stands above the basic percepts. The zeroth
 order, the *basic level* or basic order, "covers basic percepts and the first
-concepts. Symbols and concepts beyond that are first-order, and so on" (Alec). So an order is a Pi and then a Sigma, and the count rises with
+concepts. Symbols and concepts beyond that are first-order, and so on". So an order is a Pi and then a Sigma, and the count rises with
 each Sigma passed and nowhere else. A symbol is a
 cone in the conceptual space of the order beneath its own and never mixes
 concepts of two orders,
@@ -138,7 +138,7 @@ each order above has half the room of the one below.
 to 1: evidence for, and evidence against. "We are on a positive unit
 hypercube with two lanes; evidence for and evidence against. When I am
 talking about a negative number in the perceptual context, that is just a
-shorthand for positive evidence against" (Alec). Zero on both
+shorthand for positive evidence against". Zero on both
 lanes is no evidence. The two lanes go no further than the Not, which joins
 them into one signed value; a Sigma reads no pair.
 
@@ -148,7 +148,7 @@ them into one signed value; a Sigma reads no pair.
   perceived: the `y` of `archery` is evidence against `archer`.
 - *A Not entry* is an entry that reads a row's not-value. It is made
   implicitly, by the gradient, where teaching takes a concept's weight on a
-  row down to zero and further (Alec: "the gradient should be able
+  row down to zero and further ("the gradient should be able
   to make a not entry, that is the implicit definition"); and explicitly, by a
   member declared as a Not member. An omission, a thing expected that did not
   come, teaches through the gradient. The Pi has none, and no weight of a
@@ -162,7 +162,7 @@ A concept in a reading is ternary. On values between the three, the layers
 take products and the squashed sum.
 
 **Intersection, union.** The least and the greatest of graded values. They
-are operations of the basic level, below symbols (Alec: "I like
+are operations of the basic level, below symbols ("I like
 the intersection/union operations as subsymbolic (basic level) and
 conjunction/disjunction at the symbolic level").
 
@@ -187,13 +187,13 @@ is stored in it. In the source it is held by `PartSpace` and `WholeSpace`.
 of it, and so is an idea, the meaning of a whole sentence. There is one for
 each order: "the concepts at every order live in spaces with different
 geometries", "since it is not clear that the space of nouns, for example,
-should be constrained by the space of events" (Alec). A concept's
+should be constrained by the space of events". A concept's
 value in a reading is signed; the coordinates of its meaning are held at zero
 or above, in pairs of poles. In the source: `ConceptualSpace`.
 
 **Symbolic space.** The symbols, taken together. Percepts and concepts live in
 topological spaces; symbols do not. It "is a set and a space of
-points; each symbol has no space (i.e. dimensionality)" (Alec): a
+points; each symbol has no space (i.e. dimensionality)": a
 symbol is a point with no coordinates and no address. What is known of a
 symbol is which concepts its row reads, and which concepts read it.
 
@@ -234,7 +234,7 @@ row of `LTM1`.
 **Taxonomy.** What the relation of part and whole becomes among symbols.
 "Mereology is part-whole relation at the perceptual level which, when it
 occurs over symbols, becomes a taxonomy (because the sigma fold makes the
-concepts abstract)" (Alec). Among percepts a whole holds its
+concepts abstract)". Among percepts a whole holds its
 parts; among symbols a kind holds its members, since what a symbol stands for
 has been made abstract by a Sigma. "Felix is a cat" and "Ciao is a cat" make
 cat a kind over Felix and Ciao. The taxonomy and the relations of `LTM1` are
@@ -245,7 +245,7 @@ one structure, read by `Taxonomy.capture_taxonomy`.
 **Grammar.** A set of operators, each taking meanings and giving a meaning,
 with a chooser that picks the next operator. The model has three, and all
 three belong to the mind that has symbols: "compose, think, and generate
-grammars all operate as system 2, on top of system 1" (Alec).
+grammars all operate as system 2, on top of system 1".
 
 **Compose grammar.** The grammar of reading. Its operators take the meanings
 of a sentence's words and join them, step by step, into one idea, the meaning
@@ -264,14 +264,14 @@ words of an output comes from it.
 ## Memory
 
 **Time.** The model has one time: "one integer clock and one sinusoidal
-encoding of it" (Alec). The clock is an integer on the model, and
+encoding of it". The clock is an integer on the model, and
 its code is made in one place and held on the model beside it, where every
 reader reads it. A concept's `.when` is the stamp of that clock at the
 concept's moment, and it stays with the concept, which is opaque. The chooser
 and the operators are given the present in the same code, with a *comparator*
 that tells "how far back in history the concept they have recalled is". Any
 temporal value a network reads is "sinusoidal (continuous), not incremental
-(ticks)" (Alec); the integer is for what is not learned. The
+(ticks)"; the integer is for what is not learned. The
 same holds of any count or position: no learned weight reads an integer, and
 a linear difference is used only as a metric inside a cost.
 
@@ -285,7 +285,7 @@ symbols and concepts, looking first for one that already fits. The entries of
 a Pi and of a Sigma are tried in the same way: "small sparse pi and sigma
 matrices that operate on potential inputs. So candidates enter those
 medium-term structures easily, and are either promoted or forgotten according
-to their value as members" (Alec). What it holds
+to their value as members". What it holds
 is easily promoted and easily forgotten. In the source: `MediumTermMemory`.
 
 **Candidate.** An entry or a row on trial in MTM, beside the Pi or the Sigma
@@ -303,12 +303,12 @@ does not. In the source: `WordTies`.
 
 **Cone.** The region of a row of a Pi in the space beneath it: weight on the
 coordinates its members share, none on a coordinate on which they vary, and an
-against side for what its nearest neighbours hold that it does not (Alec: "that class is defined as a conic region in similarity space,
+against side for what its nearest neighbours hold that it does not ("that class is defined as a conic region in similarity space,
 which may in fact be a subspace of that space").
 
 **Slot.** A place of episodic memory: one concept of a moment, with its value.
 A row of LTM keeps an idea, which is semantic memory, and a few slots, which
-are episodic memory (Alec: "Entry should be slot in episodic
+are episodic memory ("Entry should be slot in episodic
 memory (the idea is semantic memory)"). A slot holds a concept and not a
 percept. Which concepts of the moment fill the slots is not
 settled: not the most active; "perhaps least expected, or sentence dominant
@@ -325,7 +325,7 @@ against the rows, and the best row is pushed onto the stack.
 **Look.** "One act of attention while a sentence is read. It filters the
 perceptual field by a saliency map from attended concepts, which will filter
 on both the what/where of conceptual space, and carries those selected
-percepts into the activation space on all existing concepts" (Alec). In the model the filter is a number from 0 to 1 at each percept
+percepts into the activation space on all existing concepts". In the model the filter is a number from 0 to 1 at each percept
 of the sentence, and the first look of a sentence takes all of it at once.
 There is one act of attention, `attend`; nothing forbids an act, and what was
 read is lowered, not removed.
@@ -348,14 +348,14 @@ percept tower, each as one row: its code, the where wires of its place and
 the when wires of its time. It is made once, before the sentence is read,
 and it is the domain of the first Pi. A reference into the percept codebook
 would not do in its place, "because each percept needs an associated
-location" (Alec).
+location".
 
 **Attended percepts.** The rows of the field that one look presents, at most
 `attendedPercepts` of them (256, a sentence's capacity in words). They are
 the rows "at the basic level (the vertical level that defines approximately 1
 basic percept over the provided .where, along with the complete set of parts
 and wholes covered by and covering that location, if possible, but perhaps
-only a few layers in each direction" (Alec). Within one attended
+only a few layers in each direction". Within one attended
 percept a row of the first Pi joins its entries on the what, the where and
 the when by the product, so a what is read at its own where.
 
@@ -363,27 +363,27 @@ the when by the product, so a what is read at its own where.
 their own beside its what, from one fixed sinusoid for each. A row of a Pi
 reads its input whole, "which incudes the .where and .when that get muxed into
 it when read from a percept ... so that the basic percept can decide to
-include or drop the .where and .when fields as the gradient determines" (Alec). An occurrence keeps a place; a generalization holds none. The Pi
+include or drop the .where and .when fields as the gradient determines". An occurrence keeps a place; a generalization holds none. The Pi
 alone reads these wires; no concept has a weight of its own on one.
 
 **Expectation.** A guess at the network's activation, computed in the
 architecture, on the structure's own Pi, Not and Sigma. It is built in and
 turned on by a parameter of the model. It is made at each `attend()`: "we want
 to expect perceptual and symbolic activation and then learn that stage by
-stage as we move over the orders" (Alec). At each order what was
+stage as we move over the orders". At each order what was
 expected is compared with what arrives there, and it is not trained through
 the way up and the way down again. Its stages are the basic percepts, the
 concepts and the symbols, and not the output. The top-down reconstruction is a
 different thing, and nothing fills a blind spot: "we would just expect that as
 a prediction error, since a missing bit in a large domain requires a finely
-detailed reconstruction" (Alec). Expectation "is not counted as evidence, it is just
-removing some of the burden from later layers" (Alec). It joins
+detailed reconstruction". Expectation "is not counted as evidence, it is just
+removing some of the burden from later layers". It joins
 the signal as a gain on what arrives, with its gradient stopped, and as a
 prime of selection. What it gives is the *expected field*.
 
 **Intuition.** What the operator `intuit` gives when thought calls it: the
 *intuited field*, from a Pi, Not, Sigma of its own that stands outside the
-architecture (Alec: "it is called from an operator, whereas expect
+architecture ("it is called from an operator, whereas expect
 is built in to a model parameter"). The operator writes it into knowing,
 marked as intuition. It is not the expected field.
 
@@ -391,7 +391,7 @@ marked as intuition. It is not the expected field.
 parts and properties, and the Sigma builds concepts from rows. Analysis is
 the way down, and what drives it is conceptual attention: a request over
 concepts carried down onto the what and the where, "over both particles and
-properties" (Alec). It reads the same matrices as the way up, by
+properties". It reads the same matrices as the way up, by
 their transposes, and has no weights of its own.
 
 ## The assessment
@@ -404,7 +404,7 @@ assessment. Each thing a model is asked to do before understanding and
 identity are tested (a word said back, a sentence read in order, its words
 counted, the grammar's rules one at a time) has an age in one list, about
 the age at which a child learns it. "A model's age is determined by the
-assessment, not "grade"" (Alec). The age is a parameter of the
+assessment, not "grade"". The age is a parameter of the
 model and of its XML, read and written by the assessment; a test asks for a
 mental age, and the assessment says whether the model is qualified for it.
 

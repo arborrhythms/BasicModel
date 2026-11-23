@@ -42,7 +42,7 @@ are not taking advantage of." The objective was decided as proposed on
 step that raises its meet ratio with the placed codes of its own order that
 the field activates and lowers it against sampled negatives, in the one
 conceptual space of [Orders
-§10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)
+§10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower)
 (`MereologicalCodes.place_rows`), so the overlap that drives `bind`'s content
 term and placement is one quantity.
 
@@ -143,7 +143,7 @@ to be managed; the LTM is shared, with identifiers that separate rows. What
 survives a boundary under the `human` profile is then what the learning
 stages teach, not a specification here. The stages are the five lessons of
 stage 7, "Context as content", of
-[the generated supervised curriculum](Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09):
+[the generated supervised curriculum](Training.md#the-generated-supervised-curriculum-in-order):
 batch differentiation, return after interruption, shared truth across
 documents (situated against absolute rows, decided by credit and never by a
 flag), priming as a prior, and expectation from the right history. Their
@@ -172,7 +172,7 @@ evaluation, for example "What is two plus two?" answered "Four." The first part
 exists: the graded math rows (`data/math/`; number words zero to
 twenty, counting facts, worked successor steps, and questions whose answer is
 a chain), in which mathematics enters only as language
-([Training](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20)).
+([Training](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot)).
 Whether the model learns the chain is measured in the main training run.
 Addition that reaches unseen pairs is thinking: the recursion
 $a + S(b) = S(a + b)$ is a policy the chooser learns from worked steps, not a
@@ -233,7 +233,7 @@ with one signed value (`episodic_concepts`, `episodic_values`), stored
 detached. A question is matched against the slots of the latest `ltmWindow`
 rows by content, order by order (`EpisodicMemory.matches`, `relevance`), and
 a review publishes a recalled row's slots as the querying stream's field
-([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11);
+([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems);
 [STM §10](STM.md#10-ltm-as-the-chain-of-stm-end-states)). Alec, 2026-11-11:
 "it will clarify the architecture to store concepts instead of percepts. That
 will allow us to do animal cognition (system 1 reconstruction) without
@@ -352,7 +352,7 @@ and would fill the mind with conceived absences of everything unattended.
 To specify: how the expected field, which `expect` gives over the rows of
 order zero, becomes a priority over rows of order $\ge 1$; what sets the object of observation at this level (conceptual activation as
 the origin of reading attention,
-[Architecture](Architecture.md#symbolic-weights-reconstruction-parse-time-attention-2026-06-30));
+[Architecture](Architecture.md#symbolic-weights-reconstruction-parse-time-attention));
 and the price, which is the reason this waits: selection at the readout can
 change what is composed, so an exclusion there is not neutral to content by
 construction. The residual must still be learned from what was there, not
@@ -911,7 +911,7 @@ flag, which is housekeeping.
 ## One bank: the collision rule for property rows, and a merge rule (decided 2026-10-06, unscheduled)
 
 Alec's one bank over "is X" and "contains X"
-([Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture),
+([Architecture](Architecture.md#expectation-and-surprise-through-the-architecture),
 "One bank, two relations") grows only when
 necessary to separate two objects: *contains X* comes from the segmentation
 (a word's parts, a sentence's words) and *is X* from the predicates (a
@@ -1372,7 +1372,7 @@ Alec asked whether successive binds intersect an identity, so that it is
 defined progressively, and asked that its intersection or union basis be
 flagged as future work. He keeps the question open on purpose (2026-10-22),
 for what it says about kinds and for the Buddhist reading
-([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21);
+([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower);
 [Philosophy](Philosophy.md#identity-by-intersection-and-by-union-the-materialist-and-the-uncollapsed-models-alec-2026-10-20)).
 
 As built, an identity's value is computed from its member references each
@@ -1392,7 +1392,7 @@ this question: a row above the basic percept carries no perceptual form, and
 a concept's meaning, a class's among them, is placed by its context (Alec,
 2026-11-12: "symbols should not take the centroid of the percepts that they
 collect; they are epistemic points."). And the identity that a pointing
-word carries across time empties as the things it was diversify (Alec, 2026-10-31; [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts-alec-2026-10-31)). Claude's
+word carries across time empties as the things it was diversify (Alec, 2026-10-31; [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts)). Claude's
 reading of the second, which Alec has not confirmed: an identity across time
 is read by what persists across its occurrences, its invariant.
 
@@ -1542,7 +1542,7 @@ asymmetric part relation and a crispness measure.
 - *Number follows.* Count is the measure on discrete parts, an approximate
   number sense is a noisy $\log M$ (Weber), and successor is one more unit
   part, which grounds the opaque numerals' successor chain
-  ([Training, math suite](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20)).
+  ([Training, math suite](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot)).
 - *Continuity survives the snap.* The codebook snap keeps its residual, so
   quantization gives categorical perception without erasing continuity
   ([§8](#8-recall-as-estimate-plus-residual)); exact-key matching gives way
@@ -1673,7 +1673,7 @@ exempt from the operations that rely on a definition; a kept definition names
 the token and never defines the pointing word. A pointing word interpreted as
 a symbol is raised at `raiseCount` distinct relata, and its identity across
 time empties as the things it was diversify
-([Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts-alec-2026-10-31); [Architecture](Architecture.md), "Sign and the
+([Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts); [Architecture](Architecture.md), "Sign and the
 null-concept"). An explicit `point()` operation, a symmetric raise, a counter
 of broken transitivity and a built deictic class were considered and
 withdrawn. What remains:
@@ -2043,7 +2043,7 @@ question ([above](#shared-mode-erosion-measurement)), since a reading
 without grammar is the reading Alec expected to erode serial boundaries.
 The stages it measures exist: each path reads, reconstructs through
 generate, thinks and answers, and the paths are compared once on $R + A$
-([Gradient flow](GradientFlow.md#whole-path-credit-and-concept-episodes-2026-11-11)),
+([Gradient flow](GradientFlow.md#whole-path-credit-and-concept-episodes)),
 with the omission rates adapted so that the reconstruction of everything
 holds at `omissionTarget` ([Training](Training.md), "Adaptive omission").
 
@@ -2225,7 +2225,7 @@ object-symbol ([DevelopmentHistory](DevelopmentHistory.md)).
   as a pi over concepts and a concept as a sigma over symbols, where one table
   holds both folds over the same rows today. "The definition store can still
   be split, just flag it in future work"
-  ([Reasoning](Reasoning.md#the-split-of-sigma-and-pi-alec-2026-11-13)).
+  ([Reasoning](Reasoning.md#the-split-of-sigma-and-pi)).
   The split is what lets `interpret` make all symbols (Alec, 2026-11-13:
   "lets let interpret() make all symbols."), a promoted conjunction then
   being a concept and not a symbol. Nothing is built for it: the mapping row

@@ -124,7 +124,7 @@ there.
 
 No determiner has an operator of its own. A determiner is a modifier, and
 which operator its word takes is chosen at run time
-([Language](Language.md#determiners-number-words-and-the-modifier-alec-2026-11-13)).
+([Language](Language.md#determiners-number-words-and-the-modifier)).
 `lower` drops a word of order one or more by one order, and its extend
 gives one generic member: every subconcept of the kind at an equal share
 of one, so that the set's key (`FieldProjection.key`) is their centroid.
@@ -159,14 +159,14 @@ Over the rows of memory it leaves one row.
   products find the candidates and the walk gives their whole fields. A
   question with no open operand is read on its region instead, by
   existence and by pervasion
-  ([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
+  ([Logic](Logic.md#existence-and-pervasion)).
 - **Reference.** What "the" selected is in the field. Resolving a
   reference is part of extend, not a search made beside it.
 - **Saying.** A member that has a word is said by that word. A member
   without one cannot be said, which is the sense of "non-conceptual". Not
   every concept has a symbol: "we do not symbolize all concepts to begin
   with", and `interpret` is what creates one
-  ([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)).
+  ([Language](Language.md#interpret-word-concept-to-object-concept)).
 
 ## Regions (Alec, 2026-11-13)
 
@@ -185,7 +185,7 @@ will look like a region in conceptual space (the furry things region)."
 - A claim is **pervaded** when its subject's region lies wholly within
   its property's region by such a relation, and it has an **instance**
   when a trusted object lies in both. Only the first carries a deduction
-  ([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
+  ([Logic](Logic.md#existence-and-pervasion)).
 
 ## In the code
 

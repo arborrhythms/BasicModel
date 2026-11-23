@@ -87,7 +87,7 @@ symbol raises the level and not the order (chapters 6 and 8). In the model
 an order-0 concept collects basic percepts and a higher order collects
 symbols, only symbolization raises the order, and a higher-order concept
 need not be a contiguous region, as in the book
-([below](#order-extension-and-intension-2026-07-02)).
+([below](#order-extension-and-intension)).
 
 **A symbol is a point.** A reference in the book is a discrete atom that
 cannot be divided, and a whole of references has one dimension more than what
@@ -120,8 +120,7 @@ conceptual and what is not, and aligns the division with dual-process theory.
 The book assigns sensation and the zeroth-order concepts to System 1, which
 works in parallel, and symbols and the higher-order concepts to System 2,
 which is serial (chapter 13). The model draws the same line: at symbols, or
-equivalently at higher-order logic, which is what symbols allow (Alec,
-2026-11-18). An animal in the book is the model without interpretation and
+equivalently at higher-order logic, which is what symbols allow. An animal in the book is the model without interpretation and
 symbolization, and it takes a word as a sign and not as a symbol (chapter
 14). In the model the animal is the mind that lacks `interpret`.
 
@@ -170,7 +169,7 @@ and the regress ends only in what is known by experience (chapter 4). A model
 that reads only text cannot know an object except through its word, so the
 object is first made for the word and known through what is said of it. The
 model is to end the regress as the book does, by experience: continuous
-values, given as scalars or perhaps as images (Alec, 2026-11-18).
+values, given as scalars or perhaps as images.
 
 **Filling in.** In the book top-down visualization fills in what sensation
 does not give, as at the blind spot of each eye (chapter 15). In the model
@@ -181,14 +180,12 @@ the first Pi: a part that is present raises the basic percepts that read it,
 and each basic percept gives a share to each of its parts, so a part that is
 missing receives from the rows its neighbours raised; where the percepts of
 an area are withheld, the way back reads the expected ones in their place and
-fills the area in on reconstruction (Alec, 2026-11-17;
-[Architecture](Architecture.md#sigma-and-pi-layers)).
+fills the area in on reconstruction ([Architecture](Architecture.md#sigma-and-pi-layers)).
 
 **Idea and field.** The book's glossary calls an idea a concept taken
-together with all of its parts and wholes. The model divides that in two
-(Alec, 2026-11-18): an idea is a point in space, which is the intension, and
+together with all of its parts and wholes. The model divides that in two: an idea is a point in space, which is the intension, and
 the field is the extension of that concept, which is its parts and wholes
-([below](#order-extension-and-intension-2026-07-02)). The book's idea is thus
+([below](#order-extension-and-intension)). The book's idea is thus
 the model's idea together with its field.
 
 **Underlap.** In the book two things underlap when some larger whole
@@ -199,7 +196,7 @@ parthood.
 concept appears by the exclusion of what it is not, to Vasubandhu (chapter
 15). The doctrine is Dignāga's and Dharmakīrti's, and the model's documents
 credit them; Vasubandhu did the work that prepared it. This is a correction
-to the book (Alec, 2026-11-18).
+to the book.
 
 ### What only one of them has
 
@@ -210,11 +207,11 @@ dimensions (chapter 6), beauty (chapter 18) and kindness (chapter 19).
 leave unsaid: the two lanes of evidence, trust in what is stated, the memory
 stores, expectation, and training.
 
-**A speculation on feeling** (Alec, 2026-11-18) is in neither the article
+**A speculation on feeling** is in neither the article
 nor the book. A feeling may be a felt continuous sense that corresponds to a
 continuous variable in nature. A sign, in Peirce's sense, and a symbolic
 system differ from it in that the correspondence does not hold for them. It
-continues the hypothesis of 2026-11-16, that what a model is given as
+continues the hypothesis that what a model is given as
 continuous values, and not as symbols, may be seen as its feelings. Both are
 hypotheses.
 
@@ -307,7 +304,7 @@ after other parameters stop changing).
 
 A concept can be split into two percepts without loss.
 
-### Order, extension, and intension (2026-07-02)
+### Order, extension, and intension
 
 Concepts occupy an **order**. An **order-0 concept** is a Sigma over the basic
 percepts, each of which is a row of the first Pi over its parts and wholes —
@@ -326,15 +323,14 @@ reconciliation of the prototype-vs-definition tension: a concept is *both* its
 point and its definition, carried by two different structures over the same
 object. Concretely, the point is the **intension** and what it implies is the
 **extension** (Frege's sense / reference; Carnap's intension / extension). For
-a sentence (Alec, 2026-11-12), the composed vector, the idea, "is the intension
+a sentence, the composed vector, the idea, "is the intension
 of the sentence-concept", and the field of known concepts it implies "is the
 extension of the sentence-concept"; "For kinds, a token implies a type. For
 mereology, a whole implies a part." A kind's extension is its stored members,
 reached through the sparse edge-graph ([Extend](Extend.md)).
 
 Every concept, at any order, is a point placed by the contexts it occurs in,
-and each order's concepts have **a conceptual space of their own** (Alec,
-2026-11-20: "the concepts at every order live in spaces with different
+and each order's concepts have **a conceptual space of their own** ("the concepts at every order live in spaces with different
 geometries", "since it is not clear that the space of nouns, for example,
 should be constrained by the space of events"). A dictionary holds each
 concept as a *point*, and the relational graph is structure laid *over* those
@@ -364,8 +360,7 @@ those symbols
 ([Architecture](Architecture.md#sigma-and-pi-layers)).
 An order-0 concept is thus
 defined by its perceptual features, and a concept of order $\ge 1$ by its
-edges to other symbols. Three relational primitives carry the graph (Alec,
-2026-07-02): the ordered pair $[\text{whole}, \text{part}]$ (whole
+edges to other symbols. Three relational primitives carry the graph: the ordered pair $[\text{whole}, \text{part}]$ (whole
 $\Rightarrow$ part, if $\to$ then); the singleton, a whole containing exactly
 one symbolic part, the unit set $\{x\}$ that Lewis resisted and here the
 constructive primitive; and the vine, an ordered chain of nested pairs whose
@@ -382,7 +377,7 @@ relation-table entry contract in
 subtype of perceptual spaces mapping onto conceptual spaces.
 
 As a reference a symbol has no internal extent: it is a zero-dimensional point.
-Symbols are split from concepts and have no dimensions (Alec): a symbol is
+Symbols are split from concepts and have no dimensions: a symbol is
 held in a tensor of its own, as two unsigned rows, one for each lane, of the
 Pi above the concepts it reads, and it has no vector, place, form or trust
 content read as a direction. It stores no `.where` or `.when`; its `.where`
@@ -390,7 +385,7 @@ is written when STM reads it, this activation at this place and time. A
 symbol is a thing, a region of sameness over the conceptual space of one
 order, and a concept is a kind, a Sigma over symbols; each symbol that MTM
 nominates brings one concept to start with, and there is no symbol of a
-concept (Alec, 2026-11-20). In humans, perceptual space projects onto a 3D cerebellar
+concept. In humans, perceptual space projects onto a 3D cerebellar
 subspace before symbolic encoding.
 
 Symbols are independent, permanent, and integral (as references). The

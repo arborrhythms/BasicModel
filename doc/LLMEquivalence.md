@@ -45,7 +45,7 @@ it, and where it deliberately does not, is recorded beside each.
    a bijection only onto its image; a predicted `e` will not in general
    lie on it, so inversion needs a projection onto the image. That is the
    tied reconstruction's candidate-bank search
-   ([Architecture, tied reconstruction](Architecture.md#loop-and-parameter-ownership-tied-reconstruction-2026-09-16)).
+   ([Architecture, tied reconstruction](Architecture.md#loop-and-parameter-ownership)).
    A bijection from discrete sequences to vectors is trivial to state and
    useless without metric structure — small errors in `e` must be small
    errors in `s` — which is the **generativity** requirement: a stored

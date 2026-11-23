@@ -1,6 +1,6 @@
 # Orders: sets, membership and the two ladders
 
-*Decided theory (Alec, 2026-10-15 and after). Technique lives in the code;
+*Decided theory. Technique lives in the code;
 this document is the framing it points to. It extends
 [a concept is sigma over pi](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22)
 and [symbolization establishes an order-1 individual](Mereology.md).*
@@ -11,20 +11,19 @@ An object at order *n* ≥ 1 is a set of symbols of lower orders, with graded
 (fuzzy) membership, exactly as in set theory. Order increases are always
 over individuals: a set collects symbols, never field regions directly. Order
 zero, the basic level or basic order, "covers basic percepts and the first
-concepts. Symbols and concepts beyond that are first-order, and so on"
-(Alec, 2026-11-20). An order is a Pi and then a Sigma, and the count rises
+concepts. Symbols and concepts beyond that are first-order, and so on". An order is a Pi and then a Sigma, and the count rises
 with each Sigma passed and nowhere else ("Use the term epistemic level, not
 order (which increases only with sigma)"). One Pi or one Sigma is an
 epistemic level, and every order has two.
-The ladder is not strictly ramified (Alec, 2026-11-17) at the kind: a kind
+The ladder is not strictly ramified at the kind: a kind
 collects things from every epistemic level below its own, not only from the
 one beneath it, and from none at or above its own. `green things` "must
 collect elements from all orders, because both Felix and cats may be green.
 But it collects only from lower orders, so that it is at least well-defined
-(no sets of all sets)" (Alec, 2026-11-20). A symbol, by contrast, is a cone
+(no sets of all sets)". A symbol, by contrast, is a cone
 in the conceptual space of one order and never mixes concepts of two,
 "because the concepts at every order live in spaces with different
-geometries" (Alec, 2026-11-20).
+geometries".
 
 Order 0 is the field: percepts, located in `.where`/`.when`, and the
 Boolean and mereological operations among them — union, intersection,
@@ -40,15 +39,14 @@ reading. Each nominated row brings one concept of order zero to start with,
 which reads, through a sparse Sigma, the signed values the Not gives for the
 rows present ([Architecture](Architecture.md#sigma-and-pi-layers)). A basic
 percept is an occurrence, an event: "all of their constituent percepts occur
-at the same time, so there is no basis for abstraction into a noun" (Alec,
-2026-11-20). The word over its occurrences is its concept of order zero; the
+at the same time, so there is no basis for abstraction into a noun". The word over its occurrences is its concept of order zero; the
 word as a thing is a symbol over that concept; and a kind of words, such as
 noun, collects those symbols. Above order zero the structure repeats: a
 symbol is a row of a Pi over the conceptual space beneath it, and a concept
 is a Sigma over symbols. Pi, Not and Sigma at every order are the common
-basis of the order alternation (Alec, 2026-11-17).
+basis of the order alternation.
 
-**What makes what** (Alec, 2026-11-20). "A basic percept or symbol is
+**What makes what**. "A basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their
 constituents always occur together. a concept is created implicitly by Sigma
 or when nominated by MTM when recognizing that the objects form a kind." The
@@ -59,31 +57,29 @@ things." Nothing is one to one: a row may be read by any number of concepts
 and a concept may read any number of rows, and there is no symbol of a
 concept.
 
-**Symbols are held apart from concepts** (Alec, 2026-11-14). Symbols and
+**Symbols are held apart from concepts**. Symbols and
 concepts are in separate tensors, and a symbol has no dimensions: no vector,
 place, form or trust content is read at it as a direction. A symbol is two
 unsigned rows, one for each lane. It is made implicitly by the Pi, or when
 MTM nominates it on recognizing that its constituents always occur together,
 or by `interpret` for a meta concept, and never when a concept is allocated
 or for a concept as a rule. It is a region of sameness: "my dog" and
-"Voyager" are two concepts and one symbol, "a region in semantic space"
-(Alec, 2026-11-20), and the concepts that are the same thing fall in its
+"Voyager" are two concepts and one symbol, "a region in semantic space", and the concepts that are the same thing fall in its
 cone. Symbols may be made liberally, since a symbol of one concept "still
 defines a neighborhood of identity and enables us to reason over the concept
-(i.e. with other concepts)" (Alec, 2026-11-20). Where a kind's member has no
+(i.e. with other concepts)". Where a kind's member has no
 symbol, MTM makes one in nominating the kind, after looking for one that
 already holds it. A symbol stores no `.where` or `.when`; its `.where`
 is written when STM reads it. Between conceptual orders only activation
 passes: a pull within one order does not pass through a symbol.
 
-**Room at each order** (Alec, 2026-11-19). "Geometric taper is not a bad
+**Room at each order**. "Geometric taper is not a bad
 rule. Interconnection should be: order zero is n:n on basic percepts, order
 1 is n/2 (with taper) connected to 3n/2, since it connects to both lower
 rows." Order zero has as many concepts as there are basic percepts, each
 order above has half the units of the one below, and order one has room to
 connect to three halves of order zero's count. What a concept above order
-zero reads is symbols, from every epistemic level below its own (Alec,
-2026-11-20); a basic percept is an occurrence and is read by its concept of
+zero reads is symbols, from every epistemic level below its own; a basic percept is an occurrence and is read by its concept of
 order zero. This is storage allocated beforehand, not a
 number of entries expected. Within that room each order's Sigma is square:
 as many concepts as nominated rows, each concept starting from its own row
@@ -129,7 +125,7 @@ Identity is per order: a generalization over occurrences (an individual,
 which keeps its history) is never identified with a generalization over
 individuals (a kind). Same point, different order stamp $\Rightarrow$ different thing.
 
-Order zero has an identity too (Alec, 2026-11-12), in MTM rather than in
+Order zero has an identity too, in MTM rather than in
 the field. MTM is ramsified: order-zero states joined by succession make a
 sequence, an extended event, while the same order-zero reading met again is
 an order-zero identity in MTM, the familiar-tier candidate that
@@ -138,7 +134,7 @@ Identities at different orders are never joined. Recognition, the binding of
 a present event to that identity, is decided in direction and is not part of
 the mechanism.
 
-**One relation records membership (2026-10-23).** An
+**One relation records membership.** An
 LTM1 row is two tagged references, the two truth lanes and an activity,
 $\mathrm{Part}(x, y)$, and its reading comes from its referents' types: two
 situations a conditional, a situation and a speech individual an
@@ -148,7 +144,7 @@ structure, and its Part edges with their evidence are the membership
 evidence of the table above. An LTM0 row is one concept, an idea, and
 carries no identity.
 
-**Continuity at every order (2026-11-09).** Order 1's continuity generalizes
+**Continuity at every order.** Order 1's continuity generalizes
 to every collection's connected path: one member order and kind, a
 kept-close horizon and containment, with place and first difference scored.
 States form extended events and mentions form extended nouns. Promotion
@@ -214,7 +210,7 @@ concept one order above the word concepts; like any class it is placed by
 its context (§10, "Placement"), and
 a word's fit is its coverage of the argument's vector (direction times
 radius); see
-[Formal arguments and shared hierarchical context](#formal-arguments-and-shared-hierarchical-context-alec-2026-11-08).
+[Formal arguments and shared hierarchical context](#formal-arguments-and-shared-hierarchical-context).
 The grammar names its operands by position (`argin1`, `argin2`, `argout1`),
 never by a kind of word, and whatever words work in a position become that
 position's class; positions that share their words draw their arguments
@@ -261,14 +257,14 @@ the name of the quotient. A definite with nothing accessible to bind to
 writes its occurrence and stays **unbound** until a referent appears
 (presupposition accommodation); it never asserts novelty.
 
-The bare word *water* is not an order-0 mass term. Alec, 2026-11-01: "Water
+The bare word *water* is not an order-0 mass term. "Water
 is a count noun with an elided form/shape in some contexts, so it's not a
 good example of a mass noun. Water would be order-1 at lowest, since it is
 an abstraction of an event." A determiner is a modifier and keeps its
 noun's order; the order drops only where `lower` is applied, and `lower` is
 admitted only on a word of order one or more (§10).
 
-*Worked example (Alec, 2026-10-16): "The water froze. It became ice," ice
+*Worked example: "The water froze. It became ice," ice
 never perceived.* `the water` selects a portion and
 stays unbound; `it` binds to it; `ice` is a bare NP at order 2 with a
 symbol but no content. The temporal difference on the portion is `+ice`
@@ -294,14 +290,10 @@ while its kind changes — kinds do not change, members do.
   operand's, a clause-forming one none
   ([Language](Language.md#learned-argument-concepts)).
 
-## 9. Per-order conceptual spaces, ramsified over one symbol tree; the stratified priming surface (Alec, 2026-10-20; decided)
+## 9. All symbols in one mereological tree
 
-Of this section's title one half stands. Alec, 2026-10-20: "ramsify over
-conceptual spaces, but keep all symbols in the mereological space." The
-per-order conceptual spaces and the stratified read of the priming surface
-were reversed two days later: the conceptual space is one (§10; the
-reversed design is recorded in [DevelopmentHistory](DevelopmentHistory.md)).
-What stands:
+The conceptual space is one (§10), and all symbols are kept in the
+mereological space:
 
 - **All symbols in one mereological tree.** Every symbol of every order
   lives in one structure, the rows of the Pi at each order with the Part
@@ -311,7 +303,7 @@ What stands:
   constituents, by Part edges. One tree, all orders, one relation; two
   carriers, geometric up to order 0 (forms) and recorded above it. A
   symbol above order 0 has no form and no centroid: it is a point that its
-  Part edges collect (Alec, 2026-11-12: "symbols should not take the
+  Part edges collect ("symbols should not take the
   centroid of the percepts that they collect; they are epistemic
   points."), and its set of members is its representation.
 - **Felix and *cat* are related in three ways, none of them nearness.**
@@ -327,12 +319,12 @@ What stands:
   against a kind is a membership read; an idea against a kind a membership
   read of its participants; `bind` compares candidates at the request's own
   order. Distance between orders is not a meaningful quantity, and no space
-  has geometric influence on another (Alec, 2026-11-15: "the doms location
+  has geometric influence on another ("the doms location
   in dom space does not influence the subs location in sub space"): a
   relation between orders says which concepts belong together, activation
   and evidence cross it, and a position never does.
 
-**Forms (Alec, 2026-11-12 and 2026-11-19).** A concept has no form of its
+**Forms.** A concept has no form of its
 own. A concept of order zero reads no code: it reads its basic percept's
 row, through the Not, as one signed value, for less against, and starts
 reading only that row, at one
@@ -344,9 +336,9 @@ word, through the definition that maps the word to it. A class row's cover
 $\max(0, p - m)$ and drops non-positive members, and a class's place in
 conceptual space is set by its context like any concept's (Placement, §10).
 
-## 10. Orders are learned: definitions raise, three compositions lower (Alec, 2026-10-21)
+## 10. Orders are learned: definitions raise, three compositions lower
 
-Alec: "we need not create an ordered grammar, because we have the rule
+"we need not create an ordered grammar, because we have the rule
 that raises order." Orders live in the concepts, not in the grammar's
 categories. Parts of speech stay order-free and come only from the
 grammar's positions and occupations: whether a constituent is a noun phrase,
@@ -355,11 +347,11 @@ a reference site, a marker or a predicate is read only from the kept parse
 recorded occupations), never from whether a word has an object or any other
 lexical fact, which is what keeps the grammar universal. Of the title's
 three compositions one lowers, NP + VP: the determiner selects, and the
-modal withholds the lowering (2026-10-22 and 2026-10-23).
+modal withholds the lowering.
 
 ![Orders are learned: definitions raise, NP + VP lowers](diagrams/orders_ladder.svg)
 
-**Definitions raise, by equivalence class.** Alec: "'Is' does not cross
+**Definitions raise, by equivalence class.** "'Is' does not cross
 order by itself, but when used with multiple identical RHS or LHS, it
 creates an equivalence class." The class sits one order above its
 members; this is Frege's definition by abstraction, as a direction is the
@@ -391,7 +383,7 @@ runs" is an occurrence of Felix at order 0; "dodos died out" is a change
 across the kind's members, at order 1. IS raises by collecting members, and
 NP + VP lowers by landing among them.
 
-**The determiner selects.** Alec, 2026-10-22: "Determiners might not even be
+**The determiner selects.** "Determiners might not even be
 dropping the order: they might just be selecting one of a plurality, and
 leaving the order untouched." A determiner picks one of a plurality, and the
 phrase's order is the order of what it picks, read by lookup: a member of a
@@ -400,7 +392,7 @@ kind is an individual, and a shaped portion of a mass is an individual, so
 numerical folds, and a constituent's order is read from the concept it
 denotes, whose order the equivalence classes set.
 
-**The modal withholds the lowering (Alec, 2026-10-23).** A modal clause is
+**The modal withholds the lowering.** A modal clause is
 the ordinary composition kept above order 0, an abstraction of a possible
 event that extends an alternative timeline of the one identity, never an
 order-0 occurrence. A lowered event extends the actual timeline and updates
@@ -411,7 +403,7 @@ open (`MediumTermMemory.alternative`). Possible holds on some timeline,
 necessary on every one, the actual included, and in the limit over a kind
 the generic; "did Joe run?" reads order-0 occurrences, "could Joe run?" the
 abstractions and the alternative timelines. The modal is the second
-difference. Alec, 2026-10-22: "MPs are differences of VPs just as VPs are
+difference. "MPs are differences of VPs just as VPs are
 differences of NPs (not really differences, but diagonals within
 quadratics). Running and walking are both possibilities for Joe's movement."
 It is a diagonal per modal in one shared basis (the `modifier` action),
@@ -422,7 +414,7 @@ Neither a bind nor a raise carries a price of its own: a bind adds to the
 MTM pool, which is input to output prediction, and is credited through the
 derivative.
 
-**Explicit and implicit definitions, judged together.** Alec: "multiple
+**Explicit and implicit definitions, judged together.** "multiple
 DEF in LTM1 can be used to train the fold being used in the symbolic
 order loop, and that's really all we need for integration. We can keep
 the explicit and implicit definitions, and their match or mismatch is a
@@ -443,7 +435,7 @@ intersection that is its invariant or the union that is its extension, is
 kept open in
 [FutureWork](FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21).
 
-**A conceptual space for each order (Alec, 2026-11-20).** "The concepts at
+**A conceptual space for each order.** "The concepts at
 every order live in spaces with different geometries", "since it is not
 clear that the space of nouns, for example, should be constrained by the
 space of events." Each order's concepts are placed in a space of their own:
@@ -468,7 +460,7 @@ distance.
 
 **Learning parts of speech** follows the learning sequence above: proper
 nouns first, then mass nouns, then count nouns where the language has them.
-Unit tests may force a word's part of speech or order (Alec: "unit tests can
+Unit tests may force a word's part of speech or order ("unit tests can
 force parts of speech").
 
 **Where a definition is stored.** A relation's stratum is read from its
@@ -477,10 +469,10 @@ Reading each definition in the stratum of the class it builds would put the
 second in LTM2; the stratum is derived when read, so that choice changes
 reading, not storage.
 
-## 11. Pointers, identity, and relations across known concepts (Alec, 2026-10-31)
+## 11. Pointers, identity, and relations across known concepts
 
 **IS is not special; a row between known concepts is a relation across
-them.** Alec: "We shouldn't mark 'is' as special, this is just a part of the
+them.** "We shouldn't mark 'is' as special, this is just a part of the
 equals() operator that will eventually store known concepts across a
 relation rather than as a single idea." A positive LTM1 row whose two
 referents are both concepts of known order is a member of the whole
@@ -498,15 +490,14 @@ nothing marks the operator or the origin of a row.
 **One rule at every order.** The same holds at order zero: a positive row
 between two order-zero concepts is a relation, a member of neither concept,
 and derives no order. Order zero holds no symbol: symbols exist only from
-order 1, where MTM promotes them (Alec, 2026-11-18). What the level decides is the kind of relation. Alec:
-"it's a part/whole relation if it's below symbols, and a set/superset if
+order 1, where MTM promotes them. What the level decides is the kind of relation. "it's a part/whole relation if it's below symbols, and a set/superset if
 it's above symbols." Below symbols is the mereology of the field; above
 them, the sets of §1. "Mereology is part-whole relation at the perceptual
 level which, when it occurs over symbols, becomes a taxonomy (because the
-sigma fold makes the concepts abstract)" (Alec, 2026-11-20). Percepts and
+sigma fold makes the concepts abstract)". Percepts and
 concepts live in topological spaces; symbols do not.
 
-**Relations are immediate; order is evidence over trials.** Alec: "building
+**Relations are immediate; order is evidence over trials.** "building
 relations can happen immediately, but that will not immediately raise the
 order; it serves as evidence over many trials. This will help us
 disambiguate synonyms, indexicals, and relations of order." A relation is
@@ -538,15 +529,14 @@ pending subject without a count (`define_pending`). A row is raise evidence
 wherever it is written, so the minted symbol's original row counts toward
 `raiseCount` and is not a mint.
 
-**Identity is marked by articles and shown by non-commutativity.** Alec:
-"IS of identity typically carries a definite or indefinite article to
+**Identity is marked by articles and shown by non-commutativity.** "IS of identity typically carries a definite or indefinite article to
 indicate differences of order; the lack of sentence commutativity makes
 that clear (the cat is black, but black is not the cat)." A predication
 does not commute; an identity ("Paris is the capital of France") does. The
 determiners carry the difference by selection (§10),
 learned from the grammar's positions; no article is named in code.
 
-**Pointing words.** Alec: "This is a special word; it does not reference a
+**Pointing words.** "This is a special word; it does not reference a
 static concept, it draws attention to a region in space." A demonstrative
 has no order of its own; what it points at may be an event, an individual or
 a variable, and §10's demonstratives that point at events are the first
@@ -561,7 +551,7 @@ does and stays an MTM reference until the model has perceptual input
 ([FutureWork](FutureWork.md), "Indexicals under multimodal input").
 
 **No forcing; the class is the raise's outcome.** When `interpret` handles a
-pointing word, the ordinary mechanism runs. Alec: "Even 'This is a / this is
+pointing word, the ordinary mechanism runs. "Even 'This is a / this is
 b' will create two LTM1 relations that both involve 'this', which will cause
 a raise, but eventually the ambiguity of 'this' will cause its identity to
 be empty (meaning that it could be a symbol for anything)." The word's first
@@ -582,15 +572,14 @@ The centroid stays the form of a percept or an order-zero concept. What
 empties is the identity an MTM token carries across time, in conceptual space, with its
 current value after the latest verb: "he" and "Alec" are united by one such
 identity, and after "he becomes tired" its value has the parts and wholes of
-tired(Alec). A nominal identity corresponds to a worldline, in Alec's words
+tired. A nominal identity corresponds to a worldline,
 "a physics term denoting a spatiotemporal occurrent that is the basis for
 identity": the `.where` and `.when` trajectory that §3 gives as the
 continuity collecting occurrences into an individual. "This" has none of its
 own: the things it was, Felix at one time and Ciao at another, are different
 identities, and nothing persists across them.
 
-**The three readings forced: no-op, sign, interpret.** Alec, 2026-11-01:
-"let's force a three way decision of an object (no op, sign(), or
+**The three readings forced: no-op, sign, interpret.** "let's force a three way decision of an object (no op, sign(), or
 interpret() are the icon, sign, and symbol)". Peirce's icon signifies by
 resemblance, his index by pointing and his symbol by convention. `interpret`
 is optional, and a leaf at which it is not applied is the **no-op**, the
@@ -604,7 +593,7 @@ interpreted leaf left standing and needs no operation of its own. Both
 decisions are the compose chooser's, by ordinary credit, anchored to no
 word. In reading mode the first is forced, so every word is interpreted and
 the chooser decides between `sign` and the symbol at every leaf
-([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)).
+([Language](Language.md#interpret-word-concept-to-object-concept)).
 The forcing is lifted only with a field, or inside a certificate: "The dog
 went woof. That was a bark." With it lifted, the no-op at "woof" opens a
 token whose content is the form of "woof", "that" binds to it, and the
@@ -612,8 +601,7 @@ definition kinds it bark; nothing is minted for the word.
 
 ![The readings of a percept: interpret or not; if so, a sign or a symbol](diagrams/percept_readings.svg)
 
-**Witnessing gives a perceptual identity a null-concept.** Alec, 2026-10-31:
-"So witnessing is an alternative to interpreting that gives a perceptual
+**Witnessing gives a perceptual identity a null-concept.** "So witnessing is an alternative to interpreting that gives a perceptual
 identity a null-concept, a concept that is not limiting because it is
 unknowing. It must be a frozen concept, and it must be exempt from 'normal'
 conceptual operations that rely on conceptual definition." `sign` opens an
@@ -646,7 +634,7 @@ use: what remains in LTM is the row at the occurrence, which belongs to what
 was pointed at, not to the pointing. The reading in Buddhist terms is in
 [Philosophy](Philosophy.md), "Witnessing Suchness".
 
-### Formal arguments and shared hierarchical context (Alec, 2026-11-08)
+### Formal arguments and shared hierarchical context
 
 Formal input and output arguments are explicitly constructed concepts one
 order above the word concepts they generalize. In native code numbering
@@ -655,20 +643,19 @@ leaf's referent order, and a class over argument concepts is order 2. They
 reuse the ordinary concept hierarchy: fit is coverage, and
 definiteness is separability times view evidence. A word draws its classes
 together among classes, and a class draws its words together among words;
-neither is moved toward, or compared with, the other's position (Alec,
-2026-11-15). This rule is architectural; parts of speech are special only in
+neither is moved toward, or compared with, the other's position. This rule is architectural; parts of speech are special only in
 their a priori declaration and grammar use. See
-[Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08).
+[Architecture](Architecture.md#hierarchical-conceptual-context).
 
-#### Thought over grammatical classes (Alec, 2026-11-08)
+#### Thought over grammatical classes
 
-`Priming.part_edges` carries argument-class memberships beside the relational ones, so `ThoughtTaxonomyCapability.evidence` may prove `part(word, formal argument)` and may traverse a grammatical class as a whole on its way to another; a relation a text asserts between a thing and a word class is written like any other, so what is said can join the two ladders, and a class of things in the world can then be treated as an instance of a part of speech. This is allowed deliberately. Alec's expectation is that such reasoning produces a samsaric logic for dealing with entities in the world, which are real and not grammatical; the broken rationality that results is to be observed carefully and recorded, as evidence that may help human understanding, not guarded against. No edge is excluded from the taxonomy on this account. The thought history records a membership proof whose path passes through a formal-argument class, so that these inferences can be found; the word-to-object binding itself is identity through the definition index and is not part of the traversal.
+`Priming.part_edges` carries argument-class memberships beside the relational ones, so `ThoughtTaxonomyCapability.evidence` may prove `part(word, formal argument)` and may traverse a grammatical class as a whole on its way to another; a relation a text asserts between a thing and a word class is written like any other, so what is said can join the two ladders, and a class of things in the world can then be treated as an instance of a part of speech. This is allowed deliberately. The expectation is that such reasoning produces a samsaric logic for dealing with entities in the world, which are real and not grammatical; the broken rationality that results is to be observed carefully and recorded, as evidence that may help human understanding, not guarded against. No edge is excluded from the taxonomy on this account. The thought history records a membership proof whose path passes through a formal-argument class, so that these inferences can be found; the word-to-object binding itself is identity through the definition index and is not part of the traversal.
 
 ## A felt value at order zero
 
-A present scalar reading is a basic percept held in MTM, with a `bp` reference. Its code is its place in one sorted table of the values seen: the bins at or below it tell for it and the bins above it tell against it (Alec, 2026-11-19; [Mereology](Mereology.md)). Each word heard beside it adds such percepts as members of its own collection, with a `sym` reference, and the collection is read by its bounds, 0 or 1, not through a column of the Sigma. Their reference kinds distinguish percept and concept without provenance; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Asked "what is this?" of a felt value with no object named, the model runs `interpret` backwards, as its generate face `name`: the concept that collects the present reading is read from the field, with no words, and that concept's word is given (`InterpretLayer.reverse`, `lexical_form`). Zero creates no positive value percept or scalar collection. A numeric input row is read the same way, a level percept at each place ([Spaces](Spaces.md#percept-level-sets)).
+A present scalar reading is a basic percept held in MTM, with a `bp` reference. Its code is its place in one sorted table of the values seen: the bins at or below it tell for it and the bins above it tell against it ([Mereology](Mereology.md)). Each word heard beside it adds such percepts as members of its own collection, with a `sym` reference, and the collection is read by its bounds, 0 or 1, not through a column of the Sigma. Their reference kinds distinguish percept and concept without provenance; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Asked "what is this?" of a felt value with no object named, the model runs `interpret` backwards, as its generate face `name`: the concept that collects the present reading is read from the field, with no words, and that concept's word is given (`InterpretLayer.reverse`, `lexical_form`). Zero creates no positive value percept or scalar collection. A numeric input row is read the same way, a level percept at each place ([Spaces](Spaces.md#percept-level-sets)).
 
-## 12. A word at several orders; order read from the codebook (Alec, 2026-11-13)
+## 12. A word at several orders; order read from the codebook
 
 **A word at several orders.** "I think we can have "cat" exist at
 multiple orders. So when it is found to be a count noun, we leave the old
@@ -693,11 +680,10 @@ block is a capacity error naming its order.
 **So is modality.** "modality as implicit since both it and order can be
 inferred from the .where?", and "the .where that is baked into all
 concepts in virtue of muxing the .where of a percept will include a .where
-in a range that can uniquely identify the modality and order of a percept"
-(Alec, 2026-11-13). Each modality's input has its own range of places
+in a range that can uniquely identify the modality and order of a percept". Each modality's input has its own range of places
 ([Spaces](Spaces.md#percept-modalities)).
 
-**A meta concept and the blank object** (Alec, 2026-11-17 and 2026-11-18).
+**A meta concept and the blank object**.
 A meta concept, which joins a word to its object, is one order above the
 higher of its word and its object, and it reaches both in one step, with no
 symbol between. `interpret` makes it, with its structure, when it interprets

@@ -29,7 +29,7 @@ vocabulary, see [Spaces.md](Spaces.md) and [Philosophy.md](Philosophy.md).
 Mereology is the relation of part and whole among percepts. "Mereology is
 part-whole relation at the perceptual level which, when it occurs over
 symbols, becomes a taxonomy (because the sigma fold makes the concepts
-abstract)" (Alec, 2026-11-20). Among percepts a whole holds its parts; among
+abstract)". Among percepts a whole holds its parts; among
 symbols a kind holds its members. Percepts and concepts live in topological
 spaces; symbols do not.
 
@@ -38,8 +38,7 @@ error. Geometric relations answer "looks like"; asserted parthood answers
 "is", and is a different call.
 
 1. **Asserted parthood is a relation in memory.** A parthood, subsumption or
-   kind statement ("cats are animals") is one relation, $Part(x, y)$ (Alec,
-   2026-10-20/21): an `LTM1` row of two references with the truth pair and
+   kind statement ("cats are animals") is one relation, $Part(x, y)$: an `LTM1` row of two references with the truth pair and
    an activity, owned by `ConceptAllocator.parts`. It has no typed row, and
    no `REL_PARTOF` row exists; the row is read by the types of its arguments (`LTM1.readings`):
    two situations give a conditional, a situation and a speech individual an
@@ -70,8 +69,7 @@ error. Geometric relations answer "looks like"; asserted parthood answers
    `Mereology.Contiguous` on the derivational axis; $\sigma$ extents over
    witness dimensions are single lumps always.
 
-**Identity is decided by parthood, not distance** (Alec, 2026-10-20 and
-2026-11-18). A request $q$ and a candidate $c$ are compared by parthood in
+**Identity is decided by parthood, not distance**. A request $q$ and a candidate $c$ are compared by parthood in
 both directions, $\mathrm{part}(c, q)$ and $\mathrm{part}(q, c)$ as defined
 below (`ConceptualMatch.match`). One is a part of the other when one of the
 two is 1, and the two are the same when both are. `bind`, the merge of two
@@ -130,10 +128,9 @@ A likeness of two vectors, such as their cosine, is the same in both
 directions and cannot tell a part from its whole: for a region and a part
 that is three tenths of it, parthood gives 0.3 and 1, and the cosine gives
 0.548 both ways. A cosine remains the measure where every concept is
-compared at once; it is a likeness and not parthood (Alec, 2026-11-18).
+compared at once; it is a likeness and not parthood.
 
-**Signed values.** A negative and a positive value share nothing (Alec,
-2026-11-18). On each coordinate two values of the same sign share the
+**Signed values.** A negative and a positive value share nothing. On each coordinate two values of the same sign share the
 smaller of their sizes, two values of opposite signs share zero, and a size
 is the sum of the absolute values:
 
@@ -266,12 +263,12 @@ parts and its wholes, through the Not (see
 has primitive parts and WholeSpace has supplied property rows defined over
 primitive input. The attended field binds their location and level.
 
-An order is raised in two ways (Alec, 2026-11-19).
+An order is raised in two ways.
 
 *Implicitly:* any concept formed above symbols is one order above the
 concepts those symbols read. An order rises at a Sigma and nowhere else.
 
-*Explicitly, by statements that share a side* (Alec, 2026-10-21: "'Is' does
+*Explicitly, by statements that share a side* ("'Is' does
 not cross order by itself, but when used with multiple identical RHS or LHS,
 it creates an equivalence class"). "Felix is a cat" and "Ciao is a cat" are
 two part relations kept in LTM with one whole. They call for a concept that
@@ -332,7 +329,7 @@ tiling over a window of presentations, ties toward the more general
 column; a varied text corpus turns a whitespace boundary on from the
 atomic cold start and leaves single letters' boundaries off.
 
-**Design contract -- types from properties, word-sized `.where` (Alec, 2026-07-03).**
+**Design contract -- types from properties, word-sized `.where`.**
 The enabled analysis methods are a set of PROPERTIES identifying the TYPES we
 attend to, dividing the input (left of space, right of space, punctuation,
 numbers) into word-sized objects. Each object's `.where` then either (a)
@@ -361,7 +358,7 @@ the other.
   occur together, and each row brings one concept of the Sigma above it to
   start with. A basic percept's constituents are coordinates of perceptual
   space and a symbol's are coordinates of conceptual space; each row is a
-  cone over the coordinates its members share (Alec, 2026-11-20). The Not
+  cone over the coordinates its members share. The Not
   offers each row's value and not-value, and a concept is one signed value,
   $y_c = \tanh(\sum_i w_{ci} s_i)$, a kind, whose size is its certainty.
   Its weights are at zero or above; the Not is the only place a sign is
@@ -465,15 +462,15 @@ the closure and could redirect token decode. See
 
 ### The Percept's Code: Parts and Wholes on Two Lanes {#percept-code}
 
-Alec, 2026-11-19: "parts build bottom-up with zeros as a min, and wholes
+"parts build bottom-up with zeros as a min, and wholes
 build top-down with ones as a max. This coincides with parts building using
 max/sums, and wholes building using min/products."
 
-**The layout** (Alec, 2026-11-19: "64 and 64 until proven that we need
+**The layout** ("64 and 64 until proven that we need
 more"). A percept's code has a parts half and a wholes half of 64
 coordinates each, and each half has two lanes, evidence for and evidence
 against, every value within 0 to 1. A "negative number" in perception is
-evidence against: Alec's -1 is 1 on the against lane, and zero on both lanes
+evidence against: a -1 is 1 on the against lane, and zero on both lanes
 is no evidence. No coordinate is set aside for a length or a felt value.
 
 | | Parts half | Wholes half |
@@ -489,9 +486,9 @@ The greatest and the least are taken for a code, which is a bound; the
 union and the product where percepts are present by degree and are joined
 in one reading. On values of 0 and 1 the two pairs agree. So a percept's
 code is at or above each of its parts' codes and at or below each of its
-wholes' codes (Alec, 2026-11-14).
+wholes' codes.
 
-**A form's code is the set of its parts** (Alec, 2026-11-19). A part is a
+**A form's code is the set of its parts**. A part is a
 run of adjacent characters. A form's parts are its characters and the longer
 parts that exist and lie inside it. The space is a character like a letter,
 "so that the saliency map can select against it from within parts", and a
@@ -510,7 +507,7 @@ dictionary, 4 share a code at 64 and 64 with the wholes half below, and none
 once the next part is added for them.
 
 **What tells against a form** is its strict wholes in the part tower and
-nothing else (Alec, 2026-11-19: "only strict wholes ( in the part tower, not
+nothing else ("only strict wholes ( in the part tower, not
 the property tower ) are evidence against"). Its against lane in the parts
 half holds the coordinates that its holders add, a holder being a stored
 form that holds it as a run: the `y` of `archery` for `archer`. The holders
@@ -519,7 +516,7 @@ that count are the nearest, those that add the fewest characters
 words; a form then has 0.72 against entries on average and at most 32.
 Where a coordinate would be both, for stands.
 
-**A whole is a row of the table of wholes** (Alec, 2026-11-19: "we should
+**A whole is a row of the table of wholes** ("we should
 be storing it as a codebook. Starting from the set of all values, we
 discriminate at some boundary"). A whole is defined by what belongs to it: a
 set of characters for a class of characters, a number for a feeling. Its
@@ -527,7 +524,7 @@ code is the OR of the codes of the catalog parts that belong to it, the
 catalog being drawn a second time in the wholes half's own coordinates
 (`WordIdentity.catalog_code`, `PrimitiveProperties.codes`). The whole catalog
 OR'ed is the class of all characters, all ones, which every percept lies in
-(Alec: "A percept cannot have no wholes"). So a class inside another lies
+("A percept cannot have no wholes"). So a class inside another lies
 at or below it with no rule for it, and a class of characters is the OR of
 the characters taught to it ("that would give a principled way to build
 character classes"). A whole may also be given by other wholes ("just like
@@ -549,8 +546,7 @@ whether one form lies inside another reads the for lane alone, where the
 part order holds. The code is read by the first Pi alone; no concept reads
 it.
 
-**A scalar is the same mechanism over the bins of its value** (Alec,
-2026-11-19: "the exact same mechanism, except part growth and whole
+**A scalar is the same mechanism over the bins of its value** ("the exact same mechanism, except part growth and whole
 contraction become the same operation on scalars"). The catalog is the
 value's bins in order, 64 bins of the felt value. The parts half is the bins
 at or below the value; the wholes half is all ones with the bins above it
@@ -562,7 +558,7 @@ dimensions they differ: of the 2,016 pairs of boxes on an 8 by 8 grid the
 intersection is a box in all, and the union in only the 1,232 where one box
 lies inside the other.
 
-**The analysis from above is conceptual attention** (Alec, 2026-11-19: "we
+**The analysis from above is conceptual attention** ("we
 need something driving that analysis top-down just like synthesis drives
 bottom-up part construction"). No Sigma writes into the wholes half of a
 code. A request over concepts is carried down by the transposes of the
@@ -573,15 +569,14 @@ and its properties on the property tower, and onto its where
 characters tells apart, such as `archer` and `archery`, are told apart by
 the next part above.
 
-**The way back of a form starts from the form alone** (Alec, 2026-11-19: "we
+**The way back of a form starts from the form alone** ("we
 are not always doing reconstruction: sometimes we do generation"). No place
 of a part is taken from a reading. "The whole stores its parts in order, and
 longest first": the store keeps each form's characters in order
 (`RadixLayer.inverse_table`), and a code that is no stored form has no
 spelling.
 
-**A string read as a word it is not is taught when it is observed** (Alec,
-2026-11-19). Nothing is added to a form's code for it. What is admitted is
+**A string read as a word it is not is taught when it is observed**. Nothing is added to a form's code for it. What is admitted is
 the part that tells the string from the word, and not the string ("We don't
 want to admit Felixx, we want to admit the part that discriminates it from
 Felix: "xx""), by an idempotent round over cases gathered from the training
@@ -774,8 +769,7 @@ wholes half; `BasicPercepts.against` gives its against lane.
 `FormContainment.audit` checks those rows and their boundaries.
 
 **A basic percept is a row of the first Pi** over its parts and wholes
-(`PerceptPi`, `bin/OrderZero.py`). The row selects for and against (Alec,
-2026-11-19: "Pi should select both strong for and strong against"). Its for
+(`PerceptPi`, `bin/OrderZero.py`). The row selects for and against ("Pi should select both strong for and strong against"). Its for
 entries are its parts and wholes, joined by the product, so each must be
 present. Its against entries are the parts that its nearest holders add,
 joined by the union, so any one present tells against it: the row of
@@ -788,11 +782,11 @@ for lanes, and the against lane the union of their against lanes, since one
 whole witnessed not to hold denies the row. So the character `7` under the
 property "capital" reads for 0 and against 1. A single row is for or
 against; "both" stands across the rows of one reading, one row carrying a
-property for and another against (Alec, 2026-11-19).
+property for and another against.
 
 A row exists only when MTM nominates it on recurrence, and each nominated
 row brings one concept of order zero to start with. A basic percept is an
-occurrence, an event (Alec, 2026-11-20: "all of their constituent percepts
+occurrence, an event ("all of their constituent percepts
 occur at the same time, so there is no basis for abstraction into a
 noun"): the word over its occurrences is its concept of order zero, the word
 as a thing is a symbol over that concept, and a kind of words, such as noun,
@@ -801,8 +795,7 @@ space, and its row is the cone over the coordinates its occurrences share. The t
 the basic percepts is perception, made on first sight. Parts and wholes
 unite at the basic percept, and above it only symbols are collected. So a
 concept above order zero carries no perceptual form: neither a centroid of
-the percepts it collects nor a copy of its word's code. Alec, 2026-11-12:
-"symbols should not take the centroid of the percepts that they collect;
+the percepts it collects nor a copy of its word's code. "symbols should not take the centroid of the percepts that they collect;
 they are epistemic points." A reader that needs such a concept's form takes
 its word's, through the definition that maps the word to it. The way back
 inverts the first Pi exactly and gives each percept its parts
