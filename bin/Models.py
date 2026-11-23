@@ -17544,9 +17544,10 @@ class BasicModel(BaseModel):
         percepts = (part_ids, part_spans, primitive, raw, positions)
         self._perceptual_reading = None
         self._reading_heads = None
+        native = getattr(self.perceptualSpace, '_forward_input', None)
         if (self.numeric_percepts is None and not self.grammar_phases.vector
                 and self.request_read is not None and pass_idx == len(self.body_stages) - 1
-                and self.perceptualSpace._forward_input.get('word_intervals') is not None):
+                and native is not None and native.get('word_intervals') is not None):
             from ReadingMemory import brackets
             reading = brackets(self, percepts)
             if reading is None:

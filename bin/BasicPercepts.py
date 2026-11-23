@@ -1056,10 +1056,11 @@ class BasicPercepts(nn.Module):
         device = (raw[:, 0] if raw.ndim == 3 else raw).device
         brackets = brackets.to(device)
         forms = self._form_spans(part_ids.to(device), part_spans.to(device), keys)
-        spelled = self._spelled_spans(raw, rows)
+        byte_input = not raw.is_floating_point()
+        spelled = self._spelled_spans(raw, rows) if byte_input else [[] for _ in range(len(raw))]
         found, holders = [], []
-        identity = getattr(self.native, 'identity', None)
-        lines = (raw[:, 0] if raw.ndim == 3 else raw).tolist()
+        identity = getattr(self.native, 'identity', None) if byte_input else None
+        lines = (raw[:, 0] if raw.ndim == 3 else raw).tolist() if identity is not None else None
         for b in range(brackets.shape[0]):
             held = dict.fromkeys(tuple(span) for source in (part_spans[b].tolist(), forms[b], spelled[b],
                                                             whole_spans[b].tolist(), brackets[b].tolist())
