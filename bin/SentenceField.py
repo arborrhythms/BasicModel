@@ -219,7 +219,7 @@ def said_words(model, program, stream, met):
         return None
     if head is None:
         return None
-    from Memory import OCCURRENCE
+    from Memory import OCCURRENCE, SYMBOL
     from FieldReverse import drawn
     met['rows_followed'] += 1
     met['roots_alone' if head[0] == OCCURRENCE else 'roots_composed'] += 1
@@ -230,6 +230,8 @@ def said_words(model, program, stream, met):
     start = store.when_start
     words = []
     for kind, name in parts.leaves(head):
+        if kind == SYMBOL:
+            continue  # An operator of the parse has no spoken occurrence of its own.
         if kind != OCCURRENCE:
             raise ValueError('a reading leaf must name an occurrence')
         row = store.index_of_row(name)

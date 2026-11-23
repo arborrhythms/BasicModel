@@ -1,6 +1,6 @@
 """Located ideas from attention, committed as one sequence in the ordinary pair store."""
 import torch
-from Memory import OCCURRENCE, RELATION
+from Memory import OCCURRENCE, SYMBOL, RELATION
 from Understanding import ConceptualField
 
 
@@ -56,11 +56,29 @@ def commit(stores, heads, durable):
                 referent=store.referent_of(row),
                 entry=(store.episodic_concepts[row], store.episodic_values[row]))
             translated[OCCURRENCE, name] = OCCURRENCE, durable.row_name(target)
-        store.parts._sort()
-        for relation in store.parts.relation_order[:len(store.parts)].tolist():
-            left, right = store.parts.references(relation)
-            translated[RELATION, relation] = RELATION, durable.parts.add(
-                translated[left], translated[right], truth_plus=float(store.parts.truth_plus[relation]))
+        # Handles need not be issued in tree order. Copy only relations under
+        # this reading's head, translating children before their parent.
+        pending = [] if head is None else [head]
+        while pending:
+            ref = pending[-1]
+            if ref in translated:
+                pending.pop()
+                continue
+            kind, name = ref
+            if kind == SYMBOL:
+                translated[ref] = ref
+                continue
+            if kind != RELATION:
+                raise ValueError('reading head names an unknown occurrence')
+            children = store.parts.references(name)
+            missing = [child for child in children if child not in translated]
+            if missing:
+                pending.extend(missing)
+                continue
+            left, right = children
+            translated[ref] = RELATION, durable.parts.add(
+                translated[left], translated[right], truth_plus=float(store.parts.truth_plus[name]),
+                truth_minus=float(store.parts.truth_minus[name]))
         committed.append(translated.get(head))
     return tuple(committed)
 
@@ -70,7 +88,8 @@ def field_of(model, store, heads):
     from FieldReverse import drawn
     from RowTime import encoder
     owner = model._concept_owner()
-    rows = [[store.index_of_row(name) for _, name in store.parts.leaves(head)] for head in heads]
+    rows = [[store.index_of_row(name) for kind, name in store.parts.leaves(head)
+             if kind == OCCURRENCE] for head in heads]
     width = max(1, max(map(len, rows), default=0))
     B = len(rows)
     ids = store.row_names.new_full((width, B), -1)

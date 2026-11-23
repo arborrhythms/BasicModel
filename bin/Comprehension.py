@@ -379,7 +379,7 @@ class Evaluation:
                         return cid
                 return None
             self.program.tree.write_edges(store, [concept(w) for w in range(len(self.program.leaves))],
-                                          self.program.symbol_where, self.program.symbol_when)
+                                          self.program.symbol_where, self.program.symbol_when, self.language)
             closing = PartClosing(self.owner, source, working=store)
             root, entries = closing.stage(clause, trust=self.trust)
             arrivals = self.held.retain_arrivals(clause,

@@ -20586,7 +20586,7 @@ class BasicModel(BaseModel):
                 ids = [None if cid <= 0 else cid for cid in concepts.tolist()]
                 ideas.to(device=partial.leaves.device, dtype=partial.leaves.dtype)
                 ideas.prepare(store, partial.tree, {})
-                partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when)
+                partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when, self.languageSpace)
                 head, = commit([ideas], [partial.tree.trace.head], store)
                 row_addresses[b] = head[1]
                 self._concept_owner().mtm.close(store, stream=b)
