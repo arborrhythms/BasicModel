@@ -9549,8 +9549,11 @@ class BasicModel(BaseModel):
         return list({id(p): p for p in params}.values())
 
     def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared, when=None,
-                 references=(), work=None):
-        """System 2 emits terminals; the occurrence writer supplies order zero."""
+                 references=(), work=None, places=None):
+        """System 2 emits terminals; the occurrence writer supplies order zero.
+        ``places``: by row, the extent of each terminal put out, in order,
+        where the walk was given it (a reconstruction following the tree's
+        edges), or ``None``; elsewhere the writer says the terminals in turn."""
         budget = self._walk_budget()
         if work is not None:
             streams = max(1, int(occupied.any(-1).sum()))
@@ -9633,8 +9636,17 @@ class BasicModel(BaseModel):
             if tick is None:
                 tick = self._advance_when_time()
             when = words.new_tensor((tick, tick + 1), dtype=torch.long)[None, None]
+        given = None
+        if places is not None and any(row is not None for row in places):
+            where = torch.zeros(*words.shape[:2], 2, dtype=torch.long, device=words.device)
+            placed = torch.zeros(words.shape[:2], dtype=torch.bool, device=words.device)
+            for b, row in enumerate(places):
+                for w, extent in enumerate((row or ())[:words.shape[1]]):
+                    where[b, w] = extent.to(where)
+                    placed[b, w] = True
+            given = (where, placed)
         return generated(self, words, n_emitted, output_truncated, bank,
-                         self._last_output_walk_trace, when=when,
+                         self._last_output_walk_trace, when=when, places=given,
                          depths=occupied.long().sum(-1),
                          references=tuple(tuple(reference_table[index] for index in row)
                                           for row in emitted_references.tolist()))
@@ -13095,7 +13107,7 @@ class BasicModel(BaseModel):
                               *, basis_priming=None, return_trace=False,
                               exploit_actions=None, departure=None, exploit_prefix=None, reuse_rows=None,
                               departure_uniform=None, kept_actions=None, kept_taken=False,
-                              return_candidates=False, case_bank=None,
+                              kept_operands=None, return_candidates=False, case_bank=None,
                               initial_depth=None, require_symbols=True,
                               initial_references=None, return_references=False, reference_orders=None,
                               constituents=None, constituent_valid=None, constituent_families=None,
@@ -13113,6 +13125,11 @@ class BasicModel(BaseModel):
         is legal on the menu at its parent: a step not on the menu gives the
         children the menu's inverse gave it, and the trace's features keep
         its legality; otherwise a kept action off the menu is an error.
+        ``kept_operands`` (``values`` ``[B, T, 2, D]``, ``given`` ``[B, T]``):
+        at a taken step where given, the step's operands are the values the
+        tree's edge points at (sigma-pi §19.140), and at a STOP the leaf is
+        the first; no inverse menu is read there, and so no search is made
+        for a pair that fits the parent.
         """
         del targets, stamped_events, structural_context
         language = self.languageSpace
@@ -13147,6 +13164,10 @@ class BasicModel(BaseModel):
             if kept_actions.shape != (B, T) or exploit_actions is not None or sample_actions:
                 raise ValueError('a selected output replay requires one fixed action trace per stream')
             kept_actions = own(kept_actions)
+        if kept_operands is not None:
+            if kept_actions is None or not kept_taken:
+                raise ValueError('operands are given only to the recorded steps taken')
+            kept_operands = tuple(own(value) for value in kept_operands)
         draws = torch.rand(B, T, device=event.device) if sample_actions else None
         if departure_uniform is not None and (
                 departure_uniform.shape != (B,1) or departure_uniform.device != event.device):
@@ -13205,6 +13226,13 @@ class BasicModel(BaseModel):
                 column[..., None].expand(B, 1, N), stack_refs[:, None])
             from Generative import inverse_menu, selected_inverse, selected_residual
             selected_graph = torch.is_grad_enabled()
+            if kept_operands is not None:
+                # The step's operands are given by the tree's edge: its
+                # parent's inverse is not searched for.
+                followed = kept_operands[1].gather(1, column)[:, 0] & live
+                given = kept_operands[0].gather(1, t.reshape(1, 1, 1, 1).expand(B, 1, 2, D))[:, 0]
+            else:
+                followed = torch.zeros_like(live)
             # The menu is an observation. Only the selected inverse is an operand.
             with torch.no_grad():
                 menu_options = dict(
@@ -13214,8 +13242,9 @@ class BasicModel(BaseModel):
                     constituent_families=constituent_families,
                     require_symbols=require_symbols, terminal_valid=terminal_valid, whole_bank=whole_bank,
                     action_candidates=proposed_actions)
-                menu = (inverse_menu(language, parent, live, **menu_options)
-                    if menu_read is None else menu_read.read(parent, live, **menu_options))
+                searched = live & ~followed
+                menu = (inverse_menu(language, parent, searched, **menu_options)
+                    if menu_read is None else menu_read.read(parent, searched, **menu_options))
                 from GenerateOccupation import forecast, features as occupation_features
                 expected_arguments = forecast(language, emitted, count,
                     orders=None if reference_orders is None else reference_orders[emitted_refs],
@@ -13284,7 +13313,7 @@ class BasicModel(BaseModel):
             if selected_graph:
                 # Only a step on the menu has a selected inverse; a taken step
                 # off it keeps the menu's children.
-                chosen_left, chosen_right = selected_inverse(language, parent, choice, live & ~off_menu,
+                chosen_left, chosen_right = selected_inverse(language, parent, choice, live & ~off_menu & ~followed,
                     basis=basis, basis_valid=basis_valid, priming=basis_priming,
                     limit=candidate_limit, case_bank=case_bank, constituents=constituents,
                     constituent_valid=constituent_valid, require_symbols=require_symbols, whole_bank=whole_bank,
@@ -13293,11 +13322,14 @@ class BasicModel(BaseModel):
                 left = torch.where((choice == stop)[:, None] | ~on_menu, left, chosen_left)
                 right = torch.where(on_menu, chosen_right, right)
             left = torch.where(((choice == stop) & menu.exact[:, stop])[:, None], parent, left)
+            if kept_operands is not None:
+                left = torch.where(followed[:, None], given[:, 0], left)
+                right = torch.where(followed[:, None], given[:, 1], right)
             binary = live & (choice < R2) & (depth < N) & ~missing
             unary = live & (choice >= R2) & (choice < stop) & ~missing
             pop = live & (choice == stop) & ~missing
             used=live & ~missing
-            exact_path1=exact_path & (~used | menu.exact.gather(1,choice[:,None])[:,0])
+            exact_path1=exact_path & (~used | followed | menu.exact.gather(1,choice[:,None])[:,0])
             if selected_graph:
                 step_residual=selected_residual(language,parent,left,right,choice,used,
                     form_width=form_width,whole_bank=whole_bank,case_bank=case_bank,numeric=not require_symbols,
@@ -13306,6 +13338,11 @@ class BasicModel(BaseModel):
                 errors=torch.cat((menu.form_residual[...,None],menu.meaning_residual),-1)
                 step_residual=errors.gather(1,choice[:,None,None].expand(B,1,3))[:,0]
                 step_residual=torch.where(used[:,None],step_residual,0.)
+                if kept_operands is not None:
+                    # No menu was read at a step given its operands.
+                    step_residual=torch.where(followed[:,None],selected_residual(language,parent,left,right,
+                        choice,used & followed,form_width=form_width,whole_bank=whole_bank,case_bank=case_bank,
+                        numeric=not require_symbols,action_candidates=proposed_actions),step_residual)
             step_residual = torch.where((t >= starts)[:, None], step_residual,
                 residuals.gather(1, t.reshape(1,1,1).expand(B,1,3))[:, 0])
             residuals1=residuals.scatter(1,t.reshape(1,1,1).expand(B,1,3),step_residual[:,None])

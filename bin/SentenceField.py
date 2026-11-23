@@ -59,10 +59,12 @@ def open_field(model, sid, a0):
     return field
 
 
-def sentence_generated(model, record, *, slots=None, occupied=None, **walk_options):
+def sentence_generated(model, record, *, slots=None, occupied=None, places=None, **walk_options):
     """Unfold this sentence's idea through the shared generate walk: its
     untransformed end slots, or ``slots`` ``[B, K, D]`` (newest first) with
-    ``occupied`` ``[B, K]`` where given."""
+    ``occupied`` ``[B, K]`` where given. ``places``: by row, the extent of
+    each leaf the walk puts out, in order, where its occurrence gives it
+    (``None`` for a row with none)."""
     from Generative import walk_bank
     from Output import PreparedGeneration
     if slots is None:
@@ -75,7 +77,7 @@ def sentence_generated(model, record, *, slots=None, occupied=None, **walk_optio
     prepared = PreparedGeneration((), slots, bank, None, torch.is_grad_enabled())
     return model.generate(slots, structure=record, occupied=occupied, infix_rows=None,
                           walk_options=walk_options, prepared=prepared,
-                          when=record.open_field.when[:, :1])
+                          when=record.open_field.when[:, :1], places=places)
 
 
 def walk_action(language, kind, operation):
@@ -110,13 +112,46 @@ def taken_steps(model, record, programs):
     slots = record.end_slots.new_zeros(B, K, D)
     occupied = torch.zeros(B, K, dtype=torch.bool, device=slots.device)
     actions = torch.full((B, T), -1, dtype=torch.long, device=slots.device)
+    operands = record.end_slots.new_zeros(B, T, 2, D)
+    followed = torch.zeros(B, T, dtype=torch.bool, device=slots.device)
+    places = [None] * B
     met = dict(rows=0, roots_composed=0, roots_alone=0, steps=0, binds=0, lacking=0, over_budget=0,
-               unfinished=0, lacking_rules={})
+               unfinished=0, lacking_rules={}, rows_followed=0, steps_followed=0)
     for b in range(B):
         program = programs[b] if b < len(programs) else None
         depth = int(record.end_depth[b])
         if program is None or depth <= 0:
             met['unfinished'] += depth < 0
+            continue
+        edges = tree_edges(program, depth)
+        if edges is not None:
+            values = (record.root[b:b + 1] if depth == 1 else record.end_slots[b, :depth])
+            kept = [j for j in range(depth) if edges[depth - 1 - j] is not None]
+            met['roots_composed'] += len(kept)
+            met['roots_alone'] += depth - len(kept)
+            if not kept:
+                continue
+            met['rows'] += 1
+            met['rows_followed'] += 1
+            for k, j in enumerate(kept):
+                slots[b, k] = values[j]
+                occupied[b, k] = True
+            taken, given, leaves = follow(language, program, [edges[depth - 1 - j] for j in reversed(kept)],
+                                          stop, met)
+            if len(taken) > T:
+                met['over_budget'] += 1
+                taken, given = taken[:T], given[:T]
+            actions[b, :len(taken)] = torch.tensor(taken, device=actions.device)
+            for t, pair in enumerate(given):
+                if pair is None:
+                    continue
+                followed[b, t] = True
+                for side, value in enumerate(pair):
+                    operands[b, t, side] = value.to(operands)
+            extents = getattr(program, 'word_extents', None)
+            if extents is not None:
+                # The walk's leaves come out in the reverse of their pops.
+                places[b] = [extents[word] for word in reversed(leaves)]
             continue
         forest = recorded_forest(language, program)
         if depth != len(forest):
@@ -160,7 +195,87 @@ def taken_steps(model, record, programs):
             met['over_budget'] += 1
             taken = taken[:T]
         actions[b, :len(taken)] = torch.tensor(taken, device=actions.device)
-    return slots, occupied, actions, met
+    return slots, occupied, actions, met, (operands, followed), places
+
+
+def tree_edges(program, depth):
+    """The edge of each root of the reading's tree, oldest root first, from
+    the STM's own pair store (``None`` for a root that is one word); or
+    ``None`` where the tree's sites have no edges there."""
+    tree = getattr(program, 'tree', None)
+    if tree is None or len(tree.ideas.parts) == 0:
+        return None
+    try:
+        roots, first, steps = tree.roots, tree.trace.first, tree.trace.index.steps
+    except ValueError:
+        return None
+    if len(roots) != depth:
+        return None
+    parts, edges = tree.ideas.parts, []
+    for site in roots:
+        if steps[site - first][0] == 0:
+            edges.append(None)
+            continue
+        edge = tree.edge(parts, site)
+        if edge is None:
+            return None
+        edges.append(edge)
+    return edges
+
+
+def follow(language, program, roots, stop, met):
+    """The walk's actions taken by following the tree's edges from its
+    roots (§19.140): the walk's stack holds the roots' edges, bottom to top;
+    it pops its top and takes the action of the rule at the edge's head
+    (:func:`walk_action`, by name), and its operands are what the edge points
+    at, its right above its left; at a word's occurrence it takes STOP. A
+    ``bind`` passes its parent to its one operand with no action; a rule the
+    walk has no rule of the same name for is taken as STOP at that parent,
+    and counted. Returns the actions, at each the operands given (``None``
+    where none is given: a STOP not at a word, or a rule the walk lacks), and
+    the words met at STOP, in the order of their pops."""
+    from Memory import OCCURRENCE, RELATION
+    tree = program.tree
+    parts, first, steps = tree.ideas.parts, tree.trace.first, tree.trace.index.steps
+
+    def value(reference):
+        site = (reference[1] if reference[0] == OCCURRENCE
+                else tree.members(parts, reference[1])[0][1])
+        return tree.point(site)
+    stack = [(RELATION, edge) for edge in roots]
+    taken, given, leaves = [], [], []
+    while stack:
+        reference = stack.pop()
+        if reference[0] == OCCURRENCE:
+            kind, _, word = steps[reference[1] - first]
+            if kind == 0:
+                taken.append(stop)
+                given.append((tree.point(reference[1]), tree.point(reference[1])))
+                leaves.append(word)
+                continue
+            raise ValueError('a composed site has no edge in the tree')
+        head, *children = tree.members(parts, reference[1])
+        kind, operation, _ = steps[head[1] - first]
+        rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+        name = rules[operation].method_name
+        if kind == 1 and name == 'bind':
+            met['binds'] += 1
+            stack.append(children[0])
+            continue
+        action = walk_action(language, kind, operation)
+        if action is None:
+            met['lacking'] += 1
+            met['lacking_rules'][name] = met['lacking_rules'].get(name, 0) + 1
+            taken.append(stop)
+            given.append(None)
+            continue
+        met['steps'] += 1
+        met['steps_followed'] += 1
+        taken.append(action)
+        pair = [value(child) for child in children]
+        given.append((pair[0], pair[-1]))
+        stack.extend(children)
+    return taken, given, leaves
 
 
 def policy_charge(model, generation, errors, active):
@@ -207,11 +322,11 @@ def put_back(model, field, *, record=None, programs=()):
     reads = not (getattr(language, '_compose_binary_rules', ()) or getattr(language, '_compose_unary_rules', ()))
     if record is None or reads:
         return None, model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field), None
-    slots, occupied, actions, met = taken_steps(model, record, programs)
+    slots, occupied, actions, met, given, places = taken_steps(model, record, programs)
     # The reading's constituents are kept of the way up: not candidates here.
     idea = replace(record, constituents=None, constituent_valid=None, constituent_families=None)
-    generation = sentence_generated(model, idea, slots=slots, occupied=occupied,
-                                    kept_actions=actions, kept_taken=True)
+    generation = sentence_generated(model, idea, slots=slots, occupied=occupied, places=places,
+                                    kept_actions=actions, kept_taken=True, kept_operands=given)
     return generation, realize(model, generation), met
 
 

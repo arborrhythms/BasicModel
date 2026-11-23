@@ -3,11 +3,12 @@ reconstruction (round 6d of item 1.7, seventeenth pass, item 6; §19.135),
 input to output on the model as it runs: each word alone (the word and its
 mark), the two-word sentences and the lesson's sentences are given as the
 input and the reconstruction put back is read. The reconstruction is the
-output walk from the idea made to take the recorded steps; nothing of the
-record is read but the order of its rules. Beside each, as diagnostics
-only: the words the walk's leaves say, the grammar's applied rules, and
-what the walk met (roots composed and alone, binds passed, rules the walk
-lacks, steps off the walk's menu). A record: a start drawn afresh and
+output walk from the idea made to take the recorded steps; where the STM's
+tree has its edges (nineteenth pass, §19.140) each step's operands are what
+its edge points at, each leaf at its occurrence's place. Beside each, as
+diagnostics only: the words the walk's leaves say, the grammar's applied
+rules, and what the walk met (roots composed and alone, binds passed, rules
+the walk lacks, steps followed by their edges, steps off the walk's menu). A record: a start drawn afresh and
 printed, nothing asserted of what a start gives. Then a unit test of the
 perceptual inverse's paste (`FieldReverse.reverse`) and its error."""
 import os
@@ -88,7 +89,8 @@ def measured(model, held, sentences):
         tally['silent'] = tally.get('silent', 0) + row['silent']
         tally['leaves said the words'] += upper
         tally['nothing put back'] += row['count'] == 0
-        for key in ('roots_composed', 'roots_alone', 'steps', 'binds', 'lacking', 'over_budget'):
+        for key in ('roots_composed', 'roots_alone', 'steps', 'binds', 'lacking', 'over_budget',
+                    'steps_followed'):
             tally[key] = tally.get(key, 0) + row['met'][key]
         for name, n in row['met']['lacking_rules'].items():
             tally['lacking ' + name] = tally.get('lacking ' + name, 0) + n

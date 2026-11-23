@@ -493,7 +493,8 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     # The walk made to take the recorded steps puts back ``returned``
     # (seventeenth pass: one recorded step here).
     def taken_steps(model, record, programs):
-        return end, record.end_depth.new_ones(1, 3).bool(), torch.zeros(1, 1, dtype=torch.long), dict()
+        return (end, record.end_depth.new_ones(1, 3).bool(), torch.zeros(1, 1, dtype=torch.long), dict(),
+                (end.new_zeros(1, 1, 2, end.shape[-1]), torch.zeros(1, 1, dtype=torch.bool)), [None])
     def sentence_generated(model, record, **kw):
         return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
                          when=record.open_field.when[:, :1], depths=record.end_depth)
