@@ -65,10 +65,9 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
         for name in ('_concept_activations', '_concept_codes'):
             if hasattr(carrier, name):
                 setattr(carrier, name, detached(getattr(carrier, name)))
-        if hasattr(space, '_percept_field'):
-            space._percept_field = detached(space._percept_field)
-        if hasattr(space, '_cs_open_field'):
-            space._cs_open_field = detached(space._cs_open_field)
+        for name in ('_percept_field', '_cs_open_field', '_cs_field_wires'):
+            if hasattr(space, name):
+                setattr(space, name, detached(getattr(space, name)))
     if getattr(model.percept_expectation, 'last_arrival', None) is not None:
         model.percept_expectation.last_arrival = detached(model.percept_expectation.last_arrival)
     # Publishing the chosen syntax replaces this slab with sentence writes.

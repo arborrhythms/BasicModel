@@ -75,7 +75,7 @@ def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeyp
         value = score(owner, state, observation, sid, active, registry, **kwargs)
         assert observation['answer_field'] is observation['record'].understanding_field
         error = value[0]
-        params = tuple(model.parameters())
+        params = tuple(p for p in model.parameters() if p.requires_grad)
         grads = torch.autograd.grad(error.mean(), params, retain_graph=True, allow_unused=True)
         live = {id(p) for p, g in zip(params, grads) if g is not None and bool(g.abs().any())}
         assert any(id(p) in live for p in model.outputSpace.parameters())

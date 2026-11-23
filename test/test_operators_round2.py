@@ -40,8 +40,8 @@ def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
     draw=departure(attention,torch.tensor([[False,True,True,True]]),
                    active=torch.tensor([True]), compose_round=torch.tensor([1]))
     # Six walks since the loop of looks folded the candidate walk into
-    # attention: attention, compose, bind, reconstruction, thought, output.
-    assert seen[0].tolist()==[[True,True,False,False,False,False]]
+    # attention: attention, compose, bind, thought, output.
+    assert seen[0].tolist()==[[True,True,False,False,False]]
     assert seen[1].tolist()==[[True,False,True]]
     assert draw['rounds'].item()==5
     assert draw['walk_count'].item()==2

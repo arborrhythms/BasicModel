@@ -89,11 +89,11 @@ def test_complete_path_pays_c_for_one_more_kept_application(monkeypatch):
         draw = dict(walk=torch.tensor([WALKS.index('output')]),
             thought_round=torch.tensor([-1]), output_round=torch.tensor([0]), compose_round=torch.tensor([-1]))
         paths.append(WholePaths.finish(model, (), 0, active, base=base, draw=draw, trust=1.))
-    assert paths[0].parts[0, 0] == 2 + 5*.75
+    assert paths[0].parts[0, 0] == 2 + 4*.75
     assert paths[1].parts[0, 0] - paths[0].parts[0, 0] == .75
     parts = torch.stack([path.parts for path in paths], 1)
     result = comparison(parts, active)
     assert result['winner'].tolist() == [0]
     assert result['advantage'].tolist() == [.75]
     costs, _ = WholePaths.objectives(paths, parts, active, [paths[1].draw])
-    assert costs['penalty.reconstruction'] == (5+6)*.75
+    assert costs['penalty.reconstruction'] == (4+5)*.75

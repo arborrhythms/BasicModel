@@ -181,9 +181,9 @@ def test_not_exchanges_both_poles_and_preserves_content():
 
 
 def test_operations_all_declare_pairs_and_ast_never_returns_scalar():
-    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain','non','define'}
+    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain','non','define','output'}
     assert set(THOUGHT_EXECUTORS)==expected
-    assert all(item.evidence_pair for item in THOUGHT_EXECUTORS.values())
+    assert {name for name, item in THOUGHT_EXECUTORS.items() if item.evidence_pair} == expected - {'output'}
     source=Path('bin/ThoughtFaces.py').read_text()
     tree=ast.parse(source)
     for node in ast.walk(tree):

@@ -22,7 +22,7 @@ def test_69_complete_inventory():
     assert names('generate') == common - {'bind'}
     assert names('thought') == {'ask', 'query', 'part', 'whole', 'not', 'non',
         'bind', 'isTrue', 'exist', 'isPart', 'isWhole', 'isEqual', 'infer',
-        'inferBackward', 'intuit', 'implies', 'define'}
+        'inferBackward', 'intuit', 'implies', 'define', 'output'}
     assert all('referent' not in row.attrib for section in ('compose', 'generate', 'thought')
                for row in root.findall('Symbolic/' + section + '/rule'))
 

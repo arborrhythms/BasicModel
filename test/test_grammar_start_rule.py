@@ -41,7 +41,8 @@ def _load_inline_xml(xml_text):
             "w", suffix=".xml", delete=False) as f:
         f.write(xml_text)
         path = f.name
-    util.TheXMLConfig.load(path)
+    util.TheXMLConfig.load(str(_project / "data/model.xml"))
+    util.TheXMLConfig.overlay(path)
     Language.TheGrammar._configured = False
     Language.TheGrammar._ensure_configured()
     return Language.TheGrammar
@@ -83,7 +84,7 @@ def test_start_symbol_default_without_xml_tag(reset_grammar):
     """)
     grammar = _load_inline_xml(xml)
     assert grammar.start_symbol == "S", (
-        "missing <start> must fall back to the historical default 'S'"
+        "omitted <start> must inherit the configured default 'S'"
     )
 
 

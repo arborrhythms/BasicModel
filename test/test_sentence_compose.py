@@ -41,7 +41,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     import SentenceCredit
     draw = SentenceCredit.departure
     def reading_departure(*args, **kwargs):
-        return draw(*args, **dict(kwargs, reconstruction=None, thought=None, output=None))
+        return draw(*args, **dict(kwargs, thought=None, output=None))
     monkeypatch.setattr(SentenceCredit, 'departure', reading_departure)
     # Since the loop of looks a word is perceived when it arrives at a look,
     # so which words arrive, and when, is the chooser's draw. The words are

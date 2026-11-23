@@ -482,8 +482,8 @@ def test_41_a_grammar_file_may_not_name_silence():
 def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
     """Certificate 41 (rule 48): with a grammar that joins no two words, a
     two-word sentence stays silent. Its two STM ideas commit as one LTM pair
-    (§19.146); MTM admits no identity, the put back is NULL, its cost is booked;
-    a one-word sentence of the same grammar reduces and is unchanged."""
+    (§19.146); MTM admits no identity and the closing charges silence. The open input
+    reconstruction survives either closing. A one-word sentence of the same grammar reduces and is unchanged."""
     import Language, Models
     from Interpret import SilenceLayer
     from util import init_config
@@ -507,11 +507,9 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
         generated = SentenceField.reconstruction
         put = []
         def kept(*args, **kwargs):
-            # The grammar's inverse puts back something at every place, so
-            # that what the silence leaves of it shows.
             result = generated(*args, **kwargs)
-            result[1]._reconstruction_percepts = torch.ones_like(result[1]._reconstruction_percepts)
-            put.append(result[1])
+            native = result[1]._reconstruction_percepts
+            put.append((result[1], native.detach().clone()))
             return result
         SentenceField.reconstruction = kept
         try:
@@ -522,9 +520,10 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
                 with torch.no_grad():
                     model.forward(model.inputSpace.prepInput(texts))
                 assert bool(model._sentence_silence.any()) is silent
-                # What the model's reconstruction puts back for a silent
-                # sentence is NULL at every place; it is scored so.
-                assert put and bool(put[-1]._reconstruction_percepts.any()) is not silent
+                # Composition can close silently after the input was perceived.
+                assert len(put) == 1
+                carrier, at_open = put[0]
+                torch.testing.assert_close(carrier._reconstruction_percepts, at_open, atol=0., rtol=0.)
                 if silent:
                     rows = range(before, len(store))
                     from Memory import OCCURRENCE

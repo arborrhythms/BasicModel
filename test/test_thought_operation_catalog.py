@@ -840,7 +840,7 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     value = torch.ones(4)
     arguments = {name: {'argin1': ('sym',1), 'argin2': ('sym',2)} for name in ('isPart','isEqual')}
     arguments.update({name: {'argin1':value, 'argin2':value} for name in ('part','equal','implies','define')})
-    arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not','non')})
+    arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not','non','output')})
     arguments.update({name: {'argin1':value} for name in ('exist','gain')})
     from dataclasses import replace
     arguments['bind'] = {'argin1': replace(meaning, bindings={'_bind_role': 0})}
@@ -870,6 +870,7 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     assert results['intuit']['support_true'] == 0.
     assert results['intuit']['value'] is None
     assert results['intuit']['knowing_written']
+    assert results['output']['emission'] is meaning
     assert not hasattr(context, 'reasoner')
 
 

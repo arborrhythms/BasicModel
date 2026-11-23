@@ -1,21 +1,11 @@
 """Rule 5b. An offered word can be interpreted independently of policy."""
+from pathlib import Path
 import pytest
 import torch
 
 
-def explore_configuration(tmp_path):
-    """The whole-paths benchmark's configuration (a receipt under doc/), less
-    the key conceptualPi that sigma-pi §21, rule 6 removed: a basic percept
-    is a row of the first Pi in every model."""
-    from pathlib import Path
-    source = Path('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml').read_text()
-    path = tmp_path / 'explore-1.xml'
-    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', '')
-                    .replace('<transformChooser>mlp</transformChooser>', ''))
-    return str(path)
 
-
-def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading, tmp_path):
+def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading):
     from Corpus import admit_training_forms
     import ModelAttention
     from Models import BaseModel
@@ -26,7 +16,7 @@ def test_fresh_reader_interprets_each_word_once(monkeypatch, eager_reading, tmp_
     TheData.processLM({s: dict(text=[text] if s == 'train' else [], label=[])
                        for s in ('train', 'validation', 'test')})
     model = BaseModel.from_config(
-        explore_configuration(tmp_path), data=TheData)[0]
+        str(Path(__file__).resolve().parents[1] / 'data/MM_corpus_explore_fixture.xml'), data=TheData)[0]
     admit_training_forms(model, [text])
     # MTM nominates the words on their concept_mint_count-th reading
     # (sigma-pi §21, rule 20): the words exist before the reading observed.

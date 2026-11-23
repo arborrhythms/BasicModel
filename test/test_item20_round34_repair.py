@@ -62,9 +62,19 @@ def test_packed_sentence_boundary_cuts_prior_writes_and_retains_perception(tmp_p
     from reading_fixtures import read_in_source_order
     read_in_source_order(model, monkeypatch)
     model.inputSpace.data.has_supervised_outputs = False
+    from nomination_fixtures import nominated_forms
+    nominated_forms(model, ['a b', 'c d'])
     optimizer = model.getOptimizer(lr=.0001)
     original_begin, original_step = SentenceTraining.begin_sentence, model._sentence_train_step
-    entry_nodes, sentence_nodes, first_choices, perception, scans, steps = set(), set(), [], [], [], []
+    entry_nodes, sentence_nodes, first_choices, scans, steps = set(), set(), [], [], []
+
+    import SentenceField
+    invert = SentenceField.reconstruction
+    opening_evidence = []
+    def observe_open(owner, field):
+        opening_evidence.append(field.evidence)
+        return invert(owner, field)
+    monkeypatch.setattr(SentenceField, 'reconstruction', observe_open)
 
     def begin(owner):
         frame = inspect.currentframe().f_back
@@ -72,10 +82,6 @@ def test_packed_sentence_boundary_cuts_prior_writes_and_retains_perception(tmp_p
         values = list(carried(owner, sub, sym))
         if not steps:
             entry_nodes.update(nodes([v for _, v in values]))
-            for space, names in ((owner.inputSpace, ('_ar_part_reference_vectors',
-                    '_ar_whole_reference_vectors', '_ar_order_zero_reading')),
-                    (owner.symbolSpace, ('_word_reference_presences',))):
-                perception.extend(getattr(space, name) for name in names if torch.is_tensor(getattr(space, name)) and getattr(space, name).requires_grad)
         else:
             leaking = [name for name, value in values if nodes([value]) & sentence_nodes]
             scans.append(dict(tensors=len(values), leaks=leaking))
@@ -100,8 +106,10 @@ def test_packed_sentence_boundary_cuts_prior_writes_and_retains_perception(tmp_p
             cost = sum(costs.values())
             old = torch.autograd.grad(cost, first_choices, allow_unused=True, retain_graph=True)
             assert all(value is None for value in old)
-            live = torch.autograd.grad(cost, perception, allow_unused=True, retain_graph=True)
-            assert any(value is not None for value in live), 'batch perception must remain reachable'
+            evidence_grad, sigma_grad = torch.autograd.grad(cost,
+                (opening_evidence[-1], model._concept_owner().order_zero.value),
+                allow_unused=True, retain_graph=True)
+            assert all(g is not None and torch.isfinite(g).all() for g in (evidence_grad, sigma_grad))
         result = original_step(loss)
         steps.append(1)
         return result

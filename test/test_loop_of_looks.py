@@ -1,20 +1,10 @@
 """Certificates of item 1.8 §60: one causal loop of looks."""
+from pathlib import Path
 from dataclasses import fields
 import torch
 import pytest
 from chooser_steering import stand_in
 
-
-def explore_configuration(tmp_path):
-    """The whole-paths benchmark's configuration (a receipt under doc/), less
-    the key conceptualPi that sigma-pi §21, rule 6 removed: a basic percept
-    is a row of the first Pi in every model."""
-    from pathlib import Path
-    source = Path('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml').read_text()
-    path = tmp_path / 'explore-1.xml'
-    path.write_text(source.replace('<conceptualPi>true</conceptualPi>', '')
-                    .replace('<transformChooser>mlp</transformChooser>', ''))
-    return str(path)
 
 
 def test_7_incremental_word_forecast_follows_arrival_order(monkeypatch):
@@ -45,7 +35,7 @@ def test_7_incremental_word_forecast_follows_arrival_order(monkeypatch):
 
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('leave_first', [False, True])
-def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch, tmp_path):
+def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch):
     import Attention
     import ModelAttention
     import SentenceLooks
@@ -57,7 +47,7 @@ def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch, tmp
     TheData.processLM({split: dict(text=[text] if split=='train' else [], label=[])
                       for split in ('train','validation','test')})
     model = BaseModel.from_config(
-        explore_configuration(tmp_path),data=TheData)[0]
+        str(Path(__file__).resolve().parents[1] / 'data/MM_corpus_explore_fixture.xml'),data=TheData)[0]
     admit_training_forms(model,[text])
     # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
     from nomination_fixtures import nominated_sentences; nominated_sentences(model, [text])

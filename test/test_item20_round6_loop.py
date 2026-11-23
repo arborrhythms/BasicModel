@@ -138,9 +138,7 @@ def test_registry_uses_the_two_reconstructions_and_omission_target(tmp_path, mon
             # own reverse is no second term.
             assert 'reconstruction_order_zero.pyramid' in registry
             assert not any(name.startswith('reconstruction_reverse.') for name in registry)
-            for lane in ('form', 'for', 'against'):
-                term = registry['reconstruction.walk_residual.' + lane]
-                assert term['objective'] == 'reconstruction' and term['side'] == 'R'
+            assert not any(name.startswith('reconstruction.walk_residual.') for name in registry)
             assert all(not registry[name]['trained'] for name in
                        ('reconstruction.free_bytes', 'reconstruction.coverage'))
             assert not any(name.startswith(('reconstruction.field', 'reconstruction.iterations',
