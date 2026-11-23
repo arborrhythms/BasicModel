@@ -29,6 +29,16 @@ in order is mostly animal cognition, and understanding of a higher order is
 human cognition, but that is a description of the tasks and not two ways of
 measuring them.
 
+What decides a row is the output: the answer the model returns. What teaches
+the model is more than that. A training step charges two costs together, the
+reconstruction of the input (R) and the answer against the answer that was
+supplied (A), and it keeps and credits a reading by R + A
+([Training](Training.md#what-questions-and-the-two-primary-costs),
+[GradientFlow](GradientFlow.md)). An answer is said only from a thought the
+model has concluded; with no conclusion it is silent. So a row can fail in
+two places: the input is not put back, or the model has nothing concluded to
+say.
+
 The column "Basis" says where the age comes from:
 
 - *sourced*: a published norm or study, listed under Sources. Published ages
@@ -54,7 +64,7 @@ when a later task has to be broken down.
 
 | Age | Task that must be learned | Basis | Measured by |
 | ---: | --- | --- | --- |
-| 1.00 | A word is said back | sourced: first word at 10 to 14 months | each word alone as the input, the word as the output |
+| 1.00 | A word is said back (the echo test) | sourced: first word at 10 to 14 months | each word alone as the input and as the supplied answer; the answer the model returns spells the word |
 | 1.50 | Ten words are said back; a thing is named by one word | sourced: at least ten words at 18 months | the rung "Felix" |
 | 1.70 | Twenty words are said back | sourced: between ten words at 18 months and fifty at 24 | the rung "twenty words" |
 | 2.00 | Fifty words are said back | sourced: about fifty words at 24 months, then a spurt | none yet |
@@ -63,7 +73,8 @@ when a later task has to be broken down.
 
 | Age | Task that must be learned | Basis | Measured by |
 | ---: | --- | --- | --- |
-| 1.75 | Two words are taken in order and said back | sourced: two-word combinations at 18 to 24 months | two-word sentences, read in order and stopped at the end |
+| 1.50 | Two words are said back in order as a sequence, with no understanding asked | estimate: a child repeats two words before it combines two of its own | none yet |
+| 1.75 | Two words are taken in order and said back as a sentence | sourced: two-word combinations at 18 to 24 months | two-word sentences, read in order and stopped at the end |
 | 2.00 | A noun and a verb (who did what) | sourced: Brown's stage I, 12 to 26 months | the rung "Felix ran" |
 | 2.00 | A property and a thing ("fast cat") | estimate: among Brown's stage I relations | none yet |
 | 2.25 | "What" is answered | sourced: "what" before 2;02, then "where" (Wong and Ingram 2003) | "what is cat ?" |
@@ -93,6 +104,7 @@ when a later task has to be broken down.
 | 2.75 | "One" is told from more than one | estimate: the one-knower of Wynn's levels; the levels are sourced, their ages were not found | none yet |
 | 3.00 | The counting words are said in order, to "4" | estimate | one counting word for each word of a sentence |
 | 3.25 | "Two" and "three", each learned in turn | estimate: two-knower and three-knower | none yet |
+| 3.50 | Singing: a counted sequence with a number left out is said whole | estimate; the task is still to be talked through (Alec, 2026-11-22) | none yet |
 | 3.75 | Each thing is counted once, and the last word said is how many | estimate: the cardinal-principle knower | counting, with each word looked at once |
 | 4.50 | The counting words are said in order, to "10" | estimate: "counts to 10" is on the CDC's list for 5 years as recalled; the page's wording was not confirmed in the check | counting, to "9" |
 | 5.00 | Counting on request with nothing to count: "Please count from one to 15" | estimate | none yet |
@@ -121,7 +133,7 @@ pass, and the next row, a word said back, fails.
 | --- | --- |
 | 0.70, object permanence | Passed in 3 of the 4 test models that have text; failed in 1 ("unknown word"). The ladder's eight higher rungs were not reached: no test model declares the vocabulary they need. |
 | 0.75, a word recognised by its form | Passed. |
-| 1.00, a word said back | **Failed**, by the model's own output, on `main`. Each of 19 words presented alone for 30 rounds, three starts: 0 of 19 in every round; 19 of 19 in every round; 19 then 0. The word's own concept is exact where the word is read. But the input is reproduced from the sentence's composed root, and "This." is a composition of the word and its mark by whichever rule the grammar took; some rules pass the word through and others do not. Given the word's own concept, the way back does give the word (19 of 19). A closing mark is never said back, since it is never made a word. Measured again on the branch `item17-r6d11` at `9d2fc4751a`, with a mark made a word and each leaf put back through the perceptual inverse: 0 of 19 in three starts, taught or not. Whatever leaf the output is given is spelled exactly and at its place, but the walk stops at the root and gives one leaf (the word, the mark, another word or nothing), and "This." is the word and its mark together. The root has to be taken apart by the inverse of what composed it; that is not yet built. Measured again at `11b916f86c`, with the root taken apart by the inverse of each rule that composed it, and that the only reconstruction: every word in some starts and none in others (19, 19, 19, 19, 18 and 0 of 19 over three starts, untaught and after 3 rounds; in an earlier run 19, 16, 5, 17, 19 and 1). Which rule the grammar took for the word and its mark decides it: some rules give the word back, four have no inverse and give nothing, and one gives back another word. Where a word is said back, the idea gives one of the two leaves; the other, and the place of both, are read from what the model kept of the way up. Where the reading applied no rule, the word is put back from its own basic-level concept. Measured again at `f396314f9e`, with nothing read from what was kept of the way up (Alec: "The idea is what does the reconstruction"): 0 of 19 in every start and round. The best case, the rule `part`, gives back the word and not its mark ("This." is put back as "This"); the other rules give nothing. No rule gives back both of its operands from the idea alone, and an untaught grammar draws any rule. The grammar's rules are next made available one at a time, each taught until it can be undone. |
+| 1.00, a word said back | **Failed**, by the model's own output, on `main`. Each of 19 words presented alone for 30 rounds, three starts: 0 of 19 in every round; 19 of 19 in every round; 19 then 0. The word's own concept is exact where the word is read. But the input is reproduced from the sentence's composed root, and "This." is a composition of the word and its mark by whichever rule the grammar took; some rules pass the word through and others do not. Given the word's own concept, the way back does give the word (19 of 19). A closing mark is never said back, since it is never made a word. Measured again on the branch `item17-r6d11` at `9d2fc4751a`, with a mark made a word and each leaf put back through the perceptual inverse: 0 of 19 in three starts, taught or not. Whatever leaf the output is given is spelled exactly and at its place, but the walk stops at the root and gives one leaf (the word, the mark, another word or nothing), and "This." is the word and its mark together. The root has to be taken apart by the inverse of what composed it; that is not yet built. Measured again at `11b916f86c`, with the root taken apart by the inverse of each rule that composed it, and that the only reconstruction: every word in some starts and none in others (19, 19, 19, 19, 18 and 0 of 19 over three starts, untaught and after 3 rounds; in an earlier run 19, 16, 5, 17, 19 and 1). Which rule the grammar took for the word and its mark decides it: some rules give the word back, four have no inverse and give nothing, and one gives back another word. Where a word is said back, the idea gives one of the two leaves; the other, and the place of both, are read from what the model kept of the way up. Where the reading applied no rule, the word is put back from its own basic-level concept. Measured again at `f396314f9e`, with nothing read from what was kept of the way up (Alec: "The idea is what does the reconstruction"): 0 of 19 in every start and round. The best case, the rule `part`, gives back the word and not its mark ("This." is put back as "This"); the other rules give nothing. No rule gives back both of its operands from the idea alone, and an untaught grammar draws any rule. The grammar's rules are next made available one at a time, each taught until it can be undone. *By the answer the model returns,* which is this row's measure: empty. In Codex's trial at `23a594e537` (the lesson model given only "Felix", with no mark, and taught the pair Felix, Felix three times) the returned answer was the empty string before and after, 0 of 4, with no meaning in the answer and no word from the output walk, while the reading's own reconstruction said "Felix". Not yet measured by Claude. A word alone concludes no thought, so the answer has nothing to say. |
 | 1.75, two words taken in order and said back | Failed. After the reading lesson, 0 of 6 two-word sentences are read in order in each of three starts, though the first word is taken first in 6 of 6. Every word of a sentence is found (64 of 64), but not in order, and "is" is never taken. At `11b916f86c`, by the one reconstruction: 0, 6 and 6 of 6 untaught, and 0, 0 and 1 of 6 after 3 rounds of the words alone, when a reading leaves a word or the mark out of what it composes, and what is left out is not put back. |
 | 2.25 to 5.00, with the words handed to the model in order | The curriculum's stages `reading_two`, `reading_four`, `identities`, `noun_verb` and `relations` pass when the model does not have to take the words itself. They do not count toward the age, since taking the words in order is the row that fails. |
 | 6.00, exclusive or | Passed (the standing gate). |
@@ -137,10 +149,28 @@ toy's result and not the model's.
 
 ## How the tasks are taught
 
-The tasks are taught in the chart's order. Each word is taught alone until
-every word is said back. Then sentences are read over those words, and their
-words are counted. Then the grammar is taught, one rule at a time. A stage is
-left when its measure passes, not after a fixed number of presentations.
+The tasks are taught in the chart's order, in these stages (Alec,
+2026-11-22). A stage is left when its measure passes, not after a fixed
+number of presentations.
+
+1. *The echo test* (age 1.00): a word is given, and the same word is the
+   answer. It is the stage being built now.
+2. *A sequence of two words, with no understanding* (age 1.50): two words are
+   given and said back in order.
+3. *Reading* (age 1.75 and on): a sentence of two words, then longer ones,
+   taken in order and said back. Reading comes before counting.
+4. *The counting test* (age 3.00 and on): one counting word for each word of
+   a sentence.
+5. *Singing* (age 3.50): a counted sequence with a number left out is said
+   whole. It is still to be talked through.
+
+The grammar is taught with reading, one rule at a time: a rule is available
+to the model only once it has been taught.
+
+Counting needs internal representations: what is said is not in the input, so
+it has to be something the model holds. The echo test is the first place
+where the answer is said from what the model holds of a word, and that is why
+it comes first.
 
 Reading and counting are two outputs over the same input sentences, on the
 same model and the same weights. All content of the input is a word for both:
