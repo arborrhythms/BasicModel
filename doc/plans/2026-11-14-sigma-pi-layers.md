@@ -15041,6 +15041,18 @@ Alec, §19.140: a rule's two operands are reached from its parent by the STM tre
 
 Standing rules: no seed pinned for an assertion; no skip or xfail added; nothing under `RUN_SLOW`; compiling stays the tests' default; no default in code and no new key; nothing set on a concept directly and nothing fed into the middle of the model to fix or to measure; no rule that forbids a walk; a tie is a draw; a delete is a `mv` into `/tmp/item17-r6d-2026-11-21/`; `suggestions.txt` is not edited. A question is not a stop: take the first choice that adds nothing and say which it was. Targeted tests and both gates (`test/test_mm_xor.py::TestMMXorConvergence::test_convergence`, `test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`); `test/test_item17_own_reading.py` is left out (over forty minutes).
 
+*Round 6d, nineteenth pass, second part: an edge's word end points at the word's concept; an edge is followed with no rule of the walk* (Claude, 2026-11-22, after §23.6.27; for the same implementer)
+
+The first part's edges point at sites of the reading's record, and the values put back are read from that record. Alec's words (§19.140) are "pointers into concepts".
+
+1. *A word as read is a row of the trial's own STM* (its `STM0`, whose rows are already there: 240 for 8 words), written where the edges are written: the row refers to the word's concept and holds the word's `.where` and `.when`. The edge's word end is that row's occurrence. Nothing new is added; if a row cannot refer to a concept with what the store has, say what is short and do not add it.
+2. *A leaf is said from its concept.* The reconstruction says each leaf by the concept its row points at, at the place the row holds, through the model's own way back (as the answer says a perceived word, `Output.perceived_meanings`). No value of a word or of a composed step is read from the record of the reading. Say in the return what, if anything, is still read from it.
+3. *An edge is followed with no rule of the walk.* Following an edge needs no inverse, so it needs no generate rule of the composing rule's name. A model whose walk lacks the rule (the echo's model, whose walk has `interpret` and `verb` only) follows its edges all the same.
+4. *Measured, input to output:* the three counts of the first part again (19 words with marks, lesson sentences, two-word sentences; untaught and after three rounds, three starts); the echo's cell of a word with its mark, 12 runs, counting the runs that lose a word's letters after teaching (2 of 12 in the first part, where nothing was followed); and `test_grammar_reconstruction_gate`'s read-back test, whose second half (what is put back follows a changed state) the first part's port skips where every step is followed: say what is true of it now and assert that.
+5. *Diagnosis only, nothing mended:* after teaching, readings lose words before the reconstruction (a look takes only the mark; a word is read with no rule). For three such readings: which cost's gradient moved the choice that lost the word, and whether the path that keeps every word was among those compared and what it cost.
+
+The standing rules of the first part hold.
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -26762,3 +26774,50 @@ Not taken, for Alec to decide:
 - *It passes before teaching and can fail after it.* That is the wrong way round for a lesson, and it points at the reconstruction's cost, not at the answer. It is the next thing to measure: the same cell with the reconstruction's cost left out of the step.
 - *The parent that holds both operands is the form §19.135's "span of operands" was pointing at.* Codex's proposal for the model: the parent of a binary rule has typed fields for each operand's value, its reference and its present place. That is a change of the rules' form and is Alec's to decide; the eight-bit packing is a proof that the route is exact, not the form to build.
 - *The row at 0.70 is not asked as "What was there?"* (Alec, §19.138). With that row read from identities and reported beside the age, the chart's first failing row is no longer the echo.
+
+### 23.6.27 Round 6d, nineteenth pass: the reconstruction follows the STM tree's edges and puts back every input untaught; the values are still read from the reading's record (Claude on Opus, standing in for Codex, 2026-11-22; review by Claude)
+
+The implementer's full return is `r6d_return_19.md` in Claude's scratch directory. Commits on `item17-r6d11`: 84d54b0740 (the edges), 1cc1649779 (the reconstruction follows them), e503e5d862 (no charge of the walk's policy at a followed step), 7e6ec06b90 (the curriculum test's assertion restored), 197ee790f6 (tests ported).
+
+#### Item 1: the trace
+
+- A compose step writes the parent into one operand's chunk of the STM and clears the other (`Memory.STMChunks.apply_choice`). After a step neither operand's value is in the STM's rows.
+- When `SentenceField.reconstruct` ran, no STM pair store held any edge of a compose step: the trial's store (`program.tree.ideas`, an `STM0` with an `STM1`) held 1 row and 0 pairs.
+- The closing stages into that store before the reconstruction (`Comprehension.finish`), and writes a pair only for an assertion rule (`part`, `whole`, `implies`, `equal`, `define`); any other composition is one occurrence row. The durable write is after the reconstruction (`_commit_sentence`).
+- Nothing is short: a sentence of 8 words needs at most 80 pairs; the store has 8192, and 240 rows.
+
+#### Items 2 and 3: what was built
+
+- *The edges* (`SentenceStrata.Tree.write_edges`): for each compose step the chain that `ThoughtStrata.write` uses, parent then each operand in order, by the store's own `parts.add`. Written when the trial's STM is prepared at the closing, not inside the compose loop (the loop is the tensor loop that is compiled). No store, key, parameter, layer or cost is added.
+- *Followed* (`SentenceField.taken_steps`, `follow`, `tree_edges`; `Models._output_generate_walk` with `kept_operands`): at a step with its edge the walk takes its operands from what the edge points at, and each leaf is said at the place the reading holds for it. No pair is searched for there.
+- *Still read from the record of the reading:* the values the edges point at (a word's value as read, a composed step's result: the reading's `Trace`), the rule at each edge's head, each word's extent, and the order of the roots.
+- *What teaches a rule's own inverse: nothing.* The residual the walk records compares the parent with the rule applied to the edge's operands, which teaches the rule's forward. The walk's policy is charged nothing at a followed step.
+
+#### Item 4: measured
+
+| Measure | Before this pass | This pass |
+| --- | --- | --- |
+| 19 words with marks put back, untaught | 0 (2 starts) | 19 of 19 in 6 starts of 6 |
+| 4 lesson sentences put back, untaught | 0 | 4 of 4 in 6 starts of 6 |
+| 6 two-word sentences put back, untaught | 0 | 6 of 6 in 6 starts of 6 |
+| The same after 3 rounds of teaching | 0 | words 19, 1, 18, 6, 19, 19; sentences 0, 0, 0, 0, 1, 0; two-word 0, 0, 6, 0, 0, 2 |
+| Curriculum test, readings put back whole | 6 of 16 | 16 of 16 (8 runs); the assertion is restored |
+| Echo cell, runs that lose a word's letters after teaching | 5 of 21 | 2 of 12 (nothing is followed there) |
+| `TestXorGrammarReconstruction` | fails | fails |
+
+- After teaching the reading loses the word before the reconstruction: one look takes only the mark, or a word is read with no rule. The reconstruction put back what the tree held in every row looked at.
+- The echo's model follows nothing: its walk has only `interpret` and `verb`, and a step is followed only where the walk has a rule of the composing rule's name.
+- The XOR test's sentences that come back as nothing are each read as one word with no rule, which is not put back (§19.135).
+
+#### Tests
+
+The implementer's sweep (82 files and both gates): 833 passed, 11 failed, of which 5 were its own stubs and one ported test (then passing), the XOR test, and 5 known. Claude's own run after the last commit (the said-back measure, the curriculum test, the ported gate test, the echo's tests and both gates): 24 passed, 2 failed, the two being the echo's cells with no grammar; the said-back measure, one start: 19 of 19 words and every lesson sentence untaught.
+
+#### Review (Claude, 2026-11-22)
+
+- *The route is shown:* a tree of edges with each leaf at its place puts back every input the model reads, with nothing added. The curriculum test's whole-reconstruction assertion, weakened in the sixteenth pass, holds again.
+- *It is not yet Alec's form.* His words are "pointers into concepts". As built, the edges point at sites of the reading's record and the values are read from that record, which is the source §19.135 set aside. That is why it is right untaught: it replays what was read. The second part (text above §22.7) makes a word's end the word's concept and says the leaf from the concept.
+- *The ported gate test is not accepted as it stands:* where every step is followed it skips the half that asserted the reconstruction follows a changed state. With values from the record that half is false, which is the same point. The second part is to say what is true and assert it.
+- *A consequence to put to Alec:* with edges followed, the reconstruction no longer runs any rule's inverse and charges the walk's policy nothing. The generate rules are then taught only through the answer.
+- *The harm of teaching is now upstream and visible:* after three rounds the readings themselves lose words. That is the looks and the grammar's choice, and it is the next thing to diagnose (the second part's item 5).
+
