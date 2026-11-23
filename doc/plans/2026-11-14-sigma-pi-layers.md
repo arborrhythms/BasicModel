@@ -10206,6 +10206,20 @@ The analysis is `doc/GradientFlow.md`, "One map used both ways: what its gradien
 
 Claude's wording was wrong and is corrected in `doc/GradientFlow.md` ("A field the thought has changed", "System 2 teaching System 1 on the shared map"). What a thought lights corresponds to the input, and System 1 is to learn it from the input. What was meant is narrower: it is not said as letters at a place of the input. Symbols give that: what passes through a symbol is activity with no `.where`, so the field read by place (the reconstruction) is silent on it and the field read by light (the output) has it. With that, the reconstruction reading the field the thought leaves is the order with no conflict once System 2 teaches System 1; the reconstruction before the thought is the one that pulls the way up apart wherever a thought re-read a place. As built, `intuit` deposits its light at every occupied place of the field (`IntuitionField.read`), so it does hold the input's places today.
 
+### 19.143 Alec: a sentence is read word by word and kept as a series of attention events; its analysis follows their links (2026-11-23)
+
+> the way sentence processing happens depends on processing word by word and memory: There are a number of ways in which processing a single word resembles a full in-out process, and we should have the underlying mechanisms build that would allow that to happen. So if we did process word by word, the sentence would be memorized as a series of attention events in LTM. If we have that series, could we do syntactic analysis on it by bringing that series into STM one at a time by following the LTM1 references that linked them? We need to get that working, since that is likely the same mechanism that will be present in STM (minus the LTM retrieval).
+
+In the names of the code (Claude's reading, to be corrected by Alec):
+
+- *A single word as a whole in-out process:* one look, from its percepts to the basic field and back to a reconstruction and an output, closed as an event of its own. The row at 1.00 of `doc/ModelAge.md` (a word alone said back) is that process for an input of one word.
+- *An attention event:* what one look took, kept as one entry of `LTM0` (its concepts, with the look's `.where` and `.when`).
+- *The links:* an `LTM1` pair whose two references are the entries of one look and the next.
+- *The analysis:* the grammar's compose run on events brought onto the STM one at a time, each reached from the one before by its link, as it runs today on looks of the input.
+- *The same in STM:* `STM1` is an `LTM1` whose rows expire (`doc/STM.md`), and since §19.140 it holds the STM tree's edges. Following links there is the same act without the retrieval.
+
+What the standing docs say today, which this meets (`doc/STM.md`): `LTM0` holds one idea an entry, each with its own time; `LTM1` holds one pair of references a row; memory is read by content or by the `LTM1` rows that reference a symbol, an addressed row is read directly (`EntryRead.cued_rows`), and "There is no recall by time". Following a link from one event to the next is a read by reference, not by time. Not established here: what a look writes to memory today, and whether any pair links one look's entry to the next. The text for Codex is above §22.7.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -15251,6 +15265,73 @@ test_item20_round6_gradients.py::test_input_reconstruction_reaches_perception_an
 say); "say X" answered "X" and "X" alone met with silence (19.141, no
 mechanism chosen); and the age written by the assessment, which Claude
 takes from item17-codex by hand.
+~~~
+
+*For Codex: a sentence as a series of attention events in memory, analysed by following their links* (added 2026-11-23, at Alec's word, §19.143; beside the list above, after it in order)
+
+~~~
+Item 1.7, after the list "what is open in item 1.7 at 8cd569afbb".
+Repository basicmodel, your branch item17-codex-open. Read the spec's
+section 19.143 first: it has Alec's words and the reading of them in the
+names of the code. His words are the requirement; the reading is Claude's
+and may be wrong. The standing rules of the list hold: commit locally,
+push nothing, return in suggestions.txt in your worktree; do not wait on
+a question; no seed pinned for an assertion; no skip or xfail; nothing
+under RUN_SLOW; no default in code; no new store, layer, parameter, key,
+cost or thought rule; every claim measured from the input to what the
+model returns, with nothing set inside it.
+
+Alec: "the way sentence processing happens depends on processing word by
+word and memory: There are a number of ways in which processing a single
+word resembles a full in-out process, and we should have the underlying
+mechanisms build that would allow that to happen. So if we did process
+word by word, the sentence would be memorized as a series of attention
+events in LTM. If we have that series, could we do syntactic analysis on
+it by bringing that series into STM one at a time by following the LTM1
+references that linked them? We need to get that working, since that is
+likely the same mechanism that will be present in STM (minus the LTM
+retrieval)."
+
+1. Trace first, and write it into the return; change nothing for this
+   item. For "This is Felix." read by test_item17_places.model_for and by
+   test_item17_echo.echo_model: what one look writes, and where (the
+   STM's rows, STM0; its pairs, STM1; MTM; LTM0; LTM1), at the look and
+   at the sentence's close; whether any pair has the rows of one look and
+   the next as its two references; what reads a row by reference today
+   (EntryRead.cued_rows, LTM1.rows_referencing, ExtendedRecall), and
+   whether a row a recall pushed onto the STM can be followed to the row
+   after it.
+
+2. One word as a whole in-out process. Say in which ways reading one
+   word already is the whole process (percepts, basic field, a
+   reconstruction and an output: the echo of a word alone, a look's own
+   output cost), and what is missing for one look to be closed as an
+   event of its own.
+
+3. The series. Reading word by word, each look's event is kept as an
+   entry of LTM0 (what the look took, with its .where and .when), and
+   each event is linked to the next by a pair of LTM1, written by the
+   store's own parts.add. If what exists cannot hold this, do not add a
+   store: say what is short.
+
+4. The analysis from the series. Bring the events onto the STM one at a
+   time, each reached from the one before by its link, and run the
+   grammar's compose on what arrives as it runs on looks of the input.
+   Following a link is a read by reference, not a recall by time
+   (doc/STM.md: "There is no recall by time"); say whether that line of
+   the doc still holds as written.
+   Measured, input to output: for the 19 words with their marks, the six
+   two-word sentences and the lesson's sentences, the tree, the
+   reconstruction and (in the echo's model) the answer from the series
+   against those from reading the input directly.
+
+5. The same in the STM. STM1 is an LTM1 whose rows expire, and it holds
+   the STM tree's edges (19.140). Show the following of links working on
+   the STM's own pairs with no retrieval from LTM, by the same code, and
+   say what the two share and what differs.
+
+Say in the return what you built, what you only traced, and what each
+thing added.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
