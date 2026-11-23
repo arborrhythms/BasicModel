@@ -10014,6 +10014,8 @@ The spatial parameter should be fixed, we had this exact conversation before and
 
 ### 19.134 Alec: a reconstruction undoes the composition that was made, rule by rule; there is one reconstruction (2026-11-22)
 
+*For training, replaced by §19.149 (Alec, 2026-11-23): the trained reconstruction is the one pass at the opening; this return is kept as a report.*
+
 After the fifteenth pass (§23.6.21) found that the output walk stops at the root and gives one leaf, two questions were put to Alec and answered:
 
 1. *Should a reconstruction undo the composition that was made of its input, rule by rule, or should the walk's policy be left to learn when to take a relation apart?* Alec: "undo".
@@ -10222,6 +10224,8 @@ What the standing docs say today, which this meets (`doc/STM.md`): `LTM0` holds 
 
 ### 19.144 Alec: the reconstruction is computed after the thought, in item 1.7 (2026-11-23)
 
+*Replaced by §19.149 (Alec, the same day): the reconstruction is one pass at the opening, before the looks and the thought.*
+
 Asked "Shall the reconstruction be moved after the thought within item 1.7?" (it is computed before the thought today, §19.142), Alec: "Yes, in 1.7".
 
 So the order of §19.142 is the one to build: percepts, the basic field, an optional thought, then the one field the thought leaves for both the reconstruction and the output. The line "Reconstruction has its own operated field" (`WholePaths.py`) goes. Still open with Alec when this was written, and so not decided by it: where a thought's light is placed (`intuit` deposits it at every occupied place today), whether System 2's teaching reaches the basic Pi-Not-Sigma itself, whether a thought may only re-read a place in another sense of the same word, and whether the answer and the reconstruction name a word by one concept. The text for Codex is above §22.7.
@@ -10281,6 +10285,25 @@ For the sentence input cost, run the common perceptual inverse on the open atten
 Conditional speech on “say Felix” is a later cognition experiment. Item 1.7 can advance independently of it. Follow with the word-to-object grounding of item 1.6 and the training-speed work of item 1.5 before pursuing thought across all orders. The first grounding measure presents the same two objects in both spatial orders and asks about both operand orders. Item 1.5 measures examples and wall time to fixed held-out accuracy.
 
 For the later conditional-speech experiment, Alec identifies two possible sources for the same ordinary action. An explicit LTM1 sequence can bring the next action into consideration when the current event matches the antecedent. A missing link stops that traversal. A two-link sequence can implement a learned if–then association. An implicit rule can arise when concepts in the current field activate a higher-order concept that favors the output action. Either source still has to relate the action's operand to the appropriate idea in the current STM. These are proposed learning mechanisms, with no lexical trigger added to the model.
+
+### 19.149 Alec: the reconstruction is one pass with attention wide open; thought, intuition and action are optional after it (2026-11-23)
+
+Asked whether computing the reconstruction once at the opening, before the looks and the thought (§19.148, as built at `7f3031c6e3`), is his decision, Alec: "yes, reconstruction does involve higher-order understanding in a single pass with wide-open attention. The rest is optional thought, intuition, action by the animal or human model."
+
+*Decided.* §19.148's first paragraph is his. It replaces §19.144 (the reconstruction after the thought) and, for training, §19.134 and §19.135 (the reconstruction undoing the composition rule by rule from the idea): that return is kept as a report and is not taught.
+
+Shown the three things that follow (a thought cannot change what is reconstructed, so System 2 no longer teaches System 1 through the reconstruction; the main reconstruction term is the same number for every trial reading, so it no longer tells two readings apart; the rule-by-rule reconstruction is no longer trained), Alec: "The following are good observations ... Im generally OK with them, as long as System2 teaches System1 during its operation at the basic level, I think that is still happening."
+
+*His condition, measured* (Claude's read-only probe at `7f3031c6e3`: each cost the model hands to its backward differentiated alone; the lesson model, three inputs, two teaching reads each, one start). It holds:
+
+| Cost | Reaches |
+| --- | --- |
+| `chooser` (the credit of a drawn choice, rewarded by the change in R + A) | `conceptualSpaces.0.order_zero.value` (to 0.11), the members of the wholes (to 0.26), the rules' layers, the chooser |
+| `reconstruction` | the percept codes `perceptualSpace._owned_bases.what.W` (0.19), the members of the wholes (0.02); the order-zero values at 1e-7 and below |
+| `output` | `conceptualSpaces.0.intuit_map` only (to 0.05) |
+| `attention` (now the term `attention.next_observation`) | `request_read`, `state_weight` among it (to 3e-5), the order-zero values (to 1e-4) |
+
+So System 2's operation teaches the basic level through the credit of its choices, on the reads where a choice was drawn (one of two here), and it is now the chief teacher of the order-zero values: the reconstruction all but leaves them alone. The answer's cost reaches no look and no rule of itself, as in §23.6.31.
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
@@ -27937,3 +27960,14 @@ What was read: every change of `bin/`, `data/` and the standing docs from `75388
 7. *A new test outcome.* `test/assessment_support.py` reports a passing test as "not qualified at that age" (the letter N) when it called `at_mental_age` on a model below the age asked. Today one test does, and it asserts that very status, so nothing is hidden. Used by a second test it would count an unmet age as neither a pass nor a failure, which is a skip by another name; the rounds add no skip.
 
 *What was run.* At `7f3031c6e3`, in Claude's worktree (Codex's own was in use), with `RUN_TRAINED` and `RUN_SLOW` unset: the two gates, `test_item17_echo.py`, `test_mental_age.py`, and sixteen of the test files the commits changed (`test_item17_request_read.py`, `test_item17_looks.py`, `test_item17_reading_memory.py`, `test_output_percept_pyramid.py`, `test_one_attention.py`, `test_whole_paths.py`, `test_whole_path_repairs.py`, `test_supplied_answer_training.py`, `test_item17_corpus_parthood.py`, `test_coordinate_registry.py`, `test_modal_timelines.py`, `test_reading_round.py`, `test_item18_space_boundaries.py`, `test_thought_answer_adapters.py`, `test_loop_of_looks.py`, `test_interpret_bias.py`). **202 passed, 1 failed, 1 "not qualified at that age"**, in 4 min 56 s, in one run. Both gates passed. The failure is `test_whole_paths.py::test_kept_verbal_output_reaches_the_live_understanding_and_conditioner`, which §23.7 lists as failing before the opening change. `test_item17_request_read.py::test_sentence_training_reaches_the_request_in_the_model`, which §23.7 lists as failing at `991e720448`, passes here. The full sweep was not run, nor the two long reading measures.
+
+**Alec's answers to this review (2026-11-23), and what each leaves for Codex.**
+
+- *The question on the reconstruction* is decided in §19.149: the opening pass is his. The three consequences are accepted on one condition, that System 2 teaches System 1 at the basic level during its operation; measured there, it does.
+- *Point 1.* Alec: "I dont know what reading memory is, please suggest to codex that we explore removing it." **For Codex:** explore removing `bin/ReadingMemory.py`. Its work is the looks of a model with no grammar written to STM and committed to LTM as a chain (§19.146). Say what of it `SentenceLooks.Looks` and the STM and LTM stores already do, what would be lost, and whether the grammar-free reader can run through `Looks` with an empty grammar. The twelve attributes put back go with it.
+- *Point 2.* Alec: "Sounds like a valid point." **For Codex:** make the scores the softmax reads logits the request can make large, or give the softmax a scale that is a key of `data/model.xml`; then show a taught order holds in training as in evaluation.
+- *Point 3.* Alec: "It should credited in the output, when the gradient passes back from there, since all chooser operations remain sensitive to that (?)". As measured it is not (§19.149's table): the choice of an occurrence is a sample, the answer's gradient does not pass through a sample, the answer's cost reaches `intuit_map` alone, and the `chooser` credit reaches no parameter of `request_read`. The only way the outcome reached a look's choice was the look's term in `BasicModel._compose_score_function`, which `7f3031c6e3` removed. **For Codex:** put the look's term back in that score function (its log probability times the path's change in R + A, where the difference between readings is now chiefly the answer's), beside `attention.next_observation`; or show by a measure that the outcome reaches the look's choice another way. Then `doc/GradientFlow.md` says what is built.
+- *Point 4 is withdrawn.* Alec: "it is not a second owner if the call is delegated and no state is stored." The clock's state is in `stm.model_state` alone; `BasicModel.when_time` and `when_code` only pass the call on. Nothing to do.
+- *Point 5.* Alec: "OK". **For Codex:** the chart's presentations to a file of `data/`, read by `AgeChart.chart`; the XOR bar read from where the gate reads it.
+- *Point 6.* Alec: "suggest the fixes for codex to implement if you have not already." The `doc/Params.md` row is mended by Claude in this commit, and so is Claude's own section of `doc/GradientFlow.md` on when the reconstruction is computed. **For Codex, two:** (a) `SentenceField.reconstruction(model, field)` returns the reverse alone, and its callers take one value (in `bin/Models.py` the sentence opening, which writes `_, self._sentence_order_zero_reverse = ...`, and the second import near the input reconstruction; in `test/` the wrappers of `test_item17_echo.py` and `test_item17_one_reconstruction.py`); (b) the docstring of `BasicModel.reconstruct_grammar_sentence` says it reports the return by the recorded steps (`SentenceField.put_back`) and that the trained reconstruction is the opening pass.
+- *Point 7* (the new test outcome) was not put to Alec; it stands as a caution, with nothing to change today.
