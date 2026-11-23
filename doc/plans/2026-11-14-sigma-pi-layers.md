@@ -26541,3 +26541,68 @@ Branch `item17-codex`, from a11338ac97, in a worktree of its own (`/private/tmp/
 - *The branch merges into `item17-r6d11` with no conflict* (tried with `git merge-tree`, nothing written). It changes `doc/ModelAge.md`, `doc/GradientFlow.md`, `doc/Architecture.md` and `doc/Params.md` as well as the source.
 - *Checked by Claude:* the diffs of `ThoughtStrata.py`, `Spaces.py`, `SentenceCredit.py` and `doc/ModelAge.md` were read; Codex's tests of the age, the whole paths and the output walk, the two tests that had stopped and both gates were run again in its worktree (result below).
 - *Claude's run in Codex's worktree at 4877307ecc* (`test_mental_age.py`, `test_assessment.py`, `test_whole_paths.py`, `test_output_walk.py`, `test_free_reconstruction.py`, `test_item17_root_trace.py` and both gates): 68 passed, 5 skipped (none added by Codex's commits, by its return), 1 "not qualified at that age", none failed, 3 min 45 s.
+
+### 23.6.25 Round 6d, eighteenth pass: a rule is available once taught; no rule can yet be taught to be undone from the idea alone; the echo test is in the suite and fails because the answer is given no meaning (Claude on Opus, standing in for Codex, 2026-11-22)
+
+Branch `item17-r6d11`, from d017e53c50. Nothing is pushed; `main` is not moved. Commits: 090267db97 (item 1), a11338ac97 and 27feeb5a07 (item 2, tests only), 10d4810cb7 (item 10), 92cc9a712a (item 11), 44920c86a3 (item 5). The return is `scratch-1.7/r6d_return_18.md`; it is given here shortened. The pass was closed early by Claude when the echo's build and the rule's inverse were given to Codex (§22.6d, "For Codex: the echo through the answer"), so items 3, 4 and 9 are not built.
+
+**With one rule taught, no word alone is said back from its idea alone, and the echo test fails: the answer returned is empty for every word.**
+
+#### Item 1: a rule is available once it is taught (built)
+
+`LanguageSpace.rule_available` (one value for each rule name, saved with the model), `make_available(name)`, never lowered; the compose chooser's scores are `-inf` for a rule that is not available and the walk's menu admits none (STOP always); key `SymbolSpace.language.rulesAvailable` in `data/model.xml` and `data/model.xsd`, default `*` (every rule). `model_for(..., rules=...)` takes the key. With no rule available a reading ends silent, nothing is put back, and the reconstruction's error is 1.0, the whole input. Users of the chooser and the walk's menu, with both gates: 370 passed.
+
+#### Item 2: which rule can be taught to be undone (tests only)
+
+`test/test_item17_one_rule_measure.py`: one rule available and no other, the 19 words with their marks taught by the model's own step, three starts each, 30 rounds.
+
+| Rule | Said back of 19, over 30 rounds | Operand 0 / 1 cosine | On the walk's menu at the root |
+| --- | --- | --- | --- |
+| `surface` | 0 to 2 a round in each start, by chance (another word with the right mark) | .60 / .70, unchanged | 18 to 19 of 19 |
+| `change` | 0 in every round | .63 / .70 | 19 of 19 |
+| `verb` | 0 | 0 / 0 | 0: the inverse finds no pair |
+| `modifier` | 0 | 0 / 0 | 0: the inverse finds no pair |
+| `part` (no parameters) | 0; "This." → "This" | 0 / .86 | 0 |
+| `whole` (no parameters) | 0; "This." → "." | .75 / 0 | 0 |
+| `implies` (no parameters) | 0; "This." → "This This" | .66 / .81 | 19 of 19 |
+
+*What the nearest rule, `surface`, lacks.* In the walk every binary rule's inverse of a parent alone is one bounded search over the walk's bank (`_bounded_binary_reconstruction`); the rule's own `generate` and its `marker_prior` are not used there. The search finds a pair that recomposes the parent exactly, but not the pair read: the operands as read are not codes of the bank (each has a bank code in the same direction at another size, and neither is in the shortlist of 16), and the parent has more than one exact pair among the candidates. Thirty rounds change neither. So item 3 was not built, as the pass text says.
+
+#### Item 10: the echo test (tests of the suite, `test/test_item17_echo.py`)
+
+| Cell | Looks | Echoed of 19, untaught → 30 rounds |
+| --- | --- | --- |
+| Grammar, the word | one, the path's own | 0 → 0; the answer is the empty string |
+| Grammar, the word and its mark | two, the path's own | 0 → 0 |
+| No grammar, the word (read by its reconstruction) | one, the whole input | 13 → 13 |
+| No grammar, the word and its mark | one | 0 → 0 (the word without its mark) |
+
+Only the looks each model takes of itself could be measured. *The trace:* a word alone gives the sentence's state a meaning; the closing's thought takes no action or stops on its work budget, and its meaning is not accepted (`ThoughtAnswer.accepted`); `Models._resolve_answer` then clears the answer and the output walk is given nothing. After teaching the reconstruction says the word while the answer stays empty.
+
+#### Item 11: a sentence of two words
+
+`test_echo_a_sentence_of_two_words`: 0 of 6. `test_the_state_is_enough_for_two_words`, on "This is." (two words and the mark): looks 3 of 3, the open field's slots 3 of 3, rows in STM 3 of 3 (capacity 8), leaves under the idea 3 of 3; the answer's meanings 0 of 1 and its roles 0 of 3; the output walk's slots 0 of 3 and the buffer's places 1 of 8, short only because of the answer. *The reading holds the words; the answer is what is short.*
+
+#### Items 5, 6 and 9
+
+- `test_explicit_dimensions.py::TestXorGrammarReconstruction`: the fixture's error is repaired where it was made (`WalkTrials.keep`: a path state taken before its field is published holds no field). The test now reaches its own assertion and fails it: two of four sentences are put back as nothing from the idea alone. The test is not changed.
+- The gradient that is not a number was seen once, in an echo cell with every rule available; not in the 21 runs of item 2, where `divide` was never available.
+- Item 9 (the second look) is not built. The looks run only on the sentence's path, which a model enters only when its grammar attaches a compose rule (`Models._sentence_run`: `_sentence_ends = word_brackets and languageLayer.operation_layer is not None`).
+
+#### Tests run
+
+- Final, once (140 files and both gates): **1447 passed, 18 failed, 61 skipped, 1 xpassed.** Both gates passed.
+  - Six are the echo's and the two-word tests, failing as information.
+  - Five are known and fail on the base: `test_testpoint` (blind spot), `test_item20_round34_projection`, one demuxed simulation, `test_item18_expect.py::test_81`, `test_item20_round6_gradients`.
+  - Four failed on the base (efb5be3c7b) and on the branch alike when run again: `round34_repair`, `symbols::test_54bd`, `sparse_growth::test_58`, and `sparse_ldu`'s test of the first Pi.
+  - Three passed when run again on the branch: `symbols`' gradient test, `test_item17_root_trace`, `test_item17_where_trace` (the last stopped once on "LTM1 capacity exhausted").
+- `test/test_compiled_lesson_step.py`, once: 1 passed, 62 min 2 s.
+
+#### Review (Claude, 2026-11-22)
+
+- *The two things that were between the model and its first word are now named exactly.* For the answer: the reading holds everything, and the answer is given no meaning (item 11's state test is the proof that it is not state). For the reconstruction of a composition: the inverse of a parent alone is a search over a bank that does not hold the operands as read, and its fit does not single out the pair that was read.
+- *The first is small and is Alec's decision already* (§19.137): on the sentence's path a row whose closing selected no thought takes its field's concluded meaning. Claude's trial found the exact place (the closing passes an empty selection, and `_resolve_answer` reads the field's meaning only when none is passed). It is with Codex.
+- *The second is a question of the rules' form,* not of teaching: thirty rounds move nothing. It is with Codex as its task 2, to be shown on one rule in tests before anything is built.
+- *Four failures that are on the base and on the branch are new to the record* (`round34_repair`, `symbols::test_54bd`, `sparse_growth::test_58`, the first Pi's test of `sparse_ldu`). They were not in the lists of known failures before, so they came in somewhere between `main` and efb5be3c7b. They have to be run down before the branch is landed.
+- *The availability's default is every rule,* so nothing but this pass's own tests starts with none. That is right for now: until a rule can be taught to be undone, a model that starts with none composes nothing and says nothing.
+- *Checked by Claude:* the return was read against the commits; the echo's cells assert the returned answer and have no skip; `data/BasicModel.xml` gains no key. The full list was not run (`main` is not moved).
