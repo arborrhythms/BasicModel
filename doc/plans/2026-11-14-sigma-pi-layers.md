@@ -14706,8 +14706,10 @@ The tasks, in this order. Each is a commit of its own.
    recorded steps (SentenceField.reconstruction), so no departure of a
    reconstruction walk is ever drawn. Still in the source and drawing
    nothing: WholePaths.walk_options for reconstruction, the
-   reconstruction_round draws, the term reconstruction.walk_credit, and
-   'reconstruction' in SentenceCredit.WALKS. Remove them and port their
+   reconstruction_round draws, the term reconstruction.walk_credit
+   (registered in bin/WholePaths.py as owner + '.walk_credit', held in
+   model._sentence_decoder_walk_credits), and 'reconstruction' in
+   SentenceCredit.WALKS. Remove them and port their
    tests, each port asserting what replaced what it tested. A delete is
    a mv into /tmp/item17-r6d-2026-11-21/. The output walk's departures
    (output.walk_credit) stay.
