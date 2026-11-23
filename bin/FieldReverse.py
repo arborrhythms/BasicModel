@@ -209,7 +209,7 @@ def content(amounts, byte_codes, spellings, form_codes):
         presence = presence * taken[:, i, :, i:i + P]                     # [B, F, P]
     # A form present at a start is present at each place of its extent.
     cover = presence.clone()
-    for i in range(1, L):
+    for i in range(1, min(L, P)):
         cover[..., i:] += presence[..., :P - i] * spelled[i]
     return out + cover.transpose(1, 2) @ form_codes
 

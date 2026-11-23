@@ -463,7 +463,9 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         perceptualSpace=SimpleNamespace(percept_store=native,
             _forward_input=dict(native_indices=torch.tensor([[0, 1]]), native_part_spans=field.where),
             _radix_part_events=lambda ids, positions: observed),
+        # A grammar of one rule: the reconstruction is the walk from the idea.
         languageSpace=SimpleNamespace(generation_scope=nullcontext,
+            _compose_binary_rules=(None,), _compose_unary_rules=(), generate_policy=None,
             _generate_binary_rules=(), _generate_unary_rules=(),
             _generate_binary_ops=(), _generate_unary_ops=()), _synthesis_guard=nullcontext,
         symbol_field_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
@@ -488,16 +490,16 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     trace = (torch.zeros(1, returned.shape[1], dtype=torch.long), torch.zeros(1, returned.shape[1], dtype=torch.bool),
         torch.tensor([False]), words.new_zeros(1, 3), torch.tensor([True]),
         words.new_zeros(1, 1, 1, 9), words[:, :1])
-    # The undone composition's leaves are ``returned`` (sixteenth pass:
-    # reconstruction undoes the composition; one recorded step here).
-    def undone(model, record, programs):
-        return [[('step', 1, 0, None, root)]], returned
-    def said(model, record, nodes, like):
+    # The walk made to take the recorded steps puts back ``returned``
+    # (seventeenth pass: one recorded step here).
+    def taken_steps(model, record, programs):
+        return end, record.end_depth.new_ones(1, 3).bool(), torch.zeros(1, 1, dtype=torch.long), dict()
+    def sentence_generated(model, record, **kw):
         return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
-                         when=record.open_field.when[:, :1], depths=record.end_depth), [[]]
+                         when=record.open_field.when[:, :1], depths=record.end_depth)
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
-    with patch('SentenceField.undone', undone), patch('SentenceField.said', said):
+    with patch('SentenceField.taken_steps', taken_steps), patch('SentenceField.sentence_generated', sentence_generated):
         cost, *_ = BasicModel._sentence_path_cost(model, ((end,), lang, None), 0, torch.tensor([True]))
     return cost, model._sentence_cost_registry.breakdown()
 

@@ -1,5 +1,6 @@
 """One reconstruction (round 6d of item 1.7, sixteenth pass, item 5;
-§19.134): with no symbols in the model, or no rule applied, the one
+§19.134; seventeenth pass, item 4, §19.135, 3): in a model that reads (no
+symbols, or a grammar of no rule), the one
 reconstruction's upper stretch is empty and it is the perceptual inverse of
 the basic-level concepts alone. These are tests of that function
 (`SentenceField.reconstruction`) against the shorter loop it replaced (the
@@ -77,9 +78,9 @@ def test_text_model_with_no_grammar_one_reconstruction_is_the_open_fields_invers
         for row in held:
             generation, put = row['result']
             shorter = row['shorter']
-            if row['record'] is not None:
-                assert all(program is None for program in row['programs'])
-                assert bool(model._sentence_bare.all())
+            # A model that reads (a grammar of no rule) puts back the
+            # basic level from itself: no walk (§19.135, 3).
+            assert generation is None
             assert torch.equal(put.materialize(), shorter.materialize())
             torch.testing.assert_close(put._radix_activity.amounts, shorter._radix_activity.amounts, rtol=0, atol=0)
             torch.testing.assert_close(put._reconstruction_percepts, shorter._reconstruction_percepts,

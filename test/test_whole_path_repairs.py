@@ -163,7 +163,6 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
     generation = NS(field=field, trace=(torch.zeros(1, 1), None, None, torch.zeros(1, 3), None, None, None),
                     words=torch.zeros(1, 2), counts=torch.tensor([2]), truncated=torch.zeros(1, dtype=torch.bool))
     def one(model, field, **kwargs):
-        model._sentence_bare = torch.zeros(1, dtype=torch.bool)
         return generation, first
     monkeypatch.setattr(SentenceField, 'reconstruction', one)
     monkeypatch.setattr(SentenceField, 'publish', lambda *a: None)
@@ -171,6 +170,7 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
         _omission_targets={'raw': observed.transpose(1, 2), 'bytes': torch.tensor([[False, True]])},
         loss=NS(reconstruction_scale=1.), _input_reconstructions={},
         perceptualSpace=NS(percept_store=NS(get_id=lambda raw: raw[0] if raw[0] < 16 else None,
+                                            inverse_table=[bytes([v]) for v in range(16)],
                                             _basis=NS(lookup_rows=lambda rows: torch.eye(16)[rows]))))
     def loss(value, target, *, registry, name, weight):
         registry.add(name + '.what', (value - target).square().sum((1, 2)), objective='reconstruction')

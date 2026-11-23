@@ -13087,7 +13087,7 @@ class BasicModel(BaseModel):
                               basis=None, basis_valid=None, candidate_limit=16,
                               *, basis_priming=None, return_trace=False,
                               exploit_actions=None, departure=None, exploit_prefix=None, reuse_rows=None,
-                              departure_uniform=None, kept_actions=None,
+                              departure_uniform=None, kept_actions=None, kept_taken=False,
                               return_candidates=False, case_bank=None,
                               initial_depth=None, require_symbols=True,
                               initial_references=None, return_references=False, reference_orders=None,
@@ -13099,6 +13099,13 @@ class BasicModel(BaseModel):
         Hard generate choices determine the stack topology. Reconstruction
         teaches the policy separately from the compose derivation's structure;
         this free walk supplies no straight-through policy gradient.
+
+        ``kept_actions`` ``[B, T]`` replays one action per step (``-1`` where
+        the row has none). With ``kept_taken`` (a reconstruction taking the
+        recorded steps, §19.135) each kept action is taken whether or not it
+        is legal on the menu at its parent: a step not on the menu gives the
+        children the menu's inverse gave it, and the trace's features keep
+        its legality; otherwise a kept action off the menu is an error.
         """
         del targets, stamped_events, structural_context
         language = self.languageSpace
@@ -13248,24 +13255,36 @@ class BasicModel(BaseModel):
                 alternate = sample_alternative(proposal, departure_draw)
                 choice = torch.where((t == departure) & legal.sum(-1).gt(1), alternate, choice)
                 choice = torch.where((t < departure) & (prior >= 0), prior, choice)
+            taken = torch.zeros_like(live)
             if kept_actions is not None:
                 recorded = kept_actions.gather(1, t.reshape(1, 1).expand(B, 1))[:, 0]
-                torch._assert_async(((recorded >= 0) == (live & ready)).all(),
-                                    'output replay disagrees with the live action mask')
+                if kept_taken:
+                    torch._assert_async(((recorded >= 0) == live).all(),
+                                        'a taken replay disagrees with the live rows')
+                    taken = recorded >= 0
+                else:
+                    torch._assert_async(((recorded >= 0) == (live & ready)).all(),
+                                        'output replay disagrees with the live action mask')
                 choice = torch.where(recorded >= 0, recorded, choice)
-                torch._assert_async(((recorded < 0) | legal.gather(1, choice[:, None])[:, 0]).all(),
-                                    'the recorded output action is unavailable at its replayed parent')
+                if not kept_taken:
+                    torch._assert_async(((recorded < 0) | legal.gather(1, choice[:, None])[:, 0]).all(),
+                                        'the recorded output action is unavailable at its replayed parent')
             selected = choice[:, None, None].expand(-1, 1, D)
             left = options.gather(1, selected)[:, 0]
             right = others.gather(1, selected)[:, 0]
-            missing = ~legal.gather(1, choice[:, None]).reshape(B)
+            off_menu = ~legal.gather(1, choice[:, None]).reshape(B)
+            missing = off_menu & ~taken
             if selected_graph:
-                chosen_left, right = selected_inverse(language, parent, choice, live & ~missing,
+                # Only a step on the menu has a selected inverse; a taken step
+                # off it keeps the menu's children.
+                chosen_left, chosen_right = selected_inverse(language, parent, choice, live & ~off_menu,
                     basis=basis, basis_valid=basis_valid, priming=basis_priming,
                     limit=candidate_limit, case_bank=case_bank, constituents=constituents,
                     constituent_valid=constituent_valid, require_symbols=require_symbols, whole_bank=whole_bank,
                     action_candidates=proposed_actions)
-                left = torch.where((choice == stop)[:, None], left, chosen_left)
+                on_menu = (~off_menu)[:, None]
+                left = torch.where((choice == stop)[:, None] | ~on_menu, left, chosen_left)
+                right = torch.where(on_menu, chosen_right, right)
             left = torch.where(((choice == stop) & menu.exact[:, stop])[:, None], parent, left)
             binary = live & (choice < R2) & (depth < N) & ~missing
             unary = live & (choice >= R2) & (choice < stop) & ~missing
@@ -13313,14 +13332,14 @@ class BasicModel(BaseModel):
             stack_refs1[ar, pos] = torch.where(used, 0, stack_refs[ar, pos])
             stack_refs1[ar, above] = torch.where(binary, 0, stack_refs1[ar, above])
             actions1 = actions.scatter(1, t.reshape(1, 1).expand(B, 1),
-                torch.where(t >= starts, torch.where(live & ready, choice, -1),
+                torch.where(t >= starts, torch.where(live & (ready | taken), choice, -1),
                     actions.gather(1, column)[:,0])[:,None])
             alternatives1 = alternatives.scatter(1, t.reshape(1, 1).expand(B, 1),
                 torch.where(t >= starts, live & legal.sum(-1).gt(1),
                     alternatives.gather(1, column)[:,0])[:,None])
             return (t + 1, stack1, depth + binary.long() - pop.long(),
                     emitted1, count + pop.long(), actions1, alternatives1,
-                    ((live & ready) | ((depth > 0) & (t < starts))).any(), unary_run1, tops1, exact_path1,
+                    ((live & (ready | taken)) | ((depth > 0) & (t < starts))).any(), unary_run1, tops1, exact_path1,
                     residuals1, features1, stacks1, depths1, counts1, unaries1, exacts1,
                     stack_refs1, emitted_refs1, references1)
 
