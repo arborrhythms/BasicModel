@@ -1,4 +1,5 @@
 """Grammar read-back chooses words from the ended state, with a detached hard inverse."""
+import pytest
 import torch
 
 
@@ -113,6 +114,7 @@ def test_gate_captures_grammar_words_without_a_second_forward(monkeypatch):
     try:
         assert gates._run_xor_grammar_in_process() is model
         assert calls == ['data/XOR_grammar.xml']
+        assert len(model._grammar_gate_arrivals) == 4
         assert len(model._grammar_gate_reconstructions) == 4
         assert len(model._grammar_gate_unavailable) == 4
         assert not bool(model._reconstruction_stack()._choice_mask.any())
@@ -120,3 +122,17 @@ def test_gate_captures_grammar_words_without_a_second_forward(monkeypatch):
         model.End()
         model.symbolSpace.soft_reset()
         torch._dynamo.reset()
+
+
+@pytest.mark.parametrize('boundary', ('grammar input', 'grammar inverse'))
+@pytest.mark.parametrize('wrong', (('world', 'hello'), ('hello',), ('hello', 'hello')),
+                         ids=('swapped', 'omitted', 'duplicated'))
+def test_xor_order_gate_detects_a_single_bad_pair_at_either_boundary(boundary, wrong):
+    from test_explicit_dimensions import _assert_xor_word_order
+    expected = [(first, second) for first in ('hello', 'loving') for second in ('world', 'there')]
+    arrivals, returned = list(expected), list(expected)
+    _assert_xor_word_order(expected, arrivals, returned, [False] * 4)
+    observed = arrivals if boundary == 'grammar input' else returned
+    observed[0] = wrong
+    with pytest.raises(pytest.fail.Exception, match=f'{boundary}: 3/4 in order'):
+        _assert_xor_word_order(expected, arrivals, returned, [False] * 4)

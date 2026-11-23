@@ -705,7 +705,7 @@ generation is expected at this stage and is recorded, not tuned away.
    state at `ReferenceClose.commit`'s deferred `mtm.bind` and repair at the
    producer; no clamp or fallback. The `XOR_grammar.xml` reconstruction gate
    (`test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`,
-   four of four word multisets, unseeded; open since item 2.5's completion
+   four of four pairs in source order at grammar input and inverse, unseeded; open since item 2.5's completion
    round, recommended for repair by the decomposition teacher's retirement in
    item 2.5) is run before and after that retirement with the chooser at the
    residual argmin; its class-accuracy sibling passes; no seed or budget

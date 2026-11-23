@@ -306,17 +306,19 @@ cause is repaired at its producer. XOR proofs set `omissionTarget` to 1, since
 with two words an omitted operand leaves the answer undefined.
 
 The class certificate requires all four answers on the correct side of one half
-and a mean squared error below 0.05. The reconstruction gate reads the grammar
-inverse (Alec, 2026-11-10): `reconstruct_grammar_sentence` runs generate on the
-concluded sentence's own end slots, the occurrence writer and the common
-`reverse`, and all four sentences must come back as their own word multisets,
-each with an available inverse. Conjunction and disjunction are symmetric, so
-the understanding carries no word order and a transposition is the only error
-admitted. The System 1 reading of the observed field
-(`reconstruct_field_sentence`) is printed beside it as an audit count and
-asserted nowhere. Both certificates read one shared training
-(`shared_training('xor_grammar')`); the reconstruction test,
-`test_piecewise_overall_at_least_50_pct`, asserts four of four.
+and a mean squared error below 0.05. The verbal XOR gate checks the same four inputs at two boundaries of a
+freshly trained model. During evaluation it records each word handed to the
+grammar in arrival order. It also reads the words that
+`reconstruct_grammar_sentence` emits from the concluded sentence. Each
+boundary must reproduce all four ordered word pairs. A swap, omission,
+duplicate, or substitution fails the gate, as does an unavailable inverse.
+The failure report gives the source and observed words for each mismatched
+row. The default suite retains the historical selector
+`TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`.
+
+Before starting syntax work, repeat this selector in fresh pytest processes.
+Record both counts for every start, including failures. Each start must
+reach 4/4 at both boundaries.
 
 **What the gates certify.** The XOR table measures the composition mechanism:
 two words composed nonlinearly into one understanding, decoded back, and read

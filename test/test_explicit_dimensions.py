@@ -195,19 +195,35 @@ class TestXorExactCliReconstruction(unittest.TestCase):
 
 def _run_xor_grammar_in_process():
     """Run the grammar capability gate without selecting an initialization."""
+    from collections import defaultdict
     from unittest.mock import patch
     from Models import BasicModel, ModelFactory
+    from SentenceLooks import WordForecast
+    arrivals = defaultdict(list)
+    arrive = WordForecast.arrive
     commit = BasicModel._commit_sentence
+
+    def capture_arrival(forecast, index, rows, lanes):
+        # The grammar receives occurrences one at a time. Record each handoff
+        # before composition or reconstruction can reorder it.
+        if not forecast.model._sentence_training:
+            forms = forecast.model._attention_forms[0]
+            for row in rows.nonzero().flatten().tolist():
+                arrivals[row].append(forms[row][int(index)])
+        return arrive(forecast, index, rows, lanes)
+
     def capture(model, state, sid, active, *args):
         if not model._sentence_training:
             # Observe the existing evaluation before its temporary trace is
             # discarded. This neither advances the clock nor keeps the trace.
             with torch.no_grad():
                 texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
+            model._grammar_gate_arrivals = tuple(tuple(arrivals[row]) for row in range(len(active)))
+            arrivals.clear()
             model._grammar_gate_reconstructions = texts
             model._grammar_gate_unavailable = unavailable.detach().cpu().tolist()
         return commit(model, state, sid, active, *args)
-    with patch.object(BasicModel, '_commit_sentence', capture):
+    with patch.object(WordForecast, 'arrive', capture_arrival), patch.object(BasicModel, '_commit_sentence', capture):
         results = ModelFactory.run("data/XOR_grammar.xml")
     model = results[0][2]  # (name, rCorrect, model)
     # One reconstruction (seventeenth pass, item 8): the open field's
@@ -244,26 +260,37 @@ class TestXorGrammarLearnsXor(unittest.TestCase):
 @pytest.mark.shared_training("xor_grammar")
 @pytest.mark.large_memory
 class TestXorGrammarReconstruction(unittest.TestCase):
-    """All four understandings return their own words, allowing transpositions."""
+    """Every XOR sentence reaches grammar and returns through its inverse in source order."""
 
     @pytest.mark.learning_certificate
     def test_piecewise_overall_at_least_50_pct(self):
-        # Keep the historical selector; the decided contract is now all four.
-        from collections import Counter
+        # Keep the historical selector used by the landing sweep.
         model = self.trained_xor_grammar
-        recon_texts = model._grammar_gate_reconstructions
         test_input, _ = model.inputSpace.getTestData()
-        self.assertEqual(len(test_input), 4)
-        self.assertEqual(len(recon_texts), 4)
-        self.assertFalse(any(model._grammar_gate_unavailable),
-                         'every sentence must have an available grammar inverse')
-        pairs = [(model._bytes_to_text(original).replace("\x00", " "), recovered)
-                 for original, recovered in zip(test_input, recon_texts)]
-        perfect = sum(recovered is not None and Counter(original.split()) ==
-                      Counter(recovered.replace("\x00", " ").split())
-                      for original, recovered in pairs)
-        self.assertEqual(perfect, 4,
-            f"XOR_grammar reconstruction: {perfect}/4 word multisets recovered; {pairs}")
+        expected = [tuple(model._bytes_to_text(row).replace("\x00", " ").split()) for row in test_input]
+        returned = [tuple(text.replace("\x00", " ").split()) if text is not None else None
+                    for text in model._grammar_gate_reconstructions]
+        _assert_xor_word_order(expected, model._grammar_gate_arrivals, returned, model._grammar_gate_unavailable)
+
+
+def _assert_xor_word_order(expected, arrivals, returned, unavailable):
+    assert len(expected) == len(set(expected)) == 4, 'expected four distinct XOR inputs'
+    assert all(len(words) == 2 for words in expected)
+    failures = []
+    for boundary, actual in (('grammar input', arrivals), ('grammar inverse', returned)):
+        assert len(actual) == len(expected), f'{boundary}: expected four rows, received {len(actual)}'
+        mismatches = [f'{source!r} -> {observed!r}'
+                      for source, observed in zip(expected, actual, strict=True) if observed != source]
+        result = f'{boundary}: {len(expected) - len(mismatches)}/4 in order'
+        print(result)
+        if mismatches:
+            failures.append(result + '\n  ' + '\n  '.join(mismatches))
+    assert len(unavailable) == len(expected)
+    missing = [row for row, absent in zip(expected, unavailable, strict=True) if absent]
+    if missing:
+        failures.append(f'Unavailable grammar inverse for {missing}')
+    if failures:
+        pytest.fail('\n'.join(failures))
 
 
 if __name__ == "__main__":
