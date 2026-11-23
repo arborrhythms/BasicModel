@@ -14985,7 +14985,7 @@ Then go on down as your task says: the roles, the walk's slots, the
 leaves, the writer, the bytes, with the mark where the input has one.
 ~~~
 
-*For Codex: two faults in the echo's teaching, to be found* (added 2026-11-22, after §23.6.26 and §19.139; diagnosis, and a mend only where the text says so)
+*For Codex: two faults in the echo's teaching, to be found* (added 2026-11-22, after §23.6.26 and §19.139; diagnosis, and a mend only where the text says so; replaced 2026-11-23 by "what is open in item 1.7 at 8cd569afbb, as a list" below)
 
 ~~~
 Item 1.7, two faults in the teaching of the echo. Repository basicmodel.
@@ -15083,6 +15083,111 @@ The standing rules of the first part hold.
 5. *Not in this part:* the optimizers themselves (no rule on carried state is added), the stop read, `Tree.edge`, the failing gradient test, which waits on Alec.
 
 The standing rules of the first part hold.
+
+*For Codex: what is open in item 1.7 at 8cd569afbb, as a list* (added 2026-11-23, at Alec's word: "please prepare a list of issues I can ask codex to fix"; it replaces "two faults in the echo's teaching" above, whose first item is item 3 here and whose second was not met again at the model's own rate, §23.6.30)
+
+~~~
+Item 1.7, what is open on the work branch item17-r6d11 at 8cd569afbb.
+Repository basicmodel. Start a new branch from item17-r6d11 in your
+worktree; do not merge item17-codex into it. Commit locally, one item a
+commit, push nothing, write your return to suggestions.txt in your
+worktree. Do not wait on a question: take the first choice that adds
+nothing and say which it was. No seed pinned for an assertion; no skip
+or xfail; nothing under RUN_SLOW; compiling stays the tests' default; no
+default in code; no new layer, parameter, cost or thought rule; every
+claim measured from the input to what the model returns, on the model as
+it runs, with nothing set inside it. The spec's sections 23.6.28 to
+23.6.31 say what was built and measured since your last return. The
+items are in the order I would take them; each stands alone.
+
+1. Rates written in code. getOptimizer now takes learningRate from
+   data/model.xml when no rate is given (b2d42ea39b). These still hold a
+   number: bin/Models.py run(lr=0.001), runTrial(lr=0.01) and three
+   _t("learningRate", 0.01); bin/corpus_lessons.py getOptimizer(lr=.001);
+   bin/Layers.py Adam(..., lr=0.01); bin/Spaces.py learn(..., lr=0.01);
+   bin/Language.py (lr=0.1, with steps and a seed beside it);
+   bin/Optimizer.py Adam(lr=1e-3); bin/embed.py. Where the number is the
+   model's rate, read learningRate. Where it is another routine's own
+   rate, its default goes into data/model.xml and data/model.xsd under
+   its own name (data/BasicModel.xml gains no key). Done: no rate is a
+   literal in bin/, and the tests that passed before pass.
+
+2. Six tests that fail at the tip (run today, 7 failed of 88 in their
+   files; the seventh waits on Alec, see the end):
+   test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution
+   [set], [concept] and [subgoal] (your own note: the simulated
+   generation hands OutputOccurrences.said_at a tensor where it reads
+   field.wires);
+   test/test_operators_round1.py::test_attend_gives_a_request_over_concepts_on_two_lanes;
+   test/test_item17_demuxed_way_back.py::test_simulation_a_graded_paste_by_where_on_one_lesson_sentence
+   [periods1] and [periods2].
+   Also test/test_math_chain*.py::test_forced_ordinary_pending_premise_in_both_orders[True],
+   which you measured failing in one isolated start of three (it passed
+   in today's run). For each: say whether the test or the source is
+   wrong, and mend the one that is. A test is not weakened to pass.
+
+3. A gradient that is not a number. Optimizer.NonFiniteGradients named
+   conceptualSpaces.0.order_zero.value (1 or 2 entries) and
+   wholeSpace._owned_bases.what.primitive_properties.members (2048 of
+   2304), three times in about forty runs at a rate of .01, in
+   test_item17_echo.py::test_echo_a_word_and_its_mark_with_its_own_looks
+   and test_item17_places.py::test_reading_in_order_before_and_after_the_lesson.
+   It is not the divide you mended. It was not met in 36 runs at the
+   model's rate, which does not show it gone. Find the operation (a
+   scratch copy of the test may teach at .01 to meet it); mend it where
+   the value is made, with the value unchanged; show the run that met it
+   passing afterwards.
+
+4. One start of six stops reading two words. In
+   test/test_item17_reconstruction_said_back.py (ROUNDS=10, 17 to 19
+   minutes a run), five starts of six put back all 19 words, the 4
+   lesson sentences and the 6 two-word sentences after teaching. Start
+   1686171118491 gave 17, 0 and 0: "is" and "That" are read nowhere
+   after teaching. Section 23.6.29 has the method that found the earlier
+   losses (the first step after which the reading holds fewer words; the
+   fewest parameters whose old values give the words back; which cost's
+   gradient moved them, and how much of the move was the optimizer's
+   carried state). Do the same here, in a scratch copy that may set the
+   start. Say what you would change and what it adds; build it only if
+   it adds nothing.
+
+5. SentenceStrata.Tree.edge picks min(rows) (bin/SentenceStrata.py, the
+   function "after"): it tells the tree's pairs from the closing's only
+   by the tree's having been written first. Tell them apart by something
+   the store already holds, or say what is short.
+
+6. With an answer supplied, nothing teaches the looks: confirm or
+   refute. Section 23.6.31: in the echo's model no cost's gradient
+   reached request_read in four teaching reads; SentenceLooks._output
+   returns None when the data has supplied answers and no lesson, so the
+   looks' own cost is not charged, and the credit of a look's choice
+   (output.interpret_score_function) is charged only where a departure
+   is drawn at a look. Measure it over a whole teaching round of
+   test_item17_echo's three passing cells: for each cost, its gradient on
+   request_read. Report; change nothing.
+
+7. The second look in a model with no grammar. The two tests
+   test_item17_echo.py::test_echo_a_word_read_whole_by_a_model_that_reads
+   and ::test_echo_a_word_and_its_mark_read_whole_by_a_model_that_reads
+   fail in every run (13 of 19 words and 0 of 19). The looks run only
+   where a grammar opens the sentence path (Models.py: _sentence_ends is
+   word_brackets and an operation_layer). The text "why a model with no
+   grammar puts back one word a reading" above asked for the diagnosis.
+   This is the largest item: return what running the looks with no
+   grammar needs, and build it only if it needs nothing new.
+
+8. Where the time goes. test/test_item17_own_reading.py takes over forty
+   minutes and is left out of every run; the said-back measure takes 17
+   to 19. Profile one of each and say where the time is; mend what is
+   plain waste (work repeated, a graph kept that is not read).
+
+Not yours, so leave them: the test
+test_item20_round6_gradients.py::test_input_reconstruction_reaches_perception_and_not_the_grammar
+(whether the reconstruction should still teach the reading is Alec's to
+say); "say X" answered "X" and "X" alone met with silence (19.141, no
+mechanism chosen); and the age written by the assessment, which Claude
+takes from item17-codex by hand.
+~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
@@ -26984,3 +27089,28 @@ No run lost a word's letters and none met a gradient that is not a number. Both 
 - *The loss of a word's letters after teaching* (the second fault of the Codex text above §22.7) has not been seen at the model's rate: 0 runs of 18 over the three tests here, and 0 of 8 in §23.6.29's trial, against 4 of 24 at .01. The gradient that is not a number (its first fault) was not met in these runs either; it was rare before (about 1 run in 15 to 20), so that is not yet shown gone.
 - *Not finished:* one start of six stops reading two words after teaching. It is a word that no look takes any more, the third part's kind of loss (a value at a threshold), now rarer. It is not diagnosed.
 - *The other fallbacks of a rate in code* are a standing-rule matter (every default in `data/model.xml`) outside this round; they are listed for round 7's inventory.
+
+### 23.6.31 What teaches each part of the reading: each cost's own gradient, read on teaching reads (Claude, 2026-11-23; at Alec's question)
+
+Alec: "What is teaching the reading, if not reconstruction? I assume output, since it is reading?"
+
+*How it was read.* A probe in a scratch worktree at 8cd569afbb (nothing kept): each cost the model hands to its own backward (`GradientProjection.backward`) is differentiated by itself before that backward runs, and the parameters its gradient reaches are listed. Nothing is written into the model. Two teaching reads each of "Felix.", "This is." and "This is Felix." in the lesson's model (`test_item17_places.model_for`, no answer supplied), and of "Felix." and "This is." in the echo's model (`test_item17_echo.echo_model`, the answer supplied); one start each, at the model's rate. The numbers are the largest norm of a cost's gradient on a parameter.
+
+| Part of the reading | Parameters | Whose gradient reaches it |
+| --- | --- | --- |
+| Letters to a word's concept (the percept codebook, the order-zero Sigma's values) | `perceptualSpace._owned_bases.what.W`, `conceptualSpaces.0.order_zero.value` | `reconstruction` (0.19 to 0.49 and 0.46 to 1.03). The answer's cost `output`, where an answer is supplied, at a fortieth of that or less (2.1e-3 to 2.8e-3 and 6.0e-4 to 1.2e-2). The choices' credit `chooser` on the order-zero values (4.8e-3 to 7.4). |
+| Which percepts are parts of which whole | `wholeSpace._owned_bases.what.primitive_properties.members` | `chooser` (2.1e-2 to 11.2). Under `reconstruction` only the term `memory.link_coverage` (1.3e-2 to 2.5e-2), a memory's term; saying the input back does not reach it, which is what the failing test `test_input_reconstruction_reaches_perception_and_not_the_grammar` reports. |
+| Where to look and when to stop | `request_read.*` | `attention` only (stop 0.05 to 0.19, say 0.11 to 0.14, first and second 1.3e-3 to 2.8e-2). In the echo's model there is no `attention` cost and no cost reached `request_read` in these four reads. |
+| Which rule is taken, and the rules | `symbolSpace...operation_layer.chooser.*`, `conceptualSpaces.3.syntacticLayer.layers.*` | `chooser` only (the chooser's `what_projection` 11 to 1843; a rule's Sigma up to 10.4). |
+| The predictors | `idea_stack`, `_inter_predictor`, `intuit_map` | `expectation`; and `output` on `intuit_map` where no answer is supplied (2.4e-2 to 3.9e-2), which is all `output` reaches there. |
+
+*What the two costs that teach the reading are.*
+
+- `attention` is the looks' own output cost (`Models.py`, "the output's cost of the looks (rule 80)", from `SentenceLooks.output_cost`): the looks' output is taught to say the sentence's words in their order. Where the data has supplied answers and no lesson, `SentenceLooks._output` returns `None` and the cost is not charged.
+- `chooser` is a credit, not a comparison with a target (`WholePaths.credit`: "A departure's sole reward is its complete path's change in R + A"; for a look's choice, `output.interpret_score_function`). A path is tried beside the kept one; the probability of the choice that differed is moved by how much reconstruction's cost plus the answer's cost differed between the two. So the reconstruction teaches the choice of rule by its value, not by its gradient.
+
+*So, to the question.* The answer's cost does not teach the reading: its gradient reaches no look and no rule. Alec's guess is right of the looks, which are taught by an output cost of their own. The rules are taught by the credit, whose reward is R + A.
+
+*What the nineteenth pass's second part changed in this* (from §23.6.28, not measured again here): the reconstruction puts back any tree over the same words the same, so R is the same for two trees over the same words, and the credit can tell two such trees apart by A alone. Where no answer is supplied, nothing tells them apart.
+
+*Not shown:* one start per model and two reads per text; a credit is charged only where a departure is drawn, so a cost that reached nothing in these reads may reach it in others (item 6 of the Codex list above §22.7 asks for a whole round).
