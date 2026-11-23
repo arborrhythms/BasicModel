@@ -9645,9 +9645,10 @@ class BasicModel(BaseModel):
             placed = torch.zeros(words.shape[:2], dtype=torch.bool, device=words.device)
             for b, row in enumerate(places):
                 for w, (start, reference) in enumerate((row or ())[:words.shape[1]]):
-                    starts[b, w] = int(start)
-                    placed[b, w] = True
                     said[b][w] = reference
+                    if start is not None:
+                        starts[b, w] = int(start)
+                        placed[b, w] = True
             given = (starts, placed)
         return generated(self, words, n_emitted, output_truncated, bank,
                          self._last_output_walk_trace, when=when, places=given,

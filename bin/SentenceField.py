@@ -206,7 +206,8 @@ def said_words(model, program, stream, met):
     edges there (sigma-pi §19.140): for each root's edge, oldest first, the
     word rows under it in order, each as ``(concept, start, code)``: the
     concept its row refers to; the start of the place its row holds, read
-    back from the row's ``.where`` band by the model's where wires; and the
+    back from the row's ``.where`` band by the model's where wires (``None``
+    where the row claims no place); and the
     concept's code, looked up as the answer looks up a perceived word
     (:func:`Output.perceived_meanings`). A row that names no concept is not
     said, and counted. ``None`` where the STM holds no edge of the reading."""
@@ -247,7 +248,9 @@ def said_words(model, program, stream, met):
                 met['words_unnamed'] += 1
                 continue
             band = store.slots[row, start - 4:start].detach().to(wires)
-            place = int((wires - band).square().sum(-1).argmin())
+            # A row with no .where claim has no place: it is said in turn.
+            place = (int((wires - band).square().sum(-1).argmin()) if bool(band.ne(0).any())
+                     else None)
             rows = torch.tensor([address], device=store.slots.device)
             with torch.no_grad():
                 code = owner.similarity_codebook.lookup_rows(rows, stream=stream)
