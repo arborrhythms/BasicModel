@@ -22,6 +22,7 @@ class IdeaStack(STM0):
         self._tree_sites = sites
         self._tree_root = tree.roots[0]
         self.names_issued.fill_(tree.semantic_start)
+        tree.write_edges(self.parts)
 
     def name_for(self, term, *, sentence, count):
         address = self._tree_sites.get(id(term))
@@ -109,6 +110,50 @@ class Tree:
 
     def point(self, address):
         return self.trace.point(address - self.trace.first)
+
+    def write_edges(self, parts):
+        """Each compose step's edge from its parent to its operands, in
+        order, as the pair store's own chain (sigma-pi §19.140; the form of
+        :func:`ThoughtStrata.write`): ``(parent, first operand)``, then
+        ``(that pair, second operand)``. The parent is its site's
+        occurrence; an operand read as a word is its own site's occurrence,
+        which holds its place; an operand that was itself composed is its
+        own edge. A transposition is no application and has no edge."""
+        trace = self.trace
+        index, first = trace.index, trace.first
+        edges = {}
+        for at, (kind, _, _) in enumerate(index.steps):
+            if kind in (0, 3):
+                continue
+            link = OCCURRENCE, first + at
+            for child in index.operands[at]:
+                end = ((OCCURRENCE, first + child) if index.steps[child][0] == 0
+                       else (RELATION, edges[child]))
+                link = RELATION, parts.add(link, end, truth_plus=1.)
+            edges[at] = link[1]
+
+    def edge(self, parts, address):
+        """The edge of the site at ``address`` in ``parts``: the last pair
+        of the chain whose head is the site's occurrence, or ``None``."""
+        def after(reference):
+            rows = [row for row in parts.rows_referencing(*reference)
+                    if parts.references(row)[0] == reference]
+            return min(rows) if rows else None
+        link = after((OCCURRENCE, address))
+        while link is not None:
+            following = after((RELATION, link))
+            if following is None:
+                return link
+            link = following
+        return None
+
+    @staticmethod
+    def members(parts, edge):
+        """An edge's head and its operands, in order (as
+        :class:`ThoughtStrata.View` reads a thought's tree)."""
+        left, right = parts.references(edge)
+        head = [left] if left[0] == OCCURRENCE else Tree.members(parts, left[1])
+        return [*head, right]
 
     def view(self, address):
         view = self._views.get(address)
