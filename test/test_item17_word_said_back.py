@@ -39,7 +39,7 @@ def command_trial(model, pairs, rounds):
     data.text_answers = {'train': [], 'validation': []}
     optimizer = model.getOptimizer()
     source = model.inputSpace
-    question = What.inference(0)
+    question = What.inference(0, split='train')
     teacher = What.supervised(0)
 
     def present(text, question, train):

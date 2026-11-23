@@ -1,64 +1,51 @@
-Reading words left to right with attend()
-2026-11-21
+Item 1.7 — attention and conditional speech, 2026-11-23
+Local main implementation commit d5699a82c1
 
-I traced the sentence reader on the item17-r6d8 working tree, based on
-cf1ea4e0e9 with local salience and sentence-look changes. In one unforced
-reading of "What is this?", the grammar received "this", "What", "is", "?".
-The first divergence was in the choice of the word handed to the grammar.
+The full-grammar lesson model looks at both words in “say Felix” and “say Ciao”. Across
+three fresh starts, before teaching and after six rounds of teaching both requests
+interleaved with “Felix” and “Ciao”, all four returned answers were empty in every start.
+Bare names had a supervised silence target. The positive requests incurred answer cost A
+even when the answer was empty. In two separate full-vocabulary starts, before teaching and
+after three rounds on all 19 pairs, the model returned 0/19 requested words and was silent
+on 19/19 bare words in each start. After teaching the final answer construction recorded a
+concept thought with zero answer meanings on all 38 presentations in each start. The
+checked-in probe uses one question address for every example and evaluates with no supplied
+target. These scores are for BatchResult.outputPred.
 
-1. The context changes, but the request for a place can stay fixed.
+The existing echo model, with the thought rules removed, shows the other behavior. In a
+two-name control, before and after three rounds, it returned “say Felix” for “say Felix” and
+“Felix” for “Felix”, likewise for “Ciao”. The two-word inputs supplied two perception
+meanings to the answer. The bare words supplied one each. It can spell what it heard.
+Neither model learned when to speak in these trials. The first decision to inspect next is
+the ordinary closing chooser's choice of an accepted meaning for the requested object.
+Compare the choices available for the same name with and without the cue, and check whether
+choosing differently changes A.
 
-   OperationSelectionLayer.attend in bin/Language.py asks how much of each
-   concept code the context query covers. ConceptualMatch.match sums the
-   coordinatewise minimum of query and code and divides by the size of the
-   code. Once a query coordinate exceeds the code coordinate, increasing
-   it further contributes nothing to either the match or its gradient.
+RequestRead and SentenceLooks.Looks.run now use the open conceptual field, the preceding
+look's field spread once, and whether any eligible words remain. Removed the per-look
+vocabulary predictor, last predicted word input, teacher forcing, output-length supervision
+over stopping, and auxiliary attention.output loss. Speech goes through the ordinary closing
+and generation. The input word “say” occurs in the lessons as data. BaseModel.load_weights
+keeps the old reader's shared input columns and migrates their optimizer moments. A
+checkpoint-resume test checks the next optimization step.
 
-   In a CPU probe of "This is Felix." at the reading lesson's learning
-   rate of 0.01, the first optimizer step was enough to reach this flat
-   region. Reading "This" changed the next query by as much as 3.10 on one
-   coordinate. The largest change across all place requests was exactly
-   zero. At the second look the sum of absolute gradients at the request
-   was 0.00659, and every gradient at the query was zero. In an isolated
-   backward pass, scaling that query to 2% of its magnitude and applying
-   the same incoming gradient gave a nonzero query gradient. That isolates
-   the loss of sensitivity to the match. The scale was a diagnostic probe.
+Whitespace is visible at perception. Before the first look on “say  Felix”, two native
+percept occurrences each resolved through the percept store to byte 32, at [3, 4) and [4,
+5). Spaces do not need to become word concepts to have perceptual identity and position.
+BasicModel._stage_mixing_grammar_leaf_mask explicitly filters whitespace-only grammar
+leaves.
 
-2. The ordinary corpus run does not teach the next-word request.
+The standing XOR and raised-class gates and all three no-thought grammar echo tests passed.
+Two existing gradient checks still require a positive gradient on the attention request
+under ordinary unsupervised sentence training. Both failed after removing the auxiliary word
+objective. The forty-minute own-reading experiment was updated to use spoken cues and the
+returned answer and was excluded from the run.
 
-   The 16-sentence corpus run through MathChainTraining.present supplied
-   no ReadingTargets on any of the 25 reading paths observed. The context
-   projection stayed exactly zero. On a subsequent reading of "This is
-   Felix.", all four looks asked only for the starting concept "words".
-   SentenceLooks.Looks.run lowers the activity of a word after it is
-   interpreted. Attention.draw_among selects the strongest remaining word
-   and draws randomly among exact ties. This can recover every word while
-   visiting the words out of order. The explicit reading_lesson path
-   supplies the next-word loss and replays the named target during training.
-   Its learned order must therefore be measured with that target removed.
+Across the final targeted runs, 54 distinct checks passed and 3 failed. The failures are the
+conditional-answer test and the two attention-gradient assertions. The earlier inference
+probe used mismatched split names, which the batch API rejected. After correcting the probe
+to use the active split, both inventory measurements ran to completion and the
+conditional-answer test reached its output assertion.
 
-3. The places test marks some correct readings as failures.
-
-   test/test_item17_places.py passes the length of the padded forms array
-   to AttentionLesson.in_order. That helper expects the accepted positions
-   to equal range(count). In the corpus fixture the live source positions
-   of "This is Felix." were [0, 2, 4, 5] in a 32-slot array. Reading those
-   four positions in precisely that order still fails this comparison.
-
-   I rescored an explicitly trained places fixture using interpreted
-   arrivals from Looks.source_orders() and the ordered source slots with
-   live spans. After training, one unforced evaluation gave 4 of 6
-   two-word sentences, 0 of 16 lesson sentences and 1 of 6 held-out
-   sentences in order. The existing helper scored zero in all three sets.
-   The corrected counts still show a failure to learn reliable order.
-
-Suggested next experiment
-
-Score interpreted arrivals against the live source slots for each sentence
-and batch row. Include a correct reading with gaps and padding, plus a
-reading of the same words with two arrivals swapped. With that measure in
-place, test the scale of the context query relative to the concept codes.
-Track the request and its gradient on the first two looks, then evaluate
-without a supplied reading on sentences containing the same words in
-different orders. This checks whether the location request can move after
-the first word and whether that movement predicts the next word in text.
+Reproduce the target-free inference comparison from the main worktree:
+env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest test/measure_item17_command_inventory.py test/test_item17_word_said_back.py -q -p no:cacheprovider -n 6 --dist loadfile -rP
