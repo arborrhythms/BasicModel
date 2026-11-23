@@ -153,24 +153,23 @@ class Tree:
         return unnamed
 
     @staticmethod
-    def roots_of(parts, sites):
-        """The reading's trees in the pair store: each root's edge, oldest
-        first (by its head's name). An edge is a chain's last pair whose
-        head is a site of the reading (``sites``, a range of names; the
-        closing's own pairs have other heads); a root's edge is no other
-        edge's operand."""
-        def head(row):
-            left = parts.references(row)[0]
-            while left[0] == RELATION:
-                left = parts.references(left[1])[0]
-            return left
-        rows = [row for row in parts.indices().tolist()
-                if head(row)[0] == OCCURRENCE and head(row)[1] in sites]
-        pairs = {row: parts.references(row) for row in rows}
-        links = {pair[0][1] for pair in pairs.values() if pair[0][0] == RELATION}
-        operands = {pair[1][1] for pair in pairs.values() if pair[1][0] == RELATION}
-        ends = [row for row in rows if row not in links and row not in operands]
-        return sorted(ends, key=lambda row: head(row)[1])
+    def edge(parts, address):
+        """The edge of the site at ``address`` in ``parts``: the last pair
+        of the chain whose head is the site's occurrence, or ``None`` (a
+        word alone). The tree's pairs are the store's first, written before
+        the closing stages into it, so where a closing's pair shares a head
+        the tree's has the lower handle."""
+        def after(reference):
+            rows = [row for row in parts.rows_referencing(*reference)
+                    if parts.references(row)[0] == reference]
+            return min(rows) if rows else None
+        link = after((OCCURRENCE, address))
+        while link is not None:
+            following = after((RELATION, link))
+            if following is None:
+                return link
+            link = following
+        return None
 
     @staticmethod
     def words_of(parts, edge):

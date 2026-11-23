@@ -220,13 +220,15 @@ def said_words(model, program, stream, met):
         return None
     from SentenceStrata import Tree
     try:
-        # The reading's sites are a range of names, below the store's own.
-        sites = range(tree.trace.first, tree.semantic_start)
+        # The roots' sites, oldest first: names of the reading's tree.
+        sites = tree.roots
     except ValueError:
         return None
-    roots = Tree.roots_of(parts, sites)
+    edges = [Tree.edge(parts, site) for site in sites]
+    roots = [edge for edge in edges if edge is not None]
+    met['roots_alone'] += len(edges) - len(roots)
     if not roots:
-        return None
+        return None if len(edges) == len(roots) else []
     met['rows_followed'] += 1
     met['roots_composed'] += len(roots)
     owner = model._concept_owner()
