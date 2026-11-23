@@ -662,11 +662,11 @@ reasoning; as built `intuit` deposits what it lights at every occupied place of 
 So the reconstruction is computed before any thought: nothing conflicts,
 the reconstruction teaches a thought nothing, and a thought does not change
 what is put back. Its main term is the same number in every trial reading of
-a sentence, so it does not tell two readings apart. System 2 teaches the
-basic level through the credit of its choices instead: measured on teaching
-reads, that credit reaches the order-zero values, the members of the wholes
-and the rules' layers, while the reconstruction reaches the percept codes
-and the members of the wholes.
+a sentence, so it does not tell two readings apart. The reconstruction runs
+through the whole basic layer, up and back, on every read, and teaches its
+percept codes and the members of its wholes. System 2 teaches the same layer
+by the credit of its choices, which reaches the members of the wholes, the
+values of the order-zero Sigma and the rules' layers.
 
 ### System 2 teaching System 1 on the shared map
 
@@ -734,7 +734,7 @@ to System 1 by the teaching above.
 | Up against back, a replacement between the legs | Never: one step serves both legs | The choice itself is untaught and can turn over; small steps |
 | Reconstruction against output on the shared map | One concept asked for two texts, or one text named by two concepts | The difference belongs in the field; one concept for a word, whoever reads it; the projection removes the rest |
 | Reconstruction against a thought | Never: the reconstruction is computed at the opening, before any thought | Nothing to settle |
-| Reconstruction against System 2 teaching System 1 (not built) | Where a thought leaves what the open field did not hold | Not built; System 2 teaches the basic level by the credit of its choices |
+| Reconstruction against System 2 teaching System 1 (not built) | Where a thought leaves what the open field did not hold | Not built; the basic level is taught by the reconstruction and by the credit of System 2's choices |
 | Reconstruction against the rules | Only with a learned inverse from the parent alone | A return by the STM tree's edges |
 
 ## Trained total and diagnostic objectives

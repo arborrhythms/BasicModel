@@ -10303,7 +10303,9 @@ Shown the three things that follow (a thought cannot change what is reconstructe
 | `output` | `conceptualSpaces.0.intuit_map` only (to 0.05) |
 | `attention` (now the term `attention.next_observation`) | `request_read`, `state_weight` among it (to 3e-5), the order-zero values (to 1e-4) |
 
-So System 2's operation teaches the basic level through the credit of its choices, on the reads where a choice was drawn (one of two here), and it is now the chief teacher of the order-zero values: the reconstruction all but leaves them alone. The answer's cost reaches no look and no rule of itself, as in §23.6.31.
+So System 2's operation teaches the basic level through the credit of its choices, on the reads where a choice was drawn (one of two here). The answer's cost reaches no look and no rule of itself, as in §23.6.31.
+
+*Corrected by Alec.* Claude first wrote here that System 2 "is now the chief teacher of the basic level's values". Alec: "except for reconstruction, which is still fully exercising that layer also...". He is right, and the table says no more than this: the reconstruction's pass runs through the whole basic layer, up and back, on every read, and its gradient teaches the layer's percept codes and its Pi (the members of the wholes, `primitive_properties.members`). Only on one parameter, the values of the order-zero Sigma (`order_zero.value`), is the reconstruction's gradient near nothing in this probe, and there the choices' credit is the larger. Why it is near nothing there was not looked into; one cause that would fit is that a way up and a way back that undo each other cancel on a shared parameter (`doc/GradientFlow.md`, "One map used both ways").
 
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
