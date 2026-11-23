@@ -14585,6 +14585,60 @@ What the seventeenth pass found, and why this pass is next: from the idea alone 
 7. *Not in this pass:* the span of a composed value (§19.135, 5), which needs the band widened and a question answered first; a second rule; reading in order.
 8. *Standing terms,* as the sixteenth pass's item 7. No rule's inverse is given a witness or a place from the reading. No rule is special-cased in the source by its name: the first rule is named by the curriculum's stage and by the key, and nowhere else. The two gates and `test/test_compiled_lesson_step.py` run once at the end; do not end the pass while a run of yours is still going.
 
+*For Codex: why a model with no grammar puts back one word a reading* (added 2026-11-22, at Alec's word, after §23.6.23's "A model that reads"). A diagnosis; nothing is repaired.
+
+~~~
+Diagnosis only, for item 1.7 of BasicModel: find why a model with no
+grammar puts back one word for each reading. Change no source and commit
+nothing on the branch item17-r6d11: an implementer is editing bin/ and
+test/ in that checkout. Work in a git worktree of your own at commit
+23a594e537, and add only tests or prints there.
+
+The measure. The lesson's small text model with a grammar of no rule
+(_grammar_free_text_model in test/test_item17_one_reconstruction.py) is
+given each text as its input, and the text its reconstruction puts back
+is read (SentenceField.reconstruction, which with no grammar is
+model.reverse of the field alone, called from Models.reverseReconstruct
+with understanding.reconstruction_carriers.get('field')). The script is
+/Users/arogers/.claude/projects/-Users-arogers-github-WikiOracle/scratch-1.7/measure_reading_model.py;
+copy it into test/ and run
+  env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest test/measure_reading_model.py -q -p no:cacheprovider -s -k words_said_back
+It gives, in three starts, untaught and after 3 rounds of the words
+alone: "This." put back as "This" and "Felix." as "Felix" (13 of 13
+lesson words, each without its mark); "1." to "6." put back as some
+other lesson word; "This is Felix." put back as "Felix", "What is
+this?" as "this", "This is." as "This" (no sentence whole, of 22).
+Sigma-pi specification, section 23.6.23, the last subsection.
+
+Find, by measuring on the model as it runs (input to output; a wrapper
+may read what passes and may write nothing):
+1. How many basic-level concepts the field that reaches the
+   reconstruction holds for each reading (its evidence, its .where and
+   its wires), and which words they are. One, or several of which one is
+   put back?
+2. If one: where the others are lost. The looks a reading takes with no
+   grammar (SentenceLooks.Looks.run and its decisions); what is kept of
+   each look; what reconstruction_carriers is given; the nomination
+   (which forms have rows after test_item17_places.nominate: the marks
+   "." and "?", and the counting words "1" to "6", against the thirteen
+   lesson words; WordSurfaces.is_lexical_form).
+3. If several: where the others are dropped on the way down
+   (FieldReverse.reverse: the match to the percept store, the place
+   taken from each concept's own wires, the paste into
+   NativeActivity.amounts).
+4. Why a counting word is put back as another word.
+5. The same sentences on the model with its grammar: section 23.6.21
+   reports that the open field's own inverse there put back 19 of 19
+   words and 23 of 23 sentences, marks as words. Say what differs
+   between the two models in what the field holds.
+
+Return the cause for each of the five, with the numbers that show it,
+the file and function where each word is lost, and what you would
+change, as a proposal and not a change. Add no rule that forbids a walk
+or prefers the start of a sentence, pin no seed for an assertion, and
+set no concept's activation directly.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
