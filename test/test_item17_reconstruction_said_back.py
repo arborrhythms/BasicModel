@@ -1,19 +1,6 @@
-"""The rows at 1.00 and 1.75 of doc/ModelAge.md by the model's one
-reconstruction (round 6d of item 1.7, seventeenth pass, item 6; §19.135),
-input to output on the model as it runs: each word alone (the word and its
-mark), the two-word sentences and the lesson's sentences are given as the
-input and the reconstruction put back is read. The reconstruction is the
-output walk from the idea made to take the recorded steps; where the
-trial's STM holds the reading's tree (nineteenth pass, §19.140) its edges
-are followed there and each word is said by the concept its row names, at
-the place the row holds. Beside each, as diagnostics only: the words the
-walk's leaves say, the grammar's applied rules, and what the walk met
-(roots composed and alone, binds passed, rules the walk lacks, words
-followed and words whose row names no concept, steps off the walk's menu). A record: a start drawn afresh and
-printed, nothing asserted of what a start gives. Taught at the model's own
-rate on the words, the two-word sentences and the lesson's sentences, ten
-rounds by default (`ROUNDS`). Then a unit test of the
-perceptual inverse's paste (`FieldReverse.reverse`) and its error."""
+"""Measure sentence reconstruction from opening evidence before grammar or thought.
+The teaching and measurement use the same model and its ordinary sentence path.
+"""
 import os
 
 import torch
@@ -24,85 +11,48 @@ from test_item17_places import LESSON, minimal, model_for, nominate, words_of
 WORDS = words_of(LESSON) + COUNTING[:6]
 
 
-def text(t):
-    return bytes(int(v) for v in t.detach().reshape(-1).tolist() if 0 < int(v) < 256).decode('latin1')
-
-
 class Held:
-    """Each reading's reconstruction (``joined``), the words its leaves say,
-    the leaves' sources and the grammar's applied rules."""
+    """Observe the input surface at opening and the rules chosen afterwards."""
     def __init__(self, model, monkeypatch):
         import SentenceField
+        self.rows, self.rules = [], []
         language = model.languageSpace
-        reconstruct, choose = SentenceField.reconstruct, language.choose_operation
-        self.rules, self.rows = [], []
-        owner = model._concept_owner()
+        inverse, choose = SentenceField.reconstruction, language.choose_operation
 
-        def rule(kind, op):
-            rules = {1: language._compose_binary_rules, 2: language._compose_unary_rules}.get(kind, ())
-            return getattr(rules[op], 'method_name', type(rules[op]).__name__) if 0 <= op < len(rules) else '-'
+        def reconstructed(owner, field):
+            generation, reverse = inverse(owner, field)
+            surface = bytes(reverse.materialize()[0, 0].tolist()).rstrip(b'\0')
+            self.rows.append(dict(joined=surface.decode('latin1')))
+            return generation, reverse
 
-        def chosen(state, row_gate, **kw):
-            result = choose(state, row_gate, **kw)
-            c = result[0] if isinstance(result, tuple) else result
-            if bool(c.applied[0]) and bool(row_gate.reshape(-1)[0]):
-                self.rules.append(rule(int(c.kind[0]), int(c.local_op[0])))
+        def chosen(state, row_gate, **kwargs):
+            result = choose(state, row_gate, **kwargs)
+            choice = result[0] if isinstance(result, tuple) else result
+            if bool(choice.applied[0]) and bool(row_gate.reshape(-1)[0]):
+                rules = {1: language._compose_binary_rules, 2: language._compose_unary_rules}
+                names = rules.get(int(choice.kind[0]), ())
+                index = int(choice.local_op[0])
+                if 0 <= index < len(names):
+                    self.rules.append(names[index].method_name)
             return result
 
-        def held(model, record, errors, active, **kw):
-            result = reconstruct(model, record, errors, active, **kw)
-            sid = int(record.sentence)
-            generation = model._sentence_generation
-            f = generation.realization_field
-            said = []
-            for w in range(int(generation.counts[0])):
-                presence = f.evidence[:, 0, w, 0]
-                if not bool(presence.gt(0).any()):
-                    said.append(None)
-                    continue
-                cid = int(f.concept_ids[int(presence.argmax())])
-                row = owner._concept_row_of(cid)
-                raw = None if row is None else owner.word_surface_for_row(row)
-                said.append(None if raw is None else raw.decode('latin1'))
-            met = dict(model._sentence_taken)
-            policy = model.__dict__.pop('_last_walk_policy', None) or dict(charged=0, unheld=0)
-            silent = kw.get('silent')
-            self.rows.append(dict(said=said, count=int(generation.counts[0]), met=met, policy=policy,
-                                  silent=silent is not None and bool(silent[0]),
-                                  joined=text(model._sentence_order_zero_reverse.materialize()[0, 0])))
-            return result
-
+        monkeypatch.setattr(SentenceField, 'reconstruction', reconstructed)
         monkeypatch.setattr(language, 'choose_operation', chosen)
-        monkeypatch.setattr(SentenceField, 'reconstruct', held)
 
 
 def measured(model, held, sentences):
     from test_item18_expect import read
-    tally = {'reconstructed': 0, 'leaves said the words': 0, 'nothing put back': 0}
+    reconstructed = 0
     for sentence in sentences:
-        held.rules.clear(); held.rows.clear()
+        held.rows.clear()
+        held.rules.clear()
         with torch.no_grad():
             read(model, sentence)
             model.End()
-        row = held.rows[0]
-        words = sentence[:-1].split() + [sentence[-1]]
-        upper = [w for w in row['said'] if w is not None] == words
-        # A silent sentence puts back NULL at every place (it is scored so).
-        tally['reconstructed'] += row['joined'] == sentence and not row['silent']
-        tally['silent'] = tally.get('silent', 0) + row['silent']
-        tally['leaves said the words'] += upper
-        tally['nothing put back'] += row['count'] == 0
-        for key in ('roots_composed', 'roots_alone', 'steps', 'binds', 'lacking', 'over_budget',
-                    'words_followed', 'words_unnamed'):
-            tally[key] = tally.get(key, 0) + row['met'][key]
-        for name, n in row['met']['lacking_rules'].items():
-            tally['lacking ' + name] = tally.get('lacking ' + name, 0) + n
-        tally['policy: steps charged'] = tally.get('policy: steps charged', 0) + row['policy']['charged']
-        tally['policy: steps off its menu'] = tally.get('policy: steps off its menu', 0) + row['policy']['unheld']
-        print(f'  {sentence!r}: reconstruction {row["joined"]!r} | leaves {row["count"]} said {row["said"]}'
-              f' | met {row["met"]} | policy {row["policy"]}{" (silent)" if row["silent"] else ""}'
-              f' | rules {held.rules}')
-    return tally
+        actual = held.rows[0]['joined']
+        reconstructed += actual == sentence
+        print(f'{sentence!r} reconstructed as {actual!r}, compose rules {held.rules}')
+    return dict(reconstructed=reconstructed)
 
 
 def test_the_row_at_one_by_the_models_reconstruction(tmp_path, monkeypatch):
@@ -140,6 +90,10 @@ def test_the_row_at_one_by_the_models_reconstruction(tmp_path, monkeypatch):
         assert words['reconstructed'] <= len(alone)
     finally:
         model.End()
+
+
+def text(t):
+    return bytes(t.detach().long().flatten().tolist()).rstrip(b'\0').decode('latin1')
 
 
 def test_unit_the_perceptual_inverse_paste_and_the_pyramid(tmp_path, monkeypatch):
@@ -210,11 +164,8 @@ def test_unit_the_perceptual_inverse_paste_and_the_pyramid(tmp_path, monkeypatch
         model.End()
 
 
-def test_measured_the_gradient_reaches_the_rules_through_the_inverses(tmp_path, monkeypatch):
-    """Which rules' own parameters the reconstruction's error reaches
-    through the walk's inverses (seventeenth pass, item 3): in a training
-    read, the gradient of `reconstruction_order_zero.pyramid` on each
-    generate rule's parameters, by rule. A record, read only."""
+def test_open_reconstruction_is_independent_of_generate_rules(tmp_path, monkeypatch):
+    """The input cost reaches the opening inverse before any generate rule executes."""
     import SentenceField
     from reading_fixtures import use_eager_reading
     from test_item18_expect import read
@@ -232,7 +183,6 @@ def test_measured_the_gradient_reaches_the_rules_through_the_inverses(tmp_path, 
     def charged(model_, errors, name, carrier, field, active, **kw):
         wanted = charge(model_, errors, name, carrier, field, active, **kw)
         value = errors._value(errors._terms[name + '.pyramid'])
-        taken = [entry for entry in getattr(model_, '_sentence_generation').trace[0][0].tolist() if entry >= 0]
         for rule, op in rules:
             params = [p for p in (op.parameters() if isinstance(op, torch.nn.Module) else ()) if p.requires_grad]
             if not params or not value.requires_grad:
@@ -243,7 +193,6 @@ def test_measured_the_gradient_reaches_the_rules_through_the_inverses(tmp_path, 
             entry = reached.setdefault(rule, dict(reads=0, reached=0))
             entry['reads'] += 1
             entry['reached'] += norm > 0
-        reached.setdefault('_taken', []).append(taken)
         return wanted
 
     try:
@@ -254,10 +203,6 @@ def test_measured_the_gradient_reaches_the_rules_through_the_inverses(tmp_path, 
         for sentence in ('This.', 'Felix.', 'This is Felix.', 'Here is Ciao.'):
             read(model, sentence, training=True, optimizer=optimizer)
             model.End()
-        taken = reached.pop('_taken', [])
-        names = [rule for rule, _ in rules] + ['STOP']
-        print('actions taken per read:', [[names[a] for a in row] for row in taken])
-        print('rules whose parameters the error reached (reads, reached):', reached)
-        assert taken
+        assert reached and all(value['reached'] == 0 for value in reached.values()), reached
     finally:
         model.End()

@@ -190,13 +190,10 @@ def application_cost(language, observation, output_trace, like):
         if program is not None:
             kinds = program.actions[:, 0]
             count[row] = ((kinds >= 1) & (kinds <= 3)).sum()
-    generation = observation.get('generation')
-    reconstruction_trace = None if generation is None else generation.trace
-    stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
-    for trace in (reconstruction_trace, output_trace):
-        if trace is not None:
-            actions = trace[0]
-            count = count + ((actions >= 0) & (actions < stop)).sum(-1).to(count)
+    if output_trace is not None:
+        stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
+        actions = output_trace[0]
+        count = count + ((actions >= 0) & (actions < stop)).sum(-1).to(count)
     return count * language.operator_cost
 
 

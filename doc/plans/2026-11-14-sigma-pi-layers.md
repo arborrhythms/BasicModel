@@ -10274,6 +10274,14 @@ Alec places the complete reconstruction at sentence exit. Each `attend()` can tr
 
 The complete thought grammar may call `output(meaning)`. MTM can read the meaning of a witnessed symbol in the current STM tree, including a name with no known individual. Each executed call supplies one operand to the ordinary output walk and writer. The returned bytes, including an empty response, are compared with the supplied target after the response is fixed. That comparison can teach the chooser when to call the operator and which operand to select. Whether it learns that behavior is measured on commands and bare words with the same inference question.
 
+### 19.148 Opening reconstruction and the order of the next items (2026-11-23)
+
+For the sentence input cost, run the common perceptual inverse on the open attention field before the narrowing looks and thought. The read and the inverse share the live field. Each exploration of that sentence shares the same opening reconstruction and target comparison. The trainer applies its gradient once. Expectation can be taught at a look. The answer has its own target and is scored after the response is fixed, including silence on supervised presentations.
+
+Conditional speech on “say Felix” is a later cognition experiment. Item 1.7 can advance independently of it. Follow with the word-to-object grounding of item 1.6 and the training-speed work of item 1.5 before pursuing thought across all orders. The first grounding measure presents the same two objects in both spatial orders and asks about both operand orders. Item 1.5 measures examples and wall time to fixed held-out accuracy.
+
+For the later conditional-speech experiment, Alec identifies two possible sources for the same ordinary action. An explicit LTM1 sequence can bring the next action into consideration when the current event matches the antecedent. A missing link stops that traversal. A two-link sequence can implement a learned if–then association. An implicit rule can arise when concepts in the current field activate a higher-order concept that favors the output action. Either source still has to relate the action's operand to the appropriate idea in the current STM. These are proposed learning mechanisms, with no lexical trigger added to the model.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

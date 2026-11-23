@@ -8512,9 +8512,7 @@ class BasicModel(BaseModel):
                 self._concept_owner()._cs_open_field}
             heads = getattr(self, '_reading_heads', None)
             if heads is not None:
-                from ReadingMemory import field_of
                 carriers['reading_heads'] = heads
-                carriers['field'] = field_of(self, self.symbolSpace.ltm_store, heads)
         # The answer path's seed (spec 5.3) is the terminal idea: the
         # symbols' lanes carry no code, so no answer is read from them.
         answer_seed = (conceptual if torch.is_tensor(conceptual)
@@ -14243,6 +14241,7 @@ class BasicModel(BaseModel):
             with hooks:
                 yield
         finally:
+            self._opening_errors = None
             self._sentence_ends = False
             self._sentence_reconstruction = False
             self._recon_keep_ideas = keep_ideas
@@ -20241,16 +20240,19 @@ class BasicModel(BaseModel):
         reconstruct = getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop)
         if reconstruct:
             from SentenceField import reconstruct as reconstruct_field
-            reconstruction = reconstruct_field(self, record, errors, active, silent=silent,
-                                               programs=observation['entries'])
+            errors.merge(self._opening_errors)
+            reconstruction = reconstruct_field(self, record, errors, active, second=self._sentence_order_zero_reverse)
             observation['input_reconstruction'] = self._input_reconstructions[int(sid)]
             observation['order_zero_field'] = self._sentence_order_zero_field
-            observation['generation'] = self._sentence_generation
             observation['order_zero_reverse'] = self._sentence_order_zero_reverse
             observation['target'] = self._sentence_target
             lesson = getattr(self, '_attention_part_lesson', None)
             if lesson is not None:
-                error, baseline = lesson.cost(record, self._last_decoder_trace)
+                from SentenceField import taken_steps, sentence_generated
+                slots, occupied, actions, _, given, places = taken_steps(self, record, observation['entries'])
+                lesson_walk = sentence_generated(self, record, slots=slots, occupied=occupied, places=places,
+                    kept_actions=actions, kept_taken=True, kept_operands=given)
+                error, baseline = lesson.cost(record, (lesson_walk.words, lesson_walk.counts))
                 errors.error('reconstruction.part', error, baseline, mask=active,
                     weight=self.loss.reconstruction_scale, category='reconstruction')
         else:
@@ -21029,6 +21031,13 @@ class BasicModel(BaseModel):
             from HeldConcepts import snapshot as snapshot_held_concepts
             self._sentence_initial_concepts = snapshot_held_concepts(stm)
             self._prime_sentence_symbols(sid)
+            if self._sentence_reconstruction:
+                from SentenceField import reconstruction, charge
+                opened = self._sentence_open_fields[sid]
+                _, self._sentence_order_zero_reverse = reconstruction(self, opened)
+                self._opening_errors = Error(row_mask=present)
+                self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
+                    self._sentence_order_zero_reverse, opened, present, hidden=False)
             from SentenceLooks import WordForecast, Looks
             word_forecast = WordForecast(self)
             self.languageSpace._compose_primed_bank = self._sentence_primed_bank

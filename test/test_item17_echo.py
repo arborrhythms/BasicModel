@@ -308,16 +308,9 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
 
         def observation(*args, **kw):
             result = observe(*args, **kw)
-            held.setdefault('entries', result['entries'])
-            return result
-
-        def reconstruction(model_, field, **kw):
-            where = field.where[0].reshape(-1, 2)
-            held.setdefault('slots', int((where[:, 1] > where[:, 0]).sum()))
-            program = (held.get('entries') or [None])[0]
+            program = result['entries'][0]
             if program is not None and 'leaves' not in held:
-                # The recorded forest, read while the sentence is live.
-                leaves, stack = 0, list(forest_of(model_.languageSpace, program))
+                leaves, stack = 0, list(forest_of(model.languageSpace, program))
                 while stack:
                     node = stack.pop()
                     if node[0] == 0:
@@ -325,6 +318,11 @@ def test_the_state_is_enough_for_two_words(tmp_path, monkeypatch):
                     else:
                         stack.extend(child for child in node[3:] if isinstance(child, tuple))
                 held['leaves'] = leaves
+            return result
+
+        def reconstruction(model_, field, **kw):
+            where = field.where[0].reshape(-1, 2)
+            held.setdefault('slots', int((where[:, 1] > where[:, 0]).sum()))
             return one_reconstruction(model_, field, **kw)
 
         def resolved(understanding, question, **kw):

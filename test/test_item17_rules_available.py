@@ -36,10 +36,8 @@ def test_the_default_is_every_rule_and_the_values_are_saved(tmp_path, monkeypatc
         model.End()
 
 
-def test_with_no_rule_nothing_is_composed_or_put_back(tmp_path, monkeypatch):
-    """A model with a grammar and no rule available composes nothing and, by
-    §19.135 (3), puts nothing back: the reading ends silent and the
-    reconstruction's error is the whole input."""
+def test_with_no_rule_open_reconstruction_still_puts_back_the_words(tmp_path, monkeypatch):
+    """The opening inverse precedes a grammar with no available compose rule."""
     import SentenceField
     from reading_fixtures import use_eager_reading
     from test_item18_expect import read
@@ -50,7 +48,7 @@ def test_with_no_rule_nothing_is_composed_or_put_back(tmp_path, monkeypatch):
         assert not bool(model.languageSpace.rule_available.any())
         one, _, _ = minimal()
         nominate(model, one)
-        language, held = model.languageSpace, dict(rules=[], errors=[], counts=[])
+        language, held = model.languageSpace, dict(rules=[], errors=[], surfaces=[])
         choose, charge, reconstruct = language.choose_operation, SentenceField.charge, SentenceField.reconstruct
 
         def chosen(state, row_gate, **kw):
@@ -68,7 +66,7 @@ def test_with_no_rule_nothing_is_composed_or_put_back(tmp_path, monkeypatch):
 
         def reconstructed(model_, record, errors, active, **kw):
             result = reconstruct(model_, record, errors, active, **kw)
-            held['counts'].append(int(model_._sentence_generation.counts[0]))
+            held['surfaces'].append(bytes(kw['second'].materialize().flatten().tolist()).rstrip(b'\0'))
             return result
         monkeypatch.setattr(language, 'choose_operation', chosen)
         monkeypatch.setattr(SentenceField, 'charge', charged)
@@ -77,9 +75,10 @@ def test_with_no_rule_nothing_is_composed_or_put_back(tmp_path, monkeypatch):
             with torch.no_grad():
                 read(model, word)
                 model.End()
-        print('rules applied', held['rules'], '| leaves put back', held['counts'],
+        print('rules applied', held['rules'], '| surfaces', held['surfaces'],
               '| reconstruction errors', held['errors'])
-        assert held['rules'] == [] and held['counts'] and set(held['counts']) == {0}
+        assert held['rules'] == []
+        assert held['surfaces'] == [word.encode() for word in one[:4]]
     finally:
         model.End()
 

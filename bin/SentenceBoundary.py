@@ -31,7 +31,7 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             '_last_decoder_comparison', '_compose_sampling_scale',
             '_sentence_expectation_comparison', '_sentence_gradient_objectives',
             '_sentence_open_fields', '_sentence_look_fields', '_sentence_fields',
-            '_input_reconstructions', '_sentence_generation',
+            '_input_reconstructions',
             '_sentence_order_zero_reverse', '_sentence_target', '_last_sentence_credit',
             '_sentence_credit_audits', '_sentence_walk_residuals',
             '_sentence_output_walk_credits', '_sentence_order_zero_field', '_last_answer_construction',

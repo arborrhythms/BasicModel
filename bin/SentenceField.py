@@ -245,43 +245,8 @@ def said_words(model, program, stream, met):
     return words
 
 
-def policy_charge(model, generation, errors, active):
-    """The walk's policy taught by reconstruction (§19.134; Claude's first
-    choice, provisional on Alec): at each step the walk was made to take,
-    the policy's probability of that step (STOP at a leaf) on the menu the
-    walk read there (the trace's features and parents), charged as its
-    cross entropy over that of the uniform choice among the legal actions.
-    A step taken off the menu has no probability and is not charged; it is
-    counted."""
-    from Generative import WALK_FEATURE_WIDTH
-    from ObjectiveOwnership import policy_objective
-    language = model.languageSpace
-    actions, features, tops = generation.trace[0], generation.trace[-2], generation.trace[-1]
-    if language.generate_policy is None or actions.shape[1] == 0:
-        return None
-    B, T = actions.shape
-    taken = actions >= 0
-    action = actions.clamp_min(0)
-    legal = features[..., WALK_FEATURE_WIDTH - 1].bool()                          # [B, T, A]
-    held = taken & legal.gather(-1, action[..., None])[..., 0]
-    flat = lambda value: value.reshape(B * T, *value.shape[2:])
-    logits = language.generate_policy_logits(flat(tops).detach(),
-                                             flat(features[..., :WALK_FEATURE_WIDTH - 1]).detach())
-    logits = logits.masked_fill(~flat(legal), -torch.inf)
-    _, logits = language.choose_generate(torch.where(flat(legal).any(-1, keepdim=True), logits, 0.),
-                                         return_logits=True)
-    chosen = torch.log_softmax(logits, -1).gather(1, flat(action)[:, None])[:, 0].reshape(B, T)
-    cost = torch.where(held, -chosen, 0.).sum(1)
-    uniform = torch.where(held, legal.sum(-1).clamp_min(1).to(cost).log(), 0.).sum(1)
-    model._last_walk_policy = dict(charged=int(held.sum()), unheld=int((taken & ~held).sum()))
-    errors.error('reconstruction.walk_policy', cost, uniform, mask=active, category='reconstruction',
-                 objective=policy_objective(model, 'generate', 'reconstruction'), side='R')
-    return cost
-
-
 def put_back(model, field, *, record=None, programs=()):
-    """What :func:`reconstruction` puts back, with nothing kept on the
-    model: ``(generation, reverse, met)``; the generation and ``met`` are
+    """Inspect the inverse of a recorded grammatical derivation. Return ``(generation, reverse, met)``; the generation and ``met`` are
     ``None`` in a model that reads."""
     from OutputOccurrences import realize
     from dataclasses import replace
@@ -297,29 +262,9 @@ def put_back(model, field, *, record=None, programs=()):
     return generation, realize(model, generation), met
 
 
-def reconstruction(model, field, *, record=None, programs=(), errors=None, active=None):
-    """The one reconstruction (§19.134, §19.135): from the top the model
-    has back down to the percepts. With a record (a model that
-    understands), its upper stretch is the output walk from the idea made
-    to take the recorded steps (:func:`taken_steps`), each step the walk's
-    own inverse of its parent alone; nothing is read from the journal's
-    frames or from the open field, and a concept outside every composition
-    is not put back. The walk's policy is charged the steps it was made to
-    take (:func:`policy_charge`). The lower stretch is the perceptual
-    inverse of the walk's leaves. With no record, or a grammar of no rule
-    (a model that reads), the reconstruction is the perceptual inverse of
-    the basic-level concepts of ``field``. Returns the generation (``None``
-    with no record) and what is put back."""
-    generation, reverse, met = put_back(model, field, record=record, programs=programs)
-    if generation is None:
-        return None, reverse
-    model._sentence_generation = generation
-    model._sentence_taken = met
-    model._sentence_walk_residuals.append(generation.trace[3])
-    model._last_decoder_comparison = None
-    if errors is not None:
-        policy_charge(model, generation, errors, active)
-    return generation, reverse
+def reconstruction(model, field):
+    """Invert opening evidence through the common perceptual inverse."""
+    return None, model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
 
 
 def selected_field(first, second, wins):
@@ -444,23 +389,10 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     return wanted
 
 
-def reconstruct(model, record, errors, active, *, programs=(), silent=None):
-    """The sentence's one reconstruction (:func:`reconstruction`) and its
-    error. A silent sentence (``silent`` ``[B]``, rule S -> NULL) puts back
-    NULL at every place, and that is scored against the sentence."""
+def reconstruct(model, record, errors, active, second):
+    """Score the shared opening inverse at this sentence's observed locations."""
     field = record.open_field
-    generation, second = reconstruction(model, field, record=record, programs=programs,
-                                        errors=errors, active=active)
-    if silent is not None and bool(silent.any()):
-        from Interpret import SilenceLayer
-        put = second._reconstruction_percepts
-        gate = silent.to(put.device).reshape(-1, *([1] * (put.ndim - 1)))
-        second._reconstruction_percepts = torch.where(gate, SilenceLayer().reverse(put), put)
-    model._sentence_order_zero_field = generation.field
-    publish(model, generation.field)
-    # Reconstruction from the idea is asked for every byte, the hidden ones too.
-    model._sentence_target = charge(model, errors, 'reconstruction_order_zero', second, field, active,
-        hidden=False, silent=None if silent is None or not bool(silent.any()) else silent)
+    model._sentence_order_zero_field = field
     B, W, D = record.word_values.shape
     def rows(prefix):
         return sum(term['weight'] * term.get('multiplier', 1.) * errors._value(term)
@@ -506,10 +438,6 @@ def reconstruct(model, record, errors, active, *, programs=(), silent=None):
         errors.error('reconstruction.free_percept', residual, 1., mask=active,
             weight=model.loss.reconstruction_scale, category='reconstruction')
     truncated = missing > 0
-    model._sentence_order_zero_reverse = second
-    trace = generation.trace
-    model._last_decoder_trace = (generation.words, generation.counts, generation.truncated,
-        trace[3], trace[0], trace[4], trace[-2], trace[-1])
     sid = int(record.sentence)
     sentence_costs = ideas.new_zeros(B, record.depths.shape[1])
     sentence_costs[:, sid] = cost

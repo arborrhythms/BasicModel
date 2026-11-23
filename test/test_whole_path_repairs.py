@@ -180,13 +180,6 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
     nothing = NS(amounts=torch.zeros(1, 2, 256))
     first = NS(_reconstruction_percepts=predicted, materialize=lambda: predicted.transpose(1, 2),
                _radix_activity=nothing)
-    second = NS(_reconstruction_percepts=observed, _radix_activity=nothing)
-    generation = NS(field=field, trace=(torch.zeros(1, 1), None, None, torch.zeros(1, 3), None, None, None),
-                    words=torch.zeros(1, 2), counts=torch.tensor([2]), truncated=torch.zeros(1, dtype=torch.bool))
-    def one(model, field, **kwargs):
-        return generation, first
-    monkeypatch.setattr(SentenceField, 'reconstruction', one)
-    monkeypatch.setattr(SentenceField, 'publish', lambda *a: None)
     model = NS(_staged_concepts_in=observed.transpose(1, 2),
         _omission_targets={'raw': observed.transpose(1, 2), 'bytes': torch.tensor([[False, True]])},
         loss=NS(reconstruction_scale=1.), _input_reconstructions={},
@@ -199,7 +192,8 @@ def test_free_percept_reconstruction_excludes_omitted_places(monkeypatch):
     record = NS(open_field=field, word_values=observed, word_valid=torch.ones(1, 2, dtype=torch.bool),
                 percept_expected=torch.zeros_like(observed), depths=torch.ones(1, 1), sentence=0)
     errors = Error(row_mask=active)
-    SentenceField.reconstruct(model, record, errors, active)
+    SentenceField.charge(model, errors, 'reconstruction_order_zero', first, field, active, hidden=False)
+    SentenceField.reconstruct(model, record, errors, active, second=first)
     value = errors._value(errors._terms['reconstruction.free_percept']).sum()
     torch.testing.assert_close(value, torch.tensor(1.))
     gradient, = torch.autograd.grad(value, predicted)
@@ -299,3 +293,52 @@ def test_extension_attachment_keeps_reference_plans_on_the_scored_clause(tmp_pat
         assert observation['clauses'][0] is not clause
     finally:
         model.End(); model.symbolSpace.soft_reset()
+
+
+def test_sentence_inverts_the_live_open_field_once_before_its_looks(tmp_path, monkeypatch, eager_reading):
+    import SentenceField
+    import WholePaths
+    from SentenceLooks import Looks
+    from test_item17_echo import echo
+    from test_item17_places import model_for, nominate
+
+    model = model_for(tmp_path, monkeypatch)
+    try:
+        nominate(model, ('Felix', 'This', 'is', 'This is Felix.'))
+        data = model.inputSpace.data
+        monkeypatch.setattr(data, 'has_supervised_outputs', True)
+        monkeypatch.setattr(data, 'text_answers', {'train': ['Felix'], 'validation': []})
+        reconstruct, look, objectives = SentenceField.reconstruction, Looks.run, WholePaths.objectives
+        opened, events, returned = [], [], []
+
+        def inverted(owner, field, **kwargs):
+            generation, surface = reconstruct(owner, field, **kwargs)
+            assert generation is None
+            opened.append(field)
+            returned.append(surface.materialize().detach().clone())
+            events.append('inverse')
+            return generation, surface
+
+        def observed(path, arrive):
+            assert path.model._sentence_open_fields[path.sid] is opened[0]
+            events.append('look')
+            return look(path, arrive)
+
+        def measured(paths, parts, active, draws, **kwargs):
+            costs, weights = objectives(paths, parts, active, draws, **kwargs)
+            grad, = torch.autograd.grad(costs['reconstruction'], opened[0].evidence,
+                                        retain_graph=True)
+            assert torch.isfinite(grad).all() and grad.abs().sum() > 0
+            for path in paths:
+                torch.testing.assert_close(path.observation['input_reconstruction'].event, returned[0])
+            events.append('cost')
+            return costs, weights
+
+        monkeypatch.setattr(SentenceField, 'reconstruction', inverted)
+        monkeypatch.setattr(Looks, 'run', observed)
+        monkeypatch.setattr(WholePaths, 'objectives', measured)
+        echo(model, 0, 'This is Felix.', train=True, optimizer=model.getOptimizer())
+        assert events.count('inverse') == 1 and 'look' in events
+        assert events[0] == 'inverse' and events[-1] == 'cost'
+    finally:
+        model.End()

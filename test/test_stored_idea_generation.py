@@ -410,7 +410,6 @@ def test_unspelled_primed_compound_stays_available_for_decomposition():
 def _field_trial(words, returned, *, available=True, meaning_start=None):
     """A fixed proposal, the real occurrence writer, and a linear field decoder."""
     from contextlib import nullcontext
-    from unittest.mock import patch
     from Models import BasicModel
     from Layers import ConceptualAttentionLayer, ModelLoss
     from Understanding import ConceptualField
@@ -490,18 +489,22 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     trace = (torch.zeros(1, returned.shape[1], dtype=torch.long), torch.zeros(1, returned.shape[1], dtype=torch.bool),
         torch.tensor([False]), words.new_zeros(1, 3), torch.tensor([True]),
         words.new_zeros(1, 1, 1, 9), words[:, :1])
-    # The walk made to take the recorded steps puts back ``returned``
-    # (seventeenth pass: one recorded step here).
-    def taken_steps(model, record, programs):
-        return (end, record.end_depth.new_ones(1, 3).bool(), torch.zeros(1, 1, dtype=torch.long), dict(),
-                (end.new_zeros(1, 1, 2, end.shape[-1]), torch.zeros(1, 1, dtype=torch.bool)), [None])
-    def sentence_generated(model, record, **kw):
-        return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
+    from Layers import Error
+    from OutputOccurrences import realize
+    from SentenceField import charge
+    active = torch.tensor([True])
+    if available:
+        # Stipulate the evidence delivered to the common inverse and measure its
+        # effect on the real sentence cost, independently of how a look got it.
+        walk = generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
                          when=record.open_field.when[:, :1], depths=record.end_depth)
+        model._sentence_order_zero_reverse = realize(model, walk)
+        model._opening_errors = Error(row_mask=active)
+        model._sentence_target = charge(model, model._opening_errors, 'reconstruction_order_zero',
+            model._sentence_order_zero_reverse, field, active, hidden=False)
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
-    with patch('SentenceField.taken_steps', taken_steps), patch('SentenceField.sentence_generated', sentence_generated):
-        cost, *_ = BasicModel._sentence_path_cost(model, ((end,), lang, None), 0, torch.tensor([True]))
+    cost, *_ = BasicModel._sentence_path_cost(model, ((end,), lang, None), 0, active)
     return cost, model._sentence_cost_registry.breakdown()
 
 
