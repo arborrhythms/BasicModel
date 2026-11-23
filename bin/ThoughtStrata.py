@@ -25,7 +25,11 @@ class View:
             head, *contents = members(ref)
             metadata = dict(store.raw_meaning_of(store.index_of_row(head[1])).bindings)
             roles = store.slots.new_zeros(3, store.nDim)
-            mask = torch.tensor(metadata['_roles'], dtype=torch.bool, device=roles.device)
+            # Older trial snapshots used a separate header and one row per role.
+            if '_role_mask' in metadata:
+                contents = [head, *contents]
+            mask = torch.tensor(metadata.get('_role_mask', metadata.get('_roles')),
+                                dtype=torch.bool, device=roles.device)
             occupied = mask.nonzero().flatten().tolist()
             for role, member in zip(occupied, contents[:len(occupied)], strict=True):
                 roles[role] = store.point_of_row(('ltm', store.address_domain, member[1]))
@@ -106,7 +110,7 @@ def write(store, meaning, *, key):
         for child in value.constituents: visit(child)
         nodes.append(value)
     visit(meaning)
-    count = sum(1+int(value.role_mask.sum()) for value in nodes)
+    count = sum(int(value.role_mask.sum()) for value in nodes)
     branches = count-1
     if count > store._thought_capacity_bound:
         raise OverflowError('thought structure exceeds the declared sentence bound')
@@ -131,10 +135,10 @@ def write(store, meaning, *, key):
         metadata = {name:quote(item) for name,item in data.items()}
         from EpisodicMemory import tree_entry
         entry = tree_entry(store, value.extension) if value.extension else None
-        head = append(value.roles[value.role_mask].amax(0),
-            {'_roles': tuple(value.role_mask.tolist()), '_metadata': metadata}, entry=entry)
-        operands = [append(value.roles[role], {}) for role in value.role_mask.nonzero().flatten().tolist()]
-        root = head
+        first, *remaining = value.role_mask.nonzero().flatten().tolist()
+        root = append(value.roles[first],
+            {'_role_mask': tuple(value.role_mask.tolist()), '_metadata': metadata}, entry=entry)
+        operands = [append(value.roles[role], {}) for role in remaining]
         for child in (*operands, *children):
             # The pair store was emptied above (store.expire), so the tree's
             # own next handle is free. The free list is not searched: there

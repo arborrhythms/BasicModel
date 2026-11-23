@@ -74,6 +74,7 @@ class Trace:
                 raise ValueError('recorded operations require their result points')
             if not bool(self.frames[operators, 2].isfinite().all()):
                 raise FloatingPointError('non-finite occupied meaning role')
+        self.head = None
         self.marks = {}
         self.live = True
 
@@ -111,25 +112,13 @@ class Tree:
         return self.trace.point(address - self.trace.first)
 
     def write_edges(self, store, concepts, where, when):
-        """The tree into the trial's own STM (sigma-pi §19.140): each word
-        as read is a row of ``store`` that refers to the word's concept
-        (``concepts`` by word: a concept id, or ``None`` where the word
-        names none) and holds the word's ``.where`` and ``.when`` (``where``,
-        ``when`` ``[words, 4]``, or ``None``) in its band, nothing else; each
-        compose step's edge is the pair store's own chain from its parent to
-        its operands in order (the form of :func:`ThoughtStrata.write`):
-        ``(parent, first operand)``, then ``(that pair, second operand)``.
-        The parent is its site's occurrence, a word operand its row's
-        occurrence, a composed operand its own edge. A transposition is no
-        application and has no edge. Returns the number of words whose row
-        names no concept."""
-        from Meaning import ConceptualMeaning
+        """Write the located leaves and reduce ordered operands to a single typed head."""
         trace = self.trace
-        index, first = trace.index, trace.first
-        rows, unnamed = {}, 0
+        index = trace.index
+        heads, unnamed = {}, 0
         start = store.when_start
         for word, at in sorted(index.word_actions.items(), key=lambda item: item[1]):
-            point = store.slots.new_zeros(store.nDim)
+            point = store._fit(trace.leaves[word]).clone()
             if start is not None and start >= 4:
                 for band, offset in ((where, start - 4), (when, start)):
                     if band is not None:
@@ -139,55 +128,12 @@ class Tree:
             meaning = replace(ConceptualMeaning.from_description(point),
                               role_refs=(None if concept is None else ('sym', int(concept)), None, None))
             row = store.append_meaning(meaning)
-            rows[at] = store.row_name(row)
-        parts, edges = store.parts, {}
+            heads[at] = OCCURRENCE, store.row_name(row)
         for at, (kind, _, _) in enumerate(index.steps):
-            if kind in (0, 3):
-                continue
-            link = OCCURRENCE, first + at
-            for child in index.operands[at]:
-                end = ((OCCURRENCE, rows[child]) if index.steps[child][0] == 0
-                       else (RELATION, edges[child]))
-                link = RELATION, parts.add(link, end, truth_plus=1.)
-            edges[at] = link[1]
+            if kind in (1, 2):
+                heads[at] = store.parts.sequence([heads[child] for child in index.operands[at]])
+        trace.head = store.parts.sequence([heads[root] for root in index.roots])
         return unnamed
-
-    @staticmethod
-    def edge(parts, address):
-        """The edge of the site at ``address`` in ``parts``: the last pair
-        of the chain whose head is the site's occurrence, or ``None`` (a
-        word alone). The tree's pairs are the store's first, written before
-        the closing stages into it, so where a closing's pair shares a head
-        the tree's has the lower handle."""
-        def after(reference):
-            rows = [row for row in parts.rows_referencing(*reference)
-                    if parts.references(row)[0] == reference]
-            return min(rows) if rows else None
-        link = after((OCCURRENCE, address))
-        while link is not None:
-            following = after((RELATION, link))
-            if following is None:
-                return link
-            link = following
-        return None
-
-    @staticmethod
-    def words_of(parts, edge):
-        """The word rows under an edge, in order: each operand's, first to
-        last, an edge's own in turn."""
-        _, *children = Tree.members(parts, edge)
-        words = []
-        for child in children:
-            words.extend([child[1]] if child[0] == OCCURRENCE else Tree.words_of(parts, child[1]))
-        return words
-
-    @staticmethod
-    def members(parts, edge):
-        """An edge's head and its operands, in order (as
-        :class:`ThoughtStrata.View` reads a thought's tree)."""
-        left, right = parts.references(edge)
-        head = [left] if left[0] == OCCURRENCE else Tree.members(parts, left[1])
-        return [*head, right]
 
     def view(self, address):
         view = self._views.get(address)

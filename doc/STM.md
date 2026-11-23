@@ -33,6 +33,21 @@ holds identities, and what a written row left pending, for as long as they
 are in play; LTM is the one durable history of ideas and relations, read by
 content, with each idea named by its time.
 
+A temporal sequence has one head. A single look can leave one idea.
+With two looks the head is an ordered pair of occurrences. Each further
+look extends the right end. For example, three arrivals A, B, C leave
+`(A, (B, C))`, with three occurrence rows and two links. A repeated word
+has a fresh occurrence and its own place. The grammar-free text reader
+follows these links in attention order. Reconstruction places the
+percepts using the stored spatial coordinates. The LTM commit closes
+the round and advances MTM once for the stream.
+
+Grammar can also take two subexpressions as operands. The selected
+semantic operator may keep their relation or produce a single idea.
+The recorded syntax keeps its head handle, so following it requires no
+search through other relations written during the close. A thought's
+first occupied role carries its metadata and serves as its head.
+
 Two cadences write the STM, selected by `<serial>` (legacy configs derive
 it from `symbolicOrder > 0`; see
 [Architecture.md](Architecture.md)):

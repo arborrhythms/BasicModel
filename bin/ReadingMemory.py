@@ -1,0 +1,162 @@
+"""Located ideas from attention, committed as one sequence in the ordinary pair store."""
+import torch
+from Memory import OCCURRENCE, RELATION
+from Understanding import ConceptualField
+
+
+def brackets(model, percepts):
+    """Name lexical occurrences from complete, visible native percepts. MTM owns nomination."""
+    from WordSurfaces import is_lexical_form
+    ps, owner = model.perceptualSpace, model._concept_owner()
+    ids, spans = percepts[:2]
+    intervals = ps._forward_input.get('word_intervals') or ()
+    words = []
+    for b, limits in enumerate(intervals):
+        parts = [(pid, lo, hi) for pid, (lo, hi) in zip(ids[b].tolist(), spans[b].tolist(), strict=True)
+                 if pid >= 0 and lo < hi]
+        row = []
+        for start, stop in limits:
+            members = [(pid, lo, hi) for pid, lo, hi in parts if start <= lo < hi <= stop]
+            if not members or members[0][1] != start or members[-1][2] != stop:
+                continue
+            if any(left[2] != right[1] for left, right in zip(members, members[1:])):
+                continue
+            native = [pid for pid, _, _ in members]
+            form = b''.join(ps.percept_store.bytes_for(pid) for pid in native)
+            if not is_lexical_form(form):
+                continue
+            word = owner.interpret.word_for_form(form)
+            if word is None:
+                word = owner.interpret.lookup_word(native, model.wholeSpace.property_rows_for_bytes(form),
+                    form=form, word_reading=True, reading=owner.reading(b))
+            row.append((start, stop, -1 if word is None else word))
+        words.append(row)
+    width = max(map(len, words), default=0)
+    if not width:
+        return None
+    table = ids.new_tensor([row + [(0, 0, -1)] * (width - len(row)) for row in words])
+    return table[..., :2], table[..., 2]
+
+
+def commit(stores, heads, durable):
+    """Copy each occupied idea once and translate its ordered STM1 links into LTM1."""
+    sizes = [len(store) for store in stores]
+    pairs = sum(len(store.parts) for store in stores)
+    owner = durable.owner()
+    if len(durable) + sum(sizes) > durable.capacity or (pairs and
+            (len(durable.parts) + pairs >= durable.parts.capacity or
+             owner is not None and owner._concept_allocator.next_id + pairs > durable.parts.capacity)):
+        raise OverflowError('reading exceeds remaining long-term idea or relation capacity')
+    committed = []
+    for store, head in zip(stores, heads, strict=True):
+        translated = {}
+        for row in range(len(store)):
+            name = store.row_name(row)
+            target = durable.append_idea(store.slots[row], trust=float(store.trust[row]),
+                referent=store.referent_of(row),
+                entry=(store.episodic_concepts[row], store.episodic_values[row]))
+            translated[OCCURRENCE, name] = OCCURRENCE, durable.row_name(target)
+        store.parts._sort()
+        for relation in store.parts.relation_order[:len(store.parts)].tolist():
+            left, right = store.parts.references(relation)
+            translated[RELATION, relation] = RELATION, durable.parts.add(
+                translated[left], translated[right], truth_plus=float(store.parts.truth_plus[relation]))
+        committed.append(translated.get(head))
+    return tuple(committed)
+
+
+def field_of(model, store, heads):
+    """Recover the observed concept, evidence and place by traversing each durable head."""
+    from FieldReverse import drawn
+    from RowTime import encoder
+    owner = model._concept_owner()
+    rows = [[store.index_of_row(name) for _, name in store.parts.leaves(head)] for head in heads]
+    width = max(1, max(map(len, rows), default=0))
+    B = len(rows)
+    ids = store.row_names.new_full((width, B), -1)
+    evidence = store.slots.new_zeros(width, B, width, 2)
+    wires = store.slots.new_zeros(B, width, 4)
+    where = ids.new_zeros(B, width, 2)
+    when = torch.zeros_like(where)
+    lo, hi = model.where_registry.slices['text']
+    grid = model.where_registry.code[lo:hi].to(wires)
+    for b, slots in enumerate(rows):
+        for w, slot in enumerate(slots):
+            ref = store.referent_of(slot)
+            if ref is None:
+                continue
+            cid = ref[1]
+            ids[w, b] = cid
+            evidence[w, b, w, 0] = store.trust[slot].clamp_min(0)
+            wires[b, w] = store.slots[slot, store.when_start-4:store.when_start]
+            place = drawn(-(grid-wires[b, w]).square().sum(-1)) + lo
+            form = owner.interpret.lexical_form(cid)
+            where[b, w, 0], where[b, w, 1] = place, place + (len(form) if form else 1)
+            when[b, w, 0] = encoder().decode_index(store.time[slot])
+            when[b, w, 1] = when[b, w, 0] + 1
+    return ConceptualField(ids, evidence, where, when, None, wires)
+
+
+def read(model, bank, concepts):
+    """Narrow the open field until the request stops, STM fills or nothing is found."""
+    from Places import readings
+    from Attention import draw_among
+    from SentenceLooks import attend, narrow, lower
+    from dataclasses import replace
+    from EpisodicMemory import select, unkept, uncertain
+    from SentenceField import inventory
+    from RequestRead import at_rows, spread_once
+    owner, reader = model._concept_owner(), model.request_read
+    B = len(concepts)
+    strata = model.conceptualSpace.stm.strata
+    stores = [strata.idea_stores[b * strata.trials] for b in range(B)]
+    heads = [None] * B
+    for store in stores:
+        store.expire()
+        store.to(bank.table)
+    current = owner._cs_open_field
+    def located(field):
+        return at_rows(inventory(owner, field), field, reader.rows, B)
+    opened = located(current)
+    memory, own = torch.zeros_like(opened), bank.activity.clone()
+    left = bank.where[..., 1] > bank.where[..., 0]
+    known = concepts >= 0
+    _, _, percept_codes = readings(bank)
+    excluded, ambiguous = unkept(owner), uncertain(owner)
+    for _ in range(min(model.attention_budget, model.conceptualSpace.stm.capacity)):
+        units = reader.units(reader.given(opened, memory, left.any(-1)))
+        active = left.any(-1) & (reader.stopping(units).detach() <= 0)
+        if not active.any():
+            break
+        field, _, scores = narrow(model, bank, attend(model, units), own, concepts,
+                                  known, left & active[:, None])
+        index = draw_among(scores)[0]
+        found = index >= 0
+        if not found.any():
+            break
+        batch = torch.arange(B, device=index.device)
+        evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
+        episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,
+                         found, unkept=excluded, uncertain=ambiguous)
+        for b in found.nonzero().flatten().tolist():
+            w, store = int(index[b]), stores[b]
+            cid = int(concepts[b, w])
+            code = percept_codes[b, w]
+            if cid >= 0:
+                row = owner._concept_row_of(cid)
+                code = owner.similarity_codebook.lookup_rows(index.new_tensor([row]), stream=b)[0]
+            point = store._fit(code).clone()
+            point[store.when_start-4:store.when_start] = field.wires[b, w]
+            point[store.when_start:store.when_start+4] = bank.when_band[b, w]
+            row = store.append_idea(point, referent=None if cid < 0 else ('sym', cid),
+                trust=float(scores[b, w].detach().clamp(0, 1)), entry=(episode[0][b], episode[1][b]))
+            heads[b] = store.parts.append_occurrence(heads[b], store.row_name(row))
+            left[b, w] = False
+        memory = torch.where(found[:, None, None], spread_once(owner, located(field)), memory)
+        own = lower(own, bank, index, found)
+    durable = model.symbolSpace.ltm_store
+    committed = commit(stores, heads, durable)
+    for b, head in enumerate(committed):
+        if head is not None:
+            owner.mtm.close(durable, stream=b)
+    return committed

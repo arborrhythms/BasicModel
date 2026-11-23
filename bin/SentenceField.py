@@ -95,13 +95,11 @@ def walk_action(language, kind, operation):
 def taken_steps(model, record, programs):
     """What the walk is made to take to put the sentence back.
 
-    Where the trial's STM holds the reading's tree (sigma-pi §19.140), its
-    edges are followed there, with no rule and no inverse: the words under
-    each root's edge, in order, each by the concept its row refers to and at
+    Where the trial retains a typed head (sigma-pi §19.146), follow it to
+    the located leaves. Each word is read by the concept its row refers to and at
     the place its row holds (:func:`said_words`). The walk is given them as
     its slots, each said by a STOP with that concept's code as the leaf, and
-    takes no other step. A root that is one word outside every composition
-    has no edge and is not put back (§19.135, 3).
+    takes no other step. A head naming one occurrence supplies one slot.
 
     Elsewhere the recorded composition is the walk's actions (§19.135, 1):
     each root of the reading's forest that a rule composed is a slot of the
@@ -203,62 +201,57 @@ def taken_steps(model, record, programs):
 
 def said_words(model, program, stream, met):
     """The words the trial's STM puts back for a reading, by following its
-    edges there (sigma-pi §19.140): for each root's edge, oldest first, the
-    word rows under it in order, each as ``(concept, start, code)``: the
+    head there (sigma-pi §19.146): the word rows under it in order, each as ``(concept, start, code)``: the
     concept its row refers to; the start of the place its row holds, read
     back from the row's ``.where`` band by the model's where wires (``None``
     where the row claims no place); and the
     concept's code, looked up as the answer looks up a perceived word
     (:func:`Output.perceived_meanings`). A row that names no concept is not
-    said, and counted. ``None`` where the STM holds no edge of the reading."""
+    said, and counted. ``None`` where the STM holds no head for the reading."""
     tree = getattr(program, 'tree', None)
     if tree is None:
         return None
     store = tree.ideas
     parts = store.parts
-    if len(parts) == 0:
-        return None
-    from SentenceStrata import Tree
     try:
-        # The roots' sites, oldest first: names of the reading's tree.
-        sites = tree.roots
+        head = tree.trace.head
     except ValueError:
         return None
-    edges = [Tree.edge(parts, site) for site in sites]
-    roots = [edge for edge in edges if edge is not None]
-    met['roots_alone'] += len(edges) - len(roots)
-    if not roots:
-        return None if len(edges) == len(roots) else []
+    if head is None:
+        return None
+    from Memory import OCCURRENCE
+    from FieldReverse import drawn
     met['rows_followed'] += 1
-    met['roots_composed'] += len(roots)
+    met['roots_alone' if head[0] == OCCURRENCE else 'roots_composed'] += 1
     owner = model._concept_owner()
     registry = model.where_registry
     lo, hi = registry.slices['text']
     wires = registry.code[lo:hi]
     start = store.when_start
     words = []
-    for edge in roots:
-        for name in Tree.words_of(parts, edge):
-            row = store.index_of_row(name)
-            reference = store.referent_of(row)
-            if reference is None or reference[0] != 'sym':
-                met['words_unnamed'] += 1
-                continue
-            concept = int(reference[1])
-            address = owner._concept_row_of(concept)
-            if address is None:
-                met['words_unnamed'] += 1
-                continue
-            band = store.slots[row, start - 4:start].detach().to(wires)
-            # A row with no .where claim has no place: it is said in turn.
-            place = (int((wires - band).square().sum(-1).argmin()) if bool(band.ne(0).any())
-                     else None)
-            rows = torch.tensor([address], device=store.slots.device)
-            with torch.no_grad():
-                code = owner.similarity_codebook.lookup_rows(rows, stream=stream)
-                code = owner.interpret.lexical_atoms(rows, code, stream=stream)[0]
-            words.append((concept, place, code))
-            met['words_followed'] += 1
+    for kind, name in parts.leaves(head):
+        if kind != OCCURRENCE:
+            raise ValueError('a reading leaf must name an occurrence')
+        row = store.index_of_row(name)
+        reference = store.referent_of(row)
+        if reference is None or reference[0] != 'sym':
+            met['words_unnamed'] += 1
+            continue
+        concept = int(reference[1])
+        address = owner._concept_row_of(concept)
+        if address is None:
+            met['words_unnamed'] += 1
+            continue
+        band = store.slots[row, start - 4:start].detach().to(wires)
+        # A row with no .where claim has no place: it is said in turn.
+        place = (int(drawn(-(wires - band).square().sum(-1))) if bool(band.ne(0).any())
+                 else None)
+        rows = torch.tensor([address], device=store.slots.device)
+        with torch.no_grad():
+            code = owner.similarity_codebook.lookup_rows(rows, stream=stream)
+            code = owner.interpret.lexical_atoms(rows, code, stream=stream)[0]
+        words.append((concept, place, code))
+        met['words_followed'] += 1
     return words
 
 

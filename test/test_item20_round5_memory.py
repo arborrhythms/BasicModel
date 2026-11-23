@@ -632,7 +632,7 @@ def test_hard_reset_expires_shared_short_term_references():
     thoughts = owner.stm._thought_stores[0][0]
     write(thoughts, ConceptualMeaning.from_description(atoms[0]), key=(2, 2, 2, 2))
     assert len(strata.recent_stores[0]) == len(strata.recent_stores[0].parts) == 1
-    assert len(thoughts) == 2  # The role and its written thought root.
+    assert len(thoughts) == 1 and len(thoughts.parts) == 0  # The role is the head.
     owner.stm.clear()
     assert store.parts.contains(relation)  # A document boundary withdraws no durable relation.
     assert len(strata.recent_stores[0]) == len(strata.recent_stores[0].parts) == len(thoughts) == 0
@@ -640,7 +640,7 @@ def test_hard_reset_expires_shared_short_term_references():
         strata.read(address)
     current = strata.keep_close(0, atoms[1], False, source=store.parts)
     torch.testing.assert_close(strata.read(current), atoms[1])
-    receipt('epoch-shared-strata', dict(recent_before=1, relations_before=1, thought_rows_before=2,
+    receipt('epoch-shared-strata', dict(recent_before=1, relations_before=1, thought_rows_before=1,
         recent_after=0, relations_after=0, thought_rows_after=0, next_close_readable=True))
 
 

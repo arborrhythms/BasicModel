@@ -20,7 +20,7 @@ def test_thought_content_growth_preserves_structure_and_trial_rollback():
     first = write(store, nested(1), key=(2, 2, 2, 2))
     saved = snapshot(stores)
     rng = torch.random.get_rng_state().clone()
-    second = write(store, nested(6), key=(3, 2, 2, 2))
+    second = write(store, nested(12), key=(3, 2, 2, 2))
     assert store.capacity == store.parts.capacity == 12
     assert len(store) == 12 and len(store.parts) == 11
     assert store._thought_capacity_bound == 4 * (3 + 3)
@@ -28,14 +28,14 @@ def test_thought_content_growth_preserves_structure_and_trial_rollback():
     value, count = second.read(), 1
     while value.constituents:
         value, count = value.constituents[0], count + 1
-    assert count == 6
+    assert count == 12
     with pytest.raises(ValueError, match='expired'):
         first.read()
     restore(stores, saved)
-    assert store.capacity == 8 and len(store) == 2
+    assert store.capacity == 8 and len(store) == 1
     torch.testing.assert_close(first.read().roles, nested(1).roles)
     with pytest.raises(OverflowError, match='declared sentence bound'):
-        write(store, nested(13), key=(4, 2, 2, 2))
+        write(store, nested(25), key=(4, 2, 2, 2))
     torch.testing.assert_close(first.read().roles, nested(1).roles)
 
 

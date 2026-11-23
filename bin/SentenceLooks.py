@@ -17,12 +17,11 @@ from torch.nn import functional as F
 from RequestRead import at_rows, spread_once
 
 
-def perceive(model, activity):
+def perceive(model, activity, bank):
     """A look's read of the sentence's bank with each occurrence present to
     the degree of ``activity`` ``[B, occurrences, 2]``: no lookup and no read
     on the host."""
     owner = model._concept_owner()
-    bank = model._sentence_bank
     evidence = owner.cs_read_bank(bank, activity)
     owner._cs_last_a0 = evidence.detach()
     knowing = owner.cs_forward_content(evidence)
@@ -64,7 +63,7 @@ def look(model, bank, request, own):
     # It bounds the occurrence's own activity, which takes a tie.
     share = salient.events
     activity = torch.where(share < own, share, own)
-    field = perceive(model, activity)
+    field = perceive(model, activity, bank)
     # Each reading's where match, on the salience of what it holds (the
     # ways back give no share of the .where apart from the .what): kept,
     # since without it the request is taught nothing (eighth pass, step 4).
@@ -105,6 +104,14 @@ def word_activity(field, concepts, known, extent, own, bank):
     unknown = torch.where(~known & (presence > 0), presence.to(torch.float32), -torch.inf)
     found = torch.isfinite(word).any(-1, keepdim=True)
     return torch.where(found, word, unknown)
+
+
+def narrow(model, bank, request, own, concepts, known, eligible):
+    """Read the requested field and score the still eligible occurrences on that field."""
+    field, activity = look(model, bank, request, own)
+    extent = extent_of(bank, activity, concepts.shape[1]) & eligible.any(-1, keepdim=True)
+    scores = word_activity(field, concepts, known, extent, own, bank)
+    return field, extent, scores.masked_fill(~eligible, -torch.inf)
 
 
 def lower(own, bank, index, rows):
@@ -280,8 +287,8 @@ class Looks:
             else:
                 request = attend(model, units)
             prediction = None
-            look_field, activity = look(model, bank, request, own)
-            extent = extent_of(bank, activity, W) & rows[:, None]
+            unread = live & ~state.accepted & rows[:, None]
+            look_field, extent, words = narrow(model, bank, request, own, concepts, state.known, unread)
             if forecasts is not None:
                 prediction = forecasts.forecast(extent, rows)
                 # What is expected is written anew at each look, before
@@ -298,9 +305,6 @@ class Looks:
             at_look(model, look_field, extent)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
                                     surprise=surprise))
-            words = word_activity(look_field, concepts, state.known, extent, own, bank)
-            unread = live & ~state.accepted & rows[:, None]
-            words = torch.where(unread, words, -torch.inf)
             replay = masked = None
             exploit = state.exploit
             if exploit is not None and turn < exploit.actions.shape[1]:

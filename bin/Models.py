@@ -8509,6 +8509,11 @@ class BasicModel(BaseModel):
         elif self.concept_binding == 'aligned' and not self.grammar_phases.vector:
             carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
                 self._concept_owner()._cs_open_field}
+            heads = getattr(self, '_reading_heads', None)
+            if heads is not None:
+                from ReadingMemory import field_of
+                carriers['reading_heads'] = heads
+                carriers['field'] = field_of(self, self.symbolSpace.ltm_store, heads)
         # The answer path's seed (spec 5.3) is the terminal idea: the
         # symbols' lanes carry no code, so no answer is read from them.
         answer_seed = (conceptual if torch.is_tensor(conceptual)
@@ -17537,7 +17542,21 @@ class BasicModel(BaseModel):
                                        part_ids.shape[1], device=raw.device)
         primitive = getattr(ws.subspace.what, 'primitive_properties', None)
         percepts = (part_ids, part_spans, primitive, raw, positions)
-        field = owner.cs_read_memberships(percepts, extents)
+        self._perceptual_reading = None
+        self._reading_heads = None
+        if (self.numeric_percepts is None and not self.grammar_phases.vector
+                and self.request_read is not None and pass_idx == len(self.body_stages) - 1
+                and self.perceptualSpace._forward_input.get('word_intervals') is not None):
+            from ReadingMemory import brackets
+            reading = brackets(self, percepts)
+            if reading is None:
+                self._reading_heads = (None,) * part_ids.shape[0]
+            else:
+                extents, identities = reading
+                bank = owner.cs_lookup(percepts, extents)
+                self._perceptual_reading = bank, identities
+        field = (owner.cs_read_memberships(percepts, extents) if self._perceptual_reading is None
+                 else owner.cs_read_bank(bank))
         object.__setattr__(owner, '_cs_last_a0', field.detach())
         object.__setattr__(self, '_subsymbolic_field', field)
         object.__setattr__(self, '_subsymbolic_percepts', percepts)
@@ -17909,6 +17928,11 @@ class BasicModel(BaseModel):
                         slabs.append((order, value[..., None] * selected))
                     object.__setattr__(self, "_cs_parallel_slab", tuple(slabs))
                     object.__setattr__(self, "_cs_parallel_slab_cs", _cut_cs)
+        if getattr(self, '_perceptual_reading', None) is not None:
+            from ReadingMemory import read
+            bank, concepts = self._perceptual_reading
+            self._perceptual_reading = None
+            self._reading_heads = read(self, bank, concepts)
         # A4: thread the per-stage augments to the reverse as a transient
         # local on ``self`` that the SAME forward's reverse reads (the
         # design's accepted near-term threading; A5 makes per-batch data
@@ -20062,8 +20086,11 @@ class BasicModel(BaseModel):
                     ids[0] = (entry.concept_ids[0] if comprehensions is None
                               else comprehensions[b].concept_ids[0])
             handles.append(ids)
+        partial = tuple(entry if entry is not None and bool(active[b]) and not bool(mask[b])
+                        and len(entry.tree.roots) > 1 else None
+                        for b, entry in enumerate(programs.get(sid, (None,) * B)))
         result = dict(payloads=payloads, depths=depth_list, mask=mask, entries=word_entries,
-                    comprehensions=comprehensions,
+                    partial=partial, comprehensions=comprehensions,
                     meanings=meanings, observed=observed, observed_depths=observed_depths,
                     layout=layout, roles=roles, clauses=clauses, symbol_ids=handles, reference_plans=())
         if record is not None:
@@ -20373,11 +20400,11 @@ class BasicModel(BaseModel):
         for index in (6, 10, 11, 17):
             updated[index] = lang[index].clone()
         for b, clause in enumerate(clauses):
-            if clause is None:
-                continue
-            depth = 1 if clause.relation is None else 3
-            field = (clause.point[None] if depth == 1 else clause.meaning.roles[[2, 0, 1]])
             location = store.location(row_addresses[b]) if row_addresses[b] != -1 else None
+            if clause is None and location is None:
+                continue
+            field = None if clause is None else (
+                clause.point[None] if clause.relation is None else clause.meaning.roles[[2, 0, 1]])
             references = values[chunks.REFS].new_zeros(len(clauses),2,2)
             top = int(chunks.at(values)[b])
             if top >= 0:
@@ -20387,8 +20414,12 @@ class BasicModel(BaseModel):
             # A relation has role vectors rather than an idea point. Its
             # current head is the newest stack chunk; recall uses the stored
             # chain's head under the same rule.
-            point[b] = (clause.point.detach() if clause.point is not None else
-                        values[0][b,top].detach() if top >= 0 else field[-1].detach())
+            if clause is not None and clause.point is not None:
+                point[b] = clause.point.detach()
+            elif top >= 0:
+                point[b] = values[0][b,top].detach()
+            elif field is not None:
+                point[b] = field[-1].detach()
             if location is not None:
                 occurrence = store.occurrence_of(location)
                 references[b,0] = references.new_tensor((chunks.RELATION if isinstance(location,tuple)
@@ -20408,7 +20439,11 @@ class BasicModel(BaseModel):
             values = chunks.keep_close(values,gate,refs=references,value=point,when=stamps)
             self.conceptualSpace.stm.strata.keep_close(b, point[b], stamps[b],
                 address=store.row_name(location) if isinstance(location, int) else None,
-                relations=written[b].get('relations', ()), source=None if store is None else store.parts)
+                relations=(row_addresses[b],) if field is None else written[b].get('relations', ()),
+                source=None if store is None else store.parts)
+            if field is None:
+                continue
+            depth = len(field)
             slots = field.new_zeros(3, field.shape[-1])
             slots[:depth] = field.detach()
             updated[6][b, sid] = field[-1].detach()
@@ -20538,9 +20573,23 @@ class BasicModel(BaseModel):
         silent = SilenceLayer.silent(state[1][11][:, sid], active)
         self._sentence_silence = silent
         if store is not None:
-            # S -> NULL: a row with no word and no concept; MTM takes nothing.
             for b in silent.nonzero().flatten().tolist():
-                SilenceLayer.write(store, store.slots[0])
+                partial = chosen[b]['partial'][b]
+                if partial is None:
+                    SilenceLayer.write(store, store.slots[0])
+                    continue
+                # No concluded clause. The remaining operands still form one
+                # temporal sequence in memory, without giving the answer a role.
+                from ReadingMemory import commit
+                ideas = partial.tree.ideas
+                concepts = partial.word_ids if partial.word_ids is not None else partial.concept_ids
+                ids = [None if cid <= 0 else cid for cid in concepts.tolist()]
+                ideas.to(device=partial.leaves.device, dtype=partial.leaves.dtype)
+                ideas.prepare(store, partial.tree, {})
+                partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when)
+                head, = commit([ideas], [partial.tree.trace.head], store)
+                row_addresses[b] = head[1]
+                self._concept_owner().mtm.close(store, stream=b)
         observe_sides = getattr(self, '_observe_lesson_sides', False)
         written_clauses = [dict(observe_sides=True) if observe_sides else {} for _ in rows]
         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):

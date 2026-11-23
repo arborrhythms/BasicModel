@@ -481,8 +481,8 @@ def test_41_a_grammar_file_may_not_name_silence():
 
 def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
     """Certificate 41 (rule 48): with a grammar that joins no two words, a
-    two-word sentence is written as S -> NULL: its row holds no word and no
-    concept, MTM takes nothing, the put back is NULL, its cost is booked;
+    two-word sentence stays silent. Its two STM ideas commit as one LTM pair
+    (§19.146); MTM admits no identity, the put back is NULL, its cost is booked;
     a one-word sentence of the same grammar reduces and is unchanged."""
     import Language, Models
     from Interpret import SilenceLayer
@@ -517,6 +517,7 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
         try:
             for texts, silent in ((['alpha gamma'], True), (['alpha'], False)):
                 before, entries = len(store), dict(model._concept_owner().mtm.entries)
+                previous_pairs = set(store.parts.indices().tolist())
                 put.clear()
                 with torch.no_grad():
                     model.forward(model.inputSpace.prepInput(texts))
@@ -526,10 +527,11 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
                 assert put and bool(put[-1]._reconstruction_percepts.any()) is not silent
                 if silent:
                     rows = range(before, len(store))
-                    assert len(rows) == 1
-                    row = rows[0]
-                    assert not store.slots[row, :store.when_start].any()
-                    assert store.referent_of(row) is None and float(store.trust[row]) == 0.
+                    from Memory import OCCURRENCE
+                    assert len(rows) == 2
+                    head, = set(store.parts.indices().tolist()) - previous_pairs
+                    assert store.parts.references(head) == tuple(
+                        (OCCURRENCE, store.row_name(row)) for row in rows)
                     assert model._concept_owner().mtm.entries == entries
                     assert booked and float(booked[-1].sum()) == 1.
         finally:

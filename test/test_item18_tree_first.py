@@ -99,7 +99,7 @@ def test_thought_trial_restores_its_native_store_before_applying_activity():
     leaf = ConceptualMeaning.from_description(torch.ones(4))
     write(store, leaf, key=0)
     smaller = ThoughtTrialState(model)
-    larger = replace(leaf, constituents=(leaf,) * 16)
+    larger = replace(leaf, constituents=(leaf,) * 33)
     @trial_activity()
     def trial():
         view = write(store, larger, key=0)

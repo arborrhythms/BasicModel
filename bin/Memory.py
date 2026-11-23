@@ -2453,6 +2453,25 @@ class LTM1(MemoryStore, nn.Module):
         return references
 
     @torch.no_grad()
+    def sequence(self, references):
+        """Join ordered operands. A single occurrence or subexpression is already a head."""
+        operands = iter(reversed(references))
+        head = next(operands, None)
+        for left in operands:
+            head = RELATION, self.add(left, head, truth_plus=1.)
+        return head
+
+    def leaves(self, head):
+        """Follow a typed head left to right, preserving repeated occurrences."""
+        pending = [] if head is None else [head]
+        while pending:
+            kind, name = pending.pop()
+            if kind == RELATION:
+                left, right = self.references(name)
+                pending.extend((right, left))
+            else:
+                yield kind, name
+
     def add(self, part, whole, *, ref_kinds=(SYMBOL, SYMBOL), truth_plus=0., truth_minus=0.,
             surprise=-1., symbol=None):
         left, right = self.reference(part, ref_kinds[0]), self.reference(whole, ref_kinds[1])
@@ -2729,6 +2748,28 @@ class LTM1(MemoryStore, nn.Module):
 
 class STM1(LTM1):
     """Ordered working branches, with LTM1's storage and tagged-reference reads."""
+    @torch.no_grad()
+    def append_occurrence(self, head, occurrence):
+        """Extend a live temporal chain. Its head stays stable after the first pair."""
+        leaf = self.reference(occurrence, OCCURRENCE)
+        if leaf[0] != OCCURRENCE:
+            raise ValueError('a temporal arrival must be an occurrence')
+        if head is None:
+            return leaf
+        if head[0] == OCCURRENCE:
+            return RELATION, self.add(head, leaf, truth_plus=1.)
+        cursor = head
+        while True:
+            _, tail = self.references(cursor[1])
+            if tail[0] != RELATION:
+                break
+            cursor = tail
+        extension = self.add(tail, leaf, truth_plus=1.)
+        self.refs[cursor[1], 1] = extension
+        self.ref_kinds[cursor[1], 1] = RELATION
+        # The tensor versions invalidate both the pair index and dependency order.
+        return head
+
     def expire(self):
         self.retain(())
 
