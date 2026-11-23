@@ -88,7 +88,7 @@
     <attentionPromotion>false</attentionPromotion>
     <conceptMintCount>3</conceptMintCount>
     <conceptUseFloor>0.5</conceptUseFloor>
-    <conceptMatchCos>0.8</conceptMatchCos>
+    <conceptMatchPart>0.7</conceptMatchPart>
     <conceptPartFloor>0.001</conceptPartFloor>
 
     <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):

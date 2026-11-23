@@ -12976,13 +12976,15 @@ class ConceptualSpace(Space):
             "ConceptualSpace", "conceptUseFloor", .5))
         self.concept_part_floor = float(TheXMLConfig.space(
             "ConceptualSpace", "conceptPartFloor", .001))
-        self.concept_match_cos = float(TheXMLConfig.space(
-            "ConceptualSpace", "conceptMatchCos", .8))
+        # The least share of size two collections must hold in each other,
+        # both ways, to be the same collection (ConceptualMatch.match).
+        self.concept_match_part = float(TheXMLConfig.space(
+            "ConceptualSpace", "conceptMatchPart"))
         self.concept_mint_count = int(TheXMLConfig.space('ConceptualSpace', 'conceptMintCount', 3))
         if not (self.concept_mint_count >= 1 and 0 < self.concept_use_floor < 1
-                and 0 <= self.concept_part_floor < 1 and 0 < self.concept_match_cos <= 1):
+                and 0 <= self.concept_part_floor < 1 and 0 < self.concept_match_part <= 1):
             raise ValueError('invalid familiar-tier parameters')
-        self.mtm.match_cos, self.mtm.mint_count = self.concept_match_cos, self.concept_mint_count
+        self.mtm.match_part, self.mtm.mint_count = self.concept_match_part, self.concept_mint_count
 
 
         # Stage 10 PARALLEL reverse-roundtrip cache (doc/plans/
@@ -16654,10 +16656,6 @@ class ConceptualSpace(Space):
 
     # Sparse contexts follow persistent definition addresses; reusing an
     # attended slot cannot transfer a previous concept's where to another.
-
-    @staticmethod
-    def _context_cosine(a, b):
-        return float(torch.dot(a, b) / (a.norm() * b.norm()).clamp_min(1e-12))
 
 
     @staticmethod

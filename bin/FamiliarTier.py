@@ -52,6 +52,16 @@ def centroid(owner, support, *, order=None):
     return convex_mean(weights, codes)[0]
 
 
+def shared_part(owner, value, other):
+    """The lesser of the two coverages of ``value`` and ``other`` by shared
+    size (``ConceptualMatch.match``, read with the owner's codebook): how
+    much each holds of the other, so a likeness of direction that differs in
+    size is not the same collection."""
+    from ConceptualMatch import match
+    covered, covers = match(value, other.to(value), codebook=owner.similarity_codebook)
+    return min(float(covered), float(covers))
+
+
 def _clock(owner, batch):
     model = owner._model
     return model._sentence_ticks.get(model._open_sentence_slot, model.present())
@@ -100,7 +110,7 @@ def witnessed_match(owner, order, support, *, literal_key=None):
         code = centroid(owner, members, order=source_order)
         mass, previous_mass = sum(support.values()), sum(members.values())
         same = all(support[row] / mass == members[row] / previous_mass for row in support)
-        if same or float(torch.nn.functional.cosine_similarity(value, code, dim=0)) >= owner.concept_match_cos:
+        if same or shared_part(owner, value, code) >= owner.concept_match_part:
             return cid
     return None
 
@@ -267,8 +277,7 @@ def observe_field(owner, field=None, *, active_streams=None):
                 if (alternative in used or owner._row_order(alternative) != order
                         or support_order(owner, previous, order) != context_order):
                     continue
-                cosine = torch.nn.functional.cosine_similarity(value, centroid(owner, previous, order=context_order), dim=0)
-                if float(cosine) >= owner.concept_match_cos:
+                if shared_part(owner, value, centroid(owner, previous, order=context_order)) >= owner.concept_match_part:
                     dense = field.new_zeros(owner.nVectors)
                     dense[list(context)] = dense.new_tensor(list(context.values()))
                     owner.maybe_raise_order(focal, alternative, dense, batch=batch, evidence=None)
@@ -277,15 +286,15 @@ def observe_field(owner, field=None, *, active_streams=None):
                               pair=tuple(float(x) for x in paired[focal]), focal=focal)
         observe_native_cases(owner, batch, used)
         # MTM's leading entries are read through their live member codes;
-        # similarity to this field is use, not an invented positive witness.
+        # their share of this field's size is use, not an invented positive
+        # witness.
         if used:
             for key, entry in tuple(owner.mtm.entries.items()):
                 if entry.order is None:
                     continue
                 order = support_order(owner, entry.support, entry.order)
                 current = centroid(owner, used, order=order)
-                cosine = torch.nn.functional.cosine_similarity(owner.mtm.value_of(key).to(current), current, dim=0)
-                if float(cosine) > owner.concept_use_floor:
+                if shared_part(owner, current, owner.mtm.value_of(key)) > owner.concept_use_floor:
                     owner.__dict__.setdefault('_field_activated_references', {}).setdefault(batch, set()).add(key)
     return activated
 

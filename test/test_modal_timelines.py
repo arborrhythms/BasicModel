@@ -294,7 +294,7 @@ def test_modal_aliases_preserve_actuality_after_restore_and_forgetting(monkeypat
     saved = f.cs.mtm.state()
     restored = MediumTermMemory(capacity=f.cs.mtm.capacity, horizon=f.cs.mtm.horizon,
         n_vectors=f.cs.nVectors, field_width=f.cs.mtm.field_width,
-        match_cos=f.cs.mtm.match_cos, mint_count=f.cs.mtm.mint_count)
+        match_part=f.cs.mtm.match_part, mint_count=f.cs.mtm.mint_count)
     restored._owner = f.cs.mtm._owner
     restored.restore(saved)
     torch.testing.assert_close(restored.value_of(token), actual)
