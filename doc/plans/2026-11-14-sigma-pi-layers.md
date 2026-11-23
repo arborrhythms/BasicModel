@@ -15027,6 +15027,12 @@ the returned answer on the model as it runs.
    the right words would move them the same way. This is a diagnosis: do
    not leave the cost out, weight it, or spell from the dictionary to pass.
    Say what you would change and why.
+   Since then (2026-11-23, section 23.6.28) the reconstruction says each
+   word from the concept its STM row names, and in the echo's model its
+   text is exact in 504 of 570 readings (80 of 570 before). The letters
+   are still lost in the answer in 4 runs of 24. So a reconstruction asked
+   to put back the wrong words was not the only cause; start from the
+   answer's spelling.
 ~~~
 
 *Round 6d, nineteenth pass: the reconstruction follows the STM tree's edges* (Claude, 2026-11-22, after §19.140; for an Opus implementer)
@@ -15050,6 +15056,19 @@ The first part's edges point at sites of the reading's record, and the values pu
 3. *An edge is followed with no rule of the walk.* Following an edge needs no inverse, so it needs no generate rule of the composing rule's name. A model whose walk lacks the rule (the echo's model, whose walk has `interpret` and `verb` only) follows its edges all the same.
 4. *Measured, input to output:* the three counts of the first part again (19 words with marks, lesson sentences, two-word sentences; untaught and after three rounds, three starts); the echo's cell of a word with its mark, 12 runs, counting the runs that lose a word's letters after teaching (2 of 12 in the first part, where nothing was followed); and `test_grammar_reconstruction_gate`'s read-back test, whose second half (what is put back follows a changed state) the first part's port skips where every step is followed: say what is true of it now and assert that.
 5. *Diagnosis only, nothing mended:* after teaching, readings lose words before the reconstruction (a look takes only the mark; a word is read with no rule). For three such readings: which cost's gradient moved the choice that lost the word, and whether the path that keeps every word was among those compared and what it cost.
+
+The standing rules of the first part hold.
+
+*Round 6d, nineteenth pass, third part: why a taught model reads fewer words than it is given (diagnosis only)* (Claude, 2026-11-23, after §23.6.28; for the same implementer)
+
+After three rounds of teaching, `test_item17_reconstruction_said_back.py` puts back fewer inputs than untaught, and in every row looked at the reading itself holds fewer words than the input (fewer looks than words, or a word read with no rule). The second part's explanation (a reading of fewer words has the lower reconstruction cost, and that cost's gradient reaches the looks) is not confirmed: §23.6.28's trials leave the fall in place with the cost asked for every byte, with the `reconstruction` cost left out of the step, with `attention` left out, with `expectation` left out, with the sentences taught too, with `request_read` held still, and with the reconstruction's owned parameters held still (there the 19 taught words are kept, the sentences are not).
+
+1. *Find the step.* In one start that loses words, find the first teaching step after which a reading measured with no step ("This is." or a word with its mark) holds fewer words than before it. Keep the model's parameters from just before that step.
+2. *Find the parameters.* Of the parameters that step moved, find the fewest whose values from before the step, put back alone, give the reading its words again (halve the set and repeat). Name them by `named_parameters`, with their owner (`objective_parameter_groups`) and how far the step moved each. This is a trial to find a cause, in a probe; it is not a mend and nothing of it stays in the source.
+3. *Follow them to the reading.* From those parameters to the lost word: which look stopped taking it, or which word was read with no rule, and through which values (the request, the salience of each place, the concept's value at the reading, the chooser's score of the rule). Give the numbers before and after the step for the lost word and for a word that was kept.
+4. *Say which cost's gradient moved those parameters at that step* (each cost's own gradient on them, as the second part's probe read it), and whether the same step with that cost's gradient on them left out keeps the word.
+5. *Repeat items 1 to 4 on a second start,* and say whether it is the same parameters.
+6. *Mend nothing.* Say in the return what you would change and what it adds. Also say, without changing it, whether `SentenceStrata.Tree.edge` can tell the tree's pairs from the closing's by something other than the lower handle.
 
 The standing rules of the first part hold.
 
@@ -26821,3 +26840,59 @@ The implementer's sweep (82 files and both gates): 833 passed, 11 failed, of whi
 - *A consequence to put to Alec:* with edges followed, the reconstruction no longer runs any rule's inverse and charges the walk's policy nothing. The generate rules are then taught only through the answer.
 - *The harm of teaching is now upstream and visible:* after three rounds the readings themselves lose words. That is the looks and the grammar's choice, and it is the next thing to diagnose (the second part's item 5).
 
+### 23.6.28 Round 6d, nineteenth pass, second part: each word is said from the concept its STM row names, at the place the row holds, in both models; the reconstruction's cost no longer reaches the reading; a taught model still reads fewer words than it is given, and the cause is not found (Claude on Opus, standing in for Codex, 2026-11-23; review and trials by Claude)
+
+The implementer's return is the "Second part" of `r6d_return_19.md` in Claude's scratch directory. Commits on `item17-r6d11`: 4d1412d8ed (items 1 to 3), 26dfedad39 (the gate test), a2afff83e1 (a row with no place claim is said in turn), de6e4635f5 (roots found by their sites' edges), e737082b7a (a row names the word's own concept first).
+
+#### What was built
+
+- *A word as read is a row of the trial's STM* (`SentenceStrata.Tree.write_edges(store, concepts, where, when)`, called from `Comprehension.finish` before the closing stages into the store). The row's referent is `('sym', concept)`: the word's own concept (`program.word_ids`), or, where that has no concept row, the identity the comprehension resolved (`Evaluation.ids`). Its point is zero except its band, which holds the word's `.where` and `.when` (`program.symbol_where`, `symbol_when`). The edge's word end is that row's occurrence. Nothing was short and nothing was added.
+- *A leaf is said from its concept* (`SentenceField.said_words`). For each root's edge, the word rows under it in order (`Tree.words_of`). Each word's code is the concept's, looked up as `Output.perceived_meanings` looks up a perceived word (`similarity_codebook.lookup_rows`, `interpret.lexical_atoms`), and the writer spells it by the model's own way back. Its place is the row's `.where` band read back by the nearest of the model's where wires (`where_registry.code`). A row whose band is zero claims no place and is said at the writer's cursor; that is every row of the XOR models.
+- *An edge is followed with no rule of the walk.* The walk's action index is a rule, and the walk and `Extension.generated` read a step's arity from it, so a step with no rule would need a new action; none was added. The edges are followed in the STM, and the walk is given the words as its slots and takes only STOPs. The echo's model, whose walk has `interpret` and `verb` only, now follows its edges.
+- *Still read from the record of the reading, at the reconstruction:* the roots' sites (`tree.roots`), the record's depth, and the shape of the end slots. No value of a word or of a composed step is read from it.
+
+#### Measured (the implementer's runs, and Claude's own three starts of the same measure)
+
+| Measure | Untaught | After 3 rounds of teaching the 19 words |
+| --- | --- | --- |
+| 19 words with marks put back | 19 in 6 starts of 6 | 19, 18, 0 (implementer); 19, 18, 0 (Claude) |
+| 4 lesson sentences put back | 4 in 6 starts of 6 | 2, 0, 2; 0, 1, 1 |
+| 6 two-word sentences put back | 6 in 6 starts of 6 | 0, 0, 0; 0, 1, 0 |
+
+- Echo cell of a word with its mark, 12 runs: 3 lose a word's letters after teaching (4 of 24 over two sets; 5 of 21 before the pass). The echo model's reconstruction text is exact in 504 of 570 readings (80 of 570 in the first part), so the letters are lost in the answer and a wrong reconstruction was not their only cause.
+- `test_grammar_reconstruction_gate`'s read-back test now asserts both halves: a followed reading is put back the same from a changed state; a reading with no edges is still the inverse of its state. `TestXorGrammarReconstruction` passes.
+
+#### The implementer's diagnosis of the words lost after teaching
+
+A reading that loses a word takes fewer looks than there are words. The looks' parameters (`request_read`) took a gradient from the `attention` cost only. `SentenceField.charge` scores the reconstruction over the bytes inside the reading's own slots, so a reading of fewer words has the lower cost (three readings: 1.20, 1.19, 2.33 for one look against 5.24, 4.45, 3.80 measured with every word). The path that keeps every word was never among those compared: the explore path's looks were the exploit's in every comparison.
+
+#### Tests
+
+The implementer's sweep on the last commit: 837 passed, 7 failed, 41 skipped; both gates passed. Claude's own run (the curriculum test, the echo's tests, the gate test, `test_grammar_separator`, `test_operators_final_b`, `test_item20_round6_gradients`, `test_explicit_dimensions` and both gates): 48 passed, 3 failed, 1 skipped; both gates passed. The three:
+
+- *New:* `test_item20_round6_gradients.py::test_input_reconstruction_reaches_perception_and_not_the_grammar`. The reconstruction's error no longer reaches the whole space's members (`wholeSpace._owned_bases.what.primitive_properties.members`); it still reaches the order-zero Sigma and the percept codebook. The implementer left the test as it is.
+- *Known:* the two echo cells read whole by a model that reads.
+
+#### Review and trials (Claude, 2026-11-23)
+
+- *Accepted:* the rows, the edges to them, the leaf said from its concept at its row's place, and the gate test's two halves. This is §19.140's form: the edge's word end is a pointer to a concept.
+- *What the form costs, to put to Alec.* The reconstruction is now: the concepts the reading named, each spelled by the way back at its stored place. The idea's own value takes no part in it; any tree over the same words is put back the same. No rule's inverse is run, the walk's policy is charged nothing, and the cost's gradient reaches only the way back from a concept to its letters (the order-zero Sigma, the percept codebook), not the reading's way up. The failing gradient test asserts the property that was lost. Claude's first choice, not tried: the row also holds how strongly its concept was lit by the input (one value the reading already has), and the leaf is said at that strength, so the cost reaches the reading through it; today a named leaf's strength is always 1 (`OutputOccurrences.generated`).
+- *To mend later:* `Tree.edge` tells the tree's pairs from the closing's by the lower handle, since the closing stages its own rows under the same site names. That rests on the order of writing.
+- *The diagnosis is not confirmed.* Trials in a scratch worktree at e737082b7a (nothing kept), each the said-back measure after three rounds, starts drawn afresh:
+
+| Trial | Words, of 19 | Lesson sentences, of 4 | Two-word sentences, of 6 |
+| --- | --- | --- | --- |
+| As built (Claude's three starts) | 19, 18, 0 | 0, 1, 1 | 0, 1, 0 |
+| The reconstruction asked for every byte of the input | 11, 18, 19 | 2, 0, 0 | 1, 0, 0 |
+| `reconstruction` cost left out of the step (2 starts) | 18, 18 | 0, 0 | 0, 0 |
+| `attention` cost left out (2 starts) | 0, 13 | 2, 4 | 0, 6 |
+| `expectation` cost left out (2 starts) | 12, 16 | 3, 0 | 6, 0 |
+| The sentences taught as well as the words | 0, 7, 12 | 2, 0, 0 | 0, 0, 0 |
+| `request_read` (10 parameters of 116) held still | 0, 0, 19 | 0, 2, 4 | 0, 0, 6 |
+| The reconstruction's owned parameters (66 of 116) held still | 19, 19, 19 | 2, 0, 0 | 1, 0, 0 |
+
+  - Asking the reconstruction for every byte does not keep the words, and neither does leaving its cost out. So the lower cost of a shorter reading is not what moves the looks.
+  - No one cost left out keeps them, and teaching the sentences too does not keep the sentences.
+  - With the looks' own parameters held still the words are still lost in 2 starts of 3, so the looks read something else that teaching moves. With the reconstruction's owned parameters held still the 19 taught words are kept in 3 starts of 3, and the sentences are still lost.
+  - These are 2 or 3 starts each: they rule out single causes and do not find one. The third part (text above §22.7) finds the step and the parameters.
+- *This is the looks' fault of the eleventh pass again* (§23.6.17: the request saturates and the model's own reading does not pass), now seen from the reconstruction's side: untaught the reading holds every word and every input is put back; taught, it does not.
