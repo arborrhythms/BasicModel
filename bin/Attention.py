@@ -152,26 +152,6 @@ class BracketKeys:
             return None
         return ev.detach().mean(dim=1)                       # [B, D]
 
-    @staticmethod
-    def _cos(q, keys):
-        """Row-wise cosine of a query ``[B, Dq]`` against per-span keys
-        ``[B, K, Dk]`` -> ``[B, K]`` (sliced to the common trailing width).
-        ``None`` when either side is absent."""
-        if q is None or keys is None:
-            return None
-        d = min(int(q.shape[-1]), int(keys.shape[-1]))
-        if d == 0:
-            return None
-        # DETACH both sides: the query IS the primed symbols (derived from the
-        # codebooks) and the keys are codebook-content -- the gradient must NOT
-        # flow back into either (orders.md §6 "Learning"; C-9/C-11). Defense in
-        # depth: the caller already detaches via ``_pool`` / ``_span_keys``.
-        qn = q.detach()[..., :d]
-        kn = keys.detach()[..., :d]
-        qn = qn / qn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
-        kn = kn / kn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
-        return torch.einsum('bd,bkd->bk', qn, kn)            # [B, K]
-
 
     @staticmethod
     def _span_keys(percept_ev, spans):
