@@ -103,6 +103,7 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
         # recorded composition's inverses give, so a byte may be missing
         # (a rule with no inverse); that is measured, not asserted away.
         assert owned.truncated.shape == (2,)
+        print('readings put back whole:', int((~owned.truncated).sum()), 'of', len(owned.truncated))
         # The request's read is attention's own (rule 80).
         owners = model.ownership_gradient_diagnostics(optimizer)['parameters']
         writers = [row['writers'] for row in owners if row['owner']=='attention']
