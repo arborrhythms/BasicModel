@@ -56,7 +56,7 @@ def test_thought_departure_preserves_the_other_streams_reading():
     assert model.present() == 11
 
 
-def test_every_all_path_cost_has_two_total_exposures():
+def test_only_the_admitted_reconstruction_trains_at_sentence_exit():
     from Layers import Error
     from WholePaths import objectives
     active = torch.ones(1, dtype=torch.bool)
@@ -77,12 +77,33 @@ def test_every_all_path_cost_has_two_total_exposures():
     parts = torch.tensor([[[1., 1., 1.], [2., 1., 1.], [3., 1., 1.]]])
     draws = [dict(compose_round=torch.tensor([-1])) for _ in range(2)]
     costs, weights = objectives(paths, parts, active, draws)
-    for name in ('reconstruction', 'expectation', 'compose_lesson', 'generate_lesson',
+    torch.testing.assert_close(costs['reconstruction'], parameter)
+    for name in ('expectation', 'compose_lesson', 'generate_lesson',
                  'attention', 'penalty.reconstruction', 'penalty.expectation', 'penalty.attention'):
         torch.testing.assert_close(costs[name], 2 * parameter)
     torch.testing.assert_close(costs['output'], parameter)
     torch.testing.assert_close(costs['penalty.output'], parameter)
     assert weights.tolist() == [[1., 0., 0.]]
+
+
+def test_reconstruction_gradient_follows_each_streams_selected_path():
+    from Layers import Error
+    from WholePaths import objectives
+    active = torch.tensor([True, True, False])
+    values = [torch.ones(3, requires_grad=True) for _ in range(3)]
+    paths = []
+    for value in values:
+        errors = Error(row_mask=active)
+        errors.add('reconstruction_order_zero', value, category='reconstruction')
+        paths.append(NS(registry=errors))
+    parts = torch.zeros(3, 3, 3)
+    parts[:, :, 0] = torch.tensor([[3., 2., 1.], [1., 2., 3.], [2., 1., 3.]])
+    draws = [dict(compose_round=torch.full((3,), -1)) for _ in range(2)]
+    costs, _ = objectives(paths, parts, active, draws)
+    costs['reconstruction'].backward()
+    torch.testing.assert_close(values[0].grad, torch.tensor([0., .5, 0.]))
+    assert values[1].grad is None
+    torch.testing.assert_close(values[2].grad, torch.tensor([.5, 0., 0.]))
 
 
 def test_no_departure_does_not_share_later_registry_writes():

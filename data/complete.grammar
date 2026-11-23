@@ -207,6 +207,7 @@
       <rule>intuit_argout1 = intuit.thought(intuit_argin1)</rule>
       <rule>implies_argout1 = implies.thought(implies_argin1, implies_argin2)</rule>
       <!-- §27.1: <rule>gain_argout1 = gain.thought(gain_argin1)</rule> -->
+      <rule>output_argout1 = output.thought(output_argin1)</rule>
     </thought>
 
     <generate>

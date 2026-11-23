@@ -7,6 +7,17 @@ def pair(value=None, positive=0., negative=0., *, witnesses=(), **metadata):
                 witnesses=tuple(witnesses), **metadata)
 
 
+def output(context, arguments):
+    """Issue a production request for one held meaning."""
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    operand = arguments['argin1']
+    if torch.is_tensor(operand):
+        ref = dict(context.operand_references).get('argin1')
+        operand = replace(ConceptualMeaning.from_description(operand), role_refs=(ref, None, None))
+    return pair(emission=operand)
+
+
 def bind(context, arguments):
     from ThoughtReferences import bindings
     meaning = arguments['argin1']

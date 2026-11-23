@@ -142,6 +142,10 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
         kind = forms[form]
     effect_round = effect_round or EffectRound(
         OperatorEffects(descriptor.read_scope, descriptor.write_scope), 'thought')
+    if kind == 'production':
+        # The serial history owns this emission. Its path's output walk
+        # realizes the recorded operands in order, once per response.
+        return
     if kind == 'gain':
         if 'gain' not in result.evidence:
             # A checked operation may exhaust its shared meter before it

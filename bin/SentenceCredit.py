@@ -152,14 +152,15 @@ def score_function(probabilities, scale, mask, costs):
                         probabilities=probabilities.detach(), scale=scale)
 
 
-def reader_weights(parts, active, draw):
+def reader_weights(parts, active, draw, *, winner=None):
     """One answer exposure, shared with every compose departure and its exploit."""
     if draw is None:
         raise ValueError('answer exposure requires the whole-path departure draw')
     draws = (draw,) if isinstance(draw, dict) else tuple(draw)
     if len(draws) != parts.shape[1] - 1:
         raise ValueError('one departure draw is required for every explore path')
-    winner = comparison(parts, active)['winner']
+    if winner is None:
+        winner = comparison(parts, active)['winner']
     exposure = torch.nn.functional.one_hot(winner, parts.shape[1]).bool()
     compose = torch.stack([item['compose_round'] >= 0 for item in draws], -1) if draws else active[:, None][:, :0]
     exposure[:, 1:] |= compose

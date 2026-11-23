@@ -138,7 +138,7 @@ def absence(model, row, observed, image=None, *, pending=None):
     return write(model, value, row=row)
 
 
-def close(model, fields, *, sentence, ready, images=None, pending=None):
+def close(model, fields, *, sentence, ready, images=None, pending=None, readings=()):
     """Offer one root episode at every close, then retain its presented binding."""
     results = []
     for row in ready:
@@ -153,8 +153,17 @@ def close(model, fields, *, sentence, ready, images=None, pending=None):
         previous = getattr(model, '_thought_image', None)
         model._thought_image = None if images is None else images.get(row)
         try:
+            options = {}
+            if readings and 'output' in model.grammatical_thoughts.executable_operation_ids:
+                program = readings[row]
+                if program is not None:
+                    tree = program.tree
+                    mtm = model._concept_owner().mtm
+                    options['operands'] = tuple(tree.ideas.raw_meaning_of(slot)
+                        for slot, _, address in mtm.read_occurrences(tree.ideas, tree.trace.head)
+                        if address is not None)
             result = model.run_selected_thought(field.query if field.query is not None else field.meaning, row=row,
-                work_budget=getattr(model, 'attention_budget', 32))
+                work_budget=getattr(model, 'attention_budget', 32), **options)
         finally:
             if previous is None:
                 del model._thought_image

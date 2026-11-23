@@ -10268,6 +10268,12 @@ What follows (Claude):
 
 The text for Codex is above §22.7.
 
+### 19.147 Expectation during attention, reconstruction at sentence exit and production by the chooser (2026-11-23)
+
+Alec places the complete reconstruction at sentence exit. Each `attend()` can train expectation from what the next look reveals. The completed reading supplies the reconstruction target comparison. During exploration, each distinct reading can still furnish a forward R for the R + A comparison. For each stream the final reconstruction supplies a gradient through the one reading that comparison admitted. Operations within that reading can share weights.
+
+The complete thought grammar may call `output(meaning)`. MTM can read the meaning of a witnessed symbol in the current STM tree, including a name with no known individual. Each executed call supplies one operand to the ordinary output walk and writer. The returned bytes, including an empty response, are compared with the supplied target after the response is fixed. That comparison can teach the chooser when to call the operator and which operand to select. Whether it learns that behavior is measured on commands and bare words with the same inference question.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.

@@ -17,7 +17,7 @@ def materialize(result):
     from Queries import _freeze_boundary_value
     from Meaning import ConceptualMeaning
     evidence = dict(result.evidence)
-    if result.semantic_id in ('query', 'intuit') or evidence.get('pushed'):
+    if result.semantic_id in ('query', 'intuit', 'output') or evidence.get('pushed'):
         return result  # These effects have no returned semantic operand.
     meaning = evidence.get('meaning')
     if meaning is None:
@@ -73,7 +73,7 @@ def query_pattern(goal, kind, left, right, values=None, excluded=()):
                     (('referent', 2),) if right is None else (), pair=(0., 0.), source_evidence=(0., 0.))
 
 
-def candidates(registry, root, active, current, records, descriptions=(), *, stm):
+def candidates(registry, root, active, current, records, descriptions=(), *, stm, operands=()):
     from Queries import ThoughtOperationCandidate
     results = slots(records)
     meanings = tuple(result.evidence.get('meaning') for result in results)
@@ -95,6 +95,11 @@ def candidates(registry, root, active, current, records, descriptions=(), *, stm
         requests = [item for item in requests if item.semantic_id in allowed or
                     (item.semantic_id in ('equal', 'define') and not item.open_roles
                      and not has_open_slots(item.request))]
+    if 'output' in registry.executable_operation_ids:
+        for operand in (*operands, *meanings, current):
+            if not has_open_slots(operand) and int(operand.role_mask.sum()) in (1, 3):
+                requests.append(ThoughtOperationCandidate(registry.operation_spec('output'),
+                    registry.form('output', operand)))
     if 'infer' in registry.executable_operation_ids:
         from ThoughtChunks import held
         premises = () if stm is None or not hasattr(stm, 'state') else held(stm, getattr(registry, '_thought_row', 0))
@@ -215,7 +220,7 @@ def completion_result(meaning, result, *, applied=True):
 
 def integrate(registry, goal, result, records, *, stm, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
-    if result is None:
+    if result is None or result.semantic_id == 'output':
         return goal
     if result.semantic_id == 'query' or result.evidence.get('knowing_written') or result.evidence.get('pushed'):
         # System 1 changes the field or loads STM. A later selected operation
