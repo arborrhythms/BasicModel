@@ -10142,6 +10142,24 @@ Six words; "say X" given with the answer "X" and "X" alone given with silence; f
 - *The check, a test choosing the thought's step (a check of ability, not of what the model does):* on "say Felix" and on "Felix" the thought's first menu is the same five operations: `not`, `non`, `exist`, `intuit`, `query`, and to conclude. `ask` is not on it: it is offered only for a sentence that was composed by `ask`, and the reading did not compose "say Felix" so. Each of the five, taken once and then concluded, returns nothing, for both inputs.
 - *So, as the model reads "say X" today:* the word "say" changes nothing in what the thought may do, and no one existing thought answers. Two things are still not checked: a reading that composes "say X" by `ask` (the tests' forced readings work on parts of the model, not on the model as it runs, so this is a larger check), and orders of two or more thoughts.
 
+### 19.142 Alec: the order of a reading, and what the two gradients are taught on (2026-11-23)
+
+Asked whether the reconstruction's cost should tell two trees over the same words apart again (§23.6.31), Alec reviewed what he thinks should be happening, "especially because system2 should be teaching system1":
+
+> The percepts run.
+> Then basic percepts are formed on those.
+> So we have an active field that gets propagated over all orders.
+> Then we have thought (optional): it it does happen, it further examines the input and changes the basic field based on a number of looks: this is all internal.
+> Then the (possibly altered) basic field is used to do both reconstruction and output.
+> So the gradient is being trained on both reconstruction and output (although reconstruction trains first, so the output train is basically on a residual of that; we can try letting those two gradients fight one another if it is felt that output does not have sufficient influence, but then I need your proposal to balance them.
+
+Against the build at 9369662d41 (Claude; the first is read from the code, the rest are not yet checked):
+
+- *The two gradients: as built.* `GradientProjection.project` leaves the reconstruction's gradient whole and removes from the answer's only the part that opposes it, parameter by parameter. §23.6.31 measured the answer's gradient at a fortieth or less of the reconstruction's on the parameters both reach. How much of it the projection removes on a teaching round is not measured yet; no balance is proposed before it is.
+- *Reconstruction and output from one field: to be checked.* The reconstruction as built says each word from the concept its STM row names, at the place the row holds (§23.6.28); the echo's answer says the words it perceived (§19.137). Whether both read the one field Alec means, and whether a thought's change to that field reaches the reconstruction, is not checked.
+- *The looks: differ.* As built the looks run in the reading, on the path a grammar opens, before any thought; in the review they belong to thought, which is optional and internal.
+- *The tree.* The review names no tree: both ways out read the field. Claude's reading, not confirmed by Alec: the question about two trees falls away, and what remains is whether the field the thought leaves is the one both ways out read.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
