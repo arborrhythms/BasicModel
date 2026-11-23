@@ -646,29 +646,46 @@ word the two pull the way up apart.
 
 ### A field the thought has changed
 
-A thought's change is of the first kind: it adds to the field, or of the
-second: it puts one concept where another was. Either way, an exact way back
-has no direction it cannot see. What a thought changes in the basic field at
-a place of the input shows in what is put back from that field. If the
-reconstruction reads the field after the thought, its cost charges the
-thought for every such change. There are three ways to stand.
+"Corresponds to the input" and "is at a place in the input" are two things.
+What a thought lights does correspond to the input: System 2 determines
+System 1, so System 1 is to light the same thing from the same input
+(Alec, 2026-11-23: "We have just said S2 determines S1, so of course it does
+correspond"). Reading "Felix is a cat", a thought may light *animal*. That
+follows from the input, and no letters of the input spell it.
 
-1. *The reconstruction reads the field before the thought* (as built:
-   "Reconstruction has its own operated field"). Nothing conflicts, and the
-   reconstruction teaches the thought nothing; the thought is taught by the
-   answer alone.
-2. *The reconstruction reads the field after the thought, and what the
-   thought lights holds no place in the input.* The way back says a concept
-   at its place, so a concept with no place in the input is silent in the
-   reconstruction and still there for the output. The reconstruction then
-   asks one thing of a thought: keep what was perceived where it was
-   perceived.
-3. *System 1 learns what System 2 did*, so that the change is no longer made
-   by a thought (the next part).
+The reconstruction is a comparison at the places of the input. If it reads
+the field a thought has left, the one thing that must not happen is that
+*animal* is said as letters at a place where the input has other letters.
+Two readings of one field keep that apart:
 
-The second and third belong together, and are Alec's order: percepts, basic
-field, an optional thought, then one field for both the reconstruction and
-the output.
+```text
+reconstruction:  the field read by place   (what holds a .where in the input)
+output:          the field read by light   (what is active, chosen by System 2,
+                                            and given its places by the output)
+```
+
+Symbols are what make this possible. A symbol has no dimensions and no
+percept, so what passes between the levels through a symbol is activity
+alone; it carries no `.where` (Alec: symbols "allow successive levels to
+influence each other in terms of activity without forcing isomorphism
+between the spaces"). Light that reaches the basic field by way of symbols
+arrives as activity, not as a form at a place. Read by place, it is silent;
+read by light, it is there. This is the rule that forms and meanings do not
+leak into each other, seen at the meeting point of the two loops.
+
+Where a thought changes which concept stands at a place of the input, the
+reconstruction from the changed field asks that the new concept be spelled
+as the letters at that place. That is right when the two concepts share the
+form (a word read in another of its senses), and wrong when they do not: the
+dictionary would learn that *animal* is spelled "cat". So a thought may
+re-read a place; it may not put another word's concept there.
+
+As built at item 1.7 two things differ from this. The reconstruction reads
+the field before the thought ("Reconstruction has its own operated field"),
+so nothing conflicts and the reconstruction teaches a thought nothing. And
+`intuit` deposits what it lights at every occupied place of the field
+(`IntuitionField.read`), so that light does hold the input's places; a
+reconstruction moved after the thought would meet it there.
 
 ### System 2 teaching System 1 on the shared map
 
@@ -682,23 +699,24 @@ U_p(x)  ->  z_A
 ```
 
 It arrives on one leg and is of first order. By the tie the same step moves
-the way back toward `D(z_A) = x`: the field the thought left comes to be
-spelled as the input. At its end point `U(x) = z_A`: the input lights
-directly what the thought used to add, the thought changes nothing, and the
-reconstruction from the changed field is exact.
+the way back toward `D(z_A) = x` at the places of the input. At its end
+point `U(x) = z_A`: the input lights directly what the thought used to add,
+and the thought changes nothing.
 
-The reconstruction asks `U(x) = c_R`, and this teaching asks `U(x) = z_A`.
-They agree exactly when the thought keeps, at the places of the input, the
-concepts the reading named there. That is the condition of the second way
-above, so one condition settles both: what a thought adds holds no place in
-the input, and what was perceived stays where it was. Under it the
-reconstruction, the answer and this teaching have one end point, and nothing
-is left to project. Without it they pull the way up apart at every place the
-thought rewrote.
+The reconstruction asks `U(x) = c_R` at each place, and this teaching asks
+`U(x) = z_A`.
 
-The same condition keeps System 1 honest. If it learned to light an inferred
-concept as though it were perceived at a place of the input, the
-reconstruction would put back letters that were not there.
+- If the reconstruction reads the field the thought leaves (Alec's order),
+  `c_R` is `z_A` at the places of the input, and the two ask the same thing.
+  The reconstruction, the answer and this teaching have one end point, and
+  nothing is left to project.
+- If the reconstruction reads the field before the thought (as built), the
+  two agree only where the thought kept what the reading named. Wherever a
+  thought re-read a place they pull the way up apart.
+
+So with System 2 teaching System 1, the order that has no conflict is the
+one Alec gives: percepts, basic field, an optional thought, then one field
+for both the reconstruction and the output.
 
 ### The two loops
 
@@ -736,8 +754,8 @@ to System 1 by the teaching above.
 | Up against back, one cost, an exact round trip | Always | The two cancel; nothing is taught |
 | Up against back, a replacement between the legs | Never: one step serves both legs | The choice itself is untaught and can turn over; small steps |
 | Reconstruction against output on the shared map | One concept asked for two texts, or one text named by two concepts | The difference belongs in the field; one concept for a word, whoever reads it; the projection removes the rest |
-| Reconstruction against a thought | Where the reconstruction reads the changed field at the input's places | What a thought lights holds no place in the input |
-| Reconstruction against System 2 teaching System 1 | Where a thought rewrote what was perceived | The same condition; then all three have one end point |
+| Reconstruction against a thought | Where what a thought lights is said as letters at a place of the input | The field read by place for the reconstruction and by light for the output; symbols carry activity and no `.where` |
+| Reconstruction against System 2 teaching System 1 | Where the reconstruction reads the field before the thought and the thought re-read a place | The reconstruction reads the field the thought leaves; then all three have one end point |
 | Reconstruction against the rules | Only with a learned inverse from the parent alone | A return by the STM tree's edges |
 
 ## Trained total and diagnostic objectives

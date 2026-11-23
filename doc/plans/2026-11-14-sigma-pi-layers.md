@@ -10200,6 +10200,12 @@ The analysis is `doc/GradientFlow.md`, "One map used both ways: what its gradien
 - A return by the STM tree's edges (§19.140) teaches the rules nothing by the reconstruction; System 2 is then taught by the output and passed down to System 1. This answers the question that began §19.142: the reconstruction does not tell two trees apart, and under this analysis it need not.
 - Not built, and not proposed here as a pass: the reconstruction after the thought; a cost teaching the way up toward the field the thought leaves on the basic Pi-Not-Sigma itself (as built `intuit`'s map is taught so, a map of its own); a check that the answer and the reconstruction name a word by the same concept.
 
+*Alec, on "what a thought lights holds no place in the input" (2026-11-23):*
+
+> Please elaborate. We have just said S2 determines S1, so of course it does correspond. Symbols form an interesting role between the two systems, because they are zero-D so they enable somewhat independent operation (this is currently leveraged by the fact that they allow successive levels to influence each other in terms of activity without forcing isomorphism between the spaces)
+
+Claude's wording was wrong and is corrected in `doc/GradientFlow.md` ("A field the thought has changed", "System 2 teaching System 1 on the shared map"). What a thought lights corresponds to the input, and System 1 is to learn it from the input. What was meant is narrower: it is not said as letters at a place of the input. Symbols give that: what passes through a symbol is activity with no `.where`, so the field read by place (the reconstruction) is silent on it and the field read by light (the output) has it. With that, the reconstruction reading the field the thought leaves is the order with no conflict once System 2 teaches System 1; the reconstruction before the thought is the one that pulls the way up apart wherever a thought re-read a place. As built, `intuit` deposits its light at every occupied place of the field (`IntuitionField.read`), so it does hold the input's places today.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -27172,3 +27178,21 @@ Alec: "What is teaching the reading, if not reconstruction? I assume output, sin
 *What the nineteenth pass's second part changed in this* (from §23.6.28, not measured again here): the reconstruction puts back any tree over the same words the same, so R is the same for two trees over the same words, and the credit can tell two such trees apart by A alone. Where no answer is supplied, nothing tells them apart.
 
 *Not shown:* one start per model and two reads per text; a credit is charged only where a departure is drawn, so a cost that reached nothing in these reads may reach it in others (item 6 of the Codex list above §22.7 asks for a whole round).
+
+### 23.6.32 Where Claude's part of item 1.7 stops, and what passes to Codex (Claude, 2026-11-23, at Alec's word)
+
+Alec: "After codex returns, I would like you to finish up by integrating and committing that work. So find a good stopping place within 1.7 for the work that you are doing, codex seems to be making faster progress and I would let them finish item 1.7."
+
+*Where the work branch stands.* `item17-r6d11`; nothing is pushed and `main` is not moved. No pass of Claude's or of its implementer is running. The last source change is b2d42ea39b (teaching at the model's own rate); every commit after it is the spec, `doc/ModelAge.md` or `doc/GradientFlow.md`. Codex works on `item17-codex-open`, begun from 9369662d41, on the list above §22.7.
+
+*Done in round 6d and accepted:* the reconstruction says each word from the concept its STM row names (§23.6.28); teaching at the model's rate, with the echo's three tests passing in every run (§23.6.30); what teaches each part of the reading (§23.6.31); Alec's order of a reading and the analysis of the shared map (§19.142, `doc/GradientFlow.md`).
+
+*Passes to Codex with item 1.7* (beyond its list):
+
+1. The age written by the assessment (`Assessment.assess_age`, on `item17-codex`), which the list told Codex to leave for Claude. It is Codex's to bring over.
+2. "say X" answered "X", and "X" alone met with silence (§19.141): no mechanism is chosen; the echo's test and the 1.00 row of `doc/ModelAge.md` change to the pair when one is.
+3. `test_item20_round6_gradients.py::test_input_reconstruction_reaches_perception_and_not_the_grammar`. By §19.142's analysis the reconstruction need not tell two trees apart, and a return by the STM tree's edges teaches the rules nothing; whether the test is changed to say so is Alec's word to give.
+4. What §19.142 names and nothing builds: the reconstruction after the thought, System 2's teaching on the basic Pi-Not-Sigma itself, one concept for a word whoever reads it, and where `intuit` places its light. These are not passes until Alec says so.
+5. Round 7 (§22.7), the full list of tests when `main` moves, and the landing.
+
+*Left to Claude:* when Codex returns, to read its return, integrate its branch into `item17-r6d11` and commit.
