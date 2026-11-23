@@ -368,6 +368,16 @@ class Evaluation:
             source = self.model.symbolSpace.ltm_store
             store.to(device=end.device, dtype=end.dtype)
             store.prepare(source, self.program.tree, self.composition_sites)
+            # The tree into the trial's STM before the closing stages into
+            # it: each word a row naming its concept, each step its edge.
+            def concept(word):
+                for cid in (int(self.ids[word]), -1 if self.program.word_ids is None
+                            else int(self.program.word_ids[word])):
+                    if cid > 0 and self.owner._concept_row_of(cid) is not None:
+                        return cid
+                return None
+            self.program.tree.write_edges(store, [concept(w) for w in range(len(self.program.leaves))],
+                                          self.program.symbol_where, self.program.symbol_when)
             closing = PartClosing(self.owner, source, working=store)
             root, entries = closing.stage(clause, trust=self.trust)
             arrivals = self.held.retain_arrivals(clause,

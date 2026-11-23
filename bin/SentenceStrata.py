@@ -22,7 +22,6 @@ class IdeaStack(STM0):
         self._tree_sites = sites
         self._tree_root = tree.roots[0]
         self.names_issued.fill_(tree.semantic_start)
-        tree.write_edges(self.parts)
 
     def name_for(self, term, *, sentence, count):
         address = self._tree_sites.get(id(term))
@@ -111,41 +110,77 @@ class Tree:
     def point(self, address):
         return self.trace.point(address - self.trace.first)
 
-    def write_edges(self, parts):
-        """Each compose step's edge from its parent to its operands, in
-        order, as the pair store's own chain (sigma-pi §19.140; the form of
-        :func:`ThoughtStrata.write`): ``(parent, first operand)``, then
-        ``(that pair, second operand)``. The parent is its site's
-        occurrence; an operand read as a word is its own site's occurrence,
-        which holds its place; an operand that was itself composed is its
-        own edge. A transposition is no application and has no edge."""
+    def write_edges(self, store, concepts, where, when):
+        """The tree into the trial's own STM (sigma-pi §19.140): each word
+        as read is a row of ``store`` that refers to the word's concept
+        (``concepts`` by word: a concept id, or ``None`` where the word
+        names none) and holds the word's ``.where`` and ``.when`` (``where``,
+        ``when`` ``[words, 4]``, or ``None``) in its band, nothing else; each
+        compose step's edge is the pair store's own chain from its parent to
+        its operands in order (the form of :func:`ThoughtStrata.write`):
+        ``(parent, first operand)``, then ``(that pair, second operand)``.
+        The parent is its site's occurrence, a word operand its row's
+        occurrence, a composed operand its own edge. A transposition is no
+        application and has no edge. Returns the number of words whose row
+        names no concept."""
+        from Meaning import ConceptualMeaning
         trace = self.trace
         index, first = trace.index, trace.first
-        edges = {}
+        rows, unnamed = {}, 0
+        start = store.when_start
+        for word, at in sorted(index.word_actions.items(), key=lambda item: item[1]):
+            point = store.slots.new_zeros(store.nDim)
+            if start is not None and start >= 4:
+                for band, offset in ((where, start - 4), (when, start)):
+                    if band is not None:
+                        point[offset:offset + 4] = band[word].detach().to(point)
+            concept = concepts[word]
+            unnamed += concept is None
+            meaning = replace(ConceptualMeaning.from_description(point),
+                              role_refs=(None if concept is None else ('sym', int(concept)), None, None))
+            row = store.append_meaning(meaning)
+            rows[at] = store.row_name(row)
+        parts, edges = store.parts, {}
         for at, (kind, _, _) in enumerate(index.steps):
             if kind in (0, 3):
                 continue
             link = OCCURRENCE, first + at
             for child in index.operands[at]:
-                end = ((OCCURRENCE, first + child) if index.steps[child][0] == 0
+                end = ((OCCURRENCE, rows[child]) if index.steps[child][0] == 0
                        else (RELATION, edges[child]))
                 link = RELATION, parts.add(link, end, truth_plus=1.)
             edges[at] = link[1]
+        return unnamed
 
-    def edge(self, parts, address):
-        """The edge of the site at ``address`` in ``parts``: the last pair
-        of the chain whose head is the site's occurrence, or ``None``."""
-        def after(reference):
-            rows = [row for row in parts.rows_referencing(*reference)
-                    if parts.references(row)[0] == reference]
-            return min(rows) if rows else None
-        link = after((OCCURRENCE, address))
-        while link is not None:
-            following = after((RELATION, link))
-            if following is None:
-                return link
-            link = following
-        return None
+    @staticmethod
+    def roots_of(parts, sites):
+        """The reading's trees in the pair store: each root's edge, oldest
+        first (by its head's name). An edge is a chain's last pair whose
+        head is a site of the reading (``sites``, a range of names; the
+        closing's own pairs have other heads); a root's edge is no other
+        edge's operand."""
+        def head(row):
+            left = parts.references(row)[0]
+            while left[0] == RELATION:
+                left = parts.references(left[1])[0]
+            return left
+        rows = [row for row in parts.indices().tolist()
+                if head(row)[0] == OCCURRENCE and head(row)[1] in sites]
+        pairs = {row: parts.references(row) for row in rows}
+        links = {pair[0][1] for pair in pairs.values() if pair[0][0] == RELATION}
+        operands = {pair[1][1] for pair in pairs.values() if pair[1][0] == RELATION}
+        ends = [row for row in rows if row not in links and row not in operands]
+        return sorted(ends, key=lambda row: head(row)[1])
+
+    @staticmethod
+    def words_of(parts, edge):
+        """The word rows under an edge, in order: each operand's, first to
+        last, an edge's own in turn."""
+        _, *children = Tree.members(parts, edge)
+        words = []
+        for child in children:
+            words.extend([child[1]] if child[0] == OCCURRENCE else Tree.words_of(parts, child[1]))
+        return words
 
     @staticmethod
     def members(parts, edge):

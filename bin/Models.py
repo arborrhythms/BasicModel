@@ -9551,9 +9551,11 @@ class BasicModel(BaseModel):
     def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared, when=None,
                  references=(), work=None, places=None):
         """System 2 emits terminals; the occurrence writer supplies order zero.
-        ``places``: by row, the extent of each terminal put out, in order,
-        where the walk was given it (a reconstruction following the tree's
-        edges), or ``None``; elsewhere the writer says the terminals in turn."""
+        ``places``: by row, ``(start, reference)`` of each terminal put
+        out, in order, where the walk was given it (a reconstruction
+        following the tree's edges: the place's start and the concept it is
+        said by), or ``None``; elsewhere the writer says the terminals in
+        turn."""
         budget = self._walk_budget()
         if work is not None:
             streams = max(1, int(occupied.any(-1).sum()))
@@ -9636,20 +9638,21 @@ class BasicModel(BaseModel):
             if tick is None:
                 tick = self._advance_when_time()
             when = words.new_tensor((tick, tick + 1), dtype=torch.long)[None, None]
+        said = [[reference_table[index] for index in row] for row in emitted_references.tolist()]
         given = None
         if places is not None and any(row is not None for row in places):
-            where = torch.zeros(*words.shape[:2], 2, dtype=torch.long, device=words.device)
+            starts = torch.zeros(words.shape[:2], dtype=torch.long, device=words.device)
             placed = torch.zeros(words.shape[:2], dtype=torch.bool, device=words.device)
             for b, row in enumerate(places):
-                for w, extent in enumerate((row or ())[:words.shape[1]]):
-                    where[b, w] = extent.to(where)
+                for w, (start, reference) in enumerate((row or ())[:words.shape[1]]):
+                    starts[b, w] = int(start)
                     placed[b, w] = True
-            given = (where, placed)
+                    said[b][w] = reference
+            given = (starts, placed)
         return generated(self, words, n_emitted, output_truncated, bank,
                          self._last_output_walk_trace, when=when, places=given,
                          depths=occupied.long().sum(-1),
-                         references=tuple(tuple(reference_table[index] for index in row)
-                                          for row in emitted_references.tolist()))
+                         references=tuple(tuple(row) for row in said))
 
     from RowTime import produced as _produced_sentence
     @_produced_sentence

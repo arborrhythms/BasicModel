@@ -76,9 +76,10 @@ def object_identity(owner, reference):
 def generated(model, words, counts, truncated, bank, trace, *, when=None, references=(), depths=None,
               places=None):
     """The walk's leaves ``words`` ``[B, W, D]`` as a field of terminals.
-    ``places`` (``where`` ``[B, W, 2]``, ``placed`` ``[B, W]``), where
-    given, are each placed leaf's own extent (a reconstruction's, from its
-    occurrence); the other words are said in turn at a cursor."""
+    ``places`` (``starts`` ``[B, W]``, ``placed`` ``[B, W]``), where
+    given, are each placed leaf's own start (a reconstruction's, from the
+    row of the word read), its extent the length of the form it is said
+    by; the other words are said in turn at a cursor."""
     from SentenceUnderstanding import readback_scores
     owner = model._concept_owner()
     B, W, D = words.shape
@@ -152,10 +153,11 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
             if cursor and not raw[:1].isalnum():
                 cursor -= 1
             where[b, w] = where.new_tensor((cursor, cursor + len(raw)))
+            if places is not None and bool(places[1][b, w]):
+                start = int(places[0][b, w])
+                where[b, w] = where.new_tensor((start, start + len(raw)))
             cursor += len(raw) + 1
     wires = None
-    if places is not None:
-        where = torch.where(places[1][..., None].to(where.device), places[0].to(where), where)
     if when is None:
         tick = model.present()
         when = selected.new_tensor((tick, tick + 1))[None, None]

@@ -93,65 +93,68 @@ def walk_action(language, kind, operation):
 
 
 def taken_steps(model, record, programs):
-    """The recorded composition as the walk's actions (§19.135, 1). Each
-    root of the reading's forest that a rule composed is a slot of the
-    walk's stack (newest first, as the end slots are); a root that is one
-    concept outside every composition is not (§19.135, 3). The walk pops
-    its top and takes the inverse of the parent's recorded rule (its action
-    by the rule's name, :func:`walk_action`), its right child above its
-    left, and STOP at a leaf. A ``bind`` passes its parent to its one child
-    with no action. A recorded rule the walk has no rule of the same name
-    for is taken as STOP at that parent, and counted. Returns the slots
-    ``[B, K, D]``, ``occupied`` ``[B, K]``, the actions ``[B, T]`` (``-1``
-    past a row's last) and a count of what was met."""
+    """What the walk is made to take to put the sentence back.
+
+    Where the trial's STM holds the reading's tree (sigma-pi §19.140), its
+    edges are followed there, with no rule and no inverse: the words under
+    each root's edge, in order, each by the concept its row refers to and at
+    the place its row holds (:func:`said_words`). The walk is given them as
+    its slots, each said by a STOP with that concept's code as the leaf, and
+    takes no other step. A root that is one word outside every composition
+    has no edge and is not put back (§19.135, 3).
+
+    Elsewhere the recorded composition is the walk's actions (§19.135, 1):
+    each root of the reading's forest that a rule composed is a slot of the
+    walk's stack (newest first, as the end slots are); the walk pops its top
+    and takes the inverse of the parent's recorded rule (its action by the
+    rule's name, :func:`walk_action`), its right child above its left, and
+    STOP at a leaf. A ``bind`` passes its parent to its one child with no
+    action. A recorded rule the walk has no rule of the same name for is
+    taken as STOP at that parent, and counted.
+
+    Returns the slots ``[B, K, D]``, ``occupied`` ``[B, K]``, the actions
+    ``[B, T]`` (``-1`` past a row's last), a count of what was met, the
+    operands given (``values`` ``[B, T, 2, D]``, ``given`` ``[B, T]``) and,
+    by row, each said word's ``(start, reference)`` in the order the walk
+    puts them out (``None`` for a row that follows no edge)."""
     from DerivationReconstruction import recorded_forest
     language = model.languageSpace
     stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
     B, K, D = record.end_slots.shape
     T = int(model._walk_budget())
+    met = dict(rows=0, roots_composed=0, roots_alone=0, steps=0, binds=0, lacking=0, over_budget=0,
+               unfinished=0, lacking_rules={}, rows_followed=0, words_followed=0, words_unnamed=0)
+    said = [said_words(model, programs[b] if b < len(programs) else None, b, met) for b in range(B)]
+    K = max([K] + [len(words) for words in said if words])
     slots = record.end_slots.new_zeros(B, K, D)
     occupied = torch.zeros(B, K, dtype=torch.bool, device=slots.device)
     actions = torch.full((B, T), -1, dtype=torch.long, device=slots.device)
     operands = record.end_slots.new_zeros(B, T, 2, D)
     followed = torch.zeros(B, T, dtype=torch.bool, device=slots.device)
     places = [None] * B
-    met = dict(rows=0, roots_composed=0, roots_alone=0, steps=0, binds=0, lacking=0, over_budget=0,
-               unfinished=0, lacking_rules={}, rows_followed=0, steps_followed=0)
     for b in range(B):
         program = programs[b] if b < len(programs) else None
         depth = int(record.end_depth[b])
         if program is None or depth <= 0:
             met['unfinished'] += depth < 0
             continue
-        edges = tree_edges(program, depth)
-        if edges is not None:
-            values = (record.root[b:b + 1] if depth == 1 else record.end_slots[b, :depth])
-            kept = [j for j in range(depth) if edges[depth - 1 - j] is not None]
-            met['roots_composed'] += len(kept)
-            met['roots_alone'] += depth - len(kept)
-            if not kept:
+        words = said[b]
+        if words is not None:
+            if not words:
                 continue
             met['rows'] += 1
-            met['rows_followed'] += 1
-            for k, j in enumerate(kept):
-                slots[b, k] = values[j]
-                occupied[b, k] = True
-            taken, given, leaves = follow(language, program, [edges[depth - 1 - j] for j in reversed(kept)],
-                                          stop, met)
-            if len(taken) > T:
-                met['over_budget'] += 1
-                taken, given = taken[:T], given[:T]
-            actions[b, :len(taken)] = torch.tensor(taken, device=actions.device)
-            for t, pair in enumerate(given):
-                if pair is None:
-                    continue
+            n = min(len(words), T)
+            met['over_budget'] += len(words) > T
+            # The walk's top is the newest slot; it pops the last word first
+            # and puts its words out in the reverse of its pops.
+            for t in range(n):
+                code = words[n - 1 - t][2][:D].to(slots)
+                slots[b, t, :len(code)] = code
+                occupied[b, t] = True
+                actions[b, t] = stop
                 followed[b, t] = True
-                for side, value in enumerate(pair):
-                    operands[b, t, side] = value.to(operands)
-            extents = getattr(program, 'word_extents', None)
-            if extents is not None:
-                # The walk's leaves come out in the reverse of their pops.
-                places[b] = [extents[word] for word in reversed(leaves)]
+                operands[b, t, :, :len(code)] = code
+            places[b] = [(start, ('sym', concept)) for concept, start, _ in words[:n]]
             continue
         forest = recorded_forest(language, program)
         if depth != len(forest):
@@ -198,84 +201,60 @@ def taken_steps(model, record, programs):
     return slots, occupied, actions, met, (operands, followed), places
 
 
-def tree_edges(program, depth):
-    """The edge of each root of the reading's tree, oldest root first, from
-    the STM's own pair store (``None`` for a root that is one word); or
-    ``None`` where the tree's sites have no edges there."""
+def said_words(model, program, stream, met):
+    """The words the trial's STM puts back for a reading, by following its
+    edges there (sigma-pi §19.140): for each root's edge, oldest first, the
+    word rows under it in order, each as ``(concept, start, code)``: the
+    concept its row refers to; the start of the place its row holds, read
+    back from the row's ``.where`` band by the model's where wires; and the
+    concept's code, looked up as the answer looks up a perceived word
+    (:func:`Output.perceived_meanings`). A row that names no concept is not
+    said, and counted. ``None`` where the STM holds no edge of the reading."""
     tree = getattr(program, 'tree', None)
-    if tree is None or len(tree.ideas.parts) == 0:
+    if tree is None:
         return None
+    store = tree.ideas
+    parts = store.parts
+    if len(parts) == 0:
+        return None
+    from SentenceStrata import Tree
     try:
-        roots, first, steps = tree.roots, tree.trace.first, tree.trace.index.steps
+        # The reading's sites are a range of names, below the store's own.
+        sites = range(tree.trace.first, tree.semantic_start)
     except ValueError:
         return None
-    if len(roots) != depth:
+    roots = Tree.roots_of(parts, sites)
+    if not roots:
         return None
-    parts, edges = tree.ideas.parts, []
-    for site in roots:
-        if steps[site - first][0] == 0:
-            edges.append(None)
-            continue
-        edge = tree.edge(parts, site)
-        if edge is None:
-            return None
-        edges.append(edge)
-    return edges
-
-
-def follow(language, program, roots, stop, met):
-    """The walk's actions taken by following the tree's edges from its
-    roots (§19.140): the walk's stack holds the roots' edges, bottom to top;
-    it pops its top and takes the action of the rule at the edge's head
-    (:func:`walk_action`, by name), and its operands are what the edge points
-    at, its right above its left; at a word's occurrence it takes STOP. A
-    ``bind`` passes its parent to its one operand with no action; a rule the
-    walk has no rule of the same name for is taken as STOP at that parent,
-    and counted. Returns the actions, at each the operands given (``None``
-    where none is given: a STOP not at a word, or a rule the walk lacks), and
-    the words met at STOP, in the order of their pops."""
-    from Memory import OCCURRENCE, RELATION
-    tree = program.tree
-    parts, first, steps = tree.ideas.parts, tree.trace.first, tree.trace.index.steps
-
-    def value(reference):
-        site = (reference[1] if reference[0] == OCCURRENCE
-                else tree.members(parts, reference[1])[0][1])
-        return tree.point(site)
-    stack = [(RELATION, edge) for edge in roots]
-    taken, given, leaves = [], [], []
-    while stack:
-        reference = stack.pop()
-        if reference[0] == OCCURRENCE:
-            kind, _, word = steps[reference[1] - first]
-            if kind == 0:
-                taken.append(stop)
-                given.append((tree.point(reference[1]), tree.point(reference[1])))
-                leaves.append(word)
+    met['rows_followed'] += 1
+    met['roots_composed'] += len(roots)
+    owner = model._concept_owner()
+    registry = model.where_registry
+    lo, hi = registry.slices['text']
+    wires = registry.code[lo:hi]
+    start = store.when_start
+    words = []
+    for edge in roots:
+        for name in Tree.words_of(parts, edge):
+            row = store.index_of_row(name)
+            reference = store.referent_of(row)
+            if reference is None or reference[0] != 'sym':
+                met['words_unnamed'] += 1
                 continue
-            raise ValueError('a composed site has no edge in the tree')
-        head, *children = tree.members(parts, reference[1])
-        kind, operation, _ = steps[head[1] - first]
-        rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
-        name = rules[operation].method_name
-        if kind == 1 and name == 'bind':
-            met['binds'] += 1
-            stack.append(children[0])
-            continue
-        action = walk_action(language, kind, operation)
-        if action is None:
-            met['lacking'] += 1
-            met['lacking_rules'][name] = met['lacking_rules'].get(name, 0) + 1
-            taken.append(stop)
-            given.append(None)
-            continue
-        met['steps'] += 1
-        met['steps_followed'] += 1
-        taken.append(action)
-        pair = [value(child) for child in children]
-        given.append((pair[0], pair[-1]))
-        stack.extend(children)
-    return taken, given, leaves
+            concept = int(reference[1])
+            address = owner._concept_row_of(concept)
+            if address is None:
+                met['words_unnamed'] += 1
+                continue
+            band = store.slots[row, start - 4:start].detach().to(wires)
+            place = int((wires - band).square().sum(-1).argmin())
+            rows = torch.tensor([address], device=store.slots.device)
+            with torch.no_grad():
+                code = owner.similarity_codebook.lookup_rows(rows, stream=stream)
+                code = owner.interpret.lexical_atoms(rows, code, stream=stream)[0]
+            words.append((concept, place, code))
+            met['words_followed'] += 1
+    return words
 
 
 def policy_charge(model, generation, errors, active):
