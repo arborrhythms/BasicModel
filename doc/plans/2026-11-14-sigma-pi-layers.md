@@ -10248,6 +10248,26 @@ What follows (Claude):
 - *Not changed:* the failing test `test_input_reconstruction_reaches_perception_and_not_the_grammar` stays as it is until parts and wholes are talked through (answer 6).
 - *For Codex:* answers 3, 6, 7 and 8 are points to explore or to talk through; their text is above §22.7.
 
+### 19.146 Alec: the chain in the two memories, the single head, the looks of a model with no grammar; momentum stays (2026-11-23)
+
+Asked to choose among Codex's four proposals (§23.6.33), Alec answered each, and said first: "codex will work on main."
+
+1. *The root's relation handle (`Tree.edge`).* "when the tree is written to LTM, I expect sequence learning such that LTM1 has a pointer to its LTM0 and a pointer to the next LTM1. that is sufficient for a chain, and temporal sequences such as sentences. That chain can exist in STM that way also, up to eight things. When reductions happen in STM, I expect the reduce to produce an STM1 where two of those STM0 are turned into: either an STM1 over those two nodes, which is just computing the WFF syntax, or finally a single STM0 using the chosen operators (or at least as much reduction as the sentence allows: relations keep at least one STM1, but the point is that everything going into LTM has a single head, either a relation or an idea). Does this answer your question?"
+2. *Looks for a model with no grammar.* "Looks can write to STM; it is the LTM commit that ends the round. So thats how we handle this case of no grammar that still wants multiple looks; there is no other assembly. And what animals do not get is the STM1 that can operate over STM1 (whats effectively the symbolic level). It might make sense to allow animals only STM0, but in that case we would have to make a new mechansim for sequence learning, so lets preserve allowing animals an *TM1 link that points to another *TM link."
+3. *No momentum for the reconstruction on the order-zero values.* "I think there can be a momentum, and that we need to fix the underlying issue a different way."
+4. *The choices' credit kept off the percept weights.* "just mention this as a thought for codex."
+
+What follows (Claude):
+
+- *It answers the question about the handle, and asks for more than the handle.* Everything that goes into LTM has a single head, so the head is the one handle: the reconstruction is given it and follows pointers from it. Nothing is found again by search. As built (`SentenceStrata.Tree.write_edges`, `Tree.edge`) three things differ. A composed step is written as two pairs that begin at its parent's site, `(parent, first operand)` then `(that pair, second operand)`, and the step's last pair, which `write_edges` holds as it writes, is not handed on; `Tree.edge` finds it again from the site's address among the rows that refer to it, taking the lowest. The words as read are rows of the STM with no link from one to the next, so there is no chain. And a reading that does not reduce to one root has several heads (`tree.roots`).
+- *The chain* is a link of `*TM1` whose two references are its own `*TM0` and the next link. It is the series of §19.143: the looks' events in order, in STM up to eight, and in LTM when the tree is committed.
+- *A reduce* turns two of the chain's `STM0` into either an `STM1` over those two (the syntax of the well-formed formula) or one `STM0` by the chosen operators (the idea). A relation keeps at least one `STM1`.
+- *A model with no grammar* reads by looks that write to the STM, each look an `STM0` on the chain; the commit to LTM ends the round; the reconstruction reads the chain. No other path assembles the looks. It has the chain's links (a `*TM1` that points to a `*TM0` and to another link) and no `STM1` over `STM1`, which is the symbolic level. This replaces Codex's proposal of a separate assembly of arrivals. Alec's earlier word for a word alone stands beside it: "one second look for a single word is enough" (§23.6.23).
+- *Momentum stays.* The loss of "That." is to be mended at its cause. What the cause looks like from the two measurements (Claude's reading, for Codex to test): a word is offered to a look only while its value is above zero (`SentenceLooks.word_activity`: `known & inside & (concept > 0)`), and the two lost words stood at 0.0045 and 0.0095 before the step that lost them. A word's being read at all hangs on the sign of a very small number.
+- *The choices' credit on the percept weights* is passed to Codex as a thought, not as work.
+
+The text for Codex is above §22.7.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -15476,6 +15496,87 @@ E. A count, not a decision. In the echo's model the answer names each
    comprehension resolved it to (Comprehension.Evaluation.finish). Count,
    over the 19 words with their marks and the six two-word sentences,
    the words for which the two are different concepts.
+~~~
+
+*For Codex: the chain in STM and LTM with a single head, and the looks of a model with no grammar* (added 2026-11-23, at Alec's word, §19.146; after the list, and it gives the form of the series in "a sentence as a series of attention events")
+
+~~~
+Item 1.7. Alec: "codex will work on main." Work on main once it holds
+the work branch item17-r6d11 (630251b2f4 or later: your return is taken
+in there, section 23.6.33, by Claude's retyping, so start from it and
+not from item17-codex-open). Read the spec's sections 19.143, 19.145
+and 19.146; Alec's words there are the requirement, the readings beside
+them are Claude's and may be wrong. The standing rules of the list hold:
+commit locally, push nothing, return in suggestions.txt; do not wait on
+a question; no seed pinned for an assertion; no skip or xfail; nothing
+under RUN_SLOW; no default in code; no new store, layer, parameter, key,
+cost or thought rule; every claim measured from the input to what the
+model returns, with nothing set inside it.
+
+1. The chain and the single head. Alec: "when the tree is written to
+   LTM, I expect sequence learning such that LTM1 has a pointer to its
+   LTM0 and a pointer to the next LTM1. that is sufficient for a chain,
+   and temporal sequences such as sentences. That chain can exist in STM
+   that way also, up to eight things. When reductions happen in STM, I
+   expect the reduce to produce an STM1 where two of those STM0 are
+   turned into: either an STM1 over those two nodes, which is just
+   computing the WFF syntax, or finally a single STM0 using the chosen
+   operators (or at least as much reduction as the sentence allows:
+   relations keep at least one STM1, but the point is that everything
+   going into LTM has a single head, either a relation or an idea)."
+   Today (SentenceStrata.Tree.write_edges, Tree.edge): a composed step
+   is two pairs from its parent's site, (parent, first operand) then
+   (that pair, second operand); its last pair's handle is known as it is
+   written and not handed on, and Tree.edge finds it again among the
+   rows that refer to the site, taking the lowest; the words as read are
+   rows with no link from one to the next; a reading with several roots
+   has several heads. This answers your item 5: the head is the handle.
+   Trace first what the STM and LTM hold for "This is Felix." against
+   his words; then build to them with the stores' own parts.add, and
+   give the reconstruction the head to follow (no search by
+   rows_referencing, no lowest handle). Say what in the present pairs
+   stays, what changes, and what each change adds.
+
+2. The looks of a model with no grammar. Alec: "Looks can write to STM;
+   it is the LTM commit that ends the round. So thats how we handle this
+   case of no grammar that still wants multiple looks; there is no other
+   assembly. And what animals do not get is the STM1 that can operate
+   over STM1 (whats effectively the symbolic level). It might make sense
+   to allow animals only STM0, but in that case we would have to make a
+   new mechansim for sequence learning, so lets preserve allowing
+   animals an *TM1 link that points to another *TM link."
+   So your item 7's separate assembly of arrivals is not built. Each
+   look writes what it took to the STM on the chain of item 1; the
+   commit to LTM ends the round; the reconstruction reads the chain. A
+   model with no grammar has the chain's links and no pair over pairs.
+   The admission of digits and marks as words, which your item 7 found
+   missing, is needed for a mark to be put back: take the least change,
+   and say what it adds. For a word alone Alec said earlier "one second
+   look for a single word is enough"; say how many looks your build
+   takes and why. Measured, input to output: the two tests
+   test_item17_echo.py::test_echo_a_word_read_whole_by_a_model_that_reads
+   and ::test_echo_a_word_and_its_mark_read_whole_by_a_model_that_reads
+   (13 of 19 and 0 of 19 today), six runs each; "This is Felix." and
+   "What is this?" in the same model; the echo's three passing tests;
+   both gates.
+
+3. Momentum stays. Alec, of your proposal to drop the reconstruction's
+   momentum on the order-zero values: "I think there can be a momentum,
+   and that we need to fix the underlying issue a different way." Find
+   the underlying issue in start 1686171118491. Claude's reading, to
+   test and not to assume: a word is offered to a look only while its
+   value is above zero (SentenceLooks.word_activity: known & inside &
+   (concept > 0)), and "That" and "is" stood at 0.0045 and 0.0095 before
+   the steps that lost them, so whether a word is read at all hangs on
+   the sign of a very small number. Say why those values are so small,
+   what the edge at zero is for, and what you would change and what it
+   adds; build it only if it adds nothing.
+
+4. A thought, not work. In the same start the choices' credit put a
+   gradient of norm 105 on conceptualSpaces.0.order_zero.value, against
+   0.0001 from the reconstruction. Whether a credit for a choice should
+   move the percepts' weights at all is worth your view; write it in
+   the return and change nothing.
 ~~~
 
 ### 22.7 Round 7: the readers, the measurements and the sweep
