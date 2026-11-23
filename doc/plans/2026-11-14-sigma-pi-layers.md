@@ -27856,3 +27856,54 @@ A new 16-presentation start applied 1.0 during the reading itself. All 1,004 com
 | Who is there? | 2,0,5,4 | 31, 77, 26 | 1.428 |
 
 There were zero Not entries at every order throughout. At the last update the 17 first-Pi rows had 6, 0, 0, 0, 0, 2, 0, 2, 0, 0, 3, 0, 3, 3, 3, 0, 0 edges. All 18 symbol-Pi rows had one member. A separate fresh first sentence made 9,571 host API reads, 7,518 scalar dispatches and 416 nonzero dispatches. These counts are beside the prior runs to show their variation across starts.
+
+**Packed readings and the finished source.** The first completed sweep at `9ccb8dcbe3` took 2,774 s. Among 7,439 distinct cases, 7,067 passed, 336 skipped, 34 failed, one unexpectedly passed and one failed as expected. Its receipt is `output/tests/20261123-113811-d94edb/result.json`. An observer between two sentences found one live wire tensor left from the first sentence. `SentenceBoundary.finish` detached the open field but left `_cs_field_wires` attached. Commit `991e720448` detaches that tensor at the same boundary. The packed-input regression now checks that the second sentence's opening cost reaches its own observed evidence and order-zero Sigma and that its graph cannot reach a choice in the first sentence. The commit also versions the XML used by the exploration tests and updates the walk, catalog and operation-count assertions to exercise the current producers. The packed-input and other repaired contracts passed in a group with 36 passes and one skip. The grammar inventory and capability group had 15 passes and two skips.
+
+The measured source at `991e720448` has 1,296 files and SHA-256 `4ee998667476224f58f4612621df9d256f8e1865c3308796526bdc6a02accf32`. In 16 presentations, the chooser explored 27 readings. All 27 covered the three lexical positions and the mark. Spaces occupied positions 1 and 3. The capacities were 4,109, 2,117 and 1,050. The elapsed time across the 16 model calls was 27.111 s with the test sweep running concurrently.
+
+| Input | Trial readings | Occupancy | Seconds |
+| --- | --- | --- | ---: |
+| This is Felix. | 2,5,0,4 / 5,0,4,2 | 13, 69, 26 | 1.910 |
+| What is this? | 5,2,4,0 | 13, 69, 26 | 0.850 |
+| That is Ciao. | 2,5,0,4 / 2,0,5,4 | 17, 70, 26 | 1.709 |
+| What is that? | 2,5,4,0 / 2,0,4,5 | 18, 70, 26 | 2.166 |
+| Here is Felix. | 2,5,0,4 | 20, 71, 26 | 1.438 |
+| Who is here? | 2,5,0,4 | 21, 72, 26 | 1.635 |
+| There is Ciao. | 5,2,0,4 / 5,2,4,0 | 23, 72, 26 | 2.566 |
+| Who is there? | 5,2,4,0 / 5,2,4,0 | 23, 72, 26 | 2.762 |
+| That is Felix. | 5,2,4,0 / 5,2,4,0 | 25, 73, 26 | 1.191 |
+| What is that? | 2,5,0,4 / 2,5,0,4 | 26, 74, 26 | 2.465 |
+| This is Ciao. | 2,5,4,0 / 2,5,4,0 | 27, 75, 26 | 1.611 |
+| What is this? | 0,5,2,4 / 0,5,2,4 | 27, 75, 26 | 1.685 |
+| Here is Ciao. | 5,2,4,0 | 27, 75, 26 | 1.207 |
+| Who is here? | 2,5,0,4 / 2,5,0,4 | 30, 76, 26 | 1.063 |
+| There is Felix. | 2,5,4,0 / 2,5,4,0 | 30, 76, 27 | 1.565 |
+| Who is there? | 2,5,0,4 | 30, 76, 27 | 1.286 |
+
+The first Pi held 22 edges across 17 rows, distributed as 6, 0, 0, 0, 0, 2, 0, 2, 0, 0, 3, 0, 3, 3, 3, 0, 0. The symbol Pi held 22 one-member rows. All three orders held zero Not entries on every measured presentation. A separate first presentation recorded 27,125 host reads, 22,414 scalar dispatches and 524 nonzero dispatches. The comparator recorded 9,870 host reads and its 16-sentence timings ranged from 37.12 to 42.55 s. The trial paths, hardware load and starts differ.
+
+**Final sweep and promotion.** The bounded default sweep at `991e720448` completed all 7,439 selected cases in 2,670.8 s. Counts by distinct test were **7,083 passed, 336 skipped, 18 failed, one expected failure and one unexpected pass**. Both stopping gates passed. All seven echo tests, all nine assessment tests and all seven mental-age tests passed. Each of the three requested answer tests also passed in 3/3 independent fresh starts outside the sweep. The model taught one round of the 19 word echoes again returned 19/19 and wrote age 0.00. After either context name it returned “What there” to “What was there?”, earning 0/2 on the first assessed row. The run had RUN_TRAINED and RUN_SLOW unset and excluded `test/test_item17_own_reading.py` by request. The complete receipts are [the test report](../../output/tests/20261123-122847-4e090f/report.html) and [the per-case results](../../output/tests/20261123-122847-4e090f/result.json). Every failing case also failed in the preceding completed sweep. Sixteen former failures passed in this one. That count includes the write-mask partition case, which varied between starts. Its pass does not establish a repair.
+
+The verbal XOR fixture ran 400 epochs. The public input reconstruction returned 4/4 strings in the original order. The grammar inverse returned the correct two words on 4/4 cases and the original order on **0/4**. Its strings were “world hello”, “there hello”, “world loving” and “there loving”. The certificate accepts transpositions. Final printed training losses were 0.1266 for output and 0.0603 for reconstruction. The spoken reading measure took 740 s and the order-of-reading regression took 539 s. Their corresponding times in the preceding sweep were 624 s and 654 s. Item 1.7 remains open for review.
+
+**Failure details on the measured source.** The table identifies the observed failure or its nearest measured producer. The earlier controls used `75388306a2`. A matching failure there establishes that it predates the opening change. The full case receipts retain the assertion and any captured output.
+
+| Test selector under `test/` | Observation |
+| --- | --- |
+| `test_compose_observer.py::test_observer_counts_detached_compose_calls` | The probe reads the retired OperationSelectionLayer.attend method and fails before it counts any composition. Reproduced on the earlier source. |
+| `test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery` | Mixed-bit input supplies about 0.018 on the primitive evidence pole expected to equal 1 in the earlier run. The primitive-field assertion also failed before opening reconstruction. |
+| `test_hash_order_producers.py::test_collision_queue_follows_admission_order` | The queue observer saw one visit each for calaba and cabala, where the test expects two in each order. Reproduced on the earlier source. |
+| `test_item17_fragments.py::test_50d_with_the_option_on_a_run_is_one_constituent_and_the_walk_is_shorter` | The reading had one leaf. Three source words and one reported pair explain two leaves. The same test failed on a fresh pre-opening run. |
+| `test_item17_layers.py::test_the_old_classes_have_the_same_source` | A diff of all four classes against 1598a9bd46 found exactly one changed line. SigmaLayer.test_integration reads learningRate from XML where that historical source contains 0.01. All four class bodies match 75388306a2 byte for byte. |
+| `test_item17_places.py::test_the_request_for_a_place_at_an_untaught_start` | The observer sees no positive request gradient at a place after the first training presentation. Also observed before the change. |
+| `test_item17_request_read.py::test_sentence_training_reaches_the_request_in_the_model` | Ordinary sentence teaching gave the first requests zero measured gradient on both later presentations. Replicated in the pre-opening control run. |
+| `test_item17_sparse_growth.py::test_58_the_sparse_sigma_is_the_full_one_on_the_lessons_readings` | Sparse and dense updates differed by 0.001874 against a tolerance of 1e-9. The pre-opening control needed 24 places in a 16-entry candidate table and dropped 40 entries (difference 0.00188). |
+| `test_item17_symbols.py::test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_apart` | ConceptSpread.look_cost received a word arrival of 0.143 against the test's 0.5 floor. The word-arrival assertion also failed in the pre-opening control. |
+| `test_item17_word_said_back.py::test_the_answer_depends_on_the_spoken_request` | All four responses were empty. The experiment expects Felix and Ciao on two prompted cases. Conditional speech is deferred under §19.148. |
+| `test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word` | After 200 presentations, the omitted word scored 0.2205 against 0.2616 for an absent competitor. The pre-opening control tied the omitted word with an absent competitor. |
+| `test_item20_round6_loop.py::test_parallel_input_without_composed_sentences_books_only_field_reconstruction` | FieldReverse.drawn tied 0 and 1 in each of the two mixed rows, with one unambiguous location each. Eight inversions of one understanding gave three different four-row outputs. The test demands two independent byte draws agree. The pre-opening fixture instead returned four zero bytes across all eight calls. |
+| `test_item4_native.py::test_observed_cat_survives_native_answer_and_store[False, True]` | The test compares the stored native idea with the sentence end state. One of 24 entries differed in the earlier run, with both omission settings. Reproduced before the opening change. |
+| `test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers` | The static inventory omits ReadingMemory.read and Comprehension.Evaluation.finish and still includes AttentionContext.context. The same assertion failed before opening reconstruction. |
+| `test_percept_collection_binding.py::test_bind_percept_collection_reads_membership_not_coordinate_overlap[2.0-True]` | The positive member binds in the probe, but reverseOutput returns silence where the test expects gamma. Reproduced on the earlier source. |
+| `test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space` | The generation compile guard sees the leading dimension of reference_orders change between calls. This test also failed in the pre-opening control run. |
+| `test_whole_paths.py::test_kept_verbal_output_reaches_the_live_understanding_and_conditioner` | The test carries a completed thought and expects production and conditioner gradients. The same expectation failed before the opening change. |
