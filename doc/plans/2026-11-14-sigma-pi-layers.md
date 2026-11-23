@@ -15072,6 +15072,18 @@ After three rounds of teaching, `test_item17_reconstruction_said_back.py` puts b
 
 The standing rules of the first part hold.
 
+*Round 6d, nineteenth pass, fourth part: the tests of teaching teach at the model's own rate, and the said-back measure teaches sentences too* (Claude, 2026-11-23, after §23.6.29; for the same implementer)
+
+§23.6.29: at `learningRate` 0.001 (`data/model.xml`) with the sentences taught beside the words, every word and sentence is put back after ten rounds in three starts of three; the tests teach at .01, written in each test.
+
+1. *The rate comes from the model.* `BasicModel.getOptimizer(lr=0.01)` has a default in code that is not `data/model.xml`'s. With no `lr` given it takes the model's configured `learningRate`; the number is written nowhere in the source. Say in the return which other places hold a rate as a fallback in code (`_t("learningRate", 0.01)` in `bin/Models.py` is one); change none of them in this part.
+2. *The tests of round 6d's teaching use it:* `test/test_item17_echo.py` (every `getOptimizer(lr=.01)`) and `test/test_item17_reconstruction_said_back.py` call `getOptimizer()` with no rate. No other test's rate is changed.
+3. *The said-back measure teaches what it measures:* its teaching reads the two-word sentences and the lesson's sentences as well as the 19 words, ten rounds by default, and it prints the counts untaught and taught as now. Nothing is asserted of what a start gives.
+4. *Measured:* the said-back measure, three starts; each of the five echo tests, six runs, counting the runs that fail and what was lost; both gates; and the three tests that call `getOptimizer()` with no rate today.
+5. *Not in this part:* the optimizers themselves (no rule on carried state is added), the stop read, `Tree.edge`, the failing gradient test, which waits on Alec.
+
+The standing rules of the first part hold.
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -26896,3 +26908,41 @@ The implementer's sweep on the last commit: 837 passed, 7 failed, 41 skipped; bo
   - With the looks' own parameters held still the words are still lost in 2 starts of 3, so the looks read something else that teaching moves. With the reconstruction's owned parameters held still the 19 taught words are kept in 3 starts of 3, and the sentences are still lost.
   - These are 2 or 3 starts each: they rule out single causes and do not find one. The third part (text above §22.7) finds the step and the parameters.
 - *This is the looks' fault of the eleventh pass again* (§23.6.17: the request saturates and the model's own reading does not pass), now seen from the reconstruction's side: untaught the reading holds every word and every input is put back; taught, it does not.
+
+### 23.6.29 Round 6d, nineteenth pass, third part: a word is lost when one parameter is carried across a threshold by the optimizer's state; at the model's own rate, with sentences taught beside the words, nothing is lost (Claude on Opus, standing in for Codex, 2026-11-23; trials by Claude)
+
+The implementer's return is the "Third part" of `r6d_return_19.md`. Nothing in `bin/`, `data/` or the tests changed; the probe is in `/tmp/item17-r6d-2026-11-21/zz_third_r6d19_scratch.py`.
+
+#### The step and the parameter (two starts)
+
+| Start | First step that loses a word | The one parameter that, put back alone, gives the word back | Owner, optimizer | Moved by | Norm before |
+| --- | --- | --- | --- | --- | --- |
+| 145040645376302 | 17, teaching "5." ("This is." 3 words to 2) | `request_read.first.weight` | `attention`, Adam | 0.382 | 6.27 |
+| 266115193679834 | 24, teaching "That." | `conceptualSpaces.0.order_zero.value` (24 entries) | `reconstruction`, momentum descent | 0.071 | 7.36 |
+
+- *To the lost word.* In the first start the look's stop read at the third turn goes from −0.073 to +0.224, so the looks end with "This" unread. In the second the mark was found at a salience of 0.0202, the only word its look reached; after the step no look reaches it. A kept word scores the same before and after (0.768 and 0.770; 0.773 and 0.773). No word was read with no rule.
+- *Which cost.* The only cost with a gradient on the parameter at that step is `attention` (0.091) in the first start and `chooser` (0.250) in the second. The step replayed with no gradient at all on the parameter moves it about nine tenths as far (0.352 of 0.387; 0.060 of 0.067), and the word is still lost. What moves it is the optimizer's state from earlier steps.
+- *Unfinished:* the optimizer's state could not be put back for the replays (a parameter grown in the step's forward), so each replay has the state from after the step; the memories are not put back between trials; the salience of each place inside a look and the concept's value at the reading were not read.
+- *`Tree.edge`:* the tree's pairs cannot be told from the closing's by anything but their order, unless the trace's index is read.
+- *The implementer's proposals, none built:* leave a parameter unmoved at a step that gives it no gradient; teach the stop read from the reading's own words (a cost).
+
+#### Trials (Claude, in the scratch worktree, nothing kept)
+
+The tests teach at a rate of .01, written in each test (`model.getOptimizer(lr=.01)`); `data/model.xml`'s `learningRate` is 0.001. Adam moves each entry it has moments for by about the rate at each step, whatever the gradient's size (the largest entry's move above is 0.0106).
+
+| The said-back measure | Words, of 19 | Lesson sentences, of 4 | Two-word sentences, of 6 |
+| --- | --- | --- | --- |
+| Rate .01, 3 rounds of the words (as built, §23.6.28) | 19, 18, 0 | 0, 1, 1 | 0, 1, 0 |
+| Rate .001, 3 rounds of the words | 19, 19, 19 | 4, 4, 4 | 6, 6, 6 |
+| Rate .001, 10 rounds of the words | 19, 18, 19 | 0, 0, 0 | 0, 0, 0 |
+| Rate .001, 10 rounds of the words and the sentences | 19, 19, 19 | 4, 4, 4 | 6, 6, 6 |
+
+- At the model's own rate, ten rounds of the words alone keep the words, and every sentence is then read with two looks (12 words followed of 18; two lesson sentences put back as nothing): a model shown only inputs of two looks takes two looks. With the sentences taught beside the words, every word and sentence is put back in three starts of three.
+- The echo's cell of a word with its mark at rate .001: 19 of 19 after teaching in 8 runs of 8 (at .01, 4 runs of 24 lost a word's letters). Eight runs without a loss would come by chance about one time in four at the old rate, so this is likely and not shown.
+
+#### Review (Claude, 2026-11-23)
+
+- *The fall after teaching is the tests' doing, in two parts.* The rate, ten times the model's own, carries values that sit at a threshold across it; and the measure teaches only words alone and then reads sentences. Neither is a fault of the reconstruction, of a cost or of the looks' design. §23.6.28's last line (the eleventh pass's fault again) is not supported by this and is withdrawn.
+- *What is changed* (the fourth part, text above §22.7): the rate comes from the model, with no default in code; the echo's tests and the said-back measure use it; the measure teaches the sentences it measures.
+- *Not taken:* a rule that leaves a parameter unmoved at a step with no gradient changes how the optimizers work and is not needed at the model's rate; teaching the stop read is a cost and Alec's to allow, and is not needed here either.
+- *Left as it is:* `Tree.edge`'s reliance on the order of writing, until the roots can be read from the store.
