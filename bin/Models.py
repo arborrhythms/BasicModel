@@ -12256,29 +12256,25 @@ class BasicModel(BaseModel):
 
     @_sentence_query_mask
     def reconstruct_grammar_sentence(self, state, sid, active):
-        """Read the concluded sentence through generate, occurrences and reverse."""
+        """Report the concluded sentence as its one reconstruction puts it
+        back (:func:`SentenceField.put_back`): from the idea, the walk made
+        to take the recorded steps; in a model that reads, the perceptual
+        inverse of the field. Nothing is kept on the model."""
         self._publish_sentence_scratch(state)
         record = self._trial_understanding(state, sid, active)
-        from SentenceField import sentence_generated
-        from OutputOccurrences import realize
-        generation = sentence_generated(self, record)
-        decoded = realize(self, generation)
-        texts = generation.texts(decoded.materialize())
-        missing = generation.truncated | torch.tensor(
+        programs = self._sentence_observation(state, sid, active, record=record)['entries']
+        from SentenceField import put_back
+        generation, decoded, _ = put_back(self, record.open_field, record=record, programs=programs)
+        if generation is not None:
+            texts = generation.texts(decoded.materialize())
+            truncated = generation.truncated
+        else:
+            from FieldReverse import word_texts
+            texts = tuple(' '.join(row) for row in word_texts(decoded.materialize(), record.open_field.where))
+            truncated = torch.zeros_like(active)
+        missing = truncated | torch.tensor(
             [not text or '\0' in text for text in texts], device=active.device, dtype=torch.bool)
         return texts, missing & active
-
-    def reconstruct_field_sentence(self, state, sid, active):
-        """Report the input field through the common grammar-free decoder."""
-        self._publish_sentence_scratch(state)
-        record = self._trial_understanding(state, sid, active)
-        field = record.open_field
-        decoded = self.reverse(self.conceptualSpace.subspace.carrier_like(), field=field)
-        from FieldReverse import word_texts
-        rows = word_texts(decoded.materialize(), field.where)
-        missing = torch.tensor([not row or any('\0' in word for word in row) for row in rows],
-                               device=active.device, dtype=torch.bool)
-        return tuple(' '.join(row) for row in rows), missing & active
 
     def _reconstruct_sentence_traversal(self, S, reference, **_unused):
         """One row-level traversal (``_reconstruct_sentences`` with one

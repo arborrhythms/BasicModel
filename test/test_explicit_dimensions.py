@@ -204,26 +204,16 @@ def _run_xor_grammar_in_process():
             # discarded. This neither advances the clock nor keeps the trace.
             with torch.no_grad():
                 texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
-                field_texts, field_unavailable = model.reconstruct_field_sentence(state, sid, active)
             model._grammar_gate_reconstructions = texts
             model._grammar_gate_unavailable = unavailable.detach().cpu().tolist()
-            model._field_gate_reconstructions = field_texts
-            model._field_gate_unavailable = field_unavailable.detach().cpu().tolist()
         return commit(model, state, sid, active, *args)
     with patch.object(BasicModel, '_commit_sentence', capture):
         results = ModelFactory.run("data/XOR_grammar.xml")
     model = results[0][2]  # (name, rCorrect, model)
-    from collections import Counter
-    inputs, _ = model.inputSpace.getTestData()
-    originals = [model._bytes_to_text(value).replace("\x00", " ") for value in inputs]
-    model._field_gate_matches = sum(not missing and recovered is not None and
-        Counter(original.split()) == Counter(recovered.replace("\x00", " ").split())
-        for original, recovered, missing in zip(originals, model._field_gate_reconstructions,
-                                                model._field_gate_unavailable))
+    # One reconstruction (seventeenth pass, item 8): the open field's
+    # reverse is no second report.
     print(f'Grammar reconstruction audit: texts={model._grammar_gate_reconstructions!r}; '
           f'unavailable={model._grammar_gate_unavailable!r}')
-    print(f'Field reconstruction audit: {model._field_gate_matches}/{len(inputs)}; '
-          f'texts={model._field_gate_reconstructions!r}')
     return model
 
 

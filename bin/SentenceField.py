@@ -197,6 +197,24 @@ def policy_charge(model, generation, errors, active):
     return cost
 
 
+def put_back(model, field, *, record=None, programs=()):
+    """What :func:`reconstruction` puts back, with nothing kept on the
+    model: ``(generation, reverse, met)``; the generation and ``met`` are
+    ``None`` in a model that reads."""
+    from OutputOccurrences import realize
+    from dataclasses import replace
+    language = model.languageSpace
+    reads = not (getattr(language, '_compose_binary_rules', ()) or getattr(language, '_compose_unary_rules', ()))
+    if record is None or reads:
+        return None, model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field), None
+    slots, occupied, actions, met = taken_steps(model, record, programs)
+    # The reading's constituents are kept of the way up: not candidates here.
+    idea = replace(record, constituents=None, constituent_valid=None, constituent_families=None)
+    generation = sentence_generated(model, idea, slots=slots, occupied=occupied,
+                                    kept_actions=actions, kept_taken=True)
+    return generation, realize(model, generation), met
+
+
 def reconstruction(model, field, *, record=None, programs=(), errors=None, active=None):
     """The one reconstruction (§19.134, §19.135): from the top the model
     has back down to the percepts. With a record (a model that
@@ -210,18 +228,9 @@ def reconstruction(model, field, *, record=None, programs=(), errors=None, activ
     (a model that reads), the reconstruction is the perceptual inverse of
     the basic-level concepts of ``field``. Returns the generation (``None``
     with no record) and what is put back."""
-    from OutputOccurrences import realize
-    from dataclasses import replace
-    language = model.languageSpace
-    reads = not (getattr(language, '_compose_binary_rules', ()) or getattr(language, '_compose_unary_rules', ()))
-    if record is None or reads:
-        return None, model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
-    slots, occupied, actions, met = taken_steps(model, record, programs)
-    # The reading's constituents are kept of the way up: not candidates here.
-    idea = replace(record, constituents=None, constituent_valid=None, constituent_families=None)
-    generation = sentence_generated(model, idea, slots=slots, occupied=occupied,
-                                    kept_actions=actions, kept_taken=True)
-    reverse = realize(model, generation)
+    generation, reverse, met = put_back(model, field, record=record, programs=programs)
+    if generation is None:
+        return None, reverse
     model._sentence_generation = generation
     model._sentence_taken = met
     model._sentence_walk_residuals.append(generation.trace[3])
