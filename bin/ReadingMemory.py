@@ -83,7 +83,26 @@ def commit(stores, heads, durable):
 
 
 def read(model, bank, concepts):
-    """Narrow the open field until the request stops, STM fills or nothing is found."""
+    """Write the narrowed looks to memory and return the caller its open field."""
+    owner = model._concept_owner()
+    # Each look binds its own packed rows. Keep their addresses and evidence
+    # together when returning to the parallel input that triggered the read.
+    names = ('_percept_field', '_cs_last_a0', '_cs_order0_raw', '_cs_field_rows',
+             '_cs_field_concept_ids', '_cs_field_caps', '_cs_field_where', '_cs_field_when',
+             '_cs_field_wires', '_cs_level_acts', '_cs_level_rows', '_cs_wave_qe')
+    opened = {name: vars(owner)[name] for name in names if name in vars(owner)}
+    try:
+        return _read(model, bank, concepts)
+    finally:
+        for name in names:
+            if name in opened:
+                object.__setattr__(owner, name, opened[name])
+            else:
+                vars(owner).pop(name, None)
+
+
+def _read(model, bank, concepts):
+    """Narrow until the request stops, STM fills or nothing is found."""
     from Places import readings
     from Attention import draw_among
     from SentenceLooks import attend, narrow, lower
