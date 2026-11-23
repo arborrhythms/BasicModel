@@ -90,7 +90,7 @@
     <attentionPromotion>false</attentionPromotion>
     <conceptMintCount>3</conceptMintCount>
     <conceptUseFloor>0.5</conceptUseFloor>
-    <conceptMatchPart>0.7</conceptMatchPart>
+    <conceptMatchPart>1.0</conceptMatchPart>
     <conceptPartFloor>0.001</conceptPartFloor>
 
     <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):

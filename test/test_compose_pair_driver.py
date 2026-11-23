@@ -133,7 +133,7 @@ def test_complete_paths_train_in_one_step_and_commit_once(monkeypatch):
         # interpretation is a round of the compose walk with its own
         # record, so it stands where the candidate round stood.
         rounds = torch.stack([draw[name + '_round'] for name in
-            ('attention', 'compose', 'interpret', 'bind', 'reconstruction', 'thought', 'output')], -1)
+            ('attention', 'compose', 'interpret', 'bind', 'thought', 'output')], -1)
         assert rounds.ge(0).sum(-1).eq(draw['walk'].ge(0).long()).all()
         composed = draw['compose_round'] >= 0
         changed_compose=(observed[0][1] != observed[1][1]).any(-1)
