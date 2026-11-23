@@ -14757,6 +14757,122 @@ run with their counts, the commits on item17-codex, and whatever you
 did not finish, first. Write it to suggestions.txt as before.
 ~~~
 
+*For Codex: the echo through the answer, and a rule undone from its parent alone* (added 2026-11-22, after §23.6.24; Alec: "Feel free to give codex a tougher problem.").
+
+~~~
+Item 1.7 of BasicModel: make the model say back what it is given. This
+is the item's hardest open problem and you own it. Repository
+/Users/arogers/github/WikiOracle/basicmodel. Go on in your own worktree
+and branch (item17-codex); first bring that branch up to the tip of
+item17-r6d11 by merging it in. Commit there, push nothing, and do not
+edit the main checkout. The implementer who was in the answer's files
+has been told to close its pass and keep out of them, so
+bin/Models.py's answer path, bin/ThoughtAnswer.py, bin/ThoughtClosing.py,
+bin/Output.py, bin/OutputOccurrences.py, bin/Generative.py and
+test/test_item17_echo.py are yours.
+
+Read first: doc/ModelAge.md ("How to read the chart" and "How the tasks
+are taught"); doc/Training.md, "What questions and the two primary
+costs" (the paragraph "Answers, silence and referents"); and in
+doc/plans/2026-11-14-sigma-pi-layers.md sections 19.135 and 19.136, and
+23.6.24. The last pass's return is
+/Users/arogers/.claude/projects/-Users-arogers-github-WikiOracle/scratch-1.7/r6d_return_18.md
+(items 2, 10 and 11).
+
+What is known, measured on the model as it runs.
+- test/test_item17_echo.py holds the echo as tests of the suite. Each
+  text is given as the input and as the supplied answer, and the answer
+  returned (BatchResult.outputPred) must spell the input.
+  test_echo_a_word_with_its_own_look ("Felix"),
+  test_echo_a_word_and_its_mark_with_its_own_looks ("Felix.") and
+  test_echo_a_sentence_of_two_words ("This is.") all fail: the answer
+  is the empty string for every word, in three starts, untaught and
+  after 30 rounds. After teaching the reconstruction says "Felix" and
+  the answer is still empty.
+- test_the_state_is_enough_for_two_words shows the reading is not what
+  is short: on "This is." there are 3 looks, 3 slots of the open field,
+  3 rows in STM and 3 leaves under the idea. The answer has 0 meanings
+  and 0 roles, so the output walk is given nothing.
+- The trace: a word alone gives the sentence's state a meaning
+  (entry.meaning, an idea with no open slot). The closing
+  (ThoughtClosing.close, Models.run_selected_thought) offers one root
+  thought; it takes no action, or runs a concept thought that stops on
+  its work budget; its meaning is not accepted (ThoughtAnswer.accepted).
+  Models._resolve_answer is given that selected thought, does not read
+  the field's own meaning (Output.concluded_meanings is read only when
+  no thought was selected), and clears the answer.
+- The documented rule is: "The answer is resolved only from a
+  concluded, accepted thought; with no conclusion the output role is
+  empty and the model is silent." A sentence with no supplied answer
+  has silence as its target, so words said where nothing was asked
+  cost A. Whatever you build has to leave both true: the model can
+  still be silent, and is taught when to be.
+
+Task 1, the echo. Make the three tests above pass, by the answer
+returned, on fresh starts, without weakening them. Decide and build how
+what was heard becomes something the answer may say. Two ways are in
+view; choose, or find a better one, and say why.
+  (a) A heard word is witnessed: its idea carries the evidence kind
+      'perception' (which ThoughtAnswer.accepted already admits), and a
+      closing whose thought takes no action leaves the answer to the
+      sentence's own concluded meaning. This changes the rule above for
+      every sentence whose closing takes no thought.
+  (b) The echo is a thought: one of the closing's actions concludes the
+      sentence's own idea, accepted, and the model learns from A when
+      to take it and when to be silent.
+The owner has not chosen between them. Build your first choice as
+provisional, and report what the other would have cost. Then follow the
+meaning down: the answer's roles, the output walk's slots, its leaves,
+the writer, the bytes. The sixteenth pass found the end slot of a root
+that is one concept at cosine .82 to .87 to the word as read; say
+whether the leaf still spells the word, and repair what does not. The
+mark of "Felix." must be in the answer: "If we put the mark in the
+input, we should expect it at the output." Then run the assessment
+(Assessment.assess_age) on a model taught the echo and say what age it
+writes.
+
+Task 2, only after task 1: a rule undone from its parent alone. "The
+idea is what does the reconstruction" (section 19.135): in a
+reconstruction a rule's inverse is given its parent and nothing kept of
+the reading. Measured (return 18, item 2): with one rule available and
+taught 30 rounds on the 19 words with their marks, no rule gives back
+either operand at cosine .99. For surface, the nearest: every binary
+rule's inverse of a parent alone is the bounded pair search over the
+walk's bank (Language.reverse_binary_step with free=True,
+_bounded_binary_reconstruction); the operands as read are not among its
+candidates (the bank holds the same directions at other magnitudes, and
+neither is in the shortlist of 16); and the parent has more than one
+exact pair among the candidates, so the fit cannot tell the pair read
+from another. verb, modifier, part and whole are never on the walk's
+menu at the root, and a step off the menu takes no gradient. Find what
+a rule and its inverse need so that a word and its mark, composed by one
+rule, come back from the parent alone, and show it first in tests only
+on one rule. Propose the change to the rule's form before building it
+into the others.
+
+Terms. Every claim is measured input to output on the model as it runs;
+feed nothing into the middle of the model to fix or to measure, and let
+the supplied answer enter only the cost, after the response is fixed.
+Pin no seed for an assertion; add no skip and no xfail; nothing under
+RUN_SLOW. Set no concept's activation directly. No rule that forbids a
+walk or prefers the start of a sentence; a tie is a draw; no rule and no
+word special-cased by its name. No default in code: a key goes in
+data/model.xml and data/model.xsd, none in data/BasicModel.xml. No
+second path beside the one that replaces it. Change nothing of the two
+gates (test/test_mm_xor.py::TestMMXorConvergence::test_convergence and
+test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class).
+Run tests with
+  env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest <files> -q -p no:cacheprovider -n 6 --dist loadfile
+leaving out test/test_item17_own_reading.py (it trains for over forty
+minutes).
+
+Do not wait on a question. Return, in suggestions.txt of your worktree:
+first, whether each of the three tests passes and in how many of how
+many fresh starts; then what you chose and why; what you changed (file
+and function); the tests run with their counts; the commits; and what
+is not finished.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
