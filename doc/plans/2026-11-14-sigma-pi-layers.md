@@ -10105,6 +10105,21 @@ On the assessment, Alec: "it also advises using the CORE metric at some point, m
 - *What it is* (one search, 2026-11-22; the paper itself was not read): the CORE score of the DataComp-LM work, as used by nanochat. 22 tasks of reading, common sense, world knowledge and question answering. Each task's accuracy is rescaled so that chance is 0 and perfect is 1, and the score is the plain mean over the tasks.
 - *Claude's reading, not decided:* it would be a late group of rows in the chart, far above the present ones. There a model picks the candidate to which it gives the least loss; Metal Baby would pick by the answer it returns. The tasks are files that would have to be downloaded, which needs Alec's word, and they are in one language, so they would be data beside the assessment and not code.
 
+### 19.140 Alec: a rule's operands are pointers on the STM tree's edges; nothing extra is added for silence (2026-11-22)
+
+Asked "Shall a rule's parent hold both operands: each one's value, its word's name and its place?", Alec: "you mean can the STM tree store these pointers into concepts on STM1 edges? sure."
+
+- *Decided:* a rule's two operands are reached from its parent by the STM tree's edge, which points at them. Nothing of the operands is copied into the parent's own value.
+- *This is not the form Codex's test proved* (§23.6.26): there both operands were packed into the parent's value, eight bits a membership. Alec's form is the pointer, and it needs no packing.
+- *What is there already* (read in the code, not traced through a reading): an STM1 edge is a pair of tagged references (`Memory.STM1`, an `LTM1`: `parts.add(part, whole, ...)`, each end a symbol, an occurrence or another edge), and an occurrence has its own `.where` and `.when`. A thought's tree is written this way (`ThoughtStrata.write`), and so is a sentence at its closing (`PartClosing._pair`). The reconstruction does not follow these edges today: it searches a bank for a pair that fits the parent (`_bounded_binary_reconstruction`).
+- *Claude's reading, to be built:* the reconstruction undoes a rule by following the parent's edge to its two operands, each with the place its occurrence holds. To be traced first: whether a sentence's compose steps have their edges in STM1 at the time the reconstruction runs, or only at the closing. This is the STM tree itself and not a record kept beside the mind, so it stands with §19.135 ("The idea is what does the reconstruction"): the idea is the root of its tree.
+
+On the learned silence, Alec: "What did you have to add architecturally to do \"Learned silence\"? Again, we are trying not to add anything extra."
+
+- *What it had added:* a linear layer on the output space (one weight for each concept dimension and a bias), the key `architecture.voiceLogit`, a term in the answer's cost, a field on the answer's construction, and a threshold on the layer's value. Claude's question to Alec in §19.139 did not say so.
+- *Done:* it is taken out (cf4687b6c1 reverts 2efe732129). A model with no thought rule says back whatever it reads.
+- *Where silence already lives* (`doc/Training.md`, "Answers, silence and referents"): the answer is resolved only from a concluded, accepted thought, and with no conclusion the model is silent. So whether to speak is the choice of a thought, which a model with no thought rule does not make. Claude's reading: when the echo model must also be silent, the echo becomes one thought rule ("say what was perceived") that the existing chooser takes or leaves; that adds a rule to a grammar and no layer.
+
 ## 20. The prototype of the looks, in tests only (Claude, standing in for Codex, 2026-11-18)
 
 This returns the text of §19.47, as amended by §19.48 and §19.49. No file of `bin/` is changed and no existing test; nothing is wired into the model. It decides nothing.
@@ -14953,8 +14968,9 @@ leaves, the writer, the bytes, with the mark where the input has one.
 ~~~
 Item 1.7, two faults in the teaching of the echo. Repository basicmodel.
 Your echo change is on the work branch item17-r6d11, made by Claude by
-hand (49fe80b064, and the learned silence at 2efe732129; the spec's
-sections 23.6.26 and 19.139 say what was taken and why). The spelling of a
+hand (49fe80b064; the spec's sections 23.6.26, 19.139 and 19.140 say
+what was taken and why; the learned silence was taken out again, since
+it added a layer). The spelling of a
 perceived word from the dictionary by name was not taken, on Alec's word,
 so the model's own way back spells the answer. Do not merge item17-codex
 with the work branch: start a new branch from item17-r6d11 in your
@@ -26704,7 +26720,7 @@ Not taken, for Alec to decide:
 
 - *Is it the reconstruction's cost that loses the letters?* The cell of a word with its mark, taught with the cost in the step and with it left out (a trial in a scratch worktree: `SentenceTraining.surrogate` skipping `'reconstruction'`). Every run returned 19 of 19 before teaching. After teaching, a word lost its letters in 5 runs of 21 with the cost in (18, 18, 18, 17 and 0 of 19), and in 0 runs of 15 with it out. So the reading stands: the reconstruction from the idea alone is wrong, and stepping on its cost moves the way back that the answer's spelling shares.
 - *The gradient that is not a number* came with the cost in (1 run of 21) and with it out (1 run of 15), and once more in `test_item17_places.py::test_reading_in_order_before_and_after_the_lesson`, which uses the lesson's whole grammar. So it is neither `divide` nor the echo nor the reconstruction's cost. Six runs with anomaly detection on did not meet it. Not found; it is in the text for Codex above §22.7.
-- *The learned silence* is made (2efe732129): Codex's linear read, the key `architecture.voiceLogit` in `data/model.xml` and its schema, a row in `doc/Params.md`, and Codex's test that the same word is taught to be said, to be met with silence and to be said again. The echo's cells with a grammar, the two-word sentence, the state and the silence test pass; both gates pass.
+- *The learned silence* was made (2efe732129) and then taken out (§19.140: it added a layer). As made: Codex's linear read, the key `architecture.voiceLogit` in `data/model.xml` and its schema, a row in `doc/Params.md`, and Codex's test that the same word is taught to be said, to be met with silence and to be said again. The echo's cells with a grammar, the two-word sentence, the state and the silence test pass; both gates pass.
 
 #### Review (Claude, 2026-11-22)
 
