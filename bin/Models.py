@@ -4682,6 +4682,9 @@ class BaseModel(Mereology, nn.Module):
             if isinstance(module, (ColumnDictionary, IndependentComponents, ReferenceClose, PartsOfSpeech, VerbGroups, IntuitionLayer, BasicPercepts)):
                 component_metadata.add(name + '._extra_state')
         model_state = dict(self.state_dict())
+        if 'age' in model_state and 'age' not in state:
+            # A checkpoint from before age was measured inherits its XML age.
+            state['age'] = self.age.new_tensor(self._initial_age)
         for name in tuple(state):
             renamed=name.replace('.discourse.','.expectation.')
             if renamed != name and renamed in model_state:
@@ -16333,6 +16336,11 @@ class BasicModel(BaseModel):
         """
         from Forgetting import ForgettingConfig
         ForgettingConfig.from_xml()  # reject invalid settings before allocating model state
+        configuration = getattr(self, 'cfg', None) or TheXMLConfig.data
+        self._initial_age = float(configuration['architecture']['age'])
+        if not math.isfinite(self._initial_age) or self._initial_age < 0:
+            raise ValueError('mental age must be finite and nonnegative')
+        self.age = nn.Parameter(torch.tensor(self._initial_age), requires_grad=False)
         self.spaces = []
         # Execution-only epoch used by immutable carrier/codebook identities.
         # It intentionally does not ride in state_dict: no carrier or replica

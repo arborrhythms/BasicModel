@@ -15,7 +15,7 @@ measure.
 
 Each row is a task with the age at which it is counted as learned. The ages
 follow the age at which a child learns the same thing. A model's age is the
-greatest age in the chart with every measured row at or below it passed.
+greatest measured age with every measured row at or below it passed.
 
 A model here takes the words of a sentence in order and says them back. That
 is nearer to a child hearing and repeating than to a child reading print, and
@@ -198,13 +198,20 @@ recalled from it: a loop of several steps that runs in long-term memory.
 
 ## Status
 
-The chart was checked against published sources. Rows marked
-*estimate* were not confirmed. The assessment today has the nine rungs from
-"one word" to "the fast cat ran quickly", and reaches only the first, because
-no test model declares the vocabulary the others need. The rows for a word
-said back, reading in order and counting are being built in item 1.7. The
-`age` parameter is not yet in the model or its XML: the age above was worked
-out by hand from the results named beside it.
+The model stores its assessed age in the checkpoint. A fresh model starts at
+the age supplied by its XML. `Assessment.assess_age(model)` presents the chart
+without training and reads the answers returned by that instance. It awards
+the greatest measured, passed age below the first age with a failed or
+unavailable measure. Passing through 3.25 and failing at 3.75 earns 3.25.
+An age group with no measurement awards no age. Use `all_rows=False` to stop
+after the first unmet age group.
+
+The presentations in `bin/AgeChart.py` include asking which name was present
+after the input has gone, distinguishing familiar and unfamiliar forms, and
+answering truth tables. The 1.00 row presents the 19 unmarked words to the
+same weights and reads the returned answers. The assessment has no teaching
+or nomination phase.
+
 
 ## Sources
 

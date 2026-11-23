@@ -526,7 +526,7 @@ def test_kept_verbal_output_reaches_the_live_understanding_and_conditioner(tmp_p
         # vary with every coordinate of the composed meaning.
         loss = result[0].sum() + result[2][3].sum()
         gradients = torch.autograd.grad(loss, (root, parameter), retain_graph=True, allow_unused=True)
-        parameters = tuple(owner.parameters())
+        parameters = tuple(p for p in owner.parameters() if p.requires_grad)
         upstream = torch.autograd.grad(root.square().sum(), parameters, retain_graph=True, allow_unused=True)
         sources = tuple(p for p, g in zip(parameters, upstream) if g is not None and bool(g.abs().any()))
         assert sources, 'the thought reads an understanding produced by model parameters'

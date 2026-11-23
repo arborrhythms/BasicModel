@@ -21,6 +21,7 @@ class _State:
         import types
         import weakref
         from collections import deque
+        from Layers import _RadixNode
         import numpy as np
         self.random = random.getstate(), np.random.get_state(), torch.random.get_rng_state()
         self.cuda = torch.cuda.get_rng_state_all() if torch.cuda.is_initialized() else None
@@ -38,6 +39,11 @@ class _State:
                 if value._base is not None:
                     visit(value._base)
                 self.saved.append(('tensor', value, value.detach().clone()))
+            elif isinstance(value, _RadixNode):
+                # Radix nodes are slotted. Restoring just the trie's count
+                # leaves the previous presentation's terminals in its tree.
+                self.saved.append(('radix_node', value, (value.prefix, value.percept_id, value.children)))
+                visit(value.children)
             elif isinstance(value, np.ndarray):
                 self.saved.append(('array', value, value.copy()))
             elif isinstance(value, torch.Generator):
@@ -86,6 +92,8 @@ class _State:
                         target.copy_(value)
                     else:
                         target.data = value.clone()
+            elif kind == 'radix_node':
+                target.prefix, target.percept_id, target.children = value
             elif kind == 'array':
                 target[...] = value
             elif kind == 'generator':
@@ -410,3 +418,110 @@ def format_record(record):
         '  missing '+missing, *sources, *(() if record['answer'] is None else
              ('  answer  '+record['answer']+' '+str(record['evidence_kind']),))))
 
+
+
+def _answer(model, case, index, answers):
+    """Present a supervised pair. The target belongs to Data.what alone."""
+    from What import What
+    with preserved(model):
+        data = model.inputSpace.data
+        for prior in case.context:
+            model.understand(model.inputSpace.prepInput([prior]))
+            model.End()
+        data.has_supervised_outputs = True
+        data.text_answers = {'train': answers}
+        question = What.supervised(index, split='train', prompt=case.prompt)
+        source = model.inputSpace.prepInput([case.text])
+        batch, _ = model.runBatch(train=False, optimizer=None, batchSize=1, split='train',
+            questions=(question,), batch_override=(source, torch.empty(1, 0)))
+        returned = None if batch is None else batch.outputPred
+        if returned is None or returned.is_floating_point():
+            return None
+        return bytes(returned.detach().reshape(-1).tolist()).rstrip(b'\0').decode('latin1')
+
+
+def _xor_result(model):
+    """Use the standing gate's four inputs and its MSE bar on these weights."""
+    with preserved(model):
+        pairs = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
+        source = model.inputSpace.prepInput(list(pairs))
+        target = model.outputSpace.prepOutput([torch.tensor([v]) for v in (0., 1., 1., 0.)])
+        batch, _ = model.runBatch(train=False, optimizer=None, batchSize=4, split='train',
+                                  batch_override=(source, target))
+        if batch is None or batch.outputPred is None:
+            return dict(status='failed', returned=None)
+        actual = batch.outputPred.detach()
+        if actual.numel() != 4:
+            return dict(status='failed', returned=actual.tolist())
+        mse = float((actual.reshape(4) - target.reshape(4).to(actual)).square().mean())
+        return dict(status='passed' if mse < .20 else 'failed', returned=actual.tolist(), mse=mse)
+
+
+def _text_row(model, cases):
+    from Spaces import SentenceTooLong
+    records = []
+    answers = [case.answer for case in cases]
+    for index, case in enumerate(cases):
+        record = dict(input=case.text, prompt=case.prompt, context=case.context, expected=case.answer)
+        try:
+            record['returned'] = _answer(model, case, index, answers)
+        except SentenceTooLong as error:
+            record['unavailable'] = str(error)
+        records.append(record)
+    unavailable = sum('unavailable' in case for case in records)
+    passed = sum(case.get('returned') == case['expected'] for case in records)
+    if passed + unavailable < len(records):
+        status = 'failed'
+    else:
+        status = 'unavailable' if unavailable else 'passed'
+    return dict(status=status, passed=passed, total=len(records), unavailable=unavailable, cases=records)
+
+
+def _attained_age(rows):
+    """Award complete, consecutive age groups in the measured chart."""
+    if not rows:
+        return 0.
+    measured = {row['age'] for row in rows}
+    first_unmet = min((row['age'] for row in rows if row['status'] != 'passed'), default=float('inf'))
+    return max((years for years in measured if years < first_unmet), default=0.)
+
+
+def assess_age(model, *, all_rows=True):
+    """Assess this instance without training. Only this function awards an age.
+
+    The full report measures higher abilities even after a lower row fails.
+    With all_rows=False, stop after the first disqualifying age group. The
+    age awarded is identical for the same observations of that prefix.
+    """
+    from itertools import groupby
+    from AgeChart import chart
+    text_model = model.inputSpace.model_type == 'embedding'
+    xor_model = (not text_model and tuple(model.inputSpace.inputShape) == (2, 1)
+                 and tuple(model.outputSpace.outputShape) == (1, 1))
+    rows = []
+    for years, group in groupby(chart(), key=lambda row: row[0]):
+        first = len(rows)
+        for _, name, cases in group:
+            if name == 'exclusive or' and xor_model:
+                result = _xor_result(model)
+            elif cases and text_model:
+                result = _text_row(model, cases)
+            else:
+                result = dict(status='unavailable', reason='requires ' + ('text input' if cases else 'the two-input XOR presentation'))
+            rows.append(dict(age=years, measure=name, **result))
+        if not all_rows and any(row['status'] != 'passed' for row in rows[first:]):
+            break
+    earned = _attained_age(rows)
+    with torch.no_grad():
+        model.age.fill_(earned)
+    return dict(age=earned, rows=rows)
+
+
+def at_age(model, years, measure):
+    """Run the requested measurement only when its prerequisite is met."""
+    import math
+    if not math.isfinite(years) or years < 0:
+        raise ValueError('requested mental age must be finite and nonnegative')
+    if bool(model.age < years):
+        return dict(status='not qualified at that age', required=years, age=float(model.age))
+    return dict(status='qualified', required=years, age=float(model.age), result=measure())

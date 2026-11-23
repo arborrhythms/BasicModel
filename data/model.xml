@@ -15,6 +15,8 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
+    <!-- Mental age in years before the first assessment. -->
+    <age>0</age>
     <separateChooser>false</separateChooser>
     <reconstructionJitter>0</reconstructionJitter>
     <explorePaths>1</explorePaths>

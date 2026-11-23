@@ -45,3 +45,24 @@ def _assessment_report(request):
             if path:
                 with Path(path).open('a') as stream:
                     stream.write(json.dumps(report)+'\n')
+
+
+@pytest.fixture
+def at_mental_age(request):
+    """Record an unmet prerequisite as its own pytest outcome, also under xdist."""
+    from Assessment import at_age
+    def run(model, years, measure):
+        result = at_age(model, years, measure)
+        if result['status'] == 'not qualified at that age':
+            request.node.user_properties.append(('mental_age_qualification', result['status']))
+            request.node.add_report_section('call', 'mental age',
+                f"{result['status']} (has {result['age']:.2f}, requires {years:.2f})")
+        return result
+    return run
+
+
+def pytest_report_teststatus(report):
+    if report.when == 'call' and report.passed:
+        for name, status in report.user_properties:
+            if name == 'mental_age_qualification':
+                return status, 'N', status

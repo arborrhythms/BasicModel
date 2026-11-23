@@ -8784,6 +8784,10 @@ def resolve_lexer():
     return "raw"
 
 
+class SentenceTooLong(ValueError):
+    """The presented sentence does not fit any configured word bucket."""
+
+
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -10061,7 +10065,7 @@ class InputSpace(Space):
                                 else len(Meronomy.percept_spans(raw)))
         needed = max(1, int(max_words))
         if needed > widths[-1]:
-            raise ValueError(
+            raise SentenceTooLong(
                 "sentence has %d words but the largest configured serial "
                 "word bucket is W=%d; add a bucket before training rather "
                 "than clipping the sentence" % (needed, widths[-1]))
