@@ -14948,6 +14948,49 @@ Then go on down as your task says: the roles, the walk's slots, the
 leaves, the writer, the bytes, with the mark where the input has one.
 ~~~
 
+*For Codex: two faults in the echo's teaching, to be found* (added 2026-11-22, after §23.6.26 and §19.139; diagnosis, and a mend only where the text says so)
+
+~~~
+Item 1.7, two faults in the teaching of the echo. Repository basicmodel.
+Your echo change is on the work branch item17-r6d11, made by Claude by
+hand (49fe80b064, and the learned silence at 2efe732129; the spec's
+sections 23.6.26 and 19.139 say what was taken and why). The spelling of a
+perceived word from the dictionary by name was not taken, on Alec's word,
+so the model's own way back spells the answer. Do not merge item17-codex
+with the work branch: start a new branch from item17-r6d11 in your
+worktree. Commit locally, push nothing, write your return to
+suggestions.txt in your worktree. Do not wait on a question: take your
+first choice and say which it was. No seed pinned for an assertion; no
+skip or xfail; nothing under RUN_SLOW; every claim measured from input to
+the returned answer on the model as it runs.
+
+1. A gradient that is not a number. Optimizer.NonFiniteGradients names
+   conceptualSpaces.0.order_zero.value (1 or 2 entries) and
+   wholeSpace._owned_bases.what.primitive_properties.members (2048 of
+   2304). Seen three times in about forty runs: twice in
+   test/test_item17_echo.py::test_echo_a_word_and_its_mark_with_its_own_looks
+   (once with the reconstruction's cost left out of the step), and once in
+   test/test_item17_places.py::test_reading_in_order_before_and_after_the_lesson,
+   which uses the lesson's whole grammar. It is not divide, which is
+   mended. Six runs with anomaly detection on did not meet it. Find the
+   operation; mend it where the value is made, with the value unchanged,
+   as you did for divide; show the run that met it passing afterwards.
+
+2. Teaching loses a word's letters. In the cell of a word with its mark,
+   every start returns 19 of 19 before teaching. After one round of
+   teaching, 5 runs of 21 returned a word as empty bytes and its mark
+   ("this." as four zero bytes and "."), and stayed so. With the
+   reconstruction's cost left out of the step (a trial: SentenceTraining.
+   surrogate skipping 'reconstruction'), 0 runs of 15 did. In the failing
+   runs the reconstruction's own text is another word or only the mark.
+   Find which parameters the reconstruction's gradient moves that the
+   answer's spelling reads, what the reconstruction was asked to put back
+   at that step and from what, and whether a reconstruction that put back
+   the right words would move them the same way. This is a diagnosis: do
+   not leave the cost out, weight it, or spell from the dictionary to pass.
+   Say what you would change and why.
+~~~
+
 ### 22.7 Round 7: the readers, the measurements and the sweep
 
 ~~~
@@ -26656,6 +26699,12 @@ Not taken, for Alec to decide:
 - Codex's tip, `test/test_item17_echo.py`: the word, the word with its mark, the two-word sentence, the state and the silence test pass; the two cells of a model with no grammar fail as before (13 and 0 of 19).
 - The work branch's version, the three echo tests five more times (six runs in all): the word alone and the two-word sentence passed every run; the word with its mark failed two runs of six, once on the lost letters described above and once on a gradient that is not a number in the teaching step (`conceptualSpaces.0.order_zero.value` and `wholeSpace`'s `primitive_properties.members`), which is a second source beside `divide` and is not found yet.
 - The work branch's version, 15 files and both gates: 147 passed, 7 failed, 30 skipped. Both gates passed. `test_item17_root_trace` passes (it failed on `divide`). The seven: the two cells with no grammar; the word with its mark, on the start described above (it passed on the first run); three of `test_thought_answer_adapters` (known, on the base); and `test_reading_curriculum.py::test_curriculum_gate_counts_one_word_only_for_active_rows`, which fails the same way on the work branch before this change (two runs each).
+
+#### After Alec's answers (§19.139): two measurements and the learned silence (Claude, 2026-11-22)
+
+- *Is it the reconstruction's cost that loses the letters?* The cell of a word with its mark, taught with the cost in the step and with it left out (a trial in a scratch worktree: `SentenceTraining.surrogate` skipping `'reconstruction'`). Every run returned 19 of 19 before teaching. After teaching, a word lost its letters in 5 runs of 21 with the cost in (18, 18, 18, 17 and 0 of 19), and in 0 runs of 15 with it out. So the reading stands: the reconstruction from the idea alone is wrong, and stepping on its cost moves the way back that the answer's spelling shares.
+- *The gradient that is not a number* came with the cost in (1 run of 21) and with it out (1 run of 15), and once more in `test_item17_places.py::test_reading_in_order_before_and_after_the_lesson`, which uses the lesson's whole grammar. So it is neither `divide` nor the echo nor the reconstruction's cost. Six runs with anomaly detection on did not meet it. Not found; it is in the text for Codex above §22.7.
+- *The learned silence* is made (2efe732129): Codex's linear read, the key `architecture.voiceLogit` in `data/model.xml` and its schema, a row in `doc/Params.md`, and Codex's test that the same word is taught to be said, to be met with silence and to be said again. The echo's cells with a grammar, the two-word sentence, the state and the silence test pass; both gates pass.
 
 #### Review (Claude, 2026-11-22)
 
