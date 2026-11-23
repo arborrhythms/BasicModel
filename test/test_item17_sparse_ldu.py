@@ -305,11 +305,17 @@ def test_the_first_pis_way_back_is_the_percept_each_row_keeps(lesson):
     what, where, when = basic.kept_percept(rows)
     R, width = len(rows), basic.width
     assert what.shape == (R, 2, width) and where.shape == (R, WHERE_WIRES, 2) and when.shape == (R, WHEN_WIRES, 2)
-    torch.testing.assert_close(what, basic.bank_codes(rows).to(what))
+    read_codes = basic.bank_codes(rows).to(what)
+    place_rows = torch.tensor([row in basic.place_rows for row in rows], device=what.device)
+    torch.testing.assert_close(what[~place_rows], read_codes[~place_rows])
+    # §19.133: a place can recognise content on the way up. On the way
+    # back it gives only its coordinates and cannot introduce letters.
+    assert place_rows.any()
+    assert torch.count_nonzero(what[place_rows]) == 0
     # Each kept percept as an occurrence of a table: the what on its lanes,
     # then the where and the when wires.
-    table = torch.cat((what.transpose(1, 2), where, when), 1)[None]            # [1, R, columns, 2]
-    bank = SimpleNamespace(codes=what, identity_width=basic.identity_width, width=width)
+    table = torch.cat((read_codes.transpose(1, 2), where, when), 1)[None]            # [1, R, columns, 2]
+    bank = SimpleNamespace(codes=read_codes, identity_width=basic.identity_width, width=width)
     part, whole, _added = held_at(bank, table)
     place = field_factor(table[..., width:width + WHERE_WIRES, :], where) * \
         field_factor(table[..., width + WHERE_WIRES:, :], when)
