@@ -643,12 +643,13 @@ word the two pull the way up apart.
 
 ### When the reconstruction is computed
 
-A look does not reconstruct. The looks lay down an activation trace (today
-explicit: the tree in the STM), each with an expectation on it. When the
-trace gives a well-formed formula, the reconstruction is computed and
-taught, and an output may follow from that comprehension.
-A thought, where there is one, comes before both: the one field it leaves
-does the reconstruction and the output.
+The reconstruction is computed once, when a sentence opens: a single pass
+with attention wide open, up through the orders and back by the common
+perceptual inverse of the open field (`SentenceField.reconstruction`). What
+follows is optional: the looks, a thought, an intuition, an act. Every trial
+reading of the sentence shares that one reconstruction and its comparison
+with the input. A look does not reconstruct; the looks lay down an
+activation trace (the tree in the STM), each with an expectation on it.
 
 A concept holds its `.where` inside it: the `.where` subspace is appended to
 the percept code before the basic level's Pi multiplies them. It is explicit
@@ -658,9 +659,14 @@ Whether light a thought adds shows in what is put back is not settled by
 reasoning; as built `intuit` deposits what it lights at every occupied place of the field
 (`IntuitionField.read`).
 
-As built the reconstruction is computed before the thought
-("Reconstruction has its own operated field"), so nothing conflicts and the
-reconstruction teaches a thought nothing.
+So the reconstruction is computed before any thought: nothing conflicts,
+the reconstruction teaches a thought nothing, and a thought does not change
+what is put back. Its main term is the same number in every trial reading of
+a sentence, so it does not tell two readings apart. The reconstruction runs
+through the whole basic layer, up and back, on every read, and teaches its
+percept codes and the members of its wholes. System 2 teaches the same layer
+by the credit of its choices, which reaches the members of the wholes, the
+values of the order-zero Sigma and the rules' layers.
 
 ### System 2 teaching System 1 on the shared map
 
@@ -685,12 +691,10 @@ nothing.
 The reconstruction asks `U(x) = c_R`, and this teaching would ask
 `U(x) = z_A`.
 
-- If the reconstruction reads the field the thought leaves (the order
-  above), `c_R` is taken from `z_A`, and the two ask the same
-  thing. The reconstruction, the answer and this teaching have one end
-  point, and nothing is left to project.
-- If the reconstruction reads the field before the thought (as built), the
-  two agree only where the thought left what the reading named.
+- If the reconstruction read the field the thought leaves, `c_R` would be
+  taken from `z_A`, and the two would ask the same thing.
+- The reconstruction reads the open field, before the thought. The two agree
+  only where the thought left what the open field held.
 
 ### The two loops
 
@@ -709,9 +713,10 @@ way back needs one of two things.
 
 - *Memory of what was composed* (the STM tree's edges). The
   return is then exact. It teaches the rules nothing, and nothing conflicts.
-  This is the build, and the measurement agrees: the
-  reconstruction reaches no rule, and two trees over the same words are put
-  back the same.
+  The build goes one step further: the reconstruction is taken at the
+  opening, before any rule is applied, so it reaches no rule and two trees
+  over the same words are put back the same. The return by the tree's edges
+  is kept as a report (`BasicModel.reconstruct_grammar_sentence`).
 - *A learned inverse from the parent alone.* The return is then inexact, so
   the reconstruction does teach the rules. But its error cannot reach zero in
   general, and the rules then share the blame for a misspelling with the
@@ -728,8 +733,8 @@ to System 1 by the teaching above.
 | Up against back, one cost, an exact round trip | Always | The two cancel; nothing is taught |
 | Up against back, a replacement between the legs | Never: one step serves both legs | The choice itself is untaught and can turn over; small steps |
 | Reconstruction against output on the shared map | One concept asked for two texts, or one text named by two concepts | The difference belongs in the field; one concept for a word, whoever reads it; the projection removes the rest |
-| Reconstruction against a thought | Where the reconstruction reads a field a thought has changed | Not settled by reasoning: to be measured |
-| Reconstruction against System 2 teaching System 1 (not built) | Where the reconstruction reads the field before the thought | The reconstruction reads the field the thought leaves; then all three have one end point |
+| Reconstruction against a thought | Never: the reconstruction is computed at the opening, before any thought | Nothing to settle |
+| Reconstruction against System 2 teaching System 1 (not built) | Where a thought leaves what the open field did not hold | Not built; the basic level is taught by the reconstruction and by the credit of System 2's choices |
 | Reconstruction against the rules | Only with a learned inverse from the parent alone | A return by the STM tree's edges |
 
 ## Trained total and diagnostic objectives
