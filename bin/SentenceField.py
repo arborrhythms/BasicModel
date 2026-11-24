@@ -373,7 +373,7 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     wanted = codes[raw.clamp(0, 255)] * scope[..., None].to(codes)
     asked = scope
     hidden = torch.as_tensor(hidden, device=raw.device).expand(len(raw))
-    bytes_hidden = None if targets is None or not bool(hidden.any()) else targets.get('bytes')
+    bytes_hidden = None if targets is None else targets.get('bytes')
     if bytes_hidden is not None:
         bytes_hidden = bytes_hidden & hidden[:, None]
         out = F.pad(bytes_hidden, (0, max(0, scope.shape[1] - bytes_hidden.shape[1])))[:, :scope.shape[1]]

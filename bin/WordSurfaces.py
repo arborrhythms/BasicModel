@@ -64,6 +64,21 @@ def stage(surfaces, raw_capacity, *, device, eos=False, retain_bytes=True, with_
             present.to(device), None if support is None else support.to(device))
 
 
+def bytes_at(surface, spans, active, capacity):
+    """Gather the observed spelling of each active interval for byte supervision."""
+    lo, hi = spans.unbind(-1)
+    lengths = torch.where(active, hi - lo, 0)
+    if surface.shape[1] > capacity and bool((lengths > capacity).any()):
+        longest = int(lengths.max())
+        raise ValueError(f'word surface has {longest} bytes; wordSurfaceCapacity is {capacity}')
+    offsets = torch.arange(capacity, device=surface.device)
+    valid = offsets < lengths[..., None]
+    source = torch.nn.functional.pad(surface, (0, 1))
+    at = torch.where(valid, lo[..., None] + offsets, surface.shape[1])
+    data = source.gather(1, at.flatten(1)).reshape_as(at).to(torch.uint8)
+    return data, valid
+
+
 def primitive_support(data, valid):
     """Compatibility for explicit banks; only scatter indices become int64."""
     return torch.zeros(*data.shape[:2], 256, dtype=torch.int32, device=data.device).scatter_add(

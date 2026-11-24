@@ -146,9 +146,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         # views keep their old base; this action reads the current version.
         frames = number('operation_values')
         if kind == 0:
-            has_point = reference_has_point(int(refs[word]),
+            reference = int(refs[word])
+            has_point = reference_has_point(reference,
                 program.reference_relations is None or not bool(program.reference_relations[word]))
-            stack.append(dict(value=values[word], composed_value=values[word], ref=int(refs[word]), rule=None,
+            stack.append(dict(value=values[word], composed_value=values[word], ref=reference, rule=None,
                               order=-1 if orders is None else int(orders[word]),
                               children=(), leaves=(word,), has_point=has_point,
                               interpretation='no_op' if interpretations[word] == 'no_op' else 'symbol'))
@@ -158,7 +159,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             # An objectless lexical reference remains a binding request at
             # order zero. Its physical word row does not stand in for the
             # order of an object which has not been resolved yet.
-            unbound = owner is not None and owner.interpret.no_object(int(refs[word]))
+            unbound = owner is not None and owner.interpret.no_object(reference)
             if stack[-1]['order'] == 1 or addressed or unbound:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],

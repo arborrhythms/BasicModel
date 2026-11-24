@@ -401,3 +401,50 @@ def test_kept_field_aligns_last_duplicate_seat_and_its_gradient(wireless):
     assert first[:, 0, 0, 0].tolist() == [1., 0., 1.]
     assert second[:, 1].eq(1).all()
     assert not first[:, 1].any() and not second[:, 0].any()
+
+
+@pytest.mark.parametrize('include_gaps', [False, True])
+def test_learned_unit_layout_fullgraph(include_gaps):
+    from Meronomy import delivered_bytes, percept_spans, sentence_unit_spans
+
+    raw = torch.tensor([[0, 0, 0, 0, 0, 0, 0], [97, 98, 0, 99, 32, 100, 0],
+                        [160, 133, 65, 49, 33, 0, 0], [32, 32, 0, 0, 0, 0, 0],
+                        [32, 65, 66, 67, 32, 32, 46]])
+    learned = torch.tensor([[(0, 0), (0, 0), (0, 0)], [(0, 2), (2, 3), (4, 7)],
+                            [(0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0)],
+                            [(1, 2), (2, 4), (6, 7)]])
+    def layout(slab, cuts):
+        return sentence_unit_spans(delivered_bytes(slab), cuts, include_gaps=include_gaps)
+    compiled = torch.compile(layout, backend='eager', fullgraph=True)
+    for slab in (raw, raw.flip(0)):
+        got = compiled(slab, learned).tolist()
+        for row, cuts, staged in zip(slab.tolist(), learned.tolist(), got, strict=True):
+            surface = bytes(row).replace(b'\x00', b'')
+            expected = [(a, z) for a, z in cuts if a < z <= len(surface)] or percept_spans(surface)
+            if include_gaps:
+                full, cursor = [], 0
+                for a, z in expected:
+                    if cursor < a:
+                        full.append((cursor, a))
+                    full.append((a, z))
+                    cursor = z
+                if cursor < len(surface):
+                    full.append((cursor, len(surface)))
+                expected = full
+            assert [(a, z) for a, z in staged if z > a] == expected
+
+
+def test_byte_rows_track_restore_and_leave_previous_gather_intact():
+    from Layers import RadixLayer
+    from FieldReverse import byte_rows
+    store = RadixLayer(8)
+    other = RadixLayer(8)
+    store.insert(b'a')
+    other.insert(b'b')
+    before = byte_rows(store)
+    store.load_vocab_extras(other.vocab_extras())
+    restored = byte_rows(store)
+    store.insert(b'c')
+    assert before[[97, 98, 99]].tolist() == [0, -1, -1]
+    assert restored[[97, 98, 99]].tolist() == [-1, 0, -1]
+    assert byte_rows(store)[[97, 98, 99]].tolist() == [-1, 0, 1]

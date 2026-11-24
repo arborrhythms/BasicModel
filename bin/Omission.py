@@ -96,6 +96,13 @@ def covered_bytes(spans, forms, length):
 def prepare(model, units):
     """Draw from the lexical layout before any unit or byte is admitted."""
     ps, isp = model.perceptualSpace, model.inputSpace
+    policy = model.omission
+    if ((not model.training or policy.target == 1)
+            and getattr(policy.draw, '__func__', None) is Omission.draw):
+        # The draw is identically empty and consumes no random numbers.
+        # Use the finalized part layout for the loss and observation counts.
+        model._omission_prepared = dict(raw=model._staged_concepts_in.detach().clone(), units=units)
+        return None
     identity = getattr(ps.percept_store, 'identity', None)
     width = int(ps._serial_word_capacity)
     plans, capacity = [], 3
@@ -172,14 +179,23 @@ def stage(model):
     if not model.word_brackets:
         return
     prepared = model.__dict__.pop('_omission_prepared')
-    draw = prepared['draw']
     valid = isp._ar_word_part_mask
-    width = valid.shape[-1]
-    forms = torch.nn.functional.pad(draw.forms, (0, max(0, width-draw.forms.shape[-1])))
-    if forms.shape[-1] > width and bool(forms[..., width:].any()):
-        raise ValueError('an omitted percept disappeared from its staged layout')
-    forms = forms[..., :width]
-    prepared['draw'] = Draw(draw.words, forms, draw.protected)
+    draw = prepared.get('draw')
+    can_hide = draw is not None
+    if can_hide:
+        width = valid.shape[-1]
+        forms = torch.nn.functional.pad(draw.forms, (0, max(0, width-draw.forms.shape[-1])))
+        if forms.shape[-1] > width and bool(forms[..., width:].any()):
+            raise ValueError('an omitted percept disappeared from its staged layout')
+        forms = forms[..., :width]
+        prepared['draw'] = Draw(draw.words, forms, draw.protected)
+    else:
+        active = isp._word_active_mask
+        forms = torch.zeros_like(valid)
+        protected = active.new_full((len(active),), -1, dtype=torch.long)
+        slots = isp._packed_sentence_slot_mask.shape[1]
+        prepared['draw'] = Draw(torch.zeros_like(active), forms, dict.fromkeys(range(slots), protected))
+        prepared['sentences'] = isp._packed_sentence_ids.detach().clone()
     native = {key: value.detach().clone() if torch.is_tensor(value) else value
               for key, value in ps._forward_input.items()}
     word_values = isp._ar_embedded_N.detach().clone()
@@ -191,9 +207,10 @@ def stage(model):
                     word_bytes=tuple(tuple(raw[lo:hi] for lo, hi in units)
                                      for raw, units in prepared['units']))
     model._omission_targets = prepared
-    if not bool(forms.any()):
-        prepared.pop('bytes')
-        prepared.pop('units'); prepared.pop('plans')
+    if not can_hide or not bool(forms.any()):
+        prepared.pop('bytes', None)
+        prepared.pop('units')
+        prepared.pop('plans', None)
         return
     values, native_valid = native_values(ps, prepared['units'])
     prepared.update(native_values=values, native_valid=native_valid)

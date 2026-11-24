@@ -17,9 +17,8 @@ def placement_step(q, context, weights, negatives, *, rate=.1, negative_weight=1
         gradient += ((q < context).to(q) * (weights / context.sum(-1).clamp_min(1e-12))[:, None]).sum(0)
     if len(negatives):
         gradient -= negative_weight * ((q < negatives).to(q) / negatives.sum(-1).clamp_min(1e-12)[:, None]).sum(0)
-    if not bool(gradient.any()):
-        return q
-    return F.normalize((q + rate * gradient).clamp_min(0), dim=-1)
+    moved = F.normalize((q + rate * gradient).clamp_min(0), dim=-1)
+    return torch.where(gradient.any(), moved, q)
 
 
 class MereologicalCodes(nn.Module):
@@ -408,7 +407,10 @@ class MereologicalCodes(nn.Module):
         cached = owner.similarity_codebook.W
         indices = torch.as_tensor(indices, dtype=torch.long, device=cached.device)
         shape = indices.shape
-        unique, inverse = torch.unique(indices.flatten(), return_inverse=True)
+        if indices.numel() == 1:
+            unique, inverse = indices.reshape(-1), None
+        else:
+            unique, inverse = torch.unique(indices.flatten(), return_inverse=True)
         if bool(((unique < 0) | (unique >= len(cached))).any()):
             raise IndexError('concept row is outside the constructed inventory')
         self._invalidate_forms()
@@ -423,11 +425,12 @@ class MereologicalCodes(nn.Module):
                                                            needed, fallback[needed],
                                                            band=self.percept_event_width - self.percept_width)
             self.form_rows_derived += len(needed)
-        self._forms[unique[~basic]] = 0
+        forms = torch.where(basic[:, None], self._forms[unique], 0.)
+        self._forms[unique] = forms
         self._form_valid[unique] = True
         out = cached.new_zeros(len(unique), self.code_width)
-        out[basic, :self.percept_event_width] = torch.where(kept[basic, None],
-            cached[unique[basic], :self.percept_event_width], self._forms[unique[basic]])
+        out[:, :self.percept_event_width] = torch.where((basic & kept)[:, None],
+            cached[unique, :self.percept_event_width], forms)
         from PerceptCollections import definitions, code
         collections = definitions(owner)
         if collections:
@@ -441,5 +444,5 @@ class MereologicalCodes(nn.Module):
             out[:, start+k:start+2*k] = cached[unique][:, start+k:start+2*k]
         # Placement supplies only for evidence; written
         # against evidence keeps its own magnitude and direction.
-        result = out[inverse]
+        result = out if inverse is None else out[inverse]
         return result.reshape(*shape, self.code_width)

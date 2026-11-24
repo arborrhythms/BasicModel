@@ -138,7 +138,8 @@ class ConceptTrust(nn.Module):
         values[:, start:start+width] = direction * self.lengths[rows, 0, None]
         if derived is not None:
             higher = rows >= self.owner._order_caps()[0]
-            values[higher, :derived.percept_event_width] = 0.
+            percept = values[:, :derived.percept_event_width]
+            values[:, :derived.percept_event_width] = torch.where(higher[:, None], 0., percept)
         bank.W[rows] = values
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):

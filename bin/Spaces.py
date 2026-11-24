@@ -11314,6 +11314,17 @@ class PartSpace(Space):
         unit_spans_rows = getattr(self, "_staged_unit_spans", None)
 
         import Meronomy
+        byte_slab = getattr(self, '_staged_unit_bytes', None)
+        layout = None
+        if torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab):
+            compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
+            layout = Meronomy.sentence_unit_spans(
+                compact, unit_spans_rows,
+                include_gaps=not self._serial_object_meta)
+            # WordIdentity currently accepts variable-length Python byte strings.
+            # Materialize the batch once at that consumer. Positional consumers
+            # below use the original device layout.
+            unit_spans_rows = layout.detach().tolist()
         staged_rows, sentence_truncated_rows, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         identity = getattr(ps, 'identity', None)
@@ -11337,9 +11348,9 @@ class PartSpace(Space):
             if unit_spans_rows is not None and b < len(unit_spans_rows):
                 spans = [(int(s0), int(e0)) for (s0, e0) in unit_spans_rows[b]
                          if int(e0) > int(s0) and int(e0) <= len(raw)]
-            if not spans:
+            if layout is None and not spans:
                 spans = [(int(s0), int(e0)) for (s0, e0) in Meronomy.percept_spans(raw)]
-            if not getattr(self, '_serial_object_meta', False):
+            if layout is None and not getattr(self, '_serial_object_meta', False):
                 # The analysis may omit separator runs from its property
                 # wholes. Perception still owns those bytes. Preserve the
                 # chosen cuts and insert each uncovered span as one unit;
@@ -11380,18 +11391,16 @@ class PartSpace(Space):
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
             word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
-            native_rows.append([(-1 if hidden_rows is not None and hidden_rows[b][i]
-                                 else int(ps.get_id(bytes([value])))) for i, value in enumerate(visible)])
-            native_spans.append([(i, i+1) for i in range(len(raw))])
+            if layout is None:
+                native_rows.append([(-1 if hidden_rows is not None and hidden_rows[b][i]
+                                     else int(ps.get_id(bytes([value])))) for i, value in enumerate(visible)])
+                native_spans.append([(i, i+1) for i in range(len(raw))])
             staged_words = []
             for word_index in range(word_capacity):
                 if word_index < len(spans):
                     start, end = spans[word_index]
-                    truncated = False
                     stop = end
                     hidden = changed is not None and changed[b][word_index]
-                    pids = [(-1 if hidden_rows is not None and hidden_rows[b][i]
-                             else int(ps.get_id(bytes([raw[i]])))) for i in range(start, stop)]
                     unit = raw[start:stop]
                     nested = ()
                     if identity is not None:
@@ -11411,8 +11420,11 @@ class PartSpace(Space):
                             pids = (list(identity.admit(unit)) if admit or unit in identity.words
                                     else [identity._atom(atom) for atom in identity.atoms_of(unit)])
                         atom_count = len(pids) - len(nested)
+                    else:
+                        pids = [(-1 if hidden_rows is not None and hidden_rows[b][i]
+                                 else int(ps.get_id(bytes([raw[i]])))) for i in range(start, stop)]
                     part_capacity = max(part_capacity, len(pids))
-                    if (identity is None and admit and not hidden and len(unit) >= 2 and not truncated
+                    if (identity is None and admit and not hidden and len(unit) >= 2
                             and ps.get_id(unit) is None
                             and unit not in getattr(ps, "_pending_promotions", {})):
                         hits[unit] = hits.get(unit, 0) + 1
@@ -11428,21 +11440,21 @@ class PartSpace(Space):
                         "word_index": int(word_index),
                         "part_spans": ([(start, stop)] * atom_count + [(start+lo,start+hi) for _pid,lo,hi in nested] if identity is not None
                                        else [(i, i + 1) for i in range(start, stop)]),
-                        "active": True, "truncated": bool(truncated),
+                        "active": True,
                     })
                 else:
                     staged_words.append({
                         "pids": [], "start": -1, "end": -1, "word_index": -1,
-                        "part_spans": [], "active": False, "truncated": False,
+                        "part_spans": [], "active": False,
                     })
             staged_rows.append(staged_words)
             sentence_truncated_rows.append(len(spans) > word_capacity)
 
         pid_rows, mask_rows, offset_rows, group_rows = [], [], [], []
-        tile_span_rows, part_span_rows, word_active_rows, word_truncated_rows = [], [], [], []
+        tile_span_rows, part_span_rows, word_active_rows = [], [], []
         for staged_words in staged_rows:
             row_pids, row_mask, row_offsets, row_groups = [], [], [], []
-            row_tile_spans, row_part_spans, row_active, row_trunc = [], [], [], []
+            row_tile_spans, row_part_spans, row_active = [], [], []
             for rec in staged_words:
                 pids = rec["pids"]
                 active_n = len(pids)
@@ -11455,19 +11467,25 @@ class PartSpace(Space):
                     [(rec["start"], rec["end"])] * active_n + [(-1, -1)] * pad_n)
                 row_part_spans.append(rec["part_spans"] + [(0, 0)] * pad_n)
                 row_active.append(bool(rec["active"]))
-                row_trunc.append(bool(rec["truncated"]))
             pid_rows.append(row_pids); mask_rows.append(row_mask)
             offset_rows.append(row_offsets); group_rows.append(row_groups)
             tile_span_rows.append(row_tile_spans); part_span_rows.append(row_part_spans)
-            word_active_rows.append(row_active); word_truncated_rows.append(row_trunc)
+            word_active_rows.append(row_active)
 
         pid_grid = torch.tensor(pid_rows, dtype=torch.long, device=dev)
         part_mask = torch.tensor(mask_rows, dtype=torch.bool, device=dev)
-        part_offsets = torch.tensor(offset_rows, dtype=torch.long, device=dev)
-        word_active = torch.tensor(word_active_rows, dtype=torch.bool, device=dev)
-        word_truncated = torch.tensor(word_truncated_rows, dtype=torch.bool, device=dev)
-        sentence_truncated = torch.tensor(
-            sentence_truncated_rows, dtype=torch.bool, device=dev)
+        if layout is None:
+            part_offsets = torch.tensor(offset_rows, dtype=torch.long, device=dev)
+            word_active = torch.tensor(word_active_rows, dtype=torch.bool, device=dev)
+            sentence_truncated = torch.tensor(sentence_truncated_rows, dtype=torch.bool, device=dev)
+        else:
+            slots = layout[:, :word_capacity]
+            slots = torch.nn.functional.pad(slots, (0, 0, 0, word_capacity - slots.shape[1]))
+            word_active = slots[..., 1] > slots[..., 0]
+            part_offsets = torch.where(part_mask, slots[..., :1], -1)
+            suffix = layout[:, word_capacity:]
+            sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
+        word_truncated = torch.zeros_like(word_active)
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets)
@@ -11506,11 +11524,25 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
-        native_capacity = max(map(len, native_rows), default=0)
-        self._forward_input['native_indices'] = torch.tensor(
-            [row + [-1]*(native_capacity-len(row)) for row in native_rows], dtype=torch.long, device=dev)
-        self._forward_input['native_part_spans'] = torch.tensor(
-            [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev).reshape(batch, native_capacity, 2)
+        if layout is not None:
+            from FieldReverse import byte_rows
+            width = max(map(len, visible_rows), default=0)
+            surface = compact[:, :width]
+            self._forward_input['sentence_bytes'] = (surface.masked_fill(omission['bytes'][:, :width], 0)
+                                                     if hiding else surface)
+            self._forward_input['unit_spans'] = slots
+            seen = surface != 0
+            eligible = seen if not hiding else seen & ~omission['bytes'][:, :width]
+            self._forward_input['native_indices'] = torch.where(eligible, byte_rows(ps)[surface], -1)
+            places = torch.arange(width, device=dev)
+            limits = torch.stack((places, places + 1), -1)
+            self._forward_input['native_part_spans'] = torch.where(seen[..., None], limits, 0)
+        else:
+            native_capacity = max(map(len, native_rows), default=0)
+            self._forward_input['native_indices'] = torch.tensor(
+                [row + [-1]*(native_capacity-len(row)) for row in native_rows], dtype=torch.long, device=dev)
+            self._forward_input['native_part_spans'] = torch.tensor(
+                [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev).reshape(batch, native_capacity, 2)
         return self.subspace
 
     def _embed_radix(self, upstream_vspace):

@@ -174,15 +174,17 @@ def chunk_token(pool, store, state, batch, index):
     additional identity/value slab is needed to reject a reused transient id.
     """
     from Memory import STMChunks as chunks
-    refs = state[chunks.REFS][batch,index]
-    if int(refs[1,0]) == chunks.IDENTITY_REF:
-        key = ('candidate', int(refs[1,1]))
+    refs = state[chunks.REFS][batch, index]
+    identity = state[chunks.IDENTITY][batch, index].reshape(1)
+    # The MTM pool takes Python keys. Read the seat once for both tagged
+    # references and its fallback identity.
+    first_kind, first, second_kind, second, identity = torch.cat((refs.flatten(), identity)).tolist()
+    if second_kind == chunks.IDENTITY_REF:
+        key = ('candidate', second)
         return key if key in pool.entries else None
-    for position in (1,0):
-        if int(refs[position,0]) == chunks.OCCURRENCE:
-            occurrence = ('ltm',store.address_domain,int(refs[position,1]))
-            return pool.token_of(occurrence)
-    identity = int(state[chunks.IDENTITY][batch,index])
+    for kind, address in ((second_kind, second), (first_kind, first)):
+        if kind == chunks.OCCURRENCE:
+            return pool.token_of(('ltm', store.address_domain, address))
     return pool.token_of(identity) if identity >= 0 else None
 
 

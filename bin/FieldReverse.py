@@ -107,6 +107,8 @@ def codebook(basic):
 
 def byte_rows(radix):
     """Each byte's row of the percept store ``[256]`` (``-1`` where none)."""
+    if hasattr(radix, 'byte_rows'):
+        return radix.byte_rows()
     return torch.tensor([-1 if (row := radix.get_id(bytes([v]))) is None else row for v in range(256)])
 
 

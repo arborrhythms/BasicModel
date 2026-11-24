@@ -11741,40 +11741,49 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(part_mask) and part_mask.shape == part_ids.shape
                 and torch.is_tensor(active) and active.shape == part_ids.shape[:2]
                 and callable(getattr(store, "bytes_for", None))):
-            B, W = (int(v) for v in active.shape)
-            ids = part_ids.detach().to("cpu").tolist()
-            masks = part_mask.detach().to("cpu").tolist()
-            live = active.detach().to("cpu").tolist()
-            spellings = [[b""] * W for _ in range(B)]
-            pieces = {}
-            identity = getattr(store, 'identity', None)
             native = (getattr(self.perceptualSpace, '_forward_input', None) or {}) if targets is None else targets['native']
-            texts = native.get('word_texts', ())
-            for b in range(B):
-                for w in range(W):
-                    if not live[b][w]:
-                        continue
-                    if targets is not None:
-                        spellings[b][w] = targets['word_bytes'][b][w]
-                        continue
-                    chunks = []
-                    for pid, valid in zip(ids[b][w], masks[b][w]):
-                        if valid:
-                            if pid not in pieces:
-                                pieces[pid] = store.bytes_for(pid)
-                            chunks.append(pieces[pid])
-                    raw = b"".join(chunks)
-                    if identity is not None:
-                        # Identity atoms are parts, not substrings. Targets
-                        # retain the separately staged input byte witness.
-                        raw = (str(texts[b][w]).encode('latin1')
-                               if b < len(texts) and w < len(texts[b]) else b'')
-                    spellings[b][w] = raw
-            from WordSurfaces import stage as stage_surfaces
-            targets, valid, _, _ = stage_surfaces(spellings, self.word_surface_capacity,
-                device=part_ids.device, with_support=False)
-            isp._ar_target_word_bytes = targets
-            isp._ar_target_word_mask = valid
+            if 'unit_spans' in native and (targets is not None or getattr(store, 'identity', None) is not None):
+                from WordSurfaces import bytes_at
+                surface = native['sentence_bytes']
+                if targets is not None and 'bytes' in targets:
+                    from Meronomy import delivered_bytes
+                    surface = delivered_bytes(targets['raw'][:, 0])[:, :surface.shape[1]]
+                isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
+                    surface, native['unit_spans'], active, self.word_surface_capacity)
+            else:
+                B, W = (int(v) for v in active.shape)
+                ids = part_ids.detach().to("cpu").tolist()
+                masks = part_mask.detach().to("cpu").tolist()
+                live = active.detach().to("cpu").tolist()
+                spellings = [[b""] * W for _ in range(B)]
+                pieces = {}
+                identity = getattr(store, 'identity', None)
+                texts = native.get('word_texts', ())
+                for b in range(B):
+                    for w in range(W):
+                        if not live[b][w]:
+                            continue
+                        if targets is not None:
+                            spellings[b][w] = targets['word_bytes'][b][w]
+                            continue
+                        chunks = []
+                        for pid, valid in zip(ids[b][w], masks[b][w]):
+                            if valid:
+                                if pid not in pieces:
+                                    pieces[pid] = store.bytes_for(pid)
+                                chunks.append(pieces[pid])
+                        raw = b"".join(chunks)
+                        if identity is not None:
+                            # Identity atoms are parts, not substrings. Targets
+                            # retain the separately staged input byte witness.
+                            raw = (str(texts[b][w]).encode('latin1')
+                                   if b < len(texts) and w < len(texts[b]) else b'')
+                        spellings[b][w] = raw
+                from WordSurfaces import stage as stage_surfaces
+                targets, valid, _, _ = stage_surfaces(spellings, self.word_surface_capacity,
+                    device=part_ids.device, with_support=False)
+                isp._ar_target_word_bytes = targets
+                isp._ar_target_word_mask = valid
         bank = lookup_view(isp, 'lookup_rows')
         if not torch.is_tensor(bank) or bank.dim() != 2:
             isp._ar_bank_bytes = None
@@ -11816,7 +11825,8 @@ class BasicModel(BaseModel):
         tokens = percepts.get('tokens', ())
         spans = percepts.get('part_spans')
         raw = getattr(self, '_staged_concepts_in', None)
-        if torch.is_tensor(spans) and torch.is_tensor(raw):
+        native_spans = percepts.get('unit_spans')
+        if native_spans is None and torch.is_tensor(spans) and torch.is_tensor(raw):
             spans = spans.detach().cpu().tolist()
             raw = raw.detach().cpu().reshape(B, -1).long().tolist()
         else:
@@ -11831,6 +11841,8 @@ class BasicModel(BaseModel):
                 spelling = owner.word_surface_for_row(concept_row) if concept_row >= 0 else None
                 if spelling:
                     surfaces[b][w] = spelling
+                if native_spans is not None:
+                    continue
                 surface = None
                 if (texts is not None and b < len(texts) and texts[b] is not None
                         and w < len(texts[b])):
@@ -11857,7 +11869,12 @@ class BasicModel(BaseModel):
         isp._ar_concept_lookup_sentence_ids = torch.where(
             rows >= 0, isp._packed_sentence_ids, torch.full_like(rows, -1))
         isp._ar_bank_bytes, isp._ar_bank_valid = tensor_bytes(surfaces, lookahead=1)
-        isp._ar_target_word_bytes, isp._ar_target_word_mask = tensor_bytes(targets)
+        if native_spans is None:
+            isp._ar_target_word_bytes, isp._ar_target_word_mask = tensor_bytes(targets)
+        else:
+            from WordSurfaces import bytes_at
+            isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
+                percepts['sentence_bytes'], native_spans, active, self.word_surface_capacity)
 
     def _understanding_reconstruction_scope(self):
         """The retained reading paths always reconstruct their understanding.
@@ -13662,19 +13679,17 @@ class BasicModel(BaseModel):
             # The analysis tiling staged above is the ladder stem's unit
             # list (meronomy fold-ladder plan, contract 2: the towers share
             # one tiling); handed over transiently, like the callback.
-            _unit_rows = None
             _spans_full = getattr(_ss, "_staged_unit_spans", None)
-            if torch.is_tensor(_spans_full) and _spans_full.dim() == 3:
-                _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
-                              for row in _spans_full.detach().to("cpu")]
-            object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
+            ps._staged_unit_spans = _spans_full
+            ps._staged_unit_bytes = analysis_input if _ss is not None else None
             from Omission import prepare as prepare_omission
             object.__setattr__(self.perceptualSpace, '_omission_prepare',
                 (lambda units: prepare_omission(self, units)) if self.word_brackets and not target_only else None)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
-                object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
+                ps._staged_unit_spans = None
+                ps._staged_unit_bytes = None
                 object.__setattr__(self.perceptualSpace, '_omission_prepare', None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
             if target_only:

@@ -244,8 +244,8 @@ def stage_input(model):
         if sentence is not None:
             here=model.inputSpace._packed_sentence_ids[:, :live_width] == sentence
             reading_spans=torch.where(here[...,None],reading_spans,0)
-        spent=spans.new_tensor([meter.spent for meter in model._attention_meters]
-                               if spent_override is None else spent_override.tolist())
+        spent = (spans.new_tensor([meter.spent for meter in model._attention_meters])
+                 if spent_override is None else spent_override.to(spans))
         limit=spans.new_tensor([meter.spent + meter.remaining for meter in model._attention_meters])-spent
         return SentenceReading(chooser, keys[:, :live_width], reading_spans, known[:, :live_width],
             poles[:, :live_width], limit.clamp(0, model.attention_budget), W, model.attention_budget,
@@ -331,7 +331,7 @@ def stage_symbol_bank(model, owner):
     ids = torch.tensor([identity for _, identity in rows], device=basis.getW().device)
     indices = ids.new_tensor([row for row, _ in rows])
     keys = basis.lookup_rows(indices).detach()
-    orders = ids.new_tensor([space._concept_source_order(int(identity)) for identity in ids])
+    orders = ids.new_tensor([space._concept_source_order(identity) for _, identity in rows])
     owner.set_symbol_bank(keys, identities=ids, orders=orders, addresses=indices)
 
 
@@ -341,7 +341,6 @@ def stage_percept_expectation(model, active):
     shape = (*active.shape, owner.width)
     model._percept_expected = owner.context_mean.new_zeros(shape)
     model._percept_arrival_loss = owner.context_mean.new_zeros(active.shape)
-    model._percept_arrivals = []
     model._percept_prior = None
 
 
@@ -381,8 +380,6 @@ def observe_percept(model, forecast, payload, sub, index, active):
     arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
     model._percept_expected[:,int(index)] = arrival.expected
     model._percept_arrival_loss[:,int(index)] = expectation.last_arrival['local_loss']
-    model._percept_arrivals.append(dict({key: value.detach() if torch.is_tensor(value) else value
-        for key, value in expectation.last_arrival.items()}, index=int(index)))
     # Identity-valued forward chart, retaining the ordinary source pullback.
     # The two poles of conceptual evidence are unchanged by this P interface.
     from Expectation import recombine_percept

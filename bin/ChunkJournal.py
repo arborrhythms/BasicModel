@@ -412,9 +412,6 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     handles = {identity:i+1 for i,identity in enumerate(ids)}
     origins = row.new_zeros(len(ids),3)
     actual,alternative = [],[]
-    live_actions = journalled.tolist()
-    by_column = {column: index for index, (column, live) in enumerate(zip(columns.tolist(), live_actions))
-                 if live}
     publications = row[:, [2, 3, 36, 6, 7, 11, 9]].tolist()
     pos = {int(position):index for index,position in enumerate(positions.tolist())}
     leaves = row.new_zeros(len(positions))
@@ -487,24 +484,40 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
                     base = current
         actual.append(base)
         alternative.append(branch)
-    events = selected[:,2:8].clone()
-    for column in (0,1,2,4):
-        events[:,column] = events.new_tensor([handles.get(int(identity),0 if column != 4 or int(identity)==0 else -1)
-                                              for identity in events[:,column].tolist()])
-    events = torch.where(journalled[:,None],events,0)
-    timeline = selected[:,8:12].clone()
-    timeline[:,2] = timeline.new_tensor([by_column.get(int(origin)-1,-1)+1 for origin in timeline[:,2].tolist()])
-    timeline = torch.where(journalled[:,None],timeline,0)
+    identity_ids = row.new_tensor(ids)
+    events = selected[:, 2:8].clone()
+    original = events[:, (0, 1, 2, 4)]
+    keys = torch.cat((row.new_zeros(1), identity_ids))
+    addresses = torch.arange(len(keys), device=row.device)
+    translated = torch.where(original[..., None] == keys, addresses, 0).amax(-1)
+    translated[:, 3] = torch.where((translated[:, 3] == 0) & (original[:, 3] != 0),
+                                   -1, translated[:, 3])
+    events[:, (0, 1, 2, 4)] = translated
+    events = torch.where(journalled[:, None], events, 0)
+
+    # The last journalled action for a column owns its reading handle.
+    # The extra slot denotes a shift, transpose, or out-of-range source.
+    size = row.shape[0]
+    index = torch.where(journalled, columns, size)
+    order = torch.arange(len(actions), device=row.device)
+    by_column = row.new_full((size + 1,), -1).scatter_reduce(
+        0, index, torch.where(journalled, order, -1), 'amax')
+    def action_at(source):
+        return by_column[torch.where((source >= 0) & (source < size), source, size)]
+    timeline = selected[:, 8:12].clone()
+    timeline[:, 2] = action_at(timeline[:, 2] - 1) + 1
+    timeline = torch.where(journalled[:, None], timeline, 0)
     width = values.shape[-1]//3
-    writes = selected[:,IDEA_WRITES:IDEA_WRITES+18].reshape(-1,3,6).clone()
-    for at in range(len(actions)):
-        if int(writes[at,0,0]) >= 0 and bool(journalled[at]):
-            column = int(writes[at,0,5])
-            if column not in by_column:
-                raise ValueError(f'idea restoration reads an earlier event outside this reading: column {column}')
-            writes[at,0,5] = by_column[column]
+    writes = selected[:, IDEA_WRITES:IDEA_WRITES+18].reshape(-1, 3, 6).clone()
+    restore = journalled & (writes[:, 0, 0] >= 0)
+    earlier = action_at(writes[:, 0, 5])
+    invalid = restore & (earlier < 0)
+    if bool(invalid.any()):
+        column = int(writes[invalid, 0, 5][0])
+        raise ValueError(f'idea restoration reads an earlier event outside this reading: column {column}')
+    writes[:, 0, 5] = torch.where(restore, earlier, writes[:, 0, 5])
     writes = torch.where(journalled[:,None,None],writes,-1)
-    return dict(identity_ids=row.new_tensor(ids),identity_origins=origins,identity_values=torch.stack(actual) if actual else values.new_zeros(0,width),
+    return dict(identity_ids=identity_ids,identity_origins=origins,identity_values=torch.stack(actual) if actual else values.new_zeros(0,width),
         identity_actions=events,identity_leaves=leaves,timeline_actions=timeline,
         timeline_values=torch.stack(alternative) if alternative else values.new_zeros(0,width),
         operation_resolved=selected[:,REFERENCE_WITNESS:REFERENCE_WITNESS+2].bool(),

@@ -382,6 +382,52 @@ def span_table(starts, ends, *, padded=False):
                         out.scatter_add(1, columns, (positions + 1) * ends)), -1)
 
 
+def delivered_bytes(byte_ids):
+    """Compact the non-NUL bytes just as InputSpace does for the delivered surface."""
+    values = byte_ids.long() & 255
+    positions = (values != 0).long().cumsum(1)
+    return torch.zeros_like(values).scatter_add(1, (positions - 1).clamp_min(0), values)
+
+
+def sentence_unit_spans(compact, learned, *, include_gaps):
+    """Lay out PartSpace units from the observed slab and the model's ordered cuts.
+
+    InputSpace removes NULs from its delivered surface. Learned coordinates
+    refer to that surface. A row without a usable cut retains the percept-run
+    fallback. In mixing mode each uncovered run is itself a unit.
+    """
+    batch, width = compact.shape
+    if not width:
+        return learned.new_zeros(batch, 1, 2)
+    live = compact != 0
+    lengths = live.sum(1, keepdim=True)
+    pos = torch.arange(width, device=compact.device)[None, :]
+    lo, hi = learned.unbind(-1)
+    valid = (lo >= 0) & (hi > lo) & (hi <= lengths)
+    # A learned interval starts a distinct unit even when it touches another.
+    def edges(at):
+        return torch.zeros_like(compact).scatter_add(1, at.clamp(0, width - 1), valid.long()).bool()
+    starts, ends = edges(lo), edges(hi - 1)
+    if include_gaps:
+        before = torch.nn.functional.pad(ends[:, :-1], (1, 0), value=True)
+        after = torch.nn.functional.pad(starts[:, 1:], (0, 1), value=True)
+        starts, ends = live & (starts | before), live & (ends | after | (pos + 1 == lengths))
+
+    letter = ((65 <= compact) & (compact <= 90)) | ((97 <= compact) & (compact <= 122))
+    digit = (48 <= compact) & (compact <= 57)
+    # chr(byte).isspace() over the delivered byte alphabet.
+    space = (((9 <= compact) & (compact <= 13)) | ((28 <= compact) & (compact <= 32))
+             | (compact == 133) | (compact == 160))
+    kind = torch.where(letter, 1, torch.where(digit, 2, torch.where(space, 0, 3)))
+    keep = live if include_gaps else live & ~space
+    fallback_start = keep & (kind != torch.nn.functional.pad(kind[:, :-1], (1, 0), value=-1))
+    fallback_end = keep & ((kind != torch.nn.functional.pad(kind[:, 1:], (0, 1), value=-1))
+                           | (pos + 1 == lengths))
+    use_learned = valid.any(1, keepdim=True)
+    return span_table(torch.where(use_learned, starts, fallback_start),
+                      torch.where(use_learned, ends, fallback_end), padded=True)
+
+
 def pin_word_table(byte_ids, spans, *, padded=False):
     """Pin the maximal pre-NUL letter runs over an ordered, disjoint span table."""
     batch, width = byte_ids.shape

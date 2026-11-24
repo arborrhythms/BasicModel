@@ -11853,6 +11853,16 @@ class RadixLayer(Layer):
         """Surface text of one word entry (the realize direction)."""
         return self.bytes_for(int(percept_id)).decode("utf-8", "replace")
 
+    def byte_rows(self):
+        """Native addresses of the byte alphabet, valid until admission or restore."""
+        device = self._basis.W.device
+        cached = self.__dict__.get('_byte_row_table')
+        if cached is None or cached.device != device:
+            rows = [self.hash_map.get(bytes([value]), -1) for value in range(256)]
+            cached = torch.tensor(rows, dtype=torch.long, device=device)
+            self.__dict__['_byte_row_table'] = cached
+        return cached
+
     def get_id(self, chunk: bytes) -> Optional[int]:
         """Hash-map lookup. Returns ``None`` if ``chunk`` is unknown."""
         return self.hash_map.get(bytes(chunk))
@@ -12044,6 +12054,8 @@ class RadixLayer(Layer):
         # Update the auxiliary structures.
         self.radix_trie.insert(chunk_b, new_id)
         self.hash_map[chunk_b] = new_id
+        if len(chunk_b) == 1:
+            self.__dict__.pop('_byte_row_table', None)
         self.inverse_table.append(chunk_b)
         self._size += 1
         group = self._pending_part_groups.pop(chunk_b, None)
@@ -12493,6 +12505,7 @@ class RadixLayer(Layer):
         self.hash_map = {bytes(k): int(v)
                          for k, v in extras["hash_map"].items()}
         self.inverse_table = [bytes(b) for b in extras["inverse_table"]]
+        self.__dict__.pop('_byte_row_table', None)
         self.byte_fallback.extras_load(extras["byte_fallback_hits"])
         self._chunk_hits = {
             bytes(k): int(v)
