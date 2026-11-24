@@ -81,7 +81,23 @@ def perceive(model, bank, values):
             for b in (values == value).any(1).nonzero().flatten().tolist():
                 if owner.nominates(('value', percept), owner.reading(b)):
                     bring(owner, percept, 'value')
+                    noun(owner, percept)
     meet(owner, bank)
+
+
+def noun(owner, percept):
+    """The value's concept as a thing: a symbol of order one over the
+    concept its row brought, nominated with it, as a word's concept is read
+    through its symbol by the kind of words. None where the row brought no
+    concept."""
+    from Spaces import _concept_alloc_of
+    row = owner.concept_of_basic_percept(percept)
+    concept = None if row is None else owner.concept_id_at_row(row)
+    if concept is None:
+        return None
+    table = _concept_alloc_of(owner).symbol_table()
+    found = table.fit(int(concept))
+    return found if found is not None else owner.nominate_symbol(('noun', int(concept)), int(concept))
 
 
 def image_rows(model):

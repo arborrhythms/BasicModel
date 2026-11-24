@@ -166,6 +166,8 @@
       <!-- The shape of a scene's box, whole numbers separated by spaces;
            empty for none. -->
       <xs:element name="sceneShape" type="xs:string" minOccurs="0"/>
+      <!-- Whether interpret makes meta concepts and blank objects directly. -->
+      <xs:element name="createMetaConcepts" type="xs:boolean" minOccurs="0"/>
       <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Radial STM idea folds (Alec 2026-07-13): the bounded reducer's
            conjunction/disjunction hosts use radmin/radmax and the radial

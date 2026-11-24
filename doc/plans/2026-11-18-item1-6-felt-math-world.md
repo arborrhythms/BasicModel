@@ -6976,3 +6976,310 @@ Keep tmp/item1-6/naming_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 35. Step D2: the return (Claude on Opus, 2026-11-24)
+
+The work of §34.2 on the text model with the scene's box. No git was run;
+nothing is committed. Progress was kept in `tmp/item1-6/naming_progress.md`.
+Every file changed was copied first to `/tmp/item1-6-2026-11-24/naming_before/`
+(`bin/Interpret.py`, `bin/FamiliarTier.py`, `bin/ImagePercepts.py`,
+`bin/Assessment.py`, `data/model.xml`, `data/model.xsd`,
+`data/scene/BasicModel_scene.xml`, `test/test_item16_scene.py`,
+`test/test_item17_symbols.py`). Nothing was removed.
+
+### 35.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `data/model.xml` | `architecture.createMetaConcepts`, `true`, after `sceneShape` (beside `whereAxes`). |
+| `data/model.xsd` | `createMetaConcepts`, `xs:boolean`, beside `sceneShape`. |
+| `data/scene/BasicModel_scene.xml` | `<createMetaConcepts>false</createMetaConcepts>`; no other file of `data/` has the key; `data/BasicModel.xml` gains nothing. |
+| `bin/Interpret.py` | `InterpretLayer.create_meta_concepts`, read from the key in `__init__`. Where it is false: `reading` makes no blank object and no meta concept and gives `named(word)`; `forward` of a word with no object gives `named(word)`; `lookup_word`'s discovering path does not `define` the word's case as its object. New `named(word)`: the other member of a unit across modality that holds the word's symbol (the expected one among several, by `preferred_objects`), or the word. With the key true every path is as it was. |
+| `bin/FamiliarTier.py` | `MODALITIES`, `ACROSS`; `modalities`, `apart`, `observe_units`, `units`, `raised`, `across` (new); `observe_field` keeps today's context within one modality and counts each pair across modality (`observe_units`); `promote_candidates` writes no percept feature for a literal `ACROSS` (its Sigma is the cover's). |
+| `bin/ImagePercepts.py` | `noun(owner, percept)`: a value's concept, when its row is nominated and the concept brought, is given a symbol of order one (its fit, or one nominated under `('noun', concept)`). Called in `perceive` after `bring`. |
+| `bin/Assessment.py` | `units_across_modality(model)`: the units across modality by order. |
+| `test/test_item16_naming.py` (new) | N1 to N7. |
+| `test/test_item16_scene.py`, `test/test_item17_symbols.py` | Ported (35.6). |
+| `tmp/item1-6/naming_progress.md`, `naming_run_files.txt`, `naming_run*.log` | Progress, the run's selectors and logs. Not source. |
+
+### 35.2 Where the unit is nominated, what counts the pair, how it is stored and read
+
+- **Each concept's modality.** In `FamiliarTier.observe_field`, for each
+  stream, `modalities` reads the opened field (`[S, B, L, 2]`) and the
+  readings' `.where` (`owner._percept_field.where`, the same `L`): a
+  concept's modality is the one of the registry's ranges `text` and `scene`
+  that holds every reading at which it reads (either lane), and none where
+  its readings lie in neither or in both. Where the model has no range
+  `scene` (every model but the scene's), it is empty, and nothing below
+  changes anything: `apart` is never true and `observe_units` finds no
+  pair. So a text model, and a numeric one (the XOR gate), are as before.
+- **Within one modality, today's promotion.** The focal row's context is
+  the offered rows less those `apart` from it (both of a modality, and
+  different). Without this the existing focal/context candidate would make
+  field conjunctions of order zero over a word and a value, which 19.5,
+  point 2 forbids.
+- **The pair counted for itself.** `observe_units(owner, batch, present,
+  kinds)`: of the offered concepts of order zero with a modality whose
+  *for* lane is above `conceptUseFloor` (a concept read only against is not
+  present: 35.7, 2), each pair of a `scene` concept and a `text` concept is
+  offered to MTM by `observe_candidate(owner, 1, {row: for, other: for},
+  literal=key, literal_key=key)` with `key = ('across', (('scene',
+  value), ('text', word)))`. The literal keeps each pair its own MTM entry
+  (without one, `match_candidate` would merge pairs whose centroids are
+  alike); each kept close is one reading (`record_reading`), so the count is
+  of openings at which the two were present together, within MTM's horizon.
+- **Nominated.** In `promote_candidates`, on the ordinary path for a
+  candidate above order zero: on `conceptMintCount` readings, its order is
+  one above its members' (`1 + 0`); `concept_fit` first (a concept of order
+  one reading exactly the two symbols); else a new concept, its LTM1
+  grounding (`_ground_candidate_members`), its row at order one, its own
+  symbol (`nominate_symbol(key, cid)`), and `cover_members(..., conjunctive
+  =False)`, which writes the Sigma: `_populate_concept_weights` with the
+  row-addressed witness gives the unit an entry, at the support's weight,
+  on the thing that reads each member (`things_reading`: the member's
+  symbol, its fit, or one made). The literal is remembered
+  (`candidate_literal`). The only change on that path is that a literal
+  `ACROSS` writes no percept feature.
+- **Stored.** A unit is a concept of order one in the concept store whose
+  row has two entries, on the two nouns' symbols (store columns are symbol
+  indices), each symbol a row of the symbols' Pi over one concept of order
+  zero: the word's symbol is the one the kind of words made for it at the
+  word's admission (`('kind', words, word)`); the value's is `noun`'s. It
+  is a Sigma, a list of two: it reads either symbol alone (N5).
+- **Read.** `FamiliarTier.units(owner)`: each raised concept whose
+  `candidate_literal` is `ACROSS`, with its order and the members of its
+  pair whose symbols its Sigma reads at a weight above zero. (Today's part
+  learning offers every defined row of order one a zero entry on every
+  concept of the context, `_prepare_part_learning`; those are not members
+  until learned, so `units` does not read the row's columns alone.)
+  `across(owner, concept)`: the other members of each unit that holds the
+  concept. `Assessment.units_across_modality` counts `units` by order.
+
+### 35.3 The way down
+
+The source's way down is `ConceptualSpace.cs_reverse_presence` (the Sigma's
+transpose to the symbols a concept reads, then the symbols' Pi back to the
+seats of the concepts they hold), used by `SentenceField.descended`. As it
+is called there it does not serve: with no `observed` a concept's value
+goes down its strongest entry alone (its case; the unit's two entries are
+equal, so the first written, the word's), and with `observed` it goes down
+only as far as what was observed reaches, so a member whose percepts are
+absent gets nothing. And the opened field has no row for a concept whose
+percepts are absent. **Built, the least that does, marked:**
+`FamiliarTier.raised(owner, field, concepts, batch=0)` runs
+`cs_reverse_presence` over the field's rows plus the rows of `concepts`
+not among them (reading nothing), with `observed` everywhere one, as
+`CaseSelection` already calls it, so nothing narrows which entry a value
+goes down. The opened field itself and `descended` are not changed: the
+other member is raised by this reading of the field, not written into the
+field the decoder sees.
+
+### 35.4 The certificates, as printed
+
+From the final run (35.5). The model is the echo test's text model
+(`test_item17_echo.echo_model`) with `sceneShape` and `createMetaConcepts`
+as `data/scene/BasicModel_scene.xml` has them (`8 8 8`, `false`), and,
+set in the test: `ConceptualSpace.attentionPromotion` true (35.7, 1); for
+N7 also `ConceptualSpace.nVectors` 512 (`CORPUS_ROWS`; the echo model has
+64; order caps `(512, 323, 153, 64, 32)`) and
+`architecture.serialWordBuckets` `8,256` (`CORPUS_BUCKETS`; the echo model
+has `8`). Rows are made in the test: the word `three`, the pixel `[3, 2, 0,
+200]`; for N4 the other pixel `[5, 5, 0, 240]`; `five` as a word with no
+unit. N2, N3, N5, N6 and the key-false half of N1 read one model taken
+through the stages in order (a module fixture).
+
+From the final run (`output/tests/20261124-111651-25b0a2`):
+
+- **N1, the key.** `N1 key true: {'definitions': 1, 'blanks': 1}, the word's blank object 95; key false ('false' in the scene's configuration), after every stage: {'definitions': 0, 'blanks': 0}`. With the key true both stopping gates, and every test of run 1 that names `interpret`, `Interpret`, `blank`, `define`, `observe_field`, `promote_candidates` or `DefinitionIndex`, have their sweep outcome (35.5).
+- **N2, each known alone.** `N2 the word 'three' concept 93 symbols [0]; the pixel [3, 2, 0, 200] concept 95 symbols [1]; units across modality {}`.
+- **N3, the unit.** `N3 after 'three' with [3, 2, 0, 200] as often as nominates: units across modality {1: 1}; [{'unit': 99, 'order': 1, 'members': (95, 93), 'entries': {95: [2.2849], 93: [2.2849]}}]` (the Sigma's entry on each noun's symbol; the weight is the candidate's summed support, as `cover_members` writes any promotion's).
+- **N4, the pair that recurs.** `N4 'three' (93) with [3, 2, 0, 200] (95) 6 times, with [5, 5, 0, 240] (97) 2 of them: united with (95,); units [{'unit': 99, 'order': 1, 'members': (95, 93), ...}]`.
+- **N5, one raises the other.** `N5 the word alone: the unit reads (0.9403, 0.0), the object's concept by the way down (0.9403, 0.0) (before the unit (0.0, 0.0)); the pixel alone: the unit reads (0.9403, -0.0), the word's concept (0.9403, 0.0) (before (0.0, 0.0))`.
+- **N6, interpret.** `N6 interpret of 'three' (93): 95 (its reading 95), the object's concept 95; of 'five' (98), with no unit: 98`.
+- **N7, the corpus (a measure; nothing asserted).** Categories 1 and 2 (train) in order, each row presented once, training: `300 rows taught, 0 refused; order caps (512, 323, 153, 64, 32); units across modality by order {1: 28}`. By value's word, the steps it is united with: eight 0, five 0, four 0, nine 0, one 0, seven 0, six 0, three 0, two 0. Every word in a unit, with the count of steps it is united with: `{'is': 10, 'this': 2, 'what': 2, '?': 3, 'that': 1, '.': 10}`. No seed is set and the numbers move from run to run: run 1 (35.5) gave eight 1 [175], nine 1 [72], seven 1 [125], the others 0; a pytest run of the same configuration `{1: 56}` and two 1 [47]; with the echo model's buckets (`8`) 91 of category 2's rows were refused (`registered sentence exceeds constructed seen capacity`) and `{1: 49}`. A number word meets each step about once in category 2, under the count that nominates (three, within MTM's horizon of 16 closes); the frequent words meet the frequent lesser values (35.7, 2) and unite with them.
+
+### 35.5 The runs
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py`:
+
+- **Run 1**, the 200 files of `tmp/item1-6/naming_run_files.txt` (both gates' files, §34.2 step 6's list, and every test file that names `interpret`, `Interpret`, `blank`, `define`, `observe_field`, `promote_candidates` or `DefinitionIndex`): `output/tests/20261124-103136-d1ab5d/result.json`, `Result: test_failure, exit 1; 2572/2572 cases completed.` 2629 s. 2443 passed, 122 skipped, 1 xpassed, 6 failed. **Both stopping gates passed.** The six: `test_item17_symbols::test_71_...` (new: the call site of `ImagePercepts.noun`; ported, 35.6); `test_item17_symbols::test_cert_c_...` and `test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`, on the list of chance; `test_item17_symbols::test_54bd_...`, `test_item17_word_said_back::test_the_answer_depends_on_the_spoken_request` and `test_percept_collection_binding::...[2.0-True]`, failed in the sweep. Every other test has its sweep outcome; the 122 skipped are skipped there.
+- **Final run**, after the port: both gates, `test_item17_symbols.py`, `test_item16_naming.py`, `test_item16_scene.py`, `test_item16_scene_field.py`: `output/tests/20261124-111651-25b0a2/result.json`, `Result: test_failure, exit 1; 66/66 cases completed.` 65 passed; the one failure is `test_item17_symbols::test_54bd_...`, failed in the sweep. **Both gates passed**; N1 to N7, C1 to C5, S1 to S4 passed.
+
+### 35.6 Tests ported
+
+| Test | Old | New |
+|---|---|---|
+| `test_item17_symbols.py::test_71_no_symbol_is_made_for_a_concept_and_every_symbol_is_mtms` | the callers of `nominate_symbol` are `[('FamiliarTier.py', 'promote_candidates'), ('FamiliarTier.py', 'promote_identity'), ('Spaces.py', 'things_reading')]` | the same with `('ImagePercepts.py', 'noun')`: point 2 gives a value's concept its symbol, and no existing maker makes one (no kind reads values); it is made on MTM's nomination of the value's row. Its comment says so. The rest of the test (no handle names a making for a concept; every symbol after the lesson is MTM's or a kind's) is unchanged and passes |
+| `test_item16_scene.py::test_s1_the_key` | the scene's configuration differs from `BasicModel.xml` in `["/architecture/sceneShape", "/architecture/weightsPath"]` | in `["/architecture/createMetaConcepts", "/architecture/sceneShape", "/architecture/weightsPath"]` (point 1 sets the key false there); its docstring says so. Nothing else changed |
+
+No other assertion was weakened, skipped or marked; no seed chosen.
+Neither gate, nor anything a gate uses, was touched.
+
+### 35.7 What in §34.1 could not be built as written, and what was built
+
+1. *MTM's promotion from the opened field is off on the text model*
+   (`ConceptualSpace.attentionPromotion` false in `model.xml` and in
+   `BasicModel.xml`, so in the scene's configuration). `observe_field`
+   returns at once without it, and `promote_candidates` promotes no
+   candidate of the field. A unit across modality is made by that
+   promotion, so the test's configuration sets it true; it is not set in
+   `data/scene/BasicModel_scene.xml` (§34.2 names one key for that file).
+   **Proposed:** the felt world's configuration sets it, when its sizes are
+   set. *Marked.*
+2. *A lesser value is present with a greater one.* By the Pi over values as
+   built (§20.2, point 3, "to be measured"), the concept of a value reads
+   *for* at a pixel of any greater value. So an image of step 200 presents
+   every known lesser value's concept too, and each is counted with the
+   word. N4's other pixel is the greater (240); with a lesser (90) the word
+   was united with both. In the corpus this is why a word present with
+   several images unites with lesser steps, and why one opening reads many
+   concepts (the seen capacity of 8 was exceeded by 91 rows of N7 until the
+   buckets were raised). Not changed here.
+3. *The way down* (35.3): built, the least that does. *Marked.*
+4. *The value's symbol* is nominated with its concept (`ImagePercepts.noun`),
+   where a word's is made by the kind of words; §34.1 point 2 says each has
+   one and not by what. *Marked.*
+5. *Frequent words unite too.* Every word of the sentence present with an
+   image is paired with it, so `this`, `is`, `.` and `what` unite with
+   values as a number word does, and more often (N7). §34.1's bound says
+   so for the corpus; nothing tells a name from a word that merely recurs
+   with images, which is the open point of the step after.
+6. *A unit once made has no single modality* (it reads at readings of
+   both), so today's focal/context promotion treats it as any concept: its
+   contexts may join it with words and values into classes of order one
+   and two. Those are not counted as units (no literal).
+7. *What `interpret` gives* with the key false is a concept of order zero
+   (the value's), at its row and order; downstream readers already take a
+   word that reads as itself (order zero) where no blank was made.
+
+### 35.9 Review of step D2 (Claude, 2026-11-24)
+
+**Accepted as a mechanism; naming does not yet work on the corpus.**
+Claude ran both stopping gates, `test_item16_naming.py`,
+`test_item16_scene.py`, `test_item16_scene_field.py` and
+`test_item16_values.py` (run `20261124-113631-3ca9fa`): all passed.
+
+- *What holds.* On one word with one pixel the four stages hold (N2 to
+  N6), and a text model with the key true is as it was.
+- *What N7 shows.* Categories 1 and 2 taught, 28 units across modality at
+  order one, none of a number word with its value; they are of the
+  frequent words (`is`, `.`, `?`). Two causes. (a) Step T's reading for
+  only: a lesser value's concept reads at every greater value's pixel, so
+  values are not told apart; §36 replaces it. (b) Pairs are counted by
+  their being present together alone, and a word present with every image
+  reaches the count first. The pair is to be judged by how constantly the
+  two go together, each against its own occurrences, and not by how often;
+  that is designed after §36 returns, on its numbers.
+- *`attentionPromotion`* must be true for a unit to be made, and the test
+  sets it; the felt world's configuration is to set it, with its room at
+  order zero and one, when the corpus is taught through it.
+- *The way down* (`FamiliarTier.raised`) is the source's own way down run
+  over the field's rows and the absent member's, with nothing narrowing
+  it. Accepted, and marked: the field and what the decoder sees are not
+  changed by it, so "the name carries its object's properties" is so far
+  a reading that can be asked for and not a state of the field.
+
+## 36. Alec on what a basic percept of intensity is (2026-11-24), and the step that rebuilds it
+
+> If percepts bracket the basic percept in virtue of being its parts and
+> wholes, concepts live in a region (of values). They do not take on a
+> specific value.
+
+> A basic percept does not have an exact value except for its centroid. It
+> generalizes over a mereological region. This is already implemented for
+> letter/word percepts, and is in the doc/MD files.
+>
+> Your definition of a concept is significantly different from what is
+> already documented.
+>
+> The gathering of percepts will be more clear to you when you have a
+> codebook of parts, each with values for codes. A linear example, that can
+> be extended to 3D:
+>
+> Input: .75 at location [0,0,0]
+>
+> Parts: .5, . 4,
+> Wholes : 0.8 (must apply everywhere, trivial for a one- position look
+> over .where)
+>
+> So those parts and wholes get a postfix of .where and .when, and 0.5 < x <
+> 0.8 may become a basic percept that correctly identifies the area.
+>
+> So x in that formula is a region in mereological space that is identified
+> by the basic percept, and pi on that space becomes a discriminator
+> (present parts are evidence, absent parts are negative evidence). The
+> same applies to wholes.
+>
+> We discussed this previously in terms of implicit and explicit
+> construction: it can be found by pi, or we can add parts and wholes
+> explicitly to the sparse matrix that identifies the constituent basic
+> percepts that PI will operate over.
+>
+> Excuse my frustration, this should not be new; it should be the algorithm
+> we are using in the text modality, now applied to intensity.
+
+### 36.1 What stands, and what was built otherwise
+
+**It stands over 29.3, 30.1 and whatever of §28 and §34 says a concept is
+a region or a value has a row of its own.** The algorithm of the text
+modality is applied to intensity, unchanged:
+
+- A basic percept is a row of the first Pi over its parts and its wholes
+  (`BasicPercepts.reserve(parts, wholes)`, their entries in the sparse
+  matrix). Its code is the greatest of its parts' codes below and the
+  least of its wholes' codes above (`subspace_bounds`). It identifies a
+  region of mereological space; it has a centroid and no exact value.
+- The Pi is a discriminator: an occurrence that holds the row's parts and
+  lies under its wholes is evidence for, and what it lacks or exceeds is
+  evidence against (`held_at`, as `read_bank` reads a form).
+- A concept of order zero is the Sigma over basic percepts' rows through
+  the Not, as documented. Claude's "a concept is the region between a part
+  and a whole" described the basic percept.
+- "A different Pi on that space" is a Pi of its own, with its own sparse
+  matrix, running this algorithm: the two spaces are not mereologically
+  related.
+
+*Built otherwise, and to be undone.* Before this item a value's row of the
+first Pi was empty (`member_keys` returns none for it), and steps B and T
+kept it so: one row for each exact value, with no constituents. Step T
+then read for only, with nothing against. Step B's first reading, by
+`held_at` with both lanes, was the algorithm, on rows that were exact
+values.
+
+### 36.2 Step T2: intensity percepts by the text algorithm
+
+1. *Codebooks with values for codes.* The catalog of parts and the catalog
+   of wholes over intensity are the bins of the line of values, in order,
+   as `value_code` already lays them out: a part is a lower cut, a whole
+   an upper cut. They are given, as the parts of a form and the classes of
+   characters are given.
+2. *A basic percept of intensity* is a row over a part and a whole of
+   those catalogs, with its entries in the Pi of the value space: for an
+   occurrence, the greatest part it holds and the least whole it lies
+   under, which is its bin. It is nominated by MTM when occurrences recur
+   in its region, as a form is, and brings its concept then. Its centroid
+   is the mean of the values met in it. No row is kept for an exact value.
+3. *Read as a form is,* in a Pi of its own: for where the occurrence holds
+   the row's part and lies under its whole; against where it holds the
+   part and lies above the whole; and the row's entries on the wires for
+   its place. `read_values` by `held_at`'s test on two lanes; step T's
+   `parthood` on the `.what` goes. A place's row and the conjunction over
+   places are as they are.
+4. *The way back* gives, at each place, the centroid of the basic percept
+   that a concept of the field reads for there. An image comes back to its
+   percepts' centroids: exactly where one value recurs, and within a bin
+   otherwise.
+5. *Percepts atomic over digits* stays (`intensityWhereWidth`), and with it
+   the question of `NumericPercepts.pooled`: with evidence against, see
+   whether XOR's "not without the conjunction" holds without withholding a
+   value's concept from the readout, and remove `pooled` if it does.
+
+Certificates, in `test/test_item16_values.py` (V3, V9 and V11 rewritten):
+V3, a row reads for inside its region, against above it where its part is
+held, nothing below it; V9, a region met once has no row, and met as often
+as nominates it has one row whatever exact values fell in it; V11, an image
+comes back to its percepts' centroids, exactly where each value recurred;
+V12, the corpus's nine values each fall in rows of their own and a
+reserved step falls in a row its value's other steps made; V5 and the XOR
+gate as they are. And N7 of step D2 is run again and reported.
+

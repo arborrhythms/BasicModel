@@ -546,11 +546,12 @@ def test_71_no_symbol_is_made_for_a_concept_and_every_symbol_is_mtms(lesson_at_s
     # No function gives "the" symbol of a concept or makes one for it.
     assert not defined & {'symbol_for', 'symbols_from_records'}
     assert not handles
-    # The one maker is called by MTM's two nominations and by a kind's need
-    # of a member that no symbol holds, and by nothing else.
+    # The one maker is called by MTM's two nominations, by MTM's nomination
+    # of a value's row (a value's concept is a noun, with its symbol), and
+    # by a kind's need of a member that no symbol holds, and by nothing else.
     assert _calls_in_bin('nominate_symbol') == [
         ('FamiliarTier.py', 'promote_candidates'), ('FamiliarTier.py', 'promote_identity'),
-        ('Spaces.py', 'things_reading')]
+        ('ImagePercepts.py', 'noun'), ('Spaces.py', 'things_reading')]
     # After the lesson's sixteen sentences, every symbol in the table was
     # nominated by MTM (its handle is an entry of MTM whose symbol is the
     # concept the nomination brought), or made for a kind, named by the

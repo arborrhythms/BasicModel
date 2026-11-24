@@ -33,6 +33,121 @@ def is_place(owner, row):
     return cid is not None and 'place' in _concept_alloc_of(owner).symbol_types.get(cid, ())
 
 
+#: The two modalities whose concepts a unit across modality joins: the
+#: ranges of the registry that hold a word's readings and an image's.
+MODALITIES = ('scene', 'text')
+
+#: The literal of a unit across modality: ``(ACROSS, ((range, concept), ...))``.
+ACROSS = 'across'
+
+
+def modalities(owner, field, batch, rows, wanted):
+    """The modality of each concept of ``wanted`` (rows of the inventory;
+    ``rows`` gives the row of each slot of ``field``, ``[S, B, L, 2]``, in
+    ``batch``): the one range of :data:`MODALITIES` that
+    holds every reading at which it reads, on either lane; ``None`` where its
+    readings lie in no such range or in more than one. Empty where the model
+    has no range ``scene`` or the field's readings are not the perceived
+    ones."""
+    registry = getattr(owner, 'where_registry', None)
+    perception = getattr(owner, '_percept_field', None)
+    if (registry is None or 'scene' not in registry.slices or perception is None
+            or perception.where.shape[1] != field.shape[2]):
+        return {}
+    where = perception.where[batch].to(field.device)                                       # [L, 2]
+    held = {name: (where[:, 0] >= lo) & (where[:, 1] <= hi) & (where[:, 1] > where[:, 0])
+            for name, (lo, hi) in ((name, registry.slices[name]) for name in MODALITIES)}
+    found = {}
+    slots = {int(row): slot for slot, row in enumerate(rows.tolist()) if int(row) in wanted}
+    for row, slot in slots.items():
+        reads = field[slot, batch].amax(-1) > 0                                            # [L]
+        names = {name for name, inside in held.items() if bool((reads & inside).any())}
+        outside = bool((reads & ~torch.stack(tuple(held.values())).any(0)).any())
+        found[row] = next(iter(names)) if len(names) == 1 and not outside else None
+    return found
+
+
+def apart(kinds, row, other):
+    """Whether two concepts lie in two modalities (:func:`modalities`)."""
+    return kinds.get(row) is not None and kinds.get(other) is not None and kinds[row] != kinds[other]
+
+
+def observe_units(owner, batch, present, kinds):
+    """Each pair of concepts of order zero present together in the field
+    (``present``: each offered concept's for lane) and lying in two
+    modalities is counted for itself: a candidate of order one whose support
+    is the pair, under a literal that names it. A concept read only against
+    is not present. On the count that nominates the candidate becomes a unit
+    across modality, a Sigma of order one over the two concepts' symbols
+    (:func:`promote_candidates`)."""
+    nouns = {row: weight for row, weight in present.items()
+             if weight > owner.concept_use_floor and kinds.get(row) is not None and owner._row_order(row) == 0}
+    for row, weight in nouns.items():
+        for other, other_weight in nouns.items():
+            if not (kinds[row] < kinds[other]):
+                continue
+            literal = (ACROSS, ((kinds[row], owner.concept_id_at_row(row)),
+                                (kinds[other], owner.concept_id_at_row(other))))
+            observe_candidate(owner, 1, {row: weight, other: other_weight}, batch=batch,
+                              pair=(min(weight, other_weight), 0.), literal=literal, literal_key=literal)
+
+
+def units(owner):
+    """Each unit across modality: its concept, its order, and the concepts
+    of the pair it was nominated from whose symbols its Sigma reads with a
+    weight above zero (the zero entries that today's learning offers on any
+    concept of the context are not members until they are learned)."""
+    alloc = owner._concept_allocator
+    store = alloc.layer(0)
+    found = []
+    for cid in sorted(alloc.raised - alloc.retired):
+        row = owner._concept_row_of(cid)
+        literal = next((value for role, value in alloc.store_of(cid).constituents(cid)
+                        if role == 'candidate_literal' and isinstance(value, tuple) and value[:1] == (ACROSS,)), None)
+        if row is None or literal is None:
+            continue
+        members = tuple(member for _, member in literal[1]
+                        if (source := owner._concept_row_of(member)) is not None
+                        and any(float(store.values[at]) > 0 for at in owner.concept_entries(row, source)))
+        found.append((cid, alloc.order_of(cid), members))
+    return found
+
+
+@torch.no_grad()
+def raised(owner, field, concepts, *, batch=0):
+    """What each of ``concepts`` reads, ``{concept: (for, against)}``, by the
+    way down (``ConceptualSpace.cs_reverse_presence``: from a concept of a
+    higher order through its Sigma to the symbols it reads, and from each
+    symbol to the concepts it holds) over the rows of ``field`` (a
+    ``ConceptualField``) in ``batch`` and the rows of ``concepts`` not among
+    them, which the field itself reads nothing at. Nothing narrows which of
+    a concept's entries its value goes down (``observed`` everywhere one, as
+    case selection asks it), so a unit's value reaches each of its members;
+    narrowed by what was observed, or to its strongest entry, it would not
+    reach a member whose percepts are absent. So a member of a unit that
+    reads in the field is raised there though its own percepts are absent."""
+    from SentenceField import inventory
+    rows = inventory(owner, field)
+    rows = (rows[:, batch] if rows.ndim == 2 else rows).tolist()
+    evidence = field.evidence[:, batch:batch + 1].detach()
+    wanted = {int(cid): owner._concept_row_of(int(cid)) for cid in concepts}
+    extra = [row for row in dict.fromkeys(wanted.values()) if row is not None and row not in rows]
+    lanes = torch.cat((evidence, evidence.new_zeros(len(extra), *evidence.shape[1:])))
+    rows = rows + extra
+    down = owner.cs_reverse_presence(lanes, observed=torch.ones_like(lanes),
+                                     inventory_rows=torch.tensor(rows, device=lanes.device))
+    return {cid: (tuple(float(x) for x in down[rows.index(row), 0].amax(0)) if row is not None else (0., 0.))
+            for cid, row in wanted.items()}
+
+
+def across(owner, concept):
+    """The other members of each unit across modality that holds ``concept``
+    (reads a symbol whose members include it)."""
+    concept = int(concept)
+    return tuple(dict.fromkeys(member for _, _, members in units(owner) if concept in members
+                               for member in members if member != concept))
+
+
 def support_order(owner, support, candidate_order=None):
     """The highest member order, whose next order the candidate can become."""
     if candidate_order == 0:
@@ -266,9 +381,13 @@ def observe_field(owner, field=None, *, active_streams=None):
         # co-occurrence tells nothing of what stands there: it is neither a
         # focal row nor a context of a conjunction by co-occurrence.
         offered = {row: weight for row, weight in used.items() if not is_place(owner, row)}
+        # Within one modality a conjunction is promoted from its context; a
+        # concept of another modality is no part of it (``observe_units``).
+        kinds = modalities(owner, field, batch, rows, offered)
         for focal in offered:
             order = owner._row_order(focal)
-            context = {row: weight for row, weight in offered.items() if row != focal}
+            context = {row: weight for row, weight in offered.items()
+                       if row != focal and not apart(kinds, focal, row)}
             if not context:
                 continue
             context_order = support_order(owner, context, order)
@@ -284,6 +403,7 @@ def observe_field(owner, field=None, *, active_streams=None):
                     break
             observe_candidate(owner, order, context, batch=batch,
                               pair=tuple(float(x) for x in paired[focal]), focal=focal)
+        observe_units(owner, batch, {row: float(paired[row][0]) for row in offered}, kinds)
         observe_native_cases(owner, batch, used)
         # MTM's leading entries are read through their live member codes;
         # their share of this field's size is use, not an invented positive
@@ -960,7 +1080,9 @@ def promote_candidates(owner):
                 percept = owner.basic_percepts.reserve(literal[1], wholes)
                 owner.basic_percepts.promote(percept)
                 owner.bring_concept(percept, row)
-            else:
+            elif literal[0] != ACROSS:
+                # A unit across modality is its Sigma over its members'
+                # symbols, written by the cover above.
                 owner.add_concept_feature(row, literal[0], literal[1], 1.)
         result.append(cid)
     return result

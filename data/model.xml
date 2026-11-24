@@ -282,6 +282,11 @@
          separated by spaces (8 8 8 is a box of 8 by 8 by 8 places).
          Empty: the model feels no scene and has no box for one. -->
     <sceneShape></sceneShape>
+    <!-- Whether interpret makes a word's meta concept directly, with a
+         blank object where the word names none. False: it makes neither,
+         and a word's object is what a unit across modality learned over
+         the word's symbol holds beside it. -->
+    <createMetaConcepts>true</createMetaConcepts>
 
     <data>
       <dataType>numeric</dataType>

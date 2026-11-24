@@ -136,7 +136,7 @@ def scene_model(models):
 def test_s1_the_key():
     """The key's default declares no box; the scene's configuration alone
     declares one, and differs from the configuration it was copied from in
-    that and in its weights' path alone."""
+    that, in its weights' path and in ``createMetaConcepts`` alone."""
     defaults = _flat(os.path.join(_DATA, "model.xml"))
     assert defaults["/architecture/sceneShape"] == ""
     declaring = [n for n in _configurations()
@@ -144,7 +144,7 @@ def test_s1_the_key():
     assert declaring == [_SCENE]
     scene, source = _flat(os.path.join(_DATA, _SCENE)), _flat(os.path.join(_DATA, _SOURCE))
     differ = sorted(k for k in set(scene) | set(source) if scene.get(k) != source.get(k))
-    assert differ == ["/architecture/sceneShape", "/architecture/weightsPath"]
+    assert differ == ["/architecture/createMetaConcepts", "/architecture/sceneShape", "/architecture/weightsPath"]
     assert scene["/architecture/sceneShape"] == "8 8 8"
     print(f"S1 sceneShape: default empty; declared by {declaring} alone, as "
           f"{scene['/architecture/sceneShape']!r}; it differs from {_SOURCE} in {differ}")
