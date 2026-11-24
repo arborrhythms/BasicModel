@@ -196,3 +196,31 @@ def test_compiled_concatenation_keeps_null_bytes_and_empty_forms():
     expected = torch.tensor([[97, 0, 98, 98, -1], [-1] * 5])
     result = torch.compile(concatenate_parts, fullgraph=True, backend='eager')(parts, 5)
     torch.testing.assert_close(result, expected)
+
+
+def test_disjoint_cover_decodes_utf8_within_each_cut_when_escaped_bytes_are_known():
+    import torch
+    from BasicPercepts import disjoint_occurrences, pack_disjoint_units
+    from WordIdentity import text_of
+
+    raw = b'x' + 'é中😀'.encode() + b'\xff\xc0\xed\xa0\x80\xf4\x90\x80\x80'
+    identity, *_ = coded((b'x', b'x\xc3', 'é'.encode(), '中'.encode(), '😀'.encode()))
+    for byte in raw:
+        identity._atom(('part', text_of(bytes([byte]))))
+    # Compare every possible interval to the lesson's decoder. In particular
+    # the learned part x + escaped C3 must stop matching when C3 begins é.
+    intervals = [(a, z) for a in range(len(raw)) for z in range(a + 1, len(raw) + 1)]
+    surface = torch.tensor(list(raw)).expand(len(intervals), -1)
+    spans = torch.tensor(intervals)[:, None]
+    flat, counts, extents = identity.sentence_cover(surface, spans, -1)
+    keys, rows, _, ranks = identity.occurrence_bank(surface.device, escaped_elements=True)
+    compiled = torch.compile(disjoint_occurrences, backend='eager', fullgraph=True)
+    for value, expected in zip(compiled(surface, spans, keys, rows, ranks, -1, escaped_elements=True),
+                               (flat, counts, extents), strict=True):
+        torch.testing.assert_close(value, expected)
+    parts, spans = pack_disjoint_units(flat, counts, extents, -1, len(raw))
+    for b, (lo, hi) in enumerate(intervals):
+        cover = identity.ordered_cover(raw[lo:hi])
+        n = counts[b, 0]
+        assert parts[b, 0, :n].tolist() == [identity.atoms[part] for part, _, _ in cover]
+        assert spans[b, 0, :n].tolist() == [[lo + start, lo + end] for _, start, end in cover]

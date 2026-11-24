@@ -237,14 +237,15 @@ class WordIdentity(nn.Module):
         self._catalog[key] = result
         return result
 
-    def occurrence_bank(self, device):
+    def occurrence_bank(self, device, *, escaped_elements=False):
         """Group native part references by spelling length for the occurrence read.
 
         The cache holds addresses and fixed catalog coordinates. Native part
         codes are read through the actual basis on each differentiable forward.
         """
         stamp = (len(self.atoms), len(self.added), self.revision, self._given_revision, device)
-        cached = self._catalog.get('occurrence_bank')
+        key = ('occurrence_bank', escaped_elements)
+        cached = self._catalog.get(key)
         if cached is not None and cached[0] == stamp:
             return cached[1]
         groups = {}
@@ -257,8 +258,10 @@ class WordIdentity(nn.Module):
             except UnicodeEncodeError:
                 # A surrogateescape byte may be part of a valid character in
                 # another span. Its interpretation depends on the span's edges.
-                self._catalog['occurrence_bank'] = stamp, None
-                return None
+                if not escaped_elements:
+                    self._catalog[key] = stamp, None
+                    return None
+                raw = bytes_of(text)
             groups.setdefault(len(raw), []).append((raw, row, atom))
         spellings, rows, catalogs, ranks = [], [], [], []
         added_rank = self._added_rank()
@@ -274,7 +277,7 @@ class WordIdentity(nn.Module):
         catalog = (torch.stack(catalogs).to(device) if catalogs else
                    torch.empty(len(rows), self.property_width, device=device))
         bank = tuple(spellings), addresses, catalog, addresses.new_tensor(ranks)
-        self._catalog['occurrence_bank'] = stamp, bank
+        self._catalog[key] = stamp, bank
         return bank
 
     def located_parts(self, surface, spans, padding):
@@ -287,12 +290,15 @@ class WordIdentity(nn.Module):
         return parts_for_units(surface, spans, spellings, rows, ranks, padding)
 
     def sentence_cover(self, surface, spans, padding):
+        """Read ordered parts, including escaped bytes at a unit's UTF-8 boundaries."""
         from BasicPercepts import disjoint_occurrences
         bank = self.occurrence_bank(surface.device)
-        if bank is None:
-            return None
+        escapes = bank is None
+        if escapes:
+            bank = self.occurrence_bank(surface.device, escaped_elements=True)
         spellings, rows, _, ranks = bank
-        return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding)
+        return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding,
+                                    escaped_elements=escapes)
 
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""

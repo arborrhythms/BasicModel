@@ -283,7 +283,25 @@ def parts_for_units(raw, spans, spellings, rows, added_rank, padding):
     return torch.where(present.gather(-1, order), rows[order], padding), present.sum(-1)
 
 
-def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding):
+def _utf8_boundaries(raw, remaining):
+    """A cut through a multibyte character exposes each truncated byte as an element."""
+    width = raw.shape[1]
+    padded = F.pad(raw, (0, 3))
+    first, second, third, fourth = (padded[:, n:n + width] for n in range(4))
+    continuation = lambda byte: (byte >= 0x80) & (byte <= 0xBF)
+    two = (first >= 0xC2) & (first <= 0xDF) & (remaining >= 2)
+    three = ((first >= 0xE0) & (first <= 0xEF) & (remaining >= 3) & continuation(third)
+             & ((first != 0xE0) | (second >= 0xA0)) & ((first != 0xED) | (second < 0xA0)))
+    four = ((first >= 0xF0) & (first <= 0xF4) & (remaining >= 4)
+            & continuation(third) & continuation(fourth)
+            & ((first != 0xF0) | (second >= 0x90)) & ((first != 0xF4) | (second < 0x90)))
+    interior = torch.zeros_like(raw, dtype=torch.bool)
+    for offset, starts in enumerate((two | three | four, three | four, four), start=1):
+        interior |= F.pad(starts & continuation(second), (offset, 0))[:, :width]
+    return F.pad(~interior, (0, 1), value=True)
+
+
+def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False):
     """Tile each ordered unit with its longest proper part at each surviving start."""
     batch, width = raw.shape
     units = spans.shape[1]
@@ -295,6 +313,7 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding):
     parent = seat.clamp_min(0)
     left, right = lo.gather(1, parent), hi.gather(1, parent)
     live = (seat >= 0) & (pos < right)
+    boundaries = _utf8_boundaries(raw, torch.where(live, right - pos, 0)) if escaped_elements else None
     stride = torch.ones_like(pos)
     address = torch.full_like(pos, padding)
     base = 0
@@ -310,6 +329,8 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding):
                 index = hit.to(torch.int32).argmax(-1) + base + offset
                 proper = (size < right[:, :count] - left[:, :count]) | (ranks[index] < 0)
                 keep = live[:, :count] & (pos[:, :count] + size <= right[:, :count]) & proper & hit.any(-1)
+                if boundaries is not None:
+                    keep = keep & boundaries[:, :count] & boundaries[:, size:size+count]
                 keep = F.pad(keep, (0, size - 1))
                 stride = torch.where(keep, size, stride)
                 address = torch.where(keep, F.pad(rows[index], (0, size - 1)), address)
