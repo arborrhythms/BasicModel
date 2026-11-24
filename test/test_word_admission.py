@@ -304,3 +304,20 @@ def test_grammar_word_admission_keeps_nonlexical_percept_extent(monkeypatch):
 def test_lexical_form_predicate_uses_unicode_categories(surface, expected):
     from WordSurfaces import is_lexical_form
     assert is_lexical_form(surface) is expected
+
+
+def test_device_mixing_witnesses_keep_fixation_coverage_clipping_and_pre_nul_extent():
+    from WordSurfaces import reading_witnesses
+    read = torch.compile(reading_witnesses, fullgraph=True, backend='eager')
+    raw = torch.tensor([list(b'a 99!x'), list(b'Bx\x00yz!')])
+    # Multiple events can occupy one unit; absent bytes cannot complete one.
+    ids = torch.tensor([[7, 8, 9, -1, 10], [7, -1, 8, 9, 10]])
+    events = torch.tensor([[[0, 1], [2, 3], [3, 4], [4, 5], [5, 6]],
+                           [[0, 2], [0, 1], [2, 3], [3, 4], [4, 6]]])
+    attention = (torch.tensor([[[2, 4], [1, 2], [5, 6]], [[0, 2], [3, 5], [0, 0]]]),
+                 torch.ones(2, 3, dtype=torch.bool))
+    signatures = torch.arange(256, dtype=torch.long)
+    units, seats = read(raw, ids, events, signatures, 0, torch.tensor([True, False]), attention)
+    present = units[..., 1] > units[..., 0]
+    assert units[present].tolist() == [[2, 4, 0, ord('9')], [0, 2, 1, ord('B') & ord('x')]]
+    assert seats.tolist() == [[-1, 1, 1, -1, -1], [0, -1, -1, -1, -1]]

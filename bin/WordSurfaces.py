@@ -116,7 +116,7 @@ def reading_forms(surface, spans, active, *, trimmed=None):
     return bounds, torch.where(present, torch.cat(keys, 1), -1)
 
 
-def reading_property_signatures(surface, spans, signatures, discard):
+def reading_property_signatures(surface, spans, signatures, discard, *, latin1_text=True):
     """Intersect primitive memberships over each observed reading's spelling.
 
     The existing nomination interface passes Latin-1 word text to the UTF-8
@@ -127,8 +127,10 @@ def reading_property_signatures(surface, spans, signatures, discard):
     length = (end - start).clamp_min(0)
     result = torch.full_like(start, -1)
     byte = surface.long()
-    table = torch.where(byte < 128, signatures[byte],
-                        signatures[192 | (byte >> 6)] & signatures[128 | (byte & 63)])
+    table = signatures[byte]
+    if latin1_text:
+        table = torch.where(byte < 128, table,
+                            signatures[192 | (byte >> 6)] & signatures[128 | (byte & 63)])
     # Read each requested length as adjacent power-of-two intervals.
     for level in range(width.bit_length()):
         size = 1 << level
@@ -139,6 +141,91 @@ def reading_property_signatures(surface, spans, signatures, discard):
         if 2 * size <= width:
             table = table & torch.nn.functional.pad(table[:, size:], (0, size), value=-1)
     return torch.where(length > 0, result & ~discard, 0)
+
+
+def reading_witnesses(surface, ids, events, signatures, discard, clipped, attention=None):
+    """Locate complete primitive runs and assign their native part witnesses.
+
+    The mixing reader ends at the first NUL. Each native event contributes
+    only to a run that contains both endpoints. Overlapping and incomplete
+    inputs keep the original sum-of-extents coverage rule.
+    """
+    from Meronomy import sentence_unit_spans
+    surface = surface.masked_fill((surface == 0).long().cumsum(1) != 0, 0)
+    units = sentence_unit_spans(surface, events[:, :0], include_gaps=False)
+    start, end = units.unbind(-1)
+    present = end > start
+    width = surface.shape[1]
+    lo, hi = events.unbind(-1)
+    seat = torch.searchsorted(torch.where(present, start, width).contiguous(), lo.contiguous(), right=True) - 1
+    index = seat.clamp_min(0)
+    selected = ((ids >= 0) & (lo < hi) & (seat >= 0) & present.gather(1, index)
+                & (hi <= end.gather(1, index)))
+    total = torch.zeros_like(start).scatter_add(1, index, torch.where(selected, hi - lo, 0))
+    present = present & (total == end - start)
+    present = present & ~(clipped[:, None] & (end == width) & (start + 1 == end))
+    if attention is not None:
+        attended, accepted = attention
+        # Each disjoint run has one start. A fixation must cover that exact run.
+        at = attended[..., 0].contiguous()
+        target = torch.searchsorted(torch.where(end > start, start, width).contiguous(), at, right=True) - 1
+        index_at = target.clamp_min(0)
+        same = ((target >= 0) & (start.gather(1, index_at) == at)
+                & (end.gather(1, index_at) == attended[..., 1]))
+        visited = torch.zeros_like(start).scatter_add(1, index_at, (accepted & same).long())
+        present = present & (visited > 0)
+    first = torch.nn.functional.pad(surface, (0, 1)).gather(1, start)
+    lexical = ((65 <= first) & (first <= 90)) | ((97 <= first) & (first <= 122))
+    bits = reading_property_signatures(surface, units, signatures, discard, latin1_text=False)
+    return (torch.stack((start, torch.where(present, end, start), lexical.long(), bits), -1),
+            torch.where(selected & present.gather(1, index), seat, -1))
+
+
+def mixing_word_witnesses(model, raw, ids, spans, attention):
+    """Translate located byte evidence once for the existing MTM word writer."""
+    from Spaces import _analysis_property_signature
+    rows = raw.reshape(len(raw), -1)
+    capacity = rows.shape[1]
+    delivered = getattr(model.inputSpace, '_delivered_length', None)
+    if delivered is not None:
+        rows = rows[:, :delivered]
+    surface = rows.long()
+    sentences = getattr(model.inputSpace, '_last_sentences', None)
+    clipped = torch.tensor([surface.shape[1] == capacity and
+                            (sentences is None or b >= len(sentences) or
+                             len(sentences[b].encode('utf-8')) > capacity)
+                            for b in range(len(rows))], device=rows.device, dtype=torch.bool)
+    attended = getattr(model, '_attention_spans', None)
+    fixations = (attended, attention.accepted) if attention is not None and torch.is_tensor(attended) else None
+    signatures, discard = _analysis_property_signature(model.wholeSpace, device=rows.device)
+    units, seats = reading_witnesses(surface, ids, spans, signatures, discard, clipped, fixations)
+    # Unit records preserve source order, including several events covering
+    # the same span. The byte column belongs to the input, not to a tiling.
+    events = torch.stack((seats, ids), -1)
+    fields = (units.flatten(1), events.flatten(1), surface)
+    records = torch.cat(fields, 1).tolist()
+    event_offset = units.shape[1] * 4
+    byte_offset = event_offset + events.shape[1] * 2
+    extents, observations = [], []
+    for b, record in enumerate(records):
+        grouped = {}
+        for offset in range(event_offset, byte_offset, 2):
+            seat, part = record[offset:offset + 2]
+            if seat >= 0:
+                grouped.setdefault(seat, []).append(((offset - event_offset) // 2, part))
+        data = bytes(record[byte_offset:])
+        located = []
+        for seat, offset in enumerate(range(0, event_offset, 4)):
+            lo, hi, lexical, bits = record[offset:offset + 4]
+            if lo >= hi:
+                continue
+            located.append((lo, hi))
+            if lexical:
+                members = grouped[seat]
+                wholes = tuple(row for row in range(min(int(model.wholeSpace.nVectors), 63)) if bits & (1 << row))
+                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], members[-1][0], wholes))
+        extents.append(located)
+    return extents, observations
 
 
 def grammar_leaves(surface, spans, active):

@@ -11127,11 +11127,39 @@ class BasicModel(BaseModel):
                     end = offset + len(str(token).encode('latin1', 'replace'))
                     spans[b, i] = spans.new_tensor((offset, end))
                     offset = end
+        if torch.is_tensor(fi.get('unit_spans')) and torch.is_tensor(fi.get('sentence_bytes')):
+            from WordSurfaces import mixing_word_witnesses
+            extents, observations = mixing_word_witnesses(self, raw, ids, spans, attention)
+        else:
+            extents, observations = BasicModel._legacy_word_witnesses(self, raw, ids, spans, attention)
+        grammar_words = []
+        for b, lo, hi, surface, parts, last, wholes in observations:
+            word = owner.interpret.lookup_word(parts, wholes, form=surface, word_reading=True,
+                                               reading=owner.reading(b))
+            if word is not None:
+                object_id, object_row, object_order = owner.interpret.reading(word, batch=b)
+                grammar_words.append((b, lo, hi, surface.decode('latin1'), last, word,
+                                      object_id, object_row, object_order))
+        # Even an entirely unadmitted reading owns a fresh, empty bank.
+        # No previous sentence's candidates may survive this boundary.
+        self._stage_reading_grammar_references(grammar_words, fi)
+        width = max(map(len, extents), default=0)
+        if not width:
+            return
+        brackets = spans.new_tensor([row + [(0, 0)] * (width - len(row)) for row in extents])
+        positions, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
+        self._reading_word_percepts = (ids, spans,
+            getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
+        self._reading_word_extents = brackets
+
+    def _legacy_word_witnesses(self, raw, ids, spans, attention):
+        """Read non-word-major input whose native units need host decoding."""
+        ws = self.wholeSpace
         from Meronomy import percept_spans, word_spans
         from WordSurfaces import is_lexical_form
         raw_rows = raw.detach().to('cpu').reshape(raw.shape[0], -1).long().tolist()
         id_rows, span_rows = ids.detach().to('cpu').tolist(), spans.detach().to('cpu').tolist()
-        extents, grammar_words = [], []
+        extents, observations = [], []
         for b, values in enumerate(raw_rows):
             data = bytes(values).split(b'\0', 1)[0]
             words = []
@@ -11156,30 +11184,12 @@ class BasicModel(BaseModel):
                 # A truncated or unresolved native unit cannot name unseen bytes.
                 if sum(span_rows[b][i][1] - span_rows[b][i][0] for i in selected) != hi - lo:
                     continue
-                if (lo, hi) not in word_spans(data) or not is_lexical_form(data[lo:hi]):
-                    words.append((lo, hi))
-                    continue
-                form = data[lo:hi].decode('latin1')
-                word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
-                    ws.property_rows_for_bytes(data[lo:hi]), form=data[lo:hi], word_reading=True,
-                    reading=owner.reading(b))
-                if word is not None:
-                    object_id, object_row, object_order = owner.interpret.reading(word, batch=b)
-                    grammar_words.append((b, lo, hi, form, selected[-1], word,
-                                          object_id, object_row, object_order))
                 words.append((lo, hi))
+                if (lo, hi) in word_spans(data) and is_lexical_form(data[lo:hi]):
+                    observations.append((b, lo, hi, data[lo:hi],
+                        [id_rows[b][i] for i in selected], selected[-1], ws.property_rows_for_bytes(data[lo:hi])))
             extents.append(words)
-        # Even an entirely unadmitted reading owns a fresh, empty bank.
-        # No previous sentence's candidates may survive this boundary.
-        self._stage_reading_grammar_references(grammar_words, fi)
-        width = max(map(len, extents), default=0)
-        if not width:
-            return
-        brackets = spans.new_tensor([row + [(0, 0)] * (width - len(row)) for row in extents])
-        positions, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
-        self._reading_word_percepts = (ids, spans,
-            getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
-        self._reading_word_extents = brackets
+        return extents, observations
 
     def _stage_mixing_grammar_leaf_mask(self):
         """Keep whitespace in perception, but off the mixing grammar's stack.
