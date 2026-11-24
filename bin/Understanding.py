@@ -315,12 +315,11 @@ class SentenceEndState:
             raise ValueError('completed source trust must be a finite scalar in [-1, 1]')
         if not isinstance(self.meaning, ConceptualMeaning):
             raise TypeError('a sentence end state requires a conceptual field')
-        if int(self.meaning.role_mask.sum()) not in (1, 2, 3):
-            raise ValueError('a sentence end state requires an idea or a working chain view')
         if len(self.refs) != 3 or any(type(ref) is not int or ref == 0 for ref in self.refs):
             raise ValueError('completed references must be native addresses or -1')
         if self.query is not None and not isinstance(self.query, ConceptualMeaning):
             raise ValueError('a completed question requires a conceptual field')
+        # The owned copy validates the three canonical slots and requires an occupied one.
         object.__setattr__(self, 'meaning', replace(self.meaning))
         if self.query is not None:
             object.__setattr__(self, 'query', replace(self.query))
