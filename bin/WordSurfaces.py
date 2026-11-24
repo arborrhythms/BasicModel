@@ -79,27 +79,31 @@ def bytes_at(surface, spans, active, capacity):
     return data, valid
 
 
-def reading_forms(surface, spans, active):
-    """Trim byte whitespace and identify repeated ordered spellings within each page.
-
-    A name is the first live place with the same bytes on this page. It is
-    only an equality key for this reading. Identical multisets in different
-    orders, and repetitions with different lengths, remain distinct.
-    """
-    B, length = surface.shape
-    W = active.shape[1]
+def trimmed_spans(surface, spans):
+    """The visible extent after bytes.strip(), including vertical tab and form feed."""
+    length = surface.shape[1]
+    if not length:
+        return torch.zeros_like(spans)
     lo, hi = spans.unbind(-1)
-    if not length or not W:
-        return torch.zeros_like(spans), torch.full_like(lo, -1)
     pos = torch.arange(length, device=surface.device)
-    # Match bytes.strip(), including vertical tab and form feed.
     visible = (surface != 32) & ((surface < 9) | (surface > 13))
     first = torch.where(visible, pos, length).flip((1,)).cummin(1).values.flip((1,))
     last = torch.where(visible, pos + 1, 0).cummax(1).values
     start = torch.nn.functional.pad(first, (0, 1), value=length).gather(1, lo)
     end = torch.nn.functional.pad(last, (1, 0)).gather(1, hi)
-    present = active & (start < end)
-    bounds = torch.where(present[..., None], torch.stack((start, end), -1), 0)
+    return torch.where((start < end)[..., None], torch.stack((start, end), -1), 0)
+
+
+def reading_forms(surface, spans, active, *, trimmed=None):
+    """Name each ordered spelling by its first live occurrence on the same page."""
+    B, length = surface.shape
+    W = active.shape[1]
+    if not length or not W:
+        return torch.zeros_like(spans), torch.full_like(spans[..., 0], -1)
+    if trimmed is None:
+        trimmed = trimmed_spans(surface, spans)
+    present = active & (trimmed[..., 1] > trimmed[..., 0])
+    bounds = torch.where(present[..., None], trimmed, 0)
     # Bound transient pairwise comparison for larger constructed capacities.
     spellings, _ = bytes_at(surface, bounds, present, length)
     sizes = bounds[..., 1] - bounds[..., 0]
@@ -110,6 +114,31 @@ def reading_forms(surface, spans, active):
         same = same & (sizes[:, i:i+block, None] == sizes[:, None])
         keys.append(same.long().argmax(-1))
     return bounds, torch.where(present, torch.cat(keys, 1), -1)
+
+
+def reading_property_signatures(surface, spans, signatures, discard):
+    """Intersect primitive memberships over each observed reading's spelling.
+
+    The existing nomination interface passes Latin-1 word text to the UTF-8
+    property reader. Read both UTF-8 chart entries for each high byte here.
+    """
+    width = surface.shape[1]
+    start, end = spans.unbind(-1)
+    length = (end - start).clamp_min(0)
+    result = torch.full_like(start, -1)
+    byte = surface.long()
+    table = torch.where(byte < 128, signatures[byte],
+                        signatures[192 | (byte >> 6)] & signatures[128 | (byte & 63)])
+    # Read each requested length as adjacent power-of-two intervals.
+    for level in range(width.bit_length()):
+        size = 1 << level
+        take = (length & size) != 0
+        segment = torch.nn.functional.pad(table, (0, 1), value=-1).gather(1, start)
+        result = torch.where(take, result & segment, result)
+        start = torch.where(take, start + size, start)
+        if 2 * size <= width:
+            table = table & torch.nn.functional.pad(table[:, size:], (0, size), value=-1)
+    return torch.where(length > 0, result & ~discard, 0)
 
 
 def grammar_leaves(surface, spans, active):

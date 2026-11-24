@@ -10,9 +10,11 @@ def brackets(model, percepts):
     ids, spans = percepts[:2]
     intervals = ps._forward_input.get('word_intervals') or ()
     words = []
+    # The existing nomination interface consumes native row names. Bring
+    # the whole bank to this boundary once, preserving witness order.
+    events = torch.cat((ids[..., None], spans.to(ids)), -1).tolist() if intervals else ()
     for b, limits in enumerate(intervals):
-        parts = [(pid, lo, hi) for pid, (lo, hi) in zip(ids[b].tolist(), spans[b].tolist(), strict=True)
-                 if pid >= 0 and lo < hi]
+        parts = [(pid, lo, hi) for pid, lo, hi in events[b] if pid >= 0 and lo < hi]
         row = []
         for start, stop in limits:
             members = [(pid, lo, hi) for pid, lo, hi in parts if start <= lo < hi <= stop]

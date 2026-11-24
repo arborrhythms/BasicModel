@@ -539,3 +539,23 @@ def test_all_attested_parts_are_found_on_their_own_contiguous_bytes(monkeypatch)
             observed = torch.nn.functional.one_hot(values, 256).float() * valid[..., None]
             dense = field.content(observed, torch.zeros(256, 3), spelled, codes)
             torch.testing.assert_close(cover.float() @ codes, dense, rtol=0, atol=0)
+
+
+def test_reading_property_intersections_follow_the_native_text_chart():
+    from functools import reduce
+    from operator import and_
+    from WordSurfaces import reading_property_signatures, trimmed_spans
+    raw = b"  A\xe9 B\t\xff  "
+    surface = torch.tensor([list(raw)], dtype=torch.uint8)
+    spans = torch.tensor([[(a, b) for a in range(len(raw) + 1) for b in range(a, len(raw) + 1)]])
+    lookup = torch.randint(0, 1 << 48, (256,), generator=torch.Generator().manual_seed(15))
+    lookup |= 1 << 62
+    discard = 5
+    wanted = []
+    for a, b in spans[0].tolist():
+        spelling = raw[a:b].strip().decode('latin1').encode('utf8')
+        wanted.append(reduce(and_, (int(lookup[c]) for c in spelling), -1) & ~discard if spelling else 0)
+    bounds = trimmed_spans(surface, spans)
+    actual = torch.compile(reading_property_signatures, backend='eager', fullgraph=True)(
+        surface, bounds, lookup, discard)
+    assert actual.tolist() == [wanted]

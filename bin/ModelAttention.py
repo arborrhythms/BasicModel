@@ -181,7 +181,15 @@ def stage_input(model):
     # Only a model whose word step reads its words nominates them here.
     reads_words=bool(getattr(model,'_aligned_serial_word_mode',lambda:False)())
 
-    def found(b, form, lo, hi):
+    native_spans_available = torch.is_tensor(fi.get('sentence_bytes')) and torch.is_tensor(fi.get('unit_spans'))
+    if native_spans_available:
+        from WordSurfaces import reading_forms, trimmed_spans
+        byte_surface, units = fi['sentence_bytes'], fi['unit_spans']
+        trimmed = trimmed_spans(byte_surface, units)
+        spans, ids = reading_forms(byte_surface, units, active, trimmed=trimmed)
+    native_rows = property_bits = None
+
+    def found(b, w, form, lo, hi):
         """The word of a form, counting this reading of it first: the first
         reader of a form in a reading is where MTM nominates it (rule 20),
         so that attention reads it as known in that reading."""
@@ -189,16 +197,26 @@ def stage_input(model):
         if (word is not None or not reads_words or not is_lexical_form(form) or whole_space is None
                 or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):
             return word
-        parts=[int(pid) for pid,(start,stop) in zip(native_ids[b].tolist(),native_spans[b].tolist())
-               if pid>=0 and lo<=start<stop<=hi]
+        nonlocal native_rows, property_bits
+        if native_rows is None:
+            native_rows = torch.cat((native_ids[..., None], native_spans.to(native_ids)), -1).tolist()
+        parts = [pid for pid, start, stop in native_rows[b] if pid >= 0 and lo <= start < stop <= hi]
         if not parts:
             return None
-        return owner.interpret.lookup_word(parts,sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form))),
-            form=form,word_reading=True,reading=owner.reading(b))
-    native_spans_available = torch.is_tensor(fi.get('sentence_bytes')) and torch.is_tensor(fi.get('unit_spans'))
+        if native_spans_available:
+            if property_bits is None:
+                from Spaces import _analysis_property_signature
+                from WordSurfaces import reading_property_signatures
+                lut, discard = _analysis_property_signature(whole_space, device=units.device)
+                property_bits = reading_property_signatures(byte_surface, trimmed, lut, discard).tolist()
+            bits = property_bits[b][w]
+            wholes = [row for row in range(min(int(whole_space.nVectors), 63)) if bits & (1 << row)]
+        else:
+            wholes = sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form)))
+        return owner.interpret.lookup_word(parts, wholes, form=form, word_reading=True, reading=owner.reading(b))
     extents=[];known=[];identities=[];forms=[];concepts=[]
     for b in range(B):
-        row=[];seen=[];ids=[];names=[];words=[]
+        row=[];seen=[];row_ids=[];names=[];words=[]
         vocabulary = {} if not native_spans_available else None
         for w in range(W):
             text=str(texts[b][w]) if b<len(texts) and w<len(texts[b]) else ''
@@ -213,21 +231,18 @@ def stage_input(model):
             form=surface.decode('latin1')
             if not native_spans_available:
                 row.append((lo,hi) if surface else (0,0))
-            word=found(b,form,lo,hi) if surface else None
+            word=found(b,w,form,lo,hi) if surface else None
             seen.append(word is not None);words.append(-1 if word is None else int(word))
             if not native_spans_available:
                 if form and form not in vocabulary:
                     vocabulary[form] = w
-                ids.append(vocabulary.get(form, -1))
+                row_ids.append(vocabulary.get(form, -1))
             names.append(form)
         if not native_spans_available:
             extents.append(row)
-            identities.append(ids)
+            identities.append(row_ids)
         known.append(seen);forms.append(names);concepts.append(words)
-    if native_spans_available:
-        from WordSurfaces import reading_forms
-        spans, ids = reading_forms(fi['sentence_bytes'], fi['unit_spans'], active)
-    else:
+    if not native_spans_available:
         spans = torch.tensor(extents, device=slab.device, dtype=torch.long)
         ids = torch.tensor(identities, device=slab.device, dtype=torch.long)
     live=active & (spans[...,1]>spans[...,0])
