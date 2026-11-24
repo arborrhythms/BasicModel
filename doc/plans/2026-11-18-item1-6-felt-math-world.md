@@ -8100,3 +8100,108 @@ to fail and failing, N7 reported.
   passes the runner's 8 GiB on this tree and on the tree before this
   step; the closing sweep finds which step it came with.
 
+
+## 40. Step E: things wider than a place (Claude, 2026-11-24; the text for the implementer is 40.2)
+
+*Alec, asked whether to stop at the sweep or build areas, intensities out
+and relations of place: "Build the rest". Rests on 19.1 (the two towers; a
+whole pervades its range), 29.1 and 29.5 (his example of [1,3,3,1]; parts
+kept in order and placed by their overlap), 36 (the text algorithm,
+unchanged).*
+
+### 40.1 What it builds, and its certificates
+
+As a word is a run of letters between spaces, a thing in an image is a run
+of touching places that are not background. What a form is to its
+characters, a thing's percept is to its pixels.
+
+1. *A thing is a run.* In an image's bank the places that are not
+   background and touch (by a side, on any axis of the box) are one
+   thing. It is an occurrence beside its pixels' occurrences: its `.where`
+   is the box of its places, its `.when` the moment's.
+2. *Its percept, as a form's.* Its parts are its pixels' basic percepts in
+   their order within its box (row by row), each at its place relative to
+   the box's origin, so that the same thing at another place has the same
+   parts. Its whole is the property that holds at every one of its places:
+   the least upper cut all its pixels lie under. Its row is over those
+   parts and that whole in the Pi of the value space, its code the
+   greatest of its parts' codes below and the least of its wholes' above,
+   as `subspace_bounds` gives a form's. It is nominated when the thing
+   recurs, as a form is, and brings its concept then.
+3. *Parts of a thing.* A run within a thing (his [1,2,1] within [1,3,3,1])
+   is a part of it when it lies within it place by place by numerical
+   parthood. Only what recurs is nominated; no powerset is laid out
+   beforehand.
+4. *Read as a form is,* for and against, by the value space's Pi; a thing's
+   row reads at the thing's reading, and a pixel's row at the pixel's.
+5. *The limit.* `intensityWhereWidth` is the greatest width of a thing on
+   any axis: at one, no thing is wider than a place and nothing of this
+   step is made, so XOR is as it is.
+6. *The way back.* A thing's concept read for gives its parts back in
+   their order at their places, each its centroid; where a thing's and a
+   pixel's concepts both read, they agree or the difference is charged.
+
+In `test/test_item16_things.py`, each printing what it measured:
+
+| | Certificate | Passes when |
+|---|---|---|
+| E1 | A run is a thing | An image with two groups of touching pixels has two things, each with the box of its places; a pixel alone is a thing of one place and gains no second row |
+| E2 | The same thing elsewhere | A thing met at one place and then at another is one row, with another `.where` |
+| E3 | Parts and whole | A thing's row holds its pixels' percepts in order as parts and the least upper cut over them as its whole; its code is the greatest of its parts' codes and the least of its wholes' |
+| E4 | For and against | The thing's row reads for at its own occurrence, and against at an occurrence that holds its parts and one pixel above its whole |
+| E5 | Recurrence | A thing met once has no concept; met as often as nominates, it has one |
+| E6 | The limit | With `intensityWhereWidth` one, no thing's row is made; the XOR gate, the XOR certificate and `test_concept_output.py` pass as they are |
+| E7 | Put back | After a thing of several pixels has recurred, its image comes back at every place from the thing's concept, to its parts' centroids |
+| E8 | The corpus (a measure) | Over the categories whose images hold things wider than a place: the number of things, and of rows nominated. Reported |
+
+### 40.2 Text for the implementer
+
+~~~
+Item 1.6, step E: things wider than a place. Read §40.1 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md (what you build), then
+§36 (the text algorithm applied to intensity; the owner's words there are
+the authority), §37 (step T2 as built), §33 (step C), §29.1 and §29.5, and
+H.5. Then read how a form is made of its characters and read, since you
+are to apply it: doc/Mereology.md (the percept's code), doc/Spaces.md
+("PartSpace", "Level Sets", "Modalities"), and in the source
+BasicPercepts.reserve, member_keys, subspace_bounds, lookup, held_at and
+read_bank, how a form's run and its bracket are found, and how MTM
+nominates a form's row. Then bin/ImagePercepts.py, bin/NumericPercepts.py
+and BasicPercepts.value_bank, read_values, value_pi.
+
+Keep tmp/item1-6/things_progress.md current after each step.
+
+1. Points 1 to 4 of §40.1, in the image's bank, for the numeric stem and
+   for a sentence's image alike (one reader). Say what a thing's row's key
+   is and what its entries in value_pi are.
+2. Point 5. The key exists (intensityWhereWidth); 0 sets no limit.
+3. Point 6, in NumericPercepts.reverse and ImagePercepts.put_back.
+4. test/test_item16_things.py: E1 to E8. E8 uses felt_world_corpus; say
+   which categories hold things wider than a place.
+5. Port a test only where a point of §40.1 makes its assertion false, and
+   list each with old and new. No other assertion is weakened, skipped or
+   marked; no seed is chosen. Neither stopping gate, nor anything a gate
+   uses, is touched. The text modality's reading is not to change.
+6. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_concept_output.py,
+   test/test_item16_values.py, test/test_item16_scene.py,
+   test/test_item16_scene_field.py, test/test_item16_things.py,
+   test/test_item16_naming.py, test/test_item17_echo.py,
+   test/test_item18_places.py, test/test_item18_scalar.py, and the files
+   of tmp/item1-6/values_run4_files.txt. No test that passes in the sweep
+   may fail, apart from those known to fail by chance. Report the
+   greatest memory of a worker and the time of test_item16_scene_field.py
+   before and after.
+7. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+8. Return as tmp/item1-6/section41.md, headed "## 41. Step E: the
+   return": files changed and why; the thing's row, key and entries; each
+   certificate with what it printed; every test ported; what in §40.1
+   could not be built as written and what you built. You do not stop on a
+   question of design: propose, build, mark it. Stop only if a gate, the
+   XOR certificate or "without the intersection" cannot pass with its
+   assertion as it is.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
