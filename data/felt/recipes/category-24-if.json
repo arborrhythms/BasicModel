@@ -1,0 +1,155 @@
+{
+ "category": 24,
+ "compose": "statement",
+ "construction": "If",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "inference": {
+  "counts": {
+   "no": 8,
+   "open": 4,
+   "yes": 8
+  },
+  "premise": "s04",
+  "question": "q01",
+  "rule": "if",
+  "rules": [
+   "s02",
+   "s03"
+  ]
+ },
+ "name": "if",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "implies",
+  "infer"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "b"
+   ],
+   "id": "q01",
+   "inference_only": true,
+   "predicate": "moved",
+   "text": "did {b} move ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "inference": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "no_witness": true,
+   "predicate": "if_above_below",
+   "text": "if {a} is above {b}, {b} is below {a}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "if_moves_moves",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "same_steps": true,
+      "who": "b"
+     }
+    ],
+    "timing": "concurrent"
+   },
+   "text": "if {a} moves, {b} moves."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "if_moves_still",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "steps": [
+       1,
+       2
+      ],
+      "who": "b"
+     }
+    ]
+   },
+   "text": "if {a} moves, {b} stays still."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s04",
+   "inference_only": true,
+   "predicate": "moved",
+   "text": "{a} moved."
+  }
+ ]
+}

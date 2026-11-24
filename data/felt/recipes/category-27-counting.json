@@ -1,0 +1,69 @@
+{
+ "category": 27,
+ "compose": "count",
+ "construction": "Counting",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "count_sets",
+ "name": "counting",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [],
+ "questions": [],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20
+ },
+ "statements": [
+  {
+   "answer": {
+    "type": "count"
+   },
+   "args": [],
+   "id": "s01",
+   "predicate": "count",
+   "text": ""
+  }
+ ]
+}

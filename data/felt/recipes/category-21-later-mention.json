@@ -1,0 +1,196 @@
+{
+ "category": 21,
+ "construction": "A later mention",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "later-mention",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "bind"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "stopped",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what stopped ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "q02",
+   "predicate": "present_member",
+   "script": {
+    "kinds": {
+     "a": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "what is {k} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "id": "s01",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "sentences": [
+    {
+     "args": [
+      "a"
+     ],
+     "predicate": "moved",
+     "text": "{a} moved."
+    },
+    {
+     "args": [
+      "a"
+     ],
+     "predicate": "stopped",
+     "text": "it stopped."
+    }
+   ]
+  },
+  {
+   "id": "s02",
+   "script": {
+    "kinds": {
+     "a": {
+      "kind": "k"
+     }
+    }
+   },
+   "sentences": [
+    {
+     "args": [
+      "a"
+     ],
+     "predicate": "present",
+     "text": "{a} is here."
+    },
+    {
+     "args": [
+      "a",
+      "k"
+     ],
+     "predicate": "member",
+     "text": "it is {k}."
+    }
+   ]
+  },
+  {
+   "id": "s03",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     },
+     {
+      "who": "y"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "sentences": [
+    {
+     "args": [
+      "k"
+     ],
+     "predicate": "kind_moved_all",
+     "text": "the {Ks} moved."
+    },
+    {
+     "args": [
+      "k"
+     ],
+     "predicate": "kind_stopped_all",
+     "text": "they stopped."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,200 @@
+{
+ "category": 10,
+ "construction": "Adjective",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "adjective",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "intersection",
+  "modifier"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "big",
+   "script": {
+    "size": {
+     "a": "big"
+    }
+   },
+   "text": "what is big ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "q02",
+   "predicate": "the_big",
+   "script": {
+    "hidden": [
+     "y"
+    ],
+    "kinds": {
+     "a": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "size": {
+     "a": "big",
+     "y": "small"
+    }
+   },
+   "text": "which {K} is big ?"
+  }
+ ],
+ "schema": 1,
+ "sizes": [
+  1,
+  4,
+  5,
+  6
+ ],
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s01",
+   "predicate": "big",
+   "script": {
+    "size": {
+     "a": "big"
+    }
+   },
+   "text": "{a} is big."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s02",
+   "predicate": "small",
+   "script": {
+    "size": {
+     "a": "small"
+    }
+   },
+   "text": "{a} is small."
+  },
+  {
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "s03",
+   "predicate": "the_big",
+   "script": {
+    "hidden": [
+     "y"
+    ],
+    "kinds": {
+     "a": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "size": {
+     "a": "big",
+     "y": "small"
+    }
+   },
+   "text": "the big {K} is {a}."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s04",
+   "predicate": "the_small_moved",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "size": {
+     "x": "small",
+     "y": "big"
+    }
+   },
+   "text": "the small {K} moved."
+  }
+ ]
+}

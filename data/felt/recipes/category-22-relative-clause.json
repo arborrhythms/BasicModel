@@ -1,0 +1,208 @@
+{
+ "category": 22,
+ "construction": "A clause inside a phrase",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "relative-clause",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "bind",
+  "intersection",
+  "lower"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "moved",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what moved ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "k",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "the_k_above",
+   "script": {
+    "hidden": [
+     "y"
+    ],
+    "kinds": {
+     "a": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "layout": [
+     [
+      "row_before",
+      "a",
+      "b"
+     ]
+    ]
+   },
+   "text": "which {K} is above {b} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "k",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "the_k_above_moved",
+   "script": {
+    "events": [
+     {
+      "end": [
+       "row_before",
+       "x",
+       "b"
+      ],
+      "who": "x"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "the {K} that is above {b} moved."
+  },
+  {
+   "args": [
+    "k",
+    "a"
+   ],
+   "id": "s02",
+   "predicate": "the_k_moved_is",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ],
+    "hidden": [
+     "y"
+    ],
+    "kinds": {
+     "a": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "the {K} that moved is {a}."
+  },
+  {
+   "args": [
+    "k",
+    "b",
+    "a"
+   ],
+   "id": "s03",
+   "predicate": "the_k_next_is",
+   "script": {
+    "hidden": [
+     "y"
+    ],
+    "kinds": {
+     "a": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "layout": [
+     [
+      "next_to",
+      "a",
+      "b"
+     ]
+    ]
+   },
+   "text": "the {K} that is next to {b} is {a}."
+  }
+ ]
+}

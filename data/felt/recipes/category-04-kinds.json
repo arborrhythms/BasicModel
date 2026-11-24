@@ -1,0 +1,174 @@
+{
+ "category": 4,
+ "construction": "Kinds",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "kinds",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "part",
+  "whole",
+  "lower"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "q01",
+   "predicate": "member",
+   "script": {
+    "no": {
+     "kinds": {
+      "a": {
+       "kind_not": "k"
+      }
+     }
+    },
+    "yes": {
+     "kinds": {
+      "a": {
+       "kind": "k"
+      }
+     }
+    }
+   },
+   "text": "is {a} {k} ?"
+  },
+  {
+   "answer": {
+    "form": "adjective",
+    "type": "value"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q02",
+   "predicate": "kind_of",
+   "text": "what is {a} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "s01",
+   "predicate": "member",
+   "script": {
+    "kinds": {
+     "a": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "{a} is {k}."
+  },
+  {
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "s02",
+   "predicate": "not_member",
+   "script": {
+    "kinds": {
+     "a": {
+      "kind_not": "k"
+     }
+    }
+   },
+   "text": "{a} is not {k}."
+  },
+  {
+   "args": [
+    "a",
+    "k"
+   ],
+   "id": "s03",
+   "predicate": "member",
+   "script": {
+    "kinds": {
+     "a": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "{a} is {aK}."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "fixed": {
+    "k": "even"
+   },
+   "id": "s04",
+   "predicate": "kind_members",
+   "text": "the evens are two, four, six and eight."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "fixed": {
+    "k": "odd"
+   },
+   "id": "s05",
+   "predicate": "kind_members",
+   "text": "the odds are one, three, five, seven and nine."
+  }
+ ]
+}

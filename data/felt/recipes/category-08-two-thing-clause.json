@@ -1,0 +1,144 @@
+{
+ "category": 8,
+ "construction": "A clause with two things",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "two-thing-clause",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "verb",
+  "change"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "adjacent",
+   "text": "what touches {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "reached",
+   "script": {
+    "events": [
+     {
+      "rel": "reach",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what did {a} reach ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "adjacent",
+   "text": "{a} touches {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "reached",
+   "script": {
+    "events": [
+     {
+      "rel": "reach",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} reached {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "left_from",
+   "script": {
+    "events": [
+     {
+      "rel": "leave",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} left {b}."
+  }
+ ]
+}

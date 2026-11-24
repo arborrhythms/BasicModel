@@ -1,0 +1,311 @@
+{
+ "category": 16,
+ "construction": "Motion with a direction",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "motion-direction",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "verb",
+  "preposition",
+  "change"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "moved_toward",
+   "script": {
+    "events": [
+     {
+      "rel": "toward",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what did {a} move toward ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "toward_quickly_beside_slow",
+   "script": {
+    "events": [
+     {
+      "rel": "toward",
+      "speed": 2,
+      "to": "b",
+      "who": "a"
+     },
+     {
+      "rel": "toward",
+      "speed": 1,
+      "to": "b",
+      "who": "c"
+     }
+    ],
+    "hidden": [
+     "c"
+    ]
+   },
+   "text": "what moved toward {b} quickly ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "moving_toward",
+   "script": {
+    "events": [
+     {
+      "rel": "toward",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} is moving toward {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    {
+     "=": 1
+    }
+   ],
+   "id": "s02",
+   "predicate": "moved_toward_speed",
+   "script": {
+    "events": [
+     {
+      "rel": "toward",
+      "speed": 1,
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved toward {b} slowly."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    {
+     "=": 2
+    }
+   ],
+   "id": "s03",
+   "predicate": "moved_toward_speed",
+   "script": {
+    "events": [
+     {
+      "rel": "toward",
+      "speed": 2,
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved toward {b} quickly."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s04",
+   "predicate": "moved_away",
+   "script": {
+    "events": [
+     {
+      "rel": "away",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved away from {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    {
+     "=": [
+      1,
+      0
+     ]
+    }
+   ],
+   "id": "s05",
+   "predicate": "moving_toward_from",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       1,
+       0
+      ],
+      "rel": "toward",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} is moving toward {b} from the left."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    {
+     "=": [
+      -1,
+      0
+     ]
+    }
+   ],
+   "id": "s06",
+   "predicate": "moving_toward_from",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       -1,
+       0
+      ],
+      "rel": "toward",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} is moving toward {b} from the right."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    {
+     "=": [
+      0,
+      1
+     ]
+    }
+   ],
+   "id": "s07",
+   "predicate": "moving_toward_from",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       0,
+       1
+      ],
+      "rel": "toward",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} is moving toward {b} from above."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    {
+     "=": [
+      0,
+      -1
+     ]
+    }
+   ],
+   "id": "s08",
+   "predicate": "moving_toward_from",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       0,
+       -1
+      ],
+      "rel": "toward",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} is moving toward {b} from below."
+  }
+ ]
+}

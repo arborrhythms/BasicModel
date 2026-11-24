@@ -1,0 +1,541 @@
+{
+ "category": 14,
+ "construction": "Place of two things",
+ "contrast": {
+  "questions": [
+   [
+    "q03",
+    {
+     "a": "a",
+     "b": "b"
+    }
+   ],
+   [
+    "q03",
+    {
+     "a": "b",
+     "b": "a"
+    }
+   ],
+   [
+    "q06",
+    {
+     "a": "a",
+     "b": "b"
+    }
+   ]
+  ]
+ },
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "inference": {
+  "premises": [
+   "s01",
+   "s02",
+   "s03",
+   "s04"
+  ],
+  "questions": [
+   "q01",
+   "q02",
+   "q03",
+   "q04",
+   "q05",
+   "q06",
+   "q07",
+   "q08",
+   "q09",
+   "q10",
+   "q11",
+   "q12"
+  ],
+  "rule": "order",
+  "types": [
+   "converse",
+   "chain"
+  ]
+ },
+ "name": "place-of-two",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "preposition",
+  "compound"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "row_before",
+   "text": "what is above {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "row_before",
+   "text": "what is {a} above ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q03",
+   "predicate": "row_before",
+   "text": "is {a} above {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q04",
+   "predicate": "row_before",
+   "text": "what is below {a} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q05",
+   "predicate": "row_before",
+   "text": "what is {b} below ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q06",
+   "predicate": "row_before",
+   "text": "is {b} below {a} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q07",
+   "predicate": "column_before",
+   "text": "what is to the left of {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q08",
+   "predicate": "column_before",
+   "text": "what is {a} to the left of ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q09",
+   "predicate": "column_before",
+   "text": "is {a} to the left of {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q10",
+   "predicate": "column_before",
+   "text": "what is to the right of {a} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q11",
+   "predicate": "column_before",
+   "text": "what is {b} to the right of ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q12",
+   "predicate": "column_before",
+   "text": "is {b} to the right of {a} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q13",
+   "predicate": "on_top",
+   "text": "what is on top of {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q14",
+   "predicate": "on_top",
+   "text": "what is {a} on top of ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q15",
+   "predicate": "on_top",
+   "text": "is {a} on top of {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q16",
+   "predicate": "on_top",
+   "text": "what is under {a} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q17",
+   "predicate": "on_top",
+   "text": "what is {b} under ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q18",
+   "predicate": "on_top",
+   "text": "is {b} under {a} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q19",
+   "predicate": "next_to",
+   "text": "what is next to {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q20",
+   "predicate": "next_to",
+   "text": "what is {a} next to ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q21",
+   "predicate": "next_to",
+   "text": "is {a} next to {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q22",
+   "predicate": "near",
+   "text": "what is near {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q23",
+   "predicate": "near",
+   "text": "what is {a} near ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q24",
+   "predicate": "near",
+   "text": "is {a} near {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q25",
+   "predicate": "far",
+   "text": "what is far from {b} ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q26",
+   "predicate": "far",
+   "text": "what is {a} far from ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q27",
+   "predicate": "far",
+   "text": "is {a} far from {b} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "contrast": 20,
+  "generalization": 20,
+  "inference": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "row_before",
+   "text": "{a} is above {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "row_before",
+   "text": "{b} is below {a}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "column_before",
+   "text": "{a} is to the left of {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s04",
+   "predicate": "column_before",
+   "text": "{b} is to the right of {a}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s05",
+   "predicate": "on_top",
+   "text": "{a} is on top of {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s06",
+   "predicate": "on_top",
+   "text": "{b} is under {a}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s07",
+   "predicate": "next_to",
+   "text": "{a} is next to {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s08",
+   "predicate": "near",
+   "text": "{a} is near {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s09",
+   "predicate": "far",
+   "text": "{a} is far from {b}."
+  }
+ ]
+}

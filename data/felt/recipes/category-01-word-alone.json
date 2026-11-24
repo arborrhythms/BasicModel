@@ -1,0 +1,83 @@
+{
+ "category": 1,
+ "compose": "statement",
+ "construction": "A word alone; a feeling alone",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "word-alone",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "interpret",
+  "sign"
+ ],
+ "questions": [],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s01",
+   "image": false,
+   "predicate": "word",
+   "text": "{a}."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s02",
+   "predicate": "this_is",
+   "script": {
+    "only": true
+   },
+   "text": ""
+  }
+ ]
+}

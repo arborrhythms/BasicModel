@@ -1,0 +1,166 @@
+{
+ "category": 18,
+ "construction": "Aspect",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "aspect",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "compound",
+  "marker"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "moving",
+   "script": {
+    "no": {},
+    "yes": {
+     "events": [
+      {
+       "who": "a"
+      }
+     ]
+    }
+   },
+   "text": "is {a} moving ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q02",
+   "predicate": "stopped",
+   "script": {
+    "no": {},
+    "yes": {
+     "events": [
+      {
+       "who": "a"
+      }
+     ]
+    }
+   },
+   "text": "has {a} moved ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s01",
+   "predicate": "moving",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} is moving."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s02",
+   "predicate": "was_moving",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} was moving."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s03",
+   "predicate": "stopped",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} has moved."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s04",
+   "predicate": "stopped",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} has stopped."
+  }
+ ]
+}

@@ -1279,7 +1279,7 @@ these stand.
 | 17 | `{a} was above {b}.` `{a} is above {b}.` `{a} moved.` `{a} will move.` | `what was above {b} ?` {a}. `is {a} above {b} ?` yes, no |
 | 18 | `{a} is moving.` `{a} was moving.` `{a} has moved.` `{a} has stopped.` | `is {a} moving ?` yes, no. `has {a} moved ?` yes, no |
 | 19 | `{a} moved, then {b} moved.` `{a} moved before {b} moved.` `{b} moved after {a} moved.` `before {b} moved, {a} stopped.` | `which moved first, {a} or {b} ?` {a} |
-| 20 | `{a} moved toward {b} slowly.` then `it moved toward {c} quickly.`, and the same with the quick move first | `which move was faster, the first or the second ?` second, first. `which move was slower, the first or the second ?` first, second |
+| 20 | `{a} moved toward {b}.` then `it moved toward {c}.`, with one move of step 1 and one of step 2 in either order; and, for the words, `{a} moved toward {b} slowly.` then `it moved toward {c} quickly.`, and the same with the quick move first | `which move was faster, the first or the second ?` second, first. `which move was slower, the first or the second ?` first, second |
 | 21 | `{a} moved.` then `it stopped.` `{a} is here.` then `it is {k}.` `the {Ks} moved.` then `they stopped.` | `what stopped ?` {a}. `what is {k} ?` {a} |
 | 22 | `the {K} that is above {b} moved.` `the {K} that moved is {a}.` `the {K} that is next to {b} is {a}.` | `what moved ?` {a}. `which {K} is above {b} ?` {a} |
 | 23 | `{a} moved and {b} stopped.` `{a} moved but {b} did not.` `{a} moved and {b} moved.` | `did {b} move ?` yes, no |
@@ -1316,8 +1316,11 @@ not say it.
   now. *`was moving`:* inside an event at an earlier image, at rest now.
 - *The frames of 20:* the two events are one thing's, one of step 1 and
   one of step 2, each toward a thing that does not move. Which comes
-  first is drawn, with the question and the order of telling fixed, so
-  that the answer follows from what was seen and not from the wording.
+  first is drawn, with the question and the order of telling fixed. Half
+  the documents of every split tell the two moves with no word of their
+  speed, so that the answer follows from what was seen; the other half
+  name the speeds, for the words "slowly" and "quickly" (amended after
+  the first build, §15.8).
 - *A relative clause of 22:* at least two of the kind are present and
   exactly one satisfies the clause.
 - *`if {a} moves, {b} moves`:* its document's images show at least
@@ -1379,7 +1382,12 @@ For each category, as far as its frames allow:
   key. Ten sets are of pairs that train holds and ten of the held-out
   pairs.
 - *Inference, by category:* 6, 11 and 14, the other way round and a
-  chain of two; 19, a chain through time; 24, the rule applied, eight
+  chain of two (the other way round: one premise in one wording of a
+  pair, asked in the other, as "one is less than six." asked "which is
+  greater, one or six ?", or "three is above four." asked "is four below
+  three ?"; the pairs are less and greater, bigger and smaller, above and
+  below, to the left of and to the right of; amended after the first
+  build, §15.8); 19, a chain through time; 24, the rule applied, eight
   that follow as yes and eight as no, and four with the premise left
   out, marked `open`, whose answer is the empty text; 25, through the
   kind; the others have none.
@@ -1413,7 +1421,9 @@ imports no module of the model.
    train.
 7. A scene is `null` in every entry of an `inference` row, in frame 1's
    word alone and in category 26, and nowhere else. An `inference`
-   row's question has not the meaning of any of its statements. An
+   row's question does not ask a fact one of its statements states in
+   the statement's own wording: where the fact is a statement's, the
+   wording is the other of its pair. An
    `open` row's answer is empty, and its record says that neither yes
    nor no follows.
 8. The balance of yes and no, and of `first` and `second`.
@@ -2280,3 +2290,579 @@ context runs short, stop at the end of a step with that file current.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+
+## 15. The corpus as built: the implementer's return (Claude on Opus, 2026-11-23)
+
+The text of §14.8, built. Everything below that says "verified" was run in
+the worktree `~/GitHub/wikioracle/basicmodel/.worktrees/item1-6`; the rest is
+what the files hold. No source of the model and no existing file under
+`data/` was changed; no git command was run.
+
+### 15.1 The files and their counts
+
+| File | Lines | What it is |
+|---|---|---|
+| `bin/felt_world_corpus.py` | 2066 | the world, the predicates, the expansion of recipes, `verify`, `freeze`, `load` |
+| `data/felt/recipes/cast.json` | 229 | the nine values and their words, the two kinds and their forms, the counting words, the words of yes and no, the English a rule can check, the vocabulary (87 words) |
+| `data/felt/recipes/category-NN-<name>.json` | 4904 in all | one recipe for each of the 27 categories |
+| `data/felt/category-NN-<name>.jsonl` | 5120 in all | one row to a line |
+| `data/felt/manifest.json` | 1000 | seed, command, each file's hash and counts, each recipe's hash, the cast's hash, the vocabulary, the greatest text, each value's reserved step and places, the held-out pairs, `never_direct`, and `short` (empty) |
+| `test/test_felt_corpus.py` | 459 | the eleven checks of §14.6, in twelve tests |
+
+The command, run as §14.8 gives it:
+`.venv/bin/python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt`.
+A freeze takes 13 to 21 seconds of wall time on this machine. Two freezes
+from the same recipes write the same 28 files byte for byte (verified, with
+the second written to a scratch directory and each file compared with
+`cmp`). The test runs, verified:
+
+| Command | Result |
+|---|---|
+| `BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest test/test_felt_corpus.py` | 12 passed |
+| `BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest test/test_game_corpus.py` | 7 passed |
+| `BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest test/test_math_corpus.py` | 5 passed |
+
+Rows by category and split (contrast counts rows; its 240 rows are 20 sets
+of 12):
+
+| # | File | train | validation | test | generalization | witness | inference | contrast |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `category-01-word-alone` | 100 | 20 | 20 | 20 | | | |
+| 2 | `category-02-naming` | 100 | 20 | 20 | 20 | 20 | | |
+| 3 | `category-03-presence` | 100 | 20 | 20 | 20 | 20 | | |
+| 4 | `category-04-kinds` | 100 | 20 | 20 | 20 | | | |
+| 5 | `category-05-and-or` | 100 | 20 | 20 | 20 | 20 | | |
+| 6 | `category-06-order-of-levels` | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 7 | `category-07-one-thing-clause` | 100 | 20 | 20 | 20 | 20 | | |
+| 8 | `category-08-two-thing-clause` | 100 | 20 | 20 | 20 | 20 | | |
+| 9 | `category-09-passive` | 100 | 20 | 20 | 20 | 20 | | |
+| 10 | `category-10-adjective` | 100 | 20 | 20 | 20 | 20 | | |
+| 11 | `category-11-comparative-size` | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 12 | `category-12-determiners` | 100 | 20 | 20 | | 20 | | |
+| 13 | `category-13-adverb` | 100 | 20 | 20 | 20 | 20 | | |
+| 14 | `category-14-place-of-two` | 100 | 20 | 20 | 20 | 20 | 20 | 240 |
+| 15 | `category-15-place-among-three` | 100 | 20 | 20 | 20 | 20 | | |
+| 16 | `category-16-motion-direction` | 100 | 20 | 20 | 20 | 20 | | |
+| 17 | `category-17-tense` | 100 | 20 | 20 | 20 | 20 | | |
+| 18 | `category-18-aspect` | 100 | 20 | 20 | 20 | 20 | | |
+| 19 | `category-19-order-of-events` | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 20 | `category-20-events-compared` | 100 | 20 | 20 | 20 | 20 | | |
+| 21 | `category-21-later-mention` | 100 | 20 | 20 | 20 | 20 | | |
+| 22 | `category-22-relative-clause` | 100 | 20 | 20 | 20 | 20 | | |
+| 23 | `category-23-two-clauses` | 100 | 20 | 20 | 20 | 20 | | |
+| 24 | `category-24-if` | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 25 | `category-25-kind-follows` | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 26 | `category-26-said-mathematics` | 100 | 20 | 20 | 20 | | | |
+| 27 | `category-27-counting` | 100 | 20 | 20 | 20 | | | |
+| | in all, 5120 | 2700 | 540 | 540 | 520 | 460 | 120 | 240 |
+
+### 15.2 Frames left out
+
+None. Every frame of §14.4 is in its recipe with its wording as written.
+Where the recipe differs in form only: frame 5's `{a} is {k} and {b} is
+{k}.`, "each with its own kind", is written `{a} is {k} and {b} is {l}.`,
+with `{l}` the second kind's adjective; frame 14's questions are written
+out from the pattern its row gives, three for each of the nine relations
+(27 question frames, `q01` to `q27`); frame 24's `{a} moved.` and `did {b}
+move ?`, which §14.4 names only for the inference split, are frames of
+recipe 24 marked `inference_only`; frame 27 is a frame whose text is
+empty. No frame's English was judged wrong.
+
+### 15.3 Counts short, and splits not made
+
+No category fell short of a count (`short` in the manifest is empty). The
+splits a category does not have are absent by §14.5's rules or by a
+decision listed in §15.6:
+
+| Split | Absent from | Why |
+|---|---|---|
+| witness | 1, 4, 26, 27 | 26 and 27 and frame 1's word have no statement of an image; 4's statements are of kinds, which no image makes false (decision 7) |
+| generalization | 12 | no frame of 12 names a digit, and kinds are never held out (decision 9) |
+| inference | all but 6, 11, 14, 19, 24, 25 | §14.5 |
+| contrast | all but 14 | §14.5 |
+
+### 15.4 The layout of a recipe
+
+A recipe is one JSON object:
+
+| Key | Holds |
+|---|---|
+| `category`, `name`, `construction`, `operators` | which category; the operators are §13.5's labels, copied into every row |
+| `held_out` | the rule of §14.5 the category uses: `pairs`, `frame_digit`, `sums` (with `sum_pairs`), `count_sets`, `reserved` (with `reserved_question`), or `none` |
+| `forms` | each placeholder of a text and the slot and form it is: `{a}` is slot `a`'s word, `{K}` slot `k`'s noun, `{Ks}` its plural, `{aK}` its form with the article, `{l}` slot `l`'s adjective |
+| `slots` | each named slot's type, `digit` or `kind`; any other slot a script names (`x`, `y`, `z`, `w`, a hidden `c`) is a digit |
+| `splits` | the count wanted for each split |
+| `statements` | the statement frames `s01`, `s02`, ...: a frame is `text`, `predicate`, `args` and an optional `script`; a frame of several sentences told in order (20, 21) is `sentences`, a list of such, with one `script` |
+| `questions` | the question frames `q01`, ...: as a statement, with `answer`: `{"type": "yes_no"}`, `{"type": "wh", "slot": s}` (the one thing for which the predicate holds, which must be slot `s`'s), or `{"type": "value"}` (the predicate gives the answer: a digit, a kind with `form`, an index into `words`, or with `roles` a choice between two slots, drawn which) |
+| `inference`, `contrast` | how those splits are made (rule, frames, counts) |
+| optional | `sizes` (sizes a thing may have), `world: "none"` (26), `distinct: false` (26: a digit may repeat), `compose` (`statement` for 1 and 24's train, `count` for 27) |
+
+`args` names slots, and a literal is `{"=": value}` (a speed, or a direction
+as a vector such as `[0, -1]` for up, so that no word of direction is in the
+code). A `script` says what the images must hold beyond what the predicate
+checks: `hidden` slots (things the frame needs and does not name),
+`kinds` (a slot's digit is, or is not, of a kind slot), `size` (`big` or
+`small`), `absent`, `one_of`, `only` (no further things), `layout`
+(predicates that guide where things are put), `events` (each `who`, and as
+needed `rel` of `toward`, `reach`, `away` or `leave` with `to`, `speed`,
+`dir`, `dir_not`, `steps`, `start` or `end` as a predicate the mover starts
+or ends in, `same_steps`, and `part`, the sentence of a group it serves) and
+`timing` (`sequential` or `concurrent`). A question's script may be split
+by its wanted answer, `{"yes": ..., "no": ...}`. A question with `bind`
+takes those slots from the statement (frame 20's `a`).
+
+The predicate names are the identifiers of §14.2 and of the conditions
+under §14.4's table (`row_before`, `reached`, `kind_moved_one`, ...); with
+the split names, the inference labels and the relation names of scripts
+they are the only names in the code, and none of them reaches a text. Every
+word of a text comes from `cast.json` or a recipe.
+
+### 15.5 Twelve documents
+
+Printed whole from the frozen files. A grid is the image of an entry, row
+`y` = 0 at the top; a place shows the value whose band its steps lie in,
+and `.` is the background; the steps themselves are not shown. One each
+from categories 3, 6, 12, 14, 16, 18, 20, 22, 24, 25 and 27 (the shortest
+train document among each file's first forty that asks a question, where
+the category asks one), then the first four rows of the contrast set
+`set-14-00`. The records are the rows' `meaning`, shortened to entry,
+frame, predicate, arguments, truth and answer value.
+
+~~~
+felt-03-train-0000  variant s02+q02  inference None  answer 'nine'
+   0 'four is not here.'
+   1 'what is here ?'  (asks)
+     0         1       
+     ........  ........
+     ........  ........
+     ........  ........
+     ........  ........
+     .....9..  .....9..
+     ........  ........
+     ........  ........
+     ........  ........
+     {"entry": 0, "frame": "s02", "predicate": "absent", "args": [4], "truth": true}
+     {"entry": 1, "frame": "q02", "predicate": "present", "args": ["?"], "truth": true, "value": 9}
+~~~
+
+~~~
+felt-06-train-0000  variant s01+q02  inference None  answer 'no'
+   0 'two is less than four.'
+   1 'is nine less than four ?'  (asks)
+     0         1       
+     ........  ........
+     ........  ........
+     ..5..4..  ..5..4..
+     ........  ........
+     ........  ........
+     ........  ........
+     ........  ........
+     .29....6  .29....6
+     {"entry": 0, "frame": "s01", "predicate": "level_before", "args": [2, 4], "truth": true}
+     {"entry": 1, "frame": "q02", "predicate": "level_before", "args": [9, 4], "truth": false, "value": false}
+~~~
+
+~~~
+felt-12-train-0001  variant s07+q02  inference None  answer 'no'
+   0 ''
+   1 ''
+   2 'no odd moved.'
+   3 ''
+   4 'did an odd move ?'  (asks)
+     0         1         2         3         4       
+     .......3  .......3  ..8....3  ..8....3  ..8....3
+     ........  ........  ........  ........  ........
+     .1...5.9  .18..5.9  .1...5.9  .1...5.9  .1...5.9
+     ........  ........  ........  ........  ........
+     ..8.....  ........  ........  ........  ........
+     ........  ........  ........  ........  ........
+     ........  ........  ........  ........  ........
+     ........  ........  ........  ........  ........
+     {"entry": 2, "frame": "s07", "predicate": "kind_moved_none", "args": ["odd"], "truth": true}
+     {"entry": 4, "frame": "q02", "predicate": "kind_moved_one", "args": ["odd"], "truth": false, "value": false}
+~~~
+
+~~~
+felt-14-train-0000  variant s09+q17  inference None  answer 'two'
+   0 'two is far from one.'
+   1 'what is five under ?'  (asks)
+     0         1       
+     .......2  .......2
+     .......5  .......5
+     ..1.....  ..1.....
+     ........  ........
+     ........  ........
+     ........  ........
+     ........  ........
+     ........  ........
+     {"entry": 0, "frame": "s09", "predicate": "far", "args": [2, 1], "truth": true}
+     {"entry": 1, "frame": "q17", "predicate": "on_top", "args": ["?", 5], "truth": true, "value": 2}
+~~~
+
+~~~
+felt-16-train-0020  variant s01+q01  inference None  answer 'seven'
+   0 ''
+   1 'nine is moving toward seven.'
+   2 ''
+   3 'what did nine move toward ?'  (asks)
+     0         1         2         3       
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     .......3  .......3  .......3  .......3
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ..7....9  ..7..9..  ..79....  ..79....
+     ........  ........  ........  ........
+     {"entry": 1, "frame": "s01", "predicate": "moving_toward", "args": [9, 7], "truth": true}
+     {"entry": 3, "frame": "q01", "predicate": "moved_toward", "args": [9, "?"], "truth": true, "value": 7}
+~~~
+
+~~~
+felt-18-train-0002  variant s01+q01  inference None  answer 'no'
+   0 ''
+   1 'one is moving.'
+   2 'is five moving ?'  (asks)
+   3 ''
+     0         1         2         3       
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ........  ........  ........  ........
+     ..51....  ..5.1...  ..5..1..  ..5..1..
+     ........  ........  ........  ........
+     {"entry": 1, "frame": "s01", "predicate": "moving", "args": [1], "truth": true}
+     {"entry": 2, "frame": "q01", "predicate": "moving", "args": [5], "truth": false, "value": false}
+~~~
+
+~~~
+felt-20-train-0006  variant s02+q01  inference None  answer 'first'
+   0 ''
+   1 ''
+   2 ''
+   3 ''
+   4 ''
+   5 ''
+   6 ''
+   7 'eight moved toward two quickly.'
+   8 'it moved toward seven slowly.'
+   9 'which move was faster, the first or the second ?'  (asks)
+     0         1         2         3         4         5         6         7       
+     ......7.  ......7.  ......7.  ......7.  ......7.  ......7.  ......7.  ......7.
+     ......8.  ........  ........  ........  ........  ........  ........  ........
+     ........  ........  ........  ........  ........  ........  ........  ........
+     ........  ......8.  ........  ........  ........  ......8.  ......8.  ......8.
+     ........  ........  ........  ........  ......8.  ........  ........  ........
+     ........  ........  ......8.  ......8.  ........  ........  ........  ........
+     ......2.  ......2.  ......2.  ......2.  ......2.  ......2.  ......2.  ......2.
+     ........  ........  ........  ........  ........  ........  ........  ........
+     8         9       
+     ......7.  ......7.
+     ........  ........
+     ........  ........
+     ......8.  ......8.
+     ........  ........
+     ........  ........
+     ......2.  ......2.
+     ........  ........
+     {"entry": 7, "frame": "s02", "predicate": "moved_toward_speed", "args": [8, 2, 2], "truth": true}
+     {"entry": 8, "frame": "s02", "predicate": "moved_toward_speed", "args": [8, 7, 1], "truth": true}
+     {"entry": 9, "frame": "q01", "predicate": "faster_move", "args": [8], "truth": true, "value": 0}
+~~~
+
+~~~
+felt-22-train-0007  variant s03+q02  inference None  answer 'three'
+   0 'the even that is next to three is two.'
+   1 'which odd is above six ?'  (asks)
+     0         1       
+     ........  ........
+     ..9...32  ..9...32
+     ........  ........
+     ...1....  ...1....
+     ........  ........
+     ........  ........
+     .......5  .......5
+     ......6.  ......6.
+     {"entry": 0, "frame": "s03", "predicate": "the_k_next_is", "args": ["even", 3, 2], "truth": true}
+     {"entry": 1, "frame": "q02", "predicate": "the_k_above", "args": ["?", "odd", 6], "truth": true, "value": 3}
+~~~
+
+~~~
+felt-24-train-0002  variant s01  inference None  answer None
+   0 'if five is above eight, eight is below five.'
+     0       
+     ........
+     .....5..
+     .....8..
+     ........
+     ........
+     ........
+     ........
+     ........
+     {"entry": 0, "frame": "s01", "predicate": "if_above_below", "args": [5, 8], "truth": true}
+~~~
+
+~~~
+felt-25-train-0000  variant s02+q01  inference None  answer 'no'
+   0 'every odd is below four.'
+   1 'is five above two ?'  (asks)
+     0         1       
+     .4.....2  .4.....2
+     .1......  .1......
+     ........  ........
+     ........  ........
+     ........  ........
+     ........  ........
+     ........  ........
+     .5......  .5......
+     {"entry": 0, "frame": "s02", "predicate": "every_below", "args": ["odd", 4], "truth": true}
+     {"entry": 1, "frame": "q01", "predicate": "row_before", "args": [5, 2], "truth": false, "value": false}
+~~~
+
+~~~
+felt-27-train-0000  variant s01  inference None  answer 'one two three four five six'
+   0 ''  (asks)
+     0       
+     .....6..
+     ........
+     ........
+     ........
+     .7....4.
+     .....53.
+     ........
+     ..9.....
+     {"entry": 0, "frame": "s01", "predicate": "count", "args": [], "truth": true, "value": 6}
+~~~
+
+~~~
+felt-14-contrast-0000  variant q03  inference None  answer 'yes'
+   0 'is nine above one ?'  (asks)
+     0       
+     ........
+     ...9....
+     ........
+     ........
+     ........
+     ...1....
+     ........
+     ........
+     {"entry": 0, "frame": "q03", "predicate": "row_before", "args": [9, 1], "truth": true, "value": true}
+~~~
+
+~~~
+felt-14-contrast-0001  variant q03  inference None  answer 'no'
+   0 'is one above nine ?'  (asks)
+     0       
+     ........
+     ...9....
+     ........
+     ........
+     ........
+     ...1....
+     ........
+     ........
+     {"entry": 0, "frame": "q03", "predicate": "row_before", "args": [1, 9], "truth": false, "value": false}
+~~~
+
+~~~
+felt-14-contrast-0002  variant q06  inference None  answer 'yes'
+   0 'is one below nine ?'  (asks)
+     0       
+     ........
+     ...9....
+     ........
+     ........
+     ........
+     ...1....
+     ........
+     ........
+     {"entry": 0, "frame": "q06", "predicate": "row_before", "args": [9, 1], "truth": true, "value": true}
+~~~
+
+~~~
+felt-14-contrast-0003  variant q03  inference None  answer 'no'
+   0 'is nine above one ?'  (asks)
+     0       
+     ........
+     ...1....
+     ........
+     ........
+     ........
+     ...9....
+     ........
+     ........
+     {"entry": 0, "frame": "q03", "predicate": "row_before", "args": [9, 1], "truth": false, "value": false}
+~~~
+
+### 15.6 Decided by the implementer
+
+1. *A document.* One statement frame (or group of sentences) and one
+   question frame, each with a slot filling of its own. The question's
+   digits are taken from the statement's things three times in four, so
+   that it speaks of what the statement speaks of, and otherwise drawn
+   freely; its answer is the world's. For the questions that choose between
+   two slots (6, 11, 13, 19) which of the two the images favour is drawn,
+   so that the answer is not always the first named. Category 1 and the
+   train split of 24 have statements only; 27 has the image only.
+2. *Where a text is put.* A document without motion has one entry for each
+   text, every entry the same arrangement with its steps drawn afresh. In a
+   document of motion each text is put at an image where its meaning holds,
+   statements in the order told, the question after them where any later
+   image allows it and otherwise anywhere. 243 of 5120 rows ask before a
+   statement, in categories 7, 8, 9, 12, 17, 18, 21, 22 and 23, where the
+   wanted answer holds only at an earlier image (a no to "did {b} move ?"
+   before {b}'s event; a yes to "is {a} moving ?"). Up to three copies of the last image are available for texts at
+   the end; the longest document has 19 entries.
+3. *Scripts of motion.* An event is 2 or 3 steps of 1 or 2 places in one of
+   four directions; the first starts after 0 to 2 still images; events in
+   sequence are 1 or 2 still images apart, or start together where a frame
+   says `concurrent` (24's "if {a} moves, {b} moves"). One still image
+   follows the last event. A mover is one place. The thing an event goes
+   toward, reaches, leaves or goes away from is still, placed on the
+   mover's line, and the gap at the end of a reaching (and at the start of
+   a leaving) is one place; frame 20's two events are separated by still
+   images.
+4. *`meaning` records.* One for each text (and for frame 1's image without
+   text and 27's image): `entry`, `frame`, `part` (in a group), `slots`
+   (those the frame's text and arguments use), `predicate`, `args` (with
+   `"?"` for a wh question's answer), `truth`, `cast` (the digits the frame
+   names: its text's digits, or its arguments' where it has no text, with a
+   wh answer), and for the question `value` (the answer before it is a
+   word) and, in the inference split, `follows`.
+5. *Three values.* A predicate is true, false, or undefined where its
+   presupposition fails (a thing absent, a graded word between its bounds,
+   two answers to a wh question, an event under way when "moved" is
+   asked). No text is kept where its meaning is undefined.
+6. *Readings of the conditions.* At the last image `at_rest` looks only
+   back. "moved": an event of the thing complete by now and none under
+   way. "is moving": displaced on both sides of now. "has moved" and "has
+   stopped" are one predicate (§14.4 gives them one condition). "will
+   move": still now, not displaced before, displaced after. "this is
+   {a}": a is the only thing in the image. A no to "did {a} move up ?":
+   {a} moved, in another direction. "did {aK} move ?": yes when exactly one
+   of the kind moved and no when none did; two or more is not used, so the
+   "exactly one" of §14.4 and the English "at least one" agree on every
+   row. "every {K} is above {b}" (25) and "the big {K}" (10) presuppose two
+   or more of the kind in the image, as 12 and 22 do; in 25 {b} is not of
+   the kind. A relative clause of 22 does not count its own {b}. A wh
+   question of an image is not answered by a thing its own arguments name
+   (a thing is "near" itself); arithmetic is exempt (two plus two).
+7. *The witness split.* One sentence of the statement group is made false;
+   the events and layout that serve it are left out, half the time
+   replaced by an event of no relation, and the world is drawn until that
+   sentence is false and the rest true. The mark is `truth: false` in its
+   record. Not made in 4 (a kind is not false of an image), nor from frame
+   24's `if {a} is above {b}, {b} is below {a}.`, which no image makes
+   false.
+8. *Balance.* Each document's wanted answer is the yes or no (or first or
+   second) given least so far in its split, and the images are drawn to
+   it; no condition is loosened. Over the corpus 888 answers are yes and
+   889 no. In the inference split a converse yes/no question can only
+   answer no (a converse yes restates its premise and is excluded by
+   check 7), so the yeses come from chains; converse and chain are drawn
+   at random for each document.
+9. *Held-out casts.* A frame's index is its place in the recipe's list,
+   statements then questions, from 1, and a group of sentences is one
+   frame. The one-thing rule applies to each frame of a document and each
+   digit it names; the two-thing rule to any held-out pair among one
+   frame's digits; the sums of 26 are the ordered addends `(a, b)` as
+   §14.5 writes them; 12 has no generalization split. Category 4's
+   generalization is the one-thing rule, which "asks of a digit in a frame
+   it was not stated in".
+10. *Reserved places* are avoided by every place of a big thing, by a mover
+    at every image and by every still thing; a contrast set's two rows and
+    its shifted rows avoid the reserved places of both values. A contrast
+    set's two rows are any two of the column, not only neighbours; the
+    offset is up to 3 places on each axis.
+11. *Things not named.* The limit of two is read as a limit on extra
+    things: at most two are added that no frame needs. The things a frame
+    needs and does not name by a digit (the members of a kind in 10, 12,
+    21, 22 and 25; "something else moved" in 7; the slow mover beside the
+    quick one in 16) are not counted. So some documents show more than two
+    unnamed things: 3 in 7, 28 in 10, 117 in 12, 19 in 16, 2 in 21, 49 in
+    22, 28 in 25 (and all of 27, as §14.4 allows).
+12. *Sizes.* A thing is one place except in 10 (1, 4, 5 or 6 places) and
+    11 (1 to 6 places). The bounds of "big" and "small" are kept by giving
+    10 no size of 2 or 3.
+13. *Inference.* In 6, 11 and 14 the premises of a document are of one
+    order (in 14 only above, below, to the left of and to the right of,
+    the relations that chain); 6's premises are true of the numbers. 19's
+    rows are chains through time. 24 has 8 rows that follow as yes, 8 as
+    no and 4 `open`. 25's question asks of a digit of the kind, the kind
+    never stated in the row. A premise's record has `truth: true`; the
+    question's `follows` is what a closure of the premises gives.
+14. *Category 27's operators* are an empty list: §13.5 has no row for it.
+15. *Interfaces.* `verify(rows, recipe, cast)` takes the cast besides the
+    recipe. `load(category, split)` returns `FeltDocument` records with
+    `key`, `category`, `split`, `sentences`, `scenes`, `question`,
+    `answer`, `variant`, `inference` and `contrast_set` (the row's `set`).
+16. *Words the test needs* (which forms are singular, which take "an", the
+    conjunction, the clause words and verb forms that bound a subject, the
+    marks) are in `cast.json` under `english`. The greatest text is 10
+    words and 48 bytes.
+
+### 15.7 What in §14 was unclear
+
+- *Frame 20, "which comes first is drawn, with the question and the order
+  of telling fixed".* With the two frames as written, the sentences name
+  the speeds, so the answer follows from the words as well as from the
+  images. Built as two frames, drawn at random, with first and second
+  balanced; a document that shows the two events and asks with no
+  statement would measure the comparison from what was seen alone, and is
+  not a frame of §14.4.
+- *"Something of the other kind moves where the sentence denies"* (12) is
+  applied to `no {K} moved.` only.
+- *"Up to two" things not named* against the things a frame needs (15.6,
+  decision 11).
+- *A witness for a kind* (4): no image can make "two is odd." false of
+  it.
+- *`at_rest(a, i)`* at the last image, which has no image after it
+  (15.6, decision 6).
+- *Check 7 and the converse:* see 15.6, decision 8.
+- *The sums of 26*: read as ordered addends; if "in either order" was
+  meant, (7, 2), (5, 3), (2, 6) and (4, 1) are in train now.
+
+### 15.8 Review of the first build (Claude, 2026-11-23)
+
+*What was run again, by Claude.* The three test files in one run: 24
+passed. A second freeze into a scratch folder: every file the same, byte
+for byte. Every frame of the 27 recipes read against §14.4: as written. A
+checker of Claude's own, sharing no code with the generator, over the 5,120
+rows: every pixel in a band and in range; no reserved step and no reserved
+place outside category 2's generalization split, and nothing else inside
+it; a scene `null` in the inference split, in frame 1's word alone and in
+category 26, and nowhere else; category 27's answers the first n counting
+words; in category 14, the truth of every "above" and "below" statement and
+the answer to every such yes or no question, read from the image (294
+cases); each of the 20 contrast sets twelve rows on four arrangements, six
+yes and six no, ten sets on held-out pairs; yes and no within 40 to 60 in a
+hundred in every split. Nothing failed. The generator names no word of the
+vocabulary except as a key of a recipe or as an identifier of a predicate.
+
+*Accepted as built:* the decisions of §15.6, among them that a question may
+come before a statement where its answer holds only at an earlier image
+(243 rows); that things a frame needs and does not name are not counted
+among the two extra; that category 4 has no witness and category 12 no
+generalization; that the sums of 26 are held out as ordered addends, so
+that its generalization split asks a sum taught the other way round.
+
+*Two things to change, both faults of §14 as Claude wrote it and not of
+the build.*
+
+1. *Frame 20 says the speeds.* "eight moved toward two quickly. it moved
+   toward seven slowly." answers "which move was faster" by its words.
+   Suggestion 4 asked for the moves described neutrally. §14.4 and its
+   condition are amended: half the documents tell the two moves with no
+   word of their speed.
+2. *The converse.* Check 7 compared meanings, so a question that asks a
+   premise's fact back in other words was refused, and a converse could
+   only be answered no; and it let through "six is greater than one."
+   asked "which is greater, six or one ?", which is said and not inferred.
+   §14.5 and check 7 are amended: the other way round is a premise in one
+   wording of a pair, asked in the other.
+
+Both go back to the implementer; the corpus is frozen again after them,
+with the same seed.

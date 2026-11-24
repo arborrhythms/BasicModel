@@ -1,0 +1,102 @@
+{
+ "category": 2,
+ "construction": "Naming",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "reserved",
+ "name": "naming",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "interpret",
+  "part"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "this_is",
+   "script": {
+    "only": true
+   },
+   "text": "what is this ?"
+  }
+ ],
+ "reserved_question": "q01",
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s01",
+   "predicate": "this_is",
+   "script": {
+    "only": true
+   },
+   "text": "this is {a}."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s02",
+   "predicate": "this_is",
+   "script": {
+    "only": true
+   },
+   "text": "that is {a}."
+  }
+ ]
+}

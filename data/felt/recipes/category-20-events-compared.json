@@ -1,0 +1,190 @@
+{
+ "category": 20,
+ "construction": "Events compared",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "events-compared",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "modifier",
+  "bind"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "value",
+    "words": [
+     "first",
+     "second"
+    ]
+   },
+   "args": [
+    "a"
+   ],
+   "bind": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "faster_move",
+   "text": "which move was faster, the first or the second ?"
+  },
+  {
+   "answer": {
+    "type": "value",
+    "words": [
+     "first",
+     "second"
+    ]
+   },
+   "args": [
+    "a"
+   ],
+   "bind": [
+    "a"
+   ],
+   "id": "q02",
+   "predicate": "slower_move",
+   "text": "which move was slower, the first or the second ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "id": "s01",
+   "script": {
+    "events": [
+     {
+      "part": 0,
+      "rel": "toward",
+      "speed": 1,
+      "to": "b",
+      "who": "a"
+     },
+     {
+      "part": 1,
+      "rel": "toward",
+      "speed": 2,
+      "to": "c",
+      "who": "a"
+     }
+    ]
+   },
+   "sentences": [
+    {
+     "args": [
+      "a",
+      "b",
+      {
+       "=": 1
+      }
+     ],
+     "predicate": "moved_toward_speed",
+     "text": "{a} moved toward {b} slowly."
+    },
+    {
+     "args": [
+      "a",
+      "c",
+      {
+       "=": 2
+      }
+     ],
+     "predicate": "moved_toward_speed",
+     "text": "it moved toward {c} quickly."
+    }
+   ]
+  },
+  {
+   "id": "s02",
+   "script": {
+    "events": [
+     {
+      "part": 0,
+      "rel": "toward",
+      "speed": 2,
+      "to": "b",
+      "who": "a"
+     },
+     {
+      "part": 1,
+      "rel": "toward",
+      "speed": 1,
+      "to": "c",
+      "who": "a"
+     }
+    ]
+   },
+   "sentences": [
+    {
+     "args": [
+      "a",
+      "b",
+      {
+       "=": 2
+      }
+     ],
+     "predicate": "moved_toward_speed",
+     "text": "{a} moved toward {b} quickly."
+    },
+    {
+     "args": [
+      "a",
+      "c",
+      {
+       "=": 1
+      }
+     ],
+     "predicate": "moved_toward_speed",
+     "text": "it moved toward {c} slowly."
+    }
+   ]
+  }
+ ]
+}
