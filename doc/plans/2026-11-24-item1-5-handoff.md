@@ -1,6 +1,28 @@
 # Item 1.5 integration handoff
 
-## Integration status at the spelling audit checkpoint
+## MTM ownership and the native forecast
+
+The published base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`. Its reviewed 1.7 ancestor is `d38029113103ce5e9cf1223eaa55c9181010d649`. Local training commit `80150fc8da226099cf59d897b8b3fd805e1ea2de` implements the first STM → MTM → LTM transfer changes on main.
+
+| Four pages, batch four, float32, seed 1505 | 1.7 | MTM checkpoint |
+| --- | ---: | ---: |
+| Steady CPU sentences/s | 6.99 | 10.09 |
+| Steady MPS sentences/s | 0.786 | 1.63 |
+| First three updates on CPU, seconds | 0.938, 0.634, 0.576 | 0.825, 0.404, 0.407 |
+| First three updates on MPS, seconds | 3.352, 4.464, 4.932 | 2.332, 2.596, 2.921 |
+| Wall time to restored 122/122 sampled and evaluation on CPU | 97.89 s | 41.95 s |
+| Explicit tensor reads inside the CPU sentence | 23,609 | 4,515 |
+| Repeated native percept addresses in an audited update | 3,696 | 402 |
+
+Times include backward and the optimizer. Steady throughput uses the nine steps after three warm-ups. These eager measurements can be reproduced with the benchmark commands below using `mtm-kept-cpu`, `mtm-winner-metal`, and `mtm-kept-reader` under `output/item1-5`. On the separately timed CPU audit the exploit took 59 ms in looks and 25 ms in scoring. One exploration took 81 ms and 25 ms. Two fresh restored readers scored 122/122 sampled and 122/122 in evaluation. All five learning gates passed, including 4/4 ordered pairs into grammar, 4/4 through its inverse, numeric XOR convergence and class, and raised-class denotation. The scoped memory and performance rerun passed 270 tests, including one additional forecast isolation test added after that commit. One matched update compared 597 tensors against the preceding training code, with exact equality across parameters, buffers, optimizer, RNG and all 26 live gradients.
+
+The retained native head goes through MTM at close. An eligible resolved STM0 idea transfers directly to LTM0. A distinct predicted post-action idea stays in MTM while recent noun/event references need its value and signed evidence. Promotion transfers the native row with its original stable name. At expiry MTM releases the row using the existing token lifetime. Event queries consult the owning store, including when an older checkpoint still stores a predicted result in LTM0. When the durable head exists the sentence stack retains its reference and releases the trial copy. General grammatical closing still uses the Python reading index and event topology. The per-stream root/time index is outstanding. Claude may overlap in `Memory.MediumTermMemory`, `PartClosing`, `CaseSelection`, `MemberRead`, and `TimelineRead`.
+
+The physical native percept prior was reused across histories at this checkpoint. On an audited three-exploration update the four paths advanced shared native state 3, 0, 0 and 0 times. Disabling the cache without isolating state changed those counts to 3, 5, 3 and 7. Seven predictor buffers differed even though the live gradients, parameters, optimizer and RNG matched in the ablation. The cached and uncached schedules sustained 6.12 and 5.83 CPU sentences/s. The causal predictor is neural. Shared mean and variance are serialized but have no production reader in the ordinary forecast. The per-stream recent percept and its prior mean feed `ActivationPredictor` together with order-zero concept activity.
+
+For locating parts, a dense signed-bit dot product recovered the same 71 overlapping byte matches as exact windows on the four-page surface. With pattern encoding outside the timed loop and delivered-byte encoding inside, the sweeps took 0.043 versus 0.010 ms on CPU and 0.220 versus 0.054 ms on MPS. This was a matcher probe. The retained graded lanes still fold through Pi. Each fresh occurrence can use the existing powerset of learned parts without allocating all theoretical subsets.
+
+## Earlier status at the spelling audit checkpoint
 
 Item 1.5 is open on local `main`. The starting commit was `ad8fafea927839c0d7f92d0aee35c913d02b2612`, with reviewed handoff `d38029113103ce5e9cf1223eaa55c9181010d649` in its ancestry. The current training commit is `091e5493101496ccef1f96ce7dad9304bf3850d1`. The original preparation branch was ported onto the new layout. All integration and pushes belong to Alec.
 
