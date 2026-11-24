@@ -226,12 +226,17 @@ def spread(owner, observed, *, percepts=None, structure_=None):
 def _staged(owner, observed, percepts, stage):
     graph = structure(owner, observed.device)
     depth = 4 * (len(owner._order_caps()) + 1)
-    source, up, down, fan, _ = _flow(graph, observed, percepts, depth)
+    flow = _flow(graph, observed, percepts, depth)
+    return _read_stage(graph, flow, stage)
+
+
+def _read_stage(graph, flow, stage):
+    source, up, down, fan, _ = flow
     lo, hi = ((0, graph.concepts) if stage == 'concepts' else (graph.percept_start, graph.part_start))
     if fan is None:
         return union(up, down)[lo:hi]
     own = (graph.parent >= lo) & (graph.parent < hi)
-    weight = graph.weight.to(observed)[own]
+    weight = graph.weight.to(source)[own]
     child, parent = graph.child[own], graph.parent[own]
     share = weight / fan.index_select(0, child)
     reading = _carry(union(source, up), child, parent, share, graph.negated[own], graph.size)
@@ -256,11 +261,11 @@ def staged_percepts(owner, observed, *, percepts=None):
     return _staged(owner, observed, percepts, 'percepts')
 
 
-def stage_values(owner, observed, *, percepts=None):
+def stage_values(owner, observed, *, percepts=None, structure_=None):
     """What arrives at each stage from the observed concepts: the concepts
     themselves, and each symbol's two lanes, the product of its members'
     (the symbols' Pi). ``dict(concepts=[V, B, 2], symbols=[T, B, 2])``."""
-    graph = structure(owner, observed.device)
+    graph = structure(owner, observed.device) if structure_ is None else structure_
     V, T = graph.concepts, graph.symbols
     concepts = observed[:V].detach()
     symbols = concepts.new_zeros(T, *concepts.shape[1:])
@@ -327,12 +332,16 @@ def look_cost(owner, before, arrived):
     observed[:before.shape[1]] = before.transpose(0, 1).detach()
     target = arrived.new_zeros(V, B, 2)
     target[:arrived.shape[1]] = arrived.transpose(0, 1).detach()
-    concepts = staged(owner, observed)
+    # Both errors read this candidate's topology at the same instant.
+    # Only the local stage reattaches its own weights to the detached flow.
+    graph = structure(owner, observed.device)
+    flow = _flow(graph, observed, None, 4 * (len(owner._order_caps()) + 1))
+    concepts = _read_stage(graph, flow, 'concepts')
     error = (concepts - target).square().mean((0, 2))
     with torch.no_grad():
-        value, graph = spread(owner, observed)
-        symbols = stage_values(owner, target)['symbols']
-        expected_symbols = value[graph.concepts:graph.percept_start]
+        symbols = stage_values(owner, target, structure_=graph)['symbols']
+        rows = slice(graph.concepts, graph.percept_start)
+        expected_symbols = union(flow[1][rows], flow[2][rows])
         owner._expectation_stages = dict(
             getattr(owner, '_expectation_stages', None) or {},
             concepts=error.detach().mean(),
