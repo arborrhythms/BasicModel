@@ -88,13 +88,29 @@ Commit the winning STM root as the sole LTM value for that time. Preserve the st
 
 `ReadingMemory.commit` now copies the reachable ideas with their original stamps, translates occurrence references, and interns reachable pairs in dependency order. Two streams can retain the same durable relation even when all relation seats are occupied. The copy checks the capacity for all streams before publishing the first. Tests cover a single free idea seat, shared children, external references, STM expiry, and checkpoint restore.
 
-The grammar-free and partial-reading paths use that copy. The ordinary grammatical close still writes from its admitted clause. Its recent STM relation head also consumes an occurrence name for a point, and existing checkpoints omit the stream and tick of a relation close. The historical root lookup and the changeover of the ordinary grammatical close are open.
+The grammar-free and partial-reading paths use that copy. The ordinary grammatical close consumes typed STM operands and still finishes through its admitted clause. ModelState.root_at(stream, tick) returns the sole retained idea or ordered relation for that stream and tick. Restore and forgetting tests cover the temporal index. The ordinary close still uses host grammar and event metadata.
+
+Each stream selects its winning exploration at sentence close. Independent pages share new spelling parts at the end of the packed input block. A learned part first appears in the observing page’s occurrence geometry and evidence in the sentence that supplied it. A later sentence in the same block cannot add that part to an earlier opening. Each page also reads its own immediate revision of a previously promoted Pi row. The block retains the existing 1.7 consolidated definition.
+
+### Existing Pi definitions during a packed block
+
+Two fresh runs with seed 1505 trained both pages on `abc` until its basic percept was promoted. On the next block page 0 read `abc` again. Giving page 1 `ba` left all coordinates of the promoted row unchanged. Giving it `ab` changed six positive and three negative coordinates before page 0 used the opening. Its part-match score on the same `[0,3)` occurrence fell from 1 to 0. The occurrence table on page 0 had already hidden the other page's new part in both runs.
+
+The opening now uses each page’s current definition and the inverse uses the same revision. For a part whose coordinate changes, the temporary tensor holds the signed difference from the shared row for the relevant page and sentence. It expires after the block. Admission follows the page’s observation order. Only the normal consolidated definition survives in the checkpoint.
+
+Rule 61 remains the 1.7 repair. With the stored forms `aab`, `baa`, and `bab`, admitting `baab` exposes a false coordinate-subset match against `bab`. In a trace on the release base, the repair set bit 0 on the stored `bab` code. The new form contained the parts `b`, `a`, `aab`, `baa`, and `baab`. Its parts list never contained `bab`. After independent pages finish a block, apply the release consolidation order. A privately selected repair coordinate has no separate durable vote.
 
 ## Percept and concept staging
 
 MTM is the implementation name for the staging area for basic percepts and concepts. STM and LTM share the idea and ordered-relation representation used to retain a sentence. The two mechanisms meet when a word occurrence refers to a concept. Copying that occurrence preserves the reference and leaves concept admission with its existing owner.
 
 Each exploration can observe its own provisional growth. Only the winning stream’s observations are eligible to persist, in the existing close order. Exercise mixed winners against isolated runs from the same opening and compare STM, LTM, clock, RNG, optimizer and gradients. The current `MediumTermMemory` class also exposes event and checkpoint interfaces used by grounding. Preserve their existing lifetimes and compatibility while changing sentence storage. Alec subsequently placed recent noun and event operands in MTM, with transfer to LTM when eligible. Preserve the current teaching and expiry rules. The broader staging-area review and its compile check belong to item 1.4.
+
+## Conditional gradients at the optimizer boundary
+
+In the four-page, three-exploration lesson at seed 1505, the chooser's `tool_embedding` accumulated an Adam first moment. A later winning objective left that parameter unused. Eager backward gave it a gradient of None, and its largest parameter change was exactly zero. Giving only that unused parameter a literal zero gradient moved it by 0.006700525 on the first affected update. Both compiled `torch.cond` and a tensor selection returned a zero gradient for the unselected branch in an isolated two-parameter probe with the installed PyTorch.
+
+The optimizer keeps eager participation semantics. Alec declined the proposed participation mask. The regression checks an inactive weight with existing Adam momentum and a participating weight with exactly zero derivative. It checks the weights, both moments and each parameter’s step counter. Device work on candidate reads and scoring proceeds independently.
 
 ## Acceptance and rollout
 

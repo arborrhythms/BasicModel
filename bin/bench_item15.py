@@ -232,20 +232,35 @@ def main():
         record['texts'] = texts
         data = model.inputSpace.data
 
-        def step():
+        def step(*, time_boundaries=False):
             supervised = data.has_supervised_outputs
+            if time_boundaries:
+                step_index = len(record['steps'])
+                device = next(model.parameters()).device
+                sync(device)
+                setup_start = time.perf_counter()
             try:
                 with data.runtime_batch(texts):
                     data.has_supervised_outputs = False
                     source = model.inputSpace.prepInput(texts)
                     record['input_shape'] = list(source.shape)
+                    questions = tuple(What.present(i, split='runtime') for i in range(len(texts)))
+                    batch = source, torch.empty(len(texts), 0, device=source.device)
+                    if time_boundaries:
+                        sync(device)
+                        setup_seconds = time.perf_counter() - setup_start
                     return model.runBatch(train=True, optimizer=optimizer, batchSize=len(texts),
-                        split='runtime', questions=tuple(What.present(i, split='runtime') for i in range(len(texts))),
-                        batch_override=(source, torch.empty(len(texts), 0, device=source.device)))
+                        split='runtime', questions=questions, batch_override=batch)
             finally:
+                if time_boundaries:
+                    reset_start = time.perf_counter()
                 data.has_supervised_outputs = supervised
                 model.End()
                 model.dispatch_per_row_reset([True] * len(texts))
+                if time_boundaries and len(record['steps']) > step_index:
+                    sync(device)
+                    record['steps'][-1].update(input_setup_seconds=setup_seconds,
+                                               end_and_reset_seconds=time.perf_counter() - reset_start)
 
         if args.strict_sentence:
             method = torch.compile(BasicModel._execute_input_sentence, backend=args.strict_sentence,
@@ -271,7 +286,7 @@ def main():
             storage = fixed_storage()
             record['fixed_store_resizes'] = []
             for update in range(args.steps):
-                step()
+                step(time_boundaries=True)
                 current = fixed_storage()
                 record['fixed_store_resizes'].extend((update, n) for n in current if current[n] != storage[n])
                 storage = current
@@ -514,6 +529,9 @@ def main():
     steady = [r['seconds'] for r in steady_rows]
     record['steady_sentences'] = sum(r['sentences'] for r in steady_rows)
     record['steady_sentences_per_second'] = record['steady_sentences'] / sum(steady) if steady else None
+    if steady_rows and 'end_and_reset_seconds' in steady_rows[0]:
+        elapsed = sum(r['input_setup_seconds'] + r['seconds'] + r['end_and_reset_seconds'] for r in steady_rows)
+        record['steady_sentences_per_second_with_boundaries'] = record['steady_sentences'] / elapsed
     record['steady_median_seconds'] = statistics.median(steady) if steady else None
     record['steady_mean_seconds'] = statistics.mean(steady) if steady else None
     save()

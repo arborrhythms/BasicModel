@@ -1914,12 +1914,13 @@ generation is expected at this stage and is recorded, not tuned away.
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
-   **Integration review, 2026-11-24 UTC.** The local implementation on main
-   shares sentence percept reads and the opening forecast, reduces host work,
-   and keeps provisional growth and fixation gradients with their selected
-   streams. The [final handoff](doc/plans/2026-11-24-item1-5-handoff.md)
-   records release-to-final sentences/s, restored reading, both XOR boundaries,
-   one/three-path scaling, outstanding architecture and 1.6 integration points.
+   **Open, 2026-11-24 UTC.** Local main shares sentence percept reads and
+   the opening forecast. Each stream selects its winning exploration at
+   sentence close. The ordinary input ladder still reads learned span
+   endpoints on the host and prevents strict whole-sentence capture.
+   The [integration handoff](doc/plans/2026-11-24-item1-5-handoff.md)
+   records real training speed, restored accuracy, gradient checks and
+   remaining work shared with 1.6.
    After item 1.6 and before item 1, so the compiler work compiles what
    this builds under `fullgraph`, and before item 0. It has two parts.
    *Claude's default:* the wiring first, as it stood before the lookups
